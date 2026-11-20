@@ -181,13 +181,15 @@
 "torres_suspected": false
 }
 },
+{"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
 "front door",
-"Just checking in"
+["Just checking in", "That's all for now"]
 ]
 },
 {
@@ -259,7 +261,7 @@
 "note": "Named after flag 3: no early-naming credit. The vault paperwork is left unread on purpose, for the sweep."
 },
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
@@ -348,7 +350,7 @@
 }
 },
 {
-"talk": "recruiter",
+"talk": "recruiter", "knot": "first_call",
 "picks": []
 },
 {
@@ -437,12 +439,12 @@
 "said": [
 "MISSION COMPLETE",
 "TURNED",
-"SHE NEVER MADE HER PITCH — the TalentStack list went to SAFETYNET",
+"SHE NEVER MADE HER PITCH: the TalentStack list went to SAFETYNET",
 "Nobody on staff hurt"
 ],
 "notSaid": [
 "AT A COST",
-"TALENTSTACK LIST — left unread",
+"TALENTSTACK LIST: left unread",
 "ROTATION WINDOW"
 ]
 },

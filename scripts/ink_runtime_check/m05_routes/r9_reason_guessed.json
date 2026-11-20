@@ -58,8 +58,10 @@
 "torres_reason_guessed": true
 }
 },
+{"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
@@ -67,12 +69,12 @@
 ]
 },
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
 "front door",
-"Just checking in"
+["Just checking in", "That's all for now"]
 ]
 },
 {

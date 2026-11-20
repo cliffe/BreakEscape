@@ -75,13 +75,15 @@
 "That's all for now"
 ]
 },
+{"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
 {
-"talk": "patricia_phone",
+"talk": "patricia_phone", "knot": "phone_call",
 "picks": [
 "I know who it is",
 "David Torres",
 "Halloran puts him",
-"Just checking in"
+["Just checking in", "That's all for now"]
 ]
 },
 {
@@ -289,13 +291,13 @@
 {
 "said": [
 "MISSION COMPLETE",
-"HANDED TO THE POLICE — talked to SAFETYNET first",
-"TALENTSTACK LIST — left unread"
+"HANDED TO THE POLICE: talked to SAFETYNET first",
+"TALENTSTACK LIST: left unread"
 ],
 "notSaid": [
 "AT A COST",
 "ROTATION WINDOW",
-"NAMED ON THE EVIDENCE — before the portal's manifest was in",
+"NAMED ON THE EVIDENCE: before the portal's manifest was in",
 "before the server did",
 "NAMED ON THE EVIDENCE"
 ]

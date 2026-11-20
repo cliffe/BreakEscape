@@ -9,7 +9,7 @@
 }
 },
 {
-"talk": "recruiter",
+"talk": "recruiter", "knot": "first_call",
 "picks": [
 "How many more",
 "What were you actually after",
@@ -33,10 +33,8 @@
 ]
 },
 {
-"talk": "recruiter",
-"picks": [
-"Ring the TalentStack number back",
-"No deal."
+"talk": "recruiter", "knot": "return_contact",
+"picks": ["No deal."
 ]
 },
 {
@@ -49,7 +47,6 @@
 "said": [
 "Still deciding?",
 "Then we're done. I'll close your file.",
-"She hangs up first."
 ],
 "notSaid": [
 "[choice] I already told you",
@@ -57,10 +54,8 @@
 ]
 },
 {
-"talk": "recruiter",
-"picks": [
-"Ring the TalentStack number back"
-]
+"talk": "recruiter", "knot": "return_contact",
+"picks": []
 },
 {
 "said": [

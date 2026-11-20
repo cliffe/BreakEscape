@@ -75,13 +75,15 @@
     "That's all for now"
    ]
   },
-  {
-   "talk": "patricia_phone",
+  {"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
+{"set":{"patricia_phone_available":true}},
+{
+   "talk": "patricia_phone", "knot": "phone_call",
    "picks": [
     "I know who it is",
     "David Torres",
     "front door",
-    "Just checking in"
+    ["Just checking in", "That's all for now"]
    ]
   },
   {
@@ -141,7 +143,7 @@
    "enter": "data_center"
   },
   {
-   "talk": "patricia_phone",
+   "talk": "patricia_phone", "knot": "phone_call",
    "picks": [
     "I know who it is",
     "David Torres",
@@ -354,7 +356,7 @@
     "Nobody else on staff hurt"
    ],
    "notSaid": [
-    "HANDED TO THE POLICE \u2014 said nothing",
+    "HANDED TO THE POLICE: said nothing",
     "Nobody on staff hurt",
     "AT A COST"
    ]
