@@ -582,7 +582,7 @@
         },
         {
           "heading": "If one gets approved",
-          "text": "When a prompt like this is approved, the account is taken, the claims mailbox is rebuilt and the whole team loses the afternoon locked out during the clean-up. Because the account holds health and other special-category data, a breach like this gets reported so the organisation can act, and the people affected are told."
+          "text": "When a prompt like this is approved, the account is taken, the claims mailbox is rebuilt and the whole team loses the afternoon locked out during the clean-up. An insurer's accounts hold health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
         }
       ]
     },

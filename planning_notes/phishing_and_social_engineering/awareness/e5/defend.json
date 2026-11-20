@@ -627,7 +627,7 @@
       "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed.",
       "conceptPanel": {
         "heading": "If a password goes in",
-        "text": "When a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. Because the account holds health and other special-category data, a breach like this gets reported so the organisation can act, and the people affected are told."
+        "text": "When a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
       }
     },
     "_defendOnly": {

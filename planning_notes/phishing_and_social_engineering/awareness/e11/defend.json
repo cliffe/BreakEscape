@@ -250,7 +250,7 @@
         },
         {
           "heading": "If records go astray",
-          "text": "When care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families; a breach like this gets reported so the organisation can act, and the people affected are told."
+          "text": "When care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families; under UK GDPR a breach like this is reported to the ICO unless it is unlikely to be a risk, and the people affected are told only where the risk to them is high."
         }
       ]
     },
