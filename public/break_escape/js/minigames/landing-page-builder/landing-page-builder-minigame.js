@@ -426,9 +426,11 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     // ── shell ─────────────────────────────────────────────────────────────
     _buildInvalid() {
-        const wrap = h('div', { class: 'lpb-root lpb-invalid', tabindex: '-1' },
+        // Text in a header row with the shared X at the right (X closes, no Cancel).
+        const head = h('header', { class: 'lpb-head' },
             h('p', { class: 'lpb-invalid-text', text: this._invalid }),
-            this.buildCloseControl());
+            h('div', { class: 'lpb-head-buttons' }, this.buildCloseControl()));
+        const wrap = h('div', { class: 'lpb-root lpb-invalid', tabindex: '-1' }, head);
         this.root = wrap;
         this.gameContainer.appendChild(wrap);
     }
