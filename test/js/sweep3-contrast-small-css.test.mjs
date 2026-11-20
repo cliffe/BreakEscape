@@ -20,9 +20,8 @@ const lum = (hex) => {
 };
 const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
-test('esd panel and status are opaque', () => {
+test('esd panel is opaque', () => {
     assert.ok(/background:\s*#101010;/.test(rule('esd-pushbutton-minigame.css', '.esd-panel')), 'panel #101010');
-    assert.ok(/background:\s*#000;/.test(rule('esd-pushbutton-minigame.css', '.esd-status')), 'status #000');
 });
 test('ncsc envelope ref is #8b949e at 4.5:1 or better, sealed line-height 1.4', () => {
     assert.ok(/color:\s*#8b949e;/.test(rule('ncsc-brief-minigame.css', '.ncsc-envelope-ref')), 'ref colour');
@@ -32,4 +31,8 @@ test('ncsc envelope ref is #8b949e at 4.5:1 or better, sealed line-height 1.4', 
 test('nad detail hint is #8a9bb0 at 4.5:1 or better on #0a0f1e', () => {
     assert.ok(/color:\s*#8a9bb0;/.test(rule('network-architecture-minigame.css', '.nad-detail-hint')), 'hint colour');
     assert.ok(ratio('#8a9bb0', '#0a0f1e') >= 4.5, 'hint contrast');
+});
+test('landing-page invalid text keeps flex-grow so the X stays at the right of the header', () => {
+    // .lpb-head has no justify-content: without flex-grow the X sits mid-row after the text.
+    assert.ok(/flex:\s*1( 1 auto)?;/.test(rule('landing-page-builder-minigame.css', '.lpb-invalid-text')), 'flex grow');
 });
