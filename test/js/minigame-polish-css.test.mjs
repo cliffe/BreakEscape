@@ -168,25 +168,35 @@ test('se-overlay-close touch hit area is at least 44px with the border it really
     const ruleBlock = fw.match(/\.se-overlay-close::after \{[^}]*\}/)?.[0] || '';
     const insetText = ruleBlock.match(/inset:\s*([^;]+);/)?.[1] || '';
     assert.ok(insetText !== '', 'the ::after rule sets an inset');
-    // Inset magnitude for a given border: -Npx, or calc(-Apx - var(--ui-small-button-px, Fpx)).
-    const insetFor = (border) => {
-        const c = insetText.match(/^calc\(\s*-(\d+)px\s*-\s*var\(--ui-small-button-px,\s*(\d+)px\)\s*\)$/);
-        if (c) return Number(c[1]) + border; // the var resolves to the border actually drawn
-        const n = insetText.match(/^-(\d+)px$/);
-        assert.ok(n !== null, 'the inset is a plain px value or the calc form: ' + insetText);
-        return Number(n[1]);
-    };
-    const check = (border, label) => {
-        const inset = insetFor(border);
+    // The shared themed close list sets the SE X's drawn border: find the rule that holds it.
+    const themedRule = [...themes.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .find((m) => m[1].split(',').map((x) => x.trim()).includes('[data-ui-theme] .se-overlay-close'));
+    assert.ok(themedRule !== undefined, 'a themed list holds the SE X');
+    const themedBorder = themedRule[2].match(/(?:^|[\s;])border-width:\s*([^;]+);/)?.[1].trim() || '';
+    assert.ok(themedBorder === 'var(--ui-small-button-px)', 'the themed SE X border is --ui-small-button-px, got ' + themedBorder);
+    // Inset for the calc form: -Apx - var(--ui-small-button-px, Fpx). The var resolves to the
+    // theme's px when a theme sets it, else to its own fallback F.
+    const c = insetText.match(/^calc\(\s*-(\d+)px\s*-\s*var\(--ui-small-button-px,\s*(\d+)px\)\s*\)$/);
+    const plain = insetText.match(/^-(\d+)px$/);
+    assert.ok(c !== null || plain !== null, 'the inset is a plain px value or the calc form: ' + insetText);
+    const insetFor = (varValue) => (c ? Number(c[1]) + varValue : Number(plain[1]));
+    const check = (border, varValue, label) => {
+        const inset = insetFor(varValue);
         const side = (box - 2 * border) + 2 * inset; // the inset starts at the padding box
         const past = inset - border; // reach beyond the drawn edge
         assert.ok(side >= 44, label + ': hit area ' + side + 'px is under 44px (border ' + border + 'px)');
         assert.ok(past <= 8, label + ': reach past the X is ' + past + 'px, over the 8px title-bar gap');
     };
-    check(fallback, 'unthemed');
-    for (const px of new Set(themed)) check(px, 'themed ' + px + 'px');
-    // The reach must name the variable the themed border uses, or the arithmetic above is moot.
-    assert.ok(/border-width:\s*var\(--ui-small-button-px\)/.test(themes), 'the themed X border is --ui-small-button-px');
+    // Unthemed: the var is undefined, so the calc's own fallback is used and must equal the drawn border.
+    if (c) assert.ok(Number(c[2]) === fallback, 'calc fallback ' + c[2] + 'px must equal the unthemed border ' + fallback + 'px');
+    check(fallback, c ? Number(c[2]) : 0, 'unthemed');
+    // Themed: the drawn border is the var, so both are the theme's px.
+    for (const px of new Set(themed)) check(px, px, 'themed ' + px + 'px');
+    // The touch target only exists under a coarse pointer or a narrow width: 844x390 phones need coarse.
+    const at = fw.indexOf('.se-overlay-close::after');
+    const mq = fw.lastIndexOf('@media', at);
+    assert.ok(mq >= 0 && !fw.slice(mq, at).includes('\n}\n'), 'the SE X ::after sits inside an @media block');
+    assert.ok(/pointer:\s*coarse/.test(fw.slice(mq, fw.indexOf('{', mq))), 'the @media query includes (pointer: coarse), so 844x390 phones keep the 44px target');
 });
 
 test('dusting key marks are shown at a whole-number 2x (m3)', () => {

@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 for (const k of ['log', 'info', 'debug', 'warn']) console[k] = () => {};
@@ -80,14 +80,20 @@ test('C-X1/C-X2 shared CSS rules exist', () => {
     assert.ok(/width:\s*min\(720px/.test(fw), 'the framed window is capped at 720px');
 });
 
-test('D216 no rule that styles .se-overlay-close is red, in any state, in either sheet', () => {
-    for (const f of ['minigames-framework.css', 'ui-themes.css']) {
+test('D216 no rule that styles .se-overlay-close is red or rounded, in any state, in any sheet', () => {
+    let seen = 0;
+    for (const f of readdirSync(css).filter((n) => n.endsWith('.css'))) {
         const hits = rulesOf(readFileSync(join(css, f), 'utf8')).filter((r) => /se-overlay-close/.test(r.sel));
-        assert.ok(hits.length >= 1, f + ': finds the .se-overlay-close rules');
+        seen += hits.length;
         for (const r of hits) {
             assert.ok(!RED.test(r.body), f + ': red in a rule for ' + r.sel.replace(/\s+/g, ' '));
             assert.ok(!/border-image(-source)?:\s*none/.test(r.body), f + ': the skin is switched off in ' + r.sel.replace(/\s+/g, ' '));
+            assert.ok(!/border-radius:\s*[1-9]/.test(r.body), f + ': rounded corners in ' + r.sel.replace(/\s+/g, ' '));
         }
+    }
+    assert.ok(seen >= 4, 'finds the .se-overlay-close rules across the sheets: ' + seen);
+    for (const f of ['minigames-framework.css', 'ui-themes.css']) {
+        assert.ok(rulesOf(readFileSync(join(css, f), 'utf8')).some((r) => /se-overlay-close/.test(r.sel)), f + ' holds an SE X rule');
     }
 });
 
