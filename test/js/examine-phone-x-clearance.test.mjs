@@ -20,8 +20,13 @@ test('phone examine panel keeps 44px above the content for the X', () => {
 });
 
 test('the card scrolls inside the viewport on short landscape', () => {
-    const base = css.slice(0, css.indexOf('.examine-panel'));
-    assert.ok(/max-height:\s*calc\(100vh - 160px\)/.test(base) && /overflow-y:\s*auto/.test(base), 'bounded and scrolling');
+    const rule = css.match(/\.examine-minigame \.minigame-game-container\s*\{([^}]*)\}/);
+    assert.ok(rule !== null, 'the card rule');
+    const body = rule[1].replace(/\/\*[\s\S]*?\*\//g, '');
+    // vh first for browsers without dvh, dvh after it so it wins where it parses (iOS toolbar)
+    const heights = [...body.matchAll(/max-height:\s*([^;]+);/g)].map((x) => x[1].trim());
+    assert.deepEqual(heights, ['calc(100vh - 32px)', 'calc(100dvh - 32px)'], 'vh fallback then dvh, in that order');
+    assert.ok(/overflow-y:\s*auto/.test(body), 'scrolling');
 });
 
 // Round 1 fixes
