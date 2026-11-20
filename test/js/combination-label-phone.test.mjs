@@ -43,7 +43,8 @@ test('the dial row fits a 360px screen in the widest frame theme (24px and 28px)
     for (const f of [24, 28]) assert.ok(frames.includes(f), 'a ' + f + 'px theme exists');
     const widest = Math.max(...frames);
     const room = 360 - 2 * widest - 2 * pad;
-    assert.ok(row <= room, 'row ' + row + 'px fits ' + room + 'px (frame ' + widest + 'px)');
+    // Keep 8px spare: the live row at 360 cyberpunk ran 2px past this model with zero slack
+    assert.ok(row + 8 <= room, 'row ' + row + 'px fits ' + room + 'px with 8px spare (frame ' + widest + 'px)');
 });
 
 test('the TURN word is kept as the non-colour cue', () => {
