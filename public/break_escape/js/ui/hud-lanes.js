@@ -37,7 +37,7 @@ export const LANE_BUDGET = { compact: 0.75, short: 0.95, wide: 0.8 };
 
 /** The budget share for a measurement. */
 export function laneBudgetShare({ compact, vh }) {
-  if (compact && vh <= 500) return LANE_BUDGET.short;
+  if (compact && vh <= COMPACT_MAX_HEIGHT) return LANE_BUDGET.short;
   return compact ? LANE_BUDGET.compact : LANE_BUDGET.wide;
 }
 
@@ -77,9 +77,19 @@ export function laneYields(h, budget, gap = LANE_GAP) {
 export const NOTIFY_SHARE = { compact: 0.4, wide: 0.5 };
 export const MESSAGE_SHARE = { compact: 0.3, wide: 0.3 };
 
+/**
+ * The one rule for the phone layout (body.hud-compact). Every JS copy imports these; the CSS media
+ * queries (max-width: 899.98px, max-height: 500px) are pinned to them by test/js/compact-hud-rule.test.mjs.
+ * New compact CSS keys on body.hud-compact, which measureHud sets from isCompactViewport. A new @media copy
+ * goes in COMPACT_QUERIES in that test (only objectives.css, ui-themes.css and hud.css are scanned).
+ * Keep this file import-free: several test harnesses load it through a data: URL, which cannot resolve imports.
+ */
+export const COMPACT_MAX_WIDTH_EXCL = 900;   // compact when narrower than this
+export const COMPACT_MAX_HEIGHT = 500;       // or this tall or less
+
 /** Phones and small windows: narrower than 900 px, or 500 px tall or less (phones sideways). */
 export function isCompactViewport(vw, vh) {
-  return vw < 900 || vh <= 500;
+  return vw < COMPACT_MAX_WIDTH_EXCL || vh <= COMPACT_MAX_HEIGHT;
 }
 
 /**

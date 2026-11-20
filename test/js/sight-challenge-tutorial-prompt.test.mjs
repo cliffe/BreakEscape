@@ -49,7 +49,8 @@ Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, c
 globalThis.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 globalThis.window = { innerWidth: 1280, gameState: { globalVariables: {} } };
 
-const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')));
+const { TutorialManager } = await import(dataUrl(readFileSync(join(js, 'systems/tutorial-manager.js'), 'utf8')
+    .split("'../ui/hud-lanes.js'").join(`'${dataUrl(readFileSync(join(js, 'ui/hud-lanes.js'), 'utf8'))}'`)));
 const losUrl = dataUrl(readFileSync(join(js, 'systems/npc-los.js'), 'utf8'));
 const watcherSrc = readFileSync(join(js, 'systems/npc-sight-challenge.js'), 'utf8')
     .split("'./npc-los.js'").join(`'${losUrl}'`);
