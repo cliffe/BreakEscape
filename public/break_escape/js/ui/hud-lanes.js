@@ -37,7 +37,7 @@ export const LANE_BUDGET = { compact: 0.75, short: 0.95, wide: 0.8 };
 
 /** The budget share for a measurement. */
 export function laneBudgetShare({ compact, vh }) {
-  if (compact && vh <= 500) return LANE_BUDGET.short;
+  if (compact && vh <= COMPACT_MAX_HEIGHT) return LANE_BUDGET.short;
   return compact ? LANE_BUDGET.compact : LANE_BUDGET.wide;
 }
 
