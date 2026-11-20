@@ -576,9 +576,7 @@ Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
 // ================================================
 
 === final_assessment ===
-Agent HaX: Here's what worries me.
-
-Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one schedule for all of them.
+Agent HaX: What worries me is that somebody wrote one schedule for all six cells.
 
 {architect_identity_found:
     Agent HaX: And we may finally have a name for whoever wrote it.

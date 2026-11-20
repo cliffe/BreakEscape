@@ -225,14 +225,14 @@ Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the pa
 ~ topic_danny = true
 ~ receptionist_influence = receptionist_influence + 5
 # influence_increased
-Ffion Rees: Well, there's Danny Foster - he's one of our senior consultants.
+Ffion Rees: Well, there's Danny Foster, he's one of our senior consultants.
 Ffion Rees: Really nice bloke. Always brings doughnuts in on a Friday.
 { receptionist_influence >= 15:
     Ffion Rees: He's been off it lately, mind. Hasn't touched a doughnut in weeks.
 }
 * [What kind of consulting work does Danny do?]
     Ffion Rees: Site visits, mostly. Hospitals, loads of them this year. Came back from one and sat in his car for an hour.
-    Ffion Rees: He's been with WhiteHat since the beginning - 2010, I think.
+    Ffion Rees: He's been with WhiteHat since the beginning, 2010, I think.
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub

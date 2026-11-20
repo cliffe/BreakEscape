@@ -120,7 +120,7 @@ One test call before it's texts only.
 
 A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.
 
-So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
+So, quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
 
 + [Understood. Texts it is.]
     Good. Off you go.
@@ -771,7 +771,7 @@ Time to decide: How do you want to resolve this?
 Confrontation, silent extraction, or public exposure. Each has consequences.
 
 + [I need to think about this]
-    Take your time. This is the part where your choices matter most.
+    Take your time.
     + + [Got it.]
         #exit_conversation
         -> support_hub

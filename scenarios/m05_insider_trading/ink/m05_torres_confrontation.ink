@@ -357,7 +357,7 @@ David Torres: She dies. Sofia and Miguel watch it happen.
 === arrest_cooperation ===
 #speaker:david_torres
 
-David Torres: The Recruiter. How they found me. Where the money comes from. All of it.
+David Torres: The Recruiter, how they found me, where the money comes from. All of it.
 
 David Torres: Just... Elena. Please.
 

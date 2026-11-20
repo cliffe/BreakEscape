@@ -238,7 +238,7 @@ Director Magnus Netherton: Say it, Agent. I would rather hear it than watch you 
 === the_next ===
 ~ asked_next = true
 { tomb_gamma_location_known:
-    Director Magnus Netherton: Now we use the one thing tonight bought us. Tomb Gamma: a coordinate in Montana, from Nightshade's own mouth.
+    Director Magnus Netherton: Now we use the one thing tonight bought us. Tomb Gamma, a coordinate in Montana, from Nightshade's own mouth.
     Director Magnus Netherton: It is the first hard address we have ever had for The Architect's workshop, and it is where the database went.
     Director Magnus Netherton: That is where this ends, or where we do.
     Director Magnus Netherton: Take your seventy-two hours. Then we go to Montana and we get it back.

@@ -982,7 +982,7 @@ Ask me what you want to ask.
 // lint: call-knot
 #speaker:agent_0x99
 {not all_flags_in():
-    Not yet. The research server isn't finished: all four flags in the drop-site, then I'll pull you out.
+    Not yet. The research server isn't finished. All four flags in the drop-site, then I'll pull you out.
     #exit_conversation
     -> DONE
 }

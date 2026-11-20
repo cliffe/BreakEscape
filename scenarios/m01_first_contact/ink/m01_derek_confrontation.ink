@@ -282,7 +282,7 @@ So. Here we are. What happens now is up to you.
 
 I have here a launch device to remotely activate Operation Shatter. One confirmation code is all it takes. And I have it memorised.
 
-But know this: even if you stop Operation Shatter here, the idea doesn't die. There are other cells. Other believers. Other architects of the inevitable.
+But know this. Even if you stop Operation Shatter here, the idea doesn't die. There are other cells. Other believers. Other architects of the inevitable.
 
 + [I'm taking you down. Now.] #color:red
     ~ final_choice = "fight"

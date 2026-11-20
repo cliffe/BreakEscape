@@ -310,7 +310,7 @@ You won't reach all of them before I've closed on a few more.
 
 Still deciding? The offer doesn't improve with age, agent.
 
-Forty-seven names. One call from you protects them, or leaves them where they are. In my pipeline.
+Forty-seven names. One call from you protects them, or leaves them where they are, in my pipeline.
 
 -> mid_mission_contact_choices
 
