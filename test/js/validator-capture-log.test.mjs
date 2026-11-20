@@ -9,6 +9,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+// A command-line -r (or -rjson) loads before the -rbundler/setup that `bundle exec` puts in
+// RUBYOPT, so it activates the default json gem and Bundler then refuses the locked one
+// (Gem::LoadError, CI node-tests). These children need only stdlib: run them without Bundler.
+const PLAIN_RUBY_ENV = { ...process.env, RUBYOPT: (process.env.RUBYOPT || '').replace(/-r\S*bundler\/setup\S*/g, '').trim() };
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 
@@ -400,7 +404,7 @@ test('E0.4: CaptureModel.proof_satisfiable? agrees with the validator on each ki
         p.({ 'planted' => 'ghost' }), p.({ 'dropped' => 'kit' }), p.({ 'dropped' => 'stick' }),
         p.({ 'session' => 'pc1' }), p.({ 'session' => 'desk' }), p.({ 'bogus' => 1 })
       ])`;
-    const r = spawnSync('ruby', ['-rjson', '-e', script], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    const r = spawnSync('ruby', ['-rjson', '-e', script], { encoding: 'utf8', env: { ...PLAIN_RUBY_ENV, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
     assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()),
         [true, true, false, true, false, false, true, false, true, false, false]);
@@ -474,7 +478,7 @@ test('R1 M2 parity: check_proof and proof_satisfiable? agree on every shorthand 
       end
       puts JSON.generate(out)`;
     const r = spawnSync('ruby', ['-rjson', '-e', script], {
-        input: JSON.stringify([withJack, noDesk]), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        input: JSON.stringify([withJack, noDesk]), encoding: 'utf8', env: { ...PLAIN_RUBY_ENV, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
     const rows = JSON.parse(r.stdout.trim().split('\n').pop());
     assert.equal(rows.length, proofs.length * 2);
