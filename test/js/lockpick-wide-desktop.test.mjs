@@ -98,18 +98,65 @@ test('option B does not compact for a fraction: a 1x to 1x room with a taller co
 
 test('option B is sticky across a feedback pass and relaxes on a resize pass', () => {
     L.setWideOption('B');
-    const t = rig(ROOMY);
+    const rooms = { ...ROOMY };
+    const t = rig(rooms);
     at(1920, 1080, () => H._fitLockZoom.call(t.fake, false));
     assert.ok(t.sec.classList.contains('lockpicking-compact'), 'a feedback pass can add compact');
-    // the full strip would now fit at 2 as well, or not: the strip stays put on a feedback pass
+    // the feedback grows: full and compact both give zoom 1 now, so a fresh measure would drop it
+    Object.assign(rooms, { full: { w: 1900, h: 450 }, compact: { w: 1900, h: 600 } });
     at(1920, 1080, () => H._fitLockZoom.call(t.fake, false));
-    assert.ok(t.sec.classList.contains('lockpicking-compact') && t.zoom() === 2, 'sticky');
-    // a window resize that leaves the room tight drops it again
+    assert.ok(t.sec.classList.contains('lockpicking-compact') && t.fake._lockCompact === true, 'sticky: compact stays on a feedback pass');
+    assert.ok(t.zoom() === 1, 'zoom follows the compact room: ' + t.zoom());
+    // the same object on a resize pass measures afresh and drops it
+    at(1920, 1080, () => H._fitLockZoom.call(t.fake, true));
+    assert.ok(!t.sec.classList.contains('lockpicking-compact') && t.fake._lockCompact === false, 'relax true drops compact');
+    // a resize that leaves the room tight drops it again (fresh rig)
     const tight = rig(TIGHT);
     tight.sec.classList.add('lockpicking-compact');
     tight.fake._lockCompact = true;
     at(1600, 900, () => H._fitLockZoom.call(tight.fake, true));
     assert.ok(!tight.sec.classList.contains('lockpicking-compact'), 'relax true drops compact');
+});
+
+test('option B only tries the compact strip when the full strip already gives a whole zoom (the wideB guard)', () => {
+    L.setWideOption('B');
+    // A 1366x768-like room: full gives 0.8 (not under LOCK_COMPACT_BELOW), so only B's own rule
+    // could try compact. The real compact room cannot reach 2 from here, but a rig can: the
+    // layout must still stay off, because the guard skips the try (two class flips and reflows saved).
+    const t = rig({ full: { w: 1340, h: 320 }, compact: { w: 1340, h: 850 }, side: { w: 1000, h: 850 } });
+    at(1366, 768, () => H._fitLockZoom.call(t.fake));
+    assert.ok(!t.sec.classList.contains('lockpicking-compact') && t.fake._lockCompact === false, 'no compact class below zoom 1');
+    assert.ok(t.zoom() === 0.8, 'zoom ' + t.zoom());
+    // the same rooms at zoom 1 full do try it
+    const u = rig({ full: { w: 1340, h: 420 }, compact: { w: 1340, h: 850 }, side: { w: 1000, h: 850 } });
+    at(1366, 768, () => H._fitLockZoom.call(u.fake));
+    assert.ok(u.sec.classList.contains('lockpicking-compact') && u.zoom() === 2, 'full zoom 1 tries compact');
+});
+
+test('the zoomed class goes on the lock box for a whole zoom above 1 only', () => {
+    L.setWideOption('B');
+    const box = () => document.querySelector('#phaser-game-container');
+    const t = rig(ROOMY);
+    at(1920, 1080, () => H._fitLockZoom.call(t.fake));
+    assert.ok(box().classList.contains('lockpicking-zoomed'), 'zoom 2: class on the box');
+    const u = rig(TIGHT);
+    at(1600, 900, () => H._fitLockZoom.call(u.fake));
+    assert.ok(!box().classList.contains('lockpicking-zoomed'), 'zoom 1: no class');
+    const v = rig({ full: { w: 1340, h: 320 }, compact: { w: 1340, h: 330 }, side: { w: 1000, h: 330 } });
+    at(1366, 768, () => H._fitLockZoom.call(v.fake));
+    assert.ok(v.zoom() < 1 && !box().classList.contains('lockpicking-zoomed'), 'fraction under 1: no class');
+});
+
+test('the zoomed canvas is scaled nearest-neighbour, only under .lockpicking-zoomed (R1 M1)', () => {
+    const css = readFileSync(join(root, 'css/lockpicking.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = [];
+    const re = /([^{}@]+)\{([^{}]*)\}/g;
+    let m;
+    while ((m = re.exec(css))) rules.push({ sel: m[1].trim(), body: m[2] });
+    const crisp = rules.filter((r) => /image-rendering\s*:\s*pixelated/.test(r.body) && /canvas/.test(r.sel));
+    assert.ok(crisp.length >= 1 && crisp.every((r) => r.sel.split(',').every((s) => /#phaser-game-container\.lockpicking-zoomed\s+canvas\s*$/.test(s.trim()))), 'a pixelated canvas rule scoped to .lockpicking-zoomed: ' + JSON.stringify(crisp.map((r) => r.sel)));
+    const unscoped = rules.filter((r) => /image-rendering/.test(r.body) && /canvas/.test(r.sel) && !/lockpicking-zoomed/.test(r.sel));
+    assert.ok(unscoped.length === 0, 'no unscoped canvas image-rendering: ' + JSON.stringify(unscoped.map((r) => r.sel)));
 });
 
 test('option C moves the strip beside the lock when that unlocks zoom 2, and drops it when it does not', () => {
