@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 for (const k of ['log', 'info', 'debug', 'warn']) console[k] = () => {};
@@ -65,13 +65,47 @@ test('C-X2 framed opt-in: default off, and a framed scene tags the container', (
     assert.ok(framed.container.classList.contains('minigame-framed'), 'framed scene tags the container');
 });
 
+// Every `selector { body }` in a stylesheet, comments stripped (an @media block yields its inner rules).
+const rulesOf = (src) => [...src.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .map((m) => ({ sel: m[1].trim(), body: m[2] }));
+const RED = /#e74c3c|#c0392b|#a93226/i;
+
 test('C-X1/C-X2 shared CSS rules exist', () => {
     const fw = readFileSync(join(css, 'minigames-framework.css'), 'utf8');
-    assert.match(fw, /\.se-overlay-close\s*\{/, 'the shared close look is defined');
-    assert.match(fw, /border:\s*4px solid #c0392b/, 'the X keeps a 2px+ pixel border');
-    assert.doesNotMatch(fw.match(/\.se-overlay-close\s*\{[^}]*\}/)[0], /border-radius:\s*[1-9]/, 'no rounded X');
-    assert.match(fw, /\.minigame-container\.minigame-framed\s*>\s*\.minigame-game-container/, 'the framed window rule exists');
-    assert.match(fw, /width:\s*min\(720px/, 'the framed window is capped at 720px');
+    assert.ok(/\.se-overlay-close\s*\{/.test(fw), 'the shared close look is defined');
+    const rule = fw.match(/\.se-overlay-close\s*\{[^}]*\}/)?.[0] || '';
+    assert.ok(/border:\s*4px solid/.test(rule), 'the X keeps a 2px+ pixel border');
+    assert.ok(!/border-radius:\s*[1-9]/.test(rule), 'no rounded X');
+    assert.ok(/\.minigame-container\.minigame-framed\s*>\s*\.minigame-game-container/.test(fw), 'the framed window rule exists');
+    assert.ok(/width:\s*min\(720px/.test(fw), 'the framed window is capped at 720px');
+});
+
+test('D216 no rule that styles .se-overlay-close is red or rounded, in any state, in any sheet', () => {
+    let seen = 0;
+    for (const f of readdirSync(css).filter((n) => n.endsWith('.css'))) {
+        const hits = rulesOf(readFileSync(join(css, f), 'utf8')).filter((r) => /se-overlay-close/.test(r.sel));
+        seen += hits.length;
+        for (const r of hits) {
+            assert.ok(!RED.test(r.body), f + ': red in a rule for ' + r.sel.replace(/\s+/g, ' '));
+            assert.ok(!/border-image(-source)?:\s*none/.test(r.body), f + ': the skin is switched off in ' + r.sel.replace(/\s+/g, ' '));
+            assert.ok(!/border-radius:\s*[1-9]/.test(r.body), f + ': rounded corners in ' + r.sel.replace(/\s+/g, ' '));
+        }
+    }
+    assert.ok(seen >= 4, 'finds the .se-overlay-close rules across the sheets: ' + seen);
+    for (const f of ['minigames-framework.css', 'ui-themes.css']) {
+        assert.ok(rulesOf(readFileSync(join(css, f), 'utf8')).some((r) => /se-overlay-close/.test(r.sel)), f + ' holds an SE X rule');
+    }
+});
+
+test('D216 .se-overlay-close is in the themed close lists for base, hover and focus', () => {
+    const rules = rulesOf(readFileSync(join(css, 'ui-themes.css'), 'utf8'));
+    for (const suffix of ['', ':hover', ':focus-visible']) {
+        const mc = '[data-ui-theme] .minigame-close-button' + suffix;
+        const list = rules.find((r) => r.sel.split(',').map((x) => x.trim()).includes(mc));
+        assert.ok(list !== undefined, 'a themed list holds ' + mc);
+        const items = list.sel.split(',').map((x) => x.trim());
+        assert.ok(items.includes('[data-ui-theme] .se-overlay-close' + suffix), 'the list holding ' + mc + ' also holds the SE X');
+    }
 });
 
 test('C-X4/C-X6 shared notice and title rules exist, pixel and square', () => {
@@ -127,12 +161,13 @@ test('C-ER1 the episode runner draws a kiosk bezel in normal play, full-bleed on
         assert.doesNotMatch(rule, /border-radius:\s*[1-9]/, `${sel}: no rounded corners`);
         assert.ok(!/url\(/.test(rule), `${sel}: no image art`);
     }
-    // The kiosk close is themed, not the flat red SE X: ui-themes keeps the themed skin while
-    // the two-class SE rule stays scoped to .minigame-close-button.se-overlay-close only.
+    // The kiosk close is themed, and (D216) so is the SE X: ui-themes lists .se-overlay-close with
+    // the shared themed close buttons and has no red override.
     const kioskClose = er.match(/\.epr-kiosk-top \.epr-kiosk-close\s*\{[^}]*\}/)[0];
     assert.ok(!/se-overlay-close/.test(kioskClose), 'the kiosk close is not the flat SE X');
     const ut = readFileSync(join(css, 'ui-themes.css'), 'utf8');
-    assert.match(ut, /\.minigame-close-button\.se-overlay-close\s*\{/, 'the SE flat close override targets both classes');
+    assert.ok(/\[data-ui-theme\] \.se-overlay-close,/.test(ut), 'D216: the SE close joins the themed close list');
+    assert.ok(!/\.minigame-close-button\.se-overlay-close\s*\{/.test(ut), 'D216: no red SE override remains');
 });
 
 test('C-X1 hand-rolled text Close buttons are gone from the SE scenes', () => {

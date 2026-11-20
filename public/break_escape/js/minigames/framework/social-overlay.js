@@ -77,7 +77,8 @@ export class SocialOverlayScene extends MinigameScene {
 
     /**
      * A diegetic device (a kiosk, a monitor) closes with the themed steel X, the
-     * same look as the PC monitor's close, not the flat red SE overlay X. Builds a
+     * same look as the PC monitor's close. It is the themed .minigame-close-button, kept for
+     * placement (the SE X has the same skin since D216). Builds a
      * `.minigame-close-button` (so the [data-ui-theme] skin styles it) wired to the
      * same requestClose as the SE control, with an optional extra class for
      * placement, and adds it to `parent`. Returns the button.
