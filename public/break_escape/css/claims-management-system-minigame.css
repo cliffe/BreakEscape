@@ -119,7 +119,7 @@
 .cms-nav-label {
     min-width: 0;
     overflow-wrap: anywhere;
-    font-size: 22px;
+    font-size: 16px;
     line-height: 1.1;
 }
 
@@ -208,7 +208,7 @@
     flex-direction: column;
     gap: 10px;
     font-family: 'GNF', monospace;
-    font-size: 27px;
+    font-size: 24px;
     line-height: 1.32;
     color: #d5e2ff;
 }
@@ -230,7 +230,7 @@
 .cms-context p {
     margin: 0;
     font-family: 'GNF', monospace;
-    font-size: 25px;
+    font-size: 24px;
     line-height: 1.24;
     color: #c8d8f8;
     max-width: 30ch;
@@ -243,7 +243,7 @@
     flex-direction: column;
     gap: 8px;
     font-family: 'GNF', monospace;
-    font-size: 23px;
+    font-size: 16px;
     line-height: 1.22;
     color: #a8c4ee;
 }
@@ -318,7 +318,7 @@
     }
 
     .cms-content-list {
-        font-size: 22px;
+        font-size: 16px;
     }
 
     .cms-context p {

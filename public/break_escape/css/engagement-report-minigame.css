@@ -259,7 +259,8 @@
     .engagement-report-game-container {
         width: 100vw;
         height: 100vh;
-        border-width: 0;
+        height: 100dvh;
+        border-width: 16px;
     }
 
     .er-table,
