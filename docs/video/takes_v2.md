@@ -1,3 +1,77 @@
+# v3 takes (2026-11-20, main 1f651abce, spy avatars)
+
+Frame check of the m01 re-records (footage `~/video-takes-local/m01/takes/<id>.trimmed.mkv`, 2 to 10 frames viewed per take, times are trimmed seconds). Avatars per `docs/video/edits/M01_TRAILER60_AVATARS.md`. A/V offsets are start/end in ms after correction. No secrets found: no code, password, flag value or post-it text appears inside any suggested window. Not yet checked: t09_derek_v5, t03, t16, t23 (failed, to be re-recorded).
+
+Avatar check: seen only on silhouette. t05 hood (female_hacker_hood_v2) fine, t08 and t18 turban (harjit_singh) fine, t21 grey trench and hat, t19 grey trench and hat, t07 dark suit. t06 (lucia_moreno) and t22 (frank_callahan) both show a brown trench and hat that look alike: compare against the sprite sheets before relying on "all eight spies used". Every run logs `sprite restored to "female_hacker_hood_v2"` after the take, so the override was applied during it.
+
+## Banner ("Incoming call", Agent HaX, Answer/Decline buttons)
+
+- t04_lockpick: on screen at 1.5 and throughout the minigame (bottom centre, x .41 to .59, y .92 to .99, straddling the panel's status line) and at the top centre (y .0 to .06) on the overworld at 10.9; on the briefcase contents at 12.0. Covers m_lockpick 8.9 to 9.9. cr_lockpick's 2x crop excludes it.
+- t06_keypad_v3: top centre on the overworld at 0.7 and 2.0; bottom centre over the panel's last 6 percent from 3.5 to 12.0. Covers m_keypad (5.3 to 6.8) and cr_keypad.
+- t14_cyberchef: top centre at 0.8, bottom centre at 2.5 and 4.0 (loader and empty UI), gone by 5.8. The edit's windows (6.57 to 7.57, 7.2 to 7.33) are clean, so no re-record needed for the edit.
+- t05, t07, t08, t10 to t13, t18, t19, t21, t22: none.
+
+## Rows
+
+| id | avatar | length s | drop % | A/V ms | key marks (trimmed s, frame-checked) | problems | suggested in/out and crop |
+|---|---|---|---|---|---|---|---|
+| t04_lockpick | daniel_seo | 13.13 | 0.22 | -58/-80 | pins 1:4.73, 3:5.96, 4:6.83, 2:8.05 (overset: all pins drop at about 7.5, so pins 1-3 set and pin 2 lands 6.8 to 7.3), toast "Lock picked successfully" 9.4, lock-open 10.87 | banner (see above); at 8.9 to 9.9 the pins show reset (dark), not set | m_lockpick: 6.3 to 7.3 (three pins set, fourth lands, all four lime at 7.2); banner makes it unusable at 1x: re-record. Stopgap crop cx .5 cy .435 zoom 1.15 drops the banner. cr_lockpick: 6.85 to 7.35, existing crop (.45, .38, 2x) is banner-free |
+| t05_phone | female_hacker_hood_v2 | 12.07 | 0.7 | -60/-60 | choices 3.70, pick 5.10, HaX reply 7.2, reply choices 7.9, "What about Maya?" picked 8.87 | HUD, objectives and hearts visible in the reception frame 0.8 (not used by the edit); drop 0.7 is the highest of the passes | m_phone 7.2 to 8.7, crop (.5, .385, 1.3) as is. cr_phone 4.2 to 4.33 (choices "Got any general advice?" shown); 5.4 shows typing dots, do not use |
+| t06_keypad_v3 | lucia_moreno | 13.9 | 0.21 | -25/-23 | digits 4.35 ("1___" 4.6), 4.98 ("19__" 5.4), 5.62 ("193_" 6.5), back-off 7.22, closed 12.23 | banner (see above); panel x .34 to .66 | m_keypad 5.3 to 6.8 shows 19 then 193, good but banner: re-record. cr_keypad 4.3 to 4.57 (first digit lands 4.35 to 4.6), crop (.5, .5, 1.3) cuts the banner at the bottom |
+| t07_terminal | vivian_ashby | 11.1 | 0.25 | -38/-22 | desktop-shown 3.08, "Server Access Log" icon visible 4.0 to 5.0, log opens 5.33 | the opened log (5.6 on) names Derek Lawson: identity reveal, keep out | cr_pc 4.4 to 4.63, crop (.5, .5, 1.4) fine |
+| t08_flag_station | harjit_singh | 14.8 | 0.2 | -38/-22 | terminal-open 3.46, typing 5.66 to 5.88 ("fla" 5.8), "flag{" in the field 6.0 to 7.0, cleared 7.43 | the panel is centred (x .36 to .64, y .30 to .70); the edit's crop (.3, .25, 1.6) points at the wrong place for this take | cr_flag 6.45 to 6.58, crop cx .5 cy .5 zoom 2.2 |
+| t10_hax_hook | male_hacker_hood_v2 (portrait) | 21.43 | 0.14 | -35/-37 | line 15.60 to 19.32 (3.72 s), subtitle visible from 15.7, mouth moves 16.8 and 18.0 | "Skip" button bottom right; none else | 16.8 to 19.8; crop as is |
+| t11_kevin_line | lucia_moreno (portrait) | 14.0 | 0.21 | -50/-48 | target 8.30 to 11.78 (3.48 s), subtitle correct at 8.26 | "Influence: Kevin Park" toast at 5.9 only (outside window) | 8.26 to 12.26 |
+| t12_maya_line | frank_callahan (portrait) | 33.1 | 0.09 | -25/-38 | target 27.49 to 30.89 | at 27.46 the subtitle is still the previous "Derek arranged it..." line, swaps by 27.50; dialogue fade band starts about 31.4 | 27.50 to 31.30 (3.8 s) |
+| t13_sarah_line | ngozi_adeyemi (portrait) | 21.77 | 0.14 | -73/-45 | target 15.41 to 19.54 | "Influence: Sarah O'Brien" toast visible 15.38 to about 16.5, gone by 19.5; next line's subtitle 20.0 | 16.55 to 19.90 (3.35 s, no toast) or keep 15.38 to 19.88 if the toast is accepted |
+| t14_cyberchef | daniel_seo | 11.53 | 0.25 | -48/-30 | loader 2.5, UI 4.0, input pasted 6.6, output "Meet at the server room" visible from 6.6 | banner only in 0.8 to 4.0 | m_cyberchef 6.57 to 7.57 and cr_cyberchef 7.2 to 7.33, crop (.725, .385, 2x) shows input and output panes, as is |
+| t18_walk_maya | harjit_singh | 9.57 | 0.29 | -58/-43 | room-entered 4.53, walk 5.45 to 6.10 | none; player is already beside Maya at 4.8 so the walk is short; a wall-fade overlay appears after 6.3 | 5.3 to 6.3 as is |
+| t19_minigames | mei_lin_chow | 37.67 | 0.08 | -62/-82 | briefcase contents 2.9 to 3.2, key insertion 22.0 to 26.0 ("Key fits perfectly! Lock unlocked." 26.0), password 31.8 to 36.4, "...", 3 masked dots at 34.1 | the full lock frame shows "Door to Derek Lawson" (outside the crops); "Anniversary" post-it bottom-left of the password screen (y .93): keep out of the crop; briefcase panel is centred, not high | cr_briefcase 2.9 to 3.17, crop cx .5 cy .5 zoom 2.2 (edit's cy .22 is wrong). cr_key 23.9 to 24.4, crop cx .5 cy .64 zoom 2 (the pins sit at y .50 to .78). cr_password 34.3 to 34.53, crop cx .5 cy .5 zoom 3 (field at y .51; edit's cy .28 misses it) |
+| t21_walk_chair | marcus_hale | 5.6 | 0.44 | -35/-43 | contact 1.74, chair rolls aside by 2.0, player at the NW doorway 2.8 | none | 1.6 to 3.1 as is |
+| t22_launch_device | frank_callahan | 7.13 | 0.37 | -37/-43 | device shown 1.63, modal steady 1.7 to 5.1, closed 5.88 | modal at y .36 to .64: the edit's crop (.5, .2, 2.5) shows only its top edge; overworld frames carry the HaX toast and HUD (do not use); dim ghost of the toast behind the modal | cr_launch 2.5 to 2.6, crop cx .5 cy .5 zoom 2.5 |
+
+## v3 edit windows
+
+Shot index = position in `shots` of `tools/video/edits/m01_trailer60.json` (0 is the open preset).
+
+| shot | take | old in/out | new in/out | crop | reason |
+|---|---|---|---|---|---|
+| 1 hax_hook | t10 | 19.665/22.665 | 16.80/19.80 | as is | re-record timing (line 15.60 to 19.32) |
+| 4 m_lockpick | t04 | 8.9/9.9 | 6.3/7.3 | as is (or stopgap cx .5 cy .435 zoom 1.15) | banner and reset pins; re-record preferred |
+| 5 m_phone | t05 | 7.4/8.9 | 7.2/8.7 | as is | reply timing |
+| 6 m_keypad | t06 | 5.3/6.8 | 5.3/6.8 | as is | fine but banner: re-record |
+| 8 kali_walk | t23 | 0.95/2.95 | open | | take failed |
+| 10 m_cyberchef | t14 | 6.567/7.567 | 6.57/7.57 | as is | banner-free |
+| 12 npc_1 | t11 | 12.2/16.2 | 8.26/12.26 | as is | new take timing |
+| 13 npc_2 | t12 | 34.2/38.2 | 27.50/31.30 | as is | new take timing, subtitle swap, fade |
+| 14 npc_3 | t13 | 17.6/22.1 | 16.55/19.90 | as is | toast gone, next subtitle at 20.0 |
+| 16 mb_sarah | t16 | 2.3/3.3 | open | | take failed |
+| 17 mb_chair | t21 | 1.6/3.1 | 1.6/3.1 | as is | checked |
+| 18 mb_maya | t18 | 5.3/6.3 | 5.3/6.3 | as is | checked |
+| 20 cr_lockpick | t04 | 6.5/7.0 | 6.85/7.35 | as is | four pins set at 7.2 |
+| 21 cr_key | t19 | 23.9/24.4 | 23.9/24.4 | cx .5 cy .64 zoom 2 | pins at y .50 to .78 |
+| 22 cr_briefcase | t19 | 2.9/3.1667 | 2.9/3.1667 | cx .5 cy .5 zoom 2.2 | panel centred |
+| 23 cr_pc | t07 | 4.4/4.6333 | 4.4/4.6333 | as is | checked |
+| 24 cr_keypad | t06 | 4.62/4.8867 | 4.30/4.57 | as is | first digit 4.35 to 4.6 |
+| 25 cr_password | t19 | 34.3/34.5333 | 34.3/34.5333 | cx .5 cy .5 zoom 3 | field at y .51 |
+| 26 cr_cyberchef | t14 | 7.2/7.3333 | 7.2/7.3333 | as is | banner-free |
+| 27 cr_phone | t05 | 5.4/5.5333 | 4.20/4.33 | as is | 5.4 shows typing dots |
+| 28 cr_flag | t08 | 6.45/6.5833 | 6.45/6.5833 | cx .5 cy .5 zoom 2.2 | panel centred |
+| 29 cr_launch | t22 | 2.5/2.6 | 2.5/2.6 | cx .5 cy .5 zoom 2.5 | modal at y .36 to .64 |
+| 30, 31 derek | t09_derek_v5 | 49.54/51.84, 51.84/56.04 | open | | take failed |
+
+## Re-record
+
+- t03_lights_on: failed twice (one slate; then the page never reached window.__test, game 11004, avatar ngozi_adeyemi). Investigate solo, try another avatar.
+- t09_derek_v5: failed check (found 1 picture slate, need 2; tone likewise).
+- t16_walk_sarah: failed check, drop 1.13 %.
+- t23_walk_kali: failed check, drop 1.33 %.
+- t04_lockpick: "Incoming call" banner over the whole minigame (recorded before the ringer fix); pins also reset before the success toast. Re-record with the fix; pin order varies per game, so re-pick cr_lockpick.
+- t06_keypad_v3: banner over the overworld and the panel's lower edge. Re-record.
+- t14_cyberchef: banner only before 5.8, edit windows clean: optional.
+
+---
+
 # m01 trailer takes v2 (t10 to t18)
 
 Scripts in `tools/video/takes/m01/` (shared: `dlg.mjs` dialogue driver, `walklib.mjs` key-driven walking). Outputs in `video_out/m01/takes/` (git-ignored): `<id>.trimmed.mkv`, `<id>.trimmed.markers.json`, `<id>.check.json`, `<id>.contact.jpg`. All recorded with `--fps 30 --preset ultrafast --crf 14 --music 0` via `run-take.sh`, 1920x1080. All 9 pass check-take. Marker times below are in the trimmed file's own clock (`*.trimmed.markers.json`).
