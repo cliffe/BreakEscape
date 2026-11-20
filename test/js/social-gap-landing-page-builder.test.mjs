@@ -337,6 +337,18 @@ test('an unknown landingPageId refuses with its own message and still closes nor
     assert.equal(gv()[DRAFTS_KEY], undefined, 'an invalid page writes no draft');
 });
 
+test('the invalid state puts the text and the X in one header row, X at the right', () => {
+    setGlobals();
+    const s = open({ landingPageId: 'no_such_page' });
+    const head = s.root.querySelector('header.lpb-head');
+    assert.ok(head !== null, 'a header row exists');
+    const kids = [...head.querySelectorAll('.lpb-invalid-text, .se-overlay-close')];
+    assert.ok(kids.length === 2, 'the header holds the text and the close control');
+    assert.ok(kids[0].classList.contains('lpb-invalid-text'), 'text first, X after it at the right');
+    assert.ok(kids[0].textContent === 'This page is not available.', 'text set as plain text');
+    assert.ok(s.root.firstElementChild === head, 'the header is the first row of the root');
+});
+
 test('no landingPageId at all refuses; no social block at all refuses', () => {
     setGlobals();
     assert.equal(bs(open({ landingPageId: undefined })).invalid, 'This page is not available.');
