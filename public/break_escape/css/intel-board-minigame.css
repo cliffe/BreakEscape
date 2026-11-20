@@ -286,7 +286,7 @@ ul.ib-options { list-style: none; margin: 0; padding: 0; display: flex; flex-dir
 @media (max-width: 700px) {
     ul.ib-people, ul.ib-exposures { grid-template-columns: minmax(0, 1fr); }
     .ib-strings { display: none; }
-    .intel-board-game-container { width: 100vw; height: 100vh; border-width: 0; }
+    .intel-board-game-container { width: 100vw; height: 100vh; height: 100dvh; border-width: 16px; }
 }
 
 @media (max-width: 1000px) and (min-width: 701px) {
