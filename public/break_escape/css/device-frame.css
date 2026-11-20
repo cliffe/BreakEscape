@@ -52,13 +52,15 @@
     image-rendering: pixelated;
 }
 
-/* The title bar row: device name on the left, the shared pixel X on the right. */
+/* The title bar row: device name on the left, the shared pixel X on the right. The X's 44px hit area
+   hangs below this row, so the gap to the first control row is 12px (14px at phone width, where the
+   16px line leaves the 32px X hanging about 6px lower). */
 .device-frame > .device-frame-title {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin: 0 0 8px;
+    margin: 0 0 12px;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;
     line-height: 24px;
@@ -69,5 +71,6 @@
     .device-frame > .device-frame-title {
         font-size: 8px;
         line-height: 16px;
+        margin-bottom: 14px;
     }
 }

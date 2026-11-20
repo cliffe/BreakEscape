@@ -35,13 +35,9 @@
 }
 
 /* The X sits inside the frame at its top right: keep the title clear of it. Its 44px hit area hangs
-   below the title row, so the row gets 12px before the tabs (the shared frame gives 8px). The
-   selector outranks `.device-frame > .device-frame-title` whichever sheet loads last. */
+   below the title row; the gap to the tabs comes from device-frame.css. */
 .rogue-ap .rogue-ap-title {
     padding-right: 40px;
-}
-.rogue-ap.device-frame > .rogue-ap-title {
-    margin-bottom: 12px;
 }
 
 .rogue-ap .rogue-ap-title-text {
