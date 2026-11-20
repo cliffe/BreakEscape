@@ -37,15 +37,18 @@ Camila Ospina: Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straig
 + [Reception's just through there. They'll sign you in.]
     ~ kit_ca12_door_choice = "reception"
     Camila Ospina: Oh, of course. I'll do that.
-    -> bye
+    #exit_conversation
+    -> DONE
 + [Of course, go on through.]
     ~ kit_ca12_door_choice = "letin"
     Camila Ospina: Lovely, thanks. I'll find her myself.
-    -> bye
+    #exit_conversation
+    -> DONE
 + [\[Say nothing\]]
     ~ kit_ca12_door_choice = "silent"
     Camila Ospina: Sorry, I'll try the desk.
-    -> bye
+    #exit_conversation
+    -> DONE
 
 === bye ===
 + [See you later.]

@@ -21,7 +21,7 @@ for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js',
     'minigames/episode-runner/consequence-sandbox.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js',
@@ -461,7 +461,7 @@ test('a montage line is set as text, never markup', () => {
     assert.equal(document.querySelector('.aw-montage-line').textContent, '<b>bold</b>');
 });
 
-test('the new styles keep text at 13px or more and use the readable face', () => {
+test('the new styles keep text at 13px or more and no address/mono face', () => {
     for (const sel of ['.epr-sbx-', '.aw-montage']) {
         const rules = css.split('}').filter((r) => r.includes(sel));
         assert.ok(rules.length > 0, sel);

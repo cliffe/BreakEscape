@@ -23,7 +23,7 @@ for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js',
     'minigames/inbox-triage/triage-flags.js', 'minigames/inbox-triage/triage-scoring.js', 'systems/phish-rules.js',

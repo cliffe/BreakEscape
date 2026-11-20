@@ -227,13 +227,28 @@
 }
 
 /* ---- No-charts guard screen ---- */
+/* The guard path swaps the game container's content, so the container itself must shrink to the card:
+   no #1a1a1a plate, the shell's flex centring places it, and the X anchors to the card's corner. */
+.minigame-container[data-minigame="infusion-pump"] > .minigame-game-container:has(> .ip-no-charts) {
+    width: fit-content;
+    max-width: calc(100vw - 32px);
+    height: auto;
+    margin: auto;
+    background: none;
+}
+
 .ip-no-charts {
-    height: 100%;
+    /* A small framed card centred in the window, not a full-viewport plate (K5 B). */
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;   /* centres the card when :has() is unsupported; no change when the container is fit-content */
+    background: #1d1d1d;
+    border: 2px solid #f59e0b;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 24px;
+    padding: 16px 48px;   /* both sides, so the content is centred and the 30px X keeps 16px clear */
     text-align: center;
     box-sizing: border-box;
 }
@@ -243,7 +258,7 @@
     font-size: 32px;
     line-height: 40px;
     color: #f59e0b;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     border: 2px solid #f59e0b;
     width: 56px;
     height: 56px;
@@ -255,9 +270,10 @@
 .ip-no-charts-text {
     color: #f59e0b;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
+    font-size: 16px;   /* Press Start 2P on its 8px grid, 16px readable (K5 B) */
     margin-bottom: 16px;
-    line-height: 16px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
 }
 
 .ip-no-charts-sub {

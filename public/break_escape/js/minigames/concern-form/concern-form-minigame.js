@@ -53,6 +53,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
     init() {
         super.init();
+        this.container.classList.add('cf-minigame-container');
         const raw = isObj(this.params.config) ? this.params.config : this.params.episode?.concernForm;
         this.config = normaliseConfig(raw);
 

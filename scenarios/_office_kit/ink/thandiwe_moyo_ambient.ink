@@ -3,6 +3,7 @@ VAR kit_ep = ""
 VAR kit_key_caught = false
 VAR kit_ca12_screen_asked = false
 VAR kit_ca12_screen_choice = ""
+VAR kit_ca12_screen_seen = false
 
 // Her click after the look-up request lands here: before an answer it offers the choice,
 // after one it falls through to the ca12 stub (see ca12_screen).
@@ -30,14 +31,21 @@ Thandiwe Moyo: Right, that's me back. Anything I should know?
 { kit_ca12_screen_choice == "":
     ~ kit_ca12_screen_choice = "asked"
 }
-+ [Your screen's still unlocked, Thandiwe.]
++ {kit_ca12_screen_seen} [Your screen was open while you were away.]
     ~ kit_ca12_screen_choice = "mention"
     Thandiwe Moyo: Oh, good shout. Locked. Easy to do when you've only nipped off.
-    -> bye
+    #exit_conversation
+    -> DONE
++ [All quiet.]
+    ~ kit_ca12_screen_choice = "silent"
+    Thandiwe Moyo: Okay. Back to work, then.
+    #exit_conversation
+    -> DONE
 + [\[Say nothing\]]
     ~ kit_ca12_screen_choice = "silent"
     Thandiwe Moyo: Okay. Back to work, then.
-    -> bye
+    #exit_conversation
+    -> DONE
 
 === bye ===
 + [See you later.]

@@ -10,7 +10,7 @@
 // the goodbye parks there quietly, and a re-talk re-enters and says the line that fits.
 // The lobby pretext and the door-opening are Delphine's ink (delphine_reception.ink).
 // Placeholder sprite (female_office_worker_v2) until the PixelLab reset.
-// Living-office build (panel form): the host recap fires once the look-up beat is over (or was skipped). H1a, the door recap H1b (only if she looked up), then H2.
+// Living-office build (panel form): the host recap fires once the look-up beat is over (or was skipped). H1a, the door recap H1b (only if she looked up), the tester reveal H1c (only if Camila arrived and was answered), then H2.
 // ================================================
 
 VAR episode_e12_visitor_tailgater_defend_complete = false
@@ -37,6 +37,9 @@ VAR hub_quiet = false
         {kit_key_caught: Lorna Easton: You kept the visitor with no badge at the gate.}
         { kit_ca12_out:
             Lorna Easton: {kit_ca12_door_choice == "reception": You sent Camila to Delphine's desk to sign in.|{kit_ca12_door_choice == "letin": Camila got in without signing in. {kit_ca12_screen_choice == "mention": The screen was locked by then, at least.|The screen was still open, so she could have read anything on it.}|{kit_ca12_door_choice == "silent": Camila stood at the door a while with a clear view of the studio, then went off to reception herself.|{not kit_ca12_visitor_go: Nobody turned up while you were looking up.|Camila was waiting at the studio door and nobody had checked she was expected.}}}}
+            { kit_ca12_visitor_go && (kit_ca12_door_choice == "reception" || kit_ca12_door_choice == "letin" || kit_ca12_door_choice == "silent"):
+                Lorna Easton: Camila's one of Jo's, by the way. {kit_ca12_door_choice == "reception": Her brief was to get past the studio door without signing in, and the desk ended it there.|{kit_ca12_door_choice == "letin": {kit_ca12_screen_choice == "mention": She wanted one photo of an open screen. The only one she reached had just been locked.|She wanted one photo of an open screen, and there was one on the desks.}|From that doorway she could see who sits where and what was up on the screens.}}
+            }
         }
         Lorna Easton: Anyone you don't know on the floor goes back to the desk. And lock your screen whenever you step away.
         ~ kit_ca12_host_said = true
