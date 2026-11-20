@@ -52,9 +52,18 @@
     image-rendering: pixelated;
 }
 
-/* The title bar row: device name on the left, the shared pixel X on the right. The X's 44px hit area
-   hangs below this row, so the gap to the first control row is 12px (14px at phone width, where the
-   16px line leaves the 32px X hanging about 6px lower). */
+/* The X over a device frame keeps its drawn size and its 44px hit area, but the area stops at the
+   X's own bottom edge (padding box, bottom 0) and reaches up into the bezel instead of down over the
+   first control row: 26px up, 14px to each side. Scoped to the three device frames through the
+   container that holds one. The X is at the frame top plus 20px, so the area ends 44px (46px for the
+   32px vm-launcher X) below the frame top, and the rows below the title never sit under it. */
+.minigame-container:has(.device-frame) > .minigame-close-button.minigame-close-in-frame::after {
+    inset: -26px -14px 0 -14px;
+}
+
+/* The title bar row: device name on the left, the shared pixel X on the right. The margin below it
+   keeps the first control row clear of the drawn X (the X's bottom edge is 50px below the frame top,
+   52px for the 32px vm-launcher X): 12px, and 14px at phone width where the 16px line is 8px shorter. */
 .device-frame > .device-frame-title {
     display: flex;
     align-items: center;
