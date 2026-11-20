@@ -60,3 +60,26 @@ test('every lamp class the m10 board uses has a fill rule, and status text is co
     assert.ok(mg._colourFor('ap-warning') === '#f59e0b', 'warning status colour');
     assert.ok(mg._colourFor('ap-critical') === '#ef4444', 'critical status colour');
 });
+
+test('every onClass and offClass literal in scenarios has a fill rule in the alarm-panel CSS', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const css = readFileSync(join(here, '../../public/break_escape/css/alarm-panel-minigame.css'), 'utf8');
+    const root = join(here, '../../scenarios');
+    const files = [];
+    const walk = d => { for (const e of readdirSync(d, { withFileTypes: true })) {
+        const p = join(d, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.json(\.erb)?$/.test(e.name)) files.push(p);
+    } };
+    walk(root);
+    const used = new Map();
+    for (const f of files) {
+        for (const m of readFileSync(f, 'utf8').matchAll(/"(?:on|off)Class"\s*:\s*"([^"<>%]+)"/g)) {
+            if (!used.has(m[1])) used.set(m[1], f);
+        }
+    }
+    assert.ok(used.size >= 4, 'found lamp classes in scenarios, got ' + used.size);
+    for (const [c, f] of used) {
+        assert.ok(new RegExp('\\.' + c + '\\s*\\{[^}]*fill:\\s*#[0-9a-f]{6}').test(css), c + ' (used in ' + f + ') has no fill rule');
+    }
+});
