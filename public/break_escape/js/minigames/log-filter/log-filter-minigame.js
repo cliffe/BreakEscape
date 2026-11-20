@@ -29,6 +29,7 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { attachScrollCue } from '../../utils/scroll-cue.js';
 
 export class LogFilterMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
@@ -619,6 +620,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Remove old table if present
         const oldTable = pane.querySelector('.lf-log-table-wrap');
         if (oldTable) oldTable.remove();
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
 
         const wrap = this._el('div', 'lf-log-table-wrap pixel-scroll');
         // Insert before session-detail if it exists
@@ -629,6 +631,7 @@ export class LogFilterMinigame extends MinigameScene {
             pane.appendChild(wrap);
         }
         this._dom.logTableWrap = wrap;
+        this._scrollCue = attachScrollCue(wrap);
 
         const fields = LogFilterMinigame.LOG_FIELDS[this._logType] || [];
         const filtered = this._applyFilters(this._logEntries);
@@ -1436,6 +1439,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     cleanup() {
         if (this._closeTimer) clearTimeout(this._closeTimer);
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
         super.cleanup();
     }
 }

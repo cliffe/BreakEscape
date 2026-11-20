@@ -1,6 +1,7 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { attachScrollCue } from '../../utils/scroll-cue.js';
 
 // Scenario text is plain text: escape it once before it goes into HTML
 
@@ -179,6 +180,12 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
         const panel = this.gameContainer.querySelector('#dli-panel');
         if (!panel) return;
+        if (!this._scrollCue || this._scrollCuePanel !== panel) {
+            if (this._scrollCue) this._scrollCue.destroy();
+            this._scrollCue = attachScrollCue(panel);
+            this._scrollCuePanel = panel;
+        }
+        panel.scrollLeft = 0;
 
         switch (tabId) {
             case 'integrity': this._renderIntegrityTab(panel); break;
@@ -947,6 +954,7 @@ ${activePump ? `
         // Clear all pending scan timers
         this._scanTimers.forEach(id => { clearTimeout(id); clearInterval(id); });
         this._scanTimers = [];
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
         super.cleanup();
     }
 }
