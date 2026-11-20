@@ -381,20 +381,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             screen.appendChild(root);
             bezel.appendChild(top);
             bezel.appendChild(screen);
-            // R2 m2 (b): a device cue on the chin so it reads as a public kiosk, not a window -
-            // a card-reader slot and a status LED beside a READY label, all 2px pixel art.
-            const chin = el('div', 'epr-kiosk-chin');
-            const reader = el('div', 'epr-kiosk-reader');
-            reader.setAttribute('aria-hidden', 'true');
-            reader.appendChild(el('span', 'epr-kiosk-reader-slot'));
-            const status = el('div', 'epr-kiosk-status');
-            const led = el('span', 'epr-kiosk-led');
-            led.setAttribute('aria-hidden', 'true');
-            status.appendChild(led);
-            status.appendChild(el('span', 'epr-kiosk-status-label', 'READY'));
-            chin.appendChild(reader);
-            chin.appendChild(status);
-            bezel.appendChild(chin);
+            // K13 (D-batch4): the old chin (card slot, LED, READY label) was an empty strip; the bezel now wraps the screen.
             this.gameContainer.appendChild(bezel);
         } else {
             this.mountCloseControl(bar, 'Close');

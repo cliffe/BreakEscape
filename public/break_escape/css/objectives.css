@@ -492,7 +492,8 @@
 @media (max-width: 899.98px), (max-height: 500px) {
   /* The pill takes the width up to 8px short of the menu buttons (ui/hud-lanes.js measures it
      into --hud-pill-room; the fallback is the 14px + 132px buttons). The whole pill is the
-     button, so no chevron; the count comes first and never shrinks (review R1 M2). */
+     button; the count comes first and never shrinks (review R1 M2). K12 B: the desktop chevron
+     (pointing right while folded) sits at the pill's right end as a tap cue. */
   .objectives-panel.collapsed {
     box-sizing: border-box;
     width: var(--hud-pill-room, calc(100vw / var(--hud-zoom, 1) - 174px));
@@ -502,9 +503,30 @@
   .objectives-panel.collapsed .objectives-header {
     padding: 8px 8px;
   }
-  .objectives-panel.collapsed .objectives-controls,
   .objectives-panel.collapsed .objectives-title-text {
     display: none;
+  }
+  .objectives-panel.collapsed .objectives-controls {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+  /* Tight padding so the cue takes 15px, not the desktop 30px (the rotated 14x8 glyph shows 8px;
+     the negative margin trims its blank layout box); the whole pill is still the tap target */
+  .objectives-panel.collapsed .objectives-toggle {
+    padding: 4px 0 4px 4px;
+    margin-right: -3px;
+    position: static;
+  }
+  /* The toggle's hit area is the whole pill (the panel is the containing block), so one tap
+     anywhere on it, padding included, opens it once; the 48px min-height keeps it 44px+ inside the border */
+  .objectives-panel.collapsed {
+    min-height: 48px;
+  }
+  .objectives-panel.collapsed .objectives-toggle::before {
+    inset: 0;
+    width: auto;
+    height: auto;
+    transform: none;
   }
   .objectives-panel.collapsed .objectives-clipboard {
     margin-right: 0;

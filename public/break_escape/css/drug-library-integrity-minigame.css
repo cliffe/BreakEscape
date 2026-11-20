@@ -318,7 +318,9 @@
 
 .dli-diff-panel { overflow-x: auto; }
 
-.dli-diff-panel:first-child { border-right: 2px solid #30363d; }
+.dli-diff-col { min-width: 0; }
+
+.dli-diff-col:first-child { border-right: 2px solid #30363d; }
 
 .dli-diff-panel-header {
   padding: 8px 10px;

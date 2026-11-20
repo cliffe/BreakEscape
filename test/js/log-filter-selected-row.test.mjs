@@ -41,7 +41,8 @@ globalThis.window = { gameState: { globalVariables: {} } };
 const base = dataUrl('export class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } start() {} cleanup() {} complete() {} }');
 let src = readFileSync(join(js, 'minigames/log-filter/log-filter-minigame.js'), 'utf8');
 src = src.split(`'../framework/base-minigame.js'`).join(`'${base}'`)
-         .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`);
+         .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+         .split(`'../../utils/scroll-cue.js'`).join(`'${dataUrl('export const attachScrollCue = () => ({ update() {}, destroy() {}, cue: null });')}'`);
 const { LogFilterMinigame } = await import(dataUrl(src));
 
 const vpnData = () => ({
