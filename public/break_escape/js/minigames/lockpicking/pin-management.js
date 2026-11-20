@@ -294,6 +294,9 @@ export class PinManagement {
                     if (this.parent.keyPinLabel) {
                         this.parent.keyPinLabel.setVisible(false);
                     }
+                    if (this.parent.labelLeaders) {
+                        this.parent.labelLeaders.setVisible(false);
+                    }
                     
                     // Hide all pin numbers
                     this.parent.pins.forEach(pin => {

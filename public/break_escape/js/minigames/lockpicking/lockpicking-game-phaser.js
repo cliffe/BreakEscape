@@ -8,6 +8,7 @@ import { PinManagement } from './pin-management.js';
 import { ToolManager } from './tool-manager.js';
 import { KeyAnimation } from './key-animation.js';
 import { HookMechanics } from './hook-mechanics.js';
+import { LockLabels } from './label-layout.js';
 import { PinVisuals } from './pin-visuals.js';
 import { KeyInsertion } from './key-insertion.js';
 import { KeyDrawing } from './key-drawing.js';
@@ -454,6 +455,10 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                 self.pinMgmt.createPins();
                 self.lockGraphics.createHookPick();
                 self.pinMgmt.createShearLine();
+                // Labels at a readable size and clear of the pins (D219)
+                self.lockLabels = new LockLabels(self);
+                self.lockLabels.apply();
+                self.lockLabels.watch();
                 
                 // Create key if in key mode and not skipping starting key
                 if (self.keyMode && !self.skipStartingKey) {
