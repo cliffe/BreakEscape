@@ -39,10 +39,6 @@ export class ShreddedDocumentMinigame extends MinigameScene {
     static consoleWindow = true;
     static consoleWindowFill = true;
 
-    consoleTitle() {
-        return this.params?.title || 'Document Reconstruction';
-    }
-
     constructor(container, params) {
         super(container, {
             ...params,
@@ -173,7 +169,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
             <div class="sdm-panel">
                 <div class="sdm-completed-banner">Document already reconstructed.</div>
                 <div class="sdm-success-reveal">${escapeText(this.successMessage)}</div>
-                <div class="sdm-scroll">
+                <div class="sdm-scroll pixel-scroll">
                     ${titleHtml}
                     <div class="sdm-strips-area">${stripsHtml}</div>
                 </div>
@@ -222,7 +218,7 @@ export class ShreddedDocumentMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="sdm-panel">
                 <div class="sdm-instruction">${escapeText(instructionText)}</div>
-                <div class="sdm-scroll">
+                <div class="sdm-scroll pixel-scroll">
                     ${titleHtml}
                     <div class="sdm-strips-area">${emptyState}</div>
                 </div>

@@ -153,7 +153,7 @@ test('m3 shredded-document closes by the console window X (D218), no text Close'
     const src = readFileSync(join(js, 'minigames/shredded-document/shredded-document-minigame.js'), 'utf8');
     assert.ok(!/cancelText:/.test(src), 'no text Close cancel button left');
     assert.ok(!/showCancel:\s*true/.test(src), 'the text cancel row is not requested');
-    assert.match(src, /static consoleWindow = true/, 'the X sits in the console window title bar');
+    assert.ok(/static consoleWindow = true/.test(src), 'the X sits in the console window title bar');
     assert.ok(!/add\('se-overlay-close'\)/.test(src), 'no red SE X variant (D216)');
 });
 

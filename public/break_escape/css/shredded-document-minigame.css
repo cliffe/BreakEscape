@@ -3,13 +3,8 @@
    ============================================================ */
 
 /* The console window (D218) supplies the title bar, the frame and the X; the body is the
-   game container */
-.sdm-game-container {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    margin: 0 !important;
-}
+   game container. Its layout (flex column, margin 0, overflow auto) comes from the framework's
+   `.console-window > .console-body` rule, so nothing is set here. */
 
 /* ── Outer panel ─────────────────────────────────────────── */
 
@@ -29,7 +24,7 @@
     font-family: 'GNF', monospace;
     font-size: 16px;
     color: var(--ui-text-dim, #a8b2c8);
-    border-bottom: 2px solid #2a3a5a;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
     line-height: 24px;
     flex-shrink: 0;
 }
@@ -48,12 +43,12 @@
 .sdm-doc-title {
     font-family: 'GNF', monospace;
     font-size: 16px;
-    color: #4a6090;
+    color: var(--ui-text-dim, #a8b2c8);
     letter-spacing: 1px;
     text-align: center;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #2a3a5a;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
 }
 
 /* ── Strip list ──────────────────────────────────────────── */
@@ -215,6 +210,31 @@
     }
 }
 
+/* Phone width. Inside the console window the body is 338px at 390 (318px in a 28px-frame theme),
+   against 390px before D218. Old rows: 338 - scroll padding 40 - area padding 16 - strip
+   padding and borders 24 - handle 32 and gap 8 - controls 146 and gap 8 = 64px of text (44px
+   cyberpunk), against main's 116px. The controls move to their own row under the text and the
+   padding shrinks: 338 - scroll padding 16 - area padding 0 - strip padding and borders 24 -
+   handle 32 and gap 8 = 258px of text (238px cyberpunk), at least main's 116px. */
+@media (max-width: 600px) {
+    .sdm-scroll {
+        padding: 8px;
+    }
+
+    .sdm-strips-area {
+        padding: 0;
+    }
+
+    .sdm-strip {
+        flex-wrap: wrap;
+    }
+
+    .sdm-strip-controls {
+        flex: 1 0 100%;
+        justify-content: flex-end;
+    }
+}
+
 /* ── Completed state ─────────────────────────────────────── */
 
 .sdm-completed-banner {
@@ -230,7 +250,7 @@
 .sdm-success-reveal {
     padding: 10px 16px;
     background: #081808;
-    border-bottom: 2px solid #2a3a5a;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
     color: #c8ffcc;
     font-family: 'GNF', monospace;
     font-size: 16px;
@@ -243,7 +263,7 @@
 .sdm-empty-state {
     font-family: 'GNF', monospace;
     font-size: 16px;
-    color: #4a6090;
+    color: var(--ui-text-dim, #a8b2c8);
     text-align: center;
     padding: 24px 0;
 }
