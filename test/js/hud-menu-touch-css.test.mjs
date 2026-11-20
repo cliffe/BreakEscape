@@ -10,18 +10,22 @@ const cssDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const MQ = '@media (max-width: 600px), (pointer: coarse)';
 
-// The body of the touch media block, with nested braces balanced.
-function touchBlock(file) {
+// Every touch media block in the file (a later block must not hide the one with our rules).
+function touchBlocks(file) {
     const src = strip(readFileSync(join(cssDir, file), 'utf8'));
-    const at = src.indexOf(MQ);
-    assert.ok(at >= 0, `${file} has the touch media query`);
-    let i = src.indexOf('{', at), depth = 0, j = i;
-    for (; j < src.length; j++) {
-        if (src[j] === '{') depth++;
-        else if (src[j] === '}' && --depth === 0) break;
+    const out = [];
+    for (let at = src.indexOf(MQ); at >= 0; at = src.indexOf(MQ, at + 1)) {
+        let i = src.indexOf('{', at), depth = 0, j = i;
+        for (; j < src.length; j++) {
+            if (src[j] === '{') depth++;
+            else if (src[j] === '}' && --depth === 0) break;
+        }
+        out.push(src.slice(i + 1, j));
     }
-    return src.slice(i + 1, j);
+    assert.ok(out.length > 0, `${file} has the touch media query`);
+    return out;
 }
+const touchBlock = (file) => touchBlocks(file).join('\n');
 const rule = (block, sel) => {
     const m = [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((r) => r[1].trim() === sel);
     assert.ok(m, `rule ${sel}`);
@@ -55,11 +59,33 @@ test('touch: themed slider fill moves to the track', () => {
     }
 });
 
-test('active menu tab has a raised fill and a 4px bar, kept on hover and press', () => {
+test('webkit thumb is centred on the 6px content box of the track', () => {
+    const r = rule(touchBlock('music-widget.css'), '.mw-vol-slider::-webkit-slider-thumb');
+    assert.ok(/margin-top:\s*-11px/.test(r), '(6 - 28) / 2 = -11px');
+});
+
+test('touch: floating panel scrolls inside the viewport; the menu page resets it', () => {
+    const r = rule(touchBlock('music-widget.css'), '#music-widget-panel');
+    assert.ok(/max-height:\s*calc\(100vh - 90px\)/.test(r), 'max-height within the viewport');
+    assert.ok(/overflow-y:\s*auto/.test(r), 'scrolls');
+    const g = strip(readFileSync(join(cssDir, 'game-menu.css'), 'utf8'));
+    const m = [...g.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((x) => x[1].trim() === '[data-ui-theme] .game-menu-page #music-widget-panel,\n.game-menu-page #music-widget-panel');
+    assert.ok(m, 'menu page panel rule');
+    assert.ok(/max-height:\s*none/.test(m[2]) && /overflow:\s*visible/.test(m[2]), 'menu page uses its own scroller');
+});
+
+test('active menu tab cue is a 4px accent ::after drawn above the border image', () => {
     const src = strip(readFileSync(join(cssDir, 'ui-themes.css'), 'utf8'));
-    const m = [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find((r) => r[1].includes('.game-menu-item.active:hover'));
-    assert.ok(m, 'active tab rule');
-    assert.ok(m[1].includes('.game-menu-item.active:active'), 'covers :active');
-    assert.ok(/background:\s*var\(--ui-surface-raised\)/.test(m[2]), 'raised background');
-    assert.ok(/box-shadow:\s*inset 0 -4px 0 var\(--ui-accent\)/.test(m[2]), '4px bottom bar, no blur');
+    const rules = [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+    const host = rules.find((r) => r[1].trim() === '[data-ui-theme] .game-menu-item.active');
+    assert.ok(host && /position:\s*relative/.test(host[2]), 'tab is a positioned host');
+    const bar = rules.find((r) => r[1].trim() === '[data-ui-theme] .game-menu-item.active::after');
+    assert.ok(bar, 'pseudo-element rule');
+    assert.ok(/position:\s*absolute/.test(bar[2]) && /bottom:\s*0/.test(bar[2]), 'at the bottom edge');
+    assert.ok(/height:\s*4px/.test(bar[2]), '4px');
+    assert.ok(/background:\s*var\(--ui-accent\)/.test(bar[2]), 'accent fill');
+    assert.ok(/z-index:\s*1/.test(bar[2]), 'z-order above the border image');
+    assert.ok(!/box-shadow:\s*inset 0 -4px/.test(src), 'no inset shadow (the 9-slice fill covers it)');
+    const themes = (src.match(/\[data-ui-theme="[a-z]+"\]\s*\{[^{}]*--ui-accent:/g) || []).length;
+    assert.ok(themes === 7, 'all 7 themes define --ui-accent');
 });

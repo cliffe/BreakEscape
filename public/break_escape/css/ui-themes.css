@@ -990,15 +990,23 @@
   color: var(--ui-accent);
 }
 
-/* The open tab needs a cue besides colour: a raised fill and a 4px accent bar along the bottom
-   edge. The inset shadow sits in the padding box, inside the 9-slice border, so it works in the
-   column (desktop) and the row (phone) layouts and does not move the text. Listed with :hover and
-   :active so the button states above (background: none, box-shadow: none) do not remove it. */
-[data-ui-theme] .game-menu-item.active,
-[data-ui-theme] .game-menu-item.active:hover,
-[data-ui-theme] .game-menu-item.active:active {
-  background: var(--ui-surface-raised);
-  box-shadow: inset 0 -4px 0 var(--ui-accent);
+/* The open tab needs a cue besides colour: a 4px accent bar along the bottom edge, inside the
+   art border. It is a pseudo-element because the 9-slice `fill` centre is opaque in 6 of 7 themes
+   and paints over the element's own background and inset box-shadow; a child box paints after the
+   border image, so it stays visible. It does not move the label and is the same in the desktop
+   column and the phone row. */
+[data-ui-theme] .game-menu-item.active { position: relative; }
+
+[data-ui-theme] .game-menu-item.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--ui-accent);
+  pointer-events: none;
+  z-index: 1;
 }
 
 [data-ui-theme] .tutorial-btn-primary:hover,

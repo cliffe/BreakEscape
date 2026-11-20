@@ -314,6 +314,14 @@
    44px hit box (transparent, no border); the 6px track is drawn on the track pseudo-elements and
    the thumb grows to 20x28. Shared by the game menu's Audio page and the music widget panel. */
 @media (max-width: 600px), (pointer: coarse) {
+  /* The floating panel is fixed at top: 82px; with 44px rows it would run off a landscape phone,
+     so it scrolls inside the viewport (the menu's Audio page resets this, see game-menu.css) */
+  #music-widget-panel {
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
   .mw-vol-row { min-height: 44px; }
 
   .mw-vol-slider {
@@ -340,7 +348,7 @@
   .mw-vol-slider::-webkit-slider-thumb {
     width: 20px;
     height: 28px;
-    margin-top: -9px; /* centres the 28px thumb on the 10px track box (webkit does not) */
+    margin-top: -11px; /* webkit lays the thumb out in the track's 6px content box: (6 - 28) / 2 = -11 */
     border-radius: 0;
   }
 
