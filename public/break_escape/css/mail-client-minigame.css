@@ -503,7 +503,13 @@
     .mail-client * { max-width: 100%; }
     .mail-toolbar > * { min-width: 0; }
     .mail-account { flex: 1 1 100%; margin-right: 0; }
-    .mail-toolbar .se-overlay-close { margin-left: 0; }
+    /* B9: the account label and Close share the header row; the buttons take their own row. */
+    .mail-client .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
+    .mail-client .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
+    .mail-client .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; margin: -4px 0; }
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-folders,
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
+    .mail-client .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
     .mail-list-pane, .mail-read-pane { overflow-x: hidden; }
     .mail-chip { max-width: 100%; box-sizing: border-box; }
     .mail-back { min-height: 44px; }
@@ -632,7 +638,12 @@
 .mail-client--phone * { max-width: 100%; }
 .mail-client--phone .mail-toolbar > * { min-width: 0; }
 .mail-client--phone .mail-account { flex: 1 1 100%; margin-right: 0; }
-.mail-client--phone .mail-toolbar .se-overlay-close { margin-left: 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) .mail-account { flex: 1 1 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) .se-overlay-close { order: 1; margin-left: auto; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar)::after { content: ''; order: 1; flex: 0 0 100%; height: 0; margin: -4px 0; }
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-folders,
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-contacts-btn,
+.mail-client--phone .mail-toolbar:not(.tri-toolbar) > .mail-toolbar-actions { order: 2; }
 .mail-client--phone .mail-list-pane, .mail-client--phone .mail-read-pane { overflow-x: hidden; }
 .mail-client--phone .mail-chip { max-width: 100%; box-sizing: border-box; }
 .mail-client--phone .mail-back { min-height: 44px; display: inline-block; }
