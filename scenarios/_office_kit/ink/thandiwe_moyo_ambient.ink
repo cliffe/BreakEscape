@@ -4,6 +4,7 @@ VAR kit_key_caught = false
 VAR kit_ca12_screen_asked = false
 VAR kit_ca12_screen_choice = ""
 VAR kit_ca12_screen_seen = false
+VAR kit_ca12_done = false
 
 // Her click after the look-up request lands here: before an answer it offers the choice,
 // after one it falls through to the ca12 stub (see ca12_screen).
@@ -24,7 +25,8 @@ Thandiwe Moyo: {kit_key_caught: Sounds like the front desk had a good morning.|L
 // Reached from the return bark (C1). A bark's knot sticks, so a second entry never re-answers.
 // The bubble closes when "asked" is written, so the knot opens on the bark's own words.
 === ca12_screen ===
-{ kit_ca12_screen_choice == "mention" || kit_ca12_screen_choice == "silent":
+// Once the beat is over (kit_ca12_done) a late click gets the stub, so no answer lands after the recap.
+{ kit_ca12_screen_choice == "mention" || kit_ca12_screen_choice == "silent" || kit_ca12_done:
     -> ca12
 }
 Thandiwe Moyo: Right, that's me back. Anything I should know?
