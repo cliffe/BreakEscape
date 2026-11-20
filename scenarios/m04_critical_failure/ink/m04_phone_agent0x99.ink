@@ -32,8 +32,6 @@ VAR erlang_guide_offered = false
 VAR erlang_guide_hint_given = false
 VAR cyberchef_guide_offered = false
 VAR cyberchef_guide_hint_given = false
-VAR privesc_guide_offered = false
-VAR privesc_guide_hint_given = false
 VAR proftpd_guide_offered = false
 VAR proftpd_guide_hint_given = false
 VAR relay_card_cloned = false        // PASS 4: Relay's card copied on the quiet route
@@ -194,7 +192,7 @@ EXTERNAL player_name()
 
 // ---- Field guides, one choice. Exposure-gated: offered by an eventMapping
 // ---- when the player meets the obstacle, handed over here on request.
-+ {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (erlang_guide_offered and not erlang_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
++ {(rfid_guide_offered and not rfid_guide_hint_given) or (lockpicking_guide_offered and not lockpicking_guide_hint_given) or (recon_guide_offered and not recon_guide_hint_given) or (vuln_guide_offered and not vuln_guide_hint_given) or (erlang_guide_offered and not erlang_guide_hint_given) or (proftpd_guide_offered and not proftpd_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given)} [Send me a field guide.]
     // Struggling run A (F8): a visible reply before the list.
     Which one?
     -> field_guides
@@ -222,8 +220,6 @@ EXTERNAL player_name()
     -> request_proftpd_guide
 + {erlang_guide_offered and not erlang_guide_hint_given} [The Erlang SSH RCE guide.]
     -> request_erlang_guide
-+ {privesc_guide_offered and not privesc_guide_hint_given} [The sudo guide.]
-    -> request_privesc_guide
 + {cyberchef_guide_offered and not cyberchef_guide_hint_given} [The CyberChef decoding guide.]
     -> request_cyberchef_guide
 + [Not now.]
@@ -264,12 +260,6 @@ Sent. Once you know what's listening, it tells you what's worth pushing on.
 #give_item:lab-workstation:safetynet_field_guide_erlang_ssh
 Sent. Erlang/OTP SSH daemon on the high port from the crew's job card, a brand-new pre-auth RCE.
 It runs commands before it even asks who you are. Your way in.
--> support_hub
-
-=== request_privesc_guide ===
-~ privesc_guide_hint_given = true
-#give_item:lab-workstation:safetynet_field_guide_privesc
-Sent. On the box, check what sudo lets you run. That's how the crew got at the charge settings.
 -> support_hub
 
 === request_proftpd_guide ===
