@@ -23,3 +23,19 @@ test('the card scrolls inside the viewport on short landscape', () => {
     const base = css.slice(0, css.indexOf('.examine-panel'));
     assert.ok(/max-height:\s*calc\(100vh - 160px\)/.test(base) && /overflow-y:\s*auto/.test(base), 'bounded and scrolling');
 });
+
+// Round 1 fixes
+test('long unbroken name and caption wrap instead of widening the card (m1)', () => {
+    for (const sel of ['\\.examine-name', '\\.examine-observations']) {
+        const r = css.match(new RegExp('(?:^|\\n)' + sel + '\\s*\\{([^}]*)\\}'));
+        assert.ok(r !== null && /overflow-wrap:\s*(anywhere|break-word)/.test(r[1]), sel + ' has overflow-wrap');
+    }
+});
+
+test('a sticky strip keeps scrolling content clear of the X (m2)', () => {
+    const r = css.match(/\.examine-panel::before\s*\{([^}]*)\}/);
+    assert.ok(r !== null, 'a .examine-panel::before rule');
+    assert.ok(/position:\s*sticky/.test(r[1]) && /top:\s*0/.test(r[1]), 'sticky at top 0');
+    const h = r[1].match(/height:\s*(\d+)px/);
+    assert.ok(h !== null && Number(h[1]) >= 44, 'strip at least 44px tall');
+});
