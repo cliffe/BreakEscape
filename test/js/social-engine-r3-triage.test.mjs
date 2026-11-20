@@ -25,7 +25,7 @@ for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js',
-    'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/flip-view.js'
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/flip-view.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));

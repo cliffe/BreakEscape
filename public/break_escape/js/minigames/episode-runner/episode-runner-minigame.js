@@ -910,6 +910,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             showScore,
             set: this.defendSet,
             strings: this.strings,
+            globals: this.globals,
             variant: variantOf(this.episode),
             reportRoute: reportRouteFor(this.episode, this.social, config),
             ruleOfThumb: settings.ruleOfThumb,

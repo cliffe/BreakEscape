@@ -33,7 +33,7 @@ for (const rel of [
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',
-    'minigames/inbox-triage/header-panel.js', 'minigames/episode-runner/debrief-view.js',
+    'minigames/inbox-triage/header-panel.js', 'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js', 'systems/phish-rules.js',

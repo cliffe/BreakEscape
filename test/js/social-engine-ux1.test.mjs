@@ -27,7 +27,7 @@ for (const rel of [
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',
     'minigames/inbox-triage/header-panel.js',
-    'minigames/episode-runner/debrief-view.js',
+    'utils/global-condition.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/concern-form/concern-form-minigame.js', 'minigames/concern-form/concern-form-model.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
