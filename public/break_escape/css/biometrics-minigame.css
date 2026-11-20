@@ -464,6 +464,7 @@
     font-size: 16px;
     font-weight: normal;
     color: #00ff41;
+    line-height: 24px;
     margin: 0;
     text-align: center;
     text-shadow: none;
@@ -506,7 +507,7 @@
     border: 2px solid #1f6b35;
     color: #c8f5d2;
     font-family: 'VT323', monospace;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
 }
 
@@ -751,7 +752,7 @@
     to { transform: scale(1); opacity: 1; }
 }
 
-.fpr-keys { margin: 0; font-size: 16px; color: #5d8068; text-align: center; }
+.fpr-keys { margin: 0; font-size: 16px; color: #7fa88a; text-align: center; }
 
 @media (prefers-reduced-motion: reduce) {
     .fpr-result-accepted .fpr-result-title { animation: none; }

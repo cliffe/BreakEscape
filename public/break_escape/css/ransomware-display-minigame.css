@@ -78,8 +78,8 @@
     background: #220000;
     color: #efefef;
     font-family: 'GNF', monospace;
-    font-size: 20px;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 28px;
     white-space: pre-wrap;
     flex: 1 0 auto;
     overflow: auto;
@@ -123,6 +123,7 @@
     background: #1d1d1d;
     color: #d9d9d9;
     padding: 8px;
+    font-family: 'Press Start 2P', monospace;
     font-size: 8px;
     line-height: 16px;
     text-align: center;
@@ -146,6 +147,7 @@
     }
 
     .ransomware-display-title {
+        font-family: 'Press Start 2P', monospace;
         font-size: 8px;
         line-height: 16px;
     }
@@ -167,6 +169,7 @@
     }
 
     .ransomware-display-timer-row {
+        font-family: 'Press Start 2P', monospace;
         font-size: 8px;
         line-height: 16px;
     }

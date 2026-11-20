@@ -74,7 +74,7 @@
     width: 12px;
     height: 12px;
     border: none;
-    font-size: 12px;   /* whole-pixel size (the browser's button default is 13.33px) */
+    font-size: 16px;   /* GNF grid; the dot holds no text */
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -97,7 +97,7 @@
 }
 
 .window-title {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 500;
     color: #333333;
     font-family: 'GNF', monospace;
@@ -127,7 +127,7 @@
 
 .file-name {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: normal;
     color: #212529;
     margin-bottom: 4px;
 }
@@ -218,7 +218,7 @@
 
 .file-text {
     color: #000000;
-    font-size: 20px;
+    font-size: 16px;
     line-height: 1.5;
     margin: 0;
     white-space: pre-wrap;
@@ -242,7 +242,7 @@
     color: #856404;
     font-size: 16px;
     margin: 0 0 8px 0;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .file-observations p {
@@ -335,7 +335,7 @@
     }
     
     .file-name {
-        font-size: 20px;
+        font-size: 16px;
     }
     
     .file-meta {
