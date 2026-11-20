@@ -30,7 +30,7 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca07_host_said:
         { kit_key_caught:
             { kit_caught:
-                Agnieszka Duda: You rang that one back before a penny moved, so the payment that sounded so urgent never left the building.
+                Agnieszka Duda: You didn't release that payment on the voice alone, so what sounded so urgent never left the building.
             - else:
                 Agnieszka Duda: You stopped to check that payment instead of releasing it on the voice alone, which is the whole job here.
             }

@@ -26,7 +26,7 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca03_host_said:
         { kit_key_caught:
             { kit_caught:
-                Darren Price: You reported the prompt nobody started, so the approval never came and the account stayed shut.
+                Darren Price: You stopped a prompt nobody started from turning into an approval, so the account stayed shut.
             - else:
                 Darren Price: You turned away the prompt that mattered, so the account held. One or two others slipped by, and the debrief walks you through them.
             }

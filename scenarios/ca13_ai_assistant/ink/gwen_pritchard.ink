@@ -48,7 +48,7 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca13_host_said:
         { kit_key_caught:
             { kit_caught:
-                Gwen Pritchard: You flagged the request that rode on the assistant's summary, so the attacker's staged call walked away with nothing.
+                Gwen Pritchard: You stopped the request that rode on the assistant's summary, so the attacker's staged call walked away with nothing.
             - else:
                 Gwen Pritchard: You caught the one that mattered, the request leaning on the assistant's summary, before it turned into a payment or a shared list.
             }
