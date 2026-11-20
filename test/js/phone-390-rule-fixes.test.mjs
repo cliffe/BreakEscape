@@ -87,15 +87,20 @@ test('the 16px SIEM queue band ends at 839px (24px fits with 8px to spare from 8
     assert.ok(!/max-width: 1100px\) \{\s*\.siem-queue-count/.test(raw), 'the old band to 1100px is gone');
 });
 
-test('the VM launcher scroller still starts 14px below its title row at phone width, now from device-frame.css', () => {
-    // The old .vm-launcher margin-top of 6px sat on top of the 8px title margin so the scroller cleared
-    // the 32px X's 5.6px overhang. The shared device-frame title margin now gives that 14px alone.
+test('the VM launcher scroller starts below the 32px X at phone width, from the shared device-frame title geometry', () => {
+    // K3: the phone title is 16px on a 24px line, wrapped where needed, with the base 12px margin. The scroller
+    // top is bezel + gap + line + margin, and must sit at or below the drawn X's bottom (bezel + gap + 32px).
     const strip = (f) => readFileSync(join(root, 'css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const frame = strip('device-frame.css');
-    const phone = frame.match(/@media \(max-width: 559px\) \{\s*\.device-frame > \.device-frame-title \{([^}]*)\}/);
-    assert.ok(phone, 'a phone-width title rule exists in device-frame.css');
-    const gapBelow = px(phone[1], 'margin-bottom')[0] || 0;
-    assert.ok(gapBelow >= 14, `the title margin-bottom ${gapBelow}px gives the scroller its old 8 + 6 clearance`);
+    assert.ok(!/@media[^{]*\{[^@]*\.device-frame-title\s*\{[^}]*(margin|font-size|line-height)/.test(frame), 'no media query on the title row changes size, line or margin');
+    const base = frame.match(/\.device-frame > \.device-frame-title \{([^}]*)\}/)[1];
+    const margin = parseFloat(base.match(/margin:\s*0 0 (\d+)px/)[1]);
+    const line = parseFloat(base.match(/line-height:\s*(\d+)px/)[1]);
+    const bezel = parseFloat(frame.match(/\.device-frame \{[^}]*?border:\s*(\d+)px solid transparent/)[1]);
+    const gap = parseFloat(frame.match(/--device-frame-gap:\s*(\d+)px/)[1]);
+    const xSize = parseFloat(strip('vm-launcher-minigame.css').match(/\.vm-launcher-minigame > \.minigame-close-button \{[^}]*?width:\s*(\d+)px/)[1]);
+    const scrollerTop = bezel + gap + line + margin;
+    assert.ok(scrollerTop >= bezel + gap + xSize, `the scroller top ${scrollerTop}px is above the X bottom ${bezel + gap + xSize}px`);
     const launcher = strip('vm-launcher-minigame.css');
     assert.ok(!/@media \(max-width: 559px\) \{\s*\.vm-launcher \{[^}]*margin-top/.test(launcher), 'no phone .vm-launcher margin-top is left to double the gap');
 });

@@ -124,8 +124,8 @@
     color: #d9d9d9;
     padding: 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    line-height: 16px;
+    font-size: 16px;   /* K8 B: the status note is readable text; the headline stays a display */
+    line-height: 24px;
     text-align: center;
 }
 
@@ -148,8 +148,9 @@
 
     .ransomware-display-title {
         font-family: 'Press Start 2P', monospace;
-        font-size: 8px;
-        line-height: 16px;
+        font-size: 16px;   /* the display face's other grid size; the headline wraps */
+        line-height: 24px;
+        overflow-wrap: anywhere;
     }
 
     .ransomware-display-body {
