@@ -281,12 +281,6 @@
         padding: 12px;
     }
 
-    .backup-recovery-shell--outcome .backup-recovery-header {
-        font-family: 'Press Start 2P', monospace;
-        font-size: 16px;
-        line-height: 24px;
-    }
-
     /* The slot state goes on its own line under the name (critique B BR3) */
     .backup-recovery-slot {
         grid-template-columns: auto minmax(0, 1fr);

@@ -354,7 +354,7 @@
 }
 
 .lpb-inspect-intro { margin-bottom: 10px; }
-.lpb-inspect-title { margin: 0 0 4px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
+.lpb-inspect-title { margin: 0 0 10px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
 .lpb-inspect-help { margin: 0; color: var(--ui-text-dim, #a8b2c8); font-size: 16px; }
 .lpb-inspect-progress { margin: 8px 0; font-weight: 700; }
 .lpb-inspect-blocked { margin: 8px 0; color: var(--ui-accent, #ffcc44); }
@@ -389,7 +389,7 @@
     border-radius: 0;
 }
 
-.lpb-pretext-title { margin: 0 0 8px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
+.lpb-pretext-title { margin: 0 0 10px; font-size: 16px; font-family: 'GNF', 'Courier New', monospace; }
 .lpb-facts { margin: 0 0 8px; padding-left: 18px; }
 .lpb-fact { margin-bottom: 4px; }
 .lpb-pretext-empty { margin: 0 0 8px; color: var(--ui-text-dim, #a8b2c8); }
@@ -530,7 +530,7 @@
     border-radius: 0;
 }
 
-.lpb-root .cc-title { margin: 0 0 6px; font-size: 16px; }
+.lpb-root .cc-title { margin: 0 0 10px; font-size: 16px; }
 .lpb-root .cc-text { margin: 0 0 6px; font-size: 16px; }
 .lpb-root .cc-image { max-width: 100%; image-rendering: pixelated; }
 

@@ -48,7 +48,7 @@
 .pp-text { margin: 0 0 10px; max-width: 62ch; }
 .pp-note { margin: 0 0 10px; max-width: 62ch; font-size: 16px; color: var(--pp-dim); }
 .pp-counter { margin: 0 0 10px; padding: 6px 10px; display: inline-block; font-weight: 700; background: var(--pp-raised); border: 2px solid var(--pp-line); }
-.pp-section { margin: 14px 0 6px; font-size: 16px; color: var(--pp-accent); }
+.pp-section { margin: 14px 0 6px; font-size: 24px; color: var(--pp-accent); }
 
 .pp-settings, .pp-facts { margin: 0; padding: 0; list-style: none; }
 .pp-setting { margin: 0 0 10px; padding: 10px 12px; background: var(--pp-raised); border: 2px solid var(--pp-line); border-left: 6px solid var(--pp-line); }

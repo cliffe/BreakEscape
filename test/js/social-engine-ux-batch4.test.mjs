@@ -129,7 +129,7 @@ test('a plain string badge is unchanged: a mark-tick and the word, no tone class
 test('CSS carries the batch-4 skin and meter fixes', () => {
     const skin = readFileSync(join(cssDir, 'awareness-skin.css'), 'utf8');
     const stepSize = skin.match(/\.aw-step-num\s*\{[^}]*font-size:\s*(\d+)px/);
-    assert.ok(stepSize && Number(stepSize[1]) >= 13, 'step-number badge is at least 13px (GNF grid: 16)');
+    assert.ok(stepSize && Number(stepSize[1]) === 16, 'step-number badge is GNF 16, which fits its 20x20 box (24 would overflow it)');
     assert.doesNotMatch(skin, /\.aw-step-num\s*\{[^}]*font-size:\s*12px/);
     assert.match(skin, /\.aw-heading\s*\{[^}]*color-mix\(in srgb, var\(--aw-accent\)/, 'heading darkened for AA');
 

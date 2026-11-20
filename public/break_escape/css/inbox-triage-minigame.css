@@ -637,7 +637,7 @@
 /* Pre/post comparison (05 N11) */
 .tri-compare { margin: 10px 0; padding: 8px 10px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-accent, #ffcc44); }
 .tri-compare.no-baseline { border-left-color: var(--ui-text-dim, #a8b2c8); }
-.tri-compare-title { margin: 0 0 4px; font-size: 16px; }
+.tri-compare-title { margin: 0 0 4px; font-size: 24px; }
 .tri-compare-line { margin: 2px 0; }
 .tri-brief-kind { font-size: 16px; line-height: 1.45; color: #e6ebf6; }
 

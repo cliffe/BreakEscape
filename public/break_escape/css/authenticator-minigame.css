@@ -91,7 +91,7 @@
     padding: 10px 12px; animation: auth-card-in 180ms ease-out;
 }
 .auth-card-manual { border-style: dashed; }
-.auth-card-app { margin: 0 0 2px; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: var(--auth-dim); text-transform: uppercase; }
+.auth-card-app { margin: 0 0 6px; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; color: var(--auth-dim); text-transform: uppercase; }
 .auth-card-request { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
 .auth-card-details { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 16px; }
 .auth-card-details dt { color: var(--auth-dim); }

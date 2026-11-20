@@ -455,12 +455,14 @@ test('phone body text is 24px GNF, the conversation dialogue size; the name stay
     const at = src.indexOf('@media (max-width: 600px)');
     assert.ok(at > 0, 'a phone block exists');
     const desktop = src.slice(0, at), phone = src.slice(at);
-    assert.equal(size(phone, '.examine-text'), 24);
-    assert.equal(size(phone, '.examine-observations'), 24);
+    // 24 at every width (base rules), so desktop and phone landscape match phone portrait
+    assert.ok(size(desktop, '.examine-text') === 24, 'examine text is 24 at desktop and landscape widths');
+    assert.ok(size(desktop, '.examine-observations') === 24, 'examine observations are 24 at desktop and landscape widths');
+    assert.ok(size(phone, '.examine-text') === null, 'the phone block does not need to restate the body size');
+    assert.ok(/\.examine-text\s*\{[^}]*line-height:\s*36px/.test(desktop), 'examine text line height is a whole 36px');
+    assert.ok(/\.examine-observations\s*\{[^}]*line-height:\s*36px/.test(desktop), 'examine observations line height is a whole 36px');
     assert.equal(size(phone, '.examine-name'), 16);
     assert.match(desktop, /\.examine-name\s*\{[^}]*Press Start 2P/);
-    assert.equal(size(phone, '.examine-text') % 8, 0, 'GNF is crisp at multiples of 8 from 16');
-    assert.equal(size(phone, '.examine-observations') % 8, 0);
     assert.doesNotMatch(src, /\.examine-(text|observations)[^{}]*\{[^}]*font-family/, 'body text inherits GNF');
     assert.doesNotMatch(src, /font-style:\s*italic/, 'GNF has no italic');
 });

@@ -163,7 +163,7 @@
 /* logos are drawn 20px tall; shown at a whole-number scale */
 .ob-logo { height: 60px; width: auto; image-rendering: pixelated; }
 .ob-page-title { margin: 0; font-size: 24px; font-weight: 700; outline: none; }
-.ob-heading { margin: 8px 0 0; font-size: 16px; }
+.ob-heading { margin: 8px 0 0; font-size: 24px; }
 .ob-empty { margin: 0; font-style: italic; color: #4a4f5c; }
 .ob-tools-note { margin: 0; color: #3a3f4c; }
 .ob-image { max-width: 100%; image-rendering: pixelated; }

@@ -82,7 +82,7 @@
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
 .aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
-.aw-flip-section { margin: 14px 0 4px; font-size: 16px; }
+.aw-flip-section { margin: 14px 0 4px; font-size: 24px; }
 .aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
 
 /* flip */

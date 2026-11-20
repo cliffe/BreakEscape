@@ -107,7 +107,7 @@
 .sd-mark-caution, .sd-mark-suggest { color: var(--sd-dim); }
 .sd-mark-wrong { color: var(--sd-bad); }
 .sd-miss .sd-col-text { text-decoration: underline; text-decoration-color: var(--sd-bad); }
-.sd-score { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
+.sd-score { margin: 0 0 8px; font-size: 24px; font-weight: 700; }
 
 .sd-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--sd-accent); background: var(--sd-raised); }
 .sd-close-ask-text { margin: 0 0 8px; }

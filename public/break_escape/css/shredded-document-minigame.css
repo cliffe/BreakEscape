@@ -213,8 +213,10 @@
 
 /* Phone width. Inside the console window the body is 338px at 390 (318px in a 28px-frame theme),
    against 390px before D218. Old rows: 338 - scroll padding 40 - area padding 16 - strip
-   padding and borders 24 - handle 32 and gap 8 - controls 146 and gap 8 = 64px of text (44px
-   cyberpunk), against main's 116px. The controls move to their own row under the text and the
+   padding and borders 24 - handle 32 and gap 8 - controls about 166 (Up, Down and Flip as GNF 16
+   buttons at roughly 10px a glyph plus 14px padding and 4px border, and two 6px gaps; it was 146
+   for the old 8px figure and is measured live) and gap 8 = about 44px of text (24px cyberpunk),
+   against main's 116px. The controls move to their own row under the text and the
    padding shrinks: 338 - scroll padding 16 - area padding 0 - strip padding and borders 24 -
    handle 32 and gap 8 = 258px of text (238px cyberpunk), at least main's 116px. */
 @media (max-width: 600px) {
