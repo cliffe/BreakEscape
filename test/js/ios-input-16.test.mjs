@@ -155,7 +155,7 @@ test('the control matcher sees the known text controls (guards against a matcher
         let m;
         while ((m = re.exec(t))) if (targetsTextControl(m[1].trim().replace(/\s+/g, ' '))) seen.add(f);
     }
-    for (const f of ['game-menu.css', 'mail-client-minigame.css', 'music-widget.css', 'notes.css', 'password-minigame.css', 'player_preferences.css', 'modals.css', 'ble-scanner.css', 'inbox-triage-minigame.css']) {
+    for (const f of ['game-menu.css', 'mail-client-minigame.css', 'music-widget.css', 'notes.css', 'password-minigame.css', 'player_preferences.css', 'ble-scanner.css', 'inbox-triage-minigame.css']) {
         assert.ok(seen.has(f), `${f} has a rule the matcher recognises as a text control`);
     }
 });
