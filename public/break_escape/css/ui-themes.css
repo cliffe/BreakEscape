@@ -752,7 +752,6 @@
 [data-ui-theme] .tutorial-prompt-modal,
 [data-ui-theme] .tutorial-panel,
 [data-ui-theme] .game-confirm-dialog,
-[data-ui-theme] .password-modal-content,
 [data-ui-theme] .modal-content,
 [data-ui-theme] .player-preferences-modal-content,
 [data-ui-theme] .game-menu-panel {
@@ -789,7 +788,6 @@
 [data-ui-theme] .tutorial-prompt-modal h2,
 [data-ui-theme] .tutorial-title,
 [data-ui-theme] .game-display-title,
-[data-ui-theme] .password-modal-title,
 [data-ui-theme] .modal-header,
 [data-ui-theme] .player-preferences-modal-content .modal-header h2,
 [data-ui-theme] .minigame-header {
@@ -856,7 +854,6 @@
 /* Form controls inside themed windows */
 [data-ui-theme] .game-menu-panel select,
 [data-ui-theme] #music-widget-panel .mw-select,
-[data-ui-theme] #password-modal-input,
 [data-ui-theme] .player-preferences-modal-content .form-control {
   background: var(--ui-surface-raised);
   color: var(--ui-text);
@@ -865,8 +862,7 @@
 }
 
 [data-ui-theme] .game-menu-panel select:focus,
-[data-ui-theme] #music-widget-panel .mw-select:focus,
-[data-ui-theme] #password-modal-input:focus {
+[data-ui-theme] #music-widget-panel .mw-select:focus {
   outline: none;
   border-color: var(--ui-accent);
 }
@@ -912,15 +908,12 @@
 [data-ui-theme] .tutorial-btn,
 [data-ui-theme] .tutorial-skip,
 [data-ui-theme] .game-confirm-btn,
-[data-ui-theme] .password-modal-button,
 [data-ui-theme] .modal-button,
 [data-ui-theme] .player-preferences-modal-content .btn,
 [data-ui-theme] #music-widget-panel .mw-btn,
 [data-ui-theme] #music-widget-panel .mw-takeover-btn,
 [data-ui-theme] .game-menu-item,
-[data-ui-theme] .game-menu-reset,
-[data-ui-theme] #password-modal-ok,
-[data-ui-theme] #password-modal-cancel {
+[data-ui-theme] .game-menu-reset {
   border-style: solid;
   border-width: var(--ui-button-px);
   border-image-source: var(--ui-button-image);
@@ -956,7 +949,6 @@
 [data-ui-theme] .tutorial-btn:hover,
 [data-ui-theme] .tutorial-skip:hover,
 [data-ui-theme] .game-confirm-btn:hover,
-[data-ui-theme] .password-modal-button:hover,
 [data-ui-theme] .modal-button:hover,
 [data-ui-theme] .player-preferences-modal-content .btn:hover,
 [data-ui-theme] #music-widget-panel .mw-btn:hover,
@@ -983,7 +975,6 @@
 /* Primary actions read in the accent colour; secondary ones are muted */
 [data-ui-theme] .tutorial-btn-primary,
 [data-ui-theme] .game-confirm-ok,
-[data-ui-theme] #password-modal-ok,
 [data-ui-theme] .modal-button.primary,
 [data-ui-theme] .player-preferences-modal-content .btn-primary,
 [data-ui-theme] .game-menu-item.active,
@@ -1004,7 +995,6 @@
 }
 
 [data-ui-theme] .tutorial-btn-secondary,
-[data-ui-theme] #password-modal-cancel,
 [data-ui-theme] .modal-button.secondary,
 [data-ui-theme] .player-preferences-modal-content .btn-secondary {
   color: var(--ui-text-dim);
@@ -1363,9 +1353,6 @@
 [data-ui-theme] .game-menu-close:focus-visible,
 [data-ui-theme] .game-menu-reset:focus-visible,
 [data-ui-theme] .modal-button:focus-visible,
-[data-ui-theme] .password-modal-button:focus-visible,
-[data-ui-theme] #password-modal-ok:focus-visible,
-[data-ui-theme] #password-modal-cancel:focus-visible,
 [data-ui-theme] .player-preferences-modal-content .btn:focus-visible,
 [data-ui-theme] #music-widget-panel .mw-btn:focus-visible,
 [data-ui-theme] #music-widget-panel .mw-takeover-btn:focus-visible,

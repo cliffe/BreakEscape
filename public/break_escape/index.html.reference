@@ -85,24 +85,6 @@
         </div>
     </div>
 
-    <!-- Password Modal -->
-    <div id="password-modal">
-        <div class="password-modal-content">
-            <div class="password-modal-title">
-                Enter Password
-            </div>
-            <input id="password-modal-input" type="password" autocomplete="off" autofocus>
-            <div class="password-modal-checkbox-container">
-                <input type="checkbox" id="password-modal-show">
-                <label for="password-modal-show" class="password-modal-checkbox-label">Show password</label>
-            </div>
-            <div class="password-modal-buttons">
-                <button id="password-modal-ok" class="password-modal-button">OK</button>
-                <button id="password-modal-cancel" class="password-modal-button">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Game JavaScript Module -->
     <script type="module" src="js/main.js?v=47"></script>
     

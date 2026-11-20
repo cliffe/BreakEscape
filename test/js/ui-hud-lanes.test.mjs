@@ -272,7 +272,7 @@ test('R1 M1: a dialog holds every bark until it closes, then they go in order', 
     window.getTutorialManager = () => ({ isPromptOpen: () => true });
     assert.equal(L.dialogLayerOpen(), true);
     window.getTutorialManager = undefined;
-    const hidden = add('<div id="password-modal" style="display: none"></div>');
+    const hidden = add('<div id="player-preferences-modal" style="display: none"></div>');
     assert.equal(L.dialogLayerOpen(), false, 'a closed modal does not hold');
     hidden.remove();
 });
@@ -294,7 +294,7 @@ test('R1 M1 CSS: both bark lanes sit under dialogs; speech sits under the phone'
     const c = css('npc-barks.css');
     const rule = c.match(/body:has\(([^)]*)\) :is\(#npc-bark-container, #npc-speech-container\) \{[^}]*z-index: 1390 !important;/);
     assert.ok(rule, 'dialog rule');
-    for (const sel of ['.tutorial-prompt-overlay', '.tutorial-overlay', '.game-confirm-overlay', '#game-menu-overlay.visible', '#password-modal', '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay']) {
+    for (const sel of ['.tutorial-prompt-overlay', '.tutorial-overlay', '.game-confirm-overlay', '#game-menu-overlay.visible', '#player-preferences-modal', '.ending-check-overlay', '.success-screen-overlay']) {
         assert.ok(rule[1].includes(sel), `${sel} in the CSS list`);
     }
     assert.match(c, /body:has\(\[data-minigame="phone-chat"\]\) #npc-speech-container \{[^}]*z-index: 1400 !important;/);
