@@ -385,7 +385,7 @@
 
 /* ── small screens: one column; the sites strip is a vertical list ── */
 @media (max-width: 700px) {
-    .osint-browser-game-container { width: 100vw; height: 100vh; border-width: 2px; }
+    .osint-browser-game-container { width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-width: 16px; }
     /* C-OB1: one sideways-scrolling tab row at narrow widths, not four full-width rows that
        push the page below the fold. */
     .ob-strip { flex-wrap: nowrap; overflow-x: auto; }
