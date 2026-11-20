@@ -140,7 +140,44 @@ test('X8: the shared window has one title bar with the X inside it, a 9-slice fr
     assert.match(sub, /font-size: 16px/);
     assert.match(rule('.console-titlebar > .minigame-close-button'), /position: relative/, 'the X is laid out in the bar');
     assert.match(rule('.minigame-container.minigame-console'), /padding: 8px/, 'phones: the whole window less 8px');
-    assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: 100%;/);
+    assert.match(fw, /@media \(max-width: 600px\), \(max-height: 500px\) \{\s*\.console-window \{\s*width: 100%;\s*height: auto;\s*max-height: 100%;\s*\}\s*\.console-window\.console-window-fill \{\s*height: 100%;/, 'phones: wrap scenes keep their content height, fill scenes take the full height');
+});
+
+// Pure scan so the mutation checks below can feed it altered CSS.
+export function consoleWindowFullHeightRules(sheet) {
+    const out = [];
+    for (const m of sheet.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const list = m[1].replace(/@media[^{]*$/, '').trim();
+        if (!/(^|[;\s])height:\s*100%/.test(m[2])) continue;
+        // Each selector in a list is judged on its own: `.console-window, .console-window-fill` still hits the wrap window.
+        for (const sel of list.split(',').map((x) => x.trim())) {
+            if (/\.console-window(?![\w-])/.test(sel) && !/\.console-window-fill/.test(sel)) out.push(sel);
+        }
+    }
+    return out;
+}
+
+test('X8: no rule except the fill pair gives .console-window height 100%, in any block or scene sheet', () => {
+    const fw = css('minigames-framework.css');
+    assert.deepEqual(consoleWindowFullHeightRules(fw), [], 'a wrap window keeps height auto on phones');
+    // The scan itself must catch the regression it guards against, in any later block.
+    const bad = fw + '\n@media (max-height: 500px) {\n .console-window {\n  height: 100%;\n }\n}\n';
+    assert.equal(consoleWindowFullHeightRules(bad).length, 1, 'a later phone block with height 100% is caught');
+    const listed = fw + '\n@media (max-width: 600px) {\n .console-window, .console-window.console-window-fill {\n  height: 100%;\n }\n}\n';
+    assert.ok(consoleWindowFullHeightRules(listed).length === 1, 'a selector list naming the wrap window and the fill window is caught');
+    assert.ok(consoleWindowFullHeightRules(fw + '\n@media (max-width: 600px) {\n .console-window.console-window-fill {\n  height: 100%;\n }\n}\n').length === 0, 'the fill rule alone passes');
+    assert.equal(consoleWindowFullHeightRules(fw.replace('.console-window.console-window-fill {\n        height: 100%;', '.console-window {\n        height: 100%;')).length, 1, 'the fill rule losing its class is caught');
+    for (const f of readdirSync(join(root, 'css')).filter((n) => n.endsWith('.css') && n !== 'minigames-framework.css')) {
+        assert.ok(!/\.console-window(?![\w-])/.test(css(f)), `${f} does not restyle .console-window`);
+    }
+});
+
+test('A9: the authenticator frame wraps its 420px card instead of standing 720px wide', () => {
+    const fw = css('minigames-framework.css');
+    const m = fw.match(/\.minigame-container\.minigame-framed\[data-minigame="authenticator"\]\s*>\s*\.minigame-game-container\s*\{([^}]*)\}/);
+    assert.ok(m, 'authenticator framed window rule exists');
+    assert.match(m[1], /width:\s*fit-content/, 'frame shrinks to the card');
+    assert.match(m[1], /max-width:\s*min\(720px, 96vw\)/, 'still capped by the shared frame width');
 });
 
 test('X8: the shared window title is escaped text and can be changed later', async () => {
