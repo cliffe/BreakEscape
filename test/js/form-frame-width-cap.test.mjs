@@ -7,7 +7,24 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 
-const DESKTOP = '@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1000px)';
+const FRAMEWORK = 'css/minigames-framework.css';
+
+// Evaluates a media condition at a viewport size: comma = or, ' and ' = and. Understands
+// (min|max)-(width|height): Npx and the range form; throws on any other feature.
+function mediaMatches(cond, w, h) {
+    const q = cond.replace(/^@media\s*/i, '').trim();
+    return q.split(',').some((clause) => clause.split(/\s+and\s+/i).every((f) => {
+        const t = f.trim().replace(/^only\s+screen\s*|^screen\s*/i, '');
+        if (t === '') return true;
+        let m = t.match(/^\(\s*(min|max)-(width|height)\s*:\s*([\d.]+)px\s*\)$/i);
+        if (m) { const v = m[2].toLowerCase() === 'width' ? w : h; return m[1].toLowerCase() === 'min' ? v >= +m[3] : v <= +m[3]; }
+        m = t.match(/^\(\s*(width|height)\s*(>=|<=|>|<)\s*([\d.]+)px\s*\)$/i);
+        if (m) { const v = m[1].toLowerCase() === 'width' ? w : h, n = +m[3]; return { '>=': v >= n, '<=': v <= n, '>': v > n, '<': v < n }[m[2]]; }
+        throw new Error('unparsed media feature: ' + t);
+    }));
+}
+const PHONES = [[390, 844], [844, 390], [915, 412], [932, 430], [956, 440], [997, 448]];
+const DESKTOPS = [[1024, 600], [1280, 500], [1280, 500.5], [1280, 720], [1920, 1080]];
 
 // Returns the condition text of the innermost @media block that encloses
 // character index `idx`, or '' when the rule sits at top level.
@@ -35,14 +52,17 @@ const cases = [
 ];
 
 for (const [file, cls, cap, jsFile] of cases) {
-    test(`${file}: ${cap}px cap applies only inside the desktop media query, phones keep full width`, () => {
-        const css = read(file);
-        const re = new RegExp('\\.' + cls + ' \\.console-window \\{ width: min\\((\\d+)px, 100%\\); \\}');
+    test(`${cls}: ${cap}px cap lives in the shared framework sheet (X8), applies at desktop sizes, phones keep full width`, () => {
+        assert.ok(!/\.console-window(?![\w-])/.test(read(file)), file + ' does not restyle .console-window');
+        const css = read(FRAMEWORK);
+        const re = new RegExp('\\.' + cls + ' \\.console-window(?:,\\s*\\.[\\w-]+ \\.console-window)*\\s*\\{ width: min\\((\\d+)px, 100%\\); \\}');
         const m = css.match(re);
         assert.ok(m !== null, 'cap rule present');
         assert.ok(Number(m[1]) === cap, 'cap is ' + cap);
         const media = enclosingMedia(css, m.index);
-        assert.ok(media === DESKTOP, 'rule sits inside ' + DESKTOP + ', found: "' + media + '"');
+        assert.ok(media !== '', 'rule is inside a media query, not top level');
+        for (const [w, h] of PHONES) assert.ok(mediaMatches(media, w, h) === false, `phone ${w}x${h} keeps full width`);
+        for (const [w, h] of DESKTOPS) assert.ok(mediaMatches(media, w, h) === true, `desktop ${w}x${h} gets the cap`);
     });
 
     test(`${jsFile} sets the ${cls} class on the scene container`, () => {

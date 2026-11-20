@@ -940,3 +940,12 @@ html .minigame-container .console-window > .console-body > * {
         padding-bottom: 2px;
     }
 }
+
+/* K4 B: form-like scenes wrap their content instead of spanning 1280px. The rule lives here, with the other
+   .console-window rules (X8), keyed on the scene class the scene JS puts on its container. Phones, in either
+   orientation, keep the full width: the condition only matches desktop-sized windows. */
+@media (min-width: 601px) and (min-height: 500.02px), (min-width: 1000px) {
+    .cf-minigame-container .console-window,
+    .ncsc-minigame-container .console-window { width: min(760px, 100%); }
+    .sis-threshold-minigame-container .console-window { width: min(800px, 100%); }
+}
