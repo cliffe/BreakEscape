@@ -1,11 +1,11 @@
 # m01 60 s trailer: avatar per take (v3 re-record, 2026-11-20)
 
-Set with `BE_SPRITE=<key> tools/video/takes/run-take.sh m01 <id> ...`. Edit order from `tools/video/edits/m01_trailer60.json` (v8.5). "Visible" = the player sprite can be seen on the map or in a minigame approach. No two adjacent visible shots share an avatar; the first visible shot (m_lights, ngozi_adeyemi) differs from m02's (vivian_ashby, m_ransom). Hood hackers once each.
+Set with `BE_SPRITE=<key> tools/video/takes/run-take.sh m01 <id> ...`. Edit order from `tools/video/edits/m01_trailer60.json` (v9). "Visible" = the player sprite can be seen on the map or in a minigame approach. No two adjacent visible shots share an avatar; the first visible shot (m_lights, ngozi_adeyemi) differs from m02's (vivian_ashby, m_ransom). Hood hackers once each.
 
 | Edit order | Shot | Take | Avatar | Visible |
 |---|---|---|---|---|
 | 1 | hax_hook | t10_hax_hook | male_hacker_hood_v2 | no (portrait) |
-| 2 | m_lights | t03_lights_on | ngozi_adeyemi | yes |
+| 2 | m_lights | t03b_lights_on (storage_closet) | ngozi_adeyemi | yes |
 | 3 | m_lockpick, cr_lockpick | t04_lockpick | daniel_seo | minigame |
 | 4 | m_phone, cr_phone | t05_phone | female_hacker_hood_v2 | yes (reception, before phone) |
 | 5 | m_keypad, cr_keypad | t06_keypad_v3 | lucia_moreno | minigame |
