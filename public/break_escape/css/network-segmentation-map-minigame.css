@@ -176,13 +176,13 @@
     overflow-y: auto;
     flex: 1;
     font-family: 'GNF', monospace;
-    font-size: 17px;
+    font-size: 16px;
 }
 
 .nsm-cons-intro {
     color: #aaaacc;
     margin-bottom: 14px;
-    line-height: 1.4;
+    line-height: 24px;
 }
 
 .nsm-warn-text {
@@ -209,8 +209,8 @@
     margin-bottom: 4px;
     border-left: 3px solid;
     position: relative;
-    line-height: 1.3;
-    font-size: 17px;
+    line-height: 24px;
+    font-size: 16px;
 }
 
 .nsm-cons-item::before {
@@ -218,7 +218,7 @@
     position: absolute;
     left: 5px;
     top: 5px;
-    font-size: 10px;
+    font-size: 16px;
 }
 
 .nsm-impact-high     { border-color: #cc2200; color: #ff8888; }
@@ -359,7 +359,7 @@
 .nsm-sever-hint {
     font-family: 'GNF', monospace;
     font-size: 16px;
-    line-height: 1.15;
+    line-height: 24px;
     color: #9aa0b8;
     flex: 0 1 560px;
     min-width: 0;
@@ -482,9 +482,9 @@
 
 .nsm-modal-body {
     font-family: 'GNF', monospace;
-    font-size: 20px;
+    font-size: 16px;
     color: #cccccc;
-    line-height: 1.6;
+    line-height: 26px;
     margin-bottom: 26px;
 }
 

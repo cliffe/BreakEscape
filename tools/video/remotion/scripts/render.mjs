@@ -15,6 +15,9 @@ try {
   await renderMedia({
     composition, serveUrl, inputProps, browserExecutable, outputLocation: out,
     codec: 'h264', crf: 14, pixelFormat: 'yuv420p', imageFormat: 'png', muted: true, concurrency: Math.max(1, Number(process.env.BE_CONCURRENCY) || 1), logLevel: 'error',
+    // The compositor's decoded-frame cache grows without a cap and was OOM-killed under the 6 GB node memory cap on the
+    // desktop host (m02 v2, frame 595). 1 GB keeps it well inside; BE_VIDEO_CACHE_MB overrides.
+    offthreadVideoCacheSizeInBytes: (Number(process.env.BE_VIDEO_CACHE_MB) || 1024) * 1024 * 1024,
     onProgress: ({ renderedFrames }) => { const p = Math.floor((renderedFrames / composition.durationInFrames) * 10); if (p !== last) { last = p; console.log(`  ${renderedFrames}/${composition.durationInFrames}`); } },
   });
 } finally { cleanupBundle(serveUrl); }

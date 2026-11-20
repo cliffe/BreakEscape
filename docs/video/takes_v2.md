@@ -1,3 +1,75 @@
+# v3 takes (2026-11-20, main 1f651abce, spy avatars)
+
+Frame check of the m01 re-records (footage `~/video-takes-local/m01/takes/<id>.trimmed.mkv`, 2 to 10 frames viewed per take, times are trimmed seconds). Avatars per `docs/video/edits/M01_TRAILER60_AVATARS.md`. A/V offsets are start/end in ms after correction. No secrets found: no code, password, flag value or post-it text appears inside any suggested window. Re-recorded and frame-checked 2026-11-20 (second pass): t04, t06, t14, t16, t23, t09_derek_v5. t03_lights_on is replaced by t03b_lights_on (storage_closet, row below, recorded 2026-11-20).
+
+Avatar check (2026-11-20, against the sprite sheets): lucia_moreno is a tan trench with a dark brown hat and long dark hair, frank_callahan a dark brown jacket with a yellow tie and a brown fedora, daniel_seo a tan trench with no hat. Both lucia and frank read as brown at game scale, but they are different outfits and no two adjacent player-visible shots share one: the visible-player shots in order are m_lights (ngozi, not yet recorded), m_phone (hood), kali_walk (frank), mb_sarah (vivian), mb_chair (marcus), mb_maya (harjit). t06 (lucia) shows its player only in the first 2 s, outside the m_keypad window, and t22 (frank) is a modal minigame, so the "brown trench" pair never sits next to itself on screen. `SPRITE_SWITCHED` is in each newgame log (t06 lucia_moreno, t22 frank_callahan, t04 daniel_seo, t23 frank_callahan, t09 marcus_hale). Earlier notes, silhouette only: t05 hood (female_hacker_hood_v2) fine, t08 and t18 turban (harjit_singh) fine, t21 grey trench and hat, t19 grey trench and hat, t07 dark suit. t06 (lucia_moreno) and t22 (frank_callahan) both show a brown trench and hat that look alike: compare against the sprite sheets before relying on "all eight spies used". Every run logs `sprite restored to "female_hacker_hood_v2"` after the take, so the override was applied during it.
+
+## Banner ("Incoming call", Agent HaX, Answer/Decline buttons)
+
+Fixed. `clearScreen` in `tools/video/takes/lib/lib.mjs` now closes the phone ringer (HaX's first call rings 6 s after first entering main_office_area). Proven on the re-records of t04, t06 and t14: frames at the start, through the minigame and after it show no banner (t04 at 1.5, 6.0 to 7.8, 9.5 and 11.5; t06 at 0.7, 2.0, 5.3 and 12.0; t14 at 0.8, 2.5, 6.6 and 7.4), and all three takes still run to their end marks (the closed ringer does not break them). The old banner notes applied to the first v3 recordings only. t05, t07, t08, t10 to t13, t16, t18, t19, t21, t22, t23, t09: none.
+
+## Rows
+
+| id | avatar | length s | drop % | A/V ms | key marks (trimmed s, frame-checked) | problems | suggested in/out and crop |
+|---|---|---|---|---|---|---|---|
+| t03b_lights_on | ngozi_adeyemi | 6.97 | 0.37 | -35/-35 | enter-room 1.66, lights-on:storage_closet 3.41 (frames: closet dark and door open 2.6 to 3.3, glow at the door 3.0, lit by 3.5), walk 4.32 to 4.71, linger-end 6.51 | none: no text, no banner, no HUD; storage safe and boxes only. Start `--start-room hallway_east --set briefing_played=true`, NPC-free motion room that starts dark | m_lights 2.25 to 3.75 (strike 1.16 s in) |
+| t04_lockpick | daniel_seo | 13.07 | 0.22 | -38/-68 | pin-set 2:4.33, 3:5.55, 4:6.48, 1:8.10 (labels follow the take's order; frames: all four pins lime from 6.4 to about 7.4, overset reset by 7.8), toast "Lock picked successfully" 9.5 (pins dark = reset), lock-open 10.81 | none: no banner at 1.5, 6.0 to 7.8, 9.5 or 11.5 (re-recorded 2026-11-20 with the ringer fix) | m_lockpick 6.4 to 7.4 (all four lime, no banner, no stopgap crop needed); cr_lockpick 6.85 to 7.35 as is |
+| t05_phone | female_hacker_hood_v2 | 12.07 | 0.7 | -60/-60 | choices 3.70, pick 5.10, HaX reply 7.2, reply choices 7.9, "What about Maya?" picked 8.87 | HUD, objectives and hearts visible in the reception frame 0.8 (not used by the edit); drop 0.7 is the highest of the passes | m_phone 7.2 to 8.7, crop (.5, .385, 1.3) as is. cr_phone 4.2 to 4.33 (choices "Got any general advice?" shown); 5.4 shows typing dots, do not use |
+| t06_keypad_v3 | lucia_moreno | 13.8 | 0.21 | -25/-43 | digit:1 4.23, digit:2 4.87 ("19__" at 5.3), digit:3 5.50 ("193_" from 5.5), back-off 7.11, closed 12.12 | none: banner gone at 0.7, 2.0, 5.3 and 12.0 (re-recorded with the ringer fix); player at 0.7 and 2.0 is a tan trench with a dark hat | m_keypad 5.3 to 6.8 shows 19 then 193; cr_keypad 4.25 to 4.52 (first digit lands 4.23, a hair earlier than the old 4.3 to 4.57) |
+| t07_terminal | vivian_ashby | 11.1 | 0.25 | -38/-22 | desktop-shown 3.08, "Server Access Log" icon visible 4.0 to 5.0, log opens 5.33 | the opened log (5.6 on) names Derek Lawson: identity reveal, keep out | cr_pc 4.4 to 4.63, crop (.5, .5, 1.4) fine |
+| t08_flag_station | harjit_singh | 14.8 | 0.2 | -38/-22 | terminal-open 3.46, typing 5.66 to 5.88 ("fla" 5.8), "flag{" in the field 6.0 to 7.0, cleared 7.43 | the panel is centred (x .36 to .64, y .30 to .70); the edit's crop (.3, .25, 1.6) points at the wrong place for this take | cr_flag 6.45 to 6.58, crop cx .5 cy .5 zoom 2.2 |
+| t10_hax_hook | male_hacker_hood_v2 (portrait) | 21.43 | 0.14 | -35/-37 | line 15.60 to 19.32 (3.72 s), subtitle visible from 15.7, mouth moves 16.8 and 18.0 | "Skip" button bottom right; none else | 16.8 to 19.8; crop as is |
+| t11_kevin_line | lucia_moreno (portrait) | 14.0 | 0.21 | -50/-48 | target 8.30 to 11.78 (3.48 s), subtitle correct at 8.26 | "Influence: Kevin Park" toast at 5.9 only (outside window) | 8.26 to 12.26 |
+| t12_maya_line | frank_callahan (portrait) | 33.1 | 0.09 | -25/-38 | target 27.49 to 30.89 | at 27.46 the subtitle is still the previous "Derek arranged it..." line, swaps by 27.50; dialogue fade band starts about 31.4 | 27.50 to 31.30 (3.8 s) |
+| t13_sarah_line | ngozi_adeyemi (portrait) | 21.77 | 0.14 | -73/-45 | target 15.41 to 19.54 | "Influence: Sarah O'Brien" toast visible 15.38 to about 16.5, gone by 19.5; next line's subtitle 20.0 | 16.55 to 19.90 (3.35 s, no toast) or keep 15.38 to 19.88 if the toast is accepted |
+| t14_cyberchef | daniel_seo | 11.67 | 0.25 | -35/-85 | workstation-open 1.67, loader 2.5, UI 4.0, ready 5.67, input pasted and output "Meet at the server room" 7.59 | none: no banner at 0.8, 2.5, 6.6 or 7.4 (re-recorded; first re-run failed A/V drift -18/-85 "drifting", second passed) | m_cyberchef 6.57 to 7.57 and cr_cyberchef 7.2 to 7.33, crop as before |
+| t16_walk_sarah | vivian_ashby | 6.9 | 0.37 | -50/-40 | walk-start 1.72, walk-end 3.23, take-end 6.45; player (navy suit, navy fedora) walks up from the seats, Sarah's desk enters from the top, her speech-bubble prompt at 3.5 | none: no banner, no HUD, no toast | mb_sarah 2.3 to 3.3 as is (player mid-walk, Sarah at the desk by 2.8) |
+| t18_walk_maya | harjit_singh | 9.57 | 0.29 | -58/-43 | room-entered 4.53, walk 5.45 to 6.10 | none; player is already beside Maya at 4.8 so the walk is short; a wall-fade overlay appears after 6.3 | 5.3 to 6.3 as is |
+| t23_walk_kali | frank_callahan | 5.43 | 0.45 | -38/-50 | walk-start 1.27, walk-end 2.07, launcher-open 2.95, linger-end 4.95 | none: server room lit, no banner or HUD; the launcher (from 2.95) shows "user: kali password: kali" on a post-it, keep it outside the window. First re-run failed (drop 1.27 % under a load average near 13); second passed | kali_walk 0.95 to 2.95 as is (walk 1.27 to 2.07, ends at the desk) |
+| t19_minigames | mei_lin_chow | 37.67 | 0.08 | -62/-82 | briefcase contents 2.9 to 3.2, key insertion 22.0 to 26.0 ("Key fits perfectly! Lock unlocked." 26.0), password 31.8 to 36.4, "...", 3 masked dots at 34.1 | the full lock frame shows "Door to Derek Lawson" (outside the crops); "Anniversary" post-it bottom-left of the password screen (y .93): keep out of the crop; briefcase panel is centred, not high | cr_briefcase 2.9 to 3.17, crop cx .5 cy .5 zoom 2.2 (edit's cy .22 is wrong). cr_key 23.9 to 24.4, crop cx .5 cy .64 zoom 2 (the pins sit at y .50 to .78). cr_password 34.3 to 34.53, crop cx .5 cy .5 zoom 3 (field at y .51; edit's cy .28 misses it) |
+| t21_walk_chair | marcus_hale | 5.6 | 0.44 | -35/-43 | contact 1.74, chair rolls aside by 2.0, player at the NW doorway 2.8 | none | 1.6 to 3.1 as is |
+| t09_derek_v5 | marcus_hale (portrait) | 67.47 | 0.05 | -37/-47 | derek_5 "Murder? No..." 31.33 to 38.39, derek_6 "Entropy is inevitable..." 56.41 to 65.12 (8.71 s); silence before "Security" 60.77 to 61.39 | the subtitle bar names "Derek Lawson" in the wide shot; "Skip" button bottom right. Failures fixed: the choice regex said "rationalizing", the ink now says "rationalising" (case-insensitive [sz]); and the first interact is swallowed (`no-effect-confirmed`), so the script retries up to 3 times (chat opens on the second, about 12 s in) | derek_wide 58.84 to 61.14 (was 49.54 to 51.84, +9.30), derek_close 61.14 to 65.34 (face crop, no UI). Wide shot shows the name bar: crop to cx .5 cy .4 zoom 1.3 if the name must be hidden |
+| t22_launch_device | frank_callahan | 7.13 | 0.37 | -37/-43 | device shown 1.63, modal steady 1.7 to 5.1, closed 5.88 | modal at y .36 to .64: the edit's crop (.5, .2, 2.5) shows only its top edge; overworld frames carry the HaX toast and HUD (do not use); dim ghost of the toast behind the modal | cr_launch 2.5 to 2.6, crop cx .5 cy .5 zoom 2.5 |
+
+## v3 edit windows
+
+Shot index = position in `shots` of `tools/video/edits/m01_trailer60.json` (0 is the open preset).
+
+| shot | take | old in/out | new in/out | crop | reason |
+|---|---|---|---|---|---|
+| 1 hax_hook | t10 | 19.665/22.665 | 16.80/19.80 | as is | re-record timing (line 15.60 to 19.32) |
+| 4 m_lockpick | t04 | 8.9/9.9 | 6.4/7.4 | as is | re-recorded: all four pins lime 6.4 to 7.4, no banner |
+| 5 m_phone | t05 | 7.4/8.9 | 7.2/8.7 | as is | reply timing |
+| 6 m_keypad | t06 | 5.3/6.8 | 5.3/6.8 | as is | re-recorded: 19 then 193, no banner |
+| 8 kali_walk | t23 | 0.95/2.95 | 0.95/2.95 | as is | re-recorded: walk 1.27 to 2.07, launcher (kali post-it) opens at 2.95 |
+| 10 m_cyberchef | t14 | 6.567/7.567 | 6.57/7.57 | as is | banner-free |
+| 12 npc_1 | t11 | 12.2/16.2 | 8.26/12.26 | as is | new take timing |
+| 13 npc_2 | t12 | 34.2/38.2 | 27.50/31.30 | as is | new take timing, subtitle swap, fade |
+| 14 npc_3 | t13 | 17.6/22.1 | 16.55/19.90 | as is | toast gone, next subtitle at 20.0 |
+| 16 mb_sarah | t16 | 2.3/3.3 | 2.3/3.3 | as is | re-recorded: walk 1.72 to 3.23, Sarah at the desk by 2.8 |
+| 17 mb_chair | t21 | 1.6/3.1 | 1.6/3.1 | as is | checked |
+| 18 mb_maya | t18 | 5.3/6.3 | 5.3/6.3 | as is | checked |
+| 20 cr_lockpick | t04 | 6.5/7.0 | 6.85/7.35 | as is | re-recorded: four pins lime 6.4 to 7.4 |
+| 21 cr_key | t19 | 23.9/24.4 | 23.9/24.4 | cx .5 cy .64 zoom 2 | pins at y .50 to .78 |
+| 22 cr_briefcase | t19 | 2.9/3.1667 | 2.9/3.1667 | cx .5 cy .5 zoom 2.2 | panel centred |
+| 23 cr_pc | t07 | 4.4/4.6333 | 4.4/4.6333 | as is | checked |
+| 24 cr_keypad | t06 | 4.62/4.8867 | 4.25/4.52 | as is | re-recorded: first digit lands 4.23 |
+| 25 cr_password | t19 | 34.3/34.5333 | 34.3/34.5333 | cx .5 cy .5 zoom 3 | field at y .51 |
+| 26 cr_cyberchef | t14 | 7.2/7.3333 | 7.2/7.3333 | as is | banner-free |
+| 27 cr_phone | t05 | 5.4/5.5333 | 4.20/4.33 | as is | 5.4 shows typing dots |
+| 28 cr_flag | t08 | 6.45/6.5833 | 6.45/6.5833 | cx .5 cy .5 zoom 2.2 | panel centred |
+| 29 cr_launch | t22 | 2.5/2.6 | 2.5/2.6 | cx .5 cy .5 zoom 2.5 | modal at y .36 to .64 |
+| 30 derek_wide | t09_derek_v5 | 49.54/51.84 | 58.84/61.14 | as is (name bar visible: or cx .5 cy .4 zoom 1.3) | re-recorded, line 56.41 to 65.12, silence before "Security" 60.77 to 61.39 |
+| 31 derek_close | t09_derek_v5 | 51.84/56.04 | 61.14/65.34 | as is (face crop) | line ends 65.12 |
+
+## Re-record
+
+Done 2026-11-20 (second pass): t04, t06, t14 (banner), t16, t23 (dropped frames), t09_derek_v5 (see its row). Open:
+
+- t03_lights_on: fails the same way on ngozi_adeyemi (games 11004, 11062) and mei_lin_chow (11064), so the sprite is not the cause. The run's error is `lights never came on` (the 11004 "window.__test never ready" was a separate flake). Cause: main_office_area is a motion-sensor room, and since office life put staff at desks in it, motion rooms with NPCs start lit (`startOn`, lighting.js header). `watchLights` only logs an off to on change, so no `lights-on` mark exists and the script throws; the office is lit when the door opens (frames 4.6 to 7.0). The "dark office strikes on" shot is gone from this room. Options: pick an NPC-free motion room (storage_closet, conference_room, kevin_office or the flickering hallway_west) and rewrite `t03_lights_on.mjs`, or ask for `startOn: false` on main_office_area (scenario edit, not mine).
+
+---
+
 # m01 trailer takes v2 (t10 to t18)
 
 Scripts in `tools/video/takes/m01/` (shared: `dlg.mjs` dialogue driver, `walklib.mjs` key-driven walking). Outputs in `video_out/m01/takes/` (git-ignored): `<id>.trimmed.mkv`, `<id>.trimmed.markers.json`, `<id>.check.json`, `<id>.contact.jpg`. All recorded with `--fps 30 --preset ultrafast --crf 14 --music 0` via `run-take.sh`, 1920x1080. All 9 pass check-take. Marker times below are in the trimmed file's own clock (`*.trimmed.markers.json`).
