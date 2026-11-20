@@ -78,6 +78,12 @@
     z-index: 10;
 }
 
+.scanner-panel .scan-toggle::after {
+    /* 24px box, 44px touch target: the pad reaches 10px past each edge */
+    content: '';
+    position: absolute;
+    inset: -12px; /* from the padding box (24px less the 2px border = 20px), so 20 + 24 = 44px */
+}
 .scanner-panel .scan-toggle:hover { background: var(--scan-accent-mid); }
 .scanner-panel .scan-toggle.expanded { transform: rotate(180deg); }
 
@@ -178,10 +184,16 @@
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
 }
 
 .scanner-panel .scan-chips > * {
+    box-sizing: border-box;
+    margin: 0; /* panels.css gives the category chips margin-right: 5px; the gap alone spaces them */
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 4px 10px;
     background: rgba(0, 0, 0, 0.3);
     border: 2px solid #555;
@@ -291,4 +303,11 @@
     .scanner-panel .scan-chips > * {
         padding: 4px 8px;
     }
+}
+
+/* A scanner is a minigame: objectives-panel.js already treats the HUD panel as off screen
+   (_onScreen), so it is hidden rather than left peeking round the frame. visibility keeps
+   its collapse state and scroll. */
+body:has(.minigame-container.scanner-panel) .objectives-panel {
+    visibility: hidden !important;
 }
