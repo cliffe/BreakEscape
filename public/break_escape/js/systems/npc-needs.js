@@ -105,6 +105,8 @@ export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this lo
 export const AVOID_RECHECK_MS = 1000;   // an avoid park re-checks whether the avoided NPC has left this often
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
 export const WAKE_STEP_MS = 500;      // ...plus this per parked NPC before it (id order), so they go one by one
+// A `no_source` park re-checks this often (ticks) whether a source for its need has registered since
+export const SOURCE_RECHECK_TICKS = 4;
 // Built-in needs that are environmental: the validator warns on `deferrable: false` for these
 export const ENVIRONMENTAL_NEEDS = Object.freeze(['caffeine', 'thirst', 'hunger', 'rest']);
 /** How long a chat line's bubble shows: 2.5 s + 50 ms per character, at most 4 s. */
@@ -449,6 +451,7 @@ export class NPCNeedsSystem {
         this._reachCache = null;
         this._selectSearched = false;
         this._knownRooms = new Set();
+        this._sourceCheckAt = 0;
         // Reveal slots set down at a target or shown as a cosmetic copy (slice 7): id -> clock ms
         // at which the engine stows (or removes) it. Client only; a reload stows on sight instead.
         this._placed = new Map();
@@ -1189,6 +1192,7 @@ export class NPCNeedsSystem {
         this.clockMs += NEEDS_TICK_MS;
         this._worldChanged();
         this._checkRooms();
+        if (this.tickCount >= this._sourceCheckAt) this._checkNewSources();
         if (this._placed.size) this._tickPlaced();
         if (this._prints.size) this._tickPrints();
         if (this._magnets.size) this._tickMagnets();
@@ -2045,6 +2049,9 @@ export class NPCNeedsSystem {
         if (why.targetId && (FAILURE_PARKS.includes(why.reason) || why.reason === 'avoid')) s.parked[name].targetId = why.targetId;
         if (why.wakeOn) s.parked[name].wakeOn = [...why.wakeOn];
         if (why.missing) s.parked[name].missing = why.missing.map(c => ({ ...c }));
+        // The sources known when it gave up: one that registers later (a reload evaluates needs
+        // before the room's objects, and a coordinate home never resolves late) wakes it early
+        if (why.reason === 'no_source') s.parked[name].srcIds = this._sourceIdsFor(name);
         s.levels[name] = clamp(n.urgentAt + 1, 0, 100);
         this._log(s.npcId, 'parked', { need: name, reason: why.reason, avoided: why.avoidedId || undefined, target: why.targetId || undefined, grumble: why.grumble || undefined });
         this._emit(`npc_need_parked:${s.npcId}`, {
@@ -2078,6 +2085,40 @@ export class NPCNeedsSystem {
             for (const name of names) {
                 const p = s.parked[name];
                 if (at < p.until) { p.until = at; p.woken = true; }
+            }
+        }
+    }
+
+    /** Ids of the loaded objects whose affordance satisfies `need`, sorted. */
+    _sourceIdsFor(need) {
+        return this._objects().filter(o => o.affordance && asList(o.affordance.satisfies).includes(need)).map(o => o.id).sort();
+    }
+
+    /**
+     * A `no_source` park whose need gained a source since it parked (an object registered after
+     * the need went urgent, as on a reload) retries soon instead of waiting out the defer, once
+     * per new source: a genuine no_source parks again with the new list. Every SOURCE_RECHECK_TICKS,
+     * and no object scan at all while nothing is parked `no_source`.
+     */
+    _checkNewSources() {
+        this._sourceCheckAt = this.tickCount + SOURCE_RECHECK_TICKS;
+        let any = false;
+        for (const s of this.states.values()) {
+            for (const n in s.parked) if (s.parked[n].reason === 'no_source') { any = true; break; }
+            if (any) break;
+        }
+        if (!any) return;
+        for (const id of [...this.states.keys()].sort()) {
+            const s = this.states.get(id);
+            for (const name of Object.keys(s.parked).sort()) {
+                const p = s.parked[name];
+                if (p.reason !== 'no_source' || !Array.isArray(p.srcIds)) continue;
+                const now = this._sourceIdsFor(name);
+                const fresh = now.filter(i => !p.srcIds.includes(i));
+                if (!fresh.length) continue;
+                p.srcIds = now;
+                this._log(s.npcId, 'source_appeared', { need: name, target: fresh[0] });
+                this._wakeParkedFor(s, [name]);
             }
         }
     }
