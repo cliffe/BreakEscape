@@ -11,6 +11,10 @@ import { readFileSync } from 'node:fs';
 import { resolveAffordance, setOfficePresetTable } from '../../public/break_escape/js/systems/office-presets.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
+// A command-line -r (or -rjson) loads before the -rbundler/setup that `bundle exec` puts in
+// RUBYOPT, so it activates the default json gem and Bundler then refuses the locked one
+// (Gem::LoadError, CI node-tests). These children need only stdlib: run them without Bundler.
+const PLAIN_RUBY_ENV = { ...process.env, RUBYOPT: (process.env.RUBYOPT || '').replace(/-r\S*bundler\/setup\S*/g, '').trim() };
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 const TABLE = JSON.parse(readFileSync(join(root, 'public/break_escape/js/data/office-presets.json'), 'utf8'));
@@ -82,7 +86,7 @@ test('the Ruby and JS resolvers agree on a mixed set', { skip }, () => {
 });
 
 test('test_needs_sims: no needs error, and every preset object is listed', { skip }, () => {
-    const r = spawnSync('ruby', ['-r', join(root, 'lib/break_escape/scenario_binding.rb'), '-e', `print BreakEscape::ScenarioBinding.render(File.read(${JSON.stringify(join(root, 'scenarios/test_needs_sims/scenario.json.erb'))}))`], { encoding: 'utf8' });
+    const r = spawnSync('ruby', ['-r', join(root, 'lib/break_escape/scenario_binding.rb'), '-e', `print BreakEscape::ScenarioBinding.render(File.read(${JSON.stringify(join(root, 'scenarios/test_needs_sims/scenario.json.erb'))}))`], { env: PLAIN_RUBY_ENV, encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
     const sims = JSON.parse(r.stdout);
     const issues = check(sims);

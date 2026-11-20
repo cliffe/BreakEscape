@@ -12,6 +12,10 @@ import { spawnSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
+// A command-line -r (or -rjson) loads before the -rbundler/setup that `bundle exec` puts in
+// RUBYOPT, so it activates the default json gem and Bundler then refuses the locked one
+// (Gem::LoadError, CI node-tests). These children need only stdlib: run them without Bundler.
+const PLAIN_RUBY_ENV = { ...process.env, RUBYOPT: (process.env.RUBYOPT || '').replace(/-r\S*bundler\/setup\S*/g, '').trim() };
 const require = createRequire(import.meta.url);
 const { createVmSteps, lastJsonLine } = require(join(root, '.claude/skills/playtest-scenario/scripts/vm-steps.js'));
 
@@ -123,7 +127,7 @@ function verify(logLines, flags) {
   const log = join(dir, 'session.jsonl');
   writeFileSync(log, logLines.map(l => JSON.stringify(l)).join('\n') + '\n');
   const r = spawnSync('ruby', ['-r', join(here, 'fixtures', 'verify-run-stub.rb'), join(root, 'tools/playtest/verify-run.rb'), '--log', log, '1'],
-    { env: { ...process.env, STUB_FLAGS: flags }, encoding: 'utf8' });
+    { env: { ...PLAIN_RUBY_ENV, STUB_FLAGS: flags }, encoding: 'utf8' });
   return { status: r.status, out: r.stdout + r.stderr };
 }
 
