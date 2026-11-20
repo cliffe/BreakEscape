@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const css = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'break_escape', 'css');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'break_escape');
 const read = (f) => readFileSync(join(css, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
 function rule(src, selector) {
@@ -19,28 +20,70 @@ function rule(src, selector) {
     return out;
 }
 
-test('lpb-game-container background is opaque (invalid and captures states share it)', () => {
-    const decls = rule(read('landing-page-builder-minigame.css'), '.lpb-game-container');
-    const withBg = decls.filter((d) => /(^|[;\s])background(-color)?:/.test(d));
+// Flat list of {sel, body} for every rule, including those inside @media blocks
+function allRules(src) {
+    const out = [];
+    const re = /([^{}]+)\{([^{}]*)\}/g;
+    let m;
+    while ((m = re.exec(src))) out.push({ sel: m[1].trim(), body: m[2] });
+    return out;
+}
+
+// The text between the braces of the block that opens with exactly `header`, by brace depth
+function mediaBlock(src, header) {
+    const i = src.indexOf(header + ' {');
+    if (i < 0) return null;
+    let depth = 0;
+    const open = src.indexOf('{', i);
+    for (let k = open; k < src.length; k++) {
+        if (src[k] === '{') depth++;
+        else if (src[k] === '}' && --depth === 0) return src.slice(open + 1, k);
+    }
+    return null;
+}
+
+test('every .lpb-game-container rule that sets a background is opaque (scene, invalid, captures)', () => {
+    const rules = allRules(read('landing-page-builder-minigame.css')).filter((r) =>
+        r.sel.split(',').some((s) => /\.lpb-game-container$/.test(s.trim())));
+    assert.ok(rules.length >= 1, 'a .lpb-game-container rule exists');
+    const withBg = rules.filter((r) => /(^|[;\s])background(-color)?\s*:/.test(r.body));
     assert.ok(withBg.length >= 1, 'a .lpb-game-container rule sets a background');
-    assert.ok(withBg.every((d) => !/rgba/.test(d)), 'no rgba background in any rule');
-    const bg = /background:\s*([^;]+);/.exec(withBg[0]);
-    assert.ok(!!bg, 'has a background');
-    assert.ok(/--ui-surface-opaque/.test(bg[1]), 'uses --ui-surface-opaque');
-    assert.ok(!/rgba|--ui-surface,/.test(bg[1]), 'no translucent colour: ' + bg[1]);
+    for (const r of withBg) {
+        const bg = /(?:^|[;\s])background(?:-color)?\s*:\s*([^;]+)/.exec(r.body)[1];
+        assert.ok(/--ui-surface-opaque/.test(bg), `${r.sel} uses --ui-surface-opaque: ${bg}`);
+        assert.ok(!/rgba|hsla|--ui-surface\b(?!-opaque)|transparent/.test(bg), `${r.sel} has no translucent colour: ${bg}`);
+    }
 });
 
-test('concern form short landscape: Start sticks to the stage bottom', () => {
+test('concern form short landscape: exact 500px block tightens the panel and the footer', () => {
     const src = read('concern-form-minigame.css');
-    const i = src.indexOf('@media (max-height: 500px)');
-    assert.ok(i >= 0, 'has a max-height 500px block');
-    const block = src.slice(i);
-    const start = /\.cf-intro \.cf-start\s*\{([^}]*)\}/.exec(block);
-    assert.ok(!!start, 'rule for .cf-intro .cf-start');
-    assert.ok(/position:\s*sticky/.test(start[1]), 'sticky');
-    assert.ok(/bottom:\s*\d+px/.test(start[1]), 'bottom offset');
+    const block = mediaBlock(src, '@media (max-height: 500px)');
+    assert.ok(block !== null, 'has an @media (max-height: 500px) block with no extra conditions');
     assert.ok(!/font-size/.test(block), 'no font-size in the short-landscape block');
     assert.ok(/\.cf-panel\s*\{[^}]*max-width:\s*none/.test(block), 'panel uses the full width');
+    assert.ok(/\.cf-foot\s*\{[^}]*padding/.test(block), 'footer padding is tightened');
+});
+
+test('concern form: Start is never positioned over the copy (no position or bottom offset on .cf-start)', () => {
+    const rules = allRules(read('concern-form-minigame.css'));
+    for (const r of rules.filter((x) => /cf-start|cf-foot|cf-button/.test(x.sel))) {
+        assert.ok(!/(^|[;\s])(position|bottom|top|inset)\s*:/.test(r.body), `${r.sel} must not position the button: ${r.body.trim()}`);
+    }
+    const foot = rules.find((r) => r.sel === '.cf-foot');
+    assert.ok(!!foot, '.cf-foot rule');
+    assert.ok(/flex:\s*none/.test(foot.body), 'footer does not shrink or scroll');
+    assert.ok(/background-color:\s*var\(--cf-surface\)/.test(foot.body), 'footer paints an opaque surface');
+    assert.ok(!/(^|[;\s])overflow/.test(foot.body), 'footer is not a scroller');
+    const stage = rules.find((r) => r.sel === '.cf-stage');
+    assert.ok(/overflow-y:\s*auto/.test(stage.body), 'the stage is the scroller');
+});
+
+test('concern form JS: Start goes in the footer outside the stage, the footer is a sibling of the stage', () => {
+    const js = readFileSync(join(root, 'js', 'minigames', 'concern-form', 'concern-form-minigame.js'), 'utf8');
+    assert.ok(/this\.footEl\.appendChild\(start\)/.test(js), 'start is appended to footEl');
+    assert.ok(!/this\.stageEl\.appendChild\(start\)|p\.appendChild\(start\)/.test(js), 'start is not inside the stage panel');
+    assert.ok(/root\.appendChild\(this\.stageEl\);\s*[\s\S]{0,300}root\.appendChild\(this\.footEl\)/.test(js), 'footEl follows stageEl under the root');
+    assert.ok(/this\.footEl\)\s*this\.footEl\.textContent\s*=\s*''/.test(js), 'footer is cleared on each step');
 });
 
 test('concern form: the min-height 44px touch target is untouched', () => {
