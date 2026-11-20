@@ -11,7 +11,7 @@
 // Run with: node test/js/office-kit-quiet-and-stub.test.mjs
 // Assertions are boolean (assert.ok(a === b)) by house rule.
 
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -106,7 +106,7 @@ const STUBS = [
     { person: 'agnieszka_duda', npcId: 'kit_agnieszka_duda' }
 ];
 
-async function openStub({ person, npcId }, globals) {
+async function openStub({ person, npcId }, globals, knot = 'start') {
     const sc = loadShell('test_ca_office_kit');
     window.gameScenario = { globalVariables: sc.globalVariables };
     window.gameState = { globalVariables: { ...sc.globalVariables, ...globals } };
@@ -116,7 +116,7 @@ async function openStub({ person, npcId }, globals) {
     conv.observeGlobals = false;
     const json = JSON.parse(readFileSync(join(root, `scenarios/_office_kit/ink/${person}_ambient.json`), 'utf8').replace(/^﻿/, ''));
     assert.ok((await conv.loadStory(json)) === true);
-    conv.goToKnot('start');
+    conv.goToKnot(knot);
     // As person-chat does after goToKnot: the declared globals go into the story
     stateManager.declaredGlobalNames = null;
     stateManager.syncGlobalVariablesToStory(conv.engine.story);
@@ -156,6 +156,127 @@ for (const stub of STUBS) {
         assert.ok(r.choices.length === 1);
     });
 }
+
+// ---- stub ink for EVERY shared *_ambient.ink (wave 2, WAVE2_BUILD.md 2.8) ----
+// Parameterised over the folder, so a person added later is covered with no edit here. A row-driven case
+// reads episodes.json, so a row that is not there yet is not visited.
+const AW = join(root, 'planning_notes/phishing_and_social_engineering/awareness');
+const INK_DIR = join(root, 'scenarios/_office_kit/ink');
+const kitStaff = {};   // person key -> kit record, from every company kit
+for (const f of readdirSync(join(AW, 'office_kits')).filter(f => f.endsWith('.json') && f !== 'episodes.json')) {
+    const kit = JSON.parse(readFileSync(join(AW, 'office_kits', f), 'utf8'));
+    for (const [p, rec] of Object.entries(kit.staff || {})) kitStaff[p] = rec;
+}
+const rows = JSON.parse(readFileSync(join(AW, 'office_kits/episodes.json'), 'utf8')).episodes.filter(r => r.tier && r.tier !== 'none');
+const AMBIENT = readdirSync(INK_DIR).filter(f => f.endsWith('_ambient.ink')).map(f => f.replace(/_ambient\.ink$/, '')).sort();
+const inkOf = person => readFileSync(join(INK_DIR, `${person}_ambient.ink`), 'utf8');
+const knotNames = ink => [...ink.matchAll(/^===\s*([A-Za-z0-9_]+)\s*===/gm)].map(m => m[1]);
+const episodeKnots = ink => knotNames(ink).filter(k => /^ca\d\d$/.test(k));   // ca12_screen and kit_e1_* are not stubs
+const stripComments = ink => ink.split('\n').map(l => l.replace(/\/\/.*$/, '')).join('\n');
+const SEE_YOU = 'See you later.';
+
+// Continue to the first choice list; the stub must show a line and not report the story ended.
+function firstChoices(conv) {
+    const texts = [];
+    for (let i = 0; i < 8; i++) {
+        const r = conv.continue();
+        if (typeof r.text === 'string' && r.text.trim()) texts.push(r.text.trim());
+        assert.ok(r.hasEnded === false, `reported the story ended after "${texts.join(' ')}"`);
+        if (r.choices.length > 0) return { text: texts.join(' '), choices: r.choices };
+    }
+    throw new Error('no choices after 8 continues');
+}
+const choiceText = c => (typeof c === 'string' ? c : c.text);
+// Take the sticky exit and check the conversation ends with #exit_conversation
+function exitThroughSeeYou(conv, choices, label) {
+    const idx = choices.findIndex(c => choiceText(c).trim() === SEE_YOU);
+    assert.ok(idx >= 0, `${label}: no sticky "${SEE_YOU}" among ${JSON.stringify(choices.map(choiceText))}`);
+    conv.engine.choose(idx);
+    let end = conv.continue();
+    for (let i = 0; i < 4 && !end.hasEnded; i++) end = conv.continue();
+    assert.ok(end.hasEnded === true, `${label}: did not end after the exit choice`);
+    assert.ok(end.tags.some(t => t.trim() === 'exit_conversation'), `${label}: exit choice has no #exit_conversation`);
+}
+
+for (const person of AMBIENT) {
+    const stub = { person, npcId: `kit_${person}` };
+    const ink = inkOf(person);
+    const eps = episodeKnots(ink);
+
+    test(`${person}: the committed .json loads and start opens on a line with the sticky exit`, async () => {
+        assert.ok(existsSync(join(INK_DIR, `${person}_ambient.json`)), `${person}_ambient.json is committed beside the ink`);
+        const conv = await openStub(stub, { kit_defend_done: false });
+        const { text, choices } = firstChoices(conv);
+        assert.ok(text.length > 0);
+        exitThroughSeeYou(conv, choices, `${person} start`);
+    });
+
+    test(`${person}: every ink line's speaker prefix is the kit displayName; no state-writing tag`, () => {
+        const body = stripComments(ink);
+        const tags = [...body.matchAll(/#\s*([A-Za-z_]+)/g)].map(m => m[1]);
+        // allow-list: a stub writes no state, so no #set_global, #give_item, #unlock_* or the like
+        assert.ok(tags.every(t => t === 'exit_conversation' || t === 'speaker'), `${person}: tags ${JSON.stringify([...new Set(tags)])}`);
+        const speakers = new Set();
+        for (const line of body.split('\n')) {
+            const m = line.match(/^\s*(?:-\s*)?([A-Z][A-Za-z'’.\- ]*):\s+\S/);
+            if (m && !/^\s*[+*~{]|->|^\s*VAR\b/.test(line)) speakers.add(m[1]);
+        }
+        if (kitStaff[person]) {
+            assert.ok(speakers.size > 0, `${person}: no speaker line found`);
+            for (const sp of speakers) assert.ok(sp === kitStaff[person].displayName, `${person}: speaker "${sp}" is not "${kitStaff[person].displayName}"`);
+        }
+    });
+
+    test(`${person}: start diverts on kit_defend_done and kit_ep to each episode knot, and each knot ends on the sticky exit`, async () => {
+        const startBody = knotBody(ink, 'start');
+        assert.ok(startBody !== null);
+        for (const ep of eps) {
+            assert.ok(/kit_defend_done/.test(startBody) && startBody.includes(`kit_ep == "${ep}"`), `${person}: start does not divert on kit_defend_done and kit_ep == "${ep}"`);
+            for (const kc of [true, false]) {
+                const g = { kit_defend_done: true, kit_ep: ep, kit_key_caught: kc };
+                const startConv = await openStub(stub, g);
+                const viaStart = firstChoices(startConv);
+                const direct = firstChoices(await openStub(stub, g, ep));
+                assert.ok(viaStart.text === direct.text, `${person} ${ep} key ${kc}: start shows "${viaStart.text}", the knot shows "${direct.text}"`);
+                exitThroughSeeYou(startConv, viaStart.choices, `${person} ${ep} key ${kc}`);
+            }
+        }
+    });
+}
+
+function knotBody(ink, name) {
+    const m = ink.match(new RegExp(`^===\\s*${name}\\s*===\\s*$([\\s\\S]*?)(?=^===|(?![\\s\\S]))`, 'm'));
+    return m ? m[1] : null;
+}
+
+test('every person a row names has a knot for that row\'s episode (Chidi in ca17 excepted)', () => {
+    for (const r of rows) {
+        const knot = r.stub || r.ep;
+        for (const person of r.ambient || []) {
+            if (r.ep === 'ca17' && person === 'chidi_okeke') continue;   // Fatima carries the one ca17 stub knot (4.1)
+            assert.ok(existsSync(join(INK_DIR, `${person}_ambient.ink`)), `${r.id}: ${person}_ambient.ink does not exist`);
+            assert.ok(knotNames(inkOf(person)).includes(knot), `${r.id}: ${person} has no knot "${knot}"`);
+        }
+    }
+});
+
+test('ca00 knots open directly: a line, the sticky exit, no branch on the result', async () => {
+    const people = AMBIENT.filter(p => knotNames(inkOf(p)).includes('ca00'));
+    for (const r of rows.filter(x => x.convention === true)) {
+        for (const p of r.ambient) assert.ok(people.includes(p), `${r.id}: ${p} has no ca00 knot`);
+    }
+    for (const person of people) {
+        const body = knotBody(inkOf(person), 'ca00');
+        assert.ok(!/kit_key_caught|kit_defend_done|kit_ep/.test(body), `${person}: the ca00 knot branches`);
+        const stub = { person, npcId: `kit_${person}` };
+        // the same line whatever the globals say: it is opened directly by currentKnot, not diverted to
+        const conv = await openStub(stub, { kit_defend_done: false }, 'ca00');
+        const a = firstChoices(conv);
+        const b = firstChoices(await openStub(stub, { kit_defend_done: true, kit_ep: 'ca00', kit_key_caught: true }, 'ca00'));
+        assert.ok(a.text.length > 0 && a.text === b.text, `${person}: ca00 text differs with state`);
+        exitThroughSeeYou(conv, a.choices, `${person} ca00`);
+    }
+});
 
 // ---- host (Adaeze) layer-2 line is a three-way branch (R3 F1 + R4) ----
 // kit_key_caught (did the learner catch the fraud email) gates the outer branch; kit_caught (>= 85%)
