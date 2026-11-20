@@ -400,9 +400,10 @@
   }
 }
 
-/* Hide panel during certain game states */
-.objectives-panel.hidden,
-.minigame-active .objectives-panel {
+/* Hide panel during certain game states. (A `.minigame-active .objectives-panel` selector was
+   removed: nothing ever adds minigame-active to any element; objectives-panel.js hides the pill
+   through MinigameFramework.currentMinigame.) */
+.objectives-panel.hidden {
   display: none !important;
 }
 

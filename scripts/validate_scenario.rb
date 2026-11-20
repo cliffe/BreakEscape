@@ -907,9 +907,36 @@ def check_unknown_fields(json_data)
     {}
   end
 
+  # Alarm-panel lamps name CSS classes; the SVG fill comes from alarm-panel-minigame.css. A class with
+  # no `fill:#hex` rule paints the lamp black. A two-state lamp with no class falls back in the
+  # engine, so only a class that is named and undefined is flagged.
+  alarm_css_path = File.expand_path('../public/break_escape/css/alarm-panel-minigame.css', __dir__)
+  alarm_css = File.exist?(alarm_css_path) ? File.read(alarm_css_path) : nil
+  check_alarm_lamps = lambda do |md, path|
+    next unless alarm_css && md['lamps'].is_a?(Array)
+
+    md['lamps'].each_with_index do |lamp, li|
+      next unless lamp.is_a?(Hash)
+
+      named = [['onClass', lamp['onClass']], ['offClass', lamp['offClass']]]
+      (lamp['states'].is_a?(Array) ? lamp['states'] : []).each_with_index do |st, si|
+        named << ["states[#{si}]/cssClass", st['cssClass']] if st.is_a?(Hash)
+      end
+      named.each do |field, cls|
+        next unless cls.is_a?(String) && cls =~ /\A[A-Za-z][\w-]*\z/
+        next if alarm_css.match?(/\.#{Regexp.escape(cls)}\s*\{[^}]*fill:\s*#[0-9a-fA-F]{3,8}/)
+
+        warnings << "⚠️ WARNING: '#{path}/minigameData/lamps[#{li}](#{lamp['label'] || lamp['variable'] || '?'})' #{field} names class '#{cls}', " \
+                    "which has no fill rule in alarm-panel-minigame.css, so the lamp paints black. Add the rule or use an existing class."
+      end
+    end
+  end
+
   check_minigame_data = lambda do |obj, path|
     md = obj['minigameData']
     return unless md.is_a?(Hash)
+
+    check_alarm_lamps.call(md, path)
 
     # Every layer that reads minigameData has its own schema, and an object can hit
     # several: a locked 'pc' (type: the requiresGlobal gate) with lockType
