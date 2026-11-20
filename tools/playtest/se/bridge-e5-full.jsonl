@@ -1,6 +1,6 @@
 {"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
 {"cmd": "note", "message": "RUN"}
-{"cmd": "eval", "fn": "() => { const g = window.gameState.globalVariables; const s = g.episode_e5_signin_pages_state; return !window.MinigameFramework.currentMinigame && s && typeof s==='object' && Object.keys(s).length===0 && g.episode_e5_signin_pages_defend_done===false && g.phish_sso_staff_landed===false; }"}
+{"cmd": "eval", "fn": "() => { const g = window.gameState.globalVariables; const s = g.episode_e5_signin_pages_state; return !window.MinigameFramework.currentMinigame && s && typeof s==='object' && Object.keys(s).length===0 && g.episode_e5_signin_pages_defend_complete===false && g.phish_sso_staff_landed===false; }"}
 {"cmd": "moveToNear", "id": "training_kiosk"}
 {"cmd": "interact", "id": "training_kiosk"}
 {"cmd": "waitFor", "kind": "minigame", "id": "episode-runner", "timeoutMs": 20000}
@@ -30,11 +30,11 @@
 {"cmd": "eval", "fn": "() => !!window.__triageDiag && window.__triageDiag.step==='result' && window.__triageDiag.total===5"}
 {"cmd": "eval", "fn": "async () => {\n  const W = window; const sleep = ms => new Promise(r=>setTimeout(r,ms));\n  const mg = () => W.MinigameFramework.currentMinigame; const C = () => mg() && mg().container;\n  const q = s => C() && C().querySelector(s);\n  const end = Date.now() + 60000;\n  while (Date.now() < end) { const f = q('.tri-finish'); if (f && !f.disabled) { f.click(); return true; } await sleep(150); }\n  return false;\n}"}
 {"cmd": "waitFor", "kind": "condition", "fn": "() => { const mg = window.MinigameFramework.currentMinigame; if (!mg || mg.constructor.name !== 'EpisodeRunnerMinigame' || typeof mg.getTestState !== 'function') return false; const s = mg.getTestState(); return !!(s && s.episode); }", "timeoutMs": 60000}
-{"cmd": "waitFor", "kind": "global", "name": "episode_e5_signin_pages_defend_done", "expected": true, "timeoutMs": 20000}
-{"cmd": "eval", "fn": "() => { const W=window; const mg=W.MinigameFramework.currentMinigame; const C=mg.container; const ep=mg.getTestState().episode; const g=W.gameState.globalVariables; const recs=g.se_awareness_records; const hasRec=(Array.isArray(recs)?recs.length:Object.keys(recs||{}).length)>=1; return ep.stage==='debrief' && ep.done.includes('defend') && g.episode_e5_signin_pages_defend_done===true && !!C.querySelector('.aw-monday') && hasRec; }"}
+{"cmd": "waitFor", "kind": "global", "name": "episode_e5_signin_pages_defend_complete", "expected": true, "timeoutMs": 20000}
+{"cmd": "eval", "fn": "() => { const W=window; const mg=W.MinigameFramework.currentMinigame; const C=mg.container; const ep=mg.getTestState().episode; const g=W.gameState.globalVariables; const recs=g.se_awareness_records; const hasRec=(Array.isArray(recs)?recs.length:Object.keys(recs||{}).length)>=1; return ep.stage==='debrief' && ep.done.includes('defend') && g.episode_e5_signin_pages_defend_complete===true && !!C.querySelector('.aw-monday') && hasRec; }"}
 {"cmd": "eval", "fn": "async () => { const C=window.MinigameFramework.currentMinigame.container; C.querySelector('.aw-finish').click(); await new Promise(r=>setTimeout(r,300)); return true; }"}
 {"cmd": "waitFor", "kind": "task", "id": "check_signin_pages", "timeoutMs": 20000}
-{"cmd": "eval", "fn": "() => { const t=window.__test; const g=window.gameState.globalVariables; const log=t.peekLog(3000); let i=-1; log.forEach((e,j)=>{ if(e.kind==='note'&&e.message==='RUN') i=j; }); const after=log.slice(i+1).filter(e=>e.kind==='event'); const failed=after.some(e=>e.event==='minigame_failed'&&e.data&&e.data.minigameName==='EpisodeRunnerMinigame'); const mg=window.MinigameFramework.currentMinigame; const closedOrFinished=!mg||mg.getTestState().episode.stage===null; return g.episode_e5_signin_pages_defend_done===true && !failed && closedOrFinished; }"}
+{"cmd": "eval", "fn": "() => { const t=window.__test; const g=window.gameState.globalVariables; const log=t.peekLog(3000); let i=-1; log.forEach((e,j)=>{ if(e.kind==='note'&&e.message==='RUN') i=j; }); const after=log.slice(i+1).filter(e=>e.kind==='event'); const failed=after.some(e=>e.event==='minigame_failed'&&e.data&&e.data.minigameName==='EpisodeRunnerMinigame'); const mg=window.MinigameFramework.currentMinigame; const closedOrFinished=!mg||mg.getTestState().episode.stage===null; return g.episode_e5_signin_pages_defend_complete===true && !failed && closedOrFinished; }"}
 {"cmd": "sync"}
 {"cmd": "drain"}
 {"cmd": "quit"}
