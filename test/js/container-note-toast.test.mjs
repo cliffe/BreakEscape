@@ -205,3 +205,21 @@ test('a normal item take keeps its in-window message and raises no note toast', 
     assert.ok(msgs.includes('Added Brass Key to inventory'), `message kept: ${msgs.join('|')}`);
     assert.ok(alerts.every(a => !/your notes/.test(a[0])), 'no note toast for a key');
 });
+
+test('m4: a takeable notes item with no viewer route (not readable) goes to the Notepad, not nowhere', async () => {
+    setup();
+    const added = [];
+    window.addNote = (t, b, imp) => { added.push([t, b, imp]); return true; };
+    const memo = { type: 'notes', id: 'm1', name: 'Torn Memo', takeable: true, readable: false, text: 'Meet at six' };
+    window.fetch = globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ contents: [{ ...memo }] }) });
+    const mg = new ContainerMinigame(document.getElementById('mg'), {
+        title: 'Floor Safe', containerItem: SAFE(), contents: [{ ...memo }], isTakeable: false });
+    window.MinigameFramework = { currentMinigame: mg, endMinigame() {} };
+    await mg.init();
+    document.querySelector('.container-content-slot').querySelector('img, .container-content-item').click();
+    await new Promise(r => setTimeout(r, 50));
+    delete window.addNote;
+    assert.ok(added.length === 1 && added[0][0] === 'Torn Memo' && added[0][1] === 'Meet at six', `notepad add: ${JSON.stringify(added)}`);
+    const msgs = [...document.querySelectorAll('.container-message')].map(m => m.textContent);
+    assert.ok(msgs.includes('Added "Torn Memo" to your notes.'), `message: ${msgs.join('|')}`);
+});
