@@ -504,10 +504,14 @@
         justify-content: flex-start;
     }
 
+    /* The frame's own 20px margin plus height 100% would run it 40px past the shell and push the
+       feedback box off the foot of the window: 8px each side, and the height less both */
     .minigame-container.lockpicking-side > .minigame-game-container {
         flex: 1 1 0;
         width: auto;
         min-width: 0;
+        height: calc(100% - 16px);
+        margin: 8px auto;
     }
 }
 
