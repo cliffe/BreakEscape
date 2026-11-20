@@ -77,8 +77,17 @@ test('touch: floating panel scrolls inside the viewport; the menu page resets it
     const frames = [...themes.matchAll(/--ui-frame-px:\s*(\d+)px/g)].map((m) => +m[1]);
     const widest = Math.max(...frames);
     assert.ok(widest === 28, 'widest frame is 28px (update if themes change)');
-    for (const H of [390, 360]) {
-        assert.ok(82 + 2 * widest + (H - 90 - 2 * widest) <= H, `panel ends inside a ${H}px viewport`);
+    // Pin the exact caps, then do the sum with the reserve and frame count read from the CSS
+    assert.ok(caps[0] === 'calc(100vh / var(--hud-zoom, 1) - 90px - 2 * var(--ui-frame-px, 2px))', 'vh cap: ' + caps[0]);
+    assert.ok(caps[1] === 'calc(100dvh / var(--hud-zoom, 1) - 90px - 2 * var(--ui-frame-px, 2px))', 'dvh cap: ' + caps[1]);
+    for (const c of caps) {
+        const m = c.match(/- (\d+)px - (\d+) \* var\(--ui-frame-px/);
+        assert.ok(m, 'cap subtracts a px reserve and N frames: ' + c);
+        const reserve = +m[1], n = +m[2];
+        assert.ok(reserve >= 82, 'reserve covers the 82px top offset');
+        for (const H of [390, 360]) {
+            assert.ok(82 + 2 * widest + (H - reserve - n * widest) <= H, `panel ends inside a ${H}px viewport`);
+        }
     }
     assert.ok(/overflow-y:\s*auto/.test(r), 'scrolls');
     const g = strip(readFileSync(join(cssDir, 'game-menu.css'), 'utf8'));
