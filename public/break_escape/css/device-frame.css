@@ -65,9 +65,19 @@
 }
 
 @media (max-width: 559px) {
-    /* W below 480 (W is the viewport less 32 gutters, 32 frame and 16 padding): the title drops to 8px (plan 5.4). */
+    /* K3 B: the title stays 16px on phones and wraps beside the X, like the SCADA and warranty titles. */
     .device-frame > .device-frame-title {
-        font-size: 8px;
-        line-height: 16px;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    /* The vm-launcher and rogue-ap title text sets nowrap + ellipsis: on phones let it wrap instead.
+       The element-type step beats their one-class rules without editing those files. */
+    .device-frame > .device-frame-title > span,
+    .device-frame > .device-frame-title > h2 {
+        min-width: 0;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }

@@ -228,12 +228,17 @@
 
 /* ---- No-charts guard screen ---- */
 .ip-no-charts {
-    height: 100%;
+    /* A small framed card centred in the window, not a full-viewport plate (K5 B). */
+    width: fit-content;
+    max-width: calc(100% - 32px);
+    margin: auto;
+    background: #1d1d1d;
+    border: 2px solid #f59e0b;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 24px;
+    padding: 16px;
     text-align: center;
     box-sizing: border-box;
 }
@@ -243,7 +248,7 @@
     font-size: 32px;
     line-height: 40px;
     color: #f59e0b;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     border: 2px solid #f59e0b;
     width: 56px;
     height: 56px;
@@ -255,9 +260,10 @@
 .ip-no-charts-text {
     color: #f59e0b;
     font-family: 'Press Start 2P', monospace;
-    font-size: 8px;   /* Press Start 2P on its 8px grid (slice 7 R2 n3) */
+    font-size: 16px;   /* Press Start 2P on its 8px grid, 16px readable (K5 B) */
     margin-bottom: 16px;
-    line-height: 16px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
 }
 
 .ip-no-charts-sub {

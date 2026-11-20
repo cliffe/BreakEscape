@@ -36,9 +36,11 @@ test('pixel rules: no radius, no shadow, and no theme variables', () => {
     assert.doesNotMatch(css, /var\(--ui-/, 'the device frame must not follow the UI theme');
 });
 
-test('the title uses Press Start 2P at 16px, 8px below W 480', () => {
+test('the title uses Press Start 2P at 16px and stays 16px on phones, wrapping (K3 B)', () => {
     assert.match(css, /\.device-frame-title\s*\{[^}]*font-family:\s*'Press Start 2P'[^}]*font-size:\s*16px/);
-    assert.match(css, /@media \(max-width: 559px\)\s*\{[^@]*font-size:\s*8px/);
+    const phone = /@media \(max-width: 559px\)\s*\{([^@]*)\}\s*$/.exec(css.trim())?.[1] ?? '';
+    assert.ok(!/font-size/.test(phone), 'no phone font-size override: the title stays 16px');
+    assert.ok(/white-space:\s*normal/.test(phone), 'title text wraps on phones');
 });
 
 test('the game page loads the stylesheet', () => {
