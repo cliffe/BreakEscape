@@ -1,4 +1,63 @@
-# m02 60 s trailer takes (t01 to t15)
+# m02 trailer takes
+
+## v2 takes (2026-11-20, main 1f651abce, spy avatars)
+
+Re-recorded against current main (office life, room dressing and lighting, trimmed HaX briefing, today's dialogue round) with `BE_SPRITE` per take (see `docs/video/edits/M02_TRAILER60_AVATARS.md`; the switch is logged in each `<id>.newgame.log` as SPRITE_SWITCHED). Env: display :113, keyless server :3017, `FOOTAGE_ROOT=$HOME/video-takes-local/m02/takes/`. All 1920x1080 full frame, 30 fps, `--music 0`. Marks are trimmed-file seconds. **No take script needed a fix**: every take the edit uses passed first time. Flags are the v1 flags (new-game; record), v1 section below. Every take has `--set briefing_played=true` except t01, t16, t17, t22, t24, t25, t26, t28 (as v1).
+
+Status of the frame check: t01 to t08 frames viewed (below). **t09, t12, t14a-d, t16, t17, t22, t24, t25, t26, t27, t28 are recorded and pass check-take but their frames have NOT yet been viewed** (see handover). Windows for those are marks-derived only.
+
+| id | avatar | len | drop % | A/V off start/end (ms) | key marks (trimmed s) | problems / differences from v1 | suggested window |
+|---|---|---|---|---|---|---|---|
+| t01_hax_hook | vivian_ashby | 18.0 | 0.17 | -45 / -38 | choice "Walk me through the stakes" 9.60; **hax_1 line-start 11.75, line-end 15.89 (4.14 s)**; hax_1-done 15.91 | Briefing is trimmed (menu earlier, no 'Who did this?' step in this path). **hax_1 clip is now 4.13 s via /tts (was 3.94 s; re-voiced in today's round, same wording).** Frames 11.9 to 16.0: HaX portrait, subtitle bar, no toast. Line before (hundred and fifty thousand) plays 11.1 to 11.7, partly audible | in 11.65, out 15.95 (v1 edit window 15.29-18.14 is now wrong) |
+| t02_lights | mei_lin_chow | 7.5 | 0.35 | -53 / -62 | walk-start 1.67, door-open 3.04, **lights-on:ward_vestibule 4.12**, lights-seen 5.21, walk-end 7.01 | Frames: reception lit, Bernie at desk with an office-life speech bubble at 2.2 (harmless); player in doorway at 4.0, dark vestibule with flashlight cone 4.6, lit vestibule 6.0. Room small in frame: crop in. Strike is 0.4 s earlier than v1 | in 2.9, out 5.3 (drop at 4.12) |
+| t03_lockpick | lucia_moreno | 14.8 | 0.20 | -52 / -82 | interact 1.26, minigame-open 2.50, pins set 5.76 / 6.48 / 7.81 / 9.46, "Lock picked successfully" toast visible by 10.2, lock-open mark 12.19, **contents-first-seen 12.84**, closed 13.11 | Frames 6.5, 7.9, 8.6: pins green being set, tension wrench; 9.5 and 11.0 show the red "Set pin overpicked! Release tension to reset." line; 10.2 shows the success toast. Panel title and item blurb at the top (IT Filing Cabinet; no contents). v1 edit window 9.2-10.33 now shows the overpick message and success: use earlier | in 6.3, out 7.9 (mid-pick, clean); cr in 7.0; out before 10.0 |
+| t04_ransom | vivian_ashby | 6.2 | 0.40 | -22 / -22 | interact 1.46, minigame-open 1.78, hold-end 4.78, closed 4.90 | Frames 2.3, 3.5, 4.7: ransom screen, timer 12:00:00 then 11:59:58 and 11:59:56; wallet-style string and ".onion" address are on screen (fake, as v1). Tap menu (Visitor Log / Workstation) shows at 1.5: start at 2.3 | in 2.3, out 4.7 |
+| t05_phone | ngozi_adeyemi | 20.2 | 0.15 | -43 / -30 | phone-open 2.03, choices-shown 3.90 to 5.80 (Understood / What should I know / Anything careful), hub choices 9.60 to 11.53, reply settled 16.80 | Frames 2.5, 4.5, 9.8, 17.5: green phone, HaX, no codes; names Gary Whitlock | in 4.1, out 5.7 (cr 5.0-5.3) |
+| t06_keypad | daniel_seo | 12.7 | 0.68 | -70 / -58 | interact 1.46, minigame-open 1.73, digit 1 3.17, 2 3.81, 3 4.44, three digits on screen 4.44 to 6.04, minigame-closed 11.05 | Frames 2.2, 3.6, 4.8, 5.8: "2___" then "256_". Real code is 1987: no overlap. Attempts log empty ("No attempts yet"), ENTER not pressed, no hint line visible. Take is long (closes 11.05) | in 3.2, out 5.9 |
+| t07_walk_vm | ngozi_adeyemi | 5.1 | 0.47 | -35 / -35 | walk-start 1.26 (leg left 1.27, up 1.88), walk-end 2.60 | Frames 1.0, 1.9, 2.7, 4.0: **the camera is lower/closer until about 2.2 s (top of the room is cut off at 1.0 and 1.9), settled by 2.7** (differs from v1). Player (Ngozi, dark jacket) walks to the console desk, console never opens | in 1.2, out 4.3, or in 2.3 for a settled frame |
+| t08_cyberchef | mei_lin_chow | 12.9 | 0.22 | -25 / -70 | workstation-open 1.66, cyberchef-ready 5.66, **input-set 7.58**, panes 8.18, linger-end 11.68 | Frame 1.5 is the server room (player at the desk); 5.8 empty ROT13 workstation; 7.6 and 8.4 input pane holds the ROT13 ciphertext, **output pane shows the decoded note (restore hours, "they will pay"): crop to input pane x 962-1864, y 117-577 as v1** | in 7.6, out 8.6 (cr 8.0) |
+| t09_val | frank_callahan | 11.8 | 0.24 | -35 / -37 | walk-start 1.47, walk-end 2.69, interact 2.94, conversation-open 3.19, **val_2 "Alright. Stop there a sec." 3.70 to 5.74 (2.04 s)**, **val_1 line-start 6.37, line-end 10.48 (4.10 s)**, targets-done 11.18 | Audio/length match the scout (2.09 / 4.18 via /tts, both 200). Frames not yet viewed. Ends before the choice menu | walk in 1.2 out 3.0; line in 6.3 out 10.6 |
+| t12_walk_chair | marcus_hale | 6.0 | 0.42 | -35 / -48 | walk-start 1.27, **contact 2.03**, walk-end 4.32 | Frames not yet viewed | in 0.9, out 4.2 |
+| t14a_server_minigames | marcus_hale | 8.0 | 0.34 | -35 / -58 | recovery-start 1.46, open 1.88, hold-end 5.08, closed 5.83 | Frames not yet viewed (v1: panel taller than the frame, top cut; Ghost call seized by the two `--set` flags) | in 1.9 out 5.0 |
+| t14b_flag_station | marcus_hale | 6.8 | 0.38 | -50 / -55 | interact 1.47, open 1.75, hold-end 4.75, closed 5.50 | Frames not yet viewed (no flags submitted) | in 1.8 out 4.7 |
+| t14c_supply_cabinet | lucia_moreno | 7.5 | 0.35 | -32 / -37 | interact 1.46, container-open 2.09, contents 3.30, hold-end 5.50 | Frames not yet viewed | in 3.3 out 5.4 |
+| t14d_gary_password | frank_callahan | 8.1 | 0.33 | -52 / -63 | interact 1.46, password-open 1.83, typed 4.44, hold-end 6.04 | Frames not yet viewed: **check the monitor post-it (v1 px 920-1152 x 502-578) still needs the crop** | in 1.9 out 6.0 |
+| t16_ghost_terminal | daniel_seo | 14.8 | 0.20 | -55 / -45 | pickup 1.66, phone-open 2.91, clean-window-start 11.53, took-starts 12.66, closed 13.52 | **Take is 9 s shorter than v1 (14.8 vs 24.1 s): the typing is much faster, so the v1 edit window 16.5-20.83 is past the end of the file.** Frames not yet viewed; look at the whole take before picking | to be picked from frames (typing runs about 2.9 to 12.7) |
+| t17_ghost_call | female_hacker_hood_v2 | 24.5 | 0.12 | -58 / -47 | interact 1.46, call-open 2.04, lines at 4.76, 7.48, 10.18, 12.90, 15.60, 18.31 (stop-line 18.31), hold-end 22.51 | Frames not yet viewed. v1: offer-terms panel on screen until about 2.4 s; the edit uses 2.5-4.9 and 20.7-23.07 | check |
+| t22_ward_crowd | harjit_singh | 5.8 | 0.43 | -73 / -45 | presence-start 1.44, end 4.84 | Frames not yet viewed (ward has ambient staff now) | in 1.6 out 4.6 |
+| t24_kim_talk | daniel_seo | 16.5 | 0.54 | -60 / -48 | interact 1.46, **talk-open 11.61**, hold-end 14.84 | Opening the talk took 10 s (retry); frames not yet viewed. v1 window 3.6-6.5 is wrong: use about 11.8-14.8 | in 11.8 out 14.7 |
+| t25_gary_talk | harjit_singh | 6.9 | 0.37 | -60 / -58 | talk-open 2.03, hold-end 5.23 | Frames not yet viewed (crop to Gary: keep the monitor post-its out) | in 2.2 out 5.1 |
+| t26_walk_room | harjit_singh | 3.9 | 0.56 | -27 / -35 | walk-start 1.17 (left 1.18, up 2.12), walk-end 3.03 | Frames not yet viewed | in 1.15 out 3.4 |
+| t27_reeves_talk | frank_callahan | 18.0 | 0.17 | -20 / -35 | interact 1.43, talk-open 11.49, continue-past-badge-line 12.40, hold-end 16.34 | Frames not yet viewed. **Badge line SC-4471 on screen until about 12.4: the cr_reeves window (14.3) in v1 clock is now about 12.5 to 16.3.** | in 12.5 out 16.3 |
+| t28_bernie_premise | male_hacker_hood_v2 | 19.4 | 0.15 | -58 / -38 | conversation-open 2.00, choices-shown 6.03, **premise-shown 13.46, hold-end 17.66** | Silent (no TTS clip), as v1. Take is 3.3 s shorter: v1 window 16.5-20.07 is past the end; use about 13.6-17.6. Frames not yet viewed | in 13.6 out 17.6 |
+
+### Picked voiced lines (real `/tts` on :3017, keyless; control line refused 403)
+
+| line | npc id | clip now | status |
+|---|---|---|---|
+| hax_1 | opening_briefing_cutscene | 4.13 s, played in t01 (4.14 s) | 200, same wording, **clip changed length (was 3.94 s)**: re-voiced today; retime any J-cut |
+| val_2 / val_1 | security_guard_patrol | 2.09 s / 4.18 s | 200, played in t09 (marks above) |
+| doyle_1 | ward_nurse | 3.70 s | 200 (not recorded: see below) |
+| pryce_1 / pryce_2 | patient_bed4 | 3.41 s / 4.54 s | 200 (not recorded) |
+| reeves_1 / reeves_2 | night_security_supervisor | 2.33 s / 3.50 s | 200; reeves_1 and reeves_2 both played in the t15 attempt |
+
+Nothing lacks a cached clip; no audio was generated.
+
+### Not recorded in v2
+
+- **t10_doyle, t11_pryce, t15_reeves** (picked lines, but the current edit list uses none of them): recorded and failed. t10: `person-chat did not open` (Sister Doyle interact returns `approached-then-interacted` with distance 32 against interactDistance 14.6; likely an office-life NPC or the needs system intercepts the approach). t11: same symptom (the click path). t15: the script requires reeves_5 to play in full as a target, which no longer happens (it is 0.2 s now, line changed); reeves_1 and reeves_2 played. No script edits made. Raw failures kept in `$FOOTAGE_ROOT/m02/takes/t10_doyle.*` etc.
+- **live01 to live09**: the edit uses none, and this file listed no 17 Nov live0x table in the v1 section, so none were recorded.
+
+### Decisions for the user
+
+1. hax_1's new clip is 4.13 s: the J-cut and hook window need retiming (edit change only).
+2. Take t16 and t28 are now shorter and earlier: the edit windows for `m_ghost_terminal` and `npc_bernie_premise` must be re-picked from the new takes.
+
+---
+
+## v1 takes (older)
+
+# m02 60 s trailer takes (t01 to t15), v1
 
 Scripts in `tools/video/takes/m02/` (shared helpers in `tools/video/takes/lib/`). Outputs in `video_out/m02/takes/` (git-ignored): `<id>.trimmed.mkv`, `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All recorded with `--fps 30 --preset ultrafast --crf 14 --music 0` via `tools/video/takes/run-take.sh m02 <id> "<new-game flags>" "<record flags>"`, 1920x1080. All 18 takes below pass check-take (both slates, A/V offset corrected, dropped plus duplicated under 1%). Marks are in the trimmed file's clock. Entry flags: every take has `--set briefing_played=true` except t01 (needs the fresh briefing).
 
