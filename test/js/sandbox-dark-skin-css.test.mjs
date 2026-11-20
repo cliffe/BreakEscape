@@ -68,15 +68,22 @@ test('no font shorthand or sub-16px sizes, only pixel faces', () => {
     }
 });
 
-test('title matches the shared SE window title, option frames use the dim text colour', () => {
+test('title matches the shared SE window title, unpicked option frames use the faint text colour', () => {
     const t = rule('.epr-sbx-title');
     assert.ok(/font-size:\s*16px/.test(t) && /line-height:\s*24px/.test(t), 'title 16px on 24px');
     assert.ok(/font-weight:\s*normal/.test(t), 'no faux bold');
     const o = rule('.epr-sbx-option');
-    assert.ok(/border:\s*2px solid var\(--ui-text-dim/.test(o), 'option frame uses --ui-text-dim (3:1 or better in every theme)');
+    assert.ok(/border:\s*2px solid var\(--ui-text-faint/.test(o), 'option frame uses --ui-text-faint (3:1 or better against the option fill in every theme)');
 });
 
 test('confirm button label is 24px on the font grid', () => {
     const r = rule('.epr-sbx-root .epr-sbx-confirm');
     assert.ok(/font-size:\s*24px/.test(r), 'confirm 24px');
+});
+
+test('picked frame differs from the unpicked frame', () => {
+    const o = rule('.epr-sbx-option').match(/border(?:-color)?:\s*(?:2px solid\s+)?var\((--[\w-]+)/);
+    const p = rule('.epr-sbx-picked').match(/border(?:-color)?:\s*(?:2px solid\s+)?var\((--[\w-]+)/);
+    assert.ok(o !== null && p !== null, 'both rules set a token border colour');
+    assert.ok(o !== null && p !== null && o[1] !== p[1], 'picked frame token differs from unpicked');
 });
