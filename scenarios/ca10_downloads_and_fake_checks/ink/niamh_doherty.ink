@@ -14,6 +14,10 @@
 
 VAR phish_order_colleague_attempts = 0
 VAR episode_e10_downloads_and_fake_checks_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca10_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -23,6 +27,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca10_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Niamh Doherty: You closed that page instead of following its steps, so nothing it wanted ever ran on the machine.
+            - else:
+                Niamh Doherty: You treated that check as the trap it was, which is all it takes to keep the morning ordinary.
+            }
+            Niamh Doherty: To whoever built that page, a single followed step is a way onto the machine behind it, and you gave them no step to follow.
+        - else:
+            Niamh Doherty: Follow a page like that and the machine is gone for the day while it's rebuilt, and no one quite knows what it touched.
+            Niamh Doherty: To whoever built that page, one followed step is a foothold that reaches finance and the intranet, or a live caller already on your phone.
+        }
+        ~ kit_ca10_host_said = true
+    - else:
     { episode_e10_downloads_and_fake_checks_defend_complete:
         Niamh Doherty: That's both sides done. Get your software from Quayholt Apps, read the address, and never let a page drive your computer.
         Niamh Doherty: And if you ever slip, tell us straight away. Nobody's in trouble for it.
@@ -33,6 +51,7 @@ VAR hub_quiet = false
             Niamh Doherty: Welcome back to the Quayholt exercise. Last time it was sign-in pages, this time it's the whole web.
             Niamh Doherty: The kiosk takes you through a morning of fake downloads, 'verify you are human' boxes and pop-ups that want you to call.
         }
+    }
     }
 }
 + [Thanks, Niamh.]
