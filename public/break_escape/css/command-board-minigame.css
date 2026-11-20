@@ -430,6 +430,7 @@
     /* Capped so SYSTEM STATUS and the clock stay one short scroll away */
     .cb-timeline-list {
         flex: none;
+        max-height: 45vh;
         max-height: 45dvh;
         overflow-y: auto;
     }
@@ -453,16 +454,17 @@
     .cb-entry-bar {
         grid-template-columns: minmax(0, 1fr) 120px;
     }
+
+    /* Short body: a smaller cap keeps SYSTEM STATUS in the first view */
+    .cb-timeline-list {
+        max-height: 25vh;
+        max-height: 25dvh;
+    }
 }
 
 /* Layout shrunk for the keyboard: let the whole panel scroll so POST stays reachable */
 @media (max-height: 260px) {
     .cb-panel {
         overflow-y: auto;
-    }
-
-    .cb-body {
-        flex: 0 0 auto;
-        overflow: visible;
     }
 }

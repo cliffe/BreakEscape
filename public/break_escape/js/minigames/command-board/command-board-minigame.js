@@ -275,7 +275,7 @@ export class CommandBoardMinigame extends MinigameScene {
 
     renderLayout() {
         this.gameContainer.innerHTML = `
-            <div class="cb-panel" id="cb-panel">
+            <div class="cb-panel pixel-scroll" id="cb-panel">
                 <div class="cb-body pixel-scroll">
                     <section class="cb-timeline-col">
                         <div class="cb-section-title">INCIDENT TIMELINE</div>

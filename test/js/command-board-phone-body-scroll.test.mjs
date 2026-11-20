@@ -11,8 +11,9 @@ const css = readFileSync(join(root, 'css/command-board-minigame.css'), 'utf8').r
 const js = readFileSync(join(root, 'js/minigames/command-board/command-board-minigame.js'), 'utf8');
 
 function block(query) {
-    const at = css.indexOf(query);
-    assert.ok(at >= 0, 'has ' + query);
+    const m = new RegExp(query.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css);
+    assert.ok(m, 'has ' + query);
+    const at = m.index;
     let depth = 0;
     for (let i = css.indexOf('{', at); i < css.length; i++) {
         if (css[i] === '{') depth++;
@@ -73,12 +74,12 @@ test('M1: phone timeline is capped so status stays near', () => {
 test('m1: very short layouts let the panel scroll to POST', () => {
     const b = block('@media (max-height: 260px)');
     assert.ok(/overflow-y:\s*auto/.test(rule(b, '.cb-panel')), 'panel scrolls');
-    assert.ok(/flex:\s*0 0 auto/.test(rule(b, '.cb-body')), 'body keeps its content height');
+    assert.ok(rule(b, '.cb-body') === '', 'body rule left alone so the bar stays pinned');
 });
 
-test('m2: pixel-scroll sits on the body, not the panel', () => {
+test('m2: pixel-scroll sits on the body and the panel', () => {
     assert.ok(/class="cb-body pixel-scroll"/.test(js), 'body has pixel-scroll');
-    assert.ok(/class="cb-panel"/.test(js), 'panel has none');
+    assert.ok(/class="cb-panel pixel-scroll"/.test(js), 'panel has it for the short-height scroll');
 });
 
 test('m3: subtitle is readable and hidden in short windows', () => {
@@ -90,4 +91,22 @@ test('m3: subtitle is readable and hidden in short windows', () => {
 test('m4: phone landscape keeps input and POST on one row', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
     assert.ok(/grid-template-columns:\s*minmax\(0, 1fr\) 120px/.test(rule(b, '.cb-entry-bar')), 'two columns');
+});
+
+// Round 2 fixes
+test('R2 m2: phone landscape caps the timeline at 25dvh', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    assert.ok(/max-height:\s*25dvh/.test(rule(b, '.cb-timeline-list')), '25dvh cap');
+});
+
+test('R2 m3: each dvh cap has a vh fallback just before it', () => {
+    assert.ok(/max-height:\s*45vh;\s*max-height:\s*45dvh/.test(css), '45vh then 45dvh');
+    assert.ok(/max-height:\s*25vh;\s*max-height:\s*25dvh/.test(css), '25vh then 25dvh');
+});
+
+test('R2 m4: media blocks keep their cascade order', () => {
+    const at = (q) => new RegExp(q.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css).index;
+    const order = ['@media (max-height: 520px)', '@media (max-width: 600px)',
+        '@media (max-width: 600px) and (max-height: 520px)', '@media (max-height: 260px)'].map(at);
+    assert.ok(order.every((v, i) => i === 0 || order[i - 1] < v), 'order 520, 600, combined, 260');
 });
