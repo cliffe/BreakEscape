@@ -77,7 +77,7 @@
 
 @media (max-width: 600px) {
     .examine-panel {
-        padding: 12px;
+        padding: 44px 12px 12px;   /* keep the 44px X clearance (critique A40) */
         gap: 10px;
     }
     /* Pixel fonts draw crisply on their own grid: Press Start 2P at multiples of 8, GNF at
