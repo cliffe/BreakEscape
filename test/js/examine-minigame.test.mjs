@@ -441,6 +441,7 @@ test('sameToastText: the util and the interactions.js copy have the same body', 
     };
     const a = body('utils/same-toast-text.js');
     const b = body('systems/interactions.js');
+    assert.ok(a.includes('trim'), 'extracted body is not empty: ' + a);
     assert.ok(a === b, 'bodies differ:\n' + a + '\n' + b);
 });
 
