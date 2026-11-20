@@ -70,7 +70,7 @@ Phase 3: SEARCH DEREK'S OFFICE  [unlocks when Phase 2 complete]
 Phase 4: CAPTURE TECHNICAL EVIDENCE  [unlocks on entering Derek's Office]
   → Access server room (Kevin's RFID keycard)
   → Connect to VM terminal
-  → Capture SSH, filesystem, and privilege escalation flags (3 flags total)
+  → Capture SSH, filesystem, and privilege escalation flags (4 flags total: flag_1 archive key, flag_2 + flag_4 at the Drop-Site, flag_3 launch code)
   [The SSH brute force flag (shatter_server:flag_1) is the DECRYPTION_KEY needed for the archive]
 
 Phase 5: DECRYPT ENTROPY INTELLIGENCE  [unlocks when Phase 4 complete]
@@ -135,8 +135,8 @@ Phase 6: CLOSE THE CASE  [unlocks when Phase 5 complete]
 | 21 | Access VM Terminal | Connect to Social Fabric infrastructure |
 | 22 | Complete SSH Brute Force | Flag from derek's account: DECRYPTION_KEY (shatter_server:flag_1, value generated per build) |
 | 23 | Complete Linux Navigation | Flag from operation_shatter directory (shatter_server:flag_2, value generated per build) |
-| 24 | Complete Privilege Escalation (sudo) | Flag from shatter account (shatter_server:flag_3, value generated per build) |
-| 25 | Submit all 3 flags at Drop-Site Terminal | **Phase 4 complete → Phase 5 unlocks** |
+| 24 | Complete Privilege Escalation (sudo) | Two flags from the shatter account via derek's sudo: ~/launch_code/launch_flag (shatter_server:flag_3, launch code) and ~/shatter_configuration (base64; shatter_server:flag_4), values generated per build |
+| 25 | Submit flag_2 and flag_4 at the Drop-Site Terminal, flag_1 at the ENTROPY Encrypted Archive; keep flag_3 for the ENTROPY Launch Device (finale) | **Phase 4 complete → Phase 5 unlocks** |
 | — | *[Agent 0x99 texts once the other flags are in: "One thing left: open the ENTROPY archive with the DECRYPTION_KEY from derek's account."]* | *(The DECRYPTION_KEY is flag_1; submit it at the archive)* |
 
 ### Phase 5: Decrypt ENTROPY Intelligence
@@ -244,9 +244,9 @@ Phase 4: CAPTURE TECHNICAL EVIDENCE (server room + 3 VM flags) ← parallel with
       │
       ├─► VM Terminal ─┬─► SSH flag (shatter_server:flag_1 — DECRYPTION_KEY)
       │                ├─► Linux navigation flag
-      │                └─► Privilege escalation flag
+      │                └─► Privilege escalation flags (flag_3 launch code, flag_4 config)
       │
-      └─► Drop-Site ─► Submit ALL 3 flags
+      └─► Drop-Site ─► Submit flag_2 + flag_4 (flag_1 → archive, flag_3 → launch device)
                                             │
                                     [UNLOCKS Phase 5]
 
@@ -297,7 +297,7 @@ Phase 6: CLOSE THE CASE
 |--------------------|------------------|
 | Skip Phase 1 | Phase 2 only unlocks when Phase 1 (4 notes + IT code) is complete |
 | Rush to Derek's Office | Phase 3 only unlocks after Phase 2 (Kevin + Maya + notes2 + key) |
-| Skip VM challenges | Phase 5 only unlocks after all 3 flags submitted |
+| Skip VM challenges | Phase 5 only unlocks after flag_1, flag_2 and flag_4 are in; the ending also needs flag_3 at the launch device (concludeRequires) |
 | Skip server room | ENTROPY archive requires SSH flag (shatter_server:flag_1) from the VM |
 | Confront Derek early (dialogue) | Phase 6 only unlocks after decrypting ENTROPY archive; KO still possible at any time but reduces debrief options |
 
@@ -383,7 +383,7 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Open Derek's Filing Cabinet | ✅ Yes | Part of Phase 3 |
 | Collect 3 operational docs (notes4) | ✅ Yes | Gates Phase 6 (via Phase 5) |
 | Access Server Room | ✅ Yes | Need Kevin's RFID keycard |
-| Submit all 3 VM flags | ✅ Yes | Gates Phase 5 (decrypt) |
+| Submit all 4 VM flags | ✅ Yes | flag_1/2/4 gate Phase 5 (decrypt); flag_3 gates the ending |
 | Open ENTROPY Encrypted Archive (flag shatter_server:flag_1) | ✅ Yes | Gates Phase 6 |
 | Collect 2 top-secret docs (notes5) | ✅ Yes | Gates Phase 6 |
 | Report to SAFETYNET | ✅ Yes | Part of Phase 6 |
@@ -410,4 +410,4 @@ After entering Derek's office, reading this file reveals the full frame-up plan.
 | Maya's Office | None | North from Hallway East | Maya (informant), notes2 ×2 |
 | Kevin's Office | None | North from Hallway West | Planted evidence (text_file ×2), IT incident log (notes2) |
 | Derek's Office | KEY/PICK | North from Hallway East | **No NPCs** — Computer (text_file ×3), cabinet (notes4 ×3) |
-| Server Room | RFID | South from IT Room | VM terminal, 3 flags, ENTROPY archive (notes5 ×2) |
+| Server Room | RFID | South from IT Room | VM terminal, 4 flags, ENTROPY archive (notes5 ×2) |
