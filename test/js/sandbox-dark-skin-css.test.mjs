@@ -87,3 +87,9 @@ test('picked frame differs from the unpicked frame', () => {
     assert.ok(o !== null && p !== null, 'both rules set a token border colour');
     assert.ok(o !== null && p !== null && o[1] !== p[1], 'picked frame token differs from unpicked');
 });
+
+test('picked frame has a hard 2px inset accent ring so it reads by shape, not hue alone', () => {
+    const p = rule('.epr-sbx-picked');
+    assert.ok(/box-shadow:\s*inset 0 0 0 2px var\(--ui-accent/.test(p), 'picked rule has a 2px inset accent box-shadow, no blur');
+    assert.ok(!/border-radius/.test(p), 'picked rule adds no radius');
+});

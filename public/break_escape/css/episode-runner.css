@@ -259,7 +259,7 @@
 .epr-sbx-radio { appearance: none; -webkit-appearance: none; flex: none; box-sizing: border-box; width: 16px; height: 16px; margin: 4px 0 0; border: 2px solid var(--ui-text-dim, #a8b2c8); border-radius: 0; background: transparent; }
 .epr-sbx-radio:checked { border-color: var(--ui-accent, #ffcc44); background: var(--ui-accent, #ffcc44); box-shadow: inset 0 0 0 2px var(--ui-surface-opaque, rgb(24, 30, 48)); }
 .epr-sbx-radio:focus-visible { outline: 2px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
-.epr-sbx-picked { border-color: var(--ui-accent, #ffcc44); background: var(--ui-surface-raised, rgb(38, 48, 74)); }
+.epr-sbx-picked { border-color: var(--ui-accent, #ffcc44); background: var(--ui-surface-raised, rgb(38, 48, 74)); box-shadow: inset 0 0 0 2px var(--ui-accent, #ffcc44); }
 .epr-sbx-root .epr-sbx-confirm { font-family: 'GNF', sans-serif; font-size: 24px; line-height: 32px; color: var(--ui-accent, #ffcc44); background: transparent; border: 2px solid var(--ui-accent, #ffcc44); }
 .epr-sbx-root .epr-sbx-confirm:focus-visible { outline: 2px solid var(--ui-text, #eef1f8); outline-offset: 2px; }
 .epr-sbx-root .epr-sbx-confirm:disabled { opacity: 1; color: var(--ui-text-dim, #a8b2c8); background: transparent; border-color: var(--ui-line, #4c5b80); cursor: default; }
