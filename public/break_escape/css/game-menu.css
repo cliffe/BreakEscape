@@ -171,6 +171,8 @@
   border-image: none;
   background: transparent;
   box-shadow: none;
+  max-height: none;
+  overflow: visible;
 }
 
 .game-menu-page #music-widget-panel .mw-header {

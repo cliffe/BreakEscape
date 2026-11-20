@@ -10,8 +10,8 @@ import { readFileSync } from 'node:fs';
 
 const css = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/css');
 const SHEETS = ['rfid-minigame.css', 'password-minigame.css', 'scanner-panel.css', 'lockpicking.css', 'biometrics-minigame.css', 'pin.css'];
-// Emoji/icon glyph boxes, not text
-const ICONS = /icon/;
+// Emoji/icon glyph boxes, not text. Icon-named rules that hold words (.ble-device-icon) are counted.
+const ICONS = /\.(bce-view-icon|nsm-modal-icon|protocol-icon)\b/;
 // Rules that carry no font-family but sit inside a parent that sets one
 const INHERITED = [[/\.fpr-/, 'VT323'], [/\.pin-minigame-attempt-feedback/, 'Press Start 2P'],
     [/signin-title|signin-portrait/, 'Press Start 2P'], [/lockpicking-item-info h4/, 'Press Start 2P']];
