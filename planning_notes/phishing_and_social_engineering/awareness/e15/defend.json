@@ -286,7 +286,10 @@
       "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
       "_teamLine": "F-E15-2 (E15_E16_PLAYTEST_P1): the debrief team line defaults to 'kept {n} phish away from your team' (debrief-view.js teamLine). This set is found sticks and shortcuts, not phish, so the override names what was actually kept away. {n} is the count.",
       "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
-      "conceptPanel": { "heading": "If the quick route is taken", "text": "Six months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client." }
+      "conceptPanel": [
+        { "heading": "About that stick", "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT." },
+        { "heading": "If the quick route is taken", "text": "Six months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client." }
+      ]
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e15_shadow_it_defend), which has no mistake or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown in the defend-only shell, which carries no flipMontageByChoice). The sortDrill above is carried over unchanged, so the Swap Shop runs in both variants and measurement is identical.",
