@@ -193,3 +193,17 @@ test('SIEM: the narrow layout starts at 1239px, so the wide description column s
     assert.ok(!css.includes('@media (min-width: 601px) and (max-width: ' + BREAK + 'px)'), 'the queue-count band has its own cut (839), not the row breakpoint');
     assert.ok(!/max-width:\s*1100px/.test(css), 'no query still uses 1100px');
 });
+
+test('SIEM queue items grow to their text and the badge keeps its size (live regression pins)', () => {
+    const item = rulesFor('siem-dashboard-minigame.css', 'siem-queue-item').filter((r) => r.sel.trim() === '.siem-queue-item').map((r) => r.body).join(';');
+    assert.ok(!/(^|[;\s])height:/.test(item), 'queue item has no fixed height');
+    assert.ok(/flex-shrink:\s*0/.test(item), 'queue item never shrinks inside the flex list');
+    const sev = rulesFor('siem-dashboard-minigame.css', 'siem-queue-sev').filter((r) => r.sel.trim() === '.siem-queue-sev').map((r) => r.body).join(';');
+    assert.ok(/flex-shrink:\s*0/.test(sev), 'badge never shrinks');
+    assert.ok(/min-width:\s*56px/.test(sev), 'badge keeps its full width');
+    const raw = read('siem-dashboard-minigame.css');
+    assert.ok(/container-type:\s*inline-size/.test(raw), 'queue list is a size container');
+    const m = raw.match(/@container \(max-width: (\d+)px\) \{\s*\.siem-queue-item \{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/);
+    assert.ok(m !== null, 'narrow queue stacks the badge above the text');
+    assert.ok(Number(m[1]) >= 199, 'stacks before the text column drops under about 120px');
+});

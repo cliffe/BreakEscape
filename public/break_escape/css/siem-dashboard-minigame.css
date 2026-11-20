@@ -229,6 +229,21 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    container-type: inline-size;
+}
+
+/* Narrow queue pane (800x600 and similar): when the text column would fall under about 140px
+   (list content under 220px), stack the badge above the text so the text has the full width */
+@container (max-width: 219px) {
+    .siem-queue-item {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 6px;
+    }
+
+    .siem-queue-sev {
+        justify-self: start;
+    }
 }
 
 .siem-queue-item {
@@ -237,6 +252,9 @@
     gap: 8px;
     align-items: center;
     min-height: 42px;
+    /* The list is a flex column with a scrollbar: without this the items shrink to fit the
+       pane and the wrapped text runs past the border. Height is never set, so the item grows. */
+    flex-shrink: 0;
     padding: 6px;
     border: 2px solid #32466f;
     background: #17243f;
@@ -247,6 +265,9 @@
     align-items: center;
     justify-content: center;
     height: 28px;
+    min-width: 56px;
+    box-sizing: border-box;
+    flex-shrink: 0;
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-family: 'Press Start 2P', monospace;
     font-size: 8px;
