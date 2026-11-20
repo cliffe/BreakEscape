@@ -425,6 +425,25 @@ test('examine panel: a different observation, or text-less, still shows', () => 
     assert.ok(b.includes('examine-observations') && !b.includes('examine-text'), 'observation only: ' + b);
 });
 
+test('examine panel: text with a missing or null observation shows the text and no observations paragraph', () => {
+    for (const obs of [undefined, null, '']) {
+        const h = panelHtml({ itemName: 'Slip', observations: obs, text: 'The text.' });
+        assert.ok(h.includes('class="examine-text"') && h.includes('The text.'), 'text kept for ' + obs + ': ' + h);
+        assert.ok(!h.includes('examine-observations'), 'no observations paragraph for ' + obs + ': ' + h);
+    }
+});
+
+test('sameToastText: the util and the interactions.js copy have the same body', () => {
+    const body = (file) => {
+        const m = readFileSync(join(js, file), 'utf8').match(/function sameToastText\s*\([^)]*\)\s*\{([\s\S]*?)\n\}/);
+        assert.ok(m, 'sameToastText found in ' + file);
+        return m[1].replace(/\s+/g, ' ').trim();
+    };
+    const a = body('utils/same-toast-text.js');
+    const b = body('systems/interactions.js');
+    assert.ok(a === b, 'bodies differ:\n' + a + '\n' + b);
+});
+
 test('phone body text is 24px GNF, the conversation dialogue size; the name stays 16px Press Start 2P', () => {
     const src = readFileSync(join(here, '../../public/break_escape/css/examine-minigame.css'), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '');
