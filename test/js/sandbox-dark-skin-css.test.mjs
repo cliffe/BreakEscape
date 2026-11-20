@@ -31,3 +31,52 @@ test('sandbox has no border-radius other than 0', () => {
     const radii = [...block.matchAll(/border-radius:\s*([^;]+);/g)].map((m) => m[1].trim());
     assert.ok(radii.every((r) => r === '0'), 'square corners only');
 });
+
+// Round 1 (review M1, m2, m3, m4): pin the tick box, the checked fill, the title and the frames.
+const plain = block.replace(/\/\*[\s\S]*?\*\//g, '');
+function rule(sel) {
+    const i = plain.indexOf(sel + ' {');
+    return i < 0 ? '' : plain.slice(i, plain.indexOf('}', i));
+}
+
+test('sandbox surface token is used outside comments', () => {
+    assert.ok(plain.includes('--ui-surface-opaque'), 'dark surface token in real rules');
+    assert.ok(!/#f{3}(?:f{3})?\b|\bwhite\b/i.test(plain), 'no white left');
+});
+
+test('tick box drops the native radio and stays square', () => {
+    const r = rule('.epr-sbx-radio');
+    assert.ok(/(^|[\s;{])appearance:\s*none/.test(r), 'appearance none');
+    assert.ok(/-webkit-appearance:\s*none/.test(r), 'webkit appearance none');
+    assert.ok(/border-radius:\s*0\s*;/.test(r), 'radius 0');
+});
+
+test('checked tick box has a real fill', () => {
+    const r = rule('.epr-sbx-radio:checked');
+    const m = r.match(/background(?:-color)?:\s*([^;]+);/);
+    assert.ok(m !== null, 'checked rule sets a background');
+    assert.ok(m !== null && !/^(transparent|none)$/i.test(m[1].trim()), 'checked background is a fill');
+});
+
+test('no font shorthand or sub-16px sizes, only pixel faces', () => {
+    for (const m of plain.matchAll(/font:\s*([^;]+);/g)) {
+        const px = m[1].match(/(\d+)px/);
+        assert.ok(px !== null && Number(px[1]) >= 16, 'font shorthand size 16 or more: ' + m[1]);
+    }
+    for (const m of plain.matchAll(/font-family:\s*([^;]+);/g)) {
+        assert.ok(/GNF|VT323|Press Start 2P|--ui-heading-font/.test(m[1]), 'pixel face: ' + m[1]);
+    }
+});
+
+test('title matches the shared SE window title, option frames use the dim text colour', () => {
+    const t = rule('.epr-sbx-title');
+    assert.ok(/font-size:\s*16px/.test(t) && /line-height:\s*24px/.test(t), 'title 16px on 24px');
+    assert.ok(/font-weight:\s*normal/.test(t), 'no faux bold');
+    const o = rule('.epr-sbx-option');
+    assert.ok(/border:\s*2px solid var\(--ui-text-dim/.test(o), 'option frame uses --ui-text-dim (3:1 or better in every theme)');
+});
+
+test('confirm button label is 24px on the font grid', () => {
+    const r = rule('.epr-sbx-root .epr-sbx-confirm');
+    assert.ok(/font-size:\s*24px/.test(r), 'confirm 24px');
+});

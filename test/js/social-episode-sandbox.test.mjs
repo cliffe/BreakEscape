@@ -461,7 +461,7 @@ test('a montage line is set as text, never markup', () => {
     assert.equal(document.querySelector('.aw-montage-line').textContent, '<b>bold</b>');
 });
 
-test('the new styles keep text at 13px or more and use the readable face', () => {
+test('the new styles keep text at 13px or more and no address/mono face', () => {
     for (const sel of ['.epr-sbx-', '.aw-montage']) {
         const rules = css.split('}').filter((r) => r.includes(sel));
         assert.ok(rules.length > 0, sel);
