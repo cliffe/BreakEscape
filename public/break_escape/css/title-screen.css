@@ -27,7 +27,11 @@
     animation: crtFlicker 4s step-end infinite;
 }
 
-/* CRT scanlines — same technique as bond-visualiser.css */
+/* CRT scanlines — same technique as bond-visualiser.css.
+   Recorded exception (D220, 2026-11-20): the boot and credits screens keep their full-screen CRT
+   overlays: scanlines, the smooth vignette and the logo glow below, which the no-gradient and
+   no-blur rules would otherwise remove. No other full-screen overlay takes them (the faint button
+   scanlines in utilities.css are a separate texture). */
 .title-screen-container::before {
     content: '';
     position: absolute;
@@ -66,6 +70,7 @@
     /* 300px, or on a phone half the screen less a 16px gutter, so the zoom to 200% ends
        inside the screen instead of being cut by the container (coordinator 5b) */
     width: min(300px, calc(50vw - 16px));
+    /* Logo glow: part of the D220 CRT exception noted above the scanlines */
     filter: drop-shadow(0 0 20px rgba(126, 18, 214, 0.3));
     animation: logoFadeZoom 2.5s ease-in-out forwards;
     transform-origin: center center;

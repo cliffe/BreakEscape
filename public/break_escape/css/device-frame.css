@@ -63,7 +63,9 @@
 
 /* The title bar row: device name on the left, the shared pixel X on the right. The margin below it
    keeps the first control row clear of the drawn X (the X's bottom edge is 50px below the frame top,
-   52px for the 32px vm-launcher X): 12px, and 14px at phone width where the 16px line is 8px shorter. */
+   52px for the 32px vm-launcher X): 12px at every width. The title is 16px on a 24px line on phones too, so a
+   one-line title puts the first row 58px down, 8px below the drawn X (6px for vm-launcher); a title that
+   wraps to two lines only pushes the row lower. */
 .device-frame > .device-frame-title {
     display: flex;
     align-items: center;
@@ -75,11 +77,21 @@
     line-height: 24px;
 }
 
-@media (max-width: 559px) {
-    /* W below 480 (W is the viewport less 32 gutters, 32 frame and 16 padding): the title drops to 8px (plan 5.4). */
-    .device-frame > .device-frame-title {
-        font-size: 8px;
-        line-height: 16px;
-        margin-bottom: 14px;
-    }
+/* Titles wrap at every width and never ellipsise. The element-type step makes the span/h2 rule (0,2,1), which
+   beats vm-launcher's and rogue-ap's two-class (0,2,0) nowrap + ellipsis rules without editing those files.
+   padding-right keeps the last glyph clear of the X's hit area, which reaches 64px (66px vm) in from the
+   frame's outer edge; text stops at 70px or more. No min-width on the row: it would tie the patch panel's
+   min-width: 100% at the same specificity. */
+.device-frame > .device-frame-title {
+    overflow-wrap: anywhere;
+}
+.device-frame > .device-frame-title > span,
+.device-frame > .device-frame-title > h2 {
+    padding-right: 16px;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
