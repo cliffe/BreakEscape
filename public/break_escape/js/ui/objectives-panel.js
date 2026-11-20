@@ -9,6 +9,7 @@
  */
 import { displayDashes } from '../utils/display-dashes.js';
 import { openModalCount } from './modal-stack.js';
+import { isCompactViewport } from './hud-lanes.js';
 
 // Ids are scenario data: escaped for a quoted attribute (quotes included, no dash display),
 // and for a quoted attribute selector when looked up again.
@@ -270,7 +271,7 @@ export class ObjectivesPanel {
   /** The phone layout (ui/hud-lanes.js isCompactViewport: under 900 px wide or 500 px tall). */
   static compactNow(win = (typeof window !== 'undefined' ? window : null)) {
     if (!win || !win.innerWidth) return false;
-    return win.innerWidth < 900 || win.innerHeight <= 500;
+    return isCompactViewport(win.innerWidth, win.innerHeight);
   }
 
   /**
