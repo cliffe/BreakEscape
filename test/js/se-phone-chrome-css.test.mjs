@@ -39,9 +39,11 @@ for (const [file, sel] of [
     });
 }
 
-test('shredded-document instruction has right padding for the X', () => {
+// D218: the X now sits in the console window's title bar, above the instruction bar, so the
+// instruction no longer reserves 48px for it; equal side padding instead.
+test('shredded-document instruction has even side padding now the X is in the title bar (D218)', () => {
     const m = read('shredded-document-minigame.css').match(/\.sdm-instruction\s*\{([^}]*)\}/);
-    assert.ok(m && /padding:\s*8px 48px 8px 14px/.test(m[1]), 'right padding 48px');
+    assert.ok(m && /padding:\s*8px 14px;/.test(m[1]), 'padding 8px 14px');
 });
 
 test('mail-client phone toolbar: Close in the header row, buttons on their own row', () => {
