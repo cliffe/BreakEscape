@@ -34,17 +34,6 @@
     color: #9b59b6;
 }
 
-#bluetooth-close {
-    cursor: pointer;
-    font-size: 18px;
-    color: #aaa;
-    transition: color 0.2s;
-}
-
-#bluetooth-close:hover {
-    color: white;
-}
-
 #bluetooth-search-container {
     padding: 10px 15px;
     background-color: #333;
@@ -234,17 +223,6 @@
     font-weight: bold;
     font-size: 18px;
     color: #e74c3c;
-}
-
-#biometrics-close {
-    cursor: pointer;
-    font-size: 18px;
-    color: #aaa;
-    transition: color 0.2s;
-}
-
-#biometrics-close:hover {
-    color: white;
 }
 
 #biometrics-search-container {
