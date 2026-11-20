@@ -1165,7 +1165,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "room_entered:engineering_workshop",
               "onceOnly": true,
               "setGlobal": { "recon_guide_offered": true, "vuln_guide_offered": true, "server_room_reached": true, "lockpicking_guide_offered": true },
-              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags make the case: the status page, their FTP drop, their way back in, and the root-only override." }
+              "sendTimedMessage": { "delay": 3000, "message": "You're on the OT network. The BMS jump server is their way in; scan it from the terminal. Four flags: status page, FTP drop, their way back in, root override." }
             },
             <%# Round 2 (re-review m7): the 87-word workshop text split in two. The
                 guides offer and the tool-case pointer (fix 2a) follow it. %>
