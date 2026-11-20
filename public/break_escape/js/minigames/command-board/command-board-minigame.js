@@ -298,7 +298,7 @@ export class CommandBoardMinigame extends MinigameScene {
                     </section>
                 </div>
                 <div class="cb-entry-bar">
-                    <input id="cb-manual-input" class="cb-entry-input" type="text" maxlength="200" placeholder="LOG DECISION OR ACTION" />
+                    <input id="cb-manual-input" class="cb-entry-input" type="text" maxlength="200" placeholder="LOG ACTION" />
                     <button id="cb-manual-post" class="cb-post-btn" type="button">POST</button>
                 </div>
             </div>

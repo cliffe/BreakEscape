@@ -249,3 +249,12 @@ test('R2 m4: media blocks keep their cascade order', () => {
         NARROW, WIDE, '@media (max-height: 260px)'].map(at);
     assert.ok(order.every((v, i) => i === 0 || order[i - 1] < v), 'order 520, 600, shared short block, wide block, 260');
 });
+
+// R3 m1 (AC1 call): the long placeholder clipped under about 504px wide at GNF 24 (only 144px of text
+// room at 360 wide); "LOG ACTION" fits at every size without a smaller font
+test('sweep 6 R3 m1: the entry placeholder is short enough for a 360px window', () => {
+    const m = js.match(/id="cb-manual-input"[^>]*placeholder="([^"]*)"/);
+    assert.ok(m !== null, 'the manual input has a placeholder');
+    assert.ok(m[1] === 'LOG ACTION', 'placeholder is LOG ACTION, got ' + (m && m[1]));
+    assert.ok(m[1].length <= 10, 'at most 10 characters (about 130px at GNF 24)');
+});
