@@ -29,6 +29,7 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { attachScrollCue } from '../../utils/scroll-cue.js';
 
 export class LogFilterMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
@@ -348,6 +349,7 @@ export class LogFilterMinigame extends MinigameScene {
         this._updateTabActiveClass();
 
         const body = this._dom.body;
+        this._destroyScrollCues();
         body.innerHTML = '';
 
         if (tabId === 'session_log') {
@@ -363,6 +365,12 @@ export class LogFilterMinigame extends MinigameScene {
         }
 
         this._updateStatusBar();
+    }
+
+    // Cues belong to the table wraps that body.innerHTML clears: drop them before the wraps go.
+    _destroyScrollCues() {
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
+        if (this._auditScrollCue) { this._auditScrollCue.destroy(); this._auditScrollCue = null; }
     }
 
     // ── Session Log Tab ────────────────────────────────────────────────────
@@ -619,6 +627,7 @@ export class LogFilterMinigame extends MinigameScene {
         // Remove old table if present
         const oldTable = pane.querySelector('.lf-log-table-wrap');
         if (oldTable) oldTable.remove();
+        if (this._scrollCue) { this._scrollCue.destroy(); this._scrollCue = null; }
 
         const wrap = this._el('div', 'lf-log-table-wrap pixel-scroll');
         // Insert before session-detail if it exists
@@ -629,6 +638,7 @@ export class LogFilterMinigame extends MinigameScene {
             pane.appendChild(wrap);
         }
         this._dom.logTableWrap = wrap;
+        this._scrollCue = attachScrollCue(wrap);
 
         const fields = LogFilterMinigame.LOG_FIELDS[this._logType] || [];
         const filtered = this._applyFilters(this._logEntries);
@@ -1240,6 +1250,7 @@ export class LogFilterMinigame extends MinigameScene {
 
         const tableWrap = this._el('div', 'lf-audit-table-wrap pixel-scroll');
         pane.appendChild(tableWrap);
+        this._auditScrollCue = attachScrollCue(tableWrap);
 
         const table = this._el('table', 'lf-audit-table');
         const thead = document.createElement('thead');
@@ -1436,6 +1447,7 @@ export class LogFilterMinigame extends MinigameScene {
 
     cleanup() {
         if (this._closeTimer) clearTimeout(this._closeTimer);
+        this._destroyScrollCues();
         super.cleanup();
     }
 }
