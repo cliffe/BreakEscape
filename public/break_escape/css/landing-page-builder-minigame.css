@@ -538,6 +538,16 @@
 /* ── invalid ── */
 .lpb-invalid { display: flex; flex-direction: column; }
 .lpb-invalid-text { margin: 0; flex: 1 1 auto; }
+/* The invalid state is one line and an X: the frame wraps it (centred by the container) with a
+   minimum width so the header row does not cramp. Two classes, so it also beats the phone rule. */
+.lpb-game-container.lpb-game-container--invalid {
+    width: fit-content;
+    min-width: min(420px, 96vw);
+    max-width: min(1180px, 96vw);
+    height: auto;
+    max-height: min(92vh, 900px);
+}
+.lpb-game-container--invalid .lpb-root { height: auto; }
 
 /* ── captures view (read-only) ── */
 .lpb-captures { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; height: 100%; box-sizing: border-box; overflow: hidden; }

@@ -118,3 +118,25 @@ test('concern form: the min-height 44px touch target is untouched', () => {
     const decls = rule(read('concern-form-minigame.css'), '.cf-button');
     assert.ok(decls.some((d) => /min-height:\s*44px/.test(d)), '44px');
 });
+
+// R3: the landing-page builder's invalid state wraps its content instead of keeping the scene size.
+test('lpb invalid state: JS marks the frame, CSS shrinks it to content with a minimum width', () => {
+    const js = readFileSync(join(root, 'js', 'minigames', 'landing-page-builder', 'landing-page-builder-minigame.js'), 'utf8');
+    const fn = js.slice(js.indexOf('_buildInvalid() {'));
+    const body = fn.slice(0, fn.indexOf('\n    }\n'));
+    assert.match(body, /gameContainer\.classList\.add\('lpb-game-container--invalid'\)/, 'invalid build sets the class with classList');
+    const src = read('landing-page-builder-minigame.css');
+    const rules = rule(src, '.lpb-game-container.lpb-game-container--invalid');
+    assert.equal(rules.length, 1, 'one invalid-frame rule (two classes, beats the phone 100vw rule)');
+    const b = rules[0];
+    assert.match(b, /width:\s*(fit-content|auto)\s*;/, 'width wraps content');
+    assert.match(b, /height:\s*auto\s*;/, 'height wraps content');
+    assert.match(b, /min-width:\s*min\(\s*\d+px\s*,\s*\d+vw\s*\)/, 'minimum width, capped to the viewport');
+    assert.doesNotMatch(b, /font-size/, 'no font-size');
+    const root2 = rule(src, '.lpb-game-container--invalid .lpb-root');
+    assert.ok(root2.length === 1 && /height:\s*auto/.test(root2[0]), 'inner root stops filling 100% height');
+    // the normal scene rule keeps its full size
+    const base = rule(src, '.lpb-game-container')[0];
+    assert.match(base, /width:\s*min\(1180px, 96vw\)/);
+    assert.match(base, /height:\s*min\(92vh, 900px\)/);
+});
