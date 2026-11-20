@@ -526,11 +526,13 @@
 /* The two-line row starts at 1239px and below, not 1100px. The wide grid keeps 70 86 156 _ 200
    plus four 10px gaps (552px) and the description gets the rest: about 236px at 1280, and it
    falls 0.7px per viewport px, so it reaches 200px at about 1229px. With a 1239px cut the
-   narrowest wide layout (1240px) leaves it about 208px, and 1280 is still wide. Keep the two
-   queries and test/js/phone-390-rule-fixes.test.mjs in step. */
+   narrowest wide layout (1240px) leaves it about 208px, and 1280 is still wide. Keep this query
+   and test/js/phone-390-rule-fixes.test.mjs in step. The queue-count band below has its own cut. */
 
-/* The queue pane is 212px wide at 800x600: 24px wraps "12 alerts queued", so 16px, on one line */
-@media (min-width: 601px) and (max-width: 1239px) {
+/* "24 alerts queued" is 196px at GNF 24. Measured in headless Chromium (601 to 1100px wide): the queue
+   pane's text box (pane width less 20px padding) is 154px at 601, 192 at 800, 203 at 838 and 204 at 839.
+   839 is the narrowest width with 8px to spare, so GNF 24 from 840px up and GNF 16 on one line below it. */
+@media (min-width: 601px) and (max-width: 839px) {
     .siem-queue-count {
         font-size: 16px;   /* GNF scale 16/24/32 */
         white-space: nowrap;

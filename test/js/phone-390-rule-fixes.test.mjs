@@ -79,6 +79,22 @@ test('the compact PC bezel strip holds the 32px X with 2px clear, and the SIEM q
     assert.ok(q.length > 0 && px(q[0].body, 'font-size')[0] === 16, 'the narrow-pane band is 16px, nowrap');
 });
 
+test('the 16px SIEM queue band ends at 839px (24px fits with 8px to spare from 840px)', () => {
+    const raw = readFileSync(join(root, 'css', 'siem-dashboard-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const m = raw.match(/@media \(min-width: 601px\) and \(max-width: (\d+)px\) \{\s*\.siem-queue-count \{[^}]*white-space: nowrap/);
+    assert.ok(m, 'the nowrap band is a 601px+ media query');
+    assert.ok(m[1] === '839', `the band ends at ${m[1]}px, not 839`);
+    assert.ok(!/max-width: 1100px\) \{\s*\.siem-queue-count/.test(raw), 'the old band to 1100px is gone');
+});
+
+test('the VM launcher scroller starts below the 32px X at phone width', () => {
+    const raw = readFileSync(join(root, 'css', 'vm-launcher-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const m = raw.match(/@media \(max-width: 559px\) \{\s*\.vm-launcher \{([^}]*)\}/);
+    assert.ok(m, 'a phone-width rule for the scroller exists');
+    const top = px(m[1], 'margin-top')[0] || 0;
+    assert.ok(top >= 6, `the scroller margin-top ${top}px clears the X's 5.6px overhang`);
+});
+
 test('queued alerts text pluralises', async () => {
     const { queuedAlertsText } = await import('../../public/break_escape/js/minigames/siem/siem-dashboard-minigame.js');
     assert.ok(queuedAlertsText(0) === '0 alerts queued', 'zero');
@@ -174,6 +190,6 @@ test('SIEM: the narrow layout starts at 1239px, so the wide description column s
     assert.ok(descAt(1280) > descAt(BREAK + 1), '1280 is wider than the narrowest wide layout');
     const css = read(f);
     assert.ok(css.includes('@media (max-width: ' + BREAK + 'px)'), 'the two-line query is max-width ' + BREAK);
-    assert.ok(css.includes('@media (min-width: 601px) and (max-width: ' + BREAK + 'px)'), 'the queue-count band ends at the same width');
+    assert.ok(!css.includes('@media (min-width: 601px) and (max-width: ' + BREAK + 'px)'), 'the queue-count band has its own cut (839), not the row breakpoint');
     assert.ok(!/max-width:\s*1100px/.test(css), 'no query still uses 1100px');
 });
