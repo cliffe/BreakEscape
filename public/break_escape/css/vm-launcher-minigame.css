@@ -96,6 +96,14 @@
     overflow-y: auto;
 }
 
+/* Phone width: the 32px X hangs 5.6px below the 16px title row, over the scroller's top edge. Padding
+   would scroll away with the text, so the scroller's box starts 6px lower and text never passes under the X. */
+@media (max-width: 559px) {
+    .vm-launcher {
+        margin-top: 6px;
+    }
+}
+
 .vm-launcher-description {
     color: var(--device-palette-dim);
     margin-bottom: 15px;
