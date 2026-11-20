@@ -56,7 +56,9 @@ export class AlarmPanelMinigame extends MinigameScene {
         const md = params.lockable?.scenarioData?.minigameData || {};
         super(container, { ...params, showCancel: true, cancelText: 'Close Panel', title: 'Facility Alarm Panel' });
         // A two-state lamp with no offClass falls back to 'ap-off', so missing data never paints black
-        this._lamps      = (md.lamps || []).map(l => (l.multiState || l.offClass) ? l : { ...l, offClass: 'ap-off' });
+        // and one with no onClass falls back to 'ap-amber' (a lit lamp must never be unstyled)
+        this._lamps      = (md.lamps || []).map(l => l.multiState ? l
+            : { ...l, offClass: l.offClass || 'ap-off', onClass: l.onClass || 'ap-amber' });
         this._panelTitle = md.panelTitle;
         this._footer     = md.footer;
         this._eventSubs  = [];
@@ -149,8 +151,8 @@ export class AlarmPanelMinigame extends MinigameScene {
 
     _colourFor(cls) {
         if (cls === 'ap-green') return '#00c853';
-        if (cls === 'ap-amber') return '#f59e0b';
-        if (cls === 'ap-red')   return '#ef4444';
+        if (cls === 'ap-amber' || cls === 'ap-warning') return '#f59e0b';
+        if (cls === 'ap-red' || cls === 'ap-critical') return '#ef4444';
         return '#3a4a60';
     }
 

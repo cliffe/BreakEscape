@@ -41,3 +41,22 @@ test('a lamp with no offClass paints ap-off, not an empty class', () => {
     const cls = el.querySelector('#ap-lamp-0').getAttribute('class');
     assert.ok(cls === 'ap-off', 'class is ap-off, got ' + JSON.stringify(cls));
 });
+
+test('a lamp with no onClass paints ap-amber when lit', () => {
+    window.gameState.globalVariables.a = true;
+    const el = build([{ label: 'A', variable: 'a', offClass: 'ap-off', offStatus: 'x', onStatus: 'y' }]);
+    const cls = el.querySelector('#ap-lamp-0').getAttribute('class');
+    delete window.gameState.globalVariables.a;
+    assert.ok(cls === 'ap-amber', 'lit class is ap-amber, got ' + JSON.stringify(cls));
+});
+
+test('every lamp class the m10 board uses has a fill rule, and status text is coloured', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync(join(here, '../../public/break_escape/css/alarm-panel-minigame.css'), 'utf8');
+    for (const c of ['ap-warning', 'ap-critical']) {
+        assert.ok(new RegExp('\\.' + c + '\\s*\\{[^}]*fill:\\s*#[0-9a-f]{6}').test(css), c + ' has a fill rule');
+    }
+    const mg = new AlarmPanelMinigame(document.getElementById('mg'), {});
+    assert.ok(mg._colourFor('ap-warning') === '#f59e0b', 'warning status colour');
+    assert.ok(mg._colourFor('ap-critical') === '#ef4444', 'critical status colour');
+});
