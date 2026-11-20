@@ -403,10 +403,10 @@ LINES = {
     # line speaks of the reception call the learner handled and what it meant for the studio.
     ('e12', 'defend'): (
         "You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.",
-        {'catch': ("You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.",
+        {'catch': ("You kept that visitor with no badge at the door, so they never got a quiet walk through the studio.",
                    "That's the one that leans on a busy morning and a friendly face, and you didn't wave it through."),
-         'miss': ("That visitor with no badge was the one to stop at the gate.",
-                  "They went through, so a stranger had the run of the studio floor for a while. On a busy morning it's an easy one to wave through.")},
+         'miss': ("That visitor with no badge was the one to stop at the door.",
+                  "They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.")},
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
