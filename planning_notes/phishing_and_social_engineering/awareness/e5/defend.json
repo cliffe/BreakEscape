@@ -624,7 +624,11 @@
       "noBlameLine": "A miss here is no reflection on you. Every one of these pages was built to pass for the real thing, and signing in to one says nothing about how careful a person is.",
       "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link using the route in the box below.",
       "defendOnly": "These pages were built to pass for the real sign-in, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
-      "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
+      "defendIntro": "Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed.",
+      "conceptPanel": {
+        "heading": "If a password goes in",
+        "text": "When a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so the organisation assesses the breach without delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
+      }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e5_signin_pages_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

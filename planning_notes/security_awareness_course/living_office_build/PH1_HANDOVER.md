@@ -1,78 +1,52 @@
-# P-H1 handover (ca02, ca03, ca04, ca05)
+# P-H1 handover (ca02, ca03, ca04, ca05) — COMPLETE (2026-11-20 Sonnet pass)
 
-Hit the 200k hard stop mid-build. All creative content is finished and written in
-`living_office_build/W2_LINES_H1.md` (layers 0/1 per shell, 16 host clips, fragment layer-1 text,
-keyMessage list, replaced-sentence list, D225 markers). Use that file as the source of truth; the
-remaining work is mechanical splicing of text that is already written there.
+All P-H1 content is written (`W2_LINES_H1.md`) and now fully applied. All checks run, 0 errors.
 
-## Done (committed)
-- `W2_LINES_H1.md` — complete lines file (keyMessage list, replaced sentences, all layer and host text).
-- conceptPanel layers 0+1 applied to THREE erbs:
-  - `scenarios/ca02_cv_lures/scenario.json.erb` (existing conceptPanel text replaced; cut sentence 2).
-  - `scenarios/ca03_helpdesk_reset/scenario.json.erb` (existing conceptPanel; cut the "Only a callback…Gordon from the impostor." sentence).
-  - `scenarios/ca04_exec_whaling/scenario.json.erb` (NEW conceptPanel added after voicePanel).
+## Applied
+- conceptPanel layers 0/1 in all four full-shell erbs:
+  - ca02 `scenarios/ca02_cv_lures/scenario.json.erb` (prior commit).
+  - ca03 `scenarios/ca03_helpdesk_reset/scenario.json.erb` (prior commit).
+  - ca04 `scenarios/ca04_exec_whaling/scenario.json.erb` (prior commit, new panel after voicePanel).
+  - ca05 `scenarios/ca05_signin_pages/scenario.json.erb` (THIS pass — new panel after `defendIntro`,
+    heading "What the address bar settles", layer 0 + layer 1).
+- Host blocks spliced into all four host inks (`.ink` + recompiled `.json`): `fatima_begum`,
+  `darren_price`, `thandiwe_moyo`, `niamh_doherty`. Kit VARs added (`kit_defend_done`, `kit_caught`,
+  `kit_key_caught`, `kit_ca0<n>_host_said`); three-way CATCH/PARTIAL/MISS on `kit_key_caught`/`kit_caught`
+  above the existing defend-complete branch, gated `kit_defend_done && not kit_ca0<n>_host_said`,
+  `~ kit_ca0<n>_host_said = true`. ca01 pattern.
+- Twin fragment layer-1 `conceptPanel` in `e2`–`e5/defend.json` (awareness folder): e2/e4/e5 added to
+  `awarenessEpisode.strings`, e3 replaced its old teaching panel. Cost-framed headings in the e1 model's
+  style. e4 keeps its separate `_voicePanel`.
+- `W2_LINES_H1.md`: `(VOICE_CAST)` resolved — Fatima=Vindemiatrix, Darren=Orus, Thandiwe=Pulcherrima,
+  Niamh=Leda (from VOICE_CAST.md). keyMessage ids confirmed. `// D225 pending` kept in the lines file only
+  (ca02/ca03/ca05). ca04/ca05 D9-moot note added. New "H1 Sonnet-pass applied state" section with the full
+  check results and the e2 generator flag.
 
-## Open / not yet applied (text is all in W2_LINES_H1.md, ready to paste)
-1. **ca05 conceptPanel** — NOT yet added. Insert a new `conceptPanel` block into `awarenessEpisode.strings`
-   of `scenarios/ca05_signin_pages/scenario.json.erb`, after the `defendIntro` key (last key before `strings`
-   closes). Heading "What the address bar settles"; text = ca05 layer 0 + "\n\n" + ca05 layer 1 (ends
-   "…have a word with Niamh."). // D225 pending (layer 1 carries option-A GDPR duty wording).
-2. **Host blocks** — NOT yet applied to any of the 4 host inks. For each host ink
-   (`ca02_cv_lures/ink/fatima_begum.ink`, `ca03_helpdesk_reset/ink/darren_price.ink`,
-   `ca04_exec_whaling/ink/thandiwe_moyo.ink`, `ca05_signin_pages/ink/niamh_doherty.ink`):
-   - Add VARs at top: `kit_defend_done`, `kit_caught`, `kit_key_caught`, `kit_ca0<n>_host_said` (all `= false`).
-   - In the `hub` knot's `- else:` branch, wrap the existing `{ episode_<id>_defend_complete: … }` block
-     so the kit branch comes first (ca01 pattern, see `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`):
-     ```
-     - else:
-         { kit_defend_done && not kit_ca0<n>_host_said:
-             { kit_key_caught:
-                 { kit_caught:
-                     <CATCH beat1>
-                 - else:
-                     <PARTIAL beat1>
-                 }
-                 <beat2 / close>
-             - else:
-                 <MISS beat1>
-                 <beat2 / close>
-             }
-             ~ kit_ca0<n>_host_said = true
-         - else:
-         { episode_<id>_defend_complete:
-             …existing…
-         - else:
-             …existing…
-         }
-         }
-     ```
-     Exact lines (CATCH/PARTIAL/MISS/close) are the host rows in W2_LINES_H1.md (ids ca0n-H1c/H1p/H1m/H2).
-     Compile `.ink`+`.json` together with `bin/inklecate`.
-3. **Fragments (twin layer 1)** — NOT yet applied. Edit `AW/e2/defend.json`..`AW/e5/defend.json`
-   (AW = `planning_notes/phishing_and_social_engineering/awareness/`). Each fragment carries the twin's
-   conceptPanel layer-1 text (no "you", no layer 0, no "have a word with" pointer), exactly the "Layer 1
-   (fragment …)" text in W2_LINES_H1.md. Confirm each fragment's `awarenessEpisode.strings.conceptPanel`
-   location (ca01's `e1/defend.json` is the model); ca04/ca05 fragments may need the conceptPanel key added.
-   Keep the ≥8-word shared run with the erb layer 1 (marked **[shared run]** in the lines file).
+## keyMessage ids (confirmed; I writes to episodes.json, D13)
+- ca02 `e2_enable_content` (set `e2_recruitment_inbox`)
+- ca03 `e3_push_early` (set `e3_service_desk_queue`; `e3_helpdesk_reset` is the episode id, not the set)
+- ca04 `e4_boarding_payment` (set `e4_pa_inbox`)
+- ca05 `e5_sso_lookalike` (set `e5_links_inbox`)
+Each sits in the scored defend set carrying `outcome.setGlobalPrefix = episode_<id>_defend_`, the set
+`office_kit.message_globals` writes `kit_key_caught` onto; all `isPhish: true`.
 
-## Checks still to run (Sonnet pass per 2.7)
-- `ruby scripts/validate_scenario.rb scenarios/<shell>/scenario.json.erb --strict-social --no-graph --skip-ink` (0 ERROR) on all 4.
-- `bin/inklecate` on the 4 host inks.
-- `node scripts/ink_runtime_check/dialoguelint.mjs --json scenarios/<shell>` (no `error`).
-- npc-dialog-review (opus48) on the host batch.
-- JSON-validate the 3 edited erbs (the conceptPanel edits add `\n\n` escapes — I have NOT yet re-parsed
-  them; verify they parse).
+## Checks (all 0 errors)
+- `bin/inklecate` on the four host inks: clean.
+- `validate_scenario.rb --strict-social --no-graph` on ca02–ca05: 0 errors. Only warnings are the expected
+  `kit_*` "read but never set" (I's splice/office_kit sets these at runtime).
+- `dialoguelint.mjs --json` on ca02–ca05: clean.
+- `node --test` social-*/validator-social-*/office-kit-quiet-and-stub: pass in isolation (2 fails only in the
+  big combined run, the "deserialize cloned data" worker flake; social-mail-ink-runner passes alone 23/23).
+- `test_office_kit`: 74 OK. `proof5.py`: 17 diffs, all pre-existing stale twin outputs in HEAD awaiting I's
+  regen (proof5 reads `git archive HEAD`, not the working tree); ca00 expected; none a regression.
 
-## D225 placeholders (reported)
-ca02, ca03, ca05 layer 1 carry option-A UK GDPR duty wording as placeholder, marked `// D225 pending` in
-W2_LINES_H1.md (not in the shells). ca04 is a payment shell, not on the hold list — no duty claim.
+## Open flag for P-GEN / I
+- **e2 twin conceptPanel:** `gen_e2_e4_shells.py panels()` sources e2's conceptPanel from the top-level
+  `_conceptPanel` (hardcoded lead `"Why 'enable content' matters. "`), overriding `strings.conceptPanel`.
+  The e2 twin (ca02_cv_lures_defend) will therefore carry the OLD macro panel, not the living-office
+  layer-1, and parity would fail once regenerated. Fix is P-GEN's (read `strings.conceptPanel` like e3/e5)
+  or an e2 `_conceptPanel` contract change — outside P-H1. e3/e4/e5 twins are correct.
 
-## Gotchas / flags for the orchestrator
-- **ca03 keyMessage** `e3_push_early` is a candidate only: ca03 has two triage sets. I must confirm which
-  set carries the `outcome`/`setGlobalPrefix` and that `office_kit` writes `messageGlobals` there. See the
-  keyMessage-list note in W2_LINES_H1.md.
-- **ca04/ca05 replaced sentence (D9):** neither shell has an existing conceptPanel or debrief prose to
-  replace (debrief is `mondayCard`+`noBlameLine`), so the timing pay-for is moot; defer to human timing runs.
-  Appendix §8 for ca04/ca05 says "replacing one debrief sentence" — a stale appendix line; flagged.
-- Host lines are voiced (O2 card); layers are written. Voice-cast names left as `(VOICE_CAST)` — resolve
-  before the voicing card.
+## D225
+ca02, ca03, ca05 layer 1 carry option-A UK GDPR duty wording (placeholder, `// D225 pending` in the lines
+file only). ca04 is a payment shell, no duty claim. Revisit when O1 is answered.

@@ -14,11 +14,17 @@ the id exists in the first triage set **with an outcome** of both the full shell
 | Shell | full-shell keyMessage | notes |
 |---|---|---|
 | ca02_cv_lures | `e2_enable_content` | first set `e2_recruitment_inbox`; the macro/"enable content" lure, `isPhish: true`. |
-| ca03_helpdesk_reset | `e3_push_early` | **Verify:** ca03 has two sets — `e3_service_desk_queue` (first; holds `e3_push_early`, the unrequested push prompt, `isPhish: true`) and `e3_helpdesk_reset`. The incident (account takeover by prompt-bombing) turns on the push approval, so `e3_push_early` is the candidate. If the scored defend set with the `outcome`/`setGlobalPrefix` is `e3_helpdesk_reset` rather than `e3_service_desk_queue`, I must confirm which set `office_kit` writes `messageGlobals` onto and pick the incident message in that set. Flagged for I. |
+| ca03_helpdesk_reset | `e3_push_early` | **Confirmed (H1 Sonnet pass).** The scored defend set is `e3_service_desk_queue` (its `outcome.setGlobalPrefix` = `episode_e3_helpdesk_reset_defend_`; `gen_e3_e5_shells.py` sets the prefix on `clean_set(cfg['defend_set'])` with `defend_set: 'e3_service_desk_queue'`, and `office_kit.message_globals` writes `{keyMessage: kit_key_caught}` into that set's outcome). `e3_helpdesk_reset` is the **episode id**, not a second scored set, so there is no ambiguity: `e3_push_early` (the unrequested push prompt, `isPhish: true`) is the keyMessage. |
 | ca04_exec_whaling | `e4_boarding_payment` | first set `e4_pa_inbox`; the urgent "pay before I land" payment email, `isPhish: true`. |
 | ca05_signin_pages | `e5_sso_lookalike` | first set `e5_links_inbox`; the fake "session expired" sign-in page, `isPhish: true`. |
 
 No shell in P-H1 is without a turning message, so none stops.
+
+**All four confirmed (H1 Sonnet pass).** Each listed keyMessage sits in the shell's scored defend set,
+the one whose `outcome.setGlobalPrefix` is `episode_<id>_defend_` and onto which `office_kit.message_globals`
+writes `{keyMessage: kit_key_caught}`: ca02 `e2_enable_content` in `e2_recruitment_inbox`; ca03 `e3_push_early`
+in `e3_service_desk_queue`; ca04 `e4_boarding_payment` in `e4_pa_inbox`; ca05 `e5_sso_lookalike` in `e5_links_inbox`.
+All four incident messages carry `isPhish: true`. I writes these into `episodes.json` (D13).
 
 ## Replaced-sentence list (D9 timing; one existing sentence cut per shell)
 
@@ -94,22 +100,22 @@ side. VARs added per shell: `kit_defend_done`, `kit_caught`, `kit_key_caught`, `
 
 | id | file | speaker | voice | line | kind | v/w | branch |
 |---|---|---|---|---|---|---|---|
-| ca02-H1c | ca02_cv_lures/ink/fatima_begum.ink hub | Fatima Begum | (VOICE_CAST) | You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean. | host | voiced | CATCH |
-| ca02-H1p | " | Fatima Begum | (VOICE_CAST) | You stopped the one that wanted enabling, so nothing ran. A couple of the others are worth another look, and the debrief goes through them. | host | voiced | PARTIAL |
-| ca02-H1m | " | Fatima Begum | (VOICE_CAST) | That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed. | host | voiced | MISS |
-| ca02-H2 | " | Fatima Begum | (VOICE_CAST) | A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag. | host | voiced | close |
-| ca03-H1c | ca03_helpdesk_reset/ink/darren_price.ink hub | Darren Price | (VOICE_CAST) | You reported the prompt nobody started, so the approval never came and the account stayed shut. | host | voiced | CATCH |
-| ca03-H1p | " | Darren Price | (VOICE_CAST) | You turned away the prompt that mattered, so the account held. One or two others slipped by, and the debrief walks you through them. | host | voiced | PARTIAL |
-| ca03-H1m | " | Darren Price | (VOICE_CAST) | That approval went through, so the attacker was inside a claims account, reading records and setting mailbox rules to stay hidden. | host | voiced | MISS |
-| ca03-H2 | " | Darren Price | (VOICE_CAST) | A prompt you didn't start is one to report, not approve. Number matching stops a careless tap cold. | host | voiced | close |
-| ca04-H1c | ca04_exec_whaling/ink/thandiwe_moyo.ink hub | Thandiwe Moyo | (VOICE_CAST) | You checked it before it moved, so the money stayed put and the account that email named got nothing. | host | voiced | CATCH |
-| ca04-H1p | " | Thandiwe Moyo | (VOICE_CAST) | You held the payment that mattered, so nothing left. A couple of the others are worth a second look in the debrief. | host | voiced | PARTIAL |
-| ca04-H1m | " | Thandiwe Moyo | (VOICE_CAST) | That payment went out on a voice that wasn't hers, straight to an account the attacker holds, with a bank-change lined up to keep it coming. | host | voiced | MISS |
-| ca04-H2 | " | Thandiwe Moyo | (VOICE_CAST) | A voice can be copied. Ring her back on a number you already hold before anything leaves the account. | host | voiced | close |
-| ca05-H1c | ca05_signin_pages/ink/niamh_doherty.ink hub | Niamh Doherty | (VOICE_CAST) | You read the address and didn't type your password into the copy, so there was nothing for the attacker to catch. | host | voiced | CATCH |
-| ca05-H1p | " | Niamh Doherty | (VOICE_CAST) | You kept your password off the fake page, so your account held. A couple of the others are worth another look in the debrief. | host | voiced | PARTIAL |
-| ca05-H1m | " | Niamh Doherty | (VOICE_CAST) | Your password went into the copy, so the attacker had your real account, the claimant data behind it and a seat to phish the rest of us from. | host | voiced | MISS |
-| ca05-H2 | " | Niamh Doherty | (VOICE_CAST) | Read the address bar before you type a password. A padlock doesn't make a page ours. | host | voiced | close |
+| ca02-H1c | ca02_cv_lures/ink/fatima_begum.ink hub | Fatima Begum | Vindemiatrix | You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean. | host | voiced | CATCH |
+| ca02-H1p | " | Fatima Begum | Vindemiatrix | You stopped the one that wanted enabling, so nothing ran. A couple of the others are worth another look, and the debrief goes through them. | host | voiced | PARTIAL |
+| ca02-H1m | " | Fatima Begum | Vindemiatrix | That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed. | host | voiced | MISS |
+| ca02-H2 | " | Fatima Begum | Vindemiatrix | A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag. | host | voiced | close |
+| ca03-H1c | ca03_helpdesk_reset/ink/darren_price.ink hub | Darren Price | Orus | You reported the prompt nobody started, so the approval never came and the account stayed shut. | host | voiced | CATCH |
+| ca03-H1p | " | Darren Price | Orus | You turned away the prompt that mattered, so the account held. One or two others slipped by, and the debrief walks you through them. | host | voiced | PARTIAL |
+| ca03-H1m | " | Darren Price | Orus | That approval went through, so the attacker was inside a claims account, reading records and setting mailbox rules to stay hidden. | host | voiced | MISS |
+| ca03-H2 | " | Darren Price | Orus | A prompt you didn't start is one to report, not approve. Number matching stops a careless tap cold. | host | voiced | close |
+| ca04-H1c | ca04_exec_whaling/ink/thandiwe_moyo.ink hub | Thandiwe Moyo | Pulcherrima | You checked it before it moved, so the money stayed put and the account that email named got nothing. | host | voiced | CATCH |
+| ca04-H1p | " | Thandiwe Moyo | Pulcherrima | You held the payment that mattered, so nothing left. A couple of the others are worth a second look in the debrief. | host | voiced | PARTIAL |
+| ca04-H1m | " | Thandiwe Moyo | Pulcherrima | That payment went out on a voice that wasn't hers, straight to an account the attacker holds, with a bank-change lined up to keep it coming. | host | voiced | MISS |
+| ca04-H2 | " | Thandiwe Moyo | Pulcherrima | A voice can be copied. Ring her back on a number you already hold before anything leaves the account. | host | voiced | close |
+| ca05-H1c | ca05_signin_pages/ink/niamh_doherty.ink hub | Niamh Doherty | Leda | You read the address and didn't type your password into the copy, so there was nothing for the attacker to catch. | host | voiced | CATCH |
+| ca05-H1p | " | Niamh Doherty | Leda | You kept your password off the fake page, so your account held. A couple of the others are worth another look in the debrief. | host | voiced | PARTIAL |
+| ca05-H1m | " | Niamh Doherty | Leda | Your password went into the copy, so the attacker had your real account, the claimant data behind it and a seat to phish the rest of us from. | host | voiced | MISS |
+| ca05-H2 | " | Niamh Doherty | Leda | Read the address bar before you type a password. A padlock doesn't make a page ours. | host | voiced | close |
 
 Counts: host = 8 beats (2 per shell), clips = 16 (4 per shell: catch, partial, miss, close) — within 4.1
 (8 host lines; clip estimate 5 max per shell). Layers 0/1 = written, 8 passages (erb + fragment per shell).
@@ -125,3 +131,31 @@ Counts: host = 8 beats (2 per shell), clips = 16 (4 per shell: catch, partial, m
 ca02, ca03, ca05 layer 1 carry the option-A UK GDPR duty wording as a placeholder (marked `// D225 pending`
 above). ca04 is a payment shell, not on the hold list, so its layer 1 has no duty claim. When O1 (D225) is
 answered, revisit the three marked passages (both erb and fragment copies).
+
+## H1 Sonnet-pass applied state (2026-11-20)
+
+- **Applied:** ca05 `conceptPanel` (new, heading "What the address bar settles"); host blocks in all four
+  host inks (ca02 `fatima_begum`, ca03 `darren_price`, ca04 `thandiwe_moyo`, ca05 `niamh_doherty`) with kit
+  VARs and the three-way `kit_key_caught`/`kit_caught` branch, `.ink`+`.json` recompiled; fragment layer-1
+  `conceptPanel` in `e2`–`e5/defend.json` (e2/e4/e5 added, e3 replaced its old teaching panel). Fragment
+  headings are cost-framed in the e1 model's style ("If one gets opened/approved/paid", "If a password goes
+  in"); the lines file fixed the fragment *text*, not the heading.
+- **D9 (ca04/ca05):** confirmed neither shell has an existing `conceptPanel` or debrief prose to replace
+  (debrief is `mondayCard`+`noBlameLine`), so the one-sentence timing pay-for is moot for both; D9 defers to
+  the human timing runs. ca04's panel is new (no voicePanel conflict — voicePanel stays separate).
+- **Checks (0 errors):** `bin/inklecate` clean on all four host inks; `validate_scenario.rb --strict-social
+  --no-graph` = 0 errors on all four (the only warnings are the expected `kit_defend_done`/`kit_caught`/
+  `kit_key_caught` "read but never set" — I's splice/office_kit sets them); `dialoguelint.mjs` clean;
+  `test_office_kit` 74 OK; JS social/validator-social/office-kit suites pass in isolation (one combined-run
+  flake, "Unable to deserialize cloned data", is a worker/serialisation artefact — the file passes alone).
+- **proof5:** runs against `git archive HEAD`, so it ignores working-tree edits; its 17 diffs are stale
+  generated twin/defend outputs already in HEAD (ca00=P-X0; ca02–05=the earlier H1 commit; ca06–11=P-H2;
+  ca14–20=P-H3; plus P-TW/P-SBM/P-KT), awaiting I's integration regen+commit. Not a regression.
+- **FLAG for P-GEN/I — e2 twin panel not sourced from `strings`:** `gen_e2_e4_shells.py panels()` rebuilds
+  e2's `conceptPanel` from the top-level `_conceptPanel` (hardcoded lead `"Why 'enable content' matters. "`),
+  overriding `strings.conceptPanel`. So the e2 **twin** (ca02_cv_lures_defend) will carry the *old* macro
+  teaching text (with the un-cut sentence, no living-office layer 1), and the layer-1 parity test would fail
+  on it once I regenerates. e3/e5 copy `strings` straight through and e4's `panels()` only adds `voicePanel`,
+  so those three twins pick up the new fragment panel correctly. Resolving e2 means either P-GEN changing
+  `panels()` to read `strings.conceptPanel` like the others, or updating e2's `_conceptPanel` contract — both
+  outside P-H1 (generator code is P-GEN's). The fragment `strings.conceptPanel` for e2 is written as drafted.
