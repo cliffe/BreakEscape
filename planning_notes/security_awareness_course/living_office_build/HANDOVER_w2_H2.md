@@ -11,7 +11,16 @@ Branch `feat/ca-living-office-w2`, worktree `.claude/worktrees/b-ca-lo-w2`. Brie
 - **Layer 0 + layer 1** in each erb `strings.conceptPanel.text` (layer0 `\n\n` layer1). ca06/ca07 conceptPanel newly created (object); ca11 object text replaced; ca08/ca09/ca10 appended as the LAST entry of the existing conceptPanel array. Every layer-1 ends "have a word with <host first name>." (Chidi/Agnieszka/Anjali/Nilesh/Niamh/Tomasz). Layer 0 opens "To a real attacker".
 - **D225/O1 hold**: ca08 and ca11 layer 1 use recommended option-A duty wording (accurate plain UK GDPR) as placeholder; marked `// D225 pending` in `W2_LINES_H2.md` (not in the shell). ca06/07/09/10 carry no duty claim.
 
-## OPEN (not done — next agent finishes)
+## DONE (second P-H2 session, commit `7b490d269`)
+- **Fragment layer 1 written** into `e6..e11/defend.json` exactly per the plan: e6/e7 added a `conceptPanel` object after `defendOnly`; e8/e9/e10 appended one layer-1 entry as the LAST conceptPanel array element; e11 replaced the object `text` (heading kept). No "To a real attacker", no "have a word with", no "you". JSON parses on all six. Committed with explicit paths; `git diff HEAD` empty.
+- **All checks green.** inklecate: 6 host inks compile exit 0 (no byte change vs committed). validator `--strict-social --no-graph`: 0 errors each (only the expected pre-splice `kit_defend_done/kit_caught/kit_key_caught` VAR warnings). dialoguelint `--json`: 0 findings, 0 error tokens, exit 0 each. `node --test social-*/validator-social-*/office-kit-quiet-and-stub`: 2885/2886 subtests pass; the one "fail" is an async-teardown uncaughtException in `social-mail-ink-runner.test.mjs` that is 23/23 clean when run alone (cross-test race, not content). `python3 -m unittest test_office_kit`: 74 OK. **proof5 (committed): 26 diffs, all expected** — 17 baseline (ca00 `anjali_rao.ink` + 16 twin host inks from P-GEN step 5); 3 twin erbs (ca03/04/05_defend `scenario.json.erb`) from P-H1's commit `68ee75f9d` fragment conceptPanels (not P-H2); 6 twin erbs (ca06–ca11_defend `scenario.json.erb`) = my fragment conceptPanels flowing into the generated twins (gen has them, HEAD twin erb not yet re-spliced by step I). Each of the 6 twin erb diffs is exactly the conceptPanel I wrote, nothing else.
+- No P-H2 file needed fixing; the drafted text passed every check unchanged.
+
+## STILL OPEN (unchanged, outside this session's brief)
+3. **npc-dialog-review (opus48)** formal verdict/commit on the batch — still owed.
+4. **D9 timing trims** (ca06–ca10 appended-passage net growth) — deferred to the post-wave-2 human timing pass, per the lines file.
+
+## OPEN (original notes — items 1 and 2 now done above)
 1. **Fragment layer 1 — NOT YET WRITTEN.** `AW/e6/defend.json` … `AW/e11/defend.json`, key `awarenessEpisode.strings.conceptPanel`. Exact text is in `W2_LINES_H2.md` under each shell's "Fragment layer 1". Rules: layer-1 only, NO "To a real attacker", NO "have a word with", NO "you"; must share an 8+ word run with the erb layer 1 (checked phrasing already overlaps). State:
    - e6, e7: conceptPanel is ABSENT (last strings key is `defendOnly`); ADD an object `{heading,text}` after `defendOnly`.
    - e8, e9, e10: conceptPanel is an ARRAY of the shell's teaching panels (already present); APPEND one `{heading,text}` layer-1 entry as the last element.
