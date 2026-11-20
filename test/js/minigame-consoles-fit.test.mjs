@@ -245,10 +245,10 @@ test('multi-column consoles stack under 600px (X3)', () => {
     }
 });
 
-test('after-shot fixes: SIEM rows never shrink and wrap the message onto its own line below 1100px; the command board field stays in its cell; scrolling panes use the pixel scrollbar', () => {
+test('after-shot fixes: SIEM rows never shrink and wrap the message onto its own line below 1240px; the command board field stays in its cell; scrolling panes use the pixel scrollbar', () => {
     const siem = css('siem-dashboard-minigame.css');
     assert.match(siem, /\.siem-alert-row \{[^}]*flex-shrink: 0/);
-    const mid = siem.slice(siem.indexOf('@media (max-width: 1100px)'));
+    const mid = siem.slice(siem.indexOf('@media (max-width: 1239px)'));
     assert.match(mid, /\.siem-alert-row \{[^}]*grid-template-columns: 56px 72px minmax\(0, 1fr\) auto/);
     assert.match(mid, /\.siem-description \{[^}]*grid-column: 1 \/ -1;[^}]*grid-row: 2/);
     assert.match(css('command-board-minigame.css'), /\.cb-entry-input \{[^}]*box-sizing: border-box/);

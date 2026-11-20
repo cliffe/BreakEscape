@@ -104,7 +104,7 @@ const mediaBlock = (file, query) => {
 
 test('SIEM descriptions and queue text wrap instead of ellipsising', () => {
     for (const cls of ['siem-description', 'siem-queue-text']) {
-        // The first rule for the class is the base rule (the 1100px query comes later and
+        // The first rule for the class is the base rule (the 1239px query comes later and
         // also says normal/anywhere, so take only the base one for the positive checks)
         const base = rulesFor('siem-dashboard-minigame.css', cls).filter((r) => r.sel.trim() === '.' + cls);
         assert.ok(base.length > 0, `.${cls} base rule exists`);
@@ -154,4 +154,25 @@ test('SIEM footer spans stay text-only (no new controls to size)', () => {
     const bar = js.slice(js.indexOf('class="siem-status-bar"'), js.indexOf('</div>', js.indexOf('class="siem-status-bar"')));
     assert.ok(!/<button/.test(bar), 'no buttons in the footer');
     assert.ok((bar.match(/<span/g) || []).length === 3, 'three spans: pending, clock, remaining');
+});
+
+// fix/siem-wrap-footer R2 m1: the two-line layout takes over before the description column
+// drops below about 200px. Wide grid: 70 86 156 _ 200 and four 10px gaps leave the description
+// the rest. Measured at 1280: 236px (row content 788px), so the row content is 552 + desc and
+// shrinks 0.7px per viewport px (7fr of 10fr).
+test('SIEM: the narrow layout starts at 1239px, so the wide description column stays 200px or more, and 1280 is wide', () => {
+    const f = 'siem-dashboard-minigame.css';
+    const BREAK = 1239;
+    const wide = rulesFor(f, 'siem-alert-row').find((r) => r.sel.trim() === '.siem-alert-row').body;
+    const tracks = /grid-template-columns:\s*70px 86px 156px minmax\(0, 1fr\) 200px/.test(wide);
+    assert.ok(tracks, 'the wide grid is 70 86 156 1fr 200');
+    const fixed = 70 + 86 + 156 + 200 + 4 * 10;
+    const descAt = (vw) => 236 + (vw - 1280) * 0.7;
+    assert.ok(fixed === 552, 'fixed tracks and gaps are 552px');
+    assert.ok(descAt(BREAK + 1) >= 200, `description at ${BREAK + 1}px is ${descAt(BREAK + 1)}px, 200 or more`);
+    assert.ok(descAt(1280) > descAt(BREAK + 1), '1280 is wide');
+    const css = read(f);
+    assert.ok(css.includes('@media (max-width: ' + BREAK + 'px)'), 'the two-line query is max-width ' + BREAK);
+    assert.ok(css.includes('@media (min-width: 601px) and (max-width: ' + BREAK + 'px)'), 'the queue-count band ends at the same width');
+    assert.ok(!/max-width:\s*1100px/.test(css), 'no query still uses 1100px');
 });

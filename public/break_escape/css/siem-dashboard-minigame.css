@@ -523,15 +523,20 @@
     }
 }
 
-/* The queue pane is 212px wide at 800x600: 24px wraps "12 alerts queued", so 16px, on one line */
-@media (min-width: 601px) and (max-width: 1100px) {
+/* The two-line row starts at 1239px and below, not 1100px. The wide grid keeps 70 86 156 _ 200
+   plus four 10px gaps (552px) and the description gets the rest: about 236px at 1280, and it
+   falls 0.7px per viewport px, so it reaches 200px at about 1229px. A 1239px cut leaves it
+   about 207px in the widest wide-layout case and 1280 is still wide. Keep the two queries
+   and test/js/phone-390-rule-fixes.test.mjs in step.
+   The queue pane is 212px wide at 800x600: 24px wraps "12 alerts queued", so 16px, on one line */
+@media (min-width: 601px) and (max-width: 1239px) {
     .siem-queue-count {
         font-size: 16px;   /* GNF scale 16/24/32 */
         white-space: nowrap;
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1239px) {
     /* Two lines: badge, time, host and the buttons; then the whole message below them, so
        the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
     .siem-alert-row {
