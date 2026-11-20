@@ -28,7 +28,10 @@ const views = {
     landscape: { left: 0, top: 30, right: 580, bottom: 370 },
     desktop: { left: 0, top: 0, right: 600, bottom: 400 }
 };
-const named = { spring: 0, driver: 1, key: 2 };
+// Spring, Driver Pin and Key Pin name a KIND of part (D219 R3, AC1): each may point at any pin of
+// that kind, and records which one as `pin`. Every other label names no pin (-1).
+const pinKind = new Set(['spring', 'driver', 'key']);
+const namedPin = (r, id, n) => (pinKind.has(id) ? r.labels[id].pin : -1);
 
 for (const scale of [0.67, 1, 0.56, 0.55, 0.47]) {
     for (const n of [3, 4, 5, 6]) {
@@ -63,7 +66,7 @@ for (const scale of [0.67, 1, 0.56, 0.55, 0.47]) {
                 for (const id of ids) {
                     const a = r.labels[id];
                     pinXs.forEach((x, p) => {
-                        if (named[id] === Math.min(p, n - 1) && named[id] !== undefined && p === Math.min(named[id], n - 1)) return;
+                        if (p === namedPin(r, id, n)) return;
                         const hit = a.x < x + PIN_HALF_WIDTH && x - PIN_HALF_WIDTH < a.x + a.w && a.y < PIN_BOTTOM && PIN_TOP < a.y + a.h;
                         assert.ok(!hit, `${id} covers pin ${p + 1}`);
                     });
@@ -122,7 +125,9 @@ test('the pin check decides placement when the top rows are gone (4 pins, view s
     const pinXs = pinXsFor(4);
     const r = layoutLockLabels({ scale: 0.67, pinXs, view: { left: 0, top: 45, right: 580, bottom: 360 }, measure });
     assert.ok(r.fallbacks === 0, 'no fallback, got ' + r.fallbacks);
-    for (const [id, pin] of [['spring', 0], ['driver', 1], ['key', 2], ['shear', -1], ['wrench', -1], ['hook', -1]]) {
+    for (const id of ['spring', 'driver', 'key', 'shear', 'wrench', 'hook']) {
+        const pin = pinKind.has(id) ? r.labels[id].pin : -1;
+        assert.ok(!pinKind.has(id) || (pin >= 0 && pin < 4), `${id} names a real pin, got ${pin}`);
         assert.ok(!overlapsPin(r.labels[id], pinXs, pin), `${id} covers a pin it does not name`);
     }
 });
@@ -300,20 +305,41 @@ test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does
                     const l = r.labels[id].leader;
                     if (!l) continue;
                     pinXs.forEach((x, p) => {
-                        if (p === Math.min(named[id] ?? -1, n - 1)) return;
+                        if (p === namedPin(r, id, n)) return;
                         const pinBox = { x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP };
                         assert.ok(!hits(l, pinBox), `${id} leader crosses pin ${p + 1} (${tag}): ${JSON.stringify(l)}`);
                     });
                 }
+                // Strict, whatever pin each teaching label chose: 16px on screen, no label touching
+                // another label, an unnamed pin or a drawn part (a 0px touch counts), every pin label
+                // has a leader, no fallback
+                assert.ok(r.font * scale >= 16 - 1e-9, `font ${r.font} x ${scale} >= 16 (${tag})`);
+                assert.ok(r.fallbacks === 0, `no fallback (${tag}), got ${r.fallbacks}`);
+                const touch = (a, b) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
+                const lastX = pinXs[n - 1];
+                const drawn = [WRENCH_UPRIGHT, { x: 80, y: 200, w: 38, h: 10 }, { x: -300, y: 254, w: lastX + 6 + 300, h: 12 }, { x: lastX - 20, y: 215, w: 30, h: 39 }];
+                const ids = Object.keys(r.labels);
+                ids.forEach((id, i) => {
+                    const a = r.labels[id];
+                    if (pinKind.has(id)) assert.ok(Number.isInteger(a.pin) && a.pin >= 0 && a.pin < n, `${id} has a valid pin (${tag}), got ${a.pin}`);
+                    if (id !== 'shear') assert.ok(!!a.leader, `${id} has a leader (${tag})`);
+                    pinXs.forEach((x, p) => {
+                        if (p === namedPin(r, id, n)) return;
+                        assert.ok(!touch(a, { x: x - PIN_HALF_WIDTH, y: PIN_TOP, w: PIN_HALF_WIDTH * 2, h: PIN_BOTTOM - PIN_TOP }), `${id} touches pin ${p + 1} (${tag})`);
+                    });
+                    for (const b of drawn) assert.ok(!touch(a, b), `${id} touches a drawn part (${tag}): ${JSON.stringify(b)}`);
+                    for (const o of ids.slice(i + 1)) assert.ok(!touch(a, r.labels[o]) , `${id} and ${o} touch (${tag})`);
+                });
                 const w = r.labels.wrench;
                 const onUpright = w.x < WRENCH_UPRIGHT.x + WRENCH_UPRIGHT.w && WRENCH_UPRIGHT.x < w.x + w.w
                     && w.y < WRENCH_UPRIGHT.y + WRENCH_UPRIGHT.h && WRENCH_UPRIGHT.y < w.y + w.h;
                 assert.ok(!onUpright, `wrench label covers the upright (${tag}): ${JSON.stringify(w)}`);
-                // Where everything fits (no fallback), up to 6 pins keep every leader straight
+                // Where everything fits (no fallback), up to 6 pins keep every pin leader near-straight
+                // (first leg within 10px of vertical; a gap leader's elbow is its second leg)
                 if (r.fallbacks === 0 && n <= 6) {
                     for (const id of Object.keys(r.labels)) {
                         const l = r.labels[id].leader;
-                        if (l) assert.ok(l.x1 === l.x2 || l.y1 === l.y2, `${id} leader straight (${tag})`);
+                        if (l) assert.ok(Math.abs(l.x2 - l.x1) <= 10 || l.y1 === l.y2, `${id} leader straight (${tag})`);
                     }
                 }
                 cases++;
@@ -323,12 +349,17 @@ test('across scales 0.40 to 1.0 and 3 to 8 pins: no leader crosses a pin it does
     assert.ok(cases === 61 * 6 * 2, 'grid size ' + cases);
 });
 
-test('740x360 with the observations open (scale 0.47): a 4-pin lock keeps Driver Pin over pin 2 with a vertical leader', () => {
+test('740x360 with the observations open (scale 0.47): a 4-pin lock puts Driver Pin over a pin of its kind with a straight leader', () => {
     const pinXs = pinXsFor(4);
     const r = layoutLockLabels({ scale: 0.47, pinXs, view: views.landscape, measure: realMeasure });
     const d = r.labels.driver;
     assert.ok(r.fallbacks === 0, 'no fallback, got ' + r.fallbacks);
-    assert.ok(d.leader.x1 === d.leader.x2 && d.leader.x1 === Math.round(pinXs[1]), 'vertical leader at pin 2: ' + JSON.stringify(d.leader));
+    assert.ok(d.pin >= 0 && d.pin < 4, 'names a real pin, got ' + d.pin);
+    const l = d.leader;
+    const legs = [l, ...(l.more || [])];
+    const end = legs[legs.length - 1];
+    assert.ok(Math.abs(l.x2 - l.x1) <= 10 || l.more, 'near-straight leader: ' + JSON.stringify(l));
+    assert.ok(Math.abs(end.x2 - pinXs[d.pin]) <= PIN_HALF_WIDTH + 1, 'ends on its own pin: ' + JSON.stringify(l));
 });
 
 test('a wide wrench label goes under the upright foot with a leader up to it, and the hook label slides clear', () => {
