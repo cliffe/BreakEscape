@@ -23,7 +23,8 @@ copy('state-sync.js', 'state-sync.mjs', toMjs);
 copy('systems/global-writer.js', 'global-writer.mjs');
 copy('systems/objectives-manager.js', 'objectives-manager.mjs');
 copy('ui/objectives-panel.js', 'objectives-panel.mjs',
-  s => s.split("'../utils/display-dashes.js'").join("'./display-dashes.mjs'").split("'./modal-stack.js'").join("'./modal-stack.mjs'"));
+  s => s.split("'../utils/display-dashes.js'").join("'./display-dashes.mjs'").split("'./modal-stack.js'").join("'./modal-stack.mjs'").split("'./hud-lanes.js'").join("'./hud-lanes.mjs'"));
+copy('ui/hud-lanes.js', 'hud-lanes.mjs');
 writeFileSync(join(dir, 'modal-stack.mjs'), 'export const openModalCount = () => 0;\n');
 writeFileSync(join(dir, 'display-dashes.mjs'), 'export const displayDashes = (s) => s;\n');
 

@@ -529,7 +529,8 @@ test('walkThroughTarget: the far side is the other room, even for a player in th
 // ── ui/objectives-panel.js ──────────────────────────────────────────────────────────
 const panelSrc = readFileSync(join(js, 'ui/objectives-panel.js'), 'utf8')
     .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
-    .split("'./modal-stack.js'").join(`'${dataUrl('export const openModalCount = () => 0;')}'`);
+    .split("'./modal-stack.js'").join(`'${dataUrl('export const openModalCount = () => 0;')}'`)
+    .split("'./hud-lanes.js'").join(`'${dataUrl(readFileSync(join(js, 'ui/hud-lanes.js'), 'utf8'))}'`);
 const { ObjectivesPanel } = await import(dataUrl(panelSrc));
 
 test('hasMoreBelow: only while the list goes on past the bottom, ignoring a pixel or two of rounding', () => {
