@@ -1758,11 +1758,11 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits. Staff sign in as <%= catalogue_login_user %>.",
+          "observations": "The public catalogue screen, staff sign-in.",
           "observationVariants": [
-            { "condition": "globalVars.invoice_booked", "value": "LIVE CAPTURE -- INITIATIVE LEDGER, NEW ENTRY" },
-            { "condition": "globalVars.flag2_submitted", "value": "LIVE CAPTURE -- INITIATIVE LEDGER" },
-            { "condition": "globalVars.flag1_submitted", "value": "LIVE CAPTURE -- FULL CATALOGUE" }
+            { "condition": "globalVars.invoice_booked", "value": "A new entry on the ledger screen." },
+            { "condition": "globalVars.flag2_submitted", "value": "The screen shows the initiative ledger." },
+            { "condition": "globalVars.flag1_submitted", "value": "The catalogue screen, now a live capture." }
           ],
           "text": "PUBLIC CATALOGUE. County deeds, land records, corporate deposits.\nStaff sign-in: <%= catalogue_login_user %>. Password from the duty desk, never on screen.",
           "textVariants": [

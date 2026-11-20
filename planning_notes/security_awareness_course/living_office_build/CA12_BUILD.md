@@ -669,7 +669,7 @@ Every new line, exactly. Inline conditionals count as one line.
 | A3 | Thandiwe Moyo | Pulcherrima | `Okay. Back to work, then.` |
 | V0 | Camila Ospina | Zephyr (proposed) | `Hi. Just waiting for someone, thanks.` |
 | A4 | Camila Ospina | Zephyr (proposed) | `Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up.` (the bark, and the first line of `ca12_door`) |
-| A5 | Camila Ospina | Zephyr (proposed) | `Oh, of course. Thanks, I'll do that.` |
+| A5 | Camila Ospina | Zephyr (proposed) | `Oh, of course. I'll do that.` |
 | A6 | Camila Ospina | Zephyr (proposed) | `Lovely, thanks. I'll find her myself.` |
 | A7 | Delphine Arvanitis | Despina | `Pop your name in the book and I'll let Yasmin know you're here.` |
 | A8 | Camila Ospina | Zephyr (proposed) | `Sorry, I'll try the desk.` |
