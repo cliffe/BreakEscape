@@ -21,13 +21,15 @@ test('no engine file adds the minigame-active class', () => {
   const files = [];
   const walk = d => { for (const e of readdirSync(d, { withFileTypes: true })) {
     const p = join(d, e.name);
-    if (e.isDirectory()) walk(p); else if (/\.(js|mjs|erb)$/.test(e.name)) files.push(p);
+    if (e.isDirectory()) walk(p); else if (/\.(js|mjs|erb|rb)$/.test(e.name)) files.push(p);
   } };
   walk(join(root, 'public/break_escape/js'));
   walk(join(root, 'app/views'));
+  walk(join(root, 'app/helpers'));
   for (const f of files) {
-    const src = readFileSync(f, 'utf8');
-    assert.ok(!/classList\.(add|toggle)\(\s*['"]minigame-active/.test(src), f + ' adds minigame-active');
+    // Reads (`contains(`) and the test bridge's refusal reason (`fail(`) are fine; any other quoted use is a writer.
+    const src = readFileSync(f, 'utf8').replace(/(?:contains|fail)\(\s*['"`]minigame-active['"`]/g, '');
+    assert.ok(!/['"`]minigame-active['"`]/.test(src), f + ' uses minigame-active other than a read');
     assert.ok(!/className\s*\+?=[^;\n]*minigame-active/.test(src), f + ' sets minigame-active by className');
   }
 });
