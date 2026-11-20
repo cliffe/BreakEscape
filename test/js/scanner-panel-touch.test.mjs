@@ -19,7 +19,7 @@ test('toggle has a pseudo-element hit pad of at least 10px each side (24 + 20 = 
     assert.ok(m !== null, 'inset present');
     const v = m[1].trim().split(/\s+/).map((x) => parseFloat(x));
     assert.ok(v.length >= 1 && v.length <= 4, 'inset has 1 to 4 values');
-    assert.ok(v.every((n) => n <= -10), 'every side extends at least 10px (24 + 20 = 44)');
+    assert.ok(v.every((n) => n <= -12), 'every side extends at least 12px from the padding box (live: -10px gave 40x40; 20 + 24 = 44)');
 });
 test('chips are at least 32px tall', () => {
     const m = /min-height:\s*(\d+)px/.exec(body('.scanner-panel .scan-chips > *'));

@@ -82,7 +82,7 @@
     /* 24px box, 44px touch target: the pad reaches 10px past each edge */
     content: '';
     position: absolute;
-    inset: -10px;
+    inset: -12px; /* from the padding box (24px less the 2px border = 20px), so 20 + 24 = 44px */
 }
 .scanner-panel .scan-toggle:hover { background: var(--scan-accent-mid); }
 .scanner-panel .scan-toggle.expanded { transform: rotate(180deg); }
