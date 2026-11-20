@@ -11,8 +11,18 @@
 //
 //   node tools/playtest/shell-x-check.mjs --port 3450 --game 3084 [--scenes a,b] [--sizes 915x412,800x600,390x844]
 //
-// Exits 1 on any failure, 2 on a setup error. Scenes that do not open with a title-only start are
-// reported as "not open" and do not fail the run (the audit's --strict is the gate for those).
+// Open wait budget: up to 5 s for the shell to exist, be visible and stop moving (shell and X rects),
+// then up to 1.5 s more (from when those first hold) for the X to be hit-testable, at most about 6.5 s
+// a case. If only the hit test is unmet then, the run hands over to the X report so an off-screen,
+// frame-clipped or covered X gets its specific message, and counts as a failure. This keeps --legacy
+// (which moves the X on most of the 120 cases) well under the 900 s test limit.
+// Trade-off: an X covered by something that clears within the 1.5 s hit window passes (the old fixed
+// 1.2 s wait failed it if still covered at 1.2 s); an X covered for longer fails.
+//
+// Exits 1 on any failure, 2 on a setup error. A scene that throws from startMinigame and leaves no shell
+// is reported as "not open" and does not fail the run (the audit's --strict is the gate for those).
+// A scene that never opens and throws nothing (an unregistered --scenes name, or a knocked-out player)
+// now FAILS after the 5 s wait; a thrown error with a shell left behind also FAILS ("open threw").
 // Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE picks the browser. Runs in a merge batch on a keyless server:
 //   PLAYWRIGHT_CHROMIUM_EXECUTABLE=... node tools/playtest/shell-x-check.mjs --port 3001 --game <id>
 import { chromium } from 'playwright';
@@ -111,25 +121,73 @@ export async function xSample() {
         hitOk = !!hit && (hit === x || x.contains(hit));
         hitHtml = hit ? hit.outerHTML.slice(0, 300) : '(nothing under the X)';
     }
-    return { shell: true, visible, noX, stable: r1.every((v, i) => v === r2[i]) && (!x1 || x1.every((v, i) => v === x2[i])), hitOk, hitHtml };
+    // stable = the shell rect held still; xStable = the X rect held still (reported separately, m3)
+    return { shell: true, visible, noX, stable: r1.every((v, i) => v === r2[i]), xStable: !x1 || x1.every((v, i) => v === x2[i]), hitOk, hitHtml };
 }
 
-// Pure: which open conditions are still unmet for a sample from xSample (empty list = ready).
-// A shell with no X (disableClose scene) has nothing to hit-test, so it is ready once visible and stable.
-export function unmetConditions(sample) {
+// Pure: the "hard" open conditions still unmet (shell exists, visible, shell and X rects stable).
+// These wait up to OPEN_TIMEOUT_MS and a miss at the deadline is a timeout failure.
+export function hardUnmet(sample) {
     if (!sample || !sample.shell) return ['the minigame shell (.minigame-container) does not exist'];
     const unmet = [];
     if (!sample.visible) unmet.push('the minigame shell is not visible (hidden or zero size)');
     if (!sample.stable) unmet.push('the shell rect is still changing across two animation frames');
-    if (!sample.noX && !sample.hitOk) unmet.push('the element at the X centre is not the X or inside it');
+    if (sample.xStable === false) unmet.push('the X rect is still changing across two animation frames');
     return unmet;
 }
 
-export function openTimeoutMessage(scene, sample, unmet) {
-    return `${scene}: open wait timed out; unmet: ${unmet.join('; ')}. Element under the X: ${sample && sample.hitHtml ? sample.hitHtml : '(not measured)'}`;
+// Pure: every unmet condition, hit test included. A shell with no X (disableClose scene) has
+// nothing to hit-test, so it is ready once visible and stable.
+export function unmetConditions(sample) {
+    const unmet = hardUnmet(sample);
+    if (sample && sample.shell && !sample.noX && !sample.hitOk) unmet.push('the element at the X centre is not the X or inside it');
+    return unmet;
+}
+
+export function openTimeoutMessage(scene, sample, unmet, openError) {
+    return `${scene}: open wait timed out; unmet: ${unmet.join('; ')}.${openError ? ` (open threw: ${openError})` : ''} Element under the X: ${sample && sample.hitHtml ? sample.hitHtml : '(not measured)'}`;
+}
+
+// Pure decision for one sample. state = { hardExpired, hitExpired } says which waits have run out.
+//   ready    open and the X is on top (and startMinigame threw nothing)
+//   wait     keep sampling
+//   notOpen  no shell and startMinigame said why: the "(not open)" report, not a failure
+//   fail     counted failure; message says why
+//   report   shell, visibility and stability are fine and only the hit test is unmet at its
+//            deadline: hand over to xReport for the specific reason (off-screen, clipped, covered)
+export function openOutcome(scene, sample, openError, state) {
+    const hard = hardUnmet(sample);
+    const hasShell = !!(sample && sample.shell);
+    if (!hasShell && openError) return { kind: 'notOpen' };
+    if (hard.length) {
+        if (!state.hardExpired) return { kind: 'wait' };
+        return { kind: 'fail', message: openTimeoutMessage(scene, sample, hard, openError) };
+    }
+    // Shell is open and steady. A constructor or init() throw leaves the container behind (m2):
+    // that is a failure, not a disableClose skip.
+    if (openError) return { kind: 'fail', message: `${scene}: open threw: ${openError}` };
+    if (sample.noX || sample.hitOk) return { kind: 'ready' };
+    if (!state.hitExpired) return { kind: 'wait' };
+    return { kind: 'report', message: openTimeoutMessage(scene, sample, unmetConditions(sample)) };
+}
+
+// Injectable wait loop: sampleFn() -> sample, now() -> ms, sleep(ms). Waits up to OPEN_TIMEOUT_MS for
+// the hard conditions, then up to HIT_TIMEOUT_MS (counted from when they first held) for the hit test.
+export async function waitForOpen({ scene, sampleFn, now, sleep, openError = null, openMs = OPEN_TIMEOUT_MS, hitMs = HIT_TIMEOUT_MS }) {
+    const hardDeadline = now() + openMs;
+    let hitSince = null;
+    for (;;) {
+        const sample = await sampleFn();
+        const t = now();
+        if (sample && sample.shell && hardUnmet(sample).length === 0) { if (hitSince === null) hitSince = t; } else hitSince = null;
+        const out = openOutcome(scene, sample, openError, { hardExpired: t >= hardDeadline, hitExpired: hitSince !== null && t - hitSince >= hitMs });
+        if (out.kind !== 'wait') return { ...out, sample };
+        await sleep(50);
+    }
 }
 
 export const OPEN_TIMEOUT_MS = 5000;
+export const HIT_TIMEOUT_MS = 1500;
 
 async function main() {
     if (!GID) { console.error('--game is required'); process.exit(2); }
@@ -155,20 +213,13 @@ async function main() {
             window.__openError = null;
             try { await window.MinigameFramework.startMinigame(s, null, p); } catch (e) { window.__openError = String(e.message || e); }
         }, { s, p: PARAMS[s] || { title: s } });
-        // Condition wait in place of a fixed delay: shell visible, rect stable, X hit-testable.
-        const deadline = Date.now() + OPEN_TIMEOUT_MS;
-        let sample = null, unmet = [];
-        for (;;) {
-            sample = await page.evaluate(xSample);
-            unmet = unmetConditions(sample);
-            if (!unmet.length || Date.now() > deadline) break;
-            await page.waitForTimeout(50);
-        }
-        if (!unmet.length) return { ready: true };
+        // Condition wait in place of a fixed delay (budget in the header).
         const openError = await page.evaluate(() => window.__openError || null);
-        // Never opened and startMinigame said why: the old "(not open)" report, not a failure.
-        if (!sample.shell && openError) return { ready: false, notOpen: true };
-        return { ready: false, message: openTimeoutMessage(s, sample, unmet) };
+        const o = await waitForOpen({ scene: s, sampleFn: () => page.evaluate(xSample), now: () => Date.now(), sleep: (ms) => page.waitForTimeout(ms), openError });
+        if (o.kind === 'ready') return { ready: true };
+        if (o.kind === 'notOpen') return { ready: false, notOpen: true };
+        if (o.kind === 'report') return { ready: false, hitOnly: true, message: o.message };
+        return { ready: false, message: o.message };
     };
     for (const s of scenes) {
         if (skipped.has(s)) continue;
@@ -176,12 +227,14 @@ async function main() {
             await page.setViewportSize({ width: w, height: h });
             const o = await openScene(s);
             const tag = `${s} ${w}x${h}`;
-            if (!o.ready && !o.notOpen) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
-            const r = o.ready ? await page.evaluate(xReport) : { open: false };
+            if (!o.ready && !o.notOpen && !o.hitOnly) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
+            const r = (o.ready || o.hitOnly) ? await page.evaluate(xReport) : { open: false };
             if (!r.open) { console.log(`${tag.padEnd(40)} (not open)`); continue; }
             if (r.noX) { console.log(`${tag.padEnd(40)} no X (disableClose scene)`); continue; }
             checked++;
             const issues = r.results.flatMap(x => x.issues.map(i => `${x.label}: ${i}`));
+            // Hit test unmet for the whole wait: the specific xReport issues, or the timeout text if xReport saw none.
+            if (o.hitOnly) { fails++; console.log(`${tag.padEnd(40)} FAIL after the open wait: ${issues.length ? issues.join('; ') : o.message}`); continue; }
             if (issues.length) { fails++; console.log(`${tag.padEnd(40)} FAIL ${issues.join('; ')}`); }
             else console.log(`${tag.padEnd(40)} ok${r.results[1].scrollsX || r.results[1].scrollsY ? ` (shell scrolls ${r.results[1].scrollsX ? 'x' : ''}${r.results[1].scrollsY ? 'y' : ''})` : ''}`);
         }
@@ -191,7 +244,10 @@ async function main() {
     if (scenes.includes('pin')) {
         for (const [w, h] of SIZES) {
             await page.setViewportSize({ width: w, height: h });
-            await openScene('pin');
+            const o = await openScene('pin');
+            const tag = `pin message ${w}x${h}`;
+            if (o.notOpen) { checked++; console.log(`${tag.padEnd(40)} (not open)`); continue; }
+            if (!o.ready) { checked++; fails++; console.log(`${tag.padEnd(40)} FAIL ${o.message}`); continue; }
             const m = await page.evaluate(async () => {
                 const mg = window.MinigameFramework.currentMinigame;
                 const pad = document.querySelector('.pin-minigame-keypad');
@@ -206,7 +262,6 @@ async function main() {
                 return { before, long, longer };
             });
             checked++;
-            const tag = `pin message ${w}x${h}`;
             if (!m) { console.log(`${tag.padEnd(40)} (not open)`); continue; }
             if (Math.abs(m.before - m.long) > 0.5 || Math.abs(m.before - m.longer) > 0.5) { fails++; console.log(`${tag.padEnd(40)} FAIL keys moved ${m.before} -> ${m.long} -> ${m.longer}`); }
             else console.log(`${tag.padEnd(40)} ok keys stay at ${Math.round(m.before)}`);
