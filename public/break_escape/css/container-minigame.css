@@ -430,7 +430,7 @@
     font-size: 16px;
     margin: 0;
     color: #ecf0f1;
-    line-height: 1.4;
+    line-height: 24px;
 }
 
 .container-contents-section {
@@ -691,7 +691,6 @@
 }
 
 .desktop-account-btn {
-    font-size: 16px;
     padding: 6px 10px;
 }
 
@@ -740,7 +739,6 @@
 .desktop-transfer-btn {
     width: 100%;
     margin: 0;
-    font-size: 16px;
     padding: 6px 8px;
 }
 

@@ -199,10 +199,17 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    flex: none;
+}
+
+/* The name shrinks (and breaks long single tokens) before the SAVE button and tags are pushed out */
+.ble-device-name > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .ble-device-icon {
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .ble-save-btn {
@@ -301,7 +308,7 @@
     margin-bottom: 8px;
     font-size: 16px;
     color: #00bcd4;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .ble-clear-target-btn {

@@ -753,4 +753,7 @@
     .bce-mx-col { overflow: visible; }
     .bce-mx-help { grid-template-columns: 1fr 1fr; }
 }
-.bce-mx .bce-status-item { font-family: 'Press Start 2P', monospace; font-size: 8px; }
+.bce-mx .bce-status-item { font-family: 'GNF', monospace; font-size: 16px; letter-spacing: 0; }
+/* GNF 16px items are wider than the old 8px ones: let the footer and status bar wrap at 390 */
+.bce-mx .bce-footer { flex-wrap: wrap; }
+.bce-mx .bce-status-bar { flex-wrap: wrap; gap: 8px 20px; }

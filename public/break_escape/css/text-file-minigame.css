@@ -127,7 +127,7 @@
 
 .file-name {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: normal;
     color: #212529;
     margin-bottom: 4px;
 }
@@ -242,7 +242,7 @@
     color: #856404;
     font-size: 16px;
     margin: 0 0 8px 0;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .file-observations p {
