@@ -459,7 +459,8 @@
     }
 
     /* Short body: timeline beside status (as on a wide phone), so the list takes the body's
-       whole height and shows two whole tiles instead of one; nothing stacks, so the body
+       whole height: two whole tiles when entries are 3 lines or shorter, one whole tile for the
+       4 to 6 line sis01 entries (accepted limit); nothing stacks, so the body
        does not scroll and SYSTEM STATUS and the clock stay in view */
     .cb-body {
         grid-template-columns: 58fr 42fr;
@@ -491,6 +492,9 @@
     .cb-entry-timestamp {
         font-size: 16px;
         line-height: 16px;
+        /* room for the badge beside it (widest, [MANUAL], is 76px plus a 4px gap); on a column
+           too narrow for both the time wraps instead of being covered */
+        padding-right: 80px;
     }
 
     .cb-entry-text {

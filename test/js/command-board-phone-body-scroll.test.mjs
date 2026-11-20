@@ -10,28 +10,55 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_e
 const css = readFileSync(join(root, 'css/command-board-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const js = readFileSync(join(root, 'js/minigames/command-board/command-board-minigame.js'), 'utf8');
 
+// Every block with this exact query, joined in source order (a later copy of the block counts too)
 function block(query) {
-    const m = new RegExp(query.replace(/[().]/g, '\\$&') + '\\s*\\{').exec(css);
-    assert.ok(m, 'has ' + query);
-    const at = m.index;
-    let depth = 0;
-    for (let i = css.indexOf('{', at); i < css.length; i++) {
-        if (css[i] === '{') depth++;
-        if (css[i] === '}' && --depth === 0) return css.slice(at, i + 1);
+    const re = new RegExp(query.replace(/[().]/g, '\\$&') + '\\s*\\{', 'g');
+    const out = [];
+    let m;
+    while ((m = re.exec(css))) {
+        const at = m.index;
+        let depth = 0;
+        for (let i = css.indexOf('{', at); i < css.length; i++) {
+            if (css[i] === '{') depth++;
+            if (css[i] === '}' && --depth === 0) { out.push(css.slice(at, i + 1)); break; }
+        }
     }
-    return '';
+    assert.ok(out.length > 0, 'has ' + query);
+    return out.join('\n');
 }
 function rule(text, sel) {
     const m = new RegExp('(?:^|[}\\s])' + sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}').exec(text);
     return m ? m[1] : '';
 }
 
-// Last declaration of `prop` across every rule in `text` whose selector list names `sel` (last rule wins)
+// Effective value of `prop` from one declaration (shorthands flex-flow and grid-area count)
+function declValue(name, value, prop) {
+    value = value.trim();
+    if (name === prop) return value;
+    if (prop === 'flex-wrap' && name === 'flex-flow') {
+        const w = /\b(nowrap|wrap-reverse|wrap)\b/.exec(value);
+        return w ? w[1] : 'nowrap';
+    }
+    if ((prop === 'grid-row' || prop === 'grid-column') && name === 'grid-area') {
+        const parts = value.split('/').map((x) => x.trim());
+        return prop === 'grid-row' ? parts[0] : (parts[1] || 'auto');
+    }
+    return null;
+}
+
+// Last declaration of `prop` across every rule in `text` whose selector list has an entry that is
+// `sel` or ends in a compound `sel` (.cb-panel .cb-body counts); source order, last wins
 function lastDecl(text, sel, prop) {
-    const vals = [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-        .filter((r) => r[1].split(',').some((x) => x.trim() === sel))
-        .flatMap((r) => [...r[2].matchAll(new RegExp('(?:^|[;\\s])' + prop + '\\s*:\\s*([^;}]+)', 'g'))].map((d) => d[1].trim()));
-    return vals.length ? vals[vals.length - 1] : null;
+    const tail = new RegExp('(^|[\\s>+~])' + sel.replace(/[.]/g, '\\.') + '$');
+    let found = null;
+    for (const r of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (!r[1].split(',').some((x) => tail.test(x.trim()))) continue;
+        for (const d of r[2].matchAll(/([\w-]+)\s*:\s*([^;}]+)/g)) {
+            const v = declValue(d[1], d[2], prop);
+            if (v !== null) found = v;
+        }
+    }
+    return found;
 }
 
 for (const q of ['@media (max-height: 520px)', '@media (max-width: 600px)']) {
@@ -138,7 +165,7 @@ test('sweep 6: the status list keeps its own scroll (the body no longer scrolls)
     assert.ok(/flex:\s*1 1 auto/.test(st), 'status list fills the column');
 });
 
-test('sweep 6: phone landscape compacts tiles and the entry bar so two real tiles fit', () => {
+test('sweep 6: phone landscape compacts tiles and the entry bar: two tiles for entries of 3 lines or fewer, one whole tile for 4 to 6 lines', () => {
     const b = block('@media (max-width: 600px) and (max-height: 520px)');
     assert.ok(lastDecl(b, '.cb-entry-timestamp', 'font-size') === '16px', 'timestamp on the GNF 16 floor');
     assert.ok(lastDecl(b, '.cb-entry-timestamp', 'line-height') === '16px', 'whole-pixel line');
@@ -148,6 +175,12 @@ test('sweep 6: phone landscape compacts tiles and the entry bar so two real tile
     assert.ok(lastDecl(b, '.cb-entry-badge', 'grid-column') === '2' && lastDecl(b, '.cb-entry-badge', 'grid-row') === '1', 'badge on the timestamp row');
     assert.ok(lastDecl(b, '.cb-entry-main', 'grid-row') === '1', 'text column on the same row as the badge');
     assert.ok(/^1[0-2]px$/.test(lastDecl(b, '.cb-entry-badge', 'line-height') || ''), 'badge no taller than the 16px timestamp line');
+});
+
+test('sweep 6 R2 m1: the timestamp reserves room for the badge beside it', () => {
+    const b = block('@media (max-width: 600px) and (max-height: 520px)');
+    const pr = /^(\d+)px$/.exec(lastDecl(b, '.cb-entry-timestamp', 'padding-right') || '');
+    assert.ok(pr && Number(pr[1]) >= 76, 'padding-right at least the widest badge (76px)');
 });
 
 test('sweep 6 R1 m1: POST keeps 44px in the combined block', () => {
