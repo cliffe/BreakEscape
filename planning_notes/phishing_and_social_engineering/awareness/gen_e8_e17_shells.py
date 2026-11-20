@@ -404,18 +404,18 @@ LINES = {
     ('e12', 'defend'): (
         "You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.",
         {'catch': ("You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.",
-                   "That's the one that leans on a busy morning and a friendly face, and you didn't wave it through."),
+                   "That's the one that leans on a busy morning and a friendly face."),
          'miss': ("That visitor with no badge was the one to stop at the gate.",
                   "They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.")},
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
-        "That's the inbox sorted, thanks. Whatever the sign, the move is the same: report it and let the team act.",
+        "That's the inbox sorted, thanks. Whatever the sign, report it and let the team act.",
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
-        "Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and when you're not sure, ask first. Sort the cards, then a short inbox.",
-        "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.",
+        "Nilesh, service desk. Every rule here has a 'because'. Sort the cards into Allowed, Not allowed and Ask first, then a short inbox. If you're not sure, ask.",
+        "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day. And if you make a mistake, report it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
         "You're covering this desk inbox. Some of it is ordinary, some of it tries to open a door. If you didn't expect it or start it, report it.",
@@ -432,20 +432,20 @@ LINES = {
         'Thanks, Nilesh.', 'Any time.'),
     # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e20', 'defend'): (
-        "The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.",
-        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake; if unsure, use your hotspot.",
+        "The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.",
+        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake. If unsure, use your hotspot.",
         'Thanks, Zainab.', 'Any time.'),
     ('e9', 'defend'): (
         "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
         "That's it locked down, thanks. A different password for every account, kept in a manager, and deny anything you didn't start.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
-        "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk: raise a concern as facts, then sort the messages. Tell me what you're offered.",
+        "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.",
         "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
         'Thanks, Anjali.', 'Any time.'),
     # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e14', 'defend'): (
-        "You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.",
+        "You're on an authorised exercise. Some posts in the feed give too much away, and some messages in the inbox fish for how we work.",
         "That's the feed and the inbox done, thanks. The tell is always what they ask for, no matter how friendly they seem. Report anything that asks about our systems.",
         'Thanks, Julian.', 'Any time.'),
     # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
@@ -457,7 +457,7 @@ LINES = {
     # P1 C2 MIN-3: "come thick" (clipped from "thick and fast") -> "come fast"; P1 plain-words: "sweep" -> "an attack".
     ('e18', 'defend'): (
         "Your own seat now. After an attack the alerts come fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
-        "That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.",
+        "That's them sorted, thanks. A genuine alert never asks for your password. The fakes always do. Report the fakes, and change a reused password on the real site.",
         'Thanks, Ama.', 'Any time.'),
 }
 

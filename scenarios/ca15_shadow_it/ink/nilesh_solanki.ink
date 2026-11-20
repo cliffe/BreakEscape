@@ -28,8 +28,7 @@ VAR hub_quiet = false
         Nilesh Solanki: That's the lot. If the official way's slow, tell us rather than building your own way round.
         Nilesh Solanki: Nobody's in trouble for a workaround.
     - else:
-        Nilesh Solanki: Nilesh, service desk. Ask us first, we'd rather help than clean up.
-        Nilesh Solanki: That slow share? Tell us and we'll fix it. We can't mend what we don't know about.
+        Nilesh Solanki: Nilesh, service desk. That slow share? Ask us first, we'd rather help than clean up.
         Nilesh Solanki: Start at the kiosk. Play out the Friday, then sort what's actually waiting.
     }
 }

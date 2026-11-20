@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e16_insider_risk_defend_defend_complete:
         Anjali Rao: That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.
     - else:
-        Anjali Rao: Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk: raise a concern as facts, then sort the messages. Tell me what you're offered.
+        Anjali Rao: Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.
     }
 }
 + [Thanks, Anjali.]

@@ -33,7 +33,7 @@ VAR hub_quiet = false
         { guess_e18_landed:
             Ama Owusu: See how little it took: a staff list, a few words off the website, one password tried across everyone.
             Ama Owusu: A stolen list from another site opened a few more. The accounts that opened were the predictable ones.
-            Ama Owusu: Now it's your seat, and the alerts are arriving: some real, some fakes meant to finish the job.
+            Ama Owusu: Now it's your seat, and the alerts are arriving, some real, some fakes meant to finish the job.
         - else:
             Ama Owusu: Welcome to the Merrin & Sallow exercise. I look after security for the practice.
             Ama Owusu: Attackers rarely pick one person and crack them.

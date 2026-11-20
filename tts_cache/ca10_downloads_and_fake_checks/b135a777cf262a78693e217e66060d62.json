@@ -1,0 +1,13 @@
+{
+  "key": "b135a777cf262a78693e217e66060d62",
+  "npc": "niamh_doherty",
+  "text": "That's both sides done. Get your software from Quayholt Apps, read the address, and never let a page drive your computer.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T17:15:21Z"
+}

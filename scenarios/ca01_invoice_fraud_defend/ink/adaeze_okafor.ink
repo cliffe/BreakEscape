@@ -29,7 +29,7 @@ VAR hub_quiet = false
     { kit_defend_done && not kit_ca01_host_said:
         { kit_key_caught:
             Adaeze Okafor: You spotted that bank-change email, so the run paid Harlow's real account, not the one the email asked for.
-            Adaeze Okafor: That's the one these usually go wrong on, and you had it.
+            Adaeze Okafor: That's the one these usually go wrong on.
         - else:
             Adaeze Okafor: That bank-change email was the one to stop.
             Adaeze Okafor: It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.

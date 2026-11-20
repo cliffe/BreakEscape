@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e14_social_media_defend_defend_complete:
         Julian Sallow: That's the feed and the inbox done, thanks. The tell is always what they ask for, no matter how friendly they seem. Report anything that asks about our systems.
     - else:
-        Julian Sallow: You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.
+        Julian Sallow: You're on an authorised exercise. Some posts in the feed give too much away, and some messages in the inbox fish for how we work.
     }
 }
 + [Thanks, Julian.]

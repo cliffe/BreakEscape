@@ -195,7 +195,7 @@ test('host layer-2: catch, partial (fraud caught, score under 85), and miss each
     // Catch: fraud caught and percent >= 85.
     const caught = hostLines(await openHost({ kit_defend_done: true, kit_key_caught: true, kit_caught: true }));
     assert.ok(caught.includes('went out clean') === true);
-    assert.ok(caught.includes('That was down to you') === true);
+    assert.ok(caught.includes('That was down to you') === false);  // cut in rule-2l pass (extra text)
     assert.ok(caught.includes('recall the payment') === false);
     assert.ok(caught.includes('worth a second look') === false);
     assert.ok(caught.includes('never sees a penny') === true);
@@ -203,7 +203,7 @@ test('host layer-2: catch, partial (fraud caught, score under 85), and miss each
     // Partial: fraud caught, percent < 85 (another phish trusted or deleted, or tells missed).
     const partial = hostLines(await openHost({ kit_defend_done: true, kit_key_caught: true, kit_caught: false }));
     assert.ok(partial.includes('stopped the bank-change email') === true);
-    assert.ok(partial.includes('worth a second look') === true);
+    assert.ok(partial.includes('worth a second look') === false);  // cut in rule-2l pass: the debrief already shows the misses
     assert.ok(partial.includes('went out clean') === false);
     assert.ok(partial.includes('recall the payment') === false);
     assert.ok(partial.includes('never sees a penny') === true);
