@@ -232,20 +232,6 @@
     container-type: inline-size;
 }
 
-/* Narrow queue pane (800x600 and similar): when the text column would fall under about 140px
-   (list content under 220px), stack the badge above the text so the text has the full width */
-@container (max-width: 219px) {
-    .siem-queue-item {
-        grid-template-columns: minmax(0, 1fr);
-        align-items: start;
-        gap: 6px;
-    }
-
-    .siem-queue-sev {
-        justify-self: start;
-    }
-}
-
 .siem-queue-item {
     display: grid;
     grid-template-columns: 56px minmax(0, 1fr);
@@ -298,6 +284,20 @@
     white-space: normal;
     overflow-wrap: anywhere;
     line-height: 20px;
+}
+
+/* Narrow queue pane (800x600 and similar): when the text column would fall under about 140px
+   (list content under 220px), stack the badge above the text so the text has the full width */
+@container (max-width: 219px) {
+    .siem-queue-item {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+        gap: 6px;
+    }
+
+    .siem-queue-sev {
+        justify-self: start;
+    }
 }
 
 .siem-status-bar {
