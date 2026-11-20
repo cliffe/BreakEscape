@@ -46,10 +46,16 @@ const COMPACT_QUERIES = [
 // Queries that carry a compact-rule number for another reason. [file, prelude, reason]. Add here, not to
 // COMPACT_QUERIES, unless the query really is the compact layout.
 const OTHER_QUERIES = [];
+const SCANNED = ['objectives.css', 'ui-themes.css', 'hud.css'];
+// One place decides what counts as an OTHER_QUERIES entry: it needs a reason and a scanned file. The unpinned check and the shape count both use it.
+for (const o of OTHER_QUERIES) assert.ok(o.length === 3 && SCANNED.includes(o[0]) && o[1] && typeof o[2] === 'string' && o[2].trim(), `OTHER_QUERIES entry [${o}] needs a scanned file, a prelude and a non-empty reason`);
+const isOther = (f, prelude) => OTHER_QUERIES.some(o => o[0] === f && o[1] === prelude);
 const numbersOfRule = new RegExp(`\\b(${W.replace('.', '\\.')}|${MINW}|${H}|${HP1}|${HP002.replace('.', '\\.')})(px)?\\b`);
-for (const f of ['objectives.css', 'ui-themes.css', 'hud.css']) {
+for (const f of SCANNED) {
   const qs = mediaQueries(readFileSync(join(root, 'css', f), 'utf8'));
   const expected = COMPACT_QUERIES.filter(q => q[0] === f);
+  // A stale OTHER_QUERIES entry (query renamed or deleted) must not linger.
+  for (const o of OTHER_QUERIES.filter(o => o[0] === f)) assert.ok(qs.some(q => q.prelude === o[1]), `${f}: OTHER_QUERIES entry @media ${o[1]} matches no @media in the file`);
   // Every expected prelude appears exactly as the constants give it (a drifted bound leaves none).
   for (const [, sel, prelude] of expected) {
     const hits = qs.filter(q => q.prelude === prelude && (sel === null || q.selector === sel));
@@ -58,11 +64,11 @@ for (const f of ['objectives.css', 'ui-themes.css', 'hud.css']) {
   // Any query with a rule number in it must be one of the expected preludes: no unpinned copy.
   for (const q of qs) {
     if (!numbersOfRule.test(q.prelude)) continue;
-    assert.ok(expected.some(e => e[2] === q.prelude) || OTHER_QUERIES.some(o => o[0] === f && o[1] === q.prelude && o[2]),
+    assert.ok(expected.some(e => e[2] === q.prelude) || isOther(f, q.prelude),
       `${f}: @media ${q.prelude} uses a compact-rule number: add it to COMPACT_QUERIES if it is the compact layout, or to OTHER_QUERIES with a reason if not`);
   }
   // The compact query must keep its selector: count queries by the compact shapes with any numbers.
-  const shapes = qs.filter(q => !OTHER_QUERIES.some(o => o[0] === f && o[1] === q.prelude) && /^\(max-width: [\d.]+px\)(, \(max-height: [\d.]+px\)| and \(min-height: [\d.]+px\) and \(orientation: portrait\))$/.test(q.prelude));
+  const shapes = qs.filter(q => !isOther(f, q.prelude) && /^\(max-width: [\d.]+px\)(, \(max-height: [\d.]+px\)| and \(min-height: [\d.]+px\) and \(orientation: portrait\))$/.test(q.prelude));
   const wantShapes = expected.filter(e => /^\(max-width: [\d.]+px\)(, \(max-height|\sand \(min-height)/.test(e[2])).length;
   assert.ok(shapes.length === wantShapes, `${f}: ${shapes.length} compact-shaped @media queries, expected ${wantShapes}`);
 }
