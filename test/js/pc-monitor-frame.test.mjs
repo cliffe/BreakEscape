@@ -65,8 +65,8 @@ test('the frame fits inside the window at every listed size, with the room for t
         // The monitor is the screen plus the bezel strips and the 2px edges
         assert.equal(m.width, m.screen.width + 2 * m.bezel.side + 4 * PC_FRAME_EDGE);
         assert.equal(m.height, m.screen.height + m.bezel.top + m.bezel.chin + 4 * PC_FRAME_EDGE);
-        // The X (30px) fits in the top strip, inside the frame
-        assert.ok(m.bezel.top >= 30 + 4, `${w}x${h}: the X fits in the top strip`);
+        // The X (32px) fits in the top strip with 2px clear above and below, inside the frame
+        assert.ok(m.bezel.top >= 32 + 4, `${w}x${h}: the X fits in the top strip`);
     }
 });
 
@@ -1956,8 +1956,12 @@ test('final n1: the window X touch area stays 44px tall but leaves a gap to the 
     assert.ok(top + 24 + bottom >= 44, 'the target is at least 44px tall');
     assert.ok(right + 28 + left >= 44, 'and at least 44px wide');
     // Measured at 390x844, 360x640, 667x375, 844x390 and 1400x900: the bezel X's bottom edge is
-    // at least 12px above the window X's top edge. The hit area may use up to 8 of them.
-    assert.ok(top <= 8, 'the target leaves at least 4px to the bezel X');
+    // at least 12px (32px X, 36px compact strip) above the window X's top edge. The window hit area
+    // may use up to 8 of them; the bezel X's reach is 8 below its padding box, 2px below the 32px box, so the
+    // targets stay at least 2px apart (3 clear rows measured at 390x844).
+    assert.ok(top <= 8, 'the target leaves at least 2px to the bezel X');
+    const bz = sheet.length && css('pc-monitor.css').match(/\.pc-monitor-bezel > \.pc-monitor-close::after\s*\{[^}]*inset:\s*([^;]+);/);
+    assert.ok(bz && Math.abs(parseFloat(bz[1].trim().split(/\s+/)[2])) <= 8, 'the bezel X reach (::after) goes at most 8px below its padding box (2px below the 32px box)');
 });
 
 

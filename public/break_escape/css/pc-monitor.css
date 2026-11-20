@@ -301,18 +301,21 @@
    inside the frame and never on the screen */
 .pc-monitor-bezel > .minigame-close-button.pc-monitor-close {
     position: absolute;
-    top: calc((var(--pc-bezel-top, 38px) - 30px) / 2) !important;
+    top: calc((var(--pc-bezel-top, 38px) - 32px) / 2) !important;
     right: var(--pc-bezel-side, 20px) !important;
     left: auto;
+    width: 32px;   /* a 32 px tap target; the shared X is 30; the strip is 36 to 38 so 2px stays clear */
+    height: 32px;
     margin: 0;
     z-index: 5;
 }
 
 /* Little spill downward (the in-screen window X sits just below the strip), so the reach goes
-   up instead: 60 minus twice the border = 48 px (themed) to 52 px tall, whatever --pc-bezel-top is
-   (the target starts 10 px above the bezel's outer border, whatever the strip height). */
+   up instead: the box is 60 minus twice the border = 48 px (themed) to 52 px tall (20 up, 32 for the X,
+   8 down, which is 2 px below the X's box with the themed 6 px border). Its top is clipped at the bezel's
+   outer edge, so the real hit target is 38 to 39 px tall, and it stays clear of the window X's target below. */
 .pc-monitor-bezel > .pc-monitor-close::after {
-    inset: -20px -14px -10px -14px;
+    inset: -20px -14px -8px -14px;
 }
 
 /* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the
