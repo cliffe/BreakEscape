@@ -93,6 +93,22 @@ test('a resize from phone portrait to desktop moves the row back into the panel,
     assert.ok(foot(g).parentNode === body(g), 'and in the body at 390');
 });
 
+test('_placeFoot phone boundary: 760 is phone (row in the body), 761 is wide (row in the panel), with and without matchMedia', () => {
+    for (const withMm of [true, false]) {
+        for (const [w, inBody] of [[760, true], [761, false]]) {
+            const g = frame(w, 844, false, { step: 'examine' });
+            if (withMm) window.matchMedia = q => ({ matches: w <= 760, media: q }); else delete window.matchMedia;
+            try {
+                examineCases.fresh(g);
+                put(g, g._htmlExamine());
+                const label = `${w}px, matchMedia ${withMm ? 'present' : 'absent'}`;
+                assert.ok((foot(g).parentNode === body(g)) === inBody, `${label}: row ${inBody ? 'in the body' : 'not in the body'}`);
+                assert.ok((foot(g).parentNode === g.panel) === !inBody, `${label}: row ${inBody ? 'not in the panel' : 'in the panel'}`);
+            } finally { delete window.matchMedia; }
+        }
+    }
+});
+
 test('_placeFoot publishes the measured row height, and does nothing when there is no frame, body or row', () => {
     const g = frame(390, 844, false, { step: 'examine' });
     examineCases.fresh(g);

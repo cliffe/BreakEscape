@@ -155,6 +155,7 @@ function cachedPrint(opts) {
 function isPhoneWidth() {
     return window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : window.innerWidth <= 760;
 }
+
 function readStore(key) { try { return window.localStorage.getItem(key) === '1'; } catch (e) { return false; } }
 function writeStore(key, on) { try { window.localStorage.setItem(key, on ? '1' : '0'); } catch (e) { /* ignore */ } }
 

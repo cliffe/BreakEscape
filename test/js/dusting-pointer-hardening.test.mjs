@@ -71,6 +71,12 @@ test('a real lostpointercapture event on the canvas ends the stroke (listener is
     assert.ok(saved.length === 1, 'dust progress saved once');
     cv.dispatchEvent(lost);
     assert.ok(saved.length === 1, 'a second lostpointercapture after the end does nothing');
+    // a fresh stroke, then a real pointercancel on the canvas ends it too
+    Object.assign(g, { pointerDown: true, _pointerId: 7, lastPt: { x: 2, y: 2 } }); captured.add(7);
+    const cancel = new Event('pointercancel'); cancel.pointerId = 7;
+    cv.dispatchEvent(cancel);
+    assert.ok(g.pointerDown === false && g._pointerId === null && g.lastPt === null, 'stroke ended by pointercancel');
+    assert.ok(saved.length === 2, 'dust progress saved by the cancel');
 });
 
 function stroker(step = 'dust') {
