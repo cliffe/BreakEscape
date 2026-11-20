@@ -1,5 +1,5 @@
 {
-  "_about": "E12 visitor-and-tailgater defend fragment (awareness, Merrin & Sallow Architects). Everyone and every company is fictional; every web address ends .example. triageSets holds only the episode set e12_reception_desk (seven reception `call` items). The wiring agent copies triageSets and the awarenessEpisode keys into the E12 full shell; the generator (gen_e8_e17_shells.py) builds the defend-only shell from the named fields and _defendOnly. E12 feeds one physical-pretext item into the shared general_v2 check pair (built by 10_CHECK_FORMS.md's own generator, not this fragment; E12 brief section 14). The five scenario-local tells (tailgating, no_escort, uniform_pretext, not_expected, unlocked_screen) are declared on the set with flagChips labels and skillNames and explained per message via factorStrings.<id>.redFlag; they are NOT added to the shared CHANNEL_TELLS library (E12 brief sections 8, 11). borrowed_authority and secrecy_or_bypass are shared-library tells reused in person and need no label. Brand roster and cast: ../BRAND_SET.md (Merrin & Sallow Architects); E12 additions in e12/BRAND_ADDITIONS.md. Validator: needs ENG-08 for the awarenessEpisode.world block and the lobby room; the defend set itself validates with no library change (E12 brief section 17).",
+  "_about": "E12 visitor-and-tailgater defend fragment (awareness, Merrin & Sallow Architects). Everyone and every company is fictional; every web address ends .example. triageSets holds only the episode set e12_reception_desk (six reception `call` items). The wiring agent copies triageSets and the awarenessEpisode keys into the E12 full shell; the generator (gen_e8_e17_shells.py) builds the defend-only shell from the named fields and _defendOnly. E12 feeds one physical-pretext item into the shared general_v2 check pair (built by 10_CHECK_FORMS.md's own generator, not this fragment; E12 brief section 14). The five scenario-local tells (tailgating, no_escort, uniform_pretext, not_expected, unlocked_screen) are declared on the set with flagChips labels and skillNames and explained per message via factorStrings.<id>.redFlag; they are NOT added to the shared CHANNEL_TELLS library (E12 brief sections 8, 11). borrowed_authority and secrecy_or_bypass are shared-library tells reused in person and need no label. Brand roster and cast: ../BRAND_SET.md (Merrin & Sallow Architects); E12 additions in e12/BRAND_ADDITIONS.md. Validator: needs ENG-08 for the awarenessEpisode.world block and the lobby room; the defend set itself validates with no library change (E12 brief section 17).",
 
   "_brandAdditions": {
     "_use": "For BRAND_SET.md (Merrin & Sallow Architects additions from E12). Fuller P11 entry is in e12/BRAND_ADDITIONS.md. Two new M&S cast: Delphine Arvanitis (lobby pretext mark, Front-of-House Coordinator) and Lorna Easton (studio kiosk host, Reception & Facilities Lead). Red-team persona Jo Fairweather (Northlight Security) appears only in the seeded brief and strings, not as a world NPC. New fictional firms: a .example maintenance contractor (on the service contract) and a .example fire-safety firm (the fake inspector's claimed firm). Catherine Merrin (E4 partner) is reused by name only in the attack-half OSINT. 'Gallagher' is barred (BRAND_SET.md); the retired core_10 draft name Maureen Gallagher is not reused.",
@@ -71,7 +71,7 @@
             "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
           },
           "report": {
-            "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building. The points for this visitor also depend on the tells you named.",
+            "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
             "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
           },
           "delete": {
@@ -79,7 +79,7 @@
             "real": "That one was genuine, so turning them away was not needed. Letting them through or checking first would both have been fine."
           },
           "verify": {
-            "phish": "Right call: the day's list or a word with their host is how you check. The points for this visitor also depend on the tells you named.",
+            "phish": "Right call: the day's list or a word with their host is how you check.",
             "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
           }
         },
@@ -122,9 +122,9 @@
             { "who": "Client", "text": "Happy to sign in and wait, no rush." },
             { "who": "Today's list", "text": "10:00, client in to see Yasmin Chaudhry. Expected." }
           ],
-          "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client in the lobby; signing them in, or a quick look at the list first, was all it needed.", "reportReplyByVerdict": {"report": "Thanks, they were on the day's list, so no harm done. A quick check of the list is enough next time."}, "flags": [],
+          "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client waiting in the lobby.", "reportReplyByVerdict": {"report": "Thanks, they were on the day's list, so no harm done. A quick check of the list is enough next time."}, "flags": [],
             "whyFine": {
-              "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in and walking them up is the right call, and a glance at the list or a quick word with Yasmin confirms it.",
+              "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in, or a glance at the list to confirm, is the right call.",
               "not_expected": "They are on today's list, which a quick glance confirms." },
             "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed." } },
         { "id": "e12_call_fire_inspector", "kind": "call",
@@ -189,8 +189,8 @@
               "tailgating": "The safe answer is a temporary pass of their own, so the record stays right." },
             "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." } },
         { "id": "e12_call_unlocked_desk", "kind": "call", "kindTag": "At a colleague's desk",
-          "_kindTag": "B1 nit F-E12-11: this item and item 7 are not a visitor asking to be let in but a moment at a colleague's unattended desk, so 'Let them in' (the set comply label) reads oddly. kindTag reframes the card in the list and review; the comply verdict is unchanged.",
-          "_note": "Item 6. Concern: a signed-in visitor left alone by a colleague's desk whose screen was not locked, leaning in to read it. Observed-situation transcript. Escalate (report) or Refuse (lock the screen, step in). Local tells unlocked_screen + no_escort. Mirror of item 7.",
+          "_kindTag": "B1 nit F-E12-11: this item is not a visitor asking to be let in but a moment at a colleague's unattended desk, so 'Let them in' (the set comply label) reads oddly. kindTag reframes the card in the list and review; the comply verdict is unchanged.",
+          "_note": "Item 6. Concern: a signed-in visitor left alone by a colleague's desk whose screen was not locked, leaning in to read it. Observed-situation transcript. Escalate (report) or Refuse (lock the screen, step in). Local tells unlocked_screen + no_escort.",
           "callerId": "A visitor near a colleague's unlocked desk",
           "from": { "name": "Signed-in visitor", "address": "By an empty desk" }, "time": "16:10",
           "transcript": [
@@ -205,21 +205,7 @@
             "reportReply": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "reportReplyByVerdict": {"report": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "verify": "Thanks for checking: the screen was open, so we locked it and had a quiet word. Nobody's in trouble."} },
           "factorStrings": {
             "unlocked_screen": { "redFlag": "A screen left unlocked and unattended, open to anyone who walks up or sits down." },
-            "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
-        { "id": "e12_call_locked_desk", "kind": "call", "kindTag": "At a colleague's desk",
-          "_kindTag": "B1 nit F-E12-11: a moment at a colleague's desk, not a visitor to admit; kindTag reframes the card so 'Let them in' reads less oddly. Comply verdict unchanged.",
-          "_note": "Item 7. Genuine: a colleague who locks the screen before stepping away; the waiting visitor sees only a locked screen. P1 F-E12-1: Let them in / carry on (comply) is a full-mark answer here (nothing to act on), not the half-mark call-kind default; Check first (verify) is also full. Scored by truth.verdictPoints.trust 60. Mirror of item 6 (the same stepped-away desk, screen locked vs left open).",
-          "callerId": "A colleague who locks before stepping away",
-          "from": { "name": "Colleague leaving the desk", "address": "At the desk" }, "time": "16:25",
-          "transcript": [
-            { "who": "Colleague", "text": "Back in five, just locking this." },
-            { "who": "Colleague", "text": "(screen locked, the visitor waits where they were put)" }
-          ],
-          "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "deleteLine": "Nothing was wrong here. The screen was locked and the visitor was where they had been left, so there was no one to turn away.", "reportReplyByVerdict": {"report": "Thanks, the screen was locked and the visitor was waiting where they were put. Nothing to act on."}, "flags": [],
-            "whyFine": {
-              "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. Carrying on is fine, and a quick glance to confirm is the same good habit.",
-              "unlocked_screen": "Locked before stepping away is exactly right, nothing to act on." },
-            "falseAlarmCost": "Raise it as an alarm and you've pulled security over to a colleague who did everything right." } }
+            "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } }
       ]
     }
   ],
@@ -228,7 +214,7 @@
     "role": "general_staff",
     "company": "merrin_sallow",
     "brand": { "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" },
-    "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: one practice approach to the front desk in a courier's hi-vis, and seven situations to handle on the reception seat. Jo's test is authorised and the costume is handed back afterwards.",
+    "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: one practice approach to the front desk in a courier's hi-vis, and six situations to handle on the reception seat. Jo's test is authorised and the costume is handed back afterwards.",
     "defend": { "setId": "e12_reception_desk", "reportAlwaysVisible": true, "stage": null },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
@@ -264,7 +250,7 @@
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e12_visitor_tailgater_defend), which has no osint, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The defendOnly empathy string (strings.defendOnly) stands in for the flip in the defend-only debrief.",
       "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional architecture practice. You're covering the reception desk, and visitors arrive one at a time: some are expected, some are not, and one or two are trying to talk their way in. Handle each one, and check or report anyone who pushes past a check. Checking or reporting when you're unsure is always fine and never marked down.",
-      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: seven situations to handle on the reception seat. Checking or reporting when you're unsure is always fine and never marked down."
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: six situations to handle on the reception seat. Checking or reporting when you're unsure is always fine and never marked down."
     }
   }
 }

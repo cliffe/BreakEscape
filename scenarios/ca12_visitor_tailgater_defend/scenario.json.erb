@@ -156,7 +156,7 @@
               "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
             },
             "report": {
-              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building. The points for this visitor also depend on the tells you named.",
+              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
               "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
             },
             "delete": {
@@ -164,7 +164,7 @@
               "real": "That one was genuine, so turning them away was not needed. Letting them through or checking first would both have been fine."
             },
             "verify": {
-              "phish": "Right call: the day's list or a word with their host is how you check. The points for this visitor also depend on the tells you named.",
+              "phish": "Right call: the day's list or a word with their host is how you check.",
               "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
             }
           },
@@ -278,13 +278,13 @@
                 "trust": 60
               },
               "isPhish": false,
-              "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client in the lobby; signing them in, or a quick look at the list first, was all it needed.",
+              "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client waiting in the lobby.",
               "reportReplyByVerdict": {
                 "report": "Thanks, they were on the day's list, so no harm done. A quick check of the list is enough next time."
               },
               "flags": [],
               "whyFine": {
-                "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in and walking them up is the right call, and a glance at the list or a quick word with Yasmin confirms it.",
+                "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in, or a glance at the list to confirm, is the right call.",
                 "not_expected": "They are on today's list, which a quick glance confirms."
               },
               "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed."
@@ -517,43 +517,6 @@
                 "redFlag": "A visitor or contractor left to move around unescorted."
               }
             }
-          },
-          {
-            "id": "e12_call_locked_desk",
-            "kind": "call",
-            "kindTag": "At a colleague's desk",
-            "callerId": "A colleague who locks before stepping away",
-            "from": {
-              "name": "Colleague leaving the desk",
-              "address": "At the desk"
-            },
-            "time": "16:25",
-            "transcript": [
-              {
-                "who": "Colleague",
-                "text": "Back in five, just locking this."
-              },
-              {
-                "who": "Colleague",
-                "text": "(screen locked, the visitor waits where they were put)"
-              }
-            ],
-            "truth": {
-              "verdictPoints": {
-                "trust": 60
-              },
-              "isPhish": false,
-              "deleteLine": "Nothing was wrong here. The screen was locked and the visitor was where they had been left, so there was no one to turn away.",
-              "reportReplyByVerdict": {
-                "report": "Thanks, the screen was locked and the visitor was waiting where they were put. Nothing to act on."
-              },
-              "flags": [],
-              "whyFine": {
-                "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. Carrying on is fine, and a quick glance to confirm is the same good habit.",
-                "unlocked_screen": "Locked before stepping away is exactly right, nothing to act on."
-              },
-              "falseAlarmCost": "Raise it as an alarm and you've pulled security over to a colleague who did everything right."
-            }
           }
         ]
       }
@@ -569,7 +532,7 @@
       },
       "variant": "defendOnly",
       "durationTargetMin": 8,
-      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: seven situations to handle on the reception seat. Checking or reporting when you're unsure is always fine and never marked down.",
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: six situations to handle on the reception seat. Checking or reporting when you're unsure is always fine and never marked down.",
       "stages": [
         "brief",
         "defend",
