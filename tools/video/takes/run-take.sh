@@ -3,6 +3,7 @@
 #   <mission> is a folder under tools/video/takes/ (m01, m02, sis01 ...) or a scenario id (m02_ransomed_trust).
 # Creates a fresh game of that mission, records tools/video/takes/<mission>/<id>.mjs on display 97, checks it, deletes the raw .mkv on pass.
 # Outputs in $FOOTAGE_ROOT/<mission>/takes/<id>.* (default /data/footage, the catalogue library). Requires VIDEO_STATE_DIR and env-up.sh 97 (or BE_DISPLAY=<n>). Missions: see mission.sh.
+# BE_PORT=<n> uses the keyless server on that port (default 3001). BE_SPRITE=<avatar> plays the take as that avatar.
 # Old form still works and means m01:  run-take.sh <take-id> ["<new-game flags>"] ["<record-take flags>"]
 #
 # LIVE mode (the keyed dev Hacktivity server on :3000, so every voiced line plays, cached or not):
@@ -44,11 +45,16 @@ if [ -n "${LIVE_URL:-}" ]; then
   node tools/video/capture/record-take.mjs --display "$DISPLAY_N" --live --url "$LIVE_URL" --storage-state "$STORAGE_STATE" \
     --take "$TAKE" --out "$OUT/$ID" --fps 30 --preset ultrafast --crf 14 --music 0 $REC > "$OUT/$ID.record.json" 2> "$OUT/$ID.record.err"
 else
-GID=$(PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb "$MISSION" $NG 2>&1 | tee "$OUT/$ID.newgame.log" | sed -n 's/^GAME_ID=//p')
+BE_PORT="${BE_PORT:-3001}"
+GID=$(PLAYTEST_PORT=$BE_PORT BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb "$MISSION" $NG 2>&1 | tee "$OUT/$ID.newgame.log" | sed -n 's/^GAME_ID=//p')
 [ -n "$GID" ] || { echo "no game id, see $OUT/$ID.newgame.log"; exit 3; }
 echo "game $GID"
-node tools/video/capture/record-take.mjs --display "$DISPLAY_N" --url "http://127.0.0.1:3001/break_escape/games/$GID" \
+node tools/video/capture/record-take.mjs --display "$DISPLAY_N" --url "http://127.0.0.1:$BE_PORT/break_escape/games/$GID" \
   --take "$TAKE" --out "$OUT/$ID" --fps 30 --preset ultrafast --crf 14 --music 0 $REC > "$OUT/$ID.record.json" 2> "$OUT/$ID.record.err"
+  RECRC=$?
+  # BE_SPRITE (or a validSprites switch) changed the shared demo user's avatar: put it back now.
+  [ -f "tools/playtest/sprite-restore-$GID.txt" ] && BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/restore-sprite.rb "$GID" 2>&1 | tail -1
+  (exit $RECRC)
 fi
 echo "record exit $?"
 VOPT=""; case "$REC" in *--title-take*) VOPT="--video-only";; esac
