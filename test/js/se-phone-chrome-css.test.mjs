@@ -70,9 +70,14 @@ test('mail-client and inbox-triage sheets: no radius, blur, 1px border or outlin
         assert.ok(radii.length === 0, `${f}: radius ${radii[0]}`);
         assert.ok(!/filter:\s*blur|backdrop-filter/.test(s), `${f}: filter blur`);
         // Third length of a shadow layer is the blur; a bare 0 counts as a length.
-        const blurred = (s.match(/(?<![a-z-])(box|text)-shadow:[^;]*;/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
+        const blurred = (s.match(/(?<![a-z-])(box|text)-shadow:[^;}]*/g) || []).filter((d) => d.split(/,(?![^(]*\))/).some((layer) => {
             const nums = layer.replace(/^[^:]*:/, '').replace(/[;}]|!important/g, '').replace(/rgba?\([^)]*\)|hsla?\([^)]*\)|inset|#[0-9a-f]+/gi, '')
                 .split(/\s+/).filter((t) => /^-?\d*\.?\d+([a-z]+)?$/i.test(t));
+            // calc() or a var() that is not the trailing colour hides lengths from the token split: reject it
+            if (/\b(calc|var)\(/.test(layer.replace(/\bvar\((?:[^()]|\([^)]*\))*\)\s*(!important)?\s*$/, ''))) return true;
+            // a layer whose only value is a var() leaves no lengths to read: a var can hold any blur (R1 m3)
+            if (nums.length < 2 && !/^\s*(?:none\s*)?(?:!important)?\s*$/i.test(layer.replace(/^[^:]*:/, '').replace(/\bnone\b/i, ''))) return true;
+            if (nums.length < 2) return false;
             return nums.length >= 3 && parseFloat(nums[2]) > 0;
         }));
         assert.ok(blurred.length === 0, `${f}: blurred shadow ${blurred[0]}`);
@@ -109,6 +114,34 @@ test('mail-client toolbar: Close stays in the header row at every width up to 10
     assert.ok(s.includes(`${p} .mail-account { flex: 1 1 calc(100% - 40px); }`), 'phone account leaves room for the X');
     assert.ok(s.includes(`${p} .se-overlay-close { order: 1; margin-left: auto; }`), 'phone close order 1');
     assert.ok(s.includes(grouped(p)), 'phone: folders, contacts and actions all at order 2');
+});
+
+test('the toolbar width arithmetic behind calc(100% - 40px) is pinned: 8px gap, 30px X, no side margin (B9 R3 m1)', () => {
+    const s = read('mail-client-minigame.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const toolbar = s.match(/(?:^|\})\s*\.mail-toolbar \{([^}]*)\}/)?.[1] || '';
+    assert.ok(/(?:^|[\s;])gap:\s*8px\s*;/.test(toolbar), 'base .mail-toolbar gap is 8px, got: ' + toolbar.trim().replace(/\s+/g, ' '));
+    const fw = read('minigames-framework.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const x = fw.match(/(?:^|\})\s*\.se-overlay-close \{([^}]*)\}/)?.[1] || '';
+    assert.ok(/(?:^|[\s;])width:\s*30px\s*;/.test(x), 'the X is 30px wide');
+    assert.ok(/(?:^|[\s;])min-width:\s*30px\s*;/.test(x), 'the X min-width is 30px');
+    assert.ok(/(?:^|[\s;])margin:\s*0\s*;/.test(x), 'the X has no margin');
+    // 30 + 8 = 38 of the 40px that calc(100% - 40px) reserves, leaving 2px of slack
+    assert.ok(!/(?:^|[\s;])margin-(left|right):\s*[1-9]/.test(x), 'the X has no side margin');
+    // every mail-sheet rule on the toolbar or the X, base and inside media blocks, keeps the arithmetic (R1 m2)
+    const bad = [];
+    for (const r of s.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const sels = r[1].split(',').map((q) => q.replace(/^[\s\S]*\*\/|@media[^{]*$/g, '').trim());
+        const onBar = sels.some((q) => /\.mail-toolbar$/.test(q));
+        const onX = sels.some((q) => /\.se-overlay-close$/.test(q));
+        if (!onBar && !onX) continue;
+        for (const d of r[2].split(';').map((q) => q.trim()).filter(Boolean)) {
+            const [prop, ...rest] = d.split(':'); const val = rest.join(':').trim();
+            if (onBar && prop.trim() === 'gap' && val !== '8px') bad.push(sels.join(',') + ' { ' + d + ' }');
+            if (onX && /^(width|min-width)$/.test(prop.trim())) bad.push(sels.join(',') + ' { ' + d + ' }');
+            if (onX && /^margin-(left|right)$/.test(prop.trim()) && val !== 'auto') bad.push(sels.join(',') + ' { ' + d + ' }');
+        }
+    }
+    assert.ok(bad.length === 0, 'mail-sheet toolbar/X rules change the arithmetic: ' + bad.join(' ; '));
 });
 
 test('wifi bars are border-box so the tallest bar fits its 14px meter', () => {
