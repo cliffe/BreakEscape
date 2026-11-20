@@ -49,6 +49,12 @@ export function attachScrollCue(scroller, opts = {}) {
     const viewport = opts.viewport || null;
     const CUE_HEIGHT_PX = 24;
 
+    // Make the host the positioning parent once, before the first measurement, so the cue is
+    // never placed against the wrong offsetParent on its first show.
+    if (win.getComputedStyle && win.getComputedStyle(host).position === 'static') {
+        host.style.position = 'relative';
+    }
+
     function update() {
         // With an outer vertical scroller, pin the cue to the visible top of the scroller.
         let top = scroller.offsetTop + 4;
@@ -70,9 +76,6 @@ export function attachScrollCue(scroller, opts = {}) {
             inView
         });
         if (show) {
-            if (win.getComputedStyle && win.getComputedStyle(host).position === 'static') {
-                host.style.position = 'relative';
-            }
             const bar = scroller.offsetWidth - scroller.clientWidth;
             cue.style.top = top + 'px';
             cue.style.right = Math.max(0, host.clientWidth - scroller.offsetLeft - scroller.offsetWidth + bar + 4) + 'px';
@@ -80,9 +83,18 @@ export function attachScrollCue(scroller, opts = {}) {
         cue.style.display = show ? 'block' : 'none';
     }
 
-    scroller.addEventListener('scroll', update);
+    // Scroll events can fire many times a frame: do the measuring once per animation frame.
+    let pendingFrame = 0;
+    const cancelFrame = (id) => { if (win.cancelAnimationFrame) win.cancelAnimationFrame(id); };
+    function onScroll() {
+        if (pendingFrame) return;
+        if (typeof win.requestAnimationFrame !== 'function') { update(); return; }
+        pendingFrame = win.requestAnimationFrame(() => { pendingFrame = 0; update(); });
+    }
+
+    scroller.addEventListener('scroll', onScroll);
     win.addEventListener('resize', update);
-    if (viewport) viewport.addEventListener('scroll', update);
+    if (viewport) viewport.addEventListener('scroll', onScroll);
     let observer = null;
     if (typeof win.ResizeObserver === 'function') {
         observer = new win.ResizeObserver(update);
@@ -99,9 +111,10 @@ export function attachScrollCue(scroller, opts = {}) {
         cue,
         update,
         destroy() {
-            scroller.removeEventListener('scroll', update);
+            scroller.removeEventListener('scroll', onScroll);
             win.removeEventListener('resize', update);
-            if (viewport) viewport.removeEventListener('scroll', update);
+            if (viewport) viewport.removeEventListener('scroll', onScroll);
+            if (pendingFrame) { cancelFrame(pendingFrame); pendingFrame = 0; }
             if (observer) observer.disconnect();
             if (mutations) mutations.disconnect();
             cue.remove();

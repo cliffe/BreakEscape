@@ -171,3 +171,61 @@ test('drug library: each diff panel carries its own cue, dropped on tab switch a
     mg.cleanup();
     assert.ok(count(window, 'resize') === baseResize, 'cleanup leaves no cue listeners');
 });
+
+test('log filter: re-applying a filter leaves exactly one cue and one live cue listener set', () => {
+    const el = fresh();
+    const mg = new LogFilterMinigame(el, logParams());
+    mg.init();
+    mg.start();
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue after the first render');
+    for (let i = 0; i < 2; i++) mg._onFiltersChanged();
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue after two filter re-renders');
+    assert.ok(scrollTotal(el) === 2, 'one cue worth of scroll listeners after re-render');
+    mg._switchTab('audit');
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue on the audit tab');
+    mg._switchTab('session_log');
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 1, 'one cue after switching back');
+    mg.cleanup();
+    assert.ok(el.querySelectorAll('.scroll-cue').length === 0, 'no cue left after cleanup');
+});
+
+function frameWin(frames, cancelled) {
+    return { matchMedia: mq(390, 844), getComputedStyle: () => ({ position: 'relative' }), addEventListener() {}, removeEventListener() {},
+        requestAnimationFrame: (cb) => { frames.push(cb); return frames.length; },
+        cancelAnimationFrame: (id) => { cancelled.push(id); } };
+}
+
+test('scroll events are coalesced to one update per animation frame and cancelled on destroy', () => {
+    const doc = dom.window.document;
+    const host = doc.createElement('div'), scroller = doc.createElement('div');
+    host.appendChild(scroller);
+    Object.defineProperty(scroller, 'scrollWidth', { value: 600, configurable: true });
+    Object.defineProperty(scroller, 'clientWidth', { value: 300, configurable: true });
+    const frames = [], cancelled = [];
+    const h = attachScrollCue(scroller, { window: frameWin(frames, cancelled), document: doc });
+    assert.ok(h.cue.style.display === 'block', 'shown at rest');
+    scroller.scrollLeft = 300;
+    for (let i = 0; i < 5; i++) scroller.dispatchEvent(new dom.window.Event('scroll'));
+    assert.ok(frames.length === 1, 'five scroll events queue one frame');
+    assert.ok(h.cue.style.display === 'block', 'no measuring until the frame runs');
+    frames.shift()();
+    assert.ok(h.cue.style.display === 'none', 'the frame hides the cue at the scroll end');
+    scroller.dispatchEvent(new dom.window.Event('scroll'));
+    assert.ok(frames.length === 1, 'a new scroll queues a new frame');
+    h.destroy();
+    assert.ok(cancelled.length === 1, 'destroy cancels the pending frame');
+});
+
+test('the host is made relative before the first show, so the first top is never misplaced', () => {
+    const doc = dom.window.document;
+    const host = doc.createElement('div'), scroller = doc.createElement('div');
+    host.appendChild(scroller);
+    Object.defineProperty(scroller, 'scrollWidth', { value: 600, configurable: true });
+    Object.defineProperty(scroller, 'clientWidth', { value: 300, configurable: true });
+    const seen = [];
+    const win = { matchMedia: mq(390, 844), getComputedStyle: (e) => ({ position: e.style.position || 'static' }), addEventListener() {}, removeEventListener() {} };
+    Object.defineProperty(scroller, 'offsetTop', { configurable: true, get() { seen.push(host.style.position); return 10; } });
+    const h = attachScrollCue(scroller, { window: win, document: doc });
+    assert.ok(seen.length > 0 && seen.every(p => p === 'relative'), 'offsetTop is only read once the host is relative');
+    h.destroy();
+});
