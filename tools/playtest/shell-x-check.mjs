@@ -27,6 +27,15 @@
 // Trade-off: an X covered by something that clears within the 1.5 s hit window passes (the old fixed
 // 1.2 s wait failed it if still covered at 1.2 s); an X covered for longer fails.
 //
+// Late opens (R4 m2): each open call carries its own token. The page keeps the token with the scene it
+// opened and with __openError; a call that returns after a later call has started (a startMinigame that
+// stalled past its 30 s) tears its own scene down and writes nothing, and the error read ignores any
+// token but the current one, so a late open can never count towards a later case.
+// No-X allowlist (R4 m3): a scene with no X passes only if it disables close by design. The list is
+// derived from the scene sources (every registered scene whose class extends SocialOverlayScene, which
+// switches the framework X off and draws its own Close) plus NO_X_EXTRA (title-screen). A scene with no
+// X that is not on the list fails.
+//
 // Exits 1 on any failure, 2 on a setup error. A scene that throws from startMinigame and leaves no shell
 // is reported as "not open" and does not fail the run (the audit's --strict is the gate for those).
 // A scene that never opens and throws nothing (an unregistered --scenes name, or a knocked-out player)
@@ -34,7 +43,9 @@
 // Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE picks the browser. Runs in a merge batch on a keyless server:
 //   PLAYWRIGHT_CHROMIUM_EXECUTABLE=... node tools/playtest/shell-x-check.mjs --port 3001 --game <id>
 import { chromium } from 'playwright';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 
 const argv = process.argv.slice(2);
 const opt = (n, d) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : d; };
@@ -247,6 +258,75 @@ export function makeMissingGuard(limit = MISSING_LIMIT) {
     return (isMissing) => { run = isMissing ? run + 1 : 0; return run >= limit; };
 }
 
+
+// R4 m2: page-side open and its error read, run in the page (self-contained: playwright serialises them).
+// Each call owns a token. A call that finds a later token when it returns is stale: it removes the scene
+// it opened and leaves __openError alone.
+export async function pageOpen({ s, p, token }) {
+    const w = window;
+    w.__openToken = token;
+    w.__openError = null;
+    const stale = () => w.__openToken !== token;
+    try { w.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
+    document.querySelectorAll('.minigame-container').forEach(n => n.remove());
+    await new Promise(r => setTimeout(r, 250));
+    if (stale()) return;
+    let inst = null;
+    try { inst = await w.MinigameFramework.startMinigame(s, null, p); } catch (e) {
+        if (!stale()) w.__openError = { token, message: String((e && e.message) || e) };
+        return;
+    }
+    const cur = (inst && inst.container) ? inst : w.MinigameFramework.currentMinigame;
+    const box = (cur && cur.container) || null;
+    if (stale()) {
+        // a late scene from an older call: tear it down so it cannot sit over (or be measured for) a later case
+        try { if (w.MinigameFramework.currentMinigame === cur) w.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
+        if (box && box.remove) box.remove();
+        return;
+    }
+    if (box && box.dataset) box.dataset.openToken = token;
+}
+
+export function pageOpenError(token) {
+    const e = window.__openError;
+    return e && e.token === token ? e.message : null;
+}
+
+// R4 m3: derive the scenes that disable close by design from the sources. indexSrc is minigames/index.js,
+// sources is every other minigame source text. A registered scene counts when its class extends
+// SocialOverlayScene, directly or through another class.
+export const NO_X_EXTRA = ['title-screen'];
+export function parseNoXScenes(indexSrc, sources) {
+    const reg = {};
+    for (const m of indexSrc.matchAll(/registerScene\(\s*'([^']+)'\s*,\s*(\w+)\s*\)/g)) reg[m[1]] = m[2];
+    const parent = {};
+    for (const src of sources) for (const m of src.matchAll(/class\s+(\w+)\s+extends\s+(\w+)/g)) parent[m[1]] = m[2];
+    const isOverlay = (cls, depth = 0) => !!cls && depth < 10 && (cls === 'SocialOverlayScene' || isOverlay(parent[cls], depth + 1));
+    const out = Object.keys(reg).filter(n => isOverlay(reg[n]));
+    for (const n of NO_X_EXTRA) if (!out.includes(n)) out.push(n);
+    return out.sort();
+}
+
+export function loadNoXScenes(root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'break_escape', 'js', 'minigames')) {
+    const files = [];
+    const walk = (d) => { for (const f of readdirSync(d)) { const q = join(d, f); if (statSync(q).isDirectory()) walk(q); else if (q.endsWith('.js')) files.push(q); } };
+    walk(root);
+    return parseNoXScenes(readFileSync(join(root, 'index.js'), 'utf8'), files.map(f => readFileSync(f, 'utf8')));
+}
+
+// R4 m3: the glue from a waitForOpen result to the case the main loop tallies (hadX, hand-over, allowlist).
+export function caseFromOutcome(o, noXAllowed) {
+    if (o.kind === 'ready') return { ready: true, hadX: !!(o.sample && !o.sample.noX), noXAllowed: noXAllowed === true };
+    if (o.kind === 'notOpen') return { ready: false, notOpen: true };
+    if (o.kind === 'report') return { ready: false, hitOnly: true, message: o.message };
+    return { ready: false, message: o.message };
+}
+
+// R4 m3: the timedEval result of xReport as the main loop reads it (a crashed page is open:false).
+export function reportFromEval(rr) {
+    return rr.timedOut ? { timedOut: true } : rr.error ? { open: false } : rr.value;
+}
+
 // Pure (m2, m3): the main loop's counting for one case. o = the open result, r = the xReport result
 // (or null when it was not run), issues = flattened xReport issues. Returns { checked, fail, text }.
 // A hand-over from the hit-test wait (o.hitOnly) is always a failure, including when xReport then
@@ -263,6 +343,7 @@ export function tally(o, r, issues = []) {
     }
     if (r.noX) {
         if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${o.message} (X hidden when measured)` };
+        if (o.noXAllowed !== true) return { checked: 1, fail: true, text: 'FAIL no X, and the scene is not on the disableClose allowlist' };
         return { checked: 0, fail: false, text: 'no X (disableClose scene)' };
     }
     if (o.hitOnly) return { checked: 1, fail: true, text: `FAIL after the open wait: ${issues.length ? issues.join('; ') : o.message}` };
@@ -295,14 +376,12 @@ async function main() {
         if (c.timedOut) console.error('browser.close() did not return in time; exiting anyway');
         process.exit(2);
     };
+    const noXScenes = new Set(loadNoXScenes());
+    if (!noXScenes.size) { console.error('could not derive the disableClose scene list from the sources'); process.exit(2); }
+    let openSeq = 0;
     const openScene = async (s) => {
-        const started = await timedEval(page.evaluate(async ({ s, p }) => {
-            try { window.MinigameFramework.forceCloseMinigame?.(); } catch { /* none */ }
-            document.querySelectorAll('.minigame-container').forEach(n => n.remove());
-            await new Promise(r => setTimeout(r, 250));
-            window.__openError = null;
-            try { await window.MinigameFramework.startMinigame(s, null, p); } catch (e) { window.__openError = String(e.message || e); }
-        }, { s, p: PARAMS[s] || { title: s } }), START_TIMEOUT_MS);
+        const token = `${s}#${++openSeq}`;
+        const started = await timedEval(page.evaluate(pageOpen, { s, p: PARAMS[s] || { title: s }, token }), START_TIMEOUT_MS);
         if (started.timedOut || started.error) {
             const why = started.timedOut ? `startMinigame did not return within ${START_TIMEOUT_MS} ms` : `the page call failed: ${started.error}`;
             const o = { kind: 'fail', sample: { shell: false } };
@@ -310,15 +389,12 @@ async function main() {
             return { ready: false, message: `${s}: ${why}` };
         }
         // Condition wait in place of a fixed delay (budget in the header).
-        const oe = await timedEval(page.evaluate(() => window.__openError || null), OPENERR_TIMEOUT_MS);
+        const oe = await timedEval(page.evaluate(pageOpenError, token), OPENERR_TIMEOUT_MS);
         const openError = oe.value || null;
         const sampleFn = () => withTimeout(page.evaluate(xSample).catch(() => ({ shell: false, sampleTimeout: true })), SAMPLE_TIMEOUT_MS, { shell: false, sampleTimeout: true });
         const o = await waitForOpen({ scene: s, sampleFn, now: () => Date.now(), sleep: (ms) => page.waitForTimeout(ms), openError });
         if (await stopIfGuard(o, s)) return null;
-        if (o.kind === 'ready') return { ready: true, hadX: !!(o.sample && !o.sample.noX) };
-        if (o.kind === 'notOpen') return { ready: false, notOpen: true };
-        if (o.kind === 'report') return { ready: false, hitOnly: true, message: o.message };
-        return { ready: false, message: o.message };
+        return caseFromOutcome(o, noXScenes.has(s));
     };
     for (const s of scenes) {
         if (skipped.has(s)) continue;
@@ -329,7 +405,7 @@ async function main() {
             let r = null;
             if (o.ready || o.hitOnly) {
                 const rr = await timedEval(page.evaluate(xReport), REPORT_TIMEOUT_MS);
-                r = rr.timedOut ? { timedOut: true } : rr.error ? { open: false } : rr.value;
+                r = reportFromEval(rr);
             }
             const issues = r && r.results ? r.results.flatMap(x => x.issues.map(i => `${x.label}: ${i}`)) : [];
             const t = tally(o, r, issues);

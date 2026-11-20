@@ -1,6 +1,7 @@
 // shell-x-check open wait: pure condition logic, the decision function and the wait loop with a fake
 // clock and sampler (the in-page sampler is proven live by the full run).
 import assert from 'node:assert/strict';
+import * as SX from '../../tools/playtest/shell-x-check.mjs';
 import { unmetConditions, openTimeoutMessage, openOutcome, waitForOpen, OPEN_TIMEOUT_MS, HIT_TIMEOUT_MS, SETTLE_MS, MIN_AFTER_OPEN_MS, withTimeout, makeMissingGuard, tally, MISSING_LIMIT, isMissingCase, timedEval } from '../../tools/playtest/shell-x-check.mjs';
 
 const ready = { shell: true, visible: true, stable: true, xStable: true, rects: 'same', noX: false, hitOk: true, hitHtml: '<button>' };
@@ -87,7 +88,7 @@ const gone = T({ ready: false, hitOnly: true, message: 'cover' }, { open: false 
 assert.ok(gone.fail && gone.checked === 1 && /shell gone/.test(gone.text), 'hit-only then no shell is a failure');
 const noX = T({ ready: false, hitOnly: true, message: 'cover' }, { open: true, noX: true });
 assert.ok(noX.fail && /X hidden/.test(noX.text), 'hit-only then no X is a failure');
-assert.ok(!T({ ready: true }, { open: true, noX: true }).fail && T({ ready: true }, { open: true, noX: true }).checked === 0, 'plain no-X scene still passes uncounted');
+assert.ok(!T({ ready: true, noXAllowed: true }, { open: true, noX: true }).fail && T({ ready: true, noXAllowed: true }, { open: true, noX: true }).checked === 0, 'an allowlisted no-X scene still passes uncounted');
 assert.ok(!T({ ready: false, notOpen: true }, { open: false }).fail, 'notOpen is not a failure');
 
 // m4: per-sample timeout and the missing-shell guard
@@ -109,7 +110,7 @@ assert.ok(lostShell.fail === true && lostShell.checked === 1 && /gone/.test(lost
 assert.ok(T({ ready: true }, null).fail === true, 'ready with no xReport result is a failure');
 const lostX = T({ ready: true, hadX: true }, { open: true, noX: true });
 assert.ok(lostX.fail === true && lostX.checked === 1 && /hidden/.test(lostX.text), 'ready then X hidden is a counted failure');
-assert.ok(T({ ready: true, hadX: false }, { open: true, noX: true }).fail === false, 'a scene that never had an X still passes');
+assert.ok(T({ ready: true, hadX: false, noXAllowed: true }, { open: true, noX: true }).fail === false, 'an allowlisted scene that never had an X still passes');
 assert.ok(T({ ready: true, hadX: true }, { timedOut: true }).fail === true, 'an xReport timeout is a counted failure');
 
 // R3 m2: page calls under a timeout
@@ -133,4 +134,79 @@ assert.ok(stop === true, 'ten sample timeouts in a row give the guard stop');
 const g4 = makeMissingGuard(MISSING_LIMIT);
 let stop4 = false; for (let i = 0; i < MISSING_LIMIT - 1; i++) stop4 = g4(isMissingCase(timedOutCase));
 assert.ok(stop4 === false && g4(isMissingCase({ kind: 'ready', sample: { shell: true } })) === false, 'nine then a good case does not stop');
+
+// R4 m3: the allowlist. A no-X scene passes only when it disables close by design.
+const notListed = T({ ready: true, hadX: false }, { open: true, noX: true });
+assert.ok(notListed.fail === true && notListed.checked === 1 && /allowlist/.test(notListed.text), 'a no-X scene that is not on the allowlist fails');
+assert.ok(T({ ready: true, hadX: false, noXAllowed: false }, { open: true, noX: true }).fail === true, 'noXAllowed false fails');
+assert.ok(T({ ready: true, hadX: false, noXAllowed: 'yes' }, { open: true, noX: true }).fail === true, 'only a true allowlist flag passes');
+const idx = "registerScene('a', A);\nregisterScene('b', B);\nregisterScene('c', C);\nregisterScene('t-s', T);";
+const derived = SX.parseNoXScenes(idx, ['class A extends SocialOverlayScene {}', 'class B extends A {}', 'class C extends MinigameScene {}', 'class T extends MinigameScene {}', 'class Z extends SocialOverlayScene {}']);
+assert.ok(derived.join() === 'a,b,title-screen', 'derived: direct and inherited overlay scenes plus the explicit extra only, unregistered classes and plain scenes left out (' + derived.join() + ')');
+const real = SX.loadNoXScenes();
+assert.ok(real.length >= 15 && real.length <= 16, 'the real tree gives 15 or 16 scenes (' + real.length + ')');
+for (const n of ['mail-client', 'intel-board', 'osint-browser', 'inbox-triage', 'episode-runner', 'consequence-sandbox', 'pretext-prep', 'landing-page-builder', 'sort-drill', 'privacy-panel', 'password-guesser', 'assistant-chat', 'engagement-report', 'authenticator', 'title-screen']) assert.ok(real.includes(n), 'the allowlist has ' + n);
+for (const n of ['pin', 'notes', 'lockpicking', 'phone-chat', 'person-chat']) assert.ok(!real.includes(n), 'the allowlist has no ' + n);
+
+// R4 m3: openScene glue, caseFromOutcome and reportFromEval
+const rdyX = SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: false } }, false);
+assert.ok(rdyX.ready === true && rdyX.hadX === true && rdyX.noXAllowed === false, 'a ready sample with an X sets hadX');
+const rdyNo = SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: true } }, true);
+assert.ok(rdyNo.ready === true && rdyNo.hadX === false && rdyNo.noXAllowed === true, 'a ready sample with no X clears hadX and carries the allowlist flag');
+assert.ok(SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: true } }).noXAllowed === false, 'no allowlist flag means not allowed');
+assert.ok(SX.caseFromOutcome({ kind: 'notOpen' }).notOpen === true, 'notOpen maps through');
+const rep = SX.caseFromOutcome({ kind: 'report', message: 'cover' });
+assert.ok(rep.hitOnly === true && rep.ready === false && rep.message === 'cover', 'report maps to hitOnly');
+const fl = SX.caseFromOutcome({ kind: 'fail', message: 'late' });
+assert.ok(fl.ready === false && fl.message === 'late' && !fl.hitOnly && !fl.notOpen, 'fail maps to a plain failed case');
+assert.ok(SX.reportFromEval({ timedOut: true }).timedOut === true, 'a timed-out eval is a timedOut report');
+assert.ok(SX.reportFromEval({ error: 'page crashed' }).open === false, 'an eval error is open:false');
+assert.ok(SX.reportFromEval({ value: { open: true, noX: true } }).noX === true, 'a value passes through');
+// end to end through tally: a crashed page after a ready case is a counted failure; a missing X on an unlisted scene fails
+assert.ok(T(SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: false } }, false), SX.reportFromEval({ error: 'x' })).fail === true, 'crashed page after ready fails through the glue');
+assert.ok(T(SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: true } }, false), SX.reportFromEval({ value: { open: true, noX: true } })).fail === true, 'unlisted no-X scene fails through the glue');
+assert.ok(T(SX.caseFromOutcome({ kind: 'ready', sample: { shell: true, noX: true } }, true), SX.reportFromEval({ value: { open: true, noX: true } })).fail === false, 'listed no-X scene passes through the glue');
+
+// R4 m2: per-call tokens against a late open
+function fakePage() {
+    const boxes = [];
+    const doc = { querySelectorAll: () => ({ forEach: (f) => boxes.slice().forEach(f) }) };
+    const mk = () => { const b = { dataset: {}, removed: false, remove() { this.removed = true; const i = boxes.indexOf(this); if (i >= 0) boxes.splice(i, 1); } }; boxes.push(b); return b; };
+    const win = { __openError: null, MinigameFramework: { currentMinigame: null, forceCloseMinigame() { this.currentMinigame = null; } } };
+    return { boxes, doc, win, mk };
+}
+const savedWin = globalThis.window, savedDoc = globalThis.document;
+try {
+    const f = fakePage();
+    globalThis.window = f.win; globalThis.document = f.doc;
+    let release;
+    const slow = new Promise(r => { release = r; });
+    f.win.MinigameFramework.startMinigame = async (name) => {
+        if (name === 'slow') { await slow; const b = f.mk(); f.win.MinigameFramework.currentMinigame = { container: b, name }; return f.win.MinigameFramework.currentMinigame; }
+        if (name === 'boom') throw new Error('next case threw');
+        const b = f.mk(); f.win.MinigameFramework.currentMinigame = { container: b, name }; return f.win.MinigameFramework.currentMinigame;
+    };
+    const first = SX.pageOpen({ s: 'slow', p: {}, token: 'slow#1' });
+    await new Promise(r => setTimeout(r, 300));
+    await SX.pageOpen({ s: 'boom', p: {}, token: 'boom#2' });
+    assert.ok(SX.pageOpenError('boom#2') === 'next case threw', 'the current call error is read by its own token');
+    release();
+    await first;
+    assert.ok(f.boxes.length === 0, 'the late scene from the stale call is torn down (' + f.boxes.length + ' containers left)');
+    assert.ok(SX.pageOpenError('boom#2') === 'next case threw', 'a late open does not overwrite the next case error');
+    assert.ok(SX.pageOpenError('slow#1') === null, 'a stale token reads no error');
+    // a late open that throws must not write __openError either
+    let rel2; const slow2 = new Promise(r => { rel2 = r; });
+    f.win.MinigameFramework.startMinigame = async (name) => { if (name === 'late-throw') { await slow2; throw new Error('late boom'); } const b = f.mk(); f.win.MinigameFramework.currentMinigame = { container: b }; return f.win.MinigameFramework.currentMinigame; };
+    const a = SX.pageOpen({ s: 'late-throw', p: {}, token: 'lt#3' });
+    await new Promise(r => setTimeout(r, 300));
+    await SX.pageOpen({ s: 'fine', p: {}, token: 'fine#4' });
+    rel2(); await a;
+    assert.ok(SX.pageOpenError('fine#4') === null && f.win.__openError === null, 'a late throw does not write __openError over the next case');
+    assert.ok(f.boxes.length === 1 && f.boxes[0].dataset.openToken === 'fine#4', 'the live scene keeps its own token and stays open');
+    // an old container from a prior token is swept before the next open
+    f.win.__openToken = 'old'; const old = f.mk(); old.dataset.openToken = 'old';
+    await SX.pageOpen({ s: 'fine', p: {}, token: 'fine#5' });
+    assert.ok(old.removed === true, 'an older token container is torn down before the next case opens');
+} finally { globalThis.window = savedWin; globalThis.document = savedDoc; }
 console.log('playtest-shellx-open-wait ok');
