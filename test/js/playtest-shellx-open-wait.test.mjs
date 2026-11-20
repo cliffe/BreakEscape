@@ -144,7 +144,8 @@ const idx = "registerScene('a', A);\nregisterScene('b', B);\nregisterScene('c', 
 const derived = SX.parseNoXScenes(idx, ['class A extends SocialOverlayScene {}', 'class B extends A {}', 'class C extends MinigameScene {}', 'class T extends MinigameScene {}', 'class Z extends SocialOverlayScene {}']);
 assert.ok(derived.join() === 'a,b,title-screen', 'derived: direct and inherited overlay scenes plus the explicit extra only, unregistered classes and plain scenes left out (' + derived.join() + ')');
 const real = SX.loadNoXScenes();
-assert.ok(real.length >= 15 && real.length <= 16, 'the real tree gives 15 or 16 scenes (' + real.length + ')');
+assert.ok(real.length === 15, 'the real tree gives exactly 15 scenes (' + real.join() + ')');
+assert.ok(!real.includes('concern-form'), 'concern-form shows the framework X, so it is not on the list');
 for (const n of ['mail-client', 'intel-board', 'osint-browser', 'inbox-triage', 'episode-runner', 'consequence-sandbox', 'pretext-prep', 'landing-page-builder', 'sort-drill', 'privacy-panel', 'password-guesser', 'assistant-chat', 'engagement-report', 'authenticator', 'title-screen']) assert.ok(real.includes(n), 'the allowlist has ' + n);
 for (const n of ['pin', 'notes', 'lockpicking', 'phone-chat', 'person-chat']) assert.ok(!real.includes(n), 'the allowlist has no ' + n);
 
@@ -209,4 +210,50 @@ try {
     await SX.pageOpen({ s: 'fine', p: {}, token: 'fine#5' });
     assert.ok(old.removed === true, 'an older token container is torn down before the next case opens');
 } finally { globalThis.window = savedWin; globalThis.document = savedDoc; }
+
+// R1 M1, m3, m4, m5: parser rules
+const idx2 = "registerScene('a', A);\nregisterScene('cf', CF);";
+assert.ok(SX.parseNoXScenes(idx2, ['class A extends SocialOverlayScene {}', "class CF extends SocialOverlayScene { m() { this.q('#minigame-close').style.display = ''; } }"]).join() === 'a,title-screen', 'an overlay class that turns the X back on is not listed');
+assert.throws(() => SX.parseNoXScenes('nothing here', []), /no registerScene/, 'an index with no registrations is a setup error');
+assert.throws(() => SX.parseNoXScenes("registerScene('p', P);", ['class P extends MinigameScene {}']), /derivation is broken/, 'no overlay scenes found is a setup error even though title-screen is an extra');
+assert.ok(SX.parseNoXScenes('registerScene("q", Q);', ['class Q extends SocialOverlayScene {}']).join() === 'q,title-screen', 'double quotes parse');
+assert.ok(SX.parseNoXScenes("// registerScene('x', A);\n/* registerScene('y', A); */\nregisterScene('a', A);", ['class A extends SocialOverlayScene {}']).join() === 'a,title-screen', 'commented registrations are ignored');
+assert.ok(SX.parseNoXScenes("registerScene('a', A);\nregisterScene('pin', P);", ['class A extends SocialOverlayScene {}\n// class P extends SocialOverlayScene {}\nclass P extends MinigameScene {}']).join() === 'a,title-screen', 'a commented class is ignored');
+assert.throws(() => SX.parseNoXScenes("registerScene('a', A);", ['class A extends SocialOverlayScene {}', 'class A extends MinigameScene {}']), /more than one file/, 'a duplicate class name is a setup error');
+const noXSet = new Set(['mail-client']);
+assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'mail-client', noXSet).noXAllowed === true, 'a listed scene is allowed by its name');
+assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'pin', noXSet).noXAllowed === false, 'an unlisted scene is not');
+assert.ok(SX.caseFor({ kind: 'ready', sample: { noX: true } }, 'mail-client 915x412', noXSet).noXAllowed === false, 'the size tag is not the key');
+
+// R1 m1 (real path) and m2: startMinigame is synchronous; the next open's sweep protects the next case
+{
+    const boxes = [];
+    const doc = { querySelectorAll: () => ({ forEach: (f) => boxes.slice().forEach(f) }) };
+    const mk = () => { const b = { dataset: {}, removed: false, remove() { this.removed = true; const i = boxes.indexOf(this); if (i >= 0) boxes.splice(i, 1); } }; boxes.push(b); return b; };
+    const win = { __openError: null, MinigameFramework: { currentMinigame: null, forceCloseMinigame() { this.currentMinigame = null; } } };
+    const sw = globalThis.window, sd = globalThis.document;
+    try {
+        globalThis.window = win; globalThis.document = doc;
+        win.MinigameFramework.startMinigame = (name) => {
+            if (name === 'boom') throw new Error('boom');
+            if (name === 'unregistered') return null;
+            const inst = { container: mk() }; win.MinigameFramework.currentMinigame = inst; return inst;
+        };
+        await SX.pageOpen({ s: 'slow', p: {}, token: 'slow#1' });
+        assert.ok(boxes.length === 1 && boxes[0].dataset.openToken === 'slow#1', 'a synchronous open finishes as the current token and tags its box');
+        const slowBox = boxes[0];
+        await SX.pageOpen({ s: 'boom', p: {}, token: 'boom#2' });
+        assert.ok(slowBox.removed === true && boxes.length === 0, 'the next open sweeps the previous scene before it opens');
+        assert.ok(SX.pageOpenError('boom#2') === 'boom' && SX.pageOpenError('slow#1') === null, 'only the current token error is read');
+        // stale call whose startMinigame returns null must leave the later case scene alone
+        let rel; const gate = new Promise(r => { rel = r; });
+        win.MinigameFramework.startMinigame = async (name) => { if (name === 'late-null') { await gate; return null; } const inst = { container: mk() }; win.MinigameFramework.currentMinigame = inst; return inst; };
+        const late = SX.pageOpen({ s: 'late-null', p: {}, token: 'ln#3' });
+        await new Promise(r => setTimeout(r, 300));
+        await SX.pageOpen({ s: 'live', p: {}, token: 'live#4' });
+        const liveBox = boxes[0], liveInst = win.MinigameFramework.currentMinigame;
+        rel(); await late;
+        assert.ok(liveBox.removed === false && win.MinigameFramework.currentMinigame === liveInst, 'a stale call that returns null does not close the later case scene');
+    } finally { globalThis.window = sw; globalThis.document = sd; }
+}
 console.log('playtest-shellx-open-wait ok');
