@@ -34,7 +34,7 @@ VAR hub_quiet = false
             - else:
                 Agnieszka Duda: You stopped to check that payment instead of releasing it on the voice alone, which is the whole job here.
             }
-            Agnieszka Duda: To whoever cloned that voice, a trusted payment is money gone the same day, and your call back is exactly what they can't copy.
+            Agnieszka Duda: To whoever cloned that voice, a trusted payment is money gone the same day, and a call back on a known number is what they can't copy.
         - else:
             Agnieszka Duda: When a payment goes out on a voice alone, the run freezes while the team re-check every recent one, and that is a long, quiet afternoon.
             Agnieszka Duda: To whoever cloned that voice, that release is money moved straight on, and the plea to keep it quiet is what buys them the time.
