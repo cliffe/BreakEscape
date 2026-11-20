@@ -2,7 +2,7 @@
 
 **Authoritative from 20 Nov (R1 fix batch).** This table was first joined from the nine `W2_LINES_*.md` files; the fix batch then edited rows here directly, so those source files and PH*_HANDOVER notes are now stale for the changed rows. Edit this file, and do not re-join it from the sources. "Scenario" is the episode id prefix of the line id (`shared` = company kit or ambient start line used across that company's shells). Status is as the source file states it: `voiced` means proposed for the voicing card, not that a clip exists. Word count is of the exact text.
 
-Totals: 247 lines; voiced 182 (2918 words); written 65 (1250 words).
+Totals: 247 lines; voiced 182 (2914 words); written 65 (1250 words).
 Voiced lines over 30 words: 0.
 
 | id | scenario | speaker | file:line | words | status | kind | branch | line | source |
@@ -73,7 +73,7 @@ Voiced lines over 30 words: 0.
 | ca18-Hp | ca18 | Ama Owusu | scenarios/ca18_credential_attacks_at_scale/ink/ama_owusu.ink | 19 | voiced | host | PARTIAL | You stopped the one that mattered, the lookalike sign-in page, before a reused password turned into a live account. | H3 |
 | ca18-Hm | ca18 | Ama Owusu | scenarios/ca18_credential_attacks_at_scale/ink/ama_owusu.ink | 25 | voiced | host | MISS | The alert looked like us and you were trying to protect your account, but the password went to their page, and that opens a lot. | H3 |
 | ca18-Hh | ca18 | Ama Owusu | scenarios/ca18_credential_attacks_at_scale/ink/ama_owusu.ink | 20 | voiced | host | HABIT | A unique password per account in a manager, plus MFA, is the one habit that beats both spraying and stuffing. | H3 |
-| ca19-Hc | ca19 | Anjali Rao | scenarios/ca19_malware_and_updates/ink/anjali_rao.ink | 25 | voiced | host | CATCH | Acting fast is why it stopped at one desk. The machine you restarted stayed up while the other had to be pulled off the network. | H3 |
+| ca19-Hc | ca19 | Anjali Rao | scenarios/ca19_malware_and_updates/ink/anjali_rao.ink | 21 | voiced | host | CATCH | Acting fast is why it stopped at one desk. That machine was pulled off the network and everyone else carried on. | H3 |
 | ca19-Hp | ca19 | Anjali Rao | scenarios/ca19_malware_and_updates/ink/anjali_rao.ink | 17 | voiced | host | PARTIAL | You caught the one that mattered in time to keep it from spreading further than it did. | H3 |
 | ca19-Hm | ca19 | Anjali Rao | scenarios/ca19_malware_and_updates/ink/anjali_rao.ink | 23 | voiced | host | MISS | Every choice was the normal busy-afternoon one, which is the point, and this time it cost claims work and a weekend of rebuilds. | H3 |
 | ca19-Hh | ca19 | Anjali Rao | scenarios/ca19_malware_and_updates/ink/anjali_rao.ink | 21 | voiced | host | HABIT | Restart when the machine asks, and report anything odd straight away. That's what keeps one bad click from becoming everyone's week. | H3 |
@@ -131,9 +131,9 @@ Voiced lines over 30 words: 0.
 | ca-anjaliC2 | shared | Anjali Rao | quayholt_insurance.json anjali_rao | 4 | voiced | shared-chatter |  | Need a proper break. | quayholt |
 | ca00-Sd | ca00 | Darren Price | ink/darren_price_ambient.ink:19 | 11 | voiced | stub |  | Welcome aboard. Good to have you on the floor with us. | quayholt |
 | ca00-Sn | ca00 | Niamh Doherty | ink/niamh_doherty_ambient.ink:18 | 13 | voiced | stub |  | Hiya, welcome in. Give us a shout if you need anything at all. | quayholt |
-| ca03-Sn-c | ca03 | Niamh Doherty | ink/niamh_doherty_ambient.ink:23 | 16 | voiced | stub | catch | Good spot turning down that sign-in prompt nobody started. One tap and they'd have been in. | quayholt |
+| ca03-Sn-c | ca03 | Niamh Doherty | ink/niamh_doherty_ambient.ink:23 | 15 | voiced | stub | catch | Good spot on that sign-in prompt nobody started. One tap and they'd have been in. | quayholt |
 | ca03-Sn-m | ca03 | Niamh Doherty | ink/niamh_doherty_ambient.ink:25 | 15 | voiced | stub | miss | Helpdesk's had a run of odd reset calls lately. Keeps us all on our toes. | quayholt |
-| ca03-Sa-c | ca03 | Anjali Rao | ink/anjali_rao_ambient.ink:16 | 13 | voiced | stub | catch | Well caught. That sign-in prompt nobody started would have let them straight in. | quayholt |
+| ca03-Sa-c | ca03 | Anjali Rao | ink/anjali_rao_ambient.ink:16 | 11 | voiced | stub | catch | Well caught. They'd have kept sending those until somebody gave in. | quayholt |
 | ca03-Sa-m | ca03 | Anjali Rao | ink/anjali_rao_ambient.ink:18 | 15 | voiced | stub | miss | We've had a few callers pushing for password resets this week. Worth a second look. | quayholt |
 | ca05-Sa-c | ca05 | Anjali Rao | ink/anjali_rao_ambient.ink:24 | 12 | voiced | stub | catch | Good spot. The page was a near-perfect copy of our own sign-in. | quayholt |
 | ca05-Sa-m | ca05 | Anjali Rao | ink/anjali_rao_ambient.ink:26 | 13 | voiced | stub | miss | The alerts keep flagging lookalike sign-in pages. They're getting harder to tell apart. | quayholt |
