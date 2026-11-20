@@ -1,6 +1,7 @@
 // PC sign-in on a phone: the username line under each account tile stays (cut with an ellipsis),
-// and the password field is scrolled into view on focus and on visualViewport resize so the
-// on-screen keyboard does not cover it, the error line or Sign in. Listeners go at cleanup().
+// and while a sign-in field has focus and a keyboard has shrunk the visual viewport, the lowest of
+// the message line and Sign in is revealed once (bottom padding added, then removed, scrollY reset).
+// Pinch-zoom is ignored, the Other user username field is covered, listeners go at cleanup().
 // Run with: node --max-old-space-size=2048 test/js/signin-phone.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -64,19 +65,27 @@ test('CSS: the short frame still hides the username line, and the line keeps GNF
 // ── Behaviour ───────────────────────────────────────────────────────────────
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null }];
 
-function fakeViewport() {
-    const vv = { added: [], removed: [], handlers: new Set() };
+const INNER = 844;
+function fakeViewport(over = {}) {
+    const vv = { added: [], removed: [], handlers: new Set(), height: INNER, offsetTop: 0, scale: 1, ...over };
     vv.addEventListener = (type, h) => { vv.added.push(type); vv.handlers.add(h); };
     vv.removeEventListener = (type, h) => { vv.removed.push(type); vv.handlers.delete(h); };
     vv.fire = () => [...vv.handlers].forEach((h) => h({ type: 'resize' }));
     return vv;
 }
 
-function open({ touch }) {
+function open() {
     document.body.innerHTML = '<div id="mg"></div>';
     const scrolls = [];
     dom.window.HTMLElement.prototype.scrollIntoView = function (opts) { scrolls.push({ el: this, opts }); };
-    window.matchMedia = (q) => ({ matches: touch && /pointer:\s*coarse/.test(q), media: q });
+    const frames = [];
+    window.requestAnimationFrame = (cb) => { frames.push(cb); return frames.length; };
+    const flush = () => { while (frames.length) frames.shift()(); };
+    window.innerHeight = INNER;
+    const scrollTos = [];
+    window.scrollTo = (x, y) => { scrollTos.push([x, y]); win.scrollY = y; };
+    const win = window;
+    win.scrollY = 0;
     const vv = fakeViewport();
     window.visualViewport = vv;
     window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
@@ -91,60 +100,143 @@ function open({ touch }) {
     window.MinigameFramework.currentMinigame = mg;
     mg.init();
     mg.start();
+    flush();
     scrolls.length = 0; // the opening focus is not under test
-    return { mg, scrolls, vv };
+    scrollTos.length = 0;
+    return { mg, scrolls, vv, flush, scrollTos };
 }
-const focusField = (mg) => { mg.passwordField.dispatchEvent(new dom.window.Event('blur')); mg.passwordField.focus(); mg.passwordField.dispatchEvent(new dom.window.Event('focus')); };
+const rectBottom = (el, bottom) => { el.getBoundingClientRect = () => ({ top: bottom - 40, bottom, left: 0, right: 100, width: 100, height: 40 }); };
+const focusOn = (field) => { field.focus(); }; // jsdom fires the real focus and blur events
+const keyboard = (vv, h = 544) => { vv.height = h; };
 
-test('touch: focusing the password field scrolls it to the centre, nearest horizontally', () => {
-    const { mg, scrolls } = open({ touch: true });
-    focusField(mg);
-    assert.ok(scrolls.length >= 1, 'scrollIntoView called');
-    assert.ok(scrolls[0].el === mg.passwordField, 'on the password field itself');
-    assert.ok(scrolls[0].opts.block === 'center', 'block center');
-    assert.ok(scrolls[0].opts.inline === 'nearest', 'no sideways jump');
+test('keyboard up: Sign in is the lowest, padding is added and Sign in is revealed once, nearest', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 700); rectBottom(mg.signInMessageEl, 650);
+    mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); flush();
+    assert.ok(scrolls.length === 0, 'focus with no keyboard up reveals nothing');
+    keyboard(vv); vv.fire();
+    assert.ok(scrolls.length === 0, 'nothing is measured before the animation frame');
+    flush();
+    assert.ok(scrolls.length === 1, `exactly one reveal (got ${scrolls.length})`);
+    assert.ok(scrolls[0].el === mg.submitBtn && scrolls[0].opts.block === 'nearest', 'Sign in, block nearest');
+    assert.ok(mg.gameContainer.style.paddingBottom === '156px', `padding is how far Sign in sits below 544 (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.scrollPaddingBottom === '156px', 'scroll-padding matches so the nearest edge has a target');
     mg.cleanup();
 });
 
-test('touch: a visualViewport resize re-scrolls only while the field has focus', () => {
-    const { mg, scrolls, vv } = open({ touch: true });
-    assert.ok(vv.added.includes('resize') && vv.handlers.size === 1, 'one resize listener on visualViewport');
-    mg.passwordField.blur();
-    vv.fire();
-    assert.ok(scrolls.length === 0, 'unfocused: no scroll');
-    mg.passwordField.focus();
+test('keyboard up: a lower message line is the one revealed', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 600); rectBottom(mg.signInMessageEl, 660);
+    mg.signInMessageEl.textContent = 'Incorrect username or password. 2 attempts left.';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.signInMessageEl, 'the message line');
+    assert.ok(mg.gameContainer.style.paddingBottom === '116px', `padding from the message line (got ${mg.gameContainer.style.paddingBottom})`);
+    mg.cleanup();
+});
+
+test('keyboard up: an empty message line does not count even when it is lower', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 600); rectBottom(mg.signInMessageEl, 660);
+    mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.submitBtn, 'Sign in');
+    mg.cleanup();
+});
+
+test('keyboard up and already visible: one reveal, no padding', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 500); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(scrolls.length === 1, 'revealed once (nearest is a no-op on screen)');
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'no padding needed');
+    mg.cleanup();
+});
+
+test('keyboard closes: padding is removed and window scroll drift is put back to 0', () => {
+    const { mg, vv, flush, scrollTos } = open();
+    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    mg.gameContainer.style.paddingBottom = '3px';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === '159px', 'added on top of the existing 3px');
+    window.scrollY = 120; // iOS pan drift
+    vv.height = INNER; vv.fire(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === '3px', `restored to the earlier value (got ${mg.gameContainer.style.paddingBottom})`);
+    assert.ok(mg.gameContainer.style.scrollPaddingBottom === '', 'scroll-padding removed');
+    assert.ok(window.scrollY === 0 && scrollTos.length === 1 && scrollTos[0][1] === 0, 'scrollTo(0, 0) called');
+    mg.cleanup();
+});
+
+test('blur with the keyboard up: padding is removed and scrollY reset', () => {
+    const { mg, vv, flush } = open();
+    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === '156px', 'padding on');
+    window.scrollY = 80;
+    mg.passwordField.blur(); flush();
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'padding off after blur');
+    assert.ok(window.scrollY === 0, 'scrollY reset');
+    mg.cleanup();
+});
+
+test('pinch-zoom (scale !== 1) is ignored', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); vv.scale = 2; keyboard(vv, 400); vv.fire(); flush();
+    assert.ok(scrolls.length === 0, 'no reveal');
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'no padding');
+    mg.cleanup();
+});
+
+test('resize with no field focused does nothing', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 700);
+    mg.passwordField.blur(); mg.usernameField.blur(); flush();
+    keyboard(vv); vv.fire(); flush();
+    assert.ok(scrolls.length === 0 && mg.gameContainer.style.paddingBottom === '', 'nothing');
+    mg.cleanup();
+});
+
+test('Other user: the username field gets the same reveal, once per focus and resize', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 720); mg.signInMessageEl.textContent = '';
+    focusOn(mg.usernameField); flush();
+    keyboard(vv); vv.fire(); flush();
+    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.submitBtn, `one reveal of Sign in (got ${scrolls.length})`);
+    assert.ok(mg.gameContainer.style.paddingBottom === '176px', 'padded');
     scrolls.length = 0;
-    vv.fire();
-    assert.ok(scrolls.length === 1 && scrolls[0].el === mg.passwordField, 'focused: re-scrolled');
+    focusOn(mg.passwordField); flush(); // Enter moves to the password: keyboard stays up
+    assert.ok(scrolls.length === 1, `moving to the password field reveals once (got ${scrolls.length})`);
     mg.cleanup();
 });
 
-test('touch: cleanup removes the visualViewport listener (no leak)', () => {
-    const { mg, vv } = open({ touch: true });
-    assert.ok(vv.handlers.size === 1, 'added');
-    mg.cleanup();
-    assert.ok(vv.handlers.size === 0, 'handler set empty after cleanup');
-    assert.ok(vv.removed.includes('resize'), 'removeEventListener called with resize');
-});
-
-test('touch: after cleanup the field focus no longer scrolls', () => {
-    const { mg, scrolls } = open({ touch: true });
-    mg.cleanup();
-    focusField(mg);
-    assert.ok(scrolls.length === 0, 'no scroll after cleanup');
-});
-
-test('desktop (fine pointer): focus does not scroll and no visualViewport listener is added', () => {
-    const { mg, scrolls, vv } = open({ touch: false });
-    focusField(mg);
-    vv.fire();
-    assert.ok(scrolls.length === 0, 'scrollIntoView not called');
-    assert.ok(vv.added.length === 0, 'no listener added');
+test('desktop: no shrunk viewport, so focus and resize do nothing', () => {
+    const { mg, scrolls, vv, flush } = open();
+    rectBottom(mg.submitBtn, 700);
+    focusOn(mg.passwordField); vv.fire(); flush();
+    assert.ok(scrolls.length === 0 && mg.gameContainer.style.paddingBottom === '', 'nothing');
     mg.cleanup();
 });
 
-test('the password field sits inside the PC screen scroller, not a page scroller', () => {
-    const pcCss = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');
-    const i = pcCss.indexOf('.pc-monitor-screen > .minigame-game-container {');
-    assert.ok(i >= 0 && /overflow-y:\s*auto/.test(pcCss.slice(i, pcCss.indexOf('}', i))), 'the monitor screen scrolls its own content');
+test('cleanup removes the visualViewport listener and any padding', () => {
+    const { mg, vv, flush } = open();
+    assert.ok(vv.handlers.size === 1 && vv.added.includes('resize'), 'one resize listener');
+    rectBottom(mg.submitBtn, 700); mg.signInMessageEl.textContent = '';
+    focusOn(mg.passwordField); keyboard(vv); vv.fire(); flush();
+    mg.cleanup();
+    assert.ok(vv.handlers.size === 0 && vv.removed.includes('resize'), 'listener removed');
+    assert.ok(mg.gameContainer.style.paddingBottom === '', 'padding removed');
+});
+
+test('after cleanup the field focus and resize no longer reveal', () => {
+    const { mg, scrolls, vv, flush } = open();
+    mg.cleanup();
+    keyboard(vv); focusOn(mg.passwordField); vv.fire(); flush();
+    assert.ok(scrolls.length === 0, 'no reveal after cleanup');
+});
+
+test('the Other user hint is short enough for a compact tile (76px of content at GNF 16)', () => {
+    const src = readFileSync(join(js, 'minigames/password/password-minigame.js'), 'utf8');
+    const m = src.match(/signin-other[^]*?<span class="signin-username">([^<]*)<\/span>/);
+    assert.ok(m && m[1].length <= 6, `hint is "${m && m[1]}"`);
 });

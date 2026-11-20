@@ -1596,6 +1596,7 @@ export class PasswordMinigame extends MinigameScene {
             this.stopFrameSnap?.();
             this.pcMonitor?.destroy?.();
         }
+        this._clearKeyboardReveal?.();
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }
@@ -1732,34 +1733,81 @@ export class PasswordMinigame extends MinigameScene {
         const ways = this.gameContainer.querySelector('#signin-ways');
         if (ways) this.addEventListener(ways, 'scroll', () => this.updateSignInWaysMore());
         this.addEventListener(window, 'resize', () => this.fitSignInWays());
-        this.bindKeyboardReveal(this.passwordField);
+        this.bindKeyboardReveal([this.usernameField, this.passwordField]);
         this.renderSignInForm();
     }
 
     /**
-     * On a touch device the on-screen keyboard covers the lower half of the screen, and with it
-     * the password field's error line and the Sign in button. Focus brings the field to the
-     * middle of the visible area, and again when the visual viewport resizes (the keyboard
-     * opening or closing) while the field still has focus. The scrolling box is the PC monitor's
-     * screen (or the old frame), not the page. Not bound on a fine-pointer desktop, where there
-     * is no keyboard and the scroll would only jump the layout. Both listeners go through
-     * this.addEventListener, so cleanup() removes them.
+     * The on-screen keyboard covers the lower part of the screen, and with it the message line and
+     * the Sign in button. While the username or password field has focus and the visual viewport
+     * is shrunk (a keyboard is up, and not a pinch-zoom), find the lower of the message line (when
+     * it has text) and Sign in, see how far it sits below the visual viewport's bottom edge, give
+     * the scrolling panel that much bottom padding (and scroll-padding, so the nearest-edge reveal
+     * has a target) and reveal it with revealInFrame, in a requestAnimationFrame so a layout that
+     * the same resize changed is measured after it settles. The panel often has no scroll range
+     * at 390x844, so the padding is what lets it scroll. When the keyboard closes, or on blur,
+     * the padding goes and any window scroll drift is put back to 0 (iOS can leave the fixed
+     * overlay offset). Bound on every device and a no-op unless the visual viewport is shrunk,
+     * so a desktop is unaffected. The listeners go through this.addEventListener, so cleanup()
+     * removes them.
      */
-    bindKeyboardReveal(field) {
-        if (!field || typeof window === 'undefined') return;
-        let touch = false;
-        try { touch = !!(window.matchMedia?.('(pointer: coarse)')?.matches || window.matchMedia?.('(hover: none)')?.matches); } catch (e) { touch = false; }
-        if (!touch) return;
-        const reveal = () => {
-            try { field.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) { /* no scrollIntoView: leave the layout as it is */ }
-        };
-        this.addEventListener(field, 'focus', reveal);
+    bindKeyboardReveal(fields) {
+        if (typeof window === 'undefined') return;
+        const list = (Array.isArray(fields) ? fields : [fields]).filter(Boolean);
+        const panel = this.gameContainer;
         const vv = window.visualViewport;
-        if (vv && typeof vv.addEventListener === 'function') {
-            this.addEventListener(vv, 'resize', () => {
-                if (document.activeElement === field) reveal();
-            });
+        if (!list.length || !panel || !vv || typeof vv.addEventListener !== 'function') return;
+        const raf = (cb) => (typeof window.requestAnimationFrame === 'function' ? window.requestAnimationFrame(cb) : cb());
+        let applied = false;
+        let saved = null;
+        const keyboardUp = () => vv.scale === 1 && (window.innerHeight - vv.height) > 100;
+        const focused = () => list.includes(document.activeElement);
+        const clear = () => {
+            if (applied) {
+                panel.style.paddingBottom = saved.pad;
+                panel.style.scrollPaddingBottom = saved.scrollPad;
+                applied = false;
+                saved = null;
+            }
+            if (window.scrollY !== 0) { try { window.scrollTo(0, 0); } catch (e) { /* no scrollTo: leave it */ } }
+        };
+        const reveal = () => {
+            if (!focused() || !keyboardUp()) return;
+            const edge = vv.offsetTop + vv.height;
+            const msg = this.signInMessageEl;
+            const cands = [];
+            if (msg?.textContent) cands.push(msg);
+            if (this.submitBtn) cands.push(this.submitBtn);
+            let lowest = null;
+            let lowestBottom = -Infinity;
+            for (const el of cands) {
+                const bottom = el.getBoundingClientRect().bottom;
+                if (bottom > lowestBottom) { lowest = el; lowestBottom = bottom; }
+            }
+            if (!lowest) return;
+            const below = Math.max(0, Math.ceil(lowestBottom - edge));
+            if (below > 0) {
+                if (!applied) {
+                    saved = { pad: panel.style.paddingBottom, scrollPad: panel.style.scrollPaddingBottom };
+                    applied = true;
+                }
+                const have = parseFloat(panel.style.paddingBottom) || 0;
+                panel.style.paddingBottom = `${have + below}px`;
+                panel.style.scrollPaddingBottom = `${have + below}px`;
+            }
+            revealInFrame(lowest);
+        };
+        const onViewport = () => {
+            if (vv.scale !== 1) return; // a pinch-zoom is not a keyboard
+            if (!keyboardUp()) { raf(clear); return; }
+            raf(reveal);
+        };
+        for (const f of list) {
+            this.addEventListener(f, 'focus', () => { if (keyboardUp()) raf(reveal); });
+            this.addEventListener(f, 'blur', () => raf(() => { if (!focused()) clear(); }));
         }
+        this.addEventListener(vv, 'resize', onViewport);
+        this._clearKeyboardReveal = clear;
     }
 
     /**
@@ -1795,7 +1843,7 @@ export class PasswordMinigame extends MinigameScene {
                 <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
                     <span class="signin-portrait signin-portrait-initials">?</span>
                     <span class="signin-name">Other user</span>
-                    <span class="signin-username">type a name</span>
+                    <span class="signin-username">name?</span>
                 </button>`;
     }
 
