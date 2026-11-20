@@ -375,6 +375,10 @@ export class LockpickingMinigamePhaser extends MinigameScene {
                 if (obs.getAttribute('role') !== 'button') return;
                 itemDisplayDiv.classList.toggle('lockpicking-info-expanded');
                 this._syncObsButton();
+                // The strip changed height (the paragraph goes from the 48px clamp to up to 96px,
+                // or back): refit the lock to it. Sticky (relax false), so the toggle never
+                // switches the strip back to the full size.
+                this._fitLockZoom?.(false);
             };
             this._obsClick = toggle;
             this._obsKey = (e) => {
@@ -716,7 +720,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         return { w: area.clientWidth - padX, h: area.clientHeight - padY - others - 8 };
     }
 
-    _fitLockZoom() {
+    // relax true (a window resize, the first passes after opening, fonts loading) measures from
+    // the full-size strip and may drop compact again. relax false (the feedback line changing
+    // height, the "+ MORE" toggle) may add compact but never removes it: a strip that flips
+    // while the player holds a pick moves the lock out from under them (R1 M1). A fresh
+    // attempt is a new minigame object, so it starts from the full strip.
+    _fitLockZoom(relax = true) {
         const game = this.game;
         const box = this.gameContainer?.querySelector?.('#phaser-game-container');
         if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
@@ -731,9 +740,15 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         // full-size strip each pass so it relaxes again when the room allows.
         const sec = this._itemSection;
         if (sec) {
-            sec.classList.remove('lockpicking-compact');
-            room = this._lockRoom() || room;
-            if (LockpickingMinigamePhaser.lockNeedsCompact(room.w, room.h)) {
+            const sticky = !relax && !!this._lockCompact;
+            if (sticky) {
+                sec.classList.add('lockpicking-compact');
+                room = this._lockRoom() || room;
+            } else {
+                sec.classList.remove('lockpicking-compact');
+                room = this._lockRoom() || room;
+            }
+            if (!sticky && LockpickingMinigamePhaser.lockNeedsCompact(room.w, room.h)) {
                 const full = room;
                 sec.classList.add('lockpicking-compact');
                 room = this._lockRoom() || room;
@@ -820,6 +835,12 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         document.fonts?.ready?.then?.(() => this._syncObsButton());
     }
 
+    // Measured with the fallback font the strip can wrap onto more lines than it will with
+    // VT323 / GNF: fit again when the fonts arrive (R1 m2). Desktop path only.
+    _fitOnFontsReady() {
+        document.fonts?.ready?.then?.(() => { this._fitLockZoom(); this._syncObsButton(); });
+    }
+
     // Everything the lock added outside its own DOM: the box observer, window and scroll listeners
     _releaseLockWatchers() {
         this._lockBoxObserver?.disconnect?.();
@@ -867,12 +888,14 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         this._watchLockRefit();
         if (window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const fit = () => this._fitLockZoom();
+        const fitSticky = () => this._fitLockZoom(false);
         this._lockZoomOnResize = fit;
         window.addEventListener('resize', fit);
+        this._fitOnFontsReady();
         // The feedback box grows and shrinks with its text (one line to four) and takes room
         // from the lock, so the zoom follows it without a window resize
         if (typeof ResizeObserver !== 'undefined' && this.feedback) {
-            this._lockFeedbackObserver = new ResizeObserver(() => fit());
+            this._lockFeedbackObserver = new ResizeObserver(() => fitSticky());
             this._lockFeedbackObserver.observe(this.feedback);
         }
         requestAnimationFrame(fit);

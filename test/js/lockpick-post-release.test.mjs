@@ -284,11 +284,12 @@ test('the feedback box is observed so the zoom follows its line count, and relea
     try {
         const fb = { id: 'fb' };
         const calls = [];
-        const fake = { feedback: fb, _watchLockScroll: () => {}, _watchLockRefit: () => {}, _fitLockZoom: () => calls.push('fit') };
+        const fake = { feedback: fb, _watchLockScroll: () => {}, _watchLockRefit: () => {}, _fitOnFontsReady: () => {}, _fitLockZoom: (relax) => calls.push('fit' + relax) };
         at(1280, 720, () => H._watchLockZoom.call(fake));
         assert.ok(seen.length === 1 && seen[0].el === fb, 'one observer on the feedback box');
         seen[0].cb();
-        assert.ok(calls.includes('fit'), 'a change of the box refits the zoom');
+        assert.ok(calls.includes('fitfalse'), 'a change of the box refits the zoom, sticky (relax false): ' + calls);
+        assert.ok(!calls.includes('fitundefined') && !calls.includes('fittrue'), 'the feedback observer never relaxes');
         H._releaseLockWatchers.call(fake);
         assert.ok(seen[0].gone === true && fake._lockFeedbackObserver === null, 'disconnected on release');
     } finally {
@@ -350,7 +351,7 @@ test('_fitLockZoom compacts the item strip when the full-size strip leaves too l
     // Same state again: stable, no resync
     at(1280, 600, () => H._fitLockZoom.call(fake));
     assert.ok(sec.classList.contains('lockpicking-compact') && syncs === 1, 'stable on a second pass');
-    // Room opens up (a taller window): the full strip fits at the floor or better, so it relaxes
+    // Room opens up (a taller window): the full strip fits above LOCK_COMPACT_BELOW (0.75), so it relaxes
     room = { full: { w: 1200, h: 330 }, compact: { w: 1200, h: 600 } };
     at(1280, 700, () => H._fitLockZoom.call(fake));
     assert.ok(!sec.classList.contains('lockpicking-compact'), 'the full strip is back');
@@ -376,6 +377,67 @@ test('_fitLockZoom: a 0.64 full-size room goes compact, and the compact strip is
     at(1366, 700, () => H._fitLockZoom.call(fake));
     assert.ok(!sec.classList.contains('lockpicking-compact'), 'a compact strip that is not bigger is dropped');
     assert.ok(fake.game.scale.zoom === 0.64, 'zoom from the full room: ' + fake.game.scale.zoom);
+});
+
+test('_fitLockZoom is sticky: a feedback pass (relax false) never drops compact, a resize pass (relax true) does (R1 M1)', () => {
+    document.body.innerHTML = '<div class="game"><div id="phaser-game-container"></div></div><div id="sec" class="lockpicking-item-section"></div>';
+    const sec = document.getElementById('sec');
+    let room = { full: { w: 1200, h: 156 }, compact: { w: 1200, h: 420 } };
+    const fake = {
+        gameContainer: document.querySelector('.game'),
+        game: { scale: { zoom: 1, setZoom: (z) => { fake.game.scale.zoom = z; } } },
+        _lockFitApplied: { fit: false, portrait: false, capped: false },
+        _itemSection: sec, _syncObsButton: () => {},
+        _lockRoom: () => (sec.classList.contains('lockpicking-compact') ? room.compact : room.full)
+    };
+    at(1366, 768, () => H._fitLockZoom.call(fake, false));
+    assert.ok(sec.classList.contains('lockpicking-compact'), 'a feedback pass can add compact');
+    // the feedback shrinks to one line: the full strip would now fit at 0.81, but the strip stays
+    room = { full: { w: 1200, h: 330 }, compact: { w: 1200, h: 600 } };
+    at(1366, 768, () => H._fitLockZoom.call(fake, false));
+    assert.ok(sec.classList.contains('lockpicking-compact') && fake._lockCompact === true, 'sticky across a feedback pass');
+    at(1366, 768, () => H._fitLockZoom.call(fake, false));
+    assert.ok(sec.classList.contains('lockpicking-compact'), 'and again');
+    assert.ok(fake.game.scale.zoom === 1, 'the lock did not change size: ' + fake.game.scale.zoom);
+    // a window resize relaxes
+    at(1366, 800, () => H._fitLockZoom.call(fake, true));
+    assert.ok(!sec.classList.contains('lockpicking-compact') && fake._lockCompact === false, 'relax true drops it');
+    // a fresh attempt starts from the full strip: no compact until a pass adds it
+    const fresh = Object.assign({}, fake, { _lockCompact: undefined });
+    sec.classList.add('lockpicking-compact');
+    room = { full: { w: 1200, h: 330 }, compact: { w: 1200, h: 600 } };
+    at(1366, 768, () => H._fitLockZoom.call(fresh, false));
+    assert.ok(!sec.classList.contains('lockpicking-compact'), 'a new attempt does not inherit compact');
+});
+
+test('the window resize listener relaxes (relax true), the font load refits and resyncs, and the desktop path hooks both (R1 M1, m2)', async () => {
+    const calls = [];
+    const seen = [];
+    const RO = globalThis.ResizeObserver;
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.ResizeObserver = class { constructor(cb) { seen.push(cb); } observe() {} disconnect() {} };
+    globalThis.requestAnimationFrame = () => 0;
+    const fonts = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve() }, configurable: true });
+    try {
+        const fake = { feedback: {}, _watchLockScroll: () => {}, _watchLockRefit: () => {},
+            _fitLockZoom: (r) => calls.push('fit:' + r), _syncObsButton: () => calls.push('sync'),
+            _fitOnFontsReady: H._fitOnFontsReady };
+        at(1280, 720, () => H._watchLockZoom.call(fake));
+        await Promise.resolve(); await Promise.resolve();
+        assert.ok(calls.includes('fit:undefined') && calls.includes('sync'), 'fonts ready: refit then resync: ' + calls);
+        calls.length = 0;
+        fake._lockZoomOnResize();
+        assert.ok(calls.length === 1 && calls[0] === 'fit:undefined', 'resize passes no relax=false: ' + calls);
+        calls.length = 0;
+        seen[0]();
+        assert.ok(calls[0] === 'fit:false', 'the observer is sticky: ' + calls);
+        H._releaseLockWatchers.call(fake);
+    } finally {
+        globalThis.ResizeObserver = RO;
+        globalThis.requestAnimationFrame = raf;
+        if (fonts) Object.defineProperty(document, 'fonts', fonts); else delete document.fonts;
+    }
 });
 
 test('the compact strip is never used by the fitted (phone or short) layout, which returns first', () => {
