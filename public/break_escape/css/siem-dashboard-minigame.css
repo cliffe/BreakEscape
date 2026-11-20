@@ -180,10 +180,12 @@
     text-overflow: ellipsis;
 }
 
+/* The whole message is readable at every width: it wraps and the row grows (the list
+   scrolls; the other cells stay centred on the row) */
 .siem-description {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 20px;
 }
 
 .siem-actions {
@@ -271,9 +273,10 @@
 .siem-queue-text {
     font-size: 16px;   /* GNF scale 16/24/32 */
     color: #d6e2ff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Wraps in full; the queue item grows to fit */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 20px;
 }
 
 .siem-status-bar {
@@ -585,5 +588,21 @@
 
     .siem-pane-title {
         overflow-wrap: anywhere;
+    }
+
+    /* Compact footer: GNF 16, two lines (pending and clock; then time remaining), about 58px
+       instead of three lines of GNF 24 at about 140px. Text only, no controls */
+    .siem-status-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 2px 12px;
+        min-height: 0;
+        padding: 6px 12px;
+        font-size: 16px;
+        line-height: 20px;
+    }
+
+    .siem-status-bar > :nth-child(3) {
+        grid-column: 1 / -1;
     }
 }

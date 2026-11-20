@@ -63,3 +63,63 @@ test('queued alerts text pluralises', async () => {
     const src = readFileSync(join(root, 'js/minigames/siem/siem-dashboard-minigame.js'), 'utf8');
     assert.ok(/queueCountEl\.textContent\s*=\s*queuedAlertsText\(/.test(src), 'count set with textContent via the helper');
 });
+
+// fix/siem-wrap-footer: wrapped descriptions and a compact phone footer.
+const mediaBlock = (file, query) => {
+    const t = read(file);
+    const i = t.indexOf(query);
+    assert.ok(i >= 0, `media query ${query} exists`);
+    let depth = 0, j = t.indexOf('{', i);
+    const start = j;
+    for (; j < t.length; j++) {
+        if (t[j] === '{') depth++;
+        else if (t[j] === '}' && --depth === 0) break;
+    }
+    return t.slice(start + 1, j);
+};
+
+test('SIEM descriptions and queue text wrap instead of ellipsising', () => {
+    for (const cls of ['siem-description', 'siem-queue-text']) {
+        const base = rulesFor('siem-dashboard-minigame.css', cls).filter((r) => r.sel.trim() === '.' + cls);
+        assert.ok(base.length > 0, `.${cls} base rule exists`);
+        const b = base.map((r) => r.body).join(';');
+        assert.ok(/white-space:\s*normal/.test(b), `.${cls} wraps`);
+        assert.ok(!/text-overflow:\s*ellipsis/.test(b), `.${cls} has no ellipsis`);
+        assert.ok(/overflow-wrap:\s*anywhere/.test(b), `.${cls} breaks long tokens`);
+        assert.ok(!/white-space:\s*nowrap/.test(b), `.${cls} is not nowrap`);
+    }
+});
+
+test('SIEM alert row grows with its message and keeps cells centred', () => {
+    const b = rulesFor('siem-dashboard-minigame.css', 'siem-alert-row').filter((r) => r.sel.trim() === '.siem-alert-row').map((r) => r.body).join(';');
+    assert.ok(/min-height:\s*60px/.test(b) && !/(^|[;\s])height:/.test(b), 'row has a min-height, no fixed height');
+    assert.ok(/flex-shrink:\s*0/.test(b), 'row never shrinks below its content');
+    assert.ok(/align-items:\s*center/.test(b), 'cells stay aligned on the row centre');
+    const q = rulesFor('siem-dashboard-minigame.css', 'siem-queue-item').map((r) => r.body).join(';');
+    assert.ok(/min-height:\s*42px/.test(q) && !/(^|[;\s])height:/.test(q), 'queue item grows too');
+});
+
+test('SIEM phone footer is compact: GNF 16, two lines, no min-height', () => {
+    const m = mediaBlock('siem-dashboard-minigame.css', '@media (max-width: 600px)');
+    const re = /([^{}]+)\{([^{}]*)\}/g;
+    let mm, body = '';
+    while ((mm = re.exec(m))) if (/\.siem-status-bar(?![\w-])/.test(mm[1]) && !/>/.test(mm[1])) body += mm[2];
+    assert.ok(body.length > 0, 'phone status bar rule exists');
+    assert.ok(/font-size:\s*16px/.test(body), 'footer is GNF 16');
+    assert.ok(/display:\s*grid/.test(body), 'footer is a two-column grid');
+    assert.ok(/min-height:\s*0/.test(body), 'footer drops the 48px min-height');
+    const line = px(body, 'line-height')[0];
+    const pad = body.match(/padding:\s*(\d+)px/);
+    assert.ok(line && line <= 20 && pad, 'line-height and padding are set');
+    // two lines + row gap + padding + the 2px top border
+    const h = 2 * line + 2 + 2 * Number(pad[1]) + 2;
+    assert.ok(h <= 70, `footer height ${h}px is at most half of the old 140px`);
+    assert.ok(/grid-column:\s*1\s*\/\s*-1/.test(m.slice(m.indexOf('nth-child(3)'))), 'time remaining spans its own line');
+});
+
+test('SIEM footer spans stay text-only (no new controls to size)', () => {
+    const js = readFileSync(join(root, 'js/minigames/siem/siem-dashboard-minigame.js'), 'utf8');
+    const bar = js.slice(js.indexOf('class="siem-status-bar"'), js.indexOf('</div>', js.indexOf('class="siem-status-bar"')));
+    assert.ok(!/<button/.test(bar), 'no buttons in the footer');
+    assert.ok((bar.match(/<span/g) || []).length === 3, 'three spans: pending, clock, remaining');
+});
