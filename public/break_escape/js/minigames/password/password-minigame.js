@@ -1737,6 +1737,10 @@ export class PasswordMinigame extends MinigameScene {
         this.addEventListener(window, 'resize', () => this.fitSignInWays());
         // The frame's own resize handler sets data-short; measure the usernames now and once it has run
         this.addEventListener(window, 'resize', () => this.fitSignInUsernames({ again: true }));
+        // Name lines change when the pixel font lands: measure once more then
+        window.document?.fonts?.ready?.then?.(() => {
+            if (this.gameContainer?.isConnected) this.fitSignInUsernames();
+        });
         this.bindKeyboardReveal([this.usernameField, this.passwordField]);
         this.renderSignInForm();
     }
@@ -1972,17 +1976,26 @@ export class PasswordMinigame extends MinigameScene {
         const tiles = Array.from(root.querySelectorAll('.signin-tile'));
         for (const t of tiles) delete t.dataset.usernameFits;
         const frame = this.pcMonitor?.root;
+        // Short means a screen under 560px high, which is always drawn at x1 (the layout is
+        // 560x350 per step), so rects and computed lengths are in the same pixels: no zoom here
         if (frame?.hasAttribute?.('data-short')) {
-            const scale = Math.max(1, Number(frame.dataset?.uiScale) || 1);
-            const room = SIGNIN_USERNAME_LINE * scale;
             const fits = tiles.map((t) => {
-                const name = t.querySelector('.signin-name');
                 const tr = t.getBoundingClientRect?.();
-                const nr = name?.getBoundingClientRect?.();
-                if (!tr || !nr || !(tr.height > 0)) return false;
+                if (!tr || !(tr.height > 0)) return false;
+                // Spare is measured under the last thing in the tile's flow (the name, or a
+                // keyring tag row after it), never under the name alone. Hidden children have no
+                // rect and absolute ones (remote badges) are out of the flow.
+                let bottom = -Infinity;
+                for (const c of Array.from(t.children || [])) {
+                    const cr = c.getBoundingClientRect?.();
+                    if (!cr || !(cr.height > 0)) continue;
+                    if (window.getComputedStyle(c).position === 'absolute') continue;
+                    bottom = Math.max(bottom, cr.bottom);
+                }
+                if (bottom === -Infinity) return false;
                 const cs = window.getComputedStyle(t);
                 const below = (parseFloat(cs.borderBottomWidth) || 0) + (parseFloat(cs.paddingBottom) || 0);
-                return tr.bottom - below - nr.bottom >= room;
+                return tr.bottom - below - bottom >= SIGNIN_USERNAME_LINE;
             });
             tiles.forEach((t, i) => { if (fits[i]) t.dataset.usernameFits = ''; });
         }

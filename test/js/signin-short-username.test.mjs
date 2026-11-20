@@ -91,14 +91,28 @@ const TILES = [
 ];
 // Fake layout: a tile's bottom is `tileBottom`, its name's bottom is `nameBottom`, no border or padding
 // unless set (the computed style is read from the element)
-// jsdom gives a button 3px of padding and no CSS file is loaded, so the computed style is faked: none
-window.getComputedStyle = () => ({ borderBottomWidth: '0px', paddingBottom: '0px' });
-function layout(mg, spares) {
+// jsdom gives a button 3px of padding and no CSS file is loaded, so the computed style is faked:
+// no border or padding, and `position` from a data-pos attribute (absolute for a badge)
+window.getComputedStyle = (el) => ({ borderBottomWidth: '0px', paddingBottom: '0px', position: el?.dataset?.pos || 'static' });
+// Fake layout: the name's bottom is 100, the tile's bottom is 100 + spare, minus 16 while the tile
+// carries data-username-fits (the line then takes the spare, as in a browser). `tag` adds a tag row
+// below the name (bottom 100 + tag), `badge` an absolute corner badge near the bottom.
+function layout(mg, spares, { tag = [], reads = null } = {}) {
     const tiles = Array.from(mg.gameContainer.querySelectorAll('.signin-tile'));
     tiles.forEach((t, i) => {
         const nameBottom = 100;
-        t.getBoundingClientRect = () => ({ top: 0, left: 0, right: 84, width: 84, height: 100 + spares[i], bottom: 100 + spares[i] });
+        t.getBoundingClientRect = () => {
+            if (reads) reads.n++;
+            const b = 100 + (tag[i] || 0) + spares[i] - ('usernameFits' in t.dataset ? 16 : 0);
+            return { top: 0, left: 0, right: 84, width: 84, height: b, bottom: b };
+        };
         t.querySelector('.signin-name').getBoundingClientRect = () => ({ top: 70, left: 0, right: 84, width: 84, height: 30, bottom: nameBottom });
+        if (tag[i]) {
+            const el = document.createElement('span');
+            el.className = 'signin-tags';
+            el.getBoundingClientRect = () => ({ top: 100, left: 0, right: 84, width: 84, height: tag[i], bottom: 100 + tag[i] });
+            t.appendChild(el);
+        }
     });
     return tiles;
 }
@@ -124,11 +138,50 @@ test('short: exactly 16px spare fits, border and padding below the name are take
     mg.cleanup();
 });
 
-test('short at zoom 2 needs 32 drawn px of spare', () => {
+test('short stays at x1: a stale data-ui-scale does not change the 16px', () => {
     const { mg } = make(true, 2);
-    const tiles = layout(mg, [20, 33]);
+    const tiles = layout(mg, [16, 15]);
     mg.fitSignInUsernames();
-    assert.ok(!('usernameFits' in tiles[0].dataset) && 'usernameFits' in tiles[1].dataset, 'scaled spare');
+    assert.ok('usernameFits' in tiles[0].dataset && !('usernameFits' in tiles[1].dataset), '16 fits, 15 does not');
+    mg.cleanup();
+});
+
+test('a keyring tile with a tag row under the name: its spare is counted under the tags', () => {
+    const { mg } = make(true);
+    const tiles = layout(mg, [0, 17, 17], { tag: [18, 0, 18] });
+    // tile 0: tall (tags), no spare; tile 1 one-line name, 17 spare; tile 2 has tags AND 17 below them
+    mg.fitSignInUsernames();
+    const got = tiles.map((x) => ('usernameFits' in x.dataset ? 'y' : 'n')).join('');
+    assert.ok(got === 'nyy', `flags ${got}`);
+    // the same tag row with only 17px below the name (so under the tags nothing is left): not flagged
+    const b = make(true);
+    const bt = layout(b.mg, [0, 0, 0], { tag: [18, 0, 0] });
+    // tile 0's bottom is 118 (tags 18, 0 spare): below the name there is 18, none below the tags
+    b.mg.fitSignInUsernames();
+    assert.ok(!('usernameFits' in bt[0].dataset), 'a tag row is not spare');
+    mg.cleanup(); b.mg.cleanup();
+});
+
+test('an absolute child (a remote badge) is out of the flow and does not count', () => {
+    const { mg } = make(true);
+    const tiles = layout(mg, [20, 20, 20]);
+    const badge = document.createElement('span');
+    badge.dataset.pos = 'absolute';
+    badge.getBoundingClientRect = () => ({ top: 90, left: 70, right: 80, width: 10, height: 10, bottom: 119 });
+    tiles[0].appendChild(badge);
+    mg.fitSignInUsernames();
+    assert.ok('usernameFits' in tiles[0].dataset, 'the badge is skipped');
+    mg.cleanup();
+});
+
+test('two measures in a row give the same flags (reads come after the clear)', () => {
+    const { mg } = make(true);
+    const tiles = layout(mg, [16, 20, 5]);
+    const flags = () => tiles.map((x) => ('usernameFits' in x.dataset ? 'y' : 'n')).join('');
+    mg.fitSignInUsernames();
+    const first = flags();
+    mg.fitSignInUsernames();
+    assert.ok(first === 'yyn' && flags() === first, `first ${first}, second ${flags()}`);
     mg.cleanup();
 });
 
@@ -187,11 +240,55 @@ test('a resize event measures; a rebuild of the form measures', () => {
     mg.cleanup();
 });
 
-test('after cleanup the queued frame measures nothing', () => {
+// The frame snap also reads tile rects, so these count calls of the method itself
+const spy = (mg) => {
+    const calls = { n: 0 };
+    const orig = mg.fitSignInUsernames.bind(mg);
+    mg.fitSignInUsernames = (o) => { calls.n++; return orig(o); };
+    return calls;
+};
+
+test('a queued frame on a detached screen measures nothing', () => {
     const { mg, flush } = make(true);
     layout(mg, [20, 20, 20]);
     mg.fitSignInUsernames({ again: true });
-    mg.gameContainer.remove?.();
-    assert.doesNotThrow(() => flush());
+    const calls = spy(mg);
+    Object.defineProperty(mg.gameContainer, 'isConnected', { value: false, configurable: true });
+    flush();
+    assert.ok(calls.n === 0, `calls after detach ${calls.n}`);
     mg.cleanup();
+});
+
+test('cleanup removes the resize listener: a resize after it measures nothing', () => {
+    const { mg } = make(true);
+    layout(mg, [20, 20, 20]);
+    const calls = spy(mg);
+    window.dispatchEvent(new window.Event('resize'));
+    assert.ok(calls.n === 1, `a live resize measures (${calls.n})`);
+    mg.cleanup();
+    calls.n = 0;
+    window.dispatchEvent(new window.Event('resize'));
+    assert.ok(calls.n === 0, `calls after cleanup ${calls.n}`);
+});
+
+test('when the pixel font arrives the tiles are measured again, only while connected', async () => {
+    let resolve;
+    const ready = new Promise((r) => { resolve = r; });
+    Object.defineProperty(document, 'fonts', { value: { ready }, configurable: true });
+    const a = make(true);
+    const b = make(true);
+    layout(a.mg, [20, 20, 20]);
+    layout(b.mg, [20, 20, 20]);
+    const ca = spy(a.mg);
+    const cb = spy(b.mg);
+    // make() rewrites the body, so the first screen's container is detached: say which is which
+    Object.defineProperty(a.mg.gameContainer, 'isConnected', { value: true, configurable: true });
+    Object.defineProperty(b.mg.gameContainer, 'isConnected', { value: false, configurable: true });
+    resolve();
+    await ready;
+    await Promise.resolve();
+    assert.ok(ca.n === 1, `a connected screen is measured once (${ca.n})`);
+    assert.ok(cb.n === 0, `a detached screen is not measured (${cb.n})`);
+    delete document.fonts;
+    a.mg.cleanup(); b.mg.cleanup();
 });
