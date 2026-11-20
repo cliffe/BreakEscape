@@ -364,6 +364,27 @@ test('K12 B: tapping the chevron or the text on the collapsed phone pill opens i
     setWindow(1400, 1000);
 });
 
+test('K12 B live fix: the collapsed phone pill is one 44px+ tap target, opened once', () => {
+    const c = css('objectives.css');
+    const phone = c.slice(c.indexOf('@media (max-width: 899.98px), (max-height: 500px)'));
+    assert.ok(/\.objectives-panel\.collapsed \.objectives-toggle \{[^}]*position: static;/.test(phone), 'the toggle is not the containing block');
+    assert.ok(/\.objectives-panel\.collapsed \.objectives-toggle::before \{[^}]*inset: 0;[^}]*width: auto;[^}]*height: auto;[^}]*transform: none;/.test(phone), 'the hit area fills the pill');
+    const m = /\.objectives-panel\.collapsed \{\s*min-height: (\d+)px;/.exec(phone);
+    assert.ok(m !== null && Number(m[1]) - 4 >= 44, 'pill padding box is at least 44px tall');
+    // a tap anywhere in the header (the pseudo-element belongs to the toggle) toggles exactly once
+    document.body.innerHTML = '';
+    setWindow(390, 844);
+    const aims = [{ aimId: 'b', title: 'Find', status: 'active', tasks: [] }];
+    const panel = new ObjectivesPanel({ addListener() {}, removeListener() {}, getActiveAims: () => aims });
+    let n = 0;
+    const orig = panel.toggleCollapse.bind(panel);
+    panel.toggleCollapse = () => { n++; orig(); };
+    panel.container.querySelector('.objectives-toggle').click();
+    assert.ok(n === 1, 'one tap on the toggle toggles once');
+    panel.destroy();
+    setWindow(1400, 1000);
+});
+
 test('R1 M3: Esc closes the objectives sheet first, and the pause menu does not open', () => {
     document.body.innerHTML = '';
     setWindow(390, 844);
