@@ -325,7 +325,7 @@
 
 .cb-status-badge.state-unknown {
     background: #1a1e28;
-    color: #4a5a70;
+    color: #8fa3c0;
 }
 
 .cb-entry-bar {
@@ -382,13 +382,19 @@
 
 /* Short windows: the board scrolls inside its frame rather than squeezing the columns */
 @media (max-height: 520px) {
+    /* The body is the only scroller; the entry bar stays pinned under it */
     .cb-panel {
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     .cb-body {
-        flex: 1 0 auto;
-        min-height: 300px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .cb-entry-bar {
+        flex: none;
     }
 }
 
@@ -399,11 +405,13 @@
     }
 
     .cb-panel {
-        overflow-y: auto;
+        overflow: hidden;
     }
 
     .cb-body {
-        flex: 1 0 auto;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
         grid-template-columns: 1fr;
     }
 
@@ -412,8 +420,10 @@
         border-bottom: 2px solid #1e2d48;
     }
 
+    /* The body scrolls, so the list no longer needs its own cap */
     .cb-timeline-list {
-        max-height: 45vh;
+        max-height: none;
+        overflow: visible;
     }
 
     .cb-entry-tile {
