@@ -6221,13 +6221,25 @@ export function createEngineWorld() {
     };
 }
 
+/**
+ * The seed for the live system. An explicit seed (opts.seed, then the scenario's npcNeedsSeed) is
+ * used exactly as given. Otherwise the scenario name is mixed with the game id, so each game draws
+ * its chatter in its own order (the same game gets the same order on reload). Without a game id it
+ * falls back to the scenario name alone.
+ */
+export function resolveNeedsSeed(optSeed, scenario, gameId) {
+    if (optSeed !== undefined) return optSeed;
+    if (scenario?.npcNeedsSeed !== undefined) return scenario.npcNeedsSeed;
+    const name = scenario?.scenario_name || scenario?.name || 'scenario';
+    return (gameId === undefined || gameId === null || gameId === '') ? name : `${name}#${gameId}`;
+}
+
 /** Build the live system, register needs NPCs and hook the arrival event. Idempotent. */
 export function installNpcNeeds(opts = {}) {
     const w = typeof window !== 'undefined' ? window : null;
     if (!w) return null;
     if (!w.npcNeedsSystem) {
-        const seed = opts.seed !== undefined ? opts.seed
-            : (w.gameScenario?.npcNeedsSeed !== undefined ? w.gameScenario.npcNeedsSeed : (w.gameScenario?.scenario_name || w.gameScenario?.name || 'scenario'));
+        const seed = resolveNeedsSeed(opts.seed, w.gameScenario, w.breakEscapeConfig?.gameId);
         w.npcNeedsSystem = new NPCNeedsSystem(createEngineWorld(), { seed });
         w.eventDispatcher?.on('npc_arrived:*', (data) => {
             if (data?.npcId) w.npcNeedsSystem.onArrived(data.npcId, data.owner, data);
