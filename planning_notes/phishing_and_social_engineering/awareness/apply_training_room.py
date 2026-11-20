@@ -458,6 +458,8 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     cur = json.loads(text[em[0]:em[1]]) if em else []
     if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
         text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
+    elif not b['mappings'] and not em:
+        pass     # the convention form (ca00) has no kit host mappings: add no empty list
     else:
         # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end
         if em:
@@ -474,15 +476,16 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     epa = _member(text, social, 'awarenessEpisode')[0]
     text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] else [])
     # social.triageSets[0].outcome.messageGlobals (the row's keyMessage)
-    oc = _first_set_outcome(text)
-    own_mg = [v for k, a, bb in _members(text, oc) if k == 'messageGlobals' for v in [json.loads(text[a:bb])]]
-    if not own_mg or all(str(v).startswith('kit_') for v in own_mg[0].values()):
-        text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
-                              [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
-    else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
-        # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
-        mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
-        text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
+    if not office_kit.is_convention(row):    # the convention form (ca00) has no triage set
+        oc = _first_set_outcome(text)
+        own_mg = [v for k, a, bb in _members(text, oc) if k == 'messageGlobals' for v in [json.loads(text[a:bb])]]
+        if not own_mg or all(str(v).startswith('kit_') for v in own_mg[0].values()):
+            text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
+                                  [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
+        else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
+            # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
+            mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
+            text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
     text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
