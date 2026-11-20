@@ -25,7 +25,21 @@ ID="$1"; NG="${2:-}"; REC="${3:-}"
 KEY=$(be_mission_key "$MISSION_ARG"); MISSION=$(be_mission_id "$MISSION_ARG") || exit 2
 TAKE="tools/video/takes/$KEY/$ID.mjs"
 [ -f "$ROOT/$TAKE" ] || { echo "no take script $TAKE" >&2; exit 2; }
-export LANG=C.UTF-8 LC_ALL=C.UTF-8 BUNDLE_FORCE_RUBY_PLATFORM=true BE_DB_USER=root
+export LANG=C.UTF-8 LC_ALL=C.UTF-8
+# The capture container (/opt/node-tools) builds gems for the ruby platform and uses the root DB user. On a
+# desktop host keep the platform gems, and take them from the main checkout as start-keyless-server.sh does.
+if [ -d /opt/node-tools ]; then
+  export BUNDLE_FORCE_RUBY_PLATFORM=true BE_DB_USER=root
+elif [ -z "${BUNDLE_PATH:-}" ] && [ ! -f "$ROOT/.bundle/config" ]; then
+  COMMON="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  [ -n "$COMMON" ] && [ -d "$(dirname "$COMMON")/vendor/bundle" ] && export BUNDLE_PATH="$(dirname "$COMMON")/vendor/bundle"
+fi
+[ -z "${RBENV_VERSION:-}" ] && [ -f "$ROOT/.ruby-version" ] && export RBENV_VERSION="$(cat "$ROOT/.ruby-version")"
+# Chromium: the container's /opt/pw-browsers, else the newest Playwright download in ~/.cache/ms-playwright.
+if [ -z "${BE_CHROMIUM:-}" ] && [ ! -d /opt/pw-browsers ]; then
+  BE_CHROMIUM="$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome 2>/dev/null | sort -V | tail -1)"
+  [ -n "$BE_CHROMIUM" ] && export BE_CHROMIUM
+fi
 # Playwright: the container's /opt/node-tools, else whatever NODE_PATH / node_modules already resolves it. Node 18+ is needed.
 [ -d /opt/node-tools/node_modules ] && export NODE_PATH=/opt/node-tools/node_modules
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)

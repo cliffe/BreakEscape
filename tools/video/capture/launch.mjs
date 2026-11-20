@@ -80,6 +80,7 @@ export async function launchGame(opts) {
 
   const args = [
     '--window-position=0,0', `--window-size=${width},${height}`,
+    '--ozone-platform=x11',
     '--autoplay-policy=no-user-gesture-required',
     '--no-first-run', '--no-default-browser-check',
     '--disable-infobars', '--disable-features=Translate,MediaRouter',
@@ -99,7 +100,9 @@ export async function launchGame(opts) {
     chromiumSandbox: !noSandbox,   // Playwright adds --no-sandbox itself unless this is true
     executablePath: findChromium(),
     viewport: null,
-    env: { ...process.env, DISPLAY: `:${display}`, PULSE_SINK: sink },
+    // On a Wayland desktop Chrome would open on the user's screen (WAYLAND_DISPLAY wins over DISPLAY), so strip it
+    // and force X11: the window must land on the Xvfb display the recorder grabs.
+    env: { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => k !== 'WAYLAND_DISPLAY')), XDG_SESSION_TYPE: 'x11', DISPLAY: `:${display}`, PULSE_SINK: sink },
     args,
     ignoreDefaultArgs: ['--enable-automation', '--mute-audio'],
     acceptDownloads: false,
