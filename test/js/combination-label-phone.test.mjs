@@ -22,9 +22,28 @@ test('phone dial label never wraps', () => {
     assert.ok(/white-space:\s*nowrap/.test(m[1]), 'white-space: nowrap');
 });
 
-test('phone dial label is wide enough for 13 characters of 16px text', () => {
+// The label is VT323 (inherited): 400/1000 em advance plus 0.06em spacing, 16px
+const need = Math.ceil(13 * (0.4 + 0.06) * 16);
+
+test('phone dial label is wide enough for 13 characters of 16px VT323', () => {
     const w = m[1].match(/width:\s*(\d+)px/);
-    assert.ok(w !== null && Number(w[1]) >= 144, 'label width at least 144px, got ' + (w && w[1]));
+    assert.ok(w !== null && Number(w[1]) >= need, 'label width at least ' + need + 'px, got ' + (w && w[1]));
+});
+
+test('the dial row fits a 360px screen in the widest frame theme (24px and 28px)', () => {
+    const num = (re, src) => Number(src.match(re)[1]);
+    const label = num(/width:\s*(\d+)px/, m[1]);
+    const gap = num(/\.combination-dial-group\s*\{[^}]*gap:\s*(\d+)px/, block);
+    const display = num(/\.combination-dial-display\s*\{[^}]*?\bwidth:\s*(\d+)px/, block);
+    const arrow = num(/\.combination-dial-arrow\s*\{[^}]*?\bwidth:\s*(\d+)px/, css);
+    const pad = num(/\.combination-dials\s*\{[^}]*padding:\s*\d+px\s+(\d+)px/, block);
+    const row = label + display + 2 * arrow + 3 * gap;
+    const themes = readFileSync(join(here, '../../public/break_escape/css/ui-themes.css'), 'utf8');
+    const frames = [...themes.matchAll(/--ui-frame-px:\s*(\d+)px/g)].map(x => Number(x[1]));
+    for (const f of [24, 28]) assert.ok(frames.includes(f), 'a ' + f + 'px theme exists');
+    const widest = Math.max(...frames);
+    const room = 360 - 2 * widest - 2 * pad;
+    assert.ok(row <= room, 'row ' + row + 'px fits ' + room + 'px (frame ' + widest + 'px)');
 });
 
 test('the TURN word is kept as the non-colour cue', () => {
