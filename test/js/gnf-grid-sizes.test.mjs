@@ -81,6 +81,7 @@ for (const file of SHEETS) {
 test('the 16px username line gives way on a short PC monitor and stays, one line with an ellipsis, on a compact one (R2 M1)', () => {
     const css = readFileSync(new URL('../../public/break_escape/css/password-minigame.css', import.meta.url), 'utf8');
     assert.match(css, /\.pc-monitor\[data-short\] \.signin-username\s*\{\s*display: none;/);
+    assert.match(css, /\.pc-monitor\[data-short\] \.signin-tile\[data-username-fits\] \.signin-username\s*\{[^}]*display: block;[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/, 'a short tile with 16px to spare keeps one ellipsised line');
     assert.match(css, /\.pc-monitor\[data-compact\]:not\(\[data-short\]\) \.signin-username\s*\{[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/);
     assert.ok(!/\.pc-monitor\[data-compact\] \.signin-username\s*\{\s*display: none;/.test(css), 'a compact (not short) frame no longer hides the line');
 });
