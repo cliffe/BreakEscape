@@ -35,3 +35,17 @@ Not proven: a three-body picture with both real slots taken and a third queuer. 
 ## Validator
 
 The false positive is fixed by skipping the cell geometry check for an object with no scenario position (`positioned?`, already in the file). On this scenario that takes the warnings from 17 to 11 and removes the six queue lines; no new ones, 0 errors. That edit is in `validator-queue-skip.patch.txt` here, not committed to scripts/, because the brief restricted the change to scenario data.
+
+## Re-check on main 589d5959c (20 Nov 2026)
+
+PASS. Each case ran on a fresh game, on :3006.
+
+- Capacity 2 as authored (game 10688): both officers used the cooler together. Both `used` events came at tick 120, and the cooler chatter played.
+- Capacity forced to 1 in page memory (game 10689, screenshot from 10694): the queue sequence ran as follows.
+  - t36: julian `queued`, on cell (220,180).
+  - t132: agnieszka `used`, then julian `queue_front`.
+  - t142: agnieszka `queued` behind him.
+  - t205: julian `used`.
+- Reload after the real badge audit (game 10701): the officers were restored, visible, and used the cooler.
+
+Testing note: set `found_badge_audit` in the page after load, never with `new-game.rb --set`. A preset global never fires `global_variable_changed:found_badge_audit`, so the officers' `setVisible` mapping never runs. They stay hidden with their bodies disabled, and no trip ever starts. This is a harness artefact, not a game fault. See the playtest skill's harness gotchas.
