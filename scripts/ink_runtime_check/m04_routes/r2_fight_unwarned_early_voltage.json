@@ -24,7 +24,7 @@
 {"note":"The trigger_race timer fires: he reached the laptop. HaX's racks_vented mapping: crew still in Hall 2."},
 {"set":{"racks_vented":true,"casualties_occurred":true,"vented_by_trigger":true,"urgency_stage":4}},
 {"expect":{"crew_lost":true}},
-{"talk":"vance_phone","picks":["ops desk"]},
+{"note":"Vance is not an ally here, so the Call button does not ring (the call entry's when is vance_is_ally && !robert_vance_ko); the old 'ops desk' stub reply no longer exists. The engine owns the no-answer."},
 {"set":{"voltage_captured":true,"voltage_neutralised":true,"operative_static_defeated":true}},
 {"set":{"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"evidence_maintenance_logs_found":true,"attack_mechanism_known":true,"clock_started":true,"esd_authorized":true,"attack_prevented":true}},
 {"talk":"phone","picks":["Bring me in","Bring me in","On my way"]},

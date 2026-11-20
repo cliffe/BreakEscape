@@ -262,7 +262,7 @@
     },
     {
       "id": "vmch_submit_privesc_flag",
-      "label": "Submit proof you became root on the jump server",
+      "label": "Submit the root-only charge-ceiling override",
       "kind": "vm",
       "optional": false
     },

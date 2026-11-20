@@ -9,7 +9,7 @@
 {"notSaid":["Staff prox reader. Your cloner will take a card"]},
 {"set":{"architect_approval_confirmed":true}},
 {"talk":"phone","picks":["I'll get to work"]},
-{"talk":"phone","picks":["The Architect signed off","the insider is the only thread"]},
+{"talk":"phone","picks":["The Architect signed off","Go on","the insider is the only thread"]},
 {"said":["It puts this above whoever's staging it here","Find them first"],"notSaid":["It puts this above Torres","Then Torres is the only thread"]},
 {"set":{"torres_print_collected":true}},
 {"event":"door_unlock_attempt","data":{"connectedRoom":"data_center"}},
@@ -29,8 +29,8 @@
 {"set":{"recruiter_contacted_player":true,"final_choice":"arrest","torres_identified":true}},
 {"talk":"phone","picks":["The Recruiter rang me"]},
 {"notSaid":["The Recruiter just called me"]},
-{"talk":"recruiter","knot":"idle","picks":["Ring the TalentStack number back"]},
+{"talk":"recruiter","knot":"return_contact","picks":[]},
 {"said":["we never did talk terms"]},
-{"talk":"recruiter","knot":"idle","picks":["Ring the number again"]},
-{"said":["It rings out"],"notSaid":["we never did talk terms"]}
+{"note":"The second ring-back no longer reaches the ink: never_talked_terms sets recruiter_line_dead, and the call entry's when is !recruiter_line_dead, so the engine rings out (the old 'It rings out' line is gone from the ink)."},
+{"expect":{"recruiter_line_dead":true}}
 ]}

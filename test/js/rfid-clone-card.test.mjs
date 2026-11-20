@@ -248,3 +248,36 @@ test('a save leaves its record as window.pendingCardCloneRecord until it settles
     await settle();
     assert.equal(window.pendingCardCloneRecord, null);
 });
+
+// Regression: the clone_keycard ink action must carry the NPC rfidCard's authored RFID
+// fields (rfid_hex / rfid_facility / rfid_card_number / rfid_data) through to the reader.
+// Without them rfid-data.js hashes card_id into a stand-in number, so the reader showed a
+// number that did not match the card's badge-log entry (m05: Owen's badge read 43730, not
+// #4430), breaking the badge-log cross-check the mission teaches.
+test('clone_keycard carries the NPC rfidCard RFID fields, so the reader shows the real card number', async () => {
+    reset();
+    // Owen's authored badge: EM4100 #4430, facility 42, hex 2A0000114E.
+    window.npcManager = { getNPC: (id) => id === 'owen' ? {
+        id: 'owen',
+        rfidCard: {
+            name: 'Staff Badge - O. Gallagher', card_id: 'employee_badge', rfid_protocol: 'EM4100',
+            rfid_hex: '2A0000114E', rfid_facility: 42, rfid_card_number: 4430,
+            rfid_data: { cardId: 'employee_badge', hex: '2A0000114E', facility: 42, cardNumber: 4430 }
+        }
+    } : null };
+    window.currentConversationNPCId = 'owen';
+    await processGameActionTags(['clone_keycard:employee_badge'], { showNotification() {} });
+    assert.equal(started.length, 1);
+    const card = started[0][2].cardToClone;
+    assert.equal(card.rfid_hex, '2A0000114E', 'hex passed through');
+    assert.equal(card.rfid_facility, 42, 'facility passed through');
+    assert.equal(card.rfid_card_number, 4430, 'card number passed through');
+    assert.deepEqual(card.rfid_data, { cardId: 'employee_badge', hex: '2A0000114E', facility: 42, cardNumber: 4430 });
+
+    // The reader renders the real number, not a card_id hash.
+    const display = new RFIDDataManager().getCardDisplayData(card);
+    const cardField = display.fields.find(f => f.label === 'Card');
+    assert.equal(cardField.value, 4430, 'the reader shows #4430, matching the badge log');
+    const facilityField = display.fields.find(f => f.label === 'Facility');
+    assert.equal(facilityField.value, 42);
+});
