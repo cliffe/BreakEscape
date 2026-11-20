@@ -318,3 +318,6 @@
 .ncsc-coverage-note p:last-child {
     margin-bottom: 0;
 }
+
+/* K4 B: the frame wraps the brief instead of spanning 1280px; phones keep the full width */
+.ncsc-minigame-container .console-window { width: min(760px, 100%); }

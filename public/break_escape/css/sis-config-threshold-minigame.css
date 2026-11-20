@@ -345,3 +345,6 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* K4 B: the frame wraps the 720px table instead of spanning 1280px; phones keep the full width */
+.sis-threshold-minigame-container .console-window { width: min(800px, 100%); }

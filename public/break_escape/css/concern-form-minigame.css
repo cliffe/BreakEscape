@@ -80,3 +80,6 @@
     .cf-panel { padding: 10px 12px; }
     .cf-chip { flex: 1 1 100%; }
 }
+
+/* K4 B: the frame wraps the form instead of spanning 1280px; phones keep the full width */
+.cf-minigame-container .console-window { width: min(760px, 100%); }
