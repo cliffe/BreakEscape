@@ -75,8 +75,10 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //     shell does not have.
 //   - sandboxRecapHeading/Move, assistantRecapHeading/Move (batch 11): debrief recaps of the
 //     consequence sandbox and the assistant stage, which only a full episode has.
+//   - stepAwayHeading, stepAway (ca12 fix 1A): the step-away panel copy lives only in the hand-written full shell,
+//     which has the panel; the defend-only fragment has none.
 const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages',
-    'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove']);
+    'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove', 'stepAwayHeading', 'stepAway']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);
 
