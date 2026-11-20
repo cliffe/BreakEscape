@@ -34,6 +34,14 @@
     min-width: 100%;
 }
 
+/* Under 344px wide the panel is 6 rows of 4 with no range label, so port 4 would sit right under the
+   drawn X (the X's bottom is 50px below the frame top, the first row 46px): 6px of padding clears it. */
+@media (max-width: 343px) {
+    .patch-panel > .device-frame-title {
+        padding-top: var(--device-frame-gap);
+    }
+}
+
 .patch-panel-title {
     flex: 1 1 0;
     min-width: 0;

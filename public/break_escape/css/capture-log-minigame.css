@@ -3,7 +3,7 @@
 .capture-log { display: flex; flex-direction: column; gap: 14px; padding: 8px 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto;
     color: var(--ui-text, #eef1f8); }
 .capture-log-section { display: flex; flex-direction: column; gap: 8px; }
-.capture-log-heading { margin: 0; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
+.capture-log-heading { margin: 0; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; }
 .capture-log-banner { font-size: 16px; }
 .capture-log-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .capture-log-row { display: flex; align-items: flex-start; }
@@ -13,7 +13,7 @@
 .capture-log-open:hover, .capture-log-open:focus-visible { border-color: var(--ui-accent, #8fb3ff); outline: none; }
 .capture-log-picture { width: 32px; height: 32px; image-rendering: pixelated; flex: 0 0 auto; }
 .capture-log-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
-.capture-log-name { font-size: 20px; }
+.capture-log-name { font-size: 16px; }
 .capture-log-line { font-size: 16px; opacity: 0.85; }
 .capture-log-session .capture-log-open { margin-left: 24px; }
 .capture-log-new-mark { align-self: flex-start; margin-left: 6px; padding: 0 6px; font-size: 16px;
@@ -32,10 +32,10 @@
     border: 2px solid var(--ui-accent, #8fb3ff); border-radius: 0; }
 .signin-row-tag-kind { background: var(--ui-accent, #8fb3ff); color: #10141f; }
 .signin-row-tag-source { background: transparent; color: var(--ui-accent, #8fb3ff); }
-.signin-row-title { font-size: 20px; }
+.signin-row-title { font-size: 16px; }
 .signin-subtitle, .signin-line { font-size: 16px; opacity: 0.85; }
 .signin-use { font-size: 16px; }
-.signin-secret { font-size: 20px; letter-spacing: 1px; }
+.signin-secret { font-size: 16px; letter-spacing: 1px; }
 .signin-row-greyed { opacity: 0.55; border-style: dashed; }
 .signin-row-greyed .signin-row-tag-kind { background: transparent; color: var(--ui-text, #eef1f8); border-color: var(--ui-line, #4c5b80); }
 .signin-secret-loading, .signin-secret-failed { letter-spacing: 0; opacity: 0.8; }
