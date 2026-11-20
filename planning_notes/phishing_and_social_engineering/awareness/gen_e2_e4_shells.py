@@ -8,8 +8,8 @@ Adapted from gen_e3_e5_shells.py (P7-Y1). Differences from that script:
     E1 shells have since 55bfc0f7);
   - `se_awareness_records` is declared as `[]`, the shape the measurement store writes (P7-X2);
   - the company line in the check briefs comes from the episode, not a fixed Quayholt string;
-  - the defend-only shell carries the debrief panels: E2's macro concept panel (the fragment's
-    top-level `_conceptPanel`) as `strings.conceptPanel`, and E4's copied-voice panel
+  - the defend-only shell carries the debrief panels: E2's `strings.conceptPanel` is copied through
+    from the fragment's strings (as E3 and E5 do; wave 2 layer 1 wrote it there), and E4's copied-voice panel
     (`awarenessEpisode._voicePanel`) as `strings.voicePanel`.
 
 Usage: gen_e2_e4_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
@@ -241,15 +241,8 @@ def load(ekey):
 
 
 def panels(ekey, frag, EP):
-    """The debrief panels the fragment drafted, as strings keys."""
+    """Debrief panels not already in the fragment's strings (E4's voice panel). E2's conceptPanel comes straight from strings."""
     out = {}
-    if ekey == 'e2' and isinstance(frag.get('_conceptPanel'), dict):
-        text = frag['_conceptPanel']['text']
-        lead = "Why 'enable content' matters. "
-        if text.startswith(lead):     # the draft's first sentence is its heading
-            out['conceptPanel'] = {'heading': lead.strip().rstrip('.'), 'text': text[len(lead):]}
-        else:
-            out['conceptPanel'] = {'text': text}
     if ekey == 'e4' and isinstance(EP.get('_voicePanel'), dict):
         out['voicePanel'] = strip_private(EP['_voicePanel'])
     return out
