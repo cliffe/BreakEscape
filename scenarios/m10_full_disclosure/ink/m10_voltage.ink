@@ -180,7 +180,7 @@ Voltage (Critical Mass): Turn the key a quarter right and leave it there. That t
 {gallery_shutter_cut:
     -> captured_rest
 }
-Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave the others; they feed the hall.
+Voltage (Critical Mass): Breaker row. Third from the left is the shutter. Leave the others. They feed the hall.
 -> cut_p2_menu
 = cut_p2_menu
 {gallery_shutter_cut:

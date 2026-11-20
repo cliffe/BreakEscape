@@ -244,7 +244,7 @@ Agent HaX: Netherton put her on every watch list we can reach. Did it himself, b
     { directive_decoded and not directive_guessed:
         Agent HaX: Now Phase 2, the part that kept me up. You brought out the drive and read both layers yourself. The Architect's directive.
     - else:
-        Agent HaX: Now Phase 2, the part that kept me up. Your drive was Base64 over ROT13; our people had it off in ten minutes. The Architect's directive.
+        Agent HaX: Now Phase 2, the part that kept me up. Your drive was Base64 over ROT13. Our people had it off in ten minutes. The Architect's directive.
     }
 - else:
     // Pass 5 (R1-3): neutral, so it reads true for a player who never saw the drive.
@@ -254,7 +254,7 @@ Agent HaX: Netherton put her on every watch list we can reach. Did it himself, b
 
 === directive_substance ===
 #speaker:agent_0x99
-Agent HaX: Grid storage. Substation control. Hospitals on generator for when the grid drops out from under them. Winter, within weeks.
+Agent HaX: Grid storage, substation control, hospitals on generator for when the grid drops out from under them. Winter, within weeks.
 // D2-8: on the escape route the player heard Victoria say "proof of concept".
 { victoria_fate == "escaped":
     Agent HaX: She told you St. Catherine's was a proof of concept. She wasn't showing off.
@@ -339,9 +339,8 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
     -> danny_reply_protected
 }
 { danny_fate == "exposed":
-    Agent HaX: Danny Foster. You logged the lot -- the recon, the emails, the raise he took to stay quiet.
     // D3-17: the fact, not a verdict.
-    Agent HaX: He's been arrested. He'd worked out what it was for before he took it. A court will care about the date.
+    Agent HaX: Danny Foster's been arrested. He'd worked out what the raise was for before he took it, and a court will care about the date.
     { player_approach == "aggressive":
         Agent HaX: You went in hard and stayed hard. I won't argue with it.
     }
@@ -359,7 +358,7 @@ Agent HaX: The Phase 2 target list goes out unsigned. Substations get hardened, 
     -> danny_reply_exposed
 }
 { danny_fate == "left":
-    Agent HaX: Danny Foster. You left the decision with him. Didn't shield him, didn't hang him. Just handed it back.
+    Agent HaX: Danny Foster. You left the decision with him.
     Agent HaX: He hasn't called. His phone's been off since last night and he's not at home.
     { player_approach == "cautious":
         Agent HaX: You let him choose. He chose to switch his phone off.

@@ -186,7 +186,7 @@ Director Magnus Netherton: It is your find. You decide. I will sign whichever.
     {
     - recruiter_offer == "named":
         // C-4: the police make the arrests, never SAFETYNET; WREN still mustn't hear.
-        Director Magnus Netherton: Her handler list is with Analysis. Ours are on it by codename only; she kept the key to the names.
+        Director Magnus Netherton: Her handler list is with Analysis. Ours are on it by codename only. She kept the key to the names.
         Director Magnus Netherton: The police make the arrests at oh-six-hundred, day thirteen. Nobody moves before then. WREN would hear.
     - recruiter_offer == "double_crossed":
         Director Magnus Netherton: We have about half of her network. She warned the rest, and she warned Kowalczyk.
