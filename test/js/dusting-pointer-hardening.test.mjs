@@ -49,10 +49,29 @@ test('wide follows matchMedia over innerWidth', () => {
     assert.ok(layoutAt(390, () => false) === true, 'matchMedia says wide');
 });
 
-test('lostpointercapture is bound on the canvas next to pointerup and pointercancel', () => {
-    assert.ok(/addEventListener\(cv, 'lostpointercapture', e => this\._onPointerUp\(e\)\)/.test(src), 'bound through the tracked addEventListener');
-    assert.ok(/addEventListener\(cv, 'pointercancel', e => this\._onPointerUp\(e\)\)/.test(src), 'pointercancel bound');
-    assert.ok((src.match(/setPointerCapture/g) || []).length === 1, 'one capture site, so one place to release');
+test('a real lostpointercapture event on the canvas ends the stroke (listener is bound and routed)', () => {
+    const cv = new EventTarget();
+    const captured = new Set([7]);
+    cv.setPointerCapture = id => captured.add(id); cv.releasePointerCapture = id => captured.delete(id);
+    cv.hasPointerCapture = id => captured.has(id);
+    const saved = [];
+    const g = {
+        canvas: cv, step: 'dust', pointerDown: true, _pointerId: 7, lastPt: { x: 1, y: 1 }, _touchFind: false, _brushCarry: 2,
+        _saveProgress() { saved.push(1); }, _attemptFind() {}, _bindPanel() {}, _onPointerDown() {}, _onPointerMove() {},
+        addEventListener(target, type, fn) { target.addEventListener(type, fn); },
+        _onPointerUp: proto._onPointerUp
+    };
+    const keep = { d: globalThis.document, w: globalThis.window };
+    globalThis.document = new EventTarget(); globalThis.window = Object.assign(new EventTarget(), { gameState: {} });
+    try { proto._bind.call(g); } finally { globalThis.document = keep.d; globalThis.window = keep.w; }
+    const lost = new Event('lostpointercapture'); lost.pointerId = 7;
+    captured.delete(7);
+    cv.dispatchEvent(lost);
+    assert.ok(g.pointerDown === false && g._pointerId === null && g.lastPt === null, 'stroke ended by the event');
+    assert.ok(saved.length === 1, 'dust progress saved once');
+    const cancel = new Event('pointercancel'); cancel.pointerId = 7;
+    cv.dispatchEvent(cancel);
+    assert.ok(saved.length === 1, 'a cancel after the end does nothing');
 });
 
 function stroker(step = 'dust') {
@@ -123,4 +142,34 @@ test('a held-open stroke leaves no brush carry for the next one', () => {
     g._brushCarry = 3;
     proto._onPointerUp.call(g, ev('lostpointercapture', 1));
     assert.ok(g._brushCarry === 0, 'carry cleared');
+});
+
+test('a touch pointerup in Find attempts the find exactly once', () => {
+    const { g } = stroker('find');
+    proto._onPointerDown.call(g, ev('pointerdown', 3));
+    proto._onPointerUp.call(g, ev('pointerup', 3));
+    assert.ok(g.found === 1, 'one find attempt');
+    assert.ok(g.pointerDown === false && g._touchFind === false, 'stroke cleared');
+});
+
+// releasePointerCapture that fires lostpointercapture synchronously (re-entry into _onPointerUp)
+function syncStroker(step) {
+    const s = stroker(step);
+    const { g, captured } = s;
+    g.canvas.releasePointerCapture = id => { captured.delete(id); proto._onPointerUp.call(g, ev('lostpointercapture', id)); };
+    return s;
+}
+
+test('re-entrant lostpointercapture inside releasePointerCapture: one save in dust', () => {
+    const { g, saved } = syncStroker('dust');
+    proto._onPointerDown.call(g, ev('pointerdown', 3));
+    proto._onPointerUp.call(g, ev('pointerup', 3));
+    assert.ok(saved.length === 1, `saved once, got ${saved.length}`);
+});
+
+test('re-entrant lostpointercapture inside releasePointerCapture: one find attempt for touch Find', () => {
+    const { g } = syncStroker('find');
+    proto._onPointerDown.call(g, ev('pointerdown', 3));
+    proto._onPointerUp.call(g, ev('pointerup', 3));
+    assert.ok(g.found === 1, `find attempted once, got ${g.found}`);
 });
