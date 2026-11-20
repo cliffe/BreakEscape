@@ -1,0 +1,13 @@
+{
+  "key": "cfdc397d7543cad54520798fd27ef829",
+  "npc": "kit_camila_ospina",
+  "text": "Oh, of course. I'll do that.",
+  "voice": "Zephyr",
+  "style": "A client-side account rep in her mid 40s, confident and friendly, with the easy manner of someone sure she is expected. Speak with a consistent London accent with a light Colombian inflection throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-20",
+  "recorded_at": "2026-11-20T00:50:49Z"
+}
