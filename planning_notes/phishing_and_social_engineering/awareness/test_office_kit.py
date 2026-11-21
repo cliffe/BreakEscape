@@ -491,6 +491,25 @@ class ReviewFixes(unittest.TestCase):
             self.assertEqual(list(new)[list(new).index('disableAttacks') + 1], 'npcThoughts')
             self.assertEqual(list(new)[list(new).index('globalVariables') + 1], 'chatter')
 
+    def test_set_piece_resources_reach_only_their_own_row(self):
+        kit = copy.deepcopy(self.kit())
+        kit['setPieces'] = {
+            'with_res': {'resources': {'kit_sp_signin': {'name': 'Sign-in', 'offWhen': 'kit_x_out'}}},
+            'no_res': {},
+        }
+        kit['resources'] = {'kit_mug': {'label': 'Mug'}}
+        a = ok.kit_keyed(kit, row(setPiece='with_res'))['resources']
+        self.assertEqual(set(a), {'kit_mug', 'kit_sp_signin'})
+        b = ok.kit_keyed(kit, row(setPiece='no_res'))['resources']
+        self.assertEqual(set(b), {'kit_mug'})
+        self.assertEqual(set(ok.kit_keyed(kit, row())['resources']), {'kit_mug'})
+        del kit['resources']
+        self.assertEqual(set(ok.kit_keyed(kit, row(setPiece='with_res'))['resources']), {'kit_sp_signin'})
+        self.assertNotIn('resources', ok.kit_keyed(kit, row(setPiece='no_res')))
+        kit['setPieces']['with_res']['resources'] = {'plain': {}}
+        with self.assertRaises(ValueError):
+            ok.kit_keyed(kit, row(setPiece='with_res'))
+
     def test_kit_resources_and_roles_are_emitted_and_stripped(self):
         kit = copy.deepcopy(self.kit())
         kit['resources'] = {'kit_mug': {'label': 'Mug'}}
