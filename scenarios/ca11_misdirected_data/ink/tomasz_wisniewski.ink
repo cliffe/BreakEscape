@@ -20,6 +20,10 @@
 // ================================================
 
 VAR episode_e11_misdirected_data_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca11_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -29,12 +33,27 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca11_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Tomasz Wiśniewski: You brought the misdirected one to me the same day, which is all I ask, and it was contained before it spread.
+            - else:
+                Tomasz Wiśniewski: A misdirected item means a quiet word with me that day, never a quiet delete, and you came.
+            }
+            Tomasz Wiśniewski: To anyone who collects data like this, a stray record is a way into someone's life, and kept inside the building it is nothing to them.
+        - else:
+            Tomasz Wiśniewski: Sent astray, these details put the people in them at a stranger's reach, and my week turns into recalls and letters home.
+            Tomasz Wiśniewski: To anyone who collects data like this, a stray care record is a believable way to approach the very people it names.
+        }
+        ~ kit_ca11_host_said = true
+    - else:
     { episode_e11_misdirected_data_defend_complete:
         Tomasz Wiśniewski: That's the desk sorted. Anything about someone's personal data comes to the DPO the same day.
         Tomasz Wiśniewski: And nobody here is ever in trouble for reporting, including their own slip.
     - else:
         Tomasz Wiśniewski: Tomasz Wiśniewski, data protection. I do a drop-in at this desk once a month, so I'm at the next chair if you need me.
         Tomasz Wiśniewski: Clear the queue the way you would on any morning. If something goes wrong, the only wrong move is to keep it to yourself.
+    }
     }
 }
 + [Thanks, Tomasz.]

@@ -1,6 +1,6 @@
 # m04 Critical Failure: scenario design review, pass 5, round 2
 
-Reviewer: fresh Opus agent, read-only (2026-10-13). Skill: `scenario-design-review`. Static review, with no browser session. Sources: `scenario.json.erb` and the ink at f5baf890 (the working tree is clean for m04), plus the engine where a fix depends on it. I didn't open the SecGen XML or the four listed field guides. The "(Optional)" title prefixes are a known stopgap and aren't reported.
+Reviewer: fresh agent, read-only (2026-10-13). Skill: `scenario-design-review`. Static review, with no browser session. Sources: `scenario.json.erb` and the ink at f5baf890 (the working tree is clean for m04), plus the engine where a fix depends on it. I didn't open the SecGen XML or the four listed field guides. The "(Optional)" title prefixes are a known stopgap and aren't reported.
 
 ## Tools
 

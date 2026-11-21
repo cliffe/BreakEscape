@@ -2,7 +2,7 @@
 
 Stage 2, `mission-alignment-plan` rubric. Fresh reviewer, read-only. 2026-10-14.
 The task had two parts. First, confirm every round-2 fix (`IMPROVEMENT_LOOP_LOG.md`, "Stage 2 alignment, round 2") against `scenario.json.erb` (cited `erb:N`) and the ink (`ink/<file>:N`). Second, look for new problems in the states the round-2 latches create: `revision_before_commit`, `decode_read_open`, `revision_found_open`, `logged_in_before_door`, `cascade_armed` and `team_redirected`.
-The working tree matches HEAD 0a761060 for m07. I opened no SecGen XML and none of the four restricted field guides. I started no browser session; a Sonnet browser check is running at the same time.
+The working tree matches HEAD 0a761060 for m07. I opened no SecGen XML and none of the four restricted field guides. I started no browser session; a scripted browser check is running at the same time.
 
 ## Checks run (outputs in the session scratchpad, `m07-align-c3-reviewer/`)
 
@@ -153,7 +153,7 @@ No m07 audio exists yet; listed for the record.
   - C1 is the most likely of them and the one I'd fix first.
   - C1 and C2 together are about four latch-and-branch edits. They can go to the dialogue stage, or into a short fix round before puzzle chains starts if the orchestrator prefers.
   - C3-C6 belong in the dialogue stage.
-- Closing still depends on the concurrent Sonnet browser check confirming the round-2 items owed from the browser:
+- Closing still depends on the concurrent scripted browser check confirming the round-2 items owed from the browser:
   - the U5 aim no longer folding on the generator hall;
   - Park's third visit going hostile;
   - the late T-10 open;

@@ -1,6 +1,6 @@
 # m08 The Mole: engine regression playtest, 2026-10-16
 
-Regression run (answers known, each secret fetched from its in-game source before use), answering question 1 (does the plumbing work after this round's engine changes) with a few question-2 probes (fight, knockout, Restart, reload with a hostile NPC). Not a solvability pass: standalone, no VM, flags supplied. Sonnet driver, headless, speed fast, keyless server :3001 only (:3000 untouched). Steps came from `TESTING_WALKTHROUGH.md` and the last regression (`PASS5_REGRESSION.md`).
+Regression run (answers known, each secret fetched from its in-game source before use), answering question 1 (does the plumbing work after this round's engine changes) with a few question-2 probes (fight, knockout, Restart, reload with a hostile NPC). Not a solvability pass: standalone, no VM, flags supplied. Scripted driver, headless, speed fast, keyless server :3001 only (:3000 untouched). Steps came from `TESTING_WALKTHROUGH.md` and the last regression (`PASS5_REGRESSION.md`).
 
 ## Games, logs, evidence
 

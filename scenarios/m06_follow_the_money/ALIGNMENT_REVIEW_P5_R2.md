@@ -1,6 +1,6 @@
 # m06 pass 5: alignment review, round 2
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Checks the round-1 fixes in commit ef4d1057 against `scenario.json.erb` and the ink, then reviews the new work using the `mission-alignment-plan` rubric. I didn't open the SecGen XML, the restricted lab-sheet bodies, the exploit section of `VM_INTEGRATION.md` or the engine's sight-challenge source.
+2026-10-13. Reviewer, read-only, static only (no browser session). Checks the round-1 fixes in commit ef4d1057 against `scenario.json.erb` and the ink, then reviews the new work using the `mission-alignment-plan` rubric. I didn't open the SecGen XML, the restricted lab-sheet bodies, the exploit section of `VM_INTEGRATION.md` or the engine's sight-challenge source.
 
 ## Checks run
 

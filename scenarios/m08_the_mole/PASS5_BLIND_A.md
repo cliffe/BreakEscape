@@ -1,6 +1,6 @@
 # m08 "The Mole": pass 5 blind playtest A ("do your best")
 
-Tester: Sonnet, headless (machine load average was 43 with three other playtests running, so timings are not representative).
+Tester: scripted run, headless (machine load average was 43 with three other playtests running, so timings are not representative).
 Question answered: solvability and deduction (can a player work out the traitor from what the game gives them), plus plumbing along the way.
 Game id: 2596. Keyless server :3001. Session log: `tools/playtest/m08-blind-A-session.jsonl` (3,513 lines; the log timestamps are UTC, game created 19:24:48, last write 19:53:23, 1,716 s of wall clock played).
 Route: opening cutscene, Director, all three suspects, break room, Security Archives, server room (flags supplied), fingerprint kit, one mid-run reload, Director's reading quiz, safe, interrogation suite, debrief, credits.

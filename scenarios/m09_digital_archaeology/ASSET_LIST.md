@@ -141,7 +141,7 @@ Returning voices are copied exactly from their last mission (HaX from m08's phon
 ## 7. Other placeholders
 
 - **Field-guide lab sheets.** The four guides (`m09_catalogue_field_guide`, `m09_ledger_field_guide`, `m09_tomb_beta_field_guide`, `m09_archive_code_guide`) carry placeholder `labUrl`s under `https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/` (lab sheets are written last; memory "lab sheets last"). The page won't exist until then.
-- **VM wiring.** The VM's system names, IPs and flag strings are placeholders (`catalogue_server`, `tomb_beta_server`, `attack_vm`); every one is marked `VM-WIRE` in the ERB for the opus48 pass. `mission.json`'s `secgen_scenario` names a file that doesn't exist yet.
+- **VM wiring.** The VM's system names, IPs and flag strings are placeholders (`catalogue_server`, `tomb_beta_server`, `attack_vm`); every one is marked `VM-WIRE` in the ERB for the VM-agent pass. `mission.json`'s `secgen_scenario` names a file that doesn't exist yet.
 - **Lighting.** None set; the lighting pass comes after dressing (mission-room-lighting skill).
 
 ## 8. Scope for the user

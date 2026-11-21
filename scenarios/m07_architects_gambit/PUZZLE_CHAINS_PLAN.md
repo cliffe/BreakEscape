@@ -1052,7 +1052,7 @@ Not to be re-proposed without new evidence.
   `inside_reached`, `splice_found`; renamed guide globals; `recover_vault_pin`'s and
   `search_cable_vault`'s type and title; the vault code's sources) and the dungeon graph match what
   ships. **[r3-m4]**
-- [ ] Browser playtest (Sonnet agent, `playtest-scenario`) passes:
+- [ ] Browser playtest (test agent, `playtest-scenario`) passes:
   1. The start inventory shows picks, cloner and print kit, and the briefing's opening names them
      before the first question menu. **Expected, not a bug:** clicking a badge in the inventory
      now opens the RFID clone minigame (the player holds a cloner); cancel it.

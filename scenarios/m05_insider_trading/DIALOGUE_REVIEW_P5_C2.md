@@ -1,6 +1,6 @@
 # m05 Insider Trading: dialogue review, pass 5 cycle 2
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P5_C1.md` and the cycle-1 entry in `IMPROVEMENT_LOOP_LOG.md` (commit `ee4fb9e5`; the erb's removal of `torres_fate_by_phone` is still uncommitted in the working tree). I didn't open the SecGen XML or the four listed field guides.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P5_C1.md` and the cycle-1 entry in `IMPROVEMENT_LOOP_LOG.md` (commit `ee4fb9e5`; the erb's removal of `torres_fate_by_phone` is still uncommitted in the working tree). I didn't open the SecGen XML or the four listed field guides.
 
 Finding ids are `D5C2-n`, tagged **blocker / major / minor**. Every fix is mission-local wording or a one-line condition in the ink.
 

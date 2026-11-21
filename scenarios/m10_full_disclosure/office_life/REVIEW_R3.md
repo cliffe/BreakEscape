@@ -1,6 +1,6 @@
 # m10 office life: plan review R3
 
-Reviewer tier: Opus planning tier, read-only. Plan reviewed at commit 591243091 (R2 outcomes applied).
+Reviewer tier: planning tier, read-only. Plan reviewed at commit 591243091 (R2 outcomes applied).
 
 **Counts: 0 blockers, 2 majors, 4 minors.** All fixed in PLAN.md in the same commit as this file.
 

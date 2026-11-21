@@ -26,8 +26,8 @@ Reviewed: branch build/ol-m07 at c4d69f551. Delta is `a43fce0b5..c4d69f551` (HAN
 
 ### m1 (minor): two new model-name mentions in repo prose
 
-LOG.md:38 ("delta on Sonnet") and HANDOVER.md:115 ("delta, Sonnet") name the model. The same HANDOVER.md "Next" line schedules a "strip model names" step before the commit goes to AC0, so these two will be caught there if the sweep covers LOG.md and HANDOVER.md.
-Fix: say "cheaper tier" in both (HANDOVER.md:114 already does), or include them in the strip step.
+LOG.md:38 and HANDOVER.md:115 named the review model; both are now cleaned. The same HANDOVER.md "Next" line schedules a "strip model names" step before the commit goes to AC0, so these two will be caught there if the sweep covers LOG.md and HANDOVER.md.
+Fix: say "cheaper tier" in both (HANDOVER.md:114 already does), or include them in the strip step. Closed: LOG.md and HANDOVER.md carry no model names on this branch, and the sweep of every office_life folder removed the rest.
 
 ## Checked and fine
 

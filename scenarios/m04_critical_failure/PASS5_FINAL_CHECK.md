@@ -1,6 +1,6 @@
 # m04 pass 5 final check (confirmation playtest)
 
-Tester: Sonnet 5.5 subagent. Keyless server :3001 only, checked-in harness scripts only, no game files edited. Headless (load average was under 2 at the start). Every session started was stopped (`session-stop.sh`); the two other live sessions seen in `ps` (games 2333 and 2335) are not mine and were left alone.
+Tester: subagent. Keyless server :3001 only, checked-in harness scripts only, no game files edited. Headless (load average was under 2 at the start). Every session started was stopped (`session-stop.sh`); the two other live sessions seen in `ps` (games 2333 and 2335) are not mine and were left alone.
 
 **Which question:** confirmation of the specific fixes from "Phase 8 playtests: struggling run A fixes" and the first-call hub guard (plumbing), plus a record of real combat (question 1 only; no solvability claim).
 

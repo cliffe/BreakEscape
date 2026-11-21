@@ -1,6 +1,6 @@
 # m04 pass 5: alignment review, round 2
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Scope: confirm round 1 against commit 826c6c2c, cover what round 1 missed (the Vance phone ink, a full validator run, rooms and layout), and review the new work critically: the night-crew warning, the sweep-then-call-in ending, the sight challenges, HaX's rebuilt hub, the music phases and the route driver. Canon checked against m03 and m05. Nothing in the SecGen XML was opened.
+2026-10-13. Reviewer, read-only, static only (no browser session). Scope: confirm round 1 against commit 826c6c2c, cover what round 1 missed (the Vance phone ink, a full validator run, rooms and layout), and review the new work critically: the night-crew warning, the sweep-then-call-in ending, the sight challenges, HaX's rebuilt hub, the music phases and the route driver. Canon checked against m03 and m05. Nothing in the SecGen XML was opened.
 
 Checks run:
 - validator (`--skip-ink --no-graph`): schema passed, no unknown fields, geometry and doors OK. It gives 13 wiring notes, all on duplicate `agent_0x99` event pairs (an old pattern, reviewed, no action), and 17 issues. Two of those are the deliberate repeatable sight-challenge chats; the rest are sprite suggestions and the two seed NPCs.

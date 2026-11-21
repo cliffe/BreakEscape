@@ -113,7 +113,7 @@ From R4 §4, still to run: the tag at (15.6, 3.4) and the sheet at (15.5, 3.5), 
 
 Carried from R3 §4: the "[Where are we?]" rungs naming each find; the three hub steers in their windows; the cold-start Wendell worked-round cut; the escaped Voltage fight; Vance and Elena resuming at step 2 and `cut_done`; captured "[I'll do it.]", a re-talk at step 2 and his bark; a reload at `cut_step` 2; the click guards at steps 0 and 1 on each branch; the workshop rack, card 4 and T-62 at 10 s; Fonoti's cone after the rota, the handover and the Vos pick; exchange 3's Alpha button.
 
-**VM-side, for opus48 or the user (not a browser test):** the tag's login alone can't reach flag 2, the staging login can, and the duty sheet's login can't. Each Codes string (erb:186-193) is what the build creates.
+**VM-side, for the VM agent or the user (not a browser test):** the tag's login alone can't reach flag 2, the staging login can, and the duty sheet's login can't. Each Codes string (erb:186-193) is what the build creates.
 
 ---
 

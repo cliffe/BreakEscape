@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e4_exec_whaling_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e4_exec_whaling_defend_defend_complete:
-        Thandiwe Moyo: That's everything cleared, thanks. Money, in a hurry? Ring her on a number you already hold, or ask Yasmin.
+        { kit_key_caught:
+            Thandiwe Moyo: You held that urgent payment in Catherine's name until you'd reached her, so it never left for an account that wasn't hers.
+            Thandiwe Moyo: A voicemail that sounds like her and says don't ring back is the exact bit to distrust.
+        - else:
+            Thandiwe Moyo: That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.
+            Thandiwe Moyo: It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.
+        }
     - else:
         Thandiwe Moyo: Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.
     }

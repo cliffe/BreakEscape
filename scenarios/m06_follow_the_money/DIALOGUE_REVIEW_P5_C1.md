@@ -1,6 +1,6 @@
 # m06 Follow the Money: dialogue review, pass 5 cycle 1
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Gold standard: m04 after its three dialogue cycles, and m03. Alignment, puzzle chains and scenario design are closed and not re-raised unless a line regressed. The SecGen XML, the four listed field guides and the exploit detail in `VM_INTEGRATION.md` were not opened.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Gold standard: m04 after its three dialogue cycles, and m03. Alignment, puzzle chains and scenario design are closed and not re-raised unless a line regressed. The SecGen XML, the four listed field guides and the exploit detail in `VM_INTEGRATION.md` were not opened.
 
 `tts_cache/m06_follow_the_money/` is empty, so no rewrite below costs a re-voice yet.
 

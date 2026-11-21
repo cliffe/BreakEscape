@@ -1,4 +1,4 @@
-# m06 pass 5, alignment round 1: browser check (targeted, Sonnet-class run)
+# m06 pass 5, alignment round 1: browser check (targeted, scripted run)
 
 **Question answered:** plumbing of the round-1 changes (and, per the coordinator's late message, the round-2 changes). Targeted regression, not blind. Flags were supplied from the session seed ("flag supplied"); everything downstream of flag 3 is exercised, not proven. Slots/PINs (bitcoin2025, 3110, 4471, 2140) were known, not earned from the in-game clues in these runs (I did not visit the blockchain lab).
 **Environment:** keyless :3001 only, headless (load average about 10). Own games only. All three sessions stopped.

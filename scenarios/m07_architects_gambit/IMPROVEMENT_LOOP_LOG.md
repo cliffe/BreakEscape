@@ -10,7 +10,7 @@ Stages: regression playtest, then alignment, puzzle chains and scenario design (
 
 ### Stage 1 regression
 
-Run: `PASS5_REGRESSION.md` (Sonnet harness, keyless :3001, headless, game 2376, log `tools/playtest/m07-pass5A-game2376.jsonl`, 1574 lines). One fresh game, briefing driven by hand, two page reloads, flags supplied, credits reached and `mission_complete` set. Regression run, not blind. No mission files were edited and nothing was committed.
+Run: `PASS5_REGRESSION.md` (scripted harness, keyless :3001, headless, game 2376, log `tools/playtest/m07-pass5A-game2376.jsonl`, 1574 lines). One fresh game, briefing driven by hand, two page reloads, flags supplied, credits reached and `mission_complete` set. Regression run, not blind. No mission files were edited and nothing was committed.
 
 Counts: **0 blockers, 3 majors, 16 minors.**
 
@@ -44,7 +44,7 @@ Not covered by this run (carry into the stage 6 playtests): the badge-station ro
 
 ### Stage 2 alignment, round 1 (fixer)
 
-Review: `ALIGNMENT_REVIEW_P5_C1.md` (Opus, read-only). Regression items folded in from `PASS5_REGRESSION.md` as the orchestrator directed (M-2, M-3, m-6, m-8, m-10). Orchestrator decisions applied: U1 (the m07/m08 timeline, fixed on the m07 side with one briefing line), U2 (fate-neutral cross-mission lines, no engine work). Every finding was checked against `scenario.json.erb` and the ink before acting. No SecGen XML and none of the four restricted field guides were opened.
+Review: `ALIGNMENT_REVIEW_P5_C1.md` (read-only). Regression items folded in from `PASS5_REGRESSION.md` as the orchestrator directed (M-2, M-3, m-6, m-8, m-10). Orchestrator decisions applied: U1 (the m07/m08 timeline, fixed on the m07 side with one briefing line), U2 (fate-neutral cross-mission lines, no engine work). Every finding was checked against `scenario.json.erb` and the ink before acting. No SecGen XML and none of the four restricted field guides were opened.
 
 Counts: 0 blockers, 6 majors, 16 minors from the review; 5 regression items folded in.
 
@@ -503,7 +503,7 @@ Cycle 2 review 0 blockers / 0 majors / 4 minors; round-1 browser check all six i
 
 ### Phase 4 dialogue, cycle 1 (fixer, 2026-10-14)
 
-Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, read-only, `npc-dialog-review` in full). Counts: 0 blockers, 5 majors, 37 minors (D7-1 to D7-42; two lint warnings withdrawn by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m07-dialogue-reviewer-c1/snapshot/ink/` (commit `8e868ab9`). Every finding was checked against the ink before it was acted on. None was declined or withdrawn; where the fix differs from the reviewer's wording, the reason is given. The review's strengths are kept word for word: the teacher thread (T-30's close, the late-first-contact echo lines, `topic_teacher`), the Architect's register, HaX's voice, "The choice was yours. The menu was his.", "He measured you. He did not beat you." and the debrief's honest read-out of both dark operations by name and number. No m07 audio exists, so none of this costs anything to re-voice.
+Review: `DIALOGUE_REVIEW_P5_C1.md` (read-only, `npc-dialog-review` in full). Counts: 0 blockers, 5 majors, 37 minors (D7-1 to D7-42; two lint warnings withdrawn by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m07-dialogue-reviewer-c1/snapshot/ink/` (commit `8e868ab9`). Every finding was checked against the ink before it was acted on. None was declined or withdrawn; where the fix differs from the reviewer's wording, the reason is given. The review's strengths are kept word for word: the teacher thread (T-30's close, the late-first-contact echo lines, `topic_teacher`), the Architect's register, HaX's voice, "The choice was yours. The menu was his.", "He measured you. He did not beat you." and the debrief's honest read-out of both dark operations by name and number. No m07 audio exists, so none of this costs anything to re-voice.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -726,7 +726,7 @@ Full detail, per room and per finding, in `ROOM_DRESSING.md`; evidence in `build
 | Cycle | Blocker | Major | Minor | Outcome |
 |---|---|---|---|---|
 | 1 (survey, own maps, all six rooms built) | 1 | 5 | 2 | All fixed: six `room_pnw_*` maps (shared maps untouched, U6 cleared for m07), 11 objects onto real fixtures (11 NO SLOT before, 0 after). First room (operations floor) pending sign-off, U13 |
-| 2 (fresh Opus review of cycle 1) | 0 | 3 | 19 | 17 fixed, 1 in part, 2 left with reasons (handover-sheet wording; mimic behind the monitor) |
+| 2 (fresh reviewer review of cycle 1) | 0 | 3 | 19 | 17 fixed, 1 in part, 2 left with reasons (handover-sheet wording; mimic behind the monitor) |
 
 ### Stage 4 room dressing: CLOSED (orchestrator, 2026-10-14)
 Cycles 3–5 detail in `ROOM_DRESSING.md`. Cycle 5 fresh review 0/0/4 (`build_evidence/dressing_c5/review_c5.md`): m-1 ops back-row chair behind shelves, m-2 ATS cover should lean on the wall, m-3 open trench reads as a grille, m-4 stale builder docstrings — all optional, to pick up during lighting. Interaction walk game 2443 (`build_evidence/dressing_c5/walk_game2443.md`): 0/0/5, no pick-one menus, doors and lanes clear, fixtures persist after read and reload; F1 SCADA monitor hides the mimic's left lights (minor). Top-left taps on the five takeables untested (they vanish on first take). First room (operations floor) pending sign-off, U13. Next: lighting.
@@ -735,7 +735,7 @@ Cycles 3–5 detail in `ROOM_DRESSING.md`. Cycle 5 fresh review 0/0/4 (`build_ev
 Cycle 2 review 0/0/23, fixed (ba0308c5); browser check games 2445/2450 all five items pass (`PASS5_DIALOGUE_BROWSER_CHECK.md`). Orchestrator fixed its N3 (Netherton now answers "[What does he do with a reading?]": "Uses it. That is next year's problem, not tonight's.") and N4 (the deduction choice retires after the abort). N1 (number keys 1–5 only) backlogged; N2 sub-menu reopen is known and accepted. Routes 31/31, lint clean.
 
 ### Stage 4 room lighting: CLOSED (lighting agent, 2026-10-14)
-Full detail in `LIGHTING_PLAN.md`; evidence in `build_evidence/lighting_c<N>/` (tours of four story states each cycle: start, `cascade_armed`, `countdown_expired`, `grid_saved` + `vault_entered`). Every review by a fresh Opus agent, read-only.
+Full detail in `LIGHTING_PLAN.md`; evidence in `build_evidence/lighting_c<N>/` (tours of four story states each cycle: start, `cascade_armed`, `countdown_expired`, `grid_saved` + `vault_entered`). Every review by a fresh agent, read-only.
 
 | Cycle | Blocker | Major | Minor | Outcome |
 |---|---|---|---|---|
@@ -760,7 +760,7 @@ Input: `PASS5_BLIND_STRUGGLE_A.md` (blind struggling player, game 2473, credits 
 | m1 | minor | Restart replays a stale Mission Brief ("You decide which") | **Fixed (mission side):** `scenario_brief` "The team can reach one of the other three crises. You decide which." → "...crises, and where it goes is your call." Respawn at the checkpoint is engine (E5, with U11) |
 | m2 | minor | Reload: title, Resume overlay over the brief, checkpoint start | Engine (E5). Not changed |
 | m3 | minor | Elena's "Dormant ninety days..." choice presupposes the skipped Trojan Horse brief | **Fixed:** the choice names the source the player carries from the start (the Threat Desk Summary says "Dormancy: 90 days" and "NONE PROJECTED"): "[The desk summary says ninety days dormant. No deaths projected.]" Her reply is unchanged (`told_ninety`) |
-| m4 | minor | "I'm stuck on something" opens a sub-menu that looks like nothing happened; "I'll call you back" didn't close the phone | **Fixed in part:** HaX now answers the pick with "Tell me where." before the sub-menu (a choice body, so a reopen doesn't replay it). The phone-close report is logged as E6 for the Sonnet check |
+| m4 | minor | "I'm stuck on something" opens a sub-menu that looks like nothing happened; "I'll call you back" didn't close the phone | **Fixed in part:** HaX now answers the pick with "Tell me where." before the sub-menu (a choice body, so a reopen doesn't replay it). The phone-close report is logged as E6 for the scripted check |
 | m5 | minor | "NFS and netcat guide's on your terminal" but the guide arrives as an inventory item | **Fixed:** the RFID, NFS and SSH hand-overs say "in your kit" (the house wording, m04-m06); the other three already said "uploaded"/"sent" |
 | m6 | minor | The Architect's call holds the phone over HaX | Not acted on: intended (his calls are timed interruptions); the HaX thread is one tap away afterwards |
 | m7 | minor | Password case not hinted | **Stopgap:** HaX text on the first `door_unlock_attempt` at the control-room door once `scada_password_found` is true: "That keypad is case-sensitive. Capital C, capital W." Engine fix E4 |
@@ -830,7 +830,7 @@ Agent HaX (texts):
 
 Object text (not voiced): Mission Brief "You decide which." → "and where it goes is your call."; Backup Power Transfer Switch observation starts with the plate and opens as a dialog; Grid Situation Board text, observation and sprite variants for `countdown_expired`.
 
-#### Browser checks owed (Sonnet)
+#### Browser checks owed (scripted run)
 
 - After the briefing closes (tutorial declined), HaX's controls text is in the phone before Hollis's sight challenge; does it collide with the tutorial prompt or the Mission Brief popup?
 - Hollis: "Walk at him" → warning line → "Put it down. (Fight him.)" → fight line; the two in-fight texts; the hands-down text after the KO.

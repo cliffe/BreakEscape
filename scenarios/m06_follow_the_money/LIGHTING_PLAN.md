@@ -130,7 +130,7 @@ Left alone: `brochure_rack1`, `magazine_rack2`, `mini_fridge1`, `hce_cage_panel1
 
 `ruby scripts/lighting_lookup.rb`: every m06 room type (`room_hce_*`) is new, so nothing has been lit before. Reuse by role, with no tile coordinates copied: the scenario night ambient (m02, m04); the market wall's glow from sis02's SCADA `screens` block; call points off (m03, m04); motion for empty offices and machine rooms (m01-m04); server darks `#0a0f1c` (m02 server room, m04 workshop); per-cause phase glows in base `emitters` and ambient-only room variants (m04).
 
-## 7. Design review (fresh Opus, read-only): 0 blockers, 3 majors, 9 minors
+## 7. Design review (fresh reviewer, read-only): 0 blockers, 3 majors, 9 minors
 
 The reviewer checked every ink line, global, setter, texture key, prefix and the console's id key (all correct; no prefix collisions; `as-type` keeps the map texture, `core/rooms.js:520`; tables are in `room.objects`, so table emitters build). It reviewed the lighting blocks already in the erb as well as the plan. Folded in before the cycle 2 tour.
 
@@ -169,7 +169,7 @@ The design review fixes (section 7), plus:
 
 Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2344, warned 2345, tripped 2346, fund 2348, seized 2349. Evidence: `build_evidence/lighting_c2/<phase>/`. Pairs: `tmp/review/m06_lighting_c2_*.png` (before against cycle 2 per room; dark against lit for the motion rooms; console phases; frozen money).
 
-### Cycle 2 visual review (fresh Opus): 0 blockers, 3 majors, 8 minors
+### Cycle 2 visual review (fresh reviewer): 0 blockers, 3 majors, 8 minors
 
 Passes: the warm lobby, Irina's office dark and lit, the cyan server room and data centre, Satoshi's office, the executive wing's sconce pools and trophy cabinet; every clue reads; both sight cones clear; console phases clear in the dark; the ticker no longer bleeds; flash safety.
 
@@ -193,7 +193,7 @@ V1-V11 applied as listed.
 
 Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2352, warned 2353, tripped 2354, fund 2355, seized 2357. Evidence: `build_evidence/lighting_c3/<phase>/`. Pairs: `tmp/review/m06_lighting_c3_*.png` (cycle 2 against cycle 3; base against seized).
 
-### Cycle 3 visual review (fresh Opus): 0 blockers, 0 majors, 6 minors
+### Cycle 3 visual review (fresh reviewer): 0 blockers, 0 majors, 6 minors
 
 V1-V11 all closed. The whole set judged afresh: every room meets its mood brief, every clue reads, both sight cones are clear, console phases show (subtle lit, clear dark), flash safety passes.
 
@@ -212,7 +212,7 @@ W1-W6 applied as listed.
 
 Checks: validator schema pass; door alignment 8/8; routes 29/29. Tours on :3001, every shot drew: base 2358, warned 2359, tripped 2361, fund 2362, seized 2363. Evidence: `build_evidence/lighting_c4/<phase>/`. Pairs: `tmp/review/m06_lighting_c4_*.png`.
 
-### Cycle 4 visual review (fresh Opus): 0 blockers, 0 majors, 6 minors
+### Cycle 4 visual review (fresh reviewer): 0 blockers, 0 majors, 6 minors
 
 W1-W6 closed, none broke anything. Judged afresh, every room meets its brief; every clue reads; cones clear; no far bleed; flash safety passes; every lit room still looks like itself, moodier.
 

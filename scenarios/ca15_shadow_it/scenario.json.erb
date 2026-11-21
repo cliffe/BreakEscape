@@ -6,6 +6,7 @@
   "endGoal": "Play out the Friday, then sort the inbox and match the swaps at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e15_shadow_it_defend_percent": 0,
     "episode_e15_shadow_it_defend_reportRate": 0,
-    "episode_e15_shadow_it_defend_complete": false
+    "episode_e15_shadow_it_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca15",
+    "kit_ca15_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_tarrowby": {
+      "lines": [
+        "Another pallet backlog.",
+        "Who's on the Shipley run?",
+        "Depot's heaving today."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -134,7 +154,16 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e15_shadow_it_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e15_posted_stick": "kit_key_caught"
+          },
+          "messageCaughtVerdicts": {
+            "e15_posted_stick": [
+              "report",
+              "verify"
+            ]
+          }
         },
         "messages": [
           {
@@ -487,7 +516,7 @@
         "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
         "conceptPanel": {
           "heading": "About that stick",
-          "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
+          "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT.\n\nTo a real attacker this episode has no villain of its own, but the route you chose for the client pack, or the found stick you decided about, leaves a gap worth taking. Whoever dropped that stick to be found, or runs the free service the pack went to, gains a way onto a work machine, or a copy of a whole logistics client's consignment file, names, addresses and delivery schedules, that nobody can account for. Handing a found stick to IT unopened and routing files only through approved tools means neither gap ever opens.\n\nSix months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client. Before you leave, have a word with Nilesh."
         },
         "flipMontageByChoice": {
           "personal_email": {
@@ -650,8 +679,145 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_shortcuts"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_complete",
+              "condition": "value === true && globalVars.episode_e15_shadow_it_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_fatima_begum",
+          "displayName": "Fatima Begum",
+          "person": "fatima_begum",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/fatima_begum_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "CVs stacking up again.",
+                "Need a cold one."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "person": "chidi_okeke",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Zubenelgenubi",
+            "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "Fleet's all out today.",
+                "Parched after that yard run."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -672,6 +838,26 @@
           ],
           "minigameData": {
             "episodeId": "e15_shadow_it"
+          }
+        },
+        {
+          "type": "drinks_vending",
+          "id": "kit_vending",
+          "name": "Drinks machine",
+          "sprite": "drinks_vending1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The depot drinks machine. Staff wander over for something cold.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_tarrowby"
           }
         }
       ]

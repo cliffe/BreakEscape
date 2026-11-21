@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e11_misdirected_data_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e11_misdirected_data_defend_defend_complete:
-        Tomasz Wiśniewski: That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.
+        { kit_key_caught:
+            Tomasz Wiśniewski: You caught that overtime sheet of health notes heading to the wrong Payroll contact, so residents' details never left the building.
+            Tomasz Wiśniewski: A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable.
+        - else:
+            Tomasz Wiśniewski: That send of residents' health notes to a familiar-looking wrong address was the one to stop.
+            Tomasz Wiśniewski: It left, so special-category details reached people with no right to them, and my week went to the recall and the letters.
+        }
     - else:
         Tomasz Wiśniewski: You're covering the Care Laundry desk inbox. Some is routine, some needs the data protection lead, and some was sent to catch you out. Report anything that looks wrong.
     }

@@ -1,6 +1,6 @@
 # m10 Full Disclosure: NPC dialogue review, round 3
 
-Phase 4 (dialogue), round 3. Reviewer: Opus, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, and the closing scenes. Base: commit `1625879bc` (dialogue R2, scenario design R2, puzzle chains R1, playtest R1). Line numbers are for that commit.
+Phase 4 (dialogue), round 3. Reviewer: review agent, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, and the closing scenes. Base: commit `1625879bc` (dialogue R2, scenario design R2, puzzle chains R1, playtest R1). Line numbers are for that commit.
 
 **The working tree moved during the review.** A fixer is applying scenario design R3 and puzzle chains R2 (uncommitted: `director_netherton`, `phone_agent0x99`, `tesseract`, `carryover_vars`, the ERB). Each finding below says whether the tree already deals with it. I also compiled and loop-checked the tree's inks (31 compile, 31 clean) and read its new lines (§5).
 

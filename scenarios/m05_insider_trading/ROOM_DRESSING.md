@@ -98,7 +98,7 @@ Counts: 1 blocker, 6 majors, 1 minor.
 
 ## Cycle 2 (2026-10-13): review of cycle 1, square-to-the-walls, and fixes
 
-A fresh Opus reviewer (read-only) went through the ten rooms against the skill's critique list and the hard constraints. All seven hard constraints passed: interactables 32 px+ apart (vault schedule/manifest 37 px, terminal/envelope 50 px, Mug/briefcase 90 px), Lab Rules readable with clear floor under it and the badge hook decor only, the vault's walk-in to Torres open (N3), every clue findable, "Heisenberg Leads Only" on the vault sign, door lanes clear, wall items within the wall face. Its verdict: no blockers; Patricia's office, the open office, the vault and Torres' office need another cycle.
+A fresh reviewer (read-only) went through the ten rooms against the skill's critique list and the hard constraints. All seven hard constraints passed: interactables 32 px+ apart (vault schedule/manifest 37 px, terminal/envelope 50 px, Mug/briefcase 90 px), Lab Rules readable with clear floor under it and the badge hook decor only, the vault's walk-in to Torres open (N3), every clue findable, "Heisenberg Leads Only" on the vault sign, door lanes clear, wall items within the wall face. Its verdict: no blockers; Patricia's office, the open office, the vault and Torres' office need another cycle.
 
 At the same time the coordinator passed on the user's rule, now in the skill (section 2, "Square to the walls, not isometric"): kitchen cabinets, counters, desks, shelving and racks must face straight on; one or two angled items a room at most. Checked every sprite in the ten rooms (contact sheet in the scratchpad): the first PixelLab batch had come back three-quarter for the kitchenette, espresso cabinet, fridge, fume hood, instrument rack, key safes, key cabinet, black rack, recycling bins, glovebox and laser bench; the house set's `network_rack1`, `aes_security_desk1`, `checkin_kiosk1` and `safe1` were three-quarter too.
 
@@ -143,7 +143,7 @@ Not changed: the IT notice stays takeable with no `readDisplay` (`slot_audit` pr
 
 ## Cycle 3 (2026-10-13): review of cycle 2
 
-A fresh Opus reviewer (read-only) checked the cycle 2 rooms sprite by sprite for the square-to-the-walls rule, confirmed the cycle 2 findings, and re-ran the hard constraints. All hard constraints pass except one spacing measured by the engine's own rule (Q11). Verdict: the lab, corridor and break room are done; the rest want one more cycle, mostly sprite swaps.
+A fresh reviewer (read-only) checked the cycle 2 rooms sprite by sprite for the square-to-the-walls rule, confirmed the cycle 2 findings, and re-ran the hard constraints. All hard constraints pass except one spacing measured by the engine's own rule (Q11). Verdict: the lab, corridor and break room are done; the rest want one more cycle, mostly sprite swaps.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -178,7 +178,7 @@ All of the above. New art, hand-drawn (`make_qdc_props.py`), registered with `re
 
 ## Cycle 5 (2026-10-13): confirmation review and interaction walk
 
-### Review (fresh Opus reviewer, read-only)
+### Review (fresh reviewer, read-only)
 
 All hard constraints pass, measured with the engine's tap rule (`gatherInteractablesNearClick`): tapping the centre of any scenario object gathers only that object in every room (vault terminal/envelope 57 px, schedule/manifest 37 px; Mug/briefcase 74 px; Bludit/drop 89 px; log/cabinet 121 px). The Lab Rules sit on the wall with clear floor under them and the badge hook is decor only; the vault walk-in from the S door to Torres is open (the HSM racks' collision ends at feet 186, the row y 190-256 is clear); every clue is reachable; door lanes clear; NPCs on clear floor; wall items within the wall face. Square to the walls: all 78 furniture sprites checked; every wall-lining piece is front-on, and the angled pieces are within one or two a room. Cycle 3's Q1-Q15 are closed or their reasons hold (Q13's fix introduced R1). Verdict: every room done; **room dressing can close, nothing above minor**.
 
@@ -194,7 +194,7 @@ All hard constraints pass, measured with the engine's tap rule (`gatherInteracta
 
 Counts: 0 blockers, 0 majors, 7 minors. Fixed 4, left 3 with reasons.
 
-### Interaction walk (Sonnet, game 2373, every room unlocked server-side; session stopped, :3001 left as found)
+### Interaction walk (scripted run, game 2373, every room unlocked server-side; session stopped, :3001 left as found)
 
 All ten rooms load with no "No Tiled item found", no missing texture and no 4xx/5xx. Every door of the corridor, open office and server room walked both ways with no snag. Lab Rules read in place and still on the wall after the read and after a page reload; the VIS badge hook is not interactable. Vault walk-in (N3): entered by the server room's north door, walked straight to Torres and talked, nothing in the way. Lisa, Owen, Halloran and Patricia reached from their doors. Fifteen of sixteen scenario objects opened directly.
 
@@ -205,7 +205,7 @@ All ten rooms load with no "No Tiled item found", no missing texture and no 4xx/
 | W3 | Lab | minor | The stool beside the lanyard rolled when pushed | **Fixed** with W1 |
 | W4 | Harness | note | `interact` on Owen and the Lab Rules needed a second call; the resume overlay loops on "Prev" | **Left:** harness timing, not layout |
 
-### Confirmation run (Sonnet, game 2380, every room unlocked server-side; sessions stopped)
+### Confirmation run (scripted run, game 2380, every room unlocked server-side; sessions stopped)
 
 After the chair fixes: the Lanyard, the Mug, Torres' Briefcase, the Bludit terminal, the Security Incident Log and the Locked Filing Cabinet each open directly, by the harness's top-left tap and by a centre tap, with no menu; no chair in any menu; no page errors. Nearest chairs 43-53 px. A chair shoved along the lab bench brought the menu back, which is why the lab stools were then swapped for fixed seats (`hospital_chair_south`; the chair check reads 0 hits, final lab shot game 2382).
 

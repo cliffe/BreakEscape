@@ -1,6 +1,6 @@
 # m06 Follow the Money: puzzle chains review, pass 5 round 2
 
-Read-only review (Opus, static). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill.
+Read-only review (static). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill.
 
 The state under review is HEAD `989355e2` (round 1's fixes). The m06 folder has no uncommitted changes. Citations: `erb:N` is `scenario.json.erb`; ink files by short name (`irina`, `phone`, `debrief`).
 

@@ -59,7 +59,7 @@ class RefreshTests(unittest.TestCase):
     def test_ca03_second_story_npc_without_position(self):
         # ca03 has two story NPCs of its own (host with a position, Leila without): only the host matches
         text, d = self._load('ca03_helpdesk_reset')
-        npcs = d['rooms']['training_room']['npcs']
+        npcs = [n for n in d['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_')]   # kit staff added in wave 2
         self.assertEqual([('position' in n) for n in npcs], [True, False])
         a, b = atr.find_host_span(text, shell='ca03_helpdesk_reset')
         self.assertEqual(json.loads(text[a:b])['id'], npcs[0]['id'])
@@ -144,6 +144,49 @@ class GeneratorTests(unittest.TestCase):
                            capture_output=True, text=True, env=env, cwd=tempfile.gettempdir())
         self.assertNotIn('/nonexistent/main', r.stdout + r.stderr)
         self.assertIn('repo root: ' + atr.REPO, r.stdout)
+
+
+class ConventionKitTextTests(unittest.TestCase):
+    """Review R1 minor 5: the convention guards in apply_training_room.kit_text (the empty-mappings and
+    messageGlobals branches, commit a6a5e28cf), on the ca00 shell built in memory. Nothing is written: the
+    shell text is built and spliced as a string, so no scenario file in the tree is touched."""
+
+    def spliced(self):
+        import gen_core00_shell as g
+        import office_kit as ok
+        _, sc, _, _, _ = g.build(bare=True)
+        row = ok.row_for('ca00_first_play')
+        self.assertTrue(row and row.get('convention') is True, 'the ca00 convention row is gone')
+        kit = ok.load_kit(row['company'])
+        text = json.dumps(sc, indent=2, ensure_ascii=False)
+        return sc, text, atr.kit_text(text, kit, row, 'ca00_first_play')
+
+    def test_kit_text_on_the_bare_ca00_shell_adds_only_kit_ep(self):
+        sc, text, out = self.spliced()
+        new = json.loads(out)
+        host = next(n for n in new['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_') and n.get('position'))
+        old_host = next(n for n in sc['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_') and n.get('position'))
+        # no empty eventMappings list is added, and none is invented where the host had none
+        self.assertEqual('eventMappings' in host, 'eventMappings' in old_host)
+        self.assertEqual(host.get('eventMappings'), old_host.get('eventMappings'))
+        # no triage set outcome gains messageGlobals
+        self.assertNotIn('messageGlobals', json.dumps(new))
+        self.assertNotIn('messageGlobals', json.dumps(sc))
+        # the only kit global is kit_ep
+        self.assertEqual({k: v for k, v in new['globalVariables'].items() if k.startswith('kit_')}, {'kit_ep': 'ca00'})
+        # and the kit NPCs did arrive, so the splice ran rather than returning the input
+        self.assertTrue([n for n in new['rooms']['training_room']['npcs'] if n['id'].startswith('kit_')])
+
+    def test_the_bare_ca00_shell_gets_no_event_mappings_key_when_the_host_has_none(self):
+        import gen_core00_shell as g
+        import office_kit as ok
+        _, sc, _, _, _ = g.build(bare=True)
+        host = next(n for n in sc['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_') and n.get('position'))
+        host.pop('eventMappings', None)
+        row = ok.row_for('ca00_first_play')
+        out = json.loads(atr.kit_text(json.dumps(sc, indent=2, ensure_ascii=False), ok.load_kit(row['company']), row, 'ca00_first_play'))
+        new_host = next(n for n in out['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_') and n.get('position'))
+        self.assertNotIn('eventMappings', new_host)
 
 
 if __name__ == '__main__':

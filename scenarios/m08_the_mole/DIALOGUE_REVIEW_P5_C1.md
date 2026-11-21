@@ -2,7 +2,7 @@
 
 # m08 The Mole: dialogue review, pass 5 cycle 1
 
-Reviewer: fresh Opus, read-only, 2026-10-14. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission and the season finale, judged as a TV spy thriller turned inward. The traitor is one of the player's own colleagues. Deduction must not be handed over by a task title, toast or NPC. Suspects should each be plausible, and red herrings should cost something. The season's threads get paid off: the teacher line, Nightshade (`docs/agents/M08_PASS_BRIEF.md`). Format and depth follow `scenarios/m07_architects_gambit/DIALOGUE_REVIEW_P5_C1.md`. Alignment, puzzle chains and scenario design are closed, and I don't reopen their decisions unless a line has gone wrong.
+Reviewer: fresh reviewer, read-only, 2026-10-14. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission and the season finale, judged as a TV spy thriller turned inward. The traitor is one of the player's own colleagues. Deduction must not be handed over by a task title, toast or NPC. Suspects should each be plausible, and red herrings should cost something. The season's threads get paid off: the teacher line, Nightshade (`docs/agents/M08_PASS_BRIEF.md`). Format and depth follow `scenarios/m07_architects_gambit/DIALOGUE_REVIEW_P5_C1.md`. Alignment, puzzle chains and scenario design are closed, and I don't reopen their decisions unless a line has gone wrong.
 
 Items handed to this stage, each answered below:
 - the off-duty agent's missing locker gossip (`PUZZLE_REVIEW_P5_C2.md:182`): D8-7;

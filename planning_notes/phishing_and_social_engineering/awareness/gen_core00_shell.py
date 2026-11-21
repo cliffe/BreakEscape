@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 
 REPO = awareness_deploy.repo_root()
@@ -243,8 +244,9 @@ def kiosk(ep_id, observations):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, ending, extra=None):
+             kiosk_obs, ending, extra=None, tier='none', kit_row=None):
     """ending: (title, body) of the training success screen (README "The ending convention")."""
+    # tier: the office-kit tier (LIVING_OFFICE_PLAN.md 4.4); 'none' leaves the output byte-identical, any other tier needs kit_row.
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -286,6 +288,12 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
@@ -347,7 +355,8 @@ META = {
 }
 
 
-def build():
+def build(bare=False):
+    """bare=True builds the shell as if it had no kit row (tests use it as the kit-free input)."""
     frag = json.load(open(f'{AW}/core00/defend.json'))
     EP = strip_private(copy.deepcopy(frag['awarenessEpisode']))
     assert EP['doneGlobal'] == DONE and EP['conclusionTaskId'] == TASK
@@ -357,6 +366,9 @@ def build():
         f'episode_{ep_id}_state': {},
         DONE: False,
     }
+    row = None if bare else office_kit.row_for(MISSION)   # None: tier 'none', no kit
+    if row and row.get('handAuthored'):
+        row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(
         MISSION, 'Before you start: how this works',
         "You're on an authorised exercise at Quayholt Insurance, a fictional company. This is a short brief before your first episode: how the course works, what is recorded, and how to report. Nothing real is asked for and there is nothing to get wrong.",
@@ -365,7 +377,8 @@ def build():
         (TASK, 'Read the brief'), DONE, globals_, {'awarenessEpisode': EP}, HOST, HOST['id'],
         ('A touch-screen kiosk with a short brief for new learners, ready to read.',
          'A touch-screen kiosk. The brief has been read.'),
-        ("You're set", "That's the brief. Start your first episode whenever you're ready."))
+        ("You're set", "That's the brief. Start your first episode whenever you're ready."),
+        tier=office_kit.tier_of(row), kit_row=row)
     # scenario() keys the kiosk's "done" variant on episode_<id>_defend_done; a brief has none, so use DONE.
     for o in sc['rooms']['training_room']['objects']:
         if o.get('type') != 'kiosk':     # only the kiosk's variants; kit objects carry their own

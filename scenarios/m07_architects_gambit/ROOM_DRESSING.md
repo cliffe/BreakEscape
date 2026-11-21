@@ -87,7 +87,7 @@ Counts: 1 blocker, 5 majors, 2 minors.
 
 ## Cycle 2 (2026-10-14): review of cycle 1, and fixes
 
-A fresh Opus reviewer (read-only; report kept as `build_evidence/dressing_c2/review_c2.md`) went through the six rooms against the skill's checklist, measured every slot and chair pair with the engine's tap rule (`game.js` `gatherInteractablesNearClick`, every pixel of each sprite), and checked each fixture against the object's text. Wall items, door lanes, the bottom rows and square-to-the-walls all passed; no counter, desk, rack or shelving is angled. Verdict: the operations floor works as the signature room; the server hall, SCADA and the vault need another cycle.
+A fresh reviewer (read-only; report kept as `build_evidence/dressing_c2/review_c2.md`) went through the six rooms against the skill's checklist, measured every slot and chair pair with the engine's tap rule (`game.js` `gatherInteractablesNearClick`, every pixel of each sprite), and checked each fixture against the object's text. Wall items, door lanes, the bottom rows and square-to-the-walls all passed; no counter, desk, rack or shelving is angled. Verdict: the operations floor works as the signature room; the server hall, SCADA and the vault need another cycle.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -142,7 +142,7 @@ A script (session scratchpad `m07-dressing-build/taps.py`) reads `slot_audit`'s 
 
 ## Cycle 3 (2026-10-14): review of cycle 2
 
-A fresh Opus reviewer (read-only; `build_evidence/dressing_c4/review_c3.md`) checked the cycle 2 rooms sprite by sprite, confirmed the cycle 2 findings, and checked my tap script against `game.js` (its logic matches: 32 px slop, top-left anchor for map objects, centre for NPCs; no centre tap gathers two things). Cycle 2 closures confirmed: M1, M2, M3, m1, m4, m5, m8-m14, m16, m17, m19; m2, m6 and m7's reasons hold. Not closed: m3 (the mug and headset drew behind their consoles: items-layer depth is feet + 0.5). In part: m15 (the cover read as a plinth), m18 (the open trench read as a grille). The six rooms read as one building.
+A fresh reviewer (read-only; `build_evidence/dressing_c4/review_c3.md`) checked the cycle 2 rooms sprite by sprite, confirmed the cycle 2 findings, and checked my tap script against `game.js` (its logic matches: 32 px slop, top-left anchor for map objects, centre for NPCs; no centre tap gathers two things). Cycle 2 closures confirmed: M1, M2, M3, m1, m4, m5, m8-m14, m16, m17, m19; m2, m6 and m7's reasons hold. Not closed: m3 (the mug and headset drew behind their consoles: items-layer depth is feet + 0.5). In part: m15 (the cover read as a plinth), m18 (the open trench read as a grille). The six rooms read as one building.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|

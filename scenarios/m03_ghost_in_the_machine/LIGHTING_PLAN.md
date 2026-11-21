@@ -187,7 +187,7 @@ What the tours show:
 - **Player torch:** in Danny's dark office the beam reaches Danny from the desk; in the server room it's faint against the racks.
 - **Strikes:** server room and CEO office captured frame by frame (`strike/`): dark, two staggered flashes per tube by about 270 ms, lit by about 900 ms.
 
-Not yet proven in a browser: a page reload at night staying night (and by day staying day). The engine resolves variants from the saved globals at load (`registerRoom` → `resolveRoomLighting`), and the node test covers the resolution, but my reload run (sync my game's state to :3001, reload) was blocked by the session's permission classifier. It needs a run by the coordinator or a Sonnet tester.
+Not yet proven in a browser: a page reload at night staying night (and by day staying day). The engine resolves variants from the saved globals at load (`registerRoom` → `resolveRoomLighting`), and the node test covers the resolution, but my reload run (sync my game's state to :3001, reload) was blocked by the session's permission classifier. It needs a run by the coordinator or a scripted tester.
 
 Screenshots: `build_evidence/lighting_c2/day/`, `night/` (tour flags `--close-intro --restore-off --check`, night adds `--globals clone_call_done=true,mission_phase=act2_infiltration --show-npc danny_foster`), `night/*-player-dark.png` and `-player-lit.png`, `strike/`. Day game 2143, night games 2144 and 2146 (reception, hallways re-shot after tuning), strikes 2145.
 

@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
@@ -260,8 +261,9 @@ def kiosk(ep_id, observations):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, ending, extra=None):
+             kiosk_obs, ending, extra=None, tier='none', kit_row=None):
     """ending: (title, body) of the training success screen (README "The ending convention")."""
+    # tier: the office-kit tier (LIVING_OFFICE_PLAN.md 4.4); 'none' leaves the output byte-identical, any other tier needs kit_row.
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -303,12 +305,36 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    # `after` is normally one line. When it is a {'catch': (c1, c2), 'miss': (m1, m2)} dict
+    # (a twin with a host line, mirroring the ca01 and ca12 twins), the done-branch splits on
+    # kit_key_caught into a two-clip catch and a two-clip miss. kit_key_caught comes from the
+    # defend set's keyMessage (office_kit), so the ink declares it and only reads it.
+    if isinstance(after, dict):
+        extra_var = 'VAR kit_key_caught = false\n'
+        after_block = (
+            '{ kit_key_caught:\n'
+            f"            {n}: {after['catch'][0]}\n"
+            f"            {n}: {after['catch'][1]}\n"
+            '        - else:\n'
+            f"            {n}: {after['miss'][0]}\n"
+            f"            {n}: {after['miss'][1]}\n"
+            '        }'
+        )
+    else:
+        extra_var = ''
+        after_block = f'{n}: {after}'
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -320,7 +346,7 @@ def ink_source(header, host, done, lines):
 // ================================================
 
 VAR {done} = false
-VAR hub_quiet = false
+{extra_var}VAR hub_quiet = false
 
 === start ===
 -> hub
@@ -330,7 +356,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {{ {done}:
-        {n}: {after}
+        {after_block}
     - else:
         {n}: {before}
     }}
@@ -368,11 +394,17 @@ HOSTS = {
 LINES = {
     ('e6', 'defend'): (
         "Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.",
-        "That's the phone cleared. If a text or a notice wants a code scanned or a short link tapped, open the app yourself instead.",
+        {'catch': ("You didn't scan that barrier QR or tap the parking text, so no card number and no work sign-in went anywhere.",
+                   'A code on an official-looking notice is the easy one to trust. Opening the app yourself skips the whole thing.'),
+         'miss': ('That barrier QR, and the parking-permit text behind it, were the one to stop.',
+                  'One tap later, a personal card was charged or a work sign-in captured, and the afternoon went on the phone to the bank.')},
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
-        "All five done, thanks. Whoever's voice it is, ring back on a number you already hold and that settles it.",
+        {'catch': ("You held that payment back, so a voice that sounded like the boss didn't move money out the door.",
+                   'The "keep this quiet" is the real tell. It\'s there to buy time before anyone checks.'),
+         'miss': ("That call in the boss's voice, asking to release a payment quietly, was the one to stop.",
+                  'The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.')},
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 
@@ -532,8 +564,12 @@ def defend_only(ekey):
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
+    row = office_kit.row_for(mission)   # None: tier 'none', no kit
+    if row and row.get('handAuthored'):
+        row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
-                       {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'], d['conclusion'])
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'], d['conclusion'],
+                  tier=office_kit.tier_of(row), kit_row=row)
     meta = meta_for(d['display'], d['desc'], d['minutes'], cfg['cybok'])
     ink = ink_source(f"Awareness {ekey.upper()}, defend only", host, done, LINES[(ekey, 'defend')])
     return mission, sc, meta, ink_name, ink
@@ -609,7 +645,8 @@ def check(ekey, pair, stage):
         conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
-                       {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)
+                       {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra,
+                  tier='none')   # checks never carry the kit (plan 4.4)
     meta = meta_for(display, desc, c['minutes'], cfg['cybok'], awareness_deploy.CHECK_ORGANISER_NOTE)
     when = 'before' if stage == 'pre' else 'after'
     ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, CHECK_LINES[(host['id'], stage)])

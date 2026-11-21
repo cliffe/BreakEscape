@@ -1,6 +1,6 @@
 # m04 Critical Failure: dialogue review, pass 5 cycle 3
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Reviewed: the ink as committed in 29cc8171 (tagdiff against HEAD: structure and prose unchanged in all 10 files), and the working-tree erb. The erb's working-tree diff against HEAD is room dressing only (room types, dimensions, `as-type` positions, `readDisplay`), with no dialogue fields touched. The SecGen XML and the four listed field guides were not opened.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Reviewed: the ink as committed in 29cc8171 (tagdiff against HEAD: structure and prose unchanged in all 10 files), and the working-tree erb. The erb's working-tree diff against HEAD is room dressing only (room types, dimensions, `as-type` positions, `readDisplay`), with no dialogue fields touched. The SecGen XML and the four listed field guides were not opened.
 
 Finding ids `D7-n`. Tags: **blocker / major / minor**. All mission-local unless marked.
 

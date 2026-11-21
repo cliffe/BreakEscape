@@ -434,7 +434,7 @@ Her card for the tape room will be in that office.
 // Beat 3.3 steps 1-2. Netherton is on the line from the aircraft's forward
 // cabin; his three lines are fixed and he says nothing else.
 = opening
-// VM hint, flag 3: checked against the VM plan (opus48). The credential's first
+// VM hint, flag 3: checked against the VM plan. The credential's first
 // line is story terms only (CONTRACT §11 item 2): a SAFETYNET staff credential,
 // issued before he left, never revoked. The name is said by Netherton below, not
 // anywhere the player reads for themselves. Voiced lines kept verbatim (no new audio).
@@ -785,7 +785,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 + {identity_scene_done and not name_topic_given} [About the name.]
     ~ name_topic_given = true
     He told us to call him Adrian on the course. None of us ever managed it.
-    // Educational R1 E-M4 (wording checked against the VM plan by the opus48 agent).
+    // Educational R1 E-M4 (wording checked against the VM plan by the VM agent).
     When someone leaves, we take back their kit and shut their accounts the same day. Not his.
     That's all you get tonight. The rest is afterwards.
     -> support_hub
@@ -800,12 +800,12 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
 // 4. VM help, flags 3-4: one story-level steer before flag 3, one between 3 and 4.
 + {salvage_opened and not flag4_submitted} [I'm on his box. Where do I look?]
     {flag3_submitted:
-        // VM hint, flag 4: checked against the VM plan (opus48). Name the target, imply no live link ("set to copy", as hour_read).
+        // VM hint, flag 4: checked against the VM plan. Name the target, imply no live link ("set to copy", as hour_read).
         Now all of it. Something on there is set to copy to Tomb Gamma. Take the whole box and we'll see what.
-        // Teaching R2-n2 (opus48): why full control — the mirror job sits where only the box's keeper (root) can read it, as flag 2's ledger did.
+        // Teaching R2-n2: why full control, the mirror job sits where only the box's keeper (root) can read it, as flag 2's ledger did.
         The copy job runs as the box's keeper. To read it, you have to be the keeper.
     - else:
-        // VM hint, flag 3: checked against the VM plan (opus48). Line kept vague: the owner reveal is the player's to make, not spoken here.
+        // VM hint, flag 3: checked against the VM plan. Line kept vague: the owner reveal is the player's to make, not spoken here.
         First, whose box it is. Somebody set it up and never handed it back.
         // VM settled 2026-10-23: Tomb Beta is entered through its old enrolment site, not a login. The binder (BETA crate) points to it.
         Its enrolment site's still live on the web. The binder in the crate stencilled BETA says where.
@@ -884,7 +884,7 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     }
 // 12. VM help, flag 2.
 + {flag1_submitted and not flag2_submitted} [The ledger. Where is it?]
-    // VM hint, flag 2: checked against the VM plan (opus48). Same machine as flag 1, going further in; stay off flag 1's "part that isn't public".
+    // VM hint, flag 2: checked against the VM plan. Same machine as flag 1, going further in; stay off flag 1's "part that isn't public".
     Same box you're already on. The live ledger sits where only the machine's keeper can reach. Get that far and it's yours.
     -> support_hub
 // 13. The legacy box (MC §4.3), once. Stage 8 M-01: also gone once his
@@ -1170,7 +1170,7 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     -> guides_menu
 + {tomb_beta_guide_offered and not tomb_beta_guide_hint_given} [Tomb Beta's server.]
     ~ tomb_beta_guide_hint_given = true
-    // VM hint, flag 3: checked against the VM plan (opus48). Points at the guide only, no method, no commands.
+    // VM hint, flag 3: checked against the VM plan. Points at the guide only, no method, no commands.
     #give_item:lab-workstation:m09_tomb_beta_field_guide
     On your workstation. Read the part about old services nobody shut down.
     -> guides_menu

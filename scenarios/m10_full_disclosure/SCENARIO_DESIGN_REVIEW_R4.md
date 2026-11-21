@@ -1,10 +1,10 @@
 # m10 Full Disclosure: scenario design review, round 4
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 4.
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 4.
 
 **Tree.** HEAD is 4c2442eb6. That includes:
 - 4e87628ec: SD R3, dialogue R3, puzzle chains R2 and the VM-gating finds;
-- be0cf36c8: opus48's login strings, so nothing reads PLACEHOLDER_ now;
+- be0cf36c8: the VM agent's login strings, so nothing reads PLACEHOLDER_ now;
 - the puzzle chains R3 review.
 
 While I was reading, the PC R3 fixer began editing the ERB, the HaX ink and the CONTRACT in the working tree (uncommitted). The edits:
@@ -87,7 +87,7 @@ The finds are in the right rooms. Two of them have pointers that some players wo
 
 ### 2d. Narrative: OK
 
-F13's notice line feeds the argument. I agree with PC R3 m2 on "His disarm sits on that box.": the game's disarm is his console in the core, so the line can read as if flag 3 stops the release. The wording goes to the user or opus48 (B5 item 4).
+F13's notice line feeds the argument. I agree with PC R3 m2 on "His disarm sits on that box.": the game's disarm is his console in the core, so the line can read as if flag 3 stops the release. The wording goes to the user or the VM agent (B5 item 4).
 
 ### 2d′–2d″: OK, unchanged
 
@@ -138,8 +138,8 @@ HaX is jammed in the gallery, and the aim description doesn't mention a key, so 
 Both are unvoiced.
 
 **m3. The duty sheet's login says "vos", and HaX calls it an operator's.** erb:188 (`release_login_user = 'vos'`, be0cf36c8); erb:3676-3684 ("RELEASE SERVICE. OPERATOR ON SHIFT.… Host login:"); `m10_phone_agent0x99.ink:565` ("One of his operators dropped a duty sheet"). The staging schedule in the same room says "Zero Day. Collecting on site: P. VOS." (erb:386), and Pieter Vos is in the next room. A player will read the sheet as Vos's, or as a clue that goes nowhere. Separately, "Host login" sits against HaX's "Get out of the container onto that host", which makes the breakout sound unnecessary. **Fix (story side; the account string is the VM's):**
-- Make it Vos's: "RELEASE SERVICE. ON-SITE COLLECTION: P. VOS." HaX: "Zero Day's man dropped his collection sheet by the east racks. His login's on it." That gives the gallery meeting with Vos something to land on. Alternatively, ask opus48 for an account name that isn't a character's.
-- Have opus48 confirm what the login opens, and label the sheet to match (for example "Release service login", if it lands inside the container), so the escape stays the step.
+- Make it Vos's: "RELEASE SERVICE. ON-SITE COLLECTION: P. VOS." HaX: "Zero Day's man dropped his collection sheet by the east racks. His login's on it." That gives the gallery meeting with Vos something to land on. Alternatively, ask the VM agent for an account name that isn't a character's.
+- Have the VM agent confirm what the login opens, and label the sheet to match (for example "Release service login", if it lands inside the container), so the escape stays the step.
 
 **m4. After wrongly accusing Quintero, HaX points at the wrong clue.** `m10_phone_agent0x99.ink:385-388, 441-444`. With `clue_door_log` and no alibi, "Ask me who was where at ten past. That's how we clear them." also fires for Quintero. Her recall needs `clue_bench_log` (ink:91), and the alibi breakdown puts her in the tunnel, which makes her look guiltier. Her own line, "Read the sheet.", is the right pointer. **Fix:** add `and officer_out != "quintero"` to the `accuse_refused` guard, and `and hax_suspect != "quintero"` to the `accuse_wrong` guard. Optionally, because the hub shows "[The door log.]" rather than "[Who was where at ten past?]" until `door_log_given`, show the alibi topic while `officer_out != ""` whatever `door_log_given` says, so the button matches HaX's words.
 
@@ -169,7 +169,7 @@ Both are unvoiced.
 4. m3: settle whose sheet it is (Vos's, or a non-character account), and label what the login opens.
 5. m4: no alibi pointer after accusing Quintero.
 
-**Worth considering:** n1, n2, d1 to d3. Also PC R3 m2's disarm wording, which goes to the user or opus48.
+**Worth considering:** n1, n2, d1 to d3. Also PC R3 m2's disarm wording, which goes to the user or the VM agent.
 
 ## Top five
 
@@ -181,8 +181,8 @@ Both are unvoiced.
 
 ## For the user
 
-- m3: is the release login meant to be Vos's? If yes, the sheet becomes his collection sheet and the story gains a link. If not, opus48 should give the account a name that isn't a character's.
-- PC R3 m2: "His disarm sits on that box." needs a story-only reword so it doesn't promise that flag 3 stops the release (B5 item 4 routes this to you or opus48).
+- m3: is the release login meant to be Vos's? If yes, the sheet becomes his collection sheet and the story gains a link. If not, the VM agent should give the account a name that isn't a character's.
+- PC R3 m2: "His disarm sits on that box." needs a story-only reword so it doesn't promise that flag 3 stops the release (B5 item 4 routes this to you or the VM agent).
 - The closing card's teaser (F11) and R1's VM questions 1, 2 and 4 still stand.
 
 ## Browser checks owed (not findings)

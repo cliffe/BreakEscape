@@ -337,7 +337,7 @@ Live, keyless server from the branch worktree on a free port (not 3000, 3001, 30
 6. Trouble and attack probe (fresh game per step): attack Julian at post, mid-walk, at the cooler and in a doorway; cooler off; the other walks home; tip-off text arrives before the naming and not after; `tipoff_source` is `"watch"`; Nightshade's generic tidy line plays in the confrontation; credits line shows. Debrief, three runs with no other misconduct: only Julian KO'd, only Agnieszka KO'd, both KO'd; each hears the conduct beat after the singular or plural line.
 7. Doors: walk all four ops doors, the archives lane (x 32-76) and the S door included, while both are at the cooler and while both are at post; no jam.
 8. Critical-path regression (scripted, cheap tier) with FLAGS_XML through `session-start.sh --flags`; `verify-run.rb` must show progress.
-9. Blind persona run (Sonnet), 15 minutes: does the floor feel alive; did the pair read as suspects; did the player find the open console and say what it taught.
+9. Blind persona run (scripted agent), 15 minutes: does the floor feel alive; did the pair read as suspects; did the player find the open console and say what it taught.
 
 ## 13. Open questions for the user
 

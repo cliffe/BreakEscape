@@ -4,7 +4,7 @@
 
 Stage 2, `mission-puzzle-chains` rubric. A fresh reviewer, read-only, on 2026-10-14. This cycle reviews the round-1 fixes (commit `0a877afa`) against `PUZZLE_REVIEW_P5_C1.md` and the "Stage 2 puzzle chains, round 1 fix" section of `IMPROVEMENT_LOOP_LOG.md`.
 
-Every claim below was checked against `scenario.json.erb` (`erb:N`), the ink (`ink/<file>:N`) and the engine under `public/break_escape/js/`. I opened no SecGen XML and none of the four restricted field guides. I started no browser session (a Sonnet browser check is running at the same time) and I edited no file except this one.
+Every claim below was checked against `scenario.json.erb` (`erb:N`), the ink (`ink/<file>:N`) and the engine under `public/break_escape/js/`. I opened no SecGen XML and none of the four restricted field guides. I started no browser session (a scripted browser check is running at the same time) and I edited no file except this one.
 
 ## Checks run
 

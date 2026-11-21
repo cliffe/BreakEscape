@@ -55,4 +55,4 @@ Accept. 0 blockers, 0 majors, 4 minors. All nine R2 minors are fixed correctly a
 
 ## Outcomes (orchestrator)
 
-- 0 blockers, 0 majors, 4 minors; all four to fix (Sonnet). Round 4 is a Sonnet delta.
+- 0 blockers, 0 majors, 4 minors; all four to fix (by the build agent). Round 4 is a delta review.

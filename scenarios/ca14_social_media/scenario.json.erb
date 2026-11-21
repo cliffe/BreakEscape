@@ -6,6 +6,7 @@
   "endGoal": "Write the test message, then sort the feed and inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -77,7 +78,26 @@
     "se_intel_df_leave": false,
     "se_intel_df_pet": false,
     "phish_df_cover_attempts": 0,
-    "phish_df_cover_landed": false
+    "phish_df_cover_landed": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca14",
+    "kit_ca14_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_merrin": {
+      "lines": [
+        "Deadline on the Harbour job.",
+        "Printer's warm again.",
+        "Client's in this morning."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -148,7 +168,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e14_social_media_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e14_fake_merrin": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -457,6 +480,10 @@
         "note": "Each change closes a found fact on the board. The same settings are the ones to check on your own profile."
       },
       "strings": {
+        "conceptPanel": {
+          "heading": "Where your posts lead",
+          "text": "To a real attacker, the message you composed under a colleague's name is the start of a second account in a partner's name that the studio trusts. The next move is to trade on that borrowed name, nudging someone into resetting a security answer or opening a warmer approach to the rest of the office. Checking a new contact by a route you already know leaves the fake account and its flattery with nowhere to go.\n\nA handful of public posts, a leaving card, a lanyard, a pet, were enough to build the approach, and one trusted reply gave up a security answer that then had to be reset. A week on, the fake partner account was reported and the studio had the awkward round of comparing notes. Before you leave, have a word with Julian."
+        },
         "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
@@ -925,8 +952,147 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_social_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_complete",
+              "condition": "value === true && globalVars.episode_e14_social_media_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_lorna_easton",
+          "displayName": "Lorna Easton",
+          "person": "lorna_easton",
+          "npcType": "person",
+          "position": {
+            "x": 4.5,
+            "y": 4.5
+          },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/lorna_easton_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Erinome",
+            "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Reception's been non-stop.",
+                "Kettle's on if you fancy one.",
+                "Lovely and quiet this afternoon."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_delphine_arvanitis",
+          "displayName": "Delphine Arvanitis",
+          "person": "delphine_arvanitis",
+          "npcType": "person",
+          "position": {
+            "x": 7.5,
+            "y": 4.5
+          },
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/delphine_arvanitis_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Despina",
+            "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Three deliveries already.",
+                "Phone's not stopped ringing.",
+                "Visitor book's filling up."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -951,6 +1117,26 @@
           ],
           "minigameData": {
             "episodeId": "e14_social_media"
+          }
+        },
+        {
+          "type": "leather_sofa",
+          "id": "kit_sofa",
+          "name": "Sofa",
+          "sprite": "leather_sofa1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+          "affordance": {
+            "satisfies": "rest",
+            "restores": 70,
+            "useSeconds": 8,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_merrin"
           }
         }
       ]

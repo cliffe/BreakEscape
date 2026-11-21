@@ -1,6 +1,6 @@
 # m03 Ghost in the Machine: dialogue review, pass 2 cycle 5 (confirmation read)
 
-Reviewer: fresh Opus, read-only, 2026-10-12. Skill: `npc-dialog-review`, run as a sign-off read. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M03_PASS2_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P2_C4.md`, "Dialogue cycle 4 fixes" in `IMPROVEMENT_LOOP_LOG.md`, commit fb3049cf. Line numbers refer to HEAD fb3049cf. The ink in the working tree matches it, and all eight files compile byte for byte to the committed JSON.
+Reviewer: fresh reviewer, read-only, 2026-10-12. Skill: `npc-dialog-review`, run as a sign-off read. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M03_PASS2_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P2_C4.md`, "Dialogue cycle 4 fixes" in `IMPROVEMENT_LOOP_LOG.md`, commit fb3049cf. Line numbers refer to HEAD fb3049cf. The ink in the working tree matches it, and all eight files compile byte for byte to the committed JSON.
 
 Scope, as the cycle-4 review asked: verify every cycle-4 finding at its line, read r1, r12, r14 and r16 in full as a player would, skim the other fourteen routes for regressions, and only raise new findings a player would notice.
 

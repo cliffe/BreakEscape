@@ -1,6 +1,6 @@
 # m04 Critical Failure: dialogue review, pass 5 cycle 1
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Alignment, puzzle chains and scenario design are closed and are not re-raised unless a line regressed. No m04 audio exists on 3.8, so no rewrite below costs a re-voice. The SecGen XML and the four listed field guides were not opened.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Alignment, puzzle chains and scenario design are closed and are not re-raised unless a line regressed. No m04 audio exists on 3.8, so no rewrite below costs a re-voice. The SecGen XML and the four listed field guides were not opened.
 
 Finding ids `D5-n`. Tags: **blocker / major / minor**. All findings are mission-local (ink or the erb's dialogue fields) unless marked.
 

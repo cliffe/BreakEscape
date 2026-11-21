@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e2_cv_lures_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e2_cv_lures_defend_defend_complete:
-        Fatima Begum: That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.
+        { kit_key_caught:
+            Fatima Begum: You held back that application whose attachment wanted a second click to open it, so nothing ran on the HR machine behind it.
+            Fatima Begum: A real CV just opens. The one asking for an extra step to view it is worth a second look.
+        - else:
+            Fatima Begum: That application with the attachment that wanted a second click was the one to stop.
+            Fatima Begum: It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.
+        }
     - else:
         Fatima Begum: Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.
     }

@@ -1,6 +1,6 @@
 # m05 Insider Trading: dialogue review, pass 5 cycle 1
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Gold standard: m04 and m06 after their three dialogue cycles (`DIALOGUE_REVIEW_P5_C1..C3.md` in each). Alignment, puzzle chains and scenario design are closed, so their decisions aren't reopened here unless a line has gone wrong. Two items were handed on to this phase: B3 (the debrief's long runs without a choice) and P10 (HaX's hub can show 14 choices). I didn't open the SecGen XML or the four listed field guides.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Gold standard: m04 and m06 after their three dialogue cycles (`DIALOGUE_REVIEW_P5_C1..C3.md` in each). Alignment, puzzle chains and scenario design are closed, so their decisions aren't reopened here unless a line has gone wrong. Two items were handed on to this phase: B3 (the debrief's long runs without a choice) and P10 (HaX's hub can show 14 choices). I didn't open the SecGen XML or the four listed field guides.
 
 `tts_cache/m05_insider_trading/` holds 8 clips, so none of the rewrites below costs much in re-voicing.
 

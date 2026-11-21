@@ -38,7 +38,9 @@ KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet ==
 
 def load_kit(company, kits_dir=None):
     with open(os.path.join(kits_dir or KITS_DIR, f'{company}.json')) as f:
-        return json.load(f)
+        kit = json.load(f)
+    check_pool(kit)
+    return kit
 
 
 def load_rows(kits_dir=None):
@@ -65,6 +67,38 @@ def active(row):
     return tier_of(row) != 'none'
 
 
+def is_convention(row):
+    """True for the ca00 convention form (brief 1.3): no triage set, no chatter, no host mappings, kit_ep
+    the only kit global; each kit NPC opens on the row's `stub` knot."""
+    return bool((row or {}).get('convention'))
+
+
+def has_pool(kit):
+    """False for a pool-exempt kit (`pool: null`, D12): no top-level pool, no chatter anywhere."""
+    return kit.get('pool') is not None
+
+
+def check_pool(kit):
+    """A kit with `pool: null` needs a non-empty `poolExempt` reason and no source carrying `chatter`;
+    a kit with a pool has no `poolExempt`. Raises ValueError."""
+    name = kit.get('company')
+    exempt = kit.get('poolExempt')
+    if has_pool(kit):
+        if exempt is not None:
+            raise ValueError(f'kit {name!r}: poolExempt is only for a kit with pool: null')
+        return
+    if 'pool' not in kit:
+        raise ValueError(f'kit {name!r}: needs a pool, or pool: null with a poolExempt reason')
+    if not (isinstance(exempt, str) and exempt.strip()):
+        raise ValueError(f'kit {name!r}: pool is null, so poolExempt must be a non-empty reason')
+    for src in kit.get('sources', []):
+        if (src.get('affordance') or {}).get('chatter'):
+            raise ValueError(f"kit {name!r}: pool is exempt, but source {src.get('id')!r} carries chatter")
+    for person, rec in kit.get('staff', {}).items():
+        if rec.get('chatterLines'):
+            raise ValueError(f'kit {name!r}: pool is exempt, but {person!r} has chatterLines')
+
+
 def chain_id(row):
     return row.get('chainId') or row['ep']
 
@@ -80,6 +114,8 @@ def shell_ids(sc, row=None):
     the row is the one place that already carries per-shell kit decisions, and guessing a prefix from the
     shell would wire host mappings to an event that never fires."""
     ep = sc['social']['awarenessEpisode']
+    if is_convention(row):
+        return None, f"episode_{ep['id']}_state"     # no triage set and no <prefix>complete (brief 1.3)
     prefix = (row or {}).get('prefix')
     if prefix is None:
         sets = sc['social'].get('triageSets') or []
@@ -137,12 +173,17 @@ def room_npcs(kit, row, prefix=None):
     """The two ambient staff as room NPC records, then the set piece's own `npcs`. Empty for tier none."""
     if not active(row):
         return []
-    pool_key = kit['pool']['key']
+    # chatter is written only for a kit with a pool and a row that is not the convention form
+    pool_key = kit['pool']['key'] if has_pool(kit) and not is_convention(row) else None
     out = []
     patches = _subst(_set_piece(kit, row).get('staff', {}), prefix, row)
     for person in row['ambient']:
         s = copy.deepcopy(kit['staff'][person])
-        lines = s.pop('chatterLines')
+        lines = s.pop('chatterLines', None)
+        if lines is not None and not has_pool(kit):
+            raise ValueError(f'kit {kit.get("company")!r}: {person!r} has chatterLines but the kit has no pool')
+        if lines is None and pool_key is not None:
+            raise KeyError(f'kit {kit.get("company")!r}: {person!r} has no chatterLines')
         sheet = s.pop('spriteSheet')
         npc = {
             'id': f'kit_{person}',
@@ -154,14 +195,21 @@ def room_npcs(kit, row, prefix=None):
             'spriteTalk': f'assets/characters/{sheet}_talk.png',
             'spriteVisemes': f'assets/characters/{sheet}_visemes.png',
             'storyPath': f'scenarios/_office_kit/ink/{person}_ambient.json',
-            'currentKnot': 'start',
-            'needsHome': s.pop('needsHome'),
-            'needsRooms': ['training_room'],
+            'currentKnot': row['stub'] if is_convention(row) else 'start',
         }
+        if 'needs' in s:
+            npc['needsHome'] = s.pop('needsHome')
+            npc['needsRooms'] = ['training_room']
+        else:
+            # a seated, needs-free colleague (D12): the needs system never registers them, so they
+            # carry no home or rooms; `seated` and `position` (a desk chair) come from the record
+            for k in ('needsHome', 'needsRooms', 'needsSpeed', 'chatterCooldownMin'):
+                s.pop(k, None)
         npc.update(s)
-        # the pool is spoken only through the engine-spoken coffee topic, in the object form
-        # that carries the same gate as the top-level pool (validator V13)
-        npc['chatter'] = {pool_key: {'lines': lines, 'requireGlobal': copy.deepcopy(kit['pool']['requireGlobal'])}}
+        if pool_key is not None:
+            # the pool is spoken only through the engine-spoken coffee topic, in the object form
+            # that carries the same gate as the top-level pool (validator V13)
+            npc['chatter'] = {pool_key: {'lines': lines, 'requireGlobal': copy.deepcopy(kit['pool']['requireGlobal'])}}
         npc.update(patches.get(person, {}))
         out.append(npc)
     # a set piece's own `npcs` (ca12's visitor): kit-owned records, after the ambient pair, written as the
@@ -174,12 +222,14 @@ def room_objects(kit, row, prefix=None):
     """Need sources plus the set piece's objects. Empty for tier none."""
     if not active(row):
         return []
-    pool_key = kit['pool']['key']
+    pool_key = kit['pool']['key'] if has_pool(kit) else None
     out = []
     for src in kit.get('sources', []):
         o = copy.deepcopy(src)
         aff = o.get('affordance', {})
-        if aff.get('chatter') == 'pool':
+        if is_convention(row):
+            aff.pop('chatter', None)       # the convention form has no chatter; the need affordance stays
+        elif aff.get('chatter') == 'pool':
             aff['chatter'] = pool_key
         out.append(o)
     out.extend(_subst(copy.deepcopy(_set_piece(kit, row).get('objects', [])), prefix, row))
@@ -190,6 +240,8 @@ def kit_globals(kit, row, prefix=None):
     """Globals to declare in globalVariables. Empty for tier none."""
     if not active(row):
         return {}
+    if is_convention(row):
+        return {'kit_ep': row['ep']}       # the shared mappings never fire in ca00, so declare nothing else
     g = {k: False for k in SHARED_BOOLS}
     g['kit_ep'] = row['ep']
     if row.get('stepAway'):
@@ -214,6 +266,22 @@ def message_globals(row):
     return {row['keyMessage']: KEY_GLOBAL}
 
 
+CAUGHT_VERDICTS = ('report', 'delete', 'verify')
+
+
+def message_caught_verdicts(row):
+    """The outcome.messageCaughtVerdicts entry for the row's keyMessage: the verdicts that count as
+    caught for it (the row's keyCaughtVerdicts, e.g. ['report'] for a breach notice whose lesson is to
+    report it), so a Delete does not set kit_key_caught (W2 build review M1). Empty when the row has no
+    keyMessage or no keyCaughtVerdicts: the engine default (Report, Delete or Verify) then applies."""
+    v = row.get('keyCaughtVerdicts')
+    if not message_globals(row) or not v:
+        return {}
+    if not isinstance(v, list) or not all(x in CAUGHT_VERDICTS for x in v):
+        raise ValueError(f"{row['id']}: keyCaughtVerdicts must be a list drawn from {CAUGHT_VERDICTS}, not {v!r}")
+    return {row['keyMessage']: list(v)}
+
+
 def kit_timers(kit, row, prefix=None):
     if not active(row):
         return []
@@ -222,7 +290,7 @@ def kit_timers(kit, row, prefix=None):
 
 def host_mappings(kit, row, prefix, state_global):
     """Host eventMappings, to be appended after the host's existing ones (plan 6.1)."""
-    if not active(row):
+    if not active(row) or is_convention(row):
         return []
     state = f'global_variable_changed:{state_global}'
     complete = f'global_variable_changed:{prefix}complete'
@@ -257,7 +325,10 @@ def scenario_fields(kit, row):
     if not active(row):
         return {}
     f = copy.deepcopy(kit.get('scenario', {}))
-    f['chatter'] = {kit['pool']['key']: _pool(kit)}
+    if is_convention(row):
+        f['npcThoughts'] = False       # nothing is spoken unprompted in ca00: no pool, no thoughts
+    elif has_pool(kit):
+        f['chatter'] = {kit['pool']['key']: _pool(kit)}
     return f
 
 
@@ -316,6 +387,7 @@ def kit_keyed(kit, row):
 def build(kit, row, prefix, state_global):
     """Everything the kit owns for one shell, in one dict (the form the tests compare)."""
     kit = apply_override(kit, row)
+    check_pool(kit)
     out = {
         'npcs': room_npcs(kit, row, prefix),
         'objects': room_objects(kit, row, prefix),
@@ -327,6 +399,8 @@ def build(kit, row, prefix, state_global):
     }
     if message_globals(row):
         out['messageGlobals'] = message_globals(row)
+    if message_caught_verdicts(row):
+        out['messageCaughtVerdicts'] = message_caught_verdicts(row)
     out.update(kit_keyed(kit, row))     # resources / roles: present only when the kit has them
     return out
 
@@ -395,6 +469,14 @@ def _kit_message_globals(outcome):
     return {k: v for k, v in mg.items() if str(v).startswith('kit_')} if isinstance(mg, dict) else {}
 
 
+def _kit_caught_verdicts(outcome):
+    """The kit-owned outcome.messageCaughtVerdicts entries: those for a message the kit's
+    messageGlobals lists (a kit_ global)."""
+    mcv = (outcome or {}).get('messageCaughtVerdicts')
+    ids = _kit_message_globals(outcome)
+    return {k: v for k, v in mcv.items() if k in ids} if isinstance(mcv, dict) else {}
+
+
 def strip_kit(sc, host_id=None):
     """A deep copy of a parsed shell with every kit-owned member removed."""
     sc = copy.deepcopy(sc)
@@ -430,6 +512,12 @@ def strip_kit(sc, host_id=None):
             del sc[key]
     sc['social']['awarenessEpisode'].pop('stepAway', None)
     oc = key_outcome(sc)
+    if _kit_caught_verdicts(oc):
+        rest = {k: v for k, v in oc['messageCaughtVerdicts'].items() if k not in _kit_message_globals(oc)}
+        if rest:
+            oc['messageCaughtVerdicts'] = rest
+        else:
+            del oc['messageCaughtVerdicts']
     if _kit_message_globals(oc):
         rest = {k: v for k, v in oc['messageGlobals'].items() if not str(v).startswith('kit_')}
         if rest:
@@ -467,7 +555,8 @@ def apply_kit(sc, kit, row, host_id=None):
     tr['npcs'] = tr['npcs'] + b['npcs']
     tr['objects'] = tr['objects'] + b['objects']
     host = _find_host(out, host_id)
-    host['eventMappings'] = host.get('eventMappings', []) + b['mappings']
+    if b['mappings'] or 'eventMappings' in host:       # a convention row has none: add no empty list
+        host['eventMappings'] = host.get('eventMappings', []) + b['mappings']
     out['globalVariables'].update(b['globals'])
     top = [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts']
     out = _insert_after(out, 'disableAttacks', top)
@@ -501,6 +590,9 @@ def apply_kit(sc, kit, row, host_id=None):
         if oc is None:
             raise ValueError(f"{row['id']}: keyMessage needs a triage set with an outcome")
         oc['messageGlobals'] = {**oc.get('messageGlobals', {}), **b['messageGlobals']}
+    if b.get('messageCaughtVerdicts'):
+        oc = key_outcome(out)
+        oc['messageCaughtVerdicts'] = {**oc.get('messageCaughtVerdicts', {}), **b['messageCaughtVerdicts']}
     return out
 
 
@@ -541,6 +633,9 @@ def kit_owned(sc, host_id=None):
     mg = _kit_message_globals(key_outcome(sc))
     if mg:
         out['messageGlobals'] = mg
+    mcv = _kit_caught_verdicts(key_outcome(sc))
+    if mcv:
+        out['messageCaughtVerdicts'] = mcv
     for key in KIT_KEYED:
         v = sc.get(key)
         mine = ({k: x for k, x in v.items() if str(k).startswith('kit_')} if isinstance(v, dict)
@@ -580,6 +675,8 @@ def hand_written(old, new):
              for m in old['mappings'] if _map_id(m) not in have]
     lost += [f'chatter pool {k}' for k in old['scenario'].get('chatter', {}) if k not in new['scenario'].get('chatter', {})]
     lost += [f'messageGlobals {k}' for k in old.get('messageGlobals', {}) if k not in new.get('messageGlobals', {})]
+    lost += [f'messageCaughtVerdicts {k}' for k in old.get('messageCaughtVerdicts', {})
+             if k not in new.get('messageCaughtVerdicts', {})]
     for key in KIT_KEYED:
         have = set(new.get(key, {}) if isinstance(new.get(key), dict) else [r.get('id') for r in new.get(key, [])])
         mine = old.get(key, {})
@@ -620,6 +717,8 @@ def reverts(old, new):
     out += [f'chatter pool {k} changed' for k in oc if k in nc and oc[k] != nc[k]]
     om, nm = old.get('messageGlobals', {}), new.get('messageGlobals', {})
     out += [f'messageGlobals {k} value {om[k]!r} -> {nm[k]!r}' for k in om if k in nm and om[k] != nm[k]]
+    ov, nv = old.get('messageCaughtVerdicts', {}), new.get('messageCaughtVerdicts', {})
+    out += [f'messageCaughtVerdicts {k} value {ov[k]!r} -> {nv[k]!r}' for k in ov if k in nv and ov[k] != nv[k]]
     return out
 
 

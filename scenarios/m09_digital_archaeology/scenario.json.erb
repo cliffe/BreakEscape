@@ -58,7 +58,7 @@ salvage_tail = %q{\n\nSALVAGE CAGE ACCESS\nMSJMQAEGDZNVI}
 # catalogue server (gates flag 1) and Tomb Beta's web service (gates flag 3).
 # The scenario binding carries only flags (flags_for_vm), not account names or
 # passwords, so they are fixed strings here, as m01's password list is. Filled
-# by the opus48 agent against the VM; Opus agents don't open the VM plan.
+# by the VM agent against the VM; review agents don't open the VM plan.
 catalogue_login_user = "catalogsvc"
 catalogue_login_password = "Catalog!Helena2016"
 # Tomb Beta's enrolment site is entered through a web-server weakness, not a
@@ -75,7 +75,7 @@ tomb_beta_web_port = "8016"
 # Blind playtest F13: the two target addresses. m01/m02 print a target's address
 # in an in-game note. Here the address comes from the binding when it has one
 # (Hacktivity: the VmSet's VM by title; standalone: vm_ips), as vm_object does for
-# the launchers. PLACEHOLDER fallback when neither is present: the opus48 agent or
+# the launchers. PLACEHOLDER fallback when neither is present: the VM agent or
 # the user should supply the fixed address the build uses, as m02 hard-codes its own.
 vm_ip_for = lambda do |title, fallback|
   if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
@@ -457,7 +457,7 @@ hax_maps << text_map("global_variable_changed:legacy_remark_sent", "value === tr
 # Educational R1 E-M3: the recruiter's method, once Noor has been told (A3-39).
 hax_maps << text_map("global_variable_changed:noor_told", "value === true", "A bonus in her first week. Her dad's dialysis already on file. Kindness first, then the need.", delay: 3000)
 # Educational R1 E-M4: leavers' access is now a line in HaX's "[About the name.]" topic
-# (the opus48-checked wording), so the A3-40 text is withdrawn rather than said twice.
+# (the VM-checked wording), so the A3-40 text is withdrawn rather than said twice.
 # Educational R1 E-n1: the guard's log (A3-41).
 hax_maps << text_map("global_variable_changed:incident_log_read", "value === true", "Five nights of warnings, and nobody read them. A log nobody reads is a diary.")
 hax_maps << text_map("global_variable_changed:noor_box_read", "value === true && globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted && !globalVars.legacy_remark_sent",

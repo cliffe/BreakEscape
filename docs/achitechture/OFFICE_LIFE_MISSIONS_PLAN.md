@@ -1,6 +1,6 @@
 # Office life in the campaign missions: plan for a reusable skill
 
-Status: plan only, nothing built. Written 2026-11-13; draft 17 of 2026-11-14 follows the user's decisions of that day (section 14), including the m02 picks. The pilot is m02 ransomed_trust. One engine item, E7 to E9 (section 9.1), is approved, is built from main and lands before the pilot's stage 4.
+Status: built. The pilot (m02) and the m01 to m10 builds have landed on main; this file is kept as the original plan and is not updated to match the builds (see each mission's office_life/ folder for what shipped). Written 2026-11-13; draft 17 of 2026-11-14 follows the user's decisions of that day (section 14), including the m02 picks. The pilot is m02 ransomed_trust. One engine item, E7 to E9 (section 9.1), is approved, is built from main and lands before the pilot's stage 4.
 
 This plan covers a new skill, `mission-office-life`, which brings the office-life engine (NPC needs, habits, chatter, exchanges, levers, the physical-pentest mechanics) into the SAFETYNET campaign missions m01 to m10. Each mission is handled in its own extra pass with four steps: analyse, design, implement, review. The plan sets out:
 

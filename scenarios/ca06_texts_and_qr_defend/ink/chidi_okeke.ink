@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e6_texts_and_qr_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e6_texts_and_qr_defend_defend_complete:
-        Chidi Okeke: That's the phone cleared. If a text or a notice wants a code scanned or a short link tapped, open the app yourself instead.
+        { kit_key_caught:
+            Chidi Okeke: You didn't scan that barrier QR or tap the parking text, so no card number and no work sign-in went anywhere.
+            Chidi Okeke: A code on an official-looking notice is the easy one to trust. Opening the app yourself skips the whole thing.
+        - else:
+            Chidi Okeke: That barrier QR, and the parking-permit text behind it, were the one to stop.
+            Chidi Okeke: One tap later, a personal card was charged or a work sign-in captured, and the afternoon went on the phone to the bank.
+        }
     - else:
         Chidi Okeke: Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.
     }

@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e7_voice_ceo_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e7_voice_ceo_defend_defend_complete:
-        Agnieszka Duda: All five done, thanks. Whoever's voice it is, ring back on a number you already hold and that settles it.
+        { kit_key_caught:
+            Agnieszka Duda: You held that payment back, so a voice that sounded like the boss didn't move money out the door.
+            Agnieszka Duda: The "keep this quiet" is the real tell. It's there to buy time before anyone checks.
+        - else:
+            Agnieszka Duda: That call in the boss's voice, asking to release a payment quietly, was the one to stop.
+            Agnieszka Duda: The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.
+        }
     - else:
         Agnieszka Duda: Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.
     }
