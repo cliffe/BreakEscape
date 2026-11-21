@@ -1,0 +1,44 @@
+{
+ "imports": {
+  "m08_accused_vector": true
+ },
+ "steps": [
+  {
+   "note": "Vector after a player who wrongly accused him in m08: the thanks line for saying sorry, 'Forget I said it' is taken back, and confirming the accusation gets the harder 'You've done this to me once' reply."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true
+   }
+  },
+  {
+   "talk": "vector",
+   "picks": [
+    "Why did you come",
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "You said sorry properly. I noticed. Someone has to read the paper, and I'm good at paper.",
+    "I'll try. I won't manage.",
+    "You've done this to me once. Check it properly, then say sorry properly."
+   ],
+   "notSaid": [
+    "Someone has to read the paper. I'm good at paper.",
+    "Check it properly. Then say sorry properly."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "vector",
+    "wrong_accusation": true
+   }
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "steps": [
+  {
+   "note": "Phantom with the whodunit live: the list names the unlisted cloner, 'Who signed for the case?' sets the bench-log clue, the accusation opens, is taken back once, then confirmed."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "whodunit_live": true
+   }
+  },
+  {
+   "talk": "phantom",
+   "picks": [
+    "Counting what",
+    "Who signed for the case",
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "That case went out with a cloner its sheet doesn't list.",
+    "Two names signed for the case.",
+    "Kowalczyk and Arakawa. Both signatures are good. The count isn't.",
+    "If that's wrong, Netherton loses Phantom till you can clear him. Sure?",
+    "Already written down. Never mind.",
+    "Ask me for my list next time. It has two names on it. Neither is mine.",
+    "Then I am a pair of hands short. Carry on."
+   ],
+   "notSaid": [
+    "Tonight's count balances."
+   ]
+  },
+  {
+   "expect": {
+    "signout_read": true,
+    "clue_bench_log": true,
+    "officer_out": "phantom",
+    "wrong_accusation": true
+   }
+  }
+ ]
+}

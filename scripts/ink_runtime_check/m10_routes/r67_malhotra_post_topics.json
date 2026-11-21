@@ -1,0 +1,33 @@
+{
+ "steps": [
+  {
+   "note": "Malhotra at the van before the breach: the comms line, the badge on the door log, why he asked for comms, then the plain exit. The accusation is not offered without both clues."
+  },
+  {
+   "set": {
+    "clue_door_log": true
+   }
+  },
+  {
+   "talk": "malhotra",
+   "picks": [
+    "The door log has your badge",
+    "You asked for comms tonight",
+    "Keep the line clean"
+   ]
+  },
+  {
+   "said": [
+    "Comms check's clean. I've done it twice.",
+    "It's my badge. It isn't my hand. I was talking to HaX at ten past. Ask her.",
+    "After the mole, they re-vetted me for a week over a form.",
+    "I'd like to be trusted with something. This is something.",
+    "Always do."
+   ],
+   "notSaid": [
+    "Relay's up. You're loud and clear.",
+    "You're WREN."
+   ]
+  }
+ ]
+}
