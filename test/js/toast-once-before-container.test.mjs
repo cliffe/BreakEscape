@@ -117,7 +117,7 @@ test('callers set the expectation before the toast', () => {
     // A note taken from a reopening container is said in the reopened window (no toast);
     // the routes that reopen nothing clear the expectation before their toast, and the
     // no-helper fallback holds its toast for the reopened window.
-    const noted = container.indexOf('noteNotice = window.noteAddedText?.(containerState.itemToTake.name)');
+    const noted = container.indexOf('const repeatTake = containerState.noteAlreadyHeld');
     assert.ok(noted > 0, 'the post-reader note notice is built from the taken item');
     const block = container.slice(noted, container.indexOf('if (!reopen) return;', noted));
     const clearAt = block.indexOf('window.clearExpectedPanel?.()');
