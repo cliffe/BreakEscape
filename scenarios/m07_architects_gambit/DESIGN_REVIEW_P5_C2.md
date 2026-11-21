@@ -1,6 +1,6 @@
 # m07 The Architect's Gambit: scenario design review, pass 5, cycle 2
 
-Reviewer: fresh Opus agent, read-only (2026-10-14). Skill: `scenario-design-review`. Static review. No browser session was started, because a Sonnet browser check runs alongside this one.
+Reviewer: fresh agent, read-only (2026-10-14). Skill: `scenario-design-review`. Static review. No browser session was started, because a scripted browser check runs alongside this one.
 
 Sources: `scenario.json.erb` and the eight `.ink` files at HEAD 0d68c70a (round-1 fixes; the m07 folder is clean in the working tree), the compiled JSON (02:38, newer than every `.ink`), `DESIGN_REVIEW_P5_C1.md`, and the round-1 section of `IMPROVEMENT_LOOP_LOG.md`. Engine files read: `scenario-timer-dispatcher.js` (reload resume) and `interactions.js` `handleObjectInteraction` (the `object_interacted` payload). I did not open the SecGen XML or the four restricted field guides. Scratch output is in the session scratchpad, `m07-design-reviewer-c2/`.
 

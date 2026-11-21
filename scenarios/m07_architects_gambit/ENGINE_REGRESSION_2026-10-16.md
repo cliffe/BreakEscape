@@ -1,6 +1,6 @@
 # m07 The Architect's Gambit: engine regression, 2026-10-16
 
-Regression run (answers known), keyless server :3001, headless, Sonnet-class tester. Game id **2590** (mission id 51), created fresh. Played start to credits in about 31 minutes of wall clock (verify-run: 1881 s). Nothing in the mission or the engine was edited and nothing was committed.
+Regression run (answers known), keyless server :3001, headless, tester. Game id **2590** (mission id 51), created fresh. Played start to credits in about 31 minutes of wall clock (verify-run: 1881 s). Nothing in the mission or the engine was edited and nothing was committed.
 
 - Session log: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/d6b8f541-8b07-49dd-af31-499f27c257e9/scratchpad/m07-engreg/session-2590.jsonl` (1993 commands)
 - Screenshots (same folder): `01_checkpoint.png` to `19_credits.png`

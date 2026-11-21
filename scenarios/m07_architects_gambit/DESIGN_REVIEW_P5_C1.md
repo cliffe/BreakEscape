@@ -1,6 +1,6 @@
 # m07 The Architect's Gambit: scenario design review, pass 5, cycle 1
 
-Reviewer: fresh Opus agent, read-only (2026-10-14). Skill: `scenario-design-review`, run in full. Static review: no browser session was started.
+Reviewer: fresh agent, read-only (2026-10-14). Skill: `scenario-design-review`, run in full. Static review: no browser session was started.
 
 Kind of game: a SAFETYNET campaign mission and the season's climax, judged as a TV spy thriller whose VM flags are required and woven into the story. Teaching comes through the VM work and the field guides.
 
