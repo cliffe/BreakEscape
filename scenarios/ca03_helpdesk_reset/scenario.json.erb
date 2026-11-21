@@ -92,6 +92,9 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca03",
+    "kit_ca03_out": false,
+    "kit_ca03_there": false,
+    "kit_ca03_done": false,
     "kit_ca03_host_said": false,
     "kit_key_caught": false
   },
@@ -107,6 +110,17 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca03_t_done",
+      "startOnGlobal": "kit_ca03_out",
+      "delayMs": 12000,
+      "condition": "!globalVars.kit_ca03_done",
+      "setGlobal": {
+        "kit_ca03_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -399,6 +413,7 @@
         "stage": null
       },
       "strings": {
+        "stepAway": "Look up from the kiosk to see how a case like this plays out here. It takes a few seconds, and your place is saved.",
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First, the red team: see what Quayholt's staff have put online, then ring the IT service desk as Gordon McLeish, a locked-out claims manager, and try to talk Leila Nassar into a password reset. Then swap seats: you're Leila, taking three calls and an overnight sign-in prompt. Only Leila's seat is scored.",
         "flipHeading": "Now you're the one answering",
         "flipIntro": "This is your call as Leila heard it on the service desk. The lines picked out below are what made it believable.",
@@ -413,13 +428,14 @@
         "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
         "conceptPanel": {
           "heading": "Why the call and the prompts are hard to stop",
-          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the impostor.\n\nAn unrequested sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood.\n\nTo a real attacker, the approval you pressed for is a staff account at an insurer, one that reaches claimants' personal and financial records and lets the intruder hide behind mailbox rules. Number matching, the control you just practised, is what breaks that chain, because an idle tap on a prompt nobody started now goes nowhere.\n\nWhen a prompt like this is approved, the account is taken, the claims mailbox is rebuilt and the whole team loses the afternoon locked out during the clean-up. An insurer's accounts hold health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high. Before you leave, have a word with Darren."
+          "text": "The caller had Gordon's name, team, manager and staff number, and every one was findable online, so none of them proved who was on the line. Only a callback to the number already on file could tell the real Gordon from the impostor.\n\nAn unrequested sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood.\n\nTo a real attacker, the approval you pressed for is a staff account at an insurer, one that reaches claimants' personal and financial records and lets the intruder hide behind mailbox rules. Number matching, the control you just practised, is what breaks that chain, because an idle tap on a prompt nobody started now goes nowhere.\n\nWhen a prompt like this is approved, the account is taken, the claims mailbox is rebuilt and the whole team loses the afternoon locked out during the clean-up. An insurer's accounts hold health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
         }
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -970,6 +986,32 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca03_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_there",
+              "condition": "value === true && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca03_done": true
+              },
+              "bark": "Someone's password got out, and whoever had it wanted to walk in as a name we'd all trust. That's why IT is signing everyone out."
             }
           ]
         },
@@ -1015,9 +1057,9 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
-              "initial": 70
+              "initial": 65
             }
           },
           "chatter": {
@@ -1030,7 +1072,50 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_anjali_rao",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca03_there": true
+              },
+              "bark": "I came over to use the spare and it's on the sign-in screen, asking for everything again. Darren, is it doing this to everyone?"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume",
+              "delayMs": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_niamh_doherty",
@@ -1079,7 +1164,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -1094,7 +1193,7 @@
           "observations": "A touch-screen training kiosk for the Quayholt service desk exercise: first the red-team brief and research, then the service desk queue.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e3_helpdesk_reset_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Quayholt service desk exercise. That's this one finished."
             }
           ],
@@ -1125,6 +1224,26 @@
             "capacity": 2,
             "chatter": "kit_quayholt"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca03_spare_pc",
+          "name": "Spare workstation",
+          "sprite": "pc4",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A spare workstation at the head of the table.",
+          "position": {
+            "x": 4.1875,
+            "y": 7.09375,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca03_out === true",
+              "value": "pc4_locked"
+            }
+          ]
         }
       ]
     }
