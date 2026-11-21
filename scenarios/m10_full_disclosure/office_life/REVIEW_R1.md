@@ -1,6 +1,6 @@
 # m10 office life: plan review R1
 
-Reviewer tier: Opus planning tier, read-only. Plan reviewed at commit 3f8768edc.
+Reviewer tier: planning tier, read-only. Plan reviewed at commit 3f8768edc.
 
 **Counts: 1 blocker, 3 majors, 5 minors.**
 

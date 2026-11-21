@@ -80,5 +80,5 @@ Accept with the minor fixes. No blockers or majors. R1's three majors are closed
 
 ## Outcomes (orchestrator)
 
-- 0 blockers, 0 majors, 9 minors. All nine to fix (Sonnet). Round 3 is a Sonnet delta review.
+- 0 blockers, 0 majors, 9 minors. All nine to fix (by the build agent). Round 3 is a delta review.
 - n7: the Q5 draft line is replaced before the user answers D83; AC0 is told to update the page.

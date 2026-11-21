@@ -1,6 +1,6 @@
 # m10 office life: plan review R6 (delta)
 
-Reviewer tier: Opus planning tier, read-only, after R5's majors and design decision. Scope: the diff cb9954611..ca3351f71 of PLAN.md and QUESTIONS.md against REVIEW_R5.md.
+Reviewer tier: planning tier, read-only, after R5's majors and design decision. Scope: the diff cb9954611..ca3351f71 of PLAN.md and QUESTIONS.md against REVIEW_R5.md.
 
 **Counts: 0 blockers, 1 major, 4 minors.** No finding needs a new design decision. All fixed in the same commit as this file.
 
