@@ -1107,7 +1107,8 @@ test('wave 3: every kit set-piece object over a table or a moved table item has 
     const placeholders = tablePlaceholderTypes(roomType);
     const perType = {};
     for (const m of moved) {
-      const t = baseOf(m.sprite);
+      // the engine claims by type (rooms.js: the sprite lookup misses, then it falls back to scenarioObj.type)
+      const t = baseOf(m.type);
       perType[t] = (perType[t] || 0) + 1;
       assert.ok(placeholders[t] > 0, `${name} ${m.id}: room ${roomType} has no ${t} placeholder in its table_items layer, so the engine would store it at its own depth (under the table)`);
     }
