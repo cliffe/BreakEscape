@@ -6870,6 +6870,10 @@ def check_engine_limits(json_data)
       end
 
       if node['postitNoteVariants']
+        if node['type'] != 'pc' || node['lockType']
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants but is #{node['type'] != 'pc' ? "type '#{node['type']}', not 'pc'" : "a PC with lockType '#{node['lockType']}'"}. " \
+                    "Only a plain PC (no lockType) shows the note, so it would never appear."
+        end
         if node['locked'] == true
           issues << "❌ ERROR: '#{path}' has postitNoteVariants and locked: true. The note view opens in place of the unlock, so the PC could never be opened."
         end
