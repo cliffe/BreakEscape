@@ -27,5 +27,116 @@
       "needsSpeed": 90,
       "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } }
     }
+  },
+  "setPieces": {
+    "ca11_stray_printout": {
+      "globals": {
+        "kit_ca11_at_tray": false,
+        "kit_ca11_done": false
+      },
+      "objects": [
+        {
+          "type": "photocopier",
+          "id": "kit_ca11_printer",
+          "name": "Photocopier",
+          "sprite": "photocopier1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 3.0,
+            "y": 1.6
+          },
+          "observations": "The shared photocopier against the back wall."
+        },
+        {
+          "type": "notes",
+          "id": "kit_ca11_printout",
+          "name": "Misdirected printout",
+          "sprite": "notes1",
+          "takeable": false,
+          "position": {
+            "x": 2.97,
+            "y": 2.0,
+            "elevation": 20
+          },
+          "revealOnGlobal": "kit_ca11_out",
+          "observations": "A care home's resident list, with health notes. Not Carrholme's."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca11_t_done",
+          "startOnGlobal": "kit_ca11_out",
+          "delayMs": 14000,
+          "condition": "!globalVars.kit_ca11_done",
+          "setGlobal": {
+            "kit_ca11_done": true
+          }
+        }
+      ],
+      "staff": {
+        "yusuf_demir": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3.5,
+                  "y": 3.7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_yusuf_demir",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca11_at_tray": true
+              },
+              "bark": "This printout isn't ours. It's a care home's resident list, with health notes on it. Someone sent it here by mistake."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.0,
+                  "y": 4.2
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca11_done": true
+              },
+              "bark": "You'll want this today. In the wrong hands it's a shortlist of vulnerable people, with their addresses, handed over for free."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
+    }
   }
 }

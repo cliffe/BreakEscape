@@ -83,6 +83,9 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca08",
+    "kit_ca08_out": false,
+    "kit_ca08_there": false,
+    "kit_ca08_done": false,
     "kit_ca08_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +101,17 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca08_t_done",
+      "startOnGlobal": "kit_ca08_out",
+      "delayMs": 12000,
+      "condition": "!globalVars.kit_ca08_done",
+      "setGlobal": {
+        "kit_ca08_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -467,6 +481,7 @@
         "line": "Most of the damage happens between noticing and reporting."
       },
       "strings": {
+        "stepAway": "Look up from the kiosk to see how a case like this plays out here. It takes a few seconds, and your place is saved.",
         "defendIntro": "Go through the signs in the colleague's inbox and decide what to do with each one. Some mean someone else is in the account, and some are ordinary, and it is not always obvious which from the first line. Take them at your own pace.",
         "allPhishRight": "Every sign was caught, with every reason named.",
         "teamLine": "By reporting or checking {n} of these rather than carrying on, you got a taken-over account looked at sooner.",
@@ -495,14 +510,15 @@
           },
           {
             "heading": "The minutes that matter",
-            "text": "To a real attacker, one approved sign-in is a trusted internal account, worth far more than an outside one because its messages are believed, its prompts reset more passwords, and its reach runs to the shared drive. The damage lands in the gap between noticing something is wrong and reporting it. Reporting the moment it feels off, rather than waiting to be sure, is where the chain breaks, because it closes that gap before the account can be spent.\n\nA report made in the first few minutes is what keeps a taken-over account from sending messages in a colleague's name, locking him out and reaching the shared drive. Because client and claimant details sit in that mailbox and on that drive, under UK GDPR the organisation assesses the breach without undue delay and, where it must report, tells the ICO within 72 hours, with the people affected told where the risk to them is high. A colleague spent the afternoon on the recovery either way. Before you leave, have a word with Anjali."
+            "text": "To a real attacker, one approved sign-in is a trusted internal account, worth far more than an outside one because its messages are believed, its prompts reset more passwords, and its reach runs to the shared drive. The damage lands in the gap between noticing something is wrong and reporting it. Reporting the moment it feels off, rather than waiting to be sure, is where the chain breaks, because it closes that gap before the account can be spent.\n\nA report made in the first few minutes is what keeps a taken-over account from sending messages in a colleague's name, locking him out and reaching the shared drive. Because client and claimant details sit in that mailbox and on that drive, under UK GDPR the organisation assesses the breach without undue delay and, where it must report, tells the ICO within 72 hours, with the people affected told where the risk to them is high. A colleague spent the afternoon on the recovery either way."
           }
         ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -1012,6 +1028,32 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e8_after_the_click_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca08_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_there",
+              "condition": "value === true && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca08_done": true
+              },
+              "bark": "Thank you. We can shut that account down before it gets past your machine."
             }
           ]
         },
@@ -1047,7 +1089,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -1062,7 +1104,50 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4.5,
+                  "y": 4.0
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_darren_price",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca08_there": true
+              },
+              "bark": "My screen's locked me out and a shared folder won't open. If someone's in my account, they'll be sending as me. Reporting it now."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume",
+              "delayMs": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_niamh_doherty",
@@ -1111,7 +1196,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -1126,7 +1225,7 @@
           "observations": "A touch-screen training kiosk for the Quayholt after-the-click exercise: first the red-team brief, research and the one email to write, then the signs to sort in the colleague's account.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e8_after_the_click_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Quayholt after-the-click exercise. That's this one finished."
             }
           ],
@@ -1157,6 +1256,39 @@
             "capacity": 2,
             "chatter": "kit_quayholt"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca08_screen",
+          "name": "Darren's workstation",
+          "sprite": "pc1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "Darren's workstation.",
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca08_out === true",
+              "value": "pc1_locked"
+            }
+          ]
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca08_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
         }
       ]
     }

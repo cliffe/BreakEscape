@@ -61,9 +61,23 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca11",
+    "kit_ca11_out": false,
+    "kit_ca11_at_tray": false,
+    "kit_ca11_done": false,
     "kit_ca11_host_said": false,
     "kit_key_caught": false
   },
+  "timers": [
+    {
+      "id": "kit_ca11_t_done",
+      "startOnGlobal": "kit_ca11_out",
+      "delayMs": 14000,
+      "condition": "!globalVars.kit_ca11_done",
+      "setGlobal": {
+        "kit_ca11_done": true
+      }
+    }
+  ],
   "social": {
     "triageSets": [
       {
@@ -468,6 +482,7 @@
         "mode": "montage"
       },
       "strings": {
+        "stepAway": "Look up from the kiosk to see how a case like this plays out here. It takes a few seconds, and your place is saved.",
         "weakestTells": "The reasons most often missed: {names} ({counts} each).",
         "weakestTell": "The reason most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you make some of the ordinary choices anyone would make on a busy morning; then you see, six months on, where each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored.",
@@ -482,7 +497,7 @@
         "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
         "conceptPanel": {
           "heading": "Behind every row is a person",
-          "text": "To a real attacker, the items sent astray here are a gift: health and contact details for residents, staff and a driver, landing where they can be read and kept. The next move is to approach the named people with a believable story that already knows their circumstances. Checking who an item is really going to before it leaves is where the chain breaks, because the details never leave the building for anyone to collect.\n\nWhen care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families. Under UK GDPR a breach like this must be reported to the ICO unless it is unlikely to be a risk, and the people affected are told only where the risk to them is high. Before you leave, have a word with Tomasz."
+          "text": "To a real attacker, the items sent astray here are a gift: health and contact details for residents, staff and a driver, landing where they can be read and kept. The next move is to approach the named people with a believable story that already knows their circumstances. Checking who an item is really going to before it leaves is where the chain breaks, because the details never leave the building for anyone to collect.\n\nWhen care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families. Under UK GDPR a breach like this must be reported to the ICO unless it is unlikely to be a risk, and the people affected are told only where the risk to them is high."
         },
         "flipMontageByChoice": {
           "overtime_sheet": {
@@ -506,7 +521,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "awareness": {
       "ruleOfThumb": {
@@ -617,6 +633,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca11_out": true
+              }
             }
           ]
         },
@@ -655,7 +687,66 @@
               "urgentAt": 50,
               "initial": 65
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3.5,
+                  "y": 3.7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_yusuf_demir",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca11_at_tray": true
+              },
+              "bark": "This printout isn't ours. It's a care home's resident list, with health notes on it. Someone sent it here by mistake."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.0,
+                  "y": 4.2
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_at_tray",
+              "condition": "value === true && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca11_done": true
+              },
+              "bark": "You'll want this today. In the wrong hands it's a shortlist of vulnerable people, with their addresses, handed over for free."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca11_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -670,7 +761,7 @@
           "observations": "A touch-screen training kiosk for the Carrholme Care Laundry exercise: first the morning's ordinary choices, then where each led, then the desk inbox to sort.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e11_misdirected_data_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Carrholme Care Laundry exercise. Nothing left to do here."
             }
           ],
@@ -699,6 +790,33 @@
               "dy": 1.25
             }
           }
+        },
+        {
+          "type": "photocopier",
+          "id": "kit_ca11_printer",
+          "name": "Photocopier",
+          "sprite": "photocopier1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 3.0,
+            "y": 1.6
+          },
+          "observations": "The shared photocopier against the back wall."
+        },
+        {
+          "type": "notes",
+          "id": "kit_ca11_printout",
+          "name": "Misdirected printout",
+          "sprite": "notes1",
+          "takeable": false,
+          "position": {
+            "x": 2.97,
+            "y": 2.0,
+            "elevation": 20
+          },
+          "revealOnGlobal": "kit_ca11_out",
+          "observations": "A care home's resident list, with health notes. Not Carrholme's."
         }
       ]
     }
