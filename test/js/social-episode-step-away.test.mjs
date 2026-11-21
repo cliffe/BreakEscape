@@ -731,6 +731,39 @@ test('gate B D3: the hold also holds at the triage result (stage defend, defend 
     }
 });
 
+test('early click 2: a live step-away beat keeps the success screen held after a debrief reopen', () => {
+    const ep = fullEpisode();
+    const key = M.stateKey(ep.id);
+    const defendDone = { v: 1, done: [...ATTACK_DONE, 'defend'] };
+    const seen = { ...defendDone, debriefSeen: true };
+    const finished = { v: 1, done: [...ATTACK_DONE, 'defend', 'debrief'], debriefSeen: true };
+    const live = { kit_ca05_out: true, kit_ca05_done: false };
+    // Look up picked, debrief reopened and seen: still held while the beat runs
+    assert.ok(M.stepAwayHeld(ep, seen, live) === true);
+    assert.ok(M.stepAwayHeld(ep, finished, live) === true, 'Finish mid-beat still waits for the beat');
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca05_out: true }) === true, 'done absent counts as not done');
+    // the beat is done: released again (accepted: overlay shows once the beat ends)
+    const over = { kit_ca05_out: true, kit_ca05_done: true };
+    assert.ok(M.stepAwayHeld(ep, seen, over) === false);
+    assert.ok(M.stepAwayHeld(ep, finished, over) === false);
+    // Carry on (no out) or no globals: unchanged
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca05_out: false, kit_ca05_done: false }) === false);
+    assert.ok(M.stepAwayHeld(ep, seen, {}) === false);
+    assert.ok(M.stepAwayHeld(ep, seen) === false);
+    assert.ok(M.stepAwayHeld(ep, defendDone, { kit_ca05_out: false }) === true, 'unseen debrief still holds as before');
+    // any shell's kit_<ep> pair works; a non-stepAway episode never holds
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca16_out: true, kit_ca16_done: false }) === true);
+    assert.ok(M.stepAwayHeld(fullEpisode({ stepAway: false }), seen, live) === false);
+    assert.ok(M.stepAwayHeld(twinEpisode(), { v: 1, done: ['brief'] }, live) === false);
+    // through the starter's live read and the success screen's registry
+    setup(ep, { [key]: seen, ...live });
+    assert.ok(stepAwayHoldNow() === true);
+    assert.ok(SS.successScreenHeld() === true);
+    window.gameState.globalVariables.kit_ca05_done = true;
+    assert.ok(stepAwayHoldNow() === false);
+    assert.ok(SS.successScreenHeld() === false);
+});
+
 test('gate B D3: a reload on the triage result opens the defend launch, the result restores, Continue shows the panel', () => {
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE], defendProgress: CLEANED }, [DEFEND_COMPLETE]: true, kit_defend_done: true });

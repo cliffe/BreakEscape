@@ -78,6 +78,21 @@ export function stepAwayOn(episode) {
 }
 
 /**
+ * Whether a step-away beat is live: Look up set a shell's `kit_<ep>_out` global and its
+ * `kit_<ep>_done` is not yet true. The shell's mapping on the step-away event sets `_out`, and a
+ * Carry on never does, so with no `_out` this is false. Read from the globals alone, so it holds
+ * after a reload. A shell declares one beat, so any such pair counts.
+ */
+export function stepAwayBeatLive(globals) {
+    if (!isObj(globals)) return false;
+    for (const key of Object.keys(globals)) {
+        const m = /^(kit_.+)_out$/.exec(key);
+        if (m && globals[key] === true && globals[`${m[1]}_done`] !== true) return true;
+    }
+    return false;
+}
+
+/**
  * EC1 (d): whether the success screen waits, read from saved state alone so it holds after a
  * reload: a step-away episode whose defend round is complete and whose debrief is neither
  * finished nor closed (debriefSeen). The round counts as complete when the defend stage is done,
@@ -88,6 +103,9 @@ export function stepAwayOn(episode) {
 export function stepAwayHeld(episode, raw, globals = null) {
     if (!stepAwayOn(episode)) return false;
     const state = readState(episode, raw);
+    // A beat that Look up started and that has not ended keeps the screen held even after the
+    // debrief was reopened and seen or finished, so it cannot cover the room mid-request.
+    if (stepAwayBeatLive(globals)) return true;
     if (state.done.includes('debrief') || state.debriefSeen === true) return false;
     if (state.done.includes('defend')) return true;
     return state.stage === 'defend' && isObj(globals) && globals[`${defendPrefix(episode.id)}complete`] === true;
