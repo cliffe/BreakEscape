@@ -1,7 +1,7 @@
 {
-  "key": "aa00eb0ec43e4ca22119fe279e76d261",
+  "key": "4deb560d5b03ebb84bbfdc5dc8af009a",
   "npc": "tomasz_wisniewski",
-  "text": "It went unreported, so the staff on it were never warned, and my week went to the recall and the letters.",
+  "text": "Nine staff, with their hours and health notes, are on that sheet. Until it reaches me they can't be warned, and my week goes on a recall and letters.",
   "voice": "Algieba",
   "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca11_misdirected_data_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:52:49Z"
+  "recorded_at": "2026-11-21T20:48:10Z"
 }
