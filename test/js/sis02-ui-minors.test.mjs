@@ -223,6 +223,8 @@ test('m8: gameConfirm without closeX is unchanged: two buttons, no X; closeX is 
     await tick();
     const c = css('notifications.css');
     assert.ok(/\.game-confirm-has-x \{[^}]*position: relative/.test(c), 'dialog anchors its X');
+    assert.ok(/\n\.game-modal-close::after \{[^}]*inset: -14px/.test(c), 'one shared hit area for the dialog X');
+    assert.ok(!/has-x[^{]*::after/.test(c), 'no per-dialog hit-area override');
 });
 
 test('m8: confirm_action passes closeX only when the action sets it; the scenario cable action does', async () => {

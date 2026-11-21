@@ -368,7 +368,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 }
 
 /* A confirm with one named button and the corner X (options.closeX): the X sits inside the
-   frame, the message stops short of it, the hit area is 44px */
+   frame and the message stops short of it. Its hit area is the shared one below. */
 .game-confirm-has-x {
     position: relative;
 }
@@ -377,7 +377,9 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     padding-right: 40px;
 }
 
-.game-confirm-has-x .game-modal-close::after {
+/* One hit area for every themed dialog X: the drawn 30px box keeps its size and the target
+   reaches 44px (the same -14px reach as .minigame-close-button::after). Nothing is drawn. */
+.game-modal-close::after {
     content: '';
     position: absolute;
     inset: -14px;
