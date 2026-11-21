@@ -47,7 +47,7 @@ function normalizeStatus(status) {
 // never tells the player to select rows when none can be selected (sis02 blind playtest m7)
 // The Confirm button waits for the certification record; this line says so in words (the
 // grey button is not the only cue) without naming where the record is
-export const SIS_CONFIRM_LOCKED_TEXT = 'Certification record needed to confirm tampering';
+export const SIS_CONFIRM_LOCKED_TEXT = 'Certification document needed to confirm tampering';
 
 export function sisHelpText(canCompare, selectableCount) {
     const nothingToSelect = !(selectableCount > 0);

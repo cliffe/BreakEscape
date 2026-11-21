@@ -150,9 +150,12 @@
 
 /* The words that say why Confirm is grey; the border and marker keep it from being colour only */
 .sis-confirm-reason {
-    margin-top: 8px;
     color: #f0d9a0;
     font-size: 16px;
+}
+
+.sis-confirm-reason:not(:empty) {
+    margin-top: 8px;
 }
 
 .sis-confirm-reason:not(:empty)::before {

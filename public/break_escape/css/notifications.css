@@ -423,8 +423,11 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     /* Scrolls inside the frame; gameDisplay adds the shared .pixel-scroll class for the bar */
 }
 
-/* With no title the body starts at the top edge, under the close X */
-.game-display-dialog .game-display-body:first-child {
+/* With no title the body follows the close X directly: start it below the X's 44px target
+   (the X is 10px from the top, 30px tall, with a 14px reach: 54px) and clear of it on the
+   right, so neither the text nor the scrollbar sits under the target */
+.game-display-dialog .game-modal-close + .game-display-body {
+    margin-top: 26px;
     padding-right: 40px;
 }
 

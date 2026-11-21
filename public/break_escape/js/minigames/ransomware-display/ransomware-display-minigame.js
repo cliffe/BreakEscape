@@ -108,6 +108,19 @@ export class RansomwareDisplayMinigame extends MinigameScene {
     }
 
     ensureDeadlineTimestamp() {
+        // At a story rate with a game clock, the countdown is derived from the clock's
+        // elapsed time on every tick, as the HUD timers are. Nothing is read from or written
+        // to the saved `ransomware_deadline_at` on this path, so a reload cannot drift the note
+        // and an old 1:1 saved deadline is ignored.
+        const clockRate = ransomTimerRate(this.params.lockable?.scenarioData?.minigameData);
+        if (clockRate > 1 && typeof window.gameClock?.elapsedMs === 'function') {
+            const hours = Number(this.params.lockable?.scenarioData?.minigameData?.timerHours);
+            this.timerRate = clockRate;
+            this.clockHours = Number.isFinite(hours) && hours > 0 ? hours : TIMER_DURATION_MS / 3600000;
+            this.deadlineAt = null;
+            return;
+        }
+        this.clockHours = null;
         const vars = window.gameState?.globalVariables || {};
         const existingDeadline = parseTimestamp(vars.ransomware_deadline_at);
 
@@ -136,11 +149,13 @@ export class RansomwareDisplayMinigame extends MinigameScene {
 
     updateTimerDisplay() {
         const timerEl = this.gameContainer.querySelector('#ransomware-timer-value');
-        if (!timerEl || !this.deadlineAt) {
+        if (!timerEl || (!this.deadlineAt && !this.clockHours)) {
             return;
         }
 
-        const remainingMs = (this.deadlineAt - Date.now()) * (this.timerRate || 1);
+        const remainingMs = this.clockHours
+            ? this.clockHours * 3600000 - window.gameClock.elapsedMs() * this.timerRate
+            : (this.deadlineAt - Date.now()) * (this.timerRate || 1);
         const expired = remainingMs <= 0;
 
         timerEl.textContent = formatCountdown(remainingMs);

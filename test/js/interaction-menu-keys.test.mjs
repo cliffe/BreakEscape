@@ -560,3 +560,40 @@ test('showInteractionMenu: a mouse click in a narrow window puts the menu clear 
         reset();
     }
 });
+
+// m5 (round 2): jsdom has no layout, so pin the CSS numbers that make the X target.
+test('menu X geometry: target at least 44px, reach no more than the head padding, entries clear', () => {
+    const src = readFileSync(join(js, 'ui/interaction-menu.js'), 'utf8');
+    const rule = (sel) => { const i = src.indexOf(sel + ' {'); assert.ok(i >= 0, 'rule ' + sel); return src.slice(i, src.indexOf('}', i)); };
+    const px = (block, prop) => Number(block.match(new RegExp(prop + ':\\s*(-?\\d+)px'))[1]);
+    const x = rule('#be-interaction-menu .be-im-close');
+    const reach = -px(rule('#be-interaction-menu .be-im-close::after'), 'inset');
+    const size = Math.min(px(x, 'width'), px(x, 'height'));
+    assert.ok(size + 2 * reach >= 44, 'target ' + (size + 2 * reach) + 'px is at least 44');
+    const head = rule('#be-interaction-menu .be-im-head');
+    const pad = head.match(/padding:\s*(\d+)px (\d+)px (\d+)px (\d+)px/);
+    assert.ok(pad !== null, 'head padding is four values');
+    assert.ok(reach <= Number(pad[3]), 'reach ' + reach + ' is no more than the head bottom padding ' + pad[3]);
+    assert.ok(reach <= Number(pad[1]) + 4, 'sideways reach stays in the head right pad plus the menu padding');
+    assert.ok(reach <= px(head, 'gap'), 'reach is no more than the gap to the title');
+    const notif = readFileSync(join(js, '../css/notifications.css'), 'utf8');
+    const sharedReach = -px(notif.slice(notif.indexOf('.game-modal-close::after {')), 'inset');
+    assert.ok(sharedReach === 14, 'the shared reach is 14 (the menu overrides it with its own 6)');
+});
+
+test('untitled gameDisplay: the body starts below the X reach and clear of it', () => {
+    const css = readFileSync(join(js, '../css/notifications.css'), 'utf8');
+    assert.ok(!/\.game-display-body:first-child/.test(css), 'the never-matching first-child rule is gone');
+    const blk = css.match(/\.game-display-dialog \.game-modal-close \+ \.game-display-body \{[^}]*\}/);
+    assert.ok(blk !== null, 'rule for a body directly after the X');
+    const num = (s, p) => Number(s.match(new RegExp(p + ':\\s*(\\d+)px'))[1]);
+    const x = css.match(/\n\.game-modal-close \{[^}]*\}/)[0];
+    const reachEnd = num(x, 'top') + num(x, 'height') + 14;
+    const dialog = css.match(/\n\.game-confirm-dialog \{[^}]*\}/)[0];
+    const topPad = Number(dialog.match(/padding:\s*(\d+)px/)[1]);
+    assert.ok(topPad + num(blk[0], 'margin-top') >= reachEnd, 'body top ' + (topPad + num(blk[0], 'margin-top')) + ' is at or below the reach end ' + reachEnd);
+    assert.ok(num(blk[0], 'padding-right') >= 40, 'text clears the X on the right');
+    const hud = readFileSync(join(js, '../css/hud.css'), 'utf8');
+    const short = hud.match(/html \.game-display-dialog \.game-modal-close \+ \.game-display-body \{ margin-top: (\d+)px; \}/);
+    assert.ok(short !== null && 14 + Number(short[1]) >= reachEnd, 'short-viewport padding 14 plus margin clears the reach end');
+});

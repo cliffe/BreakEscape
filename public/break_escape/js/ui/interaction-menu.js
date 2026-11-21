@@ -94,7 +94,8 @@ function injectStyles() {
         /* position: relative makes the X its own containing block: the shared
            .game-modal-close::after hit area (position: absolute) would otherwise anchor to the
            whole menu and sit over every entry. The reach here is 6px, so the 32px X has a
-           44px target that stays inside the head (2px above the list is the head's own pad). */
+           44px target; its lower edge ends flush with the top of the list (head pad 2px + 32px
+           X + 6px bottom pad = 40px, the reach ends at 40px), so no entry is covered. */
         #be-interaction-menu .be-im-close {
             position: relative;
             flex: none;

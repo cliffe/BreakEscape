@@ -50,7 +50,7 @@ test('item 1: Confirm is disabled and the panel says why before the certificatio
     const btn = f.gameContainer.querySelector('#sis-confirm-btn');
     assert.ok(btn.disabled === true, 'Confirm is disabled');
     const reason = f.gameContainer.querySelector('#sis-confirm-reason');
-    assert.ok(reason !== null && /Certification record needed to confirm tampering/.test(reason.textContent), 'reason line is in the panel');
+    assert.ok(reason !== null && /Certification document needed to confirm tampering/.test(reason.textContent), 'reason line is in the panel');
     assert.ok(btn.getAttribute('aria-describedby') === 'sis-confirm-reason', 'button points at the reason');
     btn.click();
     assert.ok(f.shown === 0, 'a click does nothing while locked');
@@ -173,4 +173,80 @@ test('item 4: sis01 data sets timerRate to the ICO timer rate; the validator sch
     assert.ok(n === 2, 'both ransom screens carry timerRate 84, got ' + n);
     const schema = readFileSync(join(here, '../../scripts/minigame-data-schemas.json'), 'utf8');
     assert.ok(/"timerRate"/.test(schema), 'schema declares timerRate');
+});
+
+// ---- M1 (round 2): the story-rate note counts from the game clock's elapsed time ----------------
+// The HUD timers resume from the clock's saved elapsed time (GameClock startTime = now - saved),
+// so after a reload the note must too: it stores and reads nothing at a story rate.
+function ransomOpen(minigameData, clock, saved) {
+    window.gameState = { globalVariables: { ransomware_deployed: true, ...(saved || {}) } };
+    window.gameClock = clock;
+    const before = JSON.stringify(window.gameState.globalVariables);
+    const gc = document.createElement('div');
+    gc.innerHTML = '<span id="ransomware-timer-value"></span><span id="ransomware-timer-label"></span>';
+    const f = { gameContainer: gc, params: { lockable: { scenarioData: { minigameData } } } };
+    for (const m of ['getScenarioStartTimestamp', 'ensureDeadlineTimestamp', 'updateTimerDisplay']) f[m] = R.RansomwareDisplayMinigame.prototype[m];
+    f.ensureDeadlineTimestamp();
+    f.updateTimerDisplay();
+    f.after = JSON.stringify(window.gameState.globalVariables) === before;
+    f.text = () => gc.querySelector('#ransomware-timer-value').textContent;
+    return f;
+}
+
+test('M1: elapsed time restored after a reload gives the same remaining time (84x, 63 h)', () => {
+    const realNow = Date.now;
+    const t0 = 1_700_000_000_000;
+    try {
+        // first session: 10 real minutes of play
+        Date.now = () => t0 + 10 * 60_000;
+        const c1 = { startTime: t0, elapsedMs: (n = Date.now()) => Math.max(0, n - c1.startTime) };
+        const a = ransomOpen({ timerHours: 63, timerRate: 84 }, c1);
+        assert.ok(a.text() === '49:00:00', 'first open, 63 h less 14 h, got ' + a.text());
+        assert.ok(a.after === true, 'nothing written to the saved globals (player_state does not grow)');
+        // closed for 20 real minutes, then reloaded: the clock resumes from its saved 10 minutes
+        Date.now = () => t0 + 30 * 60_000;
+        const c2 = { startTime: Date.now() - 10 * 60_000, elapsedMs: (n = Date.now()) => Math.max(0, n - c2.startTime) };
+        const b = ransomOpen({ timerHours: 63, timerRate: 84 }, c2, { ransomware_deadline_at: t0 + 62 * 3600_000 });
+        assert.ok(b.text() === '49:00:00', 'same remaining time after the reload, got ' + b.text());
+        assert.ok(b.after === true, 'the saved deadline was neither read nor rewritten');
+    } finally { Date.now = realNow; window.gameClock = undefined; }
+});
+
+test('M1: an old save with a 1:1 deadline does not show about 5,200 hours', () => {
+    const realNow = Date.now;
+    const t0 = 1_700_000_000_000;
+    try {
+        Date.now = () => t0 + 60_000;
+        const c = { startTime: t0, elapsedMs: (n = Date.now()) => n - c.startTime };
+        const f = ransomOpen({ timerHours: 63, timerRate: 84 }, c, { ransomware_deadline_at: t0 + 62 * 3600_000 });
+        const hours = Number(f.text().split(':')[0]);
+        assert.ok(hours === 61, 'one minute of play at 84x leaves 61 h 36 min, got ' + f.text());
+    } finally { Date.now = realNow; window.gameClock = undefined; }
+});
+
+test('M1: rate 1 (m02) still reads and keeps the stored deadline; a missing gameClock falls back', () => {
+    const realNow = Date.now;
+    const t0 = 1_700_000_000_000;
+    try {
+        Date.now = () => t0 + 60_000;
+        const c = { startTime: t0, elapsedMs: () => 999_999_999 };
+        const m02 = ransomOpen({ timerHours: 12 }, c, { ransomware_deadline_at: t0 + 12 * 3600_000 });
+        assert.ok(m02.text() === '11:59:00', 'rate 1 uses the stored deadline, got ' + m02.text());
+        const none = ransomOpen({ timerHours: 63, timerRate: 84 }, undefined);
+        assert.ok(/^\d\d:\d\d:\d\d$/.test(none.text()), 'no gameClock: falls back to the stored-deadline path, got ' + none.text());
+    } finally { Date.now = realNow; window.gameClock = undefined; }
+});
+
+test('m5: sis01 timerRate x 45 minutes is timerHours, and timerHours is the ICO countdown hours', () => {
+    const erb = readFileSync(join(here, '../../scenarios/sis01_healthcare/scenario.json.erb'), 'utf8');
+    const hours = [...erb.matchAll(/"timerHours":\s*(\d+)/g)].map((m) => Number(m[1]));
+    const rates = [...erb.matchAll(/"timerRate":\s*(\d+)/g)].map((m) => Number(m[1]));
+    const ico = erb.slice(erb.indexOf('"id": "ico_deadline"'));
+    const delayMs = Number(ico.match(/"delayMs":\s*(\d+)/)[1]);
+    const countdown = Number(ico.match(/"countdownHours":\s*(\d+)/)[1]);
+    assert.ok(hours.length === 2 && rates.length === 2, 'two ransom screens carry both fields');
+    for (let i = 0; i < 2; i++) {
+        assert.ok(hours[i] === countdown, 'timerHours ' + hours[i] + ' equals ico_deadline countdownHours ' + countdown);
+        assert.ok(Math.abs(hours[i] * 60 / rates[i] - delayMs / 60000) < 1e-9, 'rate x delay equals timerHours');
+    }
 });
