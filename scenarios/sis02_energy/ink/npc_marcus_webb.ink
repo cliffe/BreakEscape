@@ -319,7 +319,7 @@ Before I sign it. Do we send what we've got, or wait till we know more?
 + [Hold it until we know how far they got, so the report is accurate.]
     ~ nis_initial_choice = "wait"
     #set_global:nis_initial_choice:wait
-    A wrong report's hard to undo, fair. But the clock runs from when we knew, not from when we're sure.
+    Getting it right matters, fair. But the clock runs from when we knew, not from when we're sure.
     It's your call. I won't sign what you don't stand behind.
     ++ [Fine. Send what we know.]
         -> nis_send

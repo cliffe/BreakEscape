@@ -1487,7 +1487,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
             "library_ok_global": "drug_library_restored",
             "conflict_title": "DOSE BELOW LIBRARY MINIMUM",
             "conflict_prompt": "The pump and the paper prescription disagree.",
-            "hold_label": "KEEP 2.0 mg/hr",
+            "hold_label": "KEEP MY ENTRY",
             "reenter_label": "ENTER A NEW RATE",
             "pharmacy_mismatch_text": "PHARMACY: NOT PRESCRIBED",
             "pharmacy_hold_text": "PHARMACY AGREED \u2014 2.0 mg/hr",
@@ -1755,7 +1755,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               "takeable": true,
               "important": true,
               "readable": true,
-              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nIT NETWORK CHANGE AUTHORISATION FORM\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\nRisk Classification: HIGH CLINICAL IMPACT\n\nDescription of change:\nSever the enterprise-to-clinical zone network link to contain an active ransomware incident.\nThis will take the wards' read-only view of the vendor EHR copy, the fleet management console and enterprise email offline.\n\nIT Security Risk Assessment:\nLateral movement confirmed via SIEM. VPN credential compromise (no MFA) identified as initial\naccess vector. Isolation is the appropriate containment action.\n\nAuthorised by: Ravi Anand, IT Security Manager\nSignature: R. Anand\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: Clinical Engineering co-authorisation also required before execution.",
+              "text": "NORTHGATE GENERAL HOSPITAL NHS TRUST\nIT NETWORK CHANGE AUTHORISATION FORM\n\nChange Reference: INC-2025-1103-001\nChange Type: Emergency Network Isolation — Enterprise Zone\nRisk Classification: HIGH CLINICAL IMPACT\n\nDescription of change:\nSever the enterprise-to-clinical zone network link to contain an active ransomware incident.\nThis will take the wards' access to the vendor EHR copy, the fleet management console and enterprise email offline.\n\nIT Security Risk Assessment:\nLateral movement confirmed via SIEM. VPN credential compromise (no MFA) identified as initial\naccess vector. Isolation is the appropriate containment action.\n\nAuthorised by: Ravi Anand, IT Security Manager\nSignature: R. Anand\nDate/Time: [SESSION TIMESTAMP]\n\nNOTE: Clinical Engineering co-authorisation also required before execution.",
               "observations": "A signed IT network change authorisation form from Ravi Anand. Counter-signature from Clinical Engineering required.",
               "puzzle_graph_unlocks": "network_map_screen",
               "puzzle_graph_and_with": "Clinical Safety Sign-Off — Network Isolation",
@@ -2066,7 +2066,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
               {
                 "section": "IF SEVER IS CONFIRMED:",
                 "items": [
-                  { "severity": "high", "text": "EHR offline on affected wards — prescribing reverts to paper" },
+                  { "severity": "high", "text": "EHR offline on affected wards: prescribing reverts to paper" },
                   { "severity": "high", "text": "Pump fleet console offline — no central view or library updates; rates set at the bedside from paper charts" },
                   { "severity": "med",  "text": "Clinical workstation remote management unavailable" }
                 ]
@@ -2119,7 +2119,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "VPN Log Printout",
           "takeable": false,
           "readable": true,
-          "text": "VPN AUTHENTICATION LOG — EXTRACT\nPrinted: Tue 2025-11-04 03:45\n\n[...48 entries...]\n\n2025-11-03 08:47 USER=j.hargreaves IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:51 USER=m.chen       IP=82.19.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:52 USER=m.blake IP=185.220.101.x COUNTRY=Romania MFA=NO  RESULT=ACCEPT  ← CIRCLED IN RED\n2025-11-03 08:54 USER=d.walsh      IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n\n[...]\n\nHandwritten note beside the circled line: \"Contractor account (m.blake) — no MFA configured. How??\"\nSecond note: \"Check the contractor account's history on the terminal\"",
+          "text": "VPN AUTHENTICATION LOG — EXTRACT\nPrinted: Tue 2025-11-04 03:45\n\n[...48 entries...]\n\n2025-11-03 08:47 USER=j.hargreaves IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:51 USER=m.chen       IP=82.19.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n2025-11-03 08:52 USER=######     IP=185.220.101.x COUNTRY=Romania MFA=NO  RESULT=ACCEPT  ← CIRCLED IN RED (coffee ring over the username)\n2025-11-03 08:54 USER=d.walsh      IP=82.44.xxx.xxx COUNTRY=UK     MFA=YES RESULT=ACCEPT\n\n[...]\n\nHandwritten note beside the circled line: \"Contractor account, no MFA configured. How??\"\nSecond note: \"Check the contractor account's history on the terminal\"",
           "observations": "A printout of VPN authentication logs. Someone has been through it with a red pen. One entry is circled."
         },
 
@@ -2128,7 +2128,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "name": "Incident Timeline (Draft)",
           "takeable": false,
           "readable": true,
-          "text": "NORTHGATE TRUST — INCIDENT TIMELINE (WORKING DRAFT)\nRavi Anand, IT Security Manager\n\nMon 2025-11-03\n  08:47 — Finance officer opens phishing email; macros enabled on FINWKS-047\n  08:52 — VPN login from Romania: USER=m.blake, no MFA. ACCEPTED.\n  08:52-14:00 — Lateral movement via stolen contractor credentials\n  ~15:00 — Domain admin obtained (exact time TBC from AD logs)\n  20:00 onwards — Staging and validation of ransomware payload\n\nMon 22:15 — Ransomware deployed. 312 workstations. 4 servers. EHR.\nMon 22:30 — Ward 7 nursing station encrypted. Central monitoring goes dark.\nMon 22:38 — MAJOR INCIDENT DECLARED.\nMon 23:05 — NIS incident report to NHS England (H. Carver).\n\nTue 2025-11-04 07:30 — INCIDENT RESPONDERS ON SITE.\n\n[SIEM NOTE: Multiple alerts fired Monday morning. Low severity queue. Not escalated.]",
+          "text": "NORTHGATE TRUST — INCIDENT TIMELINE (WORKING DRAFT)\nRavi Anand, IT Security Manager\n\nMon 2025-11-03\n  08:47 — Finance officer opens phishing email; macros enabled on FINWKS-047\n  08:52 — VPN login from Romania on the contractor account, no MFA. ACCEPTED.\n  08:52-14:00 — Lateral movement via stolen contractor credentials\n  ~15:00 — Domain admin obtained (exact time TBC from AD logs)\n  20:00 onwards — Staging and validation of ransomware payload\n\nMon 22:15 — Ransomware deployed. 312 workstations. 4 servers. EHR.\nMon 22:30 — Ward 7 nursing station encrypted. Central monitoring goes dark.\nMon 22:38 — MAJOR INCIDENT DECLARED.\nMon 23:05 — NIS incident report to NHS England (H. Carver).\n\nTue 2025-11-04 07:30 — INCIDENT RESPONDERS ON SITE.\n\n[SIEM NOTE: Multiple alerts fired Monday morning. Low severity queue. Not escalated.]",
           "observations": "Ravi's draft incident timeline, written on a notepad during the night. Red ink, slightly smudged."
         },
 <%# Room dressing (sis01 only): conditional sprites on room_hospital_office_it. No puzzle role. %>
@@ -2841,7 +2841,7 @@ backup_pin   = @random_pin    # Used by current MG-08 bedside pump placeholder l
           "position": { "x": 6, "y": 4 },
           "takeable": false,
           "readable": true,
-          "text": "YOUR FILES HAVE BEEN ENCRYPTED\n\nNorthgate General Hospital NHS Trust\n312 workstations | 4 file servers | EHR database\n\nRecovery price: 16 BITCOIN (approx. £1,200,000)\nWallet address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\n\nDO NOT attempt recovery — encrypted files will be destroyed\nDO NOT contact law enforcement — price will double\n\nTime remaining: 63:00:00\n\nDarkVault Ransomware Group\nSupport: darkv4ult7xkrp2c.onion",
+          "text": "YOUR FILES HAVE BEEN ENCRYPTED\n\nNorthgate General Hospital NHS Trust\n312 workstations | 4 file servers | EHR database\n\nRecovery price: 16 BITCOIN (approx. £1,200,000)\nWallet address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh\n\nDO NOT attempt recovery — encrypted files will be destroyed\nDO NOT contact law enforcement — price will double\n\nTime remaining: about 63 hours\n\nDarkVault Ransomware Group\nSupport: darkv4ult7xkrp2c.onion",
           "observations": "A printed copy of the ransom note, left on the conference table. Across the top, someone has written WE ARE NOT PAYING in red marker."
         },
 

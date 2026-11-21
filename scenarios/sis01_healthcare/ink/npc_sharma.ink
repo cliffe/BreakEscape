@@ -181,7 +181,7 @@ Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone
 
 === hc003_review ===
 Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
-* [The attacker beat it. The change was skilled enough to get past any control.]
+* [The attacker beat it. The change came from a real admin account.]
     Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
     Priya S.: The audit log recorded it. Nobody was reading the log.
 * [The control failed. An unauthorised change went through and nobody noticed.]
@@ -215,8 +215,8 @@ Priya S.: HC-007 also promised a rehearsal every year. The last one was nineteen
 Priya S.: So: who should decide on isolation, and why?
 * [IT security alone, since they're the ones who can see the attacker.]
     Priya S.: It takes the vendor's EHR copy off every ward. That makes it a clinical decision too. Neither side sees the whole cost alone.
-* [The executive on call alone, since they own the Trust's risk.]
-    Priya S.: When the two disagree, yes. But the exec needs both views in front of them, and HC-007 is how they get them.
+* [IT security and the executive on call together, since the exec owns the risk.]
+    Priya S.: Closer, but the exec owns risk, not the clinical cost. David sees what the wards lose.
 * [IT security and clinical engineering together, since each sees a cost the other misses.]
     Priya S.: That's it. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
 -
@@ -300,7 +300,7 @@ Priya S.: When you chose a source, what were you trading?
 * [How much data we'd lose, against how long it would take.]
     Priya S.: That matters too: Monday's records, or Friday's. But today the bigger question was whether the copy was clean.
 * [How much it would cost, against how long the wards stayed on paper.]
-    Priya S.: Cost barely separated them. The trade was how clean the copy was against how long you waited for it.
+    Priya S.: Nothing on the cards was about cost. The trade was how clean the copy was against how long you waited for it.
 - -> ransom_review
 
 === ransom_review ===
@@ -352,11 +352,11 @@ Priya S.: None of that is exotic. MFA on every remote login is in your DSPT. So 
 === risk_review ===
 Priya S.: Your Board will read all of this as risk, so let's put it that way.
 Priya S.: The contractor's MFA exemption, the vendor's VPN, Ward 7's old segment. What did they have in common?
-* [Each was a known risk that someone had signed off and put a date on.]
+* [Each was a known risk that someone had accepted.]
     Priya S.: Yes. Each one had a name against it and a date to look at it again. The dates came and went.
 * [Each was a missing control that nobody at the Trust had ever noticed.]
     Priya S.: They knew. Each one was written down somewhere. That's what makes it worse.
-* [Each was an unlikely event that the risk register had rated as low.]
+* [Each was unlikely on its own, so nobody planned for it.]
     Priya S.: Unlikely, perhaps. But likelihood times impact, with patients on the other side, gave a number nobody would sign today.
 -
 Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicable". They weren't. Finishing the VLAN move was reasonable, and it sat stalled for a year.

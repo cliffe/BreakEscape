@@ -111,7 +111,7 @@ David Osei: HC-001. Claim: an enterprise compromise can't reach clinical devices
 David Osei: Argument: the firewall keeps the zones apart. Evidence: the segmentation project, and a documented list of legacy rules.
 // Blind playtest: the two "No" answers were near-duplicates and the prompt pointed at
 // one of them. Now one "doesn't hold" answer (its reason depends on whether the player
-// has seen the map) sits beside two plausible wrong ones, each with a reason.
+// has seen the map: the option itself only uses the claim's own wording) sits beside two plausible wrong ones, each with a reason.
 David Osei: So, as of this morning, does that claim hold?
 + [It holds. The firewall's in place, and the legacy exceptions are on a documented list.]
     ~ hc001_verdict = "holds"
@@ -121,7 +121,7 @@ David Osei: So, as of this morning, does that claim hold?
     ~ hc001_verdict = "held_until_attack"
     David Osei: No. It never held. Those exception rules were there long before the attackers were.
     -> hc001_verdict_given
-+ [It doesn't hold. Dual-homed PCs and exception rules mean its conditions were never true.]
++ [It doesn't hold. The claim needs no exception rules, and there were exception rules already.]
     ~ hc001_verdict = "invalid"
     {network_rules_reviewed:
         ~ david_trust += 10
@@ -192,7 +192,7 @@ David Osei: One more thing before I sign. What do the wards lose when we pull th
     ~ told_to_look = true
     David Osei: No, they keep running on what they've already got. If someone's changed the library, so have they. Look at the map again.
     -> hub
-+ [The EHR goes offline on every ward. No allergy or drug checks on screen.]
++ [The other wards lose the EHR copy. No allergy or drug checks on screen.]
     ~ isolation_cost_assessed = true
     David Osei: Right. And the pump console, so nobody can see the pumps from one place.
     {isolation_compensating_controls:

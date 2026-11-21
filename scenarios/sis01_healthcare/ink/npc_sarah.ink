@@ -322,7 +322,7 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -> hub
 + {not bed4_raised and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed in Bed 4.]
     -> bed4_concern
-+ {not drug_library_compromised and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
++ {not tamper_told and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
     ~ asked_bed2 = true
     Sarah Mitchell: Ms Okafor's morphine bag runs out at quarter to eight, and I've got no one free.
     Sarah Mitchell: Set it from her paper chart and read every digit back to me before it runs.

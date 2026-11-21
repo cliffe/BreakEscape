@@ -148,8 +148,8 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
     Priya S.: And you argued to shut down on the hazard, before anyone knew the cause. That's the right order.
 - shutdown_argument == "evidence" and hydrogen_alarm:
     Priya S.: You wanted the logs before shutting down. The gas came up while you were getting them.
-- shutdown_argument == "evidence" and not esd_activated:
-    Priya S.: You wanted the logs before shutting down. This time the cells gave you the time.
+- shutdown_argument == "evidence":
+    Priya S.: You wanted the logs first, then pressed it before the gas came up. Changing your mind was the right call.
 }
 {
 - bms_registers_saved:
@@ -346,7 +346,7 @@ Priya S.: Ofgem's the competent authority, with the energy department. We're tol
 Priya S.: Did Trent Water need telling under NIS?
 * [Yes. Water supply is an essential service, so they fall under NIS.]
     Priya S.: Some water companies are. Trent Water runs one small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
-* [No. They're a separate company, so telling them was duty of care.]
+* [No. A station that small is under the NIS thresholds, so it was duty of care.]
     Priya S.: Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.
 -
 { trent_water_notified:
