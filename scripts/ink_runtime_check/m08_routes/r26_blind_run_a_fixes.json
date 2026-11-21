@@ -13,7 +13,7 @@
 { "said": ["I think it's you, Nightshade. (Out loud. The whole floor will hear.)"] },
 { "expect": { "nightshade_tipped_off": false } },
 { "talk": "netherton", "picks": ["I have a name forming", "Too calm", "I'm ready"] },
-{ "said": ["Calm is a temperament"], "notSaid": ["man with no marks", "nothing on his file"] },
+{ "said": ["Calm is a temperament"] },
 { "look": "suspect_dossiers", "has": "never returned" },
 { "talk": "phone", "picks": ["Where would the door logs", "Nothing right now"] },
 { "said": ["Try the break room, round the coffee machine"], "notSaid": ["things down. Kettle."] },

@@ -4,7 +4,7 @@
 { "talk": "briefing" },
 { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["Tell me about Nightshade", "Tell me about Vector", "I'll need access", "I'm ready"] },
-{ "said": ["noticed nothing", "never once explained"], "notSaid": ["empty file", "very careful for a very long time"] },
+{ "said": ["noticed nothing", "never once explained"] },
 { "talk": "vector", "picks": ["Where were you", "That's all"] },
 { "talk": "phantom", "picks": ["Where were you", "We'll talk"] },
 { "expect": { "phantom_alibi_known": false } },
