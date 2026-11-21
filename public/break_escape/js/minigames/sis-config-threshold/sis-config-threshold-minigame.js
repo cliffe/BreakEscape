@@ -204,6 +204,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         if (compareBtn) {
             this.addEventListener(compareBtn, 'click', () => {
                 if (!this.hasCertificationDoc()) return;
+                this._detailOpener = compareBtn;   // focus comes back here when the dialog closes
                 this.showCompare();
             });
         }
@@ -212,6 +213,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         if (confirmBtn) {
             this.addEventListener(confirmBtn, 'click', () => {
                 if (!this.hasCertificationDoc()) return;
+                this._detailOpener = confirmBtn;   // focus comes back here when the dialog closes
                 this.showConfirm();
             });
         }
@@ -286,6 +288,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
 
         const closeBtn = this.overlayEl.querySelector('#sis-compare-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
+        // Focus the X (the way out), so Tab does not walk the panel underneath
+        closeBtn.focus({ preventScroll: true });
     }
 
     showConfirm() {
@@ -297,7 +301,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                 <h4>Confirm SIS Tamper Report</h4>
                 <p>Report detected SIS setpoint deviations to security operations?</p>
                 <div class="sis-modal-actions">
-                    <button class="sis-btn sis-btn-confirm" id="sis-confirm-yes">Confirm</button>
+                    <button class="sis-btn sis-btn-confirm" id="sis-confirm-yes">Confirm Tamper Report</button>
                 </div>
             </div>
         `;
@@ -321,6 +325,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             source: 'sis-config-threshold'
         };
 
+        this._detailOpener = null;   // the scene ends; nothing to hand focus back to
         this.closeOverlay();
         this.showSuccess('SIS tamper reported. Priya has been notified.', true, 900);
     }

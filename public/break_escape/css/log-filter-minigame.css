@@ -665,14 +665,42 @@
 .lf-flag-confirm-actions {
     display: flex;
     gap: 8px;
-    margin-top: 8px;
     justify-content: flex-end;
-    /* The panel scrolls on a short screen (844x390 phone landscape): the one button that
-       acts stays in view at the foot instead of sitting below the fold */
-    position: sticky;
-    bottom: 0;
+    flex: none;
+    /* The foot of the panel, outside the scrolling body (844x390 phone landscape): the one
+       button that acts is always in view, and the rule above it marks where the text ends */
+    border-top: 2px solid #333355;
     background: #111122;
-    padding-top: 4px;
+    padding: 6px 10px;
+}
+
+/* Flag confirm panel: the body is the scroller, the header, cue and button stay put */
+.lf-overlay-panel-flag {
+    overflow: hidden;
+}
+
+.lf-overlay-panel-flag .lf-flag-confirm-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.lf-overlay-panel-flag .lf-overlay-header {
+    flex: none;
+}
+
+/* "More below" cue: its own line above the button, 2px frame, never over the text */
+.lf-more-cue {
+    display: none;
+    flex: none;
+    text-align: center;
+    font-size: 16px;
+    line-height: 16px;
+    padding: 2px 6px;
+    color: #ffffff;
+    background: #000000;
+    border-top: 2px solid #ffffff;
+    pointer-events: none;
 }
 
 .lf-flag-confirm-btn {

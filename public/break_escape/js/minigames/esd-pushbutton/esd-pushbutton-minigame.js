@@ -208,6 +208,8 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.confirmModal.setAttribute('aria-hidden', 'false');
         this._hideSceneX(true);
         this._pinConfirmToView(true);
+        // Focus the confirm's X (the way out: do not press), not the big button underneath
+        try { this.cancelButton?.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
     }
 
     // Esc is Cancel while the confirm is open; with none open it closes the scene
@@ -223,6 +225,8 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.confirmModal.setAttribute('aria-hidden', 'true');
         this._hideSceneX(false);
         this._pinConfirmToView(false);
+        // Back to the button that opened the confirm
+        try { this.buttonElement?.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
     }
 
     handleConfirm() {

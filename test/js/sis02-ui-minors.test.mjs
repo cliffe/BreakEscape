@@ -7,7 +7,8 @@
 // SIS_JS_ROOT points at a copy of the engine (used to show the tests fail on old code).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
@@ -32,12 +33,55 @@ const ruleBody = (c, sel) => {
 };
 
 // ---- m1: the historian report -------------------------------------------------------------
-test('m1: the historian report draws no [CANCEL] and does not hide the scene X', () => {
-    const src = readFileSync(join(js, 'minigames/scada-historian/scada-historian-minigame.js'), 'utf8');
-    assert.ok(!/\[CANCEL\]/.test(src), 'no [CANCEL] text in the scene');
-    assert.ok(!/sh-modal-cancel-btn/.test(src), 'no cancel button class in the scene');
-    assert.ok(!/if \(!asking\) this\._hideSceneX\(true\)/.test(src), 'the report keeps the scene X on screen');
-    assert.ok(!/sh-modal-cancel-btn/.test(css('scada-historian-minigame.css')), 'no dead cancel CSS');
+// Drives the real scene in JSDOM (copied to a temp dir so its imports resolve): the question
+// and the confirm draw no Cancel of any class or wording, and the scene X stays on screen.
+const HSD = {
+    racks: [{ id: 'A1', label: 'Rack A1', normalBase: 30.2, noisePeriodMinutes: 3, noiseAmplitude: 0.4 },
+        { id: 'A2', label: 'Rack A2', normalBase: 29.9, noisePeriodMinutes: 4, noiseAmplitude: 0.3 }],
+    injectionTimestamp: '2026-03-20T23:12:07', injectedValue: 28.0, lastRealTimestamp: '2026-03-20T23:12:06',
+    thermalTrendStartTime: '2026-03-20T20:00:00', thermalTrendRate: 0.03,
+    historianStartTime: '2026-03-20T18:00:00', historianEndTime: '2026-03-21T06:30:00', sampleIntervalMinutes: 1,
+    completionActions: [], progressActions: []
+};
+test('m1: the historian report and its confirm draw no Cancel, and the scene X stays on screen', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sis02-hist-'));
+    try {
+        writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
+        for (const rel of ['minigames/framework/base-minigame.js', 'utils/display-dashes.js', 'utils/escape-html.js',
+            'minigames/scada-historian/scada-historian-data.js', 'minigames/scada-historian/scada-historian-minigame.js']) {
+            mkdirSync(dirname(join(dir, rel)), { recursive: true });
+            writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
+        }
+        window.npcManager = { setGlobalVariable() {} };
+        window.objectivesManager = { completeTask() {} };
+        const { ScadaHistorianMinigame: H } = await import(pathToFileURL(join(dir, 'minigames/scada-historian/scada-historian-minigame.js')).href);
+        document.body.innerHTML = '';
+        const container = document.createElement('div');
+        container.innerHTML = '<button id="minigame-close"></button>';
+        document.body.appendChild(container);
+        const scene = new H(container, { sprite: { scenarioData: { minigameData: HSD } } });
+        scene.gameContainer = document.createElement('div');
+        container.appendChild(scene.gameContainer);
+        scene._buildTrendData();
+        scene._renderLayout();
+        scene._renderChart();
+        const hits = [...document.getElementById('sh-chart-area').querySelectorAll('rect')];
+        const start = scene._visible.findIndex((p) => p.isInjectionStart);
+        const order = scene._visible.map((_, k) => k).filter((k) => k !== start).concat(start >= 0 ? [start] : []);
+        const cliff = scene._visible.findIndex((p) => new Date(p.ts).toTimeString().slice(0, 8) === '23:12:07');
+        assert.ok(cliff >= 0, 'a reading at the cliff');
+        hits[order.indexOf(cliff)].dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        document.querySelector('.sh-annotate-btn').click();
+        const buttonsText = () => [...document.querySelectorAll('.sh-modal button')].map((b) => b.textContent).join('|');
+        assert.ok(document.querySelector('.sh-modal') !== null, 'the report opened');
+        assert.ok(!/cancel/i.test(buttonsText()) && !/cancel/i.test(document.querySelector('.sh-modal').textContent), 'no Cancel on the question: ' + buttonsText());
+        assert.ok(document.querySelector('.sh-modal-cancel-btn') === null, 'no cancel class on the question');
+        assert.ok(document.getElementById('minigame-close').style.visibility !== 'hidden', 'the scene X stays on the question');
+        document.querySelector('.sh-choice-btn[data-choice="written"]').click();
+        assert.ok(document.querySelector('.sh-modal-confirm-btn') !== null, 'the confirm button is there');
+        assert.ok(!/cancel/i.test(buttonsText()) && document.querySelector('.sh-modal-cancel-btn') === null, 'no Cancel on the confirm: ' + buttonsText());
+        assert.ok(document.getElementById('minigame-close').style.visibility !== 'hidden', 'the scene X stays on the confirm');
+    } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---- m2: the ESD confirm ----------------------------------------------------------------------
@@ -67,6 +111,30 @@ test('m2: the ESD confirm has its own X, keeps its wording, no CANCEL, and the X
     assert.ok(/\.esd-confirm-card \{[^}]*position: relative/.test(c), 'the card anchors its X');
 });
 
+test('m2: the ESD confirm puts focus on its X when it opens and hands it back to the button on close (X and Esc)', async () => {
+    const { EsdPushbuttonMinigame: E } = await import(pathToFileURL(join(js, 'minigames/esd-pushbutton/esd-pushbutton-minigame.js')).href);
+    for (const how of ['x', 'esc']) {
+        document.body.innerHTML = '';
+        const gc = document.createElement('div');
+        document.body.appendChild(gc);
+        const fake = { _sd: {}, gameState: {}, listeners: [], gameContainer: gc, container: document.createElement('div'), state: 'ARMED_GUARD_DOWN',
+            authorizationGranted: true, alreadyActivated: false,
+            addEventListener(el, ev, fn) { el.addEventListener(ev, fn); }, _hideSceneX() {}, _pinConfirmToView() {},
+            statusElement: null };
+        for (const m of ['hideConfirmModal', 'handleGuardFlip', 'handleButtonPress', 'handleEscapeKey']) fake[m] = E.prototype[m];
+        E.prototype.render.call(fake);
+        fake.handleGuardFlip();
+        assert.ok(fake.state === 'GUARD_OPEN', 'guard open');
+        fake.buttonElement.focus();
+        fake.handleButtonPress();
+        assert.ok(fake.state === 'CONFIRM_MODAL', 'confirm open');
+        assert.ok(document.activeElement === gc.querySelector('#esd-confirm-x'), how + ': focus starts on the X, not the big button');
+        if (how === 'x') fake.hideConfirmModal(); else fake.handleEscapeKey();
+        assert.ok(fake.state === 'GUARD_OPEN', how + ': back to the open guard');
+        assert.ok(document.activeElement === fake.buttonElement, how + ': focus goes back to the button that opened it');
+    }
+});
+
 // ---- m8: the SIS tamper confirm and the Compare dialog ----------------------------------------
 const sis = await import(pathToFileURL(join(js, 'minigames/sis-config-threshold/sis-config-threshold-minigame.js')).href);
 const S = sis.SisConfigThresholdMinigame;
@@ -84,18 +152,42 @@ function sisFake() {
     return fake;
 }
 
-test('m8: the SIS tamper confirm has its own X and one Confirm button, no Cancel; the X closes it', () => {
+test('m8: the SIS tamper confirm has its own X and one named Confirm Tamper Report button, no Cancel; the X closes it', () => {
     const f = sisFake();
     f.showConfirm();
     const x = f.overlayEl.querySelector('#sis-confirm-close');
     assert.ok(x !== null && x.classList.contains('minigame-close-button'), 'its own X');
     const named = [...f.overlayEl.querySelectorAll('button')].filter((b) => b !== x).map((b) => b.textContent.trim());
-    assert.ok(named.length === 1 && named[0] === 'Confirm', 'one button, Confirm: ' + named.join('|'));
+    assert.ok(named.length === 1 && named[0] === 'Confirm Tamper Report', 'one button, with safety wording: ' + named.join('|'));
     assert.ok(!/cancel/i.test(f.overlayEl.textContent), 'no Cancel text');
     assert.ok(f.container.querySelector('#minigame-close').style.visibility === 'hidden', 'only one X shows');
     x.click();
     assert.ok(!f.overlayEl.classList.contains('show'), 'the X closes the confirm');
     assert.ok(f.container.querySelector('#minigame-close').style.visibility !== 'hidden', 'the scene X is back');
+});
+
+test('m2: the SIS Compare dialog focuses its X, and Compare and Confirm hand focus back to their opener on X or Esc', () => {
+    for (const open of ['showCompare', 'showConfirm']) {
+        for (const how of ['x', 'esc']) {
+            const f = sisFake();
+            f.rows = [{ parameter: 'A', currentValue: '1', certifiedValue: '2', status: 'AMBER' }];
+            f.compareRows = [];
+            f.hasCertificationDoc = () => true;
+            f.handleEscapeKey = S.prototype.handleEscapeKey;
+            const opener = f.gameContainer.querySelector('#b');
+            opener.focus();
+            assert.ok(document.activeElement === opener, 'the opener has focus to start');
+            f._detailOpener = opener;   // what the Compare and Confirm click handlers set
+            f[open]();
+            const x = f.overlayEl.querySelector('.minigame-close-button');
+            assert.ok(x !== null && document.activeElement === x, open + ' ' + how + ': focus starts on the X');
+            if (how === 'x') x.click(); else assert.ok(f.handleEscapeKey() === true, 'Esc is taken by the dialog');
+            assert.ok(!f.overlayEl.classList.contains('show'), open + ' ' + how + ': dialog closed');
+            assert.ok(document.activeElement === opener, open + ' ' + how + ': focus is back on the opener');
+        }
+    }
+    const src = readFileSync(join(js, 'minigames/sis-config-threshold/sis-config-threshold-minigame.js'), 'utf8');
+    assert.ok(/this\._detailOpener = compareBtn/.test(src) && /this\._detailOpener = confirmBtn/.test(src), 'both panel buttons record themselves as the opener');
 });
 
 // ---- m7: the SIS Compare dialog -----------------------------------------------------------------
@@ -173,8 +265,11 @@ test('m12: a CLOSED row gets the closed wording and label; an ACTIVE row keeps t
     assert.ok(active.textContent.includes('[CONFIRM: FLAG ACTIVE SESSION]'), 'active label kept');
 });
 
-test('m12: the confirm names the next step, focuses CONFIRM, and the button is 44px', () => {
+test('m12: the confirm names the next step, focuses its X (not CONFIRM), and the button is 44px', () => {
     const body = lfConfirm('CLOSED');
+    const xBtn = body.querySelector('.lf-overlay-close');
+    assert.ok(xBtn !== null && document.activeElement === xBtn, 'focus starts on the header X, the safe choice');
+    assert.ok(document.activeElement !== body.querySelector('.lf-flag-confirm-btn'), 'CONFIRM is not focused');
     const step = body.querySelector('.lf-flag-confirm-step');
     assert.ok(step !== null && /press CONFIRM below to flag this session/.test(step.textContent), 'next-step line present');
     assert.ok(/The X goes back without flagging/.test(step.textContent), 'says what the X does');
@@ -199,12 +294,18 @@ test('m8: gameConfirm closeX: the X resolves false, one named button, the button
     const btns = [...dlg.querySelectorAll('.game-confirm-buttons button')].map((b) => b.textContent);
     assert.ok(btns.length === 1 && btns[0] === 'Disconnect', 'one named button: ' + btns.join('|'));
     assert.ok(!/Leave it/.test(dlg.textContent), 'the cancel label is not drawn');
+    assert.ok(document.activeElement === x, 'focus starts on the X, the safe choice, not the named button');
     x.click();
     assert.ok((await p) === false, 'the X resolves false');
     assert.ok(document.querySelector('.game-confirm-overlay') === null, 'dialog removed');
     const p2 = notif.gameConfirm('Again?', 'Do it', 'No', { closeX: true });
     document.querySelector('.game-confirm-ok').click();
     assert.ok((await p2) === true, 'the named button resolves true');
+    // Esc resolves false (the X's answer) and focus is on the X first, so a stray Enter cannot confirm
+    const p3 = notif.gameConfirm('Esc?', 'Do it', 'No', { closeX: true });
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    assert.ok((await p3) === false, 'Esc resolves false');
+    assert.ok(document.querySelector('.game-confirm-overlay') === null, 'Esc closed the dialog');
 });
 
 test('m8: gameConfirm without closeX is unchanged: two buttons, no X; closeX is ignored for html mode', async () => {
@@ -264,12 +365,56 @@ test('m17: creditsLogLine strips the dash runs from a section header and leaves 
     assert.ok(/addLog\(displayDashes\(creditsLogLine\(item\)\)\)/.test(j), 'the review log uses it');
 });
 
-// ---- m12 (live, 844x390): the confirm button stays in view when the panel scrolls ----------------------
-test('m12: the flag confirm button sticks to the foot of the scrolling panel', () => {
+// ---- m12 / M1 (844x390): the body scrolls, the button is a fixed footer, a cue shows the cut ------------
+test('M1: the flag confirm body is the scroller, the button a footer outside it, with a more-below cue', () => {
+    const body = lfConfirm('CLOSED');
+    const panel = body.querySelector('.lf-overlay-panel');
+    assert.ok(panel.classList.contains('lf-overlay-panel-flag'), 'flag-confirm panel class');
+    const scroller = panel.querySelector('.lf-flag-confirm-scroll');
+    assert.ok(scroller !== null && scroller.querySelector('.lf-flag-confirm-body') !== null, 'the text is inside the scroller');
+    const actions = panel.querySelector('.lf-flag-confirm-actions');
+    assert.ok(actions !== null && !scroller.contains(actions) && actions.parentElement === panel, 'the button footer is outside the scroller');
+    assert.ok(panel.querySelector('.lf-more-cue') !== null, 'a more-below cue line exists');
     const c = css('log-filter-minigame.css');
+    assert.ok(/overflow:\s*hidden/.test(ruleBody(c, '.lf-overlay-panel-flag')), 'the panel does not scroll in this mode');
+    const sc = ruleBody(c, '.lf-overlay-panel-flag .lf-flag-confirm-scroll');
+    assert.ok(/overflow-y:\s*auto/.test(sc) && /min-height:\s*0/.test(sc), 'the body is what scrolls');
     const r = ruleBody(c, '.lf-flag-confirm-actions');
-    assert.ok(/position:\s*sticky/.test(r), 'actions are sticky');
-    assert.ok(/bottom:\s*0/.test(r), 'stuck to the bottom edge');
-    assert.ok(/background:\s*#111122/.test(r), 'opaque so body text does not show through');
-    assert.ok(/overflow-y:\s*auto/.test(ruleBody(c, '.lf-overlay-panel')), 'the panel is what scrolls');
+    assert.ok(/border-top:\s*2px solid/.test(r), '2px rule above the footer');
+    assert.ok(!/position:\s*sticky/.test(r), 'no sticky bar over the text any more');
+    assert.ok(/background:\s*#111122/.test(r), 'opaque footer');
+    assert.ok(/border-top:\s*2px solid/.test(ruleBody(c, '.lf-more-cue')), 'cue has a 2px frame line');
 });
+
+test('M1: the more-below cue shows while text is cut, hides at the end, and takes no space when nothing is cut', () => {
+    const body = lfConfirm('CLOSED');
+    const scroller = body.querySelector('.lf-flag-confirm-scroll');
+    const cue = body.querySelector('.lf-more-cue');
+    const set = (h, c, t) => { for (const [k, v] of [['scrollHeight', h], ['clientHeight', c], ['scrollTop', t]]) Object.defineProperty(scroller, k, { value: v, configurable: true }); };
+    set(300, 100, 0);
+    scroller.dispatchEvent(new window.Event('scroll'));
+    assert.ok(cue.style.display === 'block' && cue.style.visibility === 'visible', 'cut: cue visible');
+    set(300, 100, 200);
+    scroller.dispatchEvent(new window.Event('scroll'));
+    assert.ok(cue.style.display === 'block' && cue.style.visibility === 'hidden', 'at the end: cue hidden, keeps its line');
+    set(100, 100, 0);
+    scroller.dispatchEvent(new window.Event('scroll'));
+    assert.ok(cue.style.display === 'none', 'no overflow: no cue');
+});
+
+// ---- B1: the shared dialog X hit area must not cover the interaction menu -------------------------
+test('B1: the interaction menu X is its own containing block, so the shared ::after stays on the X', () => {
+    const menu = readFileSync(join(js, 'ui/interaction-menu.js'), 'utf8');
+    const rule = menu.slice(menu.indexOf('#be-interaction-menu .be-im-close {'));
+    const body = rule.slice(0, rule.indexOf('}'));
+    assert.ok(/position:\s*relative/.test(body), 'the menu X is position: relative, not static');
+    assert.ok(!/position:\s*static/.test(body), 'not static');
+    const after = (menu.match(/#be-interaction-menu \.be-im-close::after \{[^}]*inset:\s*(-?\d+)px/) || [])[1];
+    assert.ok(after === '-6', 'the menu X reach is 6px (32px X, 44px target, inside the head): ' + after);
+    // Every user of the shared class sits in a positioned box
+    const n = css('notifications.css');
+    assert.ok(/\n\.game-modal-close \{[^}]*position:\s*absolute/.test(n), 'the shared X is absolute');
+    assert.ok(/\.game-confirm-has-x \{[^}]*position: relative/.test(n), 'confirm dialog anchors it');
+    assert.ok(/\.game-confirm-dialog \{[^}]*position:\s*relative/.test(n), 'every game-confirm-dialog (display, ending check) anchors it');
+});
+

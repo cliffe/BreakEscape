@@ -287,7 +287,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     background: #a93226;
 }
 
-/* Room for the close X. A confirm has no X (UX q99), so its message runs the full width. */
+/* Room for the close X. A confirm has no X unless options.closeX (UX q99), so its message runs the full width. */
 .game-display-dialog .game-display-title {
     padding-right: 40px;
 }

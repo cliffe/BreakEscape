@@ -79,7 +79,8 @@ test('37 the X sits in the title row outside the list; no Cancel; the title is i
     const css = document.getElementById('be-interaction-menu-style')?.textContent
         ?? [...document.head.querySelectorAll('style')].map(s => s.textContent).join('\n');
     const closeRule = css.match(/#be-interaction-menu \.be-im-close \{[^}]*\}/)[0];
-    assert.match(closeRule, /position:\s*static/, 'not absolutely positioned');
+    assert.match(closeRule, /position:\s*relative/, 'in the head flow and its own containing block (B1)');
+    assert.ok(!/position:\s*(absolute|static)/.test(closeRule), 'neither floated nor static');
     x.click();
     assert.equal(isInteractionMenuOpen(), false);
     reset();

@@ -1154,7 +1154,7 @@ export function gameDisplay(message, title = '', options = {}) {
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
-// No close X: the two named buttons answer it, and Esc picks the cancel choice. Callers name both
+// By default no close X: the two named buttons answer it, and Esc picks the cancel choice (options.closeX below swaps in one named button plus the X). Callers name both
 // buttons for what they do ("Switch off" and "Leave it"), never a bare Confirm or Cancel.
 // The message and both button labels are plain text (textContent) by default, newlines kept, so
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
@@ -1201,8 +1201,9 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             </div>`;
         }
 
-        // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
-        // Esc means the cancel button's choice (resolve false), the safe one.
+        // No X unless options.closeX (UX q99): the two named buttons answer it, or with closeX
+        // the one named button plus the X (the X is then the cancel control). Esc means the
+        // cancel choice (resolve false), the safe one.
         const okBtn = overlay.querySelector('.game-confirm-ok');
         const cancelBtn = overlay.querySelector(closeX ? '.game-modal-close' : '.game-confirm-cancel') || okBtn;
         const previousFocus = document.activeElement;

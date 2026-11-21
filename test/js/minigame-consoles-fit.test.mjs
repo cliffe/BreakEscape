@@ -38,14 +38,14 @@ test('no scene draws its own Close / Close Terminal / [CLOSE] button beside the 
     }
 });
 
-test('pop-ups that are not confirms close with the shared X; confirms keep two named buttons and no X', () => {
+test('pop-ups close with the shared X; the SIS and ESD confirms have one named button and their own X', () => {
     const sis = src(SCENES['sis-config-threshold']);
     for (const id of ['sis-detail-close', 'sis-compare-close']) {
         assert.match(sis, new RegExp(`class="minigame-close-button sis-modal-close" id="${id}" aria-label="Close">&times;<`), `${id} is the shared X`);
     }
     assert.match(sis, /class="minigame-close-button sis-modal-close" id="sis-confirm-close" aria-label="Close">&times;</, 'the tamper confirm has its own X');
     assert.doesNotMatch(sis, /sis-confirm-no/, 'no Cancel beside the one named button (sis02 m8)');
-    assert.match(sis, /id="sis-confirm-yes">Confirm</);
+    assert.match(sis, /id="sis-confirm-yes">Confirm Tamper Report</);
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal-with-x h4 \{[^}]*padding-right: 40px/, 'pop-up title stops short of its X');
     const esd = src(SCENES['esd-pushbutton']);
     assert.match(esd, /id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</);

@@ -132,12 +132,10 @@
     border-color: #8d6f1c;
 }
 
-.sis-btn-compare[disabled] {
-    background: #5d5d5d;
-    color: #cfcfcf;
-    cursor: not-allowed;
-}
-
+/* One look for a locked button, Compare or Confirm: grey fill, plain grey border */
+.sis-btn-compare[disabled],
+.sis-btn-compare[disabled]:hover,
+.sis-btn-compare[disabled]:active,
 .sis-btn-confirm[disabled],
 .sis-btn-confirm[disabled]:hover,
 .sis-btn-confirm[disabled]:active {
@@ -145,6 +143,9 @@
     color: #cfcfcf;
     border-color: #444;
     cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: none;
 }
 
 /* The words that say why Confirm is grey; the border and marker keep it from being colour only */

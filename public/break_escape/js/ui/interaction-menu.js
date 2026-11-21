@@ -69,7 +69,7 @@ function injectStyles() {
             align-items: center;
             gap: 8px;
             flex: none;
-            padding: 2px 2px 4px 8px;
+            padding: 2px 2px 6px 8px;
         }
         #be-interaction-menu .be-im-title {
             flex: 1;
@@ -91,8 +91,12 @@ function injectStyles() {
             padding: 6px;
             margin: -6px;
         }
+        /* position: relative makes the X its own containing block: the shared
+           .game-modal-close::after hit area (position: absolute) would otherwise anchor to the
+           whole menu and sit over every entry. The reach here is 6px, so the 32px X has a
+           44px target that stays inside the head (2px above the list is the head's own pad). */
         #be-interaction-menu .be-im-close {
-            position: static;
+            position: relative;
             flex: none;
             box-sizing: border-box;
             width: 32px;
@@ -102,6 +106,9 @@ function injectStyles() {
             font-family: 'Press Start 2P', monospace;
             font-size: 14px;
             line-height: 1;
+        }
+        #be-interaction-menu .be-im-close::after {
+            inset: -6px;
         }
         #be-interaction-menu .be-im-list {
             flex: 1 1 auto;

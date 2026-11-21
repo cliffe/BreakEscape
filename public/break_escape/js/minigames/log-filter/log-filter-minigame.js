@@ -1172,7 +1172,11 @@ export class LogFilterMinigame extends MinigameScene {
     }
 
     _renderFlagConfirmOverlay(panel) {
+        // The body is the scroller and the button a fixed footer, so on a short screen
+        // (844x390) all of the text is reachable and CONFIRM never covers the last lines.
+        panel.classList.add('lf-overlay-panel-flag');
         const body = this._overlayHeader(panel, this._flagConfirmTitle);
+        body.classList.add('lf-flag-confirm-scroll', 'pixel-scroll');
         const closed = String(this._selectedEntry?.status || '').toUpperCase() === 'CLOSED';
 
         // The next step, stated first: the flag is not set until CONFIRM is pressed
@@ -1185,6 +1189,14 @@ export class LogFilterMinigame extends MinigameScene {
             ? this._flagConfirmBodyClosed : this._flagConfirmBody);
         body.appendChild(text);
 
+        // "More below" line, in flow between the body and the footer: shown while text is
+        // hidden below the fold, hidden (it keeps its height) once the end is in view
+        const cue = this._el('div', 'lf-more-cue');
+        cue.ariaHidden = 'true';
+        cue.textContent = 'MORE BELOW v';
+        panel.appendChild(cue);
+        this._attachMoreBelowCue(body, cue);
+
         const actions = this._el('div', 'lf-flag-confirm-actions');
 
         const confirm = this._el('button', 'lf-flag-confirm-btn');
@@ -1192,8 +1204,26 @@ export class LogFilterMinigame extends MinigameScene {
         confirm.addEventListener('click', () => this._onFlagConfirmed());
 
         actions.appendChild(confirm);
-        body.appendChild(actions);
-        try { confirm.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
+        panel.appendChild(actions);
+        // Focus the X, the safe choice (as gameConfirm does): a held or doubled Enter from
+        // the [FLAG SESSION] button never flags before the player has read the next step
+        try { panel.querySelector('.lf-overlay-close').focus({ preventScroll: true }); } catch (e) { /* best effort */ }
+    }
+
+    // Vertical "more below" cue for a scroller. display:none when nothing is cut,
+    // visibility:hidden at the end of the scroll (no jump), visible while text is hidden.
+    _attachMoreBelowCue(scroller, cue) {
+        const update = () => {
+            const left = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+            const overflows = (scroller.scrollHeight - scroller.clientHeight) > 2;
+            cue.style.display = overflows ? 'block' : 'none';
+            cue.style.visibility = left > 2 ? 'visible' : 'hidden';
+        };
+        scroller.addEventListener('scroll', update);
+        if (typeof ResizeObserver === 'function') new ResizeObserver(update).observe(scroller);
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(update);
+        update();
+        return update;
     }
 
     _onFlagConfirmed() {
