@@ -164,6 +164,80 @@ export function creditsStatus(statusText, themeStatus) {
     return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
 }
 
+const THREAT_BAD = 'FAILED|FAILURES?|COMPROMISED';
+const THREAT_BAD_WORDS = new RegExp(`\\b(?:${THREAT_BAD})\\b`, 'i');
+// A negator, then at most one word ("NO SYSTEMS", "NOT YET", "NOT A"), then a bad word.
+// "NON-" and "UN-" prefixes count; the separator may be a space or a hyphen.
+const THREAT_NEGATORS = 'NOT|NEVER|NO|NOTHING|NOBODY|NONE|NON|UN';
+const THREAT_NEGATED = new RegExp(`\\b(?:${THREAT_NEGATORS})\\b[\\s-]+(?:(?!${THREAT_BAD})[A-Z]+\\s+)?(?:${THREAT_BAD})\\b`, 'gi');
+const THREAT_NOT_CONTAINED = /\b(?:(?:NOT|NEVER)\s+|UN-?)CONTAINED\b/i;
+const THREAT_RED = new Set(['ACTIVE', 'CRITICAL', 'BREACH']);
+const THREAT_GREEN = new Set(['CONTAINED', 'SECURE', 'CLEAR']);
+const THREAT_TONES = { red: 'bad', green: 'good', cyan: 'custom' };
+
+/**
+ * Does this text say the operation went wrong? Whole words only (FAILSAFE and
+ * UNCOMPROMISED say nothing), and a negated word does not count ("NOT COMPROMISED"),
+ * while "NOT CONTAINED" does.
+ */
+export function sniffsFailed(text) {
+    if (typeof text !== 'string') return false;
+    if (THREAT_NOT_CONTAINED.test(text)) return true;
+    return THREAT_BAD_WORDS.test(text.replace(THREAT_NEGATED, ' '));
+}
+
+/** The outcome a value names, or null: "contained" and "active" are the only two. */
+function outcomeOf(v) {
+    const t = typeof v === 'string' ? v.trim().toLowerCase() : '';
+    return t === 'contained' || t === 'active' ? t : null;
+}
+
+/** The tone of an ending's own THREAT text: a threatTone wins, else known words, else cyan. */
+function overrideTone(text, threatTone) {
+    const forced = THREAT_TONES[typeof threatTone === 'string' ? threatTone.trim().toLowerCase() : ''];
+    if (forced) return forced;
+    const word = text.toUpperCase();
+    if (THREAT_RED.has(word)) return 'bad';
+    if (THREAT_GREEN.has(word)) return 'good';
+    return 'custom';
+}
+
+/**
+ * The THREAT row once the story is over. While the visualiser is live the row follows the
+ * audio (LOW to CRITICAL), so it read CRITICAL over a win. A concluded mission (credits
+ * rolling) holds the outcome instead. In order: the ending's threatText; PENDING while the
+ * result is unsynced; an explicit `outcome` ("contained" or "active") on the ending or on
+ * any credit line that shows (active wins over contained); then, as the fallback for a
+ * scenario that sets none, a header, status or title line that says FAILED, FAILURE or
+ * COMPROMISED (see sniffsFailed) reads ACTIVE. Anything else is CONTAINED. Null means the
+ * row stays audio-driven (no credits yet).
+ * @param {object} o
+ * @param {string|null} [o.threatText] - a credits entry's own value
+ * @param {string|null} [o.threatTone] - "red", "green" or "cyan": overrides the tone of threatText
+ * @param {string|null} [o.outcome] - the entry's explicit "contained" or "active"
+ * @param {string|null} [o.headerText]
+ * @param {string|null} [o.statusText]
+ * @param {Array<{text:string,style?:string,outcome?:string}>} [o.credits] - the resolved credits lines
+ * @param {boolean} [o.over] - the credits are rolling or the mission has concluded
+ * @returns {{text:string, tone:'good'|'bad'|'custom'}|null}
+ */
+export function creditsThreat({ threatText, threatTone, outcome, headerText, statusText, credits, over } = {}) {
+    if (!over) return null;
+    const lines = (credits || []).filter(l => l && typeof l === 'object');
+    if (typeof threatText === 'string' && threatText.trim()) {
+        const text = threatText.trim();
+        return { text, tone: overrideTone(text, threatTone) };
+    }
+    if (typeof statusText === 'string' && /PENDING/i.test(statusText)) return { text: 'PENDING', tone: 'custom' };
+    const stated = [outcomeOf(outcome), ...lines.map(l => outcomeOf(l.outcome))].filter(Boolean);
+    if (stated.length) {
+        return stated.includes('active') ? { text: 'ACTIVE', tone: 'bad' } : { text: 'CONTAINED', tone: 'good' };
+    }
+    const titles = lines.filter(l => l.style === 'title').map(l => l.text || '');
+    const failed = [headerText, statusText, ...titles].some(sniffsFailed);
+    return failed ? { text: 'ACTIVE', tone: 'bad' } : { text: 'CONTAINED', tone: 'good' };
+}
+
 /** What the header shows: the ending's text, else the theme's heading, else the default. */
 export function creditsHeader(headerText, themeHeading) {
     return headerText || themeHeading || DEFAULT_CREDITS_HEADER;

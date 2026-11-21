@@ -189,6 +189,39 @@ def check_duplicate_show_scenario_brief(rendered_json)
   issues
 end
 
+# THREAT row `outcome` checks for a music event's credits (credits-theme.js creditsThreat).
+# A line, person, clause or section may carry `outcome`; only "contained" and "active" are read.
+# A title, headerText or statusText that says FAILED or COMPROMISED, with no outcome and no
+# threatText anywhere, is left to the engine's word sniffing: warn so the author states it.
+CREDITS_OUTCOMES = %w[contained active].freeze
+CREDITS_BAD_WORDS = /\b(?:FAILED|FAILURES?|COMPROMISED)\b/i
+
+def credits_nodes(items)
+  Array(items).flat_map do |item|
+    next [] unless item.is_a?(Hash)
+
+    [item] + credits_nodes(item['lines']) + credits_nodes(item['people']) + credits_nodes(item['clauses'])
+  end
+end
+
+def credits_outcome_issues(event, path)
+  nodes = credits_nodes(event['credits'])
+  found = []
+  nodes.each do |n|
+    next unless n.key?('outcome') && !CREDITS_OUTCOMES.include?(n['outcome'])
+
+    found << "❌ ERROR: '#{path}/credits' has outcome #{n['outcome'].inspect}; use \"contained\" or \"active\", lowercase, as the schema enum does for an entry."
+  end
+  stated = event.key?('outcome') || nodes.any? { |n| n.key?('outcome') } || event['threatText'].to_s.strip != ''
+  titles = nodes.select { |n| n['style'] == 'title' }.map { |n| n['text'].to_s }
+  wording = [event['headerText'], event['statusText'], *titles].compact.select { |t| t.to_s.match?(CREDITS_BAD_WORDS) }
+  if !stated && wording.any?
+    found << "⚠️ WARNING: '#{path}' reads #{wording.first.inspect} but sets no \"outcome\" (\"contained\" or \"active\") or threatText, " \
+             "so the THREAT row guesses from the words. Set outcome on the entry or its title line to say what it shows."
+  end
+  found
+end
+
 # Validate JSON against schema
 def validate_json(json_data, schema_path)
   unless File.exist?(schema_path)
@@ -4364,6 +4397,7 @@ def check_common_issues(json_data, valid_item_types = nil)
     music_events = json_data['music']['events'] || []
     music_events.each_with_index do |event, idx|
       music_path = "music/events[#{idx}]"
+      issues.concat(credits_outcome_issues(event, music_path)) if event.is_a?(Hash)
       next unless event['trigger']
       if (m = event['trigger'].match(/^conversation_closed:(.+)$/))
         npc_id = m[1]
