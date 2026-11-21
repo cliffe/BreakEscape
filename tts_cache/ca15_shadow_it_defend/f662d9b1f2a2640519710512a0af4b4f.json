@@ -1,0 +1,14 @@
+{
+  "key": "f662d9b1f2a2640519710512a0af4b4f",
+  "npc": "kit_chidi_okeke",
+  "text": "A café wifi page wanting your work password is the trap, dressed up on a near-enough web address. Accept the terms, nowt else.",
+  "delivery": "easy-going, matter-of-fact",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:08Z"
+}

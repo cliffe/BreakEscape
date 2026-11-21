@@ -223,7 +223,7 @@ test('a pass whose word was not found cannot run; with no pass run, or no roster
     assert.equal(noWord.panels[2].rows[1].outcome, 'struck');
     assert.equal(noWord.panels[2].rows[1].text, '0 of 4 accounts opened');
     const noRoster = G.buildRun(sprayBlock(), { ...allFacts, se_intel_f_names: false });
-    assert.equal(noRoster.panels[2].rows[0].outcome, 'missing', 'no roster, no accounts to try');
+    assert.equal(noRoster.panels[2].rows[0].outcome, 'blocked', 'no roster, no accounts to try: the pass was never tried, so it reads not run');
     // E18 B2 item 4: a zero-target run gets its own plain "nothing to spray" line, not
     // "0 of 0 accounts opened" with a "did not work" status.
     assert.equal(noRoster.panels[2].rows[2].outcome, 'blocked');
@@ -399,4 +399,61 @@ test('childLaunch(guess) passes a spray block through unchanged', () => {
 
 test('the new row states are styled', () => {
     assert.ok(css.includes('.epr-gs-found') && css.includes('.epr-gs-sprayed') && css.includes('--se-font-address'));
+});
+
+// ── ca18 regate: the empty-list branch (no staff pinned) ────────────────────────────────────────────────
+test('ca18: with no staff list a spray pass reads "not run", never "not found"; a missing word still reads "not found"', () => {
+    const none = {}; // nothing pinned
+    const run = G.buildRun(sprayBlock(), none);
+    const spray = run.panels.find((p) => p.id === 'spray').rows.filter((r) => r.id !== 'spray_result');
+    assert.deepEqual(spray.map((r) => r.outcome), ['blocked', 'blocked']);
+    const g = new G.GuesserRun(run);
+    g.runAll();
+    const states = spray.map((r) => g.stateOf(run.rows.findIndex((x) => x.id === r.id)));
+    assert.deepEqual(states, ['blocked', 'blocked']);
+    assert.equal(G.DEFAULT_TEXT.blocked, 'not run');
+    // staff list built, but the project word not collected: that pass is a word not found
+    const names = { se_intel_f_names: true, se_intel_f_pattern: true };
+    const r2 = G.buildRun(sprayBlock(), names);
+    assert.equal(r2.panels.find((p) => p.id === 'spray').rows.find((r) => r.id === 'p_project').outcome, 'missing');
+});
+
+test('ca18: the spray lands only through a spray row; stuffing alone leaves sprayLanded false', () => {
+    const empty = new G.GuesserRun(G.buildRun(sprayBlock(), {}));
+    empty.runAll();
+    assert.equal(empty.landed, true); // the stuffed list still opens an account
+    assert.equal(empty.sprayLanded, false);
+    const full = new G.GuesserRun(G.buildRun(sprayBlock(), allFacts));
+    full.runAll();
+    assert.equal(full.sprayLanded, true);
+});
+
+test('ca18: the scene writes sprayedGlobal only when the spray itself opened accounts', () => {
+    const withBlock = (b) => ({ ...b, sprayedGlobal: 'spray_fixture_sprayed' });
+    const sprayed = openScene(withBlock(sprayBlock()), allFacts);
+    finish();
+    assert.deepEqual(sprayed.writes, [['spray_fixture_landed', true], ['spray_fixture_sprayed', true]]);
+    const empty = openScene(withBlock(sprayBlock()), {});
+    finish();
+    assert.deepEqual(empty.writes, [['spray_fixture_landed', true]]);
+});
+
+test('ca18: the flip with no staff list says no spray ran; with one it keeps the spray lines', () => {
+    const strings = { brief: 'x', flipHeading: 'H', flipGuessIntro: 'SPRAYED intro', flipGuessIntroNoSpray: 'NOSPRAY intro',
+        flipDefenderLine: 'SPRAYED defender', flipDefenderLineNoSpray: 'NOSPRAY defender' };
+    const run = (globals) => {
+        const ep = episode();
+        ep.guess = { ...sprayBlock(), sprayedGlobal: 'spray_fixture_sprayed' };
+        ep.strings = { ...ep.strings, ...strings };
+        setup(ep, { ...globals, [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] }, spray_fixture_sprayed: false });
+        open(ep);
+        playConsole();
+        return cur().container.querySelector('.aw-flip');
+    };
+    const empty = run({});
+    assert.match(empty.querySelector('.aw-lead').textContent, /NOSPRAY intro/);
+    assert.equal(empty.querySelector('.aw-defender-line').textContent, 'NOSPRAY defender');
+    const full = run(allFacts);
+    assert.match(full.querySelector('.aw-lead').textContent, /SPRAYED intro/);
+    assert.equal(full.querySelector('.aw-defender-line').textContent, 'SPRAYED defender');
 });

@@ -29,7 +29,7 @@
 // can never drift apart (P5-R single-source). The model is pure (no DOM, no network), so
 // importing it here adds no browser coupling; both are re-exported below for callers and
 // the renderer's test, which used to read them from this file.
-import { resolveDomainOption, isDomainBlocked, fieldLabel } from './landing-page-model.js';
+import { resolveDomainOption, isDomainBlocked, fieldLabel, checkHostFor } from './landing-page-model.js';
 
 export { resolveDomainOption, isDomainBlocked };
 
@@ -286,7 +286,7 @@ function renderFakeCheck({ pageDef, choices, mode, make, doc }) {
     root.setAttribute('data-mode', mode);
     root.setAttribute('data-page-type', 'fakeCheck');
     root.setAttribute('role', 'img');
-    const host = typeof check.host === 'string' ? check.host : '';
+    const host = checkHostFor(check, sel.hostId);
     root.setAttribute('aria-label', `A "verify you are human" page over ${host || 'a familiar site'}.`);
 
     // Chrome: the genuine site's address, padlock shown (a compromised real site keeps its cert).

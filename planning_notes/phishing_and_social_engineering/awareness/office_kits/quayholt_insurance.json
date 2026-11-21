@@ -56,6 +56,86 @@
     }
   },
   "setPieces": {
+    "ca03_defend_react": {
+      "_note": "D280: the ca03 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca03_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "anjali_rao": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca03_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca08_defend_react": {
+      "_note": "D280: the ca08 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca08_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca08_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca10_defend_react": {
+      "_note": "D280: the ca10 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca10_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca10_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca16_defend_react": {
+      "_note": "D280: the ca16 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca16_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca16_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca19_defend_react": {
+      "_note": "D280: the ca19 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca19_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca19_react"
+            }
+          ]
+        }
+      }
+    },
     "ca05_defend_react": {
       "_note": "D265: the ca05 defend twin's after-sort colleague beat. A blind persona playtest found the twin flat once the sort was done: nobody reacts. Darren speaks one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close, so it lands after the sort. targetKnot (no literal bark) makes the engine speak ca05_react's first line via TTS, so the line lives in the ambient ink and branches there on kit_key_caught, true on every path. Twin only; the full ca05 shell uses ca05_signin_prompt. No globals/objects/timers/mappings: the twin is defend-only (tier S).",
       "staff": {
@@ -1032,7 +1112,7 @@
       }
     },
     "ca10_paste_check": {
-      "_note": "ca10 colleague request (WAVE6_BUILD.md s4). Darren, the service desk lead, has opened the Hatherby Trade supplier portal from his bookmarks and it shows a 'Verify you are human' box that wants Windows and R, a paste and Enter. The line would fetch a stealer that copies the browser's saved passwords and signed-in sessions. Wrong or no answer: Anjali says Darren's account is being used from somewhere nobody has seen (row 8), and the PC shows nothing wrong (moved). Right answer (close): done after 4 s. Darren is frozen on needs and never suspended; Anjali is suspended and walked to her post (7.4, 8.3), her kit needsHome. No mapping reads her arrival.",
+      "_note": "ca10 colleague request (WAVE6_BUILD.md s4). Darren, the service desk lead, has opened the Fernside supplier portal from his bookmarks and it shows a 'Verify you are human' box that wants Windows and R, a paste and Enter. The line would fetch a stealer that copies the browser's saved passwords and signed-in sessions. Wrong or no answer: Anjali says Darren's account is being used from somewhere nobody has seen (row 8), and the PC shows nothing wrong (moved). Right answer (close): done after 4 s. Darren is frozen on needs and never suspended; Anjali is suspended and walked to her post (7.4, 8.3), her kit needsHome. No mapping reads her arrival.",
       "globals": {
         "kit_ca10_there": false,
         "kit_ca10_asked": false,
@@ -1063,15 +1143,15 @@
           "requiresItemHintVariants": [
             {
               "condition": "globalVars.kit_ca10_moved === true",
-              "value": "Darren's workstation. The Hatherby Trade tab is still open. Nothing on screen looks wrong."
+              "value": "Darren's workstation. The Fernside portal tab is still open. Nothing on screen looks wrong."
             },
             {
               "condition": "globalVars.kit_ca10_check_choice === 'close'",
-              "value": "Darren's workstation. The Hatherby Trade tab is closed."
+              "value": "Darren's workstation. The Fernside portal tab is closed."
             },
             {
               "condition": "globalVars.kit_ca10_out === true",
-              "value": "Darren's workstation. The Hatherby Trade portal, opened from his bookmarks, shows a 'Verify you are human' box. It says press Windows and R, then paste and press Enter."
+              "value": "Darren's workstation. The Fernside portal, opened from his bookmarks, shows a 'Verify you are human' box. It says press Windows and R, then paste and press Enter."
             }
           ],
           "position": {

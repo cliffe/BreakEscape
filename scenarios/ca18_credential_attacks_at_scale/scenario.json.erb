@@ -53,7 +53,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Credential attacks at scale: finished",
-        "body": "You've seen a whole practice sprayed and stuffed from its public pages, then worked through the alerts from your own seat. That's this episode finished. The debrief goes through each one."
+        "body": "You've seen how a whole practice is attacked from its public pages, then worked through the alerts from your own seat. That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -78,6 +78,7 @@
     "se_intel_ms_motto": false,
     "se_intel_ms_place": false,
     "guess_e18_landed": false,
+    "guess_e18_sprayed": false,
     "kit_attack_done": false,
     "kit_defend_done": false,
     "kit_quiet": false,
@@ -532,6 +533,7 @@
           "neverLands": true
         },
         "landedGlobal": "guess_e18_landed",
+        "sprayedGlobal": "guess_e18_sprayed",
         "note": "No real password is typed here; every account, word and pair is made up for the exercise."
       },
       "defend": {
@@ -568,11 +570,13 @@
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
         "stages": {
           "osint": {
-            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; the useful lines are the patterns and projects, not individual staff. Five useful facts are there to find, and the more you note, the more the campaign has to work with."
+            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes. The lines worth noting are the one listing the team, the one showing how staff email addresses are built, and the words the practice uses: a project, its strapline, its street. Five useful facts are there to find. The team list and the address pattern are what the spray needs to aim at anyone, so note those first, and the more you note, the more the campaign has to work with."
           }
         },
         "flipHeading": "Now it's your inbox.",
         "flipGuessIntro": "You watched one password open the predictable accounts across the whole practice, and a stolen one open the accounts where it had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+        "flipGuessIntroNoSpray": "The spray needs both the staff names and the address pattern, and you did not note both, so it had no addresses to try and never ran. The stolen list did run, and opened the accounts where a password had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+        "flipDefenderLineNoSpray": "The spray never ran because it needs both the staff names and the address pattern to aim at anyone, but the People and Contact pages hand over both to anyone who reads them, and a real attacker would collect them first. The stolen pair opened the accounts where a password had been reused. A different password for every account, and not a word off the website, is what stops both. Now the alerts are arriving, and some are fakes.",
         "flipDefenderLine": "One password off the website, tried once across everyone, opened the predictable accounts. No clever cracking, just reuse and words anyone could read. A different password for every account, and not a word off the website, is what would have stopped it. Now the alerts are arriving, and some are fakes.",
         "flipNoSend": "Nothing of the practice's was opened to replay, but the lesson holds: a reused password, or a word off the website, is what opens an account. Next, you tell the real alerts from the fakes.",
         "flipMissed": "The attack opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
@@ -598,16 +602,31 @@
           },
           {
             "heading": "What the practice does",
-            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses.\n\nTo a real attacker, the guess list you built and sprayed hands back a few working sign-ins, each one worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nOne opened account reached client files and the finance controller's mail, so the cost ran from a single password up to a confidentiality and near-payment incident, and the provider spent the afternoon forcing resets and combing the sign-in logs."
+            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses."
+          },
+          {
+            "heading": "What the guess list gave an attacker",
+            "text": "To a real attacker, the guess list you built and sprayed hands back a few working sign-ins, each one worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nOne opened account reached client files and the finance controller's mail, so the cost ran from a single password up to a confidentiality and near-payment incident, and the provider spent the afternoon forcing resets and combing the sign-in logs.",
+            "condition": "globalVars.guess_e18_sprayed"
+          },
+          {
+            "heading": "What a spray would have needed",
+            "text": "The spray needs both the staff names and the address pattern, and you did not note both, so it never ran and no account opened that way. A real attacker would collect the names from the People page and the address pattern from the Contact page first, then try one likely password against every address. The stolen list you ran did open a work email account and a supplier portal login, where a password had been reused. To a real attacker, a pair like that is worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nAn account opened that way can reach client files and the finance controller's mail, so the cost can run from a single password up to a confidentiality and near-payment incident, with the provider spending the afternoon forcing resets and combing the sign-in logs.",
+            "condition": "globalVars.guess_e18_landed && !globalVars.guess_e18_sprayed"
+          },
+          {
+            "heading": "What the campaign would have needed",
+            "text": "Nothing in the campaign opened an account this time, so there was no cost to follow. A real attacker would collect the names from the People page and the address pattern from the Contact page, then try one likely password against every address, and run a stolen breach list across the services the firm uses. One predictable password or one reused pair is all it takes to open work email, client project files and a supplier portal, and the cost can run from a single password up to a confidentiality and near-payment incident.",
+            "condition": "!globalVars.guess_e18_landed"
           },
           {
             "heading": "A new password, not the old one moved on",
-            "text": "The attacker's list still held Lorna's old password from the morning's spray. On an account that has just been reset, their first tries are that password with a small change: the next season, the next year, a number on the end. Lorna made a new password out of three random words instead of tweaking the old one, so those tries opened nothing, and the password they held was worth little to them. Three random words suit a password she has to type from memory each morning; a password manager keeps every other one, each different.",
+            "text": "The attacker's list still held Lorna's old password from the morning's attack. On an account that has just been reset, their first tries are that password with a small change: the next season, the next year, a number on the end. Lorna made a new password out of three random words instead of tweaking the old one, so those tries opened nothing, and the password they held was worth little to them. Three random words suit a password she has to type from memory each morning; a password manager keeps every other one, each different.",
             "condition": "globalVars.kit_ca18_reset_choice === 'words'"
           },
           {
             "heading": "What the new season gave away",
-            "text": "Lorna saved her old password with the season moved on. The reset page turned down the old password itself, but not a small change to it. The attacker's list still held the old one from the morning's spray. On an account that has just been reset, their first tries are small changes to it: the next season, the next year, a number on the end, a few tries an account so nothing locks. One of the first was right. Only the sign-in prompt on her phone stood between them and her mail, and sending prompts until someone taps Approve is their next move. Fenlow locked her account until she sets a new password, not the old one with a tweak, checked that no prompt was approved, signed her out everywhere to be sure, and told her to turn down and report any prompts she didn't start. They are checking every reset made today for the same pattern.",
+            "text": "Lorna saved her old password with the season moved on. The reset page turned down the old password itself, but not a small change to it. The attacker's list still held the old one from the morning's attack. On an account that has just been reset, their first tries are small changes to it: the next season, the next year, a number on the end, a few tries an account so nothing locks. One of the first was right. Only the sign-in prompt on her phone stood between them and her mail, and sending prompts until someone taps Approve is their next move. Fenlow locked her account until she sets a new password, not the old one with a tweak, checked that no prompt was approved, signed her out everywhere to be sure, and told her to turn down and report any prompts she didn't start. They are checking every reset made today for the same pattern.",
             "condition": "globalVars.kit_ca18_reset_choice === 'save' || globalVars.kit_ca18_reset_choice === 'silent'"
           }
         ]

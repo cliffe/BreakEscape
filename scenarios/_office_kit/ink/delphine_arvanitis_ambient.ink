@@ -41,3 +41,19 @@ Delphine Arvanitis: Morning. The studio's just through here.
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca14_react ===
+{ kit_key_caught:
+    Delphine Arvanitis: Good eye. They copy a partner's face and name off what we post, then slide in as someone we'd all trust. #delivery: poised, approving
+- else:
+    Delphine Arvanitis: A fake profile of someone senior is built from our own photos and posts. The less we share, the less they can copy. #delivery: polite, matter-of-fact
+}
+-> bye
+
+=== ca18_react ===
+{ kit_key_caught:
+    Delphine Arvanitis: Nicely caught. Those "account locked" emails go out by the thousand, and the reset link is where they collect passwords. #delivery: poised, approving
+- else:
+    Delphine Arvanitis: An "account locked" warning goes out wide, hoping a few click through and type their password straight into the attacker's page. #delivery: polite, matter-of-fact
+}
+-> bye

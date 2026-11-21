@@ -1,0 +1,14 @@
+{
+  "key": "7f3d01a29d59b2adbd1a04ef717849c1",
+  "npc": "kit_darren_price",
+  "text": "Caught before it spread. It locks whatever it reaches, then waits for someone to pay to get it back.",
+  "delivery": "approving, dry",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:15Z"
+}

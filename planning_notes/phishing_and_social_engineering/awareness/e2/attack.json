@@ -128,7 +128,9 @@
           { "id": "careers", "title": "Careers", "blocks": [
             { "id": "blk_vacancy", "kind": "p",
               "text": "Now hiring: Warehouse Operative (ref WHO-114), reporting to Warehouse Manager Colin Mather. Apply now.",
-              "fact": "tarrowby_vacancy" } ] } ] },
+              "fact": "tarrowby_vacancy" },
+            { "id": "blk_vacancy_driver", "kind": "p",
+              "text": "Also hiring: HGV driver (Class 1), based at the Shipley depot. Apply now." } ] } ] },
 
       { "id": "tarrowby_social", "name": "Friendface", "url": "friendface.example", "type": "social",
         "profiles": [

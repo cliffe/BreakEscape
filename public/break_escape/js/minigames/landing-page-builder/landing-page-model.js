@@ -382,6 +382,18 @@ function optById(list, id) {
 }
 
 /**
+ * The address a fake-check page sits on: the chosen host option's own `host` when it has one
+ * (a look-alike or unrelated address), else the authored genuine site (check.host). A host id
+ * that is missing or unknown falls back to check.host.
+ */
+export function checkHostFor(check, hostId) {
+  const c = isObj(check) ? check : {};
+  const opt = optById(c.hosts, hostId);
+  if (opt && typeof opt.host === 'string' && opt.host) return opt.host;
+  return typeof c.host === 'string' ? c.host : '';
+}
+
+/**
  * Score a fake "verify you are human" check (ENG-03b). Pure. Same result shape as scorePage.
  * The four factors read the chosen menu entries from choices.check; the host's trust flag and
  * the match/slips flags on the pretext/steps/urgency entries decide full/partial/zero, mirroring
@@ -660,7 +672,7 @@ export function linkInfoFor(record, pageDef, kitId) {
       kitId: kitId == null ? null : kitId,
       pageId: record.pageId,
       pageType: 'fakeCheck',
-      host: typeof check.host === 'string' ? check.host : null,
+      host: checkHostFor(check, sel.hostId) || null,
       hostId: sel.hostId == null ? null : sel.hostId,
       credibility: Number(record.credibility) || 0,
       gatesPassed: record.gatesPassed === true,

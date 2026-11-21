@@ -544,7 +544,12 @@
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
         "flipHeading": "Now it lands on a colleague",
         "flipIntro": "This is the email you sent Leo, the operations colleague who places the weekly Fernside order. The parts picked out below are what would give it away.",
-        "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+        "flipDefenderLine": "Leo reached your page between jobs. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+        "flipDefenderLineByHost": {
+          "genuine": "Leo opened the Fernside portal between jobs, the way he does every week. The page looked like the portal he already trusts, padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+          "lookalike": "Your page sat on a look-alike address, not Fernside's own portal. When Leo reached it between jobs, it looked enough like the portal he trusts, padlock and all. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+          "unrelated": "Your page sat on an address with nothing to do with Fernside, which on its own should have stopped him. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does."
+        },
         "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
         "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
         "flipMissedHeading": "Nothing to replay this time",
@@ -581,16 +586,21 @@
           },
           {
             "heading": "Closing the tab",
-            "text": "The attacker had planted the check on a supplier page Darren trusted, and needed him to run one line. He closed the tab and rang security. The page was blocked and Hatherby Trade were warned their site had been broken into, so the attacker lost the page as well as the click.",
+            "text": "The attacker had planted the check on a supplier page Darren trusted, and needed him to run one line. He closed the tab and rang security. The page was blocked and Fernside were warned their site had been broken into, so the attacker lost the page as well as the click.",
             "condition": "globalVars.kit_ca10_check_choice === 'close'"
           },
           {
             "heading": "What the pasted line did",
-            "text": "Darren pasted the line the page had already put on his clipboard. It ran the attacker's downloader, which fetched a tool that copies the browser's saved passwords and the sessions it is already signed in to. Within a minute they were in Darren's Quayholt account from their own machine. The phone prompt never came up: a copied session is already past the password and the prompt, and nothing showed on his screen. Signing him out or changing his password on its own would leave them a way back: anything they added while they were in outlasts both. So IT take his workstation away to be cleaned, sign him out of every site the browser was signed in to, change every password it had saved from a clean machine, remove any sign-in method or mailbox rule they added, and check what his account touched. They also block the page and warn Hatherby Trade that their site has been broken into.",
+            "text": "Darren pasted the line the page had already put on his clipboard. It ran the attacker's downloader, which fetched a tool that copies the browser's saved passwords and the sessions it is already signed in to. Within a minute they were in Darren's Quayholt account from their own machine. The phone prompt never came up: a copied session is already past the password and the prompt, and nothing showed on his screen. Signing him out or changing his password on its own would leave them a way back: anything they added while they were in outlasts both. So IT take his workstation away to be cleaned, sign him out of every site the browser was signed in to, change every password it had saved from a clean machine, remove any sign-in method or mailbox rule they added, and check what his account touched. They also block the page and warn Fernside that their site has been broken into.",
             "condition": "globalVars.kit_ca10_check_choice === 'paste' || globalVars.kit_ca10_check_choice === 'silent'"
           }
         ],
-        "flipPageIntro": "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below.",
+        "flipPageIntro": "This is the page you built, as Leo Brennan meets it. Anything that would give it away is picked out below.",
+        "flipPageIntroByHost": {
+          "genuine": "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below.",
+          "lookalike": "This is the page you built, as Leo Brennan meets it on your look-alike address, which he takes for the Fernside portal. Anything that would give it away is picked out below.",
+          "unrelated": "This is the page you built, as Leo Brennan meets it on an address with nothing to do with Fernside. Anything that would give it away is picked out below."
+        },
         "flipPageHeading": "The page you built"
       },
       "debrief": {
@@ -872,11 +882,13 @@
             {
               "id": "lookalike",
               "label": "A look-alike you set up (orders-fernside.example)",
+              "host": "orders-fernside.example",
               "trust": "lookalike"
             },
             {
               "id": "unrelated",
               "label": "An unrelated page nobody expects",
+              "host": "weekly-menu-offers.example",
               "trust": "unrelated"
             }
           ],
@@ -1504,15 +1516,15 @@
           "requiresItemHintVariants": [
             {
               "condition": "globalVars.kit_ca10_moved === true",
-              "value": "Darren's workstation. The Hatherby Trade tab is still open. Nothing on screen looks wrong."
+              "value": "Darren's workstation. The Fernside portal tab is still open. Nothing on screen looks wrong."
             },
             {
               "condition": "globalVars.kit_ca10_check_choice === 'close'",
-              "value": "Darren's workstation. The Hatherby Trade tab is closed."
+              "value": "Darren's workstation. The Fernside portal tab is closed."
             },
             {
               "condition": "globalVars.kit_ca10_out === true",
-              "value": "Darren's workstation. The Hatherby Trade portal, opened from his bookmarks, shows a 'Verify you are human' box. It says press Windows and R, then paste and press Enter."
+              "value": "Darren's workstation. The Fernside portal, opened from his bookmarks, shows a 'Verify you are human' box. It says press Windows and R, then paste and press Enter."
             }
           ],
           "position": {

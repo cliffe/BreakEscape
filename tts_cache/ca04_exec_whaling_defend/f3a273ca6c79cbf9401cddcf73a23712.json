@@ -1,0 +1,14 @@
+{
+  "key": "f3a273ca6c79cbf9401cddcf73a23712",
+  "npc": "kit_julian_sallow",
+  "text": "Well judged. The rush and the \"keep it between us\" are there to stop you picking up the phone to check.",
+  "delivery": "measured, dry",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:32Z"
+}

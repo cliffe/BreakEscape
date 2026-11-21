@@ -97,3 +97,11 @@ Fatima Begum: No name on it, nothing. What do you reckon I do with it?
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca17_react ===
+{ kit_key_caught:
+    Fatima Begum: Good call. An invite that needs you to install their app first is how unchecked software lands on a work machine. #delivery: friendly, approving
+- else:
+    Fatima Begum: A meeting link that makes you install something is the lure. Our own tool's already on the machine, so leave new apps to the desk. #delivery: friendly, matter-of-fact
+}
+-> bye

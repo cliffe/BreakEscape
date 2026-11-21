@@ -120,3 +120,35 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca02_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good spot. That "enable content" box is the whole trick. Click it and you run whatever's tucked inside. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A real CV just opens. One that begs you to enable content is after that one click to let it loose. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca09_react ===
+{ kit_key_caught:
+    Chidi Okeke: That message wants your sign-in number read back, and that number's sat on their screen. Real IT never asks for it. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: No real IT desk asks you to read back a code or tap approve. Do either and you've handed them the account. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca15_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good call. Posted in or dropped in a car park, it's the same bait, left hoping someone plugs it in for a look. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A stick that turns up, posted or found, is a tempting thing, and that's the whole point of it. It goes to IT, never into your PC. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca20_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good eye. No wifi page needs your work password. One that asks is just after it, to sign in as you later. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A café wifi page wanting your work password is the trap, dressed up on a near-enough web address. Accept the terms, nowt else. #delivery: easy-going, matter-of-fact
+}
+-> bye

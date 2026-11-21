@@ -178,6 +178,7 @@ test('flipPage on a built fakeCheck page takes its host from check.host and the 
     assert.equal(page.heading, 'Verify you are human');
     assert.equal(page.pageDef.pageType, 'fakeCheck');
     assert.deepEqual(page.choices.check, { hostId: 'genuine', pretextId: 'fits' });
+    assert.equal(page.hostId, 'genuine', 'the flip view picks its per-host lines by this id');
 });
 
 test('flipPage on a sign-in page still derives the host from the chosen domain option', () => {
@@ -186,4 +187,49 @@ test('flipPage on a sign-in page still derives the host from the chosen domain o
     assert.ok(page);
     assert.equal(page.url, 'https://ledgerwell-login.example/');
     assert.ok(!page.tells.includes('fake_check_paste'));
+});
+
+// ── the chosen host drives the address (ca10 regate): look-alike choice no longer shows the genuine address ──
+test('a host option with its own host moves the preview address and the flip page; without one, check.host stands', () => {
+    const page = fakePage();
+    page.check.hosts[1].host = 'orders-fernside.example';
+    const addr = (hostId) => renderLandingPage({ pageDef: page, choices: { check: { hostId } }, doc: document }).root.querySelector('.lpb-address-text').textContent;
+    assert.equal(addr('lookalike'), 'orders-fernside.example');
+    assert.equal(addr('genuine'), 'orders.fernside.example');
+    assert.equal(addr('random'), 'orders.fernside.example', 'an option with no host keeps the authored address');
+    assert.equal(addr(null), 'orders.fernside.example');
+    const soc = { landingPages: [page] };
+    assert.equal(flipPage(episode(), soc, builtGlobals({ check: { hostId: 'lookalike' } })).url, 'https://orders-fernside.example/');
+    assert.equal(flipPage(episode(), soc, builtGlobals({ check: { hostId: 'genuine' } })).url, 'https://orders.fernside.example/');
+    assert.equal(model.linkInfoFor({ built: true, pageId: 'e10_check', choices: { check: { hostId: 'lookalike' } } }, page, 'k').host, 'orders-fernside.example');
+});
+
+test('ca10 shell: look-alike and unrelated host options carry their own address; the flip line does not claim the real address', () => {
+    const t = readFileSync(join(here, '../../scenarios/ca10_downloads_and_fake_checks/scenario.json.erb'), 'utf8');
+    assert.match(t, /"host": "orders-fernside\.example"/);
+    assert.match(t, /"host": "weekly-menu-offers\.example"/);
+    assert.ok(!/sat on Fernside's own address/.test(t));
+});
+
+test('ca10 shell: the flip lines carry a bookmark wording for the genuine host and an address wording for the look-alike and unrelated hosts, and no line but the genuine one claims a bookmark or a link', () => {
+    const t = readFileSync(join(here, '../../scenarios/ca10_downloads_and_fake_checks/scenario.json.erb'), 'utf8');
+    const get = (key) => JSON.parse('"' + t.match(new RegExp('"' + key + '": "((?:[^"\\\\]|\\\\.)*)"'))[1] + '"');
+    const block = (key) => t.match(new RegExp('"' + key + '": \\{([^}]*)\\}'))[1];
+    for (const key of ['flipPageIntroByHost', 'flipDefenderLineByHost']) {
+        const b = block(key);
+        const gen = b.match(/"genuine": "((?:[^"\\]|\\.)*)"/)[1];
+        const look = b.match(/"lookalike": "((?:[^"\\]|\\.)*)"/)[1];
+        assert.match(gen, /bookmark|every week/, key + ' genuine');
+        const unrel = b.match(/"unrelated": "((?:[^"\\]|\\.)*)"/)[1];
+        assert.match(look, /look-alike address/, key + ' lookalike');
+        assert.match(unrel, /nothing to do with Fernside/, key + ' unrelated');
+        // ca10 has no link to send (brief, hint): no host's line may say the player sent one
+        for (const [h, line] of [['lookalike', look], ['unrelated', unrel]]) {
+            assert.ok(!/bookmark|every week/.test(line), key + ' ' + h + ' must not claim a bookmark');
+            assert.ok(!/\blink\b/.test(line), key + ' ' + h + ' must not claim a link');
+        }
+    }
+    for (const k of ['flipPageIntro', 'flipDefenderLine']) {
+        assert.ok(!/bookmark|every week|\blink\b/.test(get(k)), k);
+    }
 });

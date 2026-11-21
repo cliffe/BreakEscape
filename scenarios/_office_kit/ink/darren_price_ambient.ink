@@ -151,3 +151,35 @@ Darren Price: It says press Windows and R, then paste and press Enter. It's off 
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca08_react ===
+{ kit_key_caught:
+    Darren Price: Someone flagged that one quick. Once they're in an account they send as you, so a fast shout boxes them in. #delivery: approving, dry
+- else:
+    Darren Price: A sign-in from abroad right after a click is them already inside. The sooner it's reported, the less they reach. #delivery: dry, matter-of-fact
+}
+-> bye
+
+=== ca10_react ===
+{ kit_key_caught:
+    Darren Price: Someone saw through that verify box. No real check tells you to press keys and paste. That paste runs a hidden command. #delivery: approving, dry
+- else:
+    Darren Price: A check that tells you to press keys or paste something isn't a check. Close it, touch nothing, and ring security. #delivery: dry, matter-of-fact
+}
+-> bye
+
+=== ca16_react ===
+{ kit_key_caught:
+    Darren Price: Keep a login to one person and the odd sign-in stands out. Share it and there's nowhere to spot them. #delivery: approving, dry
+- else:
+    Darren Price: A borrowed login hides whoever's using it among the rest of us. That's exactly what someone up to no good counts on. #delivery: dry, matter-of-fact
+}
+-> bye
+
+=== ca19_react ===
+{ kit_key_caught:
+    Darren Price: Caught before it spread. It locks whatever it reaches, then waits for someone to pay to get it back. #delivery: approving, dry
+- else:
+    Darren Price: A locked screen with a countdown and a demand to pay is ransomware. Get security on it fast, from another phone, before it spreads further. #delivery: dry, matter-of-fact
+}
+-> bye

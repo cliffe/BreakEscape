@@ -41,7 +41,7 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { evaluateActionCondition } from '../../utils/global-condition.js';
-import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
+import { redFlagString, skillName, chipLabel } from '../inbox-triage/triage-flags.js';
 import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences, caughtHow } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride } from '../inbox-triage/triage-kinds.js';
 
@@ -232,6 +232,16 @@ function buildCard(answer, msg, set = null, routeName = null, showScore = true) 
             li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : missWord),
                 el('span', 'aw-flag-text', typeof notes[id] === 'string' && notes[id] ? `${sentence} (${notes[id]})` : sentence));
             ul.appendChild(li);
+            // A second tick from the same either-tick group is covered by the first: say so.
+            if (caught) {
+                for (const extra of unitAccepts(unit).filter((m) => m !== hit && picked.has(m))) {
+                    const more = el('li', 'aw-flag aw-flag-caught aw-flag-also');
+                    more.dataset.flag = extra;
+                    more.append(el('span', 'aw-flag-word', 'Also ticked: '),
+                        el('span', 'aw-flag-text', `${chipLabel(set, extra)}. This names the same tell as '${chipLabel(set, id)}', so it is covered by that tick and not counted twice.`));
+                    ul.appendChild(more);
+                }
+            }
         }
         card.appendChild(ul);
     }

@@ -675,7 +675,7 @@ EPISODES = {
             'display': 'Misdirected data: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the Care Laundry desk inbox at Carrholme Services, a fictional support-services firm: some items are routine, some are requests or complaints that belong with the DPO, and one or two were made to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'defendIntro': "Take the Care Laundry desk inbox one item at a time. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the data protection officer (the DPO, who handles personal data mistakes) the same day. Report or check anything else that doesn't sit right.",
+            'defendIntro': "Take the Care Laundry desk inbox one item at a time. Anything about someone's personal data, a request to see or delete it, a dispute about whether it is right, a complaint about how it was used, or a breach, goes to the data protection officer (the DPO, who handles personal data mistakes) the same day. A routine update, such as a new contact number, is ordinary work: do it. Report or check anything else that doesn't sit right.",
             'conclusion': ('Desk inbox done', "That's the Care Laundry desk inbox finished. The debrief goes through each one."),
         },
     },

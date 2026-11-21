@@ -1,0 +1,14 @@
+{
+  "key": "9c6c170aaa289a31756f8eefd571765d",
+  "npc": "kit_fatima_begum",
+  "text": "Good call. An invite that needs you to install their app first is how unchecked software lands on a work machine.",
+  "delivery": "friendly, approving",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:42Z"
+}

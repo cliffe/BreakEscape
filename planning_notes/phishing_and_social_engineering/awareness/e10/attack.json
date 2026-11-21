@@ -119,8 +119,8 @@
         "points": { "borrowedTrust": 35, "pretext": 25, "stepWording": 25, "urgency": 15 },
         "hosts": [
           { "id": "genuine", "label": "Fernside's own order portal (orders.fernside.example), broken into", "trust": "genuine" },
-          { "id": "lookalike", "label": "A look-alike you set up (orders-fernside.example)", "trust": "lookalike" },
-          { "id": "unrelated", "label": "An unrelated page nobody expects", "trust": "unrelated" }
+          { "id": "lookalike", "label": "A look-alike you set up (orders-fernside.example)", "host": "orders-fernside.example", "trust": "lookalike" },
+          { "id": "unrelated", "label": "An unrelated page nobody expects", "host": "weekly-menu-offers.example", "trust": "unrelated" }
         ],
         "pretexts": [
           { "id": "fits", "label": "Confirm you are human to continue to the order portal", "match": true },
