@@ -1,7 +1,7 @@
 {
-  "key": "a58b40a45da9985550c6c34aef47126b",
+  "key": "7a84a9ee3ba2f5be09d2fa86ade87baa",
   "npc": "niamh_doherty",
-  "text": "The step ran, so a hidden program reached finance and the intranet, and the machine was off for a rebuild.",
+  "text": "Three key presses, and a hidden program runs with nothing showing on screen. The page had already copied the command for you.",
   "voice": "Leda",
   "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca10_downloads_and_fake_checks_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:52:29Z"
+  "recorded_at": "2026-11-21T20:47:41Z"
 }
