@@ -162,9 +162,9 @@ Darren Price: It says press Windows and R, then paste and press Enter. It's off 
 
 === ca10_react ===
 { kit_key_caught:
-    Darren Price: Someone saw through that verify box. It's a download in a costume, after every password the browser's got saved. #delivery: approving, dry
+    Darren Price: Someone saw through that verify box. No real check tells you to press keys and paste. That paste runs a hidden command. #delivery: approving, dry
 - else:
-    Darren Price: Those prove-you're-human boxes are just a download dressed up. Close it and go to the site direct. #delivery: dry, matter-of-fact
+    Darren Price: A check that tells you to press keys or paste something isn't a check. Close it, touch nothing, and ring security. #delivery: dry, matter-of-fact
 }
 -> bye
 
@@ -180,6 +180,6 @@ Darren Price: It says press Windows and R, then paste and press Enter. It's off 
 { kit_key_caught:
     Darren Price: Caught before it spread. It locks whatever it reaches, then waits for someone to pay to get it back. #delivery: approving, dry
 - else:
-    Darren Price: A missed update is the door they walk in by. Isolate the machine and report it, and they get nowhere. #delivery: dry, matter-of-fact
+    Darren Price: A locked screen with a countdown and a demand to pay is ransomware. Get security on it fast, from another phone, before it spreads further. #delivery: dry, matter-of-fact
 }
 -> bye
