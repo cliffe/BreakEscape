@@ -352,6 +352,7 @@
     font-family: 'GNF', monospace;
     font-size: 24px;
     padding: 0 8px;
+    min-height: 44px;   /* touch target: on a 390px phone the bar stacks and the field was 31px tall */
 }
 
 .cb-entry-input::placeholder {
@@ -450,16 +451,95 @@
     }
 }
 
-/* Phone landscape: keep the input and POST on one row */
+/* Short phone windows of any width: the input and POST share one row, status rows wrap.
+   Narrow ones (a 360px phone with the keyboard up) keep the stacked layout, with the timeline
+   capped small enough that SYSTEM STATUS stays in the first view */
 @media (max-width: 600px) and (max-height: 520px) {
     .cb-entry-bar {
         grid-template-columns: minmax(0, 1fr) 120px;
     }
 
-    /* Short body: a smaller cap keeps SYSTEM STATUS in the first view */
     .cb-timeline-list {
         max-height: 25vh;
         max-height: 25dvh;
+    }
+
+    /* A badge never shrinks below its text; when label and badge do not fit on one line the
+       badge drops under the label instead of running over the row border */
+    .cb-status-row {
+        min-height: 0;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .cb-status-badge {
+        min-width: auto;
+    }
+}
+
+/* Wide enough for two columns: from 481px the timeline column is 238px or more and its text
+   188px, enough for the time plus the badge's 80px. At 440px they are 197px and 147px, and at
+   360px a 100px column wraps the time.
+   Timeline beside status, so the list takes the body's whole height: two whole tiles when
+   entries are 3 lines or shorter, one whole tile for the 4 to 6 line sis01 entries (accepted
+   limit). Nothing stacks, so the body does not scroll and SYSTEM STATUS and the clock stay in view */
+@media (min-width: 481px) and (max-width: 600px) and (max-height: 520px) {
+    .cb-entry-bar {
+        min-height: 0;
+        padding: 4px 6px;
+    }
+
+    .cb-body {
+        grid-template-columns: 58fr 42fr;
+        grid-auto-rows: minmax(0, 1fr);
+        overflow-y: hidden;
+    }
+
+    .cb-timeline-col {
+        border-right: 2px solid #1e2d48;
+        border-bottom: 0;
+    }
+
+    .cb-timeline-col,
+    .cb-status-col {
+        padding: 4px 6px;
+    }
+
+    .cb-timeline-list {
+        flex: 1 1 auto;
+        max-height: none;
+        margin-top: 4px;
+    }
+
+    .cb-entry-tile {
+        min-height: 0;
+        padding: 4px 6px;
+    }
+
+    .cb-entry-timestamp {
+        font-size: 16px;
+        line-height: 16px;
+        /* room for the badge beside it (widest, [MANUAL], is 76px plus a 4px gap) */
+        padding-right: 80px;
+    }
+
+    .cb-entry-text {
+        margin-top: 2px;
+    }
+
+    /* POST keeps its base 44px height (touch rule). The [AUTO]/[MANUAL] badge shares the
+       timestamp row instead of taking its own, so real entries are no taller than sample ones */
+    .cb-entry-main,
+    .cb-entry-badge {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .cb-entry-badge {
+        align-self: start;
+        justify-self: end;
+        padding: 0 4px;
+        line-height: 12px;
     }
 }
 
