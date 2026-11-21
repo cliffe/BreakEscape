@@ -1,0 +1,13 @@
+{
+  "key": "001dd5bc4da01e17ae3566d8a551a55c",
+  "npc": "kit_niamh_doherty",
+  "text": "Hiya, welcome in. Give us a shout if you need anything at all.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:21Z"
+}

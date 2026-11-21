@@ -1,0 +1,13 @@
+{
+  "key": "72d3e5b29a40824915c1e9ae192d296e",
+  "npc": "niamh_doherty",
+  "text": "You kept your password off the fake page, so your account held. A couple of the others are worth another look in the debrief.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:51Z"
+}

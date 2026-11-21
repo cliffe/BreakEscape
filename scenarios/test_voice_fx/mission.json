@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Voice FX",
+  "description": "Engine trial: Ghost's voice-distortion preset (octave-down delay-line layer, drive, lowpass after drive) on a cached m02 clip.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 1,
+  "test_type": "voice_fx",
+  "test_objective": "The FX call plays the cached clip deeper, for exactly the clip's duration, and the choices return on clip end"
+}

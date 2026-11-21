@@ -1,0 +1,13 @@
+{
+  "key": "24fc3844a8f34782992fbaf2bdb97127",
+  "npc": "kit_fatima_begum",
+  "text": "Good spot on that parking text. A code on an official-looking notice is easy to trust, and that's the whole trick.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:43Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "0f3c816d9fe0507eaf787619bc964b1d",
+  "npc": "kit_delphine_arvanitis",
+  "text": "Morning. The studio's just through here.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:27Z"
+}
