@@ -322,16 +322,16 @@
     {
       "id": "ca13_ai_assistant",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "brightwell_foods",
       "ep": "ca13",
       "ambient": [
         "agnieszka_duda",
         "graham_whitfield"
       ],
-      "setPiece": null,
+      "setPiece": "ca13_summary_says_send",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e13_supplier_injection",
       "hostLine": true
     },

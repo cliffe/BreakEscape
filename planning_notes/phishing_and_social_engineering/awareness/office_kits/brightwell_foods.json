@@ -135,6 +135,243 @@
           ]
         }
       }
+    },
+    "ca13_summary_says_send": {
+      "_note": "ca13 colleague request (WAVE5_BUILD.md s4). Graham reads a Brightwell Assist summary of a recall notice that is really a hidden instruction: send the customer list. Wrong or no answer: Agnieszka says the 'supplier' has written back for each buyer's direct line (row 8), and the PC shows the new email (moved). Right answer (ring Pennine): done after 4 s. Graham is frozen on needs and never suspended; Agnieszka is suspended and walked to her post (6,3). No mapping reads her arrival.",
+      "globals": {
+        "kit_ca13_there": false,
+        "kit_ca13_asked": false,
+        "kit_ca13_moved": false,
+        "kit_ca13_done": false,
+        "kit_ca13_send_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca13_pc",
+          "name": "Graham's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_graham_whitfield",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca13_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Graham's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "Graham's PC. The reply has gone with the customer list. A new email from the same address asks for each buyer's direct line."
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "Graham's PC. The supplier's email is closed and reported to Gwen."
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "Graham's PC. Brightwell Assist's summary of a recall notice: Pennine Oat Mills need the customer list for a recall check. A reply is drafted to an address Brightwell has not used before, with the list attached."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Graham's PC."
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_ca13_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 7.125
+          }
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca13_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca13_there",
+          "setGlobal": {
+            "kit_ca13_there": true
+          }
+        },
+        {
+          "id": "kit_ca13_t_tail",
+          "startOnGlobal": "kit_ca13_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca13_send_choice === ''",
+          "setGlobal": {
+            "kit_ca13_send_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca13_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca13_done",
+          "setGlobal": {
+            "kit_ca13_done": true
+          }
+        }
+      ],
+      "staff": {
+        "agnieszka_duda": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Graham, that supplier's replied already, thanking you for the list. Now they want each buyer's direct line."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "graham_whitfield": {
+          "position": {
+            "x": 3.0,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca13_pc",
+          "needs": {
+            "caffeine": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca13_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Assistant's done the inbox for me. Lovely, saves me reading."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && globalVars.kit_ca13_send_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "targetKnot": "ca13_send"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca13_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_graham_whitfield",
+              "condition": "globalVars.kit_ca13_send_choice === 'asked' && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca13_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value === 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_moved",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_ca13_send_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }

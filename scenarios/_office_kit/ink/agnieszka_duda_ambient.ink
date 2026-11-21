@@ -1,6 +1,7 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca13_moved = false
 
 === start ===
 { kit_defend_done:
@@ -11,6 +12,9 @@ Agnieszka Duda: Hiya. The water cooler's over there if you need it.
 -> bye
 
 === ca13 ===
+{ kit_ca13_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Agnieszka Duda: Well spotted. That assistant will summarise anything, even a trap.
 - else:
