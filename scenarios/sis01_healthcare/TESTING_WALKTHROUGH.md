@@ -125,7 +125,7 @@ No blocking gaps. The scenario can be played end to end.
 
 ### Interact: Ward Monitoring Station (`ward_monitoring_station`, `ransomware_display`)
 - [ ] Opening it completes `check_monitoring_station` and sets `monitoring_station_viewed`
-- [ ] The display is read-only: skull and padlock icons, "YOUR FILES HAVE BEEN ENCRYPTED", the Trust name, the encrypted systems, the ransom (16 BITCOIN, £1,200,000), the wallet address, a "DO NOT attempt recovery" line, the support portal, and a live "TIME REMAINING" countdown starting from 62 hours
+- [ ] The display is read-only: skull and padlock icons, "YOUR FILES HAVE BEEN ENCRYPTED", the Trust name, the encrypted systems, the ransom (16 BITCOIN, £1,200,000), the wallet address, a "DO NOT attempt recovery" line, the support portal, and a live "TIME REMAINING" countdown in step with the HUD's ICO timer: 63 hours over 45 minutes of play (about 1 h 24 min per real minute), counted from game start, so it is already below 63 h on first look and survives a reload
 - [ ] There are no action buttons. The only control is the Close button; nothing else on the panel is clickable
 - [ ] The observation text changes after `network_isolated`, `debrief_started` and `patient_bed4_deceased` (station still unusable)
 
@@ -199,7 +199,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Card appears in inventory
 - [ ] The north door to the IT Security office is an RFID lock (`requires: ravi_rfid_card`) and opens with the card; before the card it stays locked. Ward 7 itself is never locked
 
-> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP MY ENTRY, CORRECT, INCORRECT, YES, NO, SEVER ENTERPRISE) rather than the full text.
+> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP MY ENTRY, CORRECT, INCORRECT, YES, SEVER ENTERPRISE) rather than the full text.
 
 > **Ravi aim gate.** The Investigate the Attack aim (`investigate_attack`: `meet_ravi`, `access_siem`, `vpn_anomaly`) stays locked until Assess Ward 7 (`assess_ward`) is complete (`unlockCondition: aimCompleted assess_ward`, scenario.json.erb), so Sarah (`talk_to_sarah`) and the MAR charts (`collect_mar_charts`) must be done first.
 

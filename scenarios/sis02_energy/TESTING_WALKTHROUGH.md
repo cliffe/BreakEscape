@@ -249,7 +249,7 @@ Enter the Engineering Workshop. Objects in this room include:
 **Controls**: select a row to open SESSION DETAIL, which has **[LOOK UP IP]**, **[INVESTIGATE ACCOUNT]** and **[FLAG SESSION]** (available on every row; a wrong row gets a "not this one" message).
 - The IP lookup shows an internal address on the enterprise VLAN, a print management server that nobody logs in from, with a firewall note about HTTPS to Tor exit `198.51.100.45` every 15 minutes since 3 March (sets `jump_server_threat_intel_viewed`)
 - The account history shows `c.ellison` as a commissioning engineer for Fosse Controls, deprovisioned 2025-01-17, with the jump server's **local account not removed** and the default password never changed
-- **[FLAG SESSION]** on the c.ellison row opens "CONFIRM SESSION FLAG" with **[CANCEL]** and **[CONFIRM: FLAG ACTIVE SESSION]**
+- **[FLAG SESSION]** on the c.ellison row opens "CONFIRM SESSION FLAG" with **[CONFIRM: FLAG ACTIVE SESSION]** and the X (Esc too) to go back
 
 **Second tab: ENG TOOL HISTORY** (`sis_audit`): the engineering workstation's own record of SIS configurator commands. The safety controller keeps no change log, so this is the only trace. At 03:22 the c.ellison session wrote `THERMAL_RUNAWAY_T` 55°C to 85°C and `H2_ALARM_THRESHOLD` 1.0% to 3.8% by volume, with no change request. A 06:00 BACKUP_FAILED line closes the list.
 
@@ -295,7 +295,7 @@ There are three ESD stations, all wired to the same relays and **none gated** (`
 Interact with a station. The flow:
 1. The ESD panel opens with the status "Flip guard to arm ESD control."
 2. Flip the yellow guard (click it); the guard opens and the button arms. (In the harness, the guard and button have no accessible labels; click the `.esd-guard` element.)
-3. Press the button: a confirmation modal "CONFIRM EMERGENCY SHUTDOWN?" shows what it does (takes Racks A1 to A4 off charge, opens the DC contactors, starts forced cooling, needs a manual reset at the hall panel) with **CONFIRM - INITIATE SHUTDOWN** and **CANCEL**
+3. Press the button: a confirmation modal "CONFIRM EMERGENCY SHUTDOWN?" shows what it does (takes Racks A1 to A4 off charge, opens the DC contactors, starts forced cooling, needs a manual reset at the hall panel) with **CONFIRM - INITIATE SHUTDOWN** and the X (Esc too) to go back
 4. Confirm: ESD activates
 
 **Verify**:
@@ -323,7 +323,7 @@ The aim opens when the jump server session is found (Step 15). The two tasks can
 
 ### Step 19: Pull the Jump Server Ethernet Cable
 
-Return to the Engineering Workshop. Find the `jump_server_cable`. Interact with it: a confirm asks "Disconnect cable JS-SCADA-LAN?" with two buttons, **Disconnect** and **Leave it**. Choose **Disconnect**.
+Return to the Engineering Workshop. Find the `jump_server_cable`. Interact with it: a confirm asks "Disconnect cable JS-SCADA-LAN?" with one button, **Disconnect**, and the X (Esc too) to leave it. Choose **Disconnect**.
 
 **Verify**:
 - `jump_server_isolated` = `true` (set by the confirm's Disconnect button) and Helen's mapping completes `pull_ethernet_cable`
@@ -383,7 +383,7 @@ The minigame shows a table of SIS setpoints with deviation status:
 | H2_ALARM_THRESHOLD | 3.8% vol | 1.0% vol | AMBER |
 | CHARGE_INHIBIT_TEMP | 45C | 45C | GREEN |
 
-Clicking an AMBER row shows the detail text. The certified values appear in the table data, but the **Compare with Certification Document** button is disabled until `sis_certification_seen = true`. The **Confirm SIS Tamper - Report to Security** button is not gated (see below).
+Clicking an AMBER row shows the detail text. The certified values appear in the table data, but the **Compare with Certification Document** button is disabled until `sis_certification_seen = true`, and so is **Confirm SIS Tamper - Report to Security**. A "[!] Certification document needed to confirm tampering" line says why.
 
 **Verify**:
 - `sis_config_seen` = `true` (set when the minigame opens)
@@ -414,15 +414,13 @@ Shows certified setpoints: thermal trip 55°C, hydrogen alarm 1.0% by volume, ch
 Return to the `sis_config_panel` and interact with it again. The **Compare with Certification Document** button is now enabled.
 
 - Click **Compare with Certification Document** to see a side-by-side comparison of current and certified values
-- Click **Confirm SIS Tamper - Report to Security**; a dialog "Confirm SIS Tamper Report" offers **Cancel** and **Confirm**
+- Click **Confirm SIS Tamper - Report to Security**; a dialog "Confirm SIS Tamper Report" has the X and one **Confirm Tamper Report** button (the X and Esc go back without reporting)
 
 **Verify**:
 - `sis_tamper_confirmed` = `true` (set by the minigame's Confirm) and `confirm_sis_tamper` completes
 - Helen's mapping on `sis_tamper_confirmed` also sets `incident_aware`
 - Helen's hub shows the SIS and patch options; Marcus's hub shows **Why was the SIS patch deferred?**
 - **Alarm panel**: SIS STATUS lamp changes to RED, SETPOINT DEVIATION (flashing)
-
-> **Gating note**: only Compare is gated on the certification document; Confirm can be pressed before it, so the tamper can be reported without comparing. Whether that is intended is an open design question.
 
 ### Step 25: Read the Deferred Patch Risk Assessment (optional)
 
