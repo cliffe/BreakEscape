@@ -231,7 +231,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] `vpn_threat_intel_checked` -> `true` (on the IP lookup for the anomalous row)
 - [ ] `vpn_impossible_travel_identified` -> `true` (on the account history for the anomalous row)
 - [ ] Flagging a different row gives a "not this one" message and sets nothing
-- [ ] [FLAG ACCOUNT] on the anomalous row opens "CONFIRM - FLAG VPN ANOMALY" with [CANCEL] and [CONFIRM: FLAG ACTIVE SESSION]. Confirming sets `vpn_anomaly_identified` -> `true` and completes `vpn_anomaly`. The two lookups are optional progress globals; the flag alone completes the task
+- [ ] [FLAG ACCOUNT] on the anomalous row opens "CONFIRM - FLAG VPN ANOMALY" with the X and [CONFIRM: FLAG ACTIVE SESSION]. Confirming sets `vpn_anomaly_identified` -> `true` and completes `vpn_anomaly`. The two lookups are optional progress globals; the flag alone completes the task
 - [ ] Ravi barks about a contractor's stolen login; `ravi_vpn_briefed` -> `true`
 
 ### Return to Ravi: give_itsec_code
@@ -246,8 +246,8 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Three legacy exception rules (WARD 5, WARD 7, FLEET), each an orange dashed line with a ! marker and a label. WARD 5 and FLEET are straight lines from the enterprise zone to the clinical zone; WARD 7 is the curved arc from the enterprise zone to the legacy segment, drawn under a "NO SEGMENTATION" caption that is plain text, not a control
 - [ ] The consequence panel opens with a "3 legacy exception rules" intro that disappears when the first rule is opened, so the layout shifts by a few pixels on the first click. Click the line, the ! marker or the label (all three work); a second click closes that rule again
 - [ ] First rule opened: `network_rules_reviewed` -> `true`; SEVER unlocks; the hint changes to the "Risk paths reviewed" text naming both signed forms
-- [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and **NO** (then a dash and CANCEL)
-- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and stays open on the severed state: SEVER gives way to CONTINUE; CONTINUE, the X or Esc close it (complete(true)). The radio chatter (Ravi, Helen, Sarah, David) plays after it closes. Without both forms only `network_isolated` is set (see Phase 3)
+- [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and the dialog's X (Esc too)
+- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and stays open on the severed state: SEVER is hidden and the hint says to close with the X; the X or Esc closes it (complete(true)). The radio chatter (Ravi, Helen, Sarah, David) plays after it closes. Without both forms only `network_isolated` is set (see Phase 3)
 
 ---
 

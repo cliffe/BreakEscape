@@ -39,7 +39,7 @@ import { attachScrollCue } from '../../utils/scroll-cue.js';
 export function logFilterCountText(matching, total) {
     const noun = (n) => (n === 1 ? 'entry' : 'entries');
     if (matching >= total) return `RESULTS: ${total} ${noun(total)}`;
-    return `RESULTS: ${matching} ${noun(matching)} match, ${total - matching} dimmed`;
+    return `RESULTS: ${matching} ${matching === 1 ? 'match' : 'matches'}, ${total - matching} dimmed`;
 }
 
 export class LogFilterMinigame extends MinigameScene {
@@ -981,8 +981,8 @@ export class LogFilterMinigame extends MinigameScene {
         if (x) x.style.visibility = hidden ? 'hidden' : '';
     }
 
-    // Esc acts as Cancel on an open pop-up and leaves the scene open; with none open it
-    // closes the scene as before (base-minigame handleEscapeKey hook)
+    // Esc is the open pop-up's X: it closes the pop-up and leaves the scene open; with none
+    // open it closes the scene as before (base-minigame handleEscapeKey hook)
     handleEscapeKey() {
         if (!this._overlayMode) return false;
         this._closeOverlay();

@@ -31,8 +31,10 @@ export function siemResultCounts(alerts) {
     const criticalEscalated = critical.filter((a) => a.status === 'escalated').length;
     const dismissed = list.filter((a) => a.status === 'dismissed').length;
     const pending = list.filter((a) => a.status === 'pending').length;
+    const otherEscalated = list.filter((a) => !a.critical && a.status === 'escalated').length;
     const noun = critical.length === 1 ? 'critical alert' : 'critical alerts';
-    return `${criticalEscalated} of ${critical.length} ${noun} escalated. ${dismissed} dismissed, ${pending} not triaged.`;
+    const other = otherEscalated ? ` ${otherEscalated} other escalated.` : '';
+    return `${criticalEscalated} of ${critical.length} ${noun} escalated.${other} ${dismissed} dismissed, ${pending} not triaged.`;
 }
 
 /** How long the result banner stays up before the scene closes (ms). */
@@ -341,6 +343,11 @@ export class SiemDashboardMinigame extends MinigameScene {
         if (this._scheduledAlertTimeouts.length) {
             this._scheduledAlertTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
             this._scheduledAlertTimeouts = [];
+        }
+
+        if (this._holdTimerId) {
+            clearTimeout(this._holdTimerId);
+            this._holdTimerId = null;
         }
 
         this.unsubscribeScenarioEvents();
@@ -879,6 +886,8 @@ export class SiemDashboardMinigame extends MinigameScene {
         const success = criticalEscalated === criticalAlerts.length && criticalAlerts.length > 0;
 
         this.isFinalized = true;
+        // An early X or Esc during the hold commits the success instead of failing it
+        if (success) this.markSuccessPending();
 
         if (success) {
             this.setScenarioGlobal('siem_escalated', true);
@@ -904,7 +913,8 @@ export class SiemDashboardMinigame extends MinigameScene {
         this.clearState();
         this.renderAll();
 
-        setTimeout(() => {
+        this._holdTimerId = setTimeout(() => {
+            this._holdTimerId = null;
             super.complete(success);
         }, SIEM_RESULT_HOLD_MS);
     }

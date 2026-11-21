@@ -22,7 +22,8 @@ export class NPCGameBridge {
     if (text && window.addNote) {
       const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
       const added = window.addNote(item.name || 'Note', body, !!item.important);
-      if (added && window.gameAlert) {
+      // addNote returns the existing note (marked read) for a duplicate: toast only a new one
+      if (added && added.read !== true && window.gameAlert) {
         window.gameAlert(`Added "${item.name}" to your notes.`, 'info', 'Note Added', 3000);
       }
     }

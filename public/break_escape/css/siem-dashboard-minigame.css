@@ -17,7 +17,8 @@
 
 .siem-result-banner {
     position: absolute;
-    top: -160px;   /* clear of the table whatever height the wrapped text makes it */
+    top: 0;
+    transform: translateY(-100%);   /* starts above the panel whatever height the text wraps to */
     left: 0;
     right: 0;
     z-index: 3;
@@ -28,8 +29,8 @@
     font-size: 16px;
     letter-spacing: 0;
     color: #ffffff;
-    transition: top 0.25s ease;
-    padding: 16px 72px 16px 16px;   /* right side clears the console X */
+    transition: transform 0.25s ease;
+    padding: 16px;   /* below the title bar, so nothing to clear: the headline is centred */
     box-sizing: border-box;
     text-align: center;
     line-height: 24px;
@@ -45,7 +46,7 @@
 }
 
 .siem-result-banner.show {
-    top: 0;
+    transform: translateY(0);
 }
 
 .siem-result-banner.success {

@@ -3,7 +3,7 @@
 // m18 a "-- HEADING --" credits line splits into decoration and words; m2 SIEM badge contrast.
 // Run with: node --max-old-space-size=2048 test/js/sis01-ui-minors.test.mjs
 // SIS_JS_ROOT points at a copy of the engine (used to show the tests fail on old code).
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -61,17 +61,22 @@ test('m15: the SEVER confirm has an X and one YES button, no NO - CANCEL', () =>
     assert.ok(!document.querySelector('#nsm-modal-overlay').classList.contains('nsm-modal-visible'), 'the X closes the confirm');
 });
 
-test('m15: the confirm X is styled inside the modal, 44px target, no radius', () => {
+test('m15: the confirm X is the shared X look (no one-off box) with the shared 44px hit area', () => {
     const c = css('network-segmentation-map-minigame.css');
     assert.ok(/\.nsm-modal \{[^}]*position: relative/.test(c), 'modal anchors the X');
     assert.ok(/\.nsm-modal-close \{[^}]*top: \d+px/.test(c), 'X placed at the top right');
     assert.ok(!/\.nsm-modal-no\b/.test(c), 'no dead NO button style');
     const rule = c.slice(c.indexOf('.nsm-modal-close {'), c.indexOf('}', c.indexOf('.nsm-modal-close {')));
-    assert.ok(/width: 44px/.test(rule) && /height: 44px/.test(rule), 'the confirm X is drawn 44x44');
-    assert.ok(/box-sizing: border-box/.test(rule), 'the 44px includes the border');
+    assert.ok(!/width|height|box-sizing|border|background/.test(rule), 'no one-off drawn size or look: ' + rule);
+    assert.ok(!/\.nsm-modal-close::after/.test(c), 'the hit area is the shared ::after, not overridden');
+    const shared = css('minigames-framework.css');
+    assert.ok(/\.minigame-close-button::after \{[^}]*inset: -14px/.test(shared), 'the shared X gives a 44px hit area');
+    const x = document.createElement('div');
+    x.innerHTML = '<button class="minigame-close-button nsm-modal-close"></button>';
+    assert.ok(x.firstChild.classList.contains('minigame-close-button'), 'drawn as the shared close button');
     assert.ok(!/radius/.test(c.slice(c.indexOf('.nsm-modal {'), c.indexOf('.nsm-modal-icon'))), 'no radius');
     const title = c.slice(c.indexOf('.nsm-modal-title {'), c.indexOf('}', c.indexOf('.nsm-modal-title {')));
-    assert.ok(/padding: 0 (5[2-9]|[6-9]\d)px/.test(title), 'the title clears the 44px X');
+    assert.ok(/padding: 0 (5[2-9]|[6-9]\d)px/.test(title), 'the title clears the X and its 44px hit area');
 });
 
 // ---- m7: the VPN log flag confirm -------------------------------------------------------
@@ -125,12 +130,21 @@ test('m7: the not-this-one pop-up has the X and no BACK TO LOG twin', () => {
     assert.ok(body.querySelectorAll('button').length === 1, 'the X is the only button');
 });
 
+test('m1: the header X drops the shared top/right offsets so it sits in the header band', () => {
+    const c = css('log-filter-minigame.css');
+    const at = c.indexOf('.lf-overlay-header .lf-overlay-close {');
+    const rule = c.slice(at, c.indexOf('}', at));
+    assert.ok(at > 0, 'rule present');
+    assert.ok(/top: auto/.test(rule) && /right: auto/.test(rule), 'top and right reset: ' + rule);
+});
+
 // ---- m8: the count --------------------------------------------------------------------
 test('m8: the status count says matches and dimmed, with the singular', () => {
     const f = lf.logFilterCountText;
     assert.ok(typeof f === 'function', 'logFilterCountText exported');
-    assert.ok(f(1, 20) === 'RESULTS: 1 entry match, 19 dimmed', f(1, 20));
-    assert.ok(f(4, 20) === 'RESULTS: 4 entries match, 16 dimmed', f(4, 20));
+    assert.ok(f(1, 20) === 'RESULTS: 1 match, 19 dimmed', f(1, 20));
+    assert.ok(f(3, 20) === 'RESULTS: 3 matches, 17 dimmed', f(3, 20));
+    assert.ok(f(0, 20) === 'RESULTS: 0 matches, 20 dimmed', f(0, 20));
     assert.ok(f(20, 20) === 'RESULTS: 20 entries', f(20, 20));
     assert.ok(f(1, 1) === 'RESULTS: 1 entry', f(1, 1));
     assert.ok(!/visible/.test(f(1, 20)), 'never claims rows are visible when the rest are only dimmed');
@@ -198,6 +212,60 @@ test('m2: the triage banner counts what was escalated, dismissed and left', () =
     assert.ok(siem.siemResultCounts(alerts) === '2 of 2 critical alerts escalated. 3 dismissed, 1 not triaged.', siem.siemResultCounts(alerts));
     assert.ok(siem.siemResultCounts([{ critical: true, status: 'pending' }]) === '0 of 1 critical alert escalated. 0 dismissed, 1 not triaged.', 'singular');
     assert.ok(typeof siem.siemResultCounts(null) === 'string', 'tolerates no alerts');
+    const withBenign = [{ critical: true, status: 'escalated' }, { critical: false, status: 'escalated' },
+        { critical: false, status: 'escalated' }, { critical: false, status: 'dismissed' }];
+    assert.ok(siem.siemResultCounts(withBenign) === '1 of 1 critical alert escalated. 2 other escalated. 1 dismissed, 0 not triaged.', siem.siemResultCounts(withBenign));
+});
+
+// ---- m2 (round 1): an early close during the hold completes as success ------------------
+const realBaseSrc = readFileSync(join(js, 'minigames/framework/base-minigame.js'), 'utf8')
+    .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+    .split(`'../../utils/escape-html.js'`).join(`'${dataUrl('export const escapeHtml = (s) => String(s);')}'`);
+const siemReal = await import(dataUrl(siemSrc.split(`'${base}'`).join(`'${dataUrl(realBaseSrc)}'`)));
+
+function siemHeld(allEscalated) {
+    const m = new siemReal.SiemDashboardMinigame(null, {});
+    m.alerts = [{ id: 'a', critical: true, status: allEscalated ? 'escalated' : 'pending' }];
+    m.setScenarioGlobal = () => {};
+    m.showResultBanner = () => {};
+    m.clearState = () => {};
+    m.renderAll = () => {};
+    m.persistState = () => {};
+    const events = [];
+    const ended = [];
+    const done = [];
+    window.eventDispatcher = { emit: (n) => events.push(n) };
+    window.MinigameFramework = { currentMinigame: m, endMinigame: (ok) => ended.push(ok) };
+    m.params = { ...m.params, onComplete: (ok) => done.push(ok) };
+    return { m, events, ended, done };
+}
+
+test('m2: the X pressed during the 2 s hold after a successful triage completes as success, once', () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const { m, events, ended } = siemHeld(true);
+        m.finalizeOutcome();
+        mock.timers.tick(500);
+        m.closeByPlayer();
+        assert.ok(events.includes('minigame_completed'), 'minigame_completed emitted: ' + events.join());
+        assert.ok(!events.includes('minigame_failed'), 'not reported as failed');
+        assert.ok(ended.length === 1 && ended[0] === true, 'ended once, as success: ' + ended.join());
+        m.cleanup();
+        assert.ok(m._holdTimerId === null, 'cleanup cleared the hold timer');
+        mock.timers.tick(2500);
+        assert.ok(ended.length === 1, 'the hold timer did not complete it a second time: ' + ended.length);
+    } finally { mock.timers.reset(); }
+});
+
+test('m2: a failed triage closed early stays a failure', () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const { m, events, ended } = siemHeld(false);
+        m.finalizeOutcome();
+        m.closeByPlayer();
+        assert.ok(events.includes('minigame_failed') && ended[0] === false, 'failure kept: ' + events.join());
+        m.cleanup();
+    } finally { mock.timers.reset(); }
 });
 
 test('m2: the scene stays open about 2 s behind the banner, and the banner is headline plus counts via textContent', async () => {
@@ -218,17 +286,17 @@ test('m2: the scene stays open about 2 s behind the banner, and the banner is he
     assert.ok(hostile.resultBannerEl.querySelector('img') === null && hostile.resultBannerEl.querySelector('b') === null, 'text, not markup');
 });
 
-test('m2: the banner CSS wraps (auto height, no nowrap or ellipsis), clears the X, no radius or blur', () => {
+test('m2: the banner CSS wraps (auto height, no nowrap or ellipsis), is centred, no radius or blur', () => {
     const c = css('siem-dashboard-minigame.css');
     const rule = c.slice(c.indexOf('.siem-result-banner {'), c.indexOf('}', c.indexOf('.siem-result-banner {')));
     assert.ok(/height: auto/.test(rule), 'auto height');
     assert.ok(/white-space: normal/.test(rule) && !/nowrap|ellipsis/.test(rule), 'wraps');
     assert.ok(/line-height: 24px/.test(rule), 'whole-pixel line box');
     assert.ok(/font-size: 16px/.test(rule), 'Press Start 2P at 16');
-    assert.ok(/padding: 16px 72px 16px 16px/.test(rule), 'right padding clears the X');
+    assert.ok(/padding: 16px;/.test(rule), 'symmetric padding: the headline is centred (the banner sits below the X)');
     const counts = c.slice(c.indexOf('.siem-result-counts {'), c.indexOf('}', c.indexOf('.siem-result-counts {')));
     assert.ok(/'GNF'/.test(counts) && /font-size: 16px/.test(counts), 'counts in GNF 16');
     assert.ok(!/radius|blur|gradient/.test(rule + counts), 'no radius, blur or gradient');
-    const top = Number(rule.match(/top: (-\d+)px/)[1]);
-    assert.ok(top <= -140, 'starts clear of the viewport even when wrapped to 5 lines: ' + top);
+    assert.ok(/transform: translateY\(-100%\)/.test(rule), 'starts one banner height above the panel, whatever the wrap');
+    assert.ok(/\.siem-result-banner\.show \{[^}]*translateY\(0\)/.test(c), 'show slides it in');
 });

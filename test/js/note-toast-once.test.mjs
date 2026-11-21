@@ -110,11 +110,71 @@ test('a different object still toasts; the real addNote marks a duplicate read',
   read(board);
   assert.ok(toasts.length === 1, 'the second, new note toasts');
   assert.ok(gs.notes.length === 2, 'two notes');
+  assert.ok(gs.notes[0].read !== true, 'a first-time note is stored unread');
+  read(tablet);
+  assert.ok(gs.notes[0].read === true, 'the duplicate re-read marks the existing note read');
 });
 
-test('receiveRewardNote (inventory.js) toasts only a new note', () => {
-  const inv = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
-  const at = inv.indexOf('function receiveRewardNote');
-  const block = inv.slice(at, inv.indexOf('const readAction', at));
-  assert.ok(/added && added\.read !== true/.test(block), 'toast guarded by the new-note check');
+// The NPC hand-over and the reward route run the real code, with imports stubbed.
+function stubbed(file, specs) {
+  let src = readFileSync(join(js, file), 'utf8');
+  for (const [spec, body] of Object.entries(specs)) {
+    const before = src;
+    src = src.split(`'${spec}'`).join(`'${dataUrl(body)}'`);
+    if (src === before) throw new Error('import specifier not found to stub: ' + spec + ' in ' + file);
+  }
+  return src;
+}
+// Every static import of the file becomes a stub exporting each imported name as a no-op
+function stubAll(file) {
+  const out = {};
+  const src = readFileSync(join(js, file), 'utf8');
+  for (const m of src.matchAll(/import\s+([^;]*?)\s+from\s+'([^']+)'/g)) {
+    const names = [...m[1].matchAll(/[{,]\s*(\w+)(?:\s+as\s+\w+)?/g)].map((x) => x[1]);
+    const dflt = /^\w+/.test(m[1].trim()) ? 'export default {};' : '';
+    out[m[2]] = (out[m[2]] || '') + dflt + names.map((n) => `export const ${n} = () => {};`).join('');
+  }
+  return out;
+}
+
+function fakeWindow(extra) {
+  toasts = [];
+  globalThis.window = {
+    gameState: gs,
+    addNote: realAddNote,
+    gameAlert: (msg) => toasts.push(msg),
+    ...extra,
+  };
+  globalThis.window.eventDispatcher = { emit: () => {} };
+}
+const item = { type: 'notes', name: 'Rota', id: 'rota', text: 'Night shift rota' };
+
+test('NPC hand-over (_receiveNote, real code): toasts a new note once, not one already read', async () => {
+  const src = stubbed('systems/npc-game-bridge.js', stubAll('systems/npc-game-bridge.js'));
+  writeFileSync(join(dir, 'npc-game-bridge.mjs'), src);
+  const mod = await import(pathToFileURL(join(dir, 'npc-game-bridge.mjs')).href);
+  const Bridge = mod.NPCGameBridge || mod.default || Object.values(mod).find((v) => typeof v === 'function' && v.prototype && v.prototype._receiveNote);
+  assert.ok(Bridge && Bridge.prototype._receiveNote, 'the bridge class exposes _receiveNote');
+  gs = { globalVariables: {}, notes: [] };
+  fakeWindow({});
+  Bridge.prototype._receiveNote.call({}, item);
+  assert.ok(toasts.length === 1, 'a new note toasts once, got ' + toasts.length);
+  Bridge.prototype._receiveNote.call({}, item);
+  Bridge.prototype._receiveNote.call({}, item);
+  assert.ok(toasts.length === 1, 'duplicates add no toast, got ' + toasts.length);
+  assert.ok(gs.notes.length === 1, 'one note');
+});
+
+test('receiveRewardNote (inventory.js, real code) toasts a new note once, not a duplicate', async () => {
+  const src = stubbed('systems/inventory.js', stubAll('systems/inventory.js'))
+    .replace('function receiveRewardNote', 'export function receiveRewardNote');
+  writeFileSync(join(dir, 'inventory.mjs'), src);
+  const mod = await import(pathToFileURL(join(dir, 'inventory.mjs')).href);
+  assert.ok(typeof mod.receiveRewardNote === 'function', 'reward route reachable');
+  gs = { globalVariables: {}, notes: [] };
+  fakeWindow({});
+  mod.receiveRewardNote(item);
+  assert.ok(toasts.length === 1, 'a new note toasts once, got ' + toasts.length);
+  mod.receiveRewardNote(item);
+  assert.ok(toasts.length === 1, 'a duplicate adds no toast, got ' + toasts.length);
 });

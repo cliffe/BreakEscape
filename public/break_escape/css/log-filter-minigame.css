@@ -547,6 +547,8 @@
 /* The shared X, in the header row (not floated over the title) */
 .lf-overlay-header .lf-overlay-close {
     position: relative;   /* anchors the X's hit area */
+    top: auto;            /* the shared top/right: 15px would turn into an offset here */
+    right: auto;
     flex: none;
     margin-left: 8px;
 }
