@@ -1,0 +1,13 @@
+{
+  "key": "e370b99f81d44d38f467eeabde6b507b",
+  "npc": "kit_agnieszka_duda",
+  "text": "A customer rang asking why we'd been in touch. Nobody here had.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:34Z"
+}

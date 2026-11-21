@@ -1,0 +1,13 @@
+{
+  "key": "0ad8ba44b88c438a901276d6a6b0bd85",
+  "npc": "niamh_doherty",
+  "text": "Follow a page like that and the machine is gone for the day while it's rebuilt, and no one quite knows what it touched.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:04Z"
+}

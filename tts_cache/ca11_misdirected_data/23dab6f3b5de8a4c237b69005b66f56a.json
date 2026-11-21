@@ -1,0 +1,13 @@
+{
+  "key": "23dab6f3b5de8a4c237b69005b66f56a",
+  "npc": "tomasz_wisniewski",
+  "text": "You brought the misdirected one to me the same day, which is all I ask, and it was contained before it spread.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:11:59Z"
+}

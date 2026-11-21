@@ -1,0 +1,13 @@
+{
+  "key": "6b90d08db773aa433d0ee46dcf178831",
+  "npc": "kit_gwen_pritchard",
+  "text": "Good spot on that bank-details email. That one would've sailed straight through.",
+  "voice": "Sulafat",
+  "style": "Brightwell's IT service desk lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:05Z"
+}

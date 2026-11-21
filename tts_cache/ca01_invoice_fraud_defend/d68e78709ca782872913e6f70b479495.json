@@ -1,0 +1,13 @@
+{
+  "key": "d68e78709ca782872913e6f70b479495",
+  "npc": "kit_agnieszka_duda",
+  "text": "Well spotted. That assistant will summarise anything, even a trap.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca01_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:46Z"
+}

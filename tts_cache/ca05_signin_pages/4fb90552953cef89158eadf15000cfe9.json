@@ -1,0 +1,13 @@
+{
+  "key": "4fb90552953cef89158eadf15000cfe9",
+  "npc": "niamh_doherty",
+  "text": "You read the address and didn't type your password into the copy, so there was nothing for the attacker to catch.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:46Z"
+}

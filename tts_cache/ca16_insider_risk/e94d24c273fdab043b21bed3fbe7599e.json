@@ -1,0 +1,13 @@
+{
+  "key": "e94d24c273fdab043b21bed3fbe7599e",
+  "npc": "kit_niamh_doherty",
+  "text": "Good catch. Spotting it early let IT shut it down before it got anywhere.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:43Z"
+}

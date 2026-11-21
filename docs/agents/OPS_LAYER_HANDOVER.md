@@ -37,7 +37,12 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 
 ## 3. State of each plan
 
-**NEWEST-8, read this first.** ROUND 3 SETTLED ACROSS ALL SEVEN PLANS. Skin R12 fixed
+**NEWEST-9, read this first.** Confirm delta R14 settled 0/0/0/3 (`02c825bd7`): R13 and R8 fixes
+resolved, leftover privilege/MFA/log-rows minors were already fixed, two citation nits fixed. N1
+(append-only ids) stays as is (AC0, 2026-11-21). Plans branch training as T279; build go-ahead is
+D233 on the owner's page. Nothing running.
+
+**NEWEST-8.** ROUND 3 SETTLED ACROSS ALL SEVEN PLANS. Skin R12 fixed
 `c04b2bf95` (generated `docs/REALISM_CATALOG_INDEX.md`, append-only ids, catalog task owns the
 content check); core loader fails closed with a fault list `332e2f005`; skin R13 delta 0/5/3
 `d1ecba417`, fixed `caa6640bd`, `9052beca8`; cross-plan R8 0/3/4 `0332427ad`, fixed `780b2cc95`.

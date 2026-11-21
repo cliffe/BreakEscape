@@ -1,0 +1,13 @@
+{
+  "key": "a74f379a605e5827621261dff845df53",
+  "npc": "fatima_begum",
+  "text": "That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:11:18Z"
+}
