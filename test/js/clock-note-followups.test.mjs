@@ -233,6 +233,19 @@ test('reload drift: with no game clock the dispatcher resumes from its own saved
     assert.ok(fresh.startTime === T0, 'a new game with no clock starts now');
 });
 
+test('reload drift: with no game clock, a stray clock elapsed is ignored and a started timer keeps its run time', () => {
+    freshWorld();
+    const scenario = { timers: [{ id: 'late', delayMs: 40000, startOnGlobal: 'go', setGlobal: { d: true } }] };
+    window.gameState.globalVariables.go = true;
+    // No clock: the dispatcher counts from its own saved 70 s, so a clock elapsed of 100 s
+    // must not be used to place the timer (R3 m2: it would have lost the 12 s run).
+    const saved = { elapsedMs: 70000, fired: [], cancelled: [], started: { late: 12000 } };
+    const d = atTime(T0, () => ScenarioTimerDispatcher.forGame(scenario, null, saved, 100000));
+    assert.ok(d.startTime === T0 - 70000, `start ${d.startTime - T0}`);
+    const ran = T0 - d.getTimerStartTime(scenario.timers[0]);
+    assert.ok(Math.abs(ran - 12000) <= 1, `ran ${ran} ms, expected 12000`);
+});
+
 test('reload drift: saved state does not grow (same four keys as before)', () => {
     freshWorld();
     const clock = atTime(T0, () => new GameClock({ config: null, saved: null }));
@@ -408,7 +421,7 @@ test('game.js passes the saved clock elapsed time as the fourth argument to Scen
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     const m = src.match(/ScenarioTimerDispatcher\.forGame\(([^;]*)\);/);
     assert.ok(m !== null, 'forGame call found in game.js');
-    const args = m[1].split(',').map(s => s.trim());
+    const args = m[1].split(',').map(s => s.trim()).filter(Boolean);
     assert.ok(args.length === 4, `four arguments: ${args.length}`);
-    assert.ok(args[3] === 'gameScenario.savedScenarioClock?.elapsedMs', `fourth argument: ${args[3]}`);
+    assert.ok(/^gameScenario\??\.savedScenarioClock\?\.elapsedMs$/.test(args[3]), `fourth argument: ${args[3]}`);
 });

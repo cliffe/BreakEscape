@@ -26,10 +26,10 @@ class ScenarioTimerDispatcher {
     this.timers = scenario.timers || [];
     this.firedTimers = new Set();  // Track which timers have already fired
     const now = Date.now();
-    // Game-time start. A game always passes opts.startTime, the GameClock's start (see
-    // forGame), so the timers resume where they were instead of restarting from zero (D14).
-    // opts.saved.elapsedMs ("now minus the elapsed time saved at the last sync") is only
-    // the fallback when there is no clock.
+    // Game-time start. forGame passes opts.startTime (the GameClock's start) whenever the
+    // game has a clock, so the timers resume where they were instead of restarting from
+    // zero (D14). Without one, the start is now minus opts.saved.elapsedMs (the elapsed
+    // time saved at the last sync), and with neither it is now.
     const savedElapsed = Number(opts.saved?.elapsedMs);
     this.startTime = Number.isFinite(opts.startTime) ? opts.startTime
       : now - (Number.isFinite(savedElapsed) && savedElapsed > 0 ? savedElapsed : 0);
@@ -98,7 +98,8 @@ class ScenarioTimerDispatcher {
           // Never mix in saved.elapsedMs here: a save from before the dispatcher counted from
           // the clock has it behind the clock's by the accumulated load gaps. With no clock
           // elapsed passed (same-save tests, no clock), the two frames are the same.
-          // Counting from "now - ranMs" instead would add this page's load time.
+          // The fallback "now - ranMs" (no usable reference) ignores the clock's timeline,
+          // so it only matches the clock when the clock's start is now minus its elapsed.
           if (Number.isFinite(ranMs) && ranMs >= 0) {
             const clockSaved = Number(opts.clockSavedElapsedMs);
             const ref = Number.isFinite(clockSaved) && clockSaved >= 0 ? clockSaved : savedElapsed;
@@ -153,10 +154,13 @@ class ScenarioTimerDispatcher {
    */
   static forGame(scenario, gameClock, saved = null, clockSavedElapsedMs = undefined) {
     const clockStart = gameClock?.startTime;
+    const hasClock = Number.isFinite(clockStart);
     return new ScenarioTimerDispatcher(scenario, {
-      startTime: Number.isFinite(clockStart) ? clockStart : undefined,
+      startTime: hasClock ? clockStart : undefined,
       saved,
-      clockSavedElapsedMs
+      // The clock's saved elapsed only means something on the clock's timeline: with no
+      // clock the dispatcher counts from its own saved elapsed, so the two must not mix.
+      clockSavedElapsedMs: hasClock ? clockSavedElapsedMs : undefined
     });
   }
 
