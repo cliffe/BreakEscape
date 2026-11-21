@@ -26,3 +26,10 @@
 - Voices: raised Ffion +3, Zainab +5, Yusuf +4 dB (Yusuf post 0.2) over v1. Short-term max in the mix: HaX -11.4, Ffion -12.6, Zainab -13.1, Yusuf -13.4 LUFS. The extra +2 dB from v1b moved them only ~0.6 dB, so the dialogue bus is compressing; the rest of the gap is the louder music after the drop. Asked on the page (duck the music more vs fine).
 - Render `~/video-takes-local/m03/renders/m03_trailer60_v1c_16x9.mp4`, 60.000 s, -14.07 LUFS, TP -1.49. Review copy asset e7db2ee71dd0679f8d3b36eb3eb071dc, poster 20818451951427c8dba44855d6f407d3.
 - Page tab "m03 · v1" on https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea, doc `feedback/m03_trailer_v1`. Questions: hook, threat card, music, Victoria, voices, console, pace, seen.
+
+## v2 (2026-11-21)
+- Takes on main 1794ca15b (Ghost deep voice + lip-sync lead), AC0's window: t17_guard (vivian_ashby; catch at 2.46, narrator 2.60-8.70, Terry 9.44-12.73, hostile after) and t18_victoria (frank_callahan; "Competent is cheap" 23.73-27.67). Both pass; check-take now aligns video to 0 (both streams start at 0).
+- Lip sync re-measured (lip.py, mouth crop): Victoria onset -20 ms, xcorr -45 ms (mouth slightly early, safe side); Terry onset +20 ms (xcorr too weak). Old build was +45 to +65 ms late.
+- Edit m03_trailer60_v2: placeholders replaced by t17_guard_map (0.9 s, cone), t17_guard_line (3.0 s, J-cut 0.36), t18_victoria_close (3.6 s, zoom 1.5, J 0.22, L 0.15 into the bumper); the wide Victoria shot dropped to fit her full line. Shots needed shot-level `dialogue: true` for the .srt (audio.dialogue alone is not enough).
+- Render `~/video-takes-local/m03/renders/m03_trailer60_v2_16x9.mp4`: 60.000 s, -14.01 LUFS, TP -1.49, 6 cues. Momentary peaks per cue: HaX -8.5, Ffion -10.4, Zainab -9.2, Yusuf -10.3, Terry -9.8, Victoria -10.4. Ending frames checked at 4 fps (43.5-52.5 s).
+- Page tab m03 · v2, doc feedback/m03_trailer_v2 (v1 had no answers), asset 0316a336526d96b9bc87ab47e412c8f7.

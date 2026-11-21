@@ -1169,7 +1169,7 @@
    },
    "note": "Terry catches the pick: 'Picks. Right. We're done talking.' voice 9.44-12.73 in the take, J-cut 0.36 s under the map shot",
    "audio": {
-    "gain_db": 0.5,
+    "gain_db": 1.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.36,
@@ -1190,7 +1190,8 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "Terry portrait, his line"
-   }
+   },
+   "dialogue": true
   },
   {
    "id": "t18_victoria_close",
@@ -1214,7 +1215,7 @@
     }
    },
    "audio": {
-    "gain_db": 2.0,
+    "gain_db": 5.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.22,
@@ -1235,7 +1236,8 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "Victoria portrait close, the briefed target"
-   }
+   },
+   "dialogue": true
   },
   {
    "preset": "hacktivity-close",
