@@ -1,0 +1,43 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "double_crossed"
+ },
+ "steps": [
+  {
+   "note": "Core after a double-cross with Quintero knocked out: nobody comes, and the player takes Kowalczyk by the arm. Cold reply, so no cracker line."
+  },
+  {
+   "set": {
+    "quintero_ko": true,
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Take her",
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Nobody comes. Kowalczyk looks at you, and waits.",
+    "You take her by the arm. She doesn't fight you.",
+    "She told me you'd break it.",
+    "She goes out through the lock without looking back at him.",
+    "Zero Day has it. You didn't stop that one."
+   ],
+   "notSaid": [
+    "Quintero comes in from the lock and takes Kowalczyk by the arm.",
+    "You thanked me for the cracker"
+   ]
+  },
+  {
+   "expect": {
+    "wren_at_core": true,
+    "sleeper_caught": true
+   }
+  }
+ ]
+}
