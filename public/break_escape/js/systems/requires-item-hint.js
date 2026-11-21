@@ -38,33 +38,38 @@ export function requiresItemConditionRefusal(data, globalVars = null) {
 }
 
 /**
- * `postitNoteVariants` on a PC (ca09's sticky note): the note that is on the screen right now, as
- * the text the sign-in view shows on its post-it, or '' when none is. A PC lists the states that
- * carry a note as [{ condition, value }] (first match wins, the observationVariants syntax); in
- * every other state the click goes on as before (ca09: the requiresItem refusal). Only a plain PC
- * counts: a `lockType: "login"` PC serves its own note (postit-marks.js, unlock-system.js).
+ * `postitNoteVariants` on a PC (ca09's sticky note): the entry that is on the screen right now, as
+ * { note, submitText }, or null when none is. A PC lists the states that carry a note as
+ * [{ condition, value, submitText }] (first match wins, the observationVariants syntax); in every
+ * other state the click goes on as before (ca09: the requiresItem refusal). Only a plain PC
+ * counts: a `lockType: "login"` or locked PC serves its own note (postit-marks.js,
+ * unlock-system.js). The base `postitNote` is not consulted. The matching entry must carry a
+ * non-empty `submitText`: the view has no lock to check a submit against, so an entry without one
+ * is refused (null) and the click goes on as before.
  * interactions.js opens the shared password view (the one m01's Derek PC shows its post-it in)
  * with the note and no way to sign in: the PC stays Chidi's to sign in to.
  */
-export function pcPostitNoteNow(data, globalVars = null) {
-    if (!data || data.type !== 'pc' || data.lockType === 'login' || !Array.isArray(data.postitNoteVariants)) return '';
-    const note = resolveObjectField(data, 'postitNote', '', globalVars);
-    return typeof note === 'string' && note.trim() ? note : '';
-}
-
-/**
- * The fixed line the post-it view shows when the learner submits while it is open, from the same
- * `postitNoteVariants` entry that supplies the note (its optional `submitText`, first match wins),
- * or '' when that entry has none. With a line the view makes no server check and counts no attempt
- * (password-minigame.js); without one a submit goes to the server as before.
- */
-export function pcPostitSubmitText(data, globalVars = null) {
-    if (!pcPostitNoteNow(data, globalVars)) return '';
+export function pcPostitVariantNow(data, globalVars = null) {
+    if (!data || data.type !== 'pc' || data.lockType === 'login' || data.locked === true
+        || !Array.isArray(data.postitNoteVariants)) return null;
     const vars = globalVars || (typeof window !== 'undefined' ? window.gameState?.globalVariables : null) || {};
     for (const v of data.postitNoteVariants) {
         if (!v || typeof v.value !== 'string') continue;
         if (v.condition && !evaluateGlobalCondition(v.condition, vars)) continue;
-        return typeof v.submitText === 'string' ? v.submitText.trim() : '';
+        const note = v.value;
+        const submitText = typeof v.submitText === 'string' ? v.submitText.trim() : '';
+        if (!note.trim() || !submitText) return null;
+        return { note, submitText };
     }
-    return '';
+    return null;
+}
+
+/** The note text of pcPostitVariantNow, or ''. */
+export function pcPostitNoteNow(data, globalVars = null) {
+    return pcPostitVariantNow(data, globalVars)?.note || '';
+}
+
+/** The fixed submit line of pcPostitVariantNow, or ''. */
+export function pcPostitSubmitText(data, globalVars = null) {
+    return pcPostitVariantNow(data, globalVars)?.submitText || '';
 }
