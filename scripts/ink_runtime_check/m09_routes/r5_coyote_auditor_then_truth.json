@@ -1,0 +1,13 @@
+{
+"steps": [
+{ "note": "R5: Old Coyote's sighting challenge. An auditor cover passes. The second sighting asks 'Still auditing?' and the truth button sends him to his truck." },
+{ "talk": "coyote", "knot": "challenge", "picks": ["Lease-holder's audit"] },
+{ "said": ["Hold on, sis, I'll call you back", "She didn't tell me. She doesn't tell me much. Go ahead"],
+  "notSaid": ["It hasn't jammed once all week", "Figured. I'll be in the truck"] },
+{ "expect": { "old_coyote_cover_given": true, "old_coyote_told": false } },
+{ "talk": "coyote", "knot": "challenge", "picks": ["I'm not an auditor"] },
+{ "said": ["Still auditing?", "Figured. Auditors bring coffee. I'll be in the truck"],
+  "notSaid": ["Hold on, sis", "[choice] Lease-holder's audit", "[choice] Shredder contractor"] },
+{ "expect": { "old_coyote_told": true } }
+]
+}

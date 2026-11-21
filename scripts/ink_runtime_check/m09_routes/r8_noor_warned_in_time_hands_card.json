@@ -1,0 +1,11 @@
+{
+"steps": [
+{ "note": "R8: m05 found the pipeline list and the player never dealt with the Recruiter. Noor hands over her card at once, there is no cover to pick, no clone choice and no tell." },
+{ "talk": "noor", "picks": ["How long have you worked", "I'll let you get on"] },
+{ "said": ["You're the one they said would come. Here, my card", "[kit:", "Peg's been in the cage since before I got here", "I didn't send the last box down", "She hired me off a temp agency in Billings"],
+  "notSaid": ["We're closed", "[choice] Lean in over her list", "[choice] That bonus wasn't for filing", "Tell her what that bonus was", "I'm not losing this job"] },
+{ "expect": { "noor_card_given": true, "noor_met": true } },
+{ "tasks": { "meet_the_clerk": "completed" } }
+],
+"imports": { "m05_found_pipeline_list": true }
+}

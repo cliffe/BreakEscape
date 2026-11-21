@@ -1,0 +1,11 @@
+{
+"steps": [
+{ "note": "R3: the first call from the dock, cold start. Office door, who is inside, then the laptop. Tran's line is the Viral Dynamics staff files default." },
+{ "talk": "phone", "picks": ["The office door", "Who else is inside", "On my way"] },
+{ "said": ["cross-cut shredder", "It's the west door. That's the front desk", "Margaret Sorensen runs the place", "Viral Dynamics' staff files have a Tran in them", "set the laptop up in the reading room"],
+  "notSaid": ["Quintero's going to hate", "It's up on the north side, in the corner", "Maya Chen would have flagged him"] },
+{ "expect": { "dock_done": true } },
+{ "talk": "phone", "picks": ["That's all for now"] },
+{ "said": ["Line's open"] }
+]
+}
