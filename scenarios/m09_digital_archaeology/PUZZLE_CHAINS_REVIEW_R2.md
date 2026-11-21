@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: puzzle chains, round 2 review
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 2 of the AGENTS.md five-phase loop, run with `.claude/skills/mission-puzzle-chains/SKILL.md` on the tree at d2fd06fe ("puzzle chains round 1 fixes"). Round 1's plan is `PUZZLE_CHAINS_PLAN.md` (P1–P7); its record is CONTRACT §15, "Puzzle chains round 1" (CONTRACT.md:835).
+2026-10-22. Fresh reviewer (read-only on game files). Phase 2 of the AGENTS.md five-phase loop, run with `.claude/skills/mission-puzzle-chains/SKILL.md` on the tree at d2fd06fe ("puzzle chains round 1 fixes"). Round 1's plan is `PUZZLE_CHAINS_PLAN.md` (P1–P7); its record is CONTRACT §15, "Puzzle chains round 1" (CONTRACT.md:835).
 
 **Method.** Read the commit diff, then traced each fix through the engine (`npc-manager.js`, `unlock-system.js`, `minigame-manager.js`, `npc-conversation-state.js`). Recompiled the three changed ink files with inklecate: each output is identical to the committed JSON. Ran `room_depth.py`, the validator (`--skip-ink --no-graph`, no graph rewrite), `dialoguelint` and `reopencheck` on m09. I opened no VM plan, SecGen file or field guide. VM flags are black boxes, and I took as settled that the H&L file number is reachable only through flag 2 and that no cage clue feeds flag 3. No browser run in this round.
 

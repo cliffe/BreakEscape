@@ -1,6 +1,6 @@
 # m07 lighting, cycle 1 review
 
-Reviewer: fresh Opus agent, read-only. Sources: `LIGHTING_PLAN.md`, the lighting blocks in `scenario.json.erb` (744, 752, 1632, 1723, 1903, 2040, 2113), `systems/lighting.js` (header, `variantsFor`, `resolveEmitters`, `EMITTERS`), every still in `lighting_c1/{base,armed,expired,saved}/` set against `dressing_c4/`, and the four tour logs. Screen positions are pixels on the 1400x1000 stills (2x zoom, so 1 world px = 2 screen px).
+Reviewer: fresh agent, read-only. Sources: `LIGHTING_PLAN.md`, the lighting blocks in `scenario.json.erb` (744, 752, 1632, 1723, 1903, 2040, 2113), `systems/lighting.js` (header, `variantsFor`, `resolveEmitters`, `EMITTERS`), every still in `lighting_c1/{base,armed,expired,saved}/` set against `dressing_c4/`, and the four tour logs. Screen positions are pixels on the 1400x1000 stills (2x zoom, so 1 world px = 2 screen px).
 
 ## Summary
 

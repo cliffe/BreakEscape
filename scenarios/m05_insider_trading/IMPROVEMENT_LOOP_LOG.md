@@ -8,7 +8,7 @@ Stages: regression playtest, then alignment, puzzle chains and scenario design (
 
 ### Phase 1 alignment, round 1
 
-Review: `ALIGNMENT_REVIEW_P5_R1.md` (Opus, read-only, static). The fixer checked each finding against `scenario.json.erb`, the ink and the engine before acting. The regression run (`PASS5_REGRESSION_A.md`, game 2222, 0 blockers, 1 suspect major, 10 minors) arrived mid-round; its mission items were folded in at the coordinator's request (M1, M3 to M7). M2 (backgrounds) goes to the POV stage; M8 and M9 are engine backlog; M10 and M11 are harness items.
+Review: `ALIGNMENT_REVIEW_P5_R1.md` (read-only, static). The fixer checked each finding against `scenario.json.erb`, the ink and the engine before acting. The regression run (`PASS5_REGRESSION_A.md`, game 2222, 0 blockers, 1 suspect major, 10 minors) arrived mid-round; its mission items were folded in at the coordinator's request (M1, M3 to M7). M2 (backgrounds) goes to the POV stage; M8 and M9 are engine backlog; M10 and M11 are harness items.
 
 Counts: 0 blockers, 6 majors, 15 minors from the review; 6 regression items folded in; 6 further issues found while fixing. Two review claims withdrawn in part.
 
@@ -147,7 +147,7 @@ Debrief (`m05_closing_debrief.ink`):
 
 ### Phase 1 alignment, round 2
 
-Review: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, read-only, static; reviews commit 6ac8d95f). It confirms 19 round-1 fixes, agrees with both partial withdrawals, and raises F6 as part of B1. The fixer checked each finding against the files before acting. A round-1 browser check was running alongside; its results are not folded in here.
+Review: `ALIGNMENT_REVIEW_P5_R2.md` (read-only, static; reviews commit 6ac8d95f). It confirms 19 round-1 fixes, agrees with both partial withdrawals, and raises F6 as part of B1. The fixer checked each finding against the files before acting. A round-1 browser check was running alongside; its results are not folded in here.
 
 Counts: 0 blockers, 3 majors (one handed to the dialogue phase), 9 minors. All acted on or routed; none withdrawn.
 
@@ -221,7 +221,7 @@ Still not checked in a browser: everything listed after round 1, plus the retry 
 
 ### Phase 1 alignment, round 3
 
-Review: `ALIGNMENT_REVIEW_P5_R3.md` (Opus, read-only, static, with two probe routes). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
+Review: `ALIGNMENT_REVIEW_P5_R3.md` (read-only, static, with two probe routes). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -250,7 +250,7 @@ Fifteen routes, all expectations met. New: `r14_owen_drop_late_disclosure.json` 
 
 ### Phase 1 alignment, round 4 fixes + confirmation
 
-Review: `ALIGNMENT_REVIEW_P5_R4.md` (Opus, read-only, static, with probes p3 and p4; a browser game, 2234, noted N2 and N5). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The confirmation below is the fixer's own static check, as the coordinator asked; the browser checklist follows.
+Review: `ALIGNMENT_REVIEW_P5_R4.md` (read-only, static, with probes p3 and p4; a browser game, 2234, noted N2 and N5). Counts: 0 blockers, 1 major, 2 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The confirmation below is the fixer's own static check, as the coordinator asked; the browser checklist follows.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -298,7 +298,7 @@ Open for the user: D1, D3 (SecGen), D4–D10.
 
 ### Phase 2 puzzle chains, round 1
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, read-only, static, with probe p1). Counts: 0 blockers, 1 major, 9 minors, and decisions D-A to D-E. The coordinator's decisions are logged with each outcome. None withdrawn.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (read-only, static, with probe p1). Counts: 0 blockers, 1 major, 9 minors, and decisions D-A to D-E. The coordinator's decisions are logged with each outcome. None withdrawn.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -368,7 +368,7 @@ Documents (not voiced): the Lab Rules notice (new); the Visitor Spare item name 
 
 ### Phase 2 puzzle chains, round 2
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, read-only, static, probes p1 to p4). Counts: 0 blockers, 0 majors, 4 minors, and side notes N2 to N4. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The stage closes after these fixes and the reviewer's nine browser checks.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (read-only, static, probes p1 to p4). Counts: 0 blockers, 0 majors, 4 minors, and side notes N2 to N4. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn. The stage closes after these fixes and the reviewer's nine browser checks.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -433,8 +433,8 @@ Spoken lines changed (old → new):
 
 | Round | Source | Counts | Outcome |
 |---|---|---|---|
-| Round 1 | `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, static, probe p1; no separate browser run for round 1) | 0 blockers, 1 major, 9 minors; decisions D-A to D-E | P1/D-D (hint ladder, `door_log_hinted`), D-A (gloves rule, Lab Rules notice), D-B (journal in the briefcase, no-picks fallback), P2 to P6, P8 fixed; D-C rejected (D11 for the user); P10 to the dialogue phase; D-E carried (D1). Routes r18 to r21 |
-| Round 2 | `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, static, probes p1 to p4) | 0 blockers, 0 majors, 4 minors; N2 to N4 | All fixed (VM-first no-picks motive, the visitor spare signed out through Halloran with a synced line, HaX's sign-off and vault lines, the dead first rung removed). Route r22 |
+| Round 1 | `PUZZLE_CHAINS_REVIEW_P5_R1.md` (static, probe p1; no separate browser run for round 1) | 0 blockers, 1 major, 9 minors; decisions D-A to D-E | P1/D-D (hint ladder, `door_log_hinted`), D-A (gloves rule, Lab Rules notice), D-B (journal in the briefcase, no-picks fallback), P2 to P6, P8 fixed; D-C rejected (D11 for the user); P10 to the dialogue phase; D-E carried (D1). Routes r18 to r21 |
+| Round 2 | `PUZZLE_CHAINS_REVIEW_P5_R2.md` (static, probes p1 to p4) | 0 blockers, 0 majors, 4 minors; N2 to N4 | All fixed (VM-first no-picks motive, the visitor spare signed out through Halloran with a synced line, HaX's sign-off and vault lines, the dead first rung removed). Route r22 |
 | Browser check (closing) | `PASS5_PUZZLE_R2_BROWSER.md`, games 2307, 2318, 2321 on :3001 | 9/9 of the reviewer's checks pass; 3 minors | F1 to F3 and the duplicate key fixed above. Route r23 |
 | Browser check (engine question, same run) | `PASS5_PUZZLE_R2_BROWSER.md`, mid-mission reloads in 2318 and 2321 | Ink locals survive a page reload | m05 comments and two log rows corrected; route drivers updated by the coordinator (2d2736ae) |
 
@@ -444,7 +444,7 @@ Nothing above minor is open. Carried forward: D11 (the clone's timing) and D3's 
 
 ### Phase 3 scenario design, round 1
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, read-only, static). Counts: 0 blockers, 2 majors, 10 minors, decisions U1 to U4. The coordinator's decisions are logged with each outcome. None withdrawn.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (read-only, static). Counts: 0 blockers, 2 majors, 10 minors, decisions U1 to U4. The coordinator's decisions are logged with each outcome. None withdrawn.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -496,7 +496,7 @@ Browser checks needed: M1 (meet Halloran, accuse, talk again with no reload); th
 
 ### Phase 3 scenario design, round 2
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 blockers, 1 major, 4 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (read-only, static). Counts: 0 blockers, 1 major, 4 minors. All fixed as the reviewer proposed (coordinator's instruction); none withdrawn.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -543,8 +543,8 @@ Spoken lines changed (old → new):
 
 | Round | Source | Counts | Outcome |
 |---|---|---|---|
-| Round 1 | `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, static) | 0 blockers, 2 majors, 10 minors; U1 to U4 | All fixed: Halloran's suspension at the hub (M1), the debrief's research-portal beat (M2/U4), "Find out why he'd do it" (m1), `torres_fight_offered` (m2), m3 to m10, the CyBOK trim (U1, D13). U2 and U3 to the user (D14, D12). Routes r24, r25 |
-| Round 2 | `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, static) | 0 blockers, 1 major, 4 minors | All fixed: Halloran's greeting after reinstatement (R2-M1), the Recruiter's ring-back close, "Textbook" gated, the repeated login and the remediation line, privilege escalation under OSV. Routes r26, r27 |
+| Round 1 | `SCENARIO_DESIGN_REVIEW_P5_R1.md` (static) | 0 blockers, 2 majors, 10 minors; U1 to U4 | All fixed: Halloran's suspension at the hub (M1), the debrief's research-portal beat (M2/U4), "Find out why he'd do it" (m1), `torres_fight_offered` (m2), m3 to m10, the CyBOK trim (U1, D13). U2 and U3 to the user (D14, D12). Routes r24, r25 |
+| Round 2 | `SCENARIO_DESIGN_REVIEW_P5_R2.md` (static) | 0 blockers, 1 major, 4 minors | All fixed: Halloran's greeting after reinstatement (R2-M1), the Recruiter's ring-back close, "Textbook" gated, the repeated login and the remediation line, privilege escalation under OSV. Routes r26, r27 |
 | Browser check (closing) | `PASS5_DESIGN_R2_BROWSER.md` | 6/6 checks pass; 2 small fixes | F1 and F2 fixed above. Route r28 |
 
 Nothing above minor is open. Carried forward: D12 to D14 for the user; to the dialogue phase, B3 (the debrief's long runs) and P10 (HaX's hub size); to room dressing, the Lab Rules notice and the lab hook as a prop only.
@@ -553,7 +553,7 @@ Nothing above minor is open. Carried forward: D12 to D14 for the user; to the di
 
 ### Phase 4 dialogue, cycle 1
 
-Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, read-only, `npc-dialog-review` in full). Counts: 0 blockers, 8 majors, 26 minors (D5-1 to D5-36; D5-29 and D5-34 folded by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-snapshot/ink/` (commit `f65b3336`). The coordinator's decisions D5-1 to D5-8, D5-18 and D5-30 are applied as given. Every finding was checked against the ink before it was acted on; none was withdrawn. Where the fix differs from the reviewer's wording, the reason is given.
+Review: `DIALOGUE_REVIEW_P5_C1.md` (read-only, `npc-dialog-review` in full). Counts: 0 blockers, 8 majors, 26 minors (D5-1 to D5-36; D5-29 and D5-34 folded by the reviewer). Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-snapshot/ink/` (commit `f65b3336`). The coordinator's decisions D5-1 to D5-8, D5-18 and D5-30 are applied as given. Every finding was checked against the ink before it was acted on; none was withdrawn. Where the fix differs from the reviewer's wording, the reason is given.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -704,7 +704,7 @@ Choices (not voiced) also changed: the reason choice and late disclosure (D5-3),
 
 ### Phase 4 dialogue, cycle 2
 
-Review: `DIALOGUE_REVIEW_P5_C2.md` (fresh Opus, read-only). Counts: 0 blockers, 1 major, 31 minors (D5C2-1 to D5C2-32). Cycle 1 confirmed closed by the reviewer. Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-c2-fixer/snap/`. Every finding was checked against the ink before acting; none withdrawn. No erb edit was needed.
+Review: `DIALOGUE_REVIEW_P5_C2.md` (fresh reviewer, read-only). Counts: 0 blockers, 1 major, 31 minors (D5C2-1 to D5C2-32). Cycle 1 confirmed closed by the reviewer. Snapshot for `tagdiff --old`: the session scratchpad's `m05-dialogue-c2-fixer/snap/`. Every finding was checked against the ink before acting; none withdrawn. No erb edit was needed.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -814,7 +814,7 @@ Choices (not voiced): debrief "[That one's on me.]", "[QDC won't like seeing tha
 
 ### Phase 4 dialogue, cycle 3 (2026-10-13)
 
-Review: `DIALOGUE_REVIEW_P5_C3.md` (fresh Opus, read-only). **0 blockers, 0 majors, 6 minors.** The review side can close. The fix pass below is ink and routes only; the erb was not touched (room-dressing agent is editing it).
+Review: `DIALOGUE_REVIEW_P5_C3.md` (fresh reviewer, read-only). **0 blockers, 0 majors, 6 minors.** The review side can close. The fix pass below is ink and routes only; the erb was not touched (room-dressing agent is editing it).
 
 | # | Sev. | Outcome |
 |---|---|---|
@@ -859,7 +859,7 @@ No rewrite needed adjusting: each proposed line fitted its context.
 
 ## Phase art: room dressing CLOSED (2026-10-13)
 
-Full log: `ROOM_DRESSING.md`. m05 now has its own building: ten `room_qdc_*` maps for Quantum Dynamics Corporation (new builders in `scripts/generate_rooms.py`, sheets from `scripts/room_gen/make_qdc_tileset.py`, hand-drawn props from `scripts/room_gen/make_qdc_props.py`); the shared maps are untouched. Five cycles: cycle 1 built all ten rooms (1 blocker, 6 majors in the old maps); fresh Opus reviews in cycles 2, 3 and 5 (8, 4 and 0 majors); the user's square-to-the-walls rule applied in cycle 2 (the angled PixelLab kit regenerated front-on) and finished in cycle 4 (hand-drawn front-on filing cabinets and HSM racks); a Sonnet interaction walk (game 2373) found one major, a chair making a pick-one menu on the lanyard, fixed across four rooms and confirmed (game 2380). Known items closed: m12 (rooms; the empty visitor-badge hook in the lab, decor only); the Lab Rules on the lab wall, read in place (`readDisplay`); N3 (the vault walk-in to Torres is open); the briefcase and Mug findable; "Heisenberg Leads Only" on the vault sign; no pick-one menus. Scenario edits were layout-only: room types, `as-type` slots (Lab Rules, IT notice, briefcase, filing cabinet), five explicit floor positions removed. Checks: validator 0 errors, doors 9/9, walls 64, `slot_audit` 0 problems, routes 38/38. First-room sign-off pending (D15). PixelLab 1787 → 1767; no Gemini.
+Full log: `ROOM_DRESSING.md`. m05 now has its own building: ten `room_qdc_*` maps for Quantum Dynamics Corporation (new builders in `scripts/generate_rooms.py`, sheets from `scripts/room_gen/make_qdc_tileset.py`, hand-drawn props from `scripts/room_gen/make_qdc_props.py`); the shared maps are untouched. Five cycles: cycle 1 built all ten rooms (1 blocker, 6 majors in the old maps); fresh reviewer reviews in cycles 2, 3 and 5 (8, 4 and 0 majors); the user's square-to-the-walls rule applied in cycle 2 (the angled PixelLab kit regenerated front-on) and finished in cycle 4 (hand-drawn front-on filing cabinets and HSM racks); a scripted interaction walk (game 2373) found one major, a chair making a pick-one menu on the lanyard, fixed across four rooms and confirmed (game 2380). Known items closed: m12 (rooms; the empty visitor-badge hook in the lab, decor only); the Lab Rules on the lab wall, read in place (`readDisplay`); N3 (the vault walk-in to Torres is open); the briefcase and Mug findable; "Heisenberg Leads Only" on the vault sign; no pick-one menus. Scenario edits were layout-only: room types, `as-type` slots (Lab Rules, IT notice, briefcase, filing cabinet), five explicit floor positions removed. Checks: validator 0 errors, doors 9/9, walls 64, `slot_audit` 0 problems, routes 38/38. First-room sign-off pending (D15). PixelLab 1787 → 1767; no Gemini.
 
 ## Phase art: lighting (2026-10-13/14)
 
@@ -950,7 +950,7 @@ Debrief, new:
 
 Credits: new "FALSE START — a wrong name or reason before the right one", "WALKED OUT BY SECURITY — you backed off; nobody talked to him", "Nobody else on staff hurt". Task titles (not voiced): see D2.
 
-#### Browser checks owed (Sonnet)
+#### Browser checks owed (scripted run)
 
 - The fight at 75 / 3 (and whether the first encounter is still at 10, D10); HaX's text on the turn, and not again on a reload's restored hostility.
 - A KO and Restart: the `game_loaded` text arrives; "Send Security" is in the hub.
@@ -1039,7 +1039,7 @@ Torres:
 
 Task title (not voiced), new: "Put a name to it, with a reason" (aim 2, required).
 
-#### Browser checks owed (Sonnet)
+#### Browser checks owed (scripted run)
 
 - After Owen's password: the panel shows "Put a name to it, with a reason" under aim 2; entering the server room shows the VM aim; naming Torres with a reason ticks it and opens "Find Out Why".
 - The briefing closes by itself on "Go." and the Mission Brief notes popup still follows.

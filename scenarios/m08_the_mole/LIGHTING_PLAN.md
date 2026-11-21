@@ -4,7 +4,7 @@
 
 Lighting stage of pass 5, 2026-10-14. Skill: `.claude/skills/mission-room-lighting/`. Brief: `docs/agents/M08_PASS_BRIEF.md` (stage 4). Worked example: `scenarios/m07_architects_gambit/LIGHTING_PLAN.md`. Rooms are the nine `room_hq_*` maps from the dressing stage (`ROOM_DRESSING.md`, closed after cycle 5). In `scenario.json.erb` only lighting blocks and `spriteVariants` (with their base `sprite`) on two lit screens changed (no ink, tags, NPC or dialogue fields). No engine change.
 
-Reviews: each cycle's review was done by a fresh Opus agent, read-only, from the tour shots and the config. The lighting agent did not review its own work.
+Reviews: each cycle's review was done by a fresh agent, read-only, from the tour shots and the config. The lighting agent did not review its own work.
 
 ## 1. Mood and where it comes from
 
@@ -54,7 +54,7 @@ New art (`scripts/room_gen/make_hq_props.py`, loaded on demand by `rooms.js`, no
 
 Evidence: `build_evidence/lighting_c<N>/{base,named,confront,after,triple}/` with each tour's `--check` log, and the cycle's review as `review_c<N>.md`. base = start, all nine rooms; named = `mole_identified`; confront = plus `all_flags_submitted`, Nightshade shown; after = plus `fate_decided`, `nightshade_arrested`; triple = plus `fate_decided`, `nightshade_triple_agent`. Unlit baseline: `build_evidence/dressing_c5/sheet.png`.
 
-### Cycle 1: design, implement, tour (games 2484 base, 2486 named, 2488 confront, 2491 after, 2493 triple). Review: fresh Opus. 0 blockers, 2 majors, 10 minors
+### Cycle 1: design, implement, tour (games 2484 base, 2486 named, 2488 confront, 2491 after, 2493 triple). Review: fresh reviewer. 0 blockers, 2 majors, 10 minors
 
 | id | sev | finding | outcome |
 |---|---|---|---|
@@ -71,7 +71,7 @@ Evidence: `build_evidence/lighting_c<N>/{base,named,confront,after,triple}/` wit
 | m9 | minor | No plan or log entry yet | **Fixed:** this file, `LIGHTING_LOG.md` |
 | m10 | minor | (notes) lab Nightshade shows in the confront tour; `mole_identified` set by phone while inside the suite won't open the scene until re-entry | **Left:** tour artefact (console globals don't fire the hide mappings); the second is not lighting, for the orchestrator |
 
-### Cycle 2: fixes, tour (games 2496 base, 2500 confront, 2498 after, 2499 triple). Review: fresh Opus. 0 blockers, 0 majors, 3 minors
+### Cycle 2: fixes, tour (games 2496 base, 2500 confront, 2498 after, 2499 triple). Review: fresh reviewer. 0 blockers, 0 majors, 3 minors
 
 M2 closed; M1 interim acceptable, open on L1 (middle letters (255,135,133), ends dark). Other cycle 1 minors closed.
 
@@ -81,7 +81,7 @@ M2 closed; M1 interim acceptable, open on L1 (middle letters (255,135,133), ends
 | n2 | minor | Lamp rim pink, some red on the case-file screen | **Fixed in part (c3):** r 26, intensity 1.0 (rim (225,158,167) → (201,154,164)); rest is L1 |
 | n3 | minor | Suite `darkAmbient` was the engine default | **Fixed:** removed |
 
-### Cycle 3: fixes, tour (games 2502 base, 2504 named, 2505 confront, 2506 after, 2507 triple). Review: fresh Opus. 0 blockers, 0 majors, 0 minors
+### Cycle 3: fixes, tour (games 2502 base, 2504 named, 2505 confront, 2506 after, 2507 triple). Review: fresh reviewer. 0 blockers, 0 majors, 0 minors
 
 All closed; whole-mission look: each room reads as itself at night and differs from the others; the suite's four states read; lockers keep the same share of their unlit brightness (0.859 / 0.843 his / 0.838); his desk 1.02 against 1.00 and 1.11. Open outside the stage: L1, E14.
 
@@ -91,7 +91,7 @@ Doors unlocked by script, globals set through `applyActions` `set_global` (so `g
 
 Not exercised: the real route to the globals, the confrontation cutscene itself, the retained face live (shot in the triple tour), walking into the server room.
 
-### Cycle 5: closing review (fresh Opus; `build_evidence/lighting_c5/review_c5.md`). 1 blocker, 0 majors, 6 minors
+### Cycle 5: closing review (fresh reviewer; `build_evidence/lighting_c5/review_c5.md`). 1 blocker, 0 majors, 6 minors
 
 | id | sev | finding | outcome |
 |---|---|---|---|
@@ -111,7 +111,7 @@ Validator (`--skip-ink --no-graph`): schema pass, no errors; 5 warnings, the sam
 
 New game (new erb). 1 suite loaded first: base faces, motion off. 2 `mole_identified` with the suite loaded: evidence `hq_evidence_wall_named1`, disposition still `hq_disposition1` (B1 closed). 3 reload: same, gameplay screenshot. 4 `all_flags_submitted`: variant 0, closed and awaiting faces, recording lights red. 5 reload: identical, gameplay screenshot. 6 `fate_decided` + `nightshade_triple_agent`: retained face, variant 1, recording off. All pass; session stopped. Globals by console (`set_global`), suite never entered.
 
-### Cycle 6: confirmation review (fresh Opus; `build_evidence/lighting_c6/review_c6.md`). 0 blockers, 0 majors, 4 minors
+### Cycle 6: confirmation review (fresh reviewer; `build_evidence/lighting_c6/review_c6.md`). 0 blockers, 0 majors, 4 minors
 
 B1 confirmed in code (`rooms.js:691` fallback; the initial texture is unchanged, `createSpriteFromMatch` `rooms.js:520`) and in the re-check shots. No fresh tour needed: the lighting blocks haven't changed since the cycle 3 tours. Four record-wording minors (r1 plan scope line and section 4 omit the base `sprite`; r2 loop-log heading and the named-face reload claim; r3 LIGHTING_LOG cites only game 2508; r4 the re-check's unnamed NPC is Nightshade): all fixed.
 
@@ -119,11 +119,11 @@ B1 confirmed in code (`rooms.js:691` fallback; the initial texture is unchanged,
 
 | Cycle | Reviewer | Blockers | Majors | Minors |
 |---|---|---|---|---|
-| 1 | fresh Opus | 0 | 2 | 10 |
-| 2 | fresh Opus | 0 | 0 | 3 |
-| 3 | fresh Opus | 0 | 0 | 0 |
-| 4 | browser check (Sonnet, game 2508) | A-F pass | | |
-| 5 | fresh Opus (closing) + re-check (Sonnet, game 2509, 6/6) | 1 (fixed) | 0 | 6 (fixed) |
-| 6 | fresh Opus (confirmation) | 0 | 0 | 4 (fixed) |
+| 1 | fresh reviewer | 0 | 2 | 10 |
+| 2 | fresh reviewer | 0 | 0 | 3 |
+| 3 | fresh reviewer | 0 | 0 | 0 |
+| 4 | browser check (scripted run, game 2508) | A-F pass | | |
+| 5 | fresh reviewer (closing) + re-check (scripted run, game 2509, 6/6) | 1 (fixed) | 0 | 6 (fixed) |
+| 6 | fresh reviewer (confirmation) | 0 | 0 | 4 (fixed) |
 
 Open with the user: L1 (RECORDING lamp as a scenario object with a lit face; the suite's door sign), E14 (`hq_rack` LEDs, engine). Not lighting, for the orchestrator: Nightshade still at the table after the fate in console-set tours (unconfirmed in play); the break room's green circle is the off-duty agent's sight circle by design. Next in the art order: POV chat backgrounds; lighting is final for them, apart from L1.

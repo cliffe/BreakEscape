@@ -1,6 +1,6 @@
 # m04 Critical Failure: puzzle chains review, pass 5 round 2
 
-Read-only review (Opus). Kind of game: SAFETYNET campaign mission, a TV spy thriller. Measured against m01_first_contact and m02_ransomed_trust with the `mission-puzzle-chains` skill. Everything is cited against `scenario.json.erb` (erb), the ink and the engine at commit cb180ef2. The SecGen XML and the four exploit field guides were not opened. VM claims are judged against the brief's "The VM side, at a high level" section (`docs/agents/M04_PASS_BRIEF.md:11-22`); anything finer is marked **needs checking against SecGen by the user**.
+Read-only review (review agent). Kind of game: SAFETYNET campaign mission, a TV spy thriller. Measured against m01_first_contact and m02_ransomed_trust with the `mission-puzzle-chains` skill. Everything is cited against `scenario.json.erb` (erb), the ink and the engine at commit cb180ef2. The SecGen XML and the four exploit field guides were not opened. VM claims are judged against the brief's "The VM side, at a high level" section (`docs/agents/M04_PASS_BRIEF.md:11-22`); anything finer is marked **needs checking against SecGen by the user**.
 
 ## Checks run
 

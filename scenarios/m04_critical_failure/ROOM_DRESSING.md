@@ -157,7 +157,7 @@ User on Hall 1 cycle 2: fill the door row with low kit; another rack row is fine
 - **Plant room:** the ESD fixed on the back wall (top-left 160,33) under an EMERGENCY SHUTDOWN plate, with a red-hatched keep-clear box in front and switchgear either side; the Coordination Log and the Operation Log on the steel bench, the laptop and the marked blueprints on Voltage's tables.
 - **Scenario edits** (layout fields only, each replacement asserted unique on a fresh read): eight room `type`s and `dimensions`; `as-type` on 14 objects; `readDisplay: gameDisplay` on Hall 2's Emergency Procedures and the dock's schedule; the tool case's (7,7) pin replaced.
 
-### Review (fresh Opus reviewer, read-only)
+### Review (fresh reviewer, read-only)
 
 Hard constraints all passed: Cipher's waypoints on walkable floor with his crossing window intact, Relay's beat clear, Static and Voltage on clear floor, the ESD fixed, slot audit clean.
 
@@ -214,7 +214,7 @@ Validator: schema, geometry and door alignment pass. `check_door_alignment.py`: 
 
 ## Cycle 5 (2026-10-13): review fixes and the interaction walk
 
-Inputs: a fresh Opus review of the cycle-4 rooms (0 blockers, 5 majors, 8 minors; its report reached the orchestrator, who relayed it) and a Sonnet interaction walk on :3001 (game 2230, every room unlocked server-side; `debugKO` used on Cipher, Relay and Static to get past their line-of-sight challenges; report and screenshots in the session scratchpad `m04-dressing-walk-c5/`).
+Inputs: a fresh reviewer review of the cycle-4 rooms (0 blockers, 5 majors, 8 minors; its report reached the orchestrator, who relayed it) and a scripted interaction walk on :3001 (game 2230, every room unlocked server-side; `debugKO` used on Cipher, Relay and Static to get past their line-of-sight challenges; report and screenshots in the session scratchpad `m04-dressing-walk-c5/`).
 
 ### Interaction walk
 
@@ -254,7 +254,7 @@ Shots: `build_evidence/dressing_c5/` (all nine rooms in game, sheet, grid maps).
 
 ## Cycle 6 (2026-10-13)
 
-Fresh Opus review of the cycle-5 rooms: 0 blockers, 2 majors, 5 minors. Hard constraints all pass (Cipher, readable fixtures, Relay, Static and Voltage, the ESD, door mouths, no ESD look-alikes, collision, slot audit 34/34). Its verdict: cycle 5 improved things (plant room most); the halls, dock and workshop are at small returns; security, reception and SCADA lag.
+Fresh reviewer review of the cycle-5 rooms: 0 blockers, 2 majors, 5 minors. Hard constraints all pass (Cipher, readable fixtures, Relay, Static and Voltage, the ESD, door mouths, no ESD look-alikes, collision, slot audit 34/34). Its verdict: cycle 5 improved things (plant room most); the halls, dock and workshop are at small returns; security, reception and SCADA lag.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -274,7 +274,7 @@ Shots: `build_evidence/dressing_c6/` (nine rooms, sheet, grids). Pairs for the u
 
 ### Where it stands
 
-The reviewer judges the scene close to small returns after this cycle. Cycle 7 will check that with a fresh reviewer and a short Sonnet re-walk of the cycle 5-6 changes (the bypass overlay, the workshop terminals and tool case, the reception counter and guard); I stop once a cycle finds nothing above minor.
+The reviewer judges the scene close to small returns after this cycle. Cycle 7 will check that with a fresh reviewer and a short scripted re-walk of the cycle 5-6 changes (the bypass overlay, the workshop terminals and tool case, the reception counter and guard); I stop once a cycle finds nothing above minor.
 
 ### Assumptions (cycle 6)
 
@@ -283,7 +283,7 @@ The reviewer judges the scene close to small returns after this cycle. Cycle 7 w
 
 ## Cycle 7 (2026-10-13): confirmation (close pending one tap re-check)
 
-Inputs: a fresh Opus review (0 blockers, 1 major, 5 minors; all hard constraints pass, Cipher's cone unchanged at 138 / 28 / 183 / 174 cells, 0 door-row cells at the dwell) and a Sonnet re-walk of the cycle 5-6 changes (0 majors, 6 minors), then a Sonnet tap check of reception.
+Inputs: a fresh reviewer review (0 blockers, 1 major, 5 minors; all hard constraints pass, Cipher's cone unchanged at 138 / 28 / 183 / 174 cells, 0 door-row cells at the dwell) and a scripted re-walk of the cycle 5-6 changes (0 majors, 6 minors), then a scripted tap check of reception.
 
 | id | source | sev | finding | outcome |
 |---|---|---|---|---|

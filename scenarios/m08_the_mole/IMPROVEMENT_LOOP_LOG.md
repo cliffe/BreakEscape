@@ -8,7 +8,7 @@ Stages: regression playtest, then alignment, puzzle chains and scenario design (
 
 ### Stage 1 regression
 
-Run: `PASS5_REGRESSION.md` (Sonnet-class playtest agent, keyless :3001, headless, game 2375, log `tools/playtest/m08-pass5-regression1-game2375.jsonl`, 1,180 lines). About 23 minutes, three page reloads, **credits reached** (16 lines read from `#bv-cr-label`; `mission_complete` set; `verify-run.rb`: 7 rooms beyond the first, 2 objects unlocked, 4 flags submitted). Flags were supplied, not earned (standalone, no VM); the box itself is "needs checking against SecGen by the user". Session stopped; :3000 not touched.
+Run: `PASS5_REGRESSION.md` (playtest agent, keyless :3001, headless, game 2375, log `tools/playtest/m08-pass5-regression1-game2375.jsonl`, 1,180 lines). About 23 minutes, three page reloads, **credits reached** (16 lines read from `#bv-cr-label`; `mission_complete` set; `verify-run.rb`: 7 rooms beyond the first, 2 objects unlocked, 4 flags submitted). Flags were supplied, not earned (standalone, no VM); the box itself is "needs checking against SecGen by the user". Session stopped; :3000 not touched.
 
 Counts: 0 blockers, 4 majors, 11 minors (three of the minors are planned work for later stages).
 
@@ -38,7 +38,7 @@ Decisions taken (tester and orchestrator): none beyond running the arrest ending
 
 ### Stage 2 alignment, round 1 fix (2026-10-14)
 
-Fixer (Opus) on `ALIGNMENT_REVIEW_P5_C1.md` (1 blocker, 6 majors, 7 minors) and the regression findings handed to it (`PASS5_REGRESSION.md` 1, 2, 3, 10, 12, 13, 14). Orchestrator decisions applied: U2 Option B, U3 textVariants first with no engine edit, U4 yes (hedge, no name). Mission files only: `scenario.json.erb`, the ink, `mission.json`; plus the new route driver and the m08 block of `scripts/ink_runtime_check/missions.json`.
+Fixer (review agent) on `ALIGNMENT_REVIEW_P5_C1.md` (1 blocker, 6 majors, 7 minors) and the regression findings handed to it (`PASS5_REGRESSION.md` 1, 2, 3, 10, 12, 13, 14). Orchestrator decisions applied: U2 Option B, U3 textVariants first with no engine edit, U4 yes (hedge, no name). Mission files only: `scenario.json.erb`, the ink, `mission.json`; plus the new route driver and the m08 block of `scripts/ink_runtime_check/missions.json`.
 
 #### Alignment review C1
 
@@ -143,7 +143,7 @@ Open for the next round: a browser check of the naming flow (aimsCompleted unloc
 
 ### Stage 2 alignment, round 2 fix (2026-10-14)
 
-Fixer (Opus) on `ALIGNMENT_REVIEW_P5_C2.md` (0 blockers, 5 majors, 10 minors) and `PASS5_ALIGN_R1_BROWSER.md` (2 majors, 4 minors). Mission files only: `scenario.json.erb`, the ink, `mission.json`, `CONTRACT.md` (pass-5 section), the route driver and routes, the m08 block of `scripts/ink_runtime_check/missions.json`. No engine edits; nothing committed.
+Fixer (review agent) on `ALIGNMENT_REVIEW_P5_C2.md` (0 blockers, 5 majors, 10 minors) and `PASS5_ALIGN_R1_BROWSER.md` (2 majors, 4 minors). Mission files only: `scenario.json.erb`, the ink, `mission.json`, `CONTRACT.md` (pass-5 section), the route driver and routes, the m08 block of `scripts/ink_runtime_check/missions.json`. No engine edits; nothing committed.
 
 #### Alignment review C2
 
@@ -238,7 +238,7 @@ Open for cycle 3: confirm J1-J5 in the files; judge the J2 residual (only 0x47 i
 
 ### Stage 2 alignment, round 3 fix (closing round, 2026-10-14)
 
-Fixer (Opus) on `ALIGNMENT_REVIEW_P5_C3.md` (0 blockers, 1 major, 4 minors) and `PASS5_ALIGN_R2_BROWSER.md` (3 minors, 1 note). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 route driver and routes. No engine edits; no browser session; nothing committed.
+Fixer (review agent) on `ALIGNMENT_REVIEW_P5_C3.md` (0 blockers, 1 major, 4 minors) and `PASS5_ALIGN_R2_BROWSER.md` (3 minors, 1 note). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 route driver and routes. No engine edits; no browser session; nothing committed.
 
 #### Alignment review C3
 
@@ -293,7 +293,7 @@ Cycle 3 review 0/1/4; round 3 fixed K1–K5, R3, R4 (no change, reasoned), with 
 
 ### Stage 2 puzzle chains, round 1 fix (2026-10-14)
 
-Fixer (Opus) on `PUZZLE_REVIEW_P5_C1.md` (0 blockers, 1 major, 7 minors). The orchestrator took m5 (MIFARE) and m6 (the locker catch). Mission files only: `scenario.json.erb`, six ink files, `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+Fixer (review agent) on `PUZZLE_REVIEW_P5_C1.md` (0 blockers, 1 major, 7 minors). The orchestrator took m5 (MIFARE) and m6 (the locker catch). Mission files only: `scenario.json.erb`, six ink files, `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
 
 #### Puzzle chains review C1
 
@@ -347,7 +347,7 @@ Owed on screen at the stage's browser check: HaX's hub before flag 1 (after ente
 
 ### Stage 2 puzzle chains, round 2 fix (closing round, 2026-10-14)
 
-Fixer (Opus) on `PUZZLE_REVIEW_P5_C2.md` (0 blockers, 0 majors, 4 new minors, 1 carried) and `PASS5_PUZZLE_R1_BROWSER.md` (all five items pass; 3 minors, 2 notes). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+Fixer (review agent) on `PUZZLE_REVIEW_P5_C2.md` (0 blockers, 0 majors, 4 new minors, 1 carried) and `PASS5_PUZZLE_R1_BROWSER.md` (all five items pass; 3 minors, 2 notes). Mission files only: `scenario.json.erb`, three ink files, `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
 
 #### Puzzle chains review C2
 
@@ -400,7 +400,7 @@ Cycle 2 review 0/0/4 (plus 1 carried engine minor); the round-1 browser check pa
 
 ### Stage 2 scenario design, round 1 fix (2026-10-14)
 
-Fixer (Opus) on `DESIGN_REVIEW_P5_C1.md` (0 blockers, 1 major, 12 minors). Mission files only: `scenario.json.erb`, four ink files (phone hub, Netherton, debrief, confrontation), `DECISIONS_PENDING.md`, the m08 routes and their driver. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+Fixer (review agent) on `DESIGN_REVIEW_P5_C1.md` (0 blockers, 1 major, 12 minors). Mission files only: `scenario.json.erb`, four ink files (phone hub, Netherton, debrief, confrontation), `DECISIONS_PENDING.md`, the m08 routes and their driver. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
 
 #### Scenario design review C1
 
@@ -469,7 +469,7 @@ Owed on screen at the next browser check: punch the Director before or after the
 
 ### Stage 2 scenario design, round 2 fix (closing round, 2026-10-14)
 
-Fixer (Opus) on `DESIGN_REVIEW_P5_C2.md` (0 blockers, 0 majors, 3 minors) and `PASS5_DESIGN_R1_BROWSER.md` (all seven items pass; 1 major for a human check, 3 minors, 3 notes). Mission files only: `scenario.json.erb`, four ink files (Netherton, the confrontation, the debrief, a comment in Phantom's), `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
+Fixer (review agent) on `DESIGN_REVIEW_P5_C2.md` (0 blockers, 0 majors, 3 minors) and `PASS5_DESIGN_R1_BROWSER.md` (all seven items pass; 1 major for a human check, 3 minors, 3 notes). Mission files only: `scenario.json.erb`, four ink files (Netherton, the confrontation, the debrief, a comment in Phantom's), `DECISIONS_PENDING.md`, the m08 routes. No engine edits; no browser session; nothing committed. I opened no SecGen XML and none of the four restricted guides.
 
 #### Scenario design review C2
 
@@ -526,7 +526,7 @@ Full record: `ROOM_DRESSING.md` (cycle 1). Survey and critique: 1 blocker (every
 
 ### Phase 4 dialogue, cycle 1 (2026-10-14)
 
-Fixer (Opus) on `DIALOGUE_REVIEW_P5_C1.md` (0 blockers, 4 majors, 21 minors). Files: all twelve m08 ink files, three text fields in `scenario.json.erb` (HaX's first text, the clone text, Netherton's two voice styles; re-read before each edit, nothing else touched while the room-dressing agent works in the file), `DECISIONS_PENDING.md` (U1 addendum 3), the m08 routes. No engine edits, no browser session, nothing committed. I opened no SecGen XML and none of the four restricted guides.
+Fixer (review agent) on `DIALOGUE_REVIEW_P5_C1.md` (0 blockers, 4 majors, 21 minors). Files: all twelve m08 ink files, three text fields in `scenario.json.erb` (HaX's first text, the clone text, Netherton's two voice styles; re-read before each edit, nothing else touched while the room-dressing agent works in the file), `DECISIONS_PENDING.md` (U1 addendum 3), the m08 routes. No engine edits, no browser session, nothing committed. I opened no SecGen XML and none of the four restricted guides.
 
 #### Dialogue review C1
 
@@ -671,10 +671,10 @@ Full record: `ROOM_DRESSING.md`. Cycle 2 review: 0 blockers, 6 majors, 9 minors 
 Cycle 2 review 0/0/10, fixed (e8d10bcf). Browser check games 2482/2495/2501 (`PASS5_DIALOGUE_BROWSER_CHECK.md`): greetings, accused Cipher, conduct beat, HaX's debrief lines, walk-out ending and HaX after the naming all pass. Orchestrator fixed N1 (Netherton's flag-4 nudge was `{&…}`, cycling; now a stopping sequence) and N4 (TESTING_WALKTHROUGH row 3a said EM4100; now MIFARE with Crack keys / Darkside / Save). N2 (confrontation reopen line unreachable, the debrief backstop fires on reload) accepted as harmless dead text; N7 ("which face" in the post-naming line) is intended. Routes 25/25.
 
 ### Stage 4 room lighting, cycles 1-6: CLOSED (2026-10-14)
-Full record: `LIGHTING_PLAN.md`. Night on Level Red (`#b8bfce`); six rooms on, three motion; the interrogation suite follows the story by room variant (dark before the confrontation; lit pool on the subject, RECORDING lamp and tally lights red during it; house lights after the fate), with evidence-wall and disposition faces per state (`spriteVariants`). Cycle 1 review (fresh Opus): 0 blockers, 2 majors (lamp face can't follow its light; pool missed Nightshade), 10 minors; 8 fixed, 1 in part, 2 deferred (door sign with L1, rack LEDs E14), 1 left (m10, tour-only notes). Cycle 2: 0/0/3 (evidence-wall glow singled out the middle anonymous card; lamp spill; no-op dark ambient), all fixed. Cycle 3: 0/0/0. Cycle 4 browser check (game 2508): start modes, motion strike, closed/awaiting/handover faces, recording emitters, variants hold across two reloads (by eval; one screenshot after reload); the named face was reloaded in the cycle 5 re-check (game 2509). Cycle 5 closing review (fresh Opus): 1 blocker (no base `sprite` on the two screens, so a suite loaded before the naming swapped the disposition screen to the generic smartscreen at `mole_identified`), 6 record minors; all fixed, B1 re-checked in the failing order (game 2509, 6/6 pass). Cycle 6 confirmation review (fresh Opus): 0/0/4 record wording, fixed; closed. Erb edits: lighting blocks, two `spriteVariants` and their base `sprite` fields only. New pending: L1 (RECORDING lamp as a scenario object, door sign), E14 (hq_rack LEDs).
+Full record: `LIGHTING_PLAN.md`. Night on Level Red (`#b8bfce`); six rooms on, three motion; the interrogation suite follows the story by room variant (dark before the confrontation; lit pool on the subject, RECORDING lamp and tally lights red during it; house lights after the fate), with evidence-wall and disposition faces per state (`spriteVariants`). Cycle 1 review (fresh reviewer): 0 blockers, 2 majors (lamp face can't follow its light; pool missed Nightshade), 10 minors; 8 fixed, 1 in part, 2 deferred (door sign with L1, rack LEDs E14), 1 left (m10, tour-only notes). Cycle 2: 0/0/3 (evidence-wall glow singled out the middle anonymous card; lamp spill; no-op dark ambient), all fixed. Cycle 3: 0/0/0. Cycle 4 browser check (game 2508): start modes, motion strike, closed/awaiting/handover faces, recording emitters, variants hold across two reloads (by eval; one screenshot after reload); the named face was reloaded in the cycle 5 re-check (game 2509). Cycle 5 closing review (fresh reviewer): 1 blocker (no base `sprite` on the two screens, so a suite loaded before the naming swapped the disposition screen to the generic smartscreen at `mole_identified`), 6 record minors; all fixed, B1 re-checked in the failing order (game 2509, 6/6 pass). Cycle 6 confirmation review (fresh reviewer): 0/0/4 record wording, fixed; closed. Erb edits: lighting blocks, two `spriteVariants` and their base `sprite` fields only. New pending: L1 (RECORDING lamp as a scenario object, door sign), E14 (hq_rack LEDs).
 
 ### Phase 8 playtests: blind run A fixes (2026-10-14)
-Source: `PASS5_BLIND_STRUGGLE_A.md` (game 2510; 0 blockers, 0 majors, 2 moderate, 5 minors, 3 harness, 1 info) and the orchestrator's list. No browser session in this round; a Sonnet check follows.
+Source: `PASS5_BLIND_STRUGGLE_A.md` (game 2510; 0 blockers, 0 majors, 2 moderate, 5 minors, 3 harness, 1 info) and the orchestrator's list. No browser session in this round; a scripted check follows.
 
 | # | Severity | Finding | Outcome |
 |---|---|---|---|
@@ -727,7 +727,7 @@ Routes: every confrontation talk now picks "Face him" first (r1 "Read the wall",
 
 Checks (after the last edit): `scripts/compile-ink.sh m08_the_mole` 12/12. Routes 26/26 "all expectations met", 0 FAILs, longest run 9 on every route (the briefing; the confrontation opening is now 8 at most). dialoguelint: no findings (one line-len and one "however" transition on the first wordings, fixed). reopencheck: 0 problems (m08 phone 1800 reopens). loopcheck 200 steps x 6 strategies on ten state sets across the eight changed files (confrontation with Okafor's file and with an accusation tidy, Nightshade with the audit, Cipher, Phantom, Director at the reading and at the second misread, phone, briefing, off-duty agent): no runtime errors. Validator (`--no-graph`, with ink): schema valid, all ink valid, lint clean, only the known warnings. `check_door_alignment.py`: all OK. `slot_audit.py`: 0 problems, `recording_lamp` on `hq_recording1` at 70,24.
 
-Owed at the Sonnet browser check: the lamp's unlit face before the confrontation, lit during it, dark after the fate (and after a reload in each state); the door sign; the wall beat both ways; the safe's three files; the reworded accusation choices fit their buttons.
+Owed at the scripted browser check: the lamp's unlit face before the confrontation, lit during it, dark after the fate (and after a reload in each state); the door sign; the wall beat both ways; the safe's three files; the reworded accusation choices fit their buttons.
 
 ## SecGen alignment (2026-10-16)
 

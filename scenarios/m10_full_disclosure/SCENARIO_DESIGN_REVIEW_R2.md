@@ -1,6 +1,6 @@
 # m10 Full Disclosure: scenario design review, round 2
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 2. Tree at 87dbe9db (dialogue R1, educational R1 and scenario design R1 fixes); the only m10 change since is the untracked `PUZZLE_CHAINS_PLAN.md`. Dialogue round 2 and a puzzle-chain reviewer are reading m10 in parallel, so I've left wording to them unless it changes what the player can do or know.
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 2. Tree at 87dbe9db (dialogue R1, educational R1 and scenario design R1 fixes); the only m10 change since is the untracked `PUZZLE_CHAINS_PLAN.md`. Dialogue round 2 and a puzzle-chain reviewer are reading m10 in parallel, so I've left wording to them unless it changes what the player can do or know.
 
 **Method.**
 - **Validator.** `ruby scripts/validate_scenario.rb scenarios/m10_full_disclosure/scenario.json.erb --no-graph`, exit 0. Output in the session scratchpad under `m10_sdr2/validator.txt`.

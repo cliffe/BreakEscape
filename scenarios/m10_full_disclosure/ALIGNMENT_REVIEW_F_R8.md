@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only and static (no browser). I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R7 and CONTRACT §11 (rounds 1 to 7). The tree is HEAD a395d5af. The R7 fixes are 02763652..HEAD, which touches only `scenario.json.erb`, `CONTRACT.md` and `FINALE_DEV_LOG.md`; m10 has no uncommitted changes. No VM material was opened. Scratch files are in `scratchpad/m10_r8/`.
+2026-10-22. Fresh reviewer, read-only and static (no browser). I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R7 and CONTRACT §11 (rounds 1 to 7). The tree is HEAD a395d5af. The R7 fixes are 02763652..HEAD, which touches only `scenario.json.erb`, `CONTRACT.md` and `FINALE_DEV_LOG.md`; m10 has no uncommitted changes. No VM material was opened. Scratch files are in `scratchpad/m10_r8/`.
 
 What I read: the R7 diff; `six_oclock`, `hearing`, `citadel`, `victoria`, `vos`, `gary` and `nightshade` (start and menus) in full; `imran`, `voltage`, `wendell`, `asante`, `ghost_phone`, `victoria_line` and Netherton's briefing stance; Tesseract's router; HaX's hub, accusation and console knots; `close_compute()` and `season_line()`; the card, every credits section, and the eventMappings from the workshop to the end of the night (erb:1650-1783) plus the gallery, workshop and power-room NPC records.
 

@@ -1,6 +1,6 @@
 # m06 pass 5: alignment review, round 3
 
-2026-10-13. Opus reviewer, read-only, static (no browser session). Confirms the round-2 fixes in commit a1699fa8, settles the open browser findings N1, N3 and N4 from `PASS5_ALIGN_R1_BROWSER.md`, then makes one fresh pass with the `mission-alignment-plan` rubric. I didn't open the SecGen XML, the restricted lab-sheet bodies, the exploit section of `VM_INTEGRATION.md` or the engine's sight-challenge source. N1 is judged from scenario configs only.
+2026-10-13. Reviewer, read-only, static (no browser session). Confirms the round-2 fixes in commit a1699fa8, settles the open browser findings N1, N3 and N4 from `PASS5_ALIGN_R1_BROWSER.md`, then makes one fresh pass with the `mission-alignment-plan` rubric. I didn't open the SecGen XML, the restricted lab-sheet bodies, the exploit section of `VM_INTEGRATION.md` or the engine's sight-challenge source. N1 is judged from scenario configs only.
 
 ## Checks run
 

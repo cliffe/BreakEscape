@@ -1,6 +1,6 @@
 # m06 Follow the Money: puzzle chains review, pass 5 round 1
 
-Read-only review (Opus, static). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill, with m04's pass-5 puzzle-chain rounds as the list of bug classes to hunt.
+Read-only review (static). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill, with m04's pass-5 puzzle-chain rounds as the list of bug classes to hunt.
 
 Every claim below is cited against `scenario.json.erb` (written `erb:N`) and the ink as they stand on 2026-10-13, not the older `PUZZLE_CHAINS_PLAN.md` (draft 4, pass 3). Alignment is closed. The open items handed to this stage were m12 (the fingerprint kit is carried but never used), Kemal's beat tuning, and N1 (one real pick inside Kemal's cone, owed to the first browser run).
 

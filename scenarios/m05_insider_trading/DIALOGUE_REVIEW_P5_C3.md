@@ -1,6 +1,6 @@
 # m05 Insider Trading: dialogue review, pass 5 cycle 3 (confirmation)
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P5_C2.md` and the "Phase 4 dialogue, cycle 2" entry in `IMPROVEMENT_LOOP_LOG.md` (fix commit `fbe1c0eb`). The ink in the working tree is identical to that commit, and only `scenario.json.erb` has uncommitted changes, which belong to the room-dressing agent. Line numbers below are HEAD's. I didn't open the SecGen XML or the four listed field guides, and I made no VM-side claims.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M05_PASS_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P5_C2.md` and the "Phase 4 dialogue, cycle 2" entry in `IMPROVEMENT_LOOP_LOG.md` (fix commit `fbe1c0eb`). The ink in the working tree is identical to that commit, and only `scenario.json.erb` has uncommitted changes, which belong to the room-dressing agent. Line numbers below are HEAD's. I didn't open the SecGen XML or the four listed field guides, and I made no VM-side claims.
 
 Finding ids are `D5C3-n`. **Counts: 0 blockers, 0 majors, 6 minors.**
 

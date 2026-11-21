@@ -1,6 +1,6 @@
 # m05 pass 5: alignment review, round 3
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as the round-3 reviewer: confirm round 2, look for regressions in what round 2 changed, then one fresh pass over the ten-row rubric. Reviews commit 57c93555 ("alignment round 2"). Every claim was checked against `scenario.json.erb` and the ink, not the log. No SecGen XML, restricted lab sheet or sight-challenge source was opened; VM claims are marked "needs checking against SecGen by the user".
+2026-10-13. Reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as the round-3 reviewer: confirm round 2, look for regressions in what round 2 changed, then one fresh pass over the ten-row rubric. Reviews commit 57c93555 ("alignment round 2"). Every claim was checked against `scenario.json.erb` and the ink, not the log. No SecGen XML, restricted lab sheet or sight-challenge source was opened; VM claims are marked "needs checking against SecGen by the user".
 
 Probe routes of my own are in the session scratchpad (`m05-align-r3-reviewer/`), run through the checked-in driver. Each is a copy of a checked-in route with a few steps changed, so they can be copied into `scripts/ink_runtime_check/m05_routes/` as regression routes once the fix lands.
 
@@ -70,7 +70,7 @@ One thing I looked at and am not raising: picking "Halloran says he's in her lab
 
 After the fixer lands R3-1 and R3-2 (and passes R3-3 to the dialogue phase), a round 4 can be a confirmation: re-run all routes including the new r14 and r15, check that the reward strings fail on p1 and p2 and still pass on r2, and do one grep that `door_log_reasoned_first` is set only inside the three `*log_reason_right` knots. If that comes back with nothing above minor and the browser checks below pass, close the alignment phase at round 4. Alignment is less design-heavy than dialogue or dressing, and with the deduction's reward fixed nothing in this pass suggests a fifth cycle would find much.
 
-## Browser checks before closing (Sonnet, :3001, at least one mid-mission reload)
+## Browser checks before closing (scripted run, :3001, at least one mid-mission reload)
 
 None of these has run in a browser yet. Rounds 1 and 2 left most of them open.
 

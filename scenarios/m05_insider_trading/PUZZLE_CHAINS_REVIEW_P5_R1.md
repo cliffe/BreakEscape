@@ -1,6 +1,6 @@
 # m05 Insider Trading: puzzle chains review, pass 5 round 1
 
-Reviewer: Opus, read-only (this file is the only write). Date: 2026-10-13. Skill: `mission-puzzle-chains`, run in full against the working tree, which includes the closed alignment phase (`IMPROVEMENT_LOOP_LOG.md`, rounds 1 to 4).
+Reviewer: review agent, read-only (this file is the only write). Date: 2026-10-13. Skill: `mission-puzzle-chains`, run in full against the working tree, which includes the closed alignment phase (`IMPROVEMENT_LOOP_LOG.md`, rounds 1 to 4).
 
 Kind of game: SAFETYNET campaign mission, a TV spy thriller. The aim for this stage: the locks chain, the player earns what they get, the deduction isn't handed over, red herrings cost something, kit is cumulative, and the VM flags are required and woven in.
 

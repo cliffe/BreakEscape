@@ -1,6 +1,6 @@
 # m03 pass 2 regression B2 (night to the end) plus the five new ZDS rooms
 
-Tester: Sonnet subagent, 2026-10-12, headless, speed fast, keyless server :3001. Load was low (about 4.6) at start.
+Tester: subagent, 2026-10-12, headless, speed fast, keyless server :3001. Load was low (about 4.6) at start.
 
 - **Run 1 (full run)**: game 2096. Day played for real, night played to the end. Session log `tools/playtest/m03-regB2-session.jsonl`. Nothing console-set for story state. Ending reached, but I overran the C10 reload window (see C10), so the ending checks were repeated in run 2.
 - **Run 2 (ending only)**: game 2099. Session log `tools/playtest/m03-regB2-ending-session.jsonl`. Reception badge cloned for real (to open the conference door), then **console-set (exercised, not earned)**: `mission_phase=act2_infiltration`, `clone_call_done`, `victoria_card_cloned`, `night_confrontation_ready`, `exec_wing_entered`, `exec_office_entered`, `transaction_log_read`. Used only for C10, C9, C18, R1-3 and the debrief text. Credits did not roll in run 2 because the other `concludeRequires` tasks were never done (expected).

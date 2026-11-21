@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only and static (no browser). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R3 and CONTRACT §11 (alignment rounds 1 to 3). The tree is HEAD 2c325e16; m10's only uncommitted change is `dungeon_graph.md`. I read the two round-3 fix commits as diffs (1421c9d2 ink, 2c325e16 JSON), then the closing inks in full (`six_oclock`, `hearing`, `citadel`), `season_line()` and `close_compute()`, Tesseract's ledger sting, database and Join knots, the card, every credits section and the merge. No VM material was opened.
+2026-10-22. Fresh reviewer, read-only and static (no browser). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R3 and CONTRACT §11 (alignment rounds 1 to 3). The tree is HEAD 2c325e16; m10's only uncommitted change is `dungeon_graph.md`. I read the two round-3 fix commits as diffs (1421c9d2 ink, 2c325e16 JSON), then the closing inks in full (`six_oclock`, `hearing`, `citadel`), `season_line()` and `close_compute()`, Tesseract's ledger sting, database and Join knots, the card, every credits section and the merge. No VM material was opened.
 
 - **Ink compile:** every `.json` is newer than its `.ink`.
 - **Validator** (`--skip-ink --no-graph`): no errors. The same 2 objective-wiring warnings (`aside_done`, `blast_tunnel`) and the 4 behaviourless placeholder NPCs as R3.

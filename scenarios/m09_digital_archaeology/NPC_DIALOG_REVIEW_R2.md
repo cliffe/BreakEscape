@@ -77,7 +77,7 @@ The validator also rewrote `mission.json`, but that was the builder's CyBOK edit
 **m4. New at `e20cb0b0`: the leaver line in `[About the name.]` is the third time tonight that the credential was never revoked.**
 `m09_phone_agent0x99.ink:707`. Unvoiced.
 - The identity scene has just said "Issued before he left us. Never revoked." (L392) and "Seven years, and nobody turned it off." (L504/506). The topic opens on his first name, then says "His were never revoked. Seven years on, the credential still works."
-- Proposed L707: "When someone leaves, their accounts and their kit go back the same day. We never took his back." This keeps the practice (E-M4) and drops the repeated fact. It was opus48-checked wording, so re-run that check if the change touches anything VM-side. It shouldn't, because it's concept only.
+- Proposed L707: "When someone leaves, their accounts and their kit go back the same day. We never took his back." This keeps the practice (E-M4) and drops the repeated fact. It was VM-agent-checked wording, so re-run that check if the change touches anything VM-side. It shouldn't, because it's concept only.
 
 **m5. New at `e20cb0b0`: the open-the-safe text says the wrong thing.**
 `scenario.json.erb:264` (texts/A, the second open-the-safe row). Unvoiced.

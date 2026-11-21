@@ -1,6 +1,6 @@
 # m10 Full Disclosure: NPC dialogue review, round 4
 
-Phase 4 (dialogue), round 4. Reviewer: Opus, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, the three new VM-gating objects and the closing scenes. Base: commit `4e87628ec` (dialogue R3, scenario design R3, puzzle chains R2, VM gating F12/F13). Line numbers are for that commit.
+Phase 4 (dialogue), round 4. Reviewer: review agent, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, the three new VM-gating objects and the closing scenes. Base: commit `4e87628ec` (dialogue R3, scenario design R3, puzzle chains R2, VM gating F12/F13). Line numbers are for that commit.
 
 **The tree moved during the review.** A puzzle chains R3 fixer is editing `phone_agent0x99.ink`, the ERB, CONTRACT and the texts file (uncommitted): the tag now hangs off "their gate terminal", the duty card is a duty sheet, the core key has moved to his terminal, and step 1's wait reply is "Take it. I'll ring you back." The login strings are filled in. Where the tree already deals with a point, I say so and don't count it. §5 has notes on its new lines.
 

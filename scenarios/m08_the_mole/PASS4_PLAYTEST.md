@@ -2,7 +2,7 @@
 
 # m08 The Mole: pass-4 design playtest script
 
-Covers the parts the pass-4 design fixes changed (see `DESIGN_REVIEW.md`, "Changes made (pass 4 design)"). Sonnet, keyless server on :3001, per `.claude/skills/playtest-scenario/SKILL.md`:
+Covers the parts the pass-4 design fixes changed (see `DESIGN_REVIEW.md`, "Changes made (pass 4 design)"). Scripted run, keyless server on :3001, per `.claude/skills/playtest-scenario/SKILL.md`:
 
 ```
 PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m08_the_mole

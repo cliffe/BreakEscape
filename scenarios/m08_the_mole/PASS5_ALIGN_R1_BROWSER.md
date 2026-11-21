@@ -2,7 +2,7 @@
 
 # m08 pass 5, alignment round 1: browser check
 
-Date 2026-10-14. Commit under test b375a939. Keyless server :3001 only, headless (machine load about 24), Sonnet-style harness commands, no files edited, nothing committed. Every session started here was stopped (`session-stop.sh` 2392, 2402, 2406; the two `playtest-session` processes still running belong to other agents, games 2404 and 2405).
+Date 2026-10-14. Commit under test b375a939. Keyless server :3001 only, headless (machine load about 24), scripted harness commands, no files edited, nothing committed. Every session started here was stopped (`session-stop.sh` 2392, 2402, 2406; the two `playtest-session` processes still running belong to other agents, games 2404 and 2405).
 
 Question answered: plumbing, plus a little unexpected behaviour (wrong reading, early accusation, re-entering a conversation mid-question). Not a solvability pass: the flags are supplied.
 

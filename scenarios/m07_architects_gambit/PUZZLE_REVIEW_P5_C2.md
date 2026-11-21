@@ -2,7 +2,7 @@
 
 Stage 2, `mission-puzzle-chains` rubric. Fresh reviewer, read-only. 2026-10-14.
 
-Everything below was checked against `scenario.json.erb` (cited `erb:N`), the ink (`ink/<file>:N`) and the engine under `public/break_escape/js/`. I opened no SecGen XML and none of the four restricted field guides. I started no browser session (a Sonnet browser check runs alongside), and I edited no file except this one.
+Everything below was checked against `scenario.json.erb` (cited `erb:N`), the ink (`ink/<file>:N`) and the engine under `public/break_escape/js/`. I opened no SecGen XML and none of the four restricted field guides. I started no browser session (a scripted browser check runs alongside), and I edited no file except this one.
 
 ## Checks run (outputs in the session scratchpad, `m07-puzzle-c2-reviewer/`)
 

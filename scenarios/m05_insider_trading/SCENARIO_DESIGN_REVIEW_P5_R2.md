@@ -1,6 +1,6 @@
 # m05 Insider Trading: scenario design review, pass 5, round 2
 
-Reviewer: Opus, read-only (static). Date 2026-10-13. Skill: `scenario-design-review`, a fresh pass, plus confirmation of round 1 (`SCENARIO_DESIGN_REVIEW_P5_R1.md`) against commit da9e6b60. Checked against `scenario.json.erb`, the ink and the engine, not the older design docs. The m05 working tree matched HEAD when I started.
+Reviewer: review agent, read-only (static). Date 2026-10-13. Skill: `scenario-design-review`, a fresh pass, plus confirmation of round 1 (`SCENARIO_DESIGN_REVIEW_P5_R1.md`) against commit da9e6b60. Checked against `scenario.json.erb`, the ink and the engine, not the older design docs. The m05 working tree matched HEAD when I started.
 
 Kind of game: SAFETYNET campaign mission (TV spy thriller). VM content was not checked; claims about it are marked "needs checking against SecGen by the user".
 
@@ -85,7 +85,7 @@ Only what changed since round 1 is written out here. Round 1's sections on solva
 
 ## Browser checks before closing the stage
 
-Run on the keyless server on :3001, Sonnet, with one mid-mission reload.
+Run on the keyless server on :3001, scripted run, with one mid-mission reload.
 
 1. **R2-M1, after the fix.** Meet Halloran early, accuse her to Patricia, then name Torres. Talk to Halloran with no reload: she should say she has her access back, never "suspended my access", and "[It's David.]" should not repeat the reinstatement. Then meet her, accuse her, and talk again before the naming: she should say "Security have suspended my access" and "What else?" should not appear (round 1's M1 check).
 2. **R2-m1, after the fix.** Answer the Recruiter (once yes, once no on a second run), then ring her back: one line, then she hangs up, with no "Think it over".

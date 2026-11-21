@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. I'm a fresh Opus reviewer, working read-only and static (no browser session). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer, against `ALIGNMENT_PLAN.md`, `ALIGNMENT_REVIEW_F_R1.md` and the alignment R1 entries in `CONTRACT.md` §11 (JSON side, ink side, and the ELSEWHERE strings). The built mission is the working tree at d03e1180 plus uncommitted edits (m10 has only `dungeon_graph.md` modified). I didn't open any VM material.
+2026-10-22. I'm a fresh reviewer, working read-only and static (no browser session). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer, against `ALIGNMENT_PLAN.md`, `ALIGNMENT_REVIEW_F_R1.md` and the alignment R1 entries in `CONTRACT.md` §11 (JSON side, ink side, and the ELSEWHERE strings). The built mission is the working tree at d03e1180 plus uncommitted edits (m10 has only `dungeon_graph.md` modified). I didn't open any VM material.
 
 - **Ink compile:** every `.json` is newer than its `.ink`.
 - **Validator** (`--skip-ink --no-graph`): no errors. It gave the same 2 objective-wiring warnings and 78 issues as R1. The `blast_tunnel` pair is now in `mutuallyExclusiveGlobals`. The remaining warning pairs those two with the non-once handlers, which is harmless.

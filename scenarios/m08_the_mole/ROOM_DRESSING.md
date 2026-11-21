@@ -2,7 +2,7 @@
 
 # m08 room dressing
 
-Skill: `.claude/skills/mission-room-dressing/`. Brief: `docs/agents/M08_PASS_BRIEF.md`, stage 4. Up to ten design → implement → review cycles while each still improves the rooms; close when a fresh review finds nothing above minor and a Sonnet interaction walk on :3001 finds no pick-one menus or stuck spots. Evidence lives in `build_evidence/dressing_c<N>/`; in-game shots come from `tools/playtest/lighting-tour.sh` on the keyless :3001 server (every room unlocked, HUD hidden), in fresh games of my own. m05's dressing log is the worked example.
+Skill: `.claude/skills/mission-room-dressing/`. Brief: `docs/agents/M08_PASS_BRIEF.md`, stage 4. Up to ten design → implement → review cycles while each still improves the rooms; close when a fresh review finds nothing above minor and a scripted interaction walk on :3001 finds no pick-one menus or stuck spots. Evidence lives in `build_evidence/dressing_c<N>/`; in-game shots come from `tools/playtest/lighting-tour.sh` on the keyless :3001 server (every room unlocked, HUD hidden), in fresh games of my own. m05's dressing log is the worked example.
 
 The aim: SAFETYNET headquarters, the Citadel, at night on a Level Red posture, while the player hunts a mole among their own colleagues. A government intelligence building that takes itself seriously: dark slate and walnut front of house, institutional blockwork in the back rooms, badge readers blinking red at every door. Each room should read as what it is and differ from the others.
 
@@ -96,7 +96,7 @@ Counts: 1 blocker, 3 majors, 2 minors.
 
 ## Cycle 2 (2026-10-14): review of cycle 1, and fixes
 
-A fresh Opus reviewer (read-only) checked the nine rooms against the skill's critique list and the hard constraints. Its main catch: cycle 1's tap check sized NPCs at about 32 px, but the engine's tap area for an NPC is its whole 80×80 frame (`game.js` `gatherInteractablesNearClick`: sprite bounds; body centre at `position*32`, frame x ±40, y −71..+9). Checked against the code and accepted; the tap check now uses the frame. Hard constraints otherwise passed: no slot within 32 px of another, no rolling `chair-*` in any HQ map, door lanes clear, feet ≤ 256 where a room lies to the south, wall items on the wall face, NPCs on clear floor, all three lockers inside the agent's circle (furthest ~92 px), HaX 140 px+ from 0x23.
+A fresh reviewer (read-only) checked the nine rooms against the skill's critique list and the hard constraints. Its main catch: cycle 1's tap check sized NPCs at about 32 px, but the engine's tap area for an NPC is its whole 80×80 frame (`game.js` `gatherInteractablesNearClick`: sprite bounds; body centre at `position*32`, frame x ±40, y −71..+9). Checked against the code and accepted; the tap check now uses the frame. Hard constraints otherwise passed: no slot within 32 px of another, no rolling `chair-*` in any HQ map, door lanes clear, feet ≤ 256 where a room lies to the south, wall items on the wall face, NPCs on clear floor, all three lockers inside the agent's circle (furthest ~92 px), HaX 140 px+ from 0x23.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -114,7 +114,7 @@ A fresh Opus reviewer (read-only) checked the nine rooms against the skill's cri
 | C2-12 | Intel | minor | Phantom's notebook landed on a loose-paper sprite; no chair | **Fixed:** hand-drawn `notes_notebook1` (black hardback, red band, pencil), erb `as-type:notes_notebook`; a chair at the console |
 | C2-13 | Break room | minor | Nothing to drink | **Fixed:** a drinks machine SE beside the sofa. No noticeboard (no free wall: kitchen, lockers and the poster fill the back wall, the E wall holds the door) |
 | C2-14 | Servers | minor | Empty band between the desks | **Left:** the room reads as finished and that band is the walk between the two terminals |
-| C2-15 | Break, Director | minor | Cycle-1 shots out of date; lockers to be tapped from the front in the walk | **Fixed:** retaken (game 2455); the locker taps go to the Sonnet walk |
+| C2-15 | Break, Director | minor | Cycle-1 shots out of date; lockers to be tapped from the front in the walk | **Fixed:** retaken (game 2455); the locker taps go to the scripted walk |
 
 Counts: 0 blockers, 6 majors, 9 minors. Fixed 12, in part 1, left 2 with reasons.
 
@@ -140,7 +140,7 @@ Commit `0899995d` (m07's room-dressing commit) carries m08's cycle-1 kit as it s
 
 ## Cycle 3 (2026-10-14): review of cycle 2, interaction walk, and fixes
 
-### Review (fresh Opus reviewer, read-only)
+### Review (fresh reviewer, read-only)
 
 All hard constraints passed: 0 tap hits with 80×80 NPC frames, no rolling chairs, lanes clear, feet ≤ 256 where needed, wall items on the wall face, lockers in the circle, HaX ~150 px from 0x23. C2 items: all closed or their reasons hold, except C2-3 (one docstring still stale, now C3-5). Verdict: every room done except the break room.
 
@@ -157,7 +157,7 @@ All hard constraints passed: 0 tap hits with 80×80 NPC frames, no rolling chair
 
 Counts: 0 blockers, 1 major, 7 minors. All fixed.
 
-### Interaction walk (Sonnet, games 2460 and 2463, every room unlocked server-side; sessions stopped)
+### Interaction walk (scripted run, games 2460 and 2463, every room unlocked server-side; sessions stopped)
 
 Every scenario object opened on a top-left tap and a centre tap with no pick-one menu; every NPC talked; every door of the lobby, ops floor and crypto lab walked both ways; no "No Tiled item found", no duplicate or missing sprite; the server room's south half reached by tap-to-move and by keys.
 
@@ -168,7 +168,7 @@ Every scenario object opened on a top-left tap and a centre tap with no pick-one
 | W3 | All | minor | `assets/icons/text-file.png` is missing (404 when a text file opens) | **Left:** an engine asset, not dressing; for the orchestrator |
 | W4 | Break | minor | The off-duty agent's dark hoodie reads like the player's sprite at a glance | **Left:** a character-stage question (his sprite is `male_hacker_hood_v2`); for the character pass |
 
-### Confirmation run (Sonnet, games 2468, 2471, 2472; sessions stopped)
+### Confirmation run (scripted run, games 2468, 2471, 2472; sessions stopped)
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -189,7 +189,7 @@ All of L1, L3, W1 and W2 above. Lockers resized in place (same names; `catalog.j
 
 ## Cycle 5 (2026-10-14): confirmation review, walk, and the last fixes
 
-### Review (fresh Opus reviewer, read-only)
+### Review (fresh reviewer, read-only)
 
 It built its own audit (`scratchpad/m08-dressing-review-c5/audit.py`): the nine built maps with their collision layers, a flood fill of where the player can stand from each door, reach from those spots to every slot's top-left, and every tap point inside each interactable's bounds tested against every other anchor. Reach: worst case locker 0x23 at 26 px, everything else under 18 px. Passed: no rolling chairs, lanes clear, feet ≤ 256 where needed, wall items on the wall face, no floor item in front of a wall item to read, NPC bodies on clear floor and reachable, lockers inside the sight circle (farthest corner ~117 px from the circle's centre, the sprite centre), HaX ~150 px from 0x23, at most two angled pieces in any room (ops: Cipher's chair and the photocopier).
 
@@ -207,7 +207,7 @@ It built its own audit (`scratchpad/m08-dressing-review-c5/audit.py`): the nine 
 
 Counts: 0 blockers, 1 major, 8 minors. Fixed 6, left 3 with reasons.
 
-### Interaction walk (Sonnet, game 2475, every room unlocked server-side; session stopped)
+### Interaction walk (scripted run, game 2475, every room unlocked server-side; session stopped)
 
 Pre-C5 maps. Every scenario object opened by tap and by E from where a player can stand (no teleporting), with no pick-one menu; the lockers open from the floor in front (L3 closed); the counter blocks walking behind it from both ends (L1 closed); the alert screen opens from the floor below it; every door of the lobby, ops floor and crypto lab both ways; nobody hidden behind furniture.
 
@@ -217,7 +217,7 @@ Pre-C5 maps. Every scenario object opened by tap and by E from where a player ca
 | F2 | Archives | minor | `assets/icons/copy-sm.png` 404 when a text file opens (with the known `text-file.png`) | **Left:** engine assets; for the orchestrator |
 | note | Break | — | The first keyless tap on a locker fires the off-duty agent's one-time catch before the locker screen | By design (pass-5 puzzle chains); not layout |
 
-### Targeted check of the C5 fixes (Sonnet, games 2477-2481; sessions stopped)
+### Targeted check of the C5 fixes (scripted run, games 2477-2481; sessions stopped)
 
 Dossiers (centre, top-left, E), safe (centre, top-left, upper right, E), Phantom's notebook and Phantom, each locker (centre and E from its foot) and the post-it: each opens alone, no menu anywhere. Nobody gets between or behind the lockers. No page errors beyond TTS 503s. One note: a tap 20-30 px left of the dossiers, from beside the desk, opens them; that is the engine's 32 px tap slop round a sprite's top-left, and it opens nothing else.
 

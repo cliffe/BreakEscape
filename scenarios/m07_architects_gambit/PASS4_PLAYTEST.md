@@ -1,6 +1,6 @@
 # m07 pass-4 design playtest: the changed parts
 
-For a Sonnet tester following `.claude/skills/playtest-scenario/SKILL.md`. Keyless server on :3001
+For a scripted tester following `.claude/skills/playtest-scenario/SKILL.md`. Keyless server on :3001
 (`PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m07_architects_gambit`;
 run `tools/playtest/start-keyless-server.sh` if :3001 isn't listening). Never stop :3000. Silent lines
 (TTS 503) are expected. Split into two runs of about 15 minutes (A: steps 1–6, B: steps 7–12) and write

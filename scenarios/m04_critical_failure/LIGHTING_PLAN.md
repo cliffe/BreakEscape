@@ -109,7 +109,7 @@ Left alone: `aes_ppe_rack1`, `undercounter_fridge1`, `cylinder_rack1` (lookup fa
 
 `ruby scripts/lighting_lookup.rb`: every m04 room type (`room_aes_*`) is new, so nothing is lit before. Reuse by role, no tile coordinates copied: scenario night ambient (m02, sis02); SCADA `screens` block and the Hall 2 rack H2 variant (sis02, the same battery-site story); call points off until the alarm (m03); motion for empty offices and back rooms (m01/m02/m03); server darks `#0a0f1c` for the workshop (m02 server room).
 
-## 8. Design review (fresh Opus, read-only): 0 blockers, 6 majors, 9 minors
+## 8. Design review (fresh reviewer, read-only): 0 blockers, 6 majors, 9 minors
 
 All accepted. Sections 3-5 above are the plan as reviewed; this table is what changed.
 
@@ -155,7 +155,7 @@ Checks: validator (schema, geometry, door alignment) pass; `check_door_alignment
 
 Evidence: `build_evidence/lighting_c1/<phase>/`, `tours.log`.
 
-## 10. Cycle 1 visual review (fresh Opus): 0 blockers, 4 majors, 6 minors
+## 10. Cycle 1 visual review (fresh reviewer): 0 blockers, 4 majors, 6 minors
 
 | id | sev | finding | outcome |
 |---|---|---|---|
@@ -174,7 +174,7 @@ Evidence: `build_evidence/lighting_c1/<phase>/`, `tours.log`.
 
 The fixes above, in `scenario.json.erb` lighting blocks only. Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; route driver 27/27. Tours on :3001 (`--close-intro --restore-off --check`), every shot drew: base 2262, clock 2264, alarm 2265, h2 2266, vent 2267, race (`voltage_fight_started`) 2268, after 2269, after_vent 2270. Evidence: `build_evidence/lighting_c2/<phase>/`, `tours.log`. Before/after pairs: `tmp/review/m04_lighting_c2_*.png`.
 
-### Cycle 2 visual review (fresh Opus): 0 blockers, 1 major, 6 minors
+### Cycle 2 visual review (fresh reviewer): 0 blockers, 1 major, 6 minors
 
 Cycle-1 findings: ESD, SCADA alarm, call points, Hall 1 beacon, Hall 2 strobe, COSTLY SUCCESS and the green panel are closed. The clock step and the vent are closed in part; the race pulse doesn't read.
 
@@ -199,7 +199,7 @@ Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; r
 
 First look: the vent's orange now sits on bank B, with bank A cooler; the armed ESD's red reaches the keep-clear box.
 
-### Cycle 3 visual review (fresh Opus): 0 blockers, 0 majors, 5 minors
+### Cycle 3 visual review (fresh reviewer): 0 blockers, 0 majors, 5 minors
 
 W1 (vent fire), W2 (armed ESD tint), W6 (call points) and W7 (H2 ambient, barely visible) are closed. W3 (race laptop) is partly closed; W4 (the amber H2 lamp still weaker than the green panel) and W5 (the ESD's after-state still yellow over the orange housing) are not closed.
 
@@ -216,7 +216,7 @@ W1 (vent fire), W2 (armed ESD tint), W6 (call points) and W7 (H2 ambient, barely
 
 X1-X5 applied. Checks: validator (schema, geometry, door alignment) pass; door alignment 8/8; route driver 27/27. Full tours on :3001, 37 shots, every one drew: base 2283, clock 2284, alarm 2285 (all rooms), h2 2286, vent 2287, race 2288, after 2290 (all rooms), after_h2 2291, after_vent 2292. Evidence: `build_evidence/lighting_c4/<phase>/`.
 
-### Cycle 4 visual review (fresh Opus): 0 blockers, 0 majors, 2 minors (both optional)
+### Cycle 4 visual review (fresh reviewer): 0 blockers, 0 majors, 2 minors (both optional)
 
 X1-X5 closed (X1 for brightness, X3 just; the vent still reads as a glow, not flames, which needs the proposed engine `fire` effect). The whole set judged afresh: mood, escalation, readability of every clue and the route to the plant door, sight cones, flash safety all pass; no new stray glows or bleed beyond the known engine limits (the plant exit sign into Hall 2; Hall 2's strobe faintly at Hall 1's east edge).
 

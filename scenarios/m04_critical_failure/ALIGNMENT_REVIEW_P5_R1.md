@@ -1,6 +1,6 @@
 # m04 pass 5: alignment review, round 1 (partial)
 
-2026-10-13. Opus reviewer, read-only, static only. **Partial:** a safety check stopped the run before it wrote this file (it gave no reason; the reviewer was reading the engine's toast-expiry code at the time). The orchestrator saved this from the reviewer's hand-back. Not covered: the Vance phone ink, the validator run, room-layout checks. A second pass hasn't verified these findings.
+2026-10-13. Reviewer, read-only, static only. **Partial:** a safety check stopped the run before it wrote this file (it gave no reason; the reviewer was reading the engine's toast-expiry code at the time). The orchestrator saved this from the reviewer's hand-back. Not covered: the Vance phone ink, the validator run, room-layout checks. A second pass hasn't verified these findings.
 
 Provisional counts: **0 blockers, 6 majors, at least 11 minors.**
 

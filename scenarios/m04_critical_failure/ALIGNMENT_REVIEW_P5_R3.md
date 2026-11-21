@@ -1,6 +1,6 @@
 # m04 pass 5: alignment review, round 3
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Scope: confirm the round-1 and round-2 findings against commit 74c3b367, look for regressions caused by the round-2 fixes, run the checks, and do a fresh pass with `mission-alignment-plan`. Nothing in the SecGen XML was opened.
+2026-10-13. Reviewer, read-only, static only (no browser session). Scope: confirm the round-1 and round-2 findings against commit 74c3b367, look for regressions caused by the round-2 fixes, run the checks, and do a fresh pass with `mission-alignment-plan`. Nothing in the SecGen XML was opened.
 
 ## Checks run
 
@@ -130,4 +130,4 @@ Every phase, reload and fight path is consistent (see m13 / N1 above). An early 
 
 Neither changes the design the orchestrator chose (option b). Everything from rounds 1 and 2 is closed, rightly withdrawn or rightly deferred. All four checks are clean.
 
-**Recommendation:** a round-4 fix pass for M1, M2 and the eight minors, with routes r12 and r13 added. Then a short round-4 confirmation: the routes, a static re-check of the two timer edits, and one Sonnet browser run of 10-15 minutes. That run should cover the five open browser checks and, if possible, the HUD switch after a late mapping. If round 4 finds nothing above minor, close the phase there.
+**Recommendation:** a round-4 fix pass for M1, M2 and the eight minors, with routes r12 and r13 added. Then a short round-4 confirmation: the routes, a static re-check of the two timer edits, and one scripted browser run of 10-15 minutes. That run should cover the five open browser checks and, if possible, the HUD switch after a late mapping. If round 4 finds nothing above minor, close the phase there.

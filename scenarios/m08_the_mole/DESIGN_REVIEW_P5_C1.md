@@ -2,7 +2,7 @@
 
 # m08 The Mole: scenario design review, pass 5, cycle 1
 
-Reviewer: fresh Opus agent, read-only (2026-10-14). Skill: `scenario-design-review`, run in full. Static review only: no browser session was started.
+Reviewer: fresh agent, read-only (2026-10-14). Skill: `scenario-design-review`, run in full. Static review only: no browser session was started.
 
 Kind of game: a SAFETYNET campaign mission and the season finale, a TV spy thriller turned inward. The VM flags are required and woven into the story. Deduction must not be handed over by a title, toast or NPC, and red herrings should cost something.
 

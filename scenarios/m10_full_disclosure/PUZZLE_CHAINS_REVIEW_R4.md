@@ -36,10 +36,10 @@
 
 This is the rule as the user put it (F12, FINALE_DEV_LOG.md:489): "A player must never hold a flag they can't yet submit." It's also the likeliest early hold in the mission. A player who has just got in with a working login will look round the host, and the station tells them to carry the flag five rooms. R3 rated a one-lock hold as major. This one runs through five rooms on the first VM step.
 
-Nothing before this round had ruled on it. B6 answers whether flag 2 needs a find of its own ("it needs none"), not whether it can be held early. CONTRACT §11 (the puzzle chains R3 paragraph) lists it as "Not checked (VM side) … for opus48 or the user".
+Nothing before this round had ruled on it. B6 answers whether flag 2 needs a find of its own ("it needs none"), not whether it can be held early. CONTRACT §11 (the puzzle chains R3 paragraph) lists it as "Not checked (VM side) … for the VM agent or the user".
 
-**Options (VM side, so for the user or opus48; not for a game fixer):**
-1. **(Preferred) Give flag 2 a find in the server hall.** On the VM, put the staging copy behind a second login. In the game, put that login on something by the release console. A label on the console's own housing or a sticky note on the schedule terminal would do. Who wrote it: the operators who run the staging copy, the same people whose duty sheet is by the east racks. The find and the station are then both at depth 5, the same arrangement as flags 1, 3 and 4. Game-side cost: one `notes` object, one unvoiced rung ("The console takes the staging copy." → "…The login's on the console."), a hall Codes entry, and a dressing position. This reverses B6's "needs none", so it needs the user's or opus48's agreement.
+**Options (VM side, so for the user or the VM agent; not for a game fixer):**
+1. **(Preferred) Give flag 2 a find in the server hall.** On the VM, put the staging copy behind a second login. In the game, put that login on something by the release console. A label on the console's own housing or a sticky note on the schedule terminal would do. Who wrote it: the operators who run the staging copy, the same people whose duty sheet is by the east racks. The find and the station are then both at depth 5, the same arrangement as flags 1, 3 and 4. Game-side cost: one `notes` object, one unvoiced rung ("The console takes the staging copy." → "…The login's on the console."), a hall Codes entry, and a dressing position. This reverses B6's "needs none", so it needs the user's or the VM agent's agreement.
 2. **A recorded exception.** The user rules that flag 2 may be carried from the post, and the gate terminal's hint is the signpost. That costs nothing, but F12 would then have a stated exception.
 3. **Not recommended: let the gate terminal take flag 2.** That breaks F-18 (one flag per station, erb:74). It would also fire the hall's flag-2 content at depth 0: the console controls (erb:3621), the schedule terminal's text variants (erb:3629-3655), the backdoor task and Victoria's call.
 
@@ -67,7 +67,7 @@ The existing three forms already rely on first-match order on `shutter_text_sent
 - **n2. Three doc rows behind the build.** CONTRACT:280 names the step-2 button "[Anything else before I pull it?]". It's "[Just that one?]" in all four voices (DR4 m1). texts/BARKS_AND_TEXTS.md:62 (T-28) lists three forms; the build has four, with "The stair's open." (erb:1729, once m1 is fixed). texts:70 (T-34) lacks the hatch text's new sentence, "One of his operators dropped a duty sheet by the east racks." (erb:1639). No player effect.
 - **n3. Stale ink comments on `hatch_topic`.** phone:571-572 still say "the disarm is a story artefact on the release host" and "the operator's duty card". Neither is shown to the player. A later writer who reads them would undo B6.
 - **n4. "On his terminal" against a desk position.** The key's observation ("propped against the host terminal's screen", erb:4257), HaX's "He's left a key envelope on his terminal" (phone:598) and the core rung "The key's on his terminal." (phone:132) all say it's on the terminal. SD R4 d1 put it on the map table about one tile east of the terminal (CONTRACT §11, d1: key (2.2, 4.8), terminal (1.2, 4.6)). If the render reads as "beside", say "beside his terminal" in the three strings, or move the object onto the terminal. Browser check 3. The in-flight SD R5 n2 edits rename the object "Core Access Code" and change the two HaX lines to "…an envelope on his terminal, stamped CORE. His login's in it." and "The login's on his terminal.", and guide 4's text to "His login's in the envelope on his terminal." All of them still say "on his terminal", so the nit stands.
-- **n5. The Codes block still calls itself a placeholder.** erb:179-184 and the three objects' `_comment`s say "PLACEHOLDER (VM) … The opus48 agent or the user replaces them". The values now look set (`relops` came from the VM plan in a3128ce35). If all three are final, the labels should go, so nobody "replaces" good values. If not, see §5.
+- **n5. The Codes block still calls itself a placeholder.** erb:179-184 and the three objects' `_comment`s say "PLACEHOLDER (VM) … The VM agent or the user replaces them". The values now look set (`relops` came from the VM plan in a3128ce35). If all three are final, the labels should go, so nobody "replaces" good values. If not, see §5.
 
 ---
 
@@ -137,13 +137,13 @@ New this round:
 5. **The shutter text after m1's fix.** Vance, Elena and captured Voltage (by hand), with flags 2 and 3 in: one text, "The stair's open." HaX as the voice: "Shutter's dead. The stair's open." No branch gets two texts.
 6. **The re-ring (n1).** "[Give me a minute.]" at step 0, then again at step 1. Is there a ring after the second? It should match whatever wording or condition n1's fix settles on.
 7. **The hatch-first route.** Click the hatch before flag 2: the text names the duty sheet. "[The hatch?]" doesn't show yet (it needs `flag2_submitted`).
-8. **If M1 goes with option 1:** the new hall find is clickable by the release console, and flag 2 can't be taken with the tag alone. That second part is a VM test for opus48 or the user, not for a browser tester.
+8. **If M1 goes with option 1:** the new hall find is clickable by the release console, and flag 2 can't be taken with the tag alone. That second part is a VM test for the VM agent or the user, not for a browser tester.
 
 Carried from R3 §4, still to run: the "[Where are we?]" rungs naming each find; the three hub steers in their windows; the cold-start Wendell worked-round cut; the escaped Voltage fight; Vance and Elena resuming at step 2 and `cut_done`; captured "[I'll do it.]", a re-talk at step 2 and his bark; a reload at `cut_step` 2; the click guards at steps 0 and 1 on each branch; the workshop rack, card 4 and T-62 at 10 s; Fonoti's cone after the rota, the handover and the Vos pick; exchange 3's Alpha button.
 
 ---
 
-## 5. For the user or opus48 (VM side, not reasoned about here)
+## 5. For the user or the VM agent (VM side, not reasoned about here)
 
 - **M1.** Pick option 1 (a hall find for flag 2, with the staging copy behind a second login on the VM) or option 2 (a recorded F12 exception). Option 1 reverses B6's "no find needed".
 - **n5.** Confirm that `secmon` / `Bunker!Monitor59`, `relops` / `Release!Shift25` and `TSRCT-CORE-9F21` (erb:186-190) are what the build creates, then drop the PLACEHOLDER labels.
@@ -156,7 +156,7 @@ Carried from R3 §4, still to run: the "[Where are we?]" rungs naming each find;
 |---|---|---|---|---|---|
 | 2 | 0 | 0 | 3 | 6 | m1-m3, n2-n6 resolved; n1 left by ruling |
 | 3 | 0 | 1 | 2 | 3 | All resolved at 588b5ae52 (M1 key in the core, m1 tag on their terminal, m2 via B6, n1-n3) |
-| 4 (this) | 0 | 1 (M1) | 1 (m1) | 5 (n1-n5) | All R3 findings closed. M1 is the flag-2 hold that R3 §5 left for the VM side. B6 makes it checkable, and it breaks F12; it goes to the user or opus48. m1 is a dead condition in the DR4 n4 mapping (validator ❌). The nits are doc and comment drift, one ring promise, and one position wording. Nothing structural outside the VM gating |
+| 4 (this) | 0 | 1 (M1) | 1 (m1) | 5 (n1-n5) | All R3 findings closed. M1 is the flag-2 hold that R3 §5 left for the VM side. B6 makes it checkable, and it breaks F12; it goes to the user or the VM agent. m1 is a dead condition in the DR4 n4 mapping (validator ❌). The nits are doc and comment drift, one ring promise, and one position wording. Nothing structural outside the VM gating |
 
 The rounds are narrowing. Outside the VM gating, R4 found one dead mapping and wording. The open question is a VM-side decision, not a design defect the game can fix alone.
 

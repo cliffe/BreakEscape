@@ -84,7 +84,7 @@ Unused but kept in the batch folders (scratchpad only): a bar cart, a trophy boo
 - `generate_rooms.py` validation: OK for all five; the remaining WARN lines are the generic N-door-corner and bottom-row hints on rooms with no door in that corner and nothing to the south, a deliberate wall safe on the back wall, and the drawer overlay sitting on the desk front ("may be on legs").
 - `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry and door alignment OK; the warnings are the existing dialogue ones. m01 validates unchanged.
 - `check_door_alignment.py` on m03: all OK. `node --check` on game.js: OK.
-- In game (fresh games of my own on :3001): every scenario object's texture key and room position dumped from `window.rooms` and matched the plan; no "No Tiled item found" logs, no console errors in the session logs. Not done: walking through the doors and interacting with each object in a browser playtest (cycle 2, Sonnet).
+- In game (fresh games of my own on :3001): every scenario object's texture key and room position dumped from `window.rooms` and matched the plan; no "No Tiled item found" logs, no console errors in the session logs. Not done: walking through the doors and interacting with each object in a browser playtest (cycle 2, scripted run).
 
 After shots:
 
@@ -100,7 +100,7 @@ Contact sheet: `after/grid-contact_sheet.png`.
 
 ### Cycle 2: what to do next
 
-1. Browser playtest (Sonnet) of the changed rooms: interact with every scenario object, check no pick-one menus (CEO desk, ops bench, Danny's desk), walk every door, check the receptionist's and Danny's conversations still open where they stand.
+1. Browser playtest (scripted run) of the changed rooms: interact with every scenario object, check no pick-one menus (CEO desk, ops bench, Danny's desk), walk every door, check the receptionist's and Danny's conversations still open where they stand.
 2. Reception: the marble desk is small for the room; try a longer counter (two desks or a PixelLab L-shaped desk) and something on the empty middle-right floor (stanchions to a speed gate by the N door, or a low planter wall). The fire extinguisher floats mid-wall; stand it under the call point at the floor line.
 3. Conference room: the lower-left and middle are bare; a credenza or a second plant, and possibly a speakerphone and glasses on the table. Give the walnut table some grain.
 4. Danny's office: the middle floor is empty; add energy-drink cans and takeaway boxes on the desk or bin, a second monitor, a rug; consider a desk lamp for the night scene (it matters for lighting).
@@ -118,7 +118,7 @@ Contact sheet: `after/grid-contact_sheet.png`.
 
 ## Cycle 2 (2026-10-12)
 
-Started from a fresh look at the cycle-1 after shots (`build_evidence/dressing_c1/after/`), asking of each room: would a player know at a glance this is Zero Day's? Item 1 of the cycle-1 list (the interaction walk) is with a separate Sonnet tester; this cycle did items 2-6 and the `exec_laptop1` leftover.
+Started from a fresh look at the cycle-1 after shots (`build_evidence/dressing_c1/after/`), asking of each room: would a player know at a glance this is Zero Day's? Item 1 of the cycle-1 list (the interaction walk) is with a separate scripted tester; this cycle did items 2-6 and the `exec_laptop1` leftover.
 
 ### Critique of the cycle-1 result
 
@@ -178,7 +178,7 @@ After shots (`build_evidence/dressing_c2/`): `reception_lobby.png`, `conference_
 
 ### Cycle 3: what to do next
 
-1. Fold in the Sonnet interaction-walk findings (cycle-1 item 1).
+1. Fold in the scripted interaction-walk findings (cycle-1 item 1).
 2. The WHITEHAT sign now appears three times (reception and both halls, which share a map). Give the executive wing its own variant (`room_zds_hall_exec`: art, a bench, a "PRIVATE" sign, no brand sign) so it reads as the quieter end of the building.
 3. Reception: the counter's monitor faces the visitor side; check it reads right next to the receptionist. A rug or a darker stone border round the waiting area would anchor it.
 4. Server room: the room is busy but still generic; a caged rack or a red-lit "PRODUCTION / DO NOT TOUCH" label on the back row would mark it as the business. Re-check under the lighting pass.
@@ -193,7 +193,7 @@ After shots (`build_evidence/dressing_c2/`): `reception_lobby.png`, `conference_
 
 ## Cycle 3 (2026-10-12)
 
-Inputs: the Sonnet interaction walk (`PASS2_REGRESSION_B2.md`: no blockers, every object in the new rooms works; F-1 to F-3 are dressing findings) and a fresh look at the cycle-2 after shots. The NPC renames had landed (receptionist `ffion_rees`, guard `terry_mott`); only Ffion's `position` was touched.
+Inputs: the scripted interaction walk (`PASS2_REGRESSION_B2.md`: no blockers, every object in the new rooms works; F-1 to F-3 are dressing findings) and a fresh look at the cycle-2 after shots. The NPC renames had landed (receptionist `ffion_rees`, guard `terry_mott`); only Ffion's `position` was touched.
 
 ### Critique
 
@@ -231,13 +231,13 @@ No PixelLab this cycle (I made no calls; the shared balance reads 3192, down fro
 - `generate_rooms.py`: OK for all seven ZDS rooms. `slot_audit.py --notes`: 0 problems (the Server Room Whiteboard prompt stays; engine change not approved).
 - `check_room_walls.py --scenario`: all 64. `validate_scenario.rb --skip-ink --no-graph`: schema passes, geometry and door alignment OK. `node --check` game.js: OK.
 - In game (fresh games of my own on :3001): all 16 scenario objects on their intended sprites; the plaque at 230,35; no decor object interactable; no "No Tiled item found" logs.
-- Not re-walked by a tester: the plaque menu at the door and the drawer menu (both fixed by geometry and by removing the interactable chairs; a short Sonnet check would confirm).
+- Not re-walked by a tester: the plaque menu at the door and the drawer menu (both fixed by geometry and by removing the interactable chairs; a short scripted check would confirm).
 
 After shots (`build_evidence/dressing_c3/`): `reception_lobby.png`, `conference_room_01.png`, `server_room.png`, `executive_office.png`, `danny_office.png`, `main_hallway.png`, `executive_wing_hallway.png`; maps `grid-room_zds_*.png`, `grid-contact_sheet.png`.
 
 ### Cycle 4: what to do next
 
-1. A short Sonnet re-walk: stand at the lobby exit (no menu), tap the CEO drawer and the Presentation Materials (no menu), and tap the plaque from the floor in front of it.
+1. A short scripted re-walk: stand at the lobby exit (no menu), tap the CEO drawer and the Presentation Materials (no menu), and tap the plaque from the floor in front of it.
 2. Conference room: the north-east quarter (Victoria's floor and the E door lane) is clean but plain; a wall-mounted speaker or a second screen on the east wall strip, and a glass water carafe on the credenza.
 3. Server room: the east half above the operator desk is empty floor under the whiteboard (kept clear for reading); consider a floor-standing "PRODUCTION" rack label or LED strip along the back row's plinth, to give lighting something to catch.
 4. CEO office: a pair of floor lamps either side of the sofa would give the lighting pass warm sources.
@@ -252,7 +252,7 @@ After shots (`build_evidence/dressing_c3/`): `reception_lobby.png`, `conference_
 
 ## Cycle 4 (2026-10-12)
 
-Inputs: the coordinator's notes on the cycle-3 contact sheet, my cycle-3 list (items 2-6) and a fresh look at the cycle-3 after shots. The re-walk (cycle-3 item 1) is with a Sonnet tester and feeds cycle 5.
+Inputs: the coordinator's notes on the cycle-3 contact sheet, my cycle-3 list (items 2-6) and a fresh look at the cycle-3 after shots. The re-walk (cycle-3 item 1) is with a scripted tester and feeds cycle 5.
 
 ### Critique
 
@@ -299,7 +299,7 @@ After shots (`build_evidence/dressing_c4/`): `reception_lobby.png`, `conference_
 2. Wait for the lighting pass to name the light sources it wants (screens, desk lamps, the counter strip, rack LEDs) and add or move physical fixtures only where it asks; re-shoot every room lit and dark.
 3. Re-check NPC spots against the final dialogue (Ffion, Danny, Victoria) and the guard's patrol on the new runner.
 4. Small polish from the cycle-4 shots: the RESTRICTED plate's lettering is tight at game scale (try a 46×10 plate with one more pixel of padding); Danny's book pile floats mid-floor and could sit against the bookcase; the conference credenza and the exec-hall console use the same sprite, which is fine but could take a second item each.
-5. Final confirmation: slot audit, validator, door alignment, a short Sonnet walk of every door and object, then hand over to the POV-background stage with the final layout.
+5. Final confirmation: slot audit, validator, door alignment, a short scripted walk of every door and object, then hand over to the POV-background stage with the final layout.
 
 ### Assumptions (cycle 4)
 

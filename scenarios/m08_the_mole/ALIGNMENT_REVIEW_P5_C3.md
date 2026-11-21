@@ -3,7 +3,7 @@
 # m08 The Mole: alignment review, pass 5, cycle 3 (confirmation)
 
 Reviewer: stage-2 alignment (mission-alignment-plan rubric), fresh eyes, read-only, 2026-10-14. Reviewed at HEAD `35e3b05a`, with no uncommitted m08 changes.
-Judged against `docs/agents/M08_PASS_BRIEF.md` ("Kind of game and aim"). Evidence comes from `scenario.json.erb` (`erb`) and the ink files (`<file>.ink:line`). I did not open the SecGen XML or the four named field guides, and I ran no browser session (a Sonnet browser check is running at the same time).
+Judged against `docs/agents/M08_PASS_BRIEF.md` ("Kind of game and aim"). Evidence comes from `scenario.json.erb` (`erb`) and the ink files (`<file>.ink:line`). I did not open the SecGen XML or the four named field guides, and I ran no browser session (a scripted browser check is running at the same time).
 
 ## Checks run (output in the session scratchpad, `m08-align-c3/`)
 
@@ -131,7 +131,7 @@ Two things would make it an oracle. One is HaX stating the conclusion (K4). The 
 | N5 | Instinct question re-asks | **Closed** | Stitch `hub.name_forming` with "[Not yet, sir.]" (`m08_director_netherton.ink:128`, `:140-160`) |
 | N6 | "Through the relay" after the chain is in | **Closed** | `m08_director_netherton.ink:403-407` |
 
-"Static" means checked in the files and the route driver. The concurrent Sonnet browser check is the place to see them on screen.
+"Static" means checked in the files and the route driver. The concurrent scripted browser check is the place to see them on screen.
 
 ## Other things looked at and left alone
 

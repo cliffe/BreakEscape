@@ -82,7 +82,7 @@ Layout fields only, re-read before each edit (character agents were editing NPC 
 - `generate_rooms.py --check`: the remaining hints are the generic N-door-corner and bottom-row ones (none of these rooms has a N door in that corner), the side-wall extinguishers, and three floor items flagged "off the walls" by design (the BATTERIES plate on the mesh, a floor cable tray, the schedule terminal).
 - `game.js` passes `node --check`.
 - In game (game 3145, every room unlocked): every map, sheet and prop loads; objects land on their furniture.
-- Browser walk (doors both ways, reach to all 49 objects, patrols): a Sonnet playtest helper was started; its result was not in when this round closed (log and shots will be in the session scratchpad, `m10dress/pt1/`). It is owed.
+- Browser walk (doors both ways, reach to all 49 objects, patrols): a scripted playtest helper was started; its result was not in when this round closed (log and shots will be in the session scratchpad, `m10dress/pt1/`). It is owed.
 
 ### Open for round 2
 
@@ -99,7 +99,7 @@ Renders: maps `dressing_r2/maps/` (contact sheet included); in game (game 3165, 
 
 ### Browser walk
 
-Round 1's helper stopped before it reported. A second Sonnet helper is running on the round 2 maps (log and shots: session scratchpad `m10dress/pt2/`). Partial results when this round closed:
+Round 1's helper stopped before it reported. A second scripted helper is running on the round 2 maps (log and shots: session scratchpad `m10dress/pt2/`). Partial results when this round closed:
 
 - Doors: tunnel ↔ security, security ↔ workshop, workshop ↔ power, power ↔ hall, hall ↔ gallery, gallery ↔ core all walked both ways. Two first tries failed only because a conversation opened mid-walk (person-chat active); both passed on the retry. forward_post ↔ tunnel is not in its log yet.
 - Reach (server hall, gallery, core so far): the plotting board opened its read modal at 22 px; the desk-top hall console opened at 27 px, the release console screen at 26 px; the gallery's lock panel at 25 px; the keypad plate's dusting minigame at 22 px; the core's key console, readout and host terminal all opened directly. Farah's chair opened through a menu shared with Farah (16 px), as expected.
@@ -151,7 +151,7 @@ Hand-drawn in `make_m10_props.py` (`round2()`), registered: `m10_gate_post1`, `m
 
 ## Round 3 (2026-10-22): the R3 review's findings
 
-Review: `DRESSING_REVIEW_R3.md` (0 blockers, 3 majors, 20 minors), with the coordinator's rulings. Renders: maps `dressing_r3/maps/` (contact sheet included); in game (game 3187, rooms unlocked, the moved NPCs shown) `dressing_r3/ingame/<room>-a.png`. Browser check of the changes: game 3188, a Sonnet helper, log in the session scratchpad `m10dress/pt3/`.
+Review: `DRESSING_REVIEW_R3.md` (0 blockers, 3 majors, 20 minors), with the coordinator's rulings. Renders: maps `dressing_r3/maps/` (contact sheet included); in game (game 3187, rooms unlocked, the moved NPCs shown) `dressing_r3/ingame/<room>-a.png`. Browser check of the changes: game 3188, a scripted helper, log in the session scratchpad `m10dress/pt3/`.
 
 ### Per finding
 

@@ -8,7 +8,7 @@ Stages: regression playtest, then alignment, puzzle chains and scenario design (
 
 ### Phase 1 alignment, round 1
 
-Review: `ALIGNMENT_REVIEW_P5_R1.md` (Opus, read-only, static; partial: a safety check stopped the reviewer before it wrote the file, and the orchestrator saved it from the hand-back). The fixer checked each finding against `scenario.json.erb` and the ink before acting. Two coordinator items from the regression run (`PASS5_REGRESSION_A.md`, M2 and M3) were folded in.
+Review: `ALIGNMENT_REVIEW_P5_R1.md` (read-only, static; partial: a safety check stopped the reviewer before it wrote the file, and the orchestrator saved it from the hand-back). The fixer checked each finding against `scenario.json.erb` and the ink before acting. Two coordinator items from the regression run (`PASS5_REGRESSION_A.md`, M2 and M3) were folded in.
 
 Counts: 0 blockers, 6 majors, 12 minors from the review; 2 regression items folded in, 3 regression items deferred; 4 further issues found while fixing.
 
@@ -117,7 +117,7 @@ HaX texts (scenario.json.erb), new: the crew-warned pair, the bank-B-venting var
 
 ### Phase 1 alignment, round 2
 
-Inputs: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 3 majors, 20 minors; it confirms A1, A2, A4, A5 and A6, and A3 in part) and `PASS5_ALIGN_R1_BROWSER.md` (Sonnet, games 2201 to 2203 on :3001: every round-1 change passes in the browser, plus minors N1 to N5 and observations O1 to O3). The fixer checked each finding against the files before acting.
+Inputs: `ALIGNMENT_REVIEW_P5_R2.md` (static; 0 blockers, 3 majors, 20 minors; it confirms A1, A2, A4, A5 and A6, and A3 in part) and `PASS5_ALIGN_R1_BROWSER.md` (scripted run, games 2201 to 2203 on :3001: every round-1 change passes in the browser, plus minors N1 to N5 and observations O1 to O3). The fixer checked each finding against the files before acting.
 
 Counts: review 0 / 3 / 20; browser 0 / 0 / 5 minors, 3 observations. Outcomes: 18 fixed, 1 fixed with an accepted limit, 2 withdrawn, 9 deferred to later stages, 1 needs an engine change.
 
@@ -223,7 +223,7 @@ Security guard, new (`on_sighted`): narration "The guard is out of his chair bef
 
 ### Phase 1 alignment, round 4
 
-Inputs: round 3's review `ALIGNMENT_REVIEW_P5_R3.md` (Opus, static; 0 blockers, 2 majors, 8 minors; rounds 1 and 2 confirmed apart from two regressions from round 2's clock) and `PASS5_ALIGN_R2_BROWSER.md` (Sonnet; all 7 checks pass; B1 is the review's M1, plus browser minors m1 and m2). Each finding checked against the files first. Outcomes: all 12 fixed, none withdrawn.
+Inputs: round 3's review `ALIGNMENT_REVIEW_P5_R3.md` (static; 0 blockers, 2 majors, 8 minors; rounds 1 and 2 confirmed apart from two regressions from round 2's clock) and `PASS5_ALIGN_R2_BROWSER.md` (scripted run; all 7 checks pass; B1 is the review's M1, plus browser minors m1 and m2). Each finding checked against the files first. Outcomes: all 12 fixed, none withdrawn.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -280,7 +280,7 @@ Cipher: "He is crouched at the end of the rack row with a panel open and a hands
 
 #### Open after round 4
 
-- The browser checks above (one Sonnet confirmation run, as round 3 recommends).
+- The browser checks above (one scripted confirmation run, as round 3 recommends).
 - O2 (fight fairness with Static joining) still needs a human.
 - N4 is with the engine agent (the watcher pausing for the tutorial prompt).
 - Deferred to later stages as before: m12, N5, O3 (characters); m14 and the log's bench position (room dressing); m16 (lighting); m17 (puzzle chains); m20 (backlog); Task Force Null (m05 pass).
@@ -304,7 +304,7 @@ Engine change for N4: 0b66f334 (sight challenges hold while the tutorial prompt 
 
 ### Phase 2 puzzle chains, round 1
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, static; 0 blockers, 2 majors, 5 minors). The orchestrator decided each finding; the fixer checked them against the files and applied them. The SecGen XML was not opened.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (static; 0 blockers, 2 majors, 5 minors). The orchestrator decided each finding; the fixer checked them against the files and applied them. The SecGen XML was not opened.
 
 | # | Sev. | Finding | Decision and reason | Outcome |
 |---|---|---|---|---|
@@ -328,7 +328,7 @@ Ink compiles (10 files). Validator, full: schema passed, all ink valid, doors an
 
 ### Phase 2 puzzle chains, round 2
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 2 majors, 5 minors). Orchestrator decisions applied; each finding checked against the files first. The do-not-open rule held (no SecGen XML, none of the four listed field guides).
+Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (static; 0 blockers, 2 majors, 5 minors). Orchestrator decisions applied; each finding checked against the files first. The do-not-open rule held (no SecGen XML, none of the four listed field guides).
 
 | # | Sev. | Finding | Decision and reason | Outcome |
 |---|---|---|---|---|
@@ -359,7 +359,7 @@ Not spoken: the ESD refusal variant naming the missing break-in is deleted.
 
 ### Phase 2 puzzle chains, round 3
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (Opus, static; 0 blockers, 2 majors, 4 minors). All six fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (static; 0 blockers, 2 majors, 4 minors). All six fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -397,7 +397,7 @@ Carried: R2-6 / m17 **need checking against SecGen by the user**.
 
 ### Phase 2 puzzle chains, round 4
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R4.md` (Opus, static; 0 blockers, 0 majors, 5 minors; recommends closing the phase). All five applied as the reviewer proposes (orchestrator). The do-not-open rule held.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R4.md` (static; 0 blockers, 0 majors, 5 minors; recommends closing the phase). All five applied as the reviewer proposes (orchestrator). The do-not-open rule held.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -445,7 +445,7 @@ Open for the user: R2-6 / m17 (SecGen check).
 
 ### Phase 3 scenario design, round 1
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, static; 0 blockers, 1 major, 17 minors; the second half finished by the orchestrator from the reviewer's hand-back after a safety stop) plus browser minors M-1 to M-3 from `PASS5_PUZZLE_R3_BROWSER.md`. Each finding checked against the files first. The do-not-open rule held.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (static; 0 blockers, 1 major, 17 minors; the second half finished by the orchestrator from the reviewer's hand-back after a safety stop) plus browser minors M-1 to M-3 from `PASS5_PUZZLE_R3_BROWSER.md`. Each finding checked against the files first. The do-not-open rule held.
 
 | # | Sev. | Finding | Decision and reason | Outcome |
 |---|---|---|---|---|
@@ -509,7 +509,7 @@ Not spoken: credits "ROBERT VANCE: vindicated — his warning broke the case ope
 
 ### Phase 3 scenario design, round 2
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, static; 0 blockers, 0 majors, 5 minors). All five fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (static; 0 blockers, 0 majors, 5 minors). All five fixed as the reviewer proposes (orchestrator). The do-not-open rule held.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -554,7 +554,7 @@ Snapshot for `tagdiff --old`: the session scratchpad's `m04-dialogue-snapshot/in
 
 ### Phase 4 dialogue, cycle 1
 
-Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, static plus the route driver; 0 blockers, 5 majors, 34 minors). Fixer: Opus, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started; the do-not-open rule held.
+Review: `DIALOGUE_REVIEW_P5_C1.md` (static plus the route driver; 0 blockers, 5 majors, 34 minors). Fixer: review agent, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started; the do-not-open rule held.
 
 User decisions this cycle: D5-4 takes the reviewer's 7-line version with a player beat; D5-2/D5-3 must account for the dead crew and tie them to the unsounded alarm where that's true, without presenting any ending as a failure; accents get one or two idioms each for the guard, Cipher, Relay and Voltage; dead variables are removed, and `asked_the_number` is paid off; "Keep the crew's fingerprint kit." stays on every route (m05 depends on it).
 
@@ -718,7 +718,7 @@ Not voiced (texts and choices): Vance's 20 s text "It's Vance. Every screen I've
 
 ### Phase 4 dialogue, cycle 2
 
-Review: `DIALOGUE_REVIEW_P5_C2.md` (Opus, static plus the route driver; 0 blockers, 2 majors, 19 minors; it confirmed all 39 cycle-1 findings closed). Same fixer, resumed. Every finding was checked against the ink first; none withdrawn. The erb regions were re-read after b37b6e3f (sprite wiring) before the one erb edit. No browser session; the do-not-open rule held.
+Review: `DIALOGUE_REVIEW_P5_C2.md` (static plus the route driver; 0 blockers, 2 majors, 19 minors; it confirmed all 39 cycle-1 findings closed). Same fixer, resumed. Every finding was checked against the ink first; none withdrawn. The erb regions were re-read after b37b6e3f (sprite wiring) before the one erb edit. No browser session; the do-not-open rule held.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -808,7 +808,7 @@ Not voiced: HaX text "He's going for the laptop. Drop him." → "Fight's on. Don
 
 ### Phase 4 dialogue, cycle 3
 
-Review: `DIALOGUE_REVIEW_P5_C3.md` (Opus, static plus the route driver and a scratch run of the Voltage-first opener; 0 blockers, 1 major, 20 minors; cycle 2's 21 confirmed). Same fixer. All 21 fixed as proposed after checking each against the ink; none withdrawn. Orchestrator addition: the kit line reworded so "crew" can't read as the dead night crew. No erb edit this cycle. No browser session; the do-not-open rule held.
+Review: `DIALOGUE_REVIEW_P5_C3.md` (static plus the route driver and a scratch run of the Voltage-first opener; 0 blockers, 1 major, 20 minors; cycle 2's 21 confirmed). Same fixer. All 21 fixed as proposed after checking each against the ink; none withdrawn. Orchestrator addition: the kit line reworded so "crew" can't read as the dead night crew. No erb edit this cycle. No browser session; the do-not-open rule held.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
