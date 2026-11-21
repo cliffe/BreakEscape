@@ -32,7 +32,7 @@ VAR hub_quiet = false
             Adaeze Okafor: That's the one these usually go wrong on.
         - else:
             Adaeze Okafor: That bank-change email was the one to stop.
-            Adaeze Okafor: It went through, so the run paid an account that was never Harlow's. On a busy afternoon it's an easy one to wave through.
+            Adaeze Okafor: Swap an l for a 1 in the address and Harlow's payment goes to an account the sender controls, with Harlow still waiting. Easy to miss on a busy afternoon.
         }
         ~ kit_ca01_host_said = true
     - else:

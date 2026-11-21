@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Chidi Okeke: Anyone can tape a code to a barrier. Check with Facilities before a code gets your card details.
         - else:
             Chidi Okeke: That QR code taped to the car park barrier was the one to stop.
-            Chidi Okeke: It got scanned, so a colleague's card details were taken and their afternoon went on the phone to the bank.
+            Chidi Okeke: Nobody can see where a taped-up code goes before they scan it. The page behind it would take your card details and number plate.
         }
     - else:
         Chidi Okeke: Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.

@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Lorna Easton: That's the one that leans on a busy morning and a friendly face.
         - else:
             Lorna Easton: That visitor with no badge was the one to stop at the gate.
-            Lorna Easton: They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.
+            Lorna Easton: Slipping in behind a badge, a stranger gets the run of the studio floor, with client plans and screens open. A busy morning helps.
         }
     - else:
         Lorna Easton: You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.

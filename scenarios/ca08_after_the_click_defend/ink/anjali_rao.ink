@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Anjali Rao: A trusted internal account is worth more to them than any outside one. Speed is what closes the gap.
         - else:
             Anjali Rao: That sign-in prompt from a PC abroad, the one you hadn't started, was the one to report at once.
-            Anjali Rao: It went unreported, so the shared drive went down and work stopped while we rebuilt it from backup.
+            Anjali Rao: Unreported, the account stays open to them. They could send messages in Ayaan's name, lock him out and reach the shared drive.
         }
     - else:
         Anjali Rao: You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.

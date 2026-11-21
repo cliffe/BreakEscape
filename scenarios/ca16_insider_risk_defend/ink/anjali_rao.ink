@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Anjali Rao: Lending a login feels kind, but it leaves you answerable for whatever is done with it.
         - else:
             Anjali Rao: That ask to borrow your sign-in, from a colleague locked out and under pressure, was the one to turn down.
-            Anjali Rao: It was lent, so the audit put his work under your name, and you had to answer for it.
+            Anjali Rao: Ten minutes on your login would sit in the audit under your name, and he might reach data he has no business in.
         }
     - else:
         Anjali Rao: Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.
