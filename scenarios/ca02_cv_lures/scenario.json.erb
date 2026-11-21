@@ -83,6 +83,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca02",
+    "kit_ca02_out": false,
+    "kit_ca02_there": false,
+    "kit_ca02_asked": false,
+    "kit_ca02_moved": false,
+    "kit_ca02_done": false,
+    "kit_ca02_cv_choice": "",
     "kit_ca02_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +104,35 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca02_t_there",
+      "startOnGlobal": "kit_ca02_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca02_there",
+      "setGlobal": {
+        "kit_ca02_there": true
+      }
+    },
+    {
+      "id": "kit_ca02_t_tail",
+      "startOnGlobal": "kit_ca02_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca02_cv_choice === ''",
+      "setGlobal": {
+        "kit_ca02_cv_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca02_t_done",
+      "startOnGlobal": "kit_ca02_out",
+      "delayMs": 60000,
+      "condition": "!globalVars.kit_ca02_done",
+      "setGlobal": {
+        "kit_ca02_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -410,6 +445,7 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruiter, Fatima Begum, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the application you just sent, the way it looked to Fatima, Tarrowby's recruitment lead. The parts picked out below are what make it believable.",
@@ -425,15 +461,28 @@
         "noBlameLine": "Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here points to a busy inbox, and to where to look next time.",
         "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd using the route in the box below.",
         "defendOnly": "These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Any you were caught out by are shown below, with what gave each one away.",
-        "conceptPanel": {
-          "heading": "Why 'enable content' matters",
-          "text": "Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on.\n\nTo a real attacker, the second action you asked the recruiter to take is a foothold on an HR machine full of candidate records, and from there a way into the candidate database and the recruitment mailbox. The habit you just practised, giving any attachment that demands a second action a second look, is what breaks that chain, because the file is never run.\n\nWhen an application like this is opened, the file runs on the HR machine and it goes out of action while it is rebuilt, and HR spend the afternoon re-contacting candidates by hand. Because CVs are personal data, under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; candidates are told where the risk to them is high. Before you leave, have a word with Fatima."
-        }
+        "conceptPanel": [
+          {
+            "heading": "Why 'enable content' matters",
+            "text": "Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on.\n\nTo a real attacker, the second action you asked the recruiter to take is a foothold on an HR machine full of candidate records, and from there a way into the candidate database and the recruitment mailbox. The habit you just practised, giving any attachment that demands a second action a second look, is what breaks that chain, because the file is never run.\n\nWhen an application like this is opened, the file runs on the HR machine and it goes out of action while it is rebuilt, and HR spend the afternoon re-contacting candidates by hand. Because CVs are personal data, under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; candidates are told where the risk to them is high."
+          },
+          {
+            "heading": "Reporting it",
+            "text": "The attacker picked the driver vacancy, looked up the fleet coordinator, and sent the CV straight to Chidi, past the recruitment inbox. It needed one more click to run their code. Chidi reported it without enabling anything, IT blocked the sender, and the file never ran.",
+            "condition": "globalVars.kit_ca02_cv_choice === 'report'"
+          },
+          {
+            "heading": "What Enable let in",
+            "text": "Chidi clicked Enable. That ran the attacker's code. They wanted a hiring manager's machine, because applicants' details sit on it. In the seconds before IT's alert cut it off, they copied the driver applications: names, addresses, licence details. Tarrowby is now working out whether it has to report to the ICO and who to tell. The gap was a setting: macros in files from email were allowed to run, and Tarrowby is switching that off.",
+            "condition": "globalVars.kit_ca02_cv_choice === 'enable' || globalVars.kit_ca02_cv_choice === 'silent'"
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -922,6 +971,29 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca02_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca02_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
             }
           ]
         },
@@ -931,20 +1003,15 @@
           "person": "chidi_okeke",
           "npcType": "person",
           "position": {
-            "x": 3,
-            "y": 6
+            "x": 3.0,
+            "y": 6.0
           },
           "spriteSheet": "chidi_okeke",
           "spriteTalk": "assets/characters/chidi_okeke_talk.png",
           "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 3,
-            "y": 6,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca02_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -957,7 +1024,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 60
             }
@@ -972,7 +1039,85 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_out",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca02_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_out",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Got a CV in for the driver job."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_there",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "bark": "Blank page, just a box saying enable editing and content. Do I click?",
+              "targetKnot": "ca02_cv"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_there",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca02_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca02_cv_choice === 'asked' && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca02_cv_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca02_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+              "condition": "value === 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca02_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_moved",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca02_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_done",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_ca02_cv_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca02_cv_choice": "silent"
+              }
+            }
+          ]
         },
         {
           "id": "kit_zainab_hussain",
@@ -1021,7 +1166,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_out",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_done",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -1036,7 +1195,7 @@
           "observations": "A touch-screen training kiosk for the Tarrowby Logistics exercise: first the red-team brief and research, then the recruitment inbox.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e2_cv_lures_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Tarrowby Logistics exercise. That's this one finished."
             }
           ],
@@ -1062,6 +1221,72 @@
             },
             "capacity": 2,
             "chatter": "kit_tarrowby"
+          }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca02_pc",
+          "name": "Chidi's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_chidi_okeke",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca02_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Chidi's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca02_moved === true",
+              "value": "Chidi's PC. IT have isolated this PC. The post-it with a big X on it says it's not to be used."
+            },
+            {
+              "condition": "globalVars.kit_ca02_cv_choice === 'report'",
+              "value": "Chidi's PC. The CV is closed, nothing enabled, and reported."
+            },
+            {
+              "condition": "globalVars.kit_ca02_out === true",
+              "value": "Chidi's PC. A CV for the driver job, open in Word. The page is blank except for a box: 'This document is protected. Enable editing, then enable content, to view it.'"
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca02_moved === true",
+              "value": "pc1_locked_isolated"
+            },
+            {
+              "condition": "globalVars.kit_ca02_cv_choice === 'report'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca02_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Chidi's PC."
+        },
+        {
+          "type": "aes_clipboard",
+          "id": "kit_ca02_clipboard",
+          "name": "Clipboard",
+          "sprite": "aes_clipboard1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
           }
         }
       ]

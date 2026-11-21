@@ -160,16 +160,16 @@
     {
       "id": "ca02_cv_lures",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "tarrowby_logistics",
       "ep": "ca02",
       "ambient": [
         "chidi_okeke",
         "zainab_hussain"
       ],
-      "setPiece": null,
+      "setPiece": "ca02_enable_editing",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e2_enable_content",
       "hostLine": true
     },

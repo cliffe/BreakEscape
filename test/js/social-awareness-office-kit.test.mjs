@@ -739,7 +739,7 @@ test('pool exemption and ca00: a shell with no pool or a convention row carries 
 // its tile position or (Quayholt) its chatter fails here.
 const COOLER_COMPANIES = { quayholt_insurance: 7, carrholme_services: 2 };
 const NEEDS_COMPANIES = ['tarrowby_logistics', 'quayholt_insurance', 'carrholme_services'];
-const PC_HOMES = { 'ca09_passwords/kit_chidi_okeke': 'kit_ca09_pc', 'ca16_insider_risk/kit_niamh_doherty': 'kit_ca16_pc', 'ca05_signin_pages/kit_darren_price': 'kit_ca05_pc' };
+const PC_HOMES = { 'ca09_passwords/kit_chidi_okeke': 'kit_ca09_pc', 'ca16_insider_risk/kit_niamh_doherty': 'kit_ca16_pc', 'ca05_signin_pages/kit_darren_price': 'kit_ca05_pc', 'ca02_cv_lures/kit_chidi_okeke': 'kit_ca02_pc' };
 test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst need and a coordinate needsHome', () => {
   const visited = {};
   for (const r of courseRows.filter((x) => NEEDS_COMPANIES.includes(x.company))) {
@@ -749,7 +749,7 @@ test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst 
     for (const n of npcs) {
       assert.ok(n.needs && typeof n.needs.thirst === 'object' && n.needs.thirst !== null, `${r.id}: ${n.id} has no thirst need`);
       const h = n.needsHome;
-      // Exactly three string homes (ca09, ca16, ca05). The work need (ca09, ca16) only uses an own-station PC, and the own station is a
+      // Exactly four string homes (ca09, ca16, ca05, ca02). The work need (ca09, ca16) only uses an own-station PC, and the own station is a
       // string needsHome; with a coordinate home the PC is "another desk" and npc_use_failed never fires (WAVE4_BUILD.md 3.3).
       const pcHome = PC_HOMES[`${r.id}/${n.id}`];
       if (pcHome) { assert.equal(h, pcHome, `${r.id}: ${n.id} needsHome is its PC's id`); continue; }
@@ -868,11 +868,6 @@ const W34 = { ...W3, ...W4 };
 // the partner's episode knot), hostId (host ink file), hostSpeaks (ca02: the host gives the follow-through),
 // there, choice, silent, knot, right, wrong, values, staffBarks, panelEntries, arrayWrap, walks, spawn, pcPos, pcName,
 // pron, movedSprite, hostBarks. Optional: walkTarget (set only if step 0 moves a partner's walk off her needsHome, e.g. Anjali).
-//   ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
-//     partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
-//     there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
-//     staffBarks: 2, hostBarks: 1, panelEntries: 2, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
-//     pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated' },
 const W5 = {
   ca13_ai_assistant: { ep: 'ca13', company: 'brightwell_foods', setPiece: 'ca13_summary_says_send', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield',
     partner: 'kit_agnieszka_duda', partnerStub: 'agnieszka_duda', partnerGuard: 'kit_ca13_moved && kit_key_caught', hostId: 'gwen_pritchard', hostSpeaks: false,
@@ -889,6 +884,11 @@ const W5 = {
     there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1' },
+  ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
+    partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
+    there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
+    staffBarks: 2, hostBarks: 1, panelEntries: 2, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated' },
 };
 const W45 = { ...W4, ...W5 };
 const W345 = { ...W34, ...W5 };
@@ -1426,7 +1426,7 @@ test('wave 4: PC text order matches the sprite order; text objects are interacta
 });
 
 test('wave 4: host recap is gated until the chain ends, in every host ink', () => {
-  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty' };
+  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum' };
   for (const [name, h] of Object.entries(hosts)) {
     const ep = ({ ...W4, ...W5 })[name].ep;
     const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
