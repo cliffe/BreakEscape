@@ -26,3 +26,9 @@ test('ca11: teamLine has no fixed bracket about a deleted item', () => {
     assert.ok(m && m[1].includes('{n}'), n);
   }
 });
+
+test('ca10: the supplier is Fernside everywhere, no Hatherby', () => {
+  assert.ok(!/Hatherby/.test(erb('ca10_downloads_and_fake_checks')));
+  const kit = readFileSync(join(root, 'planning_notes/phishing_and_social_engineering/awareness/office_kits/quayholt_insurance.json'), 'utf8');
+  assert.ok(!/Hatherby/.test(kit));
+});
