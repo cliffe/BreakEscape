@@ -165,3 +165,177 @@ test('the success overlay counts as a panel for bubbles (so a bark under it is h
     assert.equal(fn({ getElementById: () => ({ style: { display: 'none' } }) }), false);
     assert.match(src, /return !!\(m && !m\._ending\) \|\| successOverlayUp\(\);/, 'minigameOpenNow reads it');
 });
+
+// ---- fix round 1: the real condition re-check, the quiet-flag race, reload re-arm, scene-end cancel ----
+// These run the real ca05 shell mappings through the real _scheduleDelayedMapping / _handleEventMapping
+// (no stubbed handler), with a small dispatcher that both the manager and its setGlobal emits share.
+const ca05 = JSON.parse(readFileSync(join(here, '../../scenarios/ca05_signin_pages/scenario.json.erb'), 'utf8'));
+const darrenMaps = () => Object.values(ca05.rooms).flatMap(r => r.npcs || []).find(n => n.id === 'kit_darren_price').eventMappings;
+const ID = 'kit_darren_price';
+
+function realRig(globals, { perceivable = () => true } = {}) {
+    const bus = new Map();
+    const dispatcher = {
+        on(n, f) { if (!bus.has(n)) bus.set(n, []); bus.get(n).push(f); },
+        off(n, f) { bus.set(n, (bus.get(n) || []).filter(x => x !== f)); },
+        emit(n, d) { [...(bus.get(n) || [])].forEach(f => f(d)); },
+    };
+    const timers = [];
+    const realSet = globalThis.setTimeout, realClear = globalThis.clearTimeout;
+    globalThis.setTimeout = (cb, ms) => { const t = { cb, ms, live: true }; timers.push(t); return t; };
+    globalThis.clearTimeout = (t) => { if (t) t.live = false; };
+    window.eventDispatcher = dispatcher;
+    window.gameState = { globalVariables: { ...globals } };
+    const cues = [];
+    window.askCue = { perceivable: () => perceivable(), fire: (id, o) => cues.push({ id, ...o }) };
+    const m = new NPCManager(dispatcher, null);
+    m.npcs.set(ID, { id: ID, npcType: 'person', displayName: 'Darren Price' });
+    // the spoken (bark) mappings need the bark system; the ask path does not
+    m._setupEventMappings(ID, darrenMaps().filter(x => !x.bark));
+    const g = window.gameState.globalVariables;
+    const set = (k, v) => { const old = g[k]; g[k] = v; dispatcher.emit(`global_variable_changed:${k}`, { name: k, value: v, oldValue: old }); };
+    // run every live timer once (a held ask re-arms itself with a new one)
+    const run = () => { const due = timers.filter(x => x.live); due.forEach(x => { x.live = false; x.cb(); }); return due.length; };
+    return { m, g, set, run, cues, dispatcher, timers,
+        restore() { globalThis.setTimeout = realSet; globalThis.clearTimeout = realClear;
+            for (const k of ['eventDispatcher', 'gameState', 'askCue', 'MinigameFramework']) delete window[k]; } };
+}
+const live = { kit_ca05_out: true, kit_quiet: true, kit_ca05_prompt_choice: '', kit_ca05_done: false };
+
+test('kit_quiet race: Look up, reopen the kiosk, close it (kit_quiet false) while the ask is held: the ask still fires and starts the reply clock', () => {
+    let seen = false;
+    const t = realRig(live, { perceivable: () => seen });
+    try {
+        t.set('kit_ca05_there', true);        // the ask is scheduled
+        t.run();                              // delay up, not perceivable: held
+        assert.equal(t.g.kit_ca05_asked, undefined, 'held');
+        t.set('kit_quiet', false);            // the debrief was reopened and closed
+        t.run();
+        assert.equal(t.g.kit_ca05_asked, undefined, 'still held');
+        seen = true;
+        t.run();
+        assert.equal(t.g.kit_ca05_asked, true, 'the real re-check kept the ask');
+        assert.equal(t.cues.length, 1);
+        assert.equal(t.cues[0].until, 'kit_ca05_prompt_choice');
+        assert.equal(t.cues[0].ms, 45000, 'the marker lasts the reply window');
+    } finally { t.restore(); }
+});
+
+test('an ask held while the colleague is answered directly, or the beat ends, is dropped by the real re-check', () => {
+    for (const [k, v] of [['kit_ca05_prompt_choice', 'stop'], ['kit_ca05_prompt_choice', 'silent'], ['kit_ca05_done', true]]) {
+        let seen = false;
+        const t = realRig(live, { perceivable: () => seen });
+        try {
+            t.set('kit_ca05_there', true);
+            t.run();
+            t.set(k, v);
+            seen = true;
+            t.run();
+            assert.equal(t.g.kit_ca05_asked, undefined, `${k}=${v}: no "is asking you something" after the answer`);
+            assert.equal(t.cues.length, 0);
+        } finally { t.restore(); }
+    }
+});
+
+test('reload re-arm: the trigger is already true and nobody was asked, so game_loaded asks (and shows the cue)', () => {
+    const t = realRig({ ...live, kit_ca05_there: true });
+    try {
+        t.dispatcher.emit('game_loaded', { restored: true });
+        t.run(); t.run();
+        assert.equal(t.g.kit_ca05_asked, true, 'asked after the reload');
+        assert.equal(t.cues.length, 1);
+    } finally { t.restore(); }
+});
+
+test('reload re-arm: already asked and unanswered shows only the marker again; answered, done or not yet there asks nothing', () => {
+    const cases = [
+        [{ ...live, kit_ca05_there: true, kit_ca05_asked: true }, 1, 'marker back'],
+        [{ ...live, kit_ca05_there: true, kit_ca05_asked: true, kit_ca05_prompt_choice: 'silent' }, 0, 'answered'],
+        [{ ...live, kit_ca05_there: true, kit_ca05_done: true }, 0, 'done'],
+        [{ ...live, kit_ca05_there: false }, 0, 'not there yet (the timer resumes by itself)'],
+        [{ kit_quiet: true, kit_ca05_prompt_choice: '' }, 0, 'no beat'],
+    ];
+    for (const [globals, cues, why] of cases) {
+        const t = realRig(globals);
+        try {
+            const before = { ...t.g };
+            t.dispatcher.emit('game_loaded', {});
+            t.run(); t.run();
+            assert.equal(t.cues.length, cues, why);
+            if (cues) assert.equal(t.g.kit_ca05_asked, before.kit_ca05_asked, `${why}: asked unchanged`);
+            if (!cues) assert.equal(t.g.kit_ca05_asked, before.kit_ca05_asked, why);
+        } finally { t.restore(); }
+    }
+});
+
+test('scene end: removing the colleague cancels a held ask, so nothing fires later', () => {
+    const t = realRig(live, { perceivable: () => false });
+    try {
+        t.set('kit_ca05_there', true);
+        t.run();
+        assert.ok(t.timers.some(x => x.live), 'a held ask is waiting');
+        t.m._removeEventMappingListeners(ID);
+        assert.equal(t.timers.filter(x => x.live).length, 0, 'cancelled with the NPC');
+        window.askCue.perceivable = () => true;
+        t.run();
+        assert.equal(t.g.kit_ca05_asked, undefined);
+        assert.equal(t.cues.length, 0);
+    } finally { t.restore(); }
+});
+
+test('marker: lasts the given reply window, stays through an unanswered conversation, goes when the choice global is answered', () => {
+    const handlers = new Map(); const bus = new Map(); const timeouts = [];
+    const realSet = globalThis.setTimeout; globalThis.setTimeout = (cb, ms) => { const t = { cb, ms }; timeouts.push(t); return t; };
+    const g = { setDepth() { return g; }, setPosition() { return g; }, setVisible() { return g; }, destroy() { g.dead = true; }, fillStyle() { return g; }, fillRect() { return g; } };
+    const sprite = { x: 1, y: 2, depth: 0, displayHeight: 48, active: true, scene: { add: { graphics: () => g },
+        events: { on: (n, f) => handlers.set(n, f), off: (n) => handlers.delete(n) }, time: { now: 0 } } };
+    Object.assign(window, { npcManager: { getNPC: () => ({ displayName: 'D' }) }, npcBehaviorManager: { getBehavior: () => ({ sprite }) },
+        showNotification() {}, gameState: { globalVariables: { c: '' } },
+        eventDispatcher: { on: (n, f) => bus.set(n, f), off: (n) => bus.delete(n) } });
+    try {
+        const cue = new AskCue();
+        cue.fire('n', { ms: 60000, until: 'c' });
+        assert.equal(timeouts.at(-1).ms, 60000, 'the piece\'s own reply window, not 45 s');
+        assert.equal(bus.has('conversation_closed:n'), false, 'a closed conversation does not clear it');
+        bus.get('global_variable_changed:c')({ value: '' });
+        assert.ok(cue.markers.has('n'), 'still unanswered');
+        bus.get('global_variable_changed:c')({ value: 'silent' });
+        assert.equal(cue.markers.size, 0);
+        window.gameState.globalVariables.c = 'stop';
+        cue.fire('n', { until: 'c' });
+        assert.equal(cue.markers.size, 0, 'already answered: no marker');
+    } finally { globalThis.setTimeout = realSet; for (const k of ['npcManager', 'npcBehaviorManager', 'showNotification', 'gameState', 'eventDispatcher']) delete window[k]; }
+});
+
+test('every step-away shell: backstop from out, ask free of kit_quiet and gated on not done / not answered, re-arm appended last', () => {
+    const root = join(here, '../../scenarios');
+    let n = 0;
+    for (const name of readdirSync(root).filter(d => /^ca\d\d_/.test(d))) {
+        let sc;
+        try { sc = JSON.parse(readFileSync(join(root, name, 'scenario.json.erb'), 'utf8')); } catch (e) { continue; }
+        const ts = sc.timers || [];
+        const tail = ts.find(t => /_asked$/.test(t.startOnGlobal || '') && Object.values(t.setGlobal || {}).includes('silent'));
+        if (!tail) continue;
+        n++;
+        const doneT = ts.find(t => /_t_done$/.test(t.id));
+        const outT = ts.find(t => t.id === `${doneT.id}_out`);
+        assert.ok(outT, `${name}: _t_done_out exists`);
+        assert.match(outT.startOnGlobal, /_out$/);
+        assert.deepEqual(outT.setGlobal, doneT.setGlobal);
+        assert.ok(outT.delayMs >= doneT.delayMs + 60000, `${name}: backstop is later than the ask-based timer`);
+        for (const npc of Object.values(sc.rooms).flatMap(r => r.npcs || [])) {
+            const maps = npc.eventMappings || [];
+            const asks = maps.filter(m => m.setGlobal && tail.startOnGlobal in m.setGlobal && m.eventPattern !== 'game_loaded');
+            if (!asks.length) continue;
+            const done = Object.keys(doneT.setGlobal)[0], choice = Object.keys(tail.setGlobal)[0];
+            for (const a of asks) {
+                assert.ok(!/kit_quiet/.test(a.condition), `${name}: ask does not wait on kit_quiet`);
+                assert.ok(a.condition.includes(`!globalVars.${done}`) && a.condition.includes(`globalVars.${choice} === ''`), `${name}: ask is gated`);
+            }
+            const rearm = maps.filter(m => m.eventPattern === 'game_loaded');
+            assert.ok(rearm.length >= 2, `${name}: re-arm mappings`);
+            assert.ok(maps.slice(maps.length - rearm.length).every(m => m.eventPattern === 'game_loaded'), `${name}: re-arm mappings are last`);
+        }
+    }
+    assert.ok(n >= 9, `checked ${n} shells`);
+});

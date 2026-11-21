@@ -1190,6 +1190,97 @@ class StepAwayDefaults(unittest.TestCase):
                         self.assertEqual(d['startOnGlobal'], t['startOnGlobal'], f)
                         self.assertGreaterEqual(d['delayMs'], t['delayMs'] + 20000, f)
 
+    def full_piece(self):
+        """A piece shaped like a real one: out, there, asked, a reply timer, a done fallback from out."""
+        T = lambda i, st, d, sg, c=None: {'id': i, 'startOnGlobal': st, 'delayMs': d, 'setGlobal': sg, **({'condition': c} if c else {})}
+        return {'timers': [T('kit_x_t_there', '{out}', 4000, {'kit_x_there': True}),
+                           T('kit_x_t_tail', 'kit_x_asked', 20000, {'kit_x_choice': 'silent'}, "globalVars.kit_x_choice === ''"),
+                           T('kit_x_t_done', '{out}', 60000, {'kit_x_done': True}, '!globalVars.kit_x_done')],
+                'staff': {'p': {'eventMappings': [
+                    {'eventPattern': 'global_variable_changed:kit_x_there', 'delayMs': 5500, 'onceOnly': True, 'bark': 'Fine?', 'targetKnot': 'k',
+                     'condition': "value === true && globalVars.{out} === true && globalVars.kit_quiet === true && globalVars.kit_x_choice === ''"},
+                    {'eventPattern': 'global_variable_changed:kit_x_there', 'delayMs': 5500, 'onceOnly': True, 'setGlobal': {'kit_x_asked': True},
+                     'condition': 'value === true && globalVars.{out} === true && globalVars.kit_quiet === true'}]},
+                    'w': {'eventMappings': [
+                    {'eventPattern': 'global_variable_changed:kit_x_choice', 'delayMs': 8000, 'bark': 'Did you?',
+                     'condition': "value !== '' && globalVars.{out} === true && globalVars.kit_quiet === true && !globalVars.kit_x_done"}]}}}
+
+    def test_backstop_timer_counts_from_out_and_is_later(self):
+        out = ok.step_away_defaults(self.full_piece())
+        by = {t['id']: t for t in out['timers']}
+        self.assertEqual(by['kit_x_t_done']['startOnGlobal'], 'kit_x_asked')
+        b = by['kit_x_t_done_out']
+        self.assertEqual(b['startOnGlobal'], '{out}')
+        self.assertEqual(b['setGlobal'], {'kit_x_done': True})
+        self.assertEqual(b['condition'], '!globalVars.kit_x_done')
+        self.assertEqual(b['delayMs'], by['kit_x_t_done']['delayMs'] + ok.BACKSTOP_MS)
+        self.assertEqual(len({t['id'] for t in out['timers']}), len(out['timers']), 'ids stay unique')
+
+    def test_ask_condition_drops_the_quiet_flag_and_gains_done_and_answered_terms(self):
+        out = ok.step_away_defaults(self.full_piece())
+        bark, ask = out['staff']['p']['eventMappings'][:2]
+        for m in (bark, ask):
+            self.assertNotIn('kit_quiet', m['condition'])
+            self.assertIn('!globalVars.kit_x_done', m['condition'])
+            self.assertEqual(m['condition'].count("globalVars.kit_x_choice === ''"), 1, 'no duplicate term')
+        self.assertEqual(ask['askCueUntil'], 'kit_x_choice')
+        self.assertEqual(ask['askCueMs'], 45000)
+        # the follow-through keyed on the answer is free of the quiet flag too
+        self.assertNotIn('kit_quiet', out['staff']['w']['eventMappings'][0]['condition'])
+        self.assertEqual(ok.step_away_defaults(self.full_piece(), ) , out)   # deterministic
+
+    def test_rearm_mappings_are_appended_last_and_cover_the_reload_cases(self):
+        out = ok.step_away_defaults(self.full_piece())
+        maps = out['staff']['p']['eventMappings']
+        self.assertEqual(len(maps), 5)
+        self.assertEqual([m['eventPattern'] for m in maps[2:]], ['game_loaded'] * 3)
+        bark, ask, cue = maps[2:]
+        self.assertTrue(bark.get('bark') and ask['setGlobal'] == {'kit_x_asked': True})
+        self.assertIn('globalVars.kit_x_asked !== true', ask['condition'])
+        self.assertIn('globalVars.kit_x_asked === true', cue['condition'])
+        for m in maps[2:]:
+            self.assertIn('globalVars.kit_x_there === true', m['condition'])
+            self.assertIn('!globalVars.kit_x_done', m['condition'])
+            self.assertTrue(m['onceOnly'] and m['whenPerceivable'] and m['delayMs'] >= 1)
+        self.assertTrue(cue['askCue'] and 'setGlobal' not in cue and 'bark' not in cue)
+        # the other staff record is not given a re-arm
+        self.assertEqual(len(out['staff']['w']['eventMappings']), 1)
+
+    @staticmethod
+    def closure(timers, start):
+        """Globals that must become true from `start` by timers alone (every timer's condition assumed to hold)."""
+        have = set(start)
+        grew = True
+        while grew:
+            grew = False
+            for t in timers:
+                if t['startOnGlobal'] in have:
+                    for k, v in (t.get('setGlobal') or {}).items():
+                        if v is True and k not in have:
+                            have.add(k); grew = True
+        return have
+
+    def test_every_step_away_shell_reaches_done_by_every_route(self):
+        """Whatever the player does after Look up, `done` must come: by the follow-through, by the ask-based timer
+        or, with the ask never made (dropped, held, reload), by the backstop from `out` alone."""
+        import glob
+        n = 0
+        for f in sorted(glob.glob(os.path.join(REPO, 'scenarios', 'ca*', 'scenario.json.erb'))):
+            sc = json.load(open(f))
+            ts = sc.get('timers', [])
+            dones = [t for t in ts if str(t.get('id', '')).endswith('_t_done') and str(t.get('startOnGlobal', '')).endswith('_asked')]
+            for d in dones:
+                n += 1
+                done = next(iter(d['setGlobal']))
+                out = done[:-len('_done')] + '_out'
+                route_no_ask = self.closure(ts, {out})
+                self.assertIn(done, route_no_ask, f'{f}: with no ask, done must still come from out alone')
+                route_asked = self.closure(ts, {out, d['startOnGlobal']})
+                self.assertIn(done, route_asked, f)
+                back = [t for t in ts if t['id'] == d['id'] + '_out'][0]
+                self.assertGreater(back['delayMs'], d['delayMs'], f)
+        self.assertGreaterEqual(n, 9)
+
     def test_other_pieces_untouched(self):
         p = {'timers': [{'id': 't', 'startOnGlobal': 'kit_x_done', 'delayMs': 60000, 'setGlobal': {'kit_x_done': True}}]}
         self.assertEqual(ok.step_away_defaults(p), p)
