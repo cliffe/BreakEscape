@@ -1248,7 +1248,12 @@ test('wave 4: each shell has its set piece, a tier E stepAway row that matches t
     for (const g of [`kit_${w.ep}_out`, w.there, `kit_${w.ep}_done`, `kit_${w.ep}_host_said`]) assert.ok(sc.globalVariables[g] === false, `${name}: ${g} declared false`);
     assert.ok(sc.globalVariables[w.choice] === '', `${name}: ${w.choice} declared ""`);
     const twin = kitRows.find((r) => r.id === `${name}_defend`);
-    assert.ok(twin && twin.setPiece === null && twin.stepAway === false, `${name}: twin row`);
+    // D265: the ca05 twin carries a reaction-only set piece (one after-sort colleague bark, no
+    // step-away, no chain globals, no moved look); every other twin stays null. The "untouched"
+    // assertions below (no step-away flag, no kit_ca\d\d_(out|there|done|asked) globals, no
+    // step-away line) still hold for it, since the set piece adds nothing but Darren's mapping.
+    const expectTwinSetPiece = name === 'ca05_signin_pages' ? 'ca05_defend_react' : null;
+    assert.ok(twin && twin.setPiece === expectTwinSetPiece && twin.stepAway === false, `${name}: twin row`);
     const tsc = w4Shell(`${name}_defend`);
     assert.ok(tsc.social.awarenessEpisode.stepAway !== true && !Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|asked)$/.test(k)), `${name}_defend: untouched`);
     assert.ok(!Object.keys(tsc.resources || {}).some((k) => /^kit_ca\d\d_signin$/.test(k)), `${name}_defend: no sign-in resource`);

@@ -534,24 +534,6 @@ VAR {done} = false
 """
 
 
-def add_twin_reaction(sc, npc_id, knot):
-    """Append the after-sort reaction bark to a defend twin's ambient colleague (D265).
-
-    The mapping fires once when the defend set finishes (kit_defend_done -> true); a delayMs lets
-    the delayed-mapping runner wait for the kiosk to close, so the bark lands after the sort. `knot`
-    (no literal `bark`) makes the engine speak the knot's first NPC line via TTS, so the spoken line
-    lives in the ambient ink and branches there on kit_key_caught."""
-    npcs = sc['rooms']['training_room']['npcs']
-    npc = next(n for n in npcs if n.get('id') == npc_id)
-    npc.setdefault('eventMappings', []).append({
-        'eventPattern': 'global_variable_changed:kit_defend_done',
-        'condition': 'value === true',
-        'onceOnly': True,
-        'delayMs': 1500,
-        'targetKnot': knot,
-    })
-
-
 def defend_only(ekey):
     cfg = EPISODES[ekey]
     d = cfg['defend']
@@ -600,13 +582,6 @@ def defend_only(ekey):
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'],
                   success_screen(*d['ending']), tier=office_kit.tier_of(row), kit_row=row)
-    # D265: a short proactive colleague beat in the E5 defend twin, so the office reacts after the
-    # sort without the learner having to go and talk to anyone (blind playtest: the twin felt flat,
-    # nobody reacts). Darren speaks one line aloud when the defend set is finished; the ink knot
-    # reads only kit_key_caught and is true on every path. Twin only: the full ca05 shell carries
-    # its own wave-5 colleague beat and never gets this mapping.
-    if ekey == 'e5':
-        add_twin_reaction(sc, 'kit_darren_price', 'ca05_react')
     meta = {
         'display_name': d['display'],
         'description': d['desc'],

@@ -37,12 +37,40 @@
       "stepAwayBark": "Have you got a minute? Someone in finance just took a call like that one.",
       "override": {
         "sources": {
-          "kit_coffee": { "position": { "x": 2, "y": 7 }, "affordance": { "useSeconds": 8 } },
-          "kit_cooler": { "position": { "x": 7, "y": 7 }, "affordance": { "useSeconds": 6 } }
+          "kit_coffee": {
+            "position": {
+              "x": 2,
+              "y": 7
+            },
+            "affordance": {
+              "useSeconds": 8
+            }
+          },
+          "kit_cooler": {
+            "position": {
+              "x": 7,
+              "y": 7
+            },
+            "affordance": {
+              "useSeconds": 6
+            }
+          }
         },
         "staff": {
-          "gwen_pritchard": { "voice": null, "chatterLines": ["Morning, all.", "Tea round shortly?"] },
-          "agnieszka_duda": { "voice": null, "chatterLines": ["Long week.", "Any biscuits left?"] }
+          "gwen_pritchard": {
+            "voice": null,
+            "chatterLines": [
+              "Morning, all.",
+              "Tea round shortly?"
+            ]
+          },
+          "agnieszka_duda": {
+            "voice": null,
+            "chatterLines": [
+              "Long week.",
+              "Any biscuits left?"
+            ]
+          }
         }
       }
     },
@@ -235,7 +263,10 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e6_parking_permit",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -268,7 +299,9 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e8_push_abroad",
-      "keyCaughtVerdicts": ["report"],
+      "keyCaughtVerdicts": [
+        "report"
+      ],
       "hostLine": true
     },
     {
@@ -316,7 +349,9 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e11_wrong_sam_breach",
-      "keyCaughtVerdicts": ["report"],
+      "keyCaughtVerdicts": [
+        "report"
+      ],
       "hostLine": true
     },
     {
@@ -365,7 +400,10 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e15_posted_stick",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -382,7 +420,10 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e16_shared_login_req",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -415,7 +456,10 @@
       "attack": true,
       "stepAway": true,
       "keyMessage": "e19_ransom_note",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -488,7 +532,7 @@
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca05_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e5_sso_lookalike",
@@ -507,7 +551,10 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e6_parking_permit",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -538,7 +585,9 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e8_push_abroad",
-      "keyCaughtVerdicts": ["report"],
+      "keyCaughtVerdicts": [
+        "report"
+      ],
       "hostLine": true
     },
     {
@@ -583,7 +632,9 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e11_wrong_sam_breach",
-      "keyCaughtVerdicts": ["report"],
+      "keyCaughtVerdicts": [
+        "report"
+      ],
       "hostLine": true
     },
     {
@@ -614,7 +665,10 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e15_posted_stick",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -630,7 +684,10 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e16_shared_login_req",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
@@ -661,7 +718,10 @@
       "attack": false,
       "stepAway": false,
       "keyMessage": "e19_ransom_note",
-      "keyCaughtVerdicts": ["report", "verify"],
+      "keyCaughtVerdicts": [
+        "report",
+        "verify"
+      ],
       "hostLine": true
     },
     {
