@@ -116,6 +116,14 @@ test('selected sprite card: hard ring, SELECTED tag in GNF 16/24 sits in a reser
     assert.ok(/background:\s*var\(--ui-accent\)/.test(rule('.shell-picker .sprite-card.selected::after')), 'shell tag uses the accent');
 });
 
+test('shell picker: Locked summary focus shows an outline, and the pick pane pads the ring clear of its scroller', () => {
+    const f = rule('.shell-picker .pk-locked summary:focus-visible');
+    assert.ok(/outline:\s*2px solid/.test(f) && !/outline:\s*none/.test(f), 'Locked summary focus outline');
+    assert.ok(/outline-offset:\s*2px/.test(f), 'outline offset');
+    const p = rule('.shell-picker .pk-pick');
+    assert.ok(/padding:\s*2px 6px 2px 2px/.test(p), 'pick pane padding keeps the 2px ring unclipped');
+});
+
 test('.form-control:focus has a hard 2px offset outline, no blur', () => {
     for (const sel of ['.form-control:focus', '.shell-picker .form-control:focus']) {
         const r = rule(sel);

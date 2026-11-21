@@ -782,8 +782,9 @@ body.shell-picker {
 .shell-picker .pk-locked summary::-webkit-details-marker { display: none; }
 .shell-picker .pk-locked summary::before { content: '\25B6\00a0\00a0'; color: var(--ui-text-faint); }
 .shell-picker .pk-locked[open] summary::before { content: '\25BC\00a0\00a0'; }
-.shell-picker .pk-locked summary:hover,
-.shell-picker .pk-locked summary:focus-visible { color: var(--ui-accent); outline: none; }
+.shell-picker .pk-locked summary:hover { color: var(--ui-accent); }
+/* m01 R4 m1: focus is not colour alone */
+.shell-picker .pk-locked summary:focus-visible { color: var(--ui-accent); outline: 2px solid var(--ui-accent); outline-offset: 2px; }
 .shell-picker .pk-locked-grid { --pk-s: 2; margin-top: 8px; opacity: 0.6; }
 
 /* short landscape windows: a smaller preview and headshots so the panel still fits */
