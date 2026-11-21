@@ -2141,7 +2141,8 @@ test('ca02: layer 0 does not say the player asked the recruiter for a second act
 
 test('ca05: a silent Darren is described as nobody stopping him; no voicemail email or shown number is claimed', () => {
   const silent = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'silent' });
-  assert.match(silent, /You said nothing, so nobody stopped Darren/);
+  assert.match(silent, /^Darren asked, got no answer and went ahead/m);
+  assert.doesNotMatch(silent, /You said nothing|nobody stopped/);
   assert.doesNotMatch(silent, /You chose Approve/);
   const approve = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'approve' });
   assert.match(approve, /You chose Approve/);
@@ -2157,7 +2158,8 @@ test('wave 5: each silent-keyed debrief entry says the player said nothing and n
     const silent = cp.filter((e) => e.condition && new RegExp(`${w.choice} === 'silent'`).test(e.condition));
     assert.equal(silent.length, 1, `${name}: one silent entry`);
     assert.doesNotMatch(silent[0].condition, /\|\|/, `${name}: silent shares no entry with the wrong answer`);
-    assert.match(silent[0].text, /^You said nothing, so nobody stopped \w+/, `${name}: says plainly nobody stopped them`);
+    assert.match(silent[0].text, /^\w+ asked, got no answer and went ahead/, `${name}: says the colleague asked and went ahead`);
+    assert.doesNotMatch(silent[0].text, /You said nothing|nobody stopped/, `${name}: no blame wording`);
     assert.ok(!cp.some((e) => e !== silent[0] && e.condition && /silent/.test(e.condition)), `${name}: silent keyed once`);
   }
 });
