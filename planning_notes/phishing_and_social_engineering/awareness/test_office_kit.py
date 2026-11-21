@@ -1134,5 +1134,38 @@ class SetPieceHostBarksAreGuarded(unittest.TestCase):
             self.check(json.loads(text), shell, n)
 
 
+class StepAwayDefaults(unittest.TestCase):
+    """The shared step-away mechanism: 45 s reply window (overridable), ask cue, perceivable gate."""
+
+    def piece(self, **extra):
+        p = {'timers': [{'id': 't', 'startOnGlobal': 'kit_x_asked', 'delayMs': 20000, 'setGlobal': {'kit_x_choice': 'silent'}}],
+             'staff': {'p': {'eventMappings': [
+                 {'eventPattern': 'e', 'delayMs': 5500, 'bark': 'Fine?', 'targetKnot': 'k'},
+                 {'eventPattern': 'e', 'delayMs': 5500, 'setGlobal': {'kit_x_asked': True}},
+                 {'eventPattern': 'other', 'bark': 'x'}]}}}
+        p.update(extra)
+        return p
+
+    def test_default_window_cue_and_gate(self):
+        out = ok.step_away_defaults(self.piece())
+        self.assertEqual(out['timers'][0]['delayMs'], 45000)
+        bark, ask, other = out['staff']['p']['eventMappings']
+        self.assertTrue(ask['askCue'] and ask['whenPerceivable'])
+        self.assertTrue(bark['whenPerceivable'] and 'askCue' not in bark)
+        self.assertNotIn('whenPerceivable', other)
+
+    def test_override_and_no_delay(self):
+        out = ok.step_away_defaults(self.piece(replyMs=60000))
+        self.assertEqual(out['timers'][0]['delayMs'], 60000)
+        p = self.piece()
+        for m in p['staff']['p']['eventMappings'][:2]: del m['delayMs']
+        ask = ok.step_away_defaults(p)['staff']['p']['eventMappings'][1]
+        self.assertEqual(ask['delayMs'], 1)
+
+    def test_other_pieces_untouched(self):
+        p = {'timers': [{'id': 't', 'startOnGlobal': 'kit_x_done', 'delayMs': 60000, 'setGlobal': {'kit_x_done': True}}]}
+        self.assertEqual(ok.step_away_defaults(p), p)
+
+
 if __name__ == '__main__':
     unittest.main()
