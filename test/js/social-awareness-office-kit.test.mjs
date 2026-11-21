@@ -1035,7 +1035,7 @@ test('wave 3: ca19 notice states (plain before the look-up, isolated after) and 
   const sc = readShell('ca19_malware_and_updates');
   const iso = w3Obj(sc, 'kit_ca19_isolated');
   assert.ok(iso.observations === "Niamh's workstation.", 'base notice is plain');
-  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'Isolated by IT: a post-it with a big X on it is stuck to the screen. Do not use, it is recovering.' }]);
+  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'IT have isolated this PC. The post-it with a big X on it says it's not to be used.' }]);
   assert.ok(iso.interactable === true && iso.takeable === false);
   assert.ok(!('lighting' in iso) && iso.lockType !== 'ransomware_display', 'no emitter, no ransomware_display');
   const run = w3Obj(sc, 'kit_ca19_running');
