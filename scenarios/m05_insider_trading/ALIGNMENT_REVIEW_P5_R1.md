@@ -1,6 +1,6 @@
 # m05 pass 5: alignment review, round 1
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as a single reviewer against the ten-row rubric. Compared with m02, m03 and m04 as they are now; canon checked against m04 (before) and m06 (after). Every claim below was checked against `scenario.json.erb` and the ink, not the older plan docs. No SecGen XML or restricted lab sheet was opened; VM claims are marked "needs checking against SecGen by the user".
+2026-10-13. Reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as a single reviewer against the ten-row rubric. Compared with m02, m03 and m04 as they are now; canon checked against m04 (before) and m06 (after). Every claim below was checked against `scenario.json.erb` and the ink, not the older plan docs. No SecGen XML or restricted lab sheet was opened; VM claims are marked "needs checking against SecGen by the user".
 
 ## Checks run
 
@@ -95,7 +95,7 @@ A player hunts the insider through testimony, the badge log and the vetting file
 
 ### Verification plan
 
-After each phase: compile the ink, then run the validator (full, by the fixer), dialoguelint, reopencheck, `check_door_alignment.py`, tagdiff against HEAD, and the m05 route driver once it exists. After phases 1 and 2: a Sonnet browser check on :3001 with a mid-mission reload, covering the vault reader with the new enrolment, the Owen KO before suspicion, the sweep and "Bring me in", and the music after a reload in each phase. A blind run once phase 1 lands, because it changes the deduction.
+After each phase: compile the ink, then run the validator (full, by the fixer), dialoguelint, reopencheck, `check_door_alignment.py`, tagdiff against HEAD, and the m05 route driver once it exists. After phases 1 and 2: a scripted browser check on :3001 with a mid-mission reload, covering the vault reader with the new enrolment, the Owen KO before suspicion, the sweep and "Bring me in", and the music after a reload in each phase. A blind run once phase 1 lands, because it changes the deduction.
 
 ### Needs checking against SecGen by the user
 

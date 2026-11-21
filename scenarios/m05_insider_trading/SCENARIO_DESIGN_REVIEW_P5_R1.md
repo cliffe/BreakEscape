@@ -1,6 +1,6 @@
 # m05 Insider Trading: scenario design review, pass 5, round 1
 
-Reviewer: Opus, read-only (static). Date 2026-10-13. Skill: `scenario-design-review`, run in full. Verified against `scenario.json.erb` and the ink. The older design docs were not trusted.
+Reviewer: review agent, read-only (static). Date 2026-10-13. Skill: `scenario-design-review`, run in full. Verified against `scenario.json.erb` and the ink. The older design docs were not trusted.
 
 Kind of game: SAFETYNET campaign mission (TV spy thriller). Teaching comes through the VM work and the field guides.
 

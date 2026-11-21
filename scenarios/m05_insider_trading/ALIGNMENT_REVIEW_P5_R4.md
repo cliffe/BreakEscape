@@ -1,6 +1,6 @@
 # m05 pass 5: alignment review, round 4 (confirmation)
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as the round-4 confirmation reviewer. Reviews commit c2304a3a ("alignment round 3"). The m05 folder was clean against HEAD when I started. Every claim was checked against `scenario.json.erb`, the ink and the engine, not against the log. I opened no SecGen XML, no restricted lab sheet and no sight-challenge source.
+2026-10-13. Reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as the round-4 confirmation reviewer. Reviews commit c2304a3a ("alignment round 3"). The m05 folder was clean against HEAD when I started. Every claim was checked against `scenario.json.erb`, the ink and the engine, not against the log. I opened no SecGen XML, no restricted lab sheet and no sight-challenge source.
 
 The coordinator added two items from the round-1 browser check (`PASS5_ALIGN_R1_BROWSER.md`): N2 (HaX's unanswered first call hides the hub) and N5 (the vault line "the cryptography lead's"). N1 (D10) and F6 (D9) are out of scope.
 
@@ -92,7 +92,7 @@ Once those land, I don't think a full round 5 is needed. A short static confirma
 
 If that confirmation is clean and the browser checklist below passes, close the alignment phase.
 
-## Final browser checklist for closing the phase (Sonnet, :3001, at least one mid-mission reload)
+## Final browser checklist for closing the phase (scripted run, :3001, at least one mid-mission reload)
 
 The round-1 browser check (`PASS5_ALIGN_R1_BROWSER.md`, games 2234, 2240 and 2243) passed the vault, the office-card relay, the sweep and call-in with a reload, the wrong accusation, the music per phase and `show_scenario_brief`. It ran on round-1 code. The items below cover only what rounds 2 to 4 changed, plus the two round-1 items not yet exercised. Run them after the R4-1 and N2 fixes land.
 
