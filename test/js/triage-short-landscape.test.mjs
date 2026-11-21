@@ -87,10 +87,15 @@ test('CA-2: debrief kiosk fills the window and the payoff band comes first under
     }
     eq(find(runner, '.epr-root .aw-strip', 'flex-wrap', SHORT), 'nowrap', 'strip one row');
     // CSL R2 M1: the step list wraps (six and seven stage episodes do not fit one row at 568 or 844)
-    for (const r of runner) {
-        if (r.sel === '.epr-root .aw-steps') assert.ok(!/nowrap/.test(r.body), 'the step list is allowed to wrap');
+    // any sheet, any media, any selector ending in .aw-steps (base, .epr-root, .epr-root .aw-strip)
+    for (const r of [...runner, ...skin]) {
+        if (/\.aw-steps$/.test(r.sel)) assert.ok(decl(r.body, 'flex-wrap') !== 'nowrap', `${r.sel} (${r.media || 'base'}) lets the step list wrap`);
     }
     eq(find(runner, '.epr-root .aw-step-num', 'flex', SHORT), '0 0 auto', 'the badge keeps its size so the done tick shows');
+    // CSL R3 m1: the wordmark never shrinks below its text (the step list wraps instead); the 30%
+    // cap with an ellipsis still holds a long name
+    eq(find(runner, '.epr-root .aw-wordmark', 'flex', SHORT), '0 0 auto', 'wordmark shows whole when it fits under the cap');
+    eq(find(runner, '.epr-root .aw-wordmark', 'max-width', SHORT), '30%', 'wordmark cap');
     eq(find(runner, '.epr-root .aw-wordmark', 'min-width', SHORT), '0', 'wordmark can shrink');
     eq(find(runner, '.epr-root .aw-wordmark', 'text-overflow', SHORT), 'ellipsis', 'wordmark ellipsis');
     eq(find(runner, '.epr-root .aw-wordmark', 'overflow', SHORT), 'hidden', 'wordmark clips');
@@ -137,7 +142,9 @@ test('B1: no short-landscape display rule on a .tri-stage child can beat [hidden
             const d = decl(r.body, 'display');
             if (d === null || d === 'none') continue;
             const base = r.sel.replace(/:not\(\[hidden\]\)$/, '');
-            if (!views.some((v) => base.endsWith(v))) continue;
+            // any other :not(...) adds weight but is no guard, so it is stripped only to find the view
+            const bare = base.replace(/:not\([^)]*\)/g, '');
+            if (!views.some((v) => bare.endsWith(v))) continue;
             scanned += 1;
             const single = !/[\s>+~]/.test(base) && (base.match(/[.:#\[]/g) || []).length <= 1;
             if (single) continue;
@@ -219,10 +226,23 @@ test('CA-4: feedbackScrollTop shows the card and Next with the least scroll', ()
 
 test('CSL R2: result summary rows are 44px targets, the short Result chrome is tighter, montage is full width', () => {
     eq(find(triage, '.tri-item-why summary', 'min-height', ''), '44px', 'It was real row');
-    eq(find(triage, '.tri-result .tri-finish', 'height', SHORT), '44px', 'Finish');
+    // CSL R3 m2: a floor, not a fixed height, with no vertical padding, so the label sits centred
+    eq(find(triage, '.tri-result .tri-finish', 'min-height', SHORT), '44px', 'Finish');
+    assert.ok(find(triage, '.tri-result .tri-finish', 'height', SHORT) === null, 'Finish has no fixed height');
+    eq(find(triage, '.tri-result .tri-finish', 'padding-top', SHORT), '0', 'Finish top padding');
+    eq(find(triage, '.tri-result .tri-finish', 'padding-bottom', SHORT), '0', 'Finish bottom padding');
+    eq(find(triage, '.tri-result > .tri-result-bar', 'padding', SHORT), '0 10px 6px', 'short result bar padding');
+    eq(find(triage, '.tri-result .tri-score', 'margin', SHORT), '0 0 4px', 'short score margin');
     const body = find(triage, '.tri-result > .tri-result-body', 'padding', SHORT);
     assert.ok(body === '8px 10px 4px', 'short result body padding');
     const skin = parse(readCss('awareness-skin.css'));
     assert.ok(find(skin, '.aw-montage', 'max-width', '') === null, 'the montage is not capped narrower than the flip cards');
     eq(find(skin, '.aw-montage-headline', 'border-left-width', ''), '6px', 'the beat marker stays');
+});
+
+test('CSL R3 m3 and twin: the script-focused band shows no focus ring; the folded "It was real" row is a 44px target', () => {
+    eq(find(runner, '.aw-debrief > .aw-band:focus', 'outline'), 'none', 'band focus outline');
+    eq(find(skin, '.aw-genuine-fold summary', 'min-height'), '44px', 'folded It was real row');
+    eq(find(skin, '.aw-genuine-fold summary', 'box-sizing'), 'border-box', 'folded row box');
+    eq(find(skin, '.aw-genuine-fold summary', 'padding'), '12px 0', 'folded row label centred');
 });
