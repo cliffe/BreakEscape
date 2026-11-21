@@ -1,0 +1,13 @@
+{
+  "key": "b913a45bc883eaa4a56e25a357e44ab2",
+  "npc": "tomasz_wisniewski",
+  "text": "Sam's email about our overtime sheet, with staff health notes on it, was the one to report to me.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:52:44Z"
+}

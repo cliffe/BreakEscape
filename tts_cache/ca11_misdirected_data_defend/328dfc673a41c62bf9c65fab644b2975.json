@@ -1,0 +1,13 @@
+{
+  "key": "328dfc673a41c62bf9c65fab644b2975",
+  "npc": "tomasz_wisniewski",
+  "text": "A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:52:40Z"
+}
