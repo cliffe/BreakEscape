@@ -1295,6 +1295,18 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     assert.ok(close && close.condition.includes(`${ch} === 'asked'`) && close.setGlobal[ch] === w.silent && close.onceOnly === true, `${name}: close turns asked into ${w.silent}`);
     // ca09: closing before the note has been seen must not lock in "silent" (&& only, no ||)
     if (ep === 'ca09') assert.ok(!close.condition.includes('||') && close.condition.split(' && ').includes('globalVars.kit_ca09_note_seen === true'), `${name}: close-silent needs the note seen`);
+    // ca09: an unseen close starts a short timer that settles "asked" to silent (no wait for the 60 s fallback),
+    // from a mapping that is last in the colleague's list, onceOnly, && only; the knot re-offers while the choice is 'asked'
+    if (ep === 'ca09') {
+      const last = cm[cm.length - 1];
+      assert.ok(last.eventPattern === `conversation_closed:kit_${w.stub}` && last.onceOnly === true && !last.condition.includes('||') && last.condition.split(' && ').includes("globalVars.kit_ca09_note_seen !== true") && last.condition.includes(`${ch} === 'asked'`) && last.setGlobal && last.setGlobal.kit_ca09_closed_unseen === true, `${name}: last mapping marks an unseen close`);
+      const tu = (sc.timers || []).find((t) => t.id === 'kit_ca09_t_unseen');
+      assert.ok(tu && tu.startOnGlobal === 'kit_ca09_closed_unseen' && tu.delayMs >= 6000 && tu.delayMs <= 20000 && tu.condition === `globalVars.${ch} === 'asked' && globalVars.kit_ca09_note_seen !== true` && tu.setGlobal[ch] === 'silent', `${name}: unseen-close timer settles asked to silent`);
+      assert.ok(sc.globalVariables.kit_ca09_closed_unseen === false, `${name}: kit_ca09_closed_unseen is a scenario global`);
+      const ink = readFileSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.ink`), 'utf8');
+      const g = ink.match(/=== ca09_note ===\n(\{[^\n]*:)\n/)[1];
+      assert.ok(!g.includes('"asked"'), `${name}: knot guard does not divert while the choice is asked (it re-offers)`);
+    }
     const dm = cm.find((m) => m.eventPattern === `global_variable_changed:${ep === 'ca15' ? 'kit_ca15_done' : done}` && m.setGlobal && m.setGlobal[ch] === w.silent);
     assert.ok(dm && dm.condition.includes(`${ch} === 'asked'`), `${name}: done turns asked into ${w.silent}`);
     const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);

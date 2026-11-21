@@ -90,6 +90,7 @@
     "kit_ca09_to_host": false,
     "kit_ca09_at_host": false,
     "kit_ca09_done": false,
+    "kit_ca09_closed_unseen": false,
     "kit_ca09_note_choice": "",
     "kit_ca09_host_said": false,
     "kit_key_caught": false
@@ -121,6 +122,15 @@
       "startOnGlobal": "kit_ca09_asked",
       "delayMs": 20000,
       "condition": "globalVars.kit_ca09_note_choice === ''",
+      "setGlobal": {
+        "kit_ca09_note_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca09_t_unseen",
+      "startOnGlobal": "kit_ca09_closed_unseen",
+      "delayMs": 12000,
+      "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_note_seen !== true",
       "setGlobal": {
         "kit_ca09_note_choice": "silent"
       }
@@ -1156,6 +1166,14 @@
                 "set": {
                   "work": 90
                 }
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen !== true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_closed_unseen": true
               }
             }
           ]
