@@ -1,0 +1,13 @@
+{
+  "key": "046c4d46ba646dbb4fb31e5243b2b9e7",
+  "npc": "julian_sallow",
+  "text": "A new contact gets checked by a route you already know before you tell them anything, however well they seem to know us.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:05Z"
+}
