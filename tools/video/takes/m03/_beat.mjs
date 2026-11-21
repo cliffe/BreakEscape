@@ -43,7 +43,7 @@ export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy',
         const l = await vw.waitForLine(tgt.re, 20000);
         if (!l) throw new Error(tgt.name + ' never played');
         mark(tgt.name + '-done', { durMs: l.durMs }); done.add(tgt.name);
-        if (done.size < targets.length) { await sleep(500); await bridge.minigame.continue_().catch(() => {}); }
+        if (done.size < targets.length) { await sleep(1100); await bridge.minigame.continue_().catch(() => {}); }
       } else if (d.canContinue && !d.awaitingChoice) { await sleep(450); await bridge.minigame.continue_().catch(() => {}); }
       await sleep(120);
     }
