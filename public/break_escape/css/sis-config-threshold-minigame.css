@@ -350,3 +350,10 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* The dialog X draws 30px; its hit area is 44px (UI rule) */
+.sis-modal .sis-modal-close::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+}
