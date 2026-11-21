@@ -1074,23 +1074,40 @@ const tableRects = (roomName) => {
   const layer = d.layers.find((l) => l.name === 'tables');
   return layer.objects.map((t) => ({ left: t.x, right: t.x + t.width, top: t.y - t.height, bottom: t.y }));   // tile objects: y is the bottom edge
 };
-test('wave 3: every placed set-piece object that overlaps a table draws above it (depth, not just a number)', () => {
-  let overlaps = 0;
-  for (const [name, w] of Object.entries(W3)) {
+// Moved table items (a Tiled table_items placeholder claimed by a kit object and put elsewhere) join the table group at
+// table depth + n*0.01, so they are surfaces too: anything placed over one has to draw above it. They need no elevation
+// themselves, but they must land on a table or the engine stores them at their own depth.
+const MOVED_TYPES = new Set(['journal_stack', 'binders', 'm09_folder']);
+const kitObjects = (sc, pre) => sc.rooms.training_room.objects.filter((x) => String(x.id).startsWith(pre) && x.position && x.sprite);
+const objRect = (o) => { const [pw, ph] = pngSize(o.sprite); const left = o.position.x * 32, top = o.position.y * 32; return { left, top, right: left + pw, bottom: top + ph }; };
+const hits = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+test('wave 3: every kit set-piece object over a table or a moved table item has an elevation that draws it above (depth, not a sliver overlap)', () => {
+  let overlaps = 0, movedChecked = 0;
+  for (const [name, w] of Object.entries({ ...W3, test_ca_office_kit: null })) {
     const sc = readShell(name);
     const tables = tableRects(sc.rooms.training_room.type);
-    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith('kit_') && x.position && x.position.elevation !== undefined)) {
-      const [pw, ph] = pngSize(o.sprite);
-      const left = o.position.x * 32, top = o.position.y * 32, bottom = top + ph, right = left + pw;
-      const depth = bottom + 0.5 + o.position.elevation;
-      for (const t of tables) {
-        if (right <= t.left || left >= t.right || bottom <= t.top || top >= t.bottom) continue;
+    const objs = kitObjects(sc, name === 'test_ca_office_kit' ? 'kit_e1_' : 'kit_');
+    const moved = objs.filter((o) => MOVED_TYPES.has(o.type) && o.position.elevation === undefined);
+    for (const m of moved) {
+      assert.ok(tables.some((t) => hits(objRect(m), t)), `${name} ${m.id}: a moved table item must land on a table (else it is stored at its own depth)`);
+      movedChecked += 1;
+    }
+    const surfaces = [...tables.map((t) => ({ ...t, depth: t.bottom + 0.5 + 0.1 })), ...moved.map((m) => ({ ...objRect(m), depth: -1, id: m.id }))];
+    for (const o of objs.filter((x) => !MOVED_TYPES.has(x.type) || x.position.elevation !== undefined)) {
+      const r = objRect(o);
+      const depth = r.bottom + 0.5 + (o.position.elevation || 0);
+      for (const t of surfaces) {
+        if (!hits(r, t)) continue;
         overlaps += 1;
-        assert.ok(depth > t.bottom + 0.5 + 0.1, `${name} ${o.id}: depth ${depth} must exceed the table's ${t.bottom + 0.5} (it would draw hidden under it)`);
+        assert.ok(o.position.elevation !== undefined, `${name} ${o.id}: overlaps ${t.id || 'a table'} with no elevation, so it would draw hidden under it`);
+        // a table sets the depth to beat; a moved item shares its table's depth, so the same bar applies (checked via the table)
+        if (t.depth > 0) assert.ok(depth > t.depth, `${name} ${o.id}: depth ${depth} must exceed the table's ${t.depth - 0.1 }`);
       }
+      // an object over a moved item must also be over its table, which the loop above has asserted
     }
   }
-  assert.ok(overlaps >= 5, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs and the ca19 paper (saw ${overlaps})`);
+  assert.ok(movedChecked >= 4, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
+  assert.ok(overlaps >= 6, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
 });
 
 // ca19's isolated-screen look has no sprite yet (art pending an owner pick, WAVE3_BUILD.md s8). Marked skipped
@@ -1124,9 +1141,11 @@ test('wave 3 fixture: test_ca_office_kit has the done fallback, the resume liste
   assert.ok(partner.some((m) => m.needs === 'suspend' && m.eventPattern === 'global_variable_changed:kit_e1_out'), 'partner suspends on out');
   assert.ok(partner.some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_e1_done'), 'partner resumes on done');
   const pc = room.objects.find((o) => o.id === 'kit_e1_pc');
-  assert.ok(pc.spriteVariants && pc.position.elevation > 24, 'the swapped PC carries the elevation');
+  assert.ok(pc.spriteVariants && pc.position.elevation === undefined, 'Sam\'s own swapped PC is not elevated (it is not on a table)');
+  const spare = room.objects.find((o) => o.id === 'kit_e1_spare');
+  assert.ok(spare.spriteVariants && spare.position.elevation > 24, 'the swapped spare PC on the table top carries the elevation');
   assert.ok(room.objects.find((o) => o.id === 'kit_e1_pc2').position.elevation === undefined, 'the unswapped PC is as it was');
-  assert.ok(room.objects.some((o) => o.id === 'kit_e1_journals' && o.type === 'journal_stack'), 'a moved table item');
+  assert.ok(room.objects.some((o) => o.id === 'kit_e1_folder' && o.type === 'm09_folder'), 'a moved table item');
   const host = room.npcs.find((n) => n.id === 'ep_host');
   assert.ok(!host.voice, 'the fixture host has no voice, so its test bark is never voiced');
 });

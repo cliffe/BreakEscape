@@ -769,13 +769,13 @@
           "id": "kit_e1_partner",
           "displayName": "Partner",
           "npcType": "person",
-          "position": { "x": 2, "y": 6 },
+          "position": { "x": 7.5, "y": 5 },
           "spriteSheet": "female_blowse_v2",
           "spriteTalk": "assets/characters/female_blowse_talk.png",
           "spriteVisemes": "assets/characters/female_blowse_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/ep_host_ambient.json",
           "currentKnot": "start",
-          "needsHome": { "room": "training_room", "x": 2, "y": 6, "facing": "south" },
+          "needsHome": { "room": "training_room", "x": 7.5, "y": 5, "facing": "south" },
           "needsRooms": ["training_room"],
           "needsSpeed": 90,
           "needs": { "thirst": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
@@ -877,7 +877,7 @@
           "id": "kit_e1_pc",
           "name": "Sam's PC",
           "sprite": "pc_desktop",
-          "position": { "x": 3.5, "y": 5.5, "elevation": 24.2 },
+          "position": { "x": 3.5, "y": 5.5 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -912,14 +912,25 @@
           "triggerOnInteract": []
         },
         {
-          "type": "journal_stack",
-          "id": "kit_e1_journals",
-          "name": "Journal stack",
-          "sprite": "journal_stack1",
+          "type": "m09_folder",
+          "id": "kit_e1_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
           "takeable": false,
           "interactable": false,
-          "position": { "x": 1.125, "y": 6.84375 },
-          "observations": "A stack of trade journals, moved over to make room."
+          "position": { "x": 1.25, "y": 6.75 },
+          "observations": "A folder, moved over to make room."
+        },
+        {
+          "type": "pc",
+          "id": "kit_e1_spare",
+          "name": "Spare workstation",
+          "sprite": "pc4",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A spare workstation at the head of the table.",
+          "position": { "x": 4.1875, "y": 7.09375, "elevation": 24.2 },
+          "spriteVariants": [{ "condition": "globalVars.kit_e1_out === true", "value": "pc4_locked" }]
         }
       ]
     }
