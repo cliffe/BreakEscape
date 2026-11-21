@@ -43,14 +43,16 @@ const FILES = { netherton: 'm10_director_netherton', hax: 'm10_hax_post', phone:
   vance: 'm10_vance_phone', elena: 'm10_elena_phone', six: 'm10_six_oclock', hearing: 'm10_hearing', citadel: 'm10_citadel',
   fp: 'm10_fp_support', guard: 'm10_guards', imran: 'm10_imran', gary: 'm10_gary', wendell: 'm10_wendell', static: 'm10_static',
   asante: 'm10_asante', mercer: 'm10_mercer', victoria: 'm10_victoria', vos: 'm10_vos', fonoti: 'm10_fonoti',
-  tesseract: 'm10_tesseract', kcore: 'm10_kowalczyk_core', kso: 'm10_kowalczyk', qso: 'm10_quintero' };
+  tesseract: 'm10_tesseract', kcore: 'm10_kowalczyk_core', kso: 'm10_kowalczyk', qso: 'm10_quintero',
+  kws: 'm10_kowalczyk', kpr: 'm10_kowalczyk', khall: 'm10_kowalczyk', qws: 'm10_quintero', qlock: 'm10_quintero', qcore: 'm10_quintero', aso: 'm10_arakawa', aws: 'm10_arakawa', apr: 'm10_arakawa' };
 const NPC_OF = { netherton: 'director_netherton', hax: 'hax_post', phone: 'agent_0x99', nightshade: 'nightshade_table',
   kowalczyk: 'kowalczyk_post', quintero: 'quintero_post', arakawa: 'arakawa_post', malhotra: 'malhotra_post', vector: 'vector_post',
   phantom: 'phantom_post', minder: 'minder_post', voltage: 'voltage_van', ghost: 'ghost_phone', victoria_line: 'victoria_line',
   vance: 'vance_phone', elena: 'elena_phone', six: 'six_oclock', hearing: 'hearing', citadel: 'citadel',
   fp: 'darren_price', guard: 'tunnel_guard', imran: 'imran', gary: 'gary_consultant', wendell: 'wendell', static: 'static_power',
   asante: 'asante', mercer: 'mercer', victoria: 'victoria_gallery', vos: 'vos', fonoti: 'lock_guard',
-  tesseract: 'tesseract', kcore: 'kowalczyk_core', kso: 'kowalczyk_so', qso: 'quintero_so' };
+  tesseract: 'tesseract', kcore: 'kowalczyk_core', kso: 'kowalczyk_so', qso: 'quintero_so',
+  kws: 'kowalczyk_ws', kpr: 'kowalczyk_pr', khall: 'kowalczyk_hall', qws: 'quintero_ws', qlock: 'quintero_lock', qcore: 'quintero_core', aso: 'arakawa_so', aws: 'arakawa_ws', apr: 'arakawa_pr' };
 
 // ---- render the scenario (validator stubs: no VM context) ----
 // Plan step 5: one binding for every renderer. Renders through the server's BreakEscape::ScenarioBinding.

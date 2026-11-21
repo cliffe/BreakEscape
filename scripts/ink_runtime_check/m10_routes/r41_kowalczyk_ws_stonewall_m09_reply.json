@@ -1,0 +1,50 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "",
+  "m09_kowalczyk_reply": "warm"
+ },
+ "steps": [
+  {
+   "note": "Kowalczyk's workshop copy after a clean m09 (cracker handed over, warm reply): the cards can be refused at the first one. 'That's enough' is the stonewall: same right accusation, no crack, no answer recorded. The m09 thanks line only plays on the crack route."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "cracker_rack_seen": true,
+    "workshop_entered": true
+   }
+  },
+  {
+   "talk": "kws",
+   "picks": [
+    "You're WREN",
+    "I'm sure",
+    "That's enough"
+   ]
+  },
+  {
+   "said": [
+    "Smells like the electronics lab at school.",
+    "Me? Go on, then. Show me.",
+    "Then he can come down and ask me himself.",
+    "Hold her there. A minder is on the way down.",
+    "Her cracker came off his bench."
+   ],
+   "notSaid": [
+    "Well. It was a good cracker.",
+    "I liked you. I'd still have pressed it.",
+    "When did you know?"
+   ]
+  },
+  {
+   "expect": {
+    "accused": "kowalczyk",
+    "sleeper_caught": true,
+    "wren_held": true,
+    "kowalczyk_answer": ""
+   }
+  }
+ ]
+}

@@ -1,0 +1,76 @@
+{
+ "imports": {
+  "m03_victoria_fate": "recruited"
+ },
+ "steps": [
+  {
+   "note": "Victoria recruited, Zero Day's share already stopped at the console: Give me a minute defers, then Open it is free of cost. She stays on the player's side and the credits keep her."
+  },
+  {
+   "set": {
+    "share_zero_day": "stopped",
+    "head_start_killed": "zero_day"
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": [
+    "Give me a minute"
+   ]
+  },
+  {
+   "said": [
+    "Take it. Zero Day won't wait for ever, and neither will I."
+   ]
+  },
+  {
+   "talk": "victoria",
+   "picks": [
+    "Open it"
+   ]
+  },
+  {
+   "said": [
+    "Their share's dead, so they've nothing left to pay me with. That makes me yours. Go on."
+   ],
+   "notSaid": [
+    "Zero Day still pays, and you don't."
+   ]
+  },
+  {
+   "expect": {
+    "victoria_gallery": "trusted",
+    "victoria_sold": false
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": []
+  },
+  {
+   "said": [
+    "Go on. It's open, and I'm still on your side."
+   ],
+   "notSaid": [
+    "I told you not to follow me."
+   ]
+  },
+  {
+   "set": {
+    "ending": "arrest",
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "VICTORIA STERLING: Opened the lock. Still ours."
+   ],
+   "notSaid": [
+    "Sold the raid."
+   ]
+  }
+ ]
+}
