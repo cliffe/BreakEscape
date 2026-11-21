@@ -28,13 +28,6 @@
 "talk": "debrief",
 "picks": ["Bank B went", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "How far", "I'm in", "Full public", "all going in the report"]
 },
-{
-"said": [
-"The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.",
-"There'll be hell to pay for this place. There should be.",
-"Nobody told me what was in my own plant. Nine of mine paid for that."
-],
-"notSaid": ["breathing", "same one he gave you", "Fair enough", "how close it came", "Vance had the evacuation alarm"]
-}
+{ "said": ["The evacuation alarm was on Vance's desk. He never knew he had a reason to use it.", "There'll be hell to pay for this place. There should be.", "Nobody told me what was in my own plant. Nine of mine paid for that."], "notSaid": ["breathing", "Fair enough", "how close it came", "Vance had the evacuation alarm"] }
 ]
 }

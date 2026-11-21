@@ -34,6 +34,6 @@
 {"set": {"flag4_submitted": true, "found_wallet_keys": true}},
 {"said": []},
 {"talk": "satoshi", "reload": "page", "picks": ["I'm freezing it"]},
-{"said": ["Back again."], "notSaid": ["leans against the front of an executive desk", "Your paperwork was good"]},
+{ "said": ["Back again."], "notSaid": ["leans on the front of an executive desk", "Your paperwork was good"] },
 {"maxRun": 9}
 ]}

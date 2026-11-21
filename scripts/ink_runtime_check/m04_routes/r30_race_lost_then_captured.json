@@ -14,9 +14,9 @@
 {"set": {"esd_authorized": true, "attack_prevented": true}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["He reached the laptop before I put him down", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "The Architect", "I'm in", "Say there was an incident", "sorry about your people"]},
-{"said": ["He reached the laptop before I put him down. Shutdown held A and C.", "And Voltage is ours, cuffed or not.", "The night crew were still in Hall 2 when Bank B went. Nine of them."], "notSaid": ["before I reached him", "before you got to him"]},
+{ "said": ["He reached the laptop before I put him down. Shutdown held A and C.", "And Voltage is ours, cuffed or not.", "The night crew were still in Hall 2 when Bank B went. Nine of them."], "notSaid": ["before I reached him", "before you got to him"] },
 {"talk": "debrief", "reload": "page", "picks": ["Voltage is down and secured", "Tell me we came out", "how did they get in", "fix first", "goes in the report", "How far", "I'm in", "Keep it classified", "sorry about your people"]},
-{"said": ["The banks are isolated, but he reached the laptop before you put him down, and Bank B went with it."], "notSaid": ["before you got to him"]},
+{ "said": ["The banks are isolated, but he reached the laptop before you put him down, and Bank B went with it."], "notSaid": ["before you got to him"] },
 {"credits": true},
 {"said": ["COSTLY SUCCESS", "MISSION 4: CRITICAL FAILURE", "RACK BANK B LOST: he reached the laptop before you put him down", "VOLTAGE: CAPTURED", "CLASSIFIED: filed as an industrial accident"], "notSaid": ["MISSION COMPLETE", "THERMAL RUNAWAY AVERTED", "maintenance fault", "VOLTAGE: ESCAPED"]}
 ]

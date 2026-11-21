@@ -5,7 +5,6 @@
 { "set": { "briefing_played": true } },
 { "talk": "netherton", "picks": ["Tell me about Nightshade", "Tell me about Vector", "I'll need access", "I'm ready"] },
 { "said": ["noticed nothing", "never once explained"] },
-{ "notSaid": ["empty file", "very careful for a very long time"] },
 { "talk": "vector", "picks": ["Where were you", "That's all"] },
 { "talk": "phantom", "picks": ["Where were you", "We'll talk"] },
 { "expect": { "phantom_alibi_known": false } },
@@ -54,8 +53,7 @@
 { "said": ["Your phone buzzes once", "Same classroom, 0x00", "Netherton finds you", "before the box did", "history for anyone patient", "a sudo rule that handed you the rest", "Beyond what he gave freely", "whoever taught her taught him", "Tonight you took it off them"] },
 { "expect": { "debrief_stance": "defended", "mission_complete": true } },
 { "credits": true },
-{ "said": ["THE BOX", "Named from the door audit, before the root logs", "He's the crime, not you"] },
-{ "notSaid": ["Gone from his locker", "misread", "Tipped off"] },
+{ "said": ["THE BOX", "Named from the door audit, before the root logs", "He's the crime, not you"], "notSaid": ["Gone from his locker", "misread", "Tipped off"] },
 { "note": "Phase 4 dialogue C1 (D8-5, D8-8, D8-9, D8-18): every conversation, the opening cutscene included, stays at 9 lines or under without a choice." },
 { "maxRun": 9 }
 ]

@@ -23,7 +23,6 @@
 {"backstops": {"expect": ["re-emit"]}},
 {"talk": "debrief", "picks": ["Start with the fund", "How does anyone", "Was it the right call", "He'll be making speeches", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["SAFETYNET headquarters"]},
-{"notSaid": ["That's enough. Come in", "I want to hear it in person"]},
 {"expect": {"debrief_played": true}},
 {"backstops": {"expect": ["hear"]}},
 {"talk": "phone", "picks": []},

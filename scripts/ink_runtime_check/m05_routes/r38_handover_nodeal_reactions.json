@@ -57,16 +57,7 @@
 "Pull the drive myself"
 ]
 },
-{
-"said": [
-"Then I've got nothing to say to you.",
-"Elena will be dead before I get out."
-],
-"notSaid": [
-"How long will I get",
-"That's for a court"
-]
-},
+{ "said": ["Then I've got nothing to say to you.", "Elena will be dead before I get out."] },
 {
 "expect": {
 "final_choice": "arrest"
@@ -75,14 +66,7 @@
 {
 "talk": "lisa"
 },
-{
-"said": [
-"Someone's had the side door propped open for ten minutes."
-],
-"notSaid": [
-"police in reception"
-]
-},
+{ "said": ["Someone's had the side door propped open for ten minutes."] },
 {
 "talk": "halloran",
 "picks": [

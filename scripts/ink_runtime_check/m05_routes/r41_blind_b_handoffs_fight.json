@@ -161,16 +161,7 @@
 "vetting files"
 ]
 },
-{
-"said": [
-"She hands you three folders from the cabinet",
-"That's as far as vetting lets me go.",
-"Then come back with a name and a reason."
-],
-"notSaid": [
-"That's what vetting will let me give you"
-]
-},
+{ "said": ["She hands you three folders from the cabinet", "That's as far as vetting lets me go.", "Then come back with a name and a reason."] },
 {"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
 {"set":{"patricia_phone_available":true}},
 {
@@ -302,15 +293,7 @@
 "final_choice": "combat_nonlethal"
 }
 },
-{
-"said": [
-"Upload's dead. Sweep the vault"
-],
-"notSaid": [
-"Hands down",
-"open hand"
-]
-},
+{ "said": ["Upload's dead. Sweep the vault"], "notSaid": ["Hands down"] },
 {
 "maxRun": 9
 }

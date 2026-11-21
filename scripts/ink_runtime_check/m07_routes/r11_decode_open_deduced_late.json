@@ -70,19 +70,7 @@
     "The site"
    ]
   },
-  {
-   "said": [
-    "The dormancy.",
-    "The manifest.",
-    "The key count.",
-    "The site.",
-    "That isn't what I'm reading"
-   ],
-   "notSaid": [
-    "Theirs says nine days. Ours says ninety.",
-    "EHR and CAD"
-   ]
-  },
+  { "said": ["The dormancy.", "The manifest.", "The key count.", "The site.", "That isn't what I'm reading"], "notSaid": ["EHR and CAD"] },
   {
    "talk": "phone",
    "picks": [

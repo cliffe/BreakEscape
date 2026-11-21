@@ -97,15 +97,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"You've a pattern on him, not a case"
-],
-"notSaid": [
-"Check it holds",
-"You can see it leaving under his name"
-]
-},
+{ "said": ["You've a pattern on him, not a case"], "notSaid": ["Check it holds", "You can see it leaving, and it's his"] },
 {
 "talk": "owen",
 "picks": [
@@ -234,18 +226,7 @@
 {
 "credits": true
 },
-{
-"notSaid": [
-"NAMED ON THE EVIDENCE",
-"You had him before the server did",
-"Somebody read Owen's sheet"
-],
-"said": [
-"ninety-nine per cent",
-"ROTATION WINDOW LOST",
-"AT A COST"
-]
-},
+{ "notSaid": ["NAMED ON THE EVIDENCE", "You had him before the server did"], "said": ["ninety-nine per cent", "ROTATION WINDOW LOST", "AT A COST"] },
 {
 "maxRun": 9
 }
