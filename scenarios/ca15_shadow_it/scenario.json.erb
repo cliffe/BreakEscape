@@ -61,6 +61,19 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca15",
+    "kit_ca15_out": false,
+    "kit_ca15_there": false,
+    "kit_ca15_asked": false,
+    "kit_ca15_stick_taken": false,
+    "kit_ca15_sent": false,
+    "kit_ca15_at_host": false,
+    "kit_ca15_at_tray": false,
+    "kit_ca15_chidi_go": false,
+    "kit_ca15_chidi_there": false,
+    "kit_ca15_chidi_sent": false,
+    "kit_ca15_chidi_at_host": false,
+    "kit_ca15_done": false,
+    "kit_ca15_stick_choice": "",
     "kit_ca15_host_said": false,
     "kit_key_caught": false
   },
@@ -76,6 +89,53 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca15_t_there",
+      "startOnGlobal": "kit_ca15_out",
+      "delayMs": 8000,
+      "condition": "!globalVars.kit_ca15_there",
+      "setGlobal": {
+        "kit_ca15_there": true
+      }
+    },
+    {
+      "id": "kit_ca15_t_tail",
+      "startOnGlobal": "kit_ca15_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca15_stick_choice === ''",
+      "setGlobal": {
+        "kit_ca15_stick_choice": "leave"
+      }
+    },
+    {
+      "id": "kit_ca15_t_walk",
+      "startOnGlobal": "kit_ca15_sent",
+      "delayMs": 15000,
+      "condition": "!globalVars.kit_ca15_done",
+      "setGlobal": {
+        "kit_ca15_done": true
+      }
+    },
+    {
+      "id": "kit_ca15_t_chidi",
+      "startOnGlobal": "kit_ca15_chidi_go",
+      "delayMs": 15000,
+      "condition": "!globalVars.kit_ca15_done",
+      "setGlobal": {
+        "kit_ca15_done": true
+      }
+    },
+    {
+      "id": "kit_ca15_t_done",
+      "startOnGlobal": "kit_ca15_out",
+      "delayMs": 90000,
+      "condition": "!globalVars.kit_ca15_done",
+      "setGlobal": {
+        "kit_ca15_done": true
+      }
+    }
+  ],
   "social": {
     "triageSets": [
       {
@@ -604,7 +664,8 @@
           "launchText": "First, match each shortcut someone might reach for under a deadline to the approved way that does the same job safely. Nothing here is marked.",
           "launchButton": "Open the Swap Shop"
         }
-      }
+      },
+      "stepAway": true
     },
     "awareness": {
       "ruleOfThumb": {
@@ -718,6 +779,72 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_at_host",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "bark": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_at_host",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca15_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_at_tray",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "setGlobal": {
+                "kit_ca15_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "setGlobal": {
+                "kit_ca15_chidi_go": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "bark": "Ta, Chidi. That's sat on the floor all afternoon. Anyone could've pocketed it first."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 7500,
+              "setGlobal": {
+                "kit_ca15_done": true
+              }
             }
           ]
         },
@@ -753,7 +880,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -768,7 +895,146 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Hang on, someone's dropped a memory stick over here."
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && globalVars.kit_ca15_stick_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "bark": "No name on it, nothing. What do you reckon I do with it?",
+              "targetKnot": "ca15_stick"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca15_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_fatima_begum",
+              "condition": "globalVars.kit_ca15_stick_choice === 'asked' && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_choice": "leave"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_stick_taken": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'handin' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'lost' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.45,
+                  "y": 6.6
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'handin' && !globalVars.kit_ca15_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_at_host": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'lost' && !globalVars.kit_ca15_at_tray",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_at_tray": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_ca15_stick_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_choice": "leave"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_chidi_okeke",
@@ -817,7 +1083,80 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_go",
+              "condition": "value === true && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_go === true && !globalVars.kit_ca15_chidi_there && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_chidi_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_taken": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 500,
+              "bark": "Whose is this, then? I'll take it to Nilesh."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "setGlobal": {
+                "kit_ca15_chidi_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_sent === true && !globalVars.kit_ca15_chidi_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_chidi_at_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -859,6 +1198,51 @@
             "capacity": 2,
             "chatter": "kit_tarrowby"
           }
+        },
+        {
+          "type": "usb_storage_swivel",
+          "id": "kit_ca15_stick",
+          "name": "Memory stick",
+          "sprite": "usb_storage_swivel",
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_ca15_out",
+          "position": {
+            "x": 1.15,
+            "y": 5.4
+          },
+          "observations": "A small memory stick on the floor. No name, no label.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca15_stick_taken === true",
+              "value": "Nothing there now."
+            }
+          ],
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca15_stick_taken === true",
+              "value": "usb_storage_swivel_taken"
+            }
+          ]
+        },
+        {
+          "type": "drop_box",
+          "id": "kit_ca15_lost_property",
+          "name": "Lost property",
+          "sprite": "drop_box1",
+          "takeable": false,
+          "interactable": true,
+          "position": {
+            "x": 8.35,
+            "y": 5.5
+          },
+          "observations": "A box for lost property.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca15_at_tray === true",
+              "value": "Lost property. A memory stick has gone in with the rest, waiting for its owner."
+            }
+          ]
         }
       ]
     }

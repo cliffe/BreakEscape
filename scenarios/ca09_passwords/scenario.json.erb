@@ -83,6 +83,14 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca09",
+    "kit_ca09_out": false,
+    "kit_ca09_note_up": false,
+    "kit_ca09_note_seen": false,
+    "kit_ca09_asked": false,
+    "kit_ca09_to_host": false,
+    "kit_ca09_at_host": false,
+    "kit_ca09_done": false,
+    "kit_ca09_note_choice": "",
     "kit_ca09_host_said": false,
     "kit_key_caught": false
   },
@@ -96,6 +104,51 @@
       "requireGlobal": {
         "kit_quiet": false
       }
+    }
+  },
+  "timers": [
+    {
+      "id": "kit_ca09_t_note",
+      "startOnGlobal": "kit_ca09_out",
+      "delayMs": 6000,
+      "condition": "!globalVars.kit_ca09_note_up",
+      "setGlobal": {
+        "kit_ca09_note_up": true
+      }
+    },
+    {
+      "id": "kit_ca09_t_tail",
+      "startOnGlobal": "kit_ca09_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca09_note_choice === ''",
+      "setGlobal": {
+        "kit_ca09_note_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca09_t_host",
+      "startOnGlobal": "kit_ca09_to_host",
+      "delayMs": 12000,
+      "condition": "!globalVars.kit_ca09_at_host",
+      "setGlobal": {
+        "kit_ca09_at_host": true
+      }
+    },
+    {
+      "id": "kit_ca09_t_done",
+      "startOnGlobal": "kit_ca09_out",
+      "delayMs": 60000,
+      "condition": "!globalVars.kit_ca09_done",
+      "setGlobal": {
+        "kit_ca09_done": true
+      }
+    }
+  ],
+  "resources": {
+    "kit_ca09_signin": {
+      "name": "Tarrowby sign-in",
+      "kind": "intranet",
+      "offWhen": "kit_ca09_out"
     }
   },
   "social": {
@@ -546,7 +599,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -816,6 +870,46 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_out": true
+              }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === \"Chidi's PC\" && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_up === true && !globalVars.kit_ca09_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_seen": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_at_host",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "bark": "Right, Chidi. A password manager remembers it for you, so nothing goes on the screen."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_at_host",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca09_done": true
+              }
             }
           ]
         },
@@ -866,7 +960,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_chidi_okeke",
@@ -882,12 +990,7 @@
           "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 3,
-            "y": 6,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca09_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -900,9 +1003,14 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 60
+            },
+            "work": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 90
             }
           },
           "chatter": {
@@ -915,7 +1023,130 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "workNeeds": [
+            "kit_ca09_signin"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "That's me booted out. Wants a brand new password, of course."
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_chidi_okeke",
+              "condition": "data.objectId === 'kit_ca09_pc' && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_up": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && globalVars.kit_ca09_note_choice === ''",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "bark": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
+              "targetKnot": "ca09_note"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "setGlobal": {
+                "kit_ca09_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_choice",
+              "condition": "value === 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_to_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_to_host",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_to_host === true && !globalVars.kit_ca09_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_at_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca09_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 90
+                }
+              }
+            }
+          ]
         }
       ],
       "objects": [
@@ -956,6 +1187,75 @@
             },
             "capacity": 2,
             "chatter": "kit_tarrowby"
+          }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca09_pc",
+          "name": "Chidi's PC",
+          "sprite": "pc1",
+          "workstation": true,
+          "owner": "kit_chidi_okeke",
+          "lockChance": 0,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 2,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca09_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Chidi's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca09_note_choice === 'mention'",
+              "value": "Chidi's PC, on the sign-in screen. The note has gone."
+            },
+            {
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
+              "value": "Chidi's PC, on the sign-in screen. A sticky note on the edge of the screen has a word and some numbers on it."
+            },
+            {
+              "condition": "globalVars.kit_ca09_out === true",
+              "value": "Chidi's PC, on the sign-in screen."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca09_note_choice === 'mention'",
+              "value": "pc1_locked"
+            },
+            {
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
+              "value": "pc1_locked_note"
+            },
+            {
+              "condition": "globalVars.kit_ca09_out === true",
+              "value": "pc1_locked"
+            }
+          ],
+          "observations": "Chidi's PC."
+        },
+        {
+          "type": "aes_clipboard",
+          "id": "kit_ca09_clipboard",
+          "name": "Clipboard",
+          "sprite": "aes_clipboard1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
           }
         }
       ]

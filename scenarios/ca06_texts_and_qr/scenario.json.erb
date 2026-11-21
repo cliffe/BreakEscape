@@ -83,6 +83,11 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca06",
+    "kit_ca06_out": false,
+    "kit_ca06_there": false,
+    "kit_ca06_asked": false,
+    "kit_ca06_done": false,
+    "kit_ca06_notice_choice": "",
     "kit_ca06_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +103,35 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca06_t_there",
+      "startOnGlobal": "kit_ca06_out",
+      "delayMs": 8000,
+      "condition": "!globalVars.kit_ca06_there",
+      "setGlobal": {
+        "kit_ca06_there": true
+      }
+    },
+    {
+      "id": "kit_ca06_t_tail",
+      "startOnGlobal": "kit_ca06_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca06_notice_choice === ''",
+      "setGlobal": {
+        "kit_ca06_notice_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca06_t_done",
+      "startOnGlobal": "kit_ca06_out",
+      "delayMs": 60000,
+      "condition": "!globalVars.kit_ca06_done",
+      "setGlobal": {
+        "kit_ca06_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -374,7 +408,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -855,6 +890,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e6_texts_and_qr_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_out": true
+              }
             }
           ]
         },
@@ -905,7 +956,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_zainab_hussain",
@@ -939,7 +1004,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 55
             }
@@ -954,7 +1019,100 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Is that new? I've not seen a parking notice up in here before."
+            },
+            {
+              "eventPattern": "npc_arrived:kit_zainab_hussain",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true && globalVars.kit_ca06_notice_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "This one says my parking permit needs renewing. Is it one of ours?",
+              "targetKnot": "ca06_notice"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_zainab_hussain",
+              "condition": "globalVars.kit_ca06_notice_choice === 'asked' && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value === 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -996,6 +1154,26 @@
             "capacity": 2,
             "chatter": "kit_tarrowby"
           }
+        },
+        {
+          "type": "aw_notice_qr_parking",
+          "id": "kit_ca06_notice",
+          "name": "Parking notice",
+          "sprite": "aw_notice_qr_parking1",
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_ca06_out",
+          "position": {
+            "x": 0.4375,
+            "y": 4.2
+          },
+          "observations": "A printed notice about staff parking permits. The code in the corner is on a sticker, stuck over whatever was printed there.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca06_notice_choice === 'check'",
+              "value": "A printed notice about staff parking permits, with a sticker over the code in the corner. Zainab's ringing Facilities about it."
+            }
+          ]
         }
       ]
     }
