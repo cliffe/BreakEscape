@@ -1064,7 +1064,8 @@ export function handleObjectInteraction(sprite) {
     // is not signed in to: the password the note carries is never checked against a lock here.
     const noteNow = requiresItemModule.pcPostitNoteNow?.(sprite.scenarioData);
     if (noteNow && window.startPasswordMinigame) {
-        window.startPasswordMinigame(sprite, 'item', null, () => {}, { postitNote: noteNow, showPostit: true, maxAttempts: 3 });
+        window.startPasswordMinigame(sprite, 'item', null, () => {}, { postitNote: noteNow, showPostit: true, maxAttempts: 3,
+            submitText: requiresItemModule.pcPostitSubmitText?.(sprite.scenarioData) || '' });
         return;
     }
 

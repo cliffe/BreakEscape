@@ -528,6 +528,8 @@ export class PasswordMinigame extends MinigameScene {
             showPassword: false,
             postitNote: params.postitNote || '',
             showPostit: params.showPostit || false,
+            // A note-only view (ca09's Chidi): a submit shows this line, with no server check
+            submitText: params.submitText || '',
             capsLock: false,
             keyboardVisible: false
         };
@@ -1299,6 +1301,13 @@ export class PasswordMinigame extends MinigameScene {
         });
 
         if (!this.gameState.isActive) return;
+
+        // The post-it path of a PC that is not the learner's to sign in to: say so, check nothing,
+        // count nothing, and leave the view open.
+        if (this.gameData.submitText) {
+            this.showScreenMessage(this.gameData.submitText);
+            return;
+        }
 
         if (this.lockKey) {
             const left = passwordLockStatus(this.lockKey).lockedLeftSeconds;

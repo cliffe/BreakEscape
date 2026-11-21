@@ -51,3 +51,20 @@ export function pcPostitNoteNow(data, globalVars = null) {
     const note = resolveObjectField(data, 'postitNote', '', globalVars);
     return typeof note === 'string' && note.trim() ? note : '';
 }
+
+/**
+ * The fixed line the post-it view shows when the learner submits while it is open, from the same
+ * `postitNoteVariants` entry that supplies the note (its optional `submitText`, first match wins),
+ * or '' when that entry has none. With a line the view makes no server check and counts no attempt
+ * (password-minigame.js); without one a submit goes to the server as before.
+ */
+export function pcPostitSubmitText(data, globalVars = null) {
+    if (!pcPostitNoteNow(data, globalVars)) return '';
+    const vars = globalVars || (typeof window !== 'undefined' ? window.gameState?.globalVariables : null) || {};
+    for (const v of data.postitNoteVariants) {
+        if (!v || typeof v.value !== 'string') continue;
+        if (v.condition && !evaluateGlobalCondition(v.condition, vars)) continue;
+        return typeof v.submitText === 'string' ? v.submitText.trim() : '';
+    }
+    return '';
+}
