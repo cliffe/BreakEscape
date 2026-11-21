@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Zainab Hussain: A Wi-Fi page has no reason to want your work password. If one asks, close it and use your hotspot.
         - else:
             Zainab Hussain: That look-alike Wi-Fi page asking for your work password was the one to stop.
-            Zainab Hussain: The password went in, so the account was used from another town and had to be reset and traced.
+            Zainab Hussain: That page only wants one thing, your work password. Whoever put it up could sign in as you from anywhere.
         }
     - else:
         Zainab Hussain: The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.

@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Niamh Doherty: Anything telling you to paste, run or install to carry on is the tell. Real software comes from a route you already trust.
         - else:
             Niamh Doherty: That page dressed as a routine check, asking you to run a step to continue, was the one to stop.
-            Niamh Doherty: The step ran, so a hidden program reached finance and the intranet, and the machine was off for a rebuild.
+            Niamh Doherty: Three key presses, and a hidden program runs with nothing showing on screen. The page had already copied the command for you.
         }
     - else:
         Niamh Doherty: The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.

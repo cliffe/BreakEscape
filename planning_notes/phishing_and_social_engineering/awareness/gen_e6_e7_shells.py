@@ -397,14 +397,14 @@ LINES = {
         {'catch': ("You flagged that QR code taped to the car park barrier, so nobody's card details went to its page.",
                    'Anyone can tape a code to a barrier. Check with Facilities before a code gets your card details.'),
          'miss': ('That QR code taped to the car park barrier was the one to stop.',
-                  'It got scanned, so a colleague\'s card details were taken and their afternoon went on the phone to the bank.')},
+                  "Nobody can see where a taped-up code goes before they scan it. The page behind it would take your card details and number plate.")},
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
         {'catch': ("You held that payment back, so a voice that sounded like the boss didn't move money out the door.",
                    'The "keep this quiet" is the real tell. It\'s there to buy time before anyone checks.'),
          'miss': ("That email in the boss's name, with a voicemail in his voice to back it, was the one to stop.",
-                  'The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.')},
+                  "A fake voicemail and a fake email can come from the same sender. Paid, it goes to an account they control, and finance loses the afternoon re-checking.")},
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 

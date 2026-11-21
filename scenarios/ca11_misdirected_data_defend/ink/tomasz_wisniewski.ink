@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Tomasz Wiśniewski: A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable.
         - else:
             Tomasz Wiśniewski: Sam's email about our overtime sheet, with staff health notes on it, was the one to report to me.
-            Tomasz Wiśniewski: It went unreported, so the staff on it were never warned, and my week went to the recall and the letters.
+            Tomasz Wiśniewski: Nine staff, with their hours and health notes, are on that sheet. Until it reaches me they can't be warned, and my week goes on a recall and letters.
         }
     - else:
         Tomasz Wiśniewski: You're covering the Care Laundry desk inbox. Some is routine, some needs the data protection lead, and some was sent to catch you out. Report anything that looks wrong.

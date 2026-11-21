@@ -11,7 +11,7 @@ Yusuf Demir: Morning. I'm Yusuf, I keep an eye on security here. Grab a water if
 
 === ca11 ===
 { kit_key_caught:
-    Yusuf Demir: Good catch on that export bound for the wrong inbox. A checked recipient keeps residents' details inside the building.
+    Yusuf Demir: Good catch on Sam's email. Staff overtime and health notes had already gone outside Carrholme, and a quick report is what lets us contain it.
 - else:
     Yusuf Demir: Handovers go out fast when it's busy. One wrong recipient and resident details land where they shouldn't.
 }

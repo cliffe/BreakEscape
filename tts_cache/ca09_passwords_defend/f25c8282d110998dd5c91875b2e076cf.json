@@ -1,0 +1,13 @@
+{
+  "key": "f25c8282d110998dd5c91875b2e076cf",
+  "npc": "nilesh_solanki",
+  "text": "That number is on the attacker's screen. Read it back, or tap Approve, and the sender walks straight into your account.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:47:37Z"
+}

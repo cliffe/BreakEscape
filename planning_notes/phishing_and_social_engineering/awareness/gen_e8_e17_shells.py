@@ -414,14 +414,14 @@ LINES = {
         {'catch': ("You kept that visitor with no badge at the gate, so they never got a quiet walk through the studio.",
                    "That's the one that leans on a busy morning and a friendly face."),
          'miss': ("That visitor with no badge was the one to stop at the gate.",
-                  "They went through, so a stranger had the run of the studio floor and its open screens. On a busy morning it's an easy one to wave through.")},
+                  "Slipping in behind a badge, a stranger gets the run of the studio floor, with client plans and screens open. A busy morning helps.")},
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
         {'catch': ('You reported that sign-in prompt fast, so we isolated the account before it could send messages, reset passwords or reach the shared drive.',
                    'A trusted internal account is worth more to them than any outside one. Speed is what closes the gap.'),
          'miss': ('That sign-in prompt from a PC abroad, the one you hadn\'t started, was the one to report at once.',
-                  'It went unreported, so the shared drive went down and work stopped while we rebuilt it from backup.')},
+                  "Unreported, the account stays open to them. They could send messages in Ayaan's name, lock him out and reach the shared drive.")},
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
@@ -433,7 +433,7 @@ LINES = {
         {'catch': ('You reported Leo\'s locked screen straight away, so his machine came off the network before it spread.',
                    'A locked screen with a countdown is ransomware. Report it at once, and don\'t pay or try to fix it.'),
          'miss': ('Leo\'s locked screen, with the countdown and the demand to pay, was the one to report at once.',
-                  'Nobody called it in, so it spread, claims work stopped and the team lost a weekend to rebuilds.')},
+                  "That countdown keeps running while nobody tells us. Left alone, it keeps spreading, and claims work stops for hours.")},
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e11', 'defend'): (
@@ -441,14 +441,14 @@ LINES = {
         {'catch': ("You reported Sam's email about our overtime sheet the same day, so I could warn the staff on it and get it deleted.",
                    "A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable."),
          'miss': ("Sam's email about our overtime sheet, with staff health notes on it, was the one to report to me.",
-                  'It went unreported, so the staff on it were never warned, and my week went to the recall and the letters.')},
+                  "Nine staff, with their hours and health notes, are on that sheet. Until it reaches me they can't be warned, and my week goes on a recall and letters.")},
         'Thanks, Tomasz.', 'Any time.'),
     ('e15', 'defend'): (
         "Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.",
         {'catch': ('You passed that posted stick to us without plugging it in, so nothing on it ran on a work machine.',
                    "A stick in the post is a found stick, whatever the note says. It comes to us, and nobody plugs it in."),
          'miss': ('That stick posted in, marked from the client, was the one to bring to us.',
-                  'It got plugged in, so that machine had to be wiped and rebuilt, and we had to check everything it could reach.')},
+                  "The moment someone opens a file on that stick, it could run malware, first on that machine and then on the share.")},
         'Thanks, Nilesh.', 'Any time.'),
     # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e20', 'defend'): (
@@ -456,21 +456,21 @@ LINES = {
         {'catch': ('You treated that Wi-Fi sign-in page as a trap, so your work password never reached a look-alike site.',
                    'A Wi-Fi page has no reason to want your work password. If one asks, close it and use your hotspot.'),
          'miss': ('That look-alike Wi-Fi page asking for your work password was the one to stop.',
-                  'The password went in, so the account was used from another town and had to be reset and traced.')},
+                  "That page only wants one thing, your work password. Whoever put it up could sign in as you from anywhere.")},
         'Thanks, Zainab.', 'Any time.'),
     ('e9', 'defend'): (
         "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
         {'catch': ("You didn't read the number back to that email posing as IT, so the account stayed yours.",
                    'IT never asks you to read back a number or approve a prompt. Whoever asks is holding your password.'),
          'miss': ('That email posing as IT, asking you to read back a number, was the one to stop.',
-                  "The number went back, so they signed in as you, and with shared logins the audit couldn't say who did what.")},
+                  "That number is on the attacker's screen. Read it back, or tap Approve, and the sender walks straight into your account.")},
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
         "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.",
         {'catch': ("You kept your sign-in to yourself and sent him to the service desk, so none of his actions landed under your name.",
                    'Lending a login feels kind, but it leaves you answerable for whatever is done with it.'),
          'miss': ('That ask to borrow your sign-in, from a colleague locked out and under pressure, was the one to turn down.',
-                  'It was lent, so the audit put his work under your name, and you had to answer for it.')},
+                  "Ten minutes on your login would sit in the audit under your name, and he might reach data he has no business in.")},
         'Thanks, Anjali.', 'Any time.'),
     # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e14', 'defend'): (
@@ -478,7 +478,7 @@ LINES = {
         {'catch': ("You checked that new contact by a known route, so the account wearing a partner's name got nothing out of the studio.",
                    "A senior name on a days-old account is the classic fake. Her real profile is the one you already follow."),
          'miss': ("That second account in a partner's name, new this week with three connections, was the one to doubt.",
-                  'It was trusted, so a security answer went out, and a week later we were resetting it and reporting the fake account.')},
+                  "Once connected, a fake in a partner's name can approach the rest of us, and any later scam borrows her standing.")},
         'Thanks, Julian.', 'Any time.'),
     # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e10', 'defend'): (
@@ -486,7 +486,7 @@ LINES = {
         {'catch': ('You didn\'t follow that fake "verify you\'re human" check on the portal, so the command it copied never ran.',
                    'Anything telling you to paste, run or install to carry on is the tell. Real software comes from a route you already trust.'),
          'miss': ('That page dressed as a routine check, asking you to run a step to continue, was the one to stop.',
-                  'The step ran, so a hidden program reached finance and the intranet, and the machine was off for a rebuild.')},
+                  "Three key presses, and a hidden program runs with nothing showing on screen. The page had already copied the command for you.")},
         'Thanks, Niamh.', 'No bother.'),
     # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     # P1 C2 MIN-3: "come thick" (clipped from "thick and fast") -> "come fast"; P1 plain-words: "sweep" -> "an attack".
@@ -495,7 +495,7 @@ LINES = {
         {'catch': ("You didn't trust that fake lockout alert, so no password went to its look-alike page.",
                    'A unique password per account in a manager, with MFA, is the one habit that beats both spraying and stuffing.'),
          'miss': ('That lockout alert dressed as our own IT, hurrying you to sign in again, was the one to stop.',
-                  'The password reached the fake page, and the account it opened reached work email, client files and a supplier portal.')},
+                  "Picture that password on the fake page. The account behind it reaches client files and the finance controller's mail.")},
         'Thanks, Ama.', 'Any time.'),
 }
 

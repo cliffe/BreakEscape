@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Julian Sallow: A senior name on a days-old account is the classic fake. Her real profile is the one you already follow.
         - else:
             Julian Sallow: That second account in a partner's name, new this week with three connections, was the one to doubt.
-            Julian Sallow: It was trusted, so a security answer went out, and a week later we were resetting it and reporting the fake account.
+            Julian Sallow: Once connected, a fake in a partner's name can approach the rest of us, and any later scam borrows her standing.
         }
     - else:
         Julian Sallow: You're on an authorised exercise. Some posts in the feed give too much away, and some messages in the inbox fish for how we work.

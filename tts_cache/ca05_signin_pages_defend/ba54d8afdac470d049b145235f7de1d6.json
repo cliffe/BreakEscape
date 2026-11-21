@@ -1,0 +1,13 @@
+{
+  "key": "ba54d8afdac470d049b145235f7de1d6",
+  "npc": "niamh_doherty",
+  "text": "Whoever runs that look-alike address would get your email and password, then sign in as you and read your mail.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:48:39Z"
+}

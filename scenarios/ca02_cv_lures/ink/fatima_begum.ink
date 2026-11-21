@@ -42,7 +42,7 @@ VAR hub_quiet = false
         - kit_ca02_cv_choice == "report":
             Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
         - else:
-            Fatima Begum: That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed.
+            Fatima Begum: A CV that wants content switched on is after a foothold. If the file runs, the attacker is on an HR machine full of candidate records.
             Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
         }
         ~ kit_ca02_host_said = true

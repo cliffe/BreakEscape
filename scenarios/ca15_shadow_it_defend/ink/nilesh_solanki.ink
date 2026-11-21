@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Nilesh Solanki: A stick in the post is a found stick, whatever the note says. It comes to us, and nobody plugs it in.
         - else:
             Nilesh Solanki: That stick posted in, marked from the client, was the one to bring to us.
-            Nilesh Solanki: It got plugged in, so that machine had to be wiped and rebuilt, and we had to check everything it could reach.
+            Nilesh Solanki: The moment someone opens a file on that stick, it could run malware, first on that machine and then on the share.
         }
     - else:
         Nilesh Solanki: Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.

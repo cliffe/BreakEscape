@@ -67,14 +67,14 @@ LINES = {
         {'catch': ("You turned down that overnight sign-in prompt Leila hadn't started, so no claims account was handed to a stranger.",
                    'A prompt you didn\'t start means someone has your password. Deny it and report it, whatever the hour.'),
          'miss': ("That sign-in prompt at two in the morning, the one Leila hadn't started, was the one to turn down.",
-                  'It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.')},
+                  "One tap on Approve and a stranger is in Leila's account, with her service desk access, from a computer she's never used.")},
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (
         "Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.",
         {'catch': ('You read the address before signing in, so that lookalike page never got your password.',
                    "The look and the padlock both copy fine. The address bar is the one bit they can't fake."),
          'miss': ('That page copying our sign-on, on an address that was almost right, was the one to stop.',
-                  'The password went in, so a claims account was wide open and IT lost the day to resets and a records review.')},
+                  "Whoever runs that look-alike address would get your email and password, then sign in as you and read your mail.")},
         'Thanks, Niamh.', 'No bother.'),
 }
 

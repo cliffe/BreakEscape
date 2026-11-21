@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Darren Price: A prompt you didn't start means someone has your password. Deny it and report it, whatever the hour.
         - else:
             Darren Price: That sign-in prompt at two in the morning, the one Leila hadn't started, was the one to turn down.
-            Darren Price: It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.
+            Darren Price: One tap on Approve and a stranger is in Leila's account, with her service desk access, from a computer she's never used.
         }
     - else:
         Darren Price: You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.

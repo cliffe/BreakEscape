@@ -65,6 +65,15 @@
     flex: 0 0 auto;
     margin: 0;
 }
+.epr-kiosk-hint {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    color: #c8c8c8;
+    white-space: nowrap;
+}
 .epr-kiosk-screen {
     flex: 1 1 auto;
     min-height: 0;
