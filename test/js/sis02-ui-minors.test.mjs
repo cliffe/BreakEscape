@@ -261,3 +261,13 @@ test('m17: creditsLogLine strips the dash runs from a section header and leaves 
     const j = readFileSync(join(js, 'music/bond-visualiser.js'), 'utf8');
     assert.ok(/addLog\(displayDashes\(creditsLogLine\(item\)\)\)/.test(j), 'the review log uses it');
 });
+
+// ---- m12 (live, 844x390): the confirm button stays in view when the panel scrolls ----------------------
+test('m12: the flag confirm button sticks to the foot of the scrolling panel', () => {
+    const c = css('log-filter-minigame.css');
+    const r = ruleBody(c, '.lf-flag-confirm-actions');
+    assert.ok(/position:\s*sticky/.test(r), 'actions are sticky');
+    assert.ok(/bottom:\s*0/.test(r), 'stuck to the bottom edge');
+    assert.ok(/background:\s*#111122/.test(r), 'opaque so body text does not show through');
+    assert.ok(/overflow-y:\s*auto/.test(ruleBody(c, '.lf-overlay-panel')), 'the panel is what scrolls');
+});

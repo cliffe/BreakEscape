@@ -665,6 +665,12 @@
     gap: 8px;
     margin-top: 8px;
     justify-content: flex-end;
+    /* The panel scrolls on a short screen (844x390 phone landscape): the one button that
+       acts stays in view at the foot instead of sitting below the fold */
+    position: sticky;
+    bottom: 0;
+    background: #111122;
+    padding-top: 4px;
 }
 
 .lf-flag-confirm-btn {
