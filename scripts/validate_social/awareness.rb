@@ -515,6 +515,8 @@ module ValidateSocial
     # ---- strings ---------------------------------------------------------------------
 
     FACILITATOR_KEYS = %w[brief osint build write mfa mistake guess flip defend debrief check pause].freeze
+    # Wording that claims the learner did something a write-stage episode does not guarantee (task 4, ca debrief).
+    CONCEPT_YOU_DID_RE = /\byou (?:sent|handed|asked|typed|enabled|postponed)\b/i.freeze
 
     def self.string_checks(ctx, ep)
       strings = ep['strings']
@@ -556,6 +558,14 @@ module ValidateSocial
           v.each_with_index do |entry, i|
             t = entry.is_a?(Hash) ? entry['text'] : nil
             issues << err("strings.conceptPanel entry #{i + 1} has no text; the debrief would show an empty panel") if !t.is_a?(String) || t.strip.empty?
+            # An unconditioned panel in a shell with a write stage is read by every learner, including
+            # one who never sent anything or took a different route: "you sent ..." would be false
+            # for them. Word it in the third person, or gate it on what the learner did.
+            if entry.is_a?(Hash) && !entry.key?('condition') && t.is_a?(String) && Array(ep['stages']).include?('write') &&
+               (m = t.match(CONCEPT_YOU_DID_RE))
+              issues << warn_("strings.conceptPanel entry #{i + 1} has no condition but says \"#{m[0]}\"; in a shell with a write stage a learner who did not do that still reads it " \
+                              '(use third person wording, or add a condition on what they did)')
+            end
             next unless entry.is_a?(Hash) && entry.key?('condition')
 
             cond = entry['condition']
