@@ -1384,7 +1384,7 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);
     assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 45000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
     const fb = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done`);
-    assert.ok(fb && fb.startOnGlobal === `kit_${ep}_out` && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 90000 : 60000), `${name}: done fallback`);
+    assert.ok(fb && fb.startOnGlobal === asked && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 115000 : 85000), `${name}: done fallback`);
     if (!(name in W5 || name in W6)) {
       // every walk has a fallback timer
       const walkTimers = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${ep}_t_`) && !['tail', 'done'].includes(t.id.split('_t_')[1]));
@@ -1720,7 +1720,7 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     const T = (id) => (sc.timers || []).find((t) => t.id === `kit_${ep}_t_${id}`);
     assert.deepEqual([T('there').startOnGlobal, T('there').delayMs, T('there').condition, T('there').setGlobal], [`kit_${ep}_out`, 4000, `!globalVars.${w.there}`, { [w.there]: true }], `${name}: t_there`);
     assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 45000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
-    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_out`, 60000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
+    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_asked`, 85000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
   });
 });
 
