@@ -1,8 +1,14 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca15_asked = false
+VAR kit_ca15_stick_choice = ""  // Synced scenario global
+VAR kit_ca15_done = false
 
 === start ===
+{ kit_ca15_asked:
+    -> ca15_stick
+}
 { kit_defend_done:
     { kit_ep == "ca06": -> ca06 }
     { kit_ep == "ca09": -> ca09 }
@@ -52,6 +58,35 @@ Fatima Begum: Morning. Grab a cold drink from the machine if you're parched.
     Fatima Begum: So much of the job's on the move now. Easy to drop your guard on a train or in a cafe.
 }
 -> bye
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca15_stick ===
+{ kit_ca15_stick_choice == "handin" || kit_ca15_stick_choice == "lost" || kit_ca15_stick_choice == "leave" || kit_ca15_done:
+    -> ca15
+}
+Fatima Begum: No name on it, nothing. What do you reckon I do with it?
+{ kit_ca15_stick_choice == "":
+    ~ kit_ca15_stick_choice = "asked"
+}
++ [Give it to Nilesh, as it is.]
+    ~ kit_ca15_stick_choice = "handin"
+    Fatima Begum: Good thinking. I'll take it to Nilesh just as it is.
+    #exit_conversation
+    -> DONE
++ [Put it in lost property.]
+    ~ kit_ca15_stick_choice = "lost"
+    Fatima Begum: I'll pop it in the lost property box, then.
+    #exit_conversation
+    -> DONE
++ [Leave it where it is.]
+    ~ kit_ca15_stick_choice = "leave"
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca15_stick_choice = "leave"
+    #exit_conversation
+    -> DONE
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
 // choice is reported as ended on that same continue, and person-chat then shows only

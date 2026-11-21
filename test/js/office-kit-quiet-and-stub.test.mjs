@@ -215,8 +215,8 @@ for (const person of AMBIENT) {
     test(`${person}: every ink line's speaker prefix is the kit displayName; no state-writing tag`, () => {
         const body = stripComments(ink);
         const tags = [...body.matchAll(/#\s*([A-Za-z_]+)/g)].map(m => m[1]);
-        // allow-list: a stub writes no state, so no #set_global, #give_item, #unlock_* or the like
-        assert.ok(tags.every(t => t === 'exit_conversation' || t === 'speaker'), `${person}: tags ${JSON.stringify([...new Set(tags)])}`);
+        // allow-list: a stub writes no state, so no #set_global, #give_item, #unlock_* or the like (#delivery is a voicing note, not state)
+        assert.ok(tags.every(t => t === 'exit_conversation' || t === 'speaker' || t === 'delivery'), `${person}: tags ${JSON.stringify([...new Set(tags)])}`);
         const speakers = new Set();
         for (const line of body.split('\n')) {
             const m = line.match(/^\s*(?:-\s*)?([A-Z][A-Za-z'’.\- ]*):\s+\S/);

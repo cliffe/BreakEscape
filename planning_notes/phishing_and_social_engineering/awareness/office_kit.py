@@ -372,8 +372,19 @@ def kit_keyed(kit, row):
     if not active(row):
         return {}
     out = {}
+    piece = _set_piece(kit, row)
     for key in KIT_KEYED:
         v = kit.get(key)
+        extra = piece.get(key) if key == 'resources' else None   # a set piece's own resources, for its row only
+        if extra:
+            if v and isinstance(v, dict) != isinstance(extra, dict):
+                raise ValueError(f'set piece {key} and kit {key} must both be dicts or both be lists')
+            if not v:
+                v = extra
+            elif isinstance(v, dict):
+                v = {**v, **extra}
+            else:
+                v = list(v) + list(extra)
         if not v:
             continue
         ids = list(v) if isinstance(v, dict) else [r.get('id') for r in v]
