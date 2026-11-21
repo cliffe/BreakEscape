@@ -27,7 +27,16 @@ FIXTURE_COMMIT = 'e9ca45939'   # the gate A fixture before its chain set piece w
 def fixture_at_commit():
     r = subprocess.run(['git', '-C', REPO, 'show', f'{FIXTURE_COMMIT}:scenarios/test_ca_office_kit/scenario.json.erb'],
                        capture_output=True, text=True)
-    return json.loads(r.stdout) if r.returncode == 0 else None
+    if r.returncode != 0:
+        return None
+    fx = json.loads(r.stdout)
+    # The one deliberate kit change since the pin (W2 build review R2 minor 1): the two Brightwell caffeine
+    # records started at 45, at or below urgentAt, so both colleagues left on reload. They start at 65 and 60.
+    for n in fx['rooms']['training_room']['npcs']:
+        want = {'kit_gwen_pritchard': 65, 'kit_agnieszka_duda': 60}.get(n.get('id'))
+        if want is not None:
+            n['needs']['caffeine']['initial'] = want
+    return fx
 
 
 def twin_shell():
@@ -400,13 +409,14 @@ class ReviewFixes(unittest.TestCase):
     # 1: host lookup ignores an unpositioned NPC with the same ink; kit() writes nothing until all build
     def test_host_lookup_ignores_the_unpositioned_second_story_npc(self):
         sc = json.loads(shell_text('ca03_helpdesk_reset'))
-        npcs = sc['rooms']['training_room']['npcs']
+        npcs = [n for n in sc['rooms']['training_room']['npcs'] if not n['id'].startswith('kit_')]   # the shell now carries its kit staff
         self.assertEqual([('position' in n) for n in npcs], [True, False])
         self.assertEqual(ok._find_host(sc)['id'], npcs[0]['id'])
         r = row(id='ca03_helpdesk_reset', ep='ca03', stub='ca03')
-        out = ok.apply_kit(sc, self.kit(), r)
-        self.assertEqual(ok.strip_kit(out), ok.strip_kit(sc))
-        new = atr.kit_text(shell_text('ca03_helpdesk_reset'), self.kit(), r, 'ca03_helpdesk_reset')
+        base = ok.strip_kit(sc)      # the committed shell carries its Quayholt kit; this test applies a Brightwell one to the bare shell
+        out = ok.apply_kit(base, self.kit(), r)
+        self.assertEqual(ok.strip_kit(out), base)
+        new = atr.kit_text(dumped(base), self.kit(), r, 'ca03_helpdesk_reset')
         self.assertEqual(json.loads(new), out)
 
     def test_kit_writes_nothing_when_a_later_row_fails(self):
@@ -819,6 +829,255 @@ class RegenerateTheChain(unittest.TestCase):
         self.assertEqual(before, after)
         with self.assertRaises(SystemExit):
             atr.kit(None)
+
+
+def exempt_kit():
+    """A synthetic pool-exempt, seated, needs-free kit (D12 form, as Quayholt and Carrholme will be)."""
+    base = ok.load_kit('brightwell_foods')
+    staff = {}
+    for person, desk in (('gwen_pritchard', {'x': 3, 'y': 5}), ('agnieszka_duda', {'x': 6, 'y': 5})):
+        rec = copy.deepcopy(base['staff'][person])
+        for k in ('needs', 'needsHome', 'needsSpeed', 'chatterCooldownMin', 'chatterLines'):
+            rec.pop(k, None)
+        rec['seated'] = True
+        rec['position'] = desk
+        staff[person] = rec
+    return {'company': 'exempt_test', 'scenario': {'npcThoughts': False}, 'pool': None,
+            'poolExempt': 'no drawn source for a non-work need', 'sources': [], 'staff': staff, 'setPieces': {}}
+
+
+def ca00_shell():
+    import gen_core00_shell as g
+    return g.build(bare=True)[1]
+
+
+class PoolExempt(unittest.TestCase):
+    """Step 4 (wave 2): `pool: null` kits, seated needs-free staff, and the ca00 convention form."""
+
+    def build(self, kit=None, **kw):
+        r = row(**kw)
+        kit = kit or exempt_kit()
+        return r, kit, ok.build(kit, r, 'episode_e1_x_defend_defend_', 'episode_e1_x_defend_state')
+
+    def test_exempt_kit_validates_and_every_shipped_kit_validates(self):
+        ok.check_pool(exempt_kit())
+        for name in sorted(os.listdir(ok.KITS_DIR)):
+            if name.endswith('.json') and name != 'episodes.json':
+                ok.load_kit(name[:-5])
+
+    def test_pool_line_length_skips_a_pool_exempt_kit(self):
+        checked = 0
+        for name in sorted(os.listdir(ok.KITS_DIR)):
+            if not name.endswith('.json') or name == 'episodes.json':
+                continue
+            kit = ok.load_kit(name[:-5])
+            if not ok.has_pool(kit):
+                continue        # nothing to measure: the kit has no pool and no chatterLines
+            checked += 1
+            for line in kit['pool']['lines'] + [x for s in kit['staff'].values() for x in s['chatterLines']]:
+                self.assertLessEqual(len(line), 40, line)
+        self.assertGreater(checked, 0)
+
+    def test_pool_null_without_a_reason_is_an_error(self):
+        kit = exempt_kit()
+        del kit['poolExempt']
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+        kit['poolExempt'] = '   '
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+        with self.assertRaises(ValueError):
+            ok.build(kit, row(), 'p_', 's')       # build refuses it too
+
+    def test_pool_null_with_a_chatter_source_or_chatter_lines_is_an_error(self):
+        kit = exempt_kit()
+        kit['sources'] = [{'id': 'kit_x', 'affordance': {'chatter': 'pool', 'capacity': 2}}]
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+        kit = exempt_kit()
+        kit['staff']['gwen_pritchard']['chatterLines'] = ['Morning.']
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+
+    def test_a_pool_kit_with_a_poolexempt_reason_is_an_error(self):
+        kit = ok.load_kit('brightwell_foods')
+        kit['poolExempt'] = 'not allowed beside a pool'
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+
+    def test_a_kit_with_no_pool_key_at_all_is_an_error(self):
+        kit = exempt_kit()
+        del kit['pool']
+        with self.assertRaises(ValueError):
+            ok.check_pool(kit)
+
+    def test_room_npcs_seated_and_needs_free_write_no_chatter_home_or_rooms(self):
+        _, _, b = self.build()
+        self.assertEqual([n['id'] for n in b['npcs']], ['kit_gwen_pritchard', 'kit_agnieszka_duda'])
+        for n in b['npcs']:
+            self.assertIs(n['seated'], True)
+            self.assertNotIn('chatter', n)
+            for k in ('needs', 'needsHome', 'needsRooms'):
+                self.assertNotIn(k, n)
+            self.assertEqual(n['currentKnot'], 'start')
+
+    def test_a_record_with_needs_still_gets_home_and_rooms_in_the_old_order(self):
+        _, _, b = self.build(kit=ok.load_kit('brightwell_foods'))
+        keys = list(b['npcs'][0])
+        self.assertLess(keys.index('currentKnot'), keys.index('needsHome'))
+        self.assertLess(keys.index('needsHome'), keys.index('needsRooms'))
+        self.assertEqual(b['npcs'][0]['needsRooms'], ['training_room'])
+
+    def test_exempt_kit_has_no_pool_in_objects_scenario_or_chatter(self):
+        _, kit, b = self.build()
+        self.assertEqual(b['objects'], [])
+        self.assertEqual(b['scenario'], {'npcThoughts': False})
+        self.assertEqual(ok.scenario_fields(kit, row()), {'npcThoughts': False})
+
+    def test_exempt_kit_round_trips_through_apply_and_strip(self):
+        r, kit, b = self.build()
+        tw = twin_shell()
+        applied = ok.apply_kit(tw, kit, r)
+        self.assertEqual(ok.kit_chatter(applied), {})
+        self.assertNotIn('chatter', applied)
+        owned = ok.kit_owned(applied)
+        self.assertNotIn('chatter', owned['scenario'])
+        prefix, state = ok.shell_ids(applied, r)
+        self.assertEqual(ok.build(kit, r, prefix, state), owned)
+        self.assertEqual(ok.strip_kit(applied), ok.strip_kit(tw))
+
+    def convention_row(self, **kw):
+        return row(id='ca00_first_play', company='brightwell_foods', ep='ca00', stub='ca00', tier='S',
+                   convention=True, **kw)
+
+    def test_convention_shell_ids_need_no_triage_set(self):
+        sc = ca00_shell()
+        self.assertEqual(ok.shell_ids(sc, self.convention_row()),
+                         (None, 'episode_core_00_first_play_state'))
+
+    def test_convention_branches_of_every_function(self):
+        r = self.convention_row()
+        kit = ok.load_kit('brightwell_foods')      # a pool kit: the convention row still writes no chatter
+        npcs = ok.room_npcs(kit, r)
+        self.assertEqual([n['currentKnot'] for n in npcs], ['ca00', 'ca00'])
+        for n in npcs:
+            self.assertNotIn('chatter', n)
+        for o in ok.room_objects(kit, r):
+            self.assertNotIn('chatter', o.get('affordance', {}))
+        self.assertTrue([o for o in ok.room_objects(kit, r) if o.get('affordance')])   # the need affordance stays
+        self.assertEqual(ok.kit_globals(kit, r), {'kit_ep': 'ca00'})
+        self.assertEqual(ok.host_mappings(kit, r, None, 'episode_core_00_first_play_state'), [])
+        self.assertEqual(ok.scenario_fields(kit, r), {'npcThoughts': False})
+
+    def test_convention_row_applies_to_ca00_with_only_kit_ep_and_no_mappings(self):
+        sc = ca00_shell()
+        r = self.convention_row()
+        host = ok._find_host(sc)
+        mappings_before = copy.deepcopy(host['eventMappings'])
+        applied = ok.apply_kit(sc, exempt_kit(), r)
+        self.assertEqual(ok._find_host(applied)['eventMappings'], mappings_before)
+        added = {k: v for k, v in applied['globalVariables'].items() if k.startswith('kit_')}
+        self.assertEqual(added, {'kit_ep': 'ca00'})
+        self.assertIs(applied['npcThoughts'], False)
+        self.assertNotIn('chatter', applied)
+        kits = [n for n in applied['rooms']['training_room']['npcs'] if n['id'].startswith('kit_')]
+        self.assertEqual([n['currentKnot'] for n in kits], ['ca00', 'ca00'])
+        self.assertEqual(ok.apply_kit(applied, exempt_kit(), r), applied)        # idempotent
+        self.assertEqual(ok.strip_kit(applied), sc)                                 # and invertible
+
+    def test_convention_host_with_no_event_mappings_gets_no_empty_list(self):
+        sc = ca00_shell()
+        host = ok._find_host(sc)
+        del host['eventMappings']
+        applied = ok.apply_kit(sc, exempt_kit(), self.convention_row())
+        self.assertNotIn('eventMappings', ok._find_host(applied))
+
+    def test_non_convention_rows_are_unchanged(self):
+        r = row()
+        kit = ok.load_kit('brightwell_foods')
+        self.assertFalse(ok.is_convention(r))
+        self.assertIn('kit_quiet', ok.kit_globals(kit, r))
+        self.assertTrue(ok.host_mappings(kit, r, 'p_', 's'))
+
+
+class RealKitsThroughBuilders(unittest.TestCase):
+    """Review R1 minor 3: the shipped Quayholt and Carrholme kits (office_kits/*.json), not the synthetic
+    `exempt_kit()`, go through room_objects and room_npcs. `exempt_kit()` stays for the error paths."""
+
+    def real_row(self, company, **want):
+        rows = [r for r in ok.load_rows() if r.get('company') == company and not r.get('fixture')
+                and all(r.get(k) == v for k, v in want.items())]
+        self.assertTrue(rows, f'no {company} row with {want}')
+        return rows[0]
+
+    def source(self, kit, sid='kit_cooler'):
+        return [s for s in kit['sources'] if s['id'] == sid][0]
+
+    def test_quayholt_cooler_reaches_the_shell_with_its_position_and_chatter_key(self):
+        kit = ok.load_kit('quayholt_insurance')
+        r = self.real_row('quayholt_insurance', convention=None)
+        objs = ok.room_objects(kit, r)
+        cooler = [o for o in objs if o['id'] == 'kit_cooler']
+        self.assertEqual(len(cooler), 1)
+        self.assertEqual(cooler[0]['position'], self.source(kit)['position'])      # explicit position, unchanged
+        self.assertEqual(cooler[0]['position'], {'x': 8.2, 'y': 5.6})
+        self.assertEqual(cooler[0]['affordance']['chatter'], kit['pool']['key'])   # "pool" resolved to the real key
+        self.assertEqual(cooler[0]['affordance']['satisfies'], 'thirst')
+
+    def test_carrholme_cooler_reaches_the_shell_with_its_position_and_no_chatter(self):
+        kit = ok.load_kit('carrholme_services')
+        self.assertIsNone(kit['pool'])
+        r = self.real_row('carrholme_services')
+        objs = ok.room_objects(kit, r)
+        cooler = [o for o in objs if o['id'] == 'kit_cooler']
+        self.assertEqual(len(cooler), 1)
+        self.assertEqual(cooler[0]['position'], self.source(kit)['position'])
+        self.assertEqual(cooler[0]['position'], {'x': 8.2, 'y': 5.6})
+        self.assertNotIn('chatter', cooler[0]['affordance'])
+        self.assertEqual(cooler[0]['affordance']['satisfies'], 'thirst')
+
+    def test_an_explicit_source_position_is_passed_through_unchanged_not_defaulted(self):
+        for company in ('quayholt_insurance', 'carrholme_services'):
+            kit = ok.load_kit(company)
+            kit['sources'] = copy.deepcopy(kit['sources'])
+            self.source(kit)['position'] = {'x': 3.25, 'y': 9.5}
+            r = self.real_row(company)
+            cooler = [o for o in ok.room_objects(kit, r) if o['id'] == 'kit_cooler'][0]
+            self.assertEqual(cooler['position'], {'x': 3.25, 'y': 9.5}, company)
+
+    def test_quayholt_convention_row_drops_the_cooler_chatter_but_keeps_its_position(self):
+        kit = ok.load_kit('quayholt_insurance')
+        r = self.real_row('quayholt_insurance', convention=True)
+        cooler = [o for o in ok.room_objects(kit, r) if o['id'] == 'kit_cooler'][0]
+        self.assertNotIn('chatter', cooler['affordance'])
+        self.assertEqual(cooler['position'], {'x': 8.2, 'y': 5.6})
+
+    def check_npcs(self, company, r, with_chatter):
+        kit = ok.load_kit(company)
+        npcs = [n for n in ok.room_npcs(kit, r) if n.get('person')]
+        self.assertEqual([n['person'] for n in npcs], r['ambient'])
+        for n in npcs:
+            self.assertIn('thirst', n['needs'], n['id'])
+            home = n['needsHome']
+            self.assertIsInstance(home['x'], (int, float))
+            self.assertIsInstance(home['y'], (int, float))
+            self.assertEqual(n['needsRooms'], ['training_room'])
+            self.assertNotIn('seated', n)
+            self.assertEqual('chatter' in n, with_chatter, n['id'])
+        return npcs
+
+    def test_quayholt_ambient_staff_have_a_thirst_need_a_home_and_a_pool_entry(self):
+        npcs = self.check_npcs('quayholt_insurance', self.real_row('quayholt_insurance', convention=None), True)
+        for n in npcs:
+            self.assertEqual(list(n['chatter']), ['kit_quayholt'])
+
+    def test_carrholme_ambient_staff_have_a_thirst_need_a_home_and_no_chatter(self):
+        self.check_npcs('carrholme_services', self.real_row('carrholme_services'), False)
+
+    def test_quayholt_convention_row_gives_staff_the_stub_knot_and_no_chatter(self):
+        r = self.real_row('quayholt_insurance', convention=True)
+        npcs = self.check_npcs('quayholt_insurance', r, False)
+        self.assertEqual([n['currentKnot'] for n in npcs], [r['stub']] * len(npcs))
 
 
 if __name__ == '__main__':

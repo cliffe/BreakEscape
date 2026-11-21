@@ -11,6 +11,10 @@
 
 VAR phish_exec_pa_attempts = 0
 VAR episode_e4_exec_whaling_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca04_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -20,6 +24,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca04_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Thandiwe Moyo: You checked it before it moved, so the money stayed put and the account that email named got nothing.
+            - else:
+                Thandiwe Moyo: You held the payment that mattered, so nothing left. A couple of the others are worth a second look in the debrief.
+            }
+            Thandiwe Moyo: A voice can be copied. Ring her back on a number you already hold before anything leaves the account.
+        - else:
+            Thandiwe Moyo: That payment went out on a voice that wasn't hers, straight to an account the attacker holds, with a bank-change lined up to keep it coming.
+            Thandiwe Moyo: A voice can be copied. Ring her back on a number you already hold before anything leaves the account.
+        }
+        ~ kit_ca04_host_said = true
+    - else:
     { episode_e4_exec_whaling_defend_complete:
         Thandiwe Moyo: Both seats done, thanks.
         Thandiwe Moyo: Money, in a hurry, or kept from finance? Ring her on a number you already hold, even when the voice is hers.
@@ -29,6 +47,7 @@ VAR hub_quiet = false
         - else:
             Thandiwe Moyo: Welcome to the Merrin & Sallow exercise. Start at the kiosk: research Catherine and her trip, write one email to her PA, then swap seats and cover his inbox.
         }
+    }
     }
 }
 + [Thanks, Thandiwe.]

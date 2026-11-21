@@ -38,7 +38,7 @@
       "needsHome": { "room": "training_room", "x": 3, "y": 3, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 } },
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
       "chatterLines": ["Anyone for a brew?", "Tea round shortly?", "Kettle's just boiled."]
     },
     "agnieszka_duda": {
@@ -49,8 +49,19 @@
       "needsHome": { "room": "training_room", "x": 6, "y": 3, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 45 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
       "chatterLines": ["Long week.", "Any biscuits left?", "Just need a top-up."]
+    },
+    "graham_whitfield": {
+      "displayName": "Graham Whitfield",
+      "spriteSheet": "graham_whitfield",
+      "voice": { "name": "Umbriel", "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 8, "y": 4 },
+      "needsHome": { "room": "training_room", "x": 8, "y": 3, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
+      "chatterLines": ["Year-end's creeping up.", "Steady day on the ledgers.", "That's my second cup."]
     }
   },
   "setPieces": {

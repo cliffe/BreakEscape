@@ -232,7 +232,8 @@
         { "heading": "Password spraying", "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year." },
         { "heading": "Credential stuffing", "text": "A list of address and password pairs stolen from one website, tried automatically across many others. Where someone reused that password at work, the attacker is straight in." },
         { "heading": "The one habit", "text": "A different password for every account, not a word off the website, kept in a manager, breaks both: the spray has nothing predictable to try, and a stolen pair opens nothing else." },
-        { "heading": "What the practice does", "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on." }
+        { "heading": "What the practice does", "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on." },
+        { "heading": "If one account opens", "text": "One opened account reached client files and the finance controller's mail, so the cost ran from a single password up to a confidentiality and near-payment incident, and the provider spent the afternoon forcing resets and combing the sign-in logs." }
       ]
     },
     "_defendOnly": {

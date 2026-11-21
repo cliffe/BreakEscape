@@ -323,6 +323,10 @@
         {
           "heading": "First steps and recovery",
           "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on."
+        },
+        {
+          "heading": "The minutes that matter",
+          "text": "A report made in the first few minutes keeps a taken-over account from sending messages in a colleague's name, locking him out and reaching the shared drive; because client and claimant details sit there, under UK GDPR the breach is assessed without undue delay and, where it must be reported, the ICO is told within 72 hours, with the people affected told where the risk to them is high."
         }
       ]
     },

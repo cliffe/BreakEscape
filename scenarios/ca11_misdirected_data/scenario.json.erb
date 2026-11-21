@@ -6,6 +6,7 @@
   "endGoal": "Play out the morning, then sort the Care Laundry desk inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,14 @@
     "se_awareness_records": [],
     "episode_e11_misdirected_data_defend_percent": 0,
     "episode_e11_misdirected_data_defend_reportRate": 0,
-    "episode_e11_misdirected_data_defend_complete": false
+    "episode_e11_misdirected_data_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca11",
+    "kit_ca11_host_said": false,
+    "kit_key_caught": false
   },
   "social": {
     "triageSets": [
@@ -137,7 +145,15 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e11_misdirected_data_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e11_wrong_sam_breach": "kit_key_caught"
+          },
+          "messageCaughtVerdicts": {
+            "e11_wrong_sam_breach": [
+              "report"
+            ]
+          }
         },
         "messages": [
           {
@@ -466,7 +482,7 @@
         "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
         "conceptPanel": {
           "heading": "Behind every row is a person",
-          "text": "If a spreadsheet, a form or an email about someone goes astray, tell the data protection lead straight away. Reporting fast is what limits the harm."
+          "text": "To a real attacker, the items sent astray here are a gift: health and contact details for residents, staff and a driver, landing where they can be read and kept. The next move is to approach the named people with a believable story that already knows their circumstances. Checking who an item is really going to before it leaves is where the chain breaks, because the details never leave the building for anyone to collect.\n\nWhen care records go to the wrong recipient, special-category details about residents, staff and a driver end up with people who have no right to see them, and the data protection lead loses the week to a recall, to deletion requests, and to letters to the families. Under UK GDPR a breach like this must be reported to the ICO unless it is unlikely to be a risk, and the people affected are told only where the risk to them is high. Before you leave, have a word with Tomasz."
         },
         "flipMontageByChoice": {
           "overtime_sheet": {
@@ -478,7 +494,7 @@
             "take_message": "The version where the school and the time were given out: a stranger learned where a lone worker would be. Offering to pass a message gave the caller nothing."
           },
           "marketing_export": {
-            "export_list": "A month on, three families complained and one wrote to the regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers.",
+            "export_list": "A month on, three families complained and one wrote to the ICO, the UK's data protection regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers.",
             "ask_dpo": "The version where the list was exported: families who had given their details to sort a claim got a marketing email, and complained. Asking first turned it into a proper sign-up box."
           },
           "redaction_send": {
@@ -562,8 +578,84 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_desk_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_complete",
+              "condition": "value === true && globalVars.episode_e11_misdirected_data_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_yusuf_demir",
+          "displayName": "Yusuf Demir",
+          "person": "yusuf_demir",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 7
+          },
+          "spriteSheet": "yusuf_demir",
+          "spriteTalk": "assets/characters/yusuf_demir_talk.png",
+          "spriteVisemes": "assets/characters/yusuf_demir_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/yusuf_demir_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 7,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Alnilam",
+            "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          }
         }
       ],
       "objects": [
@@ -584,6 +676,28 @@
           ],
           "minigameData": {
             "episodeId": "e11_misdirected_data"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A water cooler by the shared desk. Staff top up between jobs.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            }
           }
         }
       ]

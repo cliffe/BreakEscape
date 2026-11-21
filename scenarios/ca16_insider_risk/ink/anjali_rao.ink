@@ -22,6 +22,10 @@
 // ================================================
 
 VAR episode_e16_insider_risk_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca16_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -31,6 +35,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca16_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Anjali Rao: You kept your sign-in to yourself and sent the handover the proper way, so every action still points at whoever actually did it.
+            - else:
+                Anjali Rao: You held the line on the one that counted, the sign-in someone wanted to borrow, before your name ended up on their work.
+            }
+        - else:
+            Anjali Rao: Lending a login feels kind, but then an audit shows your name on things you never touched, and there's no untangling it.
+        }
+        Anjali Rao: A sign-in stays yours alone, and a handover goes through the shared place. For a real lockout, send them to the service desk.
+        ~ kit_ca16_host_said = true
+    - else:
     { episode_e16_insider_risk_defend_complete:
         Anjali Rao: That's them handled. Your login is you, offers get reported, and a concern that comes to nothing is never a failure.
         Anjali Rao: Nobody's in trouble for being approached, and nobody's a suspect for having a hard week.
@@ -38,6 +55,7 @@ VAR hub_quiet = false
         Anjali Rao: Anjali Rao, information security. This week someone's leaving and there's a bit of talk going round. You're not here to catch anyone.
         Anjali Rao: Keep your login yours, tell me what gets offered to you, and if something gives you pause, bring me the facts rather than a theory.
         Anjali Rao: Start at the kiosk. Make this week's calls first, then raise a concern and sort the messages.
+    }
     }
 }
 + [Thanks, Anjali.]

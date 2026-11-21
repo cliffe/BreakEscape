@@ -226,7 +226,10 @@ function buildCard(answer, msg, set = null, routeName = null, showScore = true) 
             const li = el('li', `aw-flag ${caught ? 'aw-flag-caught' : 'aw-flag-missed'}`);
             li.dataset.flag = id;
             const sentence = redFlagString(id, msg, set);
-            li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : 'Look for: '),
+            // D227 A3: a risky item the learner let in with no tick sheet names its tells as
+            // "What gave them away:", as the removed result card did.
+            const missWord = answer.sheetless === true && wrongVerdict(answer, msg, 'awareness', set?.scoring) ? 'What gave them away: ' : 'Look for: ';
+            li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : missWord),
                 el('span', 'aw-flag-text', typeof notes[id] === 'string' && notes[id] ? `${sentence} (${notes[id]})` : sentence));
             ul.appendChild(li);
         }
@@ -428,7 +431,7 @@ function conceptEntryShown(entry, globals) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true, globals = null } = {}) {
+    concernRecap = null, showScore = true, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -447,9 +450,24 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const cleanRound = reviewed.length === 0 && answers.length > 0;
     if (variant === 'defendOnly' && !cleanRound) root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
 
+    // D227 A1: with the triage result card folded away (folded, set by the episode runner for a
+    // self-paced run), the debrief opens with the set's own band headline and the score in large
+    // type, the payoff the card used to carry. The summary line then drops its "Round score".
+    const bigScore = folded === true && showScore && Number.isFinite(result?.percent);
+    if (folded === true && (isStr(bandHeadline) || bigScore)) {
+        const band = el('div', 'aw-band');
+        if (isStr(bandHeadline)) band.appendChild(el('p', 'aw-band-headline', bandHeadline));
+        if (bigScore) {
+            const big = el('p', 'aw-band-score', `${result.percent}%`);
+            big.setAttribute('aria-label', `Score ${result.percent} percent`);
+            band.appendChild(big);
+        }
+        root.appendChild(band);
+    }
+
     const summary = el('p', 'aw-summary');
     const bits = [];
-    if (showScore && Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
+    if (showScore && !bigScore && Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
     // F-E10-2: the triage result card above the debrief already shows the band headline as its
     // title, so the debrief summary does not repeat it ("Round score: N% — headline" alongside the
     // same headline read as a duplication). The summary keeps the score and the caught counts.
@@ -512,7 +530,9 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const namedAnyFlags = (result?.flagRecall?.caught || 0) > 0
         || Object.keys(result?.falseByFactor || {}).length > 0
         || answers.some((a) => a && a.none === true);
-    if (reviewed.length && namedAnyFlags) {
+    // D227 A1: the folded result card's weakest-skill line lives on here, so a folded debrief shows
+    // it whenever a tell was missed, even on a round with no wrong verdict.
+    if ((reviewed.length || folded === true) && namedAnyFlags) {
         const weak = weakestFactor(isObj(result?.perFactor) ? result.perFactor : {});
         if (weak && weak.missed > 0) {
             const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
@@ -526,7 +546,12 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             const tmpl = one
                 ? (isObj(strings) && isStr(strings.weakestTell) ? strings.weakestTell : 'The tell most often missed: {names} ({counts}).')
                 : (isObj(strings) && isStr(strings.weakestTells) ? strings.weakestTells : 'The tells most often missed: {names} ({counts} each).');
-            root.appendChild(el('p', 'aw-weakest', tmpl.replace(/\{names\}/g, joined).replace(/\{counts\}/g, counts)));
+            // D227 A1: the folded card's next step for that skill, when the set authors one (set.nudges).
+            // With no authored line, the generic next step (weakestNudge) so the pointer is not lost.
+            let nudgeText = isObj(set?.nudges) && isStr(set.nudges[weak.id]) ? set.nudges[weak.id] : null;
+            if (!nudgeText && typeof weakestNudge === 'function') nudgeText = weakestNudge(ids.length > 1);
+            const nudge = folded === true && isStr(nudgeText) ? ` ${nudgeText}` : '';
+            root.appendChild(el('p', 'aw-weakest', tmpl.replace(/\{names\}/g, joined).replace(/\{counts\}/g, counts) + nudge));
         }
     }
     // disc_visible: the real items, after the cards it may point at.

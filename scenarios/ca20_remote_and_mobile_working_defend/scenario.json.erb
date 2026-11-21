@@ -6,6 +6,7 @@
   "endGoal": "Sort the networks and pages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e20_remote_and_mobile_working_defend_defend_percent": 0,
     "episode_e20_remote_and_mobile_working_defend_defend_reportRate": 0,
-    "episode_e20_remote_and_mobile_working_defend_defend_complete": false
+    "episode_e20_remote_and_mobile_working_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca20",
+    "kit_ca20_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_tarrowby": {
+      "lines": [
+        "Another pallet backlog.",
+        "Who's on the Shipley run?",
+        "Depot's heaving today."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -147,7 +167,10 @@
         },
         "outcome": {
           "setGlobalPrefix": "episode_e20_remote_and_mobile_working_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e20_wifi_page_fake": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -435,6 +458,10 @@
           {
             "heading": "What Tarrowby has set up",
             "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing."
+          },
+          {
+            "heading": "If a work password goes in",
+            "text": "A captured password means an account used from elsewhere, reset and traced; an overheard alarm code forces the client to re-key and re-issue it; a device reported late stays readable until it is wiped, while one reported at once is locked within minutes."
           }
         ],
         "defendIntro": "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here."
@@ -517,8 +544,137 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "tell_them_apart"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e20_remote_and_mobile_working_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_fatima_begum",
+          "displayName": "Fatima Begum",
+          "person": "fatima_begum",
+          "npcType": "person",
+          "position": {
+            "x": 2,
+            "y": 6
+          },
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/fatima_begum_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Vindemiatrix",
+            "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "CVs stacking up again.",
+                "Need a cold one."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "person": "chidi_okeke",
+          "npcType": "person",
+          "position": {
+            "x": 3,
+            "y": 6
+          },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/chidi_okeke_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 3,
+            "y": 6,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Zubenelgenubi",
+            "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "chatter": {
+            "kit_tarrowby": {
+              "lines": [
+                "Fleet's all out today.",
+                "Parched after that yard run."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -539,6 +695,26 @@
           ],
           "minigameData": {
             "episodeId": "e20_remote_and_mobile_working_defend"
+          }
+        },
+        {
+          "type": "drinks_vending",
+          "id": "kit_vending",
+          "name": "Drinks machine",
+          "sprite": "drinks_vending1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The depot drinks machine. Staff wander over for something cold.",
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_tarrowby"
           }
         }
       ]

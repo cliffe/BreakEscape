@@ -6,6 +6,7 @@
   "endGoal": "Build the page and send the link, then check the sign-in pages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -79,7 +80,26 @@
     "landing_sso_login_built": false,
     "landing_sso_login_domain": "",
     "phish_sso_staff_landed": false,
-    "phish_sso_staff_attempts": 0
+    "phish_sso_staff_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca05",
+    "kit_ca05_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -105,7 +125,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e5_signin_pages_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e5_sso_lookalike": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -343,7 +366,11 @@
         "mondayCard": "On Monday: before you type a password, read the address bar. Your organisation's real sign-in page sits on its own domain, and your password manager knows it. If a page asks you to sign in and the address is new to you, close it, go to the site the way you normally would, and report the link using the route in the box below.",
         "defendOnly": "These pages were built to pass for the real sign-in, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "flipPageIntro": "This is the sign-in page you built, as Hana Novak, the claims handler you sent it to, would meet it after following the link. Anything that would give it away is picked out below.",
-        "defendIntro": "Now you're the one reading your inbox. Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed."
+        "defendIntro": "Now you're the one reading your inbox. Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed.",
+        "conceptPanel": {
+          "heading": "What the address bar settles",
+          "text": "To a real attacker, the password you captured on the lookalike page is the member of staff's real account, one that reaches claimant data and makes a base for mailbox rules and phishing sent from the inside. Reading the address bar, the check you just practised, is what breaks that chain, because the password is never typed into the copy.\n\nWhen a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high. Before you leave, have a word with Niamh."
+        }
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -1002,8 +1029,145 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "check_signin_pages"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_defend_complete",
+              "condition": "value === true && globalVars.episode_e5_signin_pages_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_anjali_rao",
+          "displayName": "Anjali Rao",
+          "person": "anjali_rao",
+          "npcType": "person",
+          "position": {
+            "x": 7.4,
+            "y": 8.3
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/anjali_rao_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.4,
+            "y": 8.3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Quiet on the alerts today.",
+                "Need a proper break."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_darren_price",
+          "displayName": "Darren Price",
+          "person": "darren_price",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 7.0
+          },
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 2.5,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Orus",
+            "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Busy on the awareness side.",
+                "Just grabbing some water."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -1024,6 +1188,30 @@
           ],
           "minigameData": {
             "episodeId": "e5_signin_pages"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
           }
         }
       ]

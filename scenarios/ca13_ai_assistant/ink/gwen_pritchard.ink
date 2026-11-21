@@ -32,6 +32,10 @@ VAR phish_assist_reader_attempts = 0
 VAR episode_e13_ai_assistant_defend_complete = false
 VAR e13_demo_offered = false
 VAR demo_answer = ""
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca13_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -41,6 +45,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca13_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Gwen Pritchard: You stopped the request that rode on the assistant's summary, so the attacker's staged call walked away with nothing.
+            - else:
+                Gwen Pritchard: You caught the one that mattered, the request leaning on the assistant's summary, before it turned into a payment or a shared list.
+            }
+        - else:
+            Gwen Pritchard: The assistant sounded certain, which is the whole trap, so a small invoice slipped out, or the customer list went out on a staged call.
+        }
+        Gwen Pritchard: When something wants money moved or a list shared, check it on a route you already trust, never through the assistant.
+        ~ kit_ca13_host_said = true
+    - else:
     { episode_e13_ai_assistant_defend_complete:
         Gwen Pritchard: That's them handled, thank you. You can't always tell a fake voice or face.
         Gwen Pritchard: Check another way, on a number you already hold. Nobody's ever in trouble for checking.
@@ -51,6 +68,7 @@ VAR hub_quiet = false
             Gwen Pritchard: Welcome. Brightwell Assist is live. First, red team: write a supplier brief for the assistant to read, with or without a line hidden in it.
             Gwen Pritchard: Then swap seats, use it for real, and handle what comes at you. Start at the kiosk.
         }
+    }
     }
 }
 + {episode_e13_ai_assistant_defend_complete and not e13_demo_offered} [Optional: hear what a faked call sounds like]

@@ -1,0 +1,57 @@
+{
+  "company": "tarrowby_logistics",
+  "_note": "Tarrowby Logistics office kit (wave 2, plan 4.3; brief WAVE2_BUILD.md D12). Sources carry no position: with no position an object binds to the drawn prop of its type on the room's Tiled map (rooms.js findMatchFor :261-284, applyScenarioObjectPosition :2495). kit_vending binds to the drinks_vending1 prop drawn at tile (6.94, 9.38) on room_aw_tarrowby, against the bottom wall, so useFrom is north (dx 0, dy -1). Staff carry one thirst need and a coordinate needsHome at a supported south desk chair (aw_chair_south_slate1, chairs drawn at tiles 1.62/2.88/4.12, y 6.78): they leave home, drink at the vending and sit again (D12, proof 11). Homes are best-estimate seat tiles, confirmed and adjusted by gate D proof 11. The test fixture test_ca_office_kit keeps the gate placeholder positions and shortened timings through the override on its episodes.json row. Pool lines: awareness level, nothing that blames anyone.",
+  "scenario": { "npcThoughts": false },
+  "pool": {
+    "key": "kit_tarrowby",
+    "lines": ["Another pallet backlog.", "Who's on the Shipley run?", "Depot's heaving today."],
+    "requireGlobal": { "kit_quiet": false }
+  },
+  "sources": [
+    {
+      "type": "drinks_vending",
+      "id": "kit_vending",
+      "name": "Drinks machine",
+      "sprite": "drinks_vending1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "The depot drinks machine. Staff wander over for something cold.",
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": -1.25 }, "capacity": 2, "chatter": "pool" }
+    }
+  ],
+  "staff": {
+    "fatima_begum": {
+      "displayName": "Fatima Begum",
+      "spriteSheet": "fatima_begum",
+      "voice": { "name": "Vindemiatrix", "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 2, "y": 6 },
+      "needsHome": { "room": "training_room", "x": 2, "y": 6, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
+      "chatterLines": ["CVs stacking up again.", "Need a cold one."]
+    },
+    "chidi_okeke": {
+      "displayName": "Chidi Okeke",
+      "spriteSheet": "chidi_okeke",
+      "voice": { "name": "Zubenelgenubi", "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 3, "y": 6 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 6, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
+      "chatterLines": ["Fleet's all out today.", "Parched after that yard run."]
+    },
+    "zainab_hussain": {
+      "displayName": "Zainab Hussain",
+      "spriteSheet": "zainab_hussain",
+      "voice": { "name": "Achernar", "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 4, "y": 6 },
+      "needsHome": { "room": "training_room", "x": 4, "y": 6, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 } },
+      "chatterLines": ["Back off the road at last.", "Could murder a cold drink."]
+    }
+  }
+}

@@ -53,7 +53,7 @@ window.gameAlert = (msg) => alerts.push(msg);
 const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
-const { EpisodeRunnerMinigame, defendCopy, defendSetKind } = await load('minigames/episode-runner/episode-runner-minigame.js');
+const { EpisodeRunnerMinigame, defendCopy, defendSetKind, foldsResult, foldedHeadline, foldedWeakestNudge } = await load('minigames/episode-runner/episode-runner-minigame.js');
 const { startEpisodeRunner } = await load('systems/episode-starter.js');
 const M = await load('minigames/episode-runner/episode-model.js');
 window.MinigameFramework = FW;
@@ -572,7 +572,9 @@ test('with the real views and the real store, a round is recorded once and the d
     assert.equal(records[0].variant, 'full');
     assert.equal(records[0].percent, 80);
     assert.equal(records[0].items.length, 1);
-    assert.ok(cur().container.textContent.includes('Round score: 80%'));
+    // D227 A1: a self-paced debrief opens with the score in large type, not a "Round score" line.
+    assert.equal(cur().container.querySelector('.aw-band-score')?.textContent, '80%');
+    assert.ok(!cur().container.textContent.includes('Round score'));
     assert.ok(cur().container.querySelector('.aw-card-score'));
     click('.aw-finish');
 
@@ -714,7 +716,8 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
         else assert.equal(epState().paused, false, 'never paused unless facilitated');
         const text = panelText();
         assert.ok(cur().container.querySelector('.aw-debrief'));
-        assert.equal(text.includes('Round score'), !facilitated);
+        assert.equal(!!cur().container.querySelector('.aw-band-score'), !facilitated, 'D227 A1: the big score replaces the Round score line when self-paced');
+        assert.ok(!text.includes('Round score'));
         assert.equal(!!cur().container.querySelector('.aw-card-score'), !facilitated);
         assert.equal(text.includes('Compare your answers.'), facilitated);
         click('.aw-finish');
@@ -1263,4 +1266,51 @@ test('ENG-01: episode.stepLabels overrides flip and keeps the call default other
     const both = { ...call, stepLabels: { flip: 'The vishing call' }, strings: { stepLabels: { flip: 'ignored', defend: 'Triage' } } };
     setup(both); open(both);
     assert.deepEqual(cur()._stripLabels(), { flip: 'The vishing call', defend: 'Triage' }, 'episode-level wins over strings');
+});
+
+// ── D227 A1: the triage result card folds into the debrief for a self-paced episode ───────────────
+
+test('D227 A: a self-paced episode with a debrief asks the triage for the trims and the fold', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    open(ep);
+    click('.epr-launch');
+    assert.equal(calls.triage.length, 1);
+    assert.equal(calls.triage[0].episodeTrims, true);
+    assert.equal(calls.triage[0].foldResult, true);
+    assert.equal(calls.triage[0].debriefFollows, true);
+});
+
+test('D227 A: a facilitated episode keeps its result card (trims on, no fold)', () => {
+    const ep = { ...fullEpisode(), facilitated: true };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+    open(ep);
+    click('.epr-launch');
+    assert.equal(calls.triage[0].foldResult, false);
+    assert.equal(calls.triage[0].debriefFollows, true);
+});
+
+test('D227 A: foldsResult is false for a facilitated run, a stage with no debrief after it, and a stage not in the episode', () => {
+    const ep = fullEpisode();
+    assert.equal(foldsResult(ep, 'defend'), true);
+    assert.equal(foldsResult({ ...ep, facilitated: true }, 'defend'), false);
+    assert.equal(foldsResult({ ...ep, stages: ['brief', 'defend'] }, 'defend'), false, 'a check ends on its result');
+    assert.equal(foldsResult(ep, 'nowhere'), false);
+});
+
+test('D227 A1: foldedHeadline prefers the live headline, then the set band for the percent, never throws', () => {
+    const set = { bands: [{ min: 0, headline: 'Low band' }, { min: 50, headline: 'High band' }] };
+    assert.equal(foldedHeadline({ percent: 90, headline: 'Live one' }, set), 'Live one');
+    assert.equal(foldedHeadline({ percent: 90 }, set), 'High band');
+    assert.equal(foldedHeadline({ percent: 10 }, set), 'Low band');
+    assert.equal(foldedHeadline(null, set), null);
+    assert.equal(foldedHeadline({}, set), null);
+});
+
+test('D227 A1: the weakest-skill fallback is the set resultCopy line, else the generic next step for its kinds', () => {
+    const inbox = { messages: [{ id: 'a', kind: 'email' }] };
+    assert.match(foldedWeakestNudge(inbox), /^Look for it in the next messages you get at work, and if you are not sure/);
+    assert.match(foldedWeakestNudge(inbox, true), /^Look for them in the next messages/);
+    assert.match(foldedWeakestNudge({ messages: [{ id: 'p', kind: 'page' }] }), /^Read the address bar/);
+    assert.equal(foldedWeakestNudge({ resultCopy: { weakest: 'Practise {it} daily.' }, messages: [] }, true), 'Practise them daily.');
 });

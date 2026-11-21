@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e10_downloads_and_fake_checks_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e10_downloads_and_fake_checks_defend_defend_complete:
-        Niamh Doherty: That's the morning sorted, thanks. No honest web page ever needs you to paste, run, install or call.
+        { kit_key_caught:
+            Niamh Doherty: You didn't follow that fake "verify you're human" step on the portal, so no extension got near the finance system.
+            Niamh Doherty: Anything telling you to paste, run or install to carry on is the tell. Real software comes from a route you already trust.
+        - else:
+            Niamh Doherty: That page dressed as a routine check, asking you to run a step to continue, was the one to stop.
+            Niamh Doherty: The step ran, an extension reached finance and the intranet, and the machine was off for a rebuild.
+        }
     - else:
         Niamh Doherty: The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.
     }

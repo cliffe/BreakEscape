@@ -117,3 +117,31 @@ test('messageGlobals that is not an object is an error', { skip }, () => {
     assert.ok(/must be an object/.test(e[0]), e[0]);
   }
 });
+
+// outcome.messageCaughtVerdicts (build review W2 M1): per-message caught verdicts.
+const withMcv = (mcv) => {
+  const j = base({ a: 'caught_a' });
+  j.social.triageSets[0].outcome.messageCaughtVerdicts = mcv;
+  return j;
+};
+const mcvIssues = (out) => out.filter((s) => /messageCaughtVerdicts/.test(s));
+
+test('messageCaughtVerdicts: a valid list gives no issue', { skip }, () => {
+  assert.deepEqual(mcvIssues(lintJson(withMcv({ a: ['report'] }))), []);
+  assert.deepEqual(mcvIssues(lintJson(withMcv({ a: ['report', 'verify'] }))), []);
+});
+
+test('messageCaughtVerdicts: a bad list or shape is an error', { skip }, () => {
+  for (const bad of [[], ['trust'], ['report', 'keep'], 'report']) {
+    const e = errors(mcvIssues(lintJson(withMcv({ a: bad }))));
+    assert.ok(e.length === 1 && /non-empty list/.test(e[0]), JSON.stringify(bad));
+  }
+  const e = errors(mcvIssues(lintJson(withMcv(['report']))));
+  assert.ok(e.length === 1 && /must be an object/.test(e[0]), e.join(' | '));
+});
+
+test('messageCaughtVerdicts: an id with no messageGlobals entry is a warning', { skip }, () => {
+  const out = mcvIssues(lintJson(withMcv({ b: ['report'] })));
+  assert.equal(errors(out).length, 0);
+  assert.ok(out.some((m) => /'b', which has no outcome.messageGlobals entry/.test(m)), out.join(' | '));
+});

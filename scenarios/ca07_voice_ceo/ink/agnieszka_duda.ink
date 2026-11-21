@@ -14,6 +14,10 @@
 
 VAR phish_ceo_voice_target_attempts = 0
 VAR episode_e7_voice_ceo_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca07_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -23,6 +27,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca07_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Agnieszka Duda: You didn't release that payment on the voice alone, so what sounded so urgent never left the building.
+            - else:
+                Agnieszka Duda: You stopped to check that payment instead of releasing it on the voice alone, which is the whole job here.
+            }
+            Agnieszka Duda: To whoever cloned that voice, a trusted payment is money gone the same day, and a call back on a known number is what they can't copy.
+        - else:
+            Agnieszka Duda: When a payment goes out on a voice alone, the run freezes while the team re-check every recent one, and that is a long, quiet afternoon.
+            Agnieszka Duda: To whoever cloned that voice, that release is money moved straight on, and the plea to keep it quiet is what buys them the time.
+        }
+        ~ kit_ca07_host_said = true
+    - else:
     { episode_e7_voice_ceo_defend_complete:
         Agnieszka Duda: Both ends done now, thank you. Whoever's voice it is, ring back on a number we already hold and that settles it.
     - else:
@@ -31,6 +49,7 @@ VAR hub_quiet = false
         - else:
             Agnieszka Duda: Welcome to the Brightwell finale. Start at the kiosk: research the chief executive, write one message, then swap seats and cover the finance line.
         }
+    }
     }
 }
 + [Thanks, Agnieszka.]

@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e14_social_media_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e14_social_media_defend_defend_complete:
-        Julian Sallow: That's the feed and the inbox done, thanks. The tell is always what they ask for, no matter how friendly they seem. Report anything that asks about our systems.
+        { kit_key_caught:
+            Julian Sallow: You checked that new contact by a known route, so the account wearing a partner's name got nothing out of the studio.
+            Julian Sallow: It reads like an insider because it's built from our public posts. The name alone is never the proof.
+        - else:
+            Julian Sallow: That second account in a partner's name, friendly and knowing our details, was the one to doubt.
+            Julian Sallow: It was trusted, so a security answer went public, and a week later we were resetting it and reporting the fake account.
+        }
     - else:
         Julian Sallow: You're on an authorised exercise. Some posts in the feed give too much away, and some messages in the inbox fish for how we work.
     }

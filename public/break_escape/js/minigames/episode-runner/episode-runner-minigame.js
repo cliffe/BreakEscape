@@ -65,7 +65,8 @@ import { SocialOverlayScene, socialOverlayParams } from '../framework/social-ove
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
 import { resolvePlayerSent, plainSentMessage, buildTriageMessages } from '../inbox-triage/triage-messages.js';
-import { scoreTriage } from '../inbox-triage/triage-scoring.js';
+import { scoreTriage, bandFor } from '../inbox-triage/triage-scoring.js';
+import { awarenessWeakestLineFor } from '../inbox-triage/triage-kinds.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -868,6 +869,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                     const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
                     if (a.action) out.action = a.action;
                     if (a.none === true) out.none = true;
+                    if (a.sheetless === true) out.sheetless = true;
                     return out;
                 })
             };
@@ -904,10 +906,18 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // report-rate percentage, which the stored result keeps. The item counts stay either way.
         const showScore = !this.facilitated && settings.showResult !== false;
         const result = showScore ? raw : hideScore(raw);
+        // D227 A1: the round's result card was folded into the debrief, so the debrief opens with
+        // the set's own band headline (shown even when the host hides the score, as the card did)
+        // and, when scores show, the score in large type.
+        const folded = foldsResult(this.episode, 'defend') && isObj(this.defendSet);
+        const bandHeadline = folded ? foldedHeadline(raw, this.defendSet) : null;
         this._debriefShown = true;
         this.view = this.deps.renderDebrief(this.body, {
             result,
             showScore,
+            folded,
+            bandHeadline,
+            weakestNudge: folded ? (several) => foldedWeakestNudge(this.defendSet, several) : null,
             set: this.defendSet,
             strings: this.strings,
             globals: this.globals,
@@ -1224,6 +1234,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 // A debrief later in this episode carries the real-items cost and why lines, so the
                 // triage result names the items only (disc_visible). A check ends on the result.
                 debriefFollows: debriefAfter(episode, stage),
+                // D227 A2/A3: compact tell rows and no sheet after a Trust (the triage minigame
+                // applies them to a scored, immediate-feedback round only, never a check). A1: a
+                // self-paced run folds the result card into the debrief; a facilitated run keeps it.
+                episodeTrims: true,
+                foldResult: foldsResult(episode, stage),
                 // item 8 (E12 B2 finding 3): save each locked verdict so a reload mid-round resumes
                 // where the learner was, and restore them when the round reopens. The triage
                 // minigame uses these only when present, so every other scenario is unchanged.
@@ -1379,6 +1394,36 @@ export function debriefAfter(episode, stage) {
     const stages = stagesFor(episode);
     const at = stages.indexOf(stage);
     return at >= 0 && stages.indexOf('debrief') > at;
+}
+
+/**
+ * D227 A1: whether the triage round for `stage` skips its result card, so the debrief opens with
+ * the band headline and the score. A self-paced run with a debrief after the round; a facilitated
+ * run (a shared screen that hides the per-learner score) keeps its result card as before.
+ */
+export function foldsResult(episode, stage) {
+    return episode?.facilitated !== true && debriefAfter(episode, stage);
+}
+
+/** D227 A1: the folded round's band headline: the live result's, else the set's band for its percent. */
+export function foldedHeadline(result, set) {
+    if (!isObj(result)) return null;
+    if (isStr(result.headline)) return result.headline;
+    if (!Number.isFinite(result.percent)) return null;
+    const band = bandFor(result.percent, Array.isArray(set?.bands) ? set.bands : undefined);
+    return isStr(band?.headline) ? band.headline : null;
+}
+
+/**
+ * D227 A1: the folded card's next step for the weakest skill when the set authors no `nudges` line:
+ * the set's resultCopy.weakest ({it} becomes it/them), else the awareness line for its message kinds.
+ */
+export function foldedWeakestNudge(set, several = false) {
+    const it = several ? 'them' : 'it';
+    const own = isObj(set?.resultCopy) && isStr(set.resultCopy.weakest) ? set.resultCopy.weakest : null;
+    if (own) return own.split('{it}').join(it);
+    const kinds = (Array.isArray(set?.messages) ? set.messages : []).filter(isObj).map((m) => (isStr(m.kind) ? m.kind : 'email'));
+    return awarenessWeakestLineFor(kinds, it);
 }
 
 function isNormal(success, result) {

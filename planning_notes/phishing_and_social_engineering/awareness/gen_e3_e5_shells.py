@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
@@ -63,11 +64,17 @@ HOSTS = {
 LINES = {
     ('e3', 'defend'): (
         "You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.",
-        "That's the queue cleared, thanks. If a caller won't let you ring them back, that tells you most of what you need.",
+        {'catch': ("You turned down that overnight sign-in prompt nobody had started, so no claims account was handed to a stranger.",
+                   'Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.'),
+         'miss': ("That overnight sign-in prompt, the one nobody had started, was the one to turn down.",
+                  'It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.')},
         'Thanks, Darren.', 'Shout if you need me.'),
     ('e5', 'defend'): (
         "Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.",
-        "That's all five checked. The address bar is the bit to read, every time.",
+        {'catch': ('You read the address before signing in, so that lookalike page never got a real password off anyone here.',
+                   "The look and the padlock both copy fine. The address bar is the one bit they can't fake."),
+         'miss': ('That page copying our sign-on, on an address that was almost right, was the one to stop.',
+                  'The password went in, so a claims account was wide open and IT lost the day to resets and a records review.')},
         'Thanks, Niamh.', 'No bother.'),
 }
 
@@ -419,7 +426,9 @@ def success_screen(title, body):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, ending, extra=None):
+             kiosk_obs, ending, extra=None, tier='none', kit_row=None):
+    """tier is the office-kit tier (LIVING_OFFICE_PLAN.md 4.4): 'none' adds nothing and leaves the
+    output byte-identical; any other tier needs kit_row, the episodes.json row, which must carry that tier."""
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -461,12 +470,36 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    # `after` is normally one line. When it is a {'catch': (c1, c2), 'miss': (m1, m2)} dict
+    # (a twin with a host line, mirroring the ca01 and ca12 twins), the done-branch splits on
+    # kit_key_caught into a two-clip catch and a two-clip miss. kit_key_caught comes from the
+    # defend set's keyMessage (office_kit), so the ink declares it and only reads it.
+    if isinstance(after, dict):
+        extra_var = 'VAR kit_key_caught = false\n'
+        after_block = (
+            '{ kit_key_caught:\n'
+            f"            {n}: {after['catch'][0]}\n"
+            f"            {n}: {after['catch'][1]}\n"
+            '        - else:\n'
+            f"            {n}: {after['miss'][0]}\n"
+            f"            {n}: {after['miss'][1]}\n"
+            '        }'
+        )
+    else:
+        extra_var = ''
+        after_block = f'{n}: {after}'
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -478,7 +511,7 @@ def ink_source(header, host, done, lines):
 // ================================================
 
 VAR {done} = false
-VAR hub_quiet = false
+{extra_var}VAR hub_quiet = false
 
 === start ===
 -> hub
@@ -488,7 +521,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {{ {done}:
-        {n}: {after}
+        {after_block}
     - else:
         {n}: {before}
     }}
@@ -543,9 +576,12 @@ def defend_only(ekey):
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
+    row = office_kit.row_for(mission)   # None: tier 'none', no kit
+    if row and row.get('handAuthored'):
+        row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'],
-                  success_screen(*d['ending']))
+                  success_screen(*d['ending']), tier=office_kit.tier_of(row), kit_row=row)
     meta = {
         'display_name': d['display'],
         'description': d['desc'],
@@ -632,7 +668,8 @@ def check(ekey, pair, stage):
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
-                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra,
+                  tier='none')   # checks never carry the kit (plan 4.4)
     meta = {
         'display_name': display,
         'description': desc,

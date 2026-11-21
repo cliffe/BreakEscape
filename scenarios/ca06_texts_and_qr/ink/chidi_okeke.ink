@@ -14,6 +14,10 @@
 
 VAR phish_mobile_staff_attempts = 0
 VAR episode_e6_texts_and_qr_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca06_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -23,6 +27,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca06_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Chidi Okeke: You flagged that fake barrier code to me before anyone scanned it, so nothing of yours ever reached them.
+            - else:
+                Chidi Okeke: You flagged that barrier code, so it got checked before a card or a sign-in was tapped into it.
+            }
+            Chidi Okeke: To the people who send these, one scan is a card to drain or a sign-in to walk in behind, and you handed them neither.
+        - else:
+            Chidi Okeke: Trust a code like that and it can empty a colleague's card, or hand over a sign-in they spend the next day winning back.
+            Chidi Okeke: To whoever sends these, one scan is a card to drain or a sign-in to walk in behind, and a text from a new number keeps the thread going.
+        }
+        ~ kit_ca06_host_said = true
+    - else:
     { episode_e6_texts_and_qr_defend_complete:
         Chidi Okeke: There, both ends done. If a message wants a code scanned or a link tapped, open the app yourself instead.
     - else:
@@ -31,6 +49,7 @@ VAR hub_quiet = false
         - else:
             Chidi Okeke: Welcome to the Tarrowby exercise. Start at the kiosk: look at what's public, write one message, then swap seats and go through the work phone it lands on.
         }
+    }
     }
 }
 + [Thanks, Chidi.]
