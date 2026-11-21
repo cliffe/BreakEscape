@@ -1307,7 +1307,7 @@ test('wave 4: strings.stepAway is the shared line and the first key; the kiosk a
     const panel = sa.conceptPanel;
     assert.ok(Array.isArray(panel), `${name}: conceptPanel is an array`);
     // Entries conditioned on a guess global (ca18's guess_e18_* debrief branches) are ordinary panel text, not step-away entries.
-    const isKit = (e) => e.condition && !/guess_/.test(e.condition);
+    const isKit = (e) => e.condition && !/\bguess_e18_(?:landed|sprayed)\b/.test(e.condition);
     const plain = panel.filter((e) => !isKit(e)), cond = panel.filter(isKit);
     assert.ok(plain.length >= 1 && !/have a word with/i.test(plain[0].text), `${name}: entry 0 has no host pointer`);
     if (name in W5 || name in W6) for (const e of plain) assert.ok(!/have a word with/i.test(e.text), `${name}: no unconditioned entry has a host pointer`);
