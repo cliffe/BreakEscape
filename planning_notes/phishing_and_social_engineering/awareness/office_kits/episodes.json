@@ -183,9 +183,9 @@
         "anjali_rao",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca03_people_locked_out",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e3_push_early",
       "hostLine": true
     },
@@ -264,9 +264,9 @@
         "darren_price",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca08_machine_out",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e8_push_abroad",
       "keyCaughtVerdicts": ["report"],
       "hostLine": true
@@ -312,9 +312,9 @@
       "ambient": [
         "yusuf_demir"
       ],
-      "setPiece": null,
+      "setPiece": "ca11_stray_printout",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e11_wrong_sam_breach",
       "keyCaughtVerdicts": ["report"],
       "hostLine": true
@@ -411,9 +411,9 @@
         "darren_price",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca19_isolated_beside_running",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e19_ransom_note",
       "keyCaughtVerdicts": ["report", "verify"],
       "hostLine": true

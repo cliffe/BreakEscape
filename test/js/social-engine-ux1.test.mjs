@@ -243,31 +243,72 @@ test('the debrief card uses kindLine for a trusted genuine-but-report item', () 
 
 // ── F3: sticky verdict row and the scroll to the feedback ───────────────────────
 
-test('the verdict row is marked sticky until answered; Confirm scrolls the feedback into view, instant under reduced motion', () => {
+test('the verdict row is marked sticky until answered; Confirm scrolls the least that shows the card and Next, instant under reduced motion', () => {
     const s = open(makeSet([real(), phish()]));
     click($(s, '.tri-start'));
     pick(s, 'm_reset');
     assert.ok($(s, '.tri-actions.tri-actions-open .tri-verdicts'));
-    const calls = [];
+    const pane = s.reader.readPane;
+    // jsdom has no layout: fake the boxes by class. Pane 0..200 high; the card starts at 300 and
+    // Next ends at 400 (100 high, so it fits and only the least scroll is needed).
+    const box = { card: 300, verdict: 310, next: 400 };
     const proto = window.HTMLElement.prototype;
-    const old = proto.scrollIntoView;
-    proto.scrollIntoView = function (opts) { calls.push({ cls: this.className, opts }); };
+    const oldRect = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = function () {
+        const c = String(this.className || '');
+        let top = 0, bottom = 0;
+        if (this === pane) { top = 0; bottom = 200; }
+        else if (/tri-review-card/.test(c)) { top = box.card; bottom = box.card + 90; }
+        else if (/tri-card-verdict|tri-locked/.test(c)) { top = box.verdict; bottom = box.verdict + 20; }
+        else if (/tri-next/.test(c)) { top = box.next - 40; bottom = box.next; }
+        return { top, bottom, left: 0, right: 0, width: 0, height: bottom - top };
+    };
+    Object.defineProperty(pane, 'clientHeight', { configurable: true, get: () => 200 });
+    const calls = [];
+    pane.scrollTo = (opts) => { calls.push(opts); };
     try {
         window.matchMedia = () => ({ matches: false });
+        pane.scrollTop = 0;
         click($(s, '.tri-verdict[data-verdict="report"]'));
         click($(s, '.tri-confirm'));
         assert.equal($(s, '.tri-actions-open'), null, 'no sticky row once locked in');
-        assert.equal(calls.length, 1);
-        // F-E19-3: immediate mode drops .tri-locked, so Confirm scrolls the review card's verdict line.
-        assert.match(calls[0].cls, /tri-card-verdict/);
-        assert.deepEqual(calls[0].opts, { block: 'start', behavior: 'smooth' });
+        assert.ok(calls.length === 1, `one scrollTo call, got ${calls.length}`);
+        // Next ends 200px below the pane's visible bottom, so scroll 400 - 200 = 200.
+        assert.ok(calls[0].top === 200, `scroll to the card's end, got ${calls[0].top}`);
+        assert.ok(calls[0].behavior === 'smooth', `smooth by default, got ${calls[0].behavior}`);
+
+        // Reduced motion: same target, instant.
         window.matchMedia = (q) => ({ matches: /reduce/.test(q) });
         pick(s, 'm_phish');
+        pane.scrollTop = 0;
         click($(s, '.tri-verdict[data-verdict="report"]'));
         click($(s, '.tri-confirm'));
-        assert.equal(calls[1].opts.behavior, 'auto');
+        assert.ok(calls.length === 2, `second scrollTo call, got ${calls.length}`);
+        assert.ok(calls[1].behavior === 'auto', `instant under reduced motion, got ${calls[1].behavior}`);
+        assert.ok(calls[1].top === 200, `same target under reduced motion, got ${calls[1].top}`);
+
+        // Early return: the card and Next already sit inside the visible pane, so nothing scrolls.
+        window.matchMedia = () => ({ matches: false });
+        box.card = 20; box.verdict = 30; box.next = 120;
+        pane.scrollTop = 0;
+        const before = calls.length;
+        s._scrollToFeedback();
+        assert.ok(calls.length === before, 'no scroll when it already fits in view');
+        assert.ok(pane.scrollTop === 0, 'scrollTop untouched on the early return');
+
+        // A card taller than the pane puts the verdict line at the top.
+        box.card = 100; box.verdict = 140; box.next = 600;
+        s._scrollToFeedback();
+        assert.ok(calls[calls.length - 1].top === 140, `verdict line to the top, got ${calls[calls.length - 1].top}`);
+
+        // No scrollTo available: falls back to setting scrollTop.
+        delete pane.scrollTo;
+        pane.scrollTop = 0;
+        box.card = 300; box.verdict = 310; box.next = 400;
+        s._scrollToFeedback();
+        assert.ok(pane.scrollTop === 200, `scrollTop fallback, got ${pane.scrollTop}`);
     } finally {
-        proto.scrollIntoView = old;
+        proto.getBoundingClientRect = oldRect;
         delete window.matchMedia;
     }
 });

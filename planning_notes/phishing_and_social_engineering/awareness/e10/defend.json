@@ -96,6 +96,14 @@
         "fake_alarm_callback": "Spotting a fake alarm with a number to call",
         "browser_permission_grab": "Judging what an extension or page is asking to read or change"
       },
+      "_nudges": "CA-1 (UI sweep, Major): the folded debrief's weakest-skill line appends a next-step pointer; with no set.nudges it falls through foldedWeakestNudge -> awarenessWeakestLineFor, which for this all-`page` set reads with the sign-in wording ('Read the address bar before you sign in to any page...') in an episode about downloads, fake checks and alarms, not signing in. set.nudges authors that next step per tell id so the browser-habit wording wins (debrief-view.js reads set.nudges[weak.id] first, then resultCopy.weakest, then the generic kind line). One line per tell the debrief can name as weakest: the five scenario-local tells that appear in truth.flags (fake_check_paste, fake_update_prompt, dangerous_download, fake_alarm_callback, browser_permission_grab). The two shared-library tells (lookalike_domain, padlock_myth) appear only in whyFine, never in any item's flags, so the debrief cannot name them as weakest and they need no nudge. Shown text only, never spoken; no method, no blame.",
+      "nudges": {
+        "fake_check_paste": "A real 'prove you are human' check keeps you on the page, ticking a box or picking pictures. The moment a page tells you to press keys, paste or run something on your computer, close it and report it, however familiar the site looks.",
+        "fake_update_prompt": "A web page has no business telling you your browser needs updating, and a genuine update never arrives as a page offering you a download. Let your browser and IT handle updates, and close anything that pops up to push one.",
+        "dangerous_download": "A price list or a report arrives as a document, not a program, so a file whose name ends in .exe is something else wearing a disguise. Get your software from the company's approved apps rather than adverts or search results, and leave a download you didn't ask for unopened.",
+        "fake_alarm_callback": "A genuine warning from your computer never gives you a number to ring, and the page hasn't really locked your machine. Close the tab or the browser instead, and if you want help, use the service desk number you already have, not the one on screen.",
+        "browser_permission_grab": "An add-on that asks to read or change everything you do in the browser can see your work, the finance system and the intranet alike, and a high rating doesn't make it safe. Add tools only from the company's approved list, and ask IT if you're unsure."
+      },
       "outcome": { "setGlobalPrefix": "episode_e10_downloads_and_fake_checks_defend_", "passPercent": 0 },
       "messages": [
         {
