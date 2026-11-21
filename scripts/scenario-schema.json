@@ -3108,6 +3108,7 @@
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
+            "flipDefenderLineNoSpray": {"type": "string", "description": "The defender line instead of flipDefenderLine when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "flipDefenderLineByChoice": {
               "type": "object",
               "description": "aw2: the flip's defender line per chosen pretext, keyed by the template id the learner picked (state.sent.templateId). A matching entry replaces flipDefenderLine for that branch; any other branch falls back to flipDefenderLine. Keys are social.templates ids",
@@ -3156,6 +3157,7 @@
             "flipPageHeading": {"type": "string", "description": "E10 MA4: the heading over the page section when the flip shows both a message and a page; default 'The page it links to'. A no-link design (a fake check on the site's own address) overrides it, e.g. 'The page you built', so it does not claim a link"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
+            "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {
