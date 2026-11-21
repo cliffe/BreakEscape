@@ -5,7 +5,7 @@
 import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 const SPEED = 145;
-export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy', targets, lingerMs = 1000 }) {
+export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy', targets, lingerMs = 1000, preMs = 350 }) {
   let npc = null;
   const find = async (bridge) => (await bridge.getState()).nearby.find(n => n.id === npcId);
   const setup = async (page, bridge) => {
@@ -25,15 +25,15 @@ export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy',
     await keyLegs(bridge, legs, SPEED, mark);
     for (let i = 0; i < 12; i++) { const n = await find(bridge); if (n && n.inRange) break; const p = (await bridge.getState()).player; await bridge.walk(Math.abs(n.x - p.x) > Math.abs(n.y - p.y) ? (n.x > p.x ? 'right' : 'left') : (n.y > p.y ? 'down' : 'up'), 90); }
     mark('walk-end', { npc: await find(bridge), player: (await bridge.getState()).player });
-    await sleep(350);
+    await sleep(preMs);
     mark('interact');
     let r = await bridge.interact(npcId, { timeoutMs: 15000 });
-    let w = await bridge.waitForMinigame('person-chat', { timeoutMs: 5000 });
+    let w = await bridge.waitForMinigame('person-chat', { timeoutMs: 2500 });
     if (!w || w.ok === false) { mark('interact-retry', { r: JSON.stringify(r).slice(0, 300) }); r = await bridge.interact(npcId, { timeoutMs: 15000 }); w = await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 }); }
     if (!w || w.ok === false) throw new Error('person-chat did not open ' + JSON.stringify(r).slice(0, 300));
     mark('conversation-open');
     // own driver: a target line can arrive together with its choice menu (Ffion), so never stop at a menu before every target has played
-    const done = new Set(); const t0 = Date.now();
+    const done = new Set(); const t0 = Date.now(); let tLine = Date.now();
     while (done.size < targets.length && Date.now() - t0 < 60000) {
       const d = (await bridge.getState()).dialogue;
       if (!d) { await sleep(150); continue; }
@@ -43,8 +43,8 @@ export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy',
         const l = await vw.waitForLine(tgt.re, 20000);
         if (!l) throw new Error(tgt.name + ' never played');
         mark(tgt.name + '-done', { durMs: l.durMs }); done.add(tgt.name);
-        if (done.size < targets.length) { await sleep(1100); await bridge.minigame.continue_().catch(() => {}); }
-      } else if (d.canContinue && !d.awaitingChoice) { await sleep(450); await bridge.minigame.continue_().catch(() => {}); }
+        // no continue click: the game auto-advances on the audio, and a click would skip the next line's voice
+      } else if (d.canContinue && !d.awaitingChoice && Date.now() - tLine > 12000) { await bridge.minigame.continue_().catch(() => {}); tLine = Date.now(); }
       await sleep(120);
     }
     if (done.size < targets.length) throw new Error('targets reached: ' + [...done].join(','));
