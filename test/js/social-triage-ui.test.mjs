@@ -234,7 +234,7 @@ test('immediate feedback: the review card names caught, missed and false flags a
     assert.match($(s, '.tri-review-card').textContent, /Safe, but not reported/);
     assert.match($(s, '.tri-review-card').textContent, /What this one was after: Opening it/);
     verdict(s, 'm4_jed', 'report', ['senderAuth']);
-    assert.match($(s, '.tri-review-card').textContent, /real, but reporting is never wrong/);
+    assert.match($(s, '.tri-review-card').textContent, /real\. Reporting when you're unsure is safe/);
     const mark = $(s, '.tri-card-verdict');
     assert.ok(mark.classList.contains('acceptable'));
     assert.equal(mark.classList.contains('wrong'), false);

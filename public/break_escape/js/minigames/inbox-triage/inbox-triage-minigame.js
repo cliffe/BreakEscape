@@ -1098,8 +1098,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return fb || {
             trust: 'Right call. This one was real.',
             report: aware
-                ? "Reported, and that's never wrong. For next time, here is why this one was fine."
-                : "That one was real, but reporting is never wrong when you're unsure. Here's what to check next time.",
+                ? "Reported, which is safe, though a genuine message costs a colleague a little time to check. For next time, here is why this one was fine."
+                : "That one was real. Reporting when you're unsure is safe, but it costs a colleague a little time. Here's what to check next time.",
             // F-E13-3: the right call named for a deleted real item is Trust or Verify, so the line
             // no longer recommends reporting (which contradicted it); it names the cost of binning
             // real mail instead. A set override (labels.verdictFeedback.delete.real) still wins.
