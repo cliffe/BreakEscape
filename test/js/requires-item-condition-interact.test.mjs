@@ -143,3 +143,46 @@ test('the test_remove_item demo scenario carries the gated PC, its switch and a 
   assert.ok(sw.triggerOnInteract.some(a => a.type === 'set_global' && a.key === 'kp_test_owner_away'));
   assert.equal(sc.globalVariables.kp_test_owner_away, false);
 });
+
+// A PC with postitNoteVariants (ca09's Chidi): the click opens the shared post-it view while the note is up.
+const NOTE_COND = "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'";
+const LINE = "You stop before signing in. It isn't your account, but anyone walking past could use it.";
+const notePc = () => ({ objectId: 'kit_ca09_pc', scenarioData: { id: 'kit_ca09_pc', type: 'pc', name: "Chidi's PC",
+  requiresItem: 'kit_deviceA', requiresItemHint: "Chidi's PC, on the sign-in screen. The note has gone.",
+  triggerOnInteract: [],
+  postitNoteVariants: [{ condition: NOTE_COND, value: 'Tarrowby2468', submitText: LINE }] } });
+
+test('postit note up: object_interacted first, then the post-it view with the note, the line and no notepad button; no alert, no action', () => {
+  const w = setup({ kit_ca09_note_up: true, kit_ca09_note_choice: '' }, { holding: false });
+  const order = [];
+  const realEmit = window.eventDispatcher.emit;
+  window.eventDispatcher.emit = (n, d) => { order.push(n); realEmit(n, d); };
+  const starts = [];
+  window.startPasswordMinigame = (...a) => { order.push('start'); starts.push(a); };
+  handleObjectInteraction(notePc());
+  assert.equal(starts.length, 1);
+  assert.deepEqual(starts[0][4], { postitNote: 'Tarrowby2468', showPostit: true, maxAttempts: 3, submitText: LINE, hideNotepadButton: true });
+  assert.ok(order.indexOf('object_interacted') >= 0 && order.indexOf('object_interacted') < order.indexOf('start'));
+  assert.equal(w.alerts.length, 0);
+  assert.equal(globalThis.__applied.length, 0);
+});
+
+test('postit note gone (choice mention): no view, the requiresItem refusal shows', () => {
+  const w = setup({ kit_ca09_note_up: true, kit_ca09_note_choice: 'mention' }, { holding: false });
+  let started = 0;
+  window.startPasswordMinigame = () => { started++; };
+  handleObjectInteraction(notePc());
+  assert.equal(started, 0);
+  assert.equal(w.alerts.length, 1);
+  assert.equal(w.alerts[0][0], "Chidi's PC, on the sign-in screen. The note has gone.");
+});
+
+test('postit variant without submitText: refused, falls back to the requiresItem refusal', () => {
+  const w = setup({ kit_ca09_note_up: true, kit_ca09_note_choice: '' }, { holding: false });
+  let started = 0;
+  window.startPasswordMinigame = () => { started++; };
+  const s = notePc(); delete s.scenarioData.postitNoteVariants[0].submitText;
+  handleObjectInteraction(s);
+  assert.equal(started, 0);
+  assert.equal(w.alerts.length, 1);
+});

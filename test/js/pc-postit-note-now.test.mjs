@@ -9,7 +9,8 @@ import { pcPostitNoteNow } from '../../public/break_escape/js/systems/requires-i
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const COND = "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'";
-const pc = { type: 'pc', postitNoteVariants: [{ condition: COND, value: 'Tarrowby2468' }] };
+const LINE = "You stop before signing in. It isn't your account, but anyone walking past could use it.";
+const pc = { type: 'pc', postitNoteVariants: [{ condition: COND, value: 'Tarrowby2468', submitText: LINE }] };
 
 test('the note shows only while it is up and has not been mentioned away', () => {
   assert.equal(pcPostitNoteNow(pc, { kit_ca09_note_up: false, kit_ca09_note_choice: '' }), '');
@@ -22,14 +23,16 @@ test('only a plain PC with variants counts', () => {
   const g = { kit_ca09_note_up: true, kit_ca09_note_choice: '' };
   assert.equal(pcPostitNoteNow({ ...pc, lockType: 'login' }, g), '');
   assert.equal(pcPostitNoteNow({ ...pc, type: 'notes' }, g), '');
-  assert.equal(pcPostitNoteNow({ type: 'pc', postitNote: 'x' }, g), '');
+  assert.equal(pcPostitNoteNow({ type: 'pc', postitNote: 'x' }, g), '');   // the base note alone, or beside variants, is not read
+  assert.equal(pcPostitNoteNow({ ...pc, postitNote: 'x' }, { kit_ca09_note_up: false }), '');
+  assert.equal(pcPostitNoteNow({ ...pc, locked: true }, g), '');
   assert.equal(pcPostitNoteNow(null, g), '');
 });
 
 test('ca09 shell and its kit carry the same variants, and the sprite variant matches the note state', () => {
   const erb = JSON.parse(readFileSync(join(root, 'scenarios/ca09_passwords/scenario.json.erb'), 'utf8'));
   const o = erb.rooms.training_room.objects.find((x) => x.id === 'kit_ca09_pc');
-  assert.deepEqual(o.postitNoteVariants, [{ ...pc.postitNoteVariants[0], submitText: LINE }]);
+  assert.deepEqual(o.postitNoteVariants, pc.postitNoteVariants);
   assert.ok(o.spriteVariants.some((v) => v.value === 'pc1_locked_note' && v.condition === COND));
   assert.ok(!/\{[a-z_]+\}/i.test(o.postitNoteVariants[0].value));
   const kit = JSON.parse(readFileSync(join(root, 'planning_notes/phishing_and_social_engineering/awareness/office_kits/tarrowby_logistics.json'), 'utf8'));
@@ -39,7 +42,6 @@ test('ca09 shell and its kit carry the same variants, and the sprite variant mat
 
 // submitText: the line a submit shows in the post-it view (pcPostitSubmitText, password-minigame.js)
 import { pcPostitSubmitText } from '../../public/break_escape/js/systems/requires-item-hint.js';
-const LINE = "You stop before signing in. It isn't your account, but anyone walking past could use it.";
 const pcSubmit = { type: 'pc', postitNoteVariants: [{ condition: COND, value: 'Tarrowby2468', submitText: LINE }] };
 const UP = { kit_ca09_note_up: true, kit_ca09_note_choice: '' };
 
@@ -47,7 +49,9 @@ test('submitText comes from the matching variant only while the note is up', () 
   assert.equal(pcPostitSubmitText(pcSubmit, UP), LINE);
   assert.equal(pcPostitSubmitText(pcSubmit, { kit_ca09_note_up: false }), '');
   assert.equal(pcPostitSubmitText(pcSubmit, { ...UP, kit_ca09_note_choice: 'mention' }), '');
-  assert.equal(pcPostitSubmitText(pc, UP), '');   // a variant without submitText
+  const bare = { type: 'pc', postitNoteVariants: [{ condition: COND, value: 'Tarrowby2468' }] };
+  assert.equal(pcPostitSubmitText(bare, UP), '');   // a variant without submitText is refused...
+  assert.equal(pcPostitNoteNow(bare, UP), '');      // ...note and line alike (the engine falls back)
   assert.equal(pcPostitSubmitText({ type: 'pc', lockType: 'login', postitNoteVariants: pcSubmit.postitNoteVariants }, UP), '');
 });
 
@@ -66,22 +70,24 @@ async function loadMinigame() {
 
 function fakeView(PM, gameData) {
   const shown = [];
+  const kinds = [];
   const calls = { validate: 0 };
   const view = {
     gameState: { isActive: true }, gameData, lockKey: null, passwordField: { value: 'Tarrowby2468' },
-    showScreenMessage: (t) => shown.push(t), validatePasswordWithServer: async () => { calls.validate++; },
+    showScreenMessage: (t, o) => { shown.push(t); kinds.push(o?.kind); }, validatePasswordWithServer: async () => { calls.validate++; },
     passwordIncorrect() { calls.validate++; }, _saveLock() { calls.validate++; },
   };
-  return { view, shown, calls, run: () => PM.prototype._submitPasswordOnce.call(view) };
+  return { view, shown, kinds, calls, run: () => PM.prototype._submitPasswordOnce.call(view) };
 }
 
 test('a submit with submitText shows the line, makes no server request and counts no attempt', async (t) => {
-  let PM; try { PM = await loadMinigame(); } catch (e) { t.skip(`minigame needs a browser: ${e.message}`); return; }
+  const PM = await loadMinigame();
   let fetched = 0; const realFetch = globalThis.fetch; globalThis.fetch = async () => { fetched++; return { ok: true, json: async () => ({}) }; };
   try {
     const f = fakeView(PM, { attempts: 0, maxAttempts: 3, submitText: LINE });
     await f.run();
     assert.deepEqual(f.shown, [LINE]);
+    assert.deepEqual(f.kinds, ['info']);
     assert.equal(f.calls.validate, 0);
     assert.equal(f.view.gameData.attempts, 0);
     assert.equal(fetched, 0);
@@ -89,10 +95,20 @@ test('a submit with submitText shows the line, makes no server request and count
 });
 
 test('a variant without submitText keeps today\'s behaviour: the attempt counts and the server is asked', async (t) => {
-  let PM; try { PM = await loadMinigame(); } catch (e) { t.skip(`minigame needs a browser: ${e.message}`); return; }
+  const PM = await loadMinigame();
   globalThis.window.ApiClient = {};
   const f = fakeView(PM, { attempts: 0, maxAttempts: 3, submitText: '' });
   await f.run();
   assert.equal(f.view.gameData.attempts, 1);
   assert.ok(f.calls.validate >= 1);
+});
+
+test('a submit with an empty field and a submitText does nothing: no line, no request, no attempt', async () => {
+  const PM = await loadMinigame();
+  const f = fakeView(PM, { attempts: 0, maxAttempts: 3, submitText: LINE });
+  f.view.passwordField.value = '  ';
+  await f.run();
+  assert.deepEqual(f.shown, []);
+  assert.equal(f.calls.validate, 0);
+  assert.equal(f.view.gameData.attempts, 0);
 });
