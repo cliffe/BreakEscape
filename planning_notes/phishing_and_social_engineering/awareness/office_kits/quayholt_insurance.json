@@ -157,7 +157,7 @@
           "position": {
             "x": 4.1875,
             "y": 7.09375,
-            "elevation": 22
+            "elevation": 24.2
           },
           "spriteVariants": [
             {
@@ -471,7 +471,7 @@
           "position": {
             "x": 6.47,
             "y": 7.55,
-            "elevation": 20
+            "elevation": 40
           },
           "revealOnGlobal": "kit_ca19_out",
           "observations": "Pen and paper, till IT rebuild her machine."
@@ -548,6 +548,19 @@
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 2.5,
+                  "y": 7.0
+                },
+                "speed": 90
+              }
             },
             {
               "eventPattern": "global_variable_changed:kit_ca19_there",

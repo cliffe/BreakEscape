@@ -886,11 +886,29 @@ test('wave 3: the kiosk carries the hand-authored finished variant, and the quie
   }
 });
 
-test('wave 3: the layer-1 host pointer is gone from the panel (the fragment parity test covers the shared run)', () => {
+test('wave 3: the layer-1 host pointer is gone from the panel (the stepAway parity test below covers the shared run)', () => {
   for (const name of Object.keys(W3)) {
     const sc = readShell(name);
     const texts = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel);
     assert.ok(texts.length > 0 && texts.every((t) => !/have a word with/i.test(t) && !/Before you leave/.test(t)), `${name}: no host pointer`);
+  }
+});
+
+test('wave 3: stepAway full rows keep the layer-1 text in step with their fragment (no pointer, shared run, twin equals the fragment)', () => {
+  const rows = courseRows.filter((r) => FULL_TIERS.includes(r.tier) && r.attack === true && r.stepAway === true && fragmentPanel(r.ep) !== null);
+  for (const n of Object.keys(W3)) assert.ok(rows.some((r) => r.id === n), `${n} is among the stepAway rows this test visits`);
+  for (const r of rows) {
+    const sc = readShell(r.id);
+    const erb = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel).join('\n');
+    assert.ok(!/have a word with/i.test(erb), `${r.id}: the panel carries no host pointer`);
+    const frag = fragmentPanel(r.ep);
+    const fragText = conceptPanelTexts(frag).join('\n');
+    assert.ok(!/To a real attacker/.test(fragText) && !/have a word with/.test(fragText), `${r.id}: the fragment panel carries layer 0 or the pointer`);
+    assert.ok(sharesRun(erb, fragText), `${r.id}: erb and fragment layer 1 share no run of eight words`);
+    const twinName = `${r.id}_defend`;
+    if (existsSync(join(scenarios, twinName, 'scenario.json.erb'))) {
+      assert.ok(canon(readShell(twinName).social.awarenessEpisode.strings.conceptPanel) === canon(frag), `${r.id}: the twin's panel differs from the fragment's`);
+    }
   }
 });
 
@@ -906,12 +924,10 @@ test('wave 3: chain barks, the walk, the partner and the timer have the shape th
     const walk = wm.filter((m) => m.patrolOverride);
     assert.ok(walk.length >= 1 && walk.every((m) => m.patrolOverride.targetTile && Number.isFinite(m.patrolOverride.targetTile.x)), `${name}: walker has a patrolOverride`);
     assert.ok(wm.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: walker resumes on the done global`);
-    // the first line: an arrival bark that sets the "there" global (ca11 sets it on the second walk's arrival instead)
+    // the first line: an arrival bark that sets the "there" global (ca11's "there" is kit_ca11_at_tray, set on the first arrival)
     const first = wm.find((m) => m.bark && /^npc_arrived:/.test(m.eventPattern));
-    if (w.ep !== 'ca11') {
-      assert.ok(first && first.setGlobal && first.setGlobal[w.there] === true && first.onceOnly === true, `${name}: arrival bark sets ${w.there}`);
-      assert.ok(!globalsRead(first.condition).includes(w.there), `${name}: first bark does not read what it sets`);
-    }
+    assert.ok(first && first.setGlobal && first.setGlobal[w.there] === true && first.onceOnly === true, `${name}: arrival bark sets ${w.there}`);
+    assert.ok(!globalsRead(first.condition).includes(w.there), `${name}: first bark does not read what it sets`);
     // timer: the fallback resumes even if the walk never arrives
     const t = (sc.timers || []).find((x) => x.id === `kit_${w.ep}_t_done`);
     assert.ok(t && t.startOnGlobal === out && t.setGlobal[done] === true && t.condition === `!globalVars.${done}` && t.delayMs >= 10000, `${name}: fallback timer`);
@@ -919,19 +935,34 @@ test('wave 3: chain barks, the walk, the partner and the timer have the shape th
     if (w.partner) {
       const pm = w3Maps(w3Npc(sc, w.partner));
       assert.ok(pm.some((m) => m.needs === 'suspend' && m.eventPattern === `global_variable_changed:${out}`), `${name}: partner suspends`);
-      assert.ok(pm.some((m) => m.needs === 'resume'), `${name}: partner resumes`);
+      assert.ok(pm.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: partner resumes on the done global`);
     }
     // needs freeze on the walker: ca03/ca08/ca19 carry it, ca11's Yusuf keeps the decaying need
     const th = walker.needs && walker.needs.thirst;
     assert.ok(th, `${name}: walker has a thirst need`);
     // frozen = a decay too slow to cross urgentAt in a playthrough; ca11 keeps Yusuf's real decay (the chain resumes him)
     assert.ok(w.ep === 'ca11' ? th.decayPerMin >= 10 : th.decayPerMin <= 0.05, `${name}: thirst decay ${th.decayPerMin} (${w.ep === 'ca11' ? 'unchanged' : 'frozen'})`);
+    // a frozen walker must also start above urgentAt, or it would be urgent at once and the freeze would not hold it
+    if (w.ep !== 'ca11') assert.ok(th.initial > th.urgentAt, `${name}: thirst initial ${th.initial} is above urgentAt ${th.urgentAt}`);
     // host-reply mapping on the "there" global (ca03, ca08 only)
     const hostNpc = w.hostId ? w3Npc(sc, w.hostId) : null;
     const reply = hostNpc && w3Maps(hostNpc).find((m) => m.eventPattern === `global_variable_changed:${w.there}`);
     if (w.hostReply) {
       assert.ok(reply && reply.bark && reply.setGlobal && reply.setGlobal[done] === true && reply.delayMs >= 4000, `${name}: host reply sets done after a gap`);
       assert.ok(!globalsRead(reply.condition).includes(done), `${name}: reply bark does not read the global it sets`);
+      assert.ok(/kit_quiet === true/.test(reply.condition) && new RegExp(`kit_${w.ep}_out === true`).test(reply.condition), `${name}: host reply is gated on kit_quiet === true and the out global`);
+    }
+    // ca19: the second line is the partner's, said on the first line's "there" global after a gap, and it sets done
+    if (w.ep === 'ca19') {
+      const d2 = w3Maps(w3Npc(sc, w.partner)).find((m) => m.bark && m.eventPattern === `global_variable_changed:${w.there}`);
+      assert.ok(d2 && d2.delayMs >= 4000 && d2.setGlobal && d2.setGlobal[done] === true && /kit_quiet === true/.test(d2.condition), `${name}: D2 is wired on ${w.there}, sets done, gated on kit_quiet`);
+      assert.ok(!globalsRead(d2.condition).includes(done), `${name}: D2 does not read the global it sets`);
+      // D2 is said from his desk: the partner is walked home right after the suspend
+      const pm = w3Maps(w3Npc(sc, w.partner));
+      const home = pm.find((m) => m.patrolOverride && m.eventPattern === `global_variable_changed:${out}`);
+      const post = w3Npc(sc, w.partner).needsHome;
+      assert.ok(home && home.delayMs === 1000 && home.patrolOverride.targetTile.x === post.x && home.patrolOverride.targetTile.y === post.y, `${name}: partner is sent to his desk post on ${out}`);
+      assert.ok(pm.indexOf(home) > pm.findIndex((m) => m.needs === 'suspend'), `${name}: the walk home comes after the suspend`);
     }
   }
 });
@@ -945,6 +976,7 @@ test('wave 3: ca11 walks twice off one arrival, ca11 line 2 routes through kit_c
   assert.ok(second, 'second patrolOverride listens on kit_ca11_at_tray');
   const l2 = maps.find((m) => m.bark && m.eventPattern === 'global_variable_changed:kit_ca11_at_tray');
   assert.ok(l2 && l2.setGlobal && l2.setGlobal.kit_ca11_done === true, 'line 2 sets kit_ca11_done');
+  assert.ok(l2.delayMs === 5000, `line 2 waits 5000 ms after the tray arrival (got ${l2.delayMs})`);
   assert.ok(maps.some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_ca11_done'), 'Yusuf resumes on done');
   assert.ok(sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person).length === 1, 'Yusuf is the only kit colleague');
   assert.ok(!w3Maps(hostOf(sc)).some((m) => /kit_ca11_(at_tray|done)/.test(m.eventPattern)), 'no host reply mapping on ca11');
@@ -1017,10 +1049,48 @@ test('wave 3: verdict sets match the rows (ca03 none, ca08 report, ca11 report, 
   }
 });
 
-test('wave 3: every set-piece PC the four shells place is on the kit it was authored in', () => {
+test('wave 3: every placed kit object in the four shells is the one its set piece authors (same id, sprite, position)', () => {
   const quay = readKit('quayholt_insurance.json').setPieces, carr = readKit('carrholme_services.json').setPieces;
   for (const k of ['ca03_people_locked_out', 'ca08_machine_out', 'ca19_isolated_beside_running']) assert.ok(quay[k], k);
   assert.ok(carr.ca11_stray_printout);
+  for (const [name, w] of Object.entries(W3)) {
+    const kitSp = (w.ep === 'ca11' ? carr : quay)[w.setPiece];
+    assert.ok(kitSp.objects && kitSp.objects.length > 0, `${name}: set piece has objects`);
+    for (const ko of kitSp.objects) {
+      const o = w3Obj(readShell(name), ko.id);
+      assert.ok(o, `${name}: ${ko.id} is placed in the shell`);
+      assert.deepEqual(o.position, ko.position, `${name}: ${ko.id} position matches the kit`);
+      assert.ok(o.sprite === ko.sprite && o.type === ko.type, `${name}: ${ko.id} sprite and type match the kit`);
+    }
+  }
+});
+
+// Depth (rooms.js setDepthAndStore): bottom + 0.5 + elevation. A placed object that overlaps a drawn table has to
+// draw above that table (table depth = its Tiled bottom + 0.5), or the table's opaque sprite hides it.
+// Table items and moved items join the table group at table depth + n*0.01, so they are compared with a 0.1 margin.
+const pngSize = (key) => { const b = readFileSync(join(root, 'public/break_escape/assets/objects', `${key}.png`)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+const tableRects = (roomName) => {
+  const d = JSON.parse(readFileSync(join(rooms, `${roomName}.json`), 'utf8'));
+  const layer = d.layers.find((l) => l.name === 'tables');
+  return layer.objects.map((t) => ({ left: t.x, right: t.x + t.width, top: t.y - t.height, bottom: t.y }));   // tile objects: y is the bottom edge
+};
+test('wave 3: every placed set-piece object that overlaps a table draws above it (depth, not just a number)', () => {
+  let overlaps = 0;
+  for (const [name, w] of Object.entries(W3)) {
+    const sc = readShell(name);
+    const tables = tableRects(sc.rooms.training_room.type);
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith('kit_') && x.position && x.position.elevation !== undefined)) {
+      const [pw, ph] = pngSize(o.sprite);
+      const left = o.position.x * 32, top = o.position.y * 32, bottom = top + ph, right = left + pw;
+      const depth = bottom + 0.5 + o.position.elevation;
+      for (const t of tables) {
+        if (right <= t.left || left >= t.right || bottom <= t.top || top >= t.bottom) continue;
+        overlaps += 1;
+        assert.ok(depth > t.bottom + 0.5 + 0.1, `${name} ${o.id}: depth ${depth} must exceed the table's ${t.bottom + 0.5} (it would draw hidden under it)`);
+      }
+    }
+  }
+  assert.ok(overlaps >= 5, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs and the ca19 paper (saw ${overlaps})`);
 });
 
 // ca19's isolated-screen look has no sprite yet (art pending an owner pick, WAVE3_BUILD.md s8). Marked skipped
@@ -1040,4 +1110,23 @@ test('wave 3 ca19 art: the isolated sprite is 28x23 like pc1 (footprint unchange
   const png = (f) => readFileSync(join(root, 'public/break_escape/assets/objects', f));
   const dims = (b) => [b.readUInt32BE(16), b.readUInt32BE(20)];
   assert.deepEqual(dims(png(`${o.spriteVariants[0].value}.png`)), dims(png('pc1.png')));
+});
+
+test('wave 3 fixture: test_ca_office_kit has the done fallback, the resume listeners, a partner pair, an elevated swapped PC and a moved table item', () => {
+  const sc = readShell('test_ca_office_kit');
+  const room = sc.rooms.training_room;
+  const npc = (id) => room.npcs.find((n) => n.id === id);
+  const maps = (id) => (npc(id).eventMappings || []);
+  assert.ok(sc.globalVariables.kit_e1_done === false, 'kit_e1_done declared false');
+  assert.ok((sc.timers || []).some((t) => t.id === 'kit_e1_t_done' && t.startOnGlobal === 'kit_e1_out' && t.setGlobal.kit_e1_done === true), 'fallback timer');
+  assert.ok(maps('kit_agnieszka_duda').some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_e1_done'), 'walker resumes on done');
+  const partner = maps('kit_e1_partner');
+  assert.ok(partner.some((m) => m.needs === 'suspend' && m.eventPattern === 'global_variable_changed:kit_e1_out'), 'partner suspends on out');
+  assert.ok(partner.some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_e1_done'), 'partner resumes on done');
+  const pc = room.objects.find((o) => o.id === 'kit_e1_pc');
+  assert.ok(pc.spriteVariants && pc.position.elevation > 24, 'the swapped PC carries the elevation');
+  assert.ok(room.objects.find((o) => o.id === 'kit_e1_pc2').position.elevation === undefined, 'the unswapped PC is as it was');
+  assert.ok(room.objects.some((o) => o.id === 'kit_e1_journals' && o.type === 'journal_stack'), 'a moved table item');
+  const host = room.npcs.find((n) => n.id === 'ep_host');
+  assert.ok(!host.voice, 'the fixture host has no voice, so its test bark is never voiced');
 });

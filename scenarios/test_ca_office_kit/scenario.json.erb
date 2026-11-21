@@ -683,6 +683,12 @@
               "condition": "value === true",
               "onceOnly": true,
               "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
             }
           ]
         },
@@ -756,6 +762,35 @@
               "onceOnly": true,
               "bark": "Right, back at my desk.",
               "targetKnot": "kit_e1_screen"
+            }
+          ]
+        },
+        {
+          "id": "kit_e1_partner",
+          "displayName": "Partner",
+          "npcType": "person",
+          "position": { "x": 2, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/ep_host_ambient.json",
+          "currentKnot": "start",
+          "needsHome": { "room": "training_room", "x": 2, "y": 6, "facing": "south" },
+          "needsRooms": ["training_room"],
+          "needsSpeed": 90,
+          "needs": { "thirst": { "decayPerMin": 0.01, "urgentAt": 50, "initial": 90 } },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_e1_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
             }
           ]
         }
@@ -842,7 +877,7 @@
           "id": "kit_e1_pc",
           "name": "Sam's PC",
           "sprite": "pc_desktop",
-          "position": { "x": 3.5, "y": 5.5 },
+          "position": { "x": 3.5, "y": 5.5, "elevation": 24.2 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -862,7 +897,7 @@
           "id": "kit_e1_pc2",
           "name": "Priya's PC",
           "sprite": "pc_desktop",
-          "position": { "x": 6.5, "y": 5.5, "elevation": 22 },
+          "position": { "x": 6.5, "y": 5.5 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -875,6 +910,16 @@
           "requiresItem": "kit_e1_gate_item",
           "requiresItemHint": "Priya's PC. It is hers.",
           "triggerOnInteract": []
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_e1_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": { "x": 1.125, "y": 6.84375 },
+          "observations": "A stack of trade journals, moved over to make room."
         }
       ]
     }
