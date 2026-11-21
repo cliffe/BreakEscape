@@ -1,0 +1,13 @@
+{
+  "key": "e7d73b28ea426f285543544d7e2370a9",
+  "npc": "nilesh_solanki",
+  "text": "You didn't read the number back to that email posing as IT, so the account stayed yours.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:56Z"
+}
