@@ -338,16 +338,16 @@
     {
       "id": "ca14_social_media",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "merrin_sallow",
       "ep": "ca14",
       "ambient": [
         "lorna_easton",
         "delphine_arvanitis"
       ],
-      "setPiece": null,
+      "setPiece": "ca14_team_photo",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e14_fake_merrin",
       "hostLine": true
     },

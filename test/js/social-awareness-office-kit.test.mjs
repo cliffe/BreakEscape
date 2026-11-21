@@ -868,11 +868,6 @@ const W34 = { ...W3, ...W4 };
 // the partner's episode knot), hostId (host ink file), hostSpeaks (ca02: the host gives the follow-through),
 // there, choice, silent, knot, right, wrong, values, staffBarks, panelEntries, arrayWrap, walks, spawn, pcPos, pcName,
 // pron, movedSprite, hostBarks. Optional: walkTarget (set only if step 0 moves a partner's walk off her needsHome, e.g. Anjali).
-//   ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
-//     partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
-//     there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
-//     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
-//     pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1' },
 //   ca05_signin_pages: { ep: 'ca05', company: 'quayholt_insurance', setPiece: 'ca05_signin_prompt', colleague: 'kit_darren_price', stub: 'darren_price',
 //     partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca05_moved && kit_key_caught', hostId: 'niamh_doherty', hostSpeaks: false,
 //     there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
@@ -889,6 +884,11 @@ const W5 = {
     there: 'kit_ca13_there', choice: 'kit_ca13_send_choice', silent: 'silent', knot: 'ca13_send', right: 'ring', wrong: 'send', values: ['ring', 'send', 'silent'],
     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1' },
+  ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
+    partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
+    there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
+    staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1' },
 };
 const W45 = { ...W4, ...W5 };
 const W345 = { ...W34, ...W5 };
@@ -1426,7 +1426,7 @@ test('wave 4: PC text order matches the sprite order; text objects are interacta
 });
 
 test('wave 4: host recap is gated until the chain ends, in every host ink', () => {
-  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard' };
+  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow' };
   for (const [name, h] of Object.entries(hosts)) {
     const ep = ({ ...W4, ...W5 })[name].ep;
     const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
