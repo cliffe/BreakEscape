@@ -1081,29 +1081,54 @@ const MOVED_TYPES = new Set(['journal_stack', 'binders', 'm09_folder']);
 const kitObjects = (sc, pre) => sc.rooms.training_room.objects.filter((x) => String(x.id).startsWith(pre) && x.position && x.sprite);
 const objRect = (o) => { const [pw, ph] = pngSize(o.sprite); const left = o.position.x * 32, top = o.position.y * 32; return { left, top, right: left + pw, bottom: top + ph }; };
 const hits = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+// Placeholders in the room's Tiled table_items layer: gid -> tileset image basename -> base type (trailing digits and .png dropped,
+// the same reduction rooms.js extractBaseTypeFromImageName makes). A scenario object only joins a table group if it claims one.
+const baseOf = (n) => String(n).replace(/\.png$/, '').replace(/\d+$/, '');
+const tablePlaceholderTypes = (roomName) => {
+  const d = JSON.parse(readFileSync(join(rooms, `${roomName}.json`), 'utf8'));
+  const gid = {};
+  for (const ts of d.tilesets || []) for (const tile of ts.tiles || []) gid[ts.firstgid + tile.id] = String(tile.image || '').split('/').pop();
+  const layer = d.layers.find((l) => l.name === 'table_items');
+  const counts = {};
+  for (const o of (layer ? layer.objects : [])) { const t = baseOf(gid[o.gid] || '?'); counts[t] = (counts[t] || 0) + 1; }
+  return counts;
+};
+const overlapArea = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
 test('wave 3: every kit set-piece object over a table or a moved table item has an elevation that draws it above (depth, not a sliver overlap)', () => {
   let overlaps = 0, movedChecked = 0;
-  for (const [name, w] of Object.entries({ ...W3, test_ca_office_kit: null })) {
+  for (const [name] of Object.entries({ ...W3, test_ca_office_kit: null })) {
     const sc = readShell(name);
-    const tables = tableRects(sc.rooms.training_room.type);
-    const objs = kitObjects(sc, name === 'test_ca_office_kit' ? 'kit_e1_' : 'kit_');
+    const roomType = sc.rooms.training_room.type;
+    const tables = tableRects(roomType);
+    const objs = kitObjects(sc, 'kit_');
     const moved = objs.filter((o) => MOVED_TYPES.has(o.type) && o.position.elevation === undefined);
+    // each moved item has to claim a table_items placeholder of its type in this room (else the engine takes the
+    // fallback path and stores it at its own depth), and there can be no more of a type than placeholders
+    const placeholders = tablePlaceholderTypes(roomType);
+    const perType = {};
     for (const m of moved) {
-      assert.ok(tables.some((t) => hits(objRect(m), t)), `${name} ${m.id}: a moved table item must land on a table (else it is stored at its own depth)`);
+      const t = baseOf(m.sprite);
+      perType[t] = (perType[t] || 0) + 1;
+      assert.ok(placeholders[t] > 0, `${name} ${m.id}: room ${roomType} has no ${t} placeholder in its table_items layer, so the engine would store it at its own depth (under the table)`);
+    }
+    for (const [t, n] of Object.entries(perType)) assert.ok(n <= placeholders[t], `${name}: ${n} moved ${t} objects but only ${placeholders[t]} placeholders in ${roomType}`);
+    // a moved item takes the depth of the table it lands on (table bottom + 0.5, plus up to 0.1 of group index steps)
+    const surfaces = tables.map((t) => ({ ...t, depth: t.bottom + 0.5 + 0.1, label: 'a table' }));
+    for (const m of moved) {
+      const r = objRect(m);
+      const onto = tables.filter((t) => hits(r, t)).sort((x, y) => overlapArea(r, y) - overlapArea(r, x))[0];
+      assert.ok(onto, `${name} ${m.id}: a moved table item must land on a table (else it is stored at its own depth)`);
+      surfaces.push({ ...r, depth: onto.bottom + 0.5 + 0.1, label: m.id });
       movedChecked += 1;
     }
-    const surfaces = [...tables.map((t) => ({ ...t, depth: t.bottom + 0.5 + 0.1 })), ...moved.map((m) => ({ ...objRect(m), depth: -1, id: m.id }))];
     for (const o of objs.filter((x) => !MOVED_TYPES.has(x.type) || x.position.elevation !== undefined)) {
       const r = objRect(o);
       const depth = r.bottom + 0.5 + (o.position.elevation || 0);
       for (const t of surfaces) {
         if (!hits(r, t)) continue;
         overlaps += 1;
-        assert.ok(o.position.elevation !== undefined, `${name} ${o.id}: overlaps ${t.id || 'a table'} with no elevation, so it would draw hidden under it`);
-        // a table sets the depth to beat; a moved item shares its table's depth, so the same bar applies (checked via the table)
-        if (t.depth > 0) assert.ok(depth > t.depth, `${name} ${o.id}: depth ${depth} must exceed the table's ${t.depth - 0.1 }`);
+        assert.ok(depth > t.depth, `${name} ${o.id}: depth ${depth} must exceed ${t.label}'s ${(t.depth - 0.1).toFixed(1)} (elevation ${o.position.elevation})`);
       }
-      // an object over a moved item must also be over its table, which the loop above has asserted
     }
   }
   assert.ok(movedChecked >= 4, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
