@@ -195,10 +195,9 @@ test('CA-7: awareness cards are square with 2px borders (scanning every rule)', 
     eq(find(skin, '.aw-flip .mail-chip', 'border').startsWith('2px '), true, 'flip chip 2px');
     // m5: no rounded corners on any aw-* rule at all (50%, 999px, var() included). Only the
     // D217 paper surface and the D220 boot/credits CRT are exempt (matched by substring).
-    const EXEMPT = new Set([]);
     for (const r of skin) {
         if (!r.sel.includes('.aw-')) continue;
-        if (EXEMPT.has(r.sel) || /boot|credits|crt/.test(r.sel)) continue;
+        if (/boot|credits|crt/.test(r.sel)) continue;
         for (const d of r.body.split(';')) {
             const k = d.indexOf(':');
             if (k < 0 || !/^border(-\w+)*-radius$/.test(d.slice(0, k).trim())) continue;
@@ -228,6 +227,8 @@ test('CSL R2: result summary rows are 44px targets, the short Result chrome is t
     eq(find(triage, '.tri-item-why summary', 'min-height', ''), '44px', 'It was real row');
     // CSL R3 m2: a floor, not a fixed height, with no vertical padding, so the label sits centred
     eq(find(triage, '.tri-result .tri-finish', 'min-height', SHORT), '44px', 'Finish');
+    // CSL R5 m1: the skinned tally's margin is cleared at a weight that beats awareness-skin.css
+    eq(find(triage, '.triage-client.aw-skin .tri-sort > .aw-team-tally', 'margin', SHORT), '0', 'short skinned tally margin');
     assert.ok(find(triage, '.tri-result .tri-finish', 'height', SHORT) === null, 'Finish has no fixed height');
     eq(find(triage, '.tri-result .tri-finish', 'padding-top', SHORT), '0', 'Finish top padding');
     eq(find(triage, '.tri-result .tri-finish', 'padding-bottom', SHORT), '0', 'Finish bottom padding');
@@ -235,7 +236,6 @@ test('CSL R2: result summary rows are 44px targets, the short Result chrome is t
     eq(find(triage, '.tri-result .tri-score', 'margin', SHORT), '0 0 4px', 'short score margin');
     const body = find(triage, '.tri-result > .tri-result-body', 'padding', SHORT);
     assert.ok(body === '8px 10px 4px', 'short result body padding');
-    const skin = parse(readCss('awareness-skin.css'));
     assert.ok(find(skin, '.aw-montage', 'max-width', '') === null, 'the montage is not capped narrower than the flip cards');
     eq(find(skin, '.aw-montage-headline', 'border-left-width', ''), '6px', 'the beat marker stays');
 });

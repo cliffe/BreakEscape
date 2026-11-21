@@ -735,6 +735,8 @@
     .triage-client .tri-sort > .mail-reader { grid-column: 1 / -1; grid-row: 2; align-self: stretch; min-height: 0; }
     .triage-client .tri-sort > .tri-progress { grid-column: 1; grid-row: 1; }
     .triage-client .tri-sort > .aw-team-tally { grid-column: 2; grid-row: 1; margin: 0; }
+    /* CSL R5 m1: awareness-skin.css sets the skinned tally's margin at the same weight and loads later */
+    .triage-client.aw-skin .tri-sort > .aw-team-tally { margin: 0; }
     .triage-client .tri-panel { padding: 8px; }
     /* Result (CSL R2 m3): less chrome round the scrolling body so more of it shows. Finish stays a
        44px target; the score keeps its 48px size, only its margins tighten. */
