@@ -2041,7 +2041,7 @@ Each entry names what this plan needs from another plan and the section of that 
    new sign-in checks go where each plan puts them. The one change near them is
    `desktop_request_allowed?` (section 5.4), whose `remote: "blocked"` term admits a technique
    session through its own foothold.
-6. **`OPS_REALISM_SKIN_PLAN.md`, sections 4.2, 5.2, 5.3 and 9.** The four routes and the
+6. **`OPS_REALISM_SKIN_PLAN.md`, sections 4.2, 4.3, 5.2, 5.3 and 9.** The four routes and the
    `GET /network` fields of sections 5 to 7 are the whole surface (the optional `cli` display objects are served as sections 5.2, 5.3 and
    7 say, at the stage of the thing they belong to, copied unchanged, left out when not authored,
    and read by nothing on the server; the skin plan declares their schema rows at its K3 and owns

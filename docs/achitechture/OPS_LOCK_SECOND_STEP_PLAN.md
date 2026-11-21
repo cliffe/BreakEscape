@@ -1305,7 +1305,7 @@ Each entry names what this plan needs from another plan and the section of that 
 4. **`OPS_LAYER_BRIEF.md` (in `docs/agents/`), sections 4 and 5.** This plan is feature id A25, and
    `test_ops_lock_step` is in the brief's feature list.
 5. **`OPS_CORE_PLAN.md` (section 14), `OPS_PRIVILEGE_ACCOUNTS_PLAN.md` (section 6) and
-   `OPS_CRACKING_PLAN.md` (section 14, "Second-step and lock plans").** A password they yield is a
+   `OPS_CRACKING_PLAN.md` (section 14, "Second-step and lock plan").** A password they yield is a
    first factor and meets the step. A plan that opens an object by its own server route uses
    `record_step_open!` and `step_object_open?`, or the validator refuses `secondStep` on that
    object. The core and privilege plans open no lockable object by their own routes, so they call
