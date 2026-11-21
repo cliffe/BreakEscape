@@ -123,11 +123,11 @@ Priya S.: His monitor went dark because of the attack. So when it would come bac
     Priya S.: Ms Okafor's infusion was never renewed. Nobody overdosed her, but she went hours without her pain relief.
 }
 Priya S.: One question on that pump. Suppose it tells you the prescribed dose is below its minimum. What should the person at the pump do?
-* [Raise the rate to the pump's minimum. The library is there to protect her.]
+* [Raise the rate to the pump's minimum, since the library exists to protect her.]
     Priya S.: That's exactly what the attacker counted on. The library had been changed. The prescription hadn't.
-* [Clear the warning and carry on. Pumps nag all the time.]
+* [Clear the warning and carry on, since pumps raise false alarms all the time.]
     Priya S.: That habit is what they turned against you. A warning everyone clears has stopped being a warning.
-* [Keep the prescribed rate, stop, and query pharmacy.]
+* [Hold at the prescribed rate and query it with pharmacy before going any further.]
     Priya S.: Yes. When the device and the prescription disagree, trust the prescription. They were betting on someone clearing one more warning without reading it.
 - -> safety_claims
 
@@ -157,15 +157,15 @@ Priya S.: Now the safety case.
     Priya S.: HC-001. David went through it with you on the day.
 }
 Priya S.: Whose job was it to check that claim against the network, and how often?
-* [Clinical engineering, once a year.]
+* [Clinical engineering, as part of the annual safety review.]
     Priya S.: Better than never. But it should be checked whenever the network changes. The VLAN project changed it every month.
-* [Whoever changes the network, every time they change it.]
+* [Whoever changes the network, as part of every change they make.]
     Priya S.: Yes. If a claim depends on how the network's built, whoever changes the network has to check it.
 - -> hc003_review
 
 === hc001_valid ===
 Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone got in?
-* [Yes. The firewall was in. The attack broke it.]
+* [Yes. The firewall was in place, and the attack only broke it on Monday.]
     Priya S.: That's what most people say. Read its conditions: no dual-homed workstations, no exception rules. Both had been there for eighteen months.
 * [It held until the attackers found the exception rules.]
     Priya S.: Those rules were there long before the attackers were. A claim whose "provided" is already false never held.
@@ -181,10 +181,10 @@ Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone
 
 === hc003_review ===
 Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
-* [The attacker beat it. Nothing would have stopped that.]
+* [The attacker beat it. Nothing stops a change made with real admin credentials.]
     Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
     Priya S.: The audit log recorded it. Nobody was reading the log.
-* [It failed. An unauthorised change went through and nobody noticed.]
+* [The control failed. An unauthorised change went through and nobody noticed.]
     Priya S.: Right. The control existed on paper. The audit log had the change in it, and nobody read it.
 -
 // Round R3 (PRI3-1, L1): the Q14 and Q2 points play after the gather, whatever the answer.
@@ -213,11 +213,11 @@ Priya S.: Your internal audit asked for a medical device risk register six month
 }
 Priya S.: HC-007 also promised a rehearsal every year. The last one was nineteen months ago. Today was the first test since.
 Priya S.: So: who should decide on isolation, and why?
-* [IT security. They're the ones who can see the attacker.]
+* [IT security alone, since they're the ones who can see the attacker.]
     Priya S.: It takes the vendor's EHR copy off every ward. That makes it a clinical decision too. Neither side sees the whole cost alone.
-* [The executive on call. They own the Trust's risk.]
-    Priya S.: When the two disagree, yes. But the exec needs both views in front of them, and HC-007 is how they get them.
-* [IT security and clinical engineering together. Each sees a cost the other misses.]
+* [IT security and the executive on call together, since the exec owns the risk.]
+    Priya S.: Closer. But the exec can't see the clinical cost from there. David can.
+* [IT security and clinical engineering together, since each sees a cost the other misses.]
     Priya S.: That's it. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
 -
 {
@@ -299,8 +299,8 @@ Priya S.: When you chose a source, what were you trading?
     Priya S.: Yes. The NAS was quick, and only as clean as Ravi's scan. The cloud was clean and slow. Tape was clean and days away.
 * [How much data we'd lose, against how long it would take.]
     Priya S.: That matters too: Monday's records, or Friday's. But today the bigger question was whether the copy was clean.
-* [Nothing much. Only one source was really usable.]
-    Priya S.: Every one was usable, at a price. Call two of them "no good" and nobody notices a choice was made.
+* [How much it would cost, against how long the wards stayed on paper.]
+    Priya S.: None of the three sources was about cost. The trade was how clean the copy was against how long you waited for it.
 - -> ransom_review
 
 === ransom_review ===
@@ -325,11 +325,11 @@ Priya S.: When you chose a source, what were you trading?
 
 === root_cause ===
 Priya S.: Now, how did they get in?
-* [Phishing on a finance PC. That's where the first alert fired.]
+* [A phishing email on a finance PC, where the first alert fired.]
     Priya S.: That's one. The other was a stolen NetSol password on the VPN, the same morning, with no second factor.
-* [A stolen NetSol password on the VPN, with no MFA.]
+* [A stolen NetSol password on the VPN, with no MFA behind it.]
     Priya S.: That's one. The other was a phishing email on a finance PC, the same morning.
-* [Both: the phishing email and the stolen VPN password.]
+* [Both. The phishing email opened one door and the stolen VPN password another.]
     Priya S.: Both. Two ways in on the same Monday morning.
 -
 // D173 (owner-approved): the SIEM miss, gated on the console's own outcome globals.
@@ -352,11 +352,11 @@ Priya S.: None of that is exotic. MFA on every remote login is in your DSPT. So 
 === risk_review ===
 Priya S.: Your Board will read all of this as risk, so let's put it that way.
 Priya S.: The contractor's MFA exemption, the vendor's VPN, Ward 7's old segment. What did they have in common?
-* [Each was a risk someone accepted.]
+* [Each was a known risk that someone had accepted.]
     Priya S.: Yes. Each one had a name against it and a date to look at it again. The dates came and went.
-* [Each was a control the Trust didn't know was missing.]
+* [Each was a missing control that nobody at the Trust had ever noticed.]
     Priya S.: They knew. Each one was written down somewhere. That's what makes it worse.
-* [Each was unlikely on its own.]
+* [Each was unlikely on its own, so nobody planned for it.]
     Priya S.: Unlikely, perhaps. But likelihood times impact, with patients on the other side, gave a number nobody would sign today.
 -
 Priya S.: Ward 7's exceptions were written up as "as low as reasonably practicable". They weren't. Finishing the VLAN move was reasonable, and it sat stalled for a year.

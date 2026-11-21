@@ -38,8 +38,8 @@
   <div class="configuration-container">
     <% unless @shell %><h1><%= heading %></h1><% end %>
 
-    <% if params[:game_id].present? %>
-      <p class="config-prompt">⚠️ Please select your character before starting the mission.</p>
+    <% if character_choice_needed? %>
+      <p class="config-prompt" role="alert">Please select your character before starting the mission.</p>
     <% end %>
 
     <%= form_with model: @player_preference,
@@ -71,8 +71,8 @@
 
         <div class="pk-pick">
           <p class="pk-pick-title">Select Your Character</p>
-          <% if @player_preference.selected_sprite.blank? %>
-            <p class="selection-required">⚠️ Character selection required</p>
+          <% if @player_preference.selected_sprite.blank? && !character_choice_needed? %>
+            <p class="selection-required">Character selection required</p>
           <% end %>
           <div class="sprite-grid" id="sprite-selection-grid">
             <% available.each do |entry| %>
@@ -108,8 +108,8 @@
         <!-- Sprite Selection -->
         <div class="form-group">
           <%= f.label :selected_sprite, "Select Your Character" %>
-          <% if @player_preference.selected_sprite.blank? %>
-            <p class="selection-required">⚠️ Character selection required</p>
+          <% if @player_preference.selected_sprite.blank? && !character_choice_needed? %>
+            <p class="selection-required">Character selection required</p>
           <% end %>
 
           <div class="sprite-selection-layout">

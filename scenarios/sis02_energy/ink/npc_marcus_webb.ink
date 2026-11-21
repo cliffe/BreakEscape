@@ -44,6 +44,7 @@ VAR marcus_airgap_view_heard = false
 // Local state
 VAR marcus_called = false
 VAR marcus_rdp_briefed = false
+VAR jump_server_asked = false  // Local: the "what am I looking for" answer has been given once
 VAR topic_shutdown_argued = false
 VAR topic_claim001_discussed = false
 VAR topic_why_not_fixed = false
@@ -152,7 +153,12 @@ VAR topic_patch_view = false
 + { sis_tamper_confirmed and not topic_patch_view } [Why was the SIS patch deferred?]
     -> sis_patch_view
 + { marcus_webb_contacted and not jump_server_confirmed } [What am I looking for on the jump server?]
-    Anyone on it who shouldn't be. Look at who, when, and where from. Then tell me.
+    { not jump_server_asked:
+        ~ jump_server_asked = true
+        Anyone on it who shouldn't be. Look at who, when, and where from. Flag it on ENG-02, then tell me.
+    - else:
+        Same as before, an account that shouldn't be there. Flag it on ENG-02, then tell me.
+    }
     -> hub
 + [Where are we?]
     -> current_status
@@ -310,10 +316,10 @@ Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour 
 Before I sign it. Do we send what we've got, or wait till we know more?
 + [Send it now with what we've got. We'll update it as we go.]
     -> nis_send
-+ [Hold it till we know how far they got. Wrong reports are hard to undo.]
++ [Hold it until we know how far they got, so the report is accurate.]
     ~ nis_initial_choice = "wait"
     #set_global:nis_initial_choice:wait
-    A wrong report's hard to undo, fair. But the clock runs from when we knew, not from when we're sure.
+    Getting it right matters, fair. But the clock runs from when we knew, not from when we're sure.
     It's your call. I won't sign what you don't stand behind.
     ++ [Fine. Send what we know.]
         -> nis_send
@@ -328,6 +334,7 @@ Before I sign it. Do we send what we've got, or wait till we know more?
 }
 ~ nis_notified = true
 #set_global:nis_notified:true
+#complete_task:complete_nis_form
 // Each branch claims only what the player has seen or Marcus has said (SL3): "since 23:12"
 // only once the historian was opened.
 {

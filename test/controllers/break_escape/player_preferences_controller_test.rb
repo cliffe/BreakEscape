@@ -375,6 +375,125 @@ module BreakEscape
       assert_select 'label.sprite-card.invalid', count: 0
     end
 
+    # ─── "Select your character" prompt (m12 of the m01 gate playtest) ───────
+
+    def prompt_game(valid_sprites)
+      Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => valid_sprites },
+        player_state: {}
+      )
+    end
+
+    test 'prompt is hidden when a valid choice for the mission is already saved' do
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+      assert_select 'p.selection-required', count: 0
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt shows when no character is saved' do
+      @preference.update_columns(selected_sprite: nil)
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+      assert_select 'p.config-prompt', text: /select your character before starting the mission/
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt shows when the saved choice is not valid for the mission' do
+      @preference.update_columns(selected_sprite: 'male_nerd_v2')
+      game = prompt_game(['female_*'])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt never shows without a game_id' do
+      @preference.update_columns(selected_sprite: nil)
+      get configuration_url
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+    end
+
+    test 'prompt and selection notice carry no emoji' do
+      @preference.update_columns(selected_sprite: nil)
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_select 'p.config-prompt', count: 1
+      assert_no_match(/\u26A0/, response.body)
+    ensure
+      game&.destroy
+    end
+
+    test 'with no character chosen only the prompt shows, not the second selection line' do
+      @preference.update_columns(selected_sprite: nil)
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_select 'p.config-prompt', count: 1
+      assert_select 'p.selection-required', count: 0
+    ensure
+      game&.destroy
+    end
+
+    test 'opened from the menu with no character chosen the selection line shows once, no prompt' do
+      @preference.update_columns(selected_sprite: nil)
+      get configuration_url
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+      assert_select 'p.selection-required', count: 1
+    end
+
+    test 'another player game: prompt follows the current player own rules and the foreign game is not loaded (prompt count is the guard)' do
+      other = break_escape_demo_users(:other_user)
+      foreign = Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: other,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => ['female_*'] },
+        player_state: {}
+      )
+      # saved male_nerd_v2 would be rejected by the foreign scenario's validSprites
+      @preference.update_columns(selected_sprite: 'male_nerd_v2')
+      get configuration_url(game_id: foreign.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+      with_blank = response.body
+      @preference.update_columns(selected_sprite: nil)
+      get configuration_url(game_id: foreign.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+      assert_not_equal with_blank, response.body
+    ensure
+      foreign&.destroy
+    end
+
+    test 'missing game_id: 200, no prompt with a saved sprite, prompt only when blank' do
+      get configuration_url(game_id: 0)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+      @preference.update_columns(selected_sprite: nil)
+      get configuration_url(game_id: 0)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+    end
+
+    test 'no preferences view carries the warning emoji' do
+      dir = BreakEscape::Engine.root.join('app/views/break_escape/player_preferences')
+      files = Dir[dir.join('*.erb').to_s]
+      assert_operator files.size, :>=, 3
+      files.each do |f|
+        assert_no_match(/\u26A0/, File.read(f), "#{File.basename(f)} has an emoji")
+      end
+    end
+
     # ─── Available sprites constant ───────────────────────────────────────────
 
     test 'PlayerPreference::AVAILABLE_SPRITES offers only the v2 sprites' do

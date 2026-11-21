@@ -149,7 +149,7 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
 - shutdown_argument == "evidence" and hydrogen_alarm:
     Priya S.: You wanted the logs before shutting down. The gas came up while you were getting them.
 - shutdown_argument == "evidence":
-    Priya S.: You wanted the logs before shutting down. This time the cells gave you the time.
+    Priya S.: You wanted the logs first, then pressed it before the gas came up. Changing your mind was the right call.
 }
 {
 - bms_registers_saved:
@@ -164,7 +164,7 @@ Priya S.: Nobody's being blamed here. What we learn goes out to other sites like
     Priya S.: The ESD also wiped what they'd written into the battery controller. Ten seconds at the operator screen would have saved a copy.
 }
 Priya S.: When one mistake costs money and the other costs the building, how sure do you need to be?
-* [Sure it's a real hazard. Not sure of the cause.]
+* [Sure the hazard is real, whatever the cause. Act on it.]
     {
     - not anomaly_detected and hydrogen_alarm:
         Priya S.: Yes. By the time the gas came up, the alarm was reason enough.
@@ -175,7 +175,7 @@ Priya S.: When one mistake costs money and the other costs the building, how sur
     - else:
         Priya S.: Yes. The dial was enough. The cause could wait.
     }
-* [Sure it isn't the gauge. One more reading would do it.]
+* [Sure it isn't a faulty gauge. One more reading would settle it.]
     Priya S.: A second reading's fair, if it takes two minutes. Wait to be certain and you'll be watching it from the car park.
     Priya S.: You don't need to be certain. You need to know which mistake you can live with.
 - -> safety_case
@@ -195,12 +195,12 @@ Priya S.: The argument was that it sat on its own network, so nothing on SCADA c
 -> en002_question
 
 === en002_question ===
-+ [No. It stopped being true when the engineering port went on the SCADA network.]
++ [No. The engineering port sat on the SCADA network, so SCADA could reach the trip.]
     ~ en002_verdict = "broken"
     #set_global:en002_verdict:broken
     Priya S.: Yes. It broke at commissioning, when that port went on. The attackers just found it.
     -> claims_more
-+ [It held. The trip worked; it just had the wrong number in it.]
++ [Yes. The trip logic ran as designed; only the number inside it was wrong.]
     ~ en002_verdict = "held"
     #set_global:en002_verdict:held
     Priya S.: The logic worked. The claim didn't. It promised the trip whatever happened on the network.
@@ -260,9 +260,9 @@ Priya S.: The dial claim only half held. The dial was independent, but the claim
 === cable_question ===
 Priya S.: One thing I'd push you on. You pulled the jump server cable before Marcus knew about the session. My view is he should have been told first.
 Priya S.: Cut someone mid-write to a safety controller and you can leave it half-configured.
-* [The session was the attacker's. Every minute it stayed up was worse.]
+* [I cut it at once. Every minute that session stayed up made things worse.]
     Priya S.: That's fair, and you may be right. I'd still want ten seconds on the phone first, not after.
-* [Fair. I should have told him.]
+* [Fair. A call to Marcus first would have taken ten seconds.]
     Priya S.: It worked out. Ten seconds on the phone next time.
 - -> patch_review
 
@@ -344,9 +344,9 @@ Priya S.: Ofgem's the competent authority, with the energy department. We're tol
     Priya S.: Trent Water still don't know. That file's still on one of their PCs.
 }
 Priya S.: Did Trent Water need telling under NIS?
-* [Yes. Water's an essential service too.]
+* [Yes. Water supply is an essential service, so they fall under NIS.]
     Priya S.: Some water companies are. Trent Water runs one small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
-* [No. It was duty of care. They share our systems.]
+* [No. One small station is under the NIS thresholds, so it is duty of care.]
     Priya S.: Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.
 -
 { trent_water_notified:

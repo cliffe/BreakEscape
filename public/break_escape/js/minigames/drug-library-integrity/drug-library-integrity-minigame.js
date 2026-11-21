@@ -311,7 +311,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
 
     _buildHashDetail(restored) {
         const t = this._tampered;
-        const prefix = '3a7f4bc9d85e2f1a946cb0d3';
+        const prefix = '3a7f4bc9d85e2f1a946cb0d35e91a6c4';
         const expSuffix = '3c8b1e4f7d2a9c5e6b1f3d8a0c7e2b5f';
         const cmpSuffix = '7d3e9f1c4b8a2e6f5c0d1b7a3e8f9c2d';
 
