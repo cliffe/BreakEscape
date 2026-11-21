@@ -528,6 +528,10 @@ export class PasswordMinigame extends MinigameScene {
             showPassword: false,
             postitNote: params.postitNote || '',
             showPostit: params.showPostit || false,
+            // A note-only view (ca09's Chidi): a submit shows this line, with no server check
+            submitText: params.submitText || '',
+            // No "Add to notepad" button: the note is a colleague's password, not the learner's to file
+            hideNotepadButton: params.hideNotepadButton === true,
             capsLock: false,
             keyboardVisible: false
         };
@@ -683,7 +687,7 @@ export class PasswordMinigame extends MinigameScene {
         this.setupPasswordInterface();
         
         // Add notebook button to minigame controls if postit note exists
-        if (this.gameData.showPostit && this.gameData.postitNote) {
+        if (this.gameData.showPostit && this.gameData.postitNote && !this.gameData.hideNotepadButton) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
@@ -1300,6 +1304,14 @@ export class PasswordMinigame extends MinigameScene {
 
         if (!this.gameState.isActive) return;
 
+        // The post-it path of a PC that is not the learner's to sign in to: say so, check nothing,
+        // count nothing, and leave the view open.
+        if (this.gameData.submitText) {
+            if (!this.passwordField?.value?.trim()) return;
+            this.showScreenMessage(this.gameData.submitText, { kind: 'info' });
+            return;
+        }
+
         if (this.lockKey) {
             const left = passwordLockStatus(this.lockKey).lockedLeftSeconds;
             if (left > 0) {
@@ -1694,7 +1706,7 @@ export class PasswordMinigame extends MinigameScene {
         if (this.gameData.showPostit && this.gameData.postitNote) {
             const postit = inMonitor ? null : this.gameContainer.querySelector('.postit-note');
             if (postit) makeDraggable(postit);
-            const controls = this.ensureControlsRow();
+            const controls = this.gameData.hideNotepadButton ? null : this.ensureControlsRow();
             if (controls) {
                 const notebookBtn = document.createElement('button');
                 notebookBtn.className = 'minigame-button';

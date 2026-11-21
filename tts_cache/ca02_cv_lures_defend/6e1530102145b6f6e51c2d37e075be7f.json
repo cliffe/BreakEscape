@@ -1,0 +1,13 @@
+{
+  "key": "6e1530102145b6f6e51c2d37e075be7f",
+  "npc": "kit_zainab_hussain",
+  "text": "Good idea. I'll ring Facilities from my desk before I touch it.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout \u2014 do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:16Z"
+}

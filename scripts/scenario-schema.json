@@ -5484,6 +5484,20 @@
             "additionalProperties": false
           }
         },
+        "postitNoteVariants": {
+          "type": "array",
+          "description": "A plain PC (type pc, not lockType login) whose sticky note is on the screen only in some states: [{ condition, value }], first match wins (the observationVariants syntax). When one matches, a click opens the shared sign-in post-it view showing value on the post-it, with no sign-in; otherwise the click goes on as before. Must not sit beside locked: true or a non-empty triggerOnInteract (the validator errors). The view has no Add-to-notepad button. Pair it with a spriteVariants note sprite. ca09's Chidi.",
+          "items": {
+            "type": "object",
+            "required": ["condition", "value", "submitText"],
+            "properties": {
+              "condition": { "type": "string" },
+              "value": { "type": "string" },
+              "submitText": { "type": "string", "description": "Required. The fixed line the view shows (in the neutral info colour) when the learner submits a non-empty field while it is open. The submit makes no server check and counts no attempt, and nothing signs in. An entry without it is refused: the click goes on as before." }
+            },
+            "additionalProperties": false
+          }
+        },
         "requiresItemCondition": { "type": "string", "description": "With requiresItem and triggerOnInteract: WHEN the held item may be used, as a globals condition (the observationVariants syntax: '&&'-joined terms of globalVars.x, !globalVars.x, or globalVars.x with ===, !==, >, <, >=, <= and a literal; no '||' or parentheses). With the item held and the condition false, the actions do not fire, nothing is consumed and no plant is recorded; the player sees requiresItemConditionHint. Only the triggerOnInteract branch reads it." },
         "requiresItemConditionHint": { "type": "string", "description": "Message shown when the item is held but requiresItemCondition does not hold. Default: 'Not now.'. The toast lasts 300 ms per word, at least 6 s and at most 12 s." },
         "requiresItemConditionHintVariants": {

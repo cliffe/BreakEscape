@@ -199,13 +199,23 @@ flowchart TD
 
   training_room("Training Room")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_nilesh_solanki_2("Nilesh Solanki")
+  rc_kit_vending_2{"Drinks machine"}
+  rc_kit_ca09_pc_3{"Chidi's PC"}
+  rc_kit_ca09_clipboard_4{"Clipboard"}
+  rc_npc_nilesh_solanki_5("Nilesh Solanki")
+  rc_npc_fatima_begum_6("Fatima Begum")
+  rc_npc_chidi_okeke_7("Chidi Okeke")
 
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_nilesh_solanki_2
+  training_room --> rc_kit_vending_2
+  training_room --> rc_kit_ca09_pc_3
+  training_room --> rc_kit_ca09_clipboard_4
+  training_room --> rc_npc_nilesh_solanki_5
+  training_room --> rc_npc_fatima_begum_6
+  training_room --> rc_npc_chidi_okeke_7
 
   class training_room room
-  class rc_training_kiosk_1 item
-  class rc_npc_nilesh_solanki_2 npc
+  class rc_training_kiosk_1,rc_kit_vending_2,rc_kit_ca09_pc_3,rc_kit_ca09_clipboard_4 item
+  class rc_npc_nilesh_solanki_5,rc_npc_fatima_begum_6,rc_npc_chidi_okeke_7 npc
   class node_start start
 ```

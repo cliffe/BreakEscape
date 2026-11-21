@@ -6847,7 +6847,7 @@ def check_engine_limits(json_data)
         issues << "⚠️ WARNING: '#{path}' has requiresItemConditionHint(Variants) but no requiresItemCondition, so those hints are never shown."
       end
 
-      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants postitNoteVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if vk == 'requiresItemConditionHintVariants' && v.key?('condition')
@@ -6858,10 +6858,27 @@ def check_engine_limits(json_data)
             end
             next
           end
+          if vk == 'postitNoteVariants' && !(v['submitText'].is_a?(String) && !v['submitText'].strip.empty?)
+            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' needs a non-empty submitText (the line a submit shows, with no server check): " \
+                      "the note view has no lock, and without the line the engine refuses to open it."
+          end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."
           end
+        end
+      end
+
+      if node['postitNoteVariants']
+        if node['type'] != 'pc' || node['lockType']
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants but is #{node['type'] != 'pc' ? "type '#{node['type']}', not 'pc'" : "a PC with lockType '#{node['lockType']}'"}. " \
+                    "Only a plain PC (no lockType) shows the note, so it would never appear."
+        end
+        if node['locked'] == true
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and locked: true. The note view opens in place of the unlock, so the PC could never be opened."
+        end
+        if node['triggerOnInteract'].is_a?(Array) && !node['triggerOnInteract'].empty?
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and a non-empty triggerOnInteract. The note view pre-empts it while a note is up."
         end
       end
 
@@ -6970,7 +6987,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|conceptPanel)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|postitNoteVariants|conceptPanel)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node
