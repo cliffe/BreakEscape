@@ -88,7 +88,7 @@ h1 {
 .form-control:focus {
   outline: none;
   border-color: #00ff00;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.3);
 }
 
 .form-group small {
@@ -166,7 +166,22 @@ h1 {
 .sprite-card.selected {
   border-color: #00ff00;
   background: #003300;
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 0 2px #00ff00; /* hard ring, no blur */
+}
+
+/* Non-colour cue: text tag bottom-left (the badge is top-right) */
+.sprite-card.selected::after {
+  content: 'SELECTED';
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 0 4px;
+  background: #00ff00;
+  color: #000;
+  font-family: 'GNF', monospace;
+  font-size: 16px;
+  line-height: 24px;
+  pointer-events: none;
 }
 
 .sprite-card.invalid {
@@ -405,7 +420,7 @@ h1 {
   overflow: hidden;
   padding: 20px;
   position: relative;
-  box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.3);
   box-sizing: border-box;
   /* header and footer stay put; only the body between them scrolls */
   display: flex;
@@ -503,7 +518,7 @@ h1 {
 
 .player-preferences-modal-content .btn-primary:hover {
   background: #00cc00;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.5);
 }
 
 .player-preferences-modal-content .btn-primary:disabled {

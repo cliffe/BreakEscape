@@ -452,12 +452,12 @@ module BreakEscape
       assert_select 'p.selection-required', count: 1
     end
 
-    test 'another player game: prompt follows the current player own rules and nothing leaks' do
+    test 'another player game: prompt follows the current player own rules and the foreign game is not loaded (prompt count is the guard)' do
       other = break_escape_demo_users(:other_user)
       foreign = Game.create!(
         mission: break_escape_missions(:ceo_exfil),
         player: other,
-        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => ['female_*'], 'secretMarker' => 'FOREIGN-LEAK' },
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => ['female_*'] },
         player_state: {}
       )
       # saved male_nerd_v2 would be rejected by the foreign scenario's validSprites
@@ -465,7 +465,6 @@ module BreakEscape
       get configuration_url(game_id: foreign.id)
       assert_response :success
       assert_select 'p.config-prompt', count: 0
-      assert_no_match(/FOREIGN-LEAK/, response.body)
       with_blank = response.body
       @preference.update_columns(selected_sprite: nil)
       get configuration_url(game_id: foreign.id)

@@ -25,8 +25,11 @@ test('CyberChef notice wrapper is kept so the header layout is stock', () => {
 test('CyberChef page explains the #notice edit in a comment beside it', () => {
     const i = chef.indexOf('<span id="notice"');
     assert.ok(i > 0, '#notice present');
-    const before = chef.slice(Math.max(0, i - 400), i);
-    assert.ok(before.includes('<!-- Break Escape:') && /upgrad/.test(before), 'comment before span mentions upgrading');
+    const c = chef.lastIndexOf('<!-- Break Escape:', i);
+    assert.ok(c >= 0, 'Break Escape comment precedes the span');
+    const between = chef.slice(c, i);
+    assert.ok(/upgrad/.test(between), 'comment mentions upgrading');
+    assert.ok(between.indexOf('-->') >= 0 && between.indexOf('-->') === between.lastIndexOf('-->'), 'one comment closes before the span');
 });
 
 function rule(sel) {
@@ -50,4 +53,15 @@ test('.config-prompt is pixel styled: 2px border, no radius, GNF 16px, dark', ()
     assert.ok(/font-size:\s*16px/.test(r), '16px');
     assert.ok(/line-height:\s*24px/.test(r), 'whole-pixel line box');
     assert.ok(!/background:\s*#fff3cd/i.test(r), 'no light box');
+});
+
+test('selected sprite card: hard ring, no blur, SELECTED tag in GNF 16/24; no blurred shadows on the sheet', () => {
+    const r = rule('.sprite-card.selected');
+    assert.ok(/box-shadow:\s*0 0 0 2px #00ff00/.test(r), 'hard 2px ring');
+    const a = rule(".sprite-card.selected::after");
+    assert.ok(/content:\s*'SELECTED'/.test(a), 'SELECTED tag');
+    assert.ok(/font-family:\s*'GNF'/.test(a) && /font-size:\s*16px/.test(a) && /line-height:\s*24px/.test(a), 'GNF 16/24');
+    assert.ok(/bottom:\s*4px/.test(a) && /left:\s*4px/.test(a), 'bottom-left, clear of the top-right badge');
+    const blurred = css.split('\n').filter(l => /box-shadow:\s*(inset\s+)?-?\d+(px)?\s+-?\d+(px)?\s+[1-9]\d*px/.test(l));
+    assert.ok(blurred.length === 0, 'blurred shadows: ' + blurred.join(' | '));
 });
