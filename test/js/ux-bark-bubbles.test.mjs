@@ -429,21 +429,43 @@ test('R1 m3: a bubble plays no phone sound, voiced or not; a toast still does', 
     assert.equal(beeps, 1, 'the toast keeps its sound');
 });
 
-test('R1 n5: a bark bubble whose stillValid() stops holding closes, with no remainder toast', async () => {
+test('R1 n5 / D254 M-C: a bark bubble whose stillValid() stops holding finishes its own line (never cut mid-sentence), with no remainder toast', async () => {
     const r = rig();
     const sys = barkSystem();
     let valid = true;
     await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: LONG, stillValid: () => valid });
     r.bubbles.update();
     assert.ok(r.bubbles.hasLine('sara'));
+    const st = r.bubbles.says.get('sara');
+    assert.ok(st.linePages >= 2, 'the long line has more than one page');
     valid = false;
     r.clock.advance(300);
     r.bubbles.update();
     await tick();
-    assert.equal(r.bubbles.hasLine('sara'), false);
+    assert.equal(r.bubbles.hasLine('sara'), true, 'still up: the line is not cut');
+    for (let i = 0; i < 20 && r.bubbles.hasLine('sara'); i++) { r.clock.advance(1000); r.bubbles.update(); }
+    assert.equal(r.bubbles.hasLine('sara'), false, 'ends once the line has been read');
     assert.equal(r.bubbles.bubbles.get('sara').box.visible, false);
     assert.deepEqual(toasts(), []);
-    assert.equal(r.bubbles.log.at(-1).event, 'stale');
+    const ev = r.bubbles.log.map(e => e.event);
+    assert.ok(ev.includes('stale-finish'));
+    assert.ok(ev.filter(e => e === 'page').length >= st.linePages - 1, 'every page of the line showed');
+    assert.equal(ev.at(-1), 'done');
+});
+
+test('D254 M-C: a stale bark on its last line page ends when that page does, not at once', async () => {
+    const r = rig();
+    const sys = barkSystem();
+    let valid = true;
+    await sys._renderBark({ npcId: 'sara', npcName: 'Sara', message: 'Short line here.', stillValid: () => valid });
+    r.bubbles.update();
+    valid = false;
+    r.clock.advance(300);
+    r.bubbles.update();
+    assert.equal(r.bubbles.hasLine('sara'), true);
+    r.clock.advance(10000);
+    r.bubbles.update();
+    assert.equal(r.bubbles.hasLine('sara'), false);
 });
 
 const rectOf = (bb) => ({ x: bb.box.x + bb.layout.dx - bb.w / 2, y: bb.box.y - bb.layout.lift - 4 - bb.h, w: bb.w, h: bb.h + 4 });
