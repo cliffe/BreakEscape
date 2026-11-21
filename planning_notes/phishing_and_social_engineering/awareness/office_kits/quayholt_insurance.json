@@ -497,6 +497,279 @@
           ]
         }
       }
+    },
+    "ca16_borrowed_login": {
+      "globals": {
+        "kit_ca16_signin_failed": false,
+        "kit_ca16_there": false,
+        "kit_ca16_asked": false,
+        "kit_ca16_done": false,
+        "kit_ca16_signin_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca16_pc",
+          "name": "Niamh's PC",
+          "sprite": "pc1",
+          "workstation": true,
+          "owner": "kit_niamh_doherty",
+          "lockChance": 0,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 2,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca16_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Niamh's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca16_signin_choice === 'lend'",
+              "value": "Niamh's PC, signed in under your login."
+            },
+            {
+              "condition": "globalVars.kit_ca16_out === true",
+              "value": "Niamh's PC, on the sign-in screen."
+            }
+          ],
+          "position": {
+            "x": 3.9375,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca16_signin_choice === 'lend'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca16_out === true",
+              "value": "pc1_locked"
+            }
+          ],
+          "observations": "Niamh's PC."
+        },
+        {
+          "type": "binders",
+          "id": "kit_ca16_binders",
+          "name": "Binders",
+          "sprite": "binders1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 6.47,
+            "y": 7.75
+          },
+          "observations": "Box files, moved over to clear the desk."
+        }
+      ],
+      "resources": {
+        "kit_ca16_signin": {
+          "name": "Quayholt sign-in",
+          "kind": "intranet",
+          "offWhen": "kit_ca16_out"
+        }
+      },
+      "timers": [
+        {
+          "id": "kit_ca16_t_fail",
+          "startOnGlobal": "kit_ca16_out",
+          "delayMs": 6000,
+          "condition": "!globalVars.kit_ca16_signin_failed",
+          "setGlobal": {
+            "kit_ca16_signin_failed": true
+          }
+        },
+        {
+          "id": "kit_ca16_t_there",
+          "startOnGlobal": "kit_ca16_signin_failed",
+          "delayMs": 6000,
+          "condition": "!globalVars.kit_ca16_there",
+          "setGlobal": {
+            "kit_ca16_there": true
+          }
+        },
+        {
+          "id": "kit_ca16_t_tail",
+          "startOnGlobal": "kit_ca16_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca16_signin_choice === ''",
+          "setGlobal": {
+            "kit_ca16_signin_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca16_t_done",
+          "startOnGlobal": "kit_ca16_out",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca16_done",
+          "setGlobal": {
+            "kit_ca16_done": true
+          }
+        }
+      ],
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "niamh_doherty": {
+          "needsHome": "kit_ca16_pc",
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 55
+            },
+            "work": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 90
+            }
+          },
+          "workNeeds": [
+            "kit_ca16_signin"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Hang on, my screen's thrown me out."
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_niamh_doherty",
+              "condition": "data.objectId === 'kit_ca16_pc' && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_failed": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_niamh_doherty",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_failed === true && !globalVars.kit_ca16_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_there",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true && globalVars.kit_ca16_signin_choice === ''",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "bark": "It won't take my password at all. Could I borrow your login for an hour?",
+              "targetKnot": "ca16_signin"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_there",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "setGlobal": {
+                "kit_ca16_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_niamh_doherty",
+              "condition": "globalVars.kit_ca16_signin_choice === 'asked' && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
+              "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
+              "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
+              "onceOnly": true,
+              "delayMs": 6000,
+              "setGlobal": {
+                "kit_ca16_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 90
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
