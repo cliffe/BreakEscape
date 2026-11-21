@@ -28,7 +28,7 @@ So browser playtests run in this session; every report says which checks were st
 
 ## Phase 1: mission alignment
 
-### Round 1 review (fresh Opus, read-only)
+### Round 1 review (fresh reviewer, read-only)
 
 Review copied to `m03-align-r1-review/REVIEW.md` in scratch. Counts: 1 blocker, 9 major, 11 minor.
 
@@ -58,13 +58,13 @@ Review copied to `m03-align-r1-review/REVIEW.md` in scratch. Counts: 1 blocker, 
 
 Decisions: night staging option (a); all canon fixes now, worded for every m02 ending; Perfect Stealth hidden until earned; Ghost's "own build" callback through Victoria. Reason: each is mission-local and reversible, and matches m02.
 
-### Round 1 fix (Opus fixer)
+### Round 1 fix (fixer)
 
 Plan appended to `ALIGNMENT_PLAN.md` ("Pass 5 alignment"). Outcomes: P1-1 to P1-12, P1-14, P1-16, P1-18, P1-20 fixed; P1-15 covered by P1-18; P1-21 fixed except the four `npc_ko:victoria_sterling` handlers, which are meant to fire together (justified in an ERB comment); P1-13 no change; P1-17 deferred; P1-19 open (D1). Act-2 aims are story-gated on `clone_call_done` and unlocked live by a mapping; "Settle Accounts" gated on `night_confrontation_ready`; Perfect Stealth hidden until the debrief's `#unlock_aim`; HaX hub rebuilt on m02's pattern with five gated hints. Static checks: ink compiles, validator schema pass with 1 justified warning, reopencheck 0 problems, door alignment OK, inkcheck/loopcheck clean. Browser: not yet (playtest phase).
 
 Orchestrator check: grepped the briefing, revelation, Victoria and debrief lines and the unlock gates; all present. Correction made by the orchestrator: Victoria's new line called Ghost "he"; m02 uses "they" throughout, so the line now uses "they".
 
-### Round 2 review (fresh Opus, read-only)
+### Round 2 review (fresh reviewer, read-only)
 
 Counts (new): 0 blockers, 0 majors, 15 minors. Round 1: 13 closed, 6 partly closed (P1-5, 6, 10, 12, 18, 21: remainders minor), P1-19 open (user), P1-17 deferred. Confirmed in the engine: act-2 aims can't move in the day and the unlock is recorded server-side so it survives reload; "Settle Accounts" can't show before four flags; `#unlock_aim` works from person-chat; music triggers and the `end` playlist exist; debrief and credits agree.
 
@@ -84,13 +84,13 @@ Counts (new): 0 blockers, 0 majors, 15 minors. Round 1: 13 closed, 6 partly clos
 | P1-36 | minor | `missions.json` lacks three m03 globals; two dead VARs | to fixer |
 | P1-37 | minor | Two hints never retire | to fixer |
 
-### Round 2 fix (same Opus fixer, resumed)
+### Round 2 fix (same fixer, resumed)
 
 All round-2 items fixed: canon lines reworded (P1-22/23/24); hints gated on the situation existing (new synced globals `clone_read_dropped`, `sterling_on_call_seen`, `guard_hostile`, `guard_knocked_out`, `exec_office_entered`) and retired on progress; new hostile-guard hint; Danny's task moved to the office aim; night aims staggered (server room on the night turn, office on the first night entry to the exec wing, paper trail on the first night entry to either); music in four phases (day noir, night cutscene, confrontation spy-action, after the choice end), each with a `game_loaded` cue so a reload keeps it; new optional task "Decode the drive and tell HaX what it says"; lore titles made spoiler-free; target-selection callback put in Sterling's encoded client roster (not spoken); dead VARs removed; nine m03 globals added to `missions.json`; no dashes in any new text. Static checks: validator 1 justified warning, dialoguelint 0 errors (deferred lint only), reopencheck 0 problems over 439 reopens, inkcheck/loopcheck clean over ten states, tagdiff explained. Commit 48dc4c4 (WIP).
 
 Orchestrator: fixed the hard-coded home path in `inkcheck.js`, `loopcheck.js` and `predict_door_sides.py` (tooling commit), so agents no longer need patched copies.
 
-### Round 3 review (fresh Opus, confirmation)
+### Round 3 review (fresh reviewer, confirmation)
 
 P1-1..P1-37: 33 closed, P1-17 deferred (playtests), P1-19 open (D1), P1-33 n/a, lint items deferred to Phase 4, P1-28 reopened as P1-38. New: 0 blockers, 1 major, 2 minors. Verdict: another round needed (short).
 
@@ -104,7 +104,7 @@ P1-1..P1-37: 33 closed, P1-17 deferred (playtests), P1-19 open (D1), P1-33 n/a, 
 
 Fixer: `guard_hostile` renamed `guard_attacking` (set only by the engine's `npc_hostile_state_changed`); a collision sweep of every new global against every m03 ink VAR found no others; P1-39 mapping on `closing_debrief` (clone_call_done + exec_office_entered); `hint_password` gated on `exec_office_entered`, `hint_guard` shows by day with its talk-or-pay line night-only. No spoken lines changed.
 
-Round 4 (fresh Opus): P1-38, P1-39, P1-40 closed. New: 0 blockers, 0 majors, 2 minors. **Verdict: Phase 1 closed.**
+Round 4 (fresh reviewer): P1-38, P1-39, P1-40 closed. New: 0 blockers, 0 majors, 2 minors. **Verdict: Phase 1 closed.**
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -126,7 +126,7 @@ Tooling item (optional, for approval): a validator check for a scenario global s
 
 ## Phase 2: puzzle chains
 
-### Round 1 review (fresh Opus, read-only)
+### Round 1 review (fresh reviewer, read-only)
 
 Counts: 0 blockers, 4 majors, 9 minors. No unambiguous factual bugs found (CVE claims right: the ProFTPD 1.3.3c source backdoor has no CVE; distcc CVE-2004-2687 on port 3632). Good already: three boss-key locks (server room, wall safe, office PC) with two cross-building hunts; the wall-safe decode chain is the strongest puzzle; Victoria's fate is required; `concludeRequires` lists only the four flags; all four VM flags are required and carry act 2. Draft SecGen XML written (scratch `m03-puzzle-r1-review/m03_ghost_in_the_machine.xml`; all four modules exist in SecGen).
 
@@ -150,7 +150,7 @@ Counts: 0 blockers, 4 majors, 9 minors. No unambiguous factual bugs found (CVE c
 
 Plan appended to `PUZZLE_CHAINS_PLAN.md` ("Pass 5 puzzle chains"). No ink changed, so no spoken lines. P2-1 fixed (transaction log itemised as m02's invoice: ProFTPD $25,000, recon of 214 hospitals $15,000, target selection $10,000, deployment guide $5,000, total $55,000 after the 15% affiliate discount; the premium is a margin note and stays in the catalogue as list-price logic, so the Phase 1 spoken lines hold). P2-2 light version: the opening message no longer pre-arms the cloner; HaX introduces it on the first `door_unlock_attempt` at the conference room (the engine opens the cloner minigame rather than a hard refusal when the cloner is held, so a true "fail, then grant" needs engine work). P2-3, P2-5, P2-6, P2-8, P2-10 fixed. P2-4 left: the schema allows only the array form of `flagRewards`, which is index-paired with the flags, so the three dead `emit_event` rewards can't be dropped without moving the distcc reward (engine/schema item E-2). P2-7 marked deferred by the fixer without a ruling; sent to round 2 to judge. Credits keep their existing em-dash house format (25 lines already use it). Static checks clean; commit 5a95140 (WIP).
 
-### Round 2 review (fresh Opus; rerun after a container restart lost the first attempt)
+### Round 2 review (fresh reviewer; rerun after a container restart lost the first attempt)
 
 Verdict: implementable, converging. Round 1: P2-1, 5, 6, 8, 10 closed; P2-2 works but few players will meet the door before cloning (P2-16); P2-3 partly closed (P2-17); P2-4 worse than logged: each dead `emit_event` shows "Rewards Unlocked / Event triggered" at the flag station; P2-7 judged a puzzle issue (guessing earns the decode credit and debrief line). New: 0 blockers, 1 major, 4 minors.
 
@@ -170,7 +170,7 @@ Correction to the spoken-lines list: the engine voices a phone line only when it
 
 All ruled items in (commit 5ea9d78, WIP): `set_global` rewards on write-only keys `vm_flag1..3_reward` (index pairing kept); `directive_guessed` set on a wrong answer, so the "decoded by the agent" credit and debrief line need a first-try answer (debrief and credits agree; the optional task still completes); cloner no longer named before the reader (aim, task title "Get through the conference room's card reader", opening text, door text reworded); receptionist's clone choice needs `conference_reader_tried` (door mapping) or `cloner_explained` (briefing tag, HaX hint, RFID guide); recon guide line and HaX's day progress line reworded; transaction log gains the Target line and a separate discount line; post-it reads "Surname plus the year the firm was founded". No voiced line changed (four phone text lines changed, listed below). Static checks clean.
 
-### Round 3 review (fresh Opus, confirmation)
+### Round 3 review (fresh reviewer, confirmation)
 
 P2-1..P2-18 all closed or ruled; nothing broken by round 2 (door handler sits on the start-room phone contact; the receptionist re-reads globals on reopen; no player left without a next step after reload, a receptionist KO, or never opening the phone). New: 0 blockers, 0 majors, 2 minors. **Verdict: Phase 2 closed.**
 
@@ -195,7 +195,7 @@ All checks static. Browser checks carried to Phase 5 (P2-20). Capability arc not
 
 ## Phase 3: scenario design review
 
-### Round 1 review (fresh Opus, read-only)
+### Round 1 review (fresh reviewer, read-only)
 
 Counts: 0 blockers, 3 majors, 15 minors. Solvable on every branch checked (each fate for Victoria and Danny, every guard outcome, each NPC KO, receptionist KO, day office raid); one soft-lock on a reload between Victoria's choice and the debrief (P3-1). All static; P3-1 and P3-3 are read from engine code and need a browser check.
 
@@ -220,9 +220,9 @@ Engine items from this round, for approval: E-A CyberChef decode event; E-B NPC 
 
 All ruled items in (commit 90437d6, WIP). Engine finding confirmed by the fixer: person-chat runs a batch's tags before its lines (`person-chat-minigame.js` ~1005), so P3-1 was real; `victoria_choice_made` now comes from a mapping on `conversation_closed:victoria_sterling`, with reload backstops on the always-loaded night_transition NPC. Four HaX calls are now texts that open the call when clicked. Safe catalogue keeps buyers and adds Critical Mass reserved stock; the VM price list (proposed XML flag 3) has no buyers. Danny KO after his choice gets its own debrief knot (2 new voiced lines) and credit; guard KO credit added; `game_loaded` clears `guard_attacking` (mitigation for E-B); brief `once`; "EXPLOITATION" dropped. Static checks clean. Needs browser: Victoria's final lines, the backstop, the four call texts, the reloaded-guard hint.
 
-Round 2 runs two ways at once: a fresh Opus static re-review and a Sonnet browser probe of P3-1 and P3-3.
+Round 2 runs two ways at once: a fresh reviewer static re-review and a scripted browser probe of P3-1 and P3-3.
 
-### Round 2 static review (fresh Opus)
+### Round 2 static review (fresh reviewer)
 
 Counts (new): 0 blockers, 1 major, 6 minors. P3-1 holds when traced (handlers registered from the start room; debrief opens 500 ms after her chat closes; can't play twice; backstops need a room entry and `clone_call_done`). Closed: P3-4..9, 11, 12, 13, 15, 16, 18; P3-2 closed in game with leftover wording; P3-3, P3-10 partly closed; P3-14 waits on E-C; P3-17 waits on E-D.
 
@@ -236,7 +236,7 @@ Counts (new): 0 blockers, 1 major, 6 minors. P3-1 holds when traced (handlers re
 | P3-24 | minor | "Knocked out on his rounds" credit also shows for a day-desk KO | to fixer |
 | P3-25 | minor | Reload after her fate is set but before her chat closes: she's visible, and a KO overwrites the fate | to fixer |
 
-### Round 2 browser probe (Sonnet, games 5001 and 5002, headless; late-game globals set by console, so exercised, not earned)
+### Round 2 browser probe (scripted run, games 5001 and 5002, headless; late-game globals set by console, so exercised, not earned)
 
 | Check | Result |
 |---|---|
@@ -255,7 +255,7 @@ Commit e44d22d (WIP). P3-19: three hub choices replay a missed call (distcc reve
 
 Flag station (classified by the fixer from `flag-station-minigame.js`): real minor engine bug. Enter during an in-flight submission returns silently (`:613`), and the first submission's success clears the input (`:705`), so a flag typed during the round-trip is dropped with no feedback. Engine item E-E for approval: say "Still checking the last flag" and clear the input only if it still holds the submitted value.
 
-### Round 3 review (fresh Opus, confirmation) and closing fix
+### Round 3 review (fresh reviewer, confirmation) and closing fix
 
 P3-1..P3-25 closed, ruled or deferred (P3-14 waits on E-C, P3-17 on E-D, P3-23 to Phase 4). Nothing broken by round 2: replays gated and retired, `revelation_heard` set on both paths, the "Sterling's waiting" texts fire once in any flag order, the room-entry hide can't fire early, every KO route still sets a fate. New: 0 blockers, 0 majors, 4 minors. **Verdict: Phase 3 closed**, provided the guard-ink half of P3-20 is reverted.
 
@@ -282,7 +282,7 @@ Browser-tested in this phase: P3-1 (recruit ending, reload backstop), P3-3 (stat
 
 Ink snapshot of 3726cf4 (Phase 3 close) kept in scratch `m03-dialogue-snapshot/` for `tagdiff --old`.
 
-### Round 1 review (fresh Opus, read-only)
+### Round 1 review (fresh reviewer, read-only)
 
 Counts: 0 blockers, 9 majors, 33 minors (P4-1..P4-42). Per character: ship Danny and HaX's phone ink (small text fixes); light revise briefing, guard, narrator; revise receptionist, Victoria's afternoon interview, debrief. Already good: Danny's scene, Victoria's night confrontation, the guard's best dry lines, the debrief opening, the night transition, HaX's hub.
 
@@ -292,11 +292,11 @@ Recommended voiced changes: 37 rewrites, 32 cuts, 7 optional (lean set 24).
 
 Decision: take the full set. Reason: m03 has no audio generated yet (no `tts_cache/m03_*` in the repo), so a rewritten voiced line replaces nothing that was paid for; every m03 line is voiced fresh when its audio is generated.
 
-### Round 1 fix (writer: the same Opus fixer, resumed)
+### Round 1 fix (writer: the same fixer, resumed)
 
 Commit acbe10e (WIP). All 42 findings acted on (P4-37 justified: Victoria's 18-word offer and her one "not X but Y"). Edit notes in `DIALOGUE_EDIT_NOTES.md` ("Pass 5"). Voiced: 51 changed, 33 cut, 0 added (full list under "Spoken lines changed"). tagdiff vs snapshot: Danny, receptionist, phone, night transition structurally unchanged; briefing (learn topic, dead writes, `mission_priority`), Victoria (stance overwrite), guard (influence tag) and debrief (dead blocks, fate re-reads) changes all intended. dialoguelint 0 errors, 4 justified warnings. Orchestrator check: grepped sample lines; no new dashes in any .ink.
 
-### Round 2 review (fresh Opus script editor)
+### Round 2 review (fresh script editor)
 
 Verdict: revise (short). Round 1: 35 closed, 1 justified, 3 partly (P4-8, 15, 39), 3 made worse (P4-19, 28, 42). New: 1 blocker, 2 majors, 19 minors (6 optional). Ship: Danny, guard, HaX phone, narrator and night transition. Revise (mostly light): briefing, receptionist, Victoria, debrief. Read-through: the receptionist is a convincing Cardiff voice without caricature; Victoria's afternoon isn't thin after the cuts ("We find it, we price it, and we find the somebody." is the pass's best new line); her night scene is still the mission's best; the debrief paces better.
 
@@ -313,7 +313,7 @@ Process note: the round-1 reviewer recommended a cut without knowing a later mis
 
 All items done (commit after acbe10e). P4-43 restored verbatim (orchestrator grepped it). Voiced: 1 restored, 19 changed, 3 cut. One structural change: the P4-48 condition in the debrief. Checks clean; four lint warnings justified.
 
-### Round 3 review (fresh Opus script editor) and touch-up
+### Round 3 review (fresh script editor) and touch-up
 
 P4-1..P4-64: 63 closed, 1 justified (P4-37). Every character "ship". Every cut line grepped against m04-m08: nothing else is paid off later. New: 0 blockers, 0 majors, 8 minors (3 recommended, 5 optional). **Verdict: Phase 4 closed.** All 8 taken (no audio cost yet): two repeats in Victoria's lines, two in the debrief, "stayed in" for the history and catalogue, the receptionist's echo, one surviving dash in the guard's line; five unread ink VARs removed (checked not synced or read anywhere). Orchestrator grepped two of the lines; validator schema passes.
 
@@ -335,7 +335,7 @@ A voiced line that prints `{player_name()}` or a count can't be cached by TTS. R
 
 Script: `PASS5_PLAYTEST.md` (two regression runs and 18 carried browser checks C1-C18); `TESTING_WALKTHROUGH.md` updated to pass 5. All runs headless on :3001. Testers' Writes to the scratchpad were refused in this round, so the orchestrator saved their reports from their final messages.
 
-### Round 1 playtests (Sonnet)
+### Round 1 playtests (scripted run)
 
 | Run | Game | Result | Counts (tester) |
 |---|---|---|---|
@@ -365,9 +365,9 @@ Orchestrator rulings so far: struggling S1 (flags accepted without the VM) withd
 
 New engine items: E-F a timed message on a person NPC makes a voiced toast that opens that NPC's story in the phone; E-G the harness `openTasks` lists locked tasks (skill code).
 
-Confirmation runs (Sonnet, three in parallel): day, night (incl. the C10/C14 reload window), KO route.
+Confirmation runs (scripted run, three in parallel): day, night (incl. the C10/C14 reload window), KO route.
 
-### Round 1 confirmation (Sonnet, three runs)
+### Round 1 confirmation (scripted run, three runs)
 
 | Run | Games | Result | Counts |
 |---|---|---|---|
@@ -381,7 +381,7 @@ Leftover minors for round 2: clone choice label "Lean in to read the building di
 
 All six leftover minors fixed: clone label "[Lean in by her lanyard and let the cloner read her badge.]"; HaX phone opener "On the line, {player_name()}." (phone text); guard grace pair true at his post or walking off; "saw the people in it" gated on meeting Danny; a beat after cloning before her hub; C10/C14 rewritten (C14 not reachable). Static checks clean. No confirmation run for these (wording and one gate); the blind runs play through them.
 
-### Blind playtests (Sonnet, two personas, fresh games)
+### Blind playtests (scripted run, two personas, fresh games)
 
 Brief in scratch `m03-blind-brief.md`: testers read only the harness skill, housekeeping and what the game shows; no scenario files, reviews or scripts; flags supplied by the session policy with in-game prerequisites earned; one reload at a risky moment; scores for fun, pacing, clarity, openness and teaching.
 
@@ -410,7 +410,7 @@ Merged with rulings in scratch `m03-blind-merged.md` (B-1..B-14): majors B-1 Vic
 | B-10, B-12 | No change: the cabinet is reachable (tester got `inRange: true`); the second file is the harness `take` |
 | B-11 | "Sable" said by the player only once they've heard it (new global `sable_named`); otherwise "[SAFETYNET. And I've read your approvals.]" with a new reply |
 
-Targeted browser check (Sonnet, games 5015 day and 5016 night; night state console-set): B-1, B-2, B-3, B-4, B-5, B-9 pass on screen; B-11 pass for the "not heard" variant. Not reached in the browser, checked statically by the orchestrator (grep of the erb and ink): B-6 ("Clean enough" only with history and catalogue out; otherwise "It's done. Get some rest."), B-7 (stealth credit wording), B-8 (catalogue credit matches the debrief), the "Sable" variant. B-10 confirmed reachable on foot (harness path detours). 0 blockers, 0 majors, 4 minors (harness or wording-note only). Final static checks at the close: validator schema pass, dialoguelint 0 errors (4 justified warnings), reopencheck 0 problems.
+Targeted browser check (scripted run, games 5015 day and 5016 night; night state console-set): B-1, B-2, B-3, B-4, B-5, B-9 pass on screen; B-11 pass for the "not heard" variant. Not reached in the browser, checked statically by the orchestrator (grep of the erb and ink): B-6 ("Clean enough" only with history and catalogue out; otherwise "It's done. Get some rest."), B-7 (stealth credit wording), B-8 (catalogue credit matches the debrief), the "Sable" variant. B-10 confirmed reachable on foot (harness path detours). 0 blockers, 0 majors, 4 minors (harness or wording-note only). Final static checks at the close: validator schema pass, dialoguelint 0 errors (4 justified warnings), reopencheck 0 problems.
 
 **Phase 5 closed. Loop closed.**
 
@@ -607,7 +607,7 @@ Full record, per-room before/after and screenshots: `ROOM_DRESSING.md` (cycle 1)
 
 ## Dialogue cycle 1 fixes (2026-10-12)
 
-Review acted on: `DIALOGUE_REVIEW_P2_C1.md` (0 blockers, 5 majors, 21 minors, 20 line rewrites, 7 missing or flat scenes). Fixer: Opus, to be resumed for cycles 2-5. Ink snapshot before editing: session scratchpad `m03-dialogue/snapshot_c1/` (tagdiff baseline). Line numbers below are in the new files.
+Review acted on: `DIALOGUE_REVIEW_P2_C1.md` (0 blockers, 5 majors, 21 minors, 20 line rewrites, 7 missing or flat scenes). Fixer: review agent, to be resumed for cycles 2-5. Ink snapshot before editing: session scratchpad `m03-dialogue/snapshot_c1/` (tagdiff baseline). Line numbers below are in the new files.
 
 | Severity | Found | Fixed | Withdrawn | Deferred |
 |---|---|---|---|---|
@@ -964,7 +964,7 @@ Record: `ROOM_DRESSING.md` (cycle 4), screenshots `build_evidence/dressing_c4/`.
 
 ## Dialogue cycle 2 fixes (2026-10-12)
 
-Review acted on: `DIALOGUE_REVIEW_P2_C2.md` (revise, light: 0 blockers, 4 majors, 19 minors, 15 line rewrites W-1..W-15, 4 local flat scenes, 4 cycle-1 items not fully fixed). Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c2/` (taken after commit adee101b). Line numbers are in the new files. Scene #5 (Sterling and Danny threads in later missions) went to `docs/IDEAS_BACKLOG.md` (orchestrator); no other mission touched.
+Review acted on: `DIALOGUE_REVIEW_P2_C2.md` (revise, light: 0 blockers, 4 majors, 19 minors, 15 line rewrites W-1..W-15, 4 local flat scenes, 4 cycle-1 items not fully fixed). Fixer: the same agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c2/` (taken after commit adee101b). Line numbers are in the new files. Scene #5 (Sterling and Danny threads in later missions) went to `docs/IDEAS_BACKLOG.md` (orchestrator); no other mission touched.
 
 | Severity | Found | Fixed | Withdrawn | Deferred |
 |---|---|---|---|---|
@@ -1294,7 +1294,7 @@ Skill `mission-room-lighting`; plan `LIGHTING_PLAN.md`; screenshots `build_evide
 
 ## Dialogue cycle 3 fixes (2026-10-12)
 
-Review acted on: `DIALOGUE_REVIEW_P2_C3.md` (revise: 1 blocker, 3 majors, 18 minors, 10 rewrites W3-1..W3-10, 2 noted lines, 3 flat scenes, all local). Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c3/`. Line numbers are in the new files. No change to `scenario.json.erb` this cycle (the lighting agent is editing it). Evidence this cycle is the route driver, `scripts/ink_runtime_check/m03_routes/route.js`, which re-enters a conversation at the knot that owns its saved choices, as the engine does.
+Review acted on: `DIALOGUE_REVIEW_P2_C3.md` (revise: 1 blocker, 3 majors, 18 minors, 10 rewrites W3-1..W3-10, 2 noted lines, 3 flat scenes, all local). Fixer: the same agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c3/`. Line numbers are in the new files. No change to `scenario.json.erb` this cycle (the lighting agent is editing it). Evidence this cycle is the route driver, `scripts/ink_runtime_check/m03_routes/route.js`, which re-enters a conversation at the knot that owns its saved choices, as the engine does.
 
 | Severity | Found | Fixed | Withdrawn | Deferred |
 |---|---|---|---|---|
@@ -1609,7 +1609,7 @@ Engine work at the coordinator's instruction, in four change sets (patches in `b
 
 ## Dialogue cycle 4 fixes (2026-10-12)
 
-Review acted on: `DIALOGUE_REVIEW_P2_C4.md` (revise, light: 0 blockers, 2 majors, 19 minors, 10 rewrites W4-1..W4-10, 2 noted lines, 3 flat scenes). This is the last full fix cycle; a light confirmation read follows. Fixer: the same Opus agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c4/`. The erb was not touched (lighting and sprite agents are editing it).
+Review acted on: `DIALOGUE_REVIEW_P2_C4.md` (revise, light: 0 blockers, 2 majors, 19 minors, 10 rewrites W4-1..W4-10, 2 noted lines, 3 flat scenes). This is the last full fix cycle; a light confirmation read follows. Fixer: the same agent, resumed. Ink snapshot: scratchpad `m03-dialogue/snapshot_c4/`. The erb was not touched (lighting and sprite agents are editing it).
 
 | Severity | Found | Fixed | Withdrawn | Deferred |
 |---|---|---|---|---|
@@ -1840,7 +1840,7 @@ After the cycle-5 sign-off (`DIALOGUE_REVIEW_P2_C5.md`). One new spoken line, no
 
 ## Lighting cycle 3 (2026-10-12)
 
-Config only (`scenario.json.erb` lighting fields); plan §11; screenshots `build_evidence/lighting_c3/` (options game 2148, day 2151, night 2152). Reload checks and the real night turn are with the Sonnet tester (coordinator).
+Config only (`scenario.json.erb` lighting fields); plan §11; screenshots `build_evidence/lighting_c3/` (options game 2148, day 2151, night 2152). Reload checks and the real night turn are with the scripted tester (coordinator).
 
 | Severity | Count | Fixed | Deferred |
 |---|---|---|---|

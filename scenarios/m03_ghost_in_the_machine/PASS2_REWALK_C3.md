@@ -1,6 +1,6 @@
 # m03 pass 2: re-walk of the cycle-3 room interaction fixes
 
-Tester: Sonnet-class subagent, 2026-10-12, headless (load about 1), speed fast, keyless server :3001. Question answered: plumbing only (do the F-1, F-2, F-3 fixes hold). Not a solvability run.
+Tester: subagent, 2026-10-12, headless (load about 1), speed fast, keyless server :3001. Question answered: plumbing only (do the F-1, F-2, F-3 fixes hold). Not a solvability run.
 
 - **Run A**, game 2107, session log `tools/playtest/m03-rewalkC3-session.jsonl`. Day state, played for real: lobby, conference room (badge cloned from Ffion's lanyard with the dictionary attack, Save, Emulate at the conference reader), hallways, Danny's office by day.
 - **Run B**, game 2109, session log `tools/playtest/m03-rewalkC3-night-session.jsonl`. **Exercised, not earned**: all seven rooms unlocked server-side with `tools/playtest/unlock-all-rooms.rb`, and `mission_phase` set to `act2_infiltration` through the console so the night scene and Danny appear. No keys, picks, Victoria clone or flags were earned in this run. Executive Computer password `Sterling2010` was typed from memory of the brief, not found in-game.

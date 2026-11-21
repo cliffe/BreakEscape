@@ -1,6 +1,6 @@
 # m03 Ghost in the Machine: Pass 5 regression playtest script
 
-> Written 2026-10-04 against HEAD 86675b6. For a Sonnet tester. Read `.claude/skills/playtest-scenario/SKILL.md` first (Steps 2-5, "Blind runs and regression runs"). These are **regression** runs: you know the answers; the earned-secrets table keeps it honest. Fetch every secret from its in-game source before you use it. Flags use the `session` policy: submit `<flag:N>` at the drop-site, and earn the in-game prerequisite (reach the server-room VM terminal) first.
+> Written 2026-10-04 against HEAD 86675b6. For a scripted tester. Read `.claude/skills/playtest-scenario/SKILL.md` first (Steps 2-5, "Blind runs and regression runs"). These are **regression** runs: you know the answers; the earned-secrets table keeps it honest. Fetch every secret from its in-game source before you use it. Flags use the `session` policy: submit `<flag:N>` at the drop-site, and earn the in-game prerequisite (reach the server-room VM terminal) first.
 
 Environment and commands are in `docs/agents/M03_LOOP_BRIEF.md` ("Browser playtests"): keyless server on :3001, `--headless true` required, `new-game.rb m03_ghost_in_the_machine`, `session-start.sh`, `cmd.sh`, `session-stop.sh`, `verify-run.rb`. Keep each run to 10-15 minutes. One report per run in your scratch folder; put the whole report in the final message if a Write is refused.
 

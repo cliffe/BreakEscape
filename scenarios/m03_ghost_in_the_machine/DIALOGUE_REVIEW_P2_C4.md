@@ -1,6 +1,6 @@
 # m03 Ghost in the Machine: dialogue review, pass 2 cycle 4
 
-Reviewer: fresh Opus, read-only, 2026-10-12. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M03_PASS2_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P2_C1.md` to `_C3.md`, "Dialogue cycle 3 fixes" in `IMPROVEMENT_LOOP_LOG.md`, commit 341be38e. m03 has no audio, so no rewrite here costs anything in TTS.
+Reviewer: fresh reviewer, read-only, 2026-10-12. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M03_PASS2_BRIEF.md`). Inputs: `DIALOGUE_REVIEW_P2_C1.md` to `_C3.md`, "Dialogue cycle 3 fixes" in `IMPROVEMENT_LOOP_LOG.md`, commit 341be38e. m03 has no audio, so no rewrite here costs anything in TTS.
 
 Finding ids: `D5-n` (cycle 4). Weakest lines: `W4-n`. Tags: **blocker / major / minor**. Every finding is mission-local unless it says otherwise. Line numbers refer to the files at HEAD 341be38e. The ink in the working tree is unchanged, and all eight compiled files match the committed JSON byte for byte.
 

@@ -2,7 +2,7 @@
 
 Questions answered: 2 (unexpected behaviour: Terry, stealth) and 1 (plumbing for the A4 fixes). Not a solvability pass: the four VM flags were supplied from the session flag XML (not earned), and Terry was KO'd with `debugKO` in game C (assisted).
 
-Headless, keyless server :3001, load about 1. Sonnet-class tester. Screenshots are in `tools/playtest/m03-stealth-shots/` (copied from the scratchpad).
+Headless, keyless server :3001, load about 1. tester. Screenshots are in `tools/playtest/m03-stealth-shots/` (copied from the scratchpad).
 
 ## Games and logs
 
