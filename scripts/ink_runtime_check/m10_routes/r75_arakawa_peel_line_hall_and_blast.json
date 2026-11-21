@@ -1,0 +1,86 @@
+{
+ "steps": [
+  {
+   "note": "Arakawa's later talks: the workshop copy says the Solder line, then (after Kowalczyk goes ahead) the menu plays the service-side line once on the next talk. His server-hall copy gives it straight away. On the tether he is at the blast door with Nightshade and says neither."
+  },
+  {
+   "set": {
+    "workshop_entered": true
+   }
+  },
+  {
+   "talk": "aws",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "Solder. Smells like my dad's garage.",
+    "Right behind you."
+   ],
+   "notSaid": [
+    "Service side."
+   ]
+  },
+  {
+   "set": {
+    "kowalczyk_gone_ahead": true
+   }
+  },
+  {
+   "talk": "aws",
+   "picks": []
+  },
+  {
+   "said": [
+    "Service side. She always takes the door nobody's watching."
+   ],
+   "notSaid": [
+    "Solder."
+   ]
+  },
+  {
+   "set": {
+    "server_hall_entered": true
+   }
+  },
+  {
+   "talk": "ahall",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "Service side. She always takes the door nobody's watching.",
+    "Right behind you."
+   ],
+   "notSaid": [
+    "Two patrols."
+   ]
+  },
+  {
+   "set": {
+    "nightshade_tethered": true,
+    "breach_open": true
+   }
+  },
+  {
+   "talk": "arakawa",
+   "picks": [
+    "Keep moving"
+   ]
+  },
+  {
+   "said": [
+    "I've got him. He's not said a word to me all night.",
+    "Right behind you."
+   ],
+   "notSaid": [
+    "Case is packed.",
+    "Service side."
+   ]
+  }
+ ]
+}

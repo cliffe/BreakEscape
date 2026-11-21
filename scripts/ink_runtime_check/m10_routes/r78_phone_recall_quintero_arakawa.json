@@ -1,0 +1,74 @@
+{
+ "steps": [
+  {
+   "note": "HaX's line: Quintero is named wrongly and sent back; naming Arakawa while she is out is refused ('Get Quintero back first'); 'Bring Quintero back' recalls her. Arakawa is then named wrongly and recalled the same way."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "door_log_given": true,
+    "clue_alibi": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Quintero",
+    "Yes. Them.",
+    "I know who WREN is",
+    "Arakawa",
+    "Bring Quintero back"
+   ]
+  },
+  {
+   "said": [
+    "Quintero leads on the ground. If you're wrong, nobody's at your back at the end.",
+    "Agent Quintero, come back up to the post. Now, please.",
+    "I took the drain. I didn't pack the case. Read the sheet.",
+    "Get Quintero back first.",
+    "Agent Quintero, you are cleared. Go back down.",
+    "Next time, read the sheet first."
+   ],
+   "notSaid": [
+    "Arakawa holds the county for us."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "",
+    "quintero_recalled": true,
+    "wrong_accusation": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Arakawa",
+    "Yes. Them.",
+    "Bring Arakawa back"
+   ]
+  },
+  {
+   "said": [
+    "Arakawa holds the county for us. If you're wrong, the sheriff starts asking questions.",
+    "Officer Arakawa, back to the post. The county will have to manage without you.",
+    "You were standing right next to me. Think.",
+    "Officer Arakawa, you are cleared. Back to it.",
+    "You heard me on the phone to her. Then you thought I'd do this?"
+   ],
+   "notSaid": [
+    "Get Arakawa back first."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "",
+    "arakawa_recalled": true
+   }
+  }
+ ]
+}
