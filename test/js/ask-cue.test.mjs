@@ -143,7 +143,7 @@ test('every shell with a step-away reply timer: 45 s default window, and the ask
     for (const name of readdirSync(root).filter(d => /^ca\d\d_/.test(d))) {
         let sc;
         try { sc = JSON.parse(readFileSync(join(root, name, 'scenario.json.erb'), 'utf8')); } catch (e) { continue; }
-        const timers = (sc.timers || []).filter(t => /_asked$/.test(t.startOnGlobal || '') && Object.values(t.setGlobal || {}).includes('silent'));
+        const timers = (sc.timers || []).filter(t => /_asked$/.test(t.startOnGlobal || '') && Object.keys(t.setGlobal || {}).some(k => /_choice$/.test(k)));
         for (const t of timers) {
             n++;
             assert.ok(t.delayMs >= DEFAULT_REPLY_MS, `${name} ${t.id}: window ${t.delayMs}`);
@@ -152,7 +152,7 @@ test('every shell with a step-away reply timer: 45 s default window, and the ask
             assert.ok(ask.length && ask.every(m => m.askCue === true && m.whenPerceivable === true && m.delayMs >= 1), `${name}: ask mapping has the cue`);
         }
     }
-    assert.ok(n >= 9, `found ${n} step-away reply timers`);
+    assert.equal(n, 11, `found ${n} step-away reply timers`);
 });
 
 test('the success overlay counts as a panel for bubbles (so a bark under it is handed on and held, not played unseen)', () => {
@@ -188,15 +188,16 @@ function realRig(globals, { perceivable = () => true } = {}) {
     window.gameState = { globalVariables: { ...globals } };
     const cues = [];
     window.askCue = { perceivable: () => perceivable(), fire: (id, o) => cues.push({ id, ...o }) };
-    const m = new NPCManager(dispatcher, null);
-    m.npcs.set(ID, { id: ID, npcType: 'person', displayName: 'Darren Price' });
-    // the spoken (bark) mappings need the bark system; the ask path does not
-    m._setupEventMappings(ID, darrenMaps().filter(x => !x.bark));
+    const barks = [];
+    const m = new NPCManager(dispatcher, { showBark: (o) => barks.push(o), answersInView: () => true });
+    m.npcs.set(ID, { id: ID, npcType: 'person', displayName: 'Darren Price', storyPath: 'x' });
+    // all of the colleague's mappings, the bark twins included (a recording bark system stands in for the real one)
+    m._setupEventMappings(ID, darrenMaps());
     const g = window.gameState.globalVariables;
     const set = (k, v) => { const old = g[k]; g[k] = v; dispatcher.emit(`global_variable_changed:${k}`, { name: k, value: v, oldValue: old }); };
     // run every live timer once (a held ask re-arms itself with a new one)
     const run = () => { const due = timers.filter(x => x.live); due.forEach(x => { x.live = false; x.cb(); }); return due.length; };
-    return { m, g, set, run, cues, dispatcher, timers,
+    return { m, g, set, run, cues, barks, dispatcher, timers,
         restore() { globalThis.setTimeout = realSet; globalThis.clearTimeout = realClear;
             for (const k of ['eventDispatcher', 'gameState', 'askCue', 'MinigameFramework']) delete window[k]; } };
 }
@@ -244,6 +245,8 @@ test('reload re-arm: the trigger is already true and nobody was asked, so game_l
         t.run(); t.run();
         assert.equal(t.g.kit_ca05_asked, true, 'asked after the reload');
         assert.equal(t.cues.length, 1);
+        assert.ok(!t.cues[0].quiet, 'a first ask after a reload still toasts');
+        assert.ok(t.barks.length >= 1, 'the bark twin of the re-arm ran through the real path');
     } finally { t.restore(); }
 });
 
@@ -262,7 +265,7 @@ test('reload re-arm: already asked and unanswered shows only the marker again; a
             t.dispatcher.emit('game_loaded', {});
             t.run(); t.run();
             assert.equal(t.cues.length, cues, why);
-            if (cues) assert.equal(t.g.kit_ca05_asked, before.kit_ca05_asked, `${why}: asked unchanged`);
+            if (cues) { assert.equal(t.g.kit_ca05_asked, before.kit_ca05_asked, `${why}: asked unchanged`); assert.equal(t.cues[0].quiet, true, `${why}: no second toast`); assert.equal(t.barks.length, 0, `${why}: no second ask bark`); }
             if (!cues) assert.equal(t.g.kit_ca05_asked, before.kit_ca05_asked, why);
         } finally { t.restore(); }
     }
@@ -314,7 +317,7 @@ test('every step-away shell: backstop from out, ask free of kit_quiet and gated 
         let sc;
         try { sc = JSON.parse(readFileSync(join(root, name, 'scenario.json.erb'), 'utf8')); } catch (e) { continue; }
         const ts = sc.timers || [];
-        const tail = ts.find(t => /_asked$/.test(t.startOnGlobal || '') && Object.values(t.setGlobal || {}).includes('silent'));
+        const tail = ts.find(t => /_asked$/.test(t.startOnGlobal || '') && Object.keys(t.setGlobal || {}).some(k => /_choice$/.test(k)));
         if (!tail) continue;
         n++;
         const doneT = ts.find(t => /_t_done$/.test(t.id));
@@ -322,6 +325,7 @@ test('every step-away shell: backstop from out, ask free of kit_quiet and gated 
         assert.ok(outT, `${name}: _t_done_out exists`);
         assert.match(outT.startOnGlobal, /_out$/);
         assert.deepEqual(outT.setGlobal, doneT.setGlobal);
+        assert.ok(outT.condition.includes(`globalVars.${tail.startOnGlobal} !== true`), `${name}: the backstop never cuts an asked beat`);
         assert.ok(outT.delayMs >= doneT.delayMs + 60000, `${name}: backstop is later than the ask-based timer`);
         for (const npc of Object.values(sc.rooms).flatMap(r => r.npcs || [])) {
             const maps = npc.eventMappings || [];
@@ -334,8 +338,74 @@ test('every step-away shell: backstop from out, ask free of kit_quiet and gated 
             }
             const rearm = maps.filter(m => m.eventPattern === 'game_loaded');
             assert.ok(rearm.length >= 2, `${name}: re-arm mappings`);
+            assert.ok(rearm.filter(m => m.askCue && m.askCueQuiet === true).length === 1 && rearm.every(m => !m.askCue || m.askCueQuiet === true || m.setGlobal), `${name}: only the marker-only copy is quiet`);
             assert.ok(maps.slice(maps.length - rearm.length).every(m => m.eventPattern === 'game_loaded'), `${name}: re-arm mappings are last`);
         }
     }
-    assert.ok(n >= 9, `checked ${n} shells`);
+    assert.equal(n, 11, `checked ${n} shells`);
+});
+
+test('AskCue.fire quiet: the marker is drawn again but the toast is not shown twice (reload while asked)', () => {
+    const toasts = []; const timeouts = [];
+    const realSet = globalThis.setTimeout; globalThis.setTimeout = (cb, ms) => { const t = { cb, ms }; timeouts.push(t); return t; };
+    const g = { setDepth() { return g; }, setPosition() { return g; }, setVisible() { return g; }, destroy() {}, fillStyle() { return g; }, fillRect() { return g; } };
+    const sprite = { x: 1, y: 2, depth: 0, displayHeight: 48, active: true, scene: { add: { graphics: () => g },
+        events: { on() {}, off() {} }, time: { now: 0 } } };
+    Object.assign(window, { npcManager: { getNPC: () => ({ displayName: 'D' }) }, npcBehaviorManager: { getBehavior: () => ({ sprite }) },
+        showNotification: (t) => toasts.push(t), gameState: { globalVariables: { c: '' } }, eventDispatcher: { on() {}, off() {} } });
+    try {
+        const cue = new AskCue();
+        cue.fire('n', { ms: 45000, until: 'c', quiet: true });
+        assert.equal(toasts.length, 0, 'no toast');
+        assert.ok(cue.markers.has('n'), 'marker back');
+        cue.fire('n', { ms: 45000, until: 'c' });
+        assert.equal(toasts.length, 1, 'a normal ask still toasts');
+    } finally { globalThis.setTimeout = realSet; for (const k of ['npcManager', 'npcBehaviorManager', 'showNotification', 'gameState', 'eventDispatcher']) delete window[k]; }
+});
+
+// The scenario timers of a real shell, run on a tiny clock: a timer starts when its startOnGlobal is true,
+// fires delayMs later, and sets its globals if its condition holds then (scenario-timer-dispatcher.js).
+function runTimers(sc, events, until) {
+    const globals = {};
+    for (const t of sc.timers || []) for (const k of Object.keys(t.setGlobal || {})) globals[k] = /_choice$/.test(k) ? '' : false;
+    const timers = (sc.timers || []).filter(t => t.startOnGlobal);
+    const started = new Map(); const log = [];
+    const queue = events.map(([t, k, v]) => ({ t: t * 1000, k, v }));
+    const holds = (c) => !c || new Function('globalVars', `return (${c});`)(globals);
+    const setG = (t, k, v) => { globals[k] = v; log.push([t / 1000, k, v]);
+        for (const tm of timers) if (tm.startOnGlobal === k && v && !started.has(tm.id)) { started.set(tm.id, t); queue.push({ t: t + tm.delayMs, timer: tm }); } };
+    while (queue.length) {
+        queue.sort((a, b) => a.t - b.t);
+        const e = queue.shift();
+        if (e.t > until * 1000) break;
+        if (e.timer) { if (holds(e.timer.condition)) for (const [k, v] of Object.entries(e.timer.setGlobal || {})) setG(e.t, k, v); }
+        else setG(e.t, e.k, e.v);
+    }
+    return { globals, log };
+}
+
+test('backstop: an ask held for 100+ s after `out` still gets its whole window and its follow-through; a beat never asked still reaches done', () => {
+    const root = join(here, '../../scenarios');
+    let n = 0;
+    for (const name of readdirSync(root).filter(d => /^ca\d\d_/.test(d))) {
+        let sc;
+        try { sc = JSON.parse(readFileSync(join(root, name, 'scenario.json.erb'), 'utf8')); } catch (e) { continue; }
+        const ts = sc.timers || [];
+        const tail = ts.find(t => /_asked$/.test(t.startOnGlobal || '') && Object.keys(t.setGlobal || {}).some(k => /_choice$/.test(k)));
+        if (!tail) continue;
+        n++;
+        const doneT = ts.find(t => /_t_done$/.test(t.id));
+        const done = Object.keys(doneT.setGlobal)[0], choice = Object.keys(tail.setGlobal)[0], out = ts.find(t => t.id === `${doneT.id}_out`).startOnGlobal;
+        // held: out at 0, the ask lands at 100 s (colleague off camera, player in a minigame)
+        const held = runTimers(sc, [[0, out, true], [100, tail.startOnGlobal, true]], 600);
+        const at = (log, k, v) => (log.find(([, key, val]) => key === k && val === v) || [])[0];
+        const silentAt = at(held.log, choice, tail.setGlobal[choice]), doneAt = at(held.log, done, true);
+        assert.ok(silentAt !== undefined && silentAt >= 100 + tail.delayMs / 1000 - 0.001, `${name}: the full reply window ran (silent at ${silentAt})`);
+        assert.ok(doneAt > silentAt, `${name}: done (${doneAt}) lands after silent (${silentAt}), so the follow-through can play`);
+        // never asked: done still arrives, from the backstop
+        const never = runTimers(sc, [[0, out, true]], 600);
+        assert.ok(at(never.log, done, true) > 0, `${name}: never asked still reaches done`);
+        assert.equal(at(never.log, choice, tail.setGlobal[choice]), undefined);
+    }
+    assert.equal(n, 11);
 });

@@ -139,7 +139,7 @@
       "id": "kit_ca15_t_done_out",
       "startOnGlobal": "kit_ca15_out",
       "delayMs": 175000,
-      "condition": "!globalVars.kit_ca15_done",
+      "condition": "!globalVars.kit_ca15_done && globalVars.kit_ca15_asked !== true",
       "setGlobal": {
         "kit_ca15_done": true
       }
@@ -1096,7 +1096,8 @@
               "askCue": true,
               "whenPerceivable": true,
               "askCueUntil": "kit_ca15_stick_choice",
-              "askCueMs": 45000
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         },

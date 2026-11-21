@@ -1213,7 +1213,8 @@ class StepAwayDefaults(unittest.TestCase):
         b = by['kit_x_t_done_out']
         self.assertEqual(b['startOnGlobal'], '{out}')
         self.assertEqual(b['setGlobal'], {'kit_x_done': True})
-        self.assertEqual(b['condition'], '!globalVars.kit_x_done')
+        # a live ask belongs to the ask-based timer: the backstop only ends a beat that was never asked
+        self.assertEqual(b['condition'], '!globalVars.kit_x_done && globalVars.kit_x_asked !== true')
         self.assertEqual(b['delayMs'], by['kit_x_t_done']['delayMs'] + ok.BACKSTOP_MS)
         self.assertEqual(len({t['id'] for t in out['timers']}), len(out['timers']), 'ids stay unique')
 
@@ -1244,6 +1245,8 @@ class StepAwayDefaults(unittest.TestCase):
             self.assertIn('!globalVars.kit_x_done', m['condition'])
             self.assertTrue(m['onceOnly'] and m['whenPerceivable'] and m['delayMs'] >= 1)
         self.assertTrue(cue['askCue'] and 'setGlobal' not in cue and 'bark' not in cue)
+        self.assertIs(cue['askCueQuiet'], True, 'the marker restored by a reload does not toast again')
+        self.assertNotIn('askCueQuiet', ask)
         # the other staff record is not given a re-arm
         self.assertEqual(len(out['staff']['w']['eventMappings']), 1)
 

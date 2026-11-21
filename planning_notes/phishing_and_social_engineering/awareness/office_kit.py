@@ -187,7 +187,7 @@ def _rearm_mappings(ask, twins, out_key, asked_key, done_key, choice_key):
         out.append(m)
     cue = {'eventPattern': 'game_loaded', 'condition': f'{live} && globalVars.{asked_key} === true',
            'onceOnly': True, 'delayMs': ask['delayMs'], 'askCue': True, 'whenPerceivable': True,
-           'askCueUntil': choice_key, 'askCueMs': ask['askCueMs']}
+           'askCueUntil': choice_key, 'askCueMs': ask['askCueMs'], 'askCueQuiet': True}
     out.append(cue)
     return out
 
@@ -233,6 +233,10 @@ def step_away_defaults(piece):
                 backstop['id'] = t['id'] + '_out'
                 backstop['startOnGlobal'] = out_start
                 backstop['delayMs'] = t['delayMs'] + BACKSTOP_MS
+                # a live ask belongs to `_t_done` (it starts on the ask); the backstop only ends a beat
+                # that was never asked, so it cannot cut a reply window held past BACKSTOP_MS
+                bc = backstop.get('condition') or 'true'
+                backstop['condition'] = f"{bc} && globalVars.{ask} !== true"
                 extra.append(backstop)
                 done_key = next(iter(t.get('setGlobal') or {}), None)
                 out_key = out_start

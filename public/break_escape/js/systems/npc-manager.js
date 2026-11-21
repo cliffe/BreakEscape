@@ -1504,6 +1504,7 @@ export default class NPCManager {
         whenPerceivable: mapping.whenPerceivable === true,   // with delayMs: also wait until the player could notice it (ask-cue.js)
         askCue: mapping.askCue === true,                     // show the colleague-is-asking cue (marker and toast) when it fires
         askCueMs: Number(mapping.askCueMs) > 0 ? Number(mapping.askCueMs) : 0,   // how long the marker stays: the reply window (0: the default)
+        askCueQuiet: mapping.askCueQuiet === true,           // marker only, no toast (a reload restoring an ask already announced)
         askCueUntil: typeof mapping.askCueUntil === 'string' ? mapping.askCueUntil : null,  // the marker goes when this global leaves ''
         barkDelay: Number(mapping.barkDelay) > 0 ? Number(mapping.barkDelay) : 0,  // ms: the bark alone waits this long (_delayBark)
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
@@ -1825,7 +1826,7 @@ export default class NPCManager {
       // changed sends nothing.
       if (globalChanged) window.stateSync?.requestSoon?.();
     }
-    if (config.askCue) { try { window.askCue?.fire(npcId, { ms: config.askCueMs || undefined, until: config.askCueUntil || undefined }); } catch (e) { console.debug('[npc] ask cue failed', e); } }
+    if (config.askCue) { try { window.askCue?.fire(npcId, { ms: config.askCueMs || undefined, until: config.askCueUntil || undefined, quiet: config.askCueQuiet }); } catch (e) { console.debug('[npc] ask cue failed', e); } }
 
     // A reconciliation re-announce (eventData._reconcile, from
     // ObjectivesManager#reconcileCompletedFlagTasks on game_loaded) only needs

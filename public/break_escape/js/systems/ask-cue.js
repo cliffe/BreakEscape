@@ -59,11 +59,12 @@ export class AskCue {
      * until that global leaves '' (answered, or the reply clock lapsed), not until any conversation
      * with the colleague closes, and is not drawn at all if it has already left ''.
      */
-    fire(npcId, { ms = CUE_MARKER_MS, until = null } = {}) {
+    fire(npcId, { ms = CUE_MARKER_MS, until = null, quiet = false } = {}) {
         const w = win();
         const name = w.npcManager?.getNPC?.(npcId)?.displayName || npcId;
         const text = askToastText(name);
-        try { w.showNotification?.(text, 'info', 'Colleague', 6000); } catch (e) { /* cosmetic */ }
+        // quiet: a reload restoring the marker of an ask already toasted before it
+        if (!quiet) { try { w.showNotification?.(text, 'info', 'Colleague', 6000); } catch (e) { /* cosmetic */ } }
         try { this._mark(npcId, ms, until); } catch (e) { console.debug('[ask-cue] marker failed', e); }
         return text;
     }
