@@ -144,6 +144,54 @@
     }
   },
   "setPieces": {
+    "ca04_defend_react": {
+      "_note": "D280: the ca04 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca04_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "julian_sallow": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca04_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca14_defend_react": {
+      "_note": "D280: the ca14 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca14_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "delphine_arvanitis": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca14_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca18_defend_react": {
+      "_note": "D280: the ca18 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca18_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "delphine_arvanitis": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca18_react"
+            }
+          ]
+        }
+      }
+    },
     "ca12_visitor": {
       "globals": {
         "kit_ca12_screen_choice": "",

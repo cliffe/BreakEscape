@@ -66,6 +66,54 @@
   },
   "setPieces": {
     "_note": "ca01 layer-3 recall. kit_ca01_notice is the payments team's taped notice on the back wall (an EARLIER, separate case, so it reads true after both a catch and a miss; consistent with Agnieszka's 'a different case, one that got through' bark). Sprite notes6 (14x18 taped paper notice, preloaded) on type notice_board1, wallMounted on the back wall. Placement (R3 dressing, 2026-11-19): the back wall of room_aw_brightwell has no gap wide enough for the 42x31 corkboard (window 36-76, RANGE 96-126, BRIGHTWELL sign 146-210, chart 226-270, side walls slant in; every gap is about 20-24 px), so the notice is the 14x18 taped paper in the 20 px gap between RANGE and the sign: x 129-143, y 22-40 (position {4.03125, 0.6875}, the same wall height as other boards), directly above Agnieszka's walk target {4,3}. Real bespoke board-notice art is still approved-but-ungenerated.",
+    "ca01_defend_react": {
+      "_note": "D280: the ca01 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca01_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "gwen_pritchard": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca01_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca07_defend_react": {
+      "_note": "D280: the ca07 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca07_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "graham_whitfield": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca07_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca13_defend_react": {
+      "_note": "D280: the ca13 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca13_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "graham_whitfield": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca13_react"
+            }
+          ]
+        }
+      }
+    },
     "ca01_recall_fallback": {
       "globals": {},
       "objects": [
