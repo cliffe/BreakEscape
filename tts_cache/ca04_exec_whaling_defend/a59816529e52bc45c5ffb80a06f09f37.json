@@ -1,0 +1,13 @@
+{
+  "key": "a59816529e52bc45c5ffb80a06f09f37",
+  "npc": "thandiwe_moyo",
+  "text": "You held that urgent payment in Catherine's name, so it never left for an account that wasn't hers.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:23Z"
+}

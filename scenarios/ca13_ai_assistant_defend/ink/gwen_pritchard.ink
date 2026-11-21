@@ -27,7 +27,7 @@ VAR hub_quiet = false
         { kit_key_caught:
             Gwen Pritchard: You didn't take the assistant's word for that one, so nothing was paid and no list went out.
         - else:
-            Gwen Pritchard: That was the one to check on a route you trust. On the assistant's word, it's a small payment gone or the customer list shared.
+            Gwen Pritchard: That invoice with a note hidden for the assistant was the one to check. On the assistant's word, it's a small payment gone or a list shared.
         }
     - else:
         Gwen Pritchard: Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.

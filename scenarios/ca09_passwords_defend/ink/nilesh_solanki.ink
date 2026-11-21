@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e9_passwords_defend_defend_complete:
         { kit_key_caught:
-            Nilesh Solanki: You didn't read that code back to the text pretending to be IT, so the one-time code stayed yours and the account held.
-            Nilesh Solanki: A manager and a passkey make a reused password harmless, and every sign-in belongs to one person.
+            Nilesh Solanki: You didn't read the number back to that email posing as IT, so the account stayed yours.
+            Nilesh Solanki: IT never asks you to read back a number or approve a prompt. Whoever asks is holding your password.
         - else:
-            Nilesh Solanki: That text posing as IT, asking you to read a code back, was the one to stop.
-            Nilesh Solanki: The account opened on a reused password, and with shared logins the audit couldn't say who had done what.
+            Nilesh Solanki: That email posing as IT, asking you to read back a number, was the one to stop.
+            Nilesh Solanki: The number went back, so they signed in as you, and with shared logins the audit couldn't say who did what.
         }
     - else:
         Nilesh Solanki: Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.
