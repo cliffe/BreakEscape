@@ -185,7 +185,7 @@
           "interactable": true,
           "active": true,
           "locked": false,
-          "observations": "Seven readable notes and a key card, for the note-returns-to-container proof.",
+          "observations": "Seven readable notes, one unreadable note and a key card, for the note-returns-to-container proof.",
           "contents": [
             {
               "type": "notes",
@@ -249,6 +249,15 @@
               "readable": true,
               "text": "Safe note 7.\n\nAudit log: readable test text inside a container.",
               "observations": "Safe note 7 of 7."
+            },
+            {
+              "type": "notes",
+              "id": "safe_note_unreadable",
+              "name": "Torn memo: Unreadable",
+              "takeable": true,
+              "readable": false,
+              "text": "Torn memo.\n\nNo reader opens for this one: taking it files it in the Notepad straight from the container.",
+              "observations": "An unreadable note, for the container take proof."
             },
             {
               "type": "keycard",
