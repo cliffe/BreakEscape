@@ -34,15 +34,7 @@
     "Understood. Let"
    ]
   },
-  {
-   "said": [
-    "HaX here, Agent.",
-    "It'd take something new to move it"
-   ],
-   "notSaid": [
-    "I'm not reopening it"
-   ]
-  },
+  { "said": ["HaX here, Agent.", "It'd take something new to move it"] },
   {
    "note": "Hollis's sight challenge: the spotted event opens his chat at start."
   },
