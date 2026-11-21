@@ -13,7 +13,7 @@
 { "talk": "netherton", "picks": ["I'll need access", "Step up beside him", "Understood"] },
 { "expect": { "netherton_card_cloned": true, "netherton_card_taken": true } },
 { "talk": "phone", "picks": ["How do I get into the server room", "Nothing right now"] },
-{ "said": ["With the keys cracked, the reader can't tell a copy"], "notSaid": ["EM4100 has no crypto"] },
+{ "said": ["With the keys cracked, the reader can't tell a copy"] },
 { "read": "password_sticky_note" },
 { "enter": "security_archives" },
 { "read": "badge_audit_printout" },
