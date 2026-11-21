@@ -3,7 +3,7 @@
 Status: **implemented (draft 4, after review round 3).** Every ✅ item is in the m04 files,
 plus the approved `biometric` lockType value in `scripts/scenario-schema.json`. Nothing is
 committed. §0 records what was done, the deviations, and the Phase 4 "done when" results. The
-Sonnet browser playtest (Phase 4 (a)–(g)) is the orchestrator's next step.
+Scripted browser playtest (Phase 4 (a)–(g)) is the orchestrator's next step.
 
 ## 0. Implementation status [new r3]
 

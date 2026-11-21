@@ -1,6 +1,6 @@
 # m04 Critical Failure: dialogue review, pass 5 cycle 2
 
-Reviewer: fresh Opus, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Reviewed: the ink as committed in b4427303, plus the working-tree erb (Vance's 20 s text, the two new globals). The SecGen XML and the four listed field guides were not opened.
+Reviewer: fresh reviewer, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M04_PASS_BRIEF.md`). Reviewed: the ink as committed in b4427303, plus the working-tree erb (Vance's 20 s text, the two new globals). The SecGen XML and the four listed field guides were not opened.
 
 Finding ids `D6-n`. Tags: **blocker / major / minor**. All mission-local unless marked.
 

@@ -1,6 +1,6 @@
 # m04 Critical Failure: scenario design review, pass 5, round 1
 
-Reviewer: fresh Opus agent, read-only (2026-10-13). Skill: `scenario-design-review`, run in full. Static review: no browser session was started.
+Reviewer: fresh agent, read-only (2026-10-13). Skill: `scenario-design-review`, run in full. Static review: no browser session was started.
 
 Kind of game: a SAFETYNET campaign mission, judged as a TV spy thriller whose VM flags are required and woven into the story. The teaching comes through the VM work and the field guides.
 
