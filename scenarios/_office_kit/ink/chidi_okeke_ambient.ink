@@ -1,8 +1,15 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca09_asked = false
+VAR kit_ca09_note_choice = ""
+VAR kit_ca09_note_seen = false
+VAR kit_ca09_done = false
 
 === start ===
+{ kit_ca09_asked:
+    -> ca09_note
+}
 { kit_defend_done:
     { kit_ep == "ca02": -> ca02 }
     { kit_ep == "ca09": -> ca09 }
@@ -43,6 +50,30 @@ Chidi Okeke: Now then. Drinks machine's over there if you fancy one.
     Chidi Okeke: Half my week's out of the van. You forget what's sat on that tablet if you leave it somewhere.
 }
 -> bye
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca09_note ===
+{ kit_ca09_note_choice == "mention" || kit_ca09_note_choice == "fine" || kit_ca09_note_choice == "silent" || kit_ca09_done:
+    -> ca09
+}
+Chidi Okeke: Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?
+{ kit_ca09_note_choice == "":
+    ~ kit_ca09_note_choice = "asked"
+}
++ {kit_ca09_note_seen} [I'd take that note down. Anyone passing can read it.]
+    ~ kit_ca09_note_choice = "mention"
+    Chidi Okeke: Fair point, that. I'll have it down and ask Nilesh about a password manager.
+    #exit_conversation
+    -> DONE
++ [Sounds sorted. At least he won't forget it now.]
+    ~ kit_ca09_note_choice = "fine"
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca09_note_choice = "silent"
+    #exit_conversation
+    -> DONE
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
 // choice is reported as ended on that same continue, and person-chat then shows only
