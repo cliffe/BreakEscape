@@ -103,7 +103,7 @@ test('ca11: teamLine has a comma after "alone"; only see/correct/delete are call
   for (const n of ['ca11_misdirected_data', 'ca11_misdirected_data_defend']) {
     const t = erb(n);
     assert.match(t, /rather than handling them alone, you got/, n);
-    assert.match(t, /A request to see, correct or delete the personal data held about someone is a legal right with a deadline/, n);
+    assert.match(t, /A request to see or delete the personal data held about someone is a legal right with a deadline/, n);
     assert.match(t, /A dispute about whether the data is right, or a complaint about how it was used, goes to the DPO too/, n);
     assert.ok(!/a complaint about how it was used, is a legal right/.test(t), n);
   }
