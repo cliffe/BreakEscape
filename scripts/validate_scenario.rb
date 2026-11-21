@@ -6847,7 +6847,7 @@ def check_engine_limits(json_data)
         issues << "⚠️ WARNING: '#{path}' has requiresItemConditionHint(Variants) but no requiresItemCondition, so those hints are never shown."
       end
 
-      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants postitNoteVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if vk == 'requiresItemConditionHintVariants' && v.key?('condition')
@@ -6970,7 +6970,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|conceptPanel)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|postitNoteVariants|conceptPanel)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node
