@@ -91,7 +91,16 @@ class ScenarioTimerDispatcher {
         const ranMs = Number(savedStarted[timer.id]);
         let startedAt = null;
         if (alreadySet) {
-          startedAt = Number.isFinite(ranMs) && ranMs >= 0 ? now - ranMs : now;
+          // Saved: this timer had run ranMs when the game clock read savedElapsed, so it
+          // started at that point on the clock's timeline. Counting from "now - ranMs"
+          // instead would add this page's load time on every reload.
+          if (Number.isFinite(ranMs) && ranMs >= 0) {
+            startedAt = Number.isFinite(savedElapsed) && savedElapsed >= ranMs
+              ? Math.min(now, this.startTime + (savedElapsed - ranMs))
+              : now - ranMs;
+          } else {
+            startedAt = now;
+          }
         }
         this._timerStartTimes.set(timer.id, startedAt);
 
@@ -123,6 +132,21 @@ class ScenarioTimerDispatcher {
     }
 
     console.log(`⏱️ ScenarioTimerDispatcher initialized with ${this.timers.length} timer(s)`);
+  }
+
+  /**
+   * The dispatcher a game starts with. It always counts from the game clock's start when
+   * there is a clock, so the HUD timers and every other clock reader agree after a reload
+   * however long the page took to load; `saved` (the last sync's timer block) only carries
+   * the fired, cancelled and started state. With no clock it resumes from its own saved
+   * elapsed time.
+   */
+  static forGame(scenario, gameClock, saved = null) {
+    const clockStart = gameClock?.startTime;
+    return new ScenarioTimerDispatcher(scenario, {
+      startTime: Number.isFinite(clockStart) ? clockStart : undefined,
+      saved
+    });
   }
 
   /**
