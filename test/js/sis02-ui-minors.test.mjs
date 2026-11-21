@@ -409,8 +409,8 @@ test('B1: the interaction menu X is its own containing block, so the shared ::af
     const body = rule.slice(0, rule.indexOf('}'));
     assert.ok(/position:\s*relative/.test(body), 'the menu X is position: relative, not static');
     assert.ok(!/position:\s*static/.test(body), 'not static');
-    const after = (menu.match(/#be-interaction-menu \.be-im-close::after \{[^}]*inset:\s*(-?\d+)px/) || [])[1];
-    assert.ok(after === '-6', 'the menu X reach is 6px (32px X, 44px target, inside the head): ' + after);
+    const after = (menu.match(/#be-interaction-menu \.be-im-close::after \{[^}]*inset:\s*calc\(-(\d+)px - var\(--ui-small-button-px, 4px\)\)/) || [])[1];
+    assert.ok(after === '6', 'the menu X reach is 6px past its border (32px X, 44px target, inside the head): ' + after);
     // Every user of the shared class sits in a positioned box
     const n = css('notifications.css');
     assert.ok(/\n\.game-modal-close \{[^}]*position:\s*absolute/.test(n), 'the shared X is absolute');

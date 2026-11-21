@@ -93,7 +93,7 @@ function injectStyles() {
         }
         /* position: relative makes the X its own containing block: the shared
            .game-modal-close::after hit area (position: absolute) would otherwise anchor to the
-           whole menu and sit over every entry. The reach here is 6px, so the 32px X has a
+           whole menu and sit over every entry. The reach here is 6px past the drawn box, so the 32px X has a
            44px target; its lower edge ends flush with the top of the list (head pad 2px + 32px
            X + 6px bottom pad = 40px, the reach ends at 40px), so no entry is covered. */
         #be-interaction-menu .be-im-close {
@@ -108,8 +108,10 @@ function injectStyles() {
             font-size: 14px;
             line-height: 1;
         }
+        /* inset is measured from the X's padding box, inside its border (4px unthemed, the skin's
+           --ui-small-button-px themed): add the border back so the reach is 6px past the drawn box */
         #be-interaction-menu .be-im-close::after {
-            inset: -6px;
+            inset: calc(-6px - var(--ui-small-button-px, 4px));
         }
         #be-interaction-menu .be-im-list {
             flex: 1 1 auto;

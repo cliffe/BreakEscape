@@ -567,7 +567,12 @@ test('menu X geometry: target at least 44px, reach no more than the head padding
     const rule = (sel) => { const i = src.indexOf(sel + ' {'); assert.ok(i >= 0, 'rule ' + sel); return src.slice(i, src.indexOf('}', i)); };
     const px = (block, prop) => Number(block.match(new RegExp(prop + ':\\s*(-?\\d+)px'))[1]);
     const x = rule('#be-interaction-menu .be-im-close');
-    const reach = -px(rule('#be-interaction-menu .be-im-close::after'), 'inset');
+    // inset is from the padding box: calc(-<reach>px - border), border = --ui-small-button-px (4px fallback)
+    const insetRule = rule('#be-interaction-menu .be-im-close::after');
+    const calc = insetRule.match(/inset:\s*calc\(-(\d+)px - var\(--ui-small-button-px, (\d+)px\)\)/);
+    assert.ok(calc !== null, 'the inset adds the border back to the reach');
+    const reach = Number(calc[1]);
+    assert.ok(Number(calc[2]) === 4, 'unthemed X border is 4px, the fallback');
     const size = Math.min(px(x, 'width'), px(x, 'height'));
     assert.ok(size + 2 * reach >= 44, 'target ' + (size + 2 * reach) + 'px is at least 44');
     const head = rule('#be-interaction-menu .be-im-head');
