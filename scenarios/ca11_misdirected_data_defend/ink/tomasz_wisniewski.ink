@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e11_misdirected_data_defend_defend_complete:
         { kit_key_caught:
-            Tomasz Wiśniewski: You caught that overtime sheet of health notes heading to the wrong Payroll contact, so residents' details never left the building.
+            Tomasz Wiśniewski: You reported Sam's email about our overtime sheet the same day, so I could warn the staff on it and get it deleted.
             Tomasz Wiśniewski: A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable.
         - else:
-            Tomasz Wiśniewski: That send of residents' health notes to a familiar-looking wrong address was the one to stop.
-            Tomasz Wiśniewski: It left, so special-category details reached people with no right to them, and my week went to the recall and the letters.
+            Tomasz Wiśniewski: Sam's email about our overtime sheet, with staff health notes on it, was the one to report to me.
+            Tomasz Wiśniewski: It went unreported, so the staff on it were never warned, and my week went to the recall and the letters.
         }
     - else:
         Tomasz Wiśniewski: You're covering the Care Laundry desk inbox. Some is routine, some needs the data protection lead, and some was sent to catch you out. Report anything that looks wrong.

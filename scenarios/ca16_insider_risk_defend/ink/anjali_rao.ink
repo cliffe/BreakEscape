@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e16_insider_risk_defend_defend_complete:
         { kit_key_caught:
-            Anjali Rao: You kept your sign-in to yourself and sent her to the service desk, so no one else's actions landed under your name.
+            Anjali Rao: You kept your sign-in to yourself and sent him to the service desk, so none of his actions landed under your name.
             Anjali Rao: Lending a login feels kind, but it leaves you answerable for whatever is done with it.
         - else:
             Anjali Rao: That ask to borrow your sign-in, from a colleague locked out and under pressure, was the one to turn down.
-            Anjali Rao: It was lent, so the audit pointed at you for work that was never yours, and nobody could say who did what.
+            Anjali Rao: It was lent, so the audit put his work under your name, and you had to answer for it.
         }
     - else:
         Anjali Rao: Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.

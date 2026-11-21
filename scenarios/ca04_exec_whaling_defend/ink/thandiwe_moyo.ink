@@ -21,8 +21,8 @@ VAR hub_quiet = false
 - else:
     { episode_e4_exec_whaling_defend_defend_complete:
         { kit_key_caught:
-            Thandiwe Moyo: You held that urgent payment in Catherine's name until you'd reached her, so it never left for an account that wasn't hers.
-            Thandiwe Moyo: A voicemail that sounds like her and says don't ring back is the exact bit to distrust.
+            Thandiwe Moyo: You held that urgent payment in Catherine's name, so it never left for an account that wasn't hers.
+            Thandiwe Moyo: A voice can be copied. When a voicemail says don't ring back, ring her on the number you already hold.
         - else:
             Thandiwe Moyo: That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.
             Thandiwe Moyo: It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.

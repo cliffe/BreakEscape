@@ -21,7 +21,7 @@ VAR hub_quiet = false
 - else:
     { episode_e18_credential_attacks_at_scale_defend_defend_complete:
         { kit_key_caught:
-            Ama Owusu: You didn't trust that fake lockout alert, so it never steered a password onto a look-alike page and opened an account here.
+            Ama Owusu: You didn't trust that fake lockout alert, so no password went to its look-alike page.
             Ama Owusu: A unique password per account in a manager, with MFA, is the one habit that beats both spraying and stuffing.
         - else:
             Ama Owusu: That lockout alert dressed as our own IT, hurrying you to sign in again, was the one to stop.

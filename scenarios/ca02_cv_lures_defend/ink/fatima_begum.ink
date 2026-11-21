@@ -21,10 +21,10 @@ VAR hub_quiet = false
 - else:
     { episode_e2_cv_lures_defend_defend_complete:
         { kit_key_caught:
-            Fatima Begum: You held back that application whose attachment wanted a second click to open it, so nothing ran on the HR machine behind it.
-            Fatima Begum: A real CV just opens. The one asking for an extra step to view it is worth a second look.
+            Fatima Begum: You held back that application whose CV wanted content switched on, so nothing ran on the HR machine.
+            Fatima Begum: A real CV just opens. One that asks you to enable content first is the one to report.
         - else:
-            Fatima Begum: That application with the attachment that wanted a second click was the one to stop.
+            Fatima Begum: That application whose CV wanted content switched on was the one to stop.
             Fatima Begum: It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.
         }
     - else:
