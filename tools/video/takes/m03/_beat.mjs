@@ -28,8 +28,9 @@ export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy',
     mark('walk-end', { npc: await find(bridge), player: (await bridge.getState()).player });
     await sleep(350);
     mark('interact');
-    const r = await bridge.interact(npcId, { approach: false, timeoutMs: 15000 });
-    const w = await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 });
+    let r = await bridge.interact(npcId, { approach: false, timeoutMs: 15000 });
+    let w = await bridge.waitForMinigame('person-chat', { timeoutMs: 5000 });
+    if (!w || w.ok === false) { mark('interact-retry', { r: JSON.stringify(r).slice(0, 300) }); r = await bridge.interact(npcId, { approach: false, timeoutMs: 15000 }); w = await bridge.waitForMinigame('person-chat', { timeoutMs: 10000 }); }
     if (!w || w.ok === false) throw new Error('person-chat did not open ' + JSON.stringify(r).slice(0, 300));
     mark('conversation-open');
     await runDialogue(page, bridge, mark, vw, { steps: [], targets, lingerMs });
