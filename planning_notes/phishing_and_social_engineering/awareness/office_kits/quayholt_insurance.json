@@ -679,6 +679,7 @@
               "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
+              "delayMs": 250,
               "needs": "suspend"
             },
             {

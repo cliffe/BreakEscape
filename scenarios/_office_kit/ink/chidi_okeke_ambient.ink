@@ -2,7 +2,7 @@ VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
 VAR kit_ca09_asked = false
-VAR kit_ca09_note_choice = ""
+VAR kit_ca09_note_choice = ""  // Synced scenario global
 VAR kit_ca09_note_seen = false
 VAR kit_ca09_done = false
 
@@ -66,8 +66,9 @@ Chidi Okeke: Right, sorted. New one's on a sticky note on my screen so I don't f
     Chidi Okeke: Fair point, that. I'll have it down and ask Nilesh about a password manager.
     #exit_conversation
     -> DONE
-+ [Sounds sorted. At least he won't forget it now.]
++ [Sounds sorted. At least you won't forget it now.]
     ~ kit_ca09_note_choice = "fine"
+    Chidi Okeke: Grand, that. Back to it, then.
     #exit_conversation
     -> DONE
 + [\[Say nothing\]]

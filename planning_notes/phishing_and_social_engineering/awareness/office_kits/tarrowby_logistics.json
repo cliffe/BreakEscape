@@ -450,6 +450,7 @@
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
+              "delayMs": 250,
               "needs": "suspend"
             },
             {
@@ -471,7 +472,7 @@
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",
-              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true",
+              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen === true",
               "onceOnly": true,
               "setGlobal": {
                 "kit_ca09_note_choice": "silent"
@@ -636,7 +637,7 @@
         {
           "id": "kit_ca15_t_chidi",
           "startOnGlobal": "kit_ca15_chidi_go",
-          "delayMs": 15000,
+          "delayMs": 20000,
           "condition": "!globalVars.kit_ca15_done",
           "setGlobal": {
             "kit_ca15_done": true
@@ -689,7 +690,7 @@
         },
         {
           "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
-          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
           "onceOnly": true,
           "delayMs": 2000,
           "bark": "Ta, Chidi. That's sat on the floor all afternoon. Anyone could've pocketed it first."

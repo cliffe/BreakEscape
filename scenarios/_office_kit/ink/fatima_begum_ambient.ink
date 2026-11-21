@@ -2,7 +2,7 @@ VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
 VAR kit_ca15_asked = false
-VAR kit_ca15_stick_choice = ""
+VAR kit_ca15_stick_choice = ""  // Synced scenario global
 VAR kit_ca15_done = false
 
 === start ===
