@@ -93,3 +93,10 @@ rubocop touched Ruby, validator on the four shells (`ruby scripts/validate_scena
 - The ca15 `silent` value is `leave`, not `silent`.
 - `type` for the notice, stick and drop box is the sprite name minus trailing digit (`aw_notice_qr_parking`, `usb_storage_swivel`, `drop_box`); if the placement test or the engine wants another, change in the kit and regenerate.
 - No tests, validator or drift check have been run on step 4 yet.
+
+## Handover 5 (step 4 finished and verified)
+- Hand edits to the four erbs done (9b7ca8fe2, fixed for ca16 in 0766a94fd): `stepAway` string, host pointer sentence removed, conceptPanel arrays with choice-keyed entries (final headings from the caller), kiosk finished condition. `apply_training_room.py --kit` reports all four shells and twins "(unchanged)".
+- `type` kept as sprite minus trailing digit (aw_notice_qr_parking, usb_storage_swivel, drop_box): the placement/depth tests only constrain types of table items (MOVED_TYPES) and rooms.js picks the texture from `sprite` first. Other scenarios use `usb` for the same stick sprite (14 uses, engine special-cases takeable `usb` only) and `pc` for a network drop box; neither fits a takeable:false evidence stick or a lost-property box.
+- bin/test-js: only social-awareness-office-kit.test.mjs fails, 3 ink-dependent tests: #19 targetKnot ca06_notice not in zainab_hussain_ambient.ink, #57 host recap guard (ca06), #58 request knot guard (ca06 knot ca06_notice). 56 pass, 2 skipped (ca19 art pending). Two loose `|| true` assertions tightened.
+- Validator on the four shells: 0 errors. Drift check: 0 failures.
+- Next (step 5): inks.

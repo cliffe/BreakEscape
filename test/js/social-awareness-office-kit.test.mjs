@@ -1422,7 +1422,7 @@ test('wave 4: placement: new floor and wall props and every new stand point clea
     const sc = w4Shell(name);
     const roomType = sc.rooms.training_room.type;
     const kiosk = { left: 238, right: 265, top: 98, bottom: 140 }, column = { left: 238, right: 265, top: 140, bottom: 224 };
-    const fixed = layerRects(roomType, ['items', 'tables']).filter((r) => !/wall|poster|logo|blinds|board|map|screen|alarm|hook|queue|radiator/.test(r.name) || true);
+    const fixed = layerRects(roomType, ['items', 'tables']).filter((r) => !/wall|poster|logo|blinds|board|map|screen|alarm|hook|queue|radiator/.test(r.name));
     const objs = sc.rooms.training_room.objects.filter((o) => o.id.startsWith(`kit_${w.ep}_`) && o.position && o.sprite);
     const props = objs.filter((o) => ['kit_ca06_notice', 'kit_ca15_stick', 'kit_ca15_lost_property'].includes(o.id));
     const others = objs.filter((o) => !props.includes(o) && o.position.elevation === undefined);
@@ -1453,7 +1453,7 @@ test('wave 4: kit staff patches stay inside their own set piece (no other kit sh
   for (const name of kitShellNames()) {
     if (name in W4) continue;
     const text = JSON.stringify(readShell(name));
-    assert.ok(!/kit_ca(06|09|15|16)_/.test(text) || name.startsWith(`ca`) && /^ca(06|09|15|16)_.*_defend$/.test(name) === false || true, name);
+    if (!/^ca(06|09|15|16)_/.test(name)) assert.ok(!/kit_ca(06|09|15|16)_/.test(text), `${name}: carries a wave 4 id`);
     if (/^ca(06|09|15|16)_/.test(name) && name.endsWith('_defend')) assert.ok(!/kit_ca(06|09|15|16)_(asked|there|done|signin|note|stick)/.test(text.replace(/kit_ca\d\d_host_said/g, '')), `${name}: twin carries no chain id`);
   }
 });
