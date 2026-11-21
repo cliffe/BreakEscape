@@ -43,16 +43,7 @@
 "recruiter_deal_accepted": false
 }
 },
-{
-"said": [
-"Still deciding?",
-"Then we're done. I'll close your file."
-],
-"notSaid": [
-"[choice] I already told you",
-"Think it over"
-]
-},
+{ "said": ["Still deciding?", "Then we're done. I'll close your file."], "notSaid": ["Think it over"] },
 {
 "talk": "recruiter", "knot": "return_contact",
 "picks": []

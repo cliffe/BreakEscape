@@ -224,14 +224,7 @@
 "Did I get him right"
 ]
 },
-{
-"said": [
-"You gave a wrong name or a wrong reason before the right one"
-],
-"notSaid": [
-"You read past her line on the badge log"
-]
-},
+{ "said": ["You gave a wrong name or a wrong reason before the right one"] },
 {
 "credits": true
 },

@@ -187,18 +187,7 @@
 "final_choice": "combat_lethal"
 }
 },
-{
-"said": [
-"You step over him. He doesn't move.",
-"He's still on that floor. The research server isn't finished"
-],
-"notSaid": [
-"dead. Good.",
-"sweep the vault",
-"Sweep the vault",
-"on the way out"
-]
-},
+{ "said": ["You step over him. He doesn't move.", "He's still on that floor. The research server isn't finished"], "notSaid": ["dead. Good.", "sweep the vault", "Sweep the vault"] },
 {
 "music": "global_variable_changed:final_choice",
 "value": "combat_lethal",
