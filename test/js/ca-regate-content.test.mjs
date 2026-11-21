@@ -92,11 +92,11 @@ test('ca07: the debrief tells one payment story, and the opening card makes no c
   assert.match(panels.find((m) => m[1] === 'Ringing back')[2], /a payment that never left/);
 });
 
-test('ca07: the "When the voice wins" card points at no card that may not show, and the call is Graham\'s', () => {
+test('ca07: the "When the voice wins" card points at no card that may not show, and the call is the call-taker\'s (no ambient name in an unconditioned card)', () => {
   const t = erb('ca07_voice_ceo');
   assert.ok(!/is in the next card/.test(t), 'a pointer to a conditional card');
   assert.ok(!/in your own seat/.test(t.match(/"heading": "When the voice wins"[\s\S]*?"condition"/)[0]));
-  assert.match(t, /Whether the payment left was Graham's call to make/);
+  assert.match(t, /Whether the payment left depended on the person who took the call/);
 });
 
 test('ca11: teamLine has a comma after "alone"; only see/correct/delete are called legal rights, a dispute or complaint goes to the DPO too', () => {
