@@ -450,7 +450,7 @@ Find the complete documentation: target lists, message templates, deployment sys
 
 Gather proof of Derek's involvement. And shut down their attack infrastructure before those messages go out.
 
-+ [What about those 85 people?]
++ [What about those 42 to 85 people?]
     -> people_at_stake
 + [I'll stop it]
     -> mission_commitment

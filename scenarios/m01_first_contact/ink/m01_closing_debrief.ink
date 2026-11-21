@@ -366,7 +366,7 @@ Agent HaX: You had the authority. The operation succeeded. I'm noting the loss.
     {player_launched_attack:
         Agent HaX: The attack went through and Maya is gone. That's two losses. Hold both of them.
     - else:
-        Agent HaX: And it did. Keep that in proportion: you stopped 85 people from dying.
+        Agent HaX: And it did. Keep that in proportion: you stopped 42 to 85 people from dying.
         Agent HaX: But we lost Maya's intelligence. That gap shows up in the next mission.
     }
     -> kevin_frame_discussion
@@ -402,7 +402,7 @@ Agent HaX: You had the authority. The operation succeeded. I'm noting the loss.
     {player_launched_attack:
         Agent HaX: The attack still went through. Both things are true: Kevin's removal was costly, and we still failed the people in those projections.
     - else:
-        Agent HaX: You stopped something that would have killed 85 people. Keep that in perspective.
+        Agent HaX: You stopped something that would have killed 42 to 85 people. Keep that in perspective.
     }
     -> security_audit_review
 
@@ -674,7 +674,7 @@ Agent HaX: Different approach than a quiet arrest, but the result's the same.
         Agent HaX: Agreed. Operation Shatter stopped, lives saved.
     }
     -> phase_3_discussion
-+ [He planned to kill 85 people. No sympathy.]
++ [He planned to kill 42 to 85 people. No sympathy.]
     Agent HaX: None deserved. Derek's done. ENTROPY lost this round.
     -> phase_3_discussion
 
@@ -712,7 +712,7 @@ Agent HaX: He's not cooperating. Fanatics rarely do. But we have the evidence. H
 {player_launched_attack:
     Agent HaX: He'll spend decades in prison explaining why the people who died were acceptable losses for his ideology.
 - else:
-    Agent HaX: He'll spend decades in prison explaining why 85 dead people would have been "educational."
+    Agent HaX: He'll spend decades in prison explaining why 42 to 85 deaths would have been "educational."
 }
 
 + [Will the charges stick?]
@@ -862,7 +862,7 @@ Agent HaX: And if Social Fabric was willing to do this... what are the other cel
 === architect_mystery ===
 Agent HaX: We don't know. ENTROPY's leader, strategist, philosopher.
 
-Agent HaX: Derek quoted The Architect. Believed every word. Got approval to kill 85 people.
+Agent HaX: Derek quoted The Architect. Believed every word. Got approval to kill 42 to 85 people.
 
 Agent HaX: Whoever they are, they've built an organisation of fanatics.
 
@@ -877,7 +877,7 @@ Agent HaX: Whoever they are, they've built an organisation of fanatics.
     {player_launched_attack:
         Agent HaX: Today, ENTROPY showed what they're willing to do. We know the cost now. We don't let it happen again.
     - else:
-        Agent HaX: Today, you stood between ENTROPY and 85 people they'd sacrifice.
+        Agent HaX: Today, you stood between ENTROPY and the 42 to 85 people they'd sacrifice.
     }
     -> mission_end
 

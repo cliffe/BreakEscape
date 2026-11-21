@@ -124,10 +124,10 @@ Sarah Mitchell: So when does that central station come back? Minutes, or hours?
     #set_global:sarah_given_soon_estimate:true
     Sarah Mitchell: Then Amy stays on the round and I'll watch him from here. Come straight back if that changes.
     -> hub
-+ [I honestly don't know yet.]
++ [I can't say. Nobody's given me a time.]
     ~ bed4_escalated = true
     #set_global:bed4_escalated:true
-    Sarah Mitchell: Then I'll treat "don't know" as "hours". Thank you for not guessing.
+    Sarah Mitchell: No time means I plan for hours. I can't leave him on a guess.
     Sarah Mitchell: I'm escalating him. Amy's going on one-to-one until outreach arrive.
     -> hub
 
@@ -224,7 +224,7 @@ Sarah Mitchell: And the pumps have lost their console. Anything new on my ward, 
 ~ sarah_pump_warned = true
 #set_global:sarah_pump_warned:true
 Sarah Mitchell: Twenty. That's ten times her prescription, and the chart even warns about that decimal point.
-{drug_library_compromised:
+{tamper_told:
     Sarah Mitchell: Somebody built that to catch a tired nurse clearing a warning. You did right to stop.
     Sarah Mitchell: Nothing else goes on a pump here until pharmacy clears the library.
 - else:
@@ -263,8 +263,6 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -> bed2_death
 - patient_bed4_deceased and not death_told:
     -> bed4_death
-- drug_library_compromised and not tamper_told:
-    -> post_drug_tamper
 - network_isolated and not isolation_discussed:
     -> post_isolation
 }
@@ -280,6 +278,11 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
 - else:
     Sarah Mitchell: {&What've you got?|Quickly, then.|Go on.}
 }
+// Sarah only learns of the tamper when the player tells her (no auto-route).
++ {drug_library_compromised and not drug_library_restored and not tamper_told} [Someone tampered with the pump drug library.]
+    -> post_drug_tamper
++ {drug_library_restored and not tamper_told} [Someone tampered with the pump drug library. I've restored it from a clean copy.]
+    -> post_drug_tamper
 + {pump_dose_error and bed2_seen_unwell and not bed2_alarm_raised and not patient_bed2_deceased} [Ms Okafor's barely breathing. She needs help now.]
     ~ bed2_alarm_raised = true
     #set_global:bed2_alarm_raised:true
@@ -296,7 +299,7 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     ~ told_rate = true
     Sarah Mitchell: Twenty. Her chart says two point nought. Did the pump say anything?
     ++ [Nothing. It just took it.]
-        {drug_library_compromised:
+        {tamper_told:
             Sarah Mitchell: That's what they changed the library for. One slip, and nothing in the pump to catch it.
         - else:
             Sarah Mitchell: Our range is half to four. That pump should never have taken twenty. Get David Osei to look at that library.
@@ -319,7 +322,7 @@ Sarah Mitchell: I'm reporting it as a patient safety incident. Somebody has to r
     -> hub
 + {not bed4_raised and not bed4_escalated and not patient_bed4_deceased} [About Mr Ahmed in Bed 4.]
     -> bed4_concern
-+ {not drug_library_compromised and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
++ {not tamper_told and not pump_dose_correct and not pump_dose_error and not asked_bed2} [What about Bed 2's infusion?]
     ~ asked_bed2 = true
     Sarah Mitchell: Ms Okafor's morphine bag runs out at quarter to eight, and I've got no one free.
     Sarah Mitchell: Set it from her paper chart and read every digit back to me before it runs.
