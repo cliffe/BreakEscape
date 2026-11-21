@@ -221,14 +221,7 @@
 "flag4_submitted": true
 }
 },
-{
-"said": [
-"That's the last flag. Call me."
-],
-"notSaid": [
-"Sweep the vault if you haven't"
-]
-},
+{ "said": ["That's the last flag. Call me."] },
 {
 "talk": "phone",
 "picks": [
@@ -237,11 +230,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"He hasn't got long"
-]
-},
+{ "said": ["He hasn't got long"], "notSaid": ["Sweep the vault if you haven't"] },
 {
 "talk": "phone",
 "picks": [
