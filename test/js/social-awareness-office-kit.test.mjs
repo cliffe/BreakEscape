@@ -1916,3 +1916,9 @@ test('wave 5: preloads and dims: every base sprite and variant value is preloade
     if (w.ep === 'ca14') { assert.ok(keys.has('m10_map_board1') || keys.has('flip_chart1'), `${name}: the board sprite`); if (keys.has('m10_map_board1')) assert.deepEqual(pngSize('m10_map_board1'), [40, 28]); }
   });
 });
+
+test('wave 6: ca07 kiosk text: the genuine voicemail no longer rests on a saved number (1c)', () => {
+  const erb = readFileSync(join(scenarios, 'ca07_voice_ceo', 'scenario.json.erb'), 'utf8');
+  assert.ok(!erb.includes("It came from Ravinder's mobile, which is already in the office contacts."), 'old first sentence gone');
+  assert.ok(erb.includes('It asks you to do nothing, and he tells you to ring his own mobile'), 'new opening present');
+});
