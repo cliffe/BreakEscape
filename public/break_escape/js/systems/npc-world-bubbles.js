@@ -989,11 +989,28 @@ export class NpcWorldBubbles {
     _tickSays() {
         const t = this.now();
         for (const st of [...this.says.values()]) {
-            if (st.stillValid && t - st.validAt >= STILL_VALID_EVERY_MS) {
+            if (st.stillValid && !st.stale && t - st.validAt >= STILL_VALID_EVERY_MS) {
                 st.validAt = t;
                 let ok = true;
                 try { ok = st.stillValid() !== false; } catch (e) { ok = true; }
-                if (!ok) { this._end(st.npcId, 'stale'); continue; }
+                if (!ok) {
+                    // D254 M-C: a line already being read is finished, never cut mid-sentence (its
+                    // own beat often flips the condition, e.g. ca14's `done` 5 s after `moved`).
+                    // The follow-up (a gate's hint) is not wanted any more as a bubble page: it goes
+                    // to its toast now, and the bubble ends with the line's last page.
+                    const n = st.linePages ?? st.pages.length;
+                    if (st.page < n) {
+                        const rest = followUpLeft(st);
+                        st.stale = true;
+                        st.pages = st.pages.slice(0, n);
+                        st.hints = [];
+                        this._note(st.npcId, 'stale-finish', { page: st.page });
+                        if (rest) {
+                            this._note(st.npcId, 'follow-up-lost', { page: st.page, text: rest });
+                            try { st.onFollowUpLost?.(rest); } catch (e) { /* never break a frame */ }
+                        }
+                    } else { this._end(st.npcId, 'stale'); continue; }
+                }
             }
             if (!this._inView(st.npcId)) { this._leave(st.npcId, 'left-view'); continue; }
             while (st.page < st.pages.length && t - st.pageStarted >= st.times[st.page]) {
