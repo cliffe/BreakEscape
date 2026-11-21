@@ -25,20 +25,7 @@
 "About that flag"
 ]
 },
-{
-"said": [
-"(9 options)",
-"Whoever carries badge 4471 is your insider.",
-"[choice] I need to talk about Torres.",
-"[choice] I'm going in. Soft or hard?"
-],
-"notSaid": [
-"[choice] Someone here has been talking to a recruiter",
-"[choice] First flag's in",
-"Third flag's in",
-"Torres is buried in debt"
-]
-},
+{ "said": ["(9 options)", "Whoever carries badge 4471 is your insider.", "[choice] I need to talk about Torres.", "[choice] I'm going in. Soft or hard?"], "notSaid": ["[choice] Someone here has been talking to a recruiter", "[choice] First flag's in"] },
 {
 "talk": "phone",
 "picks": [
@@ -64,18 +51,7 @@
 "Does knowing why"
 ]
 },
-{
-"said": [
-"You know his reasons now. I won't tell you what he deserves.",
-"Maybe it changes what's fair. It doesn't change the upload."
-],
-"notSaid": [
-"weaponises",
-"rope with a hook",
-"Nobody's philosophy",
-"[choice] Is the debt the hook?"
-]
-},
+{ "said": ["You know his reasons now. I won't tell you what he deserves.", "Maybe it changes what's fair. It doesn't change the upload."], "notSaid": ["weaponises", "[choice] Is the debt the hook?"] },
 {
 "set": {
 "flag4_submitted": true

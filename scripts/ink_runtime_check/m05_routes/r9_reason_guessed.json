@@ -235,13 +235,7 @@
 {
 "credits": true
 },
-{
-"notSaid": [
-"NAMED ON THE EVIDENCE",
-"You had him before the server did",
-"Somebody read Owen's sheet"
-]
-},
+{ "notSaid": ["NAMED ON THE EVIDENCE", "You had him before the server did"] },
 {
 "maxRun": 9
 }
