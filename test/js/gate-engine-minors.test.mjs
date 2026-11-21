@@ -284,7 +284,8 @@ test('the validator rejects mistyped outcome and threatTone, and warns on FAILED
     assert.ok(!nudge.test(run('quiet', sc({ credits: [{ text: 'MISSION FAILED', style: 'title', outcome: 'active' }] }))), 'a line outcome silences it');
     assert.ok(!nudge.test(run('quiet2', sc({ credits: [{ text: 'MISSION FAILED', style: 'title' }], outcome: 'active' }))), 'an entry outcome silences it');
     assert.ok(/outcome "failed"/.test(run('badline', sc({ credits: [{ text: 'X', outcome: 'failed' }] }))), 'a mistyped line outcome is an error');
-    assert.ok(!/ERROR: '[^']*credits' has outcome/.test(run('ok', sc({ credits: [{ section: 'S', outcome: 'Active ', lines: [{ text: 'a' }] }] }))), 'case and spaces are accepted');
+    assert.ok(/ERROR: '[^']*credits' has outcome/.test(run('case', sc({ credits: [{ section: 'S', outcome: 'Active', lines: [{ text: 'a' }] }] }))), 'outcome is lowercase-only, matching the entry enum');
+    assert.ok(!/ERROR: '[^']*credits' has outcome/.test(run('ok', sc({ credits: [{ section: 'S', outcome: 'active', lines: [{ text: 'a' }] }] }))), 'lowercase outcome accepted');
     assert.ok(/outcome/.test(run('badentry', sc({ credits: [{ text: 'X' }], outcome: 'failed' }))), 'a mistyped entry outcome is rejected by the schema');
     assert.ok(/threatTone/.test(run('badtone', sc({ credits: [{ text: 'X' }], threatTone: 'purple' }))), 'a mistyped threatTone is rejected by the schema');
 });

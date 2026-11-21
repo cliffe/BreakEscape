@@ -208,9 +208,9 @@ def credits_outcome_issues(event, path)
   nodes = credits_nodes(event['credits'])
   found = []
   nodes.each do |n|
-    next unless n.key?('outcome') && !CREDITS_OUTCOMES.include?(n['outcome'].to_s.strip.downcase)
+    next unless n.key?('outcome') && !CREDITS_OUTCOMES.include?(n['outcome'])
 
-    found << "❌ ERROR: '#{path}/credits' has outcome #{n['outcome'].inspect}; use \"contained\" or \"active\" (anything else is ignored)."
+    found << "❌ ERROR: '#{path}/credits' has outcome #{n['outcome'].inspect}; use \"contained\" or \"active\", lowercase, as the schema enum does for an entry."
   end
   stated = event.key?('outcome') || nodes.any? { |n| n.key?('outcome') } || event['threatText'].to_s.strip != ''
   titles = nodes.select { |n| n['style'] == 'title' }.map { |n| n['text'].to_s }
