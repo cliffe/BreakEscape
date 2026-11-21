@@ -456,14 +456,15 @@ test('ca01 twin: tier S kit (staff, pool, stubs) with the conceptPanel, and no c
   const twin = readFileSync(join(scenarios, 'ca01_invoice_fraud_defend/scenario.json.erb'), 'utf8');
   const sc = JSON.parse(twin);
   const row = kitRows.find((r) => r.id === 'ca01_invoice_fraud_defend');
-  assert.ok(row && row.tier === 'S' && !row.setPiece && row.stepAway !== true, 'the twin has a tier S row, no set piece, no step-away (plan 5)');
+  assert.ok(row && row.tier === 'S' && (!row.setPiece || row.setPiece === 'ca01_defend_react') && row.stepAway !== true, 'the twin has a tier S row, at most the D280 reaction-only set piece, no step-away (plan 5)');
   const cp = sc.social.awarenessEpisode.strings.conceptPanel;
   assert.ok(typeof cp === 'object' && cp.heading === 'If one gets through');
   assert.ok(!/patrolOverride|stepAway|npc_arrived|"timers"|_out"|resume|suspend/i.test(twin), 'no chain');
   assert.ok(!('timers' in sc) && !Object.keys(sc.globalVariables).some((k) => /^kit_.*_out$/.test(k)));
   assert.ok(sc.social.awarenessEpisode.stepAway !== true);
   for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) {
-    assert.ok(!(n.eventMappings || []).length, `${n.id}: a twin's kit staff carry no mappings`);
+    // D280: the only mapping a twin's kit staff may carry is the after-sort reaction (kit_defend_done)
+    assert.ok((n.eventMappings || []).every((m) => m.eventPattern === 'global_variable_changed:kit_defend_done'), `${n.id}: a twin's kit staff carry no mappings but the after-sort reaction`);
   }
   const allMaps = [];
   const walk = (o) => {
@@ -945,7 +946,8 @@ test('wave 3: each shell has its set piece, a stepAway row that matches the shel
     }
     // the _defend twin is untouched by wave 3: no chain, no stepAway, no set piece
     const twin = kitRows.find((r) => r.id === `${name}_defend`);
-    assert.ok(twin && twin.setPiece === null && twin.stepAway === false, `${name}: twin row`);
+    // D280: a twin may carry only its reaction-only set piece <ca>_defend_react (one after-sort colleague bark)
+    assert.ok(twin && twin.setPiece === `${name.slice(0, 4)}_defend_react` && twin.stepAway === false, `${name}: twin row`);
     const tsc = readShell(`${name}_defend`);
     assert.ok(tsc.social.awarenessEpisode.stepAway !== true, `${name}_defend: no stepAway`);
     assert.ok(!Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|at_tray)$/.test(k)), `${name}_defend: no chain global`);
@@ -1288,7 +1290,7 @@ test('wave 4: each shell has its set piece, a tier E stepAway row that matches t
     // step-away, no chain globals, no moved look); every other twin stays null. The "untouched"
     // assertions below (no step-away flag, no kit_ca\d\d_(out|there|done|asked) globals, no
     // step-away line) still hold for it, since the set piece adds nothing but Darren's mapping.
-    const expectTwinSetPiece = name === 'ca05_signin_pages' ? 'ca05_defend_react' : null;
+    const expectTwinSetPiece = `${name.slice(0, 4)}_defend_react`;
     assert.ok(twin && twin.setPiece === expectTwinSetPiece && twin.stepAway === false, `${name}: twin row`);
     const tsc = w4Shell(`${name}_defend`);
     assert.ok(tsc.social.awarenessEpisode.stepAway !== true && !Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|asked)$/.test(k)), `${name}_defend: untouched`);
