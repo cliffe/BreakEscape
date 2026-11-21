@@ -1,0 +1,10 @@
+{
+"steps": [
+{ "note": "R14: no. She wipes her own desk, HaX offers the choice, the Alpha tapes are pulled. The offer stays refused and no name is given." },
+{ "talk": "recruiter", "knot": "call", "picks": ["Go on", "No. Keep your name", "Alpha tapes"] },
+{ "said": ["Then I'll tidy my own desk", "She only watched the counter", "She fired it from Sorensen's office"],
+  "notSaid": ["Halina Kowalczyk", "She's watching the deck"] },
+{ "expect": { "recruiter_offer": "refused", "deck_pulled": "alpha_tapes", "sleeper_named": false, "recruiter_gone": true, "deck_choice_made": true } },
+{ "tasks": { "answer_the_offer": "completed" } }
+]
+}

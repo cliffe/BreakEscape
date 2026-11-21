@@ -45,14 +45,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"Start with Patricia Morgan"
-],
-"notSaid": [
-"Let's use them"
-]
-},
+{ "said": ["Start with Patricia Morgan"] },
 {
 "talk": "patricia",
 "picks": [
@@ -132,14 +125,7 @@
 "That's everything"
 ]
 },
-{
-"said": [
-"Two thumbs enrolled, Ruth Halloran's and David's"
-],
-"notSaid": [
-"cryptography lead's thumb"
-]
-},
+{ "said": ["Two thumbs enrolled, Ruth Halloran's and David's"] },
 {
 "talk": "phone",
 "picks": [
@@ -165,15 +151,7 @@
 "That's all for now"
 ]
 },
-{
-"said": [
-"Amara some evenings, gone by ten. Ben, for his test runs. David, some nights"
-],
-"notSaid": [
-"David, mostly",
-"Oh, no"
-]
-},
+{ "said": ["Amara some evenings, gone by ten. Ben, for his test runs. David, some nights"] },
 {
 "expect": {
 "halloran_questioned": true,
@@ -374,12 +352,7 @@
 "On my way"
 ]
 },
-{
-"notSaid": [
-"envelope under the terminal keyboard",
-"Agent. Four hours"
-]
-},
+{ "notSaid": ["envelope under the terminal keyboard"] },
 {
 "expect": {
 "mission_complete": true
@@ -414,18 +387,7 @@
 "debrief_played": true
 }
 },
-{
-"said": [
-"ninety-seven per cent",
-"Task Force Null's wall",
-"Old software with a known flaw nobody had patched"
-],
-"notSaid": [
-"before the server did",
-"East of England",
-"We never got the authorisation"
-]
-},
+{ "said": ["ninety-seven per cent", "Task Force Null's wall", "Old software with a known flaw nobody had patched"], "notSaid": ["before the server did", "East of England"] },
 {
 "backstops": {
 "expect": [

@@ -1,0 +1,80 @@
+{
+ "globals": {
+  "found_casualty_projections": false,
+  "found_target_database": false,
+  "talked_to_kevin": true,
+  "kevin_ko": true,
+  "maya_ko": true,
+  "final_choice": "fight",
+  "derek_fight_triggered": true,
+  "derek_confronted": true,
+  "player_aborted_attack": true
+ },
+ "steps": [
+  {
+   "note": "R20: the debrief after both informants were knocked out and Derek fought, with no evidence found: the removal reviews, the fight reasoning, and the matching credits lines."
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "said": [
+    "The core Operation Shatter documentation is still being recovered",
+    "Both Kevin Park and Maya Chen were removed from the picture",
+    "Neither of them was ENTROPY",
+    "You took Derek down physically",
+    "His defence team is spinning the excessive force angle"
+   ],
+   "notSaid": [
+    "You found everything. The casualty projections",
+    "I saw in your report that you warned Kevin",
+    "You chose arrest",
+    "He surrendered. Voluntarily",
+    "Kevin Park was arrested this morning"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "DEREK LAWSON: Neutralised, in custody",
+    "MAYA CHEN: Removed, intelligence lost, no ENTROPY connection",
+    "KEVIN PARK: Removed, evidence confirms no ENTROPY connection",
+    "PARTIAL: Forensics team recovering additional files"
+   ],
+   "notSaid": [
+    "DEREK LAWSON: Arrested, in custody",
+    "MAYA CHEN: Identity protected",
+    "KEVIN PARK: Protected from frame-up"
+   ]
+  }
+ ]
+}

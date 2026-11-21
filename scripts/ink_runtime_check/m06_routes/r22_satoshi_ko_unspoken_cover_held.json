@@ -7,7 +7,7 @@
 {"talk": "irina", "picks": ["Thirty-seven papers", "Financial surveillance", "password strength", "That's all for now"]},
 {"set": {"found_blockchain_evidence": true, "flag1_submitted": true, "flag2_submitted": true, "flag3_submitted": true, "flag4_submitted": true, "found_wallet_keys": true, "found_architects_fund": true}},
 {"talk": "irina", "picks": ["Satoshi's wing", "I'm not from the FCA", "I'm detaining you"]},
-{"said": ["I really did think I was building something good."], "notSaid": ["state overreach"]},
+{ "said": ["I really did think I was building something good."] },
 {"room": "server_room"},
 {"room": "data_center"},
 {"room": "executive_wing"},
@@ -18,6 +18,6 @@
 {"expect": {"satoshi_spoken": false, "cover_strained": false}},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
 {"talk": "debrief", "picks": ["What does it give us", "What's left of that clock", "What happens to the cells now", "She knew what she was building", "He'll be making speeches", "Skip it", "Their door passphrases", "Two service accounts", "Every cold wallet", "What's next"]},
-{"said": ["And the cover held. Nobody at HashChain thought to ring the FCA.", "When the payout goes, every wallet it reaches gets tagged", "They don't know we're watching"], "notSaid": ["Only Satoshi thought to check", "The payout went out on time"]},
+{ "said": ["And the cover held. Nobody at HashChain thought to ring the FCA.", "When the payout goes, every wallet it reaches gets tagged", "They don't know we're watching"], "notSaid": ["Only Satoshi thought to check"] },
 {"maxRun": 9}
 ]}

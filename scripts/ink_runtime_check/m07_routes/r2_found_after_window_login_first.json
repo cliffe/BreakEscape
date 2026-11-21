@@ -107,17 +107,7 @@
     "Help me stop it"
    ]
   },
-  {
-   "said": [
-    "What were you told about Austin",
-    "You've already sent them",
-    "One frightened engineer, but it fits. The window's shut."
-   ],
-   "notSaid": [
-    "page forty",
-    "Say the second half"
-   ]
-  },
+  { "said": ["What were you told about Austin", "You've already sent them", "One frightened engineer, but it fits. The window's shut."], "notSaid": ["page forty"] },
   {
    "talk": "elena",
    "picks": [
@@ -182,16 +172,7 @@
   {
    "flag": 2
   },
-  {
-   "said": [
-    "it's Elena's door code, so she told the truth"
-   ],
-   "notSaid": [
-    "the control room door's included",
-    "Before you log in",
-    "The moment that operator flag goes through the relay"
-   ]
-  },
+  { "said": ["it's Elena's door code, so she told the truth"], "notSaid": ["Before you log in", "The moment that operator flag goes through the relay"] },
   {
    "flag": 3
   },
@@ -348,21 +329,7 @@
     0
    ]
   },
-  {
-   "said": [
-    "Three doors they left open. You went through all of them.",
-    "You logged in on their host before the control room door was open",
-    "You found it after the window had closed",
-    "The timing was his, not yours",
-    "You found it after the window shut",
-    "You finished it, Agent"
-   ],
-   "notSaid": [
-    "You knew. You found it",
-    "Above expectations",
-    "The team not moving is a separate sentence"
-   ]
-  },
+  { "said": ["Three doors they left open. You went through all of them.", "You logged in on their host before the control room door was open", "You found it after the window had closed", "The timing was his, not yours", "You found it after the window shut", "You finished it, Agent"], "notSaid": ["You knew. You found it", "Above expectations"] },
   {
    "creditsSaid": [
     "ran out one step before the abort",

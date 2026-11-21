@@ -37,14 +37,7 @@
 "I'll find my own way"
 ]
 },
-{
-"said": [
-"Read it before you go. The who starts in there."
-],
-"notSaid": [
-"on the desk. Take it."
-]
-},
+{ "said": ["Read it before you go. The who starts in there."] },
 {
 "talk": "owen",
 "picks": [
@@ -146,14 +139,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"You've got a pattern in the hallway badge log."
-],
-"notSaid": [
-"on that sheet"
-]
-},
+{ "said": ["You've got a pattern in the hallway badge log."] },
 {
 "talk": "patricia",
 "picks": [
@@ -161,16 +147,7 @@
 "vetting files"
 ]
 },
-{
-"said": [
-"She hands you three folders from the cabinet",
-"That's as far as vetting lets me go.",
-"Then come back with a name and a reason."
-],
-"notSaid": [
-"That's what vetting will let me give you"
-]
-},
+{ "said": ["She hands you three folders from the cabinet", "That's as far as vetting lets me go.", "Then come back with a name and a reason."] },
 {"note":"Patricia gave her mobile (conversation_closed:patricia_morgan sets patricia_phone_available); set here so the Call button rings."},
 {"set":{"patricia_phone_available":true}},
 {
@@ -302,15 +279,7 @@
 "final_choice": "combat_nonlethal"
 }
 },
-{
-"said": [
-"Upload's dead. Sweep the vault"
-],
-"notSaid": [
-"Hands down",
-"open hand"
-]
-},
+{ "said": ["Upload's dead. Sweep the vault"], "notSaid": ["Hands down"] },
 {
 "maxRun": 9
 }

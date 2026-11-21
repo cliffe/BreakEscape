@@ -1,0 +1,14 @@
+{
+ "steps": [
+  {"note": "R29: Maya told who the player is. The tactical advice is offered from the first hub; once the launch device is resolved (ready_for_debrief) it is withdrawn and the other questions stay."},
+  {"talk": "maya", "picks": ["You seem nervous", "SAFETYNET sent me", "Tell me everything", "When does it launch", "I need to keep investigating"]},
+  {"said": ["Finally. I've been waiting for weeks", "[choice] What should I do first", "[choice] What can you tell me about Derek", "Be careful. Derek's paranoid"],
+   "notSaid": ["Only if you're here to stop it", "[choice] Tell me about Operation Shatter"]},
+  {"talk": "maya", "reload": true, "picks": ["What should I do first", "I'll get started"]},
+  {"said": ["[choice] What should I do first", "I was starting to think no one cared about stopping this"]},
+  {"set": {"ready_for_debrief": true}},
+  {"talk": "maya", "reload": true, "picks": ["I need to keep investigating"]},
+  {"said": ["[choice] What can you tell me about Derek", "[choice] What happened to Patricia"],
+   "notSaid": ["[choice] What should I do first", "Derek's office, the server room: that's where the real answers are"]}
+ ]
+}

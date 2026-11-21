@@ -1,0 +1,10 @@
+{
+"globals": { "recruiter_gone": true, "recruiter_said_yes": false },
+"steps": [
+{ "note": "R44: the Recruiter hung up after the player said no. The deck call (no block) offers one pull, her file or the Alpha tapes; the player takes the tapes. The no block's Her file branch and its sleeper line stay unsaid." },
+{ "talk": "phone", "knot": "deck_resume", "picks": ["The Alpha tapes", "On my way"] },
+{ "said": ["I've paused the deck", "She only watched the counter. I can pull one before it wipes. Which?", "[choice] Her file", "She fired it from Sorensen's office"],
+  "notSaid": ["She's watching the deck", "First name on it is a handler in Baltimore", "One of four. Two, if that firm's boxes say so"] },
+{ "expect": { "recruiter_offer": "refused", "deck_pulled": "alpha_tapes", "deck_choice_made": true } }
+]
+}

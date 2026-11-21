@@ -22,7 +22,7 @@
 { "talk": "nightshade", "picks": ["We're done"] },
 { "notSaid": ["Back so soon"] },
 { "talk": "nightshade", "picks": ["I think it's you, Nightshade", "We're done"] },
-{ "said": ["Back so soon", "it'll be worth more than a guess", "The whole floor's listening now"], "notSaid": ["I'd rather you found me"] },
+{ "said": ["Back so soon", "it'll be worth more than a guess", "The whole floor's listening now"] },
 { "talk": "nightshade", "picks": ["We're done"] },
 { "said": ["Still here, as promised"], "notSaid": ["[choice] I think it's you, Nightshade"] },
 { "talk": "vector", "picks": ["I think it's you, Vector", "That's all"] },

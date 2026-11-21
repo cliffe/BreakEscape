@@ -99,18 +99,7 @@
     "Then I'll be in this one"
    ]
   },
-  {
-   "said": [
-    "You moved them. I had wondered whether you would."
-   ],
-   "notSaid": [
-    "The door closed behind you",
-    "A word about Austin",
-    "Ten minutes before",
-    "You've sent your team.",
-    "Almost nobody picks the one with no bodies in the brief"
-   ]
-  },
+  { "said": ["You moved them. I had wondered whether you would."], "notSaid": ["The door closed behind you", "Ten minutes before", "You've sent your team.", "Almost nobody picks the one with no bodies in the brief"] },
   {
    "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
   },

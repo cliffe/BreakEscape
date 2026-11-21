@@ -1,0 +1,61 @@
+{
+ "steps": [
+  {
+   "note": "06:00 after the surrender ending: disclosed database, no trial, the couriers go at half five."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "disclosed",
+    "console_choice": "stopped",
+    "ending": "surrender"
+   }
+  },
+  {
+   "talk": "six",
+   "picks": [
+    "Go to Quintero",
+    "Go to Imran",
+    "Go to Wendell",
+    "Put the phone",
+    "What did it cost",
+    "And the database",
+    "Go to the van window",
+    "Stand with her",
+    "Leave it"
+   ]
+  },
+  {
+   "said": [
+    "Forty vendors have acknowledged",
+    "Our tap on Zero Day's brokers dropped at ten past five",
+    "HaX climbs into the back of the van and sits with him for a minute",
+    "There will be no trial.",
+    "The couriers went at half five"
+   ],
+   "notSaid": [
+    "A trial. He will make speeches.",
+    "His copy goes into the vault tonight"
+   ]
+  },
+  {
+   "expect": {
+    "six_done": true,
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Took his surrender. Kept his protocol.",
+    "DR ADRIAN TESSERACT: Typed the cells' protocol himself, without hurrying."
+   ],
+   "notSaid": [
+    "Brought him in alive"
+   ]
+  }
+ ]
+}

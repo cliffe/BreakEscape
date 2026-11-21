@@ -53,18 +53,7 @@
 {
 "talk": "lisa"
 },
-{
-"said": [
-"Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone",
-"David's badge went into the vault an hour ago",
-"I've rung David twice",
-"His coat's still on his chair"
-],
-"notSaid": [
-"[choice] Anything else I should know before I go in?",
-"Should I be"
-]
-},
+{ "said": ["Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone", "David's badge went into the vault an hour ago", "I've rung David twice", "His coat's still on his chair"], "notSaid": ["[choice] Anything else I should know before I go in?"] },
 {
 "talk": "halloran",
 "picks": [
@@ -73,18 +62,7 @@
 "It's out of my hands now"
 ]
 },
-{
-"said": [
-"I signed his overtime every week",
-"It was never in yours. Mine, maybe."
-],
-"notSaid": [
-"[choice] That depends on whether he helps us",
-"[choice] He'll face justice",
-"I've rung David twice",
-"I failed him"
-]
-},
+{ "said": ["I signed his overtime every week", "It was never in yours. Mine, maybe."], "notSaid": ["[choice] That depends on whether he helps us", "[choice] He'll face justice", "I've rung David twice"] },
 {
 "talk": "lisa",
 "picks": [

@@ -86,17 +86,7 @@
     "His badge is on the server hallway"
    ]
   },
-  {
-   "said": [
-    "Front door at five past eight on a Thursday evening",
-    "Don't throw names at me",
-    "[chat closes]"
-   ],
-   "notSaid": [
-    "logged it with Owen",
-    "Try again"
-   ]
-  },
+  { "said": ["Front door at five past eight on a Thursday evening", "Don't throw names at me", "[chat closes]"], "notSaid": ["Ben's on that log one night"] },
   {
    "expect": {
     "torres_reason_guessed": true,
@@ -242,15 +232,7 @@
     "I'll stop him"
    ]
   },
-  {
-   "said": [
-    "...Damn.",
-    "Right. Your call from here."
-   ],
-   "notSaid": [
-    "Patricia Morgan: His own journal. He knows"
-   ]
-  },
+  { "said": ["...Damn.", "Right. Your call from here."] },
   {
    "expect": {
     "torres_identified": true

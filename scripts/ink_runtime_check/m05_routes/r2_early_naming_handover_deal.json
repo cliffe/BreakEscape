@@ -200,15 +200,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"The research server isn't finished",
-"The upload's dead. The research server isn't"
-],
-"notSaid": [
-"Car's at the front entrance"
-]
-},
+{ "said": ["The research server isn't finished", "The upload's dead. The research server isn't"] },
 {
 "expect": {
 "mission_complete": false

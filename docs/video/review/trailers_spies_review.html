@@ -58,12 +58,13 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 20 Nov 2026 · game build 1f651abce</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 21 Nov 2026</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m02" aria-selected="true" data-cut="m02">m02 · v3</button>
+    <button class="tab" role="tab" id="tab-m03" aria-selected="true" data-cut="m03">m03 · v2</button>
+    <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
     <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
   </nav>
 
@@ -79,26 +80,52 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
-  m02: {
-    doc: "feedback/m02_trailer_v3",
-    title: "m02 Ransomed Trust · 60 s trailer · round v3",
-    video: "/_blob/611faee4148a0fc30fccf913b802f23b", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
-    stats: ["60.000 s", "1920×1080 30 fps", "−13.8 LUFS", "true peak −1.49 dB", "16:9 only"],
+  m03: {
+    doc: "feedback/m03_trailer_v2",
+    title: "m03 Ghost in the Machine · 60 s trailer · round v2",
+    video: "/_blob/0316a336526d96b9bc87ab47e412c8f7", poster: "/_blob/20818451951427c8dba44855d6f407d3",
+    stats: ["60.000 s", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.49 dB", "16:9 only"],
     changed: [
-      "Bernie's line is voiced (\"The cardiac ward's monitoring is down...\") and carries over a walk through the ward.",
-      "Val: the approach now comes first, then \"So. Who are you...\".",
-      "Ward walk trimmed before the player walks into the door; kitchen chatter muted.",
-      "Ghost's Money line plays whole and at the same level as HaX, Bernie and Val (all within about 1 dB).",
-      "Voices start before the cut to each character or run past it (HaX, Bernie, Val, Ghost)."
+      "First cut. Music: CutScene \"Shadow Code 1\" (the mission's night playlist), picked by beat analysis; the drop lands on the motion lights in the main hallway.",
+      "Built like m02: HaX hook, gameplay montage, Real Hacking (nmap recon, MAC line cropped), three character beats each with an approach first, a crescendo, then the guard and the villain.",
+      "The guard catches a pick in his torch beam: the sight cone on the map, then Terry, \"Picks. Right. We're done talking.\"",
+      "Victoria Sterling closes it: \"Competent is cheap. That's not why you're here.\" Her last syllable runs into the bumper.",
+      "Every line starts before its cut and finishes; all voices peak within about 2 dB of HaX.",
+      "Recorded on today's build (deeper Ghost voice and the lip-sync fix are in the game); the guard and Victoria takes measure within about one frame of lip sync.",
+      "A different spy in each map shot. Danny Foster left out (a face flash was allowed but not needed)."
     ],
     standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
-    srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,967 --> 00:00:52,117\nGhost: Money is simply a means to hasten your inevitable end.",
+    srt: "1\n00:00:05,820 --> 00:00:08,850\nAgent HaX: They don't run the attacks. They arm the cells that do.\n\n2\n00:00:24,570 --> 00:00:27,290\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n3\n00:00:28,080 --> 00:00:31,450\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n4\n00:00:31,900 --> 00:00:35,890\nYusuf Demir: Afternoon. If you're my client, you're very late.\n\n5\n00:00:45,040 --> 00:00:48,330\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:48,180 --> 00:00:52,120\nVictoria Sterling: Competent is cheap. That's not why you're here.",
     questions: [
-      {k:"lookup", t:"Ghost's first line (\"Before you touch that console. Look up.\") is muted: with both voiced they overlapped, and the end bumper leaves no room for both in full. The Money line starts 0.7 s before his on-screen subtitle changes", o:[["keep","Keep: Money line only","Whole, no overlap",1],["both","Both lines, take time elsewhere","Shortens a map shot before the crescendo and moves the beat-locked cuts"],["lookup","\"Look up\" only","Shorter; drops the Money line"]]},
-      {k:"ghostfx", t:"Ghost's voice effect in the game sounds gritty and buzzy (distortion after the filter, plus a 75 Hz ring mod). Change the game's effect? That would mean re-recording his takes", o:[["later","Not for the trailer","Raise it as a game audio fix separately",1],["now","Fix it now","Engine change, then re-record t17 and re-cut"],["fine","It's fine","Keep as is"]]},
+      {k:"hook", t:"HaX's hook line under the title", o:[["cells","\"They don't run the attacks. They arm the cells that do.\"","States the mission's premise (in this cut)",1],["hospital","\"You worked St. Catherine's last month. The hospital that went dark.\"","Links back to m02; recorded and ready to swap in"]]},
+      {k:"card", t:"Threat card wording (m01 \"The Entropy\", m02 \"Before the Ward Goes Dark\")", o:[["sale","\"Before the Next Sale\"","As in this cut",1],["other","Other wording","Write it in the note"]]},
+      {k:"music", t:"Music: \"Shadow Code 1\". The lull after 44 s carries the guard and Victoria beats", o:[["keep","Keep","Night-playlist track, unused by m01/m02",1],["midnight","SpyAction \"Midnight Trigger\"","Fallback from the scouting notes"],["cold","\"Cold Bond Circuit\"","Second fallback"]]},
+      {k:"victoria", t:"Victoria Sterling as the villain close (she is the briefed target, not a twist)", o:[["yes","Show her","Close-up with her line, as in this cut",1],["no","Leave her out","End on the guard beat instead"]]},
+      {k:"voices", t:"Voice levels: every line peaks within about 2 dB of HaX (the music is louder after the drop)", o:[["ok","Fine as is","Close enough at speed",1],["music","Duck the music more under them","Voices stay, the bed drops"]]},
+      {k:"console", t:"Real Hacking: nmap recon only, as agreed for m02", o:[["keep","Enough","2.2 s, four service banners",1],["more","Show more of the solve","Needs a longer console beat"]]},
       {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
-      {k:"seen", t:"Anything on screen a viewer should not see?", o:null},
-      {k:"platform", t:"Which platform first?", o:[["yt","YouTube / Hacktivity page","16:9 as rendered",1],["shorts","Shorts / Reels / TikTok","Needs the 9:16 cut"],["li","LinkedIn","1:1 cut"]]}
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m02: {
+    doc: "feedback/m02_trailer_v4",
+    title: "m02 Ransomed Trust · 60 s trailer · round v4",
+    video: "/_blob/1b26eadfb6ca17acea6691e42e8de30c", poster: "/_blob/8ee2d9b7a5a82bfe795e6c04796c5429",
+    stats: ["60.000 s", "1920×1080 30 fps", "−13.8 LUFS", "true peak −1.49 dB", "16:9 only"],
+    changed: [
+      "Ghost's call re-recorded on today's build with the deeper voice (an octave-down layer, as you asked).",
+      "The whole Money line plays: \"Money is simply a means to hasten your inevitable end.\" Its last word runs 0.8 s into the end bumper. The muted reveal shot before it is 0.8 s shorter to make room.",
+      "Ghost now peaks within 1 dB of HaX.",
+      "Lip sync: the game now reads the mouth shapes ahead by the audio output delay (engine fix), and the take pipeline no longer shifts the picture by one frame. New takes measure within about one frame. The other m02 takes are unchanged from v3, whose renders already measured within 5 to 10 ms."
+    ],
+    standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,990 --> 00:00:52,770\nGhost: Money is simply a means to hasten your inevitable end.",
+    questions: [
+      {k:"ghostvoice", t:"Ghost's new deeper voice", o:[["keep","Keep","As in this cut",1],["more","Deeper or darker still","Another pass on the game's voice effect"],["less","Too much","Pull it back towards v3"]]},
+      {k:"tail", t:"The Money line's last word runs 0.8 s over the Hacktivity bumper", o:[["keep","Keep","Ends the trailer on his line",1],["trim","Fit it before the bumper","Take 0.8 s from an earlier shot"]]},
+      {k:"lipsync", t:"Lip sync: does any character's mouth still look off?", o:null},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
     ]
   },
   m01: {
@@ -126,10 +153,10 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m02";
-let answers = {m02:{}, m01:{}};
+let current = "m03";
+let answers = {m03:{}, m02:{}, m01:{}};
 let db = null;
-const LS = "safetynet_trailer_review_v1";
+const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
 try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
 
 function el(tag, attrs, ...kids){ const e=document.createElement(tag); for (const [k,v] of Object.entries(attrs||{})) { if (k==="class") e.className=v; else if (k==="text") e.textContent=v; else e.setAttribute(k,v);} for (const c of kids) if (c) e.append(c); return e; }
@@ -168,7 +195,7 @@ function render(){
 
 function fillCopy(){
   const lines=[];
-  for (const key of ["m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
+  for (const key of ["m03","m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
     const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
     got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
   document.getElementById("copybox").value=lines.join("\n");
@@ -190,6 +217,6 @@ document.getElementById("copybtn").addEventListener("click",async()=>{ const box
 render();
 
 (async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
-  for (const key of ["m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  for (const key of ["m03","m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
   render(); } catch(_){} })();
 </script>

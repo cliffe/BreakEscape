@@ -15,19 +15,7 @@
     "I'm ready"
    ]
   },
-  {
-   "said": [
-    "The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.",
-    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet."
-   ],
-   "notSaid": [
-    "You turned Torres, so he's sti",
-    "You put the Initiative on the ",
-    "You handed Torres to the polic",
-    "You knocked Torres out and sta",
-    "You left Torres on that floor,"
-   ]
-  },
+  { "said": ["The police took Torres with no deal from you, and he hasn't said a word since. We traced the one going out without him.", "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet."], "notSaid": ["You turned Torres. He's still", "You put the Initiative on the ", "You promised Torres we'd pay for Elena's treatment", "You knocked Torres out and sta", "You left Torres on that floor and he died"] },
   {
    "set": {
     "briefing_played": true

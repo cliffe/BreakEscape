@@ -1,0 +1,11 @@
+{
+"imports": { "m06_architect_identity_found": true, "m07_teacher_discussed": true, "m04_disclosure_choice": "full" },
+"globals": { "memo_read": true, "deck_pulled": "alpha_tapes" },
+"steps": [
+{ "note": "R22: identity scene after the player met the Architect's name in m06 and the teacher in m07, with the memo already read and the tapes pulled. HaX's both-forms confession, the player says they would have sat on it too, m04 full disclosure form of the Albion lines." },
+{ "talk": "phone", "knot": "identity_scene", "picks": ["I'd have sat on it too", "Understood"] },
+{ "said": ["I gave you his name after HashChain and called it Satoshi's guess. It was mine as well", "I put his name in a drawer", "He was mine, and I wanted to be wrong", "Don't be kind about it. Thank you. Once", "You've read his memo and the draft", "We marked it \"retain\" nine years ago", "They audited every battery site", "And Albion's inquiry gets to ask when we knew", "His tapes are on the bench in the tape room"],
+  "notSaid": ["eighty-seven per cent", "Yes. I should have", "There's more on his box. A memo"] },
+{ "expect": { "hax_confession_answer": "same_in_your_place", "identity_scene_done": true } }
+]
+}

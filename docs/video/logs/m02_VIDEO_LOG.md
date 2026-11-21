@@ -61,3 +61,9 @@ Verdict: revise. "The video chat scene with Ghost his dialog is still cut off be
 - Cause of the cut-off: the take, not the edit. The Money clip (tts_cache m02 ca91a93f...) is 5.38 s; t17_ghost_call.mjs held 4.2 s after the line appeared, so the take's audio stops dead at 22.58 s mid-word. Hold raised to 6.5 s; t17 to be re-recorded after the voice change.
 - Deeper voice: a game change (new FX preset for Ghost; the shared 'voice-distortion' preset is also used by m07 and lab_tesseract_trials). Spec sent to AC0 for a game session.
 - Lip sync: measurement under way (`docs/video/logs/m02_lipsync_check.md`).
+
+## v4 (2026-11-21)
+- t17_ghost_call re-recorded on main 1794ca15b (deeper voice, AC5) with check-take's new start alignment. Money line voice 19.19-23.97 in the take (starts just after the subtitle now; v3's take had it 0.7 s before).
+- Edit m02_trailer60_v4: ghost_reveal 1.43 -> 0.67 s (muted), ghost_close 4.1 s (19.1-23.2) pre 0.1 post 0.85, gain +6 (new take -19.7 LUFS on the line). Whole line plays, 47.99-52.77, last 0.8 s over the bumper.
+- Render `~/video-takes-local/m02/renders/m02_trailer60_v4_16x9.mp4`: 60.000 s, -13.84 LUFS, TP -1.49; Ghost short-term peak within 0.7 dB of HaX. End frames checked.
+- Page tab m02 · v4, doc feedback/m02_trailer_v4, asset 1b26eadfb6ca17acea6691e42e8de30c. Page localStorage key bumped to _v2.

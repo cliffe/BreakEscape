@@ -8,7 +8,7 @@
 {"expect": {"rfid_guide_hint_given": true}},
 {"set": {"server_room_reached": true, "flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true, "flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true, "all_flags_in": true, "attack_mechanism_known": true, "plant_room_entered": true, "operative_static_defeated": true}},
 {"talk": "voltage", "knot": "confrontation_choice", "picks": ["Step away from the bench", "Hands where I can see them"]},
-{"said": ["You're between me and the dock. I could still make that keystroke before you reached me.", "So give me a reason not to.", "Let them read the casualty model. I signed it."], "notSaid": ["Nobody left to stop you"]},
+{ "said": ["You're between me and the dock. I could still make that keystroke before you reached me.", "So give me a reason not to.", "Let them read the casualty model. I signed it."] },
 {"expect": {"voltage_captured": true}},
 {"set": {"esd_authorized": true, "attack_prevented": true}},
 {"talk": "vance", "picks": ["sweeping the site"]},

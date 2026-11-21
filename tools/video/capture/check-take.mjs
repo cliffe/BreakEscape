@@ -68,6 +68,7 @@ if (fs.existsSync(base + '.markers.json')) { const m = JSON.parse(fs.readFileSyn
 const lost = (dup || 0) + (drop || 0) + gaps;
 res.dropPct = +(100 * lost / nb).toFixed(2);
 
+// Trim encodes use -bf 0 so the video stream starts at 0 like the audio (2026-11-21). Takes trimmed before this start at 0.033 s; that offset cancelled the old engine's lip-sync lag, so never mix old-engine takes with this trim.
 if (opt['video-only'] && vSlates.length >= 2) {
   const vs0 = vSlates[0], vs1 = vSlates[vSlates.length - 1];
   res.slateGapS = +(vs1.start - vs0.end).toFixed(2);
@@ -76,7 +77,7 @@ if (opt['video-only'] && vSlates.length >= 2) {
   if (!opt['no-trim']) {
     const out = opt.out || base + '.trimmed.mkv';
     const t0 = vs0.end + 0.05, t1 = vs1.start - 0.05;
-    const r = run('ffmpeg', ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-t', String(t1 - t0), '-map', '0:v', '-map', '0:a?', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out]);
+    const r = run('ffmpeg', ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-t', String(t1 - t0), '-map', '0:v', '-map', '0:a?', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-bf', '0', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out]);
     res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: 0 } : { error: r.stderr.toString().slice(-300) };
   }
 } else if (vSlates.length >= 2 && aRuns.length >= 2) {
@@ -96,8 +97,23 @@ if (opt['video-only'] && vSlates.length >= 2) {
     const t0 = vs0.end + 0.05, t1 = vs1.start - 0.05;
     const corr = opt['no-correct'] ? 0 : res.constantOffsetMs / 1000;     // audio late by corr s: read audio from corr later
     const args = ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-ss', String(Math.max(0, t0 + corr)), '-i', file, '-t', String(t1 - t0),
-      '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out];
+      '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-bf', '0', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out];
     const r = run('ffmpeg', args); res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: Math.round(corr * 1000) } : { error: r.stderr.toString().slice(-300) };
+  }
+}
+// ---- align the trimmed file's first video frame to 0 (2026-11-21) ----
+// The trim cut rarely falls on a frame boundary, so the first video frame lands up to one frame after the audio start (video start_time 0.033).
+// Remotion ignores that start_time and maps `in` to frames from 0, which put the picture about 33 ms early. Drop the lead from both streams.
+if (res.trimmed && res.trimmed.out && !opt['keep-lead']) {
+  const tp = JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', res.trimmed.out]).stdout.toString());
+  const lead = Number((tp.streams.find(s => s.codec_type === 'video') || {}).start_time || 0);
+  if (lead > 0.0015) {
+    const cut = lead - 0.002, tmp = res.trimmed.out.replace(/\.mkv$/, '.align.mkv');
+    // trim filters cut both streams on the same timeline and restart each at 0 (an input -ss left the pcm audio starting at 0.032)
+    const hasA = tp.streams.some(s => s.codec_type === 'audio');
+    const r = run('ffmpeg', ['-y', '-v', 'error', '-i', res.trimmed.out, '-vf', `trim=start=${cut},setpts=PTS-STARTPTS`].concat(hasA ? ['-af', `atrim=start=${cut},asetpts=PTS-STARTPTS`] : []).concat(['-map', '0:v'], hasA ? ['-map', '0:a'] : [], ['-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-bf', '0', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', tmp]));
+    if (r.status === 0) { fs.renameSync(tmp, res.trimmed.out); res.trimmed.fromS = +(res.trimmed.fromS + cut).toFixed(3); res.trimmed.leadDroppedMs = Math.round(cut * 1000); }
+    else res.trimmed.alignError = r.stderr.toString().slice(-300);
   }
 }
 // ---- markers re-timed to the trimmed file: trimmed_t = (slate-relative t) + slateStart - trimFrom ----

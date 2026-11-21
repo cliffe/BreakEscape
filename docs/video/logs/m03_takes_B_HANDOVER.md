@@ -1,0 +1,13 @@
+# m03 takes B handover (Sonnet 5.5, stopped at about 150k tokens)
+
+Done: t04_rfid_clone, t09_ffion, t10_zainab recorded and passed check-take (table rows in `docs/video/takes_m03.md`). Scripts in `tools/video/takes/m03/`: t04_rfid_clone, t09_ffion, t10_zainab, t11_yusuf (written, NOT recorded), shared `_beat.mjs`.
+Open: t11_yusuf (script written; run: `BE_SPRITE=harjit_singh tools/video/takes/run-take.sh m03 t11_yusuf "--set briefing_played=true" "--hide-hud --zoom-step 1"`; stop offset [0,-50] untested for his chair); t12_terry (not written: night, `--start-room executive_wing_hallway --set briefing_played=true --set clone_call_done=true --set mission_phase=act2_infiltration --set guard_told_safetynet=true` skips his challenge; walk in view of the torch, no catch, hold about 12 s loop); t13_walk_conf (not written); t10_zainab frames still to inspect (approach 7 s long, room cropped at the bottom in the sheet, black frame at 10.0).
+Gotchas: (1) night needs `mission_phase=act2_infiltration` as well as clone_call_done. (2) The game auto-advances voiced lines; clicking continue skips the next line's voice (cut Ffion's line 2 to 30 ms). `_beat.mjs` never clicks. (3) First interact sometimes stalls about 9 s while Ffion's bark bubble shows: t09 holds 1.8 s before interacting (preMs). (4) Choice menus appear about 0.4 s after the last line ends. (5) RFID read screen shows a UID: t04 blurs it via DOM. (6) Failed takes leave a raw .mkv with no trimmed file.
+Rig: server :3017 and display :113 stopped. Commit by explicit path; docs files and takes table are in the last commit.
+
+## Update 2026-11-21 (Sonnet 5.5, second agent)
+Recorded and passed: t11_yusuf, t12_terry (env M03_PX=50 M03_PY=145 for the bottom-left standing point), t13_walk_conf (3.5 s linger needed to clear the 1% drop check). Rows in `docs/video/takes_m03.md`; t10_zainab re-viewed, no re-record needed (black frame is at 10.5 s). t12/t13 scripts written (`tools/video/takes/m03/`). Remaining m03 takes: t14-t18 per the picks file. Rig stopped.
+Gotchas: follow camera leaves black margins/bottom crop in map approaches; moveTo y is imprecise (t13 setup adds a key leg down to y 100); check-take can fail a short take on 3 dup/drop sidecar frames alone.
+
+## Update 2026-11-21 (third agent)
+Recorded and passed: t14_walk_exec, t15_walk_desk, t16a/b/c_minigames; rows in docs/video/takes_m03.md. Remaining m03: t17_guard, t18_victoria. Gotchas: m03 has no key items (key screen via window.startKeySelectionMinigame with a made-up key); window.openLoginDesktop(lockable) opens a pc desktop without the password; night exec wing too dark, use day; check-take can fail on 1.2% drops: just rerun. Rig stopped.

@@ -1,0 +1,114 @@
+{
+ "steps": [
+  {
+   "note": "HaX's line accusation: Malhotra is a wrong name (he goes to the van, officer_out is set); a second name is refused until he is back; the alibi topic clears him, 'Bring Malhotra back' recalls him, and Kowalczyk is then the right name with Quintero sent to hold her."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "door_log_given": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Malhotra",
+    "Yes. Them."
+   ]
+  },
+  {
+   "said": [
+    "Go on. Who?",
+    "Malhotra runs my relay. If you're wrong, I lose it till you can clear him.",
+    "Headset off, and sit in the van, please.",
+    "Eleven years. Check the log again.",
+    "That's my relay gone.",
+    "Ask me who was where at ten past."
+   ],
+   "notSaid": [
+    "Kowalczyk. I'll put it to Netherton."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "malhotra",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Arakawa"
+   ]
+  },
+  {
+   "said": [
+    "Get Malhotra back first."
+   ],
+   "notSaid": [
+    "Arakawa holds the county for us."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Who was where",
+    "Let me think about it"
+   ]
+  },
+  {
+   "said": [
+    "Think fast. It's a short night."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring Malhotra back"
+   ]
+  },
+  {
+   "said": [
+    "Officer Malhotra, you are cleared.",
+    "Back on. Relay's up."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "",
+    "malhotra_recalled": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I know who WREN is",
+    "Kowalczyk",
+    "Yes. Them."
+   ]
+  },
+  {
+   "said": [
+    "Kowalczyk breaches for us. If you're wrong, we lose our doors till you can clear her.",
+    "Kowalczyk. I'll put it to Netherton.",
+    "Agent Quintero. The service side. Detain Agent Kowalczyk, quietly.",
+    "Copy. Going."
+   ],
+   "notSaid": [
+    "I have nobody to send."
+   ]
+  },
+  {
+   "expect": {
+    "accused": "kowalczyk",
+    "sleeper_caught": true,
+    "wren_held": true
+   }
+  }
+ ]
+}

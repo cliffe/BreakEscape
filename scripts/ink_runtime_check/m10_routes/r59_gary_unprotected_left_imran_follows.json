@@ -1,0 +1,57 @@
+{
+ "imports": {
+  "m02_completed": true
+ },
+ "steps": [
+  {
+   "note": "After m02 with Gary not protected: Gary is the bench technician. Telling him to stay while the player copies his card (left_in_place, card_cloned) makes Imran follow him: 'Gary's staying, so I'm staying.' Imran's opener on this branch is the board-and-sacked line."
+  },
+  {
+   "talk": "gary",
+   "picks": [
+    "I'm listening",
+    "And you took it",
+    "Stay where you are"
+   ]
+  },
+  {
+   "said": [
+    "A man on their bench who ships nothing is worth something to us.",
+    "Go on, then. I'll carry on not shipping."
+   ],
+   "notSaid": [
+    "Right. Power room's open."
+   ]
+  },
+  {
+   "expect": {
+    "gary_outcome": "left_in_place",
+    "imran_outcome": "card_cloned"
+   }
+  },
+  {
+   "talk": "imran",
+   "picks": []
+  },
+  {
+   "said": [
+    "Gary's staying, so I'm staying. You've had your copy of the card."
+   ],
+   "notSaid": [
+    "Ask Gary. I go where he goes."
+   ]
+  },
+  {
+   "talk": "gary",
+   "picks": []
+  },
+  {
+   "said": [
+    "Still not shipping. Tell your Director."
+   ],
+   "notSaid": [
+    "Coat's on."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+"steps": [
+{ "note": "R42: the hour read with the schedule unread, cut off while the player is still asking questions. There is no marker for that point, so the re-ring plays the scene again from its first line (no Still here); it then closes on the box-wipe line. Pins the restart so a change to it is noticed." },
+{ "talk": "phone", "knot": "hour_read", "picks": ["Isn't it"] },
+{ "said": ["That job on his box still copies to Tomb Gamma", "Full disclosure is one researcher publishing one flaw"],
+  "notSaid": ["Nobody's wiping this box"] },
+{ "expect": { "hour_read_started": true, "hour_read_done": false, "hour_read_choice_reached": false } },
+{ "talk": "phone", "knot": "hour_read_resume", "reload": true, "picks": ["Isn't it", "Who gets it first", "How many people", "Understood"] },
+{ "said": ["That job on his box still copies to Tomb Gamma", "Nobody's wiping this box. Not her, not him"],
+  "notSaid": ["Still here. Before this goes to Netherton", "Kemal Aydin walked out"] },
+{ "expect": { "hour_read_done": true } }
+]
+}

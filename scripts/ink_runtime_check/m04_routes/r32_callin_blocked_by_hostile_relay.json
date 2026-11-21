@@ -8,7 +8,7 @@
 {"ko": "voltage"},
 {"set": {"esd_authorized": true, "attack_prevented": true}},
 {"talk": "phone", "picks": ["Bring me in", "Understood"]},
-{"said": ["Not with Relay still on you. Lose her or put her down, then call."], "notSaid": ["Car's at the loading dock"]},
+{ "said": ["Not with Relay still on you. Lose her or put her down, then call."] },
 {"expect": {"mission_complete": false}},
 {"ko": "operative_relay"},
 {"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},

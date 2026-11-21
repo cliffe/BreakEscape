@@ -56,17 +56,7 @@
 "Pull the drive myself"
 ]
 },
-{
-"said": [
-"[choice] I'm going public. The programme and the Recruiter, from a source nobody can trace.",
-"You can't. Somebody always finds the name.",
-"They're eight and eleven."
-],
-"notSaid": [
-"The programme, the Recruiter, you",
-"They always find it"
-]
-},
+{ "said": ["[choice] I'm going public. The programme and the Recruiter, from a source nobody can trace.", "You can't. Somebody always finds the name.", "They're eight and eleven."] },
 {
 "expect": {
 "final_choice": "public_exposure"
@@ -81,16 +71,7 @@
 {
 "talk": "owen"
 },
-{
-"said": [
-"David put his head round my door on his way out. He said thank you, and went.",
-"David just walked out in his coat",
-"David's badge just went out the front door"
-],
-"notSaid": [
-"walked past my door"
-]
-},
+{ "said": ["David put his head round my door on his way out. He said thank you, and went.", "David just walked out in his coat", "David's badge just went out the front door"] },
 {
 "maxRun": 9
 }

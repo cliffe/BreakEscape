@@ -1,0 +1,8 @@
+{
+"steps": [
+{ "note": "Cold start (every import at its default): briefing, aside, tether. The briefing sets briefing_done, the aside aside_done, the tether door_scene_done." },
+{ "talk": "netherton", "picks": ["What are the two times", "You knew him well", "How many will it kill", "He wants us there", "She's right", "How long have we got", "Do we know who", "Bring him up"] },
+{ "said": ["Magnus Netherton. I run this shop", "The Architect is Dr Adrian Tesseract", "eleven hundred to twenty-six hundred", "Find them before you get there", "Narrator: Kowalczyk hands you a PIN cracker", "Arakawa. He is yours when we go."], "notSaid": ["Quintero cuffs Kowalczyk", "Kowalczyk walked off the apron"] },
+{ "expect": { "briefing_done": true, "aside_done": true, "door_scene_done": true, "nightshade_tethered": true, "quintero_stance": "quintero" } }
+]
+}

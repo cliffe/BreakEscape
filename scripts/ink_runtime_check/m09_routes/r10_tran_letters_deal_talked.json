@@ -1,0 +1,12 @@
+{
+"steps": [
+{ "note": "R10: with the Social Fabric letters in hand, Tran can be talked off the wipe. The deal sets tran_outcome and HaX's mapping closes the optional tape-wipe task." },
+{ "flag": 1 },
+{ "set": { "cage_bin": "letters" } },
+{ "talk": "tran", "picks": ["What are you wiping", "You can explain these", "Go"] },
+{ "said": ["Paper. You people break into buildings at night for paper", "Interviews. Old ones, on reels", "He reads the courier line, J.T.", "The Bozeman number gets one call from me"],
+  "notSaid": ["Your call. The wipe keeps running", "Derek wrote things down"] },
+{ "expect": { "tran_outcome": "talked" } },
+{ "tasks": { "stop_the_tape_wipe": "completed" } }
+]
+}

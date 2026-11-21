@@ -1,0 +1,14 @@
+{
+ "steps": [
+  {"note": "R16: the fight choice. Derek turns hostile and the fight flag is set, but the confrontation is not complete until he is beaten: the outcome knot then sets derek_confronted. Only the surrender line is exclusive to the other branch."},
+  {"set": {"entropy_reveal_read": true}},
+  {"talk": "derek", "picks": ["I've seen the casualty projections", "42 to 85 people", "I don't need to hear this", "I'm taking you down. Now."]},
+  {"said": ["No lawyers. No trials. No platform for your twisted philosophy", "Violence? How disappointing", "If you want a fight, you'll get one", "Come on then", "[engine: derek_lawson hostile]"],
+   "notSaid": ["Derek sets down the launch device", "Derek doesn't resist"]},
+  {"expect": {"final_choice": "fight", "derek_fight_triggered": true, "derek_confronted": false, "derek_surrendered": false}},
+  {"talk": "derek", "knot": "fight_outcome"},
+  {"said": ["I'm a martyr now", "SAFETYNET backup arrives and restrains Derek Lawson"]},
+  {"expect": {"derek_confronted": true}},
+  {"tasks": {"defeat_derek_hostile": "completed"}}
+ ]
+}

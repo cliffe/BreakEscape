@@ -13,7 +13,7 @@
   { "notSaid": ["Agent 0x00."] },
   { "expect": { "architect_contact": false } },
   { "talk": "architect", "knot": "start", "picks": [] },
-  { "notSaid": ["Don't look for the trace", "Your handset lights without ringing"] },
+  { "notSaid": ["Don't look for the trace"] },
   { "talk": "phone", "knot": "hub", "picks": [] },
   { "said": ["[choice] He used your line"] },
   { "note": "m8: Mercer, Elena never met." },

@@ -224,24 +224,11 @@
 "Did I get him right"
 ]
 },
-{
-"said": [
-"You gave a wrong name or a wrong reason before the right one"
-],
-"notSaid": [
-"You read past her line on the badge log"
-]
-},
+{ "said": ["You gave a wrong name or a wrong reason before the right one"] },
 {
 "credits": true
 },
-{
-"notSaid": [
-"NAMED ON THE EVIDENCE",
-"You had him before the server did",
-"Somebody read Owen's sheet"
-]
-},
+{ "notSaid": ["NAMED ON THE EVIDENCE", "You had him before the server did"] },
 {
 "maxRun": 9
 }

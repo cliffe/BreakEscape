@@ -1,0 +1,55 @@
+{
+ "imports": {
+  "m02_completed": true,
+  "m02_gary_protected": true
+ },
+ "steps": [
+  {
+   "note": "After m02 with Gary protected: he is a consultant at the workshop door, grateful and awkward, and points at Imran. Imran has the 'You weren't supposed to be here, Gary' scene, and taking him in draws Gary's flat 'I'd hoped you'd ask him first.' Gary's rest line then says he will be all right."
+  },
+  {
+   "talk": "gary",
+   "picks": [
+    "Same supplier"
+   ]
+  },
+  {
+   "said": [
+    "You saved my career. Director of Cyber Security now.",
+    "Same bench, by the look of it.",
+    "That's Imran at the far bench. I trained him. Talk him round or take him in, but talk to him first."
+   ]
+  },
+  {
+   "talk": "imran",
+   "picks": [
+    "I haven't read it yet",
+    "I'm taking you in"
+   ]
+  },
+  {
+   "said": [
+    "You weren't supposed to be here, Gary.",
+    "I trained him. He read my emails.",
+    "Gary landed on his feet. The rest of us got a reference and a box.",
+    "Card's on my belt. Take your copy.",
+    "I'd hoped you'd ask him first. Never mind."
+   ],
+   "notSaid": [
+    "We told the board, in writing."
+   ]
+  },
+  {
+   "talk": "gary",
+   "picks": []
+  },
+  {
+   "said": [
+    "He'll be all right. Probably. I was."
+   ],
+   "notSaid": [
+    "He's going home. Thank you."
+   ]
+  }
+ ]
+}

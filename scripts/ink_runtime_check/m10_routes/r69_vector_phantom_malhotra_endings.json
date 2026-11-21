@@ -1,0 +1,94 @@
+{
+ "steps": [
+  {
+   "note": "The three bunker NPCs after the ending, one story each: scorched (Vector and Malhotra speak, Phantom counts), joined (narrator beats for Vector and Malhotra), executed (Phantom writes something down)."
+  },
+  {
+   "set": {
+    "ending": "scorched"
+   }
+  },
+  {
+   "talk": "vector",
+   "picks": []
+  },
+  {
+   "said": [
+    "Keep walking. I'll catch you up."
+   ],
+   "notSaid": [
+    "It's over."
+   ]
+  },
+  {
+   "talk": "phantom",
+   "picks": []
+  },
+  {
+   "said": [
+    "Out first. I'll count us after."
+   ],
+   "notSaid": [
+    "Tonight balances."
+   ]
+  },
+  {
+   "talk": "malhotra",
+   "picks": []
+  },
+  {
+   "said": [
+    "Relay's down. Get out with the others."
+   ],
+   "notSaid": [
+    "We're done for the night."
+   ]
+  },
+  {
+   "set": {
+    "ending": "joined"
+   }
+  },
+  {
+   "talk": "vector",
+   "picks": []
+  },
+  {
+   "said": [
+    "Vector doesn't look at you."
+   ],
+   "notSaid": [
+    "Keep walking."
+   ]
+  },
+  {
+   "talk": "malhotra",
+   "picks": []
+  },
+  {
+   "said": [
+    "Malhotra takes his headset off and doesn't look at you."
+   ],
+   "notSaid": [
+    "Get out with the others."
+   ]
+  },
+  {
+   "set": {
+    "ending": "executed"
+   }
+  },
+  {
+   "talk": "phantom",
+   "picks": []
+  },
+  {
+   "said": [
+    "Phantom writes something down and says nothing."
+   ],
+   "notSaid": [
+    "Out first."
+   ]
+  }
+ ]
+}
