@@ -1,0 +1,22 @@
+{
+ "steps": [
+  {"note": "R13: knockouts. Each KO sets its global and, for the three informants, sends Agent HaX's text; Sarah's completes the check-in task; the bystanders in HR and finance set their own globals with no text; Derek's completes the confrontation task and says to finish the archive first."},
+  {"ko": "sarah_martinez"},
+  {"said": ["Check-in resolved. Sarah's key and badge are on the floor"]},
+  {"expect": {"sarah_ko": true}},
+  {"tasks": {"check_in_reception": "completed"}},
+  {"ko": "maya_chen"},
+  {"said": ["We may never know what Maya had to tell us"], "notSaid": ["Kevin's down"]},
+  {"expect": {"maya_ko": true, "kevin_ko": false}},
+  {"ko": "kevin_park"},
+  {"said": ["Kevin's down. His items are on the floor"], "notSaid": ["We may never know what Maya had to tell us"]},
+  {"expect": {"kevin_ko": true}},
+  {"ko": "fatima_begum"},
+  {"ko": "graham_whitfield"},
+  {"expect": {"fatima_ko": true, "graham_ko": true}},
+  {"ko": "derek_lawson"},
+  {"said": ["Derek is contained. You still need to access the ENTROPY encrypted archive"]},
+  {"expect": {"derek_confronted": true}},
+  {"tasks": {"confront_derek": "completed"}}
+ ]
+}

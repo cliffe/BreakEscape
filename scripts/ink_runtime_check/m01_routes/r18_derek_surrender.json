@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R18: the surrender choice, offered at the first menu only to a player holding the casualty projections: Derek stands down and sets the surrender flag, which the credits and debrief read."},
+  {"set": {"entropy_reveal_read": true, "found_casualty_projections": true}},
+  {"talk": "derek", "picks": ["I have everything. The archive", "You know it's over. Drop the device. Surrender."]},
+  {"said": ["[choice] I have everything. The archive", "You really do have everything", "Derek sets down the launch device", "Take it. Stop the launch. I won't resist", "The Architect planned for this", "The launch device is yours"],
+   "notSaid": ["If you want a fight, you'll get one", "Derek doesn't resist"]},
+  {"expect": {"final_choice": "surrender", "derek_surrendered": true, "derek_confronted": true, "derek_fight_triggered": false}}
+ ]
+}
