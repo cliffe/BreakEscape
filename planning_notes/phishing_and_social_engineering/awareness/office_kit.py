@@ -267,6 +267,11 @@ def step_away_defaults(piece):
                     m['condition'] = _strip_quiet(m.get('condition'))
         # appended last: the server keys a mapping by its index
         maps.extend(rearm)
+    if done_key and choice_key:
+        # a follow-through spoken by the host (ca02, ca07, ca18: the piece's own `mappings`) gets the same treatment
+        for m in piece.get('mappings', []):
+            if str(m.get('eventPattern', '')).endswith(f':{choice_key}'):
+                m['condition'] = _strip_quiet(m.get('condition'))
     return piece
 
 
