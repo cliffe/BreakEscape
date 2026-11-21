@@ -1,0 +1,47 @@
+{
+ "steps": [
+  {
+   "note": "Ghost on the duty handset, default branch (no m02 deal): two misses, then the hospital appeal works and the sale is stopped. Re-opening the handset afterwards only offers to put it down."
+  },
+  {
+   "talk": "ghost",
+   "knot": "ghost_call",
+   "picks": [
+    "I'll pay you more",
+    "We'll find you",
+    "You want your last job",
+    "Understood"
+   ]
+  },
+  {
+   "said": [
+    "You don't know me. That's rather the point.",
+    "Five buyers. One of them wants the hospitals.",
+    "If it sells, the release console can kill that share. It only does one.",
+    "Numbers are my department.",
+    "You won't.",
+    "No. I'd rather not leave on that.",
+    "My share stays where it is. A clean exit, for once."
+   ],
+   "notSaid": [
+    "Then watch. Five buyers, and not one of them knows you're in the room."
+   ]
+  },
+  {
+   "expect": {
+    "ghost_call_done": true,
+    "ghost_sale": "stopped"
+   }
+  },
+  {
+   "talk": "ghost",
+   "knot": "ghost_call",
+   "picks": []
+  },
+  {
+   "notSaid": [
+    "You don't know me. That's rather the point."
+   ]
+  }
+ ]
+}

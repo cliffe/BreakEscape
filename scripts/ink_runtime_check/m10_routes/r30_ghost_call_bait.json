@@ -1,0 +1,31 @@
+{
+ "steps": [
+  {
+   "note": "Ghost on the duty handset: letting the sale run as bait records ghost_sale bait."
+  },
+  {
+   "talk": "ghost",
+   "knot": "ghost_call",
+   "picks": [
+    "Sell it, then",
+    "Understood"
+   ]
+  },
+  {
+   "said": [
+    "Then watch. Five buyers, and not one of them knows you're in the room.",
+    "It goes at four. Enjoy the view."
+   ],
+   "notSaid": [
+    "No. I'd rather not leave on that.",
+    "Numbers are my department."
+   ]
+  },
+  {
+   "expect": {
+    "ghost_sale": "bait",
+    "ghost_call_done": true
+   }
+  }
+ ]
+}
