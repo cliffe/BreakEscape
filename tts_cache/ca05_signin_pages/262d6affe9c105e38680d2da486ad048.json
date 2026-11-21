@@ -1,0 +1,13 @@
+{
+  "key": "262d6affe9c105e38680d2da486ad048",
+  "npc": "niamh_doherty",
+  "text": "Read the address bar before you type a password. A padlock doesn't make a page ours.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:10:55Z"
+}

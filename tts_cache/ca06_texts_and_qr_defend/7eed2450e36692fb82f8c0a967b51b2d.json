@@ -1,0 +1,13 @@
+{
+  "key": "7eed2450e36692fb82f8c0a967b51b2d",
+  "npc": "kit_fatima_begum",
+  "text": "Good work. A password reused on some hobby site opening a work account, that's how they walk straight in.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:47Z"
+}
