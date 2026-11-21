@@ -1,7 +1,7 @@
 {
-  "key": "ffebb31ce59afd3ae8fda0f18fa1c16c",
+  "key": "ba54d8afdac470d049b145235f7de1d6",
   "npc": "niamh_doherty",
-  "text": "The password went in, so a claims account was wide open and IT lost the day to resets and a records review.",
+  "text": "Whoever runs that look-alike address would get your email and password, then sign in as you and read your mail.",
   "voice": "Leda",
   "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca05_signin_pages_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:50:54Z"
+  "recorded_at": "2026-11-21T20:48:39Z"
 }
