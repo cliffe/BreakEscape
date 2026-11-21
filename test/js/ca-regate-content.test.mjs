@@ -39,3 +39,10 @@ test('ca02: the careers page lists the HGV driver role the genuine application n
   assert.match(t, /Also hiring: HGV driver \(Class 1\)/);
   assert.match(t, /the Class 1 driver job on your website/);
 });
+
+test('ca13: the "your brief" debrief names the contact list the brief asked for, not a payment', () => {
+  const t = erb('ca13_ai_assistant');
+  assert.ok(!/small payment banked/.test(t));
+  assert.ok(!/small invoice is paid/.test(t));
+  assert.match(t, /the brief you handed the assistant is Brightwell's site contact list/);
+});
