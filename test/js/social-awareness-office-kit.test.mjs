@@ -873,22 +873,22 @@ const W5 = {
     partner: 'kit_agnieszka_duda', partnerStub: 'agnieszka_duda', partnerGuard: 'kit_ca13_moved && kit_key_caught', hostId: 'gwen_pritchard', hostSpeaks: false,
     there: 'kit_ca13_there', choice: 'kit_ca13_send_choice', silent: 'silent', knot: 'ca13_send', right: 'ring', wrong: 'send', values: ['ring', 'send', 'silent'],
     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
-    pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1' },
+    pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1', requestDelay: 5500 },
   ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
     partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
     there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
-    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1' },
+    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1', requestDelay: 5500 },
   ca05_signin_pages: { ep: 'ca05', company: 'quayholt_insurance', setPiece: 'ca05_signin_prompt', colleague: 'kit_darren_price', stub: 'darren_price',
     partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca05_moved && kit_key_caught', hostId: 'niamh_doherty', hostSpeaks: false,
     there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
-    pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1' },
+    pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1', requestDelay: 5500 },
   ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
     partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
     there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
     staffBarks: 2, hostBarks: 1, panelEntries: 2, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
-    pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated' },
+    pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated', requestDelay: 5500 },
 };
 const W45 = { ...W4, ...W5 };
 const W345 = { ...W34, ...W5 };
@@ -1659,7 +1659,8 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     only(r5, 'row 5'); only(r6, 'row 6');
     assert.equal(r5.condition, `${c.v} && ${c.Q} && ${ch} === ''`.replace(`${ch} ===`, `globalVars.${ch} ===`), `${name}: row 5 reads quiet and an empty choice`);
     assert.equal(r6.condition, `${c.v} && ${c.Q}`, `${name}: row 6 reads quiet too (no asked for a request nobody heard)`);
-    assert.deepEqual([r5.delayMs, r6.delayMs], [4500, 4500], `${name}: rows 5 and 6 share the 4500 delay`);
+    const rd = w.requestDelay ?? 4500;   // 5500 after Fc (the first-line clip runs 4.70 s from 1.5 s)
+    assert.deepEqual([r5.delayMs, r6.delayMs], [rd, rd], `${name}: rows 5 and 6 share the ${rd} delay`);
     assert.deepEqual(r6.setGlobal, { [`kit_${ep}_asked`]: true }, `${name}: row 6 sets only asked`);
     // row 5 fires from `there`, which row 3 sets after its own delay
     assert.ok(r3.delayMs + r5.delayMs - r4.delayMs >= 4000, `${name}: chain barks start at least 4 s apart`);
