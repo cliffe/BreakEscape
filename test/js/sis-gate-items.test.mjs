@@ -118,7 +118,7 @@ function ransomFake(minigameData, start) {
     const gc = document.createElement('div');
     gc.innerHTML = '<span id="ransomware-timer-value"></span><span id="ransomware-timer-label"></span>';
     const f = { gameContainer: gc, params: { lockable: { scenarioData: { minigameData } } } };
-    for (const m of ['getScenarioStartTimestamp', 'ensureDeadlineTimestamp', 'updateTimerDisplay']) f[m] = R.RansomwareDisplayMinigame.prototype[m];
+    for (const m of ['getScenarioStartTimestamp', 'ensureDeadlineTimestamp', 'updateTimerDisplay', 'storyElapsedMs']) f[m] = R.RansomwareDisplayMinigame.prototype[m];
     f.ensureDeadlineTimestamp();
     return f;
 }
@@ -146,7 +146,7 @@ test('item 4: at a story rate the countdown starts with the game clock, not when
     try {
         // the game started 10 real minutes ago; the note is opened now
         Date.now = () => t0 + 10 * 60_000;
-        window.gameClock = { startTime: t0 };
+        window.gameClock = { startTime: t0, elapsedMs: () => Date.now() - t0 };
         const f = ransomFake({ timerHours: 62, timerRate: 84 }, undefined);
         f.updateTimerDisplay();
         const txt = f.gameContainer.querySelector('#ransomware-timer-value').textContent;
@@ -185,7 +185,7 @@ function ransomOpen(minigameData, clock, saved) {
     const gc = document.createElement('div');
     gc.innerHTML = '<span id="ransomware-timer-value"></span><span id="ransomware-timer-label"></span>';
     const f = { gameContainer: gc, params: { lockable: { scenarioData: { minigameData } } } };
-    for (const m of ['getScenarioStartTimestamp', 'ensureDeadlineTimestamp', 'updateTimerDisplay']) f[m] = R.RansomwareDisplayMinigame.prototype[m];
+    for (const m of ['getScenarioStartTimestamp', 'ensureDeadlineTimestamp', 'updateTimerDisplay', 'storyElapsedMs']) f[m] = R.RansomwareDisplayMinigame.prototype[m];
     f.ensureDeadlineTimestamp();
     f.updateTimerDisplay();
     f.after = JSON.stringify(window.gameState.globalVariables) === before;
@@ -210,6 +210,24 @@ test('M1: elapsed time restored after a reload gives the same remaining time (84
         assert.ok(b.text() === '49:00:00', 'same remaining time after the reload, got ' + b.text());
         assert.ok(b.after === true, 'the saved deadline was neither read nor rewritten');
     } finally { Date.now = realNow; window.gameClock = undefined; }
+});
+
+test('m1 (r3): the note counts from the dispatcher start the HUD uses, not the game clock start', () => {
+    const realNow = Date.now;
+    const t0 = 1_700_000_000_000;
+    try {
+        // after a reload the dispatcher resumed 3 real seconds later than the clock
+        Date.now = () => t0 + 10 * 60_000;
+        const c = { startTime: t0, elapsedMs: (n = Date.now()) => Math.max(0, n - c.startTime) };
+        window.scenarioTimerDispatcher = { startTime: t0 + 3_000 };
+        const f = ransomOpen({ timerHours: 63, timerRate: 84 }, c);
+        // dispatcher: 597 s x 84 = 13 h 55 min 48 s gone, so 49:04:12 left (the clock would say 49:00:00)
+        assert.ok(f.text() === '49:04:12', 'follows the dispatcher start, got ' + f.text());
+        // no dispatcher start: the game clock is the fallback
+        window.scenarioTimerDispatcher = undefined;
+        const g = ransomOpen({ timerHours: 63, timerRate: 84 }, c);
+        assert.ok(g.text() === '49:00:00', 'clock fallback, got ' + g.text());
+    } finally { Date.now = realNow; window.gameClock = undefined; window.scenarioTimerDispatcher = undefined; }
 });
 
 test('M1: an old save with a 1:1 deadline does not show about 5,200 hours', () => {

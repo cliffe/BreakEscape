@@ -116,7 +116,7 @@ No blocking gaps. The scenario can be played end to end.
 - [ ] `ehr-terminal` minigame opens
 - [ ] Screen shows the SYSTEM UNAVAILABLE error, including the line telling staff not to prescribe from memory and to use the paper MAR charts
 - [ ] `ehr_terminal_viewed_offline` -> `true`
-- [ ] Close button works
+- [ ] The window X (and Esc) closes it
 
 ### Collect: MAR Charts (`mar_charts_stack`)
 - [ ] Item added to inventory on pickup
@@ -126,7 +126,7 @@ No blocking gaps. The scenario can be played end to end.
 ### Interact: Ward Monitoring Station (`ward_monitoring_station`, `ransomware_display`)
 - [ ] Opening it completes `check_monitoring_station` and sets `monitoring_station_viewed`
 - [ ] The display is read-only: skull and padlock icons, "YOUR FILES HAVE BEEN ENCRYPTED", the Trust name, the encrypted systems, the ransom (16 BITCOIN, £1,200,000), the wallet address, a "DO NOT attempt recovery" line, the support portal, and a live "TIME REMAINING" countdown in step with the HUD's ICO timer: 63 hours over 45 minutes of play (about 1 h 24 min per real minute), counted from game start, so it is already below 63 h on first look and survives a reload
-- [ ] There are no action buttons. The only control is the Close button; nothing else on the panel is clickable
+- [ ] There are no action buttons. The only control is the window X (Esc too); nothing else on the panel is clickable
 - [ ] The observation text changes after `network_isolated`, `debrief_started` and `patient_bed4_deceased` (station still unusable)
 
 ### Interact: Bed 4 Monitor (`bed4_monitor`)

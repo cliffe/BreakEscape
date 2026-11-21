@@ -572,14 +572,23 @@ test('menu X geometry: target at least 44px, reach no more than the head padding
     const calc = insetRule.match(/inset:\s*calc\(-(\d+)px - var\(--ui-small-button-px, (\d+)px\)\)/);
     assert.ok(calc !== null, 'the inset adds the border back to the reach');
     const reach = Number(calc[1]);
-    assert.ok(Number(calc[2]) === 4, 'unthemed X border is 4px, the fallback');
+    // the border the X really draws: base rule and the skin both read the same variable, declared on :root
+    assert.ok(/border-width:\s*var\(--ui-small-button-px/.test(x), 'the base rule draws its border from --ui-small-button-px');
+    const themes = readFileSync(join(js, '../css/ui-themes.css'), 'utf8');
+    const themed = themes.match(/\[data-ui-theme\] #be-interaction-menu \.be-im-close \{[^}]*\}/);
+    assert.ok(themed !== null && /border-width:\s*var\(--ui-small-button-px\)/.test(themed[0]), 'the skin rule reads the same variable');
+    const rootBlk = themes.slice(0, themes.indexOf('}', themes.indexOf(':root')));
+    const border = Number(rootBlk.match(/--ui-small-button-px:\s*(\d+)px/)[1]);
+    assert.ok(Number(calc[2]) === 4, 'the fallback in the inset matches the base rule fallback');
+    // drawn box = size; reach past it = (reach + border) inset from the padding box less the border
     const size = Math.min(px(x, 'width'), px(x, 'height'));
-    assert.ok(size + 2 * reach >= 44, 'target ' + (size + 2 * reach) + 'px is at least 44');
+    const target = size - 2 * border + 2 * (reach + border);
+    assert.ok(target >= 44, 'target ' + target + 'px (size ' + size + ', border ' + border + ', reach ' + reach + ') is at least 44');
     const head = rule('#be-interaction-menu .be-im-head');
     const pad = head.match(/padding:\s*(\d+)px (\d+)px (\d+)px (\d+)px/);
     assert.ok(pad !== null, 'head padding is four values');
     assert.ok(reach <= Number(pad[3]), 'reach ' + reach + ' is no more than the head bottom padding ' + pad[3]);
-    assert.ok(reach <= Number(pad[1]) + 4, 'sideways reach stays in the head right pad plus the menu padding');
+    assert.ok(reach <= Number(pad[2]) + 4, 'sideways reach stays in the head right pad (pad[2]) plus the menu padding');
     assert.ok(reach <= px(head, 'gap'), 'reach is no more than the gap to the title');
     const notif = readFileSync(join(js, '../css/notifications.css'), 'utf8');
     const sharedReach = -px(notif.slice(notif.indexOf('.game-modal-close::after {')), 'inset');
@@ -593,7 +602,11 @@ test('untitled gameDisplay: the body starts below the X reach and clear of it', 
     assert.ok(blk !== null, 'rule for a body directly after the X');
     const num = (s, p) => Number(s.match(new RegExp(p + ':\\s*(\\d+)px'))[1]);
     const x = css.match(/\n\.game-modal-close \{[^}]*\}/)[0];
-    const reachEnd = num(x, 'top') + num(x, 'height') + 14;
+    const themes = readFileSync(join(js, '../css/ui-themes.css'), 'utf8');
+    const border = Number(themes.match(/--ui-small-button-px:\s*(\d+)px/)[1]);
+    // the ::after inset is from the padding box, so the reach ends 14px past the padding box bottom
+    const reachEnd = num(x, 'top') + num(x, 'height') - border + 14;
+    assert.ok(reachEnd === 48, 'reach end is 48px from the dialog padding top, got ' + reachEnd);
     const dialog = css.match(/\n\.game-confirm-dialog \{[^}]*\}/)[0];
     const topPad = Number(dialog.match(/padding:\s*(\d+)px/)[1]);
     assert.ok(topPad + num(blk[0], 'margin-top') >= reachEnd, 'body top ' + (topPad + num(blk[0], 'margin-top')) + ' is at or below the reach end ' + reachEnd);

@@ -99,17 +99,21 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         const vars = window.gameState?.globalVariables || {};
         const fromGlobals = parseTimestamp(vars.scenario_start_time) || parseTimestamp(vars.scenarioStartTime);
         const fromState = parseTimestamp(window.gameState?.startTime);
-        // At a story rate the note shares the HUD timers' start: the game clock's start,
-        // which survives a reload. Opening the note must not start its own clock.
-        const rate = ransomTimerRate(this.params?.lockable?.scenarioData?.minigameData);
-        const fromClock = rate > 1 ? parseTimestamp(window.gameClock?.startTime) : null;
+        return fromGlobals || fromState || Date.now();
+    }
 
-        return fromGlobals || fromClock || fromState || Date.now();
+    // Milliseconds since the start the HUD timers count from: the timer dispatcher's start
+    // (ScenarioTimerUI follows it), then the game clock as the fallback. Opening the note must
+    // not start its own clock.
+    storyElapsedMs() {
+        const start = window.scenarioTimerDispatcher?.startTime;
+        if (Number.isFinite(start)) return Math.max(0, Date.now() - start);
+        return window.gameClock.elapsedMs();
     }
 
     ensureDeadlineTimestamp() {
-        // At a story rate with a game clock, the countdown is derived from the clock's
-        // elapsed time on every tick, as the HUD timers are. Nothing is read from or written
+        // At a story rate with a game clock, the countdown is derived from the HUD timers'
+        // start (storyElapsedMs) on every tick. Nothing is read from or written
         // to the saved `ransomware_deadline_at` on this path, so a reload cannot drift the note
         // and an old 1:1 saved deadline is ignored.
         const clockRate = ransomTimerRate(this.params.lockable?.scenarioData?.minigameData);
@@ -154,7 +158,7 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         }
 
         const remainingMs = this.clockHours
-            ? this.clockHours * 3600000 - window.gameClock.elapsedMs() * this.timerRate
+            ? this.clockHours * 3600000 - this.storyElapsedMs() * this.timerRate
             : (this.deadlineAt - Date.now()) * (this.timerRate || 1);
         const expired = remainingMs <= 0;
 

@@ -107,9 +107,11 @@ function injectStyles() {
             font-family: 'Press Start 2P', monospace;
             font-size: 14px;
             line-height: 1;
+            border-width: var(--ui-small-button-px, 4px);
         }
-        /* inset is measured from the X's padding box, inside its border (4px unthemed, the skin's
-           --ui-small-button-px themed): add the border back so the reach is 6px past the drawn box */
+        /* inset is measured from the X's padding box, inside its border: subtract the border
+           (the skin's --ui-small-button-px, which the X's border-width above also reads, so the
+           two always agree) so the reach is 6px past the drawn box */
         #be-interaction-menu .be-im-close::after {
             inset: calc(-6px - var(--ui-small-button-px, 4px));
         }
