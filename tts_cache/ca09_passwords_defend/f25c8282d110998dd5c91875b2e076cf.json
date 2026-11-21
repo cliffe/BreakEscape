@@ -1,7 +1,7 @@
 {
-  "key": "3b5e77f31e18d9c66c2bacf489ca1f30",
+  "key": "f25c8282d110998dd5c91875b2e076cf",
   "npc": "nilesh_solanki",
-  "text": "The number went back, so they signed in as you, and with shared logins the audit couldn't say who did what.",
+  "text": "That number is on the attacker's screen. Read it back, or tap Approve, and the sender walks straight into your account.",
   "voice": "Iapetus",
   "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca09_passwords_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:52:10Z"
+  "recorded_at": "2026-11-21T20:47:37Z"
 }
