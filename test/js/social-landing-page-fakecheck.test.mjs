@@ -211,7 +211,7 @@ test('ca10 shell: look-alike and unrelated host options carry their own address;
     assert.ok(!/sat on Fernside's own address/.test(t));
 });
 
-test('ca10 shell: the flip lines carry a bookmark wording for the genuine host and a link wording for the look-alike, and the base lines claim neither', () => {
+test('ca10 shell: the flip lines carry a bookmark wording for the genuine host and an address wording for the look-alike and unrelated hosts, and no line but the genuine one claims a bookmark or a link', () => {
     const t = readFileSync(join(here, '../../scenarios/ca10_downloads_and_fake_checks/scenario.json.erb'), 'utf8');
     const get = (key) => JSON.parse('"' + t.match(new RegExp('"' + key + '": "((?:[^"\\\\]|\\\\.)*)"'))[1] + '"');
     const block = (key) => t.match(new RegExp('"' + key + '": \\{([^}]*)\\}'))[1];
@@ -220,9 +220,16 @@ test('ca10 shell: the flip lines carry a bookmark wording for the genuine host a
         const gen = b.match(/"genuine": "((?:[^"\\]|\\.)*)"/)[1];
         const look = b.match(/"lookalike": "((?:[^"\\]|\\.)*)"/)[1];
         assert.match(gen, /bookmark|every week/, key + ' genuine');
-        assert.match(look, /link in (the|your) email/, key + ' lookalike');
-        assert.ok(!/bookmark|every week/.test(look), key + ' lookalike must not claim a bookmark');
+        const unrel = b.match(/"unrelated": "((?:[^"\\]|\\.)*)"/)[1];
+        assert.match(look, /look-alike address/, key + ' lookalike');
+        assert.match(unrel, /nothing to do with Fernside/, key + ' unrelated');
+        // ca10 has no link to send (brief, hint): no host's line may say the player sent one
+        for (const [h, line] of [['lookalike', look], ['unrelated', unrel]]) {
+            assert.ok(!/bookmark|every week/.test(line), key + ' ' + h + ' must not claim a bookmark');
+            assert.ok(!/\blink\b/.test(line), key + ' ' + h + ' must not claim a link');
+        }
     }
-    assert.ok(!/bookmark|every week/.test(get('flipPageIntro')));
-    assert.ok(!/bookmark|every week/.test(get('flipDefenderLine')));
+    for (const k of ['flipPageIntro', 'flipDefenderLine']) {
+        assert.ok(!/bookmark|every week|\blink\b/.test(get(k)), k);
+    }
 });
