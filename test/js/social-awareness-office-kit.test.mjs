@@ -1813,6 +1813,7 @@ test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs s
   if (!(name in W5)) return;
   const w = W5[name], sc = readShell(name), c = w5Conds(w);
   const board = w3Obj(sc, 'kit_ca14_board');
+  assert.ok(board, 'kit_ca14_board exists');
   const seenMaps = w3Maps(hostOf(sc)).filter((m) => m.eventPattern === 'object_interacted' && m.setGlobal && m.setGlobal.kit_ca14_seen === true);
   assert.deepEqual(seenMaps.map((m) => m.condition), [`data.objectName === "Lorna's PC" && ${c.O} && ${c.nD}`, `data.objectName === ${JSON.stringify(board.name)} && ${c.O} && ${c.nD}`], 'the two seen mappings');
   assert.ok(['Project board', 'Flip chart'].includes(board.name), 'the board is the Project board (or the step 0 fallback Flip chart)');
@@ -1823,6 +1824,7 @@ test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs s
   assert.deepEqual([tu.startOnGlobal, tu.delayMs, tu.condition, tu.setGlobal], ['kit_ca14_closed_unseen', 20000, `globalVars.${w.choice} === 'asked' && globalVars.kit_ca14_seen !== true`, { [w.choice]: 'silent' }], 't_unseen');
   assert.ok(sc.globalVariables.kit_ca14_seen === false && sc.globalVariables.kit_ca14_closed_unseen === false, 'seen and closed_unseen declared false');
   const body = w5Knot(w5Ink(w.stub), w.knot);
+  assert.ok(body, `knot ${w.knot} exists`);
   const blocks = body.split(/\n(?=\+ )/);
   assert.ok(blocks.some((b) => b.startsWith('+ {kit_ca14_seen} [') && new RegExp(`~ ${w.choice} = "crop"`).test(b)), 'the crop option is gated {kit_ca14_seen}');
   const look = blocks.find((b) => b.startsWith('+ {not kit_ca14_seen} [Let me have a look first.]'));
@@ -1832,11 +1834,15 @@ test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs s
 
 test('wave 5: Graham, Niamh and Darren specifics: Graham\'s two-term guard, Niamh\'s stop branch and VAR, Darren\'s plain guard', () => {
   if ('ca13_ai_assistant' in W5) {
-    const l = w5Lines(w5Knot(w5Ink('graham_whitfield'), 'ca13_send'))[0];
+    const gk = w5Knot(w5Ink('graham_whitfield'), 'ca13_send');
+    assert.ok(gk, 'Graham: knot ca13_send exists');
+    const l = w5Lines(gk)[0];
     assert.equal(l, '{ kit_ca13_moved || (kit_ca13_send_choice == "ring" && not kit_key_caught):', 'Graham: the first guard has both terms');
   }
   if ('ca05_signin_pages' in W5) {
-    const l = w5Lines(w5Knot(w5Ink('darren_price'), 'ca05_prompt'))[0];
+    const dk = w5Knot(w5Ink('darren_price'), 'ca05_prompt');
+    assert.ok(dk, 'Darren: knot ca05_prompt exists');
+    const l = w5Lines(dk)[0];
     assert.equal(l.trim(), '{ kit_ca05_moved:', 'Darren: the first guard is the plain moved guard');
     const ink = readFileSync(join(scenarios, 'ca05_signin_pages', 'ink', 'niamh_doherty.ink'), 'utf8');
     assert.ok(/^VAR kit_ca05_prompt_choice = ""\s*$/m.test(ink), 'Niamh: declares VAR kit_ca05_prompt_choice = ""');
