@@ -85,10 +85,12 @@ h1 {
   font-family: 'GNF', monospace;
 }
 
+/* Solid 2px ring offset from the border: green on #2a2a2a/#1a1a1a is well over 3:1, no blur */
 .form-control:focus {
-  outline: none;
+  outline: 2px solid #00ff00;
+  outline-offset: 2px;
   border-color: #00ff00;
-  box-shadow: 0 0 0 2px rgba(0, 255, 0, 0.3);
+  box-shadow: none;
 }
 
 .form-group small {
@@ -169,7 +171,11 @@ h1 {
   box-shadow: 0 0 0 2px #00ff00; /* hard ring, no blur */
 }
 
-/* Non-colour cue: text tag bottom-left (the badge is top-right) */
+/* A strip under the image holds the tag, so it never covers the headshot and selecting
+   does not reflow the grid (locked cards are never selectable and stay compact). */
+.sprite-card:not(.invalid) { padding-bottom: 32px; }
+
+/* Non-colour cue: text tag bottom-left in that strip (the badge is top-right) */
 .sprite-card.selected::after {
   content: 'SELECTED';
   position: absolute;
@@ -655,7 +661,7 @@ body.shell-picker {
   box-sizing: border-box;
 }
 
-.shell-picker .form-control:focus { border-color: var(--ui-accent); box-shadow: 0 0 0 2px var(--ui-accent); }
+.shell-picker .form-control:focus { border-color: var(--ui-accent); outline: 2px solid var(--ui-accent); outline-offset: 2px; box-shadow: none; }
 
 .shell-picker #sprite-preview-canvas-container { border: 2px solid var(--ui-line); background: rgba(0, 0, 0, 0.45); }
 
@@ -689,7 +695,8 @@ body.shell-picker {
 }
 
 .shell-picker .btn:hover,
-.shell-picker .btn:focus-visible { background: none; color: var(--ui-button-text); filter: brightness(1.15) var(--ui-glow-filter); outline: none; }
+.shell-picker .btn:focus-visible { background: none; color: var(--ui-button-text); filter: brightness(1.15); outline: none; }
+.shell-picker .btn:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
 .shell-picker .btn-primary { color: var(--ui-accent); }
 
 /* The picker as a game screen. .pk-screen fills the window (page never scrolls): a header bar with
@@ -698,6 +705,8 @@ body.shell-picker {
    portrait screen or phone the columns stack. Sprites are drawn at whole-number scales:
    --pk-s for the 32px headshots, --pk-ps for the 80px frames of the animated preview. A portrait
    screen is zoomed by --pk-k (1, 1.5, 2 ...), so those scales stay whole on the device (k * scale). */
+/* ui-themes.css (shared, not edited) gives every theme blurred glows; this page uses hard edges only */
+.shell-picker { --ui-text-glow: none; --ui-glow-filter: brightness(1); }
 .shell-picker { --pk-k: 1; --pk-s: 4; --pk-ps: 4; }
 .shell-picker .pk-screen {
   position: relative;
@@ -729,7 +738,7 @@ body.shell-picker {
 .shell-picker .pk-name { grid-column: 1; grid-row: 1; margin: 0; }
 .shell-picker .pk-name .form-control { max-width: none; }
 .shell-picker .pk-preview { grid-column: 1; grid-row: 2; align-self: start; width: auto; }
-.shell-picker .pk-pick { grid-column: 2; grid-row: 1 / span 2; min-height: 220px; overflow-y: auto; padding-right: 6px; }
+.shell-picker .pk-pick { grid-column: 2; grid-row: 1 / span 2; min-height: 220px; overflow-y: auto; padding: 2px 6px 2px 2px; }
 .shell-picker .pk-pick-title { margin: 0 0 10px; color: var(--ui-text-dim); letter-spacing: 1px; }
 .shell-picker .selection-required { text-align: left; margin: 0 0 10px; }
 
@@ -750,6 +759,8 @@ body.shell-picker {
   min-width: 0;
 }
 .shell-picker .sprite-card { padding: 6px; }
+.shell-picker .sprite-card:not(.invalid) { padding-bottom: 32px; }
+.shell-picker .sprite-card.selected::after { left: 2px; bottom: 2px; background: var(--ui-accent); }
 .shell-picker .sprite-headshot-container,
 .shell-picker .sprite-headshot { width: calc(32px * var(--pk-s)); height: calc(32px * var(--pk-s)); }
 .shell-picker .lock-icon { width: 24px; height: 24px; }
