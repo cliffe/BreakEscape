@@ -1,0 +1,11 @@
+{
+"imports": { "m01_maya_ko": true, "m01_final_choice": "expose" },
+"globals": { "noor_cover": "safetynet", "noor_told": true, "ledger_read_heard": true },
+"steps": [
+{ "note": "R32: the hatch after Noor was told who the player is. Sorensen skips the auditor act, the player pulls the letters through and HaX warns Butte. After the pull the WREN question is open and the lean choice has gone since the card was cloned." },
+{ "talk": "hatch", "picks": ["Pull the letters through", "Who's WREN", "I'll leave you"] },
+{ "said": ["Noor went home without saying goodnight", "There's a chair on your side", "I filed the press cuttings myself", "And you're the one the Architect writes about", "The letters. You'd rather save someone who's still walking around", "Arakawa's ringing Butte", "That's the warning we didn't have", "I keep records. I don't read them aloud"],
+  "notSaid": ["The lease-holder's auditor", "Noor rang through", "Of course. He'd want to be read"] },
+{ "expect": { "cage_bin": "letters" } }
+]
+}

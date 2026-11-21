@@ -1,0 +1,13 @@
+{
+"steps": [
+{ "note": "R6: talking to Old Coyote head on, no cover given. The three questions, the plain truth button, and a knock-out on a second save." },
+{ "talk": "coyote", "picks": ["Why work nights", "Have you seen what's going on in the cage", "Do you write any of this down", "You don't want to be a witness tonight"] },
+{ "said": ["Building's closed. You lost?", "Lineman's course, days", "Nobody pays me to look in the cage", "Every night. It's on my desk by the dock", "Figured. I'll be in the truck"],
+  "notSaid": ["Auditors bring coffee", "[choice] I'm not an auditor", "[choice] I'm not here for the shredder"] },
+{ "expect": { "old_coyote_told": true } },
+{ "note": "The same man, knocked out on a fresh save, never told." },
+{ "set": { "old_coyote_told": false } },
+{ "ko": "old_coyote" },
+{ "expect": { "old_coyote_ko": true, "old_coyote_told": false } }
+]
+}

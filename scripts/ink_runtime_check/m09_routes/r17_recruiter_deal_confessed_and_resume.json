@@ -1,0 +1,15 @@
+{
+"imports": { "m05_recruiter_deal_accepted": true, "m05_recruiter_deal_confessed": true },
+"steps": [
+{ "note": "R17: deal accepted and confessed. HaX answers her opening and the spine follows with no confession choice. The player says yes, closes the call early, and the re-ring (resume_name) says the name and goes back to the deck choice." },
+{ "talk": "recruiter", "knot": "call", "picks": ["Go on", "Give me the name"] },
+{ "said": ["We've talked about that. She has nothing on you", "Halina Kowalczyk"],
+  "notSaid": ["[choice] She's right", "[choice] She's fishing"] },
+{ "expect": { "recruiter_secret": "confessed", "recruiter_said_yes": true, "recruiter_gone": true } },
+{ "set": { "deck_choice_made": false } },
+{ "talk": "recruiter", "knot": "resume_name", "picks": ["Pull her file anyway"] },
+{ "said": ["She's watching the deck", "First name on it is a handler in Baltimore"],
+  "notSaid": ["Margaret's shredding"] },
+{ "expect": { "recruiter_offer": "double_crossed", "deck_choice_made": true } }
+]
+}

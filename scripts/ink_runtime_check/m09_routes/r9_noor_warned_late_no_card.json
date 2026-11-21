@@ -1,0 +1,11 @@
+{
+"steps": [
+{ "note": "R9: the Recruiter's deal was accepted and confessed. Noor is warned late: the warning but no card, so the clone choice stays." },
+{ "talk": "noor", "picks": ["Lean in over her list", "I'll let you get on"] },
+{ "said": ["Somebody called me in October and told me to watch my boss", "I'm not losing this job for a phone call", "Series R. Forty-eight boxes", "Watch the carts"],
+  "notSaid": ["Here, my card", "We're closed", "You're the one they said would come"] },
+{ "expect": { "staff_card_cloned": true, "noor_card_given": false } },
+{ "tasks": { "meet_the_clerk": "completed" } }
+],
+"imports": { "m05_found_pipeline_list": true, "m05_recruiter_deal_accepted": true, "m05_recruiter_deal_confessed": true }
+}

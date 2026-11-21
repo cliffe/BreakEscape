@@ -1,0 +1,15 @@
+{
+"imports": { "m08_nightshade_triple_agent": true },
+"globals": { "nightshade_file_held": true, "tran_outcome": "left" },
+"steps": [
+{ "note": "R25: Tesseract's call as HaX relays it, then the player asks to be brought in with threads still open. HaX lists at most two: Nightshade's file and the H&L boxes (the lease and Tran are capped out). Bring me in raises the debrief." },
+{ "talk": "phone", "knot": "tesseract_call", "picks": ["Understood"] },
+{ "said": ["Withheld. Stay on, and don't say a word", "Nobody's called me that since the course", "He called me Ninety-nine", "he asked if we'd liked his notes", "Tell me when you're ready to come in"],
+  "notSaid": ["That's Helena done"] },
+{ "expect": { "tesseract_call_started": true, "tesseract_call_done": true, "tesseract_call_closed": true } },
+{ "talk": "phone", "knot": "bring_in_confirm", "picks": ["Not yet", "Bring me in", "Bring me in"] },
+{ "said": ["That's Helena done. Once you're on the plane", "You haven't said what we do with Nightshade's file", "H&L's boxes are still shut", "The notice is still on his box. Netherton will ask", "Go on. I'll be here", "Bringing you in. Netherton's in the hangar"],
+  "notSaid": ["Her lease file's still in her office", "Tran's still at his tapes"] },
+{ "expect": { "start_debrief": true, "debrief_notice_before": false } }
+]
+}
