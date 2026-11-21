@@ -30,7 +30,6 @@
 { "expect": { "mole_identified": true } },
 { "enter": "interrogation_room" },
 { "talk": "confront", "picks": ["Face him", "Tell me why", "What happens to you now", "No deals"] },
-{ "said": ["Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils"] },
-{ "notSaid": ["The Director went asking questions on my floor", "out cold"] }
+{ "said": ["Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils"], "notSaid": ["The Director went asking questions on my floor", "out cold"] }
 ]
 }

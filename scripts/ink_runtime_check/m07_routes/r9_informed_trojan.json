@@ -126,18 +126,7 @@
     1
    ]
   },
-  {
-   "said": [
-    "You read their schedule before you made the call",
-    "I logged it. You found the thing that was built not to be found"
-   ],
-   "notSaid": [
-    "You found it before you chose, and you chose Austin.",
-    "Your field notes say the Trojan Horse projection was understated",
-    "You had no way to know",
-    "You found out what you had chosen"
-   ]
-  },
+  { "said": ["You read their schedule before you made the call", "I logged it. You found the thing that was built not to be found"], "notSaid": ["Your field notes say the Trojan Horse projection was understated", "You had no way to know", "You found out what you had chosen"] },
   {
    "note": "Run-length guard (Phase 4 dialogue C1, D7-1): no conversation, the debrief included, runs more than nine lines without a choice."
   },

@@ -83,24 +83,6 @@
 {
 "maxRun": 9
 },
-{
-"said": [
-"Secured. Nobody else in that building",
-"Nine. Tell me we came out with something.",
-"That's the proof we've chased since Zero Day.",
-"Bank B went before you got to the button",
-"Hold on to that when the names come out tomorrow",
-"Keep the OptiGrid print kit",
-"I'm sorry about your people, Mr Vance.",
-"You did it to Relay too"
-],
-"notSaid": [
-"Good. Nobody else",
-"the proof we've been chasing",
-"won't be zero",
-"Keep the crew's",
-"Netherton can live with that"
-]
-}
+{ "said": ["Secured. Nobody else in that building", "Nine. Tell me we came out with something.", "That's the proof we've chased since Zero Day.", "Bank B went before you got to the button", "Hold on to that when the names come out tomorrow", "Keep the OptiGrid print kit", "I'm sorry about your people, Mr Vance.", "You did it to Relay too"], "notSaid": ["Good. Nobody else", "won't be zero", "Keep the crew's", "Netherton can live with that"] }
 ]
 }

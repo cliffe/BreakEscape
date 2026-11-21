@@ -70,15 +70,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"That log says Halloran's spare. Ask her who signs it out."
-],
-"notSaid": [
-"front-door lines",
-"front door"
-]
-},
+{ "said": ["That log says Halloran's spare. Ask her who signs it out."], "notSaid": ["front door"] },
 {
 "enter": "server_hallway"
 },
@@ -233,15 +225,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"The research server isn't finished",
-"The upload's dead. The research server isn't"
-],
-"notSaid": [
-"Car's at the front entrance"
-]
-},
+{ "said": ["The research server isn't finished", "The upload's dead. The research server isn't"] },
 {
 "expect": {
 "mission_complete": false

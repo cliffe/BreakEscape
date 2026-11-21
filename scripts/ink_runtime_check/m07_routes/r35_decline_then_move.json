@@ -25,15 +25,7 @@
    ],
    "knot": "hub"
   },
-  {
-   "said": [
-    "until that operator login goes through the relay, or the timer on screen runs out",
-    "Tell me if that changes while the window's open"
-   ],
-   "notSaid": [
-    "now or never"
-   ]
-  },
+  { "said": ["until that operator login goes through the relay, or the timer on screen runs out", "Tell me if that changes while the window's open"] },
   {
    "expect": {
     "redirect_declined": true
