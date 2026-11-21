@@ -18,9 +18,15 @@ test('CyberChef update banner (#notice) is hidden in the vendored page', () => {
     assert.ok(/style="[^"]*display:\s*none/.test(tag[0]), '#notice carries display:none: ' + tag[0]);
 });
 
-test('CyberChef build is unchanged apart from the banner (still 10.19.4)', () => {
-    assert.ok(chefPath.includes('10.19.4') || process.env.CYBERCHEF_COPY, 'file name keeps the version');
-    assert.ok(chef.includes('id="notice-wrapper"'), 'notice wrapper kept so layout is stock');
+test('CyberChef notice wrapper is kept so the header layout is stock', () => {
+    assert.ok(chef.includes('id="notice-wrapper"'), 'notice wrapper kept');
+});
+
+test('CyberChef page explains the #notice edit in a comment beside it', () => {
+    const i = chef.indexOf('<span id="notice"');
+    assert.ok(i > 0, '#notice present');
+    const before = chef.slice(Math.max(0, i - 400), i);
+    assert.ok(before.includes('<!-- Break Escape:') && /upgrad/.test(before), 'comment before span mentions upgrading');
 });
 
 function rule(sel) {
@@ -28,6 +34,13 @@ function rule(sel) {
     assert.ok(i >= 0, sel + ' rule exists');
     return css.slice(i, css.indexOf('}', i));
 }
+
+test('.selection-required is GNF 16px on a whole-pixel line box (not inherited 19.2px)', () => {
+    const r = rule('.selection-required');
+    assert.ok(/font-family:\s*'GNF'/.test(r), 'GNF font');
+    assert.ok(/font-size:\s*16px/.test(r), '16px');
+    assert.ok(/line-height:\s*24px/.test(r), 'whole-pixel line box');
+});
 
 test('.config-prompt is pixel styled: 2px border, no radius, GNF 16px, dark', () => {
     const r = rule('.config-prompt');

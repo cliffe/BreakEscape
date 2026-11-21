@@ -51,7 +51,10 @@ h1 {
 
 .selection-required {
   color: #ff4444;
+  font-family: 'GNF', monospace;
   font-weight: normal;
+  font-size: 16px;
+  line-height: 24px;
   margin: 8px 0;
   text-align: center;
 }
