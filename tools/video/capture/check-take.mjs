@@ -101,6 +101,21 @@ if (opt['video-only'] && vSlates.length >= 2) {
     const r = run('ffmpeg', args); res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: Math.round(corr * 1000) } : { error: r.stderr.toString().slice(-300) };
   }
 }
+// ---- align the trimmed file's first video frame to 0 (2026-11-21) ----
+// The trim cut rarely falls on a frame boundary, so the first video frame lands up to one frame after the audio start (video start_time 0.033).
+// Remotion ignores that start_time and maps `in` to frames from 0, which put the picture about 33 ms early. Drop the lead from both streams.
+if (res.trimmed && res.trimmed.out && !opt['keep-lead']) {
+  const tp = JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', res.trimmed.out]).stdout.toString());
+  const lead = Number((tp.streams.find(s => s.codec_type === 'video') || {}).start_time || 0);
+  if (lead > 0.0015) {
+    const cut = lead - 0.002, tmp = res.trimmed.out.replace(/\.mkv$/, '.align.mkv');
+    // trim filters cut both streams on the same timeline and restart each at 0 (an input -ss left the pcm audio starting at 0.032)
+    const hasA = tp.streams.some(s => s.codec_type === 'audio');
+    const r = run('ffmpeg', ['-y', '-v', 'error', '-i', res.trimmed.out, '-vf', `trim=start=${cut},setpts=PTS-STARTPTS`].concat(hasA ? ['-af', `atrim=start=${cut},asetpts=PTS-STARTPTS`] : []).concat(['-map', '0:v'], hasA ? ['-map', '0:a'] : [], ['-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-bf', '0', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', tmp]));
+    if (r.status === 0) { fs.renameSync(tmp, res.trimmed.out); res.trimmed.fromS = +(res.trimmed.fromS + cut).toFixed(3); res.trimmed.leadDroppedMs = Math.round(cut * 1000); }
+    else res.trimmed.alignError = r.stderr.toString().slice(-300);
+  }
+}
 // ---- markers re-timed to the trimmed file: trimmed_t = (slate-relative t) + slateStart - trimFrom ----
 if (res.trimmed && res.trimmed.out && vSlates.length && fs.existsSync(base + '.markers.json')) {
   const m = JSON.parse(fs.readFileSync(base + '.markers.json', 'utf8'));
