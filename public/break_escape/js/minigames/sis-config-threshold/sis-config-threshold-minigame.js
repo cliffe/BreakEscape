@@ -43,6 +43,20 @@ function normalizeStatus(status) {
     return String(status || 'GREEN').toUpperCase();
 }
 
+// The line under the panel's buttons. Only rows that are not GREEN open a detail, so the line
+// never tells the player to select rows when none can be selected (sis02 blind playtest m7)
+export function sisHelpText(canCompare, selectableCount) {
+    const nothingToSelect = !(selectableCount > 0);
+    if (canCompare) {
+        return nothingToSelect
+            ? 'No row is flagged. Compare with the certification document to check the values.'
+            : 'Select a highlighted row for its detail, or compare with the certification document.';
+    }
+    return nothingToSelect
+        ? 'No row is flagged. Retrieve the SIS certification document to unlock side-by-side comparison.'
+        : 'Select a highlighted row for its detail. Retrieve the SIS certification document to unlock side-by-side comparison.';
+}
+
 export class SisConfigThresholdMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
     static consoleWindow = true;
@@ -113,7 +127,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                 <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${escapeHtml(displayDashes(this.confirmLabel))}</button>
             </div>
             <div class="sis-help" id="sis-help-text">
-                ${canCompare ? 'Select highlighted rows to inspect deviations.' : 'Retrieve the SIS certification document to unlock side-by-side comparison.'}
+                ${escapeHtml(sisHelpText(canCompare, this.rows.filter((r) => normalizeStatus(r.status) !== 'GREEN').length))}
             </div>
             </div>
         `;
@@ -188,6 +202,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-detail-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
@@ -226,6 +241,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-compare-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
@@ -235,22 +251,24 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         if (!this.overlayEl) return;
 
         this.overlayEl.innerHTML = `
-            <div class="sis-modal">
+            <div class="sis-modal sis-modal-with-x">
+                <button type="button" class="minigame-close-button sis-modal-close" id="sis-confirm-close" aria-label="Close">&times;</button>
                 <h4>Confirm SIS Tamper Report</h4>
                 <p>Report detected SIS setpoint deviations to security operations?</p>
                 <div class="sis-modal-actions">
-                    <button class="sis-btn" id="sis-confirm-no">Cancel</button>
                     <button class="sis-btn sis-btn-confirm" id="sis-confirm-yes">Confirm</button>
                 </div>
             </div>
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
-        const noBtn = this.overlayEl.querySelector('#sis-confirm-no');
+        const closeBtn = this.overlayEl.querySelector('#sis-confirm-close');
         const yesBtn = this.overlayEl.querySelector('#sis-confirm-yes');
-        this.addEventListener(noBtn, 'click', () => this.closeOverlay());
+        this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
         this.addEventListener(yesBtn, 'click', () => this.applyConfirm());
+        closeBtn.focus({ preventScroll: true });
     }
 
     applyConfirm() {
@@ -278,14 +296,23 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.overlayEl.classList.remove('show');
         this.overlayEl.innerHTML = '';
         this._hideSceneX(false);
+        this._lockPanel(false);
         // Hand focus back to the row that opened the detail
         const opener = this._detailOpener;
         this._detailOpener = null;
         if (opener && opener.isConnected) opener.focus({ preventScroll: true });
     }
 
-    // One X on screen at a time: the pop-ups carry their own X and the confirm has two named
-    // buttons and no X (user rule), so the scene X hides while the overlay is open
+    // The panel's buttons and rows are out of reach (not focusable, not clickable) while a
+    // dialog is open; the overlay is opaque, so they are not drawn through it either
+    _lockPanel(locked) {
+        const main = this.gameContainer?.querySelector?.('.sis-threshold-main');
+        if (!main) return;
+        if (locked) main.setAttribute('inert', ''); else main.removeAttribute('inert');
+    }
+
+    // One X on screen at a time: every pop-up carries its own X (the confirm adds its one
+    // named button), so the scene X hides while the overlay is open
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';

@@ -40,7 +40,7 @@ test('SIS table: fixed layout, nowrap header, narrow value column, names break i
 async function renderSis(rows) {
     const { SisConfigThresholdMinigame } = await import(pathToFileURL(join(root, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js')).href);
     const gc = document.createElement('div');
-    const fake = { rows, gameContainer: gc, container: document.createElement('div'), hasCertificationDoc: () => false, compareTitle: 'c', confirmLabel: 'x', addEventListener(el, ev, fn) { el.addEventListener(ev, fn); }, _hideSceneX() {} };
+    const fake = { rows, gameContainer: gc, container: document.createElement('div'), hasCertificationDoc: () => false, compareTitle: 'c', confirmLabel: 'x', addEventListener(el, ev, fn) { el.addEventListener(ev, fn); }, _hideSceneX() {}, _lockPanel() {} };
     fake.showDetail = (r) => { fake.shown = r; };
     SisConfigThresholdMinigame.prototype.render.call(fake);
     SisConfigThresholdMinigame.prototype.bindEvents.call(fake);

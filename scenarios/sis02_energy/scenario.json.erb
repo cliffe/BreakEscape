@@ -2064,6 +2064,7 @@ require 'base64'
             "flagActionLabel": "FLAG SESSION",
             "flagConfirmTitle": "CONFIRM SESSION FLAG",
             "flagConfirmBody": "c.ellison left in January 2025. Active session since 01:47 from ALB-SRV-02, an enterprise print server. A dormant contractor account, live inside the SCADA network.",
+            "flagConfirmBodyClosed": "c.ellison left in January 2025. This session ran from ALB-SRV-02, an enterprise print server, from 01:47 until the cable was pulled. A dormant contractor account was live inside the SCADA network.",
 <%# F4: the SIS engineering protocol keeps no log. The 03:22 time comes from HMI-ENG-02's own
     engineering tool history (tab id kept as sis_audit for the progress action). %>
             "additionalTabs": [
@@ -2176,7 +2177,7 @@ require 'base64'
               "type": "confirm_action",
               "text": "Disconnect cable JS-SCADA-LAN?",
               "confirmLabel": "Disconnect",
-              "cancelLabel": "Leave it",
+              "closeX": true,
               "onConfirm": [
                 { "type": "set_global", "key": "jump_server_isolated", "value": true }
               ]

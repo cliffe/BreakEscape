@@ -112,11 +112,11 @@ export class EsdPushbuttonMinigame extends MinigameScene {
             </div>
             <div class="esd-confirm-modal" id="esd-confirm-modal" aria-hidden="true">
                 <div class="esd-confirm-card">
+                    <button type="button" class="minigame-close-button esd-confirm-close" id="esd-confirm-x" aria-label="Close: do not press">&times;</button>
                     <h3>CONFIRM EMERGENCY SHUTDOWN?</h3>
                     <p>${escapeHtml(displayDashes(confirmDesc))}</p>
                     <div class="esd-confirm-actions">
                         <button class="esd-confirm" id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</button>
-                        <button class="esd-cancel" id="esd-cancel">CANCEL</button>
                     </div>
                 </div>
             </div>
@@ -126,7 +126,7 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         this.buttonElement = this.gameContainer.querySelector('#esd-button');
         this.confirmModal  = this.gameContainer.querySelector('#esd-confirm-modal');
         this.confirmButton = this.gameContainer.querySelector('#esd-confirm');
-        this.cancelButton  = this.gameContainer.querySelector('#esd-cancel');
+        this.cancelButton  = this.gameContainer.querySelector('#esd-confirm-x');
         this.statusElement = this.gameContainer.querySelector('#esd-status');
         this.ledElement    = this.gameContainer.querySelector('#esd-led');
     }
@@ -175,8 +175,8 @@ export class EsdPushbuttonMinigame extends MinigameScene {
         if (window.playUISound) window.playUISound('lock');
     }
 
-    // A confirm keeps its two named buttons and has no X (user rule): the scene X, which sits
-    // over the confirm's corner, hides while it is open
+    // The confirm carries its own X (the way out: do not press) beside its one named button, so
+    // the scene X, which sits over the confirm's corner, hides while it is open
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';

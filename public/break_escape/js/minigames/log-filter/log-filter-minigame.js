@@ -197,6 +197,9 @@ export class LogFilterMinigame extends MinigameScene {
         this._flagActionLabel  = sd.flagActionLabel  || 'FLAG SESSION';
         this._flagConfirmTitle = sd.flagConfirmTitle || 'CONFIRM SESSION FLAG';
         this._flagConfirmBody  = sd.flagConfirmBody  || '';
+        // Wording for a row that is no longer ACTIVE (a cut cable closed it): the confirm must
+        // not say "Active session since ..." about a CLOSED row (sis02 blind playtest m12)
+        this._flagConfirmBodyClosed = sd.flagConfirmBodyClosed || '';
         this._flagRejectedBody = sd.flagRejectedBody || '';   // optional text shown when a non-anomalous row is flagged
         this._additionalTabs   = sd.additionalTabs   || [];
         this._requireAllTabs   = sd.requireAllTabs   || false;
@@ -1170,19 +1173,27 @@ export class LogFilterMinigame extends MinigameScene {
 
     _renderFlagConfirmOverlay(panel) {
         const body = this._overlayHeader(panel, this._flagConfirmTitle);
+        const closed = String(this._selectedEntry?.status || '').toUpperCase() === 'CLOSED';
+
+        // The next step, stated first: the flag is not set until CONFIRM is pressed
+        const step = this._el('div', 'lf-flag-confirm-step');
+        step.textContent = displayDashes('NEXT STEP: press CONFIRM below to flag this session. The X goes back without flagging.');
+        body.appendChild(step);
 
         const text = this._el('div', 'lf-flag-confirm-body');
-        text.textContent = displayDashes(this._flagConfirmBody);
+        text.textContent = displayDashes(closed && this._flagConfirmBodyClosed
+            ? this._flagConfirmBodyClosed : this._flagConfirmBody);
         body.appendChild(text);
 
         const actions = this._el('div', 'lf-flag-confirm-actions');
 
         const confirm = this._el('button', 'lf-flag-confirm-btn');
-        confirm.textContent = '[CONFIRM: FLAG ACTIVE SESSION]';
+        confirm.textContent = closed ? '[CONFIRM: FLAG SESSION]' : '[CONFIRM: FLAG ACTIVE SESSION]';
         confirm.addEventListener('click', () => this._onFlagConfirmed());
 
         actions.appendChild(confirm);
         body.appendChild(actions);
+        try { confirm.focus({ preventScroll: true }); } catch (e) { /* best effort */ }
     }
 
     _onFlagConfirmed() {
