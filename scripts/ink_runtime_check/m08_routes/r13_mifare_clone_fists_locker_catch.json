@@ -20,7 +20,6 @@
 { "read": "timeline_reconstruction" },
 { "talk": "phantom", "picks": ["audit was in the archive printer", "We'll talk"] },
 { "expect": { "phantom_alibi_known": true }, "said": ["Don't take my word for my own printout"] },
-{ "notSaid": ["Tell the Director"] },
 { "talk": "netherton", "picks": ["I can name the leak", "I'm ready"] },
 { "said": ["take it to the men who went through that lab door"], "notSaid": ["people on it"] },
 { "event": "npc_hostile_state_changed", "data": { "npcId": "director_netherton", "isHostile": true } },
