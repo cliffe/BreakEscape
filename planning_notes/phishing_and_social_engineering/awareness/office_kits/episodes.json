@@ -488,7 +488,7 @@
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca05_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e5_sso_lookalike",
