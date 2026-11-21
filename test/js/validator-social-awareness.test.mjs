@@ -1025,6 +1025,14 @@ test('guess spray: a stuffing row is a generic label and a flag, never a value',
   expectIn(lint(withSpray((g) => { g.stuff.rows.forEach((r) => { r.opens = false; }); })), /stuff has no row that opens/);
 });
 
+test('guess: sprayedGlobal is optional; when named it must be a declared string global that starts false', { skip }, () => {
+  assert.deepEqual(lint(withSpray((g, j) => { g.sprayedGlobal = 'guess_stub_sprayed'; j.globalVariables.guess_stub_sprayed = false; })), []);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = 'guess_stub_sprayed'; })), /sprayedGlobal 'guess_stub_sprayed' is not declared in globalVariables/);
+  expectIn(lint(withSpray((g, j) => { g.sprayedGlobal = 'guess_stub_sprayed'; j.globalVariables.guess_stub_sprayed = true; })), /sprayedGlobal 'guess_stub_sprayed' must be declared false/);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = ''; })), /sprayedGlobal must be a non-empty string/);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = 7; })), /sprayedGlobal must be a non-empty string/);
+});
+
 test('guess spray: the common checks still apply (landedGlobal, credential keys); target-only keys are caught', { skip }, () => {
   expectIn(lint(withSpray((g) => { delete g.landedGlobal; })), /landedGlobal is missing/);
   expectIn(lint(withSpray((g) => { g.landedGlobal = 'undeclared_global'; })), /landedGlobal 'undeclared_global' is not declared/);

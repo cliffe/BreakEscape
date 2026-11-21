@@ -255,6 +255,13 @@ module ValidateSocial
         issues.concat(Osint.lint_field(ctx, chk['host'], "#{where}.check.host"))
       end
 
+      # A host option's own address is shown on the page, so it gets the same host-only lint.
+      Mail.hash_list(chk['hosts']).each_with_index do |opt, i|
+        next if Mail.blank?(opt['host'])
+
+        issues.concat(Osint.lint_field(ctx, opt['host'], "#{where}.check.hosts[#{i}].host"))
+      end
+
       %w[hosts pretexts urgencies steps].each do |menu|
         issues << err("#{where}.check.#{menu} must be a non-empty array of options") unless chk[menu].is_a?(Array) && !chk[menu].empty?
       end

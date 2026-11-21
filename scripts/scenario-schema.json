@@ -571,7 +571,7 @@
                   "host": {"type": "string", "description": "The genuine site the check sits on (host-only .example, linted)"},
                   "heading": {"type": "string"},
                   "clipboardReveal": {"type": "string", "description": "One harmless description of what the page copied; never a working command (linted for shell metacharacters)"},
-                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "host": {"type": "string", "description": "Optional address the page shows when this option is picked (host-only .example); absent, check.host is shown"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "pretexts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "urgencies": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "steps": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
@@ -2895,6 +2895,7 @@
           "additionalProperties": false
         },
         "landedGlobal": {"type": "string", "description": "A declared global (default false) the guesser sets true when an account opens; the flip shows flipAftermath only then"},
+        "sprayedGlobal": {"type": "string", "description": "Optional declared global (default false) the guesser sets true when the spray itself opened accounts (needs the staff list); the flip and debrief can then tell a run with no spray from one with it"},
         "note": {"type": "string", "description": "The on-screen line saying nothing real is typed; strings.guessNote wins"},
         "strings": {"type": "object", "description": "The guesser's own lines over its defaults (password-guesser-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
       },
@@ -3107,6 +3108,7 @@
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
+            "flipDefenderLineNoSpray": {"type": "string", "description": "The defender line instead of flipDefenderLine when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "flipDefenderLineByChoice": {
               "type": "object",
               "description": "aw2: the flip's defender line per chosen pretext, keyed by the template id the learner picked (state.sent.templateId). A matching entry replaces flipDefenderLine for that branch; any other branch falls back to flipDefenderLine. Keys are social.templates ids",
@@ -3155,6 +3157,9 @@
             "flipPageHeading": {"type": "string", "description": "E10 MA4: the heading over the page section when the flip shows both a message and a page; default 'The page it links to'. A no-link design (a fake check on the site's own address) overrides it, e.g. 'The page you built', so it does not claim a link"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
+            "flipPageIntroByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's page intro per chosen host option id (check.hosts[].id), used instead of flipPageIntro when the id matches; any other host keeps flipPageIntro"},
+            "flipDefenderLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's defender line per chosen host option id (check.hosts[].id); any other host keeps flipDefenderLine"},
+            "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {

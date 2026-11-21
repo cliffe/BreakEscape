@@ -46,7 +46,7 @@
       "note": "A password leaked from another site was tried across many services; the ones that open are where someone reused that password at work."
     },
     "passphraseDemo": { "words": ["harbour", "ladder", "crimson"], "neverLands": true },
-    "landedGlobal": "guess_e18_landed",
+    "landedGlobal": "guess_e18_landed", "sprayedGlobal": "guess_e18_sprayed",
     "note": "No real password is typed here; every account, word and pair is made up for the exercise."
   },
 

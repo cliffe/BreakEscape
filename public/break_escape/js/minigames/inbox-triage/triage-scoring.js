@@ -362,7 +362,11 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
             // the first member the learner ticked (or its note when none was ticked).
             units: units.map((u) => {
                 const hit = unitAccepts(u).find((m) => tickedSet.has(m));
-                return { note: u.note, caught: !!hit, shown: hit && u.members.includes(hit) ? hit : u.note };
+                const shown = hit && u.members.includes(hit) ? hit : u.note;
+                // A second tick from the same either-tick group is covered by the first, not scored
+                // again; carried so the review can acknowledge it ("also ticked").
+                const also = hit ? unitAccepts(u).filter((m) => m !== hit && tickedSet.has(m)) : [];
+                return also.length ? { note: u.note, caught: !!hit, shown, also } : { note: u.note, caught: !!hit, shown };
             }),
             handledRight: vPts >= FULL_VERDICT_POINTS,
             critical,

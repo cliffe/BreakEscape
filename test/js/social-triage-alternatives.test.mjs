@@ -134,9 +134,9 @@ test('an alternate outside truth.flags credits its unit and is never a false cla
     assert.deepEqual(r.perFactor.lookalike_domain, { caught: 1, missed: 0 });
 });
 
-test('ticking both members gives one display row, under the member ticked first in the group', () => {
+test('ticking both members gives one scored unit, under the member ticked first, and carries the second as "also"', () => {
     const r = scoreTriage({ messages: spoof, answers: [{ id: 'spoof', verdict: 'report', flags: ['lookalike_domain', 'senderTrust'] }] });
-    assert.deepEqual(one(r).units, [{ note: 'senderTrust', caught: true, shown: 'senderTrust' }]);
+    assert.deepEqual(one(r).units, [{ note: 'senderTrust', caught: true, shown: 'senderTrust', also: ['lookalike_domain'] }]);
 });
 
 test('an alternate on its own is never reported missed: a missed group shows once under its authored note', () => {

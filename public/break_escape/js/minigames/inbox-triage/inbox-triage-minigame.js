@@ -1223,7 +1223,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // D227 A3: after a Trust with no sheet the learner was never asked what they noticed,
             // so the rows name the tells neutrally ("What gave them away:"), never "Missed:".
             const softMiss = ans.sheetless === true ? 'gave' : this._isRight(rec, ans.verdict);
-            for (const u of units) if (u.caught) ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
+            for (const u of units) {
+                if (!u.caught) continue;
+                ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
+                // A second tick from the same either-tick group: say it is covered, not ignored.
+                for (const extra of Array.isArray(u.also) ? u.also : []) ul.appendChild(this._alsoTickedRow(extra, u.shown));
+            }
             for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note], softMiss));
             card.appendChild(ul);
         }
@@ -1345,6 +1350,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // A score figure: hidden with the host's show_result false, as in the episode debrief.
         if (this.showResult) card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
+    }
+
+    /** The row for a second tick in an either-tick group: acknowledged, covered by the first tick. */
+    _alsoTickedRow(id, firstId) {
+        const li = el('li', 'tri-flag caught tri-flag-also');
+        li.dataset.flag = id;
+        li.append(icon('mark-tick'), el('span', 'tri-flag-word', 'Also ticked:'),
+            el('span', 'tri-flag-text', `${chipLabel(this.set, id)}. This names the same tell as '${chipLabel(this.set, firstId)}', so it is covered by that tick and not counted twice.`));
+        return li;
     }
 
     _flagRow(rec, id, caught, note, softMiss = false) {
