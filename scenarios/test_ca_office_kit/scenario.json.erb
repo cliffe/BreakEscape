@@ -74,6 +74,7 @@
     "kit_e1_combo": false,
     "kit_e1_combo_arrived": false,
     "kit_e1_combo_end": false,
+    "kit_e1_done": false,
     "kit_e1_screen_choice": ""
   },
   "resources": {
@@ -89,6 +90,7 @@
     { "id": "kit_e1_t_note", "startOnGlobal": "kit_e1_out", "delayMs": 6000, "condition": "!globalVars.kit_e1_note_up", "setGlobal": { "kit_e1_note_up": true } },
     { "id": "kit_e1_t_combo", "startOnGlobal": "kit_e1_out", "delayMs": 25000, "setGlobal": { "kit_e1_combo": true } },
     { "id": "kit_e1_t_combo_end", "startOnGlobal": "kit_e1_out", "delayMs": 40000, "setGlobal": { "kit_e1_combo_end": true } },
+    { "id": "kit_e1_t_done", "startOnGlobal": "kit_e1_out", "delayMs": 12000, "condition": "!globalVars.kit_e1_done", "setGlobal": { "kit_e1_done": true } },
     { "id": "kit_e1_t_report", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice === 'report'", "setGlobal": { "kit_e1_t_report": true } },
     { "id": "kit_e1_t_other", "startOnGlobal": "kit_e1_closed", "delayMs": 3000, "condition": "globalVars.kit_e1_note_choice !== 'report' && globalVars.kit_e1_note_choice !== ''", "setGlobal": { "kit_e1_t_other": true } }
   ],
@@ -563,6 +565,14 @@
               "delayMs": 4000,
               "bark": "Quick word about that portal note.",
               "targetKnot": "kit_e1_host_note"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_e1_agn_there",
+              "condition": "value === true && globalVars.kit_e1_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": { "kit_e1_done": true },
+              "bark": "That is the poster sorted, then."
             }
           ]
         },
@@ -852,7 +862,7 @@
           "id": "kit_e1_pc2",
           "name": "Priya's PC",
           "sprite": "pc_desktop",
-          "position": { "x": 6.5, "y": 5.5 },
+          "position": { "x": 6.5, "y": 5.5, "elevation": 22 },
           "takeable": false,
           "interactable": true,
           "active": true,
