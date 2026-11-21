@@ -732,8 +732,15 @@
     .triage-client .tri-steps { order: 1; flex: 1 1 0; min-width: 0; gap: 4px; }
     .triage-client .tri-toolbar .se-overlay-close { order: 2; margin-left: 0; }
     .triage-client .tri-sort { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; align-items: center; }
-    .triage-client .tri-sort > .mail-reader { grid-column: 1 / -1; grid-row: 2; }
+    .triage-client .tri-sort > .mail-reader { grid-column: 1 / -1; grid-row: 2; align-self: stretch; min-height: 0; }
     .triage-client .tri-sort > .tri-progress { grid-column: 1; grid-row: 1; }
     .triage-client .tri-sort > .aw-team-tally { grid-column: 2; grid-row: 1; margin: 0; }
     .triage-client .tri-panel { padding: 8px; }
+}
+
+/* 568x320: the title would push the four step chips onto a second row, so it gives way (the
+   chips, which name the stage, stay on one row beside the X). */
+@media (max-height: 500px) and (max-width: 640px) {
+    .triage-client .tri-title { display: none; }
+    .triage-client .tri-steps { justify-content: flex-start; }
 }
