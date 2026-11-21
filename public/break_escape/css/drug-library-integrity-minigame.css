@@ -263,6 +263,7 @@
 .dli-hash-row {
   margin: 4px 0;
   font-size: 16px;
+  overflow-wrap: anywhere;   /* a 64-hex SHA-256 must not widen the panel */
 }
 
 .dli-hash-label {
