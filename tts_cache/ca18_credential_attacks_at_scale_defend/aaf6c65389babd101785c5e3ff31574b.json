@@ -1,0 +1,13 @@
+{
+  "key": "aaf6c65389babd101785c5e3ff31574b",
+  "npc": "kit_lorna_easton",
+  "text": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:09:44Z"
+}
