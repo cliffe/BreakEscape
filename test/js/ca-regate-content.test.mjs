@@ -91,3 +91,10 @@ test('ca07: the debrief tells one payment story, and the opening card makes no c
   assert.equal(panels.find((m) => m[1] === 'Ringing back')[3], "globalVars.kit_ca07_call_choice === 'ringback'");
   assert.match(panels.find((m) => m[1] === 'Ringing back')[2], /a payment that never left/);
 });
+
+test('ca07: the "When the voice wins" card points at no card that may not show, and the call is Graham\'s', () => {
+  const t = erb('ca07_voice_ceo');
+  assert.ok(!/is in the next card/.test(t), 'a pointer to a conditional card');
+  assert.ok(!/in your own seat/.test(t.match(/"heading": "When the voice wins"[\s\S]*?"condition"/)[0]));
+  assert.match(t, /Whether the payment left was Graham's call to make/);
+});
