@@ -1,0 +1,13 @@
+{
+  "key": "b6aa7b582811a4c68f04216dc6666b09",
+  "npc": "kit_chidi_okeke",
+  "text": "Nice. Get everyone on a manager and a passkey and each sign-in's one person's, no more shared logins on sticky notes.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:17:10Z"
+}

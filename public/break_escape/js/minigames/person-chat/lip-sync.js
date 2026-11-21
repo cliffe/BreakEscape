@@ -171,6 +171,55 @@ export function visemeAt(steps, elapsedMs) {
     return 'rest';
 }
 
+// ------------------------------------------------------------ output latency
+//
+// audio.currentTime is where the element is in the clip, but the sound leaves the speakers a
+// little later: the Web Audio graph's processing block (AudioContext.baseLatency) plus the
+// device buffer (AudioContext.outputLatency). Reading the timeline that far ahead keeps the
+// mouth on what is heard. Video capture of m02 takes measured the mouth 30 to 50 ms late
+// before this lead (docs/video/logs/m02_lipsync_check.md). Playback itself is never moved.
+
+export const DEFAULT_OUTPUT_LEAD_MS = 30; // when the browser reports no output latency
+export const MAX_OUTPUT_LEAD_MS = 150;    // a bigger figure is a bad report (Bluetooth aside), not a lead to apply
+
+/**
+ * How far ahead of audio.currentTime to read the viseme timeline, in ms.
+ * @param {{baseLatency?: number, outputLatency?: number}|null} ctx - an AudioContext, or null
+ * @returns {number}
+ */
+export function outputLeadMs(ctx) {
+    const out = Number(ctx?.outputLatency);
+    if (!(out > 0)) return DEFAULT_OUTPUT_LEAD_MS;
+    const base = Number(ctx?.baseLatency);
+    const ms = (out + (base > 0 ? base : 0)) * 1000;
+    return Math.min(MAX_OUTPUT_LEAD_MS, Math.round(ms));
+}
+
+/**
+ * The time to look up in a viseme timeline: the clip position plus the output lead.
+ * Not playing yet (position 0) still gets the lead, so the first shape shows as its sound
+ * reaches the speakers rather than a lead's worth after.
+ * @param {number} currentTimeS - audio.currentTime
+ * @param {number} leadMs
+ * @returns {number}
+ */
+export function visemeLookupMs(currentTimeS, leadMs = 0) {
+    const t = Number(currentTimeS);
+    return (Number.isFinite(t) && t > 0 ? t * 1000 : 0) + (leadMs > 0 ? leadMs : 0);
+}
+
+/**
+ * The shape to show while a line's audio is still being decoded for alignment. The text
+ * timeline stretched over the whole clip is mis-timed on the first syllables (it ignores the
+ * clip's leading silence), so until the fitted timeline lands the mouth follows the live
+ * level instead: a neutral open shape while there is sound, rest in the gaps.
+ * @param {boolean} speaking - the live level is above the speaking threshold
+ * @returns {string}
+ */
+export function pendingViseme(speaking) {
+    return speaking ? 'medium_open' : 'rest';
+}
+
 // Preferred substitutes when a sheet lacks a viseme, most similar first. Aliases cover
 // the Preston Blair style names some viseme sets use (MBP, FV, WQ, AI, O, U, E).
 const VISEME_FALLBACKS = {

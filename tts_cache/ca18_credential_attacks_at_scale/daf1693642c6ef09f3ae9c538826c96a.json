@@ -1,0 +1,13 @@
+{
+  "key": "daf1693642c6ef09f3ae9c538826c96a",
+  "npc": "kit_lorna_easton",
+  "text": "The partner came back knowing nothing about any payment. Awful moment.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:15Z"
+}

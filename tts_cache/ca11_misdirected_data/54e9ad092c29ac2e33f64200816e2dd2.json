@@ -1,0 +1,13 @@
+{
+  "key": "54e9ad092c29ac2e33f64200816e2dd2",
+  "npc": "tomasz_wisniewski",
+  "text": "Sent astray, these details put the people in them at a stranger's reach, and my week turns into recalls and letters home.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:14Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "b3a037edd814703bc86135457b07ad33",
+  "npc": "kit_fatima_begum",
+  "text": "Good. A work password typed on some lookalike cafe wifi, and they're into your account from another town.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:20Z"
+}

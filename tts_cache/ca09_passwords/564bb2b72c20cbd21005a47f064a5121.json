@@ -1,0 +1,13 @@
+{
+  "key": "564bb2b72c20cbd21005a47f064a5121",
+  "npc": "nilesh_solanki",
+  "text": "Reuse a password and a work account opens for free, and with shared logins on notes an audit can't say whose hands were on it.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:30Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "188ff16b579e30f5b9f32d86f338ae5e",
+  "npc": "kit_graham_whitfield",
+  "text": "Finance are chasing a payment that shouldn't have gone. The assistant sounded so sure.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:47Z"
+}

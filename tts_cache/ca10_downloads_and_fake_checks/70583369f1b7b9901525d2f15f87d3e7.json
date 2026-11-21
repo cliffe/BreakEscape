@@ -1,0 +1,13 @@
+{
+  "key": "70583369f1b7b9901525d2f15f87d3e7",
+  "npc": "niamh_doherty",
+  "text": "To whoever built that page, one followed step is a foothold that reaches finance and the intranet, or a live caller already on your phone.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:09:09Z"
+}
