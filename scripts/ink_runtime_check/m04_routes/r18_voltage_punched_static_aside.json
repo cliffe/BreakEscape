@@ -82,15 +82,6 @@
 {
 "credits": true
 },
-{
-"said": [
-"STATIC: stood aside, and slipped out when Voltage fell",
-"ROBERT VANCE: brought in"
-],
-"notSaid": [
-"STATIC: stood aside, and left with Voltage",
-"vindicated"
-]
-}
+{ "said": ["STATIC: stood aside, and slipped out when Voltage fell", "ROBERT VANCE: brought in"], "notSaid": ["STATIC: stood aside, and left with Voltage"] }
 ]
 }

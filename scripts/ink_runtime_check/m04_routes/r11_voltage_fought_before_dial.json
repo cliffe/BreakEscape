@@ -43,17 +43,7 @@
 "taking you down"
 ]
 },
-{
-"said": [
-"The button? Press it.",
-"And Static's still in this room",
-"Static comes off the wall"
-],
-"notSaid": [
-"Go for the button",
-"You don't get to have both"
-]
-},
+{ "said": ["The button? Press it.", "And Static's still in this room", "Static comes off the wall"], "notSaid": ["Go for the button", "the keystroke lands before you get to your button"] },
 {
 "expect": {
 "voltage_fight_started": true,

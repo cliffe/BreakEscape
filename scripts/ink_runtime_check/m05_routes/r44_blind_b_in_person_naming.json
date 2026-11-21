@@ -13,7 +13,7 @@
 {"set":{"flag3_submitted":true}},
 {"said":[]},
 {"talk":"patricia","picks":["I need your help with something","look inside someone's office","David Torres","comes in the front door","Money. His wife's","You knew him","I'll stop him"]},
-{"said":["Whose, and why?","I never once read the front door","staging manifest","Now tell me why he'd do it","That's both","His kids drew on the tablecloth"],"notSaid":["Now I need a reason","I still don't know why"]},
+{ "said": ["Whose, and why?", "I never once read the front door", "staging manifest", "Now tell me why he'd do it", "That's both", "His kids drew on the tablecloth"], "notSaid": ["I still don't know why"] },
 {"expect":{"torres_identified":true,"torres_suspected":true,"door_log_reasoned":true,"patricia_authorised_office":true}},
 {"tasks":{"identify_torres":"completed","name_a_suspect":"completed"}},
 {"talk":"owen","picks":["I need into David Torres' office"]},

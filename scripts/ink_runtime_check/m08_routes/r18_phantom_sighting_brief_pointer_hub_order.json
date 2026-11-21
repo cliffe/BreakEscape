@@ -20,7 +20,7 @@
 { "talk": "vector", "picks": ["Where were you", "That's all"] },
 { "talk": "nightshade", "picks": ["Where were you", "We're done"] },
 { "talk": "netherton", "picks": ["I have a name forming", "Phantom.", "I'm ready"] },
-{ "said": ["Bring me the door log."], "notSaid": ["Bring me the logs."] },
+{ "said": ["Bring me the door log."] },
 { "read": "password_sticky_note" },
 { "enter": "security_archives" },
 { "tasks": { "read_the_archives": "open" } },

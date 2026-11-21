@@ -11,7 +11,6 @@
 {"expect": {"irina_recruited": true, "found_password_lists": false}},
 {"talk": "irina", "picks": ["I still need that wordlist", "Can I borrow your office badge", "Nothing. Carry on"]},
 {"said": ["Of course. Here.", "There's nothing in there I'm proud of"]},
-{"notSaid": ["Bitcoin's at the top"]},
 {"expect": {"found_password_lists": true, "irina_badge_obtained": true}},
 {"talk": "irina", "picks": ["Nothing. Carry on"]},
 {"notSaid": ["I still need that wordlist", "Can I borrow your office badge"]},

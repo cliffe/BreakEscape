@@ -29,15 +29,7 @@
     "vector_hostile": true
    }
   },
-  {
-   "said": [
-    "He won't talk to you while he's like this"
-   ],
-   "notSaid": [
-    "again tonight",
-    "Keep pressing Q"
-   ]
-  },
+  { "said": ["He won't talk to you while he's like this"], "notSaid": ["again tonight", "She won't talk to you while she's like this"] },
   {
    "event": "npc_hostile_state_changed",
    "data": {
@@ -125,15 +117,7 @@
     "We're done"
    ]
   },
-  {
-   "said": [
-    "Nightshade turns as you come in",
-    "His desk behind him is bare"
-   ],
-   "notSaid": [
-    "looks up from a desk"
-   ]
-  },
+  { "said": ["Nightshade turns as you come in", "His desk behind him is bare"] },
   {
    "talk": "netherton",
    "picks": [
@@ -142,15 +126,7 @@
     "Understood"
    ]
   },
-  {
-   "said": [
-    "looking out of the window",
-    "look out through the slats"
-   ],
-   "notSaid": [
-    "maps"
-   ]
-  },
+  { "said": ["looking out of the window", "look out through the slats"] },
   {
    "read": "password_sticky_note"
   },

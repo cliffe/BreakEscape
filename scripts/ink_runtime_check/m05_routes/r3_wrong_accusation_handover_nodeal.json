@@ -250,23 +250,7 @@
 "Did I get him right"
 ]
 },
-{
-"said": [
-"ninety-nine per cent",
-"East of England",
-"spent hours suspended",
-"Most of the night, you were.",
-"told Patricia to stop looking",
-"so does TalentStack's recruiting"
-],
-"notSaid": [
-"ninety-seven",
-"before the server did",
-"slow way",
-"forty-seven stay",
-"The file says you were"
-]
-},
+{ "said": ["ninety-nine per cent", "East of England", "spent hours suspended", "Most of the night, you were.", "told Patricia to stop looking", "so does TalentStack's recruiting"], "notSaid": ["ninety-seven", "before the server did", "slow way", "You said you'd be methodical. You were"] },
 {
 "credits": true
 },

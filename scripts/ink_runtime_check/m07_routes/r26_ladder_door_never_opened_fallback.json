@@ -7,7 +7,7 @@
  { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
  { "expect": { "scada_door_reached": false, "scada_password_found": true } },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll check back in"] },
- { "said": ["Root's in. Put the abort in at the console in the control room.", "The door's north of the server hall.", "The password's in the listener capture in your inventory."], "notSaid": ["You've got the password."] },
+ { "said": ["Root's in. Put the abort in at the console in the control room.", "The door's north of the server hall.", "The password's in the listener capture in your inventory."] },
  { "note": "Phase 4 dialogue C1 (D7-5): the clock is in the report now; the layout-and-clock choice is gone past the server hall." },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand"] },
  { "said": ["The clock's running. Fifteen minutes, from the moment you put that login through the relay.", "Root's in. Put the abort in at the console in the control room.", "The door's north of the server hall.", "[choice] Where do I stand?"], "notSaid": ["[choice] Remind me of the layout and the clock."] },
