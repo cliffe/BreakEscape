@@ -1257,7 +1257,7 @@ HacktivityLabSheets. For the log:
 4. Rendered JSON: no eventMapping condition with `||` or `(`; every new task `status: active`;
    `name_the_mole` is `optional: true`; a grep finds no "maximum" in m08's player-visible text and none
    of the four narrator verdicts (P7).
-5. Browser playtest on the keyless server (:3001, `tools/playtest/new-game.rb`), Sonnet agent, using
+5. Browser playtest on the keyless server (:3001, `tools/playtest/new-game.rb`), test agent, using
    the playtest-scenario skill:
    1. Opening: cutscene playlist, then noir when it closes (X1). ATHENA names the kit and says
       "planning access" (P3, P7). The brief reads "the ones nobody could reach cost lives" (X9).
