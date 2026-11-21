@@ -41,6 +41,8 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 resolved, leftover privilege/MFA/log-rows minors were already fixed, two citation nits fixed. N1
 (append-only ids) stays as is (AC0, 2026-11-21). Plans branch training as T279; build go-ahead is
 D233 on the owner's page. Nothing running.
+D233 answered (2026-11-21): build only after CA0's waves (art/voice, wave 5 and the next) land;
+AC0 will say when. Until then, docs-only planning that touches no shared engine files.
 
 **NEWEST-8.** ROUND 3 SETTLED ACROSS ALL SEVEN PLANS. Skin R12 fixed
 `c04b2bf95` (generated `docs/REALISM_CATALOG_INDEX.md`, append-only ids, catalog task owns the
