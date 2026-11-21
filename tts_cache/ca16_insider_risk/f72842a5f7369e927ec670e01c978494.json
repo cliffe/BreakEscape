@@ -1,0 +1,14 @@
+{
+  "key": "f72842a5f7369e927ec670e01c978494",
+  "npc": "kit_darren_price",
+  "text": "Saw you clock that lookalike sign-in. The address gave it away, same as it always does.",
+  "delivery": "approving, dry",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:09:51Z"
+}
