@@ -375,6 +375,65 @@ module BreakEscape
       assert_select 'label.sprite-card.invalid', count: 0
     end
 
+    # ─── "Select your character" prompt (m12 of the m01 gate playtest) ───────
+
+    def prompt_game(valid_sprites)
+      Game.create!(
+        mission: break_escape_missions(:ceo_exfil),
+        player: @player,
+        scenario_data: { 'startRoom' => 'lobby', 'rooms' => {}, 'validSprites' => valid_sprites },
+        player_state: {}
+      )
+    end
+
+    test 'prompt is hidden when a valid choice for the mission is already saved' do
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+      assert_select 'p.selection-required', count: 0
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt shows when no character is saved' do
+      @preference.update_columns(selected_sprite: nil)
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+      assert_select 'p.config-prompt', text: /select your character before starting the mission/
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt shows when the saved choice is not valid for the mission' do
+      @preference.update_columns(selected_sprite: 'male_nerd_v2')
+      game = prompt_game(['female_*'])
+      get configuration_url(game_id: game.id)
+      assert_response :success
+      assert_select 'p.config-prompt', count: 1
+    ensure
+      game&.destroy
+    end
+
+    test 'prompt never shows without a game_id' do
+      @preference.update_columns(selected_sprite: nil)
+      get configuration_url
+      assert_response :success
+      assert_select 'p.config-prompt', count: 0
+    end
+
+    test 'prompt and selection notice carry no emoji' do
+      @preference.update_columns(selected_sprite: nil)
+      game = prompt_game(%w[female_hacker_hood])
+      get configuration_url(game_id: game.id)
+      assert_select 'p.config-prompt', count: 1
+      assert_no_match(/\u26A0/, response.body)
+    ensure
+      game&.destroy
+    end
+
     # ─── Available sprites constant ───────────────────────────────────────────
 
     test 'PlayerPreference::AVAILABLE_SPRITES offers only the v2 sprites' do

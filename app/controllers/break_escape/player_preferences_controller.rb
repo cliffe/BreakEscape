@@ -5,6 +5,8 @@ module BreakEscape
     before_action :set_scenario_context
     before_action :set_shell
 
+    helper_method :character_choice_needed?
+
     # GET /break_escape/configuration
     def show
       @avatar_menu = @player_preference.avatar_menu
@@ -66,6 +68,16 @@ module BreakEscape
     end
 
     private
+
+    # The "select your character" prompt belongs to the pre-game redirect: it shows
+    # only when the page was opened for a game and no valid choice for that game's
+    # mission is saved. A valid saved choice (starter substituted by the mission's
+    # first character included) means the player came here to change it, not to fix it.
+    def character_choice_needed?
+      return false if params[:game_id].blank?
+
+      !(@player_preference.sprite_selected? && @player_preference.sprite_valid_for_scenario?(@scenario))
+    end
 
     def set_player_preference
       # Signed out in the host (no current_user): same answer as any other engine page
