@@ -66,7 +66,7 @@ function personLine(person, test) {
     const clause = (person.clauses || []).find(c => holds(c, test) && hasText(textOf(c)));
     if (!clause) return null;
     const text = person.name ? `${person.name}: ${textOf(clause)}` : textOf(clause);
-    return withOutcome({ text, style: clause.style || person.style || 'entry' }, clause);
+    return withOutcome({ text, style: clause.style || person.style || 'entry' }, clause.outcome ? clause : person);
 }
 
 /** Carries a line's optional explicit `outcome` ("contained" or "active", read by the THREAT row). */
@@ -92,6 +92,8 @@ export function expandCredits(credits, test) {
                 }
             }
             if (body.length === 0) continue;
+            // a section's own outcome reaches every line that sets none
+            for (const line of body) if (!line.outcome) withOutcome(line, item);
             if (hasText(item.section)) {
                 out.push({ text: item.section, style: item.headerStyle || 'section-header' });
             }

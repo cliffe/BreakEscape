@@ -164,9 +164,13 @@ export function creditsStatus(statusText, themeStatus) {
     return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
 }
 
-const THREAT_BAD_WORDS = /\b(FAILED|FAILURE|COMPROMISED)\b/i;
-const THREAT_NEGATED = /\b(NOT|NEVER|NO)\s+(FAILED|FAILURE|COMPROMISED)\b/gi;
-const THREAT_NOT_CONTAINED = /\bNOT\s+CONTAINED\b/i;
+const THREAT_BAD = 'FAILED|FAILURES?|COMPROMISED';
+const THREAT_BAD_WORDS = new RegExp(`\\b(?:${THREAT_BAD})\\b`, 'i');
+// A negator, then at most one word ("NO SYSTEMS", "NOT YET", "NOT A"), then a bad word.
+// "NON-" and "UN-" prefixes count; the separator may be a space or a hyphen.
+const THREAT_NEGATORS = 'NOT|NEVER|NO|NOTHING|NOBODY|NONE|NON|UN';
+const THREAT_NEGATED = new RegExp(`\\b(?:${THREAT_NEGATORS})\\b[\\s-]+(?:(?!${THREAT_BAD})[A-Z]+\\s+)?(?:${THREAT_BAD})\\b`, 'gi');
+const THREAT_NOT_CONTAINED = /\b(?:(?:NOT|NEVER)\s+|UN-?)CONTAINED\b/i;
 const THREAT_RED = new Set(['ACTIVE', 'CRITICAL', 'BREACH']);
 const THREAT_GREEN = new Set(['CONTAINED', 'SECURE', 'CLEAR']);
 const THREAT_TONES = { red: 'bad', green: 'good', cyan: 'custom' };
