@@ -657,6 +657,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         lockoutSeconds: options.lockoutSeconds || 0, // opt-in: attempts persist across reopening, then a lockout
         postitNote: options.postitNote || '',
         showPostit: options.showPostit || false,
+        submitText: options.submitText || '', // a note-only post-it view: a submit shows this line, no server check
         lockable: lockable,
         type: type, // Pass type for server validation
         onRefused: options.onRefused, // door_unlock_failed for a wrong password at a door
