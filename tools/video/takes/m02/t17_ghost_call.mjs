@@ -27,7 +27,8 @@ export default async (page, bridge, mark) => {
     else await sleep(150);
   }
   if (!stopped) throw new Error('stop line never reached; last=' + lastSeen);
-  await sleep(4200);
+  // The Money line's clip is 5.38 s (2026-11-20); 4.2 s cut it off mid-word. Hold past the clip and the FX tail.
+  await sleep(6500);
   mark('hold-end');
   for (let i = 0; i < 4 && (await bridge.getState()).activeMinigame; i++) { await bridge.minigame.close().catch(() => {}); await sleep(600); }
   mark('closed');

@@ -55,3 +55,9 @@ Edit `tools/video/edits/m02_trailer60.json`, id `m02_trailer60_v3`, 36 shots, 60
 - Voice levels measured in the render: HaX -12.3, Bernie -12.5, Val -12.6 (gain -2 -> +1), Ghost -13.3 (gain 0 -> +3.5) LUFS.
 - Final: `$HOME/video-takes-local/m02/renders/m02_trailer60_v3_16x9.mp4`, 60.000 s, -13.83 LUFS, TP -1.49 dBTP, .srt 4 cues (HaX, Bernie, Val, Ghost). Frame strips checked over 10.5-20, 27-37 and 44-54 s: Bernie line into the ward walk, no wall bump, Val approach then line, Ghost line ends before the bumper. Not watched in full.
 - Review page tab m02 v3, feedback doc `feedback/m02_trailer_v3`.
+
+## v3 feedback (2026-11-20)
+Verdict: revise. "The video chat scene with Ghost his dialog is still cut off before he finishes what he is saying, put the full 'money is simply a means to hasten your inevitable end' line -- his voice FX should be deeper, add an octave maybe? It currently cuts off early." / "Generally the lip sync of all the characters seems a little off, but it's hard to tell if it's just the actual code or a video sync issue."
+- Cause of the cut-off: the take, not the edit. The Money clip (tts_cache m02 ca91a93f...) is 5.38 s; t17_ghost_call.mjs held 4.2 s after the line appeared, so the take's audio stops dead at 22.58 s mid-word. Hold raised to 6.5 s; t17 to be re-recorded after the voice change.
+- Deeper voice: a game change (new FX preset for Ghost; the shared 'voice-distortion' preset is also used by m07 and lab_tesseract_trials). Spec sent to AC0 for a game session.
+- Lip sync: measurement under way (`docs/video/logs/m02_lipsync_check.md`).
