@@ -1748,3 +1748,162 @@ test('wave 5: replacement for the suspend case: the colleague has no suspend or 
     assert.ok(pm.indexOf(wk) > pm.indexOf(susp[0]), `${name}: the walk comes after the suspend`);
   });
 });
+
+test('wave 5: kiosk: the last variant is the finished one, every earlier one reads !defend_complete; stepAway first key; host release and step-away mappings', () => {
+  w5Each((name, w, sc) => {
+    const ov = w3Kiosk(sc).observationVariants || [];
+    assert.equal(ov.length, w.ep === 'ca14' ? 2 : 1, `${name}: kiosk variant count`);
+    assert.equal(ov[ov.length - 1].condition, KIOSK_FINISHED, `${name}: the last variant is the finished condition`);
+    assert.ok(typeof ov[ov.length - 1].value === 'string' && ov[ov.length - 1].value.length > 0, `${name}: kiosk finished text`);
+    for (const v of ov.slice(0, -1)) assert.ok(/!globalVars\.episode_\w+_defend_complete/.test(v.condition), `${name}: earlier variant reads !defend_complete (${v.condition})`);
+    const sa = sc.social.awarenessEpisode.strings;
+    assert.equal(sa.stepAway, 'Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.', `${name}: stepAway text`);
+    assert.equal(Object.keys(sa)[0], 'stepAway', `${name}: stepAway is the first strings key`);
+    const host = hostOf(sc);
+    assert.ok(w3Maps(host).some((m) => m.eventPattern === 'episode_step_away' && m.condition === 'globalVars.kit_defend_done === true' &&
+      JSON.stringify(m.setGlobal) === JSON.stringify({ [`kit_${w.ep}_out`]: true })), `${name}: step-away mapping sets only the out global`);
+    const release = (cond) => w3Maps(host).some((m) => /^global_variable_changed:episode_e\d+_\w+_state$/.test(m.eventPattern) &&
+      m.condition === cond && JSON.stringify(m.setGlobal) === JSON.stringify({ kit_quiet: false }));
+    assert.ok(release("data.value.done.includes('debrief')") && release('data.value.debriefSeen === true'), `${name}: quiet release on debrief done and debriefSeen`);
+  });
+});
+
+test('wave 5: PC: three mirrored literal variant entries (moved, right answer, out), base pc1_locked, the exact affordance', () => {
+  w5Each((name, w, sc) => {
+    const pc = w3Obj(sc, `kit_${w.ep}_pc`);
+    assert.ok(pc, `${name}: kit_${w.ep}_pc exists`);
+    assert.deepEqual([pc.type, pc.sprite, pc.workstation, pc.owner, pc.lockChance, pc.interactable, pc.takeable, pc.requiresItem, pc.triggerOnInteract],
+      ['pc', 'pc1_locked', true, w.colleague, 0, true, false, `kit_${w.ep}_gate_item`, []], `${name}: PC flags`);
+    assert.equal(pc.name, w.pcName, `${name}: PC name`);
+    assert.deepEqual(pc.affordance, { useFrom: { dx: 0, dy: -1 } }, `${name}: affordance is exactly useFrom (no satisfies)`);
+    assert.ok(!pc.observationVariants, `${name}: no observationVariants`);
+    assert.deepEqual(pc.position, w.pcPos, `${name}: PC position`);
+    assert.equal(pc.requiresItemHint, `${w.pcName}. It's ${w.pron} to sign in to.`, `${name}: base hint`);
+    const conds = [`globalVars.kit_${w.ep}_moved === true`, `globalVars.${w.choice} === '${w.right}'`, `globalVars.kit_${w.ep}_out === true`];
+    assert.deepEqual((pc.spriteVariants || []).map((v) => v.condition), conds, `${name}: spriteVariants conditions, in order`);
+    assert.deepEqual((pc.spriteVariants || []).map((v) => v.value), [w.movedSprite, 'pc1', 'pc1'], `${name}: spriteVariants values`);
+    assert.deepEqual((pc.requiresItemHintVariants || []).map((v) => v.condition), conds, `${name}: hint variants mirror the sprite variants`);
+    for (const v of pc.requiresItemHintVariants) assert.ok(typeof v.value === 'string' && v.value.startsWith(w.pcName), `${name}: hint variant text names the PC`);
+    assert.equal(w.movedSprite, w.ep === 'ca02' ? 'pc1_locked_isolated' : 'pc1', `${name}: moved sprite`);
+  });
+});
+
+test('wave 5: homes and spawn: the colleague sits at the PC id and spawns on the chair; the speaker keeps a coordinate home', () => {
+  w5Each((name, w, sc) => {
+    const col = w3Npc(sc, w.colleague);
+    assert.equal(col.needsHome, `kit_${w.ep}_pc`, `${name}: the colleague home is the PC id`);
+    assert.deepEqual(col.position, w.spawn, `${name}: the colleague spawn`);
+    const home = w3Npc(sc, w.partner).needsHome;
+    assert.ok(home === undefined || typeof home === 'object', `${name}: the speaker home is a coordinate, not an id`);
+  });
+});
+
+test('wave 5: Delphine (ca14): position and needsHome both (7.0, 4.5), and row 2b targets the same', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const sc = readShell(name), d = w3Npc(sc, 'kit_delphine_arvanitis');
+  assert.deepEqual([d.position.x, d.position.y], [7, 4.5], 'position');
+  assert.deepEqual([d.needsHome.x, d.needsHome.y, d.needsHome.room], [7, 4.5, 'training_room'], 'needsHome');
+  const walk = w3Maps(d).find((m) => m.patrolOverride);
+  assert.deepEqual(walk.patrolOverride.targetTile, { x: 7, y: 4.5 }, 'row 2b target equals the home');
+});
+
+test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs seen, unseen close is last, t_unseen, globals, option gates', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const w = W5[name], sc = readShell(name), c = w5Conds(w);
+  const board = w3Obj(sc, 'kit_ca14_board');
+  const seenMaps = w3Maps(hostOf(sc)).filter((m) => m.eventPattern === 'object_interacted' && m.setGlobal && m.setGlobal.kit_ca14_seen === true);
+  assert.deepEqual(seenMaps.map((m) => m.condition), [`data.objectName === "Lorna's PC" && ${c.O} && ${c.nD}`, `data.objectName === ${JSON.stringify(board.name)} && ${c.O} && ${c.nD}`], 'the two seen mappings');
+  assert.ok(['Project board', 'Flip chart'].includes(board.name), 'the board is the Project board (or the step 0 fallback Flip chart)');
+  assert.ok(seenMaps.every((m) => m.onceOnly === true && JSON.stringify(m.setGlobal) === '{"kit_ca14_seen":true}'), 'seen mappings are onceOnly and set only seen');
+  const lm = w5CM(sc, w), last = lm[lm.length - 1];
+  assert.deepEqual([last.eventPattern, last.condition, last.onceOnly, last.setGlobal], ['conversation_closed:kit_lorna_easton', `globalVars.${w.choice} === 'asked' && ${c.O} && globalVars.kit_ca14_seen !== true`, true, { kit_ca14_closed_unseen: true }], 'the unseen close is last in Lorna\'s list');
+  const tu = (sc.timers || []).find((t) => t.id === 'kit_ca14_t_unseen');
+  assert.deepEqual([tu.startOnGlobal, tu.delayMs, tu.condition, tu.setGlobal], ['kit_ca14_closed_unseen', 20000, `globalVars.${w.choice} === 'asked' && globalVars.kit_ca14_seen !== true`, { [w.choice]: 'silent' }], 't_unseen');
+  assert.ok(sc.globalVariables.kit_ca14_seen === false && sc.globalVariables.kit_ca14_closed_unseen === false, 'seen and closed_unseen declared false');
+  const body = w5Knot(w5Ink(w.stub), w.knot);
+  const blocks = body.split(/\n(?=\+ )/);
+  assert.ok(blocks.some((b) => b.startsWith('+ {kit_ca14_seen} [') && new RegExp(`~ ${w.choice} = "crop"`).test(b)), 'the crop option is gated {kit_ca14_seen}');
+  const look = blocks.find((b) => b.startsWith('+ {not kit_ca14_seen} [Let me have a look first.]'));
+  assert.ok(look && !/~ /.test(look) && look.includes('#exit_conversation') && look.includes('-> DONE'), 'the look-first option is gated, writes nothing and exits');
+  assert.ok(!w5Lines(body)[3].includes('"asked"'), 'the value guard does not divert on asked');
+});
+
+test('wave 5: Graham, Niamh and Darren specifics: Graham\'s two-term guard, Niamh\'s stop branch and VAR, Darren\'s plain guard', () => {
+  if ('ca13_ai_assistant' in W5) {
+    const l = w5Lines(w5Knot(w5Ink('graham_whitfield'), 'ca13_send'))[0];
+    assert.equal(l, '{ kit_ca13_moved || (kit_ca13_send_choice == "ring" && not kit_key_caught):', 'Graham: the first guard has both terms');
+  }
+  if ('ca05_signin_pages' in W5) {
+    const l = w5Lines(w5Knot(w5Ink('darren_price'), 'ca05_prompt'))[0];
+    assert.equal(l.trim(), '{ kit_ca05_moved:', 'Darren: the first guard is the plain moved guard');
+    const ink = readFileSync(join(scenarios, 'ca05_signin_pages', 'ink', 'niamh_doherty.ink'), 'utf8');
+    assert.ok(/^VAR kit_ca05_prompt_choice = ""\s*$/m.test(ink), 'Niamh: declares VAR kit_ca05_prompt_choice = ""');
+    const stop = ink.match(/- kit_ca05_prompt_choice == "stop":\n([\s\S]*?)(?=\n\s*- else:)/);
+    const els = ink.match(/- else:\n([\s\S]*?)\n\s*\}/);
+    assert.ok(stop && els, 'Niamh: stop and else branches');
+    const last = (s) => w5Lines(s).pop().trim();
+    assert.equal(last(stop[1]), last(els[1]), 'Niamh: the stop branch plays the habit line, the last line of the else pair');
+  }
+});
+
+test('wave 5: host and speaker inks: moved VAR, the s3.5 recap branches, and the speakers\' moved guards', () => {
+  const BR = {
+    ca13: ['- kit_key_caught && not kit_ca13_moved:', '- not kit_key_caught && not kit_ca13_moved && kit_ca13_send_choice != "ring":'],
+    ca14: ['- kit_key_caught && not kit_ca14_moved:', '- not kit_key_caught:'],
+    ca05: ['- kit_key_caught && not kit_ca05_moved:', '- kit_key_caught:', '- kit_ca05_prompt_choice == "stop":', '- else:'],
+    ca02: ['- kit_key_caught && not kit_ca02_moved:', '- kit_key_caught:', '- kit_ca02_cv_choice == "report":', '- else:'],
+  };
+  w5Each((name, w) => {
+    const ep = w.ep;
+    const hink = readFileSync(join(scenarios, name, 'ink', `${w.hostId}.ink`), 'utf8');
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(hink), `${name}: host ink declares kit_${ep}_moved`);
+    if (ep !== 'ca14') assert.ok(new RegExp(`^VAR ${w.choice} = ""`, 'm').test(hink), `${name}: host ink declares ${w.choice}`);
+    let at = -1;
+    for (const b of BR[ep]) { const i = hink.indexOf(b, at + 1); assert.ok(i > at, `${name}: host branch "${b}" in order`); at = i; }
+    // the habit line follows the block (ca13, ca14) or sits in each branch (ca05, ca02)
+    if (ep === 'ca13' || ep === 'ca14') {
+      const after = hink.slice(hink.indexOf('}', at)).split('\n').slice(1).find((l) => l.trim());
+      assert.ok(/^[A-Z][A-Za-z ]+: /.test(after.trim()), `${name}: a spoken (habit) line follows the block, not another branch`);
+    }
+    // speaker stubs
+    const p = w5Ink(w.partnerStub), ck = w5Ink(w.stub);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved = false\\s*$`, 'm').test(p), `${name}: ${w.partnerStub} declares VAR kit_${ep}_moved = false`);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(ck), `${name}: ${w.stub} declares VAR kit_${ep}_moved`);
+    const pl = w5Lines(w5Knot(p, ep));
+    assert.deepEqual([pl[0].trim(), pl[1].trim(), pl[2].trim()], [`{ ${w.partnerGuard}:`, '-> bye', '}'], `${name}: ${w.partnerStub}'s ${ep} knot opens with its moved guard`);
+    if (ep === 'ca05') assert.ok(!/kit_ca05_moved/.test(w5Knot(p, 'ca10') || ''), `${name}: Anjali's ca10 knot is unchanged`);
+  });
+});
+
+test('wave 5: board: kit_ca14_board claims hce_art_canvas with no position (fallback: the flip chart placement)', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const b = w3Obj(readShell(name), 'kit_ca14_board');
+  assert.ok(b && b.interactable === true && b.takeable === false && typeof b.observations === 'string', 'the board is a text object');
+  if (b.type === 'hce_art_canvas') assert.ok(b.sprite === 'm10_map_board1' && b.position === undefined, 'the board claims the canvas: no position');
+  else assert.ok(b.sprite === 'flip_chart1' && b.position && b.position.x === 5.75 && b.position.y === 2.2, 'fallback: the flip chart at (5.75, 2.2)');
+});
+
+test('wave 5: preloads and dims: every base sprite and variant value is preloaded and exists; pc1_locked_isolated 28x23, m10_map_board1 40x28', () => {
+  const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+  assert.deepEqual(pngSize('pc1_locked_isolated'), [28, 23], 'pc1_locked_isolated is 28x23');
+  assert.deepEqual(pngSize('m10_map_board1'), [40, 28], 'm10_map_board1 is 40x28');
+  for (const k of ['pc1', 'pc1_locked', 'pc1_locked_isolated', 'm10_map_board1']) assert.ok(game.includes(`this.load.image('${k}', 'objects/${k}.png')`), `${k} preloaded`);
+  w5Each((name, w, sc) => {
+    const keys = new Set();
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith(`kit_${w.ep}_`))) {
+      if (o.sprite) keys.add(o.sprite);
+      for (const v of o.spriteVariants || []) keys.add(v.value);
+    }
+    for (const k of ['pc1', 'pc1_locked']) assert.ok(keys.has(k), `${name}: uses ${k}`);
+    for (const k of keys) {
+      assert.ok(game.includes(`this.load.image('${k}', 'objects/${k}.png')`), `${name}: ${k} preloaded`);
+      assert.ok(existsSync(join(root, 'public/break_escape/assets/objects', `${k}.png`)), `${name}: ${k}.png exists`);
+    }
+    assert.deepEqual(pngSize('pc1_locked'), pngSize('pc1'), `${name}: pc1_locked is pc1's size`);
+    if (w.ep === 'ca02') { assert.ok(keys.has('pc1_locked_isolated'), `${name}: uses pc1_locked_isolated`); assert.deepEqual(pngSize('pc1_locked_isolated'), [28, 23]); }
+    if (w.ep === 'ca14') { assert.ok(keys.has('m10_map_board1') || keys.has('flip_chart1'), `${name}: the board sprite`); if (keys.has('m10_map_board1')) assert.deepEqual(pngSize('m10_map_board1'), [40, 28]); }
+  });
+});
