@@ -610,8 +610,9 @@ test('untitled gameDisplay: the body starts below the X reach and clear of it', 
     const dialog = css.match(/\n\.game-confirm-dialog \{[^}]*\}/)[0];
     const topPad = Number(dialog.match(/padding:\s*(\d+)px/)[1]);
     assert.ok(topPad + num(blk[0], 'margin-top') >= reachEnd, 'body top ' + (topPad + num(blk[0], 'margin-top')) + ' is at or below the reach end ' + reachEnd);
+    assert.ok(topPad + num(blk[0], 'margin-top') <= reachEnd + 2, 'and no more than 2px of slack, so the band stays tight');
     assert.ok(num(blk[0], 'padding-right') >= 40, 'text clears the X on the right');
     const hud = readFileSync(join(js, '../css/hud.css'), 'utf8');
     const short = hud.match(/html \.game-display-dialog \.game-modal-close \+ \.game-display-body \{ margin-top: (\d+)px; \}/);
-    assert.ok(short !== null && 14 + Number(short[1]) >= reachEnd, 'short-viewport padding 14 plus margin clears the reach end');
+    assert.ok(short !== null && 14 + Number(short[1]) >= reachEnd && 14 + Number(short[1]) <= reachEnd + 2, 'short-viewport padding 14 plus margin clears the reach end with at most 2px slack');
 });
