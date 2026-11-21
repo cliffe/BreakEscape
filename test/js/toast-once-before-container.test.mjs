@@ -117,12 +117,15 @@ test('callers set the expectation before the toast', () => {
     // A note taken from a reopening container is said in the reopened window (no toast);
     // the routes that reopen nothing clear the expectation before their toast, and the
     // no-helper fallback holds its toast for the reopened window.
-    const noted = container.indexOf('noteNotice = window.noteAddedText?.(containerState.itemToTake.name)');
+    const noted = container.indexOf('const repeatTake = noteWasRepeat(containerState)');
     assert.ok(noted > 0, 'the post-reader note notice is built from the taken item');
     const block = container.slice(noted, container.indexOf('if (!reopen) return;', noted));
-    const clearAt = block.indexOf('window.clearExpectedPanel?.()');
-    const toastAt = block.indexOf('window.announceNoteAdded?.(containerState.itemToTake.name)');
-    assert.ok(clearAt > 0 && toastAt > clearAt, 'a route that reopens nothing clears the expectation before its toast');
+    // The "reopens nothing" branch itself (not the repeat-take branch above it, which also clears)
+    const noReopen = block.indexOf('} else if (!reopen || lastNoteClosesToWorld');
+    assert.ok(noReopen > 0, 'the reopens-nothing branch is found');
+    const clearAt = block.indexOf('window.clearExpectedPanel?.()', noReopen);
+    const toastAt = block.indexOf('window.announceNoteAdded?.(containerState.itemToTake.name)', noReopen);
+    assert.ok(clearAt > noReopen && toastAt > clearAt && clearAt < block.indexOf('} else if (noteNotice)', noReopen), 'a route that reopens nothing clears the expectation before its toast');
     const fallback = block.slice(block.lastIndexOf('} else {'));
     assert.ok(fallback.indexOf('expectPanelWithin?.(1000)') > 0 && fallback.indexOf('expectPanelWithin') < fallback.indexOf('announceNoteAdded'), 'the fallback toast waits for the reopened window');
     assert.ok(!/gameAlert\(`\$\{containerState\.itemToTake\.name\} has been noted`/.test(container), 'the old "has been noted" toast is gone');

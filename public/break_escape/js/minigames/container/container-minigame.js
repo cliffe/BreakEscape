@@ -353,6 +353,29 @@ export function scrollingAncestor(el) {
 }
 
 /**
+ * The Notepad as it stands before a note's reader opens: how many notes it holds. Compared
+ * afterwards by noteWasRepeat, so "already held" is decided from what the reader actually
+ * did (it adds the resolved textVariants text, not the raw item.text), not predicted.
+ */
+export function notepadCount() {
+    const notes = window.gameState?.notes;
+    return Array.isArray(notes) ? notes.length : null;
+}
+
+/**
+ * Whether the reader added nothing for the taken note: the Notepad has the same count as
+ * before it opened and holds a note with the item's title (addNote returned the existing
+ * one). A reader that never ran (no matching note) is not a repeat, so it is announced.
+ */
+export function noteWasRepeat(containerState) {
+    const notes = window.gameState?.notes;
+    const before = containerState?.notesBefore;
+    if (!Array.isArray(notes) || !Number.isFinite(before) || notes.length !== before) return false;
+    const title = containerState.itemToTake?.name || 'Note';
+    return notes.some(n => n && n.title === title);
+}
+
+/**
  * Whether a note read on pickup was the last thing in an ordinary container, so closing the
  * note ends in the world instead of an empty list. Desktops, shares, folders, sign-in PCs,
  * NPC containers and takeable containers (the Take Container button) keep their own return.
@@ -2454,6 +2477,9 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
+                // The Notepad's size before the reader opens (opening it adds the note): if it
+                // is unchanged afterwards the note was already held, and nothing is announced
+                notesBefore: notepadCount(),
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
@@ -2737,8 +2763,14 @@ export class ContainerMinigame extends MinigameScene {
             const noteText = /^notes\d*$/.test(item.type) ? (item.text || item.observations || '') : '';
             if (noteText && window.addNote) {
                 const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
-                window.addNote(item.name || 'Note', body, !!item.important);
-                this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
+                const added = window.addNote(item.name || 'Note', body, !!item.important);
+                // addNote returns the existing note (marked read) for a duplicate: no reader
+                // opens here, so the window says it is already held (no toast)
+                if (added && added.read === true) {
+                    this.showMessage(window.noteAlreadyText?.() || 'Already in your notes.', 'success');
+                } else {
+                    this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
+                }
             } else {
                 this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
             }
@@ -2966,8 +2998,12 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // its window (a toast would be held until it closed: m09 "no confirmation").
             // A route that reopens nothing (the last note, a blocked reader, a session that
             // ended) has no window to carry it, so it gets the toast, shown at once.
-            noteNotice = window.noteAddedText?.(containerState.itemToTake.name) || '';
-            if (!reopen || lastNoteClosesToWorld(containerState) || pcSessionEnded(containerState)) {
+            // A note already in the Notepad is not announced again, in the window or as a toast
+            const repeatTake = noteWasRepeat(containerState);
+            noteNotice = repeatTake ? '' : (window.noteAddedText?.(containerState.itemToTake.name) || '');
+            if (repeatTake) {
+                window.clearExpectedPanel?.();
+            } else if (!reopen || lastNoteClosesToWorld(containerState) || pcSessionEnded(containerState)) {
                 noteNotice = '';
                 window.clearExpectedPanel?.();
                 window.announceNoteAdded?.(containerState.itemToTake.name);

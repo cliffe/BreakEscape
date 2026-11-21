@@ -615,6 +615,11 @@ export function noteAddedText(name) {
     return `Added "${name || 'Note'}" to your notes.`;
 }
 
+/** The in-window message for taking a note the Notepad already holds (an unreadable one: no reader opens). */
+export function noteAlreadyText() {
+    return 'Already in your notes.';
+}
+
 /**
  * The toast for a note that went into the Notepad, used by every route that reopens no
  * window (a note read in the world, a reward note, the last note of a container).
@@ -1565,6 +1570,7 @@ window.addToInventory = addToInventory;
 window.announcePickup = announcePickup;
 window.announceNoteAdded = announceNoteAdded;
 window.noteAddedText = noteAddedText;
+window.noteAlreadyText = noteAlreadyText;
 window.removeFromInventory = removeFromInventory;
 window.addNotepadToInventory = addNotepadToInventory;
 window.createItemIdentifier = createItemIdentifier;

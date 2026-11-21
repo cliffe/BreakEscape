@@ -2664,13 +2664,12 @@ export async function create() {
 
     // [Phase 5] Initialize scenario timer dispatcher (fires timers and dispatches events)
     if (gameScenario?.timers && gameScenario.timers.length > 0) {
-        // Resumes from its own saved elapsed time (normally the game clock's); a new game
-        // starts with the game clock
+        // Always counts from the game clock's start, so every clock reader (HUD timers,
+        // mail, command board, needs, ransom note) agrees however long this page took to
+        // load. The saved block only carries fired, cancelled and started state. With no
+        // game clock the dispatcher falls back to its own saved elapsed time.
         const savedTimers = gameScenario.savedScenarioClock?.timers || null;
-        window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(gameScenario, {
-            startTime: Number.isFinite(savedTimers?.elapsedMs) ? undefined : window.gameClock?.startTime,
-            saved: savedTimers
-        });
+        window.scenarioTimerDispatcher = ScenarioTimerDispatcher.forGame(gameScenario, window.gameClock, savedTimers, gameScenario.savedScenarioClock?.elapsedMs);
         console.log(`⏱️ Scenario timer dispatcher initialized`);
     }
 

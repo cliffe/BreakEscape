@@ -92,16 +92,17 @@ test('timers resume from the saved elapsed time instead of restarting at zero', 
     assert.deepEqual(saved.fired, ['bed4_1']);
     assert.ok(saved.started.bed2 >= 0 && saved.started.bed2 < 1000);
 
-    // Reload (the page was closed for a while): game time carries on from the save
+    // Reload (the page was closed for a while): game time carries on from the save. The
+    // clock restores from the same save (state-sync exports both together), so the two agree
     window.gameState.globalVariables.patient_bed4_state = 'distressed';
-    const clock = new GameClock({ saved: { elapsedMs: saved.elapsedMs + 60000 } });   // a minute later
+    const clock = new GameClock({ saved: { elapsedMs: saved.elapsedMs } });
     const after = new ScenarioTimerDispatcher(sisTimers(), { startTime: clock.startTime, saved: { ...saved, started: { bed2: 60000 } } });
     const now = Date.now();
-    assert.ok(Math.abs(after.exportState(now).elapsedMs - 1464000) < 1000);
+    assert.ok(Math.abs(after.exportState(now).elapsedMs - 1404000) < 1000);
 
     const ico = after.timers.find(t => t.id === 'ico');
     const icoLeft = ico.delayMs - (now - after.getTimerStartTime(ico));
-    assert.ok(Math.abs(icoLeft - 1236000) < 1000, `ICO clock resumes at 20:36, not 45:00 (got ${icoLeft})`);
+    assert.ok(Math.abs(icoLeft - 1296000) < 1000, `ICO clock resumes at 21:36, not 45:00 (got ${icoLeft})`);
     assert.ok(after.isDone('bed4_1'), 'a fired timer stays fired');
 
     // bed2 had run 60 s before the reload: it resumes with 120 s left
