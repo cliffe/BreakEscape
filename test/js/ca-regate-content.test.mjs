@@ -32,3 +32,10 @@ test('ca10: the supplier is Fernside everywhere, no Hatherby', () => {
   const kit = readFileSync(join(root, 'planning_notes/phishing_and_social_engineering/awareness/office_kits/quayholt_insurance.json'), 'utf8');
   assert.ok(!/Hatherby/.test(kit));
 });
+
+test('ca02: the careers page lists the HGV driver role the genuine application names', () => {
+  const t = erb('ca02_cv_lures');
+  assert.match(t, /"id": "blk_vacancy_driver"/);
+  assert.match(t, /Also hiring: HGV driver \(Class 1\)/);
+  assert.match(t, /the Class 1 driver job on your website/);
+});
