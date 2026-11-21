@@ -1,7 +1,7 @@
 {
-  "key": "2ff72a77c89ef4d154264321f7c005f7",
+  "key": "09961d1f5e04cf5957dbb9f1e716e660",
   "npc": "zainab_hussain",
-  "text": "The password went in, so the account was used from another town and had to be reset and traced.",
+  "text": "That page only wants one thing, your work password. Whoever put it up could sign in as you from anywhere.",
   "voice": "Achernar",
   "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca20_remote_and_mobile_working_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:54:51Z"
+  "recorded_at": "2026-11-21T20:47:45Z"
 }
