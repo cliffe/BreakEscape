@@ -9,6 +9,10 @@
 // The kit never touches them. Changing a pin needs the owner's yes: do not refresh the fixture to make
 // a failing run pass.
 //
+// Wave 2 part (P-TEST): layer 0 and layer 1 per row, host_said, keyMessage (D13), the pool exemption and the
+// ca00 convention form (WAVE2_BUILD.md 1.3, 2.8). Every row-driven case reads episodes.json, so a shell the
+// wave 2 integration has not added a row for is simply not visited. There is no wave marker on a row.
+//
 // Run with: node --test test/js/social-awareness-office-kit.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -227,6 +231,13 @@ test('kit: each kit row matches its shell (stepAway, ambient ids, kit_ep)', () =
   }
 });
 
+// A kit with `pool: null` and a non-empty `poolExempt` has no pool and no chatter source (D12 v4); readKit is defined below
+function kitPoolExempt(row) {
+  if (!row) return false;
+  const kit = JSON.parse(readFileSync(join(AW, 'office_kits', `${row.company}.json`), 'utf8'));
+  return kit.pool === null && typeof kit.poolExempt === 'string' && kit.poolExempt.trim().length > 0;
+}
+
 test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell that carries a kit', () => {
   const names = kitShellNames();
   assert.ok(names.includes('test_ca_office_kit'));
@@ -236,6 +247,9 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
     const sc = readShell(name);
     const tr = sc.rooms.training_room;
     const where = (m) => `${name}: ${m}`;
+    const row = kitRows.find((r) => r.id === name);
+    const convention = row?.convention === true;           // ca00: no triage set, no kit mappings (1.3)
+    const poolExempt = convention || kitPoolExempt(row);  // no pool, so no capacity-2 source (D12, 1.3)
     // pools: object form under any gated key, kit_ pools always gated on kit_quiet:false
     for (const [key, pool] of Object.entries(sc.chatter || {})) {
       if (key.startsWith('kit_')) assert.ok(JSON.stringify(pool.requireGlobal) === gate, where(`top-level pool ${key}`));
@@ -247,12 +261,14 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
         if (key.startsWith('kit_')) assert.ok(JSON.stringify(pool.requireGlobal) === gate, where(`${n.id} pool ${key} gate`));
         for (const l of pool.lines) assert.ok(l.length <= 40 && !/[{}]/.test(l), where(`${n.id} line "${l}"`));
       }
-      assert.ok(n.currentKnot === 'start' && n.storyPath.startsWith('scenarios/_office_kit/ink/'), where(`${n.id} stub`));
+      assert.ok(n.currentKnot === (convention ? row.stub : 'start') && n.storyPath.startsWith('scenarios/_office_kit/ink/'), where(`${n.id} stub`));
       assert.ok(existsSync(join(root, n.storyPath)), where(`${n.id} storyPath exists`));
     }
     // the pool is spoken through the coffee topic, capacity 2
-    const coffee = tr.objects.find((o) => o.affordance && o.affordance.chatter);
-    assert.ok(coffee && coffee.affordance.chatter.startsWith('kit_') && coffee.affordance.capacity === 2, where('coffee topic, capacity 2'));
+    if (!poolExempt) {
+      const coffee = tr.objects.find((o) => o.affordance && o.affordance.chatter);
+      assert.ok(coffee && coffee.affordance.chatter.startsWith('kit_') && coffee.affordance.capacity === 2, where('coffee topic, capacity 2'));
+    }
     assert.ok(sc.npcThoughts === false, where('npcThoughts is a top-level false'));
     // mappings: no ||, kit writes only, barks gated, both quiet releases with stepAway
     const maps = (hostOf(sc).eventMappings || []).filter(isKitMapping);
@@ -262,7 +278,8 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
       if (m.bark && name !== 'test_ca_office_kit') assert.ok(/kit_defend_done|kit_[a-z0-9]+_out/.test(m.condition || ''), where('a bark is gated'));
       if (m.eventPattern.endsWith('_state')) assert.ok(m.onceOnly === true && Object.keys(m.setGlobal).every((k) => k.startsWith('kit_')), where('state mappings set kit_ only, once'));
     }
-    assert.ok(maps.some((m) => m.setGlobal && m.setGlobal.kit_defend_done === true), where('sets kit_defend_done'));
+    if (convention) assert.ok(maps.length === 0, where('a convention shell carries no kit host mapping'));
+    else assert.ok(maps.some((m) => m.setGlobal && m.setGlobal.kit_defend_done === true), where('sets kit_defend_done'));
     if (sc.social.awarenessEpisode.stepAway === true) {
       const releases = maps.filter((m) => m.setGlobal && m.setGlobal.kit_quiet === false).map((m) => m.condition);
       assert.ok(releases.includes("data.value.done.includes('debrief')"), where('debrief release'));
@@ -553,4 +570,266 @@ test('every mapping targetKnot in every kit shell names a knot in its NPC ink', 
     }
   }
   assert.ok(checked >= 2, 'targetKnot mappings found (ca12 has ca12_screen and ca12_door)');
+});
+
+// ---- wave 2 (P-TEST): layers 0 and 1, host_said, keyMessage, the pool exemption, the ca00 convention ------
+// Row-driven: a shell with no row in episodes.json is not visited, so each case grows as the rows land.
+// Fixtures (test_ca_office_kit) are hand-built probes and are left out of the layer and keyMessage cases.
+const courseRows = kitRows.filter((r) => !r.fixture);
+const FULL_TIERS = ['T', 'O', 'E'];
+const strOf = (sc) => JSON.stringify(sc.social.awarenessEpisode.strings) + JSON.stringify(sc.social.awarenessEpisode.debrief);
+const epDir = (ep) => `e${Number(ep.slice(2))}`;
+const fragmentPanel = (ep) => {
+  const f = join(AW, epDir(ep), 'defend.json');
+  return existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')).awarenessEpisode.strings.conceptPanel : null;
+};
+const words = (t) => t.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+// true when `a` and `b` share a run of `n` consecutive words
+const sharesRun = (a, b, n = 8) => {
+  const wa = words(a), grams = new Set();
+  for (let i = 0; i + n <= wa.length; i++) grams.add(wa.slice(i, i + n).join(' '));
+  const wb = words(b);
+  for (let i = 0; i + n <= wb.length; i++) if (grams.has(wb.slice(i, i + n).join(' '))) return true;
+  return false;
+};
+
+test('layer 0: every full row with an attack half has "To a real attacker" in strings plus debrief; no tier S row has it', () => {
+  let present = 0, absent = 0;
+  for (const r of courseRows) {
+    const has = /To a real attacker/.test(strOf(readShell(r.id)));
+    if (FULL_TIERS.includes(r.tier) && r.attack === true) { assert.ok(has, `${r.id}: layer 0 passage missing`); present += 1; }
+    if (r.tier === 'S') { assert.ok(!has, `${r.id}: a tier S row carries layer 0`); absent += 1; }
+  }
+  assert.ok(present >= 1 && absent >= 1, 'compared at least one full row and one tier S row');
+});
+
+test('layer 1: a non-stepAway full row ends on the host pointer; its fragment and twin carry none; erb and fragment share a run', () => {
+  const rows = courseRows.filter((r) => FULL_TIERS.includes(r.tier) && r.attack === true && r.stepAway !== true && fragmentPanel(r.ep) !== null);
+  assert.ok(rows.length >= 1, 'no non-stepAway full row: this test would compare nothing');
+  for (const r of rows) {
+    const sc = readShell(r.id);
+    const erb = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel);
+    const first = hostOf(sc).displayName.split(' ')[0];     // read from the shell, not the row
+    assert.ok(erb[erb.length - 1].endsWith(`have a word with ${first}.`), `${r.id}: the erb panel must end "have a word with ${first}."`);
+    const frag = fragmentPanel(r.ep);
+    const fragText = conceptPanelTexts(frag).join('\n');
+    assert.ok(!/To a real attacker/.test(fragText) && !/have a word with/.test(fragText), `${r.id}: the fragment panel carries layer 0 or the pointer`);
+    assert.ok(sharesRun(erb.join('\n'), fragText), `${r.id}: erb and fragment layer 1 share no run of eight words`);
+    const twinName = `${r.id}_defend`;
+    if (existsSync(join(scenarios, twinName, 'scenario.json.erb'))) {
+      const twin = readShell(twinName).social.awarenessEpisode.strings.conceptPanel;
+      assert.ok(canon(twin) === canon(frag), `${r.id}: the twin's panel differs from the fragment's`);
+    }
+  }
+});
+
+test('layer 1: every tier S row (twin, ca17) that has a fragment carries exactly the fragment panel, with no pointer', () => {
+  let seen = 0;
+  for (const r of courseRows.filter((x) => x.tier === 'S' && x.convention !== true)) {
+    const frag = fragmentPanel(r.ep);
+    if (frag === null) continue;
+    const cp = readShell(r.id).social.awarenessEpisode.strings.conceptPanel;
+    assert.ok(canon(cp) === canon(frag), `${r.id}: panel differs from the fragment`);
+    assert.ok(!/have a word with|To a real attacker/.test(conceptPanelTexts(cp).join('\n')), `${r.id}: pointer or layer 0 in a tier S panel`);
+    seen += 1;
+  }
+  assert.ok(seen >= 2, 'the ca01 and ca12 twins are compared');
+});
+
+test('host_said: kit_<ep>_host_said is declared exactly when the row\'s hostLine is true', () => {
+  for (const r of kitRows) {
+    const declared = Object.keys(readShell(r.id).globalVariables).filter((k) => /^kit_.+_host_said$/.test(k));
+    const want = r.hostLine === true ? [`kit_${r.ep}_host_said`] : [];
+    assert.ok(JSON.stringify(declared) === JSON.stringify(want), `${r.id}: host_said globals ${JSON.stringify(declared)}, want ${JSON.stringify(want)}`);
+  }
+});
+
+// keyMessage (D13): who reads kit_key_caught. `files` maps a repo path to its text.
+const knotBody = (ink, name) => {
+  const m = ink.match(new RegExp(`^===\\s*${name}\\s*===\\s*$([\\s\\S]*?)(?=^===|(?![\\s\\S]))`, 'm'));
+  return m ? m[1] : null;
+};
+function keyMessageReaders(row, sc) {
+  const readers = [];
+  const knot = row.stub || row.ep;
+  for (const p of row.ambient || []) {
+    const f = `scenarios/_office_kit/ink/${p}_ambient.ink`;
+    if (!existsSync(join(root, f))) continue;     // a stub not built yet has nothing to read
+    const body = knotBody(readFileSync(join(root, f), 'utf8'), knot);
+    if (body !== null && /kit_key_caught/.test(body)) readers.push(f);
+  }
+  const hostInk = String(hostOf(sc).storyPath || '').replace(/\.json$/, '.ink');   // a twin's generated ink is its own host ink
+  if (hostInk && existsSync(join(root, hostInk)) && /kit_key_caught/.test(readFileSync(join(root, hostInk), 'utf8'))) readers.push(hostInk);
+  return readers;
+}
+const keyMessageProblem = (row, readers) => (readers.length > 0 && !(typeof row.keyMessage === 'string' && row.keyMessage.length > 0))
+  ? `${row.id}: no keyMessage, but ${readers.join(', ')} reads kit_key_caught` : null;
+
+test('keyMessage (D13): the check names the row and the file when a reader has no keyMessage, and accepts one that has it', () => {
+  assert.ok(keyMessageProblem({ id: 'x', keyMessage: '' }, ['a.ink']) === 'x: no keyMessage, but a.ink reads kit_key_caught');
+  assert.ok(keyMessageProblem({ id: 'x' }, ['a.ink', 'b.ink']).includes('a.ink, b.ink'));
+  assert.ok(keyMessageProblem({ id: 'x', keyMessage: 'm' }, ['a.ink']) === null);
+  assert.ok(keyMessageProblem({ id: 'x' }, []) === null);
+  assert.ok(knotBody('=== a ===\none kit_key_caught\n=== b ===\ntwo\n', 'a').includes('kit_key_caught'));
+  assert.ok(!knotBody('=== a ===\none\n=== b ===\ntwo kit_key_caught\n', 'a').includes('kit_key_caught'));
+  assert.ok(knotBody('=== a ===\none\n', 'b') === null);
+});
+
+test('keyMessage (D13): every tiered row whose stub knot, host ink or twin ink reads kit_key_caught carries a keyMessage', () => {
+  let readsIt = 0;
+  for (const r of courseRows) {
+    const readers = keyMessageReaders(r, readShell(r.id));
+    if (readers.length) readsIt += 1;
+    const problem = keyMessageProblem(r, readers);
+    assert.ok(problem === null, problem);
+  }
+  assert.ok(readsIt >= 1, 'at least one row reads kit_key_caught');
+});
+
+test('pool exemption: a kit with pool null carries a reason and no chatter source, and a kit with a reason has no pool', () => {
+  let exempt = 0;
+  for (const f of kitFiles()) {
+    const kit = readKit(f);
+    if (kit.pool === null) {
+      exempt += 1;
+      assert.ok(typeof kit.poolExempt === 'string' && kit.poolExempt.trim().length > 0, `${f}: pool null needs a non-empty poolExempt`);
+      // v4 D12: an exempt kit may declare sources (Carrholme's cooler), but none may carry chatter (office_kit.check_pool)
+      const sources = Array.isArray(kit.sources) ? kit.sources : [];
+      const chatty = sources.filter((s) => s && s.affordance && s.affordance.chatter !== undefined);
+      assert.ok(chatty.length === 0, `${f}: an exempt kit has a chatter source (${chatty.map((s) => s.id).join(', ')})`);
+    }
+    if (kit.poolExempt !== undefined) assert.ok(kit.pool === null, `${f}: poolExempt beside a pool`);
+    if (kit.pool !== null && kit.pool !== undefined) assert.ok(!('poolExempt' in kit), f);
+  }
+  // Carrholme is exempt now (review R1 minor 2): the case must visit at least one kit, or it passes on nothing
+  assert.ok(exempt >= 1, `no exempt kit visited (${exempt})`);
+});
+
+test('pool exemption and ca00: a shell with no pool or a convention row carries no kit chatter and is excused the capacity-2 source', () => {
+  let conventionRows = 0, exemptRows = 0;
+  for (const r of kitRows) {
+    const sc = readShell(r.id);
+    const tr = sc.rooms.training_room;
+    if (r.convention === true) conventionRows += 1;
+    const exempt = r.convention === true || kitPoolExempt(r);
+    const kitNpcs = tr.npcs.filter((n) => n.id.startsWith('kit_'));
+    if (exempt) {
+      exemptRows += 1;
+      assert.ok(!Object.keys(sc.chatter || {}).some((k) => k.startsWith('kit_')), `${r.id}: top-level kit pool`);
+      for (const n of kitNpcs) assert.ok(!('chatter' in n) && !('chatterLines' in n), `${r.id}: ${n.id} carries chatter`);
+      for (const o of tr.objects.filter((x) => x.id.startsWith('kit_'))) assert.ok(!(o.affordance && o.affordance.chatter), `${r.id}: ${o.id} speaks a pool`);
+    }
+    // Under v4 no kit has a needs-free colleague (the old seated, needs-free branch was dead): every ambient
+    // kit NPC (one with a person; a set piece's hidden visitor is not on the needs system) carries needs.
+    for (const n of kitNpcs.filter((x) => x.person)) {
+      assert.ok(n.needs && Object.keys(n.needs).length > 0, `${r.id}: ${n.id} has no needs`);
+    }
+  }
+  // floors: the ca00 convention row plus Carrholme's two rows are exempt, so a vanished row fails here
+  assert.ok(conventionRows === 1, `want exactly one convention row, visited ${conventionRows}`);
+  assert.ok(exemptRows >= 3, `want at least 3 exempt rows (ca00 + 2 Carrholme), visited ${exemptRows}`);
+});
+
+// Review R1 minor 1: row-driven, by company. A regenerated shell that drops a need, a home, the cooler,
+// its tile position or (Quayholt) its chatter fails here.
+const COOLER_COMPANIES = { quayholt_insurance: 7, carrholme_services: 2 };
+const NEEDS_COMPANIES = ['tarrowby_logistics', 'quayholt_insurance', 'carrholme_services'];
+test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst need and a coordinate needsHome', () => {
+  const visited = {};
+  for (const r of courseRows.filter((x) => NEEDS_COMPANIES.includes(x.company))) {
+    visited[r.company] = (visited[r.company] || 0) + 1;
+    const npcs = readShell(r.id).rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person);
+    assert.ok(npcs.length >= 1, `${r.id}: no ambient kit NPC`);
+    for (const n of npcs) {
+      assert.ok(n.needs && typeof n.needs.thirst === 'object' && n.needs.thirst !== null, `${r.id}: ${n.id} has no thirst need`);
+      const h = n.needsHome;
+      assert.ok(h && Number.isFinite(h.x) && Number.isFinite(h.y), `${r.id}: ${n.id} needsHome is not a coordinate`);
+    }
+  }
+  for (const c of NEEDS_COMPANIES) assert.ok(visited[c] >= (COOLER_COMPANIES[c] || 1), `${c}: visited only ${visited[c] || 0} shells`);
+});
+
+test('kit cooler: every Quayholt and Carrholme shell has exactly one kit_cooler with a tile position; only Quayholt carries chatter', () => {
+  const visited = {};
+  for (const r of kitRows.filter((x) => x.company in COOLER_COMPANIES)) {
+    visited[r.company] = (visited[r.company] || 0) + 1;
+    const coolers = readShell(r.id).rooms.training_room.objects.filter((o) => o.id === 'kit_cooler');
+    assert.ok(coolers.length === 1, `${r.id}: want exactly one kit_cooler, found ${coolers.length}`);
+    const c = coolers[0];
+    assert.ok(c.position && Number.isFinite(c.position.x) && Number.isFinite(c.position.y), `${r.id}: kit_cooler has no tile position`);
+    const chatter = c.affordance && c.affordance.chatter;
+    // ca00 is a convention row, so it is excused the pool (1.3): Quayholt's chatter is on its non-convention shells
+    if (r.company === 'quayholt_insurance' && r.convention !== true) assert.ok(typeof chatter === 'string' && chatter.length > 0, `${r.id}: Quayholt cooler lost its chatter`);
+    else assert.ok(chatter === undefined, `${r.id}: only a non-convention Quayholt cooler carries chatter`);
+  }
+  for (const [c, n] of Object.entries(COOLER_COMPANIES)) assert.ok(visited[c] >= n, `${c}: visited ${visited[c] || 0} shells, want at least ${n}`);
+});
+
+test('ca00 convention: no kit host mapping, each kit NPC opens on a knot of its stub, kit_ep is ca00', () => {
+  const conventionRows = kitRows.filter((x) => x.convention === true);
+  assert.ok(conventionRows.length === 1, `want exactly one convention row, visited ${conventionRows.length}`);
+  for (const r of conventionRows) {
+    const sc = readShell(r.id);
+    assert.ok(r.ep === 'ca00' && r.tier === 'S' && r.attack === false && r.stepAway === false && r.setPiece === null, `${r.id}: row form (1.3)`);
+    assert.ok(!('keyMessage' in r) && !('hostLine' in r) && !('prefix' in r), `${r.id}: a convention row has no keyMessage, hostLine or prefix`);
+    assert.ok(sc.globalVariables.kit_ep === 'ca00', `${r.id}: kit_ep`);
+    assert.ok(!/To a real attacker/.test(strOf(sc)) && !/have a word with/.test(strOf(sc)), `${r.id}: no layer 0 or 1`);
+    assert.ok(allKitMappings(sc).length === 0, `${r.id}: kit mapping present`);
+    const kitNpcs = sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_'));
+    assert.ok(kitNpcs.length === r.ambient.length && kitNpcs.length >= 2, `${r.id}: kit NPCs`);
+    for (const n of kitNpcs) {
+      assert.ok(n.currentKnot === r.stub, `${r.id}: ${n.id} currentKnot ${n.currentKnot}, want ${r.stub}`);
+      const ink = readFileSync(join(root, n.storyPath.replace(/\.json$/, '.ink')), 'utf8');
+      assert.ok(knotBody(ink, n.currentKnot) !== null, `${r.id}: ${n.id} has no knot ${n.currentKnot}`);
+      assert.ok(!/kit_key_caught|kit_defend_done/.test(knotBody(ink, n.currentKnot)), `${r.id}: the ${n.currentKnot} knot does not branch`);
+    }
+  }
+});
+
+// W2 build review R2 minor 3: the row field keyCaughtVerdicts is checked in Python; this ties each shell to it.
+// Returns the problems for rows (read from episodes.json or a scratch copy) against the shells read by readFn.
+const caughtVerdictProblems = (rows, readFn) => {
+  const problems = []; let visited = 0, withField = 0;
+  for (const r of rows) {
+    const sc = readFn(r.id);
+    if (!sc) continue;
+    visited++;
+    const got = sc.social?.triageSets?.[0]?.outcome?.messageCaughtVerdicts;
+    if (r.keyCaughtVerdicts) {
+      withField++;
+      if (canon(got) !== canon({ [r.keyMessage]: r.keyCaughtVerdicts })) problems.push(`${r.id}: messageCaughtVerdicts ${canon(got)}, want ${canon({ [r.keyMessage]: r.keyCaughtVerdicts })}`);
+    } else if (got !== undefined) problems.push(`${r.id}: has messageCaughtVerdicts ${canon(got)} but the row has no keyCaughtVerdicts`);
+  }
+  return { problems, visited, withField };
+};
+
+test('keyCaughtVerdicts: each kit row\'s shell (and twin row) carries messageCaughtVerdicts equal to the row, and rows without the field carry none', () => {
+  const { problems, visited, withField } = caughtVerdictProblems(kitRows, tryShell);
+  assert.deepEqual(problems, []);
+  assert.ok(withField >= 6, `only ${withField} rows with keyCaughtVerdicts visited`);
+  assert.ok(visited >= 6, `only ${visited} rows visited`);
+});
+
+test('keyCaughtVerdicts: the check fails on a mutated scratch copy (lost entry, wrong verdicts, stray entry)', () => {
+  const rows = JSON.parse(JSON.stringify(kitRows));
+  const withF = rows.filter((r) => r.keyCaughtVerdicts);
+  assert.ok(withF.length >= 2);
+  const lost = new Set([withF[0].id]), wrong = new Set([withF[1].id]);
+  const without = rows.find((r) => !r.keyCaughtVerdicts && tryShell(r.id)?.social?.triageSets?.[0]?.outcome);
+  assert.ok(without, 'a row without the field to stray into');
+  const mutated = (id) => {
+    const sc = JSON.parse(JSON.stringify(tryShell(id) || null));
+    if (!sc) return sc;
+    const oc = sc.social?.triageSets?.[0]?.outcome;
+    if (!oc) return sc;
+    if (lost.has(id)) delete oc.messageCaughtVerdicts;
+    if (wrong.has(id)) oc.messageCaughtVerdicts = { [withF[1].keyMessage]: ['delete'] };
+    if (id === without.id) oc.messageCaughtVerdicts = { x: ['report'] };
+    return sc;
+  };
+  const { problems } = caughtVerdictProblems(rows, mutated);
+  assert.equal(problems.length, 3, problems.join('\n'));
+  // and dropping the field from a row (a mutated episodes copy) is caught the other way round
+  const rows2 = JSON.parse(JSON.stringify(kitRows)); delete rows2.find((r) => r.keyCaughtVerdicts).keyCaughtVerdicts;
+  assert.equal(caughtVerdictProblems(rows2, tryShell).problems.length, 1);
 });

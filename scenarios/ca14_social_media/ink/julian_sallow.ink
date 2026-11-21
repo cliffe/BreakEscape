@@ -12,6 +12,10 @@
 
 VAR phish_df_cover_attempts = 0
 VAR episode_e14_social_media_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca14_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -21,6 +25,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca14_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Julian Sallow: You checked the new contact before you answered, so the account trading on a partner's name got nothing out of the studio.
+            - else:
+                Julian Sallow: You stopped the one worth stopping, the message wearing a colleague's name, before it collected anything useful.
+            }
+        - else:
+            Julian Sallow: It knew real details and wore a trusted name, so one reply handed over a security answer we then had to reset.
+        }
+        Julian Sallow: A new contact gets checked by a route you already know before you tell them anything, however well they seem to know us.
+        ~ kit_ca14_host_said = true
+    - else:
     { episode_e14_social_media_defend_complete:
         Julian Sallow: That's the lot. A well-made message is built from scraps anyone could find.
         Julian Sallow: The fix is a setting and a pause. Nobody's in trouble for what they've posted.
@@ -32,6 +49,7 @@ VAR hub_quiet = false
             Julian Sallow: Welcome to the Merrin & Sallow exercise. Everyone here is fictional, and nothing you do leaves this room.
             Julian Sallow: Start at the kiosk. See what one colleague's public posts give away, then close the gaps, on his profile and on yours.
         }
+    }
     }
 }
 + [Thanks, Julian.]

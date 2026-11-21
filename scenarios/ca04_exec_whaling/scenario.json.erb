@@ -6,6 +6,7 @@
   "endGoal": "Send the email in Catherine's name, then sort the PA's inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -77,7 +78,26 @@
     "se_intel_ms_exec_travel_email": false,
     "se_intel_ms_travel_post": false,
     "phish_exec_pa_landed": false,
-    "phish_exec_pa_attempts": 0
+    "phish_exec_pa_attempts": 0,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca04",
+    "kit_ca04_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_merrin": {
+      "lines": [
+        "Deadline on the Harbour job.",
+        "Printer's warm again.",
+        "Client's in this morning."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "awareness": {
@@ -107,7 +127,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e4_exec_whaling_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e4_boarding_payment": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -341,6 +364,10 @@
         "voicePanel": {
           "heading": "A voice is not proof",
           "text": "A voice can be copied. Recordings of someone speaking in public, such as a talk or an interview, can be used to make new sentences in a voice that sounds like theirs. So a familiar voice on a voicemail or a call doesn't tell you who is speaking. What still works is the route: ring the person back on a number you already hold, or check with someone who would know, such as finance."
+        },
+        "conceptPanel": {
+          "heading": "What the hurry was buying",
+          "text": "To a real attacker, the urgent request you sent in the partner's name is one authorised payment to an account they control, often followed by a lookalike supplier bank-change to keep the money coming. The call-back on a number you already hold, the habit you just practised, is what breaks that chain, because the payment is checked with the partner before it leaves.\n\nWhen a payment goes out on a voicemail that sounds like the partner, a few thousand pounds leaves for an account that is not the supplier's, the real supplier later chases the money it is owed, and the PA and finance spend the afternoon reconstructing what happened. Before you leave, have a word with Thandiwe."
         }
       },
       "debrief": {
@@ -806,8 +833,147 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_pa_inbox"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_state",
+              "condition": "data.value.stage === 'defend'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_attack_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_complete",
+              "condition": "value === true && globalVars.episode_e4_exec_whaling_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_lorna_easton",
+          "displayName": "Lorna Easton",
+          "person": "lorna_easton",
+          "npcType": "person",
+          "position": {
+            "x": 4.5,
+            "y": 4.5
+          },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/lorna_easton_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Erinome",
+            "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 20,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Reception's been non-stop.",
+                "Kettle's on if you fancy one.",
+                "Lovely and quiet this afternoon."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_julian_sallow",
+          "displayName": "Julian Sallow",
+          "person": "julian_sallow",
+          "npcType": "person",
+          "position": {
+            "x": 6.0,
+            "y": 8.0
+          },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/julian_sallow_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 6.0,
+            "y": 8.0,
+            "facing": "north"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Rasalgethi",
+            "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "rest": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "chatter": {
+            "kit_merrin": {
+              "lines": [
+                "Planning panel on Thursday.",
+                "Where's that elevation?",
+                "That roof pitch still won't work."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -828,6 +994,26 @@
           ],
           "minigameData": {
             "episodeId": "e4_exec_whaling"
+          }
+        },
+        {
+          "type": "leather_sofa",
+          "id": "kit_sofa",
+          "name": "Sofa",
+          "sprite": "leather_sofa1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A studio sofa by the wall. Staff drop onto it for a breather.",
+          "affordance": {
+            "satisfies": "rest",
+            "restores": 70,
+            "useSeconds": 8,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            },
+            "capacity": 2,
+            "chatter": "kit_merrin"
           }
         }
       ]

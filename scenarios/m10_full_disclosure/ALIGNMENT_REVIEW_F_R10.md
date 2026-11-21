@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R9 and CONTRACT §11 (rounds 1 to 9). The tree is HEAD 801c377e; the R9 fixes are 280f51e2..HEAD (`m10_asante`, `m10_imran`, `m10_victoria`, `m10_voltage`, `m10_vos`, `m10_wendell` ink and JSON, CONTRACT §11, FINALE_DEV_LOG). m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r10/`.
+2026-10-22. Fresh reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R9 and CONTRACT §11 (rounds 1 to 9). The tree is HEAD 801c377e; the R9 fixes are 280f51e2..HEAD (`m10_asante`, `m10_imran`, `m10_victoria`, `m10_voltage`, `m10_vos`, `m10_wendell` ink and JSON, CONTRACT §11, FINALE_DEV_LOG). m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r10/`.
 
 What I ran:
 - **Validator** (`--skip-ink --no-graph`): 0 errors; the same 2 objective-wiring warnings (`aside_done`, `blast_tunnel`) and cutscene `onceOnly` advisories as R9. Every `.json` is newer than its `.ink`.

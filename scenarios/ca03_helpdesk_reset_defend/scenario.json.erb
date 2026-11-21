@@ -6,6 +6,7 @@
   "endGoal": "Take the three calls and the sign-in prompt at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
+  "npcThoughts": false,
   "startRoom": "training_room",
   "startPosition": {
     "x": 6,
@@ -54,7 +55,26 @@
     "se_awareness_records": [],
     "episode_e3_helpdesk_reset_defend_defend_percent": 0,
     "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
-    "episode_e3_helpdesk_reset_defend_defend_complete": false
+    "episode_e3_helpdesk_reset_defend_defend_complete": false,
+    "kit_attack_done": false,
+    "kit_defend_done": false,
+    "kit_quiet": false,
+    "kit_caught": false,
+    "kit_ep": "ca03",
+    "kit_ca03_host_said": false,
+    "kit_key_caught": false
+  },
+  "chatter": {
+    "kit_quayholt": {
+      "lines": [
+        "Phones haven't stopped today.",
+        "Claims backlog's easing off.",
+        "Cooler's cold for once."
+      ],
+      "requireGlobal": {
+        "kit_quiet": false
+      }
+    }
   },
   "social": {
     "triageSets": [
@@ -75,7 +95,10 @@
         ],
         "outcome": {
           "setGlobalPrefix": "episode_e3_helpdesk_reset_defend_defend_",
-          "passPercent": 0
+          "passPercent": 0,
+          "messageGlobals": {
+            "e3_push_early": "kit_key_caught"
+          }
         },
         "messages": [
           {
@@ -273,10 +296,16 @@
         "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password, move someone's sign-in prompts or install remote-support software for a caller, hang up and ring them back on the number already on file, not one they give you. Genuine IT and suppliers never cold-call to install remote-control software or to have you read out a code. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below. At home, report fraud and cyber crime to Report Fraud (Police Scotland on 101 in Scotland).",
         "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
-        "conceptPanel": {
-          "heading": "Why these are hard to catch",
-          "text": "The caller had Gordon's name, team, manager and staff number, and every one of those is findable online, so on a phone call none of them proves who is really on the line. Only a callback to the number already on file tells the real Gordon from the impostor.\n\nThe overnight sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood."
-        }
+        "conceptPanel": [
+          {
+            "heading": "Why these are hard to catch",
+            "text": "The caller had Gordon's name, team, manager and staff number, and every one of those is findable online, so on a phone call none of them proves who is really on the line. Only a callback to the number already on file tells the real Gordon from the impostor.\n\nThe overnight sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood."
+          },
+          {
+            "heading": "If one gets approved",
+            "text": "When a prompt like this is approved, the account is taken, the claims mailbox is rebuilt and the whole team loses the afternoon locked out during the clean-up. An insurer's accounts hold health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -360,8 +389,137 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "work_service_desk_queue"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_state",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_defend_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_defend_complete",
+              "condition": "value === true && globalVars.episode_e3_helpdesk_reset_defend_defend_percent >= 85",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_caught": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_state",
+              "condition": "data.value.done.includes('debrief')",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
             }
           ]
+        },
+        {
+          "id": "kit_anjali_rao",
+          "displayName": "Anjali Rao",
+          "person": "anjali_rao",
+          "npcType": "person",
+          "position": {
+            "x": 7.4,
+            "y": 8.3
+          },
+          "spriteSheet": "anjali_rao",
+          "spriteTalk": "assets/characters/anjali_rao_talk.png",
+          "spriteVisemes": "assets/characters/anjali_rao_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/anjali_rao_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.4,
+            "y": 8.3,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Kore",
+            "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Quiet on the alerts today.",
+                "Need a proper break."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
+        },
+        {
+          "id": "kit_niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "person": "niamh_doherty",
+          "npcType": "person",
+          "position": {
+            "x": 4.0,
+            "y": 7.0
+          },
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "storyPath": "scenarios/_office_kit/ink/niamh_doherty_ambient.json",
+          "currentKnot": "start",
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.0,
+            "y": 7.0,
+            "facing": "south"
+          },
+          "needsRooms": [
+            "training_room"
+          ],
+          "voice": {
+            "name": "Leda",
+            "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "needsSpeed": 90,
+          "chatterCooldownMin": 5,
+          "needs": {
+            "thirst": {
+              "decayPerMin": 30,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          },
+          "chatter": {
+            "kit_quayholt": {
+              "lines": [
+                "Newsletter's nearly done.",
+                "Could murder a cuppa."
+              ],
+              "requireGlobal": {
+                "kit_quiet": false
+              }
+            }
+          }
         }
       ],
       "objects": [
@@ -382,6 +540,30 @@
           ],
           "minigameData": {
             "episodeId": "e3_helpdesk_reset_defend"
+          }
+        },
+        {
+          "type": "water_cooler",
+          "id": "kit_cooler",
+          "name": "Water cooler",
+          "sprite": "water_cooler1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "The office water cooler. Staff wander over for a refill.",
+          "position": {
+            "x": 8.2,
+            "y": 5.6
+          },
+          "affordance": {
+            "satisfies": "thirst",
+            "restores": 70,
+            "useSeconds": 20,
+            "useFrom": {
+              "dx": 0,
+              "dy": 1.25
+            },
+            "capacity": 2,
+            "chatter": "kit_quayholt"
           }
         }
       ]

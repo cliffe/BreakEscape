@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R8 and CONTRACT §11 (rounds 1 to 8). The tree is HEAD 215b77a5. The R8 fixes are 210198d4..HEAD; for m10 they touch `m10_victoria.ink`, `m10_vos.ink`, `m10_gary.ink` (and their `.json`), `scenario.json.erb`, `CONTRACT.md`, `FINALE_DEV_LOG.md` and `FINALE_TTS_COUNT.md`. m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r9/`.
+2026-10-22. Fresh reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R8 and CONTRACT §11 (rounds 1 to 8). The tree is HEAD 215b77a5. The R8 fixes are 210198d4..HEAD; for m10 they touch `m10_victoria.ink`, `m10_vos.ink`, `m10_gary.ink` (and their `.json`), `scenario.json.erb`, `CONTRACT.md`, `FINALE_DEV_LOG.md` and `FINALE_TTS_COUNT.md`. m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r9/`.
 
 What I ran:
 - **Validator** (`--skip-ink --no-graph`): 0 errors; the same 2 objective-wiring warnings (`aside_done`, `blast_tunnel`) and the cutscene `onceOnly` advisories as R8.

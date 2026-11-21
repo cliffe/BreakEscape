@@ -1,6 +1,6 @@
 # m03 pass 2 regression, Run B (night): PARTIAL, stopped at step 5
 
-Tester: Sonnet subagent. Game id 2083, keyless server :3001, headless, speed fast. Session log: `tools/playtest/m03-regB-session.jsonl`. Date 2026-10-12.
+Tester: subagent. Game id 2083, keyless server :3001, headless, speed fast. Session log: `tools/playtest/m03-regB-session.jsonl`. Date 2026-10-12.
 
 **This run is incomplete.** Auto mode's safety check began refusing every Bash command partway through step 5 (decoding the drive in CyberChef), so the game session was left open at game 2083 and could not be driven further, synced or verified. `verify-run.rb` was NOT run (no output to paste). Steps 5 (decode and tell HaX), 6, 7, 8 and 9 (Danny, guard, Victoria, debrief, credits) were not played, and the mid-fate reload (C10) was not exercised. The session process (pid 2797750, tag 2083) is probably still running; stop it with `tools/playtest/session-stop.sh 2083` and then run `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb 2083`.
 

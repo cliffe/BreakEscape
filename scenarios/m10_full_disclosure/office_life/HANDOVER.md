@@ -21,14 +21,14 @@ Branch `build/ol-m10`, worktree `.claude/worktrees/p-ol-m10`. The plan closed at
 |---|---|---|---|---|
 | Build R1 | planning tier | 0 | 2 | 8 |
 | Dialogue R1 | planning tier | 0 | 2 | 6 |
-| Build R2 | opus55 | 0 | 0 | 4 |
-| Build R3 (delta) | Sonnet | 0 | 0 | 1 |
-| Build R4 (delta) | Sonnet | 0 | 0 | 0 |
-| Dialogue R2 (changed lines) | Sonnet | 0 | 0 | 1 |
-| Build R5 (delta) | Sonnet | 0 | 0 | 3 |
-| Build R6 (delta, two lines) | Sonnet-tier judgement | 0 | 0 | 0 |
+| Build R2 | planning tier | 0 | 0 | 4 |
+| Build R3 (delta) | delta tier | 0 | 0 | 1 |
+| Build R4 (delta) | delta tier | 0 | 0 | 0 |
+| Dialogue R2 (changed lines) | delta tier | 0 | 0 | 1 |
+| Build R5 (delta) | delta tier | 0 | 0 | 3 |
+| Build R6 (delta, two lines) | delta judgement | 0 | 0 | 0 |
 
-All findings fixed. R5's fixes changed two ink lines, so one more Sonnet delta (R6, minors only) on `2c07133d6` is due before voicing: check ink:45 and :54 in their knot, the compile, and SPOKEN_LINES lengths (40, 29).
+All findings fixed. R5's fixes changed two ink lines, so one more delta review (R6, minors only) on `2c07133d6` is due before voicing: check ink:45 and :54 in their knot, the compile, and SPOKEN_LINES lengths (40, 29).
 
 ## Live proof (all keyless :3099, fresh games)
 

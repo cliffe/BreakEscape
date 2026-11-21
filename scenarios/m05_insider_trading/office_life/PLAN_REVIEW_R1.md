@@ -49,7 +49,7 @@ Not ready. Fix M1 to M4 before round 2. None blocks the plan's approach.
 ## Outcomes (orchestrator)
 
 - D78 (2026-11-17, user): story-safe movement for existing NPCs is approved; the skill gains a cast-audit step (branch plan/ol-skill-movement). The reviewer's D78 note (Lisa could take one kettle trip, Owen stays) goes to the fixer as a proposal to apply under the new rules.
-- M1 to M4 and m1 to m9: to fix. Round 2 on opus55 (majors).
+- M1 to M4 and m1 to m9: to fix. Round 2 on the secret-handling reviewer tier (majors).
 - User questions D82a to c (extras, cleaner, levers) are on the decisions page, unanswered.
 
 ## Outcomes (fixer, round 1)

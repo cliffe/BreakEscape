@@ -1,6 +1,6 @@
 # m10 Full Disclosure: scenario design review, round 1
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). This is phase 3 of the AGENTS.md five-phase loop, and I ran `.claude/skills/scenario-design-review/SKILL.md` in full on the tree at 7697aff2. The m10 files haven't changed since ea760465 (alignment round 12, which closed phase 1). Another reviewer is auditing the puzzle chains in parallel, so I haven't redone the lock-and-key table. I read CONTRACT.md §11 for what's settled, ALIGNMENT_REVIEW_F_R12.md, and the m09 phase 3 review for the format.
+2026-10-22. Fresh reviewer (read-only on game files). This is phase 3 of the AGENTS.md five-phase loop, and I ran `.claude/skills/scenario-design-review/SKILL.md` in full on the tree at 7697aff2. The m10 files haven't changed since ea760465 (alignment round 12, which closed phase 1). Another reviewer is auditing the puzzle chains in parallel, so I haven't redone the lock-and-key table. I read CONTRACT.md §11 for what's settled, ALIGNMENT_REVIEW_F_R12.md, and the m09 phase 3 review for the format.
 
 **Method.**
 - **Validator.** I ran it with `--no-graph`, so the tree is unchanged. Dialogue lint ran inside it. I rendered the JSON and built a fresh dungeon graph in scratch.

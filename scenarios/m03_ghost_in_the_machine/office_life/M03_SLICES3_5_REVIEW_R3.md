@@ -1,6 +1,6 @@
 # m03 office life slices 3 to 5: review round 3
 
-Range 41cc60e8a..04dcf72ee (01d172150 is the main merge with TTS clips only, ignored), read in the detached worktree `.claude/worktrees/p-ol-m03-r3` (removed at the end). Static review against the engine at 04dcf72ee, plus the live results the Haiku agent left in `scratchpad/r2fix/haiku/` (games 6614 to 6617, port 3093). I ran no server and no probe of my own.
+Range 41cc60e8a..04dcf72ee (01d172150 is the main merge with TTS clips only, ignored), read in the detached worktree `.claude/worktrees/p-ol-m03-r3` (removed at the end). Static review against the engine at 04dcf72ee, plus the live results the scripted-run agent left in `scratchpad/r2fix/` (run folder) (games 6614 to 6617, port 3093). I ran no server and no probe of my own.
 
 ## Severity table
 
@@ -16,8 +16,8 @@ Range 41cc60e8a..04dcf72ee (01d172150 is the main merge with TTS clips only, ign
 
 | R2 # | Status | Evidence |
 |---|---|---|
-| 1 major (tip never run) | closed in substance | Haiku p1, game 6614: A1 PASS (both staff on `reception_coffee`, laptop open at the leave, `expectedAwayMs` 18626, real away 28.7 s), A2 PASS (`ex_open_door` heard at 32.1 s), C1 PASS (`heard_ex_*` survive a reload), C2 PASS (no knot replays: later breaks gave `ex_tailgate`, then `ex_client_sites`), C3 PASS. B1 FAIL is the capture window: Zainab used the cooler and the laptop locked; Yusuf left his post at 9.2 s with `exp` 29000, so his use fell after the capture ended. Not a defect, but the cooler pair is still not seen end to end |
-| 2 major (send-home spot) | at post: closed. Mid-break: open (finding 1) | The fixer's explanation holds: `goToAndStay` (`npc-behavior.js:3307`) unseats first, and `unseatNPC` (`seating.js:1641`) calls `moveFeetTo` so the standing frame keeps the seated feet; the sprite y moves about 20 px, the feet do not. Haiku p3: before, Zainab sprite (148,241); the R2 "20 px north" was the sprite, not the feet. From the post the move is a no-op either way (old target 12 px off, inside the 32 px arrival radius) |
+| 1 major (tip never run) | closed in substance | Scripted run p1, game 6614: A1 PASS (both staff on `reception_coffee`, laptop open at the leave, `expectedAwayMs` 18626, real away 28.7 s), A2 PASS (`ex_open_door` heard at 32.1 s), C1 PASS (`heard_ex_*` survive a reload), C2 PASS (no knot replays: later breaks gave `ex_tailgate`, then `ex_client_sites`), C3 PASS. B1 FAIL is the capture window: Zainab used the cooler and the laptop locked; Yusuf left his post at 9.2 s with `exp` 29000, so his use fell after the capture ended. Not a defect, but the cooler pair is still not seen end to end |
+| 2 major (send-home spot) | at post: closed. Mid-break: open (finding 1) | The fixer's explanation holds: `goToAndStay` (`npc-behavior.js:3307`) unseats first, and `unseatNPC` (`seating.js:1641`) calls `moveFeetTo` so the standing frame keeps the seated feet; the sprite y moves about 20 px, the feet do not. Scripted run p3: before, Zainab sprite (148,241); the R2 "20 px north" was the sprite, not the feet. From the post the move is a no-op either way (old target 12 px off, inside the 32 px arrival radius) |
 | 3 minor (HaX texts) | closed statically; "company" live, "attacked" not live | Both texts verbatim (`scenario.json.erb:1373-1380`). "Company" delivered in game 6616 (`map:agent_0x99:npc_ko:ffion_rees:60`), absent in the both-KO negative (game 6617, W1 PASS). "Attacked" not delivered in 6615 because the punch never landed (finding 2) |
 | 4 minor (laptop text) | closed | Script check: base text, the four variant values and their conditions are verbatim from DIALOGUE_SAMPLE.md and in its order (night, upset, locked, away) at `:668-674` |
 | 5 minor (stale comment) | closed | `:808-812` says five hide mappings, which matches `:847-851` and `:889-893` |
@@ -30,7 +30,7 @@ Range 41cc60e8a..04dcf72ee (01d172150 is the main merge with TTS clips only, ign
 
 ### 1. major: send-home from a break ends a tile short, standing in the furniture
 
-`npc-manager.js:1627` calls `goToAndStay(npcId, worldX, worldY, speed)` with no opts, so `_arriveWithin` is 0 and the arrival guard (`npc-behavior.js:1400-1411`) ends the walk the moment the body is within 32 px of the target. Haiku p3, game 6616: Ffion knocked out while Yusuf was using the machine and Zainab walking to it. Final feet: Zainab (178,252), 30 px east of her post (148,252); Yusuf (137,284), 31 px east of his (106,280). Against the Tiled objects in `public/break_escape/assets/rooms/room_zds_reception.json`: the sofa (gid 1005) covers x 129 to 191, y 228 to 266, so Zainab stands in its east end; the coffee table (gid 1006) covers x 134 to 186, y 272 to 302, so Yusuf stands on its west edge. Neither sits again: `onExternalMove` (`npc-needs.js:779-789`) sets `scriptSuspended`, and the seating code sits only needs NPCs stopped at a post. Nothing resumes them, so they stay there for the rest of the day. The approach side decides where they stop, so the new targets cannot fix this.
+`npc-manager.js:1627` calls `goToAndStay(npcId, worldX, worldY, speed)` with no opts, so `_arriveWithin` is 0 and the arrival guard (`npc-behavior.js:1400-1411`) ends the walk the moment the body is within 32 px of the target. Scripted run p3, game 6616: Ffion knocked out while Yusuf was using the machine and Zainab walking to it. Final feet: Zainab (178,252), 30 px east of her post (148,252); Yusuf (137,284), 31 px east of his (106,280). Against the Tiled objects in `public/break_escape/assets/rooms/room_zds_reception.json`: the sofa (gid 1005) covers x 129 to 191, y 228 to 266, so Zainab stands in its east end; the coffee table (gid 1006) covers x 134 to 186, y 272 to 302, so Yusuf stands on its west edge. Neither sits again: `onExternalMove` (`npc-needs.js:779-789`) sets `scriptSuspended`, and the seating code sits only needs NPCs stopped at a post. Nothing resumes them, so they stay there for the rest of the day. The approach side decides where they stop, so the new targets cannot fix this.
 
 The R2 fix changed only the target. Its own check S1 failed, and the fix log does not mention it.
 
@@ -41,7 +41,7 @@ Two ways out (prove either with a screenshot):
 
 ### 2. minor: p2's live results prove nothing
 
-`scratchpad/r2fix/haiku/p2-6615.txt`: H1, M1 and M2 FAIL, but for script reasons:
+`scratchpad/r2fix/` run folder, `p2-6615.txt`: H1, M1 and M2 FAIL, but for script reasons:
 
 - The punch never landed: `wh_staff_attacked` stayed false and Zainab never turned hostile after four `f` presses (`p2.mjs:15`). No `npc_attacked` was emitted, so the HaX text could not fire.
 - The phase never turned: `p2.mjs:42` calls `gv(page, 'mission_phase', 'act2_infiltration')`, but `gv` in `lib.mjs:114` only reads a global. `debugKO('victoria_sterling')` returned `unknown-npc`. Zainab was still visible "after turn" because there was no turn.

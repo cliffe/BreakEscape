@@ -895,7 +895,7 @@ All of these pass on the working tree after implementation. `M=scenarios/m06_fol
 - [ ] loopcheck the debrief `start` with: freeze; monitor; Irina turned / detained / KO'd;
       Satoshi KO'd.
 
-**Playtest** (Sonnet agent, `playtest-scenario`; the Rails server on :3000 is already running)
+**Playtest** (test agent, `playtest-scenario`; the Rails server on :3000 is already running)
 - [ ] **`#unlock_door` probe first**, before any other P8 work is tested: talk the guard round and
       confirm the door opens and the server accepted the NPC unlock (no "Failed to unlock" toast;
       the door is still open after a reload) [r3]. If it fails, switch to P8's key fallback.

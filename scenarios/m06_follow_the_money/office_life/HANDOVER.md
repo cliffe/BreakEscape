@@ -5,8 +5,8 @@
 - Branch build/ol-m06 (worktree .claude/worktrees/p-ol-m06), main merged at 78272befc (main dae6589ee). D116 answered: all seven recommendations (option a).
 - Slices done: 3 (machines, extras, Dani's needs, trouble global, credits), 4 (Tomasz laptop, lock threshold 22 s, handover sheet, phone lever, pizza with 2 servings), 5 (pools, three exchanges, Lerato and Tomasz ink), slice 6 reduced to Lerato's seat (fixed R1). Slice 7 poses need no art. Fixes after each review round are logged in BUILD_LOG.md and each REVIEW_BUILD_R<n>.md "Outcomes".
 - Dialogue review (DIALOGUE_REVIEW_OL.md): B0 M1 m9, all fixed. Later line change: exchange 2 Tomasz "I did. Two officers, very quiet." (R1 m5).
-- Build review rounds: R1 B0 M2 m6 (fixed), R2 B0 M1 m3 (fixed: hostile leash), R3 B0 M1 m2 (fixed: coffee queue cells dy 0, fridge useFrom), R4 (Sonnet delta) B0 M0 m2 (fixed by the orchestrator: q.mjs moved to tmp/delete, print-errand notes closed).
-- Next: R5 as a Sonnet delta on `git diff 41111ed70..<tip>` plus REVIEW_BUILD_R4.md; minors only after R5. Then finish the walkthrough regression from step 18 (LIVE_R3_WALKTHROUGH.md reached step 17, office life not exercised; next run should talk to Dani/Lerato/Tomasz with the poll-before-interact rule and check hostile/KO too).
+- Build review rounds: R1 B0 M2 m6 (fixed), R2 B0 M1 m3 (fixed: hostile leash), R3 B0 M1 m2 (fixed: coffee queue cells dy 0, fridge useFrom), R4 (delta review) B0 M0 m2 (fixed by the orchestrator: q.mjs moved to tmp/delete, print-errand notes closed).
+- Next: R5 as a delta review on `git diff 41111ed70..<tip>` plus REVIEW_BUILD_R4.md; minors only after R5. Then finish the walkthrough regression from step 18 (LIVE_R3_WALKTHROUGH.md reached step 17, office life not exercised; next run should talk to Dani/Lerato/Tomasz with the poll-before-interact rule and check hostile/KO too).
 - Still unproven live: 10.2 item 1 (three minutes at post, 5 tries), natural Tomasz trips on unloaded games, LIVE_S5 no-DOM-root anomaly, reload of a body near the coffee point.
 - Voicing: 55 new clips (SPOKEN_LINES.md), none generated. AC0 relayed the user's "Implement these using your best judgement" for voicing after review and dialogue review are clean; the orchestrator left voicing to AC0 because an agent relay is not the user's own approval in this session.
 - Engine notes for the integrator (BUILD_LOG.md): NPC room label takes the first room rectangle holding the feet (npc-behavior.js:996), so the floor's bottom row reads as the checkpoint; needs.state().atPost reads true for hostile or knocked-out NPCs.
@@ -48,7 +48,7 @@ Slice 3 static build done and committed on build/ol-m06 (see BUILD_LOG.md). Live
 - PLAN.md and QUESTIONS.md written and rewritten standalone after each round. No separate ANALYSIS.md: the cast audit is plan section 2.1.
 - Rounds (all full reads on the planning tier): R1 B0 M6 m3 (REVIEW_R1.md, reviewer stopped at its context guard), R2 B0 M5 m10, R3 B0 M3 m8. Every finding fixed; outcomes in each REVIEW file.
 - Design now: only Dani moves (caffeine only, found at post first by a first-talk break plus a `room_entered` mapped break, cooldown 240000 ms, both gated `!globalVars.floor_staff_ko`). Priya pinned by her ink (`ink/m06_npc_analyst.ink:124`, `:127`, `:323`, `:347`). Dani owns no PC (owner is holding under D78); Q1 option (b) is the exception, with plan 3.4 as its build check. Extras Lerato (desk, desk phone) and Tomasz (client-support lead, readable laptop `type: "laptop1"`, `position: "as-type:laptop"`, answersPhones, one handover sheet printed by command into a single copier slot). Pizza magnet tempts only the extras. `floor_staff_ko` trouble global; existing HaX loop still sets `cover_strained` for Dani and Irina KOs. About 60 clips.
-- Next: R4. R3 changed what text may carry (secrets list 3.3, Tomasz's job and printout), so R4 is a delta review sent to the opus55 agent type (secret handling), given `git diff 54bb60169 ccf78348e -- scenarios/m06_follow_the_money/office_life/PLAN.md` plus REVIEW_R3.md. If R4 has no B/M, R5 is a Sonnet delta. Stop at R5 unless a blocker is open; leftover M/m go in the plan as open with reasons.
+- Next: R4. R3 changed what text may carry (secrets list 3.3, Tomasz's job and printout), so R4 is a delta review sent to the secret-handling reviewer tier, given `git diff 54bb60169 ccf78348e -- scenarios/m06_follow_the_money/office_life/PLAN.md` plus REVIEW_R3.md. If R4 has no B/M, R5 is a delta review. Stop at R5 unless a blocker is open; leftover M/m go in the plan as open with reasons.
 - Reviewer brief must say: read-only, never open SecGen XML, Vagrantfiles, SecGen scenario files or the m06_*_field_guide items; Irina, the guard, Kemal, Satoshi stay put; office life never sets cover_strained; VM flags stay required.
 
 
@@ -93,7 +93,7 @@ Tier: 2 in existing rooms plus two ambient extras, no new room. Cast: Irina, gua
 ## Next steps
 
 1. Write `ANALYSIS.md` (cast audit table with the lines above, rooms and machines, secrets list, beats, tier), `PLAN.md` (m05 section order), `QUESTIONS.md` (cast picks first).
-2. Plan review R1 on `opus55`, then rounds per the skill to R5; `REVIEW_R<n>.md` with B/M/m; rewrite PLAN.md standalone each round.
+2. Plan review R1 on the planning-tier reviewer, then rounds per the skill to R5; `REVIEW_R<n>.md` with B/M/m; rewrite PLAN.md standalone each round.
 3. Commit with explicit paths after `git diff --cached --stat`.
 
 ## Files touched

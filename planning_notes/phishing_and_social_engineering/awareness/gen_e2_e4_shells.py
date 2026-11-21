@@ -8,8 +8,8 @@ Adapted from gen_e3_e5_shells.py (P7-Y1). Differences from that script:
     E1 shells have since 55bfc0f7);
   - `se_awareness_records` is declared as `[]`, the shape the measurement store writes (P7-X2);
   - the company line in the check briefs comes from the episode, not a fixed Quayholt string;
-  - the defend-only shell carries the debrief panels: E2's macro concept panel (the fragment's
-    top-level `_conceptPanel`) as `strings.conceptPanel`, and E4's copied-voice panel
+  - the defend-only shell carries the debrief panels: E2's `strings.conceptPanel` is copied through
+    from the fragment's strings (as E3 and E5 do; wave 2 layer 1 wrote it there), and E4's copied-voice panel
     (`awarenessEpisode._voicePanel`) as `strings.voicePanel`.
 
 Usage: gen_e2_e4_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 REPO = awareness_deploy.repo_root()
 AW = f'{REPO}/planning_notes/phishing_and_social_engineering/awareness'
@@ -70,11 +71,17 @@ HOSTS = {
 LINES = {
     ('e2', 'defend'): (
         "Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.",
-        "That's the inbox sorted, thanks. A real CV just opens in the viewer. Anything that asks for more than that gets a second look from me.",
+        {'catch': ('You held back that application whose attachment wanted a second click to open it, so nothing ran on the HR machine behind it.',
+                   'A real CV just opens. The one asking for an extra step to view it is worth a second look.'),
+         'miss': ('That application with the attachment that wanted a second click was the one to stop.',
+                  'It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.')},
         'Thanks, Fatima.', 'Any time.'),
     ('e4', 'defend'): (
         "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
-        "That's everything cleared, thanks. Money, in a hurry? Ring her on a number you already hold, or ask Yasmin.",
+        {'catch': ("You held that urgent payment in Catherine's name until you'd reached her, so it never left for an account that wasn't hers.",
+                   "A voicemail that sounds like her and says don't ring back is the exact bit to distrust."),
+         'miss': ("That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.",
+                  "It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.")},
         'Thanks, Thandiwe.', 'Shout if anything else comes in.'),
     ('e2', 'pre'): (
         "Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.",
@@ -234,15 +241,8 @@ def load(ekey):
 
 
 def panels(ekey, frag, EP):
-    """The debrief panels the fragment drafted, as strings keys."""
+    """Debrief panels not already in the fragment's strings (E4's voice panel). E2's conceptPanel comes straight from strings."""
     out = {}
-    if ekey == 'e2' and isinstance(frag.get('_conceptPanel'), dict):
-        text = frag['_conceptPanel']['text']
-        lead = "Why 'enable content' matters. "
-        if text.startswith(lead):     # the draft's first sentence is its heading
-            out['conceptPanel'] = {'heading': lead.strip().rstrip('.'), 'text': text[len(lead):]}
-        else:
-            out['conceptPanel'] = {'text': text}
     if ekey == 'e4' and isinstance(EP.get('_voicePanel'), dict):
         out['voicePanel'] = strip_private(EP['_voicePanel'])
     return out
@@ -460,7 +460,9 @@ def kiosk(ep_id, observations):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, ending, globals_, social, host,
-             ink_name, kiosk_obs, extra=None):
+             ink_name, kiosk_obs, extra=None, tier='none', kit_row=None):
+    """tier is the office-kit tier (LIVING_OFFICE_PLAN.md 4.4): 'none' adds nothing and leaves the
+    output byte-identical; any other tier needs kit_row, the episodes.json row, which must carry that tier."""
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -502,12 +504,36 @@ def scenario(mission, name, brief, end_goal, aim, task, done, ending, globals_, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    # `after` is normally one line. When it is a {'catch': (c1, c2), 'miss': (m1, m2)} dict
+    # (a twin with a host line, mirroring the ca01 and ca12 twins), the done-branch splits on
+    # kit_key_caught into a two-clip catch and a two-clip miss. kit_key_caught comes from the
+    # defend set's keyMessage (office_kit), so the ink declares it and only reads it.
+    if isinstance(after, dict):
+        extra_var = 'VAR kit_key_caught = false\n'
+        after_block = (
+            '{ kit_key_caught:\n'
+            f"            {n}: {after['catch'][0]}\n"
+            f"            {n}: {after['catch'][1]}\n"
+            '        - else:\n'
+            f"            {n}: {after['miss'][0]}\n"
+            f"            {n}: {after['miss'][1]}\n"
+            '        }'
+        )
+    else:
+        extra_var = ''
+        after_block = f'{n}: {after}'
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -519,7 +545,7 @@ def ink_source(header, host, done, lines):
 // ================================================
 
 VAR {done} = false
-VAR hub_quiet = false
+{extra_var}VAR hub_quiet = false
 
 === start ===
 -> hub
@@ -529,7 +555,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {{ {done}:
-        {n}: {after}
+        {after_block}
     - else:
         {n}: {before}
     }}
@@ -588,9 +614,13 @@ def defend_only(ekey):
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
+    row = office_kit.row_for(mission)   # None: tier 'none', no kit
+    if row and row.get('handAuthored'):
+        row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, d['ending'],
                   round_globals(ep_id, prefix, done),
-                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'])
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'],
+                  tier=office_kit.tier_of(row), kit_row=row)
     meta = {
         'display_name': d['display'],
         'description': d['desc'],
@@ -669,7 +699,8 @@ def check(ekey, pair, stage):
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, CHECK_ENDINGS[stage],
                   round_globals(ep_id, prefix, done),
-                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, extra)
+                  {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, extra,
+                  tier='none')   # checks never carry the kit (plan 4.4)
     meta = {
         'display_name': display,
         'description': desc,

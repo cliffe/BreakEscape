@@ -2,7 +2,7 @@
 
 # m08 The Mole: scenario design review, pass 5, cycle 2
 
-Reviewer: fresh Opus agent, read-only (2026-10-14). Skill: `scenario-design-review`. Static review only. A Sonnet browser check ran at the same time, and I started no browser session.
+Reviewer: fresh agent, read-only (2026-10-14). Skill: `scenario-design-review`. Static review only. A scripted browser check ran at the same time, and I started no browser session.
 
 Sources: `scenario.json.erb` and the twelve `.ink` files at HEAD 8c7ece8e (the m08 folder was clean in the working tree), the engine files cited below, `DESIGN_REVIEW_P5_C1.md` and the scenario-design round-1 section of `IMPROVEMENT_LOOP_LOG.md`. I opened no SecGen XML and none of the four restricted field guides. Settled decisions are not reopened: Option B, the tip-off as the cost, free retries on HaX's reading, and the round-1 fixer's choices (the step-4 skip for two unavailable witnesses, B excluding a hostile Director, Phantom's challenge undrawn).
 

@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: scenario design review, round 3
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 3. Part 1 confirms R2's findings against the R2 fix commit (157a552a). Part 2 runs `.claude/skills/scenario-design-review/SKILL.md` again, giving most weight to the parts earlier rounds touched less: the briefing, the first ten minutes, pacing between flags, the identity scene and the debrief as a whole. I didn't reopen rulings settled in CONTRACT.md or earlier rounds.
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 3. Part 1 confirms R2's findings against the R2 fix commit (157a552a). Part 2 runs `.claude/skills/scenario-design-review/SKILL.md` again, giving most weight to the parts earlier rounds touched less: the briefing, the first ten minutes, pacing between flags, the identity scene and the debrief as a whole. I didn't reopen rulings settled in CONTRACT.md or earlier rounds.
 
 **The tree moved while I worked.** At the start, m09 was clean at 157a552a. Partway through, a dialogue-phase fixer began editing m09 (uncommitted: the briefing, debrief, HaX, Tran, Sorensen's hatch and door, the ERB, `texts/A_hax_texts.md`), and HEAD moved to 3efcb897 (an educational review document, no m09 game files). My validator, lint, reopencheck and recompile runs were on 157a552a before those edits. Where an in-flight edit touches a finding, I say so. Check the findings again once that work is committed.
 

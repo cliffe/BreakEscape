@@ -1,6 +1,6 @@
 # m07 lighting, cycle 4 review (closing review)
 
-Reviewer: fresh Opus agent, read-only. Sources: the skill (step 5 checklist and the rules), `docs/agents/LIGHTING_LOG.md` (m05 and m06 lessons), `LIGHTING_PLAN.md` with cycles 1-3, `review_c1.md` to `review_c3.md`, `DECISIONS_PENDING.md` L1, the seven lighting blocks in `scenario.json.erb` (744, 752, 1632, 1733, 1912, 2055, 2128), the countdown's `spriteVariants` and `textVariants` (2014-2027), and the four tour logs. I looked at every still in `lighting_c4/{base,armed,expired,saved}/` myself, diffed each against the same shot in `lighting_c3/`, set them against the unlit `dressing_c4/`, and measured regions with PIL. Positions are pixels on the 1400x1000 stills (2x zoom).
+Reviewer: fresh agent, read-only. Sources: the skill (step 5 checklist and the rules), `docs/agents/LIGHTING_LOG.md` (m05 and m06 lessons), `LIGHTING_PLAN.md` with cycles 1-3, `review_c1.md` to `review_c3.md`, `DECISIONS_PENDING.md` L1, the seven lighting blocks in `scenario.json.erb` (744, 752, 1632, 1733, 1912, 2055, 2128), the countdown's `spriteVariants` and `textVariants` (2014-2027), and the four tour logs. I looked at every still in `lighting_c4/{base,armed,expired,saved}/` myself, diffed each against the same shot in `lighting_c3/`, set them against the unlit `dressing_c4/`, and measured regions with PIL. Positions are pixels on the 1400x1000 stills (2x zoom).
 
 ## Summary
 

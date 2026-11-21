@@ -282,13 +282,13 @@ All other room blocks stay as committed: the `motion`/`flicker` choices in secti
 
 ## 8. Work order and checks
 
-1. **Engine first (Opus, one agent on `lighting.js`).** Order: E1, E4, E3, E2, E5, E6, then E7 last and alone, so a scissor problem can be reverted without losing the rest. E8 is a probe and runs alongside.
+1. **Engine first (one agent on `lighting.js`).** Order: E1, E4, E3, E2, E5, E6, then E7 last and alone, so a scissor problem can be reverted without losing the rest. E8 is a probe and runs alongside.
 2. **Engine checks:**
    - `node --test test/js/` (the log's known `engine-fixes-pass3` flake fails at HEAD too);
    - `bin/rails test`;
    - the tour on m02 with **no config change**, compared frame by frame with `before/`: only the red screens, the desk and the warmer-or-equal pools should differ;
    - one other lit mission if one exists by then.
-3. **Config (Sonnet):**
+3. **Config (scripted run):**
    - C1 + C2, then C3, then C4 (after E6), then C5;
    - `ruby scripts/validate_scenario.rb scenarios/m02_ransomed_trust/scenario.json.erb --skip-ink --no-graph`;
    - the tour into a new `after/` folder.

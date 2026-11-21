@@ -1,6 +1,6 @@
 # m05 Insider Trading: puzzle chains review, pass 5 round 2
 
-Reviewer: Opus, read-only (this file is the only write). Date: 2026-10-13. Skill: `mission-puzzle-chains`, run against the working tree after commit `158b2a60` (round-1 fixes). Probe routes are in the session scratchpad under `m05-puzzle-r2-reviewer/`.
+Reviewer: review agent, read-only (this file is the only write). Date: 2026-10-13. Skill: `mission-puzzle-chains`, run against the working tree after commit `158b2a60` (round-1 fixes). Probe routes are in the session scratchpad under `m05-puzzle-r2-reviewer/`.
 
 Kind of game: SAFETYNET campaign mission, a TV spy thriller. Aim for this stage: the locks chain, the player earns what they get, the deduction isn't handed over, red herrings cost something, kit is cumulative, and the VM flags are required and woven in.
 
@@ -109,7 +109,7 @@ Spoken lines the fixes touch: R2-3 (one changed, one new), R2-4 (one changed), a
 
 ### Browser checks before closing
 
-Sonnet, keyless server on :3001, one or two short runs with a mid-mission reload. These are round 1's open checks (no browser session has covered them yet) plus round 2's:
+Scripted run, keyless server on :3001, one or two short runs with a mid-mission reload. These are round 1's open checks (no browser session has covered them yet) plus round 2's:
 
 1. **Reward kept after rungs 1–2.** Badge log from Owen → "Where do I stand?" (expect "Ask her where it lives.", no front-door words) → Halloran → front-door reason first time → early naming → Torres' "You're early…", the debrief line, and NAMED ON THE EVIDENCE in the credits.
 2. **No reward after the method rung.** A wrong reason (or Halloran named after her alibi: "Try again."), then "Where do I stand?" gives "Her spare goes in at night…". The right reason → no "You're early", no reward credit.

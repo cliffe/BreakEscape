@@ -1,6 +1,6 @@
 # m07 lighting, cycle 5 review (closing check)
 
-Reviewer: fresh Opus agent, read-only. Sources: the skill, `LIGHTING_PLAN.md` (all cycles), `lighting_c4/review_c4.md`, the seven lighting blocks in `scenario.json.erb` (744, 752, 1632, 1733, 1912, 2055, 2128) and the countdown's `spriteVariants` (2014-2018), the m07 section of `docs/agents/LIGHTING_LOG.md`, `DECISIONS_PENDING.md` L1, the c4 tour shots, the c5 armed reshoot (game 2470), and `browser_check.md` with every relevant still in `live/`. Measurements are PIL means on the 1400x1000 stills, in the regions the c4 review used (ends 615-660 / 880-925 x y 330-380; rim 610-925 x y 200-222; monitor tops 460-590 / 780-910 x y 410-430).
+Reviewer: fresh agent, read-only. Sources: the skill, `LIGHTING_PLAN.md` (all cycles), `lighting_c4/review_c4.md`, the seven lighting blocks in `scenario.json.erb` (744, 752, 1632, 1733, 1912, 2055, 2128) and the countdown's `spriteVariants` (2014-2018), the m07 section of `docs/agents/LIGHTING_LOG.md`, `DECISIONS_PENDING.md` L1, the c4 tour shots, the c5 armed reshoot (game 2470), and `browser_check.md` with every relevant still in `live/`. Measurements are PIL means on the 1400x1000 stills, in the regions the c4 review used (ends 615-660 / 880-925 x y 330-380; rim 610-925 x y 200-222; monitor tops 460-590 / 780-910 x y 410-430).
 
 ## Summary
 

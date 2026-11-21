@@ -73,6 +73,11 @@
    (older engines fall back to the raw accent, which still meets AA on the default skin). */
 .aw-heading { margin: 0 0 8px; font-size: 32px; line-height: 40px; overflow-wrap: anywhere; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
 .aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
+/* D227 A1: the folded triage result's payoff at the top of the debrief: the set's band headline
+   and the score in large type (the old result card's .tri-score size). */
+.aw-band { margin: 0 0 12px; }
+.aw-band-headline { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
+.aw-band-score { margin: 0; font-size: 48px; font-weight: 700; line-height: 1; }
 /* C-X9: one awareness primary button, square with a 2px border, matching .epr-button and the
    password-guesser's action button so every action in the awareness windows reads the same.
    No radius or faux-bold (pixel-art UI). A secondary variant keeps the border and drops the fill. */

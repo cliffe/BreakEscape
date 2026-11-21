@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
+import office_kit  # noqa: E402
 
 
 REPO = awareness_deploy.repo_root()
@@ -244,8 +245,9 @@ def kiosk(ep_id, observations):
 
 
 def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, host, ink_name,
-             kiosk_obs, ending, extra=None):
+             kiosk_obs, ending, extra=None, tier='none', kit_row=None):
     """ending: (title, body) of the training success screen (README "The ending convention")."""
+    # tier: the office-kit tier (LIVING_OFFICE_PLAN.md 4.4); 'none' leaves the output byte-identical, any other tier needs kit_row.
     ink_path = f'scenarios/{mission}/ink/{ink_name}.json'
     ep_id = social['awarenessEpisode']['id']
     sc = {
@@ -287,6 +289,12 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     tr['npcs'] = [host_npc(host, done, task[0], ink_path)]
     tr['objects'] = [kiosk(ep_id, kiosk_obs)]
     sc['rooms'] = {'training_room': tr}
+    if tier != 'none':
+        assert kit_row and office_kit.tier_of(kit_row) == tier, f'{mission}: tier {tier!r} needs its episodes.json row'
+        office_kit.refuse_hand_authored_row(kit_row)   # hand-authored shells are touched only by apply_training_room.py --kit
+        office_kit.refuse_check_row(kit_row)
+        sc = office_kit.apply_kit(sc, office_kit.load_kit(kit_row['company']), kit_row, host_id=host['id'])
+        sc = office_kit.patch_kiosk(sc, kit_row)
     return sc
 
 
@@ -410,7 +418,10 @@ LINES = {
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
-        "That's the inbox sorted, thanks. Whatever the sign, report it and let the team act.",
+        {'catch': ('You reported that approval fast, so we isolated the account before it could send messages, reset passwords or reach the shared drive.',
+                   'A trusted internal account is worth more to them than any outside one. Speed is what closes the gap.'),
+         'miss': ('That spoofed sign-in approval, during the migration when a re-sign-in was expected, was the one to report at once.',
+                  'It stood, so the shared drive went down and work stopped while we rebuilt it from backup.')},
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
@@ -419,45 +430,72 @@ LINES = {
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
         "You're covering this desk inbox. Some of it is ordinary, some of it tries to open a door. If you didn't expect it or start it, report it.",
-        "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call me straight away, and don't pay or touch it.",
+        {'catch': ('You restarted when asked and reported it fast, so the sweep that locked other machines never reached this desk.',
+                   'The macro, the postponed restart, the protection waved off, each one just hands a program your access.'),
+         'miss': ('That document wanting content enabled, and the restart put off, were the ones to stop.',
+                  'It ran, machines locked and claims work stopped, and the team lost a weekend to rebuilds.')},
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e11', 'defend'): (
         "You're covering the Care Laundry desk inbox. Some is routine, some needs the data protection lead, and some was sent to catch you out. Report anything that looks wrong.",
-        "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
+        {'catch': ("You caught that overtime sheet of health notes heading to the wrong Payroll contact, so residents' details never left the building.",
+                   "A misdirected item is a same-day word with me, never a quiet delete. That's what keeps it containable."),
+         'miss': ("That send of residents' health notes to a familiar-looking wrong address was the one to stop.",
+                  'It left, so special-category details reached people with no right to them, and my week went to the recall and the letters.')},
         'Thanks, Tomasz.', 'Any time.'),
     ('e15', 'defend'): (
         "Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.",
-        "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it.",
+        {'catch': ('You handed that found stick to us unopened, so nothing on it ever ran on a work machine.',
+                   "A dull non-event is the point. The free shortcut is where a client pack ends up somewhere we can't account for."),
+         'miss': ('That stick left to be found, or the free tool for the client pack, was the one to stop.',
+                  'It got used, so months on nobody could say where that client data was or who could read it.')},
         'Thanks, Nilesh.', 'Any time.'),
     # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e20', 'defend'): (
         "The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.",
-        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake. If unsure, use your hotspot.",
+        {'catch': ('You treated that Wi-Fi sign-in page as a trap and used your hotspot, so your work password never reached a look-alike network.',
+                   'A page on the café network asking for your work password is the fake. A lost device reported at once is locked in minutes.'),
+         'miss': ('That look-alike Wi-Fi page asking for your work password was the one to stop.',
+                  'The password went in, so the account was used from another town and had to be reset and traced.')},
         'Thanks, Zainab.', 'Any time.'),
     ('e9', 'defend'): (
         "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
-        "That's it locked down, thanks. A different password for every account, kept in a manager, and deny anything you didn't start.",
+        {'catch': ("You didn't read that code back to the text pretending to be IT, so the one-time code stayed yours and the account held.",
+                   'A manager and a passkey make a reused password harmless, and every sign-in belongs to one person.'),
+         'miss': ('That text posing as IT, asking you to read a code back, was the one to stop.',
+                  "The account opened on a reused password, and with shared logins the audit couldn't say who had done what.")},
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
         "Anjali Rao, information security. You're not here to catch anyone. Start at the kiosk. Raise a concern as facts, then sort the messages. Tell me what you're offered.",
-        "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
+        {'catch': ("You kept your sign-in to yourself and sent her to the service desk, so no one else's actions landed under your name.",
+                   'Lending a login feels kind, but it leaves you answerable for whatever is done with it.'),
+         'miss': ('That ask to borrow your sign-in, from a colleague locked out and under pressure, was the one to turn down.',
+                  'It was lent, so the audit pointed at you for work that was never yours, and nobody could say who did what.')},
         'Thanks, Anjali.', 'Any time.'),
     # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e14', 'defend'): (
         "You're on an authorised exercise. Some posts in the feed give too much away, and some messages in the inbox fish for how we work.",
-        "That's the feed and the inbox done, thanks. The tell is always what they ask for, no matter how friendly they seem. Report anything that asks about our systems.",
+        {'catch': ("You checked that new contact by a known route, so the account wearing a partner's name got nothing out of the studio.",
+                   "It reads like an insider because it's built from our public posts. The name alone is never the proof."),
+         'miss': ("That second account in a partner's name, friendly and knowing our details, was the one to doubt.",
+                  'It was trusted, so a security answer went public, and a week later we were resetting it and reporting the fake account.')},
         'Thanks, Julian.', 'Any time.'),
     # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e10', 'defend'): (
         "The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.",
-        "That's the morning sorted, thanks. No honest web page ever needs you to paste, run, install or call.",
+        {'catch': ('You didn\'t follow that fake "verify you\'re human" step on the portal, so no extension got near the finance system.',
+                   'Anything telling you to paste, run or install to carry on is the tell. Real software comes from a route you already trust.'),
+         'miss': ('That page dressed as a routine check, asking you to run a step to continue, was the one to stop.',
+                  'The step ran, an extension reached finance and the intranet, and the machine was off for a rebuild.')},
         'Thanks, Niamh.', 'No bother.'),
     # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     # P1 C2 MIN-3: "come thick" (clipped from "thick and fast") -> "come fast"; P1 plain-words: "sweep" -> "an attack".
     ('e18', 'defend'): (
         "Your own seat now. After an attack the alerts come fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
-        "That's them sorted, thanks. A genuine alert never asks for your password. The fakes always do. Report the fakes, and change a reused password on the real site.",
+        {'catch': ("You didn't trust that fake lockout alert, so it never steered a password onto a look-alike page and opened an account here.",
+                   'A unique password per account in a manager, with MFA, is the one habit that beats both spraying and stuffing.'),
+         'miss': ('That lockout alert dressed as our own IT, hurrying you to sign in again, was the one to stop.',
+                  'The password reached the fake page, and the account it opened reached work email, client files and a supplier portal.')},
         'Thanks, Ama.', 'Any time.'),
 }
 
@@ -906,8 +944,12 @@ def defend_only(ekey):
         social['intelFacts'] = copy.deepcopy(cfg['defend_intel_facts'])
         for _fid in cfg['defend_intel_facts']:
             globals_[f'se_intel_{_fid}'] = False
+    row = office_kit.row_for(mission)   # None: tier 'none', no kit
+    if row and row.get('handAuthored'):
+        row = None   # only apply_training_room.py --kit touches a hand-authored shell
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
-                       social, host, ink_name, d['kiosk'], d['conclusion'])
+                  social, host, ink_name, d['kiosk'], d['conclusion'],
+                  tier=office_kit.tier_of(row), kit_row=row)
     # titleScreenName sits right after scenario_name.
     sc = {k2: v2 for k, v in sc.items() for k2, v2 in
           (((k, v), ('titleScreenName', TITLE_NAMES[ekey])) if k == 'scenario_name' else ((k, v),))}

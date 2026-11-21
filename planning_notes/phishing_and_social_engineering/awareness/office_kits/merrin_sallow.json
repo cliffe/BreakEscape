@@ -95,13 +95,51 @@
         "rest": {
           "decayPerMin": 30,
           "urgentAt": 50,
-          "initial": 45
+          "initial": 65
         }
       },
       "chatterLines": [
         "Planning panel on Thursday.",
         "Where's that elevation?",
         "That roof pitch still won't work."
+      ]
+    },
+    "lorna_easton": {
+      "displayName": "Lorna Easton",
+      "spriteSheet": "lorna_easton",
+      "voice": {
+        "name": "Erinome",
+        "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": { "x": 4.5, "y": 4.5 },
+      "needsHome": { "room": "training_room", "x": 4.5, "y": 4.5, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "rest": { "decayPerMin": 20, "urgentAt": 50, "initial": 70 } },
+      "chatterLines": [
+        "Reception's been non-stop.",
+        "Kettle's on if you fancy one.",
+        "Lovely and quiet this afternoon."
+      ]
+    },
+    "delphine_arvanitis": {
+      "displayName": "Delphine Arvanitis",
+      "spriteSheet": "delphine_arvanitis",
+      "voice": {
+        "name": "Despina",
+        "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": { "x": 7.5, "y": 4.5 },
+      "needsHome": { "room": "training_room", "x": 7.5, "y": 4.5, "facing": "south" },
+      "needsSpeed": 90,
+      "chatterCooldownMin": 5,
+      "needs": { "rest": { "decayPerMin": 20, "urgentAt": 50, "initial": 60 } },
+      "chatterLines": [
+        "Three deliveries already.",
+        "Phone's not stopped ringing.",
+        "Visitor book's filling up."
       ]
     }
   },

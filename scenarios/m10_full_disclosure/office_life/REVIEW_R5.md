@@ -1,6 +1,6 @@
 # m10 office life: plan review R5
 
-Reviewer tier: Opus planning tier, read-only, after R4 found a blocker. Scope: the PLAN.md diff since R3's input plus a fresh read of sections 2.3, 2.4, 3 and 10.
+Reviewer tier: planning tier, read-only, after R4 found a blocker. Scope: the PLAN.md diff since R3's input plus a fresh read of sections 2.3, 2.4, 3 and 10.
 
 **Counts: 0 blockers, 2 majors, 2 minors.** M1 needed a design decision: the plan recommends one and `QUESTIONS.md` Q5 asks the user. All fixed in PLAN.md in the same commit as this file.
 

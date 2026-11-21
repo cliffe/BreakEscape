@@ -2,7 +2,7 @@
 
 ## Scope and method
 
-2026-10-22. Phase 1 (alignment), round 1, of the AGENTS.md five-phase loop. One fresh Opus reviewer, read-only, static only (no browser session). I ran the `mission-alignment-plan` skill's ten-row rubric as a single reviewer, as m05's pass 5 did; the planner and reviewer roles are folded into this one pass because I am already the delegated reviewer. The plan is in `ALIGNMENT_PLAN.md` beside this file.
+2026-10-22. Phase 1 (alignment), round 1, of the AGENTS.md five-phase loop. One fresh reviewer, read-only, static only (no browser session). I ran the `mission-alignment-plan` skill's ten-row rubric as a single reviewer, as m05's pass 5 did; the planner and reviewer roles are folded into this one pass because I am already the delegated reviewer. The plan is in `ALIGNMENT_PLAN.md` beside this file.
 
 I judged the built mission (`scenario.json.erb`, `mission.json`, `ink/`, `texts/`), not the stage docs, and used the stage docs and `FINALE_ARC.md` only to check intent. Canon was checked against m08 (before) and m10 (after) as built, and against m01–m07 wherever m09 reads their exports. No SecGen file, VM plan or field guide was opened. VM flags are judged by what they mean in the story.
 

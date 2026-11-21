@@ -121,7 +121,7 @@ The pick window by the checkpoint's N door (36 cells) and the floor under the ex
 
 ## Cycle 2 (2026-10-13): review of cycle 1, and fixes
 
-A fresh Opus reviewer (read-only) went through the cycle 1 rooms against the skill's critique list and the hard constraints. All seven hard constraints passed: Kemal's beat and slip-past window, the guard's pick window and beat, the Signing Case on the desk's front edge, the clipping on the wall, the key clues findable, no pick-one menus between slots, door lanes, and the m11 layout (no connection change). Its verdict: cycle 1 is a large improvement; the executive wing, Satoshi's office, the lab and Irina's office lagged.
+A fresh reviewer (read-only) went through the cycle 1 rooms against the skill's critique list and the hard constraints. All seven hard constraints passed: Kemal's beat and slip-past window, the guard's pick window and beat, the Signing Case on the desk's front edge, the clipping on the wall, the key clues findable, no pick-one menus between slots, door lanes, and the m11 layout (no connection change). Its verdict: cycle 1 is a large improvement; the executive wing, Satoshi's office, the lab and Irina's office lagged.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -176,7 +176,7 @@ My own pass: the executive wing's west wall became a small gallery (a hand-drawn
 
 Checks: validator, door alignment 8/8, walls all 64, slot audit 0 problems and 0 notes prompts (the clipping's prompt is gone), routes 27/27 (one run showed 12 failures while the dialogue agent was mid-compile; re-run clean). Kemal's cone unchanged. In game: game 2326, `build_evidence/dressing_c3/`.
 
-### Review (fresh Opus reviewer, read-only)
+### Review (fresh reviewer, read-only)
 
 All hard constraints pass, including Priya's new spot (her ~80 px tap frame holds no slot; nearest paper 75 px from her centre) and the clipping (wall object with `readDisplay`, reachable from below). Verdict: a real but modest improvement; Satoshi's office, Irina's office and the executive wing deserve one more cycle, the rest are at small returns.
 
@@ -208,7 +208,7 @@ New art (cycles 3-4): hand-drawn `hce_sconce1`, `hce_art_canvas1`. No PixelLab s
 
 ## Cycle 5 (2026-10-13, in progress): confirmation review and interaction walk
 
-Fresh Opus review of the cycle 4 rooms: 0 blockers, 1 major, 6 minors (5 optional or housekeeping, plus 1 note). All hard constraints pass: Kemal 26/117/108 cells, window 2/20, 20/20, 0/20; guard 36/36 walkable, poses unchanged; Signing Case on the desk edge; the safe unobscured; the clipping on the wall with `readDisplay`; clues readable; every slot 50 px or more from the next; lanes and covered rows clear. Verdict: dressing can close once LAB-4 is fixed; every room is at small returns.
+Fresh reviewer review of the cycle 4 rooms: 0 blockers, 1 major, 6 minors (5 optional or housekeeping, plus 1 note). All hard constraints pass: Kemal 26/117/108 cells, window 2/20, 20/20, 0/20; guard 36/36 walkable, poses unchanged; Signing Case on the desk edge; the safe unobscured; the clipping on the wall with `readDisplay`; clues readable; every slot 50 px or more from the next; lanes and covered rows clear. Verdict: dressing can close once LAB-4 is fixed; every room is at small returns.
 
 | id | room | sev | finding | outcome |
 |---|---|---|---|---|
@@ -222,7 +222,7 @@ Fresh Opus review of the cycle 4 rooms: 0 blockers, 1 major, 6 minors (5 optiona
 
 The lab, executive wing, Satoshi's office and data centre maps were regenerated after the fixes.
 
-### Interaction walk (Sonnet, game 2328, every room unlocked server-side; session stopped, :3001 left as found)
+### Interaction walk (scripted run, game 2328, every room unlocked server-side; session stopped, :3001 left as found)
 
 All six checklist items pass. Every room loads its new map, with no duplicate sprites and no "No Tiled item found", before and after a page reload. Every scenario object opens directly, with no pick-one menu. Each door-to-door walk crosses. The guard and Kemal were talked past, with no debug KO.
 

@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R11, CONTRACT §11 (rounds 1 to 11) and the finale brief. The tree is HEAD c2ba82f1. The R11 fixes are c2ba82f1 alone (467fe366..HEAD also holds an SE-lab commit and an AGENTS.md commit, neither touching m10). m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r12/` (R11's folder copied, plus `tagsplit.cjs`, `midreply.cjs`, `left_in_place.cjs`, `endings.mjs`, `presets.json` and `fixtry/`).
+2026-10-22. Fresh reviewer, read-only for game files. I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R11, CONTRACT §11 (rounds 1 to 11) and the finale brief. The tree is HEAD c2ba82f1. The R11 fixes are c2ba82f1 alone (467fe366..HEAD also holds an SE-lab commit and an AGENTS.md commit, neither touching m10). m10 has no uncommitted changes. No VM material was opened. Scratch files are in the session scratchpad's `m10_r12/` (R11's folder copied, plus `tagsplit.cjs`, `midreply.cjs`, `left_in_place.cjs`, `endings.mjs`, `presets.json` and `fixtry/`).
 
 What I ran:
 - **Compile check.** I recompiled `six_oclock`, `gary`, `imran`, `victoria` and `voltage` with `bin/inklecate` into scratch and compared the JSON with the committed files: identical. No m10 `.json` is older than its `.ink`.

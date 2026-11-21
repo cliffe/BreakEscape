@@ -70,7 +70,7 @@ const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
 const { EpisodeRunnerMinigame, _resetDefendReemitsForTests } = await load('minigames/episode-runner/episode-runner-minigame.js');
-const { _resetTriageStarterForTests, persistTriageResult, startInboxTriageMinigame } = await load('systems/triage-starter.js');
+const { _resetTriageStarterForTests, persistTriageResult, startInboxTriageMinigame, messageCaught } = await load('systems/triage-starter.js');
 const { renderDebrief: realRenderDebrief } = await load('minigames/episode-runner/debrief-view.js');
 const { buildTriageMessages } = await load('minigames/inbox-triage/triage-messages.js');
 const { scoreTriage } = await load('minigames/inbox-triage/triage-scoring.js');
@@ -972,6 +972,70 @@ test('messageGlobals: the runner\'s defend round (real starter) sets the global 
         assert.ok(iM >= 0 && iC > iM, 'the message global is emitted before complete');
         assert.ok(order.indexOf('global_variable_changed:kit_m2_caught') === -1, 'unchanged false is not emitted');
     } finally { deps.startTriage = realStart; }
+});
+
+// outcome.messageCaughtVerdicts (build review W2 M1): a key message whose lesson is "report it"
+// lists the verdicts that count, so a Delete does not set kit_key_caught and the host does not
+// praise a report the learner never made. Without the option the default (Report, Delete, Verify) holds.
+
+const runDefendRound = async (answers) => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] } });
+    _resetTriageStarterForTests();
+    const set = withMessageGlobals();
+    set.outcome.messageCaughtVerdicts = { m1: ['report', 'verify'] };
+    const realStart = deps.startTriage;
+    deps.startTriage = (lockable, options) => startInboxTriageMinigame(lockable, options);
+    delete window.stateSync;
+    try {
+        open(ep);
+        click('.epr-launch');
+        assert.ok(scene() === 'inbox-triage');
+        cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0, verifyCount: 0, answers };
+        cur().complete(true);
+        await flush();
+        return window.gameState.globalVariables;
+    } finally { deps.startTriage = realStart; }
+};
+
+test('messageCaughtVerdicts: Delete on a report-only key message leaves its global false; Delete on an unlisted message still counts', async () => {
+    const g = await runDefendRound([
+        { id: 'm1', verdict: 'delete', flags: [], ms: 500 },
+        { id: 'm2', verdict: 'delete', flags: [], ms: 400 }
+    ]);
+    assert.ok(g.kit_m1_caught === false, 'a Delete is not a report');
+    assert.ok(g.kit_m2_caught === true, 'm2 has no list: the default counts Delete');
+    assert.ok(g.episode_e1_fixture_defend_complete === true);
+    assert.ok(!events.some((e) => e.name === 'global_variable_changed:kit_m1_caught'), 'unchanged false is not emitted');
+});
+
+test('messageCaughtVerdicts: Report on the report-only key message sets its global', async () => {
+    const g = await runDefendRound([
+        { id: 'm1', verdict: 'report', flags: ['sender'], ms: 500 },
+        { id: 'm2', verdict: 'trust', flags: [], ms: 400 }
+    ]);
+    assert.ok(g.kit_m1_caught === true, 'Report is listed');
+    assert.ok(g.kit_m2_caught === false, 'Trust is never a catch');
+});
+
+test('messageCaught: the per-message list wins, a malformed or empty list falls back to the default', () => {
+    const r = (verdict) => ({ answers: [{ id: 'k', verdict }] });
+    const only = (list) => ({ outcome: { messageCaughtVerdicts: { k: list } } });
+    assert.equal(messageCaught(r('delete'), 'k', only(['report'])), false);
+    assert.equal(messageCaught(r('report'), 'k', only(['report'])), true);
+    assert.equal(messageCaught(r('verify'), 'k', only(['report'])), false);
+    assert.equal(messageCaught(r('verify'), 'k', only(['report', 'verify'])), true);
+    // delete-OK: no list, or a list naming delete
+    assert.equal(messageCaught(r('delete'), 'k', null), true);
+    assert.equal(messageCaught(r('delete'), 'k', { outcome: {} }), true);
+    assert.equal(messageCaught(r('delete'), 'k', only(['report', 'delete', 'verify'])), true);
+    // malformed: not an array, empty, or only unknown verdicts (trust is never a catch) -> default
+    assert.equal(messageCaught(r('delete'), 'k', only('report')), true);
+    assert.equal(messageCaught(r('delete'), 'k', only([])), true);
+    assert.equal(messageCaught(r('trust'), 'k', only(['trust'])), false);
+    assert.equal(messageCaught(r('delete'), 'k', { outcome: { messageCaughtVerdicts: ['report'] } }), true);
+    // no answer for the message is never caught
+    assert.equal(messageCaught({ answers: [] }, 'k', only(['report'])), false);
 });
 
 test('messageGlobals: the Gate B D2 re-emit hands the defend set to the starter, so a reopen carries the true global first', async () => {

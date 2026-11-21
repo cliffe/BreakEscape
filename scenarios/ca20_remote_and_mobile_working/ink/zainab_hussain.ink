@@ -26,6 +26,10 @@
 // ================================================
 
 VAR episode_e20_remote_and_mobile_working_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca20_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -35,6 +39,19 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca20_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Zainab Hussain: You treated the lookalike network as the trap it was, so no work password ever reached their page.
+            - else:
+                Zainab Hussain: You stopped the one that counted, the page after your work password, before it opened the account.
+            }
+        - else:
+            Zainab Hussain: Working on the move is the job, but a password typed on a lookalike network is an account someone can use from another town.
+        }
+        Zainab Hussain: Treat a network named like the venue's as a trap, and ring in the moment a device goes missing. Reported fast, it's locked in minutes.
+        ~ kit_ca20_host_said = true
+    - else:
     { episode_e20_remote_and_mobile_working_defend_complete:
         Zainab Hussain: That's both sides done. On the venue's own network with the VPN, ordinary work is fine.
         Zainab Hussain: A Wi-Fi page asking for your work password is always a fake. When you're not sure, use your phone's hotspot.
@@ -44,6 +61,7 @@ VAR hub_quiet = false
         Zainab Hussain: Working on the road is normal and fine. It's the small things that catch people.
         Zainab Hussain: A screen someone reads, a call someone hears, a bag left for a minute, a password typed into the wrong Wi-Fi page.
         Zainab Hussain: I'll walk you through two days, then you sort the real networks from the fakes. Nothing here is a real password.
+    }
     }
 }
 + [Thanks, Zainab.]

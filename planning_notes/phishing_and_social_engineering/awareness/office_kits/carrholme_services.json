@@ -1,0 +1,31 @@
+{
+  "company": "carrholme_services",
+  "_note": "Carrholme Services office kit (WAVE2_BUILD.md D12, P-KC). Tiles are px/32 on the 10x10 Care Laundry map room_aw_carrholme. Yusuf Demir is the only kit colleague (ca11, observed; PLAN 8.3), so there is no pool: _maybePair needs two drinkers at a capacity-2 source and there is never a second (npc-needs.js:4490-4502). The map draws no source for a non-work need, so the kit declares a water_cooler with an explicit position, using the preloaded water_cooler1.png (24x47, game.js). With no drawn cooler to bind to, rooms.js creates the sprite by the fallback (findMatchFor returns null, then createSpriteAtRandomPosition and applyScenarioObjectPosition, ~2447-2510) and moves it to position; the cooler has no collision body (static bodies go only to tables and wheeled chairs, rooms.js ~2805-2834), so click-to-move routes round it (path-avoid.js water_cooler pattern, 47px over the 40px floor). position is tiles, room-relative, the sprite top-left corner; useFrom is from the sprite centre (npc-needs.js describe/approachCell). Cooler at column 8, rows 5-7, below the wall-hung extinguisher and under the kiosk's bottom edge (kiosk covers rows 3-4 of cols 7-8; the linen cart covers rows 8-9); clear of the learner's start (6,6.2) to host (5.5,3.8) and the kiosk. Used from the front (south). Yusuf's home is a chair on the north side of the shared desk (left of the room), well clear of the learner path. The test fixture test_ca_office_kit keeps shortened timings through the override on its episodes.json row.",
+  "scenario": { "npcThoughts": false },
+  "pool": null,
+  "poolExempt": "Yusuf Demir is Carrholme's only kit colleague (ca11, observed), so there is never a second drinker at the cooler for a capacity-2 pool topic to fire (_maybePair needs two). D12.",
+  "sources": [
+    {
+      "type": "water_cooler",
+      "id": "kit_cooler",
+      "name": "Water cooler",
+      "sprite": "water_cooler1",
+      "takeable": false,
+      "interactable": false,
+      "observations": "A water cooler by the shared desk. Staff top up between jobs.",
+      "position": { "x": 8.2, "y": 5.6 },
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": 1.25 } }
+    }
+  ],
+  "staff": {
+    "yusuf_demir": {
+      "displayName": "Yusuf Demir",
+      "spriteSheet": "yusuf_demir",
+      "voice": { "name": "Alnilam", "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 3, "y": 7 },
+      "needsHome": { "room": "training_room", "x": 3, "y": 7, "facing": "south" },
+      "needsSpeed": 90,
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } }
+    }
+  }
+}

@@ -26,6 +26,26 @@ export function kindOf(rec) {
     return isStr(rec?.kind) ? rec.kind : 'email';
 }
 
+/**
+ * The awareness "where to look next" line for a set of message kinds (E5-7): an inbox talks about
+ * the next messages at work, a page set about the address bar, a call/prompt queue about checking
+ * through a channel you trust. A mixed set falls back to the inbox wording. Shared by the triage
+ * result card and the episode debrief (D227 A1, which folds that card away).
+ */
+export function awarenessWeakestLineFor(kinds, it = 'it') {
+    const list = Array.isArray(kinds) ? kinds : [];
+    const every = (allow) => list.length > 0 && list.every((k) => allow.includes(k));
+    const ask = 'and if you are not sure, ask your IT or security team.';
+    if (list.some((k) => k === 'email' || k === 'playerSent')) return `Look for ${it} in the next messages you get at work, ${ask}`;
+    if (every(['page'])) return `Read the address bar before you sign in to any page, ${ask}`;
+    if (every(['call', 'push', 'voicemail'])) {
+        return `If a caller, prompt or voicemail pushes you to act, stop and check through a channel you already trust, ${ask}`;
+    }
+    if (every(['choice'])) return `Think back to the choices you missed the next time they come up at work, ${ask}`;
+    if (every(['sms', 'qr'])) return `Be wary of links and codes you did not ask for, ${ask}`;
+    return `Look for ${it} in the next messages you get at work, ${ask}`;
+}
+
 export function isNonEmail(recOrKind) {
     const k = typeof recOrKind === 'string' ? recOrKind : kindOf(recOrKind);
     return NON_EMAIL_KINDS.includes(k);

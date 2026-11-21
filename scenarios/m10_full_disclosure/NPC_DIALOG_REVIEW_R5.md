@@ -1,6 +1,6 @@
 # m10 Full Disclosure: NPC dialogue review, round 5
 
-Phase 4 (dialogue), round 5. Reviewer: Opus, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 32 ink files (31 conversations plus the carry-over include), HaX's texts and the barks in `scenario.json.erb`, the three VM-gating objects and the closing scenes. Base: commit `588b5ae52` (dialogue R4, scenario design R4, puzzle chains R3). Line numbers are for that commit.
+Phase 4 (dialogue), round 5. Reviewer: review agent, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 32 ink files (31 conversations plus the carry-over include), HaX's texts and the barks in `scenario.json.erb`, the three VM-gating objects and the closing scenes. Base: commit `588b5ae52` (dialogue R4, scenario design R4, puzzle chains R3). Line numbers are for that commit.
 
 **The tree moved during the review.** A scenario design R5 fixer is editing `phone_agent0x99.ink`, `tesseract.ink` and the ERB (uncommitted). It has already split the R4 n4 mapping into two `&&` mappings (SD R5 m1), which is exactly m1's fix. As R4 did, I record m1 and don't count it. §5 has notes on the fixer's other new lines.
 

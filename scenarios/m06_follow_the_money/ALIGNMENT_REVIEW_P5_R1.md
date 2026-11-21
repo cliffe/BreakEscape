@@ -1,6 +1,6 @@
 # m06 pass 5: alignment review, round 1
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). `mission-alignment-plan` rubric applied in full by one reviewer, measured against m02, m03 and m04 as they are now, with canon checked against m05 and m07. Every claim below was checked against `scenario.json.erb` and the ink; the older docs were not relied on. No SecGen XML or restricted lab-sheet body was opened.
+2026-10-13. Reviewer, read-only, static only (no browser session). `mission-alignment-plan` rubric applied in full by one reviewer, measured against m02, m03 and m04 as they are now, with canon checked against m05 and m07. Every claim below was checked against `scenario.json.erb` and the ink; the older docs were not relied on. No SecGen XML or restricted lab-sheet body was opened.
 
 Checks run:
 - validator (`--skip-ink --no-graph`): ERB, JSON, schema, unknown fields, geometry and door alignment all clean. 12 wiring warnings, all duplicate event pairs on `agent_0x99_handler`; I read each pair and they are deliberate (text plus task backstop, or disjoint in practice). 12 issues and suggestions, of which the useful ones are #9 (no hostile NPC anywhere) and #11/#12 (credits sections with no unconditional line; I traced both and every path prints at least one line).

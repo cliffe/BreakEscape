@@ -1,6 +1,6 @@
 # m06 Follow the Money: puzzle chains review, pass 5 round 3
 
-Read-only review (Opus, static, with probe routes). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill.
+Read-only review (static, with probe routes). Kind of game: a SAFETYNET campaign mission, a TV spy thriller about a money trail. Measured against m01_first_contact, m02_ransomed_trust and the `mission-puzzle-chains` skill.
 
 The review started on `9f36d6f5` (round 2's fixes). **Two commits landed during it:** `6c56ad60` (the browser check of round 1) and `8c8ee374` ("puzzle round 2 browser follow-up"). Their findings: mapping conditions resolve only one level of `data.<name>` (`npc-manager.js:35-43`, `resolveLHS`; `DECISIONS_PENDING.md` D5), so at `9f36d6f5` `data.result.maxAttemptsReached` was always false and neither console mapping ever fired. `8c8ee374` keys both on a flat `data.result` and moves the signing case onto the desk's front edge. **Findings below are written against `8c8ee374`.** The routes, the validator and `dialoguelint` were re-run on it. `erb:N` numbers before line 1290 are the same in both commits. From there on, the cited numbers are `9f36d6f5`'s; add 6 for `8c8ee374` (the console mappings are at erb:1299 and 1310 there). Citations: `erb:N` is `scenario.json.erb`; ink files by short name (`irina`, `phone`, `debrief`, `satoshi`).
 
@@ -92,7 +92,7 @@ Only the parts the round-2 changes touch. The rest stands as in rounds 1 and 2.
 
 ## Final browser checklist for closing the phase
 
-Sonnet, keyless server on :3001, runs of 10–15 minutes with at least one page reload mid-run. Read globals through `window.__test` and confirm progress with `verify-run.rb`. Items 1–3 assume M-R3-1 and m-R3-1 are in; if the orchestrator takes the engine route instead, test the same outcomes.
+Scripted run, keyless server on :3001, runs of 10–15 minutes with at least one page reload mid-run. Read globals through `window.__test` and confirm progress with `verify-run.rb`. Items 1–3 assume M-R3-1 and m-R3-1 are in; if the orchestrator takes the engine route instead, test the same outcomes.
 
 1. **Console strikes.**
    - **Before any fix (`8c8ee374` as it stands):** key one wrong slot, then press Cancel. Do the same with the × button and with Esc. Log the `minigame_failed` payload each time: it should be `{"result": null}`, and `cover_strained` and `console_tripped` should stay false. Then two wrong slots in one opening: the payload has a non-null `result` (`attempts: 2, maxAttemptsReached: true`), the strain text arrives (cover held), and `console_tripped` is true. This confirms the static reading in the F1 row and shows M-R3-1's bypass live.

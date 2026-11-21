@@ -5,10 +5,20 @@ VAR kit_key_caught = false
 === start ===
 { kit_defend_done:
     { kit_ep == "ca01": -> ca01 }
+    { kit_ep == "ca07": -> ca07 }
 }
 Gwen Pritchard: Hello there. Grab a coffee if you need one.
 -> bye
 
+=== ca07 ===
+{ kit_key_caught:
+    Gwen Pritchard: Good catch. Someone wanting it kept quiet is the real warning.
+- else:
+    Gwen Pritchard: Payment run's frozen while they re-check it. Nervy few hours ahead.
+}
+-> bye
+
+// ca01 is kept the last episode knot before bye so the QS stub test reads only its branch lines.
 === ca01 ===
 { kit_key_caught:
     Gwen Pritchard: Good spot on that bank-details email. That one would've sailed straight through.

@@ -876,7 +876,7 @@ None blocks the plan.
   - **Debrief:** 5 endings × `found_stand_down_email` true/false (10/10 reach a clean end).
   - **Opening:** `start`, confirming every path passes `cover_story`.
 
-**Playtest** (separate Sonnet agent, `playtest-scenario`):
+**Playtest** (separate test agent, `playtest-scenario`):
 - (a) The start inventory shows the four items. The phone lists HaX and Patricia only.
 - (b) Owen's clone. The minigame returns to `owen_clone_debrief` and shows the success line. The hallway opens on the saved card. `obtain_server_badge` ticks on entry. Cancel once to check the retry.
 - (c) The server-room door: HaX's neutral bark and the door sign.

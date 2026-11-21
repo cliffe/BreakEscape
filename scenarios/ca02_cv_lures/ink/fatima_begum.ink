@@ -11,6 +11,10 @@
 
 VAR phish_recruiter_contact_attempts = 0
 VAR episode_e2_cv_lures_defend_complete = false
+VAR kit_defend_done = false
+VAR kit_caught = false
+VAR kit_key_caught = false
+VAR kit_ca02_host_said = false
 VAR hub_quiet = false
 
 === start ===
@@ -20,6 +24,20 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { kit_defend_done && not kit_ca02_host_said:
+        { kit_key_caught:
+            { kit_caught:
+                Fatima Begum: You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean.
+            - else:
+                Fatima Begum: You stopped the one that wanted enabling, so nothing ran. A couple of the others are worth another look, and the debrief goes through them.
+            }
+            Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
+        - else:
+            Fatima Begum: That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed.
+            Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
+        }
+        ~ kit_ca02_host_said = true
+    - else:
     { episode_e2_cv_lures_defend_complete:
         Fatima Begum: Inbox and all, that's the pair of them done.
         Fatima Begum: A real CV just opens in the viewer. Anything that wants more than that from you is worth a second look.
@@ -29,6 +47,7 @@ VAR hub_quiet = false
         - else:
             Fatima Begum: Welcome to the Tarrowby exercise. Start at the kiosk: research the vacancy and the recruiter, send one application as the red team, then swap seats and cover the recruitment inbox.
         }
+    }
     }
 }
 + [Thanks, Fatima.]

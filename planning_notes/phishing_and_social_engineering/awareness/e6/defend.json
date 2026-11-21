@@ -571,7 +571,11 @@
       "flipLandedNoTells": "It landed clean on the phone, with nothing in it to flag. Next, the same kind of message turns up on a Tarrowby work phone, and you're the one reading it.",
       "noBlameLine": "Being caught by one of these is no fault of yours. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
       "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. A message from a new number saying 'it's me' is a warning sign, not proof: reach the person on the number you already hold. Open the app or site the way you normally would, or ring the sender on a number you already have, then report the message using the route in the box below. At home, forward a scam text to 7726 for free, call 159 for a call that says it's your bank, and report fraud to Report Fraud.",
-      "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
+      "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "conceptPanel": {
+        "heading": "When a code is trusted",
+        "text": "A barrier code trusted on sight can take a colleague's own card details or a work sign-in, and either one turns into an afternoon chasing the bank and a forced reset at work."
+      }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e6_texts_and_qr_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",

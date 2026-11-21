@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e18_credential_attacks_at_scale_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e18_credential_attacks_at_scale_defend_defend_complete:
-        Ama Owusu: That's them sorted, thanks. A genuine alert never asks for your password. The fakes always do. Report the fakes, and change a reused password on the real site.
+        { kit_key_caught:
+            Ama Owusu: You didn't trust that fake lockout alert, so it never steered a password onto a look-alike page and opened an account here.
+            Ama Owusu: A unique password per account in a manager, with MFA, is the one habit that beats both spraying and stuffing.
+        - else:
+            Ama Owusu: That lockout alert dressed as our own IT, hurrying you to sign in again, was the one to stop.
+            Ama Owusu: The password reached the fake page, and the account it opened reached work email, client files and a supplier portal.
+        }
     - else:
         Ama Owusu: Your own seat now. After an attack the alerts come fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.
     }

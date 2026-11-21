@@ -8,7 +8,7 @@ Stages: regression playtest, then alignment, puzzle chains and scenario design (
 
 ### Phase 1 alignment, round 1
 
-Review: `ALIGNMENT_REVIEW_P5_R1.md` (Opus, read-only, static). The file is partial: a safety check stopped the reviewer partway through, and the orchestrator finished it from the hand-back. Before acting, the fixer checked each finding against `scenario.json.erb` and the ink. The fixer was also stopped once by a safety check while reading engine source. It resumed on the orchestrator's instruction and worked from m03's and m04's scenario configs only.
+Review: `ALIGNMENT_REVIEW_P5_R1.md` (read-only, static). The file is partial: a safety check stopped the reviewer partway through, and the orchestrator finished it from the hand-back. Before acting, the fixer checked each finding against `scenario.json.erb` and the ink. The fixer was also stopped once by a safety check while reading engine source. It resumed on the orchestrator's instruction and worked from m03's and m04's scenario configs only.
 
 Counts: 0 blockers, 7 majors, 13 minors listed (the review said "about 15"). Outcomes: 7 majors fixed (A6 reworded); 9 minors fixed; 3 minors deferred to later stages; 1 found while fixing, left for a browser check.
 
@@ -36,7 +36,7 @@ Counts: 0 blockers, 7 majors, 13 minors listed (the review said "about 15"). Out
 | m13 | minor | The debrief covers the VM work in one generic line | **Fixed** with A6 (three lines, one beat per flag) |
 | F1 | found | Irina's badge hand-over tag is `#give_item:keycard:cto_access_badge`, but the held item's id is `m06_cto_badge` (its `opens_lock` is `cto_access_badge`), and the pickup mapping checks `m06_cto_badge` | **Not changed; browser check.** This predates the pass. If the give resolves the item by `opens_lock` the hand-over works; if not, the lend route fails silently and `irina_badge_obtained` never sets (the cloner route and HaX's relay still work). Engine source wasn't read. Check it in the round-2 browser run |
 
-Regression items folded in from `PASS5_REGRESSION_A.md` (Sonnet, game 2223; 0 blockers, 0 majors, 12 minors). The orchestrator passed on M4–M6 and kept the rest out of this round:
+Regression items folded in from `PASS5_REGRESSION_A.md` (scripted run, game 2223; 0 blockers, 0 majors, 12 minors). The orchestrator passed on M4–M6 and kept the rest out of this round:
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -151,7 +151,7 @@ Kemal Aydin (`m06_npc_minder.ink`): all new (16 lines).
 
 ### Phase 1 alignment, round 2
 
-Review: `ALIGNMENT_REVIEW_P5_R2.md` (Opus, read-only, static). It confirms every round-1 finding as fixed (A3 with fairness gaps, A5 needing a browser check) and withdraws F1 after reading the give-item code. A browser check of round 1 was running at the same time; this round did not wait for it. The fixer checked each finding against the files before acting.
+Review: `ALIGNMENT_REVIEW_P5_R2.md` (read-only, static). It confirms every round-1 finding as fixed (A3 with fairness gaps, A5 needing a browser check) and withdraws F1 after reading the give-item code. A browser check of round 1 was running at the same time; this round did not wait for it. The fixer checked each finding against the files before acting.
 
 Counts: 0 blockers, 3 majors, 12 minors. Outcomes: 3 majors fixed; 11 minors fixed (one, R2-m2, with a changed condition); F1 withdrawn and tidied; 2 user-style decisions taken by the orchestrator.
 
@@ -280,7 +280,7 @@ Kemal Aydin:
 
 ### Phase 1 alignment, round 3
 
-Review: `ALIGNMENT_REVIEW_P5_R3.md` (Opus, read-only, static). It confirms every round-2 fix. It rules on the browser findings: N1 (a pick inside Kemal's cone) is a harness artefact, still owed one real pick; N3 (repeat sightings) and N4 (the pick window) are fair. Verdict: close the phase. Counts: 0 blockers, 0 majors, 4 minors, all fixed.
+Review: `ALIGNMENT_REVIEW_P5_R3.md` (read-only, static). It confirms every round-2 fix. It rules on the browser findings: N1 (a pick inside Kemal's cone) is a harness artefact, still owed one real pick; N3 (repeat sightings) and N4 (the pick window) are fair. Verdict: close the phase. Counts: 0 blockers, 0 majors, 4 minors, all fixed.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -308,7 +308,7 @@ Spoken lines changed: none (R3-m1 changes only when two existing lines play).
 |---|---|---|---|
 | 1 | `ALIGNMENT_REVIEW_P5_R1.md` (partial; finished by the orchestrator) + regression `PASS5_REGRESSION_A.md` (M4–M6) | 0 / 7 / 13; regression 0 / 0 / 12 (3 taken) | 7 majors fixed (A6 reworded); 9 minors fixed, 3 deferred to later stages; R-M4 and R-M6 fixed, R-M5 withdrawn; F1 left for the browser. Built: sweep-then-call-in, phase music, cover strain, reactions to every choice and flag, Irina collected, Kemal Aydin, detain-and-hand-over wording, the guide menu, route driver r1–r6 |
 | 2 | `ALIGNMENT_REVIEW_P5_R2.md` | 0 / 3 / 12 | All fixed. The debrief opens at HQ; the guard catch is made readable, with per-cause strain texts; Satoshi's door locked with Kemal's key (talk / pick / fight); debrief, Satoshi and credits agree for every minder, Irina and guard state; R2-m2's condition widened; F1 withdrawn and tidied; routes r7–r13 |
-| Browser | `PASS5_ALIGN_R1_BROWSER.md` (Sonnet, games 2232 on round 1, 2235 and 2237 on round 2; keyless :3001) | 0 / 0 / 5 | Every round-1 and round-2 change checked passes: Kemal's beat, cone, sight challenge, talk-past and Irina's word, the locked door and the KO key drop, the strained cover, Irina detained and relayed, the debrief at HQ, music, credits. N1 (real pick in Kemal's cone) owed; N3 and N4 ruled fair in round 3; N2 (stand-in portrait) goes to the character stage |
+| Browser | `PASS5_ALIGN_R1_BROWSER.md` (scripted run, games 2232 on round 1, 2235 and 2237 on round 2; keyless :3001) | 0 / 0 / 5 | Every round-1 and round-2 change checked passes: Kemal's beat, cone, sight challenge, talk-past and Irina's word, the locked door and the KO key drop, the strained cover, Irina detained and relayed, the debrief at HQ, music, credits. N1 (real pick in Kemal's cone) owed; N3 and N4 ruled fair in round 3; N2 (stand-in portrait) goes to the character stage |
 | 3 | `ALIGNMENT_REVIEW_P5_R3.md` | 0 / 0 / 4 | All fixed (above). Verdict: close |
 
 Open after the phase:
@@ -325,7 +325,7 @@ Open after the phase:
 
 ### Phase 2 puzzle chains, round 1
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (Opus, read-only, static; it read only the PIN-minigame lines of the engine to settle the console's attempt limit). The fixer checked each finding against the files before acting. Counts: 0 blockers, 3 majors, 10 minors, plus three decisions (D1–D3), settled by the orchestrator. Outcomes: all 13 findings fixed; D1–D3 built; one correction to an earlier log entry.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R1.md` (read-only, static; it read only the PIN-minigame lines of the engine to settle the console's attempt limit). The fixer checked each finding against the files before acting. Counts: 0 blockers, 3 majors, 10 minors, plus three decisions (D1–D3), settled by the orchestrator. Outcomes: all 13 findings fixed; D1–D3 built; one correction to an earlier log entry.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -411,7 +411,7 @@ Document text (not voiced): the press clipping's last line and observation, Priy
 
 ### Phase 2 puzzle chains, round 2
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (Opus, read-only, static). It confirms round 1's fixes, apart from the two below. The browser check of round 1 was running at the same time; this round did not wait for it. Counts: 0 blockers, 2 majors, 6 minors, all fixed (m-R2-6 with one change).
+Review: `PUZZLE_CHAINS_REVIEW_P5_R2.md` (read-only, static). It confirms round 1's fixes, apart from the two below. The browser check of round 1 was running at the same time; this round did not wait for it. Counts: 0 blockers, 2 majors, 6 minors, all fixed (m-R2-6 with one change).
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -486,7 +486,7 @@ Not voiced: the console's observation, the signing record's release line, the cr
 
 ### Phase 2 puzzle chains, round 2: browser follow-up
 
-Input: `PASS5_PUZZLE_R1_BROWSER.md` (Sonnet, games 2247 and 2256, keyless :3001). It confirms N1: a real pick inside Kemal's cone gives "A hand the size of a shovel…", "No." and the stand-off, and "Dr Volkova sent me up" then gets the player in. It also confirms that cancelling the console without a try doesn't trip the lockout. It found two majors and one minor wording item.
+Input: `PASS5_PUZZLE_R1_BROWSER.md` (scripted run, games 2247 and 2256, keyless :3001). It confirms N1: a real pick inside Kemal's cone gives "A hand the size of a shovel…", "No." and the stand-off, and "Dr Volkova sent me up" then gets the player in. It also confirms that cancelling the console without a try doesn't trip the lockout. It found two majors and one minor wording item.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -520,7 +520,7 @@ Spoken lines changed: none.
 
 ### Phase 2 puzzle chains, round 3
 
-Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (Opus, read-only, static, with an engine-evaluator probe `probe_console_engine.js`). It settles the open F1 question statically: a cancel after one wrong try also emits `result: null`, because the pad sets `gameResult` only on success or lockout. The flat `data.result` test is therefore safe from cancels, but it misses the "one guess, cancel, reopen" sweep. Counts: 0 blockers, 1 major, 3 minors, all fixed with the reviewer's mission-local fix.
+Review: `PUZZLE_CHAINS_REVIEW_P5_R3.md` (read-only, static, with an engine-evaluator probe `probe_console_engine.js`). It settles the open F1 question statically: a cancel after one wrong try also emits `result: null`, because the pad sets `gameResult` only on success or lockout. The flat `data.result` test is therefore safe from cancels, but it misses the "one guess, cancel, reopen" sweep. Counts: 0 blockers, 1 major, 3 minors, all fixed with the reviewer's mission-local fix.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -586,7 +586,7 @@ Engine item D5 (dotted paths) is with the user.
 
 ### Phase 3 scenario design, round 1
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (Opus, read-only, static). Counts: 0 blockers, 1 major, 12 minors, three decisions and seven SecGen items. Outcomes: M1 and 11 minors fixed; m11 left by decision; decisions 1–3 acted on; S1–S7 to the user.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R1.md` (read-only, static). Counts: 0 blockers, 1 major, 12 minors, three decisions and seven SecGen items. Outcomes: M1 and 11 minors fixed; m11 left by decision; decisions 1–3 acted on; S1–S7 to the user.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -663,7 +663,7 @@ Not voiced: the guide item and menu names, the FCA letter's new option, the cred
 
 ### Phase 3 scenario design, round 2
 
-Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (Opus, read-only, static). Counts: 0 blockers, 0 majors, 5 minors. Outcomes: n2–n4 fixed; n1 and n5 left by the orchestrator's decision. The stage closes after these fixes and a browser check.
+Review: `SCENARIO_DESIGN_REVIEW_P5_R2.md` (read-only, static). Counts: 0 blockers, 0 majors, 5 minors. Outcomes: n2–n4 fixed; n1 and n5 left by the orchestrator's decision. The stage closes after these fixes and a browser check.
 
 | # | Sev. | Finding | Outcome |
 |---|---|---|---|
@@ -711,7 +711,7 @@ Snapshot for `tagdiff --old`: the session scratchpad's `m06-dialogue-snapshot/in
 
 ### Phase 4 dialogue, cycle 1
 
-Review: `DIALOGUE_REVIEW_P5_C1.md` (Opus, static plus the route driver; 0 blockers, 6 majors, 38 minors). Fixer: Opus, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started, the do-not-open rule held, and `scenario.json.erb` was not edited (no finding needed it: D6-8 keeps the texts).
+Review: `DIALOGUE_REVIEW_P5_C1.md` (static plus the route driver; 0 blockers, 6 majors, 38 minors). Fixer: review agent, resumed between cycles. Every finding was checked against the ink before it was acted on. No browser session was started, the do-not-open rule held, and `scenario.json.erb` was not edited (no finding needed it: D6-8 keeps the texts).
 
 User decisions this cycle: D6-1 and D6-2 take the reviewer's branches and subtext beat; D6-3 adds the two player beats and the cut, no debrief run over 9, a `maxRun` assertion in the route driver and routes for the worst debrief paths; D6-4 the single replacement line; D6-5 re-entry lines for Dani and Priya; D6-7 trim Satoshi's finale; D6-6 newest-first hub order; D6-13 a light Hamburg touch for Kemal; Satoshi's stock villain lines rewritten so he argues rather than sneers; D6-31 Priya's question paid off; D6-42 dead locals removed.
 
@@ -876,7 +876,7 @@ Not voiced (choices): "[He'll be making speeches at the trial.]", "[Did he give 
 
 ### Phase 4 dialogue, cycle 2
 
-Review: `DIALOGUE_REVIEW_P5_C2.md` (Opus, read-only; 0 blockers, 1 major, 21 minors; cycle 1 confirmed: 42 fixed, D6-44 rightly left, D6-39 partly closed). Fixer: the same Opus agent, resumed. Each finding was checked against the ink first. No browser session; the do-not-open rule held. The erb got two small exact edits (re-read first): a `globalVariables` entry and the credits (D6-63, allowed this cycle).
+Review: `DIALOGUE_REVIEW_P5_C2.md` (read-only; 0 blockers, 1 major, 21 minors; cycle 1 confirmed: 42 fixed, D6-44 rightly left, D6-39 partly closed). Fixer: the same agent, resumed. Each finding was checked against the ink first. No browser session; the do-not-open rule held. The erb got two small exact edits (re-read first): a `globalVariables` entry and the credits (D6-63, allowed this cycle).
 
 **Correction to cycle 1's "ink gotcha".** It wasn't real. I edited `evidence_pivot`, then ran the routes and a direct inkjs test without recompiling, so both read the old JSON. The next compile came only after I'd moved the comment, which made the move look like the fix. inklecate compiles both forms identically (the orchestrator and the reviewer both confirmed this), and the README entry has been removed. Lesson: recompile before any runtime test.
 

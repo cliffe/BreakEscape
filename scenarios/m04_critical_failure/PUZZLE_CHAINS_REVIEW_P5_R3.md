@@ -1,6 +1,6 @@
 # m04 Critical Failure: puzzle chains review, pass 5 round 3
 
-Read-only review (Opus). Kind of game: SAFETYNET campaign mission, a TV spy thriller. Measured against m01_first_contact and m02_ransomed_trust with the `mission-puzzle-chains` skill. Everything is cited against `scenario.json.erb` (erb), the ink and the engine at commit 92ac1c56 (the round-2 fixes). I did not open the SecGen XML or the four exploit field guides. VM claims are judged against the brief's "The VM side, at a high level" (`docs/agents/M04_PASS_BRIEF.md:11-22`). Anything finer than that is marked **needs checking against SecGen by the user**.
+Read-only review (review agent). Kind of game: SAFETYNET campaign mission, a TV spy thriller. Measured against m01_first_contact and m02_ransomed_trust with the `mission-puzzle-chains` skill. Everything is cited against `scenario.json.erb` (erb), the ink and the engine at commit 92ac1c56 (the round-2 fixes). I did not open the SecGen XML or the four exploit field guides. VM claims are judged against the brief's "The VM side, at a high level" (`docs/agents/M04_PASS_BRIEF.md:11-22`). Anything finer than that is marked **needs checking against SecGen by the user**.
 
 ## Checks run
 
@@ -80,7 +80,7 @@ Rounds are narrowing. Round 1 found design questions, round 2 one root cause (an
 
 ### Browser checks for the orchestrator before closing
 
-Run on the keyless server on :3001 with a Sonnet tester, and confirm each with `verify-run.rb`:
+Run on the keyless server on :3001 with a scripted tester, and confirm each with `verify-run.rb`:
 
 1. **Locker spare (R3-1).** Sign in with the guard, meet Vance without cloning, pick the security locker and take the spare. Check `window.gameState.globalVariables.level1_card_held === true` straight after the take, which proves `onPickup` fires for a container take. Then ask HaX "Where do I stand?": it should name the dial, not Vance's card. Reload the page and ask again.
 2. **Slip past the guard (R3-2).** When the guard's challenge opens, close it with the × and walk south. Check `checkpoint_passed === true` in the ops office. "Where do I stand?" should say "Find Robert Vance", "How do I get past the gate?" should be gone, and "How do I get through the card readers?" should be offered.

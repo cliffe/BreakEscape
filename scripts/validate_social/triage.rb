@@ -237,6 +237,7 @@ module ValidateSocial
         end
       end
       issues.concat(message_globals_checks(set, o, where, ctx)) if o.key?('messageGlobals')
+      issues.concat(message_caught_verdicts_checks(o, where)) if o.key?('messageCaughtVerdicts')
       pp = o['passPercent']
       if !pp.is_a?(Integer) || pp.negative? || pp > 100
         issues << err("#{where}.outcome.passPercent must be a whole number from 0 to 100")
@@ -281,6 +282,27 @@ module ValidateSocial
       names = mg.values.grep(String)
       names.select { |n| names.count(n) > 1 }.uniq.each do |n|
         issues << err("#{at} gives '#{n}' to more than one message; each message needs its own global")
+      end
+      issues
+    end
+
+    CAUGHT_VERDICTS = %w[report delete verify].freeze
+
+    # outcome.messageCaughtVerdicts: { "<messageId>": ["report", ...] }. Narrows what counts as caught
+    # for a message listed in messageGlobals (default: Report, Delete or Verify). Each list holds at
+    # least one of report, delete, verify; an id with no messageGlobals entry would do nothing.
+    def self.message_caught_verdicts_checks(outcome, where)
+      mcv = outcome['messageCaughtVerdicts']
+      at = "#{where}.outcome.messageCaughtVerdicts"
+      return [err("#{at} must be an object of message id to a list of verdicts")] unless mcv.is_a?(Hash)
+
+      mg = outcome['messageGlobals'].is_a?(Hash) ? outcome['messageGlobals'] : {}
+      issues = []
+      mcv.each do |id, list|
+        if !list.is_a?(Array) || list.empty? || !list.all? { |v| CAUGHT_VERDICTS.include?(v) }
+          issues << err("#{at}['#{id}'] must be a non-empty list drawn from #{CAUGHT_VERDICTS.join(', ')}, not #{list.inspect}")
+        end
+        issues << warn_("#{at} lists '#{id}', which has no outcome.messageGlobals entry, so it changes nothing") unless mg.key?(id)
       end
       issues
     end

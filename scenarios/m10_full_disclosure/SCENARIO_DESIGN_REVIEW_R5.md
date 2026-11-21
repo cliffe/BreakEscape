@@ -1,6 +1,6 @@
 # m10 Full Disclosure: scenario design review, round 5
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 5. From this round, a round with no blockers or majors closes the phase (user's rule).
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 5. From this round, a round with no blockers or majors closes the phase (user's rule).
 
 **Tree.** HEAD 588b5ae52 (SD R4, dialogue R4 and puzzle chains R3 applied). There were no uncommitted m10 changes while I read. Dialogue R5 and puzzle chains R4 are reading in parallel.
 
@@ -137,7 +137,7 @@ Pass it to the dialogue round for the wording if they prefer their own.
 
 ### Nits
 
-- **n1. "Release host login" against "Get out of the container onto that host."** erb:3684 and `m10_phone_agent0x99.ink:573-575`. If the duty sheet's login opens the release service (inside the container), the label tells the student they already have the host, and the breakout reads as unnecessary. If it really opens the host, the label is right. The observations line already says "Release service, operator on shift." (erb:3683). **Fix:** opus48 or the user confirms what `relops` opens. If it opens the service, change the label to "Release service login:". This is the half of R4 m3 still open. It's a question for the VM side, not a reopened ruling.
+- **n1. "Release host login" against "Get out of the container onto that host."** erb:3684 and `m10_phone_agent0x99.ink:573-575`. If the duty sheet's login opens the release service (inside the container), the label tells the student they already have the host, and the breakout reads as unnecessary. If it really opens the host, the label is right. The observations line already says "Release service, operator on shift." (erb:3683). **Fix:** the VM agent or the user confirms what `relops` opens. If it opens the service, change the label to "Release service login:". This is the half of R4 m3 still open. It's a question for the VM side, not a reopened ruling.
 - **n2. Two different "keys" in the core.** The inventory holds a "Core Host Key" (erb:4255), a login code in an envelope. Meanwhile Tesseract's publish control is "the key" throughout the end scene ("The key's where you left it.", "The key is yours to use or not.", `m10_tesseract.ink:877-890, 958-1011`), and HaX's ladder says "The key's on his terminal." The narration makes his key physical, so the scene still reads, but the envelope's name invites the wrong picture. **Fix:** rename the find "Core Host Login" or "Core Access Code" (name only; the id `core_access_key` and the text can stay). The ladder and `box_topic` would then say "envelope" or "login", not "key".
 - **n3. The guide-4 text is the natural place for the key pointer.** erb:1645 fires when the player first touches the core's field console, which is exactly when they need the login: "Guide for his box, when you want it." **Fix:** add "His key's on the terminal." (or "login", per n2). It's unvoiced. The arrival's voiced "Get on his box." can stay as it is.
 - **n4. The flag-4 task title.** erb:1451: "Take the core host and submit it at its terminal". "It" reads as the host. The other VM tasks say "submit the flag". **Fix:** "Get onto the core host and submit the flag at its terminal".

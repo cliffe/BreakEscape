@@ -336,7 +336,7 @@ A persistent, always-visible display (typically rendered on a large wall-mounted
 
 **Right column (~40% width) — System Status Panel:** Header `SYSTEM STATUS`. Table of key systems, each row showing: system name (left) and current status badge (right). Status badge colours: green `OPERATIONAL`, amber `DEGRADED`, red `OFFLINE`, grey `UNKNOWN`. Updates in real time as global variables change.
 
-**Bottom bar — Manual Entry:** A pixel-art text input field spanning the full width, labelled `LOG DECISION OR ACTION`. A `[POST]` button to the right. Submitted entries appear in the timeline immediately.
+**Bottom bar — Manual Entry:** A pixel-art text input field spanning the full width, labelled `LOG ACTION` (shortened from `LOG DECISION OR ACTION` so it fits a 360px window). A `[POST]` button to the right. Submitted entries appear in the timeline immediately.
 
 ---
 

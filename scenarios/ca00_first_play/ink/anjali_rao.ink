@@ -24,7 +24,7 @@ VAR hub_quiet = false
     { episode_core_00_first_play_done:
         Anjali Rao: That's you set. Start your first episode whenever you're ready, and report anything that doesn't sit right.
     - else:
-        Anjali Rao: Welcome. I'm Anjali, I look after security here. Open the kiosk for a short brief before your first episode. It's all practice.
+        Anjali Rao: Welcome. I'm Anjali, I look after security here. Say hello to one of the team before you sit down, then open the kiosk for a quick brief.
     }
 }
 + [Thanks, Anjali.]

@@ -1,6 +1,6 @@
 # m04 Critical Failure: puzzle chains review, pass 5 round 4
 
-This is a read-only review (Opus). Kind of game: a SAFETYNET campaign mission, a TV spy thriller. It is measured against m01_first_contact and m02_ransomed_trust using the `mission-puzzle-chains` skill. Every citation is against `scenario.json.erb` (erb), the ink and the engine at commit e1f1a317 (the round-3 fixes). I did not open the SecGen XML or the four exploit field guides. VM claims are judged against the brief's "The VM side, at a high level" (`docs/agents/M04_PASS_BRIEF.md:11-22`).
+This is a read-only review (review agent). Kind of game: a SAFETYNET campaign mission, a TV spy thriller. It is measured against m01_first_contact and m02_ransomed_trust using the `mission-puzzle-chains` skill. Every citation is against `scenario.json.erb` (erb), the ink and the engine at commit e1f1a317 (the round-3 fixes). I did not open the SecGen XML or the four exploit field guides. VM claims are judged against the brief's "The VM side, at a high level" (`docs/agents/M04_PASS_BRIEF.md:11-22`).
 
 ## Checks run
 
@@ -96,7 +96,7 @@ I walked every branch and gate listed below and asked one question: does it test
 
 The orchestrator can check the fixes with grep, the route driver (extend r15 for R4-1) and dialoguelint. That makes this the fourth review cycle. A fifth would be confirmation only, and I don't think it's needed: the rounds have narrowed from design questions (R1) to one engine-caused root cause (R2), then one hub pattern (R3), and now leftovers of that pattern in single texts (R4).
 
-**Before or alongside closing:** none of round 3's browser checks has been run yet (the round-3 log says "static; no browser session"). Round 3's checks 1 and 2 (the locker-spare latch in a real container take, and walking off the guard's challenge) prove the two latches in the real engine. They're worth one short Sonnet run on :3001, or they can go into the first playtest round of phase 5. Static reading says both work (the evidence is in the confirmation table).
+**Before or alongside closing:** none of round 3's browser checks has been run yet (the round-3 log says "static; no browser session"). Round 3's checks 1 and 2 (the locker-spare latch in a real container take, and walking off the guard's challenge) prove the two latches in the real engine. They're worth one short scripted run on :3001, or they can go into the first playtest round of phase 5. Static reading says both work (the evidence is in the confirmation table).
 
 ---
 

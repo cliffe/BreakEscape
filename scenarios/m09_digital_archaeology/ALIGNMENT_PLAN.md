@@ -57,7 +57,7 @@ Finding ids refer to `ALIGNMENT_REVIEW_F_R1.md`.
 - Retitle `send_the_notice`.
 - Paired loss lines under "WHAT THE PURGE TOOK".
 - *Accept:* on each route the credits list both what was saved and what was lost; after a reload in each phase the music is the phase's track.
-- *Verify:* validator; a short Sonnet browser check on :3001 that reloads during the hour read and after Tesseract's call, and runs the credits once with the legacy files lost and Tran left.
+- *Verify:* validator; a short scripted browser check on :3001 that reloads during the hour read and after Tesseract's call, and runs the credits once with the legacy files lost and Tran left.
 
 ### Phase 4 — hand-offs
 
@@ -91,4 +91,4 @@ None of this blocks the plan. Each phase is mission-local and reversible, and th
 
 ## Verification plan
 
-After each phase: compile the ink; run the full validator (by the fixer), dialoguelint, reopencheck for the phones touched, `check_door_alignment.py` (no room changes are expected) and a tagdiff against HEAD. After phase 3: one Sonnet browser check on :3001 (keyless) covering a reload in each music phase, a knock-out of the guard, and credits on a losing route. Round 2 of this phase is a fresh reviewer confirming A1 and the minors are closed, with any it raises; round 3 confirms.
+After each phase: compile the ink; run the full validator (by the fixer), dialoguelint, reopencheck for the phones touched, `check_door_alignment.py` (no room changes are expected) and a tagdiff against HEAD. After phase 3: one scripted browser check on :3001 (keyless) covering a reload in each music phase, a knock-out of the guard, and credits on a losing route. Round 2 of this phase is a fresh reviewer confirming A1 and the minors are closed, with any it raises; round 3 confirms.

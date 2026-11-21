@@ -1,6 +1,6 @@
 # m05 pass 5: alignment review, round 2
 
-2026-10-13. Opus reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as a single reviewer against the ten-row rubric and the Step 4 reviewer brief. Reviews the work in commit 6ac8d95f ("alignment round 1"); the m05 folder and route files match that commit. No SecGen XML, restricted lab sheet or sight-challenge source was opened. VM claims are marked "needs checking against SecGen by the user".
+2026-10-13. Reviewer, read-only, static only (no browser session). Skill: `mission-alignment-plan`, run as a single reviewer against the ten-row rubric and the Step 4 reviewer brief. Reviews the work in commit 6ac8d95f ("alignment round 1"); the m05 folder and route files match that commit. No SecGen XML, restricted lab sheet or sight-challenge source was opened. VM claims are marked "needs checking against SecGen by the user".
 
 ## Checks run
 

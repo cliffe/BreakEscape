@@ -1,6 +1,6 @@
 # m06 Follow the Money: dialogue review, pass 5 cycle 3 (confirmation)
 
-Reviewer: a fresh Opus agent, read-only apart from this file, 2026-10-13. Skill: `npc-dialog-review`. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Read beforehand: `AGENTS.md`, the skill, `DIALOGUE_REVIEW_P5_C2.md` and the log section "Phase 4 dialogue, cycle 2". I did not open the SecGen XML, the four listed field guides, or the exploit detail in `VM_INTEGRATION.md`.
+Reviewer: a fresh agent, read-only apart from this file, 2026-10-13. Skill: `npc-dialog-review`. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Read beforehand: `AGENTS.md`, the skill, `DIALOGUE_REVIEW_P5_C2.md` and the log section "Phase 4 dialogue, cycle 2". I did not open the SecGen XML, the four listed field guides, or the exploit detail in `VM_INTEGRATION.md`.
 
 What this tests: the ink as committed in 0356e009 (the ink folder has no uncommitted changes), and the erb's `minder_vouched` lines in the working tree. New finding ids continue from D6-67.
 
@@ -76,7 +76,7 @@ After that, what's left is taste, not faults. Then run the browser checks below,
 
 ## Browser checklist before closing
 
-Use the keyless server on :3001 with a Sonnet tester and the checked-in scripts. Plan short runs of 10 to 15 minutes, each with at least one page reload. Each item below names what to read on screen.
+Use the keyless server on :3001 with a scripted tester and the checked-in scripts. Plan short runs of 10 to 15 minutes, each with at least one page reload. Each item below names what to read on screen.
 
 1. **Irina, direct reveal, then detain (D6-67, after the fix).** Fund found, the executive badge taken first. Expect "Don't tell me yet." at the badge, then "I asked you not to tell me." at the reveal, then "*reads it twice*…", then "*offers her wrists* I really did think…". "State overreach" must not appear.
 2. **Irina, the evidence route (D6-55).** With the write-up and the fund, after the badge scene: "They costed the deaths…" → credentials → "I asked you not to tell me." → "My work. Used to kill people." Then a reload, and the turned re-entry line.

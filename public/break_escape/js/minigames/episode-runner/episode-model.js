@@ -258,6 +258,7 @@ export function cleanAnswerList(raw) {
         if (isStr(a.action)) entry.action = a.action;
         if (a.unflagged === true) entry.unflagged = true;
         if (a.none === true) entry.none = true;
+        if (a.sheetless === true) entry.sheetless = true;
         out.push(entry);
     }
     return out.length ? out : null;

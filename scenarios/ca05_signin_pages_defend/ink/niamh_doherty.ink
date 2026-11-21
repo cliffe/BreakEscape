@@ -9,6 +9,7 @@
 // ================================================
 
 VAR episode_e5_signin_pages_defend_defend_complete = false
+VAR kit_key_caught = false
 VAR hub_quiet = false
 
 === start ===
@@ -19,7 +20,13 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e5_signin_pages_defend_defend_complete:
-        Niamh Doherty: That's all five checked. The address bar is the bit to read, every time.
+        { kit_key_caught:
+            Niamh Doherty: You read the address before signing in, so that lookalike page never got a real password off anyone here.
+            Niamh Doherty: The look and the padlock both copy fine. The address bar is the one bit they can't fake.
+        - else:
+            Niamh Doherty: That page copying our sign-on, on an address that was almost right, was the one to stop.
+            Niamh Doherty: The password went in, so a claims account was wide open and IT lost the day to resets and a records review.
+        }
     - else:
         Niamh Doherty: Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.
     }

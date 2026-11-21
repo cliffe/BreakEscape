@@ -214,12 +214,12 @@ These match `v2/` (`cfg_v2.json`), except that the two phone variants now use th
 
 ## 8. Work order and checks
 
-1. **Engine (Opus, the one agent on `lighting.js`): E1.** Then:
+1. **Engine (the one agent on `lighting.js`): E1.** Then:
    - `node --test test/js/` and `bin/rails test`, as a general regression check (there are no lighting unit tests, so E1 itself is checked by the tours below);
    - the m02 tour, comparing each room's on/off state and frame with the last committed tour (only rooms with an NPC on a back-wall strip may change);
    - a sis02 spot check.
    - Commit separately, before m01.
-2. **Config (Sonnet): C0–C6** as written.
+2. **Config (scripted run): C0–C6** as written.
    - `ruby scripts/validate_scenario.rb scenarios/m01_first_contact/scenario.json.erb --skip-ink --no-graph`: schema passes, no lighting warnings.
    - Confirm no file under `scenarios/m01_first_contact/ink/` changed (`git status`).
 3. **Tour:** `tools/playtest/lighting-tour.sh m01_first_contact <scratch>/m01-after`.
