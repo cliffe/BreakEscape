@@ -1,0 +1,98 @@
+{
+ "steps": [
+  {
+   "note": "Core, standing: lower the weapon after the warning. The shoot choice is gone on the next menu and the arrest still works."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "Shoot him where he stands",
+    "Lower the weapon"
+   ]
+  },
+  {
+   "said": [
+    "You lower it. He hasn't moved."
+   ],
+   "notSaid": [
+    "He is still looking at you when you fire."
+   ]
+  },
+  {
+   "expect": {
+    "cold_lowered": true,
+    "ending": ""
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "No deal"
+   ]
+  },
+  {
+   "said": [
+    "Well, Agent?",
+    "[choice] No deal. You're under arrest.",
+    "He holds out his wrists before anyone asks."
+   ],
+   "notSaid": [
+    "[choice] Shoot him where he stands."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "arrest"
+   }
+  }
+ ]
+}
