@@ -1,0 +1,17 @@
+{
+"globals": { "recruiter_gone": true, "recruiter_said_yes": true },
+"steps": [
+{ "note": "R43: the Recruiter has hung up after the player said yes. HaX's deck call (deck_resume) is cut off at the Leave it / Pull her file choice, so the re-ring plays the paused-deck lines again (the choice has not been made), then the player leaves it. A reopen after that is a silent guard." },
+{ "talk": "phone", "knot": "deck_resume" },
+{ "said": ["I've paused the deck. It won't hold long", "She's watching the deck. Pull her file and we get half her people", "[choice] Leave it. Let it wipe", "[choice] Pull her file anyway"],
+  "notSaid": ["She fired it from Sorensen's office"] },
+{ "expect": { "deck_choice_made": false } },
+{ "talk": "phone", "knot": "deck_resume", "reload": true, "picks": ["Leave it", "On my way"] },
+{ "said": ["I've paused the deck", "She fired it from Sorensen's office. I'm on the door", "Her card for the tape room will be in that office"],
+  "notSaid": ["First name on it is a handler in Baltimore", "[choice] Her file"] },
+{ "expect": { "recruiter_offer": "taken", "deck_pulled": "none", "deck_choice_made": true } },
+{ "tasks": { "answer_the_offer": "completed" } },
+{ "talk": "phone", "knot": "deck_resume", "reload": true },
+{ "notSaid": ["I've paused the deck", "She fired it from Sorensen's office", "[choice] Leave it"] }
+]
+}

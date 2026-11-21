@@ -1,0 +1,22 @@
+{
+ "steps": [
+  {
+   "note": "Mercer at his console: the hard pick, 'Step away from the console, Doctor', gets a refusal and no concession, where 'Back off' would have got the sensible line. (The knock-out is a mapping the route does not drive.)"
+  },
+  {
+   "talk": "mercer",
+   "picks": [
+    "Step away from the console"
+   ]
+  },
+  {
+   "said": [
+    "When the fourth submission is declined, somebody does this.",
+    "No. If you want me off it, you'll have to put me off it."
+   ],
+   "notSaid": [
+    "Sensible. Leave me the console and we'll get along."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "imports": {
+  "m08_nightshade_triple_agent": true,
+  "m09_nightshade_shown_file": true
+ },
+ "steps": [
+  {
+   "note": "Briefing already done, Nightshade shown the file in m09 (a triple agent): the aside ends with HaX saying he has brought his payment, then the gate console line. 'Then bench the team' gets the stay-together answer."
+  },
+  {
+   "set": {
+    "briefing_done": true
+   }
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "Then bench the team"
+   ]
+  },
+  {
+   "said": [
+    "Bench four agents tonight and WREN knows we know. They stay together.",
+    "Nightshade's at the table. He's brought his payment.",
+    "Start the gate console on your way past."
+   ],
+   "notSaid": [
+    "He asked for you.",
+    "in cuffs",
+    "Nightshade's in the van."
+   ]
+  },
+  {
+   "expect": {
+    "aside_done": true
+   }
+  }
+ ]
+}

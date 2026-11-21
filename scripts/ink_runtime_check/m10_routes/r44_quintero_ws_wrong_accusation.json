@@ -1,0 +1,50 @@
+{
+ "steps": [
+  {
+   "note": "Quintero's workshop copy: the player holds both clues and names her face to face. Confirming is a wrong accusation: she is sent back to the post (officer_out, wrong_accusation) and her copy only repeats 'Read the sheet'."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "cracker_rack_seen": true,
+    "workshop_entered": true
+   }
+  },
+  {
+   "talk": "qws",
+   "picks": [
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "Keep your hands off the benches. Half of it's live.",
+    "If that's wrong, Quintero's off the raid till you can clear her. Sure?",
+    "I took the drain. I didn't pack the case. Read the sheet.",
+    "Agent Quintero, come back up to the post. Now, please."
+   ],
+   "notSaid": [
+    "Already have."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "quintero",
+    "wrong_accusation": true,
+    "accused": ""
+   }
+  },
+  {
+   "talk": "qws",
+   "picks": []
+  },
+  {
+   "said": [
+    "I'm going. Read the sheet."
+   ]
+  }
+ ]
+}
