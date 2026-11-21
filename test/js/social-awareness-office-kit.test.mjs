@@ -1961,11 +1961,12 @@ test('wave 6: knot guard: the request knot opens with the moved guard, then the 
     assert.ok(/^\{.*:\s*$/.test(guard) && lines[4].trim() === `-> ${w.ep}` && lines[5].trim() === '}', `${name}: lines 3-5 are a value guard that diverts to the stub knot`);
     assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: value guard names done`);
     for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: value guard names ${v}`);
-    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim());
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
     const idx = startBody.findIndex((l) => l.includes(`kit_${w.ep}_asked`));
     assert.equal(idx, 3, `${name}: the asked divert is start's fourth statement`);
     assert.ok(startBody[0].includes(w.askedFirst), `${name}: startBody[0] names ${w.askedFirst}`);
-    assert.ok(/^\{\s*kit_\w+_asked\s*:\s*$/.test(startBody[idx]) && startBody[idx + 1].trim() === `-> ${w.knot}` && startBody[idx + 2].trim() === '}', `${name}: start diverts on asked into ${w.knot} (three lines)`);
+    // The early-click clause (out && not done) lets a click before the request lands still open it.
+    assert.ok(/^\{\s*kit_(\w+)_asked(\s*\|\|\s*\(kit_\1_out && not kit_\1_done\))?\s*:\s*$/.test(startBody[idx]) && startBody[idx + 1].trim() === `-> ${w.knot}` && startBody[idx + 2].trim() === '}', `${name}: start diverts on asked into ${w.knot} (three lines)`);
     const dIdx = startBody.findIndex((l) => l.includes('kit_defend_done'));
     assert.ok(dIdx > idx + 2, `${name}: the asked divert comes before the kit_defend_done divert`);
     for (const v of w.values) {
