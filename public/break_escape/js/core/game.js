@@ -2666,7 +2666,7 @@ export async function create() {
         // load. The saved block only carries fired, cancelled and started state. With no
         // game clock the dispatcher falls back to its own saved elapsed time.
         const savedTimers = gameScenario.savedScenarioClock?.timers || null;
-        window.scenarioTimerDispatcher = ScenarioTimerDispatcher.forGame(gameScenario, window.gameClock, savedTimers);
+        window.scenarioTimerDispatcher = ScenarioTimerDispatcher.forGame(gameScenario, window.gameClock, savedTimers, gameScenario.savedScenarioClock?.elapsedMs);
         console.log(`⏱️ Scenario timer dispatcher initialized`);
     }
 

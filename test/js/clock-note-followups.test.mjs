@@ -191,6 +191,37 @@ test('reload drift: a started timer resumes on the clock timeline and does not g
     assert.ok(fired.join(',') === 'd', 'fires on the clock\'s 58th second');
 });
 
+test('reload drift: an old-style save (dispatcher elapsed behind the clock) gives a started timer only its own run time', () => {
+    freshWorld();
+    const scenario = { timers: [{ id: 'late', delayMs: 40000, startOnGlobal: 'go', setGlobal: { d: true } }] };
+    window.gameState.globalVariables.go = true;
+    // Saved by the old code: clock at 100 s, the dispatcher's own count 30 s behind it (the load
+    // gaps of earlier reloads). The timer had run 12 s in the dispatcher's frame.
+    const clockSaved = { elapsedMs: 100000 };
+    const saved = { elapsedMs: 70000, fired: [], cancelled: [], started: { late: 12000 } };
+    const clock = atTime(T0, () => new GameClock({ config: null, saved: clockSaved }));
+    const d = atTime(T0 + 5000, () => ScenarioTimerDispatcher.forGame(scenario, clock, saved, clockSaved.elapsedMs));
+    // Five seconds after the clock restored it has run 12 s + 5 s = 17 s, not 47 s
+    const ran = (T0 + 5000) - d.getTimerStartTime(scenario.timers[0]);
+    assert.ok(Math.abs(ran - 17000) <= 1, `ran ${ran} ms, expected 17000`);
+    // 40 s delay: 23 s of the clock to go, then it fires once
+    d.update(T0 + 5000 + 22999);
+    assert.ok(fired.length === 0, 'not 30 s early');
+    d.update(T0 + 5000 + 23000);
+    d.update(T0 + 5000 + 30000);
+    assert.ok(fired.join(',') === 'd', `fires once: ${fired.join(',')}`);
+});
+
+test('reload drift: a same-save restore (dispatcher and clock elapsed equal) still resumes the started timer exactly', () => {
+    freshWorld();
+    const scenario = { timers: [{ id: 'late', delayMs: 40000, startOnGlobal: 'go', setGlobal: { d: true } }] };
+    window.gameState.globalVariables.go = true;
+    const clock = atTime(T0, () => new GameClock({ config: null, saved: { elapsedMs: 30000 } }));
+    const saved = { elapsedMs: 30000, fired: [], cancelled: [], started: { late: 12000 } };
+    const d = atTime(T0 + 6000, () => ScenarioTimerDispatcher.forGame(scenario, clock, saved, 30000));
+    assert.ok(d.getTimerStartTime(scenario.timers[0]) === clock.startTime + 18000, 'started at game time 18 s');
+});
+
 test('reload drift: with no game clock the dispatcher resumes from its own saved elapsed time', () => {
     freshWorld();
     const scenario = { timers: [{ id: 'y', delayMs: 10000, setGlobal: { y: true } }] };
