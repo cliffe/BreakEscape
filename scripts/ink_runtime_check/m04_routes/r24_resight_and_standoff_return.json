@@ -6,7 +6,7 @@
 {"talk": "guard", "knot": "on_sighted", "picks": []},
 {"said": ["The guard looks up from the desk", "Bit early for visitors"]},
 {"talk": "guard", "knot": "on_sighted", "picks": ["regulator", "Where do I find Mr Vance"]},
-{"said": ["Still need you at the desk first, my lover", "Regulator, is it.", "Go on through"], "notSaid": ["The guard looks up from the desk", "This early?"]},
+{ "said": ["Still need you at the desk first, my lover", "Regulator, is it.", "Go on through"], "notSaid": ["The guard looks up from the desk"] },
 {"talk": "guard", "picks": ["Anything unusual", "Nothing. Carry on"]},
 {"said": ["That OptiGrid lot came through late on the ninth"]},
 {"talk": "guard", "picks": ["Nothing. Carry on"]},

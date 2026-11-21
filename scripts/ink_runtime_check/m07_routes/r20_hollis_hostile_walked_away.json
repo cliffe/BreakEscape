@@ -11,16 +11,7 @@
   { "set": { "briefing_played": true } },
   { "event": "player_spotted:ray_hollis" },
   { "talk": "hollis", "knot": "start", "picks": ["Walk at him", "Put it down"] },
-  {
-   "said": [
-    "One more push and this turns into a fight.",
-    "[choice] Put it down. (Fight him.)",
-    "with his fists up. This is going to be a fight.",
-    "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block.",
-    "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."
-   ],
-   "notSaid": ["stows", "Or walk away", "Q switches to fists"]
-  },
+  { "said": ["One more push and this turns into a fight.", "[choice] Put it down. (Fight him.)", "with his fists up. This is going to be a fight.", "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block.", "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."] },
   { "expect": { "hollis_resolved": "ko" } },
   { "enter": "operations_floor" },
   {

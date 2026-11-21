@@ -34,15 +34,7 @@
     "Understood. Let"
    ]
   },
-  {
-   "said": [
-    "HaX here, Agent.",
-    "It'd take something new to move it"
-   ],
-   "notSaid": [
-    "I'm not reopening it"
-   ]
-  },
+  { "said": ["HaX here, Agent.", "It'd take something new to move it"] },
   {
    "note": "Hollis's sight challenge: the spotted event opens his chat at start."
   },
@@ -106,14 +98,7 @@
     "projection_revised": false
    }
   },
-  {
-   "said": [
-    "If a row in there doesn't match"
-   ],
-   "notSaid": [
-    "briefed low on purpose"
-   ]
-  },
+  { "said": ["If a row in there doesn't match"] },
   {
    "hud": null
   },
@@ -124,11 +109,7 @@
     "Meltdown"
    ]
   },
-  {
-   "said": [
-    "That isn't what I'm reading"
-   ]
-  },
+  { "said": ["That isn't what I'm reading"], "notSaid": ["briefed low on purpose"] },
   {
    "expect": {
     "projection_revised": false

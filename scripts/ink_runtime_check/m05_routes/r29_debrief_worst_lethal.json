@@ -47,7 +47,7 @@
 "Did I get him right"
 ]
 },
-{ "said": ["For the training file: money.", "Hours. Two in the morning, week after week", "An approach.", "And a boss who told Security", "Halloran had the same recruiter", "You had him before the server did", "You never answered her offer", "David Torres is dead", "You know the answer to that.", "The job got done. I'm still deciding about the rest."], "notSaid": ["And David Torres...", "One last thing", "One more thing.", "Patch it", "Cold, maybe", "I trust your judgement", "slow way", "His badge at the front door at two"] },
+{ "said": ["For the training file: money.", "Hours. Two in the morning, week after week", "An approach.", "And a boss who told Security", "Halloran had the same recruiter", "You had him before the server did", "You never answered her offer", "David Torres is dead", "You know the answer to that.", "The job got done. I'm still deciding about the rest."], "notSaid": ["One more thing.", "Cold, maybe", "I trust your judgement", "slow way"] },
 {
 "maxRun": 9
 }

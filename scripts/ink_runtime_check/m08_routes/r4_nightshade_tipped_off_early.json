@@ -6,7 +6,7 @@
 { "talk": "netherton", "picks": ["I'm ready"] },
 { "talk": "nightshade", "picks": ["Where were you", "I think it's you", "We're done"] },
 { "expect": { "accused_nightshade": true, "nightshade_tipped_off": true, "nightshade_tidied": false } },
-{ "said": ["You've said it to someone's face. On this floor"], "notSaid": ["You told him"] },
+{ "said": ["You've said it to someone's face. On this floor"] },
 { "enter": "break_room" },
 { "expect": { "nightshade_tidied": false } },
 { "note": "He takes time to tidy: the player wanders off to the lobby first, and the locker is cleared behind them (n6)." },

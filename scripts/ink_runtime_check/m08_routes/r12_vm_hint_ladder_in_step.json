@@ -7,23 +7,23 @@
 { "read": "password_sticky_note" },
 { "pickup": "printed_server_badge" },
 { "talk": "phone", "picks": ["Nothing right now"] },
-{ "notSaid": ["What am I looking at", "Where do I look", "I've got credentials"] },
+{ "notSaid": ["What am I looking at", "I've read the repo. What next?", "I've got credentials"] },
 { "enter": "server_room" },
 { "expect": { "server_room_entered": true } },
 { "event": "object_interacted", "data": { "objectType": "vm-launcher" } },
 { "talk": "phone", "picks": ["What am I looking at", "Nothing right now"] },
-{ "said": ["Read what's on its front page. That's your first flag"],  "notSaid": ["Where do I look", "I've got credentials"] },
+{ "said": ["Read what's on its front page. That's your first flag"], "notSaid": ["I've read the repo. What next?", "I've got credentials"] },
 { "flag": 1 },
 { "talk": "phone", "reload": "page", "picks": ["I've read the repo", "Nothing right now"] },
 { "said": ["read the history, not just the files", "Git secrets guide's yours"],  "notSaid": ["What am I looking at", "I've got credentials"] },
 { "flag": 2 },
 { "talk": "phone", "picks": ["I've got credentials", "Nothing right now"] },
-{ "said": ["Log in properly with them"],  "notSaid": ["Where do I look", "What am I looking at", "The mail's real"] },
+{ "said": ["Log in properly with them"], "notSaid": ["I've read the repo. What next?", "What am I looking at", "The mail's real"] },
 { "flag": 3 },
 { "talk": "phone", "picks": ["The mail's real", "Nothing right now"] },
-{ "said": ["You need root"],  "notSaid": ["I've got credentials", "Where do I look"] },
+{ "said": ["You need root"], "notSaid": ["I've got credentials", "I've read the repo. What next?"] },
 { "flag": 4 },
 { "talk": "phone", "picks": ["Nothing right now"] },
-{ "notSaid": ["The mail's real", "I've got credentials", "Where do I look", "What am I looking at"] }
+{ "notSaid": ["The mail's real", "I've got credentials", "I've read the repo. What next?", "What am I looking at"] }
 ]
 }
