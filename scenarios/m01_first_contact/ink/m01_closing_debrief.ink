@@ -862,7 +862,7 @@ Agent HaX: And if Social Fabric was willing to do this... what are the other cel
 === architect_mystery ===
 Agent HaX: We don't know. ENTROPY's leader, strategist, philosopher.
 
-Agent HaX: Derek quoted The Architect. Believed every word. Got approval to kill 42 to 85 people.
+Agent HaX: Derek quoted The Architect. Believed every word. Got approval to kill between 42 and 85 people.
 
 Agent HaX: Whoever they are, they've built an organisation of fanatics.
 
