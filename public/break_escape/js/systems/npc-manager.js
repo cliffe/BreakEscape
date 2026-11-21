@@ -2498,6 +2498,8 @@ export default class NPCManager {
           npcId: npc.id,
           npcName: npc.displayName,
           message: result.text,
+          // The line's ink tags: npc-barks reads its #delivery: note for the clip's key
+          tags: result.tags || null,
           avatar: npc.avatar,
           inkStoryPath: npc.storyPath,
           startKnot: knotName,
