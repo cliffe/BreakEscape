@@ -894,21 +894,14 @@ export class ScadaHistorianMinigame extends MinigameScene {
             buttons.appendChild(confirmBtn);
             firstFocus = confirmBtn;
         }
-        if (!asking) {
-            const cancelBtn = this._el('button', 'sh-modal-cancel-btn');
-            cancelBtn.textContent = '[CANCEL]';
-            cancelBtn.addEventListener('click', () => this._closeAnnotateModal());
-            buttons.appendChild(cancelBtn);
-            modal.appendChild(buttons);
-        }
+        // One X closes the report (closeByPlayer), the scene X stays on screen: no Cancel beside it
+        if (!asking) modal.appendChild(buttons);
         this._modalFirstFocus = firstFocus;
 
         overlay.appendChild(modal);
         charts.appendChild(overlay);
         charts.classList?.add('report-open');   // phones: the chart column grows so the whole report fits
         this._annotateOverlay = overlay;
-        // Only the confirm (two named buttons) hides the scene X; the question keeps it
-        if (!asking) this._hideSceneX(true);
         this._modalFirstFocus?.focus?.();
         // On a phone the report sits in a short column: bring it to the top of view
         overlay.scrollTop = 0;
@@ -956,7 +949,7 @@ export class ScadaHistorianMinigame extends MinigameScene {
         }
     }
 
-    // The report is a confirm (two named buttons, no X), so the scene X hides while it is open
+    // Kept for the callers that restore the X; the report no longer hides it
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';

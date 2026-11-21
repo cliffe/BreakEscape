@@ -119,7 +119,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         "_comment": "Debrief ends — play one specific victory track with mission credits scroll",
         "credits": [
           { "text": "MISSION COMPLETE",                          "style": "title",    "condition": "!globalVars.player_launched_attack" },
-          { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack" },
+          { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack", "outcome": "active" },
           { "text": "FIRST CONTACT",                             "style": "subtitle" },
           { "text": "" },
           { "text": "OPERATION SHATTER: NEUTRALISED",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },

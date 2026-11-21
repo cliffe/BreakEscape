@@ -132,10 +132,34 @@
     border-color: #8d6f1c;
 }
 
-.sis-btn-compare[disabled] {
+/* One look for a locked button, Compare or Confirm: grey fill, plain grey border */
+.sis-btn-compare[disabled],
+.sis-btn-compare[disabled]:hover,
+.sis-btn-compare[disabled]:active,
+.sis-btn-confirm[disabled],
+.sis-btn-confirm[disabled]:hover,
+.sis-btn-confirm[disabled]:active {
     background: #5d5d5d;
     color: #cfcfcf;
+    border-color: #444;
     cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+/* The words that say why Confirm is grey; the border and marker keep it from being colour only */
+.sis-confirm-reason {
+    color: #f0d9a0;
+    font-size: 16px;
+}
+
+.sis-confirm-reason:not(:empty) {
+    margin-top: 8px;
+}
+
+.sis-confirm-reason:not(:empty)::before {
+    content: '[!] ';
 }
 
 .sis-btn-confirm {
@@ -177,7 +201,8 @@
 .sis-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(6, 10, 18, 0.6);
+    background: #0a0f18;   /* opaque: the panel's buttons are not drawn through the dialog */
+    font-family: 'GNF', 'VT323', monospace;   /* the overlay sits outside .sis-threshold, so it names its own pixel font */
     display: none;
     align-items: center;
     justify-content: center;
@@ -194,7 +219,8 @@
 
 .sis-modal {
     background: #161c26;
-    border: 2px solid #3c4d68;
+    border: 2px solid #5b7399;
+    font-family: 'GNF', 'VT323', monospace;
     max-width: 720px;
     width: 100%;
     padding: 14px;
@@ -223,6 +249,7 @@
     overflow-wrap: anywhere;
     margin: 0 0 8px 0;
     color: #f4f7fb;
+    font-family: 'GNF', 'VT323', monospace;
     font-size: 24px;
     line-height: 32px;
 }
@@ -273,6 +300,7 @@
 
 .sis-compare-card {
     border: 2px solid #2b3443;
+    font-family: 'GNF', 'VT323', monospace;
     background: #202735;
     padding: 10px;
     min-height: 132px;

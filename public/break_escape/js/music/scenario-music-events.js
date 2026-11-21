@@ -79,6 +79,9 @@ export function endingReplayOptions(scenario, globals, score) {
         endNote: scoreStatusNote(num),
         headerText: found.entry.headerText,
         statusText: found.entry.statusText,
+        threatText: found.entry.threatText,
+        threatTone: found.entry.threatTone,
+        outcome: found.entry.outcome,
     };
 }
 if (typeof window !== 'undefined') window.endingReplayOptions = endingReplayOptions;
@@ -203,6 +206,9 @@ function anyHostilesAlive() {
  *   closingCard    — { lines, teaser } shown before the credits (closing-sequence.js)
  *   headerText     — visualiser header for this ending (default MISSION COMPLETE // AUDIO INTEL)
  *   statusText     — visualiser STATUS row for this ending (default MONITORING)
+ *   threatText     — visualiser THREAT row once the credits roll (default CONTAINED, ACTIVE for a failed ending)
+ *   threatTone     — "red" | "green" | "cyan": the colour of threatText (known words pick their own)
+ *   outcome        — "contained" | "active": the end state, when threatText is not set (a credit line may carry it too)
  *
  * @param {object} entry - music event config entry
  * @param {object} data  - event payload
@@ -322,6 +328,9 @@ function playEntry(entry, data) {
             missionOver:  true,                         // concluded: EXIT MISSION, no way back in
             headerText:   entry.headerText,             // optional, e.g. "MISSION FAILED // AUDIO INTEL"
             statusText:   entry.statusText,             // optional, e.g. "COMPROMISED"
+            threatText:   entry.threatText,             // optional, e.g. "CONTAINED"
+            threatTone:   entry.threatTone,             // optional "red" | "green" | "cyan"
+            outcome:      entry.outcome,                // optional "contained" | "active"
             creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,
         }));
 

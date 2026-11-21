@@ -1434,7 +1434,8 @@ end
         "closingCard": <%= j.(ending == 'joined' ? join_card : closing_card.(ending, teaser)) %>,
         "credits": <%= j.(credits_for.(ending)) %><%= ending == 'joined' ? ',' : '' %>
 <% if ending == 'joined' %>        "headerText": "MISSION FAILED // AUDIO INTEL",
-        "statusText": "COMPROMISED"
+        "statusText": "COMPROMISED",
+        "outcome": "active"
 <% end %>      }<%= ei < 5 ? ',' : '' %>
 <% end %>
     ]

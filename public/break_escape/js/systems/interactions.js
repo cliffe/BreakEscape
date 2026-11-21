@@ -2026,7 +2026,8 @@ export function handleObjectInteraction(sprite) {
         readInPlace = true;
         if (data.addToNotes !== false && !filedInHolder && window.addNote) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
-            if (addedNote) {
+            // addNote returns the existing note on a re-read (marked read): toast only a new note
+            if (addedNote && addedNote.read !== true) {
                 window.announceNoteAdded?.(data.name);
             }
         }
@@ -2084,7 +2085,8 @@ export function handleObjectInteraction(sprite) {
         // Skip notepad items since they're handled specially, and items filed in a holder
         if (resolvedText.trim().length > 0 && data.type !== 'notepad' && !filedInHolder) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
-            if (addedNote) {
+            // addNote returns the existing note on a re-read (marked read): toast only a new note
+            if (addedNote && addedNote.read !== true) {
                 window.announceNoteAdded?.(data.name);
             }
         }

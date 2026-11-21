@@ -31,6 +31,17 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { attachScrollCue } from '../../utils/scroll-cue.js';
 
+/**
+ * The status-bar count. The table dims the rows a filter rules out rather than hiding them (the
+ * player keeps the surrounding context and can still click a dimmed row), so the count says how
+ * many match and how many are dimmed, never "visible". Pure; "1 entry", never "1 entries".
+ */
+export function logFilterCountText(matching, total) {
+    const noun = (n) => (n === 1 ? 'entry' : 'entries');
+    if (matching >= total) return `RESULTS: ${total} ${noun(total)}`;
+    return `RESULTS: ${matching} ${matching === 1 ? 'match' : 'matches'}, ${total - matching} dimmed`;
+}
+
 export class LogFilterMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
     static consoleWindow = true;
@@ -186,6 +197,9 @@ export class LogFilterMinigame extends MinigameScene {
         this._flagActionLabel  = sd.flagActionLabel  || 'FLAG SESSION';
         this._flagConfirmTitle = sd.flagConfirmTitle || 'CONFIRM SESSION FLAG';
         this._flagConfirmBody  = sd.flagConfirmBody  || '';
+        // Wording for a row that is no longer ACTIVE (a cut cable closed it): the confirm must
+        // not say "Active session since ..." about a CLOSED row (sis02 blind playtest m12)
+        this._flagConfirmBodyClosed = sd.flagConfirmBodyClosed || '';
         this._flagRejectedBody = sd.flagRejectedBody || '';   // optional text shown when a non-anomalous row is flagged
         this._additionalTabs   = sd.additionalTabs   || [];
         this._requireAllTabs   = sd.requireAllTabs   || false;
@@ -963,15 +977,15 @@ export class LogFilterMinigame extends MinigameScene {
         this._hideSceneX(false);
     }
 
-    // One close control at a time (UI consoles rule): pop-ups carry their own X, the two
-    // confirm-style ones carry named buttons and no X, so the scene X hides while one is open
+    // One close control at a time (UI consoles rule): every pop-up carries its own X (the
+    // flag confirm adds its one affirmative button), so the scene X hides while one is open
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';
     }
 
-    // Esc acts as Cancel on an open pop-up and leaves the scene open; with none open it
-    // closes the scene as before (base-minigame handleEscapeKey hook)
+    // Esc is the open pop-up's X: it closes the pop-up and leaves the scene open; with none
+    // open it closes the scene as before (base-minigame handleEscapeKey hook)
     handleEscapeKey() {
         if (!this._overlayMode) return false;
         this._closeOverlay();
@@ -1003,16 +1017,14 @@ export class LogFilterMinigame extends MinigameScene {
         const t = this._el('span');
         t.textContent = displayDashes(title);
         hdr.appendChild(t);
-        // Confirm-style pop-ups keep their named buttons and have no X; the rest use the
-        // shared X, inside the pop-up
-        if (this._overlayMode !== 'flag_confirm' && this._overlayMode !== 'flag_rejected') {
-            const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
-            closeBtn.type = 'button';
-            closeBtn.ariaLabel = 'Close';
-            closeBtn.textContent = '\u00d7';
-            closeBtn.addEventListener('click', () => this._closeOverlay());
-            hdr.appendChild(closeBtn);
-        }
+        // Every pop-up carries the shared X, inside the pop-up; the flag confirm adds only its
+        // one affirmative button, and the X is its way out (sis01 blind playtest m7)
+        const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
+        closeBtn.type = 'button';
+        closeBtn.ariaLabel = 'Close';
+        closeBtn.textContent = '\u00d7';
+        closeBtn.addEventListener('click', () => this._closeOverlay());
+        hdr.appendChild(closeBtn);
         panel.appendChild(hdr);
         const body = this._el('div', 'lf-overlay-body');
         panel.appendChild(body);
@@ -1157,35 +1169,61 @@ export class LogFilterMinigame extends MinigameScene {
         text.textContent = displayDashes(this._flagRejectedBody
             || `The session for ${who}${ip ? ` from ${ip}` : ''} does not match the pattern you are looking for. Nothing has been escalated. Check the IP lookup and account history, then try another row.`);
         body.appendChild(text);
-
-        const actions = this._el('div', 'lf-flag-confirm-actions');
-        const ok = this._el('button', 'lf-flag-cancel-btn');
-        ok.textContent = '[BACK TO LOG]';
-        ok.addEventListener('click', () => this._closeOverlay());
-        actions.appendChild(ok);
-        body.appendChild(actions);
     }
 
     _renderFlagConfirmOverlay(panel) {
+        // The body is the scroller and the button a fixed footer, so on a short screen
+        // (844x390) all of the text is reachable and CONFIRM never covers the last lines.
+        panel.classList.add('lf-overlay-panel-flag');
         const body = this._overlayHeader(panel, this._flagConfirmTitle);
+        body.classList.add('lf-flag-confirm-scroll', 'pixel-scroll');
+        const closed = String(this._selectedEntry?.status || '').toUpperCase() === 'CLOSED';
+
+        // The next step, stated first: the flag is not set until CONFIRM is pressed
+        const step = this._el('div', 'lf-flag-confirm-step');
+        step.textContent = displayDashes('NEXT STEP: press CONFIRM below to flag this session. The X goes back without flagging.');
+        body.appendChild(step);
 
         const text = this._el('div', 'lf-flag-confirm-body');
-        text.textContent = displayDashes(this._flagConfirmBody);
+        text.textContent = displayDashes(closed && this._flagConfirmBodyClosed
+            ? this._flagConfirmBodyClosed : this._flagConfirmBody);
         body.appendChild(text);
+
+        // "More below" line, in flow between the body and the footer: shown while text is
+        // hidden below the fold, hidden (it keeps its height) once the end is in view
+        const cue = this._el('div', 'lf-more-cue');
+        cue.ariaHidden = 'true';
+        cue.textContent = 'MORE BELOW v';
+        panel.appendChild(cue);
+        this._attachMoreBelowCue(body, cue);
 
         const actions = this._el('div', 'lf-flag-confirm-actions');
 
-        const cancel = this._el('button', 'lf-flag-cancel-btn');
-        cancel.textContent = '[CANCEL]';
-        cancel.addEventListener('click', () => this._closeOverlay());
-
         const confirm = this._el('button', 'lf-flag-confirm-btn');
-        confirm.textContent = '[CONFIRM: FLAG ACTIVE SESSION]';
+        confirm.textContent = closed ? '[CONFIRM: FLAG SESSION]' : '[CONFIRM: FLAG ACTIVE SESSION]';
         confirm.addEventListener('click', () => this._onFlagConfirmed());
 
-        actions.appendChild(cancel);
         actions.appendChild(confirm);
-        body.appendChild(actions);
+        panel.appendChild(actions);
+        // Focus the X, the safe choice (as gameConfirm does): a held or doubled Enter from
+        // the [FLAG SESSION] button never flags before the player has read the next step
+        try { panel.querySelector('.lf-overlay-close').focus({ preventScroll: true }); } catch (e) { /* best effort */ }
+    }
+
+    // Vertical "more below" cue for a scroller. display:none when nothing is cut,
+    // visibility:hidden at the end of the scroll (no jump), visible while text is hidden.
+    _attachMoreBelowCue(scroller, cue) {
+        const update = () => {
+            const left = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+            const overflows = (scroller.scrollHeight - scroller.clientHeight) > 2;
+            cue.style.display = overflows ? 'block' : 'none';
+            cue.style.visibility = left > 2 ? 'visible' : 'hidden';
+        };
+        scroller.addEventListener('scroll', update);
+        if (typeof ResizeObserver === 'function') new ResizeObserver(update).observe(scroller);
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(update);
+        update();
+        return update;
     }
 
     _onFlagConfirmed() {
@@ -1425,7 +1463,7 @@ export class LogFilterMinigame extends MinigameScene {
         const sb = this._dom.statusBar;
         sb.innerHTML = '';
         const countEl = this._el('span', 'lf-status-bar-count');
-        countEl.textContent = `RESULTS: ${filtered.length} entries visible`;
+        countEl.textContent = logFilterCountText(filtered.length, this._logEntries.length);
         const filtersEl = document.createTextNode(` · ${this._activeFilters.length} filter${this._activeFilters.length !== 1 ? 's' : ''} active`);
         sb.appendChild(countEl);
         sb.appendChild(filtersEl);

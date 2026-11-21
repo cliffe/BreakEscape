@@ -190,7 +190,10 @@
               "disableClose": { "type": "boolean", "description": "Hide the visualiser's close button." },
               "headerText": { "type": "string", "description": "The visualiser's header, such as \"MISSION FAILED // AUDIO INTEL\"." },
               "statusText": { "type": "string", "description": "The visualiser's status line, such as \"COMPROMISED\"." },
-              "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js)." },
+              "threatText": { "type": "string", "description": "The visualiser's THREAT row once the credits roll, such as \"CONTAINED\". Without it the row shows CONTAINED, or ACTIVE when the ending's header, status or title line says FAILED or COMPROMISED; it never follows the audio level after the mission is over. Known words pick their own colour (ACTIVE, CRITICAL, BREACH red; CONTAINED, SECURE, CLEAR green); anything else is cyan unless threatTone says otherwise." },
+              "threatTone": { "type": "string", "enum": ["red", "green", "cyan"], "description": "The colour of threatText, overriding the colour its words would pick." },
+              "outcome": { "type": "string", "enum": ["contained", "active"], "description": "The end state the THREAT row shows when threatText is not set: CONTAINED (green) or ACTIVE (red). A credit line may carry the same field (so a conditional title line can say it); active wins over contained. Without any, the row reads the header, status and title lines for FAILED, FAILURE or COMPROMISED." },
+              "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js). A line may carry an optional \"outcome\" (\"contained\" or \"active\") for the THREAT row." },
               "closingCard": { "type": "object", "x-id-map": false, "description": "The closing card shown before the credits (closing-sequence.js)." }
             }
           }
@@ -1006,6 +1009,7 @@
         },
         "confirmLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
         "cancelLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
+        "closeX": { "type": "boolean", "description": "confirm_action: true gives the dialog a corner X and one named button (confirmLabel); the X is the leave-it answer and cancelLabel is not drawn." },
         "objectId": { "type": "string", "x-ref": "object" },
         "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
         "room_id": { "type": "string", "x-ref": "room" },

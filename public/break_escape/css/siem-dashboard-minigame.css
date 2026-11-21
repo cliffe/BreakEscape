@@ -17,28 +17,36 @@
 
 .siem-result-banner {
     position: absolute;
-    top: -60px;
+    top: 0;
+    transform: translateY(-100%);   /* starts above the panel whatever height the text wraps to */
     left: 0;
     right: 0;
     z-index: 3;
-    height: 56px;
+    height: auto;   /* wraps at a phone width instead of clipping */
+    min-height: 56px;
     display: block;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;
     letter-spacing: 0;
     color: #ffffff;
-    transition: top 0.25s ease;
-    padding: 0 72px 0 16px;
+    transition: transform 0.25s ease;
+    padding: 16px;   /* below the title bar, so nothing to clear: the headline is centred */
     box-sizing: border-box;
     text-align: center;
-    line-height: 56px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 24px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.siem-result-counts {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    margin-top: 8px;
 }
 
 .siem-result-banner.show {
-    top: 0;
+    transform: translateY(0);
 }
 
 .siem-result-banner.success {
@@ -135,26 +143,30 @@
 }
 
 .siem-severity.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity.sev-MED {
     background: #c28733;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-severity.sev-HIGH {
     background: #d86a29;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-severity.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
     animation: siem-crit-flash 1s steps(1, end) infinite;
 }
 
 @keyframes siem-crit-flash {
-    0% { opacity: 1; }
-    50% { opacity: 0.35; }
-    100% { opacity: 1; }
+    /* The flash is on the border, never the badge's opacity: fading the whole badge dropped
+       its text under 4.5:1 for half of every second */
+    0% { border-color: #ffffff; }
+    50% { border-color: rgba(255, 255, 255, 0.2); }
+    100% { border-color: #ffffff; }
 }
 
 .siem-time,
@@ -262,19 +274,21 @@
 }
 
 .siem-queue-sev.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-queue-sev.sev-MED {
     background: #c28733;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-queue-sev.sev-HIGH {
     background: #d86a29;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-queue-sev.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-queue-text {
@@ -374,7 +388,7 @@
 }
 
 .siem-severity-bar.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity-bar.sev-MED {
@@ -386,7 +400,7 @@
 }
 
 .siem-severity-bar.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-severity-legend {
@@ -414,7 +428,7 @@
 }
 
 .siem-severity-item-color.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity-item-color.sev-MED {
@@ -426,7 +440,7 @@
 }
 
 .siem-severity-item-color.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-severity-item-count {

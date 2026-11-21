@@ -69,7 +69,7 @@ function injectStyles() {
             align-items: center;
             gap: 8px;
             flex: none;
-            padding: 2px 2px 4px 8px;
+            padding: 2px 2px 6px 8px;
         }
         #be-interaction-menu .be-im-title {
             flex: 1;
@@ -91,8 +91,13 @@ function injectStyles() {
             padding: 6px;
             margin: -6px;
         }
+        /* position: relative makes the X its own containing block: the shared
+           .game-modal-close::after hit area (position: absolute) would otherwise anchor to the
+           whole menu and sit over every entry. The reach here is 6px past the drawn box, so the 32px X has a
+           44px target; its lower edge ends flush with the top of the list (head pad 2px + 32px
+           X + 6px bottom pad = 40px, the reach ends at 40px), so no entry is covered. */
         #be-interaction-menu .be-im-close {
-            position: static;
+            position: relative;
             flex: none;
             box-sizing: border-box;
             width: 32px;
@@ -102,6 +107,13 @@ function injectStyles() {
             font-family: 'Press Start 2P', monospace;
             font-size: 14px;
             line-height: 1;
+            border-width: var(--ui-small-button-px, 4px);
+        }
+        /* inset is measured from the X's padding box, inside its border: subtract the border
+           (the skin's --ui-small-button-px, which the X's border-width above also reads, so the
+           two always agree) so the reach is 6px past the drawn box */
+        #be-interaction-menu .be-im-close::after {
+            inset: calc(-6px - var(--ui-small-button-px, 4px));
         }
         #be-interaction-menu .be-im-list {
             flex: 1 1 auto;
