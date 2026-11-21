@@ -104,10 +104,10 @@ test('R3 m1: stillValid closes her bubble on the line page: the whole hint shows
     r.clock.advance(300);
     r.bubbles.update();
     await settle();
-    assert.equal(r.bubbles.hasLine('dana'), false);
+    assert.equal(r.bubbles.hasLine('dana'), true, 'her line is finished, not cut (D254 M-C)');
     assert.deepEqual(toasts(), [`Dana: ${HINT}`], 'the hint alone, not her line again');
     assert.equal(toastEls()[0]._stillValid, undefined, 'the failed check does not close the hint toast too');
-    assert.ok(r.bubbles.log.some(e => e.event === 'stale'));
+    assert.ok(r.bubbles.log.some(e => e.event === 'stale-finish'));
     // Later frames do not show it again
     r.clock.advance(5000);
     r.bubbles.update();
@@ -142,6 +142,8 @@ test('R3 m1: a bubble with no follow-up still closes quietly on stillValid', asy
     r.bubbles.update();
     await settle();
     assert.deepEqual(toasts(), []);
+    for (let i = 0; i < 30 && r.bubbles.hasLine('dana'); i++) { r.clock.advance(1000); r.bubbles.update(); }
+    assert.equal(r.bubbles.hasLine('dana'), false);
 });
 
 test('R3 m1: close() on the handle hands the unread hint on; a finished bubble does not', () => {
