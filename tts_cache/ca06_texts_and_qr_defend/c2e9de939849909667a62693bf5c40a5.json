@@ -1,0 +1,14 @@
+{
+  "key": "c2e9de939849909667a62693bf5c40a5",
+  "npc": "kit_zainab_hussain",
+  "text": "A code on a proper-looking notice, who'd think twice? That's the whole con. Open the parking app yourself instead.",
+  "delivery": "steady, matter-of-fact",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:18Z"
+}

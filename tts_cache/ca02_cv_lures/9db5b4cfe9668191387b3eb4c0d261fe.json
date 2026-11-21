@@ -1,0 +1,14 @@
+{
+  "key": "9db5b4cfe9668191387b3eb4c0d261fe",
+  "npc": "kit_chidi_okeke",
+  "text": "Good eye. No wifi page needs your work password. One that asks is just after it, to sign in as you later.",
+  "delivery": "easy-going, approving",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:04Z"
+}
