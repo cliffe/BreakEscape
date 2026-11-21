@@ -1,13 +1,15 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca06_out = false  // Synced scenario global
 VAR kit_ca06_asked = false
 VAR kit_ca06_notice_choice = ""  // Synced scenario global
 VAR kit_ca06_done = false
 VAR kit_ca02_moved = false
 
 === start ===
-{ kit_ca06_asked:
+// A click before the request bark lands (or the ask flag is set) still opens the request, so an early click never strands it.
+{ kit_ca06_asked || (kit_ca06_out && not kit_ca06_done):
     -> ca06_notice
 }
 { kit_defend_done:
