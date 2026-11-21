@@ -1,0 +1,42 @@
+{
+ "steps": [
+  {
+   "note": "Wendell Briggs at the power room, default (Voltage not escaped): he thinks the servers are a data company's. Telling him the truth cuts the gallery shutter and he calls Dale."
+  },
+  {
+   "talk": "wendell",
+   "picks": [
+    "Who do you think owns those servers",
+    "Those servers are set to shut down hospitals"
+   ]
+  },
+  {
+   "said": [
+    "Kept these generators running for Uncle Sam all through the eighties.",
+    "Data company out of Denver. They need clean power and no questions.",
+    "Well. It'll be the gallery shutter, then.",
+    "That door won't move again tonight.",
+    "Dale's on the next shift. I'm calling him. He's got grandkids."
+   ],
+   "notSaid": [
+    "Still here? Panel's not going anywhere."
+   ]
+  },
+  {
+   "expect": {
+    "wendell_outcome": "told",
+    "gallery_shutter_cut": true,
+    "server_hall_warned": true
+   }
+  },
+  {
+   "talk": "wendell",
+   "picks": []
+  },
+  {
+   "notSaid": [
+    "Kept these generators running for Uncle Sam"
+   ]
+  }
+ ]
+}

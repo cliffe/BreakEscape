@@ -1,0 +1,11 @@
+{
+"globals": { "raid_team_answer": "kowalczyk" },
+"steps": [
+{ "note": "R13: yes, then pull her file anyway. Double-cross is recorded, and HaX reminds a player who thanked Kowalczyk at the briefing." },
+{ "talk": "recruiter", "knot": "call", "picks": ["Go on", "Give me the name", "Pull her file anyway"] },
+{ "said": ["Halina Kowalczyk", "You thanked her at the briefing. Keep doing it", "First name on it is a handler in Baltimore", "Her card for the tape room"],
+  "notSaid": ["Forty-seven names"] },
+{ "expect": { "recruiter_offer": "double_crossed", "deck_pulled": "her_file", "deck_choice_made": true } },
+{ "tasks": { "answer_the_offer": "completed" } }
+]
+}

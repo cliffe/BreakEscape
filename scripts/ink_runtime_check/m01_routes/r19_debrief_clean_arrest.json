@@ -1,0 +1,87 @@
+{
+ "globals": {
+  "found_casualty_projections": true,
+  "found_target_database": true,
+  "talked_to_kevin": true,
+  "talked_to_maya": true,
+  "kevin_choice": "warn",
+  "kevin_protected": true,
+  "final_choice": "arrest",
+  "player_aborted_attack": true,
+  "entropy_reveal_read": true,
+  "derek_confronted": true
+ },
+ "steps": [
+  {
+   "note": "R19: the debrief after a clean run: abort, arrest, everything found, both informants worked with and protected, Kevin warned. Every line is the good variant; the credits roll the matching personnel lines."
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "said": [
+    "They're going to live. Because of you",
+    "You found everything. The casualty projections",
+    "And Maya... you protected her identity",
+    "I saw in your report that you warned Kevin about the frame-up",
+    "His career is intact. His life isn't ruined",
+    "You chose arrest. Legal prosecution through proper channels",
+    "Conspiracy to commit mass murder",
+    "The people you saved will never know your name"
+   ],
+   "notSaid": [
+    "It went through. Not on an open line",
+    "Kevin Park was arrested this morning",
+    "Both Kevin Park and Maya Chen were removed",
+    "Maya's identity was compromised",
+    "You took Derek down physically"
+   ]
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "MISSION COMPLETE",
+    "OPERATION SHATTER: NEUTRALISED",
+    "COMPLETE: All critical documents recovered",
+    "DEREK LAWSON: Arrested, in custody",
+    "MAYA CHEN: Identity protected",
+    "KEVIN PARK: Protected from frame-up, career intact"
+   ],
+   "notSaid": [
+    "MISSION FAILED",
+    "OPERATION SHATTER: EXECUTED",
+    "KEVIN PARK: Removed",
+    "MAYA CHEN: Removed"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,55 @@
+{
+ "steps": [
+  {
+   "note": "Vos sells his copy of the code card (a kit item), then Fonoti at the lock stands down when told Vos sold him out."
+  },
+  {
+   "talk": "vos",
+   "picks": [
+    "Deal",
+    "Goodbye, Mr Vos"
+   ]
+  },
+  {
+   "said": [
+    "I don't do philosophy. I do delivery dates.",
+    "That guard has the code card. I have a copy, and you can have it.",
+    "His name is Fonoti, the big one at the lock end.",
+    "Visitor's Code Card",
+    "Goodbye."
+   ],
+   "notSaid": [
+    "Evening. Nobody comes up the stair this late."
+   ]
+  },
+  {
+   "expect": {
+    "vos_outcome": "bought",
+    "lock_guard_known": true
+   }
+  },
+  {
+   "talk": "fonoti",
+   "picks": [
+    "Vos sold you out",
+    "Thanks"
+   ]
+  },
+  {
+   "said": [
+    "Nobody comes up the stair this late. They told me somebody would tonight.",
+    "The Dutch guy. Figures.",
+    "I'm off shift, far as I'm concerned. Go on through.",
+    "Mind the grating by the stair. It's loose."
+   ],
+   "notSaid": [
+    "I do delivery dates."
+   ]
+  },
+  {
+   "expect": {
+    "lock_guard_stood_down": true
+   }
+  }
+ ]
+}

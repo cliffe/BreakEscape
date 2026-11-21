@@ -1,0 +1,93 @@
+{
+ "steps": [
+  {
+   "note": "Forward post, cold start: the HaX, Kowalczyk and Arakawa table hubs and the phone hub's Where are we. Each hub's rest line reappears on re-entry only until its own exit; exits close the chat."
+  },
+  {
+   "talk": "hax",
+   "picks": [
+    "You knew him well",
+    "I've got questions",
+    "I'll get going"
+   ]
+  },
+  {
+   "said": [
+    "The table's waiting. So is he.",
+    "He trained me. When he left, there was a conversation I've never told anyone about.",
+    "Ask me at six. I'll tell you then.",
+    "Ask me on the phone. I'll hear you just as well underground.",
+    "Go on. I'm right here."
+   ],
+   "notSaid": [
+    "You said there was more. In Helena.",
+    "I did. It isn't over yet."
+   ]
+  },
+  {
+   "expect": {
+    "hax_rest_promised": true
+   }
+  },
+  {
+   "talk": "kowalczyk",
+   "picks": [
+    "What's in the case",
+    "See you down there"
+   ]
+  },
+  {
+   "said": [
+    "Kit check. If it opens a door, it's in this case.",
+    "Everything that opens a door. Kenji packed half of it, so if anything jams, it's his half."
+   ],
+   "notSaid": [
+    "When did you know?",
+    "I'll be in this van"
+   ]
+  },
+  {
+   "talk": "arakawa",
+   "picks": [
+    "The road",
+    "See you at the gate"
+   ]
+  },
+  {
+   "said": [
+    "Case is packed. Don't ask me where half of it goes.",
+    "The sheriff closed it. Nobody asked who for."
+   ],
+   "notSaid": [
+    "steps up beside you at the gate and dials"
+   ]
+  },
+  {
+   "talk": "quintero",
+   "picks": [
+    "See you at the door"
+   ]
+  },
+  {
+   "said": [
+    "Fence plan. Two ways in, and he's left one of them open. I don't like that.",
+    "I'll be behind you. Keep it that way."
+   ],
+   "notSaid": [
+    "He wants you on your own."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Where are we",
+    "That's all"
+   ]
+  },
+  {
+   "said": [
+    "The table first, then the gate terminal."
+   ]
+  }
+ ]
+}

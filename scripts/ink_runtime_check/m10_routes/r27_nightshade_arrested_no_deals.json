@@ -1,0 +1,43 @@
+{
+ "imports": {
+  "m08_nightshade_arrested": true
+ },
+ "steps": [
+  {
+   "note": "Nightshade brought up in cuffs, no deal in m08: he offers the refit for a deal, and the player refuses a second time."
+  },
+  {
+   "talk": "nightshade",
+   "picks": [
+    "No deals. I said it then"
+   ]
+  },
+  {
+   "said": [
+    "You said no deals. Netherton says otherwise tonight.",
+    "Name the deal and you get the refit.",
+    "Without him you have Helena's plans.",
+    "Twice, then. You're the only one who's ever said it to me twice."
+   ],
+   "notSaid": [
+    "All of it, as promised.",
+    "He wrote fifteen years of me"
+   ]
+  },
+  {
+   "expect": {
+    "nightshade_deal": "refused",
+    "door_scene_done": true
+   }
+  },
+  {
+   "talk": "nightshade",
+   "picks": []
+  },
+  {
+   "said": [
+    "You kept your word. I'll keep my chair."
+   ]
+  }
+ ]
+}

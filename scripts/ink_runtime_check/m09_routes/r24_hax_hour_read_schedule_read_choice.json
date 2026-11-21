@@ -1,0 +1,11 @@
+{
+"imports": { "m06_minder_walked": true },
+"globals": { "schedule_read": true },
+"steps": [
+{ "note": "R24: the hour read after the shredder schedule was read. HaX asks if there is anything to add, the player answers with the cage that has no tick. The Kemal Aydin line shows only for a player who let the minder walk in m06." },
+{ "talk": "phone", "knot": "hour_read", "picks": ["Isn't it", "What's he hiding behind", "How many people", "Her schedule", "Understood"] },
+{ "said": ["A list of his defences at Tomb Gamma", "One thousand one hundred to two thousand six hundred", "Kemal Aydin walked out on a smaller number", "I'm sending this up to Netherton. Anything to add", "He shredded everyone but himself"],
+  "notSaid": ["Nobody's wiping this box", "They're ours, turned round"] },
+{ "expect": { "hour_read_choice_reached": true, "hour_read_done": true } }
+]
+}

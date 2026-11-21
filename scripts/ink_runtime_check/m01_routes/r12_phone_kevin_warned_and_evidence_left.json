@@ -1,0 +1,15 @@
+{
+ "steps": [
+  {"note": "R12: the two protective options on the phone. Warn Kevin sets warn; leaving the files for investigators sets evidence. Both mark Kevin protected, and the confront option only sets the framing flag."},
+  {"set": {"contingency_file_read": true}},
+  {"talk": "phone", "knot": "contingency_options", "picks": ["Confront Kevin with Derek's planted evidence", "Let's see what he says for himself", "Understood."]},
+  {"said": ["Show him what Derek planted. Then make the call"]},
+  {"expect": {"framing_evidence_seen": true, "kevin_choice": ""}},
+  {"talk": "phone", "knot": "contingency_options", "picks": ["Warn Kevin directly", "I'll take that risk", "Got it. I'll be careful"]},
+  {"said": ["Understood. Find Kevin, tell him what's coming"], "notSaid": ["Kevin walks away clean without ever knowing"]},
+  {"expect": {"kevin_choice": "warn", "kevin_protected": true}},
+  {"talk": "phone", "knot": "contingency_options", "picks": ["Leave evidence clearing Kevin", "That's the smarter play", "Got it. It's done."]},
+  {"said": ["Kevin walks away clean without ever knowing"], "notSaid": ["Just know that choice has consequences"]},
+  {"expect": {"kevin_choice": "evidence", "kevin_protected": true}}
+ ]
+}

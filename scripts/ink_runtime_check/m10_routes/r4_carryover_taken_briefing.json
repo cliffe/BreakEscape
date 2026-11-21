@@ -1,0 +1,41 @@
+{
+ "imports": {
+  "m09_recruiter_offer": "taken"
+ },
+ "steps": [
+  {
+   "note": "Carry-over: taken, other aside answer. 'Before Helena' stores briefing; bringing Nightshade up keeps him tethered."
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "What are the two times",
+    "You knew him well",
+    "How many will it kill",
+    "He wants us there",
+    "She's right",
+    "How long have we got",
+    "Before Helena",
+    "Bring him up"
+   ]
+  },
+  {
+   "said": [
+    "Quintero cuffs Kowalczyk without a word.",
+    "I had a feeling about you.",
+    "She turns back to the window.",
+    "Arakawa. He is yours when we go."
+   ],
+   "notSaid": [
+    "Kowalczyk walked off the apron"
+   ]
+  },
+  {
+   "expect": {
+    "kowalczyk_answer": "briefing",
+    "nightshade_tethered": true,
+    "door_scene_done": true
+   }
+  }
+ ]
+}

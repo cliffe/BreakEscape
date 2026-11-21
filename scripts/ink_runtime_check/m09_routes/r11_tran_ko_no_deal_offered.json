@@ -1,0 +1,14 @@
+{
+"steps": [
+{ "note": "R11: Tran knocked out in a fight records ko. Had the letters been saved, the deal choice would only show for a Tran who is still at his keyboard; here it stays hidden because he is no longer at his keyboard. The wipe task closes when flag 1 lands, in either order." },
+{ "ko": "jesse_tran" },
+{ "expect": { "tran_outcome": "ko" } },
+{ "tasks": { "stop_the_tape_wipe": "open" } },
+{ "flag": 1 },
+{ "tasks": { "stop_the_tape_wipe": "completed" } },
+{ "set": { "cage_bin": "derek_file" } },
+{ "talk": "tran", "picks": ["Somebody's going to want a record", "Enjoy your night"] },
+{ "said": ["Derek wrote things down. Look how that went", "Living the dream"],
+  "notSaid": ["[choice] You can explain these", "The Bozeman number"] }
+]
+}

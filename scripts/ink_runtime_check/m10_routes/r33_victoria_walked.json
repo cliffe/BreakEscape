@@ -1,0 +1,31 @@
+{
+ "steps": [
+  {
+   "note": "Victoria Sterling at the gallery rail, default (not recruited in m03): she offers the code card's holder for her freedom; letting her go sets lock_guard_known and names Fonoti."
+  },
+  {
+   "talk": "victoria",
+   "picks": [
+    "Go",
+    "Goodbye, Victoria"
+   ]
+  },
+  {
+   "said": [
+    "St. Catherine's was a proof of concept. This is the rest.",
+    "Or cuff me to that rail, and find the card yourself.",
+    "Fonoti. He carries the code card.",
+    "I don't expect we'll do this again."
+   ],
+   "notSaid": [
+    "The lock's still shut. My offer isn't."
+   ]
+  },
+  {
+   "expect": {
+    "victoria_gallery": "walked",
+    "lock_guard_known": true
+   }
+  }
+ ]
+}

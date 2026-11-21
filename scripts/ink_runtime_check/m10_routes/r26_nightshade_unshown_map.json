@@ -1,0 +1,47 @@
+{
+ "imports": {
+  "m08_nightshade_triple_agent": true
+ },
+ "steps": [
+  {
+   "note": "Nightshade at the table, kept but not shown the file: warm payment, the wrong map trusted. Choosing his map sets nightshade_map_used."
+  },
+  {
+   "talk": "nightshade",
+   "picks": [
+    "What does he get out of this",
+    "We'll go by your map"
+   ]
+  },
+  {
+   "said": [
+    "All of it, as promised. Every door, and where he got the idea.",
+    "Nightshade's Payment: The Defences",
+    "I am keeping him. If he burns you twice, that is on my signature as well.",
+    "A little longer being useful to both sides.",
+    "They always borrow a badge, and it's never the borrower's.",
+    "The plans are good plans. They are old plans.",
+    "Then the post is empty at half two. Go in when it is."
+   ],
+   "notSaid": [
+    "He wrote fifteen years of me",
+    "You said no deals."
+   ]
+  },
+  {
+   "expect": {
+    "door_scene_done": true,
+    "nightshade_map_used": true
+   }
+  },
+  {
+   "talk": "nightshade",
+   "picks": []
+  },
+  {
+   "said": [
+    "You have my map. Use it while it's still true."
+   ]
+  }
+ ]
+}

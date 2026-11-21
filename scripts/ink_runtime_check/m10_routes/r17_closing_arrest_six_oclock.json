@@ -1,0 +1,70 @@
+{
+ "steps": [
+  {
+   "note": "06:00 after the arrest ending (set directly, as the core conversation leaves it): the walkabout, the cost, the vault, the van window, then the credits."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "secured",
+    "console_choice": "stopped",
+    "ending": "arrest"
+   }
+  },
+  {
+   "talk": "six",
+   "picks": [
+    "Go to Quintero",
+    "Go to Imran",
+    "Go to Wendell",
+    "Put the phone",
+    "What did it cost",
+    "And the database",
+    "Go to the van window",
+    "Stand with her",
+    "Leave it"
+   ]
+  },
+  {
+   "said": [
+    "Everybody walked out. That's all I wanted from tonight.",
+    "Left me to it all night",
+    "Do I still get paid for the week",
+    "Zero Day got its two hours",
+    "His copy goes into the vault tonight, beside ours",
+    "You'll want a lawyer, Adrian. Get a good one. I'm testifying.",
+    "A trial. He will make speeches. Let him."
+   ],
+   "notSaid": [
+    "There will be no trial.",
+    "He reached. I will put that first.",
+    "Nobody holds the whole map now"
+   ]
+  },
+  {
+   "expect": {
+    "six_done": true,
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "tasks": {
+    "close_the_night": "completed"
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Brought him in alive, to face a court.",
+    "DR ADRIAN TESSERACT: Held out his wrists before anyone asked."
+   ],
+   "notSaid": [
+    "Pressed the key.",
+    "Wiped both copies"
+   ]
+  }
+ ]
+}
