@@ -24,6 +24,6 @@
 {"talk": "debrief", "picks": ["What does it give us", "What's left of that clock", "How does anyone", "Was it the right call", "Did he give anything up", "Walk me through it", "An analytics service on their backend", "Two service accounts", "Every cold wallet", "What's next"]},
 {"said": ["When the clock runs out, it runs out on an empty wallet", "You found the slot on the console without Priya's write-up", "An analytics service nobody had locked down", "That's the whole chain, from outside to the keys", "Three for three"], "notSaid": ["The clock ran down", "In through the mixer, out by amount and time"]},
 {"credits": true},
-{"said": ["FOUND ON THE CONSOLE", "Turned, then knocked down", "PARTIALLY MAPPED"], "notSaid": ["TRACED THROUGH THE MIXER", "Turned — gave up the mixer tonight"]},
+{ "said": ["FOUND ON THE CONSOLE", "Turned, then knocked down", "PARTIALLY MAPPED"], "notSaid": ["TRACED THROUGH THE MIXER", "Turned; gave up the mixer tonight"] },
 {"maxRun": 9}
 ]}

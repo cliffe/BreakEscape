@@ -16,19 +16,7 @@
     "I'm ready"
    ]
   },
-  {
-   "said": [
-    "You promised Torres we'd pay for Elena's treatment, and he talked before the police took him. He knew who paid him. That's how we traced the one going out.",
-    "HashChain Exchange"
-   ],
-   "notSaid": [
-    "You turned Torres, so he's sti",
-    "You put the Initiative on the ",
-    "The police took Torres with nh",
-    "You knocked Torres out and sta",
-    "You left Torres on that floor,"
-   ]
-  },
+  { "said": ["You promised Torres we'd pay for Elena's treatment, and he talked before the police took him. He knew who paid him. That's how we traced the one going out.", "HashChain Exchange"], "notSaid": ["You turned Torres. He's still", "You put the Initiative on the ", "The police took Torres with nh", "You knocked Torres out and sta", "You left Torres on that floor,"] },
   {
    "set": {
     "briefing_played": true
