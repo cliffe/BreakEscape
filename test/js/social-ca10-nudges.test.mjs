@@ -77,6 +77,12 @@ for (const [label, path] of Object.entries(SOURCES)) {
     });
 }
 
+test('ca10: the nudge text is identical in the fragment, the full erb and the defend twin', () => {
+    const [a, b, c] = Object.values(SOURCES).map((p) => readSet(p).nudges);
+    assert.deepEqual(b, a, 'full erb nudges equal the fragment');
+    assert.deepEqual(c, a, 'defend twin nudges equal the fragment');
+});
+
 test('ca10 debrief: the folded weakest line uses the authored nudge, not the sign-in fallback', () => {
     const set = readSet(SOURCES.fragment);
     // The set is all-`page`, so the generic fallback for this set IS the sign-in line (this is the bug
@@ -86,11 +92,11 @@ test('ca10 debrief: the folded weakest line uses the authored nudge, not the sig
     const fallback = awarenessWeakestLineFor(kinds, 'it');
     assert.ok(fallback.includes(PAGE_FRAGMENT), 'the all-page fallback is the sign-in line (guards the premise)');
 
-    // fake_check_paste is missed on three items; the debrief names it as weakest.
+    // fake_check_paste is the weakest tell here (missed, nothing caught); the debrief names it as weakest.
     const result = {
         percent: 50,
         flagRecall: { caught: 1 },
-        perFactor: { fake_check_paste: { caught: 0, missed: 3 } }
+        perFactor: { fake_check_paste: { caught: 0, missed: 1 } }
     };
     const container = document.createElement('div');
     renderDebrief(container, {
