@@ -1,7 +1,7 @@
 // t03_lockpick (m03): real lockpicking of the executive office door (door:executive_wing_hallway->executive_office), synthetic key events as m01 t04. The office beyond is never entered:
-// the take stops as the lock springs. Terry's sight cone: a pick started in his view makes him hostile (that is the t17 beat), so this take needs Terry out of view; see the marks.
-// Entry state: head-start in the exec hallway: new-game.rb m03_ghost_in_the_machine --start-room executive_wing_hallway --set briefing_played=true
-// Record: BE_SPRITE=lucia_moreno tools/video/takes/run-take.sh m03 t03_lockpick "--start-room executive_wing_hallway --set briefing_played=true" "--hide-hud --zoom-step 1"
+// the take stops as the lock springs. Terry sees any pick started in his view and turns hostile (the t17 beat), so this take sets guard_told_safetynet=true (mapping condition false: no catch).
+// Entry state: head-start in the exec hallway: new-game.rb m03_ghost_in_the_machine --start-room executive_wing_hallway --set briefing_played=true --set guard_told_safetynet=true
+// Record: BE_SPRITE=lucia_moreno tools/video/takes/run-take.sh m03 t03_lockpick "--start-room executive_wing_hallway --set briefing_played=true --set guard_told_safetynet=true" "--hide-hud --zoom-step 1"
 // Marks: interact-door, minigame-open, tension, pin-set:N, lock-open, linger-end, terry-state.
 import { sleep, clearScreen } from '../lib/lib.mjs';
 const DOOR = 'door:executive_wing_hallway->executive_office';
@@ -23,7 +23,7 @@ export default async (page, bridge, mark) => {
   await sleep(1800);
   const pins = () => page.evaluate(() => { const m = window.MinigameFramework.currentMinigame; return m && m.pins ? m.pins.map(p => ({ i: p.index, binding: p.binding, set: !!p.isSet, over: !!p.isOverpicked })) : null; });
   const st0 = await pins();
-  if (!st0) throw new Error('no pins state (keyMode?)');
+  if (!st0) { const ks = await bridge.minigame.getState(); console.error('KEYSTATE', JSON.stringify(ks).slice(0, 1500)); throw new Error('no pins state (keyMode?)'); }
   mark('pins', st0);
   await page.evaluate(() => { for (const t of ['keydown', 'keyup']) window.dispatchEvent(new KeyboardEvent(t, { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true })); });
   mark('tension');
