@@ -96,7 +96,7 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 { kit_ca02_cv_choice == "":
     ~ kit_ca02_cv_choice = "asked"
 }
-+ [Don't. A real CV opens without that. Report it, and tell Fatima.]
++ [Report it and tell Fatima. A real CV opens without that.]
     ~ kit_ca02_cv_choice = "report"
     Chidi Okeke: Right. Reported it, and I'll give Fatima a shout.
     #exit_conversation
