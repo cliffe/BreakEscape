@@ -1,7 +1,7 @@
 {
-  "key": "dcb8e3cbc31a465c0d67d1dda0519a09",
+  "key": "500b6fb2e7406a0e2aa34c46d88c8dd0",
   "npc": "fatima_begum",
-  "text": "It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.",
+  "text": "Enable Content is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.",
   "voice": "Vindemiatrix",
   "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca02_cv_lures_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:49:58Z"
+  "recorded_at": "2026-11-21T20:48:24Z"
 }
