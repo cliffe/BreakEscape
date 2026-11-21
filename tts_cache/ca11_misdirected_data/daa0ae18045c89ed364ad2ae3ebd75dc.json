@@ -1,0 +1,13 @@
+{
+  "key": "daa0ae18045c89ed364ad2ae3ebd75dc",
+  "npc": "tomasz_wisniewski",
+  "text": "To anyone who collects data like this, a stray care record is a believable way to approach the very people it names.",
+  "voice": "Algieba",
+  "style": "Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:12:18Z"
+}
