@@ -117,7 +117,7 @@
     {
       "id": "kit_ca07_t_tail",
       "startOnGlobal": "kit_ca07_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca07_call_choice === ''",
       "setGlobal": {
         "kit_ca07_call_choice": "silent"
@@ -1059,7 +1059,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?",
-              "targetKnot": "ca07_call"
+              "targetKnot": "ca07_call",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca07_there",
@@ -1068,7 +1069,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca07_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_graham_whitfield",

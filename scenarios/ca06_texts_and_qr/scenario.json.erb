@@ -116,7 +116,7 @@
     {
       "id": "kit_ca06_t_tail",
       "startOnGlobal": "kit_ca06_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca06_notice_choice === ''",
       "setGlobal": {
         "kit_ca06_notice_choice": "silent"
@@ -1074,7 +1074,8 @@
               "onceOnly": true,
               "delayMs": 4000,
               "bark": "This one says my parking permit needs renewing. Is it one of ours?",
-              "targetKnot": "ca06_notice"
+              "targetKnot": "ca06_notice",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca06_there",
@@ -1083,7 +1084,9 @@
               "delayMs": 4000,
               "setGlobal": {
                 "kit_ca06_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_zainab_hussain",

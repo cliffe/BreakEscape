@@ -118,7 +118,7 @@
     {
       "id": "kit_ca10_t_tail",
       "startOnGlobal": "kit_ca10_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca10_check_choice === ''",
       "setGlobal": {
         "kit_ca10_check_choice": "silent"
@@ -1331,7 +1331,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
-              "targetKnot": "ca10_check"
+              "targetKnot": "ca10_check",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca10_there",
@@ -1340,7 +1341,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca10_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_darren_price",

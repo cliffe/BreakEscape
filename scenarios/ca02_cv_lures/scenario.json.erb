@@ -117,7 +117,7 @@
     {
       "id": "kit_ca02_t_tail",
       "startOnGlobal": "kit_ca02_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca02_cv_choice === ''",
       "setGlobal": {
         "kit_ca02_cv_choice": "silent"
@@ -1068,7 +1068,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Blank page, just a box saying enable editing and content. Do I click?",
-              "targetKnot": "ca02_cv"
+              "targetKnot": "ca02_cv",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_there",
@@ -1077,7 +1078,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca02_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",

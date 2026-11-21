@@ -120,7 +120,7 @@
     {
       "id": "kit_ca09_t_tail",
       "startOnGlobal": "kit_ca09_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca09_note_choice === ''",
       "setGlobal": {
         "kit_ca09_note_choice": "silent"
@@ -1087,7 +1087,8 @@
               "onceOnly": true,
               "delayMs": 3500,
               "bark": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
-              "targetKnot": "ca09_note"
+              "targetKnot": "ca09_note",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
@@ -1096,7 +1097,9 @@
               "delayMs": 3500,
               "setGlobal": {
                 "kit_ca09_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",

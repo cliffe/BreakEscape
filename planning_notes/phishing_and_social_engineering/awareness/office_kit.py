@@ -147,7 +147,39 @@ def _set_piece(kit, row):
     pieces = kit.get('setPieces', {})
     if name not in pieces:
         raise KeyError(f'kit {kit.get("company")!r} has no set piece {name!r}')
-    return pieces[name]
+    return step_away_defaults(pieces[name])
+
+
+REPLY_MS = 45000   # the step-away reply window; a set piece may override it with `replyMs`
+
+
+def step_away_defaults(piece):
+    """The one shared step-away mechanism (ask cue, fair reply window), applied to every set piece
+    whose reply timer starts on an `*_asked` global and lapses a `*_choice` to 'silent'. Returns a
+    copy. The timer's delayMs becomes the piece's `replyMs` (default REPLY_MS). The mapping that sets
+    the asked global gets `askCue` (a marker and a toast naming the colleague when it fires) and
+    `whenPerceivable` (it waits until no minigame is open and the colleague is on camera or in the
+    player's room, so the clock starts when the ask can be noticed); the colleague's ask bark
+    mapping on the same event waits with it. Both need a delayMs to wait on, so at least 1 ms."""
+    piece = copy.deepcopy(piece)
+    asked = set()
+    for t in piece.get('timers', []):
+        sg = t.get('setGlobal') or {}
+        if str(t.get('startOnGlobal', '')).endswith('_asked') and 'silent' in sg.values():
+            t['delayMs'] = piece.get('replyMs', REPLY_MS)
+            asked.add(t['startOnGlobal'])
+    for rec in piece.get('staff', {}).values():
+        maps = rec.get('eventMappings', [])
+        for m in maps:
+            if asked & set((m.get('setGlobal') or {}).keys()):
+                m['askCue'] = True
+                m['whenPerceivable'] = True
+                m['delayMs'] = max(1, m.get('delayMs') or 0)
+                for b in maps:
+                    if b is not m and b.get('bark') and b.get('targetKnot') and b['eventPattern'] == m['eventPattern'] \
+                            and (b.get('delayMs') or 0) == (m.get('delayMs') or 0):
+                        b['whenPerceivable'] = True
+    return piece
 
 
 def _subst(node, prefix, row):

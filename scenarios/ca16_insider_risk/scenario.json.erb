@@ -104,7 +104,7 @@
     {
       "id": "kit_ca16_t_tail",
       "startOnGlobal": "kit_ca16_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca16_signin_choice === ''",
       "setGlobal": {
         "kit_ca16_signin_choice": "silent"
@@ -988,7 +988,8 @@
               "onceOnly": true,
               "delayMs": 2000,
               "bark": "It won't take my password at all. Could I borrow your login for an hour?",
-              "targetKnot": "ca16_signin"
+              "targetKnot": "ca16_signin",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca16_there",
@@ -997,7 +998,9 @@
               "delayMs": 2000,
               "setGlobal": {
                 "kit_ca16_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_niamh_doherty",

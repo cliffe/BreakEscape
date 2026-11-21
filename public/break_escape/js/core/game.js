@@ -2130,6 +2130,7 @@ export async function create() {
                     // NPC poses (docs/achitechture/NPC_POSES.md): drink, use and phone frames during uses, when the atlas has them
                     import('../systems/npc-poses.js').then(m => m.installNpcPoses(sceneRef)).catch(e => console.warn('npc poses failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
+                    import('../systems/ask-cue.js').then(m => m.installAskCue(sceneRef)).catch(e => console.warn('ask cue failed', e));
                     import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
                     // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's
                     // onOwnerNoticesMissing actions when the owner returns and finds a left-behind

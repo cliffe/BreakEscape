@@ -120,7 +120,7 @@
     {
       "id": "kit_ca05_t_tail",
       "startOnGlobal": "kit_ca05_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca05_prompt_choice === ''",
       "setGlobal": {
         "kit_ca05_prompt_choice": "silent"
@@ -1290,7 +1290,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
-              "targetKnot": "ca05_prompt"
+              "targetKnot": "ca05_prompt",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_there",
@@ -1299,7 +1300,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca05_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_darren_price",

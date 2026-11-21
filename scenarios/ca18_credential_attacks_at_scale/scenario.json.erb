@@ -117,7 +117,7 @@
     {
       "id": "kit_ca18_t_tail",
       "startOnGlobal": "kit_ca18_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca18_reset_choice === ''",
       "setGlobal": {
         "kit_ca18_reset_choice": "silent"
@@ -1024,7 +1024,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
-              "targetKnot": "ca18_reset"
+              "targetKnot": "ca18_reset",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca18_there",
@@ -1033,7 +1034,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca18_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_lorna_easton",

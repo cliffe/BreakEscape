@@ -963,6 +963,11 @@ export default class NPCManager {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
+      // An ask the player could not see or hear waits (no conversation open, the colleague on camera or in the room)
+      if (config.whenPerceivable && window.askCue && !window.askCue.perceivable(npcId)) {
+        pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
+        return;
+      }
       pending.delete(check.eventKey);
       this._handleEventMapping(npcId, eventPattern, config, eventData);
     };
@@ -1496,6 +1501,8 @@ export default class NPCManager {
         cooldown: mapping.cooldown,
         condition: mapping.condition,
         delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
+        whenPerceivable: mapping.whenPerceivable === true,   // with delayMs: also wait until the player could notice it (ask-cue.js)
+        askCue: mapping.askCue === true,                     // show the colleague-is-asking cue (marker and toast) when it fires
         barkDelay: Number(mapping.barkDelay) > 0 ? Number(mapping.barkDelay) : 0,  // ms: the bark alone waits this long (_delayBark)
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
@@ -1816,6 +1823,7 @@ export default class NPCManager {
       // changed sends nothing.
       if (globalChanged) window.stateSync?.requestSoon?.();
     }
+    if (config.askCue) { try { window.askCue?.fire(npcId); } catch (e) { console.debug('[npc] ask cue failed', e); } }
 
     // A reconciliation re-announce (eventData._reconcile, from
     // ObjectivesManager#reconcileCompletedFlagTasks on game_loaded) only needs

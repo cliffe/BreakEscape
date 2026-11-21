@@ -116,7 +116,7 @@
     {
       "id": "kit_ca13_t_tail",
       "startOnGlobal": "kit_ca13_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca13_send_choice === ''",
       "setGlobal": {
         "kit_ca13_send_choice": "silent"
@@ -1133,7 +1133,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
-              "targetKnot": "ca13_send"
+              "targetKnot": "ca13_send",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca13_there",
@@ -1142,7 +1143,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca13_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_graham_whitfield",

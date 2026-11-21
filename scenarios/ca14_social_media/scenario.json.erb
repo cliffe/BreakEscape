@@ -120,7 +120,7 @@
     {
       "id": "kit_ca14_t_tail",
       "startOnGlobal": "kit_ca14_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca14_photo_choice === ''",
       "setGlobal": {
         "kit_ca14_photo_choice": "silent"
@@ -1158,7 +1158,8 @@
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "It's all of us at our desks. Fine to post?",
-              "targetKnot": "ca14_photo"
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_there",
@@ -1167,7 +1168,9 @@
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca14_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_lorna_easton",
