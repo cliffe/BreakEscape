@@ -6,11 +6,19 @@ VAR kit_ca13_asked = false
 VAR kit_ca13_send_choice = ""  // Synced scenario global
 VAR kit_ca13_moved = false
 VAR kit_ca13_done = false
+VAR kit_ca07_out = false  // Synced scenario global
+VAR kit_ca07_asked = false
+VAR kit_ca07_call_choice = ""  // Synced scenario global
+VAR kit_ca07_moved = false
+VAR kit_ca07_done = false
 
 === start ===
 // A click before the request bark lands (or the ask flag is set) still opens the request, so an early click never strands it.
 { kit_ca13_asked || (kit_ca13_out && not kit_ca13_done):
     -> ca13_send
+}
+{ kit_ca07_asked || (kit_ca07_out && not kit_ca07_done):
+    -> ca07_call
 }
 { kit_defend_done:
     { kit_ep == "ca07": -> ca07 }
@@ -60,6 +68,34 @@ Graham Whitfield: Assistant says Pennine Oat Mills need our customer list for a 
     -> DONE
 + [\[Say nothing\]]
     ~ kit_ca13_send_choice = "silent"
+    #exit_conversation
+    -> DONE
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca07_call ===
+{ kit_ca07_moved:
+    -> bye
+}
+{ kit_ca07_call_choice == "ringback" || kit_ca07_call_choice == "pay" || kit_ca07_call_choice == "silent" || kit_ca07_done:
+    -> ca07
+}
+Graham Whitfield: Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?
+{ kit_ca07_call_choice == "":
+    ~ kit_ca07_call_choice = "asked"
+}
++ [Hang up. Ring Ravinder on his saved mobile, and Ashcarr on the number on file.]
+    ~ kit_ca07_call_choice = "ringback"
+    Graham Whitfield: You're right. I'll hang up and ring them both myself.
+    #exit_conversation
+    -> DONE
++ [Go ahead. It's his own mobile on the screen, so it's him.]
+    ~ kit_ca07_call_choice = "pay"
+    Graham Whitfield: There we are. Paid. #delivery: cheerful, unbothered
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca07_call_choice = "silent"
     #exit_conversation
     -> DONE
 
