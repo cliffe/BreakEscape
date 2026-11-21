@@ -561,6 +561,7 @@
         "mode": "montage"
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "weakestTells": "The risks most often missed: {names} ({counts} each).",
         "weakestTell": "The risk most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
@@ -574,10 +575,27 @@
         "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. Some are safe to act on and some aren't. There's no clock on you here.",
         "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
         "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
-        "conceptPanel": {
-          "heading": "About that stick",
-          "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT.\n\nTo a real attacker this episode has no villain of its own, but the route you chose for the client pack, or the found stick you decided about, leaves a gap worth taking. Whoever dropped that stick to be found, or runs the free service the pack went to, gains a way onto a work machine, or a copy of a whole logistics client's consignment file, names, addresses and delivery schedules, that nobody can account for. Handing a found stick to IT unopened and routing files only through approved tools means neither gap ever opens.\n\nSix months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client. Before you leave, have a word with Nilesh."
-        },
+        "conceptPanel": [
+          {
+            "heading": "About that stick",
+            "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT.\n\nTo a real attacker this episode has no villain of its own, but the route you chose for the client pack, or the found stick you decided about, leaves a gap worth taking. Whoever dropped that stick to be found, or runs the free service the pack went to, gains a way onto a work machine, or a copy of a whole logistics client's consignment file, names, addresses and delivery schedules, that nobody can account for. Handing a found stick to IT unopened and routing files only through approved tools means neither gap ever opens.\n\nSix months on it surfaces: a service nobody can reach still holds the client pack with no contract behind it, or a machine has to be wiped and rebuilt, and the clean-up means finding every copy, proving deletion and answering the client."
+          },
+          {
+            "heading": "Handed to IT",
+            "text": "Nilesh checked it on a machine wired to nothing. A stick left to be found is often set to run the second it's plugged in. On a work machine, that's someone else's way in, which is why it never goes near one until it's been checked.",
+            "condition": "globalVars.kit_ca15_stick_choice === 'handin'"
+          },
+          {
+            "heading": "Into the lost property box",
+            "text": "The stick sat in lost property until the next day, when it reached IT unchecked. Anyone looking for its owner could have plugged it in first.",
+            "condition": "globalVars.kit_ca15_stick_choice === 'lost'"
+          },
+          {
+            "heading": "Left on the floor",
+            "text": "The stick lay on the floor until Chidi picked it up. Whoever left it there only needs one kind or curious person to plug it in.",
+            "condition": "globalVars.kit_ca15_stick_choice === 'leave'"
+          }
+        ],
         "flipMontageByChoice": {
           "personal_email": {
             "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
@@ -1171,7 +1189,7 @@
           "observations": "A touch-screen training kiosk for the Tarrowby shadow-IT exercise: first the Friday shortcuts to take or not, then where each led, then the found sticks and shortcut messages to sort.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e15_shadow_it_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Tarrowby shadow-IT exercise. Episode finished."
             }
           ],
