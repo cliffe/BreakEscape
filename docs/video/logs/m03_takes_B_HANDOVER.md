@@ -8,3 +8,6 @@ Rig: server :3017 and display :113 stopped. Commit by explicit path; docs files 
 ## Update 2026-11-21 (Sonnet 5.5, second agent)
 Recorded and passed: t11_yusuf, t12_terry (env M03_PX=50 M03_PY=145 for the bottom-left standing point), t13_walk_conf (3.5 s linger needed to clear the 1% drop check). Rows in `docs/video/takes_m03.md`; t10_zainab re-viewed, no re-record needed (black frame is at 10.5 s). t12/t13 scripts written (`tools/video/takes/m03/`). Remaining m03 takes: t14-t18 per the picks file. Rig stopped.
 Gotchas: follow camera leaves black margins/bottom crop in map approaches; moveTo y is imprecise (t13 setup adds a key leg down to y 100); check-take can fail a short take on 3 dup/drop sidecar frames alone.
+
+## Update 2026-11-21 (third agent)
+Recorded and passed: t14_walk_exec, t15_walk_desk, t16a/b/c_minigames; rows in docs/video/takes_m03.md. Remaining m03: t17_guard, t18_victoria. Gotchas: m03 has no key items (key screen via window.startKeySelectionMinigame with a made-up key); window.openLoginDesktop(lockable) opens a pc desktop without the password; night exec wing too dark, use day; check-take can fail on 1.2% drops: just rerun. Rig stopped.
