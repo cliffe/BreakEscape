@@ -24,7 +24,7 @@ export default async (page, bridge, mark) => {
   for (let i = 0; i < 14 && !saved; i++) {
     const bs = await buttons(page);
     console.error('BTNS', i, JSON.stringify(bs));
-    for (const o of ['^Save$', 'Dictionary Attack \\(instant\\)', '^>?\\s*Read', 'Place card|Staff Access Badge']) {
+    for (const o of ['^Save$', 'Dictionary Attack \\(instant\\)', 'Crack keys first', '^>?\\s*Read', 'Place card|Staff Access Badge']) {
       const c = await clickBtn(page, o);
       if (c) { mark('step:' + c, { buttons: bs }); if (/^Save$/i.test(c)) saved = true; break; }
     }
