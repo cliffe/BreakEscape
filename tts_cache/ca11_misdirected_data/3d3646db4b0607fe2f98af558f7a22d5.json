@@ -1,7 +1,7 @@
 {
-  "key": "d23fcee34d6e2a68162105307ee1d56e",
+  "key": "3d3646db4b0607fe2f98af558f7a22d5",
   "npc": "kit_yusuf_demir",
-  "text": "Good catch on that export bound for the wrong inbox. A checked recipient keeps residents' details inside the building.",
+  "text": "Good catch on Sam's email. Staff overtime and health notes had already gone outside Carrholme, and a quick report is what lets us contain it.",
   "voice": "Alnilam",
   "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca11_misdirected_data",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T00:12:27Z"
+  "recorded_at": "2026-11-21T20:48:57Z"
 }
