@@ -1013,8 +1013,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     /**
-     * After Confirm, bring the "Your verdict" line and the feedback card under it to the top of the
-     * reading pane, so the card and Next are not left below the fold. Instant when the player
+     * After Confirm, scroll the reading pane the least that shows the feedback card and Next (the
+     * verdict line goes to the top only when the card is taller than the pane). Instant when the player
      * prefers reduced motion.
      */
     _scrollToFeedback() {
