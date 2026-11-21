@@ -1,7 +1,7 @@
 {
-  "key": "068fed42ed56855e442872d9e06f4945",
+  "key": "0fa2443b0ba0985cf89299580c15125e",
   "npc": "nilesh_solanki",
-  "text": "It got plugged in, so that machine had to be wiped and rebuilt, and we had to check everything it could reach.",
+  "text": "The moment someone opens a file on that stick, it could run malware, first on that machine and then on the share.",
   "voice": "Iapetus",
   "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca15_shadow_it_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:53:35Z"
+  "recorded_at": "2026-11-21T20:48:15Z"
 }
