@@ -106,7 +106,7 @@ test('P3 N-2: a Report on a genuine item counts as handled right in the grid, as
     const s = open(awareSet([realMail, phishMail]));
     click($(s, '.tri-start'));
     act(s, 'real_mail', 'report');
-    assert.match($(s, '.tri-card-verdict').textContent, /never wrong/);
+    assert.match($(s, '.tri-card-verdict').textContent, /which is safe, though .* costs/);
     act(s, 'phish_mail', 'report', ['lookalike_domain', 'urgencyCalibrated']);
     toResult(s);
     assert.equal(state(s).result.percent, 100);

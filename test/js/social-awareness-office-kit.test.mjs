@@ -872,22 +872,22 @@ const W5 = {
   ca13_ai_assistant: { ep: 'ca13', company: 'brightwell_foods', setPiece: 'ca13_summary_says_send', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield',
     partner: 'kit_agnieszka_duda', partnerStub: 'agnieszka_duda', partnerGuard: 'kit_ca13_moved && kit_key_caught', hostId: 'gwen_pritchard', hostSpeaks: false,
     there: 'kit_ca13_there', choice: 'kit_ca13_send_choice', silent: 'silent', knot: 'ca13_send', right: 'ring', wrong: 'send', values: ['ring', 'send', 'silent'],
-    staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    staffBarks: 3, hostBarks: 0, panelEntries: 5, extraReads: ['phish_assist_reader_landed', 'phish_assist_reader_plain_sent'], arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1' },
   ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
     partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
     there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
-    staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+    staffBarks: 3, hostBarks: 0, panelEntries: 3, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
     pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1' },
   ca05_signin_pages: { ep: 'ca05', company: 'quayholt_insurance', setPiece: 'ca05_signin_prompt', colleague: 'kit_darren_price', stub: 'darren_price',
     partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca05_moved && kit_key_caught', hostId: 'niamh_doherty', hostSpeaks: false,
     there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
-    staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    staffBarks: 3, hostBarks: 0, panelEntries: 3, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1' },
   ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
     partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
     there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
-    staffBarks: 2, hostBarks: 1, panelEntries: 2, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    staffBarks: 2, hostBarks: 1, panelEntries: 3, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated' },
 };
 const W45 = { ...W4, ...W5 };
@@ -1273,7 +1273,7 @@ test('wave 4: strings.stepAway is the shared line and the first key; the kiosk a
       assert.ok(typeof e.heading === 'string' && e.heading.length > 0 && typeof e.text === 'string' && e.text.length > 0, `${name}: entry has heading and text`);
       assert.ok(!/(Zainab|Chidi|Nilesh|Niamh|Fatima|Darren|Anjali|Graham|Agnieszka|Lorna|Delphine)/.test(e.heading), `${name}: heading "${e.heading}" names nobody`);
       const reads = globalsRead(e.condition);
-      assert.ok(reads.length >= 1 && reads.every((g) => g === w.choice), `${name}: panel condition reads only ${w.choice}`);
+      assert.ok(reads.length >= 1 && reads.every((g) => g === w.choice || (w.extraReads || []).includes(g)), `${name}: panel condition reads only ${w.choice}${(w.extraReads || []).length ? ' or the write-stage outcome' : ''}`);
     }
     // every answer value has an entry
     for (const v of w.values) assert.ok(cond.some((e) => new RegExp(`=== '${v}'`).test(e.condition)), `${name}: an entry for ${v}`);
@@ -1915,4 +1915,66 @@ test('wave 5: preloads and dims: every base sprite and variant value is preloade
     if (w.ep === 'ca02') { assert.ok(keys.has('pc1_locked_isolated'), `${name}: uses pc1_locked_isolated`); assert.deepEqual(pngSize('pc1_locked_isolated'), [28, 23]); }
     if (w.ep === 'ca14') { assert.ok(keys.has('m10_map_board1') || keys.has('flip_chart1'), `${name}: the board sprite`); if (keys.has('m10_map_board1')) assert.deepEqual(pngSize('m10_map_board1'), [40, 28]); }
   });
+});
+
+// Debrief claims about the player's own work must hold on every path (D254). The panel list a learner
+// sees, with the global-condition grammar (globalVars.x, !globalVars.x, x === literal, && and ||) evaluated.
+function shownPanels(shellId, globals) {
+  const cp = readShell(shellId).social.awarenessEpisode.strings.conceptPanel;
+  const list = Array.isArray(cp) ? cp : [cp];
+  const holds = (term) => {
+    const t = term.trim();
+    let m = t.match(/^globalVars\.(\w+)\s*===\s*(.+)$/);
+    if (m) return String(globals[m[1]]) === m[2].trim().replace(/^'|'$/g, '');
+    m = t.match(/^!globalVars\.(\w+)$/);
+    if (m) return !globals[m[1]];
+    m = t.match(/^globalVars\.(\w+)$/);
+    return m ? !!globals[m[1]] : false;
+  };
+  return list.filter((e) => !e || typeof e === 'string' || !e.condition || e.condition.split('||').some((alt) => alt.split('&&').every(holds)))
+    .map((e) => (typeof e === 'string' ? e : `${e.heading || ''}\n${e.text}`)).join('\n\n');
+}
+
+test('ca13: a plain brief gets no hidden-line, told-the-assistant or brief-you-handed claim on the player side', () => {
+  const claims = /hidden line bought|told the assistant|brief you handed|A line hidden in it told/i;
+  for (const send of ['', 'send', 'silent', 'ring']) {
+    const txt = shownPanels('ca13_ai_assistant', { phish_assist_reader_plain_sent: true, kit_ca13_send_choice: send });
+    assert.ok(!claims.test(txt), `plain brief, send_choice '${send}': ${txt.match(claims)}`);
+    assert.match(txt, /ordinary invoice/);
+  }
+  const hidden = shownPanels('ca13_ai_assistant', { phish_assist_reader_landed: true, kit_ca13_send_choice: 'send' });
+  assert.match(hidden, /To a real attacker, the brief you handed the assistant/);
+  assert.doesNotMatch(hidden, /ordinary invoice/);
+  const graham = shownPanels('ca13_ai_assistant', { phish_assist_reader_plain_sent: true, kit_ca13_send_choice: 'send' });
+  assert.match(graham, /Graham's assistant and Graham's inbox, not your brief/);
+});
+
+test('ca02: layer 0 does not say the player asked the recruiter for a second action', () => {
+  const txt = shownPanels('ca02_cv_lures', { kit_ca02_cv_choice: 'report' });
+  assert.match(txt, /To a real attacker/);
+  assert.doesNotMatch(txt, /you asked the recruiter|asked the recruiter to take/i);
+  for (const c of ['enable', 'silent', '']) assert.doesNotMatch(shownPanels('ca02_cv_lures', { kit_ca02_cv_choice: c }), /you asked the recruiter/i);
+});
+
+test('ca05: a silent Darren is described as nobody stopping him; no voicemail email or shown number is claimed', () => {
+  const silent = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'silent' });
+  assert.match(silent, /You said nothing, so nobody stopped Darren/);
+  assert.doesNotMatch(silent, /You chose Approve/);
+  const approve = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'approve' });
+  assert.match(approve, /You chose Approve/);
+  for (const c of ['silent', 'approve', 'stop']) {
+    const t = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: c });
+    assert.doesNotMatch(t, /showed the number to match|pull the voicemail email/, `ca05 ${c}`);
+  }
+});
+
+test('wave 5: each silent-keyed debrief entry says the player said nothing and nobody stopped the colleague; wrong and silent are separate entries', () => {
+  for (const [name, w] of Object.entries(W5)) {
+    const cp = readShell(name).social.awarenessEpisode.strings.conceptPanel;
+    const silent = cp.filter((e) => e.condition && new RegExp(`${w.choice} === 'silent'`).test(e.condition));
+    assert.equal(silent.length, 1, `${name}: one silent entry`);
+    assert.doesNotMatch(silent[0].condition, /\|\|/, `${name}: silent shares no entry with the wrong answer`);
+    assert.match(silent[0].text, /^You said nothing, so nobody stopped \w+/, `${name}: says plainly nobody stopped them`);
+    assert.ok(!cp.some((e) => e !== silent[0] && e.condition && /silent/.test(e.condition)), `${name}: silent keyed once`);
+  }
 });
