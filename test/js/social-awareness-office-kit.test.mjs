@@ -1451,8 +1451,9 @@ test('wave 4: each request knot guards itself, offers only allowed values, and t
     for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: guard names ${v}`);
     assert.equal(lines[1].trim(), `-> ${w.ep}`, `${name}: guard diverts to the stub knot`);
     // start diverts on asked into the knot, before any kit_defend_done divert
-    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim());
-    assert.ok(/^\{\s*kit_\w+_asked\s*:\s*$/.test(startBody[0]) && startBody[0].includes(`kit_${w.ep}_asked`) && startBody[1].trim() === `-> ${w.knot}`, `${name}: start's first statement diverts on asked into ${w.knot}`);
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    // the divert may also fire on an early click: asked || (out && not done) (social-early-click-request.test.mjs)
+    assert.ok(/^\{\s*kit_\w+_asked(\s*\|\|\s*\(kit_\w+_out && not kit_\w+_done\))?\s*:\s*$/.test(startBody[0]) && startBody[0].includes(`kit_${w.ep}_asked`) && startBody[1].trim() === `-> ${w.knot}`, `${name}: start's first statement diverts on asked into ${w.knot}`);
     assert.ok(startBody.findIndex((l) => l.includes('kit_defend_done')) > 1, `${name}: the asked divert comes before the kit_defend_done divert`);
     // one + option writes each value, and the first spoken line is the request bark
     for (const v of w.values) {
