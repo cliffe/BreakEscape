@@ -1035,7 +1035,7 @@ test('wave 3: ca19 notice states (plain before the look-up, isolated after) and 
   const sc = readShell('ca19_malware_and_updates');
   const iso = w3Obj(sc, 'kit_ca19_isolated');
   assert.ok(iso.observations === "Niamh's workstation.", 'base notice is plain');
-  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'Isolated by IT. Do not use. Recovering.' }]);
+  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'Isolated by IT: a post-it with a big X on it is stuck to the screen. Do not use, it is recovering.' }]);
   assert.ok(iso.interactable === true && iso.takeable === false);
   assert.ok(!('lighting' in iso) && iso.lockType !== 'ransomware_display', 'no emitter, no ransomware_display');
   const run = w3Obj(sc, 'kit_ca19_running');
@@ -1153,9 +1153,8 @@ test('wave 3: every kit set-piece object over a table or a moved table item has 
   assert.ok(overlaps >= 8, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
 });
 
-// ca19's isolated-screen look has no sprite yet (art pending an owner pick, WAVE3_BUILD.md s8). Marked skipped
-// until the pick lands: then add the PNG, the game.js load line and the spriteVariants, and remove `skip`.
-const CA19_ART = { skip: 'ca19 isolated sprite pick pending (set piece key _todo_ca19_art)' };
+// ca19's isolated-screen look (owner pick D235: post-it with an X): pc1_locked_isolated.
+const CA19_ART = {};
 test('wave 3 ca19 art: kit_ca19_isolated carries a spriteVariants swap to a loaded, existing key', CA19_ART, () => {
   const o = w3Obj(readShell('ca19_malware_and_updates'), 'kit_ca19_isolated');
   assert.ok(Array.isArray(o.spriteVariants) && o.spriteVariants.length === 1);
