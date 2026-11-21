@@ -490,6 +490,13 @@
 /* The title, subtitle, section-header, entry and warning looks are inline styles (STYLE_MAP in
    bond-visualiser.js); those govern, so there are no .bv-cr-title and similar rules here. */
 
+/* A "-- HEADING --" line: the dash runs are decoration that stays on one line and drops on a
+   narrow window; the words wrap only between words (sis01 m18) */
+.bv-cr-deco { white-space: nowrap; }
+@media (max-width: 600px) {
+  .bv-cr-deco { display: none; }
+}
+
 .bv-cr-gap {
   height: 22px;
 }

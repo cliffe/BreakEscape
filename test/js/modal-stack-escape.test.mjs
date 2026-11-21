@@ -73,8 +73,10 @@ test('other keys pass through, and unregister on click-close leaves no listener'
 test('gameDisplay and gameConfirm register with the stack; only gameDisplay has a close X', () => {
     const src = readFileSync(join(js, 'systems/notifications.js'), 'utf8');
     assert.equal((src.match(/registerModal\(/g) || []).length, 2);
-    // gameDisplay draws the X and wires it; a confirm has none (UX q99)
-    assert.equal((src.match(/game-modal-close/g) || []).length, 2);
+    // gameDisplay draws the X and wires it; a confirm has none (UX q99) unless the caller asks
+    // for options.closeX (one named button plus the X, sis02 m8): 2 uses in gameDisplay, 2 in that branch
+    assert.equal((src.match(/game-modal-close/g) || []).length, 4);
+    assert.match(src, /const closeX = plainText && !!\(options && options\.closeX === true\)/, 'a confirm has an X only on closeX');
     assert.match(src, /registerModal\(\(\) => finish\(false\)\)/, 'gameConfirm Esc must cancel (resolve false)');
 });
 

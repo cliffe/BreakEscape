@@ -1009,6 +1009,7 @@
         },
         "confirmLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
         "cancelLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
+        "closeX": { "type": "boolean", "description": "confirm_action: true gives the dialog a corner X and one named button (confirmLabel); the X is the leave-it answer and cancelLabel is not drawn." },
         "objectId": { "type": "string", "x-ref": "object" },
         "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
         "room_id": { "type": "string", "x-ref": "room" },

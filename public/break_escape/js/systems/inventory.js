@@ -636,7 +636,8 @@ function receiveRewardNote(item) {
     if (text && window.addNote) {
         const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : text;
         const added = window.addNote(item.name || 'Note', body, !!item.important);
-        if (added) announceNoteAdded(item.name);
+        // addNote returns the existing note (marked read) for a duplicate: toast only a new one
+        if (added && added.read !== true) announceNoteAdded(item.name);
     }
 
     const readAction = item.onRead || item.onPickup;
