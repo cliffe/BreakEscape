@@ -86,6 +86,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca05",
+    "kit_ca05_out": false,
+    "kit_ca05_there": false,
+    "kit_ca05_asked": false,
+    "kit_ca05_moved": false,
+    "kit_ca05_done": false,
+    "kit_ca05_prompt_choice": "",
     "kit_ca05_host_said": false,
     "kit_key_caught": false
   },
@@ -101,6 +107,35 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca05_t_there",
+      "startOnGlobal": "kit_ca05_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca05_there",
+      "setGlobal": {
+        "kit_ca05_there": true
+      }
+    },
+    {
+      "id": "kit_ca05_t_tail",
+      "startOnGlobal": "kit_ca05_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca05_prompt_choice === ''",
+      "setGlobal": {
+        "kit_ca05_prompt_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca05_t_done",
+      "startOnGlobal": "kit_ca05_out",
+      "delayMs": 60000,
+      "condition": "!globalVars.kit_ca05_done",
+      "setGlobal": {
+        "kit_ca05_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -354,6 +389,7 @@
         "stage": null
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: put together a fake Quayholt sign-in page from ready-made parts, choose the web address it would sit at, and send one email carrying its link. Nothing is built for real and nothing is collected. Then you swap seats and check five pages that Quayholt staff reached from links in their inbox. Only the pages are scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the page you put together, as Hana Novak, the claims handler you sent it to, would meet it after following the link. The parts picked out below are what make it believable.",
@@ -367,15 +403,28 @@
         "defendOnly": "These pages were built to pass for the real sign-in, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "flipPageIntro": "This is the sign-in page you built, as Hana Novak, the claims handler you sent it to, would meet it after following the link. Anything that would give it away is picked out below.",
         "defendIntro": "Now you're the one reading your inbox. Five pages are open, each from a link. For each one, decide whether you'd sign in, then tick what you noticed.",
-        "conceptPanel": {
-          "heading": "What the address bar settles",
-          "text": "To a real attacker, the password you captured on the lookalike page is the member of staff's real account, one that reaches claimant data and makes a base for mailbox rules and phishing sent from the inside. Reading the address bar, the check you just practised, is what breaks that chain, because the password is never typed into the copy.\n\nWhen a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high. Before you leave, have a word with Niamh."
-        }
+        "conceptPanel": [
+          {
+            "heading": "What the address bar settles",
+            "text": "To a real attacker, the password you captured on the lookalike page is the member of staff's real account, one that reaches claimant data and makes a base for mailbox rules and phishing sent from the inside. Reading the address bar, the check you just practised, is what breaks that chain, because the password is never typed into the copy.\n\nWhen a password is typed into a lookalike page, the real account is taken, and IT spend the day on a forced reset, a mailbox-rule review and a check of which claimant records were reached. A claims account holds health and other special-category data, so under UK GDPR the organisation assesses the breach without undue delay and, where it has to report, tells the ICO within 72 hours; claimants are told where the risk to them is high."
+          },
+          {
+            "heading": "Saying no to the prompt",
+            "text": "The voicemail page was the attacker's. It had passed Darren's password to the real sign-in, and the prompt on his phone was asking him to let that sign-in through. The number on the page would have matched, because it came from the real sign-in. Only the address showed the page was the attacker's. He said no and reported it. His password was changed within minutes, the address blocked and the email pulled from everyone's inbox, so the attacker was left holding a password that no longer worked.",
+            "condition": "globalVars.kit_ca05_prompt_choice === 'stop'"
+          },
+          {
+            "heading": "What the approval let in",
+            "text": "Darren approved the prompt. The page had passed his password straight on to the real Quayholt sign-in, so the prompt was genuine. The page showed the number to match, copied from the real sign-in, so it matched too, and approving it let the attacker in within seconds. They added a phone of their own as a way to sign in, set a mailbox rule to hide the replies, and sent a sign-in link from his account to Anjali and the claims team, who trust mail from the service desk lead. A forced reset on its own would leave them in: the session they opened and the phone they added both outlast it. To shut them out, IT sign Darren out of every session, reset his password, remove their phone and the mailbox rule, and check his other sign-in methods and rules. They block the page's address, pull the voicemail email and the link from everyone they reached and warn them, and anyone who signed in on either gets the same clean-up.",
+            "condition": "globalVars.kit_ca05_prompt_choice === 'approve' || globalVars.kit_ca05_prompt_choice === 'silent'"
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -1068,6 +1117,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e5_signin_pages_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca05_out": true
+              }
             }
           ]
         },
@@ -1118,7 +1183,41 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_out",
+              "condition": "value === true && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_out",
+              "condition": "value === true && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.4,
+                  "y": 8.3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca05_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Darren, have you just sent me a sign-in link? It's gone to the whole claims team."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_done",
+              "condition": "value === true && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_darren_price",
@@ -1126,20 +1225,15 @@
           "person": "darren_price",
           "npcType": "person",
           "position": {
-            "x": 2.5,
-            "y": 7.0
+            "x": 3.0,
+            "y": 6.0
           },
           "spriteSheet": "darren_price",
           "spriteTalk": "assets/characters/darren_price_talk.png",
           "spriteVisemes": "assets/characters/darren_price_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 2.5,
-            "y": 7.0,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca05_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -1152,7 +1246,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -1167,7 +1261,85 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_out",
+              "condition": "value === true && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca05_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_out",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Voicemail's come through by email. Signing in to hear it."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_there",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && globalVars.kit_ca05_prompt_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
+              "targetKnot": "ca05_prompt"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_there",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca05_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_darren_price",
+              "condition": "globalVars.kit_ca05_prompt_choice === 'asked' && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca05_prompt_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca05_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
+              "condition": "value === 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca05_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_moved",
+              "condition": "value === true && globalVars.kit_ca05_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca05_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca05_done",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_ca05_prompt_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca05_prompt_choice": "silent"
+              }
+            }
+          ]
         }
       ],
       "objects": [
@@ -1182,7 +1354,7 @@
           "observations": "A touch-screen training kiosk for the Quayholt sign-in exercise: first the red-team brief, research and page builder, then the five pages to check.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e5_signin_pages_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Quayholt sign-in exercise. The page is built and all five sign-in pages are checked."
             }
           ],
@@ -1213,6 +1385,73 @@
             "capacity": 2,
             "chatter": "kit_quayholt"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca05_pc",
+          "name": "Darren's workstation",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_darren_price",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca05_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Darren's workstation. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca05_moved === true",
+              "value": "Darren's workstation. His inbox, open as normal. Nothing in it shows the sign-in link that has just gone out from his account, or anyone's replies to it."
+            },
+            {
+              "condition": "globalVars.kit_ca05_prompt_choice === 'stop'",
+              "value": "Darren's workstation. The voicemail page is closed and the prompt on his phone turned down."
+            },
+            {
+              "condition": "globalVars.kit_ca05_out === true",
+              "value": "Darren's workstation. A Quayholt sign-in page, opened from an email saying a voicemail is waiting. The address bar reads sso.quayholt.example.voicebox.example. His password is in, and the page shows a number to enter in the sign-in prompt on his phone."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca05_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca05_prompt_choice === 'stop'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca05_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Darren's workstation."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca05_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
         }
       ]
     }

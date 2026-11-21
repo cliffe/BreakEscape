@@ -208,16 +208,16 @@
     {
       "id": "ca05_signin_pages",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "quayholt_insurance",
       "ep": "ca05",
       "ambient": [
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca05_signin_prompt",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e5_sso_lookalike",
       "hostLine": true
     },

@@ -391,7 +391,7 @@ Source table: `planning_notes/phishing_and_social_engineering/awareness/VOICE_CA
 | Ibrahim Diallo (ibrahim_diallo) | IT support lead | 40s | Sadaltager | json | yes | yes | yes | yes | yes |
 | Anjali Rao (anjali_rao) | infosec analyst | about 35 | Kore | json | yes | yes | yes | yes | yes |
 | Niamh Doherty (niamh_doherty) | comms officer and IT trainer | mid 20s | Leda | json | yes | yes | yes | yes | yes |
-| Darren Price (darren_price) | security awareness lead | 50s | Orus | json | yes | yes | yes | yes | yes |
+| Darren Price (darren_price) | service desk team lead | 50s | Orus | json | yes | yes | yes | yes | yes |
 | Sofia Marchetti (sofia_marchetti) | HR adviser | 30s | Despina | json | yes | yes | yes | yes | yes |
 | Julian Sallow (julian_sallow) | co-founding partner | mid 60s | Rasalgethi | json | yes | yes | yes | yes | yes |
 | Yasmin Chaudhry (yasmin_chaudhry) | finance controller | 40s | Laomedeia | json | yes | yes | yes | yes | yes |

@@ -1,8 +1,15 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca05_asked = false
+VAR kit_ca05_prompt_choice = ""  // Synced scenario global
+VAR kit_ca05_moved = false
+VAR kit_ca05_done = false
 
 === start ===
+{ kit_ca05_asked:
+    -> ca05_prompt
+}
 { kit_defend_done:
     { kit_ep == "ca00": -> ca00 }
     { kit_ep == "ca05": -> ca05 }
@@ -58,6 +65,34 @@ Darren Price: Welcome aboard. Good to have you on the floor with us.
     Darren Price: IT pulled a machine off the network today. Updates had slipped, apparently.
 }
 -> bye
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca05_prompt ===
+{ kit_ca05_moved:
+    -> bye
+}
+{ kit_ca05_prompt_choice == "stop" || kit_ca05_prompt_choice == "approve" || kit_ca05_prompt_choice == "silent" || kit_ca05_done:
+    -> ca05
+}
+Darren Price: Password's in, and now my phone wants me to approve it. Fine to say yes?
+{ kit_ca05_prompt_choice == "":
+    ~ kit_ca05_prompt_choice = "asked"
+}
++ [Deny it. Check voicemail the usual way, and report it now.]
+    ~ kit_ca05_prompt_choice = "stop"
+    Darren Price: Right, denied. I'll report it now and change my password.
+    #exit_conversation
+    -> DONE
++ [Approve it. The prompt's from Quayholt, so it's real.]
+    ~ kit_ca05_prompt_choice = "approve"
+    Darren Price: Done. That's me in. #delivery: cheerful, unbothered
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca05_prompt_choice = "silent"
+    #exit_conversation
+    -> DONE
 
 // Every knot ends on this choice: a knot that prints its line and ends at DONE with no
 // choice shows only "(End of conversation)" in person-chat (GATE_A.md Diagnosis).
