@@ -1,5 +1,5 @@
-// The notepad has no Continue or Cancel button beside its X, the Mission Brief popup included
-// (sis01 blind playtest m1; this replaces the A05 exception). The real notes module runs against jsdom.
+// A05: the notepad has no Continue button beside its X, except when it opens as the Mission
+// Brief popup at game start. The real notes module runs against jsdom.
 // Run with: node test/js/notes-continue-brief.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +15,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
 
-const { NotesMinigame, showMissionBrief, startNotesMinigame } =
+const { NotesMinigame, notesShowsContinue, showMissionBrief, startNotesMinigame } =
     await imp('minigames/notes/notes-minigame.js');
 
 // Records what startNotesMinigame hands the framework
@@ -29,21 +29,24 @@ function fakeFramework() {
     return started;
 }
 
+test('notesShowsContinue: only the Mission Brief popup', () => {
+    assert.equal(notesShowsContinue({ missionBrief: true }), true);
+    assert.equal(notesShowsContinue({}), false);
+    assert.equal(notesShowsContinue({ missionBrief: 'yes' }), false);
+    assert.equal(notesShowsContinue(undefined), false);
+});
+
 test('an ordinary note is built with no Continue, whatever the caller asks', () => {
     document.body.innerHTML = '<div id="mg"></div>';
     const mg = new NotesMinigame(document.getElementById('mg'), { title: 'Sticky', showCancel: true });
-    assert.ok(mg.params.showCancel === false, 'no bottom button on a note');
+    assert.equal(mg.params.showCancel, false);
 });
 
-test('the Mission Brief popup has no Continue either: the X closes it', () => {
+test('the Mission Brief popup is built with Continue', () => {
     document.body.innerHTML = '<div id="mg"></div>';
     const mg = new NotesMinigame(document.getElementById('mg'), { title: 'Mission Brief', missionBrief: true });
-    assert.ok(mg.params.showCancel === false, 'brief built without a bottom button');
-    assert.ok(NotesMinigame.keepsCancelButton === false, 'the scene never keeps a Cancel');
-    mg.init();
-    assert.ok(document.getElementById('minigame-cancel') === null, 'no Continue button in the DOM');
-    assert.ok(!/Continue/.test(document.body.textContent), 'no Continue text anywhere');
-    assert.ok(document.querySelector('.minigame-close-button, #minigame-close, .minigame-close') !== null, 'the X is present');
+    assert.equal(mg.params.showCancel, true);
+    assert.equal(mg.params.cancelText, 'Continue');
 });
 
 test('showMissionBrief passes missionBrief; a note opened from the world does not', () => {

@@ -253,6 +253,8 @@ test('no minigame in the slice draws a Cancel beside the X; the shell keeps Esc 
     assert.match(base, /const showCancel = this\.constructor\.keepsCancelButton === true/);
     assert.match(base, /e\.key === 'Escape'/);
     for (const dir of JS_DIRS) {
+        // notes keeps its Continue, the way on from reading a note
+        if (dir.endsWith('/notes')) continue;
         for (const f of jsFiles(dir)) assert.doesNotMatch(read(f), /keepsCancelButton = true/, `${f} keeps a Cancel`);
     }
     assert.match(read('css/minigames-framework.css'), /\.minigame-controls:empty\s*\{\s*display: none;/);
