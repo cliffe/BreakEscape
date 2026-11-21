@@ -1,0 +1,13 @@
+{
+  "key": "e765befe49442718b494a7d34f3b781a",
+  "npc": "kit_niamh_doherty",
+  "text": "Helpdesk's had a run of odd reset calls lately. Keeps us all on our toes.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:45Z"
+}

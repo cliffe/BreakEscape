@@ -1,0 +1,13 @@
+{
+  "key": "7d749414f119e879f9cef7d2257cb91e",
+  "npc": "niamh_doherty",
+  "text": "To whoever built that page, a single followed step is a way onto the machine behind it, and you gave them no step to follow.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:58Z"
+}

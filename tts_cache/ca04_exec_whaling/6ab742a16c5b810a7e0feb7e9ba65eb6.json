@@ -1,0 +1,13 @@
+{
+  "key": "6ab742a16c5b810a7e0feb7e9ba65eb6",
+  "npc": "thandiwe_moyo",
+  "text": "You checked it before it moved, so the money stayed put and the account that email named got nothing.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:08:49Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "6d1656a05df75a4d1277cb9ecc31ada2",
+  "npc": "darren_price",
+  "text": "You stopped a prompt nobody started from turning into an approval, so the account stayed shut.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:13:27Z"
+}

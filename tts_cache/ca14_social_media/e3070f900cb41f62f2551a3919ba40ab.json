@@ -1,0 +1,13 @@
+{
+  "key": "e3070f900cb41f62f2551a3919ba40ab",
+  "npc": "julian_sallow",
+  "text": "It knew real details and wore a trusted name, so one reply handed over a security answer we then had to reset.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:15:01Z"
+}

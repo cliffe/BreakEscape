@@ -1,0 +1,13 @@
+{
+  "key": "fbea9a9c9e78b3cf9dca653463585c2d",
+  "npc": "zainab_hussain",
+  "text": "You treated the lookalike network as the trap it was, so no work password ever reached their page.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:19Z"
+}

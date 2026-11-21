@@ -1,0 +1,13 @@
+{
+  "key": "4f5fae6539cf206698c14969d14425d1",
+  "npc": "kit_fatima_begum",
+  "text": "Good call on that stick. A found USB goes to IT unopened. Plugging it in is exactly what they're banking on.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca17_acceptable_use_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:16:52Z"
+}
