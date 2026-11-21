@@ -816,7 +816,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca15_at_host",
-              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
               "delayMs": 1000,
               "bark": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything."

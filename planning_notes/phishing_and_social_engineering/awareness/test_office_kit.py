@@ -9,6 +9,7 @@
 import copy
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -1097,6 +1098,40 @@ class RealKitsThroughBuilders(unittest.TestCase):
         r = self.real_row('quayholt_insurance', convention=True)
         npcs = self.check_npcs('quayholt_insurance', r, False)
         self.assertEqual([n['currentKnot'] for n in npcs], [r['stub']] * len(npcs))
+
+
+class SetPieceHostBarksAreGuarded(unittest.TestCase):
+    """A host bark fires on `kit_<ep>_at_host` (or `kit_<ep>_chidi_at_host`). A timer can set `kit_<ep>_done` first,
+    so every such bark must carry `!globalVars.kit_<ep>_done`, in the kit data and in the shell it generates."""
+
+    EP = re.compile(r'^global_variable_changed:kit_(ca\d+)_(?:\w+_)?at_host$')
+
+    def host_barks(self, node):
+        if isinstance(node, dict):
+            if 'bark' in node and self.EP.match(str(node.get('eventPattern', ''))):
+                yield node
+            for v in node.values():
+                yield from self.host_barks(v)
+        elif isinstance(node, list):
+            for v in node:
+                yield from self.host_barks(v)
+
+    def check(self, node, where, min_count):
+        found = list(self.host_barks(node))
+        self.assertGreaterEqual(len(found), min_count, where)
+        for m in found:
+            ep = self.EP.match(m['eventPattern']).group(1)
+            self.assertIn(f'!globalVars.kit_{ep}_done', m.get('condition', ''), f'{where}: {m["eventPattern"]}')
+
+    def test_kit_set_piece_host_barks_carry_the_done_guard(self):
+        kit = ok.load_kit('tarrowby_logistics')
+        self.check(kit['setPieces'], 'tarrowby_logistics', 3)
+
+    def test_generated_shell_host_barks_carry_the_done_guard(self):
+        for shell, n in (('ca09_passwords', 1), ('ca15_shadow_it', 2)):
+            with open(os.path.join(REPO, 'scenarios', shell, 'scenario.json.erb')) as f:
+                text = f.read()
+            self.check(json.loads(text), shell, n)
 
 
 if __name__ == '__main__':

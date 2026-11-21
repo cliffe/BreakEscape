@@ -381,7 +381,7 @@
         },
         {
           "eventPattern": "global_variable_changed:kit_ca09_at_host",
-          "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
+          "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca09_done",
           "onceOnly": true,
           "delayMs": 1000,
           "bark": "Right, Chidi. A password manager remembers it for you, so nothing goes on the screen."
@@ -674,7 +674,7 @@
       "mappings": [
         {
           "eventPattern": "global_variable_changed:kit_ca15_at_host",
-          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
           "onceOnly": true,
           "delayMs": 1000,
           "bark": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything."

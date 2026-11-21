@@ -918,7 +918,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca09_at_host",
-              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca09_done",
               "onceOnly": true,
               "delayMs": 1000,
               "bark": "Right, Chidi. A password manager remembers it for you, so nothing goes on the screen."
