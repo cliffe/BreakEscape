@@ -239,7 +239,8 @@
     .epr-kiosk-screen { margin: 0 4px 4px; }
     .epr-root .aw-strip { padding: 4px 8px; flex-wrap: nowrap; }
     .epr-root .aw-wordmark { flex: 0 1 auto; min-width: 0; max-width: 30%; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .epr-root .aw-steps { flex-wrap: nowrap; min-width: 0; }
+    .epr-root .aw-steps { min-width: 0; }
+    .epr-root .aw-step-num { flex: 0 0 auto; }
     .epr-body { padding-bottom: 8px; }
     .aw-debrief { padding: 8px 16px; }
     .aw-debrief > .aw-band { margin-bottom: 8px; }
