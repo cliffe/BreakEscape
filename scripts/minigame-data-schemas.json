@@ -74,6 +74,7 @@
       "flagActionLabel",
       "flagConfirmTitle",
       "flagConfirmBody",
+      "flagConfirmBodyClosed",
       "additionalTabs",
       "requireAllTabs",
       "stateOverrides",
