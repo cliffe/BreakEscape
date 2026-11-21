@@ -157,7 +157,7 @@ VAR topic_patch_view = false
         ~ jump_server_asked = true
         Anyone on it who shouldn't be. Look at who, when, and where from. Flag it on ENG-02, then tell me.
     - else:
-        Same as before: an account that shouldn't be there. Flag it on ENG-02, then tell me.
+        Same as before, an account that shouldn't be there. Flag it on ENG-02, then tell me.
     }
     -> hub
 + [Where are we?]

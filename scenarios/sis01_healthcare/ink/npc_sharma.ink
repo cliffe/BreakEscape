@@ -300,7 +300,7 @@ Priya S.: When you chose a source, what were you trading?
 * [How much data we'd lose, against how long it would take.]
     Priya S.: That matters too: Monday's records, or Friday's. But today the bigger question was whether the copy was clean.
 * [How much it would cost, against how long the wards stayed on paper.]
-    Priya S.: Nothing on the cards was about cost. The trade was how clean the copy was against how long you waited for it.
+    Priya S.: None of the three sources was about cost. The trade was how clean the copy was against how long you waited for it.
 - -> ransom_review
 
 === ransom_review ===
