@@ -31,7 +31,7 @@
 // Stage order (P7-X lints it): osint -> build? -> write (mail or call) -> mfa? -> flip -> defend.
 // `mfa` may also sit straight after `flip`. `build` and `mfa` are attack stages.
 
-import { fieldLabel } from '../landing-page-builder/landing-page-model.js';
+import { fieldLabel, checkHostFor } from '../landing-page-builder/landing-page-model.js';
 
 export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip', 'defend', 'debrief', 'check']);
 export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip']);
@@ -766,7 +766,7 @@ export function flipPage(episode, social, globals) {
     // (flip-view passes pageDef + choices to renderLandingPage), and the one tell is fake_check_paste.
     if (def.pageType === 'fakeCheck') {
         const check = isObj(def.check) ? def.check : {};
-        const chost = isStr(check.host) ? check.host : '';
+        const chost = checkHostFor(check, isObj(choices.check) ? choices.check.hostId : null);
         if (!chost) return null;
         return {
             url: /^[a-z]+:\/\//i.test(chost) ? chost : `https://${chost}/`,

@@ -187,3 +187,25 @@ test('flipPage on a sign-in page still derives the host from the chosen domain o
     assert.equal(page.url, 'https://ledgerwell-login.example/');
     assert.ok(!page.tells.includes('fake_check_paste'));
 });
+
+// ── the chosen host drives the address (ca10 regate): look-alike choice no longer shows the genuine address ──
+test('a host option with its own host moves the preview address and the flip page; without one, check.host stands', () => {
+    const page = fakePage();
+    page.check.hosts[1].host = 'orders-fernside.example';
+    const addr = (hostId) => renderLandingPage({ pageDef: page, choices: { check: { hostId } }, doc: document }).root.querySelector('.lpb-address-text').textContent;
+    assert.equal(addr('lookalike'), 'orders-fernside.example');
+    assert.equal(addr('genuine'), 'orders.fernside.example');
+    assert.equal(addr('random'), 'orders.fernside.example', 'an option with no host keeps the authored address');
+    assert.equal(addr(null), 'orders.fernside.example');
+    const soc = { landingPages: [page] };
+    assert.equal(flipPage(episode(), soc, builtGlobals({ check: { hostId: 'lookalike' } })).url, 'https://orders-fernside.example/');
+    assert.equal(flipPage(episode(), soc, builtGlobals({ check: { hostId: 'genuine' } })).url, 'https://orders.fernside.example/');
+    assert.equal(model.linkInfoFor({ built: true, pageId: 'e10_check', choices: { check: { hostId: 'lookalike' } } }, page, 'k').host, 'orders-fernside.example');
+});
+
+test('ca10 shell: look-alike and unrelated host options carry their own address; the flip line does not claim the real address', () => {
+    const t = readFileSync(join(here, '../../scenarios/ca10_downloads_and_fake_checks/scenario.json.erb'), 'utf8');
+    assert.match(t, /"host": "orders-fernside\.example"/);
+    assert.match(t, /"host": "weekly-menu-offers\.example"/);
+    assert.ok(!/sat on Fernside's own address/.test(t));
+});
