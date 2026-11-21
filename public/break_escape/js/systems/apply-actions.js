@@ -423,9 +423,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                     break;
                 }
                 const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
-                window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
-                    label(action.cancelLabel, 'Cancel'),
-                    action.closeX === true ? { closeX: true } : {}).then(confirmed => {
+                const confirmArgs = [text, label(action.confirmLabel, 'Confirm'), label(action.cancelLabel, 'Cancel')];
+                if (action.closeX === true) confirmArgs.push({ closeX: true });
+                window.gameConfirm(...confirmArgs).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
                         applyActions(onConfirm, { source, gameId, objectId });
                     }

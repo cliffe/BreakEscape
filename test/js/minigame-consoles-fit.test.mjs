@@ -43,12 +43,14 @@ test('pop-ups that are not confirms close with the shared X; confirms keep two n
     for (const id of ['sis-detail-close', 'sis-compare-close']) {
         assert.match(sis, new RegExp(`class="minigame-close-button sis-modal-close" id="${id}" aria-label="Close">&times;<`), `${id} is the shared X`);
     }
-    assert.match(sis, /id="sis-confirm-no">Cancel</);
+    assert.match(sis, /class="minigame-close-button sis-modal-close" id="sis-confirm-close" aria-label="Close">&times;</, 'the tamper confirm has its own X');
+    assert.doesNotMatch(sis, /sis-confirm-no/, 'no Cancel beside the one named button (sis02 m8)');
     assert.match(sis, /id="sis-confirm-yes">Confirm</);
     assert.match(css('sis-config-threshold-minigame.css'), /\.sis-modal-with-x h4 \{[^}]*padding-right: 40px/, 'pop-up title stops short of its X');
     const esd = src(SCENES['esd-pushbutton']);
     assert.match(esd, /id="esd-confirm">CONFIRM - INITIATE SHUTDOWN</);
-    assert.match(esd, /id="esd-cancel">CANCEL</);
+    assert.match(esd, /id="esd-confirm-x"/, 'the ESD confirm has its own X (sis02 m2)');
+    assert.doesNotMatch(esd, /id="esd-cancel"/, 'no CANCEL beside the one named button');
     // The scene X hides while a confirm or pop-up is open, so one X shows at a time
     for (const text of [sis, esd]) {
         assert.match(text, /_hideSceneX\(true\)/);
@@ -325,6 +327,8 @@ test('review round 2: every scene with a pop-up or confirm handles Esc and hides
     for (const [name, rel] of Object.entries({ ...more, 'drug-library-integrity': SCENES['drug-library-integrity'] })) {
         const code = src(rel);
         assert.match(code, /handleEscapeKey\(\) \{/, `${name} handles Esc on its pop-up`);
+        // The historian report has no X of its own: its scene X stays and closes the report (sis02 m1)
+        if (name === 'scada-historian') continue;
         assert.match(code, /_hideSceneX\(true\)/, `${name} hides the scene X on open`);
         assert.match(code, /_hideSceneX\(false\)/, `${name} shows the scene X on close`);
     }
