@@ -79,7 +79,7 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //     which has the panel; the defend-only fragment has none.
 const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages',
     'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove', 'stepAwayHeading', 'stepAway',
-    'flipGuessIntroNoSpray', 'flipDefenderLineNoSpray']);
+    'flipGuessIntroNoSpray', 'flipDefenderLineNoSpray', 'flipPageIntroByHost', 'flipDefenderLineByHost']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);
 
