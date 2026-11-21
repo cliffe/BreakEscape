@@ -1,0 +1,13 @@
+{
+  "key": "8dae9537dd6f0bff48acb3b196011741",
+  "npc": "anjali_rao",
+  "text": "That sign-in prompt from a PC abroad, the one you hadn't started, was the one to report at once.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:46Z"
+}
