@@ -833,3 +833,345 @@ test('keyCaughtVerdicts: the check fails on a mutated scratch copy (lost entry, 
   const rows2 = JSON.parse(JSON.stringify(kitRows)); delete rows2.find((r) => r.keyCaughtVerdicts).keyCaughtVerdicts;
   assert.equal(caughtVerdictProblems(rows2, tryShell).problems.length, 1);
 });
+
+// ---------------------------------------------------------------------------------------------------
+// Wave 3 (WAVE3_BUILD.md s9): ca03, ca08, ca11 and ca19 are watched chains at the look-up. The generic
+// chain test above already visits them; these cases pin what is specific to each shell.
+// ---------------------------------------------------------------------------------------------------
+const W3 = {
+  ca03_helpdesk_reset: { ep: 'ca03', setPiece: 'ca03_people_locked_out', walker: 'kit_anjali_rao', partner: 'kit_niamh_doherty', hostId: 'darren_price', there: 'kit_ca03_there', hostReply: true, push: true, verdicts: undefined },
+  ca08_after_the_click: { ep: 'ca08', setPiece: 'ca08_machine_out', walker: 'kit_darren_price', partner: 'kit_niamh_doherty', hostId: 'anjali_rao', there: 'kit_ca08_there', hostReply: true, push: true, verdicts: ['report'] },
+  ca11_misdirected_data: { ep: 'ca11', setPiece: 'ca11_stray_printout', walker: 'kit_yusuf_demir', partner: null, hostId: null, there: 'kit_ca11_at_tray', hostReply: false, push: false, verdicts: ['report'] },
+  ca19_malware_and_updates: { ep: 'ca19', setPiece: 'ca19_isolated_beside_running', walker: 'kit_niamh_doherty', partner: 'kit_darren_price', hostId: 'anjali_rao', there: 'kit_ca19_there', hostReply: false, push: false, verdicts: ['report', 'verify'] },
+};
+const KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet === false';
+const w3Kiosk = (sc) => sc.rooms.training_room.objects.find((o) => o.type === 'kiosk');
+const w3Npc = (sc, id) => sc.rooms.training_room.npcs.find((n) => n.id === id);
+const w3Obj = (sc, id) => sc.rooms.training_room.objects.find((o) => o.id === id);
+const w3Maps = (n) => (n && n.eventMappings) || [];
+
+test('wave 3: each shell has its set piece, a stepAway row that matches the shell, and the out/there/done globals at false', () => {
+  for (const [name, w] of Object.entries(W3)) {
+    const row = kitRows.find((r) => r.id === name);
+    const sc = readShell(name);
+    assert.ok(row && row.setPiece === w.setPiece && row.tier === 'O', `${name}: row`);
+    assert.ok(row.stepAway === true && sc.social.awarenessEpisode.stepAway === true, `${name}: stepAway in row and shell`);
+    for (const g of [`kit_${w.ep}_out`, w.there, `kit_${w.ep}_done`, `kit_${w.ep}_host_said`]) {
+      assert.ok(sc.globalVariables[g] === false, `${name}: ${g} declared false`);
+    }
+    // the _defend twin is untouched by wave 3: no chain, no stepAway, no set piece
+    const twin = kitRows.find((r) => r.id === `${name}_defend`);
+    assert.ok(twin && twin.setPiece === null && twin.stepAway === false, `${name}: twin row`);
+    const tsc = readShell(`${name}_defend`);
+    assert.ok(tsc.social.awarenessEpisode.stepAway !== true, `${name}_defend: no stepAway`);
+    assert.ok(!Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|at_tray)$/.test(k)), `${name}_defend: no chain global`);
+  }
+});
+
+test('wave 3: the kiosk carries the hand-authored finished variant, and the quiet release is on the host', () => {
+  for (const [name, w] of Object.entries(W3)) {
+    const sc = readShell(name);
+    const ov = w3Kiosk(sc).observationVariants || [];
+    assert.ok(ov.length === 1 && ov[0].condition === KIOSK_FINISHED, `${name}: kiosk finished condition`);
+    assert.ok(typeof ov[0].value === 'string' && ov[0].value.length > 0, `${name}: kiosk finished text`);
+    const sa = sc.social.awarenessEpisode.strings;
+    assert.ok(typeof sa.stepAway === 'string' && /^Look up from the kiosk/.test(sa.stepAway), `${name}: strings.stepAway is the on-screen look-up line`);
+    assert.ok(Object.keys(sa)[0] === 'stepAway', `${name}: stepAway is the first strings key`);
+    const host = hostOf(sc);
+    assert.ok(w3Maps(host).some((m) => m.eventPattern === 'episode_step_away' && m.condition === 'globalVars.kit_defend_done === true' &&
+      JSON.stringify(m.setGlobal) === JSON.stringify({ [`kit_${w.ep}_out`]: true })), `${name}: step-away mapping sets only the out global`);
+    const release = (cond) => w3Maps(host).some((m) => /^global_variable_changed:episode_e\d+_\w+_state$/.test(m.eventPattern) &&
+      m.condition === cond && JSON.stringify(m.setGlobal) === JSON.stringify({ kit_quiet: false }));
+    assert.ok(release("data.value.done.includes('debrief')") && release('data.value.debriefSeen === true'), `${name}: quiet release on debrief done and debriefSeen`);
+  }
+});
+
+test('wave 3: the layer-1 host pointer is gone from the panel (the stepAway parity test below covers the shared run)', () => {
+  for (const name of Object.keys(W3)) {
+    const sc = readShell(name);
+    const texts = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel);
+    assert.ok(texts.length > 0 && texts.every((t) => !/have a word with/i.test(t) && !/Before you leave/.test(t)), `${name}: no host pointer`);
+  }
+});
+
+test('wave 3: stepAway full rows keep the layer-1 text in step with their fragment (no pointer, shared run, twin equals the fragment)', () => {
+  const rows = courseRows.filter((r) => FULL_TIERS.includes(r.tier) && r.attack === true && r.stepAway === true && fragmentPanel(r.ep) !== null);
+  for (const n of Object.keys(W3)) assert.ok(rows.some((r) => r.id === n), `${n} is among the stepAway rows this test visits`);
+  for (const r of rows) {
+    const sc = readShell(r.id);
+    const erb = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel).join('\n');
+    assert.ok(!/have a word with/i.test(erb), `${r.id}: the panel carries no host pointer`);
+    const frag = fragmentPanel(r.ep);
+    const fragText = conceptPanelTexts(frag).join('\n');
+    assert.ok(!/To a real attacker/.test(fragText) && !/have a word with/.test(fragText), `${r.id}: the fragment panel carries layer 0 or the pointer`);
+    assert.ok(sharesRun(erb, fragText), `${r.id}: erb and fragment layer 1 share no run of eight words`);
+    const twinName = `${r.id}_defend`;
+    if (existsSync(join(scenarios, twinName, 'scenario.json.erb'))) {
+      assert.ok(canon(readShell(twinName).social.awarenessEpisode.strings.conceptPanel) === canon(frag), `${r.id}: the twin's panel differs from the fragment's`);
+    }
+  }
+});
+
+test('wave 3: chain barks, the walk, the partner and the timer have the shape the sheet gives each shell', () => {
+  for (const [name, w] of Object.entries(W3)) {
+    const sc = readShell(name);
+    const out = `kit_${w.ep}_out`, done = `kit_${w.ep}_done`;
+    const walker = w3Npc(sc, w.walker);
+    assert.ok(walker, `${name}: walker ${w.walker}`);
+    const wm = w3Maps(walker);
+    const sus = wm.find((m) => m.needs === 'suspend');
+    assert.ok(sus && sus.eventPattern === `global_variable_changed:${out}`, `${name}: walker suspends on the out global`);
+    const walk = wm.filter((m) => m.patrolOverride);
+    assert.ok(walk.length >= 1 && walk.every((m) => m.patrolOverride.targetTile && Number.isFinite(m.patrolOverride.targetTile.x)), `${name}: walker has a patrolOverride`);
+    assert.ok(wm.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: walker resumes on the done global`);
+    // the first line: an arrival bark that sets the "there" global (ca11's "there" is kit_ca11_at_tray, set on the first arrival)
+    const first = wm.find((m) => m.bark && /^npc_arrived:/.test(m.eventPattern));
+    assert.ok(first && first.setGlobal && first.setGlobal[w.there] === true && first.onceOnly === true, `${name}: arrival bark sets ${w.there}`);
+    assert.ok(!globalsRead(first.condition).includes(w.there), `${name}: first bark does not read what it sets`);
+    // timer: the fallback resumes even if the walk never arrives
+    const t = (sc.timers || []).find((x) => x.id === `kit_${w.ep}_t_done`);
+    assert.ok(t && t.startOnGlobal === out && t.setGlobal[done] === true && t.condition === `!globalVars.${done}` && t.delayMs >= 10000, `${name}: fallback timer`);
+    // partner: suspend then resume
+    if (w.partner) {
+      const pm = w3Maps(w3Npc(sc, w.partner));
+      assert.ok(pm.some((m) => m.needs === 'suspend' && m.eventPattern === `global_variable_changed:${out}`), `${name}: partner suspends`);
+      assert.ok(pm.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: partner resumes on the done global`);
+    }
+    // needs freeze on the walker: ca03/ca08/ca19 carry it, ca11's Yusuf keeps the decaying need
+    const th = walker.needs && walker.needs.thirst;
+    assert.ok(th, `${name}: walker has a thirst need`);
+    // frozen = a decay too slow to cross urgentAt in a playthrough; ca11 keeps Yusuf's real decay (the chain resumes him)
+    assert.ok(w.ep === 'ca11' ? th.decayPerMin >= 10 : th.decayPerMin <= 0.05, `${name}: thirst decay ${th.decayPerMin} (${w.ep === 'ca11' ? 'unchanged' : 'frozen'})`);
+    // a frozen walker must also start above urgentAt, or it would be urgent at once and the freeze would not hold it
+    if (w.ep !== 'ca11') assert.ok(th.initial > th.urgentAt, `${name}: thirst initial ${th.initial} is above urgentAt ${th.urgentAt}`);
+    // host-reply mapping on the "there" global (ca03, ca08 only)
+    const hostNpc = w.hostId ? w3Npc(sc, w.hostId) : null;
+    const reply = hostNpc && w3Maps(hostNpc).find((m) => m.eventPattern === `global_variable_changed:${w.there}`);
+    if (w.hostReply) {
+      assert.ok(reply && reply.bark && reply.setGlobal && reply.setGlobal[done] === true && reply.delayMs >= 4000, `${name}: host reply sets done after a gap`);
+      assert.ok(!globalsRead(reply.condition).includes(done), `${name}: reply bark does not read the global it sets`);
+      assert.ok(/kit_quiet === true/.test(reply.condition) && new RegExp(`kit_${w.ep}_out === true`).test(reply.condition), `${name}: host reply is gated on kit_quiet === true and the out global`);
+    }
+    // ca19: the second line is the partner's, said on the first line's "there" global after a gap, and it sets done
+    if (w.ep === 'ca19') {
+      const d2 = w3Maps(w3Npc(sc, w.partner)).find((m) => m.bark && m.eventPattern === `global_variable_changed:${w.there}`);
+      assert.ok(d2 && d2.delayMs >= 4000 && d2.setGlobal && d2.setGlobal[done] === true && /kit_quiet === true/.test(d2.condition), `${name}: D2 is wired on ${w.there}, sets done, gated on kit_quiet`);
+      assert.ok(!globalsRead(d2.condition).includes(done), `${name}: D2 does not read the global it sets`);
+      // D2 is said from his desk: the partner is walked home right after the suspend
+      const pm = w3Maps(w3Npc(sc, w.partner));
+      const home = pm.find((m) => m.patrolOverride && m.eventPattern === `global_variable_changed:${out}`);
+      const post = w3Npc(sc, w.partner).needsHome;
+      assert.ok(home && home.delayMs === 1000 && home.patrolOverride.targetTile.x === post.x && home.patrolOverride.targetTile.y === post.y, `${name}: partner is sent to his desk post on ${out}`);
+      assert.ok(pm.indexOf(home) > pm.findIndex((m) => m.needs === 'suspend'), `${name}: the walk home comes after the suspend`);
+    }
+  }
+});
+
+test('wave 3: ca11 walks twice off one arrival, ca11 line 2 routes through kit_ca11_at_tray, and Yusuf is the only chain colleague', () => {
+  const sc = readShell('ca11_misdirected_data');
+  const y = w3Npc(sc, 'kit_yusuf_demir');
+  const maps = w3Maps(y);
+  assert.ok(maps.filter((m) => /^npc_arrived:/.test(m.eventPattern)).length === 1, 'one npc_arrived mapping, no second arrival');
+  const second = maps.find((m) => m.patrolOverride && m.eventPattern === 'global_variable_changed:kit_ca11_at_tray');
+  assert.ok(second, 'second patrolOverride listens on kit_ca11_at_tray');
+  const l2 = maps.find((m) => m.bark && m.eventPattern === 'global_variable_changed:kit_ca11_at_tray');
+  assert.ok(l2 && l2.setGlobal && l2.setGlobal.kit_ca11_done === true, 'line 2 sets kit_ca11_done');
+  assert.ok(l2.delayMs === 5000, `line 2 waits 5000 ms after the tray arrival (got ${l2.delayMs})`);
+  assert.ok(maps.some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_ca11_done'), 'Yusuf resumes on done');
+  assert.ok(sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person).length === 1, 'Yusuf is the only kit colleague');
+  assert.ok(!w3Maps(hostOf(sc)).some((m) => /kit_ca11_(at_tray|done)/.test(m.eventPattern)), 'no host reply mapping on ca11');
+});
+
+test('wave 3: spriteVariants swaps (ca03 pc4 to pc4_locked, ca08 pc1 to pc1_locked) read the out global and keep the footprint', () => {
+  const swaps = [
+    ['ca03_helpdesk_reset', 'kit_ca03_spare_pc', 'pc4', 'pc4_locked', 'kit_ca03_out'],
+    ['ca08_after_the_click', 'kit_ca08_screen', 'pc1', 'pc1_locked', 'kit_ca08_out'],
+  ];
+  const png = (f) => readFileSync(join(root, 'public/break_escape/assets/objects', f));
+  const dims = (b) => [b.readUInt32BE(16), b.readUInt32BE(20)];
+  for (const [name, id, base, locked, out] of swaps) {
+    const o = w3Obj(readShell(name), id);
+    assert.ok(o && o.type === 'pc', `${id}: a placed pc`);
+    assert.ok(o.sprite === base, `${id}: base sprite ${base}`);
+    assert.deepEqual(o.spriteVariants, [{ condition: `globalVars.${out} === true`, value: locked }], `${id}: swap on the out global`);
+    assert.ok(o.takeable === false && o.interactable === false, `${id}: not takeable, not interactable`);
+    assert.ok(typeof o.position.elevation === 'number', `${id}: has an elevation`);
+    assert.deepEqual(dims(png(`${locked}.png`)), dims(png(`${base}.png`)), `${id}: ${locked} and ${base} share dimensions`);
+    // nothing lights up: no emitter, no ransomware lockType
+    assert.ok(!('lighting' in o) && !('emitsLight' in o) && o.lockType !== 'ransomware_display', `${id}: no glow or ransomware look`);
+  }
+});
+
+test('wave 3: revealed objects (ca11 printout, ca19 paper) are full non-pickup records with an observation', () => {
+  for (const [name, id, out] of [['ca11_misdirected_data', 'kit_ca11_printout', 'kit_ca11_out'], ['ca19_malware_and_updates', 'kit_ca19_paper', 'kit_ca19_out']]) {
+    const o = w3Obj(readShell(name), id);
+    assert.ok(o, id);
+    assert.ok(o.revealOnGlobal === out, `${id}: reveals on ${out}`);
+    assert.ok(o.takeable === false, `${id}: takeable false`);
+    assert.ok(typeof o.observations === 'string' && o.observations.length > 0, `${id}: has observations`);
+    assert.ok(typeof o.position.elevation === 'number', `${id}: elevation`);
+  }
+  assert.ok(w3Obj(readShell('ca11_misdirected_data'), 'kit_ca11_printer').type === 'photocopier');
+});
+
+test('wave 3: ca19 notice states (plain before the look-up, isolated after) and a running machine beside it', () => {
+  const sc = readShell('ca19_malware_and_updates');
+  const iso = w3Obj(sc, 'kit_ca19_isolated');
+  assert.ok(iso.observations === "Niamh's workstation.", 'base notice is plain');
+  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'Isolated by IT. Do not use. Recovering.' }]);
+  assert.ok(iso.interactable === true && iso.takeable === false);
+  assert.ok(!('lighting' in iso) && iso.lockType !== 'ransomware_display', 'no emitter, no ransomware_display');
+  const run = w3Obj(sc, 'kit_ca19_running');
+  assert.ok(run.sprite === 'pc1' && !run.spriteVariants && !run.observationVariants, 'the running machine never changes');
+});
+
+test('wave 3: every spriteVariants / revealOnGlobal / timer start in the four kits names a kit_<ep>_ global set at or after the look-up', () => {
+  for (const [name, w] of Object.entries(W3)) {
+    const sc = readShell(name);
+    const ok = new RegExp(`^kit_${w.ep}_(out|there|done|at_tray)$`);
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith('kit_'))) {
+      if (o.revealOnGlobal) assert.ok(ok.test(o.revealOnGlobal), `${name} ${o.id} reveal`);
+      for (const v of o.spriteVariants || []) assert.ok(globalsRead(v.condition).every((g) => ok.test(g)), `${name} ${o.id} sprite variant`);
+      for (const v of o.observationVariants || []) assert.ok(globalsRead(v.condition).every((g) => ok.test(g)), `${name} ${o.id} observation variant`);
+    }
+    for (const t of (sc.timers || []).filter((x) => String(x.id).startsWith('kit_'))) assert.ok(ok.test(t.startOnGlobal), `${name} timer ${t.id}`);
+    for (const { m, who } of allKitMappings(sc)) assert.ok(!/kit_attack_done/.test(JSON.stringify(m)) || who === 'host', `${name} ${who}: no chain mapping reads kit_attack_done`);
+  }
+});
+
+test('wave 3: verdict sets match the rows (ca03 none, ca08 report, ca11 report, ca19 report and verify)', () => {
+  for (const [name, w] of Object.entries(W3)) {
+    const row = kitRows.find((r) => r.id === name);
+    assert.deepEqual(row.keyCaughtVerdicts, w.verdicts, `${name}: row verdicts`);
+    const oc = readShell(name).social.triageSets[0].outcome;
+    if (w.verdicts === undefined) assert.ok(oc.messageCaughtVerdicts === undefined, `${name}: no caught-verdicts set (engine default)`);
+    else assert.deepEqual(oc.messageCaughtVerdicts, { [row.keyMessage]: w.verdicts }, `${name}: shell verdicts`);
+  }
+});
+
+test('wave 3: every placed kit object in the four shells is the one its set piece authors (same id, sprite, position)', () => {
+  const quay = readKit('quayholt_insurance.json').setPieces, carr = readKit('carrholme_services.json').setPieces;
+  for (const k of ['ca03_people_locked_out', 'ca08_machine_out', 'ca19_isolated_beside_running']) assert.ok(quay[k], k);
+  assert.ok(carr.ca11_stray_printout);
+  for (const [name, w] of Object.entries(W3)) {
+    const kitSp = (w.ep === 'ca11' ? carr : quay)[w.setPiece];
+    assert.ok(kitSp.objects && kitSp.objects.length > 0, `${name}: set piece has objects`);
+    for (const ko of kitSp.objects) {
+      const o = w3Obj(readShell(name), ko.id);
+      assert.ok(o, `${name}: ${ko.id} is placed in the shell`);
+      assert.deepEqual(o.position, ko.position, `${name}: ${ko.id} position matches the kit`);
+      assert.ok(o.sprite === ko.sprite && o.type === ko.type, `${name}: ${ko.id} sprite and type match the kit`);
+    }
+  }
+});
+
+// Depth (rooms.js setDepthAndStore): bottom + 0.5 + elevation. A placed object that overlaps a drawn table has to
+// draw above that table (table depth = its Tiled bottom + 0.5), or the table's opaque sprite hides it.
+// Table items and moved items join the table group at table depth + n*0.01, so they are compared with a 0.1 margin.
+const pngSize = (key) => { const b = readFileSync(join(root, 'public/break_escape/assets/objects', `${key}.png`)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+const tableRects = (roomName) => {
+  const d = JSON.parse(readFileSync(join(rooms, `${roomName}.json`), 'utf8'));
+  const layer = d.layers.find((l) => l.name === 'tables');
+  return layer.objects.map((t) => ({ left: t.x, right: t.x + t.width, top: t.y - t.height, bottom: t.y }));   // tile objects: y is the bottom edge
+};
+// Moved table items (a Tiled table_items placeholder claimed by a kit object and put elsewhere) join the table group at
+// table depth + n*0.01, so they are surfaces too: anything placed over one has to draw above it. They need no elevation
+// themselves, but they must land on a table or the engine stores them at their own depth.
+const MOVED_TYPES = new Set(['journal_stack', 'binders', 'm09_folder']);
+const kitObjects = (sc, pre) => sc.rooms.training_room.objects.filter((x) => String(x.id).startsWith(pre) && x.position && x.sprite);
+const objRect = (o) => { const [pw, ph] = pngSize(o.sprite); const left = o.position.x * 32, top = o.position.y * 32; return { left, top, right: left + pw, bottom: top + ph }; };
+const hits = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+// Placeholders in the room's Tiled table_items layer: gid -> tileset image basename -> base type (trailing digits and .png dropped,
+// the same reduction rooms.js extractBaseTypeFromImageName makes). A scenario object only joins a table group if it claims one.
+const baseOf = (n) => String(n).replace(/\.png$/, '').replace(/\d+$/, '');
+const tablePlaceholderTypes = (roomName) => {
+  const d = JSON.parse(readFileSync(join(rooms, `${roomName}.json`), 'utf8'));
+  const gid = {};
+  for (const ts of d.tilesets || []) for (const tile of ts.tiles || []) gid[ts.firstgid + tile.id] = String(tile.image || '').split('/').pop();
+  const layer = d.layers.find((l) => l.name === 'table_items');
+  const counts = {};
+  for (const o of (layer ? layer.objects : [])) { const t = baseOf(gid[o.gid] || '?'); counts[t] = (counts[t] || 0) + 1; }
+  return counts;
+};
+const overlapArea = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+test('wave 3: every kit set-piece object over a table or a moved table item has an elevation that draws it above (depth, not a sliver overlap)', () => {
+  let overlaps = 0, movedChecked = 0;
+  for (const [name] of Object.entries({ ...W3, test_ca_office_kit: null })) {
+    const sc = readShell(name);
+    const roomType = sc.rooms.training_room.type;
+    const tables = tableRects(roomType);
+    const objs = kitObjects(sc, 'kit_');
+    const moved = objs.filter((o) => MOVED_TYPES.has(o.type) && o.position.elevation === undefined);
+    // each moved item has to claim a table_items placeholder of its type in this room (else the engine takes the
+    // fallback path and stores it at its own depth), and there can be no more of a type than placeholders
+    const placeholders = tablePlaceholderTypes(roomType);
+    const perType = {};
+    for (const m of moved) {
+      // the engine claims by type (rooms.js: the sprite lookup misses, then it falls back to scenarioObj.type)
+      const t = baseOf(m.type);
+      perType[t] = (perType[t] || 0) + 1;
+      assert.ok(placeholders[t] > 0, `${name} ${m.id}: room ${roomType} has no ${t} placeholder in its table_items layer, so the engine would store it at its own depth (under the table)`);
+    }
+    for (const [t, n] of Object.entries(perType)) assert.ok(n <= placeholders[t], `${name}: ${n} moved ${t} objects but only ${placeholders[t]} placeholders in ${roomType}`);
+    // a moved item takes the depth of the table it lands on (table bottom + 0.5, plus up to 0.1 of group index steps)
+    const surfaces = tables.map((t) => ({ ...t, depth: t.bottom + 0.5 + 0.1, label: 'a table' }));
+    for (const m of moved) {
+      const r = objRect(m);
+      const onto = tables.filter((t) => hits(r, t)).sort((x, y) => overlapArea(r, y) - overlapArea(r, x))[0];
+      assert.ok(onto, `${name} ${m.id}: a moved table item must land on a table (else it is stored at its own depth)`);
+      surfaces.push({ ...r, depth: onto.bottom + 0.5 + 0.1, label: m.id });
+      movedChecked += 1;
+    }
+    for (const o of objs.filter((x) => !MOVED_TYPES.has(x.type) || x.position.elevation !== undefined)) {
+      const r = objRect(o);
+      const depth = r.bottom + 0.5 + (o.position.elevation || 0);
+      for (const t of surfaces) {
+        if (!hits(r, t)) continue;
+        overlaps += 1;
+        assert.ok(depth > t.depth, `${name} ${o.id}: depth ${depth} must exceed ${t.label}'s ${(t.depth - 0.1).toFixed(1)} (elevation ${o.position.elevation})`);
+      }
+    }
+  }
+  assert.ok(movedChecked >= 4, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
+  assert.ok(overlaps >= 6, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
+});
+
+// ca19's isolated-screen look has no sprite yet (art pending an owner pick, WAVE3_BUILD.md s8). Marked skipped
+// until the pick lands: then add the PNG, the game.js load line and the spriteVariants, and remove `skip`.
+const CA19_ART = { skip: 'ca19 isolated sprite pick pending (set piece key _todo_ca19_art)' };
+test('wave 3 ca19 art: kit_ca19_isolated carries a spriteVariants swap to a loaded, existing key', CA19_ART, () => {
+  const o = w3Obj(readShell('ca19_malware_and_updates'), 'kit_ca19_isolated');
+  assert.ok(Array.isArray(o.spriteVariants) && o.spriteVariants.length === 1);
+  assert.ok(o.spriteVariants[0].condition === 'globalVars.kit_ca19_out === true');
+  const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+  const m = game.match(new RegExp(`this\\.load\\.image\\('${o.spriteVariants[0].value}', '([^']+)'\\)`));
+  assert.ok(m, 'the isolated key is preloaded in game.js');
+  assert.ok(existsSync(join(root, 'public/break_escape/assets', m[1])), `${m[1]} exists`);
+});
+test('wave 3 ca19 art: the isolated sprite is 28x23 like pc1 (footprint unchanged)', CA19_ART, () => {
+  const o = w3Obj(readShell('ca19_malware_and_updates'), 'kit_ca19_isolated');
+  const png = (f) => readFileSync(join(root, 'public/break_escape/assets/objects', f));
+  const dims = (b) => [b.readUInt32BE(16), b.readUInt32BE(20)];
+  assert.deepEqual(dims(png(`${o.spriteVariants[0].value}.png`)), dims(png('pc1.png')));
+});
+
+test('wave 3 fixture: test_ca_office_kit has the done fallback, the resume listeners, a partner pair, an elevated swapped PC and a moved table item', () => {
+  const sc = readShell('test_ca_office_kit');
+  const room = sc.rooms.training_room;
+  const npc = (id) => room.npcs.find((n) => n.id === id);
+  const maps = (id) => (npc(id).eventMappings || []);
+  assert.ok(sc.globalVariables.kit_e1_done === false, 'kit_e1_done declared false');
+  assert.ok((sc.timers || []).some((t) => t.id === 'kit_e1_t_done' && t.startOnGlobal === 'kit_e1_out' && t.setGlobal.kit_e1_done === true), 'fallback timer');
+  assert.ok(maps('kit_agnieszka_duda').some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_e1_done'), 'walker resumes on done');
+  const partner = maps('kit_e1_partner');
+  assert.ok(partner.some((m) => m.needs === 'suspend' && m.eventPattern === 'global_variable_changed:kit_e1_out'), 'partner suspends on out');
+  assert.ok(partner.some((m) => m.needs === 'resume' && m.eventPattern === 'global_variable_changed:kit_e1_done'), 'partner resumes on done');
+  const pc = room.objects.find((o) => o.id === 'kit_e1_pc');
+  assert.ok(pc.spriteVariants && pc.position.elevation === undefined, 'Sam\'s own swapped PC is not elevated (it is not on a table)');
+  const spare = room.objects.find((o) => o.id === 'kit_e1_spare');
+  assert.ok(spare.spriteVariants && spare.position.elevation > 24, 'the swapped spare PC on the table top carries the elevation');
+  assert.ok(room.objects.find((o) => o.id === 'kit_e1_pc2').position.elevation === undefined, 'the unswapped PC is as it was');
+  assert.ok(room.objects.some((o) => o.id === 'kit_e1_folder' && o.type === 'm09_folder'), 'a moved table item');
+  const host = room.npcs.find((n) => n.id === 'ep_host');
+  assert.ok(!host.voice, 'the fixture host has no voice, so its test bark is never voiced');
+});
