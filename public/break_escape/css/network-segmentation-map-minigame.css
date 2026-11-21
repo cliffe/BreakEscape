@@ -444,9 +444,17 @@
     position: relative;   /* anchors its X at the top right */
 }
 
+/* The confirm's X is drawn at the 44px touch size (its own border included) */
 .nsm-modal-close {
     top: 8px;
     right: 8px;
+    width: 44px;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.nsm-modal-close::after {
+    inset: 0;   /* the box already is 44px, no extra reach over the title */
 }
 
 .nsm-modal-icon {
@@ -461,7 +469,7 @@
     color: #ff4444;
     margin-bottom: 20px;
     line-height: 24px;
-    padding: 0 32px;   /* clear of the X */
+    padding: 0 56px;   /* clear of the 44px X */
 }
 
 .nsm-modal-body {

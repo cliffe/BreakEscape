@@ -24,6 +24,20 @@ export function queuedAlertsText(n) {
     return `${n} ${n === 1 ? 'alert' : 'alerts'} queued`;
 }
 
+/** The line under the triage banner: how the alerts ended up. Pure, so a test can pin it. */
+export function siemResultCounts(alerts) {
+    const list = Array.isArray(alerts) ? alerts : [];
+    const critical = list.filter((a) => a.critical);
+    const criticalEscalated = critical.filter((a) => a.status === 'escalated').length;
+    const dismissed = list.filter((a) => a.status === 'dismissed').length;
+    const pending = list.filter((a) => a.status === 'pending').length;
+    const noun = critical.length === 1 ? 'critical alert' : 'critical alerts';
+    return `${criticalEscalated} of ${critical.length} ${noun} escalated. ${dismissed} dismissed, ${pending} not triaged.`;
+}
+
+/** How long the result banner stays up before the scene closes (ms). */
+export const SIEM_RESULT_HOLD_MS = 2000;
+
 function formatTimer(totalSeconds) {
     const safeSeconds = Math.max(0, totalSeconds);
     const mm = String(Math.floor(safeSeconds / 60)).padStart(2, '0');
@@ -869,11 +883,11 @@ export class SiemDashboardMinigame extends MinigameScene {
         if (success) {
             this.setScenarioGlobal('siem_escalated', true);
             this.setScenarioGlobal('siem_missed_alerts', false);
-            this.showResultBanner('INCIDENT TEAM NOTIFIED', true);
+            this.showResultBanner('INCIDENT TEAM NOTIFIED', true, siemResultCounts(this.alerts));
         } else {
             this.setScenarioGlobal('siem_escalated', false);
             this.setScenarioGlobal('siem_missed_alerts', true);
-            this.showResultBanner('CRITICAL ALERTS MISSED - INCIDENT ESCALATED', false);
+            this.showResultBanner('CRITICAL ALERTS MISSED - INCIDENT ESCALATED', false, siemResultCounts(this.alerts));
         }
 
         this.gameResult = {
@@ -892,13 +906,23 @@ export class SiemDashboardMinigame extends MinigameScene {
 
         setTimeout(() => {
             super.complete(success);
-        }, 1300);
+        }, SIEM_RESULT_HOLD_MS);
     }
 
-    showResultBanner(message, success) {
+    showResultBanner(message, success, countsText) {
         if (!this.resultBannerEl) return;
 
-        this.resultBannerEl.textContent = displayDashes(message);
+        this.resultBannerEl.textContent = '';
+        const head = document.createElement('div');
+        head.className = 'siem-result-head';
+        head.textContent = displayDashes(message);
+        this.resultBannerEl.appendChild(head);
+        if (countsText) {
+            const counts = document.createElement('div');
+            counts.className = 'siem-result-counts';
+            counts.textContent = displayDashes(countsText);
+            this.resultBannerEl.appendChild(counts);
+        }
         this.resultBannerEl.classList.remove('success', 'failure', 'show');
         this.resultBannerEl.classList.add(success ? 'success' : 'failure');
 

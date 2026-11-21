@@ -66,6 +66,12 @@ test('m15: the confirm X is styled inside the modal, 44px target, no radius', ()
     assert.ok(/\.nsm-modal \{[^}]*position: relative/.test(c), 'modal anchors the X');
     assert.ok(/\.nsm-modal-close \{[^}]*top: \d+px/.test(c), 'X placed at the top right');
     assert.ok(!/\.nsm-modal-no\b/.test(c), 'no dead NO button style');
+    const rule = c.slice(c.indexOf('.nsm-modal-close {'), c.indexOf('}', c.indexOf('.nsm-modal-close {')));
+    assert.ok(/width: 44px/.test(rule) && /height: 44px/.test(rule), 'the confirm X is drawn 44x44');
+    assert.ok(/box-sizing: border-box/.test(rule), 'the 44px includes the border');
+    assert.ok(!/radius/.test(c.slice(c.indexOf('.nsm-modal {'), c.indexOf('.nsm-modal-icon'))), 'no radius');
+    const title = c.slice(c.indexOf('.nsm-modal-title {'), c.indexOf('}', c.indexOf('.nsm-modal-title {')));
+    assert.ok(/padding: 0 (5[2-9]|[6-9]\d)px/.test(title), 'the title clears the 44px X');
 });
 
 // ---- m7: the VPN log flag confirm -------------------------------------------------------
@@ -174,4 +180,55 @@ test('m2: every SIEM severity badge text meets 4.5:1, and the flash never fades 
     }
     const k = c.slice(c.indexOf('@keyframes siem-crit-flash'), c.indexOf('}', c.indexOf('@keyframes siem-crit-flash') + 120));
     assert.ok(!/opacity/.test(k.replace(/\/\*[\s\S]*?\*\//g, '')), 'the CRIT flash does not animate opacity');
+});
+
+// ---- m2: the SIEM triage result banner ---------------------------------------------------
+let siemSrc = readFileSync(join(js, 'minigames/siem/siem-dashboard-minigame.js'), 'utf8');
+siemSrc = siemSrc.split(`'../framework/base-minigame.js'`).join(`'${base}'`)
+    .split(`'../../utils/display-dashes.js'`).join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
+    .split(`'../../systems/game-clock.js'`).join(`'${dataUrl('export const currentClockText = () => "00:00:00";')}'`);
+const siem = await import(dataUrl(siemSrc));
+
+test('m2: the triage banner counts what was escalated, dismissed and left', () => {
+    const alerts = [
+        { critical: true, status: 'escalated' }, { critical: true, status: 'escalated' },
+        { critical: false, status: 'dismissed' }, { critical: false, status: 'dismissed' }, { critical: false, status: 'dismissed' },
+        { critical: false, status: 'pending' }
+    ];
+    assert.ok(siem.siemResultCounts(alerts) === '2 of 2 critical alerts escalated. 3 dismissed, 1 not triaged.', siem.siemResultCounts(alerts));
+    assert.ok(siem.siemResultCounts([{ critical: true, status: 'pending' }]) === '0 of 1 critical alert escalated. 0 dismissed, 1 not triaged.', 'singular');
+    assert.ok(typeof siem.siemResultCounts(null) === 'string', 'tolerates no alerts');
+});
+
+test('m2: the scene stays open about 2 s behind the banner, and the banner is headline plus counts via textContent', async () => {
+    assert.ok(siem.SIEM_RESULT_HOLD_MS >= 2000 && siem.SIEM_RESULT_HOLD_MS <= 2500, 'hold ' + siem.SIEM_RESULT_HOLD_MS);
+    assert.ok(/\}, SIEM_RESULT_HOLD_MS\);/.test(siemSrc), 'finalizeOutcome closes on that hold');
+    document.body.innerHTML = '<div id="b"></div>';
+    const fake = { resultBannerEl: document.getElementById('b') };
+    siem.SiemDashboardMinigame.prototype.showResultBanner.call(fake, 'INCIDENT TEAM NOTIFIED', true, '2 of 2 critical alerts escalated. 0 dismissed, 0 not triaged.');
+    const head = fake.resultBannerEl.querySelector('.siem-result-head');
+    const counts = fake.resultBannerEl.querySelector('.siem-result-counts');
+    assert.ok(head && head.textContent === 'INCIDENT TEAM NOTIFIED', 'headline');
+    assert.ok(counts && /2 of 2 critical alerts escalated/.test(counts.textContent), 'counts line');
+    assert.ok(fake.resultBannerEl.classList.contains('success'), 'success class');
+    await new Promise((r) => setTimeout(r, 10));
+    assert.ok(fake.resultBannerEl.classList.contains('show'), 'shown');
+    const hostile = { resultBannerEl: document.getElementById('b') };
+    siem.SiemDashboardMinigame.prototype.showResultBanner.call(hostile, '<img src=x>', false, '<b>x</b>');
+    assert.ok(hostile.resultBannerEl.querySelector('img') === null && hostile.resultBannerEl.querySelector('b') === null, 'text, not markup');
+});
+
+test('m2: the banner CSS wraps (auto height, no nowrap or ellipsis), clears the X, no radius or blur', () => {
+    const c = css('siem-dashboard-minigame.css');
+    const rule = c.slice(c.indexOf('.siem-result-banner {'), c.indexOf('}', c.indexOf('.siem-result-banner {')));
+    assert.ok(/height: auto/.test(rule), 'auto height');
+    assert.ok(/white-space: normal/.test(rule) && !/nowrap|ellipsis/.test(rule), 'wraps');
+    assert.ok(/line-height: 24px/.test(rule), 'whole-pixel line box');
+    assert.ok(/font-size: 16px/.test(rule), 'Press Start 2P at 16');
+    assert.ok(/padding: 16px 72px 16px 16px/.test(rule), 'right padding clears the X');
+    const counts = c.slice(c.indexOf('.siem-result-counts {'), c.indexOf('}', c.indexOf('.siem-result-counts {')));
+    assert.ok(/'GNF'/.test(counts) && /font-size: 16px/.test(counts), 'counts in GNF 16');
+    assert.ok(!/radius|blur|gradient/.test(rule + counts), 'no radius, blur or gradient');
+    const top = Number(rule.match(/top: (-\d+)px/)[1]);
+    assert.ok(top <= -140, 'starts clear of the viewport even when wrapped to 5 lines: ' + top);
 });

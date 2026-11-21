@@ -17,24 +17,31 @@
 
 .siem-result-banner {
     position: absolute;
-    top: -60px;
+    top: -160px;   /* clear of the table whatever height the wrapped text makes it */
     left: 0;
     right: 0;
     z-index: 3;
-    height: 56px;
+    height: auto;   /* wraps at a phone width instead of clipping */
+    min-height: 56px;
     display: block;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;
     letter-spacing: 0;
     color: #ffffff;
     transition: top 0.25s ease;
-    padding: 0 72px 0 16px;
+    padding: 16px 72px 16px 16px;   /* right side clears the console X */
     box-sizing: border-box;
     text-align: center;
-    line-height: 56px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 24px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.siem-result-counts {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    margin-top: 8px;
 }
 
 .siem-result-banner.show {
