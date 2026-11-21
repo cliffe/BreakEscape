@@ -105,10 +105,10 @@ New: Reeves ×2 (drill deflection); Val ×7 (accusation, incl. "Me." which the b
 - **Resolved: debrief VM claims.** "You found Ghost's operational log. The mortality calculations." now reads "You found Ghost's manifesto. The mortality calculations." and is gated on `lore_ghosts_manifesto_found` (was `flag_ghost_log_submitted`). "Ghost's logs confirmed … Zero Day Syndicate sourced the ProFTPD exploit. Crypto Anarchists handle payment processing across all cells." is split: "That invoice from the boardroom safe confirmed it -- Zero Day Syndicate sourced the ProFTPD exploit." (gated on `lore_zds_invoice_found`), then "Crypto Anarchists handle payment processing across all cells." (always).
 - **Resolved: drill timeline.** Two drills, one badge. Six weeks ago an unscheduled drill covered the contractor sweep that placed the bridge, which is what every voiced line says (Ghost, Kim, Val, Bernie, Reeves, debrief). On Friday the same badge held the doors again for the 02:47 window, which is what the handover board says ("Second time"). No voiced line changed. Edited: HaX's flag-2 text ("…ran the drill six weeks ago, and held the doors again on Friday"); SecGen flag_2 and flag_4 text only (no more "Friday … place the bridge" / "the bridge was placed inside the window"; 4 `flag_generator`s, positions unchanged, lxml schema check VALID); `VM_FLAG_DOCS.md` and `VM_INTEGRATION.md` to match.
 - R13: the debrief transcript skipped the first line of `insider_flagged`; check in the confirmation run whether a line after a choice is being dropped.
-- Next: Sonnet confirmation run of the round's structural changes, then a blind run (the deduction changed).
+- Next: scripted confirmation run of the round's structural changes, then a blind run (the deduction changed).
 
 
-### Round 1 confirmation (2026-10-04, games 1548–1551, Sonnet, headless :3001)
+### Round 1 confirmation (2026-10-04, games 1548–1551, scripted run, headless :3001)
 
 0 blockers, 0 majors, 8 minors, 2 notes. Deduction chain A1–A7 PASS; round-1 fixes PASS; gated debrief lines absent/present correctly; debrief and credits agree in both endings; engine E1 PASS (m02 Val on a lockpick, m01 Derek on a container; KO screen clean).
 
@@ -238,7 +238,7 @@ None changed, none added (HaX phone and timed texts, documents and terminal text
 
 Loop total: 11 changed, 19 new.
 
-### Round 3 browser check (2026-10-04, game 1559, Sonnet, headless :3001)
+### Round 3 browser check (2026-10-04, game 1559, scripted run, headless :3001)
 
 PASS: title screen continues on Space, Enter or a click (once); password minigame counts one attempt per submit; HaX toast and recap after the Val fight; press-terminal "one bundle" wording; visitor log unnamed; inventory clicks ignored under a forced conversation. Not completed: credits after the debrief. The run skipped the four VM flags, which `concludeRequires` needs by design. Earlier runs with flags reached the credits, and round 3 did not touch conclusion code.
 
