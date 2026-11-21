@@ -181,7 +181,7 @@ Priya S.: HC-001. Was it valid at eight o'clock on Monday morning, before anyone
 
 === hc003_review ===
 Priya S.: HC-003 says library changes are authorised, controlled and audited before they reach a pump. Did that control fail, or did the attacker beat it?
-* [The attacker beat it. The change came from a real admin account.]
+* [The attacker beat it. Nothing stops a change made with real admin credentials.]
     Priya S.: Something would have. A change at quarter to seven on a Monday evening, outside any change window, with no pharmacist's sign-off.
     Priya S.: The audit log recorded it. Nobody was reading the log.
 * [The control failed. An unauthorised change went through and nobody noticed.]
@@ -216,7 +216,7 @@ Priya S.: So: who should decide on isolation, and why?
 * [IT security alone, since they're the ones who can see the attacker.]
     Priya S.: It takes the vendor's EHR copy off every ward. That makes it a clinical decision too. Neither side sees the whole cost alone.
 * [IT security and the executive on call together, since the exec owns the risk.]
-    Priya S.: Closer, but the exec owns risk, not the clinical cost. David sees what the wards lose.
+    Priya S.: Closer. But the exec can't see the clinical cost from there. David can.
 * [IT security and clinical engineering together, since each sees a cost the other misses.]
     Priya S.: That's it. Ravi sees the attacker. David sees what the wards lose. HC-007 exists so neither decides alone.
 -

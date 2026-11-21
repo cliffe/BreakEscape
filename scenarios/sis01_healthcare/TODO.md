@@ -45,7 +45,7 @@ Two implementation paths remain available for context:
 
 Best for: cybersecurity cohorts where grep/awk proficiency is an explicit learning objective.
 
-Note: the VPN log printout on the IT office desk already circles `m.blake` and points to `contractor_accounts.txt`. Redact the annotation to `"Check the VPN terminal"` before deploying with the VM, or the paper props give the answer away.
+Note (D172): the VPN log printout on the IT office desk circles the contractor line, but a coffee ring hides the username (`USER=######`); its note points to the terminal. Keep the account name off every paper prop.
 
 | Path | Content |
 |------|---------|
