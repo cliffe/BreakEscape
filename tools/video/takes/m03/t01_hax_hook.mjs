@@ -4,7 +4,7 @@
 // Entry state: fresh game, NO briefing_played gate (the briefing opens itself on load):
 //   PLAYTEST_PORT=3017 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m03_ghost_in_the_machine
 // Record: BE_SPRITE=<hood or any> tools/video/takes/run-take.sh m03 t01_hax_hook "" ""
-// Path: start > "Remind me what their deal is." > long HaX line > hook_1 > "Which cells buy from them?" > reply > hook_2; stops there (no further choices).
+// Path: start > "Remind me what their deal is." > long HaX line > hook_1 > "What are they dealing in?" (the other two choices raise a HaX Influence toast) > reply > hook_2; stops there (no further choices).
 // Marks: briefing-open, choices-shown, choice:*, line-start:/line-end: for every voiced line, hook_1-done, hook_2-done, targets-done.
 import { sleep, watchVoice } from '../lib/lib.mjs';
 import { runDialogue } from '../lib/dlg.mjs';
@@ -15,7 +15,7 @@ export default async (page, bridge, mark) => {
   if (!d) throw new Error('briefing never opened');
   mark('briefing-open', { speaker: d.speaker });
   await runDialogue(page, bridge, mark, vw, {
-    steps: [/^Remind me what their deal/i, /^Which cells buy/i],
+    steps: [/^Remind me what their deal/i, /^What are they dealing in/i],
     targets: [
       { name: 'hook_1', re: /They don't run the attacks\. They arm the cells that do/i },
       { name: 'hook_2', re: /You worked St\. Catherine's last month\. The hospital that went dark/i },

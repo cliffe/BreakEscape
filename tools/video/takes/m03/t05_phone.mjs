@@ -15,7 +15,7 @@ export default async (page, bridge, mark) => {
   await sleep(1700);
   const c = await bridge.minigame.clickText('Agent HaX');
   mark('contact-picked', { ok: c && c.ok });
-  const pick = (process.env.M03_PHONE_STEPS || '').split('|').filter(Boolean).map(s => new RegExp(s, 'i'));
+  const pick = (process.env.M03_PHONE_STEPS || '^How do I clone these keycards').split('|').filter(Boolean).map(s => new RegExp(s, 'i'));
   let n = 0;
   for (const re of pick) {
     const d = await awaitChoice(bridge, 45000);
