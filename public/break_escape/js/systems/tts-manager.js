@@ -12,7 +12,7 @@
 
 import { ApiClient } from '../api-client.js';
 import MusicController from '../music/music-controller.js';
-import { envelopeFromSamples, alignToEnvelope } from '../minigames/person-chat/lip-sync.js';
+import { envelopeFromSamples, alignToEnvelope, outputLeadMs } from '../minigames/person-chat/lip-sync.js';
 
 class TTSManager {
     constructor() {
@@ -26,6 +26,7 @@ class TTSManager {
         this.currentText = null; // Line now playing — read by portraits for lip-sync
         this.playSeq = 0;        // Bumped by every play() call: a token for "this play, not a later one of the same line"
         this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
+        this.lipSyncPending = null; // the line's text while its audio is being decoded for lip sync
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
         this._mediaElementSource = null;
@@ -184,6 +185,7 @@ class TTSManager {
     stop() {
         this.currentText = null;
         this.lipSync = null;
+        this.lipSyncPending = null;
         if (this.playing) {
             this.audio.pause();
             this.audio.currentTime = 0;
@@ -290,9 +292,12 @@ class TTSManager {
      * @private
      */
     async _alignLipSync(blob, audioUrl, text) {
+        const ctx = MusicController?.context;
+        if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
+        // While this is set the portrait follows the live level, not the text timeline
+        // (lipSyncPending in person-chat-portraits). Cleared however the decode ends.
+        this.lipSyncPending = text;
         try {
-            const ctx = MusicController?.context;
-            if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
             const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
             if (this.audio.src !== audioUrl) return; // a newer line has started
             const envelope = envelopeFromSamples(buffer.getChannelData(0), buffer.sampleRate);
@@ -300,7 +305,18 @@ class TTSManager {
             if (timeline) this.lipSync = { text, timeline };
         } catch (error) {
             console.warn('[TTS] Lip-sync alignment unavailable:', error.message);
+        } finally {
+            if (this.lipSyncPending === text && this.audio.src === audioUrl) this.lipSyncPending = null;
         }
+    }
+
+    /**
+     * How far ahead of the clip position the portrait reads its viseme timeline (ms): the
+     * audio context's output latency, or a default when the browser does not report one.
+     * Applied to the lookup only; playback is never shifted.
+     */
+    lipSyncLeadMs() {
+        return outputLeadMs(MusicController?.context || null);
     }
 
     /**
