@@ -1859,10 +1859,10 @@ test('wave 5: Graham, Niamh and Darren specifics: Graham\'s two-term guard, Niam
 
 test('wave 5: host and speaker inks: moved VAR, the s3.5 recap branches, and the speakers\' moved guards', () => {
   const BR = {
-    ca13: ['- kit_key_caught && not kit_ca13_moved:', '- not kit_key_caught && not kit_ca13_moved && kit_ca13_send_choice != "ring":'],
-    ca14: ['- kit_key_caught && not kit_ca14_moved:', '- not kit_key_caught:'],
-    ca05: ['- kit_key_caught && not kit_ca05_moved:', '- kit_key_caught:', '- kit_ca05_prompt_choice == "stop":', '- else:'],
-    ca02: ['- kit_key_caught && not kit_ca02_moved:', '- kit_key_caught:', '- kit_ca02_cv_choice == "report":', '- else:'],
+    ca13: ['- kit_key_caught && not kit_ca13_moved && (kit_ca13_send_choice == "" || kit_ca13_send_choice == "ring"):', '- not kit_key_caught && not kit_ca13_moved && kit_ca13_send_choice != "ring":'],
+    ca14: ['- kit_key_caught && not kit_ca14_moved && (kit_ca14_photo_choice == "" || kit_ca14_photo_choice == "crop"):', '- not kit_key_caught:'],
+    ca05: ['- kit_key_caught && not kit_ca05_moved && (kit_ca05_prompt_choice == "" || kit_ca05_prompt_choice == "stop"):', '- kit_key_caught:', '- kit_ca05_prompt_choice == "stop":', '- else:'],
+    ca02: ['- kit_key_caught && not kit_ca02_moved && (kit_ca02_cv_choice == "" || kit_ca02_cv_choice == "report"):', '- kit_key_caught:', '- kit_ca02_cv_choice == "report":', '- else:'],
   };
   w5Each((name, w) => {
     const ep = w.ep;

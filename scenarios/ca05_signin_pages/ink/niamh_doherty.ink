@@ -28,7 +28,7 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && (kit_ca05_done || not kit_ca05_out) && not kit_ca05_host_said:
         {
-        - kit_key_caught && not kit_ca05_moved:
+        - kit_key_caught && not kit_ca05_moved && (kit_ca05_prompt_choice == "" || kit_ca05_prompt_choice == "stop"):
             { kit_caught:
                 Niamh Doherty: You read the address and didn't type your password into the copy, so there was nothing for the attacker to catch.
             - else:
