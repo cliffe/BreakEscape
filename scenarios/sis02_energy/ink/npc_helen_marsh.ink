@@ -164,18 +164,18 @@ Helen Marsh: I'm staying on this desk while that screen's telling us fairy stori
 === gauge_decision ===
 // R2-2 (round 2): once the ESD is in, the question is which reading they went on.
 Helen Marsh: Fifty-one on the dial. Twenty-eight on my screen. {esd_activated: The ESD's in, but one of them was lying to us. Which did you go on?|One of them's lying to us. Which would you bet the hall on?}
-+ [The dial. Nothing on a network can reach it.]
-    ~ gauge_verdict = "dial"
-    #set_global:gauge_verdict:dial
-    Helen Marsh: That's my bet. A dial can stick, but it doesn't climb to fifty-one on its own.
-    -> hub
-+ [The screen. That dial's older than the building.]
++ [The screen. It's calibrated and logged, and an old dial can stick.]
     ~ gauge_verdict = "screen"
     #set_global:gauge_verdict:screen
     Helen Marsh: Dials stick. They don't climb twenty-three degrees by themselves, though.
     Helen Marsh: Have a look at the historian. See if my numbers have moved at all.
     -> hub
-+ [{esd_activated:Neither. The ESD was a precaution. Now I want the historian.|Neither yet. I want the historian first.}]
++ [The dial. It's mechanical, and no network can touch what it reads.]
+    ~ gauge_verdict = "dial"
+    #set_global:gauge_verdict:dial
+    Helen Marsh: That's my bet. A dial can stick, but it doesn't climb to fifty-one on its own.
+    -> hub
++ [{esd_activated:Neither. The ESD was a precaution, and the historian will show which one drifted.|Neither yet. The historian will show which one has drifted.}]
     ~ gauge_verdict = "historian"
     #set_global:gauge_verdict:historian
     Helen Marsh: {esd_activated: Fair enough. It's off charge, so take your time.|Fair enough. Be quick, mind. If the dial's right, every minute counts.}
