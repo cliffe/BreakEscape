@@ -9,7 +9,7 @@
  */
 
 import { ASSETS_PATH } from '../../config.js';
-import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
+import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, visemeLookupMs, pendingViseme, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
 import { influenceTintFilter } from '../../ui/pretext-chrome.js';
 import { backgroundRect, portraitRect, canvasBackingSize, containFit } from './person-chat-camera.js';
 
@@ -465,6 +465,9 @@ export default class PersonChatPortraits {
      * the audio's duration and gated by the live level. The timeline is indexed by the audio
      * element's playback position. Reading the position each frame, rather than scheduling
      * timers, keeps it in step with pauses and skips and leaves nothing to clean up.
+     * The lookup reads ahead by the audio output latency (tts.lipSyncLeadMs) so the mouth
+     * matches the sound as heard. While the line's audio is still decoding, the mouth follows
+     * the live level (pendingViseme) instead of the stretched text timeline.
      * Shows "rest" when silent. Whenever the mouth is at rest (silent, or a pause in the
      * line) and the sheet has a "blink" column, the eyes shut briefly every few seconds.
      * @private
@@ -490,8 +493,16 @@ export default class PersonChatPortraits {
             this._visemeTimeline = aligned ||
                 holdTimeline(scaleTimeline(textToVisemes(tts.currentText), duration));
         }
-        let viseme = visemeAt(this._visemeTimeline, (audio?.currentTime || 0) * 1000);
-        if (!aligned && tts._analyser && !tts.isSpeaking()) viseme = 'rest';
+        // Read ahead by the output latency so the shape matches what is heard (lookup only).
+        const at = visemeLookupMs(audio?.currentTime || 0, tts.lipSyncLeadMs?.() ?? 0);
+        let viseme;
+        if (!aligned && tts.lipSyncPending === tts.currentText && tts._analyser) {
+            // Decode still running: follow the live level rather than the stretched text timeline
+            viseme = pendingViseme(tts.isSpeaking());
+        } else {
+            viseme = visemeAt(this._visemeTimeline, at);
+            if (!aligned && tts._analyser && !tts.isSpeaking()) viseme = 'rest';
+        }
         const col = sheet.columnFor[viseme] ?? rest;
         return col === rest ? restOrBlink() : col;
     }
