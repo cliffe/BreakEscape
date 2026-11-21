@@ -20,3 +20,9 @@ Request: AC0 (LIVE AC0, uds:/run/user/1000/cc-socks/3710521.sock) relayed the us
 - m01: 14 takes passed and frame-checked (notes: v3 section of `docs/video/takes_v2.md`, e4ea3064f; handovers `m01_takes_v3_HANDOVER.md`, `m01_framecheck_HANDOVER.md`). Re-record: t03, t09_derek_v5, t16, t23, t04 and t06 (phone banner; ringer fix in lib.mjs clearScreen unproven), t14 optional. Check t06/t22 avatars (both looked like brown trench). Then edit re-time (windows table in takes_v2.md v3) + render.
 - Review page: the old m02 page (D4BSTqrn6qH51pWsUumk1X) is not in this account; make ONE new page with an m02 tab and an m01 tab (video-review skill: assets + db feedback, docs `feedback/m02_trailer_v2`, `feedback/m01_trailer_v9`). Then tell AC0 and send the branch hash.
 - Open questions for the user (page): music by ear, show Reeves, ransom wallet line visible, console clip enough, avatar mix; t10/t11/t15 m02 talk takes fail (office life), not in edit.
+
+## State (2026-11-21)
+- m02 v3 reviewed: revise. Ghost Money line was cut in the TAKE (t17 hold 4.2 s < 5.38 s clip): hold fixed (ffb0770e1). Ghost deeper voice: AC5 on fix/ghost-deep-voice (user: OK to improve the shared voice-distortion preset). When AC5's hash lands: re-record t17 (BE_SPRITE per avatars file), re-cut ghost_close so the whole line plays (may tail into the bumper), re-render, page tab m02 v4.
+- Lip sync (53c5d9213): game mouth ~30-50 ms late; the render is near sync only because Remotion rounds the trimmed takes' 0.033 s video start (picture ~40 ms early). Engine suggestions sent to AC0. Pipeline TODO: make check-take's trim start video at 0, and only then decide per-shot audio delay (else sync gets worse).
+- m03 trailer: scout + picks agent running (docs/video/scout/m03_scout.md, docs/video/edits/M03_TRAILER60_PICKS.md). Review picks, then takes, edit, render, page tab.
+- m01 v9: no verdict yet.
