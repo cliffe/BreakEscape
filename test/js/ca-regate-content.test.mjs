@@ -53,7 +53,7 @@ test('ca18: the brief asks for the staff list and address pattern; the debrief a
   assert.match(t, /The team list and the address pattern are what the spray needs/);
   assert.match(t, /"sprayedGlobal": "guess_e18_sprayed"/);
   assert.match(t, /"guess_e18_sprayed": false/);
-  assert.match(t, /"flipGuessIntroNoSpray": "You built no staff list/);
+  assert.match(t, /"flipGuessIntroNoSpray": "The spray needs both the staff names/);
   assert.match(t, /"flipDefenderLineNoSpray"/);
   // the "you built and sprayed" claim sits only under the sprayed condition
   const panels = [...t.matchAll(/\{\s*"heading": "([^"]+)",\s*"text": "((?:[^"\\]|\\.)*)"(?:,\s*"condition": "([^"]*)")?/g)];
@@ -62,9 +62,20 @@ test('ca18: the brief asks for the staff list and address pattern; the debrief a
   assert.equal(claim[0][3], 'globalVars.guess_e18_sprayed');
   const noSpray = panels.find((m) => m[1] === 'What a spray would have needed');
   assert.equal(noSpray[3], 'globalVars.guess_e18_landed && !globalVars.guess_e18_sprayed');
-  assert.match(noSpray[2], /You built no staff list, so the spray never ran/);
+  assert.match(noSpray[2], /needs both the staff names and the address pattern, and you did not note both, so it never ran/);
   assert.equal(panels.find((m) => m[1] === 'What the campaign would have needed')[3], '!globalVars.guess_e18_landed');
   assert.ok(!/sprayed and stuffed from its public pages/.test(t));
+});
+
+test('ca18: the no-spray text is true for names-only and pattern-only runs (it names both halves, never "no staff list")', () => {
+  const t = erb('ca18_credential_attacks_at_scale');
+  assert.ok(!/You built no staff list/.test(t), 'claims no staff list although the names may be pinned');
+  for (const key of ['flipGuessIntroNoSpray', 'flipDefenderLineNoSpray']) {
+    const m = t.match(new RegExp('"' + key + '": "((?:[^"\\\\]|\\\\.)*)"'));
+    assert.ok(m, key);
+    assert.match(m[1], /both the staff names and the address pattern/, key);
+  }
+  assert.ok(!/morning's spray/.test(t), 'the morning attack wording must hold on the no-spray path');
 });
 
 test('ca07: the debrief tells one payment story, and the opening card makes no claim about a released payment', () => {
