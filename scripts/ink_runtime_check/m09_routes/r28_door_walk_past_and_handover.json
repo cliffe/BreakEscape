@@ -1,0 +1,14 @@
+{
+"steps": [
+{ "note": "R28: the cage door on a cold start. Walking past takes Derek's file by default, and the handover knot (the player never chose) gives the same file with its own line." },
+{ "talk": "door", "knot": "door", "picks": ["Walk past her"] },
+{ "said": ["Your first days aren't in your file", "Social Fabric letters", "As you like. Take Mr. Lawson's file on your way"],
+  "notSaid": ["Arakawa's ringing Butte", "Nightshade cleared from his locker"] },
+{ "expect": { "cage_bin": "derek_file" } },
+{ "set": { "bin_chosen": false, "cage_bin": "" } },
+{ "talk": "door", "knot": "handover" },
+{ "said": ["You never chose, so take Mr. Lawson's file"],
+  "notSaid": ["Your first days aren't in your file"] },
+{ "expect": { "cage_bin": "derek_file" } }
+]
+}

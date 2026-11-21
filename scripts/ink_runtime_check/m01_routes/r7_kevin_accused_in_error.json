@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R7: only the planted evidence has been seen (no contingency file): the player reports Kevin anyway. kevin_accused and kevin_choice wrongly_accused; the exoneration choice was never on offer."},
+  {"set": {"framing_evidence_seen": true}},
+  {"talk": "kevin", "knot": "hub", "picks": ["I have evidence that implicates you", "The evidence on file points to you", "The totality of evidence is too strong"]},
+  {"said": ["Someone used my credentials remotely", "HEADER MISMATCH DETECTED", "two sessions running simultaneously", "I just hope whoever reviews this actually reads the forensic notes"],
+   "notSaid": ["[choice] He's not. We have his contingency files", "Can I ask: who are you, really", "That's both terrifying and the best news"]},
+  {"expect": {"kevin_accused": true, "kevin_choice": "wrongly_accused", "framing_evidence_seen": false}}
+ ]
+}

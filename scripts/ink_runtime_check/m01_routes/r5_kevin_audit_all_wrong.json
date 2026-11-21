@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R5: the audit with every wrong answer: Kevin's doubt lines fire at two and at four wrong answers, and the closing is the cool one."},
+  {"talk": "kevin", "picks": ["Happy to help", "That's what I'm here to investigate", "Just the keycard for now", "preliminary security audit update",
+    "The building's physical access controls are adequate", "Mostly normal office-hours access", "Your complexity rules are sound", "Staff seem trustworthy", "Data handling looks standard", "I'll keep investigating"]},
+  {"said": ["That's twice you've told me not to worry", "I'm starting to wonder if you've looked at anything in this building", "I expected more than that, and half of it is what I'd already ruled out"],
+   "notSaid": ["You really understand what's happening here", "I'm going to document your findings in my incident log", "Most of that matches what I've seen"]},
+  {"expect": {"audit_correct_answers": 0, "audit_wrong_answers": 5, "security_audit_completed": true}}
+ ]
+}

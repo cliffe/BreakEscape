@@ -1,0 +1,9 @@
+{
+"steps": [
+{ "note": "R31: the hatch on a cold start. Sorensen takes the player for the lease-holder's auditor, then knows them. The player leans on the counter and clones her card, then pulls Derek's file, then asks the two questions that open once the file is out." },
+{ "talk": "hatch", "picks": ["That's right", "Lean on the counter", "Pull Derek's file through", "How long have you run this counter", "What did you keep", "I'll leave you"] },
+{ "said": ["The lease-holder's auditor. Of course", "Then you'll find it in order", "Your first days aren't in your file", "You're not from the lease-holder", "She's got a file on you", "Social Fabric letters", "Series R, to the last box", "[RFID minigame: card saved]", "Of course. He'd want to be read", "Eleven years of other people's paper", "A stamp, and a list in my head", "Watch the step on your way"],
+  "notSaid": ["Noor rang through", "Noor says you've come about my shredder", "Arakawa's ringing Butte"] },
+{ "expect": { "cage_bin": "derek_file", "bin_chosen": true, "hatch_talked": true, "stacks_card_cloned": true } }
+]
+}

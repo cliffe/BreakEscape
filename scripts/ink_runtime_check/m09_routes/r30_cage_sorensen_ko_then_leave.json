@@ -1,0 +1,12 @@
+{
+"globals": { "ledger_read_heard": true },
+"steps": [
+{ "note": "R30: the player fights Sorensen. The knock-out records ko and closes the shredding task. Back at the hub she is out and the talk-down and the WREN question are no longer offered, even though the ledger was heard." },
+{ "ko": "sorensen" },
+{ "expect": { "sorensen_fate": "ko" } },
+{ "tasks": { "stop_the_shredding": "completed" } },
+{ "talk": "cage", "picks": ["I'm done here"] },
+{ "said": ["Pull the gate shut on your way out", "[choice] I'm done here"],
+  "notSaid": ["She feeds another sheaf into the shredder", "[choice] Who's WREN", "[choice] Your Architect kept", "[choice] It's over. Step away"] }
+]
+}

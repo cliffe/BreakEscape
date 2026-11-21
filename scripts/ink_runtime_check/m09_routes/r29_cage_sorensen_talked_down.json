@@ -1,0 +1,15 @@
+{
+"imports": { "m05_completed": true },
+"globals": { "nightshade_file_held": true, "ledger_read_heard": true },
+"steps": [
+{ "note": "R29: Margaret Sorensen at the shredder while the player holds Nightshade's file. She rebuffs the order to stop, then the file talks her down, and the choices that belong to the fight go away." },
+{ "talk": "cage", "picks": ["Step away from the feed", "Your Architect kept"] },
+{ "said": ["She feeds another sheaf into the shredder", "Torres cost us one hospital bill", "When I've finished, dear", "Then I'll keep what's left", "I'll write down what I've destroyed, accurately", "The shredder runs on, empty"],
+  "notSaid": ["I keep records. I don't read them aloud", "Another box"] },
+{ "expect": { "sorensen_fate": "talked" } },
+{ "tasks": { "stop_the_shredding": "completed" } },
+{ "talk": "cage", "picks": ["I'm done here"] },
+{ "said": ["She's writing in pencil, box by box", "She keeps writing"],
+  "notSaid": ["Pull the gate shut on your way out", "[choice] Your Architect kept", "[choice] It's over. Step away", "[choice] Who's WREN"] }
+]
+}

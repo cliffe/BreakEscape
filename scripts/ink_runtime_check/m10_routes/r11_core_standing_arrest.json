@@ -1,0 +1,94 @@
+{
+ "steps": [
+  {
+   "note": "Core, all three answers land (standing): the arrest ending. Tesseract holds out empty hands; Netherton offers cooperation or a trial; arrest sets ending and the quiet re-talk line."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "No deal. You're under arrest"
+   ]
+  },
+  {
+   "said": [
+    "All three of your answers landed",
+    "Ask me, then.",
+    "If he cooperates, there is no trial",
+    "A courtroom, then. I did cost it.",
+    "A courtroom, then. I did cost it."
+   ],
+   "notSaid": [
+    "Feed's dead. Hold.",
+    "I'll see you in court, Agent."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "arrest",
+    "database_outcome": "secured",
+    "console_choice": "stopped"
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": []
+  },
+  {
+   "said": [
+    "I'll see you in court, Agent."
+   ],
+   "notSaid": [
+    "A courtroom, then."
+   ]
+  }
+ ]
+}

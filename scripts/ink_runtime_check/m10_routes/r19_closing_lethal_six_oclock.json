@@ -1,0 +1,55 @@
+{
+ "steps": [
+  {
+   "note": "06:00 after the lethal ending: Netherton puts 'He reached' first and the cells have a martyr; the cost line differs from the arrest's."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "database_outcome": "secured",
+    "console_choice": "stopped",
+    "ending": "lethal"
+   }
+  },
+  {
+   "talk": "six",
+   "picks": [
+    "Go to Quintero",
+    "Go to Imran",
+    "Go to Wendell",
+    "Put the phone",
+    "What did it cost",
+    "And the database",
+    "Stand with her",
+    "Leave it"
+   ]
+  },
+  {
+   "said": [
+    "He reached. I will put that first.",
+    "They have a martyr now. Quiet is worse.",
+    "There'll be a board. I'll be sitting next to you."
+   ],
+   "notSaid": [
+    "A trial. He will make speeches.",
+    "There will be no trial."
+   ]
+  },
+  {
+   "expect": {
+    "six_done": true,
+    "closing_done": true,
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "AGENT 0x00: Fired when his hand was on the key.",
+    "DR ADRIAN TESSERACT: His key never went down."
+   ]
+  }
+ ]
+}

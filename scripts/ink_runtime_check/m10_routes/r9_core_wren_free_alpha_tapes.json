@@ -1,0 +1,67 @@
+{
+ "steps": [
+  {
+   "note": "WREN reveal with the Alpha tapes pulled: Quintero is already through the lock and no one is hurt; HaX still names her."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true,
+    "whodunit_live": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it"
+   ]
+  },
+  {
+   "said": [
+    "He always builds his own way out first.",
+    "The service door opens. Kowalczyk comes through it fast and goes for the key.",
+    "Quintero is already through the lock. She has Kowalczyk's wrist before it reaches the key.",
+    "I sent her mum flowers."
+   ],
+   "notSaid": [
+    "Shoulder. Leave it.",
+    "Quintero comes in from the lock at the noise."
+   ]
+  },
+  {
+   "expect": {
+    "wren_at_core": true,
+    "quintero_wounded": false
+   }
+  }
+ ],
+ "imports": {
+  "m09_deck_pulled": "alpha_tapes"
+ }
+}

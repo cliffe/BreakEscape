@@ -1,0 +1,13 @@
+{
+ "steps": [
+  {"note": "R22: the two bystanders. Each keeps a plain greeting and a brush-off until the player has met Kevin or Maya; then the Patricia and budget rumours open (once), and a return visit gets the return greeting."},
+  {"talk": "fatima", "picks": ["Don't let me keep you"]},
+  {"talk": "graham", "picks": ["I'll leave you to it"]},
+  {"said": ["Sorry, I'm halfway through a candidate's file", "Graham, finance. If it's about expenses, I'm not in", "[choice] Don't let me keep you", "[choice] I'll leave you to it"],
+   "notSaid": ["[choice] Do you know anything about Patricia leaving", "[choice] Anything odd in the budgets"]},
+  {"set": {"talked_to_kevin": true}},
+  {"talk": "fatima", "reload": true, "picks": ["Do you know anything about Patricia leaving"]},
+  {"talk": "graham", "reload": true, "picks": ["Anything odd in the budgets"]},
+  {"said": ["Back again? I really am up to my neck in CVs", "Patricia's file was pulled the morning she went", "Marketing has a budget line called partner services", "You again. Still quarter close"]}
+ ]
+}

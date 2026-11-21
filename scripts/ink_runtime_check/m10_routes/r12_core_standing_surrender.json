@@ -1,0 +1,86 @@
+{
+ "steps": [
+  {
+   "note": "Core, standing: the surrender ending (cooperate). He types the protocol himself; the re-talk line warns about Thursday."
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "casualty_sheet_read": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Go to his terminal"
+   ]
+  },
+  {
+   "said": [
+    "Zero Day has it. You didn't stop that one",
+    "Still HaX."
+   ]
+  },
+  {
+   "set": {
+    "flag1_submitted": true,
+    "flag2_submitted": true,
+    "flag3_submitted": true,
+    "flag4_submitted": true
+   }
+  },
+  {
+   "talk": "tesseract",
+   "knot": "start",
+   "picks": [
+    "Understood",
+    "Go on, then",
+    "You'd kill",
+    "You've had all night",
+    "I'm not pressing",
+    "I know what they cost",
+    "Someone corrected your sheet",
+    "Go on.",
+    "Only a shock",
+    "And the last one",
+    "Better you",
+    "Stop it",
+    "Put him through",
+    "And if we keep them",
+    "And if ours go",
+    "There's a third way"
+   ]
+  },
+  {
+   "talk": "tesseract",
+   "picks": [
+    "Secure it",
+    "Then cooperate"
+   ]
+  },
+  {
+   "said": [
+    "All three of your answers landed",
+    "types the cells' contact protocol himself",
+    "They'll work out who you are by Thursday"
+   ],
+   "notSaid": [
+    "A courtroom, then."
+   ]
+  },
+  {
+   "expect": {
+    "ending": "surrender"
+   }
+  },
+  {
+   "talk": "tesseract",
+   "picks": []
+  },
+  {
+   "said": [
+    "Thursday, Agent. Remember."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+"imports": { "m01_completed": true, "m08_nightshade_tidied": true },
+"steps": [
+{ "note": "R27: the cage door after m08 tidied Nightshade's locker. The letters are no longer offered, the player takes his copy. m01 finished with no recorded choice reads the arrest line." },
+{ "talk": "door", "knot": "door", "picks": ["Take Nightshade's copy"] },
+{ "said": ["You handed Mr. Lawson to the police", "Nightshade cleared from his locker", "His own words. He always did write a careful note", "So that's what he had time to clear"],
+  "notSaid": ["Social Fabric letters", "Arakawa's ringing Butte"] },
+{ "expect": { "cage_bin": "nightshade_copy", "bin_chosen": true } }
+]
+}
