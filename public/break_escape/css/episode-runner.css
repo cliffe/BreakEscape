@@ -221,3 +221,26 @@
 /* C-X4 (n2): the shared .se-notice reads its colours from the scene tokens so it stays legible
    on the awareness skin's light surface (the default --ui-* values suit the dark SE windows). */
 .epr-root .se-notice { color: var(--aw-ink, #1f2933); border-color: var(--aw-line, #cfd8d4); }
+
+/* CA-6 (sweep 7): the episode runner's X is a real 44x44 target, not a 30px square with a
+   hidden hit area; the strip around it grows to hold it. */
+.epr-kiosk-top .epr-kiosk-close,
+.epr-bar .se-overlay-close { box-sizing: border-box; width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.epr-kiosk-top .epr-kiosk-close::after,
+.epr-bar .se-overlay-close::after { content: none; }
+.epr-kiosk-top { min-height: 52px; }
+
+/* CA-2 / CA-5 (sweep 7): short landscape (568x320, 844x390). The kiosk takes the window less
+   8px, its top strip and step strip are one slim row each, and the debrief puts the payoff
+   (band headline and score) first, so it is in the first view; the heading follows it. */
+@media (max-height: 500px) {
+    .minigame-container.epr-kiosk > .minigame-game-container { margin: 0 auto; padding: 4px; height: 100%; max-height: 100%; }
+    .epr-kiosk-top { min-height: 0; padding: 2px 8px; }
+    .epr-kiosk-screen { margin: 0 4px 4px; }
+    .epr-root .aw-wordmark { display: none; }
+    .epr-root .aw-strip { padding: 4px 8px; }
+    .epr-body { padding-bottom: 8px; }
+    .aw-debrief { display: flex; flex-direction: column; padding: 8px 16px; }
+    .aw-debrief > .aw-band { order: -1; margin-bottom: 8px; }
+    .aw-debrief > .aw-heading { margin-bottom: 4px; }
+}

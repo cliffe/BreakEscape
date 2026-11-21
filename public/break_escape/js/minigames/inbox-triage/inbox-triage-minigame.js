@@ -49,7 +49,7 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    awarenessWeakestLineFor, kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, clearKindTimers, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
+    awarenessWeakestLineFor, feedbackScrollTop, kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, clearKindTimers, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
     shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
@@ -1022,10 +1022,22 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // Immediate mode drops the .tri-locked line (F-E19-3), so fall back to the review card's
         // verdict line, which is now the single confirmation.
         const target = pane?.querySelector?.('.tri-locked') || pane?.querySelector?.('.tri-card-verdict');
-        if (!target || typeof target.scrollIntoView !== 'function') return;
+        if (!target || typeof target.getBoundingClientRect !== 'function') return;
         let reduce = false;
         try { reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* default */ }
-        target.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+        // CA-4: scroll the least that shows the whole card and Next; only a card taller than the
+        // pane puts its verdict line at the top.
+        const card = pane.querySelector('.tri-review-card') || target;
+        const end = pane.querySelector('.tri-next') || card;
+        const pr = pane.getBoundingClientRect();
+        const top = feedbackScrollTop({
+            scrollTop: pane.scrollTop, paneTop: pr.top, paneHeight: pane.clientHeight,
+            startTop: card.getBoundingClientRect().top, endBottom: end.getBoundingClientRect().bottom,
+            verdictTop: target.getBoundingClientRect().top
+        });
+        if (top === pane.scrollTop) return;
+        if (typeof pane.scrollTo === 'function') pane.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
+        else pane.scrollTop = top;
     }
 
     // ── review cards ───────────────────────────────────────────────────────────
