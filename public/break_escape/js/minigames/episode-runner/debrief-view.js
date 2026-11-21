@@ -462,7 +462,8 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             big.setAttribute('aria-label', `Score ${result.percent} percent`);
             band.appendChild(big);
         }
-        root.appendChild(band);
+        // The payoff comes first in the DOM too, so reading order matches what sighted users see.
+        root.insertBefore(band, heading);
     }
 
     const summary = el('p', 'aw-summary');

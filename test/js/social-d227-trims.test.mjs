@@ -237,6 +237,9 @@ test('A1: the debrief opens with the band headline and the score in large type; 
     assert.equal(folded.querySelector('.aw-band-headline')?.textContent, 'Sharp work');
     assert.equal(folded.querySelector('.aw-band-score')?.textContent, `${result.percent}%`);
     assert.ok(!folded.textContent.includes('Round score'));
+    // the band is the first child of the debrief, before the heading (reading order = visual order)
+    assert.ok(folded.querySelector('.aw-debrief')?.firstElementChild?.className === 'aw-band', 'band is first in the DOM');
+    assert.ok(folded.querySelector('.aw-debrief')?.children[1]?.className === 'aw-heading', 'heading follows the band');
     const weak = folded.querySelector('.aw-weakest')?.textContent || '';
     assert.match(weak, /Authored next step\.$/);
     assert.ok(!weak.includes('Generic next step.'), 'the authored line wins');

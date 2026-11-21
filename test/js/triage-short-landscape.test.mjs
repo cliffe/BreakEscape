@@ -72,12 +72,23 @@ const PHONE_OR_SHORT = '(max-width: 767px), (max-height: 500px)';
 test('CA-2: debrief kiosk fills the window and the payoff band comes first under 500px high', () => {
     eq(find(runner, '.minigame-container.epr-kiosk > .minigame-game-container', 'height', SHORT), '100%', 'kiosk game container fills');
     eq(find(runner, '.minigame-container.epr-kiosk > .minigame-game-container', 'margin', SHORT), '0 auto', 'kiosk margin');
-    eq(find(runner, '.aw-debrief', 'display', SHORT), 'flex', 'debrief is a flex column');
-    eq(find(runner, '.aw-debrief', 'flex-direction', SHORT), 'column', 'debrief column');
-    eq(find(runner, '.aw-debrief > .aw-band', 'order', SHORT), '-1', 'band first');
-    eq(find(runner, '.epr-root .aw-wordmark', 'display', SHORT), 'none', 'wordmark hidden');
-    // not applied at full size
-    eq(String(find(runner, '.aw-debrief > .aw-band', 'order', '')), 'null', 'band order is not global');
+    // m1/m6: the band is first in the DOM, so no flex column or order trick (a flex column would
+    // also stretch Finish to full width)
+    for (const r of runner) {
+        if (r.sel === '.aw-debrief' || r.sel === '.aw-debrief > .aw-band') {
+            assert.ok(decl(r.body, 'order') === null, `${r.sel} sets no order`);
+            assert.ok(decl(r.body, 'display') === null, `${r.sel} sets no display`);
+            assert.ok(decl(r.body, 'flex-direction') === null, `${r.sel} sets no flex-direction`);
+        }
+    }
+    // m2: the wordmark stays on the strip row (one row, shrinking with an ellipsis), never hidden
+    for (const r of runner) {
+        if (/aw-wordmark/.test(r.sel)) assert.ok(decl(r.body, 'display') !== 'none', `${r.sel} is not hidden`);
+    }
+    eq(find(runner, '.epr-root .aw-strip', 'flex-wrap', SHORT), 'nowrap', 'strip one row');
+    eq(find(runner, '.epr-root .aw-wordmark', 'min-width', SHORT), '0', 'wordmark can shrink');
+    eq(find(runner, '.epr-root .aw-wordmark', 'text-overflow', SHORT), 'ellipsis', 'wordmark ellipsis');
+    eq(find(runner, '.epr-root .aw-wordmark', 'overflow', SHORT), 'hidden', 'wordmark clips');
 });
 
 test('CA-3 / CA-5: triage frame fills the window and the reader is the only scroller', () => {
@@ -94,11 +105,31 @@ test('CA-3 / CA-5: triage frame fills the window and the reader is the only scro
     eq(find(triage, '.triage-client .tri-toolbar', 'flex-wrap', SHORT), 'nowrap', 'toolbar one row');
 });
 
-test('CA-5: the triage title gives way at max-height 500 and max-width 640', () => {
-    eq(find(triage, '.triage-client .tri-title', 'display', SHORT_NARROW), 'none', 'title hidden');
-    const t = triage.filter((r) => r.sel === '.triage-client .tri-title' && decl(r.body, 'display') === 'none');
-    assert.ok(t.length === 1, 'title is hidden in exactly one rule');
-    eq(t[0].media, SHORT_NARROW, 'only under both limits');
+test('CA-5 / m3: the triage title shrinks with an ellipsis at every short size, steps stay one row', () => {
+    for (const r of triage) {
+        if (r.sel === '.triage-client .tri-title') assert.ok(decl(r.body, 'display') !== 'none', 'title is never hidden');
+    }
+    eq(find(triage, '.triage-client .tri-title', 'min-width', SHORT), '0', 'title can shrink');
+    eq(find(triage, '.triage-client .tri-title', 'flex', SHORT), '1 1 auto', 'title takes the spare room');
+    eq(find(triage, '.triage-client .tri-title', 'text-overflow'), 'ellipsis', 'base ellipsis kept');
+    eq(find(triage, '.triage-client .tri-steps', 'flex-wrap', SHORT), 'nowrap', 'steps one row');
+    assert.ok(!triage.some((r) => r.media === SHORT_NARROW), 'no 640px special case');
+});
+
+test('B1: no short-landscape display rule on a .tri-stage child can beat [hidden]', () => {
+    // .tri-stage > [hidden] { display: none } is (0,2,0); a later rule of equal weight that sets
+    // display on a stage view without :not([hidden]) would show the hidden view.
+    const hide = triage.find((r) => r.sel === '.tri-stage > [hidden]');
+    assert.ok(hide && decl(hide.body, 'display') === 'none', 'the hidden rule exists');
+    const views = ['.tri-sort', '.tri-panel', '.tri-brief', '.tri-review', '.tri-result'];
+    for (const r of triage) {
+        const d = decl(r.body, 'display');
+        if (d === null || d === 'none' || r.media === '') continue;
+        const base = r.sel.replace(/:not\(\[hidden\]\)$/, '');
+        if (!views.some((v) => base.endsWith(v))) continue;
+        assert.ok(r.sel.endsWith(':not([hidden])'), `${r.sel} (${r.media}) sets display without :not([hidden])`);
+    }
+    assert.ok(triage.some((r) => r.sel === '.triage-client .tri-sort:not([hidden])' && r.media === SHORT && decl(r.body, 'display') === 'grid'), 'the grid is scoped to the visible sort view');
 });
 
 test('CA-6: the X is 44x44 with no hidden hit area on triage and episode runner', () => {
@@ -117,9 +148,9 @@ test('CA-7: awareness cards are square with 2px borders (scanning every rule)', 
     const listed = [
         '.aw-card', '.aw-genuine', '.aw-panel', '.aw-rule', '.aw-monday', '.aw-report-route',
         '.aw-concern-recap', '.aw-aftermath-item', '.triage-client.aw-skin .aw-team-tally',
-        '.triage-client.aw-skin .tri-locked.aw-report-win'
+        '.triage-client.aw-skin .tri-locked.aw-report-win', '.aw-flip-reader', '.aw-montage-beat'
     ];
-    for (const sel of listed) {
+    for (const sel of listed.filter((l) => !/flip-reader|montage-beat/.test(l))) {
         const rs = skin.filter((r) => r.sel === sel);
         assert.ok(rs.length > 0, `${sel} exists`);
         for (const r of rs) {
@@ -133,16 +164,24 @@ test('CA-7: awareness cards are square with 2px borders (scanning every rule)', 
         assert.ok(b !== null && b.startsWith('2px '), `${sel} border is 2px (got ${b})`);
     }
     eq(find(skin, '.aw-report-route', 'border').startsWith('2px dashed'), true, 'report route 2px dashed');
+    // m4: the flip screen's cards match
+    for (const sel of ['.aw-flip-reader', '.aw-montage-beat']) eq(find(skin, sel, 'border').startsWith('2px '), true, `${sel} 2px`);
+    eq(find(skin, '.aw-flip-aftermath', 'border-top').startsWith('2px '), true, 'aftermath rule 2px');
     // the flip and debrief chips
     eq(find(skin, '.aw-flip .mail-chip', 'border-radius'), '0', 'flip chip radius');
     eq(find(skin, '.aw-flip .mail-chip', 'border').startsWith('2px '), true, 'flip chip 2px');
-    // no rounded corners on any aw-* rule at all (D217 paper surface and D220 boot/credits CRT exempt)
+    // m5: no rounded corners on any aw-* rule at all (50%, 999px, var() included). Only the
+    // D217 paper surface and the D220 boot/credits CRT are exempt, by exact selector.
+    const EXEMPT = new Set([]);
     for (const r of skin) {
         if (!r.sel.includes('.aw-')) continue;
-        if (/boot|credits|crt|paper/.test(r.sel)) continue;
-        const rad = decl(r.body, 'border-radius');
-        if (rad === null) continue;
-        assert.ok(/^0(px)?$/.test(rad) || rad === '50%' || rad === '999px' || rad === '0', `${r.sel} has radius ${rad}`);
+        if (EXEMPT.has(r.sel) || /boot|credits|crt/.test(r.sel)) continue;
+        for (const d of r.body.split(';')) {
+            const k = d.indexOf(':');
+            if (k < 0 || !/^border(-\w+)*-radius$/.test(d.slice(0, k).trim())) continue;
+            const v = d.slice(k + 1).trim();
+            assert.ok(/^0(px)?( 0(px)?)*$/.test(v), `${r.sel} has radius ${v}`);
+        }
     }
 });
 

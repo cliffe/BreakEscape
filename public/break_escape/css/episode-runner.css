@@ -231,16 +231,17 @@
 .epr-kiosk-top { min-height: 52px; }
 
 /* CA-2 / CA-5 (sweep 7): short landscape (568x320, 844x390). The kiosk takes the window less
-   8px, its top strip and step strip are one slim row each, and the debrief puts the payoff
-   (band headline and score) first, so it is in the first view; the heading follows it. */
+   8px, its top strip and step strip are one slim row each, and the debrief carries the payoff
+   (band headline and score, first in the DOM) so it is in the first view. */
 @media (max-height: 500px) {
     .minigame-container.epr-kiosk > .minigame-game-container { margin: 0 auto; padding: 4px; height: 100%; max-height: 100%; }
     .epr-kiosk-top { min-height: 0; padding: 2px 8px; }
     .epr-kiosk-screen { margin: 0 4px 4px; }
-    .epr-root .aw-wordmark { display: none; }
-    .epr-root .aw-strip { padding: 4px 8px; }
+    .epr-root .aw-strip { padding: 4px 8px; flex-wrap: nowrap; }
+    .epr-root .aw-wordmark { flex: 0 1 auto; min-width: 0; max-width: 30%; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .epr-root .aw-steps { flex-wrap: nowrap; min-width: 0; }
     .epr-body { padding-bottom: 8px; }
-    .aw-debrief { display: flex; flex-direction: column; padding: 8px 16px; }
-    .aw-debrief > .aw-band { order: -1; margin-bottom: 8px; }
+    .aw-debrief { padding: 8px 16px; }
+    .aw-debrief > .aw-band { margin-bottom: 8px; }
     .aw-debrief > .aw-heading { margin-bottom: 4px; }
 }
