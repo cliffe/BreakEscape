@@ -901,10 +901,28 @@ const W6 = {
     askedFirst: 'kit_ca05_asked', kioskVariants: 2, requestDelay: 5500, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
     pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1', panelEntries: 2, arrayWrap: false, walks: 1,
   },
+  ca07_voice_ceo: {
+    ep: 'ca07', company: 'brightwell_foods', setPiece: 'ca07_call_on_hold', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield', hostId: 'agnieszka_duda',
+    hostSpeaks: true, hostBarks: 1, staffBarks: 2,
+    partner: 'kit_gwen_pritchard', partnerStub: 'gwen_pritchard', partnerGuard: 'kit_ca07_moved && kit_key_caught',
+    there: 'kit_ca07_there', choice: 'kit_ca07_call_choice', silent: 'silent', knot: 'ca07_call', right: 'ringback', wrong: 'pay', values: ['ringback', 'pay', 'silent'],
+    askedFirst: 'kit_ca13_asked', kioskVariants: 1, requestDelay: 5500, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1', panelEntries: 2, arrayWrap: true, walks: 1,
+  },
+  ca18_credential_attacks_at_scale: {
+    ep: 'ca18', company: 'merrin_sallow', setPiece: 'ca18_reset_password', colleague: 'kit_lorna_easton', stub: 'lorna_easton', hostId: 'ama_owusu',
+    hostSpeaks: true, hostBarks: 1, staffBarks: 2,
+    partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca18_moved && kit_key_caught',
+    there: 'kit_ca18_there', choice: 'kit_ca18_reset_choice', silent: 'silent', knot: 'ca18_reset', right: 'words', wrong: 'save', values: ['words', 'save', 'silent'],
+    askedFirst: 'kit_ca14_asked', kioskVariants: 1, requestDelay: 5500, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1', panelEntries: 2, arrayWrap: false, walks: 1,
+  },
 };
 // keyed by shell name (the map's own keys), not by `ep` as W5_WALK is
 const W6_WALK = {
   ca10_downloads_and_fake_checks: { x: 7.4, y: 8.3 },
+  ca07_voice_ceo: { x: 3, y: 3 },
+  ca18_credential_attacks_at_scale: { x: 4.5, y: 4.5 },
 };
 const W45 = { ...W4, ...W5 };
 const W456 = { ...W45, ...W6 };
@@ -1198,8 +1216,8 @@ test('wave 3: every kit set-piece object over a table or a moved table item has 
       }
     }
   }
-  assert.ok(movedChecked >= 6 + Object.keys(W5).length + Object.keys(W6).length, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
-  assert.ok(overlaps >= 8 + Object.keys(W5).length + Object.keys(W6).length, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
+  assert.ok(movedChecked >= 13 && movedChecked >= 6 + Object.keys(W5).length + Object.keys(W6).length, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
+  assert.ok(overlaps >= 15 && overlaps >= 8 + Object.keys(W5).length + Object.keys(W6).length, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
 });
 
 // ca19's isolated-screen look (owner pick D235: post-it with an X): pc1_locked_isolated.
@@ -1444,7 +1462,7 @@ test('wave 4: PC text order matches the sprite order; text objects are interacta
 });
 
 test('wave 4: host recap is gated until the chain ends, in every host ink', () => {
-  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum', ca10_downloads_and_fake_checks: 'niamh_doherty' };
+  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum', ca10_downloads_and_fake_checks: 'niamh_doherty', ca07_voice_ceo: 'agnieszka_duda', ca18_credential_attacks_at_scale: 'ama_owusu' };
   for (const [name, h] of Object.entries(hosts)) {
     const ep = ({ ...W4, ...W5, ...W6 })[name].ep;
     const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
@@ -1946,6 +1964,26 @@ test('wave 6: ca07 kiosk text: the genuine voicemail no longer rests on a saved 
   assert.ok(erb.includes('It asks you to do nothing, and he tells you to ring his own mobile'), 'new opening present');
 });
 
+test('wave 6: ca07 panel: the pay or silent entry names Report Fraud; neither entry nor the erb says Action Fraud', () => {
+  const erb = readFileSync(join(scenarios, 'ca07_voice_ceo', 'scenario.json.erb'), 'utf8');
+  assert.ok(!erb.includes('Action Fraud'), 'no Action Fraud anywhere in the erb');
+  const pay = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'pay' });
+  const silent = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'silent' });
+  const back = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'ringback' });
+  assert.match(pay, /Report Fraud/);
+  assert.match(silent, /Report Fraud/);
+  assert.doesNotMatch(back, /Report Fraud/);
+  assert.doesNotMatch(back + pay + silent, /Action Fraud/);
+});
+
+test('wave 6: map sizes: three shells, one walk each, the walk keys match, and the depth floors read 13 and 15', () => {
+  assert.equal(Object.keys(W6).length, 3);
+  assert.equal(Object.keys(W6_WALK).length, 3);
+  assert.deepEqual(Object.keys(W6_WALK).sort(), Object.keys(W6).filter((n) => W6[n].walks === 1).sort());
+  assert.equal(6 + Object.keys(W5).length + Object.keys(W6).length, 13);
+  assert.equal(8 + Object.keys(W5).length + Object.keys(W6).length, 15);
+});
+
 // ---------------------------------------------------------------------------------------------------
 // Wave 6 copies (WAVE6_BUILD.md s12, "W6 copies"): each loops over W6 only, so the empty map passes until a kit step adds a shell.
 test('wave 6: knot guard: the request knot opens with the moved guard, then the value guard; start diverts on asked at index 3', () => {
@@ -2024,8 +2062,8 @@ test('wave 6: kiosk: the last variant is the finished one, every earlier one rea
 test('wave 6: host and speaker inks: out/done/moved VARs, the recap branches in order, and the host-bark count', () => {
   const BR = {
     ca10: ['- kit_key_caught && not kit_ca10_moved && (kit_ca10_check_choice == "" || kit_ca10_check_choice == "close"):', '- else:\n            Niamh Doherty: Follow a page like that'],
-    ca07: ['- kit_key_caught && not kit_ca07_moved:', '- kit_key_caught:', '- else:\n            Agnieszka Duda: When a payment goes out on a voice alone'],
-    ca18: ['- kit_key_caught && not kit_ca18_moved:', '{ kit_caught && not kit_ca18_out:', '- not kit_key_caught:'],
+    ca07: ['- kit_key_caught && not kit_ca07_moved && (kit_ca07_call_choice == "" || kit_ca07_call_choice == "ringback"):', '- kit_key_caught:', '- else:\n            Agnieszka Duda: When a payment goes out on a voice alone'],
+    ca18: ['- kit_key_caught && not kit_ca18_moved && (kit_ca18_reset_choice == "" || kit_ca18_reset_choice == "words"):', '{ kit_caught && not kit_ca18_out:', '- not kit_key_caught:'],
   };
   w6Each((name, w, sc) => {
     const ep = w.ep;
