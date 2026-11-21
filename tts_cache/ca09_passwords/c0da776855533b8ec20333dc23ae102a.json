@@ -1,0 +1,13 @@
+{
+  "key": "c0da776855533b8ec20333dc23ae102a",
+  "npc": "kit_chidi_okeke",
+  "text": "That's me booted out. Wants a brand new password, of course.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:23:06Z"
+}
