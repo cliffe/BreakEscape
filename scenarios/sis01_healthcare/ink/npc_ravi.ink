@@ -75,7 +75,7 @@ Ravi Anand: The SIEM's on my laptop. It's the only clean machine in here.
     Ravi Anand: Our procedure. Anything that big needs two sign-offs: mine for IT security, and David Osei's for clinical safety.
     Ravi Anand: David's in the incident room, through there.
     -> siem_briefing
-* [Let's just isolate now.]
+* [Why not cut the link now? It's still spreading.]
     Ravi Anand: I can't sign that alone. Cut the wrong link and we take down systems the wards are still using.
     Ravi Anand: Look at the SIEM first. Then we decide together.
     -> siem_briefing

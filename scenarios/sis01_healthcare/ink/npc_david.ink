@@ -113,15 +113,15 @@ David Osei: Argument: the firewall keeps the zones apart. Evidence: the segmenta
 // one of them. Now one "doesn't hold" answer (its reason depends on whether the player
 // has seen the map) sits beside two plausible wrong ones, each with a reason.
 David Osei: So, as of this morning, does that claim hold?
-+ [It holds. The firewall's in, and every exception is on a documented list.]
++ [It holds. The firewall's in place, and the legacy exceptions are on a documented list.]
     ~ hc001_verdict = "holds"
     David Osei: The claim says no exception rules at all. We've got a documented list of them, and that project stopped at seventy per cent.
     -> hc001_verdict_given
-+ [It held until Monday. The attackers found the gaps in it.]
++ [It held until Monday. The attackers found a new gap in the firewall that day.]
     ~ hc001_verdict = "held_until_attack"
     David Osei: No. It never held. Those exception rules were there long before the attackers were.
     -> hc001_verdict_given
-+ [It doesn't hold. {network_rules_reviewed:The map shows dual-homed PCs and a flat legacy segment.|Its "provided that" isn't true: there are exception rules.}]
++ [It doesn't hold. Dual-homed PCs and exception rules mean its conditions were never true.]
     ~ hc001_verdict = "invalid"
     {network_rules_reviewed:
         ~ david_trust += 10
@@ -192,7 +192,7 @@ David Osei: One more thing before I sign. What do the wards lose when we pull th
     ~ told_to_look = true
     David Osei: No, they keep running on what they've already got. If someone's changed the library, so have they. Look at the map again.
     -> hub
-+ [The read-only EHR on every ward. No allergy or drug checks on screen.]
++ [The EHR goes offline on every ward. No allergy or drug checks on screen.]
     ~ isolation_cost_assessed = true
     David Osei: Right. And the pump console, so nobody can see the pumps from one place.
     {isolation_compensating_controls:
@@ -203,7 +203,7 @@ David Osei: One more thing before I sign. What do the wards lose when we pull th
         David Osei: And who covers that gap? Nobody yet, so it goes on this form as a risk we're accepting, with my name on it.
     }
     -> clinical_signoff
-+ [Nothing much. The monitors are already down.]
++ [Very little. Ward 7's monitors are already down.]
     ~ told_to_look = true
     David Osei: Ward 7's monitors are. The other wards' EHR isn't, and nor is the pump console.
     David Osei: The network map shows what the cut costs. Look, then come back.
