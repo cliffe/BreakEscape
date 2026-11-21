@@ -112,3 +112,10 @@ test('a submit with an empty field and a submitText does nothing: no line, no re
   assert.equal(f.calls.validate, 0);
   assert.equal(f.view.gameData.attempts, 0);
 });
+
+test('hideNotepadButton is passed through the starter and honoured by every chin-button site', () => {
+  const starter = readFileSync(join(root, 'public/break_escape/js/systems/minigame-starters.js'), 'utf8');
+  assert.match(starter, /hideNotepadButton: options\.hideNotepadButton === true/);
+  const pm = readFileSync(join(root, 'public/break_escape/js/minigames/password/password-minigame.js'), 'utf8');
+  assert.equal((pm.match(/hideNotepadButton/g) || []).length, 4);   // the param (twice) and the two button sites
+});
