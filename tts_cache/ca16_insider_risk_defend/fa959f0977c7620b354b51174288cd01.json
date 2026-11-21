@@ -1,7 +1,7 @@
 {
-  "key": "8ab0de85367368a083812c4f650f649a",
+  "key": "fa959f0977c7620b354b51174288cd01",
   "npc": "anjali_rao",
-  "text": "It was lent, so the audit put his work under your name, and you had to answer for it.",
+  "text": "Ten minutes on your login would sit in the audit under your name, and he might reach data he has no business in.",
   "voice": "Kore",
   "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca16_insider_risk_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:53:55Z"
+  "recorded_at": "2026-11-21T20:48:05Z"
 }
