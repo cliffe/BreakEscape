@@ -199,7 +199,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Card appears in inventory
 - [ ] The north door to the IT Security office is an RFID lock (`requires: ravi_rfid_card`) and opens with the card; before the card it stays locked. Ward 7 itself is never locked
 
-> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP THIS RATE, CORRECT, INCORRECT, YES, NO, SEVER ENTERPRISE) rather than the full text.
+> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP THIS RATE, CORRECT, INCORRECT, YES, SEVER ENTERPRISE) rather than the full text.
 
 > **Ravi aim gate.** The Investigate the Attack aim (`investigate_attack`: `meet_ravi`, `access_siem`, `vpn_anomaly`) stays locked until Assess Ward 7 (`assess_ward`) is complete (`unlockCondition: aimCompleted assess_ward`, scenario.json.erb), so Sarah (`talk_to_sarah`) and the MAR charts (`collect_mar_charts`) must be done first.
 
