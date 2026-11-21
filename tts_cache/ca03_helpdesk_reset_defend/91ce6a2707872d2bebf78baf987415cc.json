@@ -1,7 +1,7 @@
 {
-  "key": "54ad78c927da68932cbef45f4db94890",
+  "key": "91ce6a2707872d2bebf78baf987415cc",
   "npc": "darren_price",
-  "text": "It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.",
+  "text": "One tap on Approve and a stranger is in Leila's account, with her service desk access, from a computer she's never used.",
   "voice": "Orus",
   "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca03_helpdesk_reset_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:50:18Z"
+  "recorded_at": "2026-11-21T20:48:30Z"
 }
