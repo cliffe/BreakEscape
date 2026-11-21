@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Niamh Doherty: The look and the padlock both copy fine. The address bar is the one bit they can't fake.
         - else:
             Niamh Doherty: That page copying our sign-on, on an address that was almost right, was the one to stop.
-            Niamh Doherty: The password went in, so a claims account was wide open and IT lost the day to resets and a records review.
+            Niamh Doherty: Whoever runs that look-alike address would get your email and password, then sign in as you and read your mail.
         }
     - else:
         Niamh Doherty: Hiya. There are five pages open on the kiosk, each one from a link somebody got this morning. Have a look at each before you'd sign in.

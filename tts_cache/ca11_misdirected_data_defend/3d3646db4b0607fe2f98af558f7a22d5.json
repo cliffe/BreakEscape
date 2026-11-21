@@ -1,0 +1,13 @@
+{
+  "key": "3d3646db4b0607fe2f98af558f7a22d5",
+  "npc": "kit_yusuf_demir",
+  "text": "Good catch on Sam's email. Staff overtime and health notes had already gone outside Carrholme, and a quick report is what lets us contain it.",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:49:02Z"
+}

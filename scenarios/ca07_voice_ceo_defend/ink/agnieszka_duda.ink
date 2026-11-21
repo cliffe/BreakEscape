@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Agnieszka Duda: The "keep this quiet" is the real tell. It's there to buy time before anyone checks.
         - else:
             Agnieszka Duda: That email in the boss's name, with a voicemail in his voice to back it, was the one to stop.
-            Agnieszka Duda: The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.
+            Agnieszka Duda: A fake voicemail and a fake email can come from the same sender. Paid, it goes to an account they control, and finance loses the afternoon re-checking.
         }
     - else:
         Agnieszka Duda: Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.

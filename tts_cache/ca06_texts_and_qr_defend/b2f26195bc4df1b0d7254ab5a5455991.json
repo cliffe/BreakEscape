@@ -1,0 +1,13 @@
+{
+  "key": "b2f26195bc4df1b0d7254ab5a5455991",
+  "npc": "chidi_okeke",
+  "text": "Nobody can see where a taped-up code goes before they scan it. The page behind it would take your card details and number plate.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:48:44Z"
+}

@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Nilesh Solanki: IT never asks you to read back a number or approve a prompt. Whoever asks is holding your password.
         - else:
             Nilesh Solanki: That email posing as IT, asking you to read back a number, was the one to stop.
-            Nilesh Solanki: The number went back, so they signed in as you, and with shared logins the audit couldn't say who did what.
+            Nilesh Solanki: That number is on the attacker's screen. Read it back, or tap Approve, and the sender walks straight into your account.
         }
     - else:
         Nilesh Solanki: Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.

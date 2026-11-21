@@ -25,7 +25,7 @@ VAR hub_quiet = false
             Thandiwe Moyo: A voice can be copied. When a voicemail says don't ring back, ring her on the number you already hold.
         - else:
             Thandiwe Moyo: That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.
-            Thandiwe Moyo: It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.
+            Thandiwe Moyo: The sender wants the retainer in an account they control. Skipping Yasmin's approval is how it gets there, and the real Catherine never asked for it.
         }
     - else:
         Thandiwe Moyo: Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.
