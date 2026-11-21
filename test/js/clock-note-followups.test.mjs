@@ -263,6 +263,13 @@ function notepad() {
 function readerAdds() {
     window.handleObjectInteraction = (sprite) => { const d = sprite.scenarioData; window.addNote(d.name, d.text); };
 }
+// A reader that adds the resolved text (textVariants), as interactions.js does
+function readerAddsVariant() {
+    window.handleObjectInteraction = (sprite) => {
+        const d = sprite.scenarioData;
+        window.addNote(d.name, (d.textVariants && d.textVariants[0] && d.textVariants[0].text) || d.text);
+    };
+}
 async function openWith(contents) {
     document.body.innerHTML = '<div id="notification-container"></div><div id="mg"></div>';
     const mg = new ContainerMinigame(document.getElementById('mg'), {
@@ -278,7 +285,7 @@ const clickFirst = async () => {
 };
 const winMsgs = () => [...document.querySelectorAll('.container-message')].map(m => m.textContent).filter(m => /your notes/.test(m));
 
-test('route 1 (an unreadable note): the first take says so in the window, a repeat says nothing', async () => {
+test('route 1 (an unreadable note): the first take says so in the window, a repeat says it is already held (no toast)', async () => {
     setup(); notepad();
     const memo = noteOf('m1', 'Torn Memo', { readable: false, takeable: true });
     await openWith([memo]);
@@ -288,7 +295,7 @@ test('route 1 (an unreadable note): the first take says so in the window, a repe
     // The same note again, from a fresh open
     await openWith([memo]);
     await clickFirst();
-    assert.ok(winMsgs().length === 0, `repeat take: no notice: ${winMsgs().join('|')}`);
+    assert.ok(winMsgs().join('|') === 'Already in your notes.', `repeat take: says so in the window: ${winMsgs().join('|')}`);
     assert.ok(nl(alerts).length === 0, `repeat take: no toast: ${JSON.stringify(alerts)}`);
     assert.ok(window.gameState.notes.length === 1, 'still one note');
 });
@@ -354,4 +361,34 @@ test('a different note with the same title is still announced (only the same tex
     await clickFirst();
     returnToContainerAfterNotes();
     assert.ok(nl(alerts).length === 1, `announced: ${JSON.stringify(alerts)}`);
+});
+
+test('a textVariants note: the first take is announced, a repeat (held under the variant text) is not', async () => {
+    setup(); notepad(); readerAddsVariant();
+    const note = noteOf('v1', 'Rota', { text: 'Base text', textVariants: [{ text: 'Variant text' }] });
+    const other = noteOf('v2', 'Other', { text: 'Something else' });
+    await openWith([note, other]);
+    await clickFirst();
+    returnToContainerAfterNotes();
+    assert.ok(starts.length === 1 && starts[0][2].notice === 'Added "Rota" to your notes.', `first take: ${JSON.stringify(starts.map(x => x[2] && x[2].notice))}`);
+    assert.ok(window.gameState.notes.length === 1 && window.gameState.notes[0].text === 'Variant text', 'held under the variant text');
+    // Repeat: the raw item.text ("Base text") is not what the Notepad holds
+    starts.length = 0;
+    await openWith([note, other]);
+    await clickFirst();
+    returnToContainerAfterNotes();
+    assert.ok(starts.length === 1 && starts[0][2].notice === '' && starts[0][2].noticeName === '', `repeat: no notice: ${JSON.stringify(starts.map(x => x[2] && x[2].notice))}`);
+    assert.ok(nl(alerts).length === 0, `repeat: no toast: ${JSON.stringify(alerts)}`);
+    assert.ok(window.gameState.notes.length === 1, 'still one note');
+});
+
+test('a textVariants note: the Notepad holds the base copy, the variant is new, so it is announced', async () => {
+    setup(); notepad(); readerAddsVariant();
+    window.gameState.notes.push({ id: 9, title: 'Rota', text: 'Base text', read: true });
+    const note = noteOf('v1', 'Rota', { text: 'Base text', textVariants: [{ text: 'Variant text' }] });
+    await openWith([note]);
+    await clickFirst();
+    returnToContainerAfterNotes();
+    assert.ok(window.gameState.notes.length === 2, 'the variant was added as a new note');
+    assert.ok(nl(alerts).length === 1 && nl(alerts)[0][0] === 'Added "Rota" to your notes.', `announced: ${JSON.stringify(alerts)}`);
 });

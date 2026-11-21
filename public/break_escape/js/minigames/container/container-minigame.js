@@ -353,16 +353,26 @@ export function scrollingAncestor(el) {
 }
 
 /**
- * Whether the Notepad already holds this note (same title and base text, as the reader and
- * addNote de-duplicate), so taking it again must not announce it a second time. Read before
- * the reader opens: opening it adds the note.
+ * The Notepad as it stands before a note's reader opens: how many notes it holds. Compared
+ * afterwards by noteWasRepeat, so "already held" is decided from what the reader actually
+ * did (it adds the resolved textVariants text, not the raw item.text), not predicted.
  */
-export function noteAlreadyInNotepad(item) {
+export function notepadCount() {
     const notes = window.gameState?.notes;
-    if (!item || !Array.isArray(notes)) return false;
-    const title = item.name || 'Note';
-    const base = String(item.text == null ? '' : item.text).split('\n\nObservation:')[0];
-    return notes.some(n => n && n.title === title && String(n.text || '').split('\n\nObservation:')[0] === base);
+    return Array.isArray(notes) ? notes.length : null;
+}
+
+/**
+ * Whether the reader added nothing for the taken note: the Notepad has the same count as
+ * before it opened and holds a note with the item's title (addNote returned the existing
+ * one). A reader that never ran (no matching note) is not a repeat, so it is announced.
+ */
+export function noteWasRepeat(containerState) {
+    const notes = window.gameState?.notes;
+    const before = containerState?.notesBefore;
+    if (!Array.isArray(notes) || !Number.isFinite(before) || notes.length !== before) return false;
+    const title = containerState.itemToTake?.name || 'Note';
+    return notes.some(n => n && n.title === title);
 }
 
 /**
@@ -2467,8 +2477,9 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
-                // Held before the reader opens (opening it adds the note): a repeat take says nothing
-                noteAlreadyHeld: noteAlreadyInNotepad(item),
+                // The Notepad's size before the reader opens (opening it adds the note): if it
+                // is unchanged afterwards the note was already held, and nothing is announced
+                notesBefore: notepadCount(),
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
@@ -2753,9 +2764,11 @@ export class ContainerMinigame extends MinigameScene {
             if (noteText && window.addNote) {
                 const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
                 const added = window.addNote(item.name || 'Note', body, !!item.important);
-                // addNote returns the existing note (marked read) for a duplicate: say nothing
-                // for a note already in the Notepad, as the other take routes do
-                if (!(added && added.read === true)) {
+                // addNote returns the existing note (marked read) for a duplicate: no reader
+                // opens here, so the window says it is already held (no toast)
+                if (added && added.read === true) {
+                    this.showMessage(window.noteAlreadyText?.() || 'Already in your notes.', 'success');
+                } else {
                     this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
                 }
             } else {
@@ -2986,7 +2999,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // A route that reopens nothing (the last note, a blocked reader, a session that
             // ended) has no window to carry it, so it gets the toast, shown at once.
             // A note already in the Notepad is not announced again, in the window or as a toast
-            const repeatTake = containerState.noteAlreadyHeld === true;
+            const repeatTake = noteWasRepeat(containerState);
             noteNotice = repeatTake ? '' : (window.noteAddedText?.(containerState.itemToTake.name) || '');
             if (repeatTake) {
                 window.clearExpectedPanel?.();
