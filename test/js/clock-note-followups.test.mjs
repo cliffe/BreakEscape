@@ -392,3 +392,23 @@ test('a textVariants note: the Notepad holds the base copy, the variant is new, 
     assert.ok(window.gameState.notes.length === 2, 'the variant was added as a new note');
     assert.ok(nl(alerts).length === 1 && nl(alerts)[0][0] === 'Added "Rota" to your notes.', `announced: ${JSON.stringify(alerts)}`);
 });
+
+test('a reader that never ran (count unchanged, no note with this title) is still announced', async () => {
+    setup(); notepad();
+    window.gameState.notes.push({ id: 9, title: 'Other', text: 'Something else', read: true });
+    window.handleObjectInteraction = () => {};
+    await openWith([noteOf('n1', 'Memo', { text: 'New text' })]);
+    await clickFirst();
+    returnToContainerAfterNotes();
+    assert.ok(window.gameState.notes.length === 1, 'the Notepad count is unchanged');
+    assert.ok(nl(alerts).length === 1 && nl(alerts)[0][0] === 'Added "Memo" to your notes.', `announced: ${JSON.stringify(alerts)}`);
+});
+
+test('game.js passes the saved clock elapsed time as the fourth argument to ScenarioTimerDispatcher.forGame', () => {
+    const src = readFileSync(join(js, 'core/game.js'), 'utf8');
+    const m = src.match(/ScenarioTimerDispatcher\.forGame\(([^;]*)\);/);
+    assert.ok(m !== null, 'forGame call found in game.js');
+    const args = m[1].split(',').map(s => s.trim());
+    assert.ok(args.length === 4, `four arguments: ${args.length}`);
+    assert.ok(args[3] === 'gameScenario.savedScenarioClock?.elapsedMs', `fourth argument: ${args[3]}`);
+});
