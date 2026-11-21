@@ -1,6 +1,6 @@
 # m06 Follow the Money: dialogue review, pass 5 cycle 2
 
-Reviewer: a fresh Opus agent, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Read beforehand: `AGENTS.md`, `README_ink_best_practices.md` (gotchas 0a and 0b included), `DIALOGUE_REVIEW_P5_C1.md`, and the log section "Phase 4 dialogue, cycle 1" (commit 51fdf1b1). I did not open the SecGen XML, the four listed field guides, or the exploit detail in `VM_INTEGRATION.md`.
+Reviewer: a fresh agent, read-only, 2026-10-13. Skill: `npc-dialog-review`, run in full. Aim: a SAFETYNET campaign mission, judged as a TV spy thriller (`docs/agents/M06_PASS_BRIEF.md`). Read beforehand: `AGENTS.md`, `README_ink_best_practices.md` (gotchas 0a and 0b included), `DIALOGUE_REVIEW_P5_C1.md`, and the log section "Phase 4 dialogue, cycle 1" (commit 51fdf1b1). I did not open the SecGen XML, the four listed field guides, or the exploit detail in `VM_INTEGRATION.md`.
 
 The ink folder has no uncommitted changes since 51fdf1b1, so this review tests exactly what cycle 1 committed. `tts_cache/m06_follow_the_money/` is still empty, so none of the rewrites below costs a re-voice.
 

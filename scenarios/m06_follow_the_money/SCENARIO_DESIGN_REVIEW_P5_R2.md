@@ -1,6 +1,6 @@
 # m06 Follow the Money: scenario design review, pass 5, round 2
 
-Reviewer: fresh Opus agent, read-only (2026-10-13). Skill: `scenario-design-review`. Static review: no browser session was started.
+Reviewer: fresh agent, read-only (2026-10-13). Skill: `scenario-design-review`. Static review: no browser session was started.
 
 Kind of game: a SAFETYNET campaign mission, judged as a TV spy thriller whose VM flags are required and woven into the story.
 
@@ -101,7 +101,7 @@ This round found nothing above minor. Of the five minors, n2 is the only one a p
 
 ## Browser checks before closing
 
-Keyless server on :3001, one Sonnet run, with page reloads where marked.
+Keyless server on :3001, one scripted run, with page reloads where marked.
 
 1. **M1 and n1:** meet Irina, take the academic opener and one topic, close. **Reload.** Talk again: expect "Back again.", no "You must be the FCA", the asked topic gone, and the badge loan on offer (trust 45). To settle n1, use the guard, whose opener is still keyed on an ink-local VAR (`guard_asked_name`, guard ink 46): talk to him, make one choice (state is saved after a choice), close the chat without getting through, **reload**, talk again. "You again. Who are you, then?" means ink locals survive (n1 is right). The narration and "Evening. Floor's restricted." mean they don't (n1 is withdrawn, and the guard joins m12).
 2. **m1:** strain the cover (the guard catches a pick), then two wrong slots at the console. Expect the first-strike warning, then "Another wrong slot, and it's logged…". No strain text, and `console_tripped` true.
