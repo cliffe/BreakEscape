@@ -47,3 +47,11 @@ Scripts to write: t01_hax_hook (reuse m02 pattern), t02_hall_lights, t03_lockpic
 4. Threat card wording for m03 (m01 "The Entropy", m02 "Before the Ward Goes Dark"): suggestion "Before the Next Sale".
 5. Real Hacking: is a recon-only nmap beat (MAC line cropped) enough, as agreed for m02?
 6. Terry's "Picks. Right. We're done talking." plays only after the lockpick is caught in his view: show the caught-picking beat (a sight-cone showpiece)?
+
+## Orchestrator decisions (2026-11-21, before takes)
+- Q2: show Victoria as the villain close; Danny may appear as a face flash in the crescendo (user on m02 v2: "Not a spoiler to see an NPC on screen"). Still no Danny lines or office.
+- Q5: recon-only nmap beat, MAC line cropped (same as the m02 v2 console beat the user kept).
+- Q6: yes, record the caught-picking sight-cone beat (t17_guard); Terry's line J-cuts into it.
+- Q1: Shadow Code 1 by the 60 s beat analysis at the edit stage (the user kept the analysis pick on m02); fallbacks as listed.
+- Q3, Q4 go on the review page with a suggested pick: hook "They don't run the attacks. They arm the cells that do." (states m03's premise; record both, the edit uses one); threat card "Before the Next Sale".
+- User notes from m02 that apply: approach shot before each character line, voices J/L-cut across the cut, lines finish, no walking into walls/doors, ambient chatter muted, voices levelled to HaX.
