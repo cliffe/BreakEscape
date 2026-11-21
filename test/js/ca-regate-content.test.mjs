@@ -66,3 +66,17 @@ test('ca18: the brief asks for the staff list and address pattern; the debrief a
   assert.equal(panels.find((m) => m[1] === 'What the campaign would have needed')[3], '!globalVars.guess_e18_landed');
   assert.ok(!/sprayed and stuffed from its public pages/.test(t));
 });
+
+test('ca07: the debrief tells one payment story, and the opening card makes no claim about a released payment', () => {
+  const t = erb('ca07_voice_ceo');
+  const panels = [...t.matchAll(/"heading": "(When the voice wins|Ringing back|What the call bought)",\s*"text": "((?:[^"\\]|\\.)*)"(?:,\s*"condition": "([^"]*)")?/g)];
+  assert.equal(panels.length, 3);
+  const opening = panels.find((m) => m[1] === 'When the voice wins')[2];
+  assert.ok(!/The payment released here/.test(opening));
+  assert.ok(!/18,400/.test(opening), 'the Leeds deposit is the attacker-side pretext, not a second debrief payment');
+  assert.match(opening, /can be moved on before anyone looks/);
+  // the Ashcarr payment appears once as paid (pay or silent) and once as never leaving (ringback)
+  assert.match(panels.find((m) => m[1] === 'What the call bought')[3], /pay.*silent/);
+  assert.equal(panels.find((m) => m[1] === 'Ringing back')[3], "globalVars.kit_ca07_call_choice === 'ringback'");
+  assert.match(panels.find((m) => m[1] === 'Ringing back')[2], /a payment that never left/);
+});
