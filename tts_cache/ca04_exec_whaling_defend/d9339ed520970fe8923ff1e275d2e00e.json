@@ -1,0 +1,13 @@
+{
+  "key": "d9339ed520970fe8923ff1e275d2e00e",
+  "npc": "thandiwe_moyo",
+  "text": "That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:32Z"
+}
