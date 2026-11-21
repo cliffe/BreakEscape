@@ -46,6 +46,24 @@ export function awarenessWeakestLineFor(kinds, it = 'it') {
     return `Look for ${it} in the next messages you get at work, ${ask}`;
 }
 
+/**
+ * Where the review pane should scroll after a verdict locks (CA-4). All numbers are viewport
+ * coordinates from getBoundingClientRect, except scrollTop and paneHeight. When the whole card
+ * (startTop to endBottom, the Next button included) fits in the pane, scroll the least that
+ * shows all of it: no scroll at all when it already fits, so the transcript title stays. When
+ * it does not fit, put the verdict line (verdictTop) at the top, as before.
+ */
+export function feedbackScrollTop({ scrollTop, paneTop, paneHeight, startTop, endBottom, verdictTop }) {
+    const off = (v) => scrollTop + (v - paneTop);
+    const start = off(startTop), end = off(endBottom);
+    if (end - start <= paneHeight) {
+        if (start < scrollTop) return Math.max(0, start);
+        if (end > scrollTop + paneHeight) return Math.max(0, end - paneHeight);
+        return scrollTop;
+    }
+    return Math.max(0, off(verdictTop));
+}
+
 export function isNonEmail(recOrKind) {
     const k = typeof recOrKind === 'string' ? recOrKind : kindOf(recOrKind);
     return NON_EMAIL_KINDS.includes(k);
