@@ -31,6 +31,17 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { attachScrollCue } from '../../utils/scroll-cue.js';
 
+/**
+ * The status-bar count. The table dims the rows a filter rules out rather than hiding them (the
+ * player keeps the surrounding context and can still click a dimmed row), so the count says how
+ * many match and how many are dimmed, never "visible". Pure; "1 entry", never "1 entries".
+ */
+export function logFilterCountText(matching, total) {
+    const noun = (n) => (n === 1 ? 'entry' : 'entries');
+    if (matching >= total) return `RESULTS: ${total} ${noun(total)}`;
+    return `RESULTS: ${matching} ${noun(matching)} match, ${total - matching} dimmed`;
+}
+
 export class LogFilterMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
     static consoleWindow = true;
@@ -963,8 +974,8 @@ export class LogFilterMinigame extends MinigameScene {
         this._hideSceneX(false);
     }
 
-    // One close control at a time (UI consoles rule): pop-ups carry their own X, the two
-    // confirm-style ones carry named buttons and no X, so the scene X hides while one is open
+    // One close control at a time (UI consoles rule): every pop-up carries its own X (the
+    // flag confirm adds its one affirmative button), so the scene X hides while one is open
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';
@@ -1003,16 +1014,14 @@ export class LogFilterMinigame extends MinigameScene {
         const t = this._el('span');
         t.textContent = displayDashes(title);
         hdr.appendChild(t);
-        // Confirm-style pop-ups keep their named buttons and have no X; the rest use the
-        // shared X, inside the pop-up
-        if (this._overlayMode !== 'flag_confirm' && this._overlayMode !== 'flag_rejected') {
-            const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
-            closeBtn.type = 'button';
-            closeBtn.ariaLabel = 'Close';
-            closeBtn.textContent = '\u00d7';
-            closeBtn.addEventListener('click', () => this._closeOverlay());
-            hdr.appendChild(closeBtn);
-        }
+        // Every pop-up carries the shared X, inside the pop-up; the flag confirm adds only its
+        // one affirmative button, and the X is its way out (sis01 blind playtest m7)
+        const closeBtn = this._el('button', 'minigame-close-button lf-overlay-close');
+        closeBtn.type = 'button';
+        closeBtn.ariaLabel = 'Close';
+        closeBtn.textContent = '\u00d7';
+        closeBtn.addEventListener('click', () => this._closeOverlay());
+        hdr.appendChild(closeBtn);
         panel.appendChild(hdr);
         const body = this._el('div', 'lf-overlay-body');
         panel.appendChild(body);
@@ -1157,13 +1166,6 @@ export class LogFilterMinigame extends MinigameScene {
         text.textContent = displayDashes(this._flagRejectedBody
             || `The session for ${who}${ip ? ` from ${ip}` : ''} does not match the pattern you are looking for. Nothing has been escalated. Check the IP lookup and account history, then try another row.`);
         body.appendChild(text);
-
-        const actions = this._el('div', 'lf-flag-confirm-actions');
-        const ok = this._el('button', 'lf-flag-cancel-btn');
-        ok.textContent = '[BACK TO LOG]';
-        ok.addEventListener('click', () => this._closeOverlay());
-        actions.appendChild(ok);
-        body.appendChild(actions);
     }
 
     _renderFlagConfirmOverlay(panel) {
@@ -1175,15 +1177,10 @@ export class LogFilterMinigame extends MinigameScene {
 
         const actions = this._el('div', 'lf-flag-confirm-actions');
 
-        const cancel = this._el('button', 'lf-flag-cancel-btn');
-        cancel.textContent = '[CANCEL]';
-        cancel.addEventListener('click', () => this._closeOverlay());
-
         const confirm = this._el('button', 'lf-flag-confirm-btn');
         confirm.textContent = '[CONFIRM: FLAG ACTIVE SESSION]';
         confirm.addEventListener('click', () => this._onFlagConfirmed());
 
-        actions.appendChild(cancel);
         actions.appendChild(confirm);
         body.appendChild(actions);
     }
@@ -1425,7 +1422,7 @@ export class LogFilterMinigame extends MinigameScene {
         const sb = this._dom.statusBar;
         sb.innerHTML = '';
         const countEl = this._el('span', 'lf-status-bar-count');
-        countEl.textContent = `RESULTS: ${filtered.length} entries visible`;
+        countEl.textContent = logFilterCountText(filtered.length, this._logEntries.length);
         const filtersEl = document.createTextNode(` · ${this._activeFilters.length} filter${this._activeFilters.length !== 1 ? 's' : ''} active`);
         sb.appendChild(countEl);
         sb.appendChild(filtersEl);

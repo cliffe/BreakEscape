@@ -183,3 +183,15 @@ export function trackInfoLabel(name, state) {
     if (!state?.trackTitle) return { label: 'AWAITING SIGNAL', detail: '' };
     return getCreditsTheme(name).trackLabel(state);
 }
+
+/**
+ * A section heading written as "── CLINICAL OUTCOMES ──" (scenario credits): the dash runs are
+ * decoration, the words are the heading. Returns { lead, title, trail } or null when the text
+ * is not wrapped in dash runs. Pure. The credits draw the runs as separate spans that drop on
+ * a narrow window, so the heading never wraps and leaves a lone dash line (sis01 m18).
+ */
+export function splitSectionHeader(text) {
+    if (typeof text !== 'string') return null;
+    const m = text.match(/^([\u2500\u2501\u2014\u2013-]{2,})\s+(.*?\S)\s+([\u2500\u2501\u2014\u2013-]{2,})$/u);
+    return m ? { lead: m[1], title: m[2], trail: m[3] } : null;
+}

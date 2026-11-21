@@ -675,21 +675,6 @@
     border-color: #66cc66;
 }
 
-.lf-flag-cancel-btn {
-    background: #1a1a28;
-    border: 2px solid #555577;
-    color: #8888aa;
-    font-family: inherit;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 4px 12px;
-}
-
-.lf-flag-cancel-btn:hover {
-    background: #22223a;
-    color: #aaaacc;
-}
-
 /* ── Tab 2: Audit log ─────────────────────────────────────── */
 .lf-audit-pane {
     flex: 1;

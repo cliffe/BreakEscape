@@ -301,8 +301,8 @@ test('review round 1: log filter pop-ups follow the one-close-control rule (M3)'
     const lf = src(SCENES['log-filter']);
     assert.doesNotMatch(lf, /\[✕\]/, 'no text [✕] left');
     assert.match(lf, /minigame-close-button lf-overlay-close/, 'info pop-ups use the shared X');
-    assert.match(lf, /_overlayMode !== 'flag_confirm' && this\._overlayMode !== 'flag_rejected'/, 'confirm-style pop-ups have no X');
-    assert.match(lf, /'\[CANCEL\]'/);
+    assert.doesNotMatch(lf, /_overlayMode !== 'flag_confirm'/, 'the confirm pop-ups carry the X too (sis01 m7)');
+    assert.doesNotMatch(lf, /'\[CANCEL\]'|\[BACK TO LOG\]/, 'no Cancel or Back beside the X');
     assert.match(lf, /\[CONFIRM: FLAG ACTIVE SESSION\]/);
     assert.match(lf, /_hideSceneX\(true\)/);
     assert.match(lf, /_hideSceneX\(false\)/);

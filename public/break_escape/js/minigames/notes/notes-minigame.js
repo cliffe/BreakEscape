@@ -38,9 +38,9 @@ export function noteCounterText(index, total, filtered = false) {
 export class NotesMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
-    // The scene may draw a bottom button: only the Mission Brief at game start uses it, as
-    // Continue (A05). Every other note closes with the X or Esc alone.
-    static keepsCancelButton = true;
+    // No bottom Continue or Cancel: the X and Esc close every note, the Mission Brief included
+    // (sis01 blind playtest m1: Continue did exactly what the X does). keepsCancelButton stays
+    // false from MinigameScene.
 
     // The X sits in the paper's top-right corner, not out at the window's edge. The art's paper
     // ends at column 154 of 165 (the rest is shadow and transparent), so the anchor is an empty
@@ -59,9 +59,8 @@ export class NotesMinigame extends MinigameScene {
             params.title = 'Reading Notes';
         }
         
-        // Continue only for the Mission Brief popup (A05); X and Esc close every note
-        params.showCancel = notesShowsContinue(params);
-        params.cancelText = 'Continue';
+        // The X and Esc close every note, the Mission Brief popup too: no second button
+        params.showCancel = false;
         
         super(container, params);
         
@@ -809,15 +808,6 @@ export class NotesMinigame extends MinigameScene {
     }
 }
 
-/**
- * Whether the notepad draws a Continue button (A05): only when it opens as the Mission
- * Brief popup at game start (showMissionBrief passes missionBrief: true). Reading the brief
- * later from the notepad, or any other note, has the X and Esc only. Pure.
- */
-export function notesShowsContinue(params) {
-    return params?.missionBrief === true;
-}
-
 // Export the minigame for the framework to register
 // The registration is handled in the main minigames/index.js file
 
@@ -911,7 +901,7 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
         autoAddToNotes: autoAddToNotes, // Automatically add notes to the notes system
         navigateToNote: navigateToNote, // Which note to navigate to
         hideNavigation: hideNavigation, // Whether to hide navigation buttons
-        missionBrief: options?.missionBrief === true, // the game-start brief keeps Continue (A05)
+        missionBrief: options?.missionBrief === true, // the game-start brief (no Continue: the X closes it)
         requiresKeyboardInput: true, // Notes minigame has editable observations and search
         onComplete: (success, result) => {
             if (success && result && result.addedToInventory) {

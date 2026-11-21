@@ -29,7 +29,7 @@
 import MusicController from './music-controller.js';
 import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus, splitSectionHeader } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
 import { returnToMissions } from '../ui/success-screen.js';
 import { cctvFeeds } from './cctv-feeds.js';
@@ -1725,7 +1725,17 @@ function _startCredits(lines) {
                 }
                 holdMs = cardHoldMs(item.lines.length);
             } else {
-                label.textContent = displayDashes(item.text);
+                const parts = item.style === 'section-header' ? splitSectionHeader(item.text) : null;
+                if (parts) {
+                    label.textContent = '';
+                    const deco = (t) => { const d = document.createElement('span'); d.className = 'bv-cr-deco'; d.textContent = t; return d; };
+                    const title = document.createElement('span');
+                    title.className = 'bv-cr-section-title';
+                    title.textContent = displayDashes(parts.title);
+                    label.append(deco(parts.lead + ' '), title, deco(' ' + parts.trail));
+                } else {
+                    label.textContent = displayDashes(item.text);
+                }
                 if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
             }
             label.style.opacity = '1';

@@ -120,12 +120,12 @@ test('before SEVER, the X and Esc end with complete(false)', (t) => {
     assert.deepEqual(ends, [false]);
 });
 
-test('before SEVER, a cancelled confirm leaves SEVER up and no CONTINUE', (t) => {
+test('before SEVER, a confirm closed with its X leaves SEVER up and no CONTINUE', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const mg = setup();
     mg._toggleRule('r1');
     q('#nsm-sever-btn').click();
-    q('#nsm-modal-no').click();
+    q('#nsm-modal-x').click();
     assert.ok(visible(q('#nsm-sever-btn')));
     assert.ok(!visible(q('#nsm-continue-btn')));
     assert.equal(window.gameState.globalVariables.network_isolated, false);

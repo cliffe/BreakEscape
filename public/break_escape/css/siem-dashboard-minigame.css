@@ -135,26 +135,30 @@
 }
 
 .siem-severity.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity.sev-MED {
     background: #c28733;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-severity.sev-HIGH {
     background: #d86a29;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-severity.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
     animation: siem-crit-flash 1s steps(1, end) infinite;
 }
 
 @keyframes siem-crit-flash {
-    0% { opacity: 1; }
-    50% { opacity: 0.35; }
-    100% { opacity: 1; }
+    /* The flash is on the border, never the badge's opacity: fading the whole badge dropped
+       its text under 4.5:1 for half of every second */
+    0% { border-color: #ffffff; }
+    50% { border-color: rgba(255, 255, 255, 0.2); }
+    100% { border-color: #ffffff; }
 }
 
 .siem-time,
@@ -262,19 +266,21 @@
 }
 
 .siem-queue-sev.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-queue-sev.sev-MED {
     background: #c28733;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-queue-sev.sev-HIGH {
     background: #d86a29;
+    color: #0d0d1a;   /* dark text: white on this amber is under 4.5:1 */
 }
 
 .siem-queue-sev.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-queue-text {
@@ -374,7 +380,7 @@
 }
 
 .siem-severity-bar.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity-bar.sev-MED {
@@ -386,7 +392,7 @@
 }
 
 .siem-severity-bar.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-severity-legend {
@@ -414,7 +420,7 @@
 }
 
 .siem-severity-item-color.sev-LOW {
-    background: #6e7583;
+    background: #565d6b;
 }
 
 .siem-severity-item-color.sev-MED {
@@ -426,7 +432,7 @@
 }
 
 .siem-severity-item-color.sev-CRIT {
-    background: #cf2b45;
+    background: #b81f38;
 }
 
 .siem-severity-item-count {

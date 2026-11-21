@@ -112,13 +112,13 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
             </div>
             <div class="nsm-modal-overlay" id="nsm-modal-overlay">
                 <div class="nsm-modal">
+                    <button type="button" class="minigame-close-button nsm-modal-close" id="nsm-modal-x" aria-label="Close">\u00d7</button>
                     <div class="nsm-modal-icon">&#9888;</div>
                     <div class="nsm-modal-title">CONFIRM NETWORK ISOLATION</div>
                     <div class="nsm-modal-body">
                         ${this._buildModalBodyHTML()}
                     </div>
                     <div class="nsm-modal-actions">
-                        <button type="button" class="nsm-modal-btn nsm-modal-no" id="nsm-modal-no">NO — CANCEL</button>
                         <button type="button" class="nsm-modal-btn nsm-modal-yes" id="nsm-modal-yes">YES — SEVER LINK</button>
                     </div>
                 </div>
@@ -204,7 +204,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
                 event.stopPropagation();
                 this._confirmSever();
             });
-        this.addEventListener(this.container.querySelector('#nsm-modal-no'), 'click',
+        this.addEventListener(this.container.querySelector('#nsm-modal-x'), 'click',
             (event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -283,13 +283,14 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         this._hideSceneX(false);
     }
 
-    // The confirm has two named buttons and no X, so the scene X hides while it is open
+    // The confirm carries its own X and the one YES button, so the scene X hides while it is open
+    // (one close control at a time; the X answers no, sis01 blind playtest m15)
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';
     }
 
-    // Esc is Cancel while the confirm is open; with none open it closes the scene
+    // Esc is the confirm's X while it is open; with none open it closes the scene
     handleEscapeKey() {
         const overlay = this.container?.querySelector?.('#nsm-modal-overlay');
         if (!overlay || !overlay.classList.contains('nsm-modal-visible')) return false;

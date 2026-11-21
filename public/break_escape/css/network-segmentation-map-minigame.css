@@ -464,6 +464,12 @@
     max-width: 520px;
     width: 90%;
     text-align: center;
+    position: relative;   /* anchors its X at the top right */
+}
+
+.nsm-modal-close {
+    top: 8px;
+    right: 8px;
 }
 
 .nsm-modal-icon {
@@ -478,6 +484,7 @@
     color: #ff4444;
     margin-bottom: 20px;
     line-height: 24px;
+    padding: 0 32px;   /* clear of the X */
 }
 
 .nsm-modal-body {
@@ -501,16 +508,6 @@
     padding: 14px 24px;
     cursor: pointer;
     border: 2px solid;
-}
-
-.nsm-modal-no {
-    background: #1a1a2a;
-    color: #8888cc;
-    border-color: #4444aa;
-}
-
-.nsm-modal-no:hover {
-    background: #2a2a4a;
 }
 
 .nsm-modal-yes {
