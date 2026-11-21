@@ -4,6 +4,7 @@
 
 import { ASSETS_PATH } from '../config.js';
 import TTSManager from './tts-manager.js';
+import { deliveryFromTags } from './tts-delivery.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks, HELD_BARK_VOICE_CAP_MS } from './bark-release-policy.js';
@@ -159,12 +160,12 @@ export default class NPCBarkSystem {
    * @param {{ beep?: boolean }} [opts]  beep: false for a speech bubble, which never plays the
    *   phone's sound when there is no voice (slice 5 R1 m3)
    */
-  async _speakBark(npcId, text, { beep = true } = {}) {
+  async _speakBark(npcId, text, { beep = true, delivery = null } = {}) {
     if (!this.ttsManagers.has(npcId)) {
       this.ttsManagers.set(npcId, new TTSManager());
     }
     const mgr = this.ttsManagers.get(npcId);
-    const playing = mgr.play(npcId, text);
+    const playing = mgr.play(npcId, text, { delivery });
     const seq = mgr.playSeq;
     const duration = await playing;
     // A later play() on this manager took over while this one loaded: its null is not "no voice",
@@ -541,7 +542,9 @@ export default class NPCBarkSystem {
     // phone's sound. A speech bubble never does: that sound belongs to phone contacts (R1 m3).
     let ttsPromise = null;
     if (voiced) {
-      ttsPromise = this._speakBark(npcId, text, { beep: !handle });
+      // A knot bark's #delivery: note (payload.tags, the line's ink tags) is part of its clip's
+      // key: without it the server looks for an untagged clip that was never made (D280 live proof)
+      ttsPromise = this._speakBark(npcId, text, { beep: !handle, delivery: deliveryFromTags(payload.tags) });
     } else if (playSound && !handle) {
       this.playBarkSound();
     }

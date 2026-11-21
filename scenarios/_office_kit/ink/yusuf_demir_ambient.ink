@@ -24,3 +24,11 @@ Yusuf Demir: Morning. I'm Yusuf, I keep an eye on security here. Grab a water if
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca11_react ===
+{ kit_key_caught:
+    Yusuf Demir: Well spotted. Once it's in the wrong inbox you can't call it back, but a fast report keeps it small. #delivery: steady, approving
+- else:
+    Yusuf Demir: One wrong recipient and people's details are out, and that's a breach to report. The quicker it's flagged, the less the harm. #delivery: steady, matter-of-fact
+}
+-> bye

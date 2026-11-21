@@ -571,7 +571,16 @@
               "urgentAt": 50,
               "initial": 65
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca11_react"
+            }
+          ]
         }
       ],
       "objects": [

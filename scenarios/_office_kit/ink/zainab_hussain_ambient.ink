@@ -70,3 +70,11 @@ Zainab Hussain: This one says my parking permit needs renewing. Is it one of our
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca06_react ===
+{ kit_key_caught:
+    Zainab Hussain: Nice. That code's just a sticker on an official notice, and it's your card details it's really after. #delivery: steady, approving
+- else:
+    Zainab Hussain: A code on a proper-looking notice, who'd think twice? That's the whole con. Open the parking app yourself instead. #delivery: steady, matter-of-fact
+}
+-> bye

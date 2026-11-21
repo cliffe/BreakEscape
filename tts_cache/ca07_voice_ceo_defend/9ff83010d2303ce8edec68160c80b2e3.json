@@ -1,0 +1,14 @@
+{
+  "key": "9ff83010d2303ce8edec68160c80b2e3",
+  "npc": "kit_graham_whitfield",
+  "text": "Good instinct. The number on the screen and the voice can both be faked, so ringing back is what settles it.",
+  "delivery": "unhurried, warm",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:44:50Z"
+}

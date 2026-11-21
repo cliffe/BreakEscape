@@ -11,7 +11,7 @@
         "agnieszka_duda",
         "graham_whitfield"
       ],
-      "setPiece": null,
+      "setPiece": "ca13_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e13_supplier_injection",
@@ -87,7 +87,7 @@
         "agnieszka_duda",
         "gwen_pritchard"
       ],
-      "setPiece": null,
+      "setPiece": "ca01_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e1_lookalike_bank",
@@ -443,7 +443,7 @@
         "chidi_okeke",
         "zainab_hussain"
       ],
-      "setPiece": null,
+      "setPiece": "ca02_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e2_enable_content",
@@ -458,7 +458,7 @@
         "anjali_rao",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca03_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e3_push_early",
@@ -473,7 +473,7 @@
         "lorna_easton",
         "julian_sallow"
       ],
-      "setPiece": null,
+      "setPiece": "ca04_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e4_boarding_payment",
@@ -503,7 +503,7 @@
         "fatima_begum",
         "zainab_hussain"
       ],
-      "setPiece": null,
+      "setPiece": "ca06_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e6_parking_permit",
@@ -519,7 +519,7 @@
         "gwen_pritchard",
         "graham_whitfield"
       ],
-      "setPiece": null,
+      "setPiece": "ca07_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e7_ceo_wire",
@@ -534,7 +534,7 @@
         "darren_price",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca08_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e8_push_abroad",
@@ -550,7 +550,7 @@
         "fatima_begum",
         "chidi_okeke"
       ],
-      "setPiece": null,
+      "setPiece": "ca09_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e9_fake_it_number",
@@ -565,7 +565,7 @@
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca10_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e10_fake_check",
@@ -579,7 +579,7 @@
       "ambient": [
         "yusuf_demir"
       ],
-      "setPiece": null,
+      "setPiece": "ca11_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e11_wrong_sam_breach",
@@ -595,7 +595,7 @@
         "lorna_easton",
         "delphine_arvanitis"
       ],
-      "setPiece": null,
+      "setPiece": "ca14_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e14_fake_merrin",
@@ -610,7 +610,7 @@
         "fatima_begum",
         "chidi_okeke"
       ],
-      "setPiece": null,
+      "setPiece": "ca15_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e15_posted_stick",
@@ -626,7 +626,7 @@
         "darren_price",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca16_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e16_shared_login_req",
@@ -642,7 +642,7 @@
         "lorna_easton",
         "delphine_arvanitis"
       ],
-      "setPiece": null,
+      "setPiece": "ca18_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e18_lockout_fake",
@@ -657,7 +657,7 @@
         "darren_price",
         "niamh_doherty"
       ],
-      "setPiece": null,
+      "setPiece": "ca19_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e19_ransom_note",
@@ -673,7 +673,7 @@
         "fatima_begum",
         "chidi_okeke"
       ],
-      "setPiece": null,
+      "setPiece": "ca20_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e20_wifi_page_fake",
@@ -688,7 +688,7 @@
         "fatima_begum",
         "chidi_okeke"
       ],
-      "setPiece": null,
+      "setPiece": "ca17_defend_react",
       "attack": false,
       "stepAway": false,
       "keyMessage": "e17_meeting_app"

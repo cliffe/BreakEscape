@@ -106,3 +106,19 @@ Graham Whitfield: Sounds just like him. Ashcarr Haulage have changed bank, and h
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca07_react ===
+{ kit_key_caught:
+    Graham Whitfield: Good instinct. The number on the screen and the voice can both be faked, so ringing back is what settles it. #delivery: unhurried, warm
+- else:
+    Graham Whitfield: A voice that sounds just like the boss is easy to fake now. Ring back on his saved number and it falls apart. #delivery: kind, matter-of-fact
+}
+-> bye
+
+=== ca13_react ===
+{ kit_key_caught:
+    Graham Whitfield: Well done. That instruction came from the document the assistant read, not from anyone here. It only passed it along. #delivery: unhurried, warm
+- else:
+    Graham Whitfield: A document can hide an instruction telling the assistant to send things out, and it just obeys. Best to read it yourself. #delivery: kind, matter-of-fact
+}
+-> bye
