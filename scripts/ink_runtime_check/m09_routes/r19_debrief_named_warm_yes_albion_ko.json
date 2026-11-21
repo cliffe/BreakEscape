@@ -1,0 +1,15 @@
+{
+"globals": { "recruiter_offer": "taken", "sleeper_named": true, "hax_confession_answer": "afterwards", "cage_bin": "derek_file",
+  "sorensen_fate": "ko", "tran_outcome": "ko", "noor_ko": true, "old_coyote_told": true },
+"steps": [
+{ "note": "R19: debrief after buying the name. The player thanks Kowalczyk, backs the memo about Albion and sends the notice. Sorensen was knocked down, Tran too, Noor knocked down, the guard told." },
+{ "talk": "debrief", "picks": ["Thank you. I was glad of it", "About Albion", "Send it", "The archive", "Montana", "Sign it"] },
+{ "said": ["Well? Did my toy earn its keep", "Course you were. I'll tell it you said so", "Then it goes tonight, under my name", "Mr Lawson's file is with Analysis",
+          "Mrs Sorensen woke up asking for a lawyer", "Miss Haddad woke up at her own desk", "Then he was right about Albion", "You thanked her for her cracker", "We take her at the briefing", "Kowalczyk waves"],
+  "notSaid": ["Kowalczyk took a phone call", "Your night guard sat in his truck", "She knows we know", "[choice] The notice."] },
+{ "expect": { "kowalczyk_reply": "warm", "albion_notified": true, "memo_stance": "yes_albion" } },
+{ "credits": true },
+{ "said": ["Given her own line back", "Thanked for her cracker, to her face", "Stopped at the shredder", "Knocked down at her own desk", "In custody. Asked for a phone charger", "Signed for Tesseract too", "Sat out the night in his truck"],
+  "notSaid": ["Took a phone call on the apron", "Wrote down every box"] }
+]
+}

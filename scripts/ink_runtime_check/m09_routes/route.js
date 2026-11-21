@@ -256,7 +256,17 @@ for (const step of route.steps) {
   if (step.credits) {
     out('\n--- credits ---');
     const ev = scenario.music.events.find(e => e.credits);
-    for (const c of ev.credits) { if (c.text && evalCond(c.condition, {})) out(`   ${c.text}`); }
+    // as closing-sequence.js expandCredits: sections list each person's first clause that holds, then their lines
+    for (const c of ev.credits) {
+      if (c.section !== undefined || c.people || c.lines) {
+        if (!evalCond(c.condition, {})) continue;
+        out(`   ${c.section || ''}`);
+        for (const p of c.people || []) { const cl = (p.clauses || []).find(x => evalCond(x.condition, {})); if (cl) out(`   ${p.name}: ${cl.text}`); }
+        for (const l of c.lines || []) { if (l.text && evalCond(l.condition, {})) out(`   ${l.text}`); }
+      } else if (c.text && evalCond(c.condition, {})) out(`   ${c.text}`);
+    }
+    // the closing card lines shown before the credits
+    for (const l of ((ev.closingCard || {}).lines || [])) { if (l.text && evalCond(l.condition, {})) out(`   (card) ${l.text}`); }
     continue;
   }
   // ---- a conversation ----

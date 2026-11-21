@@ -1,0 +1,17 @@
+{
+"globals": { "recruiter_offer": "double_crossed", "sleeper_named": false, "memo_stance": "", "hax_confession_answer": "should_have_told",
+  "cage_bin": "letters", "sorensen_fate": "talked", "legacy_files_saved": true, "maintenance_code_used": true, "noor_told": true, "tran_outcome": "talked" },
+"imports": { "m03_victoria_fate": "recruited" },
+"steps": [
+{ "note": "R18: debrief after the double-cross, Sorensen talked down, letters saved, Victoria's people through the gate. The player answers the memo as no, holds the notice, asks about the archive, then signs." },
+{ "talk": "debrief", "picks": ["No. Not about any of it", "Hold it", "The archive", "Montana", "Sign it"] },
+{ "said": ["Kowalczyk took a phone call when we landed", "Nobody is lifting it", "Dr Adrian Tesseract", "Then it waits behind Montana", "Eleven names. None of them ours", "Sterling's people opened that gate", "Teresa Villanueva left Butte", "She wrote down every box she destroyed",
+          "Then he can make that argument in court", "Everything I have on the bunker is on your phone", "She knows we know", "Her crate is still on the ramp"],
+  "notSaid": ["Then it goes tonight, under my name", "Well? Did my toy earn its keep", "Miss Haddad is in a hotel", "We take her at the briefing", "Across the hangar, Kowalczyk waves"] },
+{ "expect": { "memo_stance": "no", "report_done": true, "debrief_played": true } },
+{ "tasks": { "report_to_netherton": "completed" } },
+{ "credits": true },
+{ "said": ["Told she should have said it", "Took a phone call on the apron and walked away", "Her people opened the cage gate", "Wrote down every box she destroyed", "A witness in Great Falls", "Walked out and made a phone call", "Read the memo on the flight. Wants it argued in court"],
+  "notSaid": ["Stopped at the shredder", "Thanked for her cracker", "Went home and rang her father", "Signed for Tesseract too"] }
+]
+}
