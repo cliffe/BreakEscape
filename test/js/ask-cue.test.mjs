@@ -154,3 +154,14 @@ test('every shell with a step-away reply timer: 45 s default window, and the ask
     }
     assert.ok(n >= 9, `found ${n} step-away reply timers`);
 });
+
+test('the success overlay counts as a panel for bubbles (so a bark under it is handed on and held, not played unseen)', () => {
+    const src = readFileSync(join(sys, 'npc-world-bubbles.js'), 'utf8');
+    const m = /export function successOverlayUp[\s\S]*?\n}\n/.exec(src);
+    assert.ok(m, 'helper exists');
+    const fn = new Function(`${m[0].replace('export ', '')}; return successOverlayUp;`)();
+    assert.equal(fn({ getElementById: () => null }), false);
+    assert.equal(fn({ getElementById: () => ({ style: {} }) }), true);
+    assert.equal(fn({ getElementById: () => ({ style: { display: 'none' } }) }), false);
+    assert.match(src, /return !!\(m && !m\._ending\) \|\| successOverlayUp\(\);/, 'minigameOpenNow reads it');
+});

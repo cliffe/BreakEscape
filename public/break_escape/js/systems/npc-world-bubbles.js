@@ -174,7 +174,18 @@ export function hintsBeyond(hints, next) {
  */
 export function minigameOpenNow() {
     const m = win().MinigameFramework?.currentMinigame;
-    return !!(m && !m._ending);
+    return !!(m && !m._ending) || successOverlayUp();
+}
+
+/**
+ * The success overlay (#scenario-success-screen) covers the room: a bubble under it is unseen, so
+ * it counts like an open panel. The bubble then hands its line on as a remainder toast, which the
+ * bark hold (npc-barks.js, dialogLayerOpen) keeps until the overlay closes.
+ */
+export function successOverlayUp(doc = (typeof document !== 'undefined' ? document : null)) {
+    const el = doc?.getElementById?.('scenario-success-screen');
+    if (!el) return false;
+    return !(el.style && el.style.display === 'none');
 }
 
 // ---- pure helpers ----
