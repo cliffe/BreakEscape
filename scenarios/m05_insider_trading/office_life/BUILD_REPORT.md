@@ -49,14 +49,14 @@ Games: 6975, 6989, 7093, 7099, 7100, 7101, 7102, 7121, 7122 (earlier runs, see h
 | E1 hidden on entry | 7141, 7175 | pass | Thandiwe vis false after server room, unseated |
 | E2 no sprite on chair | 7175 | pass | seated false, alpha 0 |
 | E3 night, Niamh stays | 7179 | pass (static); ten needs-minutes in ev.log | Niamh seated in break room, corridor empty, `qdc_cooler_off` true |
-| E4 skip route | 7122 | Haiku FAIL was a harness artefact | its enter() calls failed with door-locked, so `server_room_entered` never became true and a seated Thandiwe was correctly visible. Her x of -124 is the break room's world offset (break room x origin about -312), not a parked sprite |
+| E4 skip route | 7122 | scripted-run FAIL was a harness artefact | its enter() calls failed with door-locked, so `server_room_entered` never became true and a seated Thandiwe was correctly visible. Her x of -124 is the break room's world offset (break room x origin about -312), not a parked sprite |
 | E4 skip route, real route | 7141, 7150, 7139 | partial, see Known items | hidden on entry (vis false, alpha 0, body off); but visible for 36 to 44 frames (about 1 s) in the corridor view before entry |
 | E5, E6, E7 | | not built | Bernadette is slice 6 |
 | Evening reload | 7175 | pass | Thandiwe hidden, Niamh reseated, 1 sprite each, no errors |
 | Night reload | 7179 | pass | `torres_identified`, `qdc_cooler_off` survive; Niamh seated, Thandiwe hidden, 1 sprite each |
-| Attack Niamh | 7100, rerun | pass; Haiku FAIL was a misread | `isNPCHostile` stays true by design. She gave up the chase (`_gaveUpChase` true, state idle) 2 s after the player left, stood at (202,127), 34 px from her post (192,160), and stayed in the room 16 s. On re-entry she chases again, as the leash allows |
+| Attack Niamh | 7100, rerun | pass; scripted-run FAIL was a misread | `isNPCHostile` stays true by design. She gave up the chase (`_gaveUpChase` true, state idle) 2 s after the player left, stood at (202,127), 34 px from her post (192,160), and stayed in the room 16 s. On re-entry she chases again, as the leash allows |
 | Attack Lisa (no KO) | 7101 | expected | no leash is declared for Lisa in the baseline or the plan (leash only on newcomers), so a struck Lisa follows the player across rooms. Upset and cooler off set |
-| KO Thandiwe | 7099, 7188 run | pass; Haiku "no walk home" is expected | a KO'd NPC stays down (idle, KO, 30 s) and keeps `thandiwe_ko`. Walk home applies to the unstruck staff |
+| KO Thandiwe | 7099, 7188 run | pass; scripted run "no walk home" is expected | a KO'd NPC stays down (idle, KO, 30 s) and keeps `thandiwe_ko`. Walk home applies to the unstruck staff |
 | KO Lisa in front of pair | 7193, 7194 | pass | see section below |
 | Live debrief trust check | 7216, 7212 | pass | `handler_trust` 40 after a Lisa KO and after a Niamh KO, 50 with no trouble; see section below |
 | Cooler pair | 7121 | pass | two cooler uses; Niamh (445,61), Thandiwe (418,61) |

@@ -1,6 +1,6 @@
 # m10 office life: plan review round 9 (delta)
 
-Reviewer tier: Sonnet review tier, read-only. Scope: the diff d560ac9bf..fd588c8e8 of PLAN.md (one sentence in section 6) against REVIEW_R8.md.
+Reviewer tier: delta review tier, read-only. Scope: the diff d560ac9bf..fd588c8e8 of PLAN.md (one sentence in section 6) against REVIEW_R8.md.
 
 **Counts: 0 blockers, 0 majors, 0 minors.** The loop is closed.
 
