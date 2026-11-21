@@ -658,6 +658,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         postitNote: options.postitNote || '',
         showPostit: options.showPostit || false,
         submitText: options.submitText || '', // a note-only post-it view: a submit shows this line, no server check
+        hideNotepadButton: options.hideNotepadButton === true, // no Add-to-notepad button on that view
         lockable: lockable,
         type: type, // Pass type for server validation
         onRefused: options.onRefused, // door_unlock_failed for a wrong password at a door
