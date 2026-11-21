@@ -1,0 +1,10 @@
+{
+ "steps": [
+  {"note": "R2: Kevin's first meeting, the Derek tip, and 'take all of it': one hand-over of lockpicks and keycard, kevin_gear_all set, and the hub then no longer offers either again."},
+  {"talk": "kevin", "picks": ["Happy to help", "Who do you think it is", "I'll look into it", "I'll take all of it", "I'll keep investigating"]},
+  {"said": ["I'm Kevin. IT manager, sole IT department", "I think it's Derek Lawson. Senior Marketing Manager", "Patricia, our manager. She got fired", "Here you go. The lockpicks work on most of the older locks", "[choice] I'll keep investigating. Thanks for the help."],
+   "notSaid": ["[choice] About those lockpicks", "[choice] I need the server room keycard", "Here's the lockpick set. It's professional grade"]},
+  {"expect": {"kevin_gear_all": true}},
+  {"tasks": {"meet_kevin": "completed"}}
+ ]
+}
