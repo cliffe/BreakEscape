@@ -45,6 +45,10 @@ function normalizeStatus(status) {
 
 // The line under the panel's buttons. Only rows that are not GREEN open a detail, so the line
 // never tells the player to select rows when none can be selected (sis02 blind playtest m7)
+// The Confirm button waits for the certification record; this line says so in words (the
+// grey button is not the only cue) without naming where the record is
+export const SIS_CONFIRM_LOCKED_TEXT = 'Certification record needed to confirm tampering';
+
 export function sisHelpText(canCompare, selectableCount) {
     const nothingToSelect = !(selectableCount > 0);
     if (canCompare) {
@@ -83,6 +87,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.setScenarioGlobal('sis_config_seen', true);
         this.render();
         this.bindEvents();
+        this.subscribeCertificationGate();
     }
 
     render() {
@@ -124,8 +129,9 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             </table>
             <div class="sis-actions">
                 <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${escapeHtml(displayDashes(this.compareTitle))}</button>
-                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${escapeHtml(displayDashes(this.confirmLabel))}</button>
+                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn" ${canCompare ? '' : 'disabled aria-describedby="sis-confirm-reason"'}>${escapeHtml(displayDashes(this.confirmLabel))}</button>
             </div>
+            <div class="sis-confirm-reason" id="sis-confirm-reason" role="status">${canCompare ? '' : escapeHtml(SIS_CONFIRM_LOCKED_TEXT)}</div>
             <div class="sis-help" id="sis-help-text">
                 ${escapeHtml(sisHelpText(canCompare, this.rows.filter((r) => normalizeStatus(r.status) !== 'GREEN').length))}
             </div>
@@ -141,6 +147,40 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.overlayEl.id = 'sis-detail-overlay';
         this.container.appendChild(this.overlayEl);
         this.helpTextEl = container.querySelector('#sis-help-text');
+    }
+
+    // Enable Compare and Confirm once the certification record has been seen. The server
+    // still decides whether the tamper report counts.
+    refreshCertificationGate() {
+        const seen = this.hasCertificationDoc();
+        const compareBtn = this.gameContainer?.querySelector?.('#sis-compare-btn');
+        const confirmBtn = this.gameContainer?.querySelector?.('#sis-confirm-btn');
+        const reason = this.gameContainer?.querySelector?.('#sis-confirm-reason');
+        if (compareBtn) compareBtn.disabled = !seen;
+        if (confirmBtn) {
+            confirmBtn.disabled = !seen;
+            if (seen) confirmBtn.removeAttribute('aria-describedby');
+            else confirmBtn.setAttribute('aria-describedby', 'sis-confirm-reason');
+        }
+        if (reason) reason.textContent = seen ? '' : SIS_CONFIRM_LOCKED_TEXT;
+        if (this.helpTextEl) {
+            this.helpTextEl.textContent = sisHelpText(seen, this.rows.filter((r) => normalizeStatus(r.status) !== 'GREEN').length);
+        }
+    }
+
+    subscribeCertificationGate() {
+        if (!window.eventDispatcher?.on) return;
+        this._certHandler = () => this.refreshCertificationGate();
+        this._certEvent = 'global_variable_changed:sis_certification_seen';
+        window.eventDispatcher.on(this._certEvent, this._certHandler);
+    }
+
+    cleanup() {
+        if (this._certHandler && window.eventDispatcher?.off) {
+            window.eventDispatcher.off(this._certEvent, this._certHandler);
+        }
+        this._certHandler = null;
+        super.cleanup();
     }
 
     bindEvents() {
@@ -171,6 +211,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         const confirmBtn = this.gameContainer.querySelector('#sis-confirm-btn');
         if (confirmBtn) {
             this.addEventListener(confirmBtn, 'click', () => {
+                if (!this.hasCertificationDoc()) return;
                 this.showConfirm();
             });
         }

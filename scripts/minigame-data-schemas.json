@@ -379,6 +379,7 @@
       "ransomBitcoin",
       "walletAddress",
       "timerHours",
+      "timerRate",
       "supportPortal",
       "extraLines"
     ]

@@ -138,6 +138,26 @@
     cursor: not-allowed;
 }
 
+.sis-btn-confirm[disabled],
+.sis-btn-confirm[disabled]:hover,
+.sis-btn-confirm[disabled]:active {
+    background: #5d5d5d;
+    color: #cfcfcf;
+    border-color: #444;
+    cursor: not-allowed;
+}
+
+/* The words that say why Confirm is grey; the border and marker keep it from being colour only */
+.sis-confirm-reason {
+    margin-top: 8px;
+    color: #f0d9a0;
+    font-size: 16px;
+}
+
+.sis-confirm-reason:not(:empty)::before {
+    content: '[!] ';
+}
+
 .sis-btn-confirm {
     background: #b32424;
     color: #fff;
