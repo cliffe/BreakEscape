@@ -1,0 +1,13 @@
+{
+  "key": "6fc3f58f49cd4db23af26ea29ff4007e",
+  "npc": "ama_owusu",
+  "text": "A unique password per account in a manager, with MFA, is the one habit that beats both spraying and stuffing.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:54:03Z"
+}
