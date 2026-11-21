@@ -3,7 +3,7 @@
  "steps": [
   { "note": "R21 (PASS 5 design r1, D1/D2/D3/m1/m11/m15): the briefing closed uncommitted. 'Where do I stand?' is walked at every step of the mission order: commit, the checkpoint, the badge (Hollis KO'd, then his badge picked up), the server hall (m1 aims open there), the Kali box, flags 1 and 2, the control room door, flag 3 with the redirect line, root with the clock run out (D2 text, clock answer), the console (D3 text on an early click), the abort, Bring me in. The field guides come from one sub-menu (m15)." },
   { "talk": "phone", "picks": ["Where do I stand?", "I'll check back in"] },
-  { "said": ["The team's still waiting on your call. Make it first, then:", "Get past the checkpoint to the ops floor."], "notSaid": ["[choice] Send me a field guide.", "Tell me where it goes"] },
+  { "said": ["The team's still waiting on your call. Make it first, then:", "Get past the checkpoint to the ops floor."], "notSaid": ["[choice] Send me a field guide."] },
   { "talk": "phone", "knot": "hub", "picks": ["Where the team goes", "Meltdown", "Where do I stand?", "I'll check back in"] },
   { "said": ["Meltdown. Passed up and confirmed.", "Get past the checkpoint to the ops floor. The server hall beyond it wants a badge."] },
   { "expect": { "team_assigned": true, "hurt_line_said": true } },
@@ -57,7 +57,7 @@
   { "talk": "architect", "knot": "seattle_call", "picks": [0] },
   { "said": ["Seattle first. Exactly as scheduled."] },
   { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?"] },
-  { "said": ["Step one ran. Seattle's dark. Steps two to four wait on the abort.", "Get root on their host"], "notSaid": ["Fifteen minutes from your login", "The console up there", "[choice] Remind me of the layout and the clock."] },
+  { "said": ["Step one ran. Seattle's dark. Steps two to four wait on the abort.", "Get root on their host"], "notSaid": ["Fifteen minutes from your login", "The console in there", "[choice] Remind me of the layout and the clock."] },
   { "flag": 4 },
   { "talk": "phone", "knot": "hub", "picks": ["Where do I stand?"] },
   { "said": ["Step one ran. Seattle's dark. Steps two to four wait on the abort.", "Root's in. Put the abort in at the console in the control room."] },

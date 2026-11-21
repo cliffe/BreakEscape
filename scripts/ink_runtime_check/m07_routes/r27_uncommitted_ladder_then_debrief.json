@@ -7,7 +7,7 @@
  { "set": { "elena_outcome": "turned", "scada_password_found": true } },
  { "flag": 2 },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll check back in"] },
- { "said": ["The team's still waiting on your call. Make it first, then:", "Open the control room door, north of the server hall", "Elena gave you the password."], "notSaid": ["Tell me where it goes", "The password's in the listener capture"] },
+ { "said": ["The team's still waiting on your call. Make it first, then:", "Open the control room door, north of the server hall", "Elena gave you the password."], "notSaid": ["The password's in the listener capture"] },
  { "enter": "scada_control" }, { "flag": 3 },
  { "talk": "phone", "knot": "hub", "picks": ["Where do I stand", "I'll check back in"] },
  { "said": ["The team's still waiting on your call. Make it first, then:", "Get root on their host and put the root flag through the relay."] },
