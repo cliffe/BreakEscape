@@ -1,0 +1,45 @@
+{
+ "steps": [
+  {
+   "note": "Arakawa's workshop copy after Kowalczyk went ahead early (wren_warned): his 'Service side' line, then the player names him by mistake. 'Forget I said it' is taken back; confirming sends him to the post."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true,
+    "cracker_rack_seen": true,
+    "workshop_entered": true,
+    "wren_warned": true,
+    "kowalczyk_gone_ahead": true
+   }
+  },
+  {
+   "talk": "aws",
+   "picks": [
+    "You're WREN",
+    "Forget I said it",
+    "You're WREN",
+    "I'm sure"
+   ]
+  },
+  {
+   "said": [
+    "Service side. She always takes the door nobody's watching.",
+    "If that's wrong, Arakawa's off the raid till you can clear him. Sure?",
+    "Okay. I didn't hear it.",
+    "You were standing right next to me. Think.",
+    "Officer Arakawa, back to the post."
+   ],
+   "notSaid": [
+    "Solder. Smells like my dad's garage."
+   ]
+  },
+  {
+   "expect": {
+    "officer_out": "arakawa",
+    "wrong_accusation": true
+   }
+  }
+ ]
+}

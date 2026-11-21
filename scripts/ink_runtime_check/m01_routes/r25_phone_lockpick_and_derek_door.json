@@ -1,0 +1,18 @@
+{
+ "steps": [
+  {"note": "R25: the locked-door hints. The Derek's-office question opens after the player tries the door, the lockpick tip and guide after the pick-up; once the player is inside the office the door question and the lockpick tip are gone."},
+  {"talk": "phone", "knot": "support_hub", "picks": ["I'm good for now"]},
+  {"said": ["[choice] Got any general advice"],
+   "notSaid": ["[choice] Derek's office is locked", "[choice] Lockpicking guidance", "[choice] Send me the lockpicking field guide"]},
+  {"event": "door_unlock_attempt", "data": {"connectedRoom": "derek_office"}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["Derek's office is locked", "Where exactly is Kevin"]},
+  {"said": ["[choice] Derek's office is locked, how do I get in", "That's Derek's office, locked tight", "IT room, east side of the main office"],
+   "notSaid": ["[choice] Lockpicking guidance"]},
+  {"event": "item_picked_up:lockpick", "data": {"itemType": "lockpick"}},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["Send me the lockpicking field guide", "Understood", "Lockpicking guidance", "Any other tips", "I'm good for now"]},
+  {"said": ["[choice] Lockpicking guidance", "[choice] Send me the lockpicking field guide", "I've uploaded the lockpicking field guide to your secure terminal", "Patience is the technique", "Lockpicking is about patience and listening", "There's no timer"]},
+  {"enter": "derek_office"},
+  {"talk": "phone", "knot": "support_hub", "reload": true, "picks": ["I'm good for now"]},
+  {"said": ["[choice] Got any general advice"],
+   "notSaid": ["[choice] Derek's office is locked", "[choice] Lockpicking guidance", "[choice] Send me the lockpicking field guide"]}
+]}

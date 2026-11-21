@@ -1,0 +1,55 @@
+{
+ "imports": {
+  "m09_completed": true
+ },
+ "steps": [
+  {
+   "note": "Arakawa after the split (no forward-post talk): his 02:10 call at the gate plays once with the telescope and the Malhotra interruption, then the daughter and the road (with the Helena line after a finished m09) and 'Hold it'."
+  },
+  {
+   "set": {
+    "split_started": true
+   }
+  },
+  {
+   "talk": "arakawa",
+   "picks": []
+  },
+  {
+   "said": [
+    "Arakawa steps up beside you at the gate and dials.",
+    "Our clock runs on UTC.",
+    "She wants a telescope. I'm getting her a telescope.",
+    "Arakawa, you're off the net."
+   ],
+   "notSaid": [
+    "Holding the gate."
+   ]
+  },
+  {
+   "expect": {
+    "arakawa_call_done": true
+   }
+  },
+  {
+   "talk": "arakawa",
+   "picks": [
+    "Your daughter",
+    "The road",
+    "Hold it"
+   ]
+  },
+  {
+   "said": [
+    "Holding the gate. Nothing's come up the road.",
+    "She turns nine on Saturday.",
+    "The sheriff closed it. Nobody asked who for.",
+    "Nobody did in Helena either.",
+    "Holding."
+   ],
+   "notSaid": [
+    "Case is packed."
+   ]
+  }
+ ]
+}

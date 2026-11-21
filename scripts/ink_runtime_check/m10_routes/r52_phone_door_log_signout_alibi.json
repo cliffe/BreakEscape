@@ -1,0 +1,76 @@
+{
+ "steps": [
+  {
+   "note": "HaX on the phone with the door log and the bench log in hand: the door-log topic (first time, the camera answer), the sign-out sheet, then 'Who was where at ten past?' which sets clue_alibi. The door-log topic only shows while the log has not been texted (the scenario texts it when the clue is read), so the route clears door_log_given to reach it."
+  },
+  {
+   "set": {
+    "clue_door_log": true,
+    "clue_bench_log": true,
+    "whodunit_live": true
+   }
+  },
+  {
+   "set": {
+    "door_log_given": false
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "The door log",
+    "Is there a camera"
+   ]
+  },
+  {
+   "said": [
+    "Ten past two, the core's service door opened to one of our badges.",
+    "The log says Malhotra's badge. Malhotra was on with me at ten past.",
+    "That camera's a box on a bracket. Never wired."
+   ],
+   "notSaid": [
+    "That's the read I texted you."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Who signed for the case"
+   ]
+  },
+  {
+   "said": [
+    "Opened one fifty-two. Kowalczyk and Arakawa."
+   ]
+  },
+  {
+   "expect": {
+    "signout_read": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Who was where",
+    "They were in the tunnel"
+   ]
+  },
+  {
+   "said": [
+    "You had Arakawa at the gate, on the phone to his daughter.",
+    "I had Malhotra, on the line.",
+    "So who wasn't where somebody could see them at ten past?",
+    "Both forks come out by the service door."
+   ],
+   "notSaid": [
+    "upright or not",
+    "Netherton had Vector"
+   ]
+  },
+  {
+   "expect": {
+    "clue_alibi": true
+   }
+  }
+ ]
+}

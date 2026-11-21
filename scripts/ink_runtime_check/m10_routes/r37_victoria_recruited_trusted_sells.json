@@ -1,0 +1,61 @@
+{
+ "imports": {
+  "m03_victoria_fate": "recruited"
+ },
+ "steps": [
+  {
+   "note": "Victoria recruited, Zero Day's share still live: Open it trusts her, she opens the door and sells the raid, goes down the stair (victoria_sold). The moral cost shows in the credits."
+  },
+  {
+   "talk": "victoria",
+   "picks": [
+    "Open it"
+   ]
+  },
+  {
+   "said": [
+    "There's your door. I'm sorry. Zero Day still pays, and you don't.",
+    "I'll see myself down the stair. Don't follow me."
+   ],
+   "notSaid": [
+    "Their share's dead, so they've nothing left to pay me with."
+   ]
+  },
+  {
+   "expect": {
+    "victoria_gallery": "trusted",
+    "victoria_sold": true
+   }
+  },
+  {
+   "talk": "victoria",
+   "picks": []
+  },
+  {
+   "said": [
+    "I told you not to follow me."
+   ],
+   "notSaid": [
+    "Go on. It's open, and I'm still on your side."
+   ]
+  },
+  {
+   "set": {
+    "ending": "arrest",
+    "night_closed": true
+   }
+  },
+  {
+   "credits": true
+  },
+  {
+   "said": [
+    "VICTORIA STERLING: Sold the raid. Gone down the gallery stair."
+   ],
+   "notSaid": [
+    "Opened the lock. Still ours.",
+    "Held, and opened the lock."
+   ]
+  }
+ ]
+}

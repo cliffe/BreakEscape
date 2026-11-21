@@ -1,0 +1,13 @@
+{
+"imports": { "m08_nightshade_triple_agent": true },
+"globals": { "dock_heard": true, "nightshade_file_held": true },
+"steps": [
+{ "note": "R47: the triple-agent branch's Nightshade file topic. HaX lays out send or keep, the player sends it, and the nightshade_send knot says Sent and sets nightshade_shown_file. The topic and the later Send row are gone after." },
+{ "talk": "phone", "knot": "support_hub", "picks": ["Nightshade's file", "Send Nightshade his file", "That's all for now"] },
+{ "said": ["He doesn't know this exists. Send it, and he stops being theirs", "Keep it, and he stays useful", "[choice] Hold it", "Sent. He'll read it tonight"],
+  "notSaid": ["Held. Say the word before the debrief"] },
+{ "expect": { "nightshade_shown_file": true } },
+{ "talk": "phone", "knot": "support_hub", "reload": true },
+{ "notSaid": ["[choice] Nightshade's file", "[choice] Send Nightshade his file"] }
+]
+}
