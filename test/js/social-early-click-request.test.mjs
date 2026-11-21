@@ -22,7 +22,8 @@ const SHELLS = [
   { ep: 'ca02', stub: 'chidi_okeke', choice: 'kit_ca02_cv_choice', knot: 'ca02_cv', right: 'report', wrong: 'enable' },
   { ep: 'ca15', stub: 'fatima_begum', choice: 'kit_ca15_stick_choice', knot: 'ca15_stick', right: 'handin', wrong: 'lost' },
   { ep: 'ca16', stub: 'niamh_doherty', choice: 'kit_ca16_signin_choice', knot: 'ca16_signin', right: 'desk', wrong: 'lend' },
-  { ep: 'ca06', stub: 'zainab_hussain', choice: 'kit_ca06_notice_choice', knot: 'ca06_notice', right: 'check', wrong: 'fine' }
+  { ep: 'ca06', stub: 'zainab_hussain', choice: 'kit_ca06_notice_choice', knot: 'ca06_notice', right: 'check', wrong: 'fine' },
+  { ep: 'ca10', stub: 'darren_price', choice: 'kit_ca10_check_choice', knot: 'ca10_check', right: 'close', wrong: 'paste' }
 ];
 
 // Open the colleague the way person-chat does: story at `start`, globals synced in, then continue.
