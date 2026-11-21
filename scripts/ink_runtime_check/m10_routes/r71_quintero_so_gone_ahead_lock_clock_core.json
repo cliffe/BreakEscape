@@ -1,0 +1,70 @@
+{
+ "steps": [
+  {
+   "note": "Quintero after Kowalczyk went ahead: the security-office copy repeats the service-side line. At the outer lock, a player who picked the clock gets the 'Fair' line and no secret topic. The core copy, unwounded, says 'Door's mine'."
+  },
+  {
+   "set": {
+    "security_office_entered": true,
+    "kowalczyk_gone_ahead": true
+   }
+  },
+  {
+   "talk": "qso",
+   "picks": []
+  },
+  {
+   "said": [
+    "Service side. She always takes the door nobody's watching."
+   ],
+   "notSaid": [
+    "Quiet door.",
+    "Good likeness."
+   ]
+  },
+  {
+   "set": {
+    "outer_lock_open": true,
+    "quintero_stance": "netherton"
+   }
+  },
+  {
+   "talk": "qlock",
+   "picks": [
+    "Hold the door"
+   ]
+  },
+  {
+   "said": [
+    "You picked the clock. Fair. It's still Tesseract's door, and he's holding it open for us.",
+    "He wants you on your own. I'll be on this side of the door.",
+    "Holding it."
+   ],
+   "notSaid": [
+    "You said I was right.",
+    "Why twice the people?",
+    "When he ran his countdown"
+   ]
+  },
+  {
+   "set": {
+    "core_entered": true
+   }
+  },
+  {
+   "talk": "qcore",
+   "picks": [
+    "Thanks"
+   ]
+  },
+  {
+   "said": [
+    "Door's mine. You've got work.",
+    "Don't. Finish it."
+   ],
+   "notSaid": [
+    "One arm's plenty for a door."
+   ]
+  }
+ ]
+}
