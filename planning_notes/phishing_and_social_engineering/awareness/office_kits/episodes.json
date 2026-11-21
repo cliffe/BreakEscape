@@ -290,16 +290,16 @@
     {
       "id": "ca10_downloads_and_fake_checks",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "quayholt_insurance",
       "ep": "ca10",
       "ambient": [
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca10_paste_check",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e10_fake_check",
       "hostLine": true
     },

@@ -2,6 +2,7 @@ VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
 VAR kit_ca05_moved = false
+VAR kit_ca10_moved = false
 
 === start ===
 { kit_defend_done:
@@ -32,6 +33,9 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 -> bye
 
 === ca10 ===
+{ kit_ca10_moved:
+    -> bye
+}
 { kit_key_caught:
     Anjali Rao: Nicely done. Those fake security checks are built to look completely routine.
 - else:

@@ -739,7 +739,7 @@ test('pool exemption and ca00: a shell with no pool or a convention row carries 
 // its tile position or (Quayholt) its chatter fails here.
 const COOLER_COMPANIES = { quayholt_insurance: 7, carrholme_services: 2 };
 const NEEDS_COMPANIES = ['tarrowby_logistics', 'quayholt_insurance', 'carrholme_services'];
-const PC_HOMES = { 'ca09_passwords/kit_chidi_okeke': 'kit_ca09_pc', 'ca16_insider_risk/kit_niamh_doherty': 'kit_ca16_pc', 'ca05_signin_pages/kit_darren_price': 'kit_ca05_pc', 'ca02_cv_lures/kit_chidi_okeke': 'kit_ca02_pc' };
+const PC_HOMES = { 'ca09_passwords/kit_chidi_okeke': 'kit_ca09_pc', 'ca16_insider_risk/kit_niamh_doherty': 'kit_ca16_pc', 'ca05_signin_pages/kit_darren_price': 'kit_ca05_pc', 'ca02_cv_lures/kit_chidi_okeke': 'kit_ca02_pc', 'ca10_downloads_and_fake_checks/kit_darren_price': 'kit_ca10_pc' };
 test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst need and a coordinate needsHome', () => {
   const visited = {};
   for (const r of courseRows.filter((x) => NEEDS_COMPANIES.includes(x.company))) {
@@ -749,7 +749,7 @@ test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst 
     for (const n of npcs) {
       assert.ok(n.needs && typeof n.needs.thirst === 'object' && n.needs.thirst !== null, `${r.id}: ${n.id} has no thirst need`);
       const h = n.needsHome;
-      // Exactly four string homes (ca09, ca16, ca05, ca02). The work need (ca09, ca16) only uses an own-station PC, and the own station is a
+      // Exactly five string homes (ca09, ca16, ca05, ca02, ca10). The work need (ca09, ca16) only uses an own-station PC, and the own station is a
       // string needsHome; with a coordinate home the PC is "another desk" and npc_use_failed never fires (WAVE4_BUILD.md 3.3).
       const pcHome = PC_HOMES[`${r.id}/${n.id}`];
       if (pcHome) { assert.equal(h, pcHome, `${r.id}: ${n.id} needsHome is its PC's id`); continue; }
@@ -892,9 +892,20 @@ const W5 = {
 };
 // Wave 6 (WAVE6_BUILD.md s12): ca10, ca07 and ca18, in the wave 5 shape. EMPTY until each shell's kit step (sheet s13 steps 3-5)
 // adds its entry; every W6 case loops over it, so an empty map passes. Fields as W5's, plus askedFirst, kioskVariants and requestDelay.
-const W6 = {};
+const W6 = {
+  ca10_downloads_and_fake_checks: {
+    ep: 'ca10', company: 'quayholt_insurance', setPiece: 'ca10_paste_check', colleague: 'kit_darren_price', stub: 'darren_price', hostId: 'niamh_doherty',
+    hostSpeaks: false, hostBarks: 0, staffBarks: 3,
+    partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca10_moved',
+    there: 'kit_ca10_there', choice: 'kit_ca10_check_choice', silent: 'silent', knot: 'ca10_check', right: 'close', wrong: 'paste', values: ['close', 'paste', 'silent'],
+    askedFirst: 'kit_ca05_asked', kioskVariants: 2, requestDelay: 5500, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1', panelEntries: 2, arrayWrap: false, walks: 1,
+  },
+};
 // keyed by shell name (the map's own keys), not by `ep` as W5_WALK is
-const W6_WALK = {};
+const W6_WALK = {
+  ca10_downloads_and_fake_checks: { x: 7.4, y: 8.3 },
+};
 const W45 = { ...W4, ...W5 };
 const W456 = { ...W45, ...W6 };
 const W56 = { ...W5, ...W6 };
@@ -1433,7 +1444,7 @@ test('wave 4: PC text order matches the sprite order; text objects are interacta
 });
 
 test('wave 4: host recap is gated until the chain ends, in every host ink', () => {
-  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum' };
+  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum', ca10_downloads_and_fake_checks: 'niamh_doherty' };
   for (const [name, h] of Object.entries(hosts)) {
     const ep = ({ ...W4, ...W5, ...W6 })[name].ep;
     const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
