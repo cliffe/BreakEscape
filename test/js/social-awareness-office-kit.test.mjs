@@ -1661,7 +1661,8 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     assert.equal(r6.condition, `${c.v} && ${c.Q}`, `${name}: row 6 reads quiet too (no asked for a request nobody heard)`);
     assert.deepEqual([r5.delayMs, r6.delayMs], [4500, 4500], `${name}: rows 5 and 6 share the 4500 delay`);
     assert.deepEqual(r6.setGlobal, { [`kit_${ep}_asked`]: true }, `${name}: row 6 sets only asked`);
-    assert.ok(r5.delayMs - r4.delayMs >= 4000, `${name}: chain barks start at least 4 s apart`);
+    // row 5 fires from `there`, which row 3 sets after its own delay
+    assert.ok(r3.delayMs + r5.delayMs - r4.delayMs >= 4000, `${name}: chain barks start at least 4 s apart`);
     const close = cm.find((m) => m.eventPattern === `conversation_closed:${w.colleague}`);
     only(close, 'row 7');
     assert.equal(close.condition, `globalVars.${ch} === 'asked' && ${c.O}${ep === 'ca14' ? ` && ${c.seen}` : ''}`, `${name}: row 7 close turns asked into ${w.silent}`);
