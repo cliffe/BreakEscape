@@ -346,7 +346,7 @@ Priya S.: Ofgem's the competent authority, with the energy department. We're tol
 Priya S.: Did Trent Water need telling under NIS?
 * [Yes. Water supply is an essential service, so they fall under NIS.]
     Priya S.: Some water companies are. Trent Water runs one small pumping station, well under the thresholds. Telling them is a duty of care, not a NIS one.
-* [No. A station that small is under the NIS thresholds, so it was duty of care.]
+* [No. One small station is under the NIS thresholds, so it is duty of care.]
     Priya S.: Right. They're under the thresholds, so NIS doesn't apply. They share your file server, though, so they need to know.
 -
 { trent_water_notified:
