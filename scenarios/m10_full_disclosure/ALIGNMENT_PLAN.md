@@ -60,7 +60,7 @@ Each phase leaves the mission validator-clean and playable. Phases 1 and 2 can r
 - **Endings say what they bought** (A8): Netherton's surrender line after "There will be no trial."; lethal's martyr line. Files: six_oclock.ink:265-267, 422-427.
 - **Credits tidy** (m4): one entry per SAFETYNET person (merge into SAFETYNET), checked against `credits_sections.json`, which the ERB's guard compares (erb:1040-1046). **Citadel** (m5): one Netherton line by a short fixed priority.
 - Acceptance: on each of the six endings, the card and credits start only after the player has seen every closing line; `AGENT 0x00` prints on every ending; at least one 06:00 line on the player's side names an earlier mission on a save with m02–m04 played; no `||` in any card or credit condition.
-- Verify: ink compile, validator (full, by the fixer), dialoguelint, reopencheck, tagdiff, then a Sonnet browser run of all six endings on :3001 (`tools/playtest/new-game.rb` with the import presets the confirmation playtests used), with screenshots of the close and `verify-run.rb`.
+- Verify: ink compile, validator (full, by the fixer), dialoguelint, reopencheck, tagdiff, then a scripted browser run of all six endings on :3001 (`tools/playtest/new-game.rb` with the import presets the confirmation playtests used), with screenshots of the close and `verify-run.rb`.
 
 ### Phase 2: the core's record speech and the bookends (A3, A4, A6, m1, m7)
 
@@ -117,7 +117,7 @@ Everything else in this plan is mission-local and decidable by the orchestrator 
 
 After each phase: ink compile; `ruby scripts/validate_scenario.rb scenarios/m10_full_disclosure/scenario.json.erb` (full, by the fixer); `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/m10_full_disclosure/`; reopencheck for the phones; `tagdiff.mjs --old` against the snapshot, with every changed tag, knot, variable, divert or condition explained; and grep for every claimed line (AGENTS.md "Check that a claimed fix happened").
 
-Browser (Sonnet, :3001, keyless):
+Browser (scripted run, :3001, keyless):
 - after phase 1, all six endings, watching the close from the ending pick to the end of the roll, on a full save and a cold start;
 - after phase 2, the core on a full save, an m05 `combat_lethal` save and a cold start, with a reload mid-speech;
 - after phase 3, the music on lethal and executed with a reload at the core.

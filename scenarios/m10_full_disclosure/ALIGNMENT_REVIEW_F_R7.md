@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only and static (no browser). I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R6 and CONTRACT §11 (rounds 1 to 6). The tree is HEAD e983ac9d. The R6 fixes are that commit; d547c33a and afff86ed don't touch m10, and m10 has no uncommitted changes. I read e983ac9d as a diff, then `six_oclock`, `hearing` and `citadel` in full, Tesseract's database, Join and ending knots, `close_compute()`, Victoria's and Vos's gallery ink, the gallery and share mappings, the card, every credits section and the `credits_for` merge. No VM material was opened. Scratch files are in `scratchpad/m10_r7/`.
+2026-10-22. Fresh reviewer, read-only and static (no browser). I worked the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, R1 to R6 and CONTRACT §11 (rounds 1 to 6). The tree is HEAD e983ac9d. The R6 fixes are that commit; d547c33a and afff86ed don't touch m10, and m10 has no uncommitted changes. I read e983ac9d as a diff, then `six_oclock`, `hearing` and `citadel` in full, Tesseract's database, Join and ending knots, `close_compute()`, Victoria's and Vos's gallery ink, the gallery and share mappings, the card, every credits section and the `credits_for` merge. No VM material was opened. Scratch files are in `scratchpad/m10_r7/`.
 
 - **Ink:** R6 changed no ink. Every `.json` is newer than its `.ink`.
 - **Validator** (`--skip-ink --no-graph`): 0 errors. The same 2 objective-wiring warnings (`aside_done`, `blast_tunnel`) and the long-standing advisory list as R6.

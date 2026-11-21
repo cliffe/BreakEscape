@@ -1,6 +1,6 @@
 # m10 Full Disclosure: NPC dialogue review, round 1
 
-Phase 4 (dialogue), round 1. Reviewer: Opus, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run in full over all 31 inks in `ink/`, `texts/BARKS_AND_TEXTS.md`, `credits_sections.json` and the readable text, objectives, credits and closing card in `scenario.json.erb`. Context: CONTRACT.md §11 (stage 8 through alignment round 12) and the "Deferred to phase 4" sections of ALIGNMENT_REVIEW_F_R7 to R12.
+Phase 4 (dialogue), round 1. Reviewer: review agent, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run in full over all 31 inks in `ink/`, `texts/BARKS_AND_TEXTS.md`, `credits_sections.json` and the readable text, objectives, credits and closing card in `scenario.json.erb`. Context: CONTRACT.md §11 (stage 8 through alignment round 12) and the "Deferred to phase 4" sections of ALIGNMENT_REVIEW_F_R7 to R12.
 
 No audio exists yet, so every voiced change below costs nothing now. The voiced column still matters: it is the list of clips the TTS stage will make.
 

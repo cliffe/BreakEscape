@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. A fresh Opus reviewer, read-only and static (no browser session). It used the `mission-alignment-plan` skill's ten-row rubric, as a single reviewer the way m05's pass 5 did; the plan that follows from it is `ALIGNMENT_PLAN.md`. This kind of game is a SAFETYNET campaign mission (a TV spy thriller), and this one is the Season 1 finale. The user's test for it: the ending must make the player feel what their m01–m09 choices did, and close the season's story.
+2026-10-22. A fresh reviewer, read-only and static (no browser session). It used the `mission-alignment-plan` skill's ten-row rubric, as a single reviewer the way m05's pass 5 did; the plan that follows from it is `ALIGNMENT_PLAN.md`. This kind of game is a SAFETYNET campaign mission (a TV spy thriller), and this one is the Season 1 finale. The user's test for it: the ending must make the player feel what their m01–m09 choices did, and close the season's story.
 
 I judged the built mission (`scenario.json.erb`, `ink/`, `texts/BARKS_AND_TEXTS.md`, `credits_sections.json`, `mission.json`), with `FINALE_ARC.md` §4 used only to see what each beat was meant to do. Line numbers are from the working tree on 2026-10-22. I didn't open any VM material (`VM_SHAPE.md`, `FINALE_VM_PLAN.md`, `SECGEN_MODULE_PLAN.md`, `STAGE_8_VM_ANSWERS.md`, SecGen or the field guides), and VM flags are described by story meaning only.
 

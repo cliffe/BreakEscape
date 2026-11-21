@@ -1,6 +1,6 @@
 # m10 Full Disclosure: NPC dialogue review, round 2
 
-Phase 4 (dialogue), round 2. Reviewer: Opus, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, the closing card and the credits. Scope also covers the R1 fixes and the educational R1 and scenario design R1 lines (CONTRACT §11, last three paragraphs; commit 87dbe9db).
+Phase 4 (dialogue), round 2. Reviewer: review agent, read-only on game files. Skill: `.claude/skills/npc-dialog-review/SKILL.md`, run afresh over all 31 inks, the HaX texts and barks in `scenario.json.erb`, the closing card and the credits. Scope also covers the R1 fixes and the educational R1 and scenario design R1 lines (CONTRACT §11, last three paragraphs; commit 87dbe9db).
 
 **Verdict: accept with fixes.** 0 blockers, 0 major, 5 minor, 7 nits. All 17 R1 minors and both majors are closed; the two departures (m7 Wendell, m13 Malhotra) hold.
 
@@ -72,7 +72,7 @@ Proposed: add `&& !globalVars.m04_voltage_captured` to the condition.
 
 **m5. T-60 assumes m02 on a cold start.** `scenario.json.erb:1826`. **T.**
 `Upper and lower case, digits, no spaces. You've seen that shape before.` The ERB comment says m02 taught the shape. A cold-start player hasn't seen it (CONTRACT §5.6, "the cold start reads cold").
-Proposed: keep the current text on `globalVars.m02_completed === true`, and add a cold twin on `!globalVars.m02_completed`: `Upper and lower case, digits, no spaces. That's encoded, not encrypted. Your kit can read it.` Ask opus48 to confirm the wording is safe; it names only the class.
+Proposed: keep the current text on `globalVars.m02_completed === true`, and add a cold twin on `!globalVars.m02_completed`: `Upper and lower case, digits, no spaces. That's encoded, not encrypted. Your kit can read it.` Ask the VM agent to confirm the wording is safe; it names only the class.
 
 ### Nits
 
@@ -81,7 +81,7 @@ Proposed: keep the current text on `globalVars.m02_completed === true`, and add 
 | n1 | `m10_vos.ink:110` | "My delivery came at four. Now I am waiting for a flight. You are in the way of that too." ("too" implies the player blocked the delivery, which arrived) | "…Now I am waiting for a flight. You are in the way of it." | V |
 | n2 | `m10_six_oclock.ink:652` | "They still are not. That was my signature too." (the stress falls oddly when spoken) | "They are still not. That was my signature too." | V |
 | n3 | `m10_wendell.ink:70` | A reopen at the switch shows "[The one marked gallery shutter.]" with no line before it | Optional: keep the departure. If a line is wanted, open the knot with `{wendell_switch > 1: Wendell Briggs: Well?}`, which uses the visit count rather than a flag inklint flagged | V (optional) |
-| n4 | `m10_phone_agent0x99.ink:541–542` | "He walled his box off, the way the release service was boxed in. Isolation like that can still be broken out of. / And he always builds his own way out first. Find his." (box/boxed; and the m09 tape motif, which pays off at `tesseract:905–907` "Service door… He always builds his own way out first.", is spent here first) | "He walled his box off, the same way the release service was. You've broken out of one of those tonight. / He'll have left himself a way out. Find it." Ask opus48 to confirm, since this is VM-adjacent | T |
+| n4 | `m10_phone_agent0x99.ink:541–542` | "He walled his box off, the way the release service was boxed in. Isolation like that can still be broken out of. / And he always builds his own way out first. Find his." (box/boxed; and the m09 tape motif, which pays off at `tesseract:905–907` "Service door… He always builds his own way out first.", is spent here first) | "He walled his box off, the same way the release service was. You've broken out of one of those tonight. / He'll have left himself a way out. Find it." Ask the VM agent to confirm, since this is VM-adjacent | T |
 | n5 | `scenario.json.erb:1824` (T-59) | "…The keys' wear and the rota will get you in." | "…The worn keys and the rota will get you in." | T |
 | n6 | `m10_tesseract.ink:558` | "[Nobody can know a number like that.]" is 7 words beside 11–14, and it answers the number he has just raised (§5.4, R3-02) | "[Your figure's a guess dressed up as sums. Nobody can know that.]" (12 words). His reply "I can. I did the sums. You didn't read them." still fits | T |
 | n7 | `m10_carryover_vars.ink:468` | R1 n13 gated Elena's ELSEWHERE row, but `close_compute` still picks `close_human = "elena"` on a funded arrest, so the card prints "Elena Torres is in treatment. It's working." beside "David Torres: serving. His wife's treatment goes on." | `- m05_elena_treatment_funded and m05_final_choice != "arrest":` (the card then falls through to the next human line) | T |

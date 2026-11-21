@@ -62,7 +62,7 @@ Cost: one object moved and reworded, one unvoiced line, two contract lines. No n
 
 **Evidence.** HaX's `hatch_topic`, restored under F13: "Get out of the container onto that host. His disarm sits on that box." (phone:564). Everywhere else in the game the disarm is Tesseract's console in the core: its stopped state reads "His console. The cover is down. The disarm's lamp is green." (erb:4191), and the clocks read "RELEASE: DISARMED" only after that choice (erb:122, 125). Flag 3 opens the gallery stair and changes nothing about the release. A player can fairly take HaX's line to mean flag 3 stops the release, then find the clock still running and the real switch two rooms on.
 
-F13 is the user's ruling and the reference stays. Only the wording needs to say that what's on the release host is a record of the disarm, not the switch. A story-only reword such as "His disarm's written down on that box. The switch is still his." keeps the F13 reference and points forward to the console. B5 item 4 asks for this wording to go past the user or opus48, so route it there rather than to a fixer. It is an unvoiced hub line.
+F13 is the user's ruling and the reference stays. Only the wording needs to say that what's on the release host is a record of the disarm, not the switch. A story-only reword such as "His disarm's written down on that box. The switch is still his." keeps the F13 reference and points forward to the console. B5 item 4 asks for this wording to go past the user or the VM agent, so route it there rather than to a fixer. It is an unvoiced hub line.
 
 ### Nits
 
@@ -148,7 +148,7 @@ New in this round:
 1. **Tag position.** The Maintenance Tag at (15, 4) (erb:2606) is visible and clickable and isn't under `arakawa_gate` at (16, 5) once he is revealed. After m1, it sits by the gate terminal's stand.
 2. **Card position.** The Operator's Duty Card at (17, 5) (erb:3680) lies on open floor by the east racks, clear of both hall patrol lines, and is clickable.
 3. **Envelope after M1.** In the core, visible on entry, clickable while Tesseract's arrival is parked, and not reachable before the outer lock opens (Victoria's and Vos's open-from-inside routes too).
-4. **Each find.** Picking up adds a note whose text shows the account lines (PLACEHOLDER until opus48 or the user sets them). No other mapping fires.
+4. **Each find.** Picking up adds a note whose text shows the account lines (PLACEHOLDER until the VM agent or the user sets them). No other mapping fires.
 5. **HaX's three steers.** `monitor_topic` after the door scene and before flag 1; `hatch_topic` after flag 2 and before flag 3; `box_topic` in the core after the lock, before flag 4. Each names its find and then retires.
 6. **No early hold (the M1 regression check).** On a save at the gallery with the lock shut, no object anywhere reachable carries the core host key.
 7. **Step-1 re-ring (n1).** At HaX's step 1, "[Give me a minute.]" then wait: after the fix, no ring straight back.
@@ -159,8 +159,8 @@ Carried from R2 §4, still to be run (texts and buttons as now named): the cold-
 
 ## 5. For the user (not reasoned about here)
 
-- **Flag 2 has no find.** B5 lists finds for flags 1, 3 and 4 only. If flag 2 needs a login or key of its own on the VM, the rule wants a find for it as well, in the server hall (the only room that satisfies the rule for its station). VM side, so it goes to opus48 or the user.
-- **m2's wording** touches the F13 reference and goes via the user or opus48 (B5 item 4).
+- **Flag 2 has no find.** B5 lists finds for flags 1, 3 and 4 only. If flag 2 needs a login or key of its own on the VM, the rule wants a find for it as well, in the server hall (the only room that satisfies the rule for its station). VM side, so it goes to the VM agent or the user.
+- **m2's wording** touches the F13 reference and goes via the user or the VM agent (B5 item 4).
 
 ---
 

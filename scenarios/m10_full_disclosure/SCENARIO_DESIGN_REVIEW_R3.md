@@ -1,6 +1,6 @@
 # m10 Full Disclosure: scenario design review, round 3
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 3. Tree at 1625879bc, which applied scenario design R2, dialogue R2, puzzle chains R1 and playtest R1 together. Dialogue R3 and puzzle chains R2 are reading m10 in parallel, so I've left wording and the cut's step design to them unless it changes what the player can do or know.
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 3. Tree at 1625879bc, which applied scenario design R2, dialogue R2, puzzle chains R1 and playtest R1 together. Dialogue R3 and puzzle chains R2 are reading m10 in parallel, so I've left wording and the cut's step design to them unless it changes what the player can do or know.
 
 **Method.**
 - **Validator.** `ruby scripts/validate_scenario.rb scenarios/m10_full_disclosure/scenario.json.erb --no-graph`, exit 0. Dialogue lint run separately. Both outputs are in the session scratchpad under `sdr3/`.

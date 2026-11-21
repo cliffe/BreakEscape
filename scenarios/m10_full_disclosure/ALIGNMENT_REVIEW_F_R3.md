@@ -2,7 +2,7 @@
 
 ## Scope and checks run
 
-2026-10-22. Fresh Opus reviewer, read-only and static (no browser). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, `ALIGNMENT_REVIEW_F_R1.md`, `ALIGNMENT_REVIEW_F_R2.md`, CONTRACT.md §11 (alignment rounds 1 and 2, ink and JSON) and m09's export list (m09 CONTRACT §5). The tree is HEAD 2937fdb9; m10's only uncommitted change is `dungeon_graph.md`. No VM material was opened.
+2026-10-22. Fresh reviewer, read-only and static (no browser). I ran the `mission-alignment-plan` ten-row rubric as a single reviewer against `ALIGNMENT_PLAN.md`, `ALIGNMENT_REVIEW_F_R1.md`, `ALIGNMENT_REVIEW_F_R2.md`, CONTRACT.md §11 (alignment rounds 1 and 2, ink and JSON) and m09's export list (m09 CONTRACT §5). The tree is HEAD 2937fdb9; m10's only uncommitted change is `dungeon_graph.md`. No VM material was opened.
 
 - **Ink compile:** every `.json` is newer than its `.ink`.
 - **Validator** (`--skip-ink --no-graph`): no errors. It reports the same 2 objective-wiring warnings and 80 issues as before (the `aside_done` and `blast_tunnel` pairs, the import-default reminders, 4 behaviourless placeholder NPCs).
