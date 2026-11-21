@@ -58,12 +58,13 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 20 Nov 2026 · game build 1f651abce</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 21 Nov 2026</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m02" aria-selected="true" data-cut="m02">m02 · v3</button>
+    <button class="tab" role="tab" id="tab-m03" aria-selected="true" data-cut="m03">m03 · v1</button>
+    <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v3</button>
     <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
   </nav>
 
@@ -79,6 +80,34 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m03: {
+    doc: "feedback/m03_trailer_v1",
+    title: "m03 Ghost in the Machine · 60 s trailer · round v1",
+    video: "/_blob/e7db2ee71dd0679f8d3b36eb3eb071dc", poster: "/_blob/20818451951427c8dba44855d6f407d3",
+    stats: ["60.000 s", "1920×1080 30 fps", "−14.1 LUFS", "true peak −1.49 dB", "16:9 only"],
+    changed: [
+      "First cut. Music: CutScene \"Shadow Code 1\" (the mission's night playlist), picked by beat analysis; the drop lands on the motion lights in the main hallway.",
+      "Built like m02: HaX hook, gameplay montage, Real Hacking (nmap recon, MAC line cropped), three character beats each with an approach first, a crescendo, then the villain close.",
+      "Ffion, Zainab and Yusuf speak with the voice starting before the cut; all lines finish.",
+      "A different spy in each map shot (the m01/m02 rotation).",
+      "Danny Foster left out (a face flash was allowed but not needed)."
+    ],
+    standin: [
+      "The guard's caught-picking beat (Terry: \"Picks. Right. We're done talking.\") and Victoria Sterling's close (\"Competent is cheap. That's not why you're here.\") are stand-in footage with no voice: the two takes wait for today's voice and lip-sync fixes to reach main. They will be recorded next round.",
+      "Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."
+    ],
+    srt: "1\n00:00:05,820 --> 00:00:08,850\nAgent HaX: They don't run the attacks. They arm the cells that do.\n\n2\n00:00:24,570 --> 00:00:27,290\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n3\n00:00:28,080 --> 00:00:31,450\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n4\n00:00:31,900 --> 00:00:35,890\nYusuf Demir: Afternoon. If you're my client, you're very late.",
+    questions: [
+      {k:"hook", t:"HaX's hook line under the title", o:[["cells","\"They don't run the attacks. They arm the cells that do.\"","States the mission's premise (in this cut)",1],["hospital","\"You worked St. Catherine's last month. The hospital that went dark.\"","Links back to m02; recorded and ready to swap in"]]},
+      {k:"card", t:"Threat card wording (m01 \"The Entropy\", m02 \"Before the Ward Goes Dark\")", o:[["sale","\"Before the Next Sale\"","As in this cut",1],["other","Other wording","Write it in the note"]]},
+      {k:"music", t:"Music: \"Shadow Code 1\". The lull after 44 s carries the guard and Victoria beats", o:[["keep","Keep","Night-playlist track, unused by m01/m02",1],["midnight","SpyAction \"Midnight Trigger\"","Fallback from the scouting notes"],["cold","\"Cold Bond Circuit\"","Second fallback"]]},
+      {k:"victoria", t:"Victoria Sterling as the villain close (she is the briefed target, not a twist)", o:[["yes","Show her","Wide, then close-up with her line",1],["no","Leave her out","End on the guard beat instead"]]},
+      {k:"voices", t:"Ffion, Zainab and Yusuf come in 1 to 2 dB under HaX, because the music is louder in their section than under the hook", o:[["ok","Fine as is","Close enough at speed",1],["music","Duck the music more under them","Voices stay, the bed drops"]]},
+      {k:"console", t:"Real Hacking: nmap recon only, as agreed for m02", o:[["keep","Enough","2.2 s, four service banners",1],["more","Show more of the solve","Needs a longer console beat"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
   m02: {
     doc: "feedback/m02_trailer_v3",
     title: "m02 Ransomed Trust · 60 s trailer · round v3",
@@ -126,8 +155,8 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m02";
-let answers = {m02:{}, m01:{}};
+let current = "m03";
+let answers = {m03:{}, m02:{}, m01:{}};
 let db = null;
 const LS = "safetynet_trailer_review_v1";
 try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
@@ -168,7 +197,7 @@ function render(){
 
 function fillCopy(){
   const lines=[];
-  for (const key of ["m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
+  for (const key of ["m03","m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
     const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
     got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
   document.getElementById("copybox").value=lines.join("\n");
@@ -190,6 +219,6 @@ document.getElementById("copybtn").addEventListener("click",async()=>{ const box
 render();
 
 (async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
-  for (const key of ["m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  for (const key of ["m03","m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
   render(); } catch(_){} })();
 </script>

@@ -1,6 +1,6 @@
 {
  "mission": "m03",
- "id": "m03_trailer60_v1",
+ "id": "m03_trailer60_v1c",
  "title": "SAFETYNET: Licence to Hack, m03 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -498,7 +498,7 @@
     }
    },
    "audio": {
-    "gain_db": -1,
+    "gain_db": 2.0,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.33,
@@ -577,7 +577,7 @@
     }
    },
    "audio": {
-    "gain_db": -2,
+    "gain_db": 3.0,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.3,
@@ -656,11 +656,11 @@
     }
    },
    "audio": {
-    "gain_db": 1.5,
+    "gain_db": 5.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.6,
-    "post": 0
+    "post": 0.2
    },
    "spoiler": {
     "reviewed": true,

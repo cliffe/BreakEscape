@@ -20,3 +20,9 @@
 - Music fit by ear: is the lull (44.5-58) under the placeholders and bumper acceptable? Alternatives Midnight Trigger, Cold Bond Circuit.
 - Hook line and card wording (Q3/Q4) still for the user; hook picture cuts at 9.4 s before the menu (menu shows from about 12.0).
 - 9:16 and 1:1 not built (only 16:9 framing in the edit).
+
+## v1c (2026-11-21, orchestrator)
+- Frame check of v1 by the orchestrator: contact sheet and a 6 fps strip over the crescendo (40.3-44.2 s): face flashes are zoomed portraits, flag panel empty, keypad "137_" differs from the safe code 5829 position by position. Lines all finish inside their audio windows (silencedetect on each take).
+- Voices: raised Ffion +3, Zainab +5, Yusuf +4 dB (Yusuf post 0.2) over v1. Short-term max in the mix: HaX -11.4, Ffion -12.6, Zainab -13.1, Yusuf -13.4 LUFS. The extra +2 dB from v1b moved them only ~0.6 dB, so the dialogue bus is compressing; the rest of the gap is the louder music after the drop. Asked on the page (duck the music more vs fine).
+- Render `~/video-takes-local/m03/renders/m03_trailer60_v1c_16x9.mp4`, 60.000 s, -14.07 LUFS, TP -1.49. Review copy asset e7db2ee71dd0679f8d3b36eb3eb071dc, poster 20818451951427c8dba44855d6f407d3.
+- Page tab "m03 · v1" on https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea, doc `feedback/m03_trailer_v1`. Questions: hook, threat card, music, Victoria, voices, console, pace, seen.
