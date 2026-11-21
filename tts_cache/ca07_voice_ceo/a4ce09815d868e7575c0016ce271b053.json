@@ -1,0 +1,13 @@
+{
+  "key": "a4ce09815d868e7575c0016ce271b053",
+  "npc": "agnieszka_duda",
+  "text": "Ravinder's rung me too, Graham. He knew about Ashcarr, and wants his salary paid somewhere new.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:08Z"
+}
