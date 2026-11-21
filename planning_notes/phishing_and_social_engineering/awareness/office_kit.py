@@ -155,7 +155,7 @@ REPLY_MS = 45000   # the step-away reply window; a set piece may override it wit
 
 def step_away_defaults(piece):
     """The one shared step-away mechanism (ask cue, fair reply window), applied to every set piece
-    whose reply timer starts on an `*_asked` global and lapses a `*_choice` to 'silent'. Returns a
+    whose reply timer starts on an `*_asked` global and lapses a `*_choice` to its no-answer value ('silent', or 'leave' in ca15). Returns a
     copy. The timer's delayMs becomes the piece's `replyMs` (default REPLY_MS). The mapping that sets
     the asked global gets `askCue` (a marker and a toast naming the colleague when it fires) and
     `whenPerceivable` (it waits until no minigame is open and the colleague is on camera or in the
@@ -165,7 +165,7 @@ def step_away_defaults(piece):
     asked = set()
     for t in piece.get('timers', []):
         sg = t.get('setGlobal') or {}
-        if str(t.get('startOnGlobal', '')).endswith('_asked') and 'silent' in sg.values():
+        if str(t.get('startOnGlobal', '')).endswith('_asked') and any(str(k).endswith('_choice') for k in sg):
             t['delayMs'] = piece.get('replyMs', REPLY_MS)
             asked.add(t['startOnGlobal'])
     for rec in piece.get('staff', {}).values():

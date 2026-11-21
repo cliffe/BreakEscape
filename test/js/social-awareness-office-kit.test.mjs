@@ -294,7 +294,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue'];
 const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
 // the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
 const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);
@@ -1382,7 +1382,7 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     const dm = cm.find((m) => m.eventPattern === `global_variable_changed:${ep === 'ca15' ? 'kit_ca15_done' : done}` && m.setGlobal && m.setGlobal[ch] === w.silent);
     assert.ok(dm && dm.condition.includes(`${ch} === 'asked'`), `${name}: done turns asked into ${w.silent}`);
     const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);
-    assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 20000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
+    assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 45000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
     const fb = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done`);
     assert.ok(fb && fb.startOnGlobal === `kit_${ep}_out` && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 90000 : 60000), `${name}: done fallback`);
     if (!(name in W5 || name in W6)) {
@@ -1719,7 +1719,7 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     assert.equal(r12.condition, `${c.v} && globalVars.${ch} === 'asked'`, `${name}: row 12 done turns asked into ${w.silent}`);
     const T = (id) => (sc.timers || []).find((t) => t.id === `kit_${ep}_t_${id}`);
     assert.deepEqual([T('there').startOnGlobal, T('there').delayMs, T('there').condition, T('there').setGlobal], [`kit_${ep}_out`, 4000, `!globalVars.${w.there}`, { [w.there]: true }], `${name}: t_there`);
-    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 20000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
+    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 45000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
     assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_out`, 60000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
   });
 });

@@ -102,7 +102,7 @@
     {
       "id": "kit_ca15_t_tail",
       "startOnGlobal": "kit_ca15_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca15_stick_choice === ''",
       "setGlobal": {
         "kit_ca15_stick_choice": "leave"
@@ -955,7 +955,8 @@
               "onceOnly": true,
               "delayMs": 4500,
               "bark": "No name on it, nothing. What do you reckon I do with it?",
-              "targetKnot": "ca15_stick"
+              "targetKnot": "ca15_stick",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca15_there",
@@ -964,7 +965,9 @@
               "delayMs": 4500,
               "setGlobal": {
                 "kit_ca15_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true
             },
             {
               "eventPattern": "conversation_closed:kit_fatima_begum",
