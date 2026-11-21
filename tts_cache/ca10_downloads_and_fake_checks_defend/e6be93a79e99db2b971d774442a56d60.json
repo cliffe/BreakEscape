@@ -1,0 +1,13 @@
+{
+  "key": "e6be93a79e99db2b971d774442a56d60",
+  "npc": "niamh_doherty",
+  "text": "Anything telling you to paste, run or install to carry on is the tell. Real software comes from a route you already trust.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:52:20Z"
+}
