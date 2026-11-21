@@ -299,7 +299,7 @@ test('analyst sets (the lab) get the same lines; a Report there is still "never 
     const s = open(set([invoice, p1], { scoringProfile: 'analyst', verifyVerdict: false, stage: 'mission' }));
     click($(s, '.tri-start'));
     act(s, 'r_invoice', 'report');
-    assert.match($(s, '.tri-card-verdict').textContent, /never wrong/);
+    assert.match($(s, '.tri-card-verdict').textContent, /is safe, but it costs a colleague a little time/);
     act(s, 'p1', 'report', ['lookalike_domain']);
     toResult(s);
     const g = genuineState(s);

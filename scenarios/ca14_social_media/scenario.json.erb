@@ -523,14 +523,14 @@
         "strings": {
           "leaveOff": "Why it matters: "
         },
-        "note": "Each change closes a found fact on the board. The same settings are the ones to check on your own profile."
+        "note": "Each change closes a fact an attacker could find on a public profile, whether or not you pinned it. The same settings are the ones to check on your own profile."
       },
       "strings": {
         "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "conceptPanel": [
           {
             "heading": "Where your posts lead",
-            "text": "To a real attacker, the message you composed under a colleague's name is the start of a second account in a partner's name that the studio trusts. The next move is to trade on that borrowed name, nudging someone into resetting a security answer or opening a warmer approach to the rest of the office. Checking a new contact by a route you already know leaves the fake account and its flattery with nowhere to go.\n\nA handful of public posts, a leaving card, a lanyard, a pet, were enough to build the approach, and one trusted reply gave up a security answer that then had to be reset. A week on, the fake partner account was reported and the studio had the awkward round of comparing notes."
+            "text": "To a real attacker, the message you composed under a colleague's name is the start of a second account in a partner's name that the studio trusts. The next move is to trade on that borrowed name, nudging someone into resetting a security answer or opening a warmer approach to the rest of the office. Checking a new contact by a route you already know leaves the fake account and its flattery with nowhere to go.\n\nDani's public posts held enough to build an approach like this: a leave countdown, a photo with a lanyard in shot, a dog's name given as a security-question answer. A colleague who trusted the borrowed name and acted on it could hand over access, or a security answer that then has to be reset. A week on, the fake partner account was reported and the studio had the awkward round of comparing notes."
           },
           {
             "heading": "Cropping the board out",
@@ -540,7 +540,12 @@
           {
             "heading": "What the photo gave away",
             "text": "Lorna posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
-            "condition": "globalVars.kit_ca14_photo_choice === 'post' || globalVars.kit_ca14_photo_choice === 'silent'"
+            "condition": "globalVars.kit_ca14_photo_choice === 'post'"
+          },
+          {
+            "heading": "What the photo gave away",
+            "text": "You said nothing, so nobody stopped Lorna, and she posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
+            "condition": "globalVars.kit_ca14_photo_choice === 'silent'"
           }
         ],
         "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
