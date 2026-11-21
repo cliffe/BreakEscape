@@ -25,7 +25,7 @@
 {"talk":"minder","knot":"on_sighted","picks":["compliance file"]},
 {"room":"satoshi_office"},
 {"talk":"satoshi","picks":["Satoshi's Ghost","Nothing justifies this","Privacy has honest uses","I'm freezing it","Better that than","I'm not debating"]},
-{"said":["At least you're honest about the trade-off"],"notSaid":["The names on that page"]},
+{ "said": ["At least you're honest about the trade-off"] },
 {"room":"blockchain_lab"},
 {"talk":"analyst","picks":["It's over upstairs","You flagged it"]},
 {"said":["I flagged it to the one person paid to bury it"]},

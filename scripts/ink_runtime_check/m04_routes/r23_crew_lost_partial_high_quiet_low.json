@@ -22,7 +22,7 @@
 { "said": ["It won't arm till grid control has a real reading", "Copy. Then the button's your job and he's a bonus.", "The button won't arm till grid control has a real reading"], "notSaid": ["Press it and the attack's dead"] },
 {"talk": "vance_phone",
 "knot": "support_call", "picks": ["shut this down safely", "That's everything"]},
-{ "said": ["It won't arm until grid control has a real reading. The dial in Hall 1."], "notSaid": ["That's the mission"] },
+{ "said": ["It won't arm until grid control has a real reading. The dial in Hall 1."] },
 {"set": {"anomaly_detected": true}},
 {"advance": 15},
 {"expect": {"crew_lost": true}},

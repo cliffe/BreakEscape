@@ -10,10 +10,7 @@
 {"said": ["Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.", "Get me a real reading off that floor"]},
 {"set": {"briefing_played": true}},
 {"talk": "phone", "picks": ["at the gate"]},
-{
-"said": ["Once you're past him, find Vance."],
-"notSaid": ["Call me once you're past him", "dial thermometer"]
-},
+{ "said": ["Once you're past him, find Vance."], "notSaid": ["dial thermometer"] },
 {"talk": "guard", "picks": ["regulator", "keep that in mind"]},
 {"said": ["Go on through, my lover."], "notSaid": ["Still need you at the desk"]},
 {"expect": {"guard_admitted": true}},

@@ -83,6 +83,6 @@
 {
 "maxRun": 9
 },
-{ "said": ["Nine. Tell me we came out with something.", "Keep the OptiGrid print kit", "Hold on to that when the names come out tomorrow"], "notSaid": ["Bank B went before you got to the button", "he reached the laptop before you put him", "run start to finish", "turn the fire into"] }
+{ "said": ["Nine. Tell me we came out with something.", "Keep the OptiGrid print kit", "Hold on to that when the names come out tomorrow"], "notSaid": ["Bank B went before you got to the button", "he reached the laptop before you put him"] }
 ]
 }

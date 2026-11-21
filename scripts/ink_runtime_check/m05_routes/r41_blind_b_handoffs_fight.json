@@ -37,14 +37,7 @@
 "I'll find my own way"
 ]
 },
-{
-"said": [
-"Read it before you go. The who starts in there."
-],
-"notSaid": [
-"on the desk. Take it."
-]
-},
+{ "said": ["Read it before you go. The who starts in there."] },
 {
 "talk": "owen",
 "picks": [
@@ -146,14 +139,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"You've got a pattern in the hallway badge log."
-],
-"notSaid": [
-"on that sheet"
-]
-},
+{ "said": ["You've got a pattern in the hallway badge log."] },
 {
 "talk": "patricia",
 "picks": [

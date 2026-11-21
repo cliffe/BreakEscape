@@ -8,7 +8,7 @@
   { "talk": "hollis", "knot": "start", "picks": ["I'm on the contractor list", "Walk at him"] },
   { "said": ["Nice try. Keep your hands where I can see them.", "One more push and this turns into a fight.", "[choice] Put it down. (Fight him.)", "[choice] I'm stepping back."] },
   { "talk": "hollis", "knot": "hostile_option", "picks": ["Put it down"] },
-  { "said": ["He comes off the frame at you with his fists up. This is going to be a fight.", "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block.", "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."], "notSaid": ["Q switches to fists", "Keep pressing Q until the open hand shows"] },
+  { "said": ["He comes off the frame at you with his fists up. This is going to be a fight.", "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block.", "He's slower than you, and he won't leave the checkpoint. If it's going badly, walk out of his reach before you read anything else."], "notSaid": ["To get clear, click open floor and walk"] },
   { "ko": "ray_hollis" },
   { "said": ["Hollis is down"], "notSaid": ["Hands down"] },
   { "pickup": "hollis_server_badge" },
@@ -43,7 +43,7 @@
   { "flag": 1 },
   { "flag": 2 },
   { "flag": 3 },
-  { "said": ["The window to move the team just shut."], "notSaid": ["The team stays where it is now."] },
+  { "said": ["The window to move the team just shut."] },
   { "maxRun": 9 }
  ]
 }

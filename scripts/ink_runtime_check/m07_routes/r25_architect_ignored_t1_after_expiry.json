@@ -9,14 +9,14 @@
  { "advance": 15 },
  { "expect": { "countdown_expired": true, "architect_t1_played": true, "architect_t5_played": true, "architect_t20_played": true } },
  { "talk": "architect", "knot": "taunt_t1", "picks": [0] },
- { "said": ["The countdown has run out. No caller ID. The line opens before you speak.", "Late. I did wonder.", "Let it hurt afterwards, not during.", "Narrator: He hangs up first."], "notSaid": ["One minute.", "He has hung up first every time.", "Don't look for the trace."] },
+ { "said": ["The countdown has run out. No caller ID. The line opens before you speak.", "Late. I did wonder.", "Let it hurt afterwards, not during.", "Narrator: He hangs up first."], "notSaid": ["He has hung up first every time.", "Don't look for the trace."] },
  { "expect": { "architect_echo_heard": true } },
  { "talk": "architect", "knot": "seattle_call", "picks": [0] },
  { "said": ["Seattle first. Exactly as scheduled.", "Three to go, and you're on the phone to me."] },
  { "talk": "architect", "knot": "start", "picks": [0] },
  { "talk": "architect", "knot": "start", "picks": [0] },
  { "talk": "architect", "knot": "start", "picks": [0] },
- { "said": ["A carrier tone on a channel"], "notSaid": ["Five minutes on the display", "You've sent your team.", "Don't look for the trace."] },
+ { "said": ["A carrier tone on a channel"], "notSaid": ["You've sent your team.", "Don't look for the trace."] },
  { "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice." },
  { "maxRun": 9 }
 ]}

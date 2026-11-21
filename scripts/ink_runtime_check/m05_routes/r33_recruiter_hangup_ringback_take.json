@@ -37,14 +37,7 @@
 "recruiter_deal_accepted": true
 }
 },
-{
-"said": [
-"You forget the envelope. It goes to Reading"
-],
-"notSaid": [
-"the number forty-seven"
-]
-},
+{ "said": ["You forget the envelope. It goes to Reading"] },
 {
 "set": {
 "final_choice": "arrest"

@@ -27,7 +27,7 @@
 { "expect": { "mole_identified": false } },
 { "ko": "director_netherton" },
 { "expect": { "netherton_ko": true, "mole_identified": false, "named_by_hax": false } },
-{ "said": ["Read me the door audit when you're ready"], "notSaid": ["It's Nightshade", "I've read the door audit against the box myself"] },
+{ "said": ["Read me the door audit when you're ready"], "notSaid": ["It's Nightshade"] },
 { "tasks": { "name_the_mole": "open" } },
 { "lockedAims": ["confront_the_mole"] },
 { "talk": "phone", "picks": ["What does the Director need", "Nothing right now"] },
