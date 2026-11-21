@@ -75,11 +75,11 @@
             "x": 0.4375,
             "y": 4.2
           },
-          "observations": "A printed notice about staff parking permits. The code in the corner is on a sticker, stuck over whatever was printed there.",
+          "observations": "A printed notice about staff parking permits. The code is on a sticker, stuck over whatever was printed there.",
           "observationVariants": [
             {
               "condition": "globalVars.kit_ca06_notice_choice === 'check'",
-              "value": "A printed notice about staff parking permits, with a sticker over the code in the corner. Zainab's ringing Facilities about it."
+              "value": "A printed notice about staff parking permits, with a sticker over the code. Zainab's ringing Facilities about it."
             }
           ]
         }
