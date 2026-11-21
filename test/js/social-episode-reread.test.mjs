@@ -187,7 +187,7 @@ const finish = (ep, globals = {}, opts = {}) => { playDefend(ep, globals, opts);
 
 test('D263: the kiosk shows a close hint beside the X; strings.closeHint replaces it and "" drops it', () => {
     playDefend(plain());
-    assert.ok(q('.epr-kiosk-top .epr-kiosk-hint').textContent === 'Press X to close');
+    assert.ok(q('.epr-kiosk-top .epr-kiosk-hint').textContent === 'Close with X');
     assert.ok(q('.epr-kiosk-top .epr-kiosk-close'));
     playDefend(plain({ strings: { brief: 'b', closeHint: 'Use the X to leave' } }));
     assert.ok(q('.epr-kiosk-hint').textContent === 'Use the X to leave');

@@ -136,7 +136,7 @@ const SEND_OFF_TEXT = 'Thanks for working through this one. Take the habit with 
 const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
 // D263: the kiosk's close hint beside the X (strings.closeHint; '' drops it), and the finished
 // panel's "read the debrief again" button (strings.rereadLink).
-const CLOSE_HINT_TEXT = 'Press X to close';
+const CLOSE_HINT_TEXT = 'Close with X';
 const REREAD_TEXT = 'Read the debrief again';
 const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' });
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing

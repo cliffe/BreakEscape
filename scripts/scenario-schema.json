@@ -3091,7 +3091,7 @@
             "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
             "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
             "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
-            "closeHint": {"type": "string", "description": "D263: the kiosk's hint beside the X; default 'Press X to close'; '' drops it"},
+            "closeHint": {"type": "string", "description": "D263: the kiosk's hint beside the X; default 'Close with X'; '' drops it"},
             "rereadLink": {"type": "string", "description": "D263: the finished panel's button that shows the debrief again, read only; default 'Read the debrief again'; '' drops it"},
             "sendOff": {"type": "string", "description": "batch-13 item 4: a short closing line under the end-of-episode panel, shown straight after the debrief's Finish only (not on a reopen); '' drops it. Default: a generic 'stop and check' thank-you."},
             "concernRecapHeading": {"type": "string", "description": "batch-13 item 2: heading over the debrief's recap of the concern form report; default 'Your report'"},
