@@ -246,7 +246,7 @@
 .tri-genuine p { margin: 4px 0; }
 .tri-genuine-cost, .tri-genuine-why { color: var(--ui-text-dim, #c3ccdf); }
 .tri-item-why { margin: 2px 0 6px 24px; font-size: 16px; color: var(--ui-text-dim, #c3ccdf); }
-.tri-item-why summary { cursor: pointer; min-height: 32px; }
+.tri-item-why summary { cursor: pointer; box-sizing: border-box; min-height: 44px; padding: 10px 0; }
 .tri-save-note { min-height: 1.4em; color: var(--ui-accent, #ffcc44); }
 .tri-result-bar { display: flex; flex-wrap: wrap; }
 /* E8 F5 (replaces the P5-1 sticky bar, which hid the skill lines under Finish): the result panel is a
@@ -704,4 +704,44 @@
     border-radius: 0;
     font-family: var(--se-font-address, var(--se-font-readable));
     white-space: pre-wrap;
+}
+
+/* ── CA-3 / CA-5 / CA-6 (sweep 7): triage on phones and short windows ─────────────────────────
+   The frame is the .mail-client itself. On a phone or a short window it takes the whole window
+   less 8px (the base rules left 80px, or 15%, of black around it), clips itself and lets the
+   reading pane be the one scroller (the base overflow-x: hidden made the frame a second,
+   nested vertical scroller). */
+.triage-client .se-overlay-close,
+.triage-client .se-overlay-close::after { box-sizing: border-box; }
+.triage-client .se-overlay-close { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.triage-client .se-overlay-close::after { content: none; }
+
+@media (max-width: 767px), (max-height: 500px) {
+    .minigame-game-container:has(> .mail-client.triage-client) { margin: 8px auto; height: calc(100% - 16px); }
+    .mail-client.triage-client { height: 100%; max-height: none; overflow: hidden; }
+    .triage-client .mail-reader { grid-template-rows: minmax(0, 1fr); }
+}
+
+/* Short landscape (568x320, 844x390): a thinner frame and one compact header. The title (which
+   shrinks with an ellipsis), the stepper and the X share one row; "N of M sorted" and the team
+   tally share the next. The frame art is drawn at 1x (8px border) instead of 2x. */
+@media (max-height: 500px) {
+    .mail-client.triage-client { padding: 4px 8px; gap: 4px; border-width: 8px; border-image-width: 8px; }
+    .triage-client .tri-toolbar { flex-wrap: nowrap; gap: 8px; }
+    .triage-client .tri-title { order: 0; flex: 1 1 auto; min-width: 0; max-width: 40%; }
+    .triage-client .tri-steps { order: 1; flex: 0 0 auto; min-width: 0; gap: 4px; }
+    .triage-client .tri-toolbar .se-overlay-close { order: 2; margin-left: 0; }
+    .triage-client .tri-sort:not([hidden]) { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; align-items: center; }
+    .triage-client .tri-sort > .mail-reader { grid-column: 1 / -1; grid-row: 2; align-self: stretch; min-height: 0; }
+    .triage-client .tri-sort > .tri-progress { grid-column: 1; grid-row: 1; }
+    .triage-client .tri-sort > .aw-team-tally { grid-column: 2; grid-row: 1; margin: 0; }
+    /* CSL R5 m1: awareness-skin.css sets the skinned tally's margin at the same weight and loads later */
+    .triage-client.aw-skin .tri-sort > .aw-team-tally { margin: 0; }
+    .triage-client .tri-panel { padding: 8px; }
+    /* Result (CSL R2 m3): less chrome round the scrolling body so more of it shows. Finish stays a
+       44px target; the score keeps its 48px size, only its margins tighten. */
+    .tri-result > .tri-result-body { padding: 8px 10px 4px; }
+    .tri-result > .tri-result-bar { padding: 0 10px 6px; }
+    .tri-result .tri-finish { min-height: 44px; padding-top: 0; padding-bottom: 0; margin-top: 6px; }
+    .tri-result .tri-score { margin: 0 0 4px; }
 }

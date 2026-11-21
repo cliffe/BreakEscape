@@ -222,7 +222,7 @@ test('A1 gating: without foldResult (campaign, lab, facilitated) the result card
     }
 });
 
-test('A1: the debrief opens with the band headline and the score in large type; Round score drops; weakest line gets the nudge or the fallback', () => {
+test('A1: the debrief opens with the band headline and the score in large type; Round score drops; weakest line gets the nudge or the fallback', async () => {
     const set = awareSet([phishMail, realMail], { nudges: { lookalike_domain: 'Authored next step.' } });
     const s = open(set, TRIMS);
     playAll(s);
@@ -237,6 +237,16 @@ test('A1: the debrief opens with the band headline and the score in large type; 
     assert.equal(folded.querySelector('.aw-band-headline')?.textContent, 'Sharp work');
     assert.equal(folded.querySelector('.aw-band-score')?.textContent, `${result.percent}%`);
     assert.ok(!folded.textContent.includes('Round score'));
+    // the band is the first child of the debrief, before the heading (reading order = visual order)
+    assert.ok(folded.querySelector('.aw-debrief')?.firstElementChild?.className === 'aw-band', 'band is first in the DOM');
+    assert.ok(folded.querySelector('.aw-debrief')?.children[1]?.className === 'aw-heading', 'heading follows the band');
+    // CSL R2 m1: the runner's focus lands on the band, so a screen reader starts at the headline and score
+    const bandEl = folded.querySelector('.aw-band');
+    assert.ok(bandEl.getAttribute('tabindex') === '-1', 'the band is programmatically focusable');
+    const runnerSrc = readFileSync(join(js, 'minigames/episode-runner/episode-runner-minigame.js'), 'utf8');
+    const sel = /_focus\(\) \{\s*const target = this\.body\?\.querySelector\?\.\('([^']+)'\)/.exec(runnerSrc)?.[1] || '';
+    assert.ok(sel.startsWith('.aw-band,'), `the runner's focus selector starts with the band (got ${sel})`);
+    assert.ok(folded.querySelector(sel) === bandEl, 'that selector finds the band first in the folded debrief');
     const weak = folded.querySelector('.aw-weakest')?.textContent || '';
     assert.match(weak, /Authored next step\.$/);
     assert.ok(!weak.includes('Generic next step.'), 'the authored line wins');

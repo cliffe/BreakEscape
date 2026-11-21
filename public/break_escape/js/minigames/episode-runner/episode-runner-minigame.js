@@ -432,7 +432,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     }
 
     _focus() {
-        const target = this.body?.querySelector?.('h2, .aw-heading, button');
+        const target = this.body?.querySelector?.('.aw-band, h2, .aw-heading, button');
         try { target?.focus?.(); } catch (e) { /* focus is a nicety */ }
     }
 

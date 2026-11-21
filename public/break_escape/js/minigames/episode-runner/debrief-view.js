@@ -456,13 +456,15 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const bigScore = folded === true && showScore && Number.isFinite(result?.percent);
     if (folded === true && (isStr(bandHeadline) || bigScore)) {
         const band = el('div', 'aw-band');
+        band.tabIndex = -1; // the runner's focus lands here, so the headline and score are read first
         if (isStr(bandHeadline)) band.appendChild(el('p', 'aw-band-headline', bandHeadline));
         if (bigScore) {
             const big = el('p', 'aw-band-score', `${result.percent}%`);
             big.setAttribute('aria-label', `Score ${result.percent} percent`);
             band.appendChild(big);
         }
-        root.appendChild(band);
+        // The payoff comes first in the DOM too, so reading order matches what sighted users see.
+        root.insertBefore(band, heading);
     }
 
     const summary = el('p', 'aw-summary');
