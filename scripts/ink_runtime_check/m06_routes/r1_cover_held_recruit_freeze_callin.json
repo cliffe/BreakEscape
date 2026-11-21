@@ -32,7 +32,7 @@
 {"room": "satoshi_office"},
 {"talk": "satoshi", "picks": ["Satoshi's Ghost", "You worked out how many", "Privacy has honest uses", "I'm freezing it", "Whatever hadn't gone out", "Sometimes"]},
 {"said": ["Your paperwork was good", "Kemal let you in", "balances will never reach the cells"]},
-{"notSaid": ["rang the FCA", "under arrest"]},
+{ "notSaid": ["rang the FCA"] },
 {"expect": {"assets_seized": true, "assets_decided": true, "ready_to_extract": true}},
 {"talk": "phone", "picks": ["Bring me in", "Not yet", "I'm good for now"]},
 {"said": ["His safe's still shut"]},

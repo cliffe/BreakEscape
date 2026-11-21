@@ -6,7 +6,7 @@
 {"room": "trading_floor"},
 {"talk": "irina", "picks": ["Let's be quick", "Tell me about your door access", "borrow your badge", "That's all for now"]},
 {"said": ["You came in asking for my wallets before my paperwork", "Volkova didn't buy you"]},
-{"notSaid": ["Someone on the floor has been asking"]},
+{ "notSaid": ["There's been talk about you tonight"] },
 {"expect": {"cover_strained": true, "irina_badge_obtained": false}},
 {"talk": "irina", "picks": ["Let the cloner read", "That's all for now"]},
 {"expect": {"irina_badge_cloned": true}},
