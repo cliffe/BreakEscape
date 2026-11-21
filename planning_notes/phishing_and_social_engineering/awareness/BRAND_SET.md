@@ -17,7 +17,7 @@ SAFETYNET.
   hyphen (`pennine-oatmills`), an added word (`castellfruit-co`, `fernhill-secure-login`). No homographs in
   the awareness product: non-technical staff are taught to read the address, not to inspect code points.
 - Freemail and file-share services are invented too (`mailgrove.example`, `hastypost.example`,
-  `fileharbour-login.example`).
+  `sharetide-login.example`).
 - Names were checked against the repo's scenarios, planning notes and docs on 2026-10-22 so that no awareness
   character shares a surname with a Licence to Hack or SIS character. The E1 pins (Adaeze Okafor, Tom Reilly)
   are fixed by `PHASE7_PACKETS.md` §2.6 and kept even where a surname appears elsewhere.
@@ -117,7 +117,7 @@ Cast-diversity note (standing rule): the cast spans 30s to 50s and mixes Polish,
 |------|--------|----------|
 | mailgrove | `mailgrove.example` | Freemail for impersonated executives and spoofed reply-to addresses |
 | Hastypost | `hastypost.example` | A second freemail, so the two forms don't share a sender domain |
-| (file-share sign-in) | `fileharbour-login.example` | The credential page behind form A's shared-invoice link |
+| (file-share sign-in) | `sharetide-login.example` | The credential page behind form A's shared-invoice link |
 
 ## 4. E1 pins (from `PHASE7_PACKETS.md` §2.6, unchanged)
 
@@ -209,8 +209,8 @@ Gallagher is not used, because it clashes with an existing scenario. Farah was d
 - **Quayholt cast:**
   - Hana Novak, claims handler, `hana.novak@quayholt.example`, 30s, Czech-British: the E5 target.
   - The Quayholt IT Service Desk, `it-servicedesk@quayholt.example`: the sender the attacker spoofs.
-- **Decoy brand:** Fileharbour, `fileharbour.example`. Look-alikes `fileharbour-login.example`, `fileharbour.example` and `fileharb0ur.example`.
-- **Pre-ship check:** "Quayholt", "Fileharbour" and "Novak" still need the real-business web-search check.
+- **Decoy brand:** Sharetide, `sharetide.example`. Look-alikes `sharetide-login.example`, `sharetide.example` and `sharet1de.example`.
+- **Pre-ship check:** "Quayholt", "Sharetide" and "Novak" still need the real-business web-search check.
 
 ## Additions from E1 shells and E3 defend (P7-J and P7-S, 2026-10-22)
 - **Check-mission hosts (P7-J):**
@@ -228,7 +228,7 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 - **Tarrowby cast:** Bogdan Ionescu, Shauna Lofthouse, Eilidh Strachan, Nilesh Solanki (renamed from Dev Mistry, see below), Lerato Dlamini, Chidi Okeke, Callum Whiteley and Marjorie Ackroyd.
 - **Hosts:** the real Tarrowby hosts `staff.`, `hr.`, `facilities.`, `forms.` and `guest.`.
 - **Look-alikes:** `tarrowby-parking`, `-charging` and `-wifi`.
-- **Third parties:** ASAParcels, Fuelr, Telvoro, PCN Services, `shrtn.example`, Shiftle and Payrollery.
+- **Third parties:** ASAParcels, Fuelr, Telvoro, Kerbsettle, `shrtn.example`, Shiftle and Payrollery.
 - **Pre-ship check:** Tarrowby, ASAParcels, Fuelr, Telvoro, Shiftle and Payrollery still need the real-business web search.
 
 ## Additions from E6 attack (2026-10-22)

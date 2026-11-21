@@ -50,8 +50,8 @@ Grouped by the company they touch. Every one is fictional, `.example`.
 - **Tarrowby (E2/E6/E9/E15/E20):** Kettlewick Talent (`kettlewick.example`), RiverReach Angling
   (`riverreachangling.example`), Pennington Rangers (club), Benmoor Packaging
   (`benmoor-packaging.example`), The Bean and Barrow café (`thebeanandbarrow.example`),
-  Haverbridge Lodge (hotel), Haulier News (`hauliernews.example`), PCN Services
-  (`pcn-settle.example`), Telvoro (`telvoro-billing.example`).
+  Haverbridge Lodge (hotel), Haulier News (`hauliernews.example`), Kerbsettle
+  (`kerbsettle.example`), Telvoro (`telvoro-billing.example`).
 - **Quayholt (E3/E5/E8/E10/E16/E19):** Ashcombe Solicitors, Marsden Holloway
   (`marsden-holloway.example`, see §7), Fernside Catering (`fernside.example`), Northgate Audit
   (`northgate-audit.example`), Fenlow Managed IT (`fenlow.example`), Vanteq Systems (remote-support
@@ -72,7 +72,7 @@ Grouped by the company they touch. Every one is fictional, `.example`.
 | Hastypost | `hastypost.example` | Second freemail |
 | Larchmail | `larchmail.example` | Webmail (general_v2) |
 | Cobweb Mail | `cobweb-mail.example` | Webmail |
-| Fileharbour | `fileharbour.example` | File share (look-alikes `fileharbour-login`, `fileharb0ur`) |
+| Sharetide | `sharetide.example` | File share (look-alikes `sharetide-login`, `sharet1de`) |
 | Chuckbox | `chuckbox-free.example` | Free file transfer (E15) |
 | PDFmangle Free | `pdfmangle-free.example` | Free PDF editor (E15) |
 | Piledocs | `piledocs.example` | Document app asking to connect (E19) |
