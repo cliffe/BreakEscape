@@ -1,0 +1,13 @@
+{
+  "key": "6bb12695773f1de4c4140b374ee8b21b",
+  "npc": "kit_niamh_doherty",
+  "text": "Hiya. There's a water cooler over by the wall if you need it.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca16_insider_risk",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:08Z"
+}

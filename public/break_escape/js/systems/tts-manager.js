@@ -12,7 +12,7 @@
 
 import { ApiClient } from '../api-client.js';
 import MusicController from '../music/music-controller.js';
-import { envelopeFromSamples, alignToEnvelope } from '../minigames/person-chat/lip-sync.js';
+import { envelopeFromSamples, alignToEnvelope, outputLeadMs } from '../minigames/person-chat/lip-sync.js';
 
 class TTSManager {
     constructor() {
@@ -26,6 +26,7 @@ class TTSManager {
         this.currentText = null; // Line now playing — read by portraits for lip-sync
         this.playSeq = 0;        // Bumped by every play() call: a token for "this play, not a later one of the same line"
         this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
+        this.lipSyncPending = null; // the line's text while its audio is being decoded for lip sync
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
         this._mediaElementSource = null;
@@ -184,6 +185,7 @@ class TTSManager {
     stop() {
         this.currentText = null;
         this.lipSync = null;
+        this.lipSyncPending = null;
         if (this.playing) {
             this.audio.pause();
             this.audio.currentTime = 0;
@@ -290,9 +292,12 @@ class TTSManager {
      * @private
      */
     async _alignLipSync(blob, audioUrl, text) {
+        const ctx = MusicController?.context;
+        if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
+        // While this is set the portrait follows the live level, not the text timeline
+        // (lipSyncPending in person-chat-portraits). Cleared however the decode ends.
+        this.lipSyncPending = text;
         try {
-            const ctx = MusicController?.context;
-            if (!ctx?.decodeAudioData || !blob?.arrayBuffer) return;
             const buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
             if (this.audio.src !== audioUrl) return; // a newer line has started
             const envelope = envelopeFromSamples(buffer.getChannelData(0), buffer.sampleRate);
@@ -300,7 +305,18 @@ class TTSManager {
             if (timeline) this.lipSync = { text, timeline };
         } catch (error) {
             console.warn('[TTS] Lip-sync alignment unavailable:', error.message);
+        } finally {
+            if (this.lipSyncPending === text && this.audio.src === audioUrl) this.lipSyncPending = null;
         }
+    }
+
+    /**
+     * How far ahead of the clip position the portrait reads its viseme timeline (ms): the
+     * audio context's output latency, or a default when the browser does not report one.
+     * Applied to the lookup only; playback is never shifted.
+     */
+    lipSyncLeadMs() {
+        return outputLeadMs(MusicController?.context || null);
     }
 
     /**
@@ -430,7 +446,9 @@ class TTSManager {
 
     /**
      * Build an FX chain from a profile. Returns { input, output, nodes, oscs } or null.
-     * Chain order: input → highpass → lowpass → waveshaper(drive) → ringMod(dry/wet) → makeup → output.
+     * Chain order: input → pitchShift(dry + shifted layer) → highpass → lowpass → waveshaper(drive)
+     * → ringMod(dry/wet) → makeup → output. With lowpassAfterDrive the lowpass follows the
+     * waveshaper instead, so it also trims the drive's high-frequency grit.
      * Every stage is optional; the whole thing degrades to a passthrough gain.
      * @private
      */
@@ -442,22 +460,27 @@ class TTSManager {
         const input = push(ctx.createGain());
         let node = input;
 
+        if (p.pitchShift && p.pitchShift.semitones && p.pitchShift.mix > 0) {
+            node = this._buildPitchShift(ctx, node, p.pitchShift, push, oscs);
+        }
         if (p.highpass) {
             const hp = push(ctx.createBiquadFilter());
             hp.type = 'highpass'; hp.frequency.value = p.highpass; hp.Q.value = 0.707;
             node.connect(hp); node = hp;
         }
-        if (p.lowpass) {
+        const addLowpass = () => {
             const lp = push(ctx.createBiquadFilter());
             lp.type = 'lowpass'; lp.frequency.value = p.lowpass; lp.Q.value = 0.707;
             node.connect(lp); node = lp;
-        }
+        };
+        if (p.lowpass && !p.lowpassAfterDrive) addLowpass();
         if (p.drive) {
             const ws = push(ctx.createWaveShaper());
             ws.curve = this._makeDistortionCurve(p.drive);
             ws.oversample = '2x';
             node.connect(ws); node = ws;
         }
+        if (p.lowpass && p.lowpassAfterDrive) addLowpass();
         if (p.ringMod && p.ringMod.mix > 0) {
             const freq = p.ringMod.frequency ?? 80;
             const mix = Math.min(1, p.ringMod.mix);
@@ -478,6 +501,48 @@ class TTSManager {
         node.connect(makeup); node = makeup;
 
         return { input, output: node, nodes, oscs };
+    }
+
+    /**
+     * Delay-line pitch shifter (two modulated delays, crossfaded) blended with the dry signal.
+     * It changes pitch without touching playbackRate, so a clip keeps its duration and the
+     * engine still advances on the element's ended event. Each delay's time ramps at a steady
+     * rate (1 - ratio seconds per second) and wraps once per period; the two delays are half a
+     * period apart and each one's sin² window is zero at its own wrap, so the jumps are silent
+     * and the two windows always sum to 1. The shifted layer lags by up to maxDelay seconds.
+     * cfg: { semitones, mix (shifted layer gain), dry (dry gain, default 1), maxDelay (s, default 0.1) }
+     * @private
+     */
+    _buildPitchShift(ctx, from, cfg, push, oscs) {
+        const curves = TTSManager.pitchShiftCurves(ctx.sampleRate, cfg.semitones, cfg.maxDelay);
+        const sum = push(ctx.createGain());
+        const dry = push(ctx.createGain()); dry.gain.value = cfg.dry ?? 1;
+        from.connect(dry); dry.connect(sum);
+        const wet = push(ctx.createGain()); wet.gain.value = Math.min(2, cfg.mix);
+        wet.connect(sum);
+
+        const loopSource = (data) => {
+            const buf = ctx.createBuffer(1, data.length, ctx.sampleRate);
+            buf.getChannelData(0).set(data);
+            const src = ctx.createBufferSource();
+            src.buffer = buf; src.loop = true;
+            oscs.push(src);
+            return src;
+        };
+        const sources = [];
+        for (const [ramp, window] of [[curves.rampA, curves.windowA], [curves.rampB, curves.windowB]]) {
+            const delay = push(ctx.createDelay(curves.maxDelay + 0.05));
+            delay.delayTime.value = 0;
+            const fade = push(ctx.createGain()); fade.gain.value = 0;
+            const rampSrc = loopSource(ramp); rampSrc.connect(delay.delayTime);
+            const fadeSrc = loopSource(window); fadeSrc.connect(fade.gain);
+            sources.push(rampSrc, fadeSrc);
+            from.connect(delay); delay.connect(fade); fade.connect(wet);
+        }
+        // Start every modulator on the same tick so the four loops stay phase-locked.
+        const t0 = ctx.currentTime + 0.01;
+        for (const src of sources) src.start(t0);
+        return sum;
     }
 
     /** @private */
@@ -522,18 +587,52 @@ class TTSManager {
  * Tuning knobs per profile:
  *   highpass / lowpass — band-limit the voice (a tight band = telephone/radio feel)
  *   drive              — waveshaper saturation (grit). ~0 clean, ~6 subtle, ~20 heavy
+ *   pitchShift         : { semitones, mix, dry, maxDelay }. A delay-line shifted layer (mix)
+ *                        blended with the dry voice (dry). Duration is unchanged.
+ *   lowpassAfterDrive  : true puts the lowpass after the waveshaper (trims its grit)
  *   ringMod            — { frequency, mix }. Metallic/masked edge. mix is the most
  *                        aggressive knob — lower it (or delete ringMod) to soften.
  *   makeup             — output gain to compensate for level lost to filtering/drive
  */
 TTSManager.VOICE_FX_PRESETS = {
-    // Anonymised, encrypted-comms voice: band-limited with a light metallic edge. Deliberately
-    // masked but still intelligible. Used for Ghost (ENTROPY) — a disguised/obscured speaker.
-    'voice-distortion': { highpass: 220, lowpass: 3400, drive: 6, ringMod: { frequency: 75, mix: 0.10 }, makeup: 1.6 },
+    // Anonymised, encrypted-comms voice: an octave-down layer under the dry voice, then a soft
+    // drive and a band limit with a faint metallic edge. Deliberately masked but still
+    // intelligible. Used for Ghost (ENTROPY), m07 and lab_tesseract_trials. The highpass sits low
+    // enough to keep the sub-octave; the lowpass follows the drive so it trims the drive's grit.
+    'voice-distortion': {
+        pitchShift: { semitones: -12, mix: 0.65, dry: 0.75 },
+        highpass: 80, drive: 3, lowpass: 3200, lowpassAfterDrive: true,
+        ringMod: { frequency: 75, mix: 0.03 }, makeup: 1.3
+    },
     // Clean radio/handset band with light grit, no ring mod.
     'radio': { highpass: 500, lowpass: 3000, drive: 10, makeup: 1.5 },
     // Heavier robotic/vocoder-ish edge.
     'robot': { highpass: 150, lowpass: 3800, drive: 4, ringMod: { frequency: 50, mix: 0.35 }, makeup: 1.5 }
+};
+
+/**
+ * Modulation curves for the delay-line pitch shifter: one period of each delay's time (seconds)
+ * and of each delay's crossfade window. Pure, so tests can check the shapes.
+ * ratio = 2^(semitones/12); the delay changes at (1 - ratio) s/s, so a period lasts
+ * maxDelay / |1 - ratio| seconds (0.2 s for an octave down with the default 0.1 s).
+ */
+TTSManager.pitchShiftCurves = function (sampleRate, semitones, maxDelay = 0.1) {
+    const ratio = Math.pow(2, semitones / 12);
+    const rate = Math.abs(1 - ratio) || 1e-6;
+    const period = maxDelay / rate;
+    const n = Math.max(2, Math.round(period * sampleRate));
+    const rampA = new Float32Array(n), rampB = new Float32Array(n);
+    const windowA = new Float32Array(n), windowB = new Float32Array(n);
+    const down = ratio < 1;
+    for (let i = 0; i < n; i++) {
+        const a = i / n, b = (a + 0.5) % 1;
+        // Pitch down: the delay grows through the period. Pitch up: it shrinks.
+        rampA[i] = maxDelay * (down ? a : 1 - a);
+        rampB[i] = maxDelay * (down ? b : 1 - b);
+        windowA[i] = Math.sin(Math.PI * a) ** 2;
+        windowB[i] = Math.sin(Math.PI * b) ** 2;
+    }
+    return { ratio, period: n / sampleRate, maxDelay, rampA, rampB, windowA, windowB };
 };
 
 export default TTSManager;

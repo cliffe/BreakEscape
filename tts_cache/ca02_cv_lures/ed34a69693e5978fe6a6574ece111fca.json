@@ -1,0 +1,13 @@
+{
+  "key": "ed34a69693e5978fe6a6574ece111fca",
+  "npc": "kit_chidi_okeke",
+  "text": "Recruitment inbox never stops. All sorts of attachments land in there from folk we've never met.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:11:32Z"
+}

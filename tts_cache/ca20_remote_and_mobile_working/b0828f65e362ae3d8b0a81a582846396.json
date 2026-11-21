@@ -1,0 +1,13 @@
+{
+  "key": "b0828f65e362ae3d8b0a81a582846396",
+  "npc": "zainab_hussain",
+  "text": "Working on the move is the job, but a password typed on a lookalike network is an account someone can use from another town.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca20_remote_and_mobile_working",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T00:14:29Z"
+}
