@@ -1,0 +1,15 @@
+{
+"globals": { "dock_heard": true, "identity_scene_done": true },
+"steps": [
+{ "note": "R46: the notice topic answered Not yet. HaX names the equities call and the optional send_the_notice task closes, but nothing is sent and the topic stays on the hub; reopening it, the player sends it." },
+{ "talk": "phone", "knot": "support_hub", "picks": ["His notice", "Not yet", "That's all for now"] },
+{ "said": ["It keeps. So does the hole", "Every service that finds a hole makes this call", "We kept this one nine years"],
+  "notSaid": ["Vendor's acknowledged", "Analysis is pulling the watch"] },
+{ "expect": { "albion_notified": false } },
+{ "tasks": { "send_the_notice": "completed" } },
+{ "talk": "phone", "knot": "support_hub", "reload": true, "picks": ["His notice", "Send it", "That's all for now"] },
+{ "said": ["[choice] His notice", "Gone.", "Vendor's acknowledged"],
+  "notSaid": ["It keeps. So does the hole"] },
+{ "expect": { "albion_notified": true } }
+]
+}

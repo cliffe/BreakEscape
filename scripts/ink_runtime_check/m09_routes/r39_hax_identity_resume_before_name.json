@@ -1,0 +1,10 @@
+{
+"globals": { "identity_scene_started": true },
+"steps": [
+{ "note": "R39: the call dropped before the name was said. The re-ring plays the opening again, hand line included, with no Still here, and carries on to the buttons." },
+{ "talk": "phone", "knot": "identity_resume", "picks": ["I'd have done the same", "Understood"] },
+{ "said": ["Same hand", "Tomb Beta's owner. It's one of ours", "Dr Adrian Tesseract", "Don't be kind about it"],
+  "notSaid": ["Still here. Netherton too"] },
+{ "expect": { "identity_name_said": true, "hand_matched": true, "identity_scene_done": true } }
+]
+}
