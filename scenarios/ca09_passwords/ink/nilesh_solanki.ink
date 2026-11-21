@@ -16,6 +16,8 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca09_host_said = false
+VAR kit_ca09_out = false
+VAR kit_ca09_done = false
 VAR hub_quiet = false
 
 === start ===
@@ -25,7 +27,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca09_host_said:
+    { kit_defend_done && (kit_ca09_done || not kit_ca09_out) && not kit_ca09_host_said:
         { kit_key_caught:
             { kit_caught:
                 Nilesh Solanki: You spotted the reused one and shut it down, so there was nothing on that account for anyone to walk into.

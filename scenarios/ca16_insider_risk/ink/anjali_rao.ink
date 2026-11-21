@@ -26,6 +26,8 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca16_host_said = false
+VAR kit_ca16_out = false
+VAR kit_ca16_done = false
 VAR hub_quiet = false
 
 === start ===
@@ -35,7 +37,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca16_host_said:
+    { kit_defend_done && (kit_ca16_done || not kit_ca16_out) && not kit_ca16_host_said:
         { kit_key_caught:
             { kit_caught:
                 Anjali Rao: You kept your sign-in to yourself and sent the handover the proper way, so every action still points at whoever actually did it.

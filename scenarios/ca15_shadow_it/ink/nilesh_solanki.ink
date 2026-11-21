@@ -19,6 +19,8 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca15_host_said = false
+VAR kit_ca15_out = false
+VAR kit_ca15_done = false
 VAR hub_quiet = false
 
 === start ===
@@ -28,7 +30,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca15_host_said:
+    { kit_defend_done && (kit_ca15_done || not kit_ca15_out) && not kit_ca15_host_said:
         { kit_key_caught:
             { kit_caught:
                 Nilesh Solanki: You routed it the approved way and handed the stick in unopened, so there was no gap for anyone to walk through.

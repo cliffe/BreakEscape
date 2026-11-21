@@ -496,6 +496,7 @@ export function preload() {
     this.load.image('lw_delivery_hatch1', 'objects/lw_delivery_hatch1.png');
     this.load.image('usb_badusb_flat', 'objects/usb_badusb_flat.png');
     this.load.image('usb_storage_swivel', 'objects/usb_storage_swivel.png');
+    this.load.image('usb_storage_swivel_taken', 'objects/usb_storage_swivel_taken.png');
     this.load.image('keylogger_flat', 'objects/keylogger_flat.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
@@ -849,6 +850,8 @@ export function preload() {
     // The key `pc` is pc1.png, so `pc_locked` is an alias of `pc1_locked`, made in create()
     // (one fetch instead of two).
     this.load.image('pc1_locked', 'objects/pc1_locked.png');
+    this.load.image('pc1_locked_note', 'objects/pc1_locked_note.png');
+    this.load.image('aw_notice_qr_parking1', 'objects/aw_notice_qr_parking1.png');
     // ca12's break reminder: Thandiwe's screen left on a break notice while she steps away.
     // Preloaded so the swap shows at 0 s with a cold cache (core/rooms.js loads variant keys on demand otherwise).
     this.load.image('pc1_break', 'objects/pc1_break.png');

@@ -18,6 +18,8 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca06_host_said = false
+VAR kit_ca06_out = false
+VAR kit_ca06_done = false
 VAR hub_quiet = false
 
 === start ===
@@ -27,7 +29,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca06_host_said:
+    { kit_defend_done && (kit_ca06_done || not kit_ca06_out) && not kit_ca06_host_said:
         { kit_key_caught:
             { kit_caught:
                 Chidi Okeke: You flagged that fake barrier code to me before anyone scanned it, so nothing of yours ever reached them.
