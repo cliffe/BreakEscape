@@ -1,0 +1,13 @@
+{
+  "key": "72cfd0eeedc7039686d143dbf282bf5b",
+  "npc": "kit_darren_price",
+  "text": "Supplier portal's asking me to prove I'm human now.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:21Z"
+}

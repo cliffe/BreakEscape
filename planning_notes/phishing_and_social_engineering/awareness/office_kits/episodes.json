@@ -241,16 +241,16 @@
     {
       "id": "ca07_voice_ceo",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "brightwell_foods",
       "ep": "ca07",
       "ambient": [
         "gwen_pritchard",
         "graham_whitfield"
       ],
-      "setPiece": null,
+      "setPiece": "ca07_call_on_hold",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e7_ceo_wire",
       "hostLine": true
     },
@@ -290,16 +290,16 @@
     {
       "id": "ca10_downloads_and_fake_checks",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "quayholt_insurance",
       "ep": "ca10",
       "ambient": [
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca10_paste_check",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e10_fake_check",
       "hostLine": true
     },
@@ -388,16 +388,16 @@
     {
       "id": "ca18_credential_attacks_at_scale",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "merrin_sallow",
       "ep": "ca18",
       "ambient": [
         "lorna_easton",
         "delphine_arvanitis"
       ],
-      "setPiece": null,
+      "setPiece": "ca18_reset_password",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e18_lockout_fake",
       "hostLine": true
     },
