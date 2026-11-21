@@ -1,19 +1,11 @@
 {
   "company": "quayholt_insurance",
   "_note": "Quayholt Insurance office kit (WAVE2_BUILD.md D12, P-KQ). Tiles are px/32 on the 10x10 room_aw_quayholt map. The map draws no source for a non-work need, so the kit declares a water_cooler with an explicit position, using the preloaded water_cooler1.png (24x47); rooms.js creates the sprite by the fallback (findMatchFor null, createSpriteAtRandomPosition, applyScenarioObjectPosition) and moves it to position. The cooler has no collision body (the engine gives static bodies only to tables and wheeled chairs, rooms.js ~2805-2834); click-to-move routes round it (path-avoid.js water_cooler pattern) as round Tarrowby's vending machine, checked in gate D proof 11. position (8.2,5.6) is the sprite top-left corner; free floor in room_aw_quayholt is x1-9, y2-9, and column 8 rows 5-7 (below the wall-hung extinguisher) is clear (kiosk covers cols 7-8 rows 3-4, the desk row 8 with its chair column 7). useFrom is from the sprite centre. Staff homes are drawn desk chairs: Darren and Niamh at the left desk (chairs ~2.9 and 4.1, y6.8), Anjali at the right desk (chair ~7.4, y8.3); confirmed/adjusted live in gate D. Every colleague carries one thirst need so they leave home, drink at the cooler and sit again. Pool kit_quayholt, capacity-2, three lines; each of Darren, Niamh and Anjali two chatterLines. Voices from VOICE_CAST.md.",
-  "scenario": {
-    "npcThoughts": false
-  },
+  "scenario": { "npcThoughts": false },
   "pool": {
     "key": "kit_quayholt",
-    "lines": [
-      "Phones haven't stopped today.",
-      "Claims backlog's easing off.",
-      "Cooler's cold for once."
-    ],
-    "requireGlobal": {
-      "kit_quiet": false
-    }
+    "lines": ["Phones haven't stopped today.", "Claims backlog's easing off.", "Cooler's cold for once."],
+    "requireGlobal": { "kit_quiet": false }
   },
   "sources": [
     {
@@ -24,122 +16,62 @@
       "takeable": false,
       "interactable": false,
       "observations": "The office water cooler. Staff wander over for a refill.",
-      "position": {
-        "x": 8.2,
-        "y": 5.6
-      },
-      "affordance": {
-        "satisfies": "thirst",
-        "restores": 70,
-        "useSeconds": 20,
-        "useFrom": {
-          "dx": 0,
-          "dy": 1.25
-        },
-        "capacity": 2,
-        "chatter": "pool"
-      }
+      "position": { "x": 8.2, "y": 5.6 },
+      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": 1.25 }, "capacity": 2, "chatter": "pool" }
     }
   ],
   "staff": {
     "darren_price": {
       "displayName": "Darren Price",
       "spriteSheet": "darren_price",
-      "voice": {
-        "name": "Orus",
-        "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
-        "language": "en-GB"
-      },
-      "position": {
-        "x": 2.5,
-        "y": 7.0
-      },
-      "needsHome": {
-        "room": "training_room",
-        "x": 2.5,
-        "y": 7.0,
-        "facing": "south"
-      },
+      "voice": { "name": "Orus", "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 2.5, "y": 7.0 },
+      "needsHome": { "room": "training_room", "x": 2.5, "y": 7.0, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": {
-        "thirst": {
-          "decayPerMin": 30,
-          "urgentAt": 50,
-          "initial": 65
-        }
-      },
-      "chatterLines": [
-        "Busy on the awareness side.",
-        "Just grabbing some water."
-      ]
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
+      "chatterLines": ["Busy on the awareness side.", "Just grabbing some water."]
     },
     "niamh_doherty": {
       "displayName": "Niamh Doherty",
       "spriteSheet": "niamh_doherty",
-      "voice": {
-        "name": "Leda",
-        "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
-        "language": "en-GB"
-      },
-      "position": {
-        "x": 4.0,
-        "y": 7.0
-      },
-      "needsHome": {
-        "room": "training_room",
-        "x": 4.0,
-        "y": 7.0,
-        "facing": "south"
-      },
+      "voice": { "name": "Leda", "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 4.0, "y": 7.0 },
+      "needsHome": { "room": "training_room", "x": 4.0, "y": 7.0, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": {
-        "thirst": {
-          "decayPerMin": 30,
-          "urgentAt": 50,
-          "initial": 55
-        }
-      },
-      "chatterLines": [
-        "Newsletter's nearly done.",
-        "Could murder a cuppa."
-      ]
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 } },
+      "chatterLines": ["Newsletter's nearly done.", "Could murder a cuppa."]
     },
     "anjali_rao": {
       "displayName": "Anjali Rao",
       "spriteSheet": "anjali_rao",
-      "voice": {
-        "name": "Kore",
-        "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
-        "language": "en-GB"
-      },
-      "position": {
-        "x": 7.4,
-        "y": 8.3
-      },
-      "needsHome": {
-        "room": "training_room",
-        "x": 7.4,
-        "y": 8.3,
-        "facing": "south"
-      },
+      "voice": { "name": "Kore", "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
+      "position": { "x": 7.4, "y": 8.3 },
+      "needsHome": { "room": "training_room", "x": 7.4, "y": 8.3, "facing": "south" },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": {
-        "thirst": {
-          "decayPerMin": 30,
-          "urgentAt": 50,
-          "initial": 70
-        }
-      },
-      "chatterLines": [
-        "Quiet on the alerts today.",
-        "Need a proper break."
-      ]
+      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 70 } },
+      "chatterLines": ["Quiet on the alerts today.", "Need a proper break."]
     }
   },
   "setPieces": {
+    "ca05_defend_react": {
+      "_note": "D265: the ca05 defend twin's after-sort colleague beat. A blind persona playtest found the twin flat once the sort was done: nobody reacts. Darren speaks one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close, so it lands after the sort. targetKnot (no literal bark) makes the engine speak ca05_react's first line via TTS, so the line lives in the ambient ink and branches there on kit_key_caught, true on every path. Twin only; the full ca05 shell uses ca05_signin_prompt. No globals/objects/timers/mappings: the twin is defend-only (tier S).",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca05_react"
+            }
+          ]
+        }
+      }
+    },
     "ca03_people_locked_out": {
       "globals": {
         "kit_ca03_there": false,
@@ -1094,22 +1026,6 @@
               "setGlobal": {
                 "kit_ca05_prompt_choice": "silent"
               }
-            }
-          ]
-        }
-      }
-    },
-    "ca05_defend_react": {
-      "_note": "D265: the ca05 defend twin's after-sort colleague beat. A blind persona playtest found the twin flat once the sort was done: nobody reacts. Darren speaks one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close, so it lands after the sort. targetKnot (no literal bark) makes the engine speak ca05_react's first line via TTS, so the line lives in the ambient ink and branches there on kit_key_caught, true on every path. Twin only; the full ca05 shell uses ca05_signin_prompt.",
-      "staff": {
-        "darren_price": {
-          "eventMappings": [
-            {
-              "eventPattern": "global_variable_changed:kit_defend_done",
-              "condition": "value === true",
-              "onceOnly": true,
-              "delayMs": 1500,
-              "targetKnot": "ca05_react"
             }
           ]
         }
