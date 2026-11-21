@@ -6,11 +6,19 @@ VAR kit_ca05_asked = false
 VAR kit_ca05_prompt_choice = ""  // Synced scenario global
 VAR kit_ca05_moved = false
 VAR kit_ca05_done = false
+VAR kit_ca10_out = false  // Synced scenario global
+VAR kit_ca10_asked = false
+VAR kit_ca10_check_choice = ""  // Synced scenario global
+VAR kit_ca10_moved = false
+VAR kit_ca10_done = false
 
 === start ===
 // A click before the request bark lands (or the ask flag is set) still opens the request, so an early click never strands it.
 { kit_ca05_asked || (kit_ca05_out && not kit_ca05_done):
     -> ca05_prompt
+}
+{ kit_ca10_asked || (kit_ca10_out && not kit_ca10_done):
+    -> ca10_check
 }
 { kit_defend_done:
     { kit_ep == "ca00": -> ca00 }
@@ -93,6 +101,34 @@ Darren Price: Password's in, and now my phone wants me to approve it. Fine to sa
     -> DONE
 + [\[Say nothing\]]
     ~ kit_ca05_prompt_choice = "silent"
+    #exit_conversation
+    -> DONE
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca10_check ===
+{ kit_ca10_moved:
+    -> bye
+}
+{ kit_ca10_check_choice == "close" || kit_ca10_check_choice == "paste" || kit_ca10_check_choice == "silent" || kit_ca10_done:
+    -> ca10
+}
+Darren Price: It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?
+{ kit_ca10_check_choice == "":
+    ~ kit_ca10_check_choice = "asked"
+}
++ [Close that tab and ring security now.]
+    ~ kit_ca10_check_choice = "close"
+    Darren Price: Closing it. I'll ring security.
+    #exit_conversation
+    -> DONE
++ [Go on. Your phone prompt still guards the account.]
+    ~ kit_ca10_check_choice = "paste"
+    Darren Price: Pasted. The box has gone. #delivery: cheerful, unbothered
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca10_check_choice = "silent"
     #exit_conversation
     -> DONE
 

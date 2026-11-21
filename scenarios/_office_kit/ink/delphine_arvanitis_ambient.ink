@@ -2,6 +2,7 @@ VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
 VAR kit_ca14_moved = false
+VAR kit_ca18_moved = false
 
 === start ===
 { kit_defend_done:
@@ -23,6 +24,9 @@ Delphine Arvanitis: Morning. The studio's just through here.
 -> bye
 
 === ca18 ===
+{ kit_ca18_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Delphine Arvanitis: Well done. A warning email is never a reason to re-enter a password.
 - else:

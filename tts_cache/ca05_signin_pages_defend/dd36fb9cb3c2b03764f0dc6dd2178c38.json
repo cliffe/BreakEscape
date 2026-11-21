@@ -1,0 +1,13 @@
+{
+  "key": "dd36fb9cb3c2b03764f0dc6dd2178c38",
+  "npc": "kit_darren_price",
+  "text": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:09:33Z"
+}

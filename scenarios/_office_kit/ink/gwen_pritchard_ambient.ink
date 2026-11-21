@@ -1,6 +1,7 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca07_moved = false
 
 === start ===
 { kit_defend_done:
@@ -11,6 +12,9 @@ Gwen Pritchard: Hello there. Grab a coffee if you need one.
 -> bye
 
 === ca07 ===
+{ kit_ca07_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Gwen Pritchard: Good catch. Someone wanting it kept quiet is the real warning.
 - else:

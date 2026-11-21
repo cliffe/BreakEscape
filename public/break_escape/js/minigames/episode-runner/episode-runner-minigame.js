@@ -27,7 +27,7 @@
 //            strings.defendIntro, else a default; the heading and button fit the set
 //            (messages, pages, calls, phone or voice)
 //   check    (check missions) the same, with defend.stage ('pre' or 'post')
-//   debrief  drawn here with renderDebrief (P7-B); Finish closes the runner
+//   debrief  drawn here with renderDebrief (P7-B); Finish shows the "Episode finished" panel, and the kiosk X closes the runner
 //
 // Progress lives in the declared global episode_<id>_state (ids and numbers only), written
 // through the shared writer, so a reopen from the kiosk resumes at the stage it left. A

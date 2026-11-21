@@ -1,0 +1,14 @@
+{
+  "key": "33750c944ad445e6e3c5f2b626147bea",
+  "npc": "kit_darren_price",
+  "text": "Pasted. The box has gone.",
+  "delivery": "cheerful, unbothered",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:09:40Z"
+}

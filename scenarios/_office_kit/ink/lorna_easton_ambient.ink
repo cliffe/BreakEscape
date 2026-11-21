@@ -7,11 +7,19 @@ VAR kit_ca14_photo_choice = ""  // Synced scenario global
 VAR kit_ca14_seen = false
 VAR kit_ca14_moved = false
 VAR kit_ca14_done = false
+VAR kit_ca18_out = false  // Synced scenario global
+VAR kit_ca18_asked = false
+VAR kit_ca18_reset_choice = ""  // Synced scenario global
+VAR kit_ca18_moved = false
+VAR kit_ca18_done = false
 
 === start ===
 // A click before the request bark lands (or the ask flag is set) still opens the request, so an early click never strands it.
 { kit_ca14_asked || (kit_ca14_out && not kit_ca14_done):
     -> ca14_photo
+}
+{ kit_ca18_asked || (kit_ca18_out && not kit_ca18_done):
+    -> ca18_reset
 }
 { kit_defend_done:
     { kit_ep == "ca04": -> ca04 }
@@ -74,6 +82,34 @@ Lorna Easton: It's all of us at our desks. Fine to post?
     -> DONE
 + [\[Say nothing\]]
     ~ kit_ca14_photo_choice = "silent"
+    #exit_conversation
+    -> DONE
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca18_reset ===
+{ kit_ca18_moved:
+    -> bye
+}
+{ kit_ca18_reset_choice == "words" || kit_ca18_reset_choice == "save" || kit_ca18_reset_choice == "silent" || kit_ca18_done:
+    -> ca18
+}
+Lorna Easton: Kept my old one, changed the season. One less thing to remember. That'll do, won't it?
+{ kit_ca18_reset_choice == "":
+    ~ kit_ca18_reset_choice = "asked"
+}
++ [Start again with three random words, then press Save.]
+    ~ kit_ca18_reset_choice = "words"
+    Lorna Easton: Ah, makes sense. Three random words it is.
+    #exit_conversation
+    -> DONE
++ [Save it. The reset page accepted it, so it's fine.]
+    ~ kit_ca18_reset_choice = "save"
+    Lorna Easton: Lovely. That's saved. #delivery: cheerful, unbothered
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca18_reset_choice = "silent"
     #exit_conversation
     -> DONE
 
