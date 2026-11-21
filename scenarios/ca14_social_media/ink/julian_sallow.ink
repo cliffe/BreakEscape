@@ -19,6 +19,7 @@ VAR kit_ca14_host_said = false
 VAR kit_ca14_out = false
 VAR kit_ca14_done = false
 VAR kit_ca14_moved = false
+VAR kit_ca14_photo_choice = ""
 VAR hub_quiet = false
 
 === start ===
@@ -30,7 +31,7 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && (kit_ca14_done || not kit_ca14_out) && not kit_ca14_host_said:
         {
-        - kit_key_caught && not kit_ca14_moved:
+        - kit_key_caught && not kit_ca14_moved && (kit_ca14_photo_choice == "" || kit_ca14_photo_choice == "crop"):
             { kit_caught:
                 Julian Sallow: You checked the new contact before you answered, so the account trading on a partner's name got nothing out of the studio.
             - else:

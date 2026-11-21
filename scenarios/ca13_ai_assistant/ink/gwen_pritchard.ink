@@ -51,7 +51,7 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && (kit_ca13_done || not kit_ca13_out) && not kit_ca13_host_said:
         {
-        - kit_key_caught && not kit_ca13_moved:
+        - kit_key_caught && not kit_ca13_moved && (kit_ca13_send_choice == "" || kit_ca13_send_choice == "ring"):
             { kit_caught:
                 Gwen Pritchard: You stopped the request that rode on the assistant's summary, so the attacker's staged call walked away with nothing.
             - else:
