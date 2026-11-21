@@ -77,6 +77,13 @@ export function stepAwayOn(episode) {
     return at >= 0 && stages.indexOf('debrief') > at;
 }
 
+/** Whether the episode's debrief comes after `stage` in its stage list. */
+export function debriefFollows(episode, stage) {
+    const stages = stagesFor(episode);
+    const at = stages.indexOf(stage);
+    return at >= 0 && stages.indexOf('debrief') > at;
+}
+
 /**
  * EC1 (d): whether the success screen waits, read from saved state alone so it holds after a
  * reload: a step-away episode whose defend round is complete and whose debrief is neither
@@ -488,6 +495,8 @@ export function readState(episode, raw) {
     if (defendProgress) state.defendProgress = defendProgress;
     // EC1 (d): a step-away episode's debrief was closed (any route), so the success screen may open.
     if (src.debriefSeen === true && stepAwayOn(episode)) state.debriefSeen = true;
+    // The step-away prompt (Look up / Carry on) was answered; one boolean, written once.
+    if (src.stepAwayPicked === true && stepAwayOn(episode)) state.stepAwayPicked = true;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -504,11 +513,11 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     // item 8: writing the defend summary means the round finished, so the saved per-verdict
-    // progress is no longer needed and is cleared. EC1 (c): a step-away episode keeps the cleaned
-    // list (verdicts only, no answer key), so the debrief's per-item cards survive a look-up.
+    // progress is no longer needed and is cleared. EC1 (c): an episode with a debrief after defend keeps the
+    // cleaned list (verdicts only, no answer key), so the debrief's per-item cards survive a look-up, a close and a reload.
     if ('defend' in patch) {
         next.defend = cleanDefend(patch.defend);
-        if (!(stageId === 'defend' && stepAwayOn(episode) && next.defendProgress)) delete next.defendProgress;
+        if (!(stageId === 'defend' && debriefFollows(episode, 'defend') && next.defendProgress)) delete next.defendProgress;
     }
     if ('defendProgress' in patch) { const p = cleanAnswerList(patch.defendProgress); if (p) next.defendProgress = p; else delete next.defendProgress; }
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
