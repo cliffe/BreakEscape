@@ -367,6 +367,22 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     color: #fff;
 }
 
+/* A confirm with one named button and the corner X (options.closeX): the X sits inside the
+   frame, the message stops short of it, the hit area is 44px */
+.game-confirm-has-x {
+    position: relative;
+}
+
+.game-confirm-has-x .game-confirm-message {
+    padding-right: 40px;
+}
+
+.game-confirm-has-x .game-modal-close::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+}
+
 /* Display modal (gameDisplay) — extends confirm dialog styles */
 .game-display-dialog {
     max-width: 700px; /* keep in step with --be-dialog-max in hud.css: 700 less padding and frame leaves a 586-600px text column */

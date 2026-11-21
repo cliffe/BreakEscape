@@ -29,7 +29,7 @@
 import MusicController from './music-controller.js';
 import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus, splitSectionHeader } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus, splitSectionHeader, creditsLogLine } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
 import { returnToMissions } from '../ui/success-screen.js';
 import { cctvFeeds } from './cctv-feeds.js';
@@ -1736,7 +1736,7 @@ function _startCredits(lines) {
                 } else {
                     label.textContent = displayDashes(item.text);
                 }
-                if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
+                if (_themeDef.logCredits) addLog(displayDashes(creditsLogLine(item)));
             }
             label.style.opacity = '1';
             _syncCreditsScroll(label);

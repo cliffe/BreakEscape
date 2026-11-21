@@ -1160,13 +1160,24 @@ export function gameDisplay(message, title = '', options = {}) {
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
 // options.html === true: all three were built as HTML on purpose, author text already escaped.
 // options.plainText is accepted and changes nothing.
+// options.closeX === true: the confirm carries one named button (confirmLabel) and the corner X
+// is the way out (resolves false); cancelLabel is ignored. For a confirm whose only other
+// answer is "never mind", so the dialog follows the one-X rule (sis02 blind playtest m8).
 export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', options = {}) {
     return new Promise(resolve => {
         const plainText = !(options && options.html === true);
+        const closeX = plainText && !!(options && options.closeX === true);
         const overlay = document.createElement('div');
         overlay.className = 'game-confirm-overlay';
         if (plainText) {
-            overlay.innerHTML = `
+            overlay.innerHTML = closeX ? `
+            <div class="game-confirm-dialog game-confirm-has-x">
+                <button type="button" class="game-modal-close" aria-label="Close">&times;</button>
+                <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
+                <div class="game-confirm-buttons">
+                    <button class="game-confirm-btn game-confirm-ok"></button>
+                </div>
+            </div>` : `
             <div class="game-confirm-dialog">
                 <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
                 <div class="game-confirm-buttons">
@@ -1177,7 +1188,8 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             // Author text in, plain text out: textContent, never innerHTML.
             overlay.querySelector('.game-confirm-message').textContent = displayDashes(message);
             overlay.querySelector('.game-confirm-ok').textContent = confirmLabel;
-            overlay.querySelector('.game-confirm-cancel').textContent = cancelLabel;
+            const cancelEl = overlay.querySelector('.game-confirm-cancel');
+            if (cancelEl) cancelEl.textContent = cancelLabel;
         } else {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
@@ -1192,7 +1204,7 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
         // Esc means the cancel button's choice (resolve false), the safe one.
         const okBtn = overlay.querySelector('.game-confirm-ok');
-        const cancelBtn = overlay.querySelector('.game-confirm-cancel');
+        const cancelBtn = overlay.querySelector(closeX ? '.game-modal-close' : '.game-confirm-cancel') || okBtn;
         const previousFocus = document.activeElement;
         let done = false;
         // Keys already down when the dialog opened (an arrow the player was walking with):

@@ -177,7 +177,8 @@
 .sis-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(6, 10, 18, 0.6);
+    background: #0a0f18;   /* opaque: the panel's buttons are not drawn through the dialog */
+    font-family: 'GNF', 'VT323', monospace;   /* the overlay sits outside .sis-threshold, so it names its own pixel font */
     display: none;
     align-items: center;
     justify-content: center;
@@ -194,7 +195,8 @@
 
 .sis-modal {
     background: #161c26;
-    border: 2px solid #3c4d68;
+    border: 2px solid #5b7399;
+    font-family: 'GNF', 'VT323', monospace;
     max-width: 720px;
     width: 100%;
     padding: 14px;
@@ -223,6 +225,7 @@
     overflow-wrap: anywhere;
     margin: 0 0 8px 0;
     color: #f4f7fb;
+    font-family: 'GNF', 'VT323', monospace;
     font-size: 24px;
     line-height: 32px;
 }
@@ -273,6 +276,7 @@
 
 .sis-compare-card {
     border: 2px solid #2b3443;
+    font-family: 'GNF', 'VT323', monospace;
     background: #202735;
     padding: 10px;
     min-height: 132px;

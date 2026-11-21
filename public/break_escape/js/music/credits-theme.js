@@ -195,3 +195,14 @@ export function splitSectionHeader(text) {
     const m = text.match(/^([\u2500\u2501\u2014\u2013-]{2,})\s+(.*?\S)\s+([\u2500\u2501\u2014\u2013-]{2,})$/u);
     return m ? { lead: m[1], title: m[2], trail: m[3] } : null;
 }
+
+/**
+ * The review log's line for one credits item: "> " and the text. A section header goes in
+ * without its dash runs, because the narrow log panel wrapped "── NETWORK CONTAINMENT ──" into
+ * a lone dash line, the words, and another dash line (sis02 blind playtest m17). Pure.
+ */
+export function creditsLogLine(item) {
+    const text = String(item?.text ?? '');
+    const parts = item?.style === 'section-header' ? splitSectionHeader(text) : null;
+    return '> ' + (parts ? parts.title : text);
+}

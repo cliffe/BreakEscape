@@ -648,6 +648,14 @@
     color: #ccccee;
 }
 
+.lf-flag-confirm-step {
+    font-size: 16px;
+    line-height: 24px;
+    color: #66cc66;
+    border: 2px solid #447744;
+    padding: 4px 8px;
+}
+
 .lf-flag-confirm-body strong {
     color: #ffffff;
 }
@@ -667,6 +675,7 @@
     font-size: 16px;
     cursor: pointer;
     padding: 4px 12px;
+    min-height: 44px;
     letter-spacing: 0.03em;
 }
 
