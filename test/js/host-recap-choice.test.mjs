@@ -17,7 +17,7 @@ const HOSTS = [
   ['ca05', 'ca05_signin_pages/ink/niamh_doherty.json', 'kit_ca05_prompt_choice', 'stop', 'approve', "You read the address and didn't type", 'Your password went into the copy'],
   ['ca13', 'ca13_ai_assistant/ink/gwen_pritchard.json', 'kit_ca13_send_choice', 'ring', 'send', 'You stopped the request that rode', 'The assistant sounded certain'],
   ['ca14', 'ca14_social_media/ink/julian_sallow.json', 'kit_ca14_photo_choice', 'crop', 'post', 'You checked the new contact', 'It knew real details'],
-  ['ca02', 'ca02_cv_lures/ink/fatima_begum.json', 'kit_ca02_cv_choice', 'report', 'enable', 'You spotted the one that wanted', 'That application was opened'],
+  ['ca02', 'ca02_cv_lures/ink/fatima_begum.json', 'kit_ca02_cv_choice', 'report', 'enable', 'You spotted the one that wanted', 'A CV that wants content switched on'],
 ];
 
 function recap(file, vars) {
