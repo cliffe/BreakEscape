@@ -20,6 +20,11 @@ class ScenarioTimerDispatcher {
   /**
    * @constructor
    * @param {Object} scenario - Scenario JSON object with timers[] section
+   * @param {Object} [opts]
+   * @param {number} [opts.startTime] - epoch ms to count from (the GameClock's start)
+   * @param {Object} [opts.saved] - the last sync's timer block (elapsedMs, fired, cancelled, started)
+   * @param {number} [opts.clockSavedElapsedMs] - the clock's saved elapsed from the same save;
+   *   places a started timer on the clock's timeline (forGame passes it only with a clock)
    */
   constructor(scenario, opts = {}) {
     this.scenario = scenario;

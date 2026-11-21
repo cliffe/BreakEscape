@@ -1,7 +1,7 @@
 /**
  * Two follow-ups.
- * 1. Reload drift: the timer dispatcher counts from the game clock's start (never its own
- *    saved elapsed time), so a slow page load does not move the two apart. Real GameClock
+ * 1. Reload drift: when there is a game clock, the timer dispatcher counts from its start
+ *    (not its own saved elapsed time), so a slow page load does not move the two apart. Real GameClock
  *    and real ScenarioTimerDispatcher.forGame (the call game.js makes).
  * 2. A note already in the Notepad is not announced again by a container, on either take
  *    route (in-window message, or notice plus toast). Real container code, real inventory.js
@@ -367,7 +367,7 @@ test('route 2: the reopened window of a repeat take shows no notice line', async
     assert.ok(winMsgs().length === 0, `no notice in the window: ${winMsgs().join('|')}`);
 });
 
-test('a different note with the same title is still announced (only the same text counts as a repeat)', async () => {
+test('a different note with the same title is still announced (a repeat needs an unchanged note count and a note with this title)', async () => {
     setup(); notepad(); readerAdds();
     window.gameState.notes.push({ id: 9, title: 'Memo', text: 'Older text', read: true });
     await openWith([noteOf('n1', 'Memo', { text: 'New text' })]);
