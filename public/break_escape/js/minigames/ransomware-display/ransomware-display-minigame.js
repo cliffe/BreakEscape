@@ -99,8 +99,12 @@ export class RansomwareDisplayMinigame extends MinigameScene {
         const vars = window.gameState?.globalVariables || {};
         const fromGlobals = parseTimestamp(vars.scenario_start_time) || parseTimestamp(vars.scenarioStartTime);
         const fromState = parseTimestamp(window.gameState?.startTime);
+        // At a story rate the note shares the HUD timers' start: the game clock's start,
+        // which survives a reload. Opening the note must not start its own clock.
+        const rate = ransomTimerRate(this.params?.lockable?.scenarioData?.minigameData);
+        const fromClock = rate > 1 ? parseTimestamp(window.gameClock?.startTime) : null;
 
-        return fromGlobals || fromState || Date.now();
+        return fromGlobals || fromClock || fromState || Date.now();
     }
 
     ensureDeadlineTimestamp() {

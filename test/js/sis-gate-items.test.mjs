@@ -140,6 +140,21 @@ test('item 4: timerRate 84 counts 62 h down at the HUD rate (63 h in 45 minutes)
     } finally { Date.now = realNow; }
 });
 
+test('item 4: at a story rate the countdown starts with the game clock, not when the note is opened', () => {
+    const realNow = Date.now;
+    const t0 = 1_700_000_000_000;
+    try {
+        // the game started 10 real minutes ago; the note is opened now
+        Date.now = () => t0 + 10 * 60_000;
+        window.gameClock = { startTime: t0 };
+        const f = ransomFake({ timerHours: 62, timerRate: 84 }, undefined);
+        f.updateTimerDisplay();
+        const txt = f.gameContainer.querySelector('#ransomware-timer-value').textContent;
+        // 10 min x 84 = 14 h: 48:00:00 left
+        assert.ok(txt === '48:00:00', 'counts from game start, got ' + txt);
+    } finally { Date.now = realNow; window.gameClock = undefined; }
+});
+
 test('item 4: without timerRate the countdown is real time as before (m02)', () => {
     const realNow = Date.now;
     const t0 = 1_700_000_000_000;
