@@ -4,6 +4,7 @@ VAR kit_key_caught = false
 VAR kit_ca06_asked = false
 VAR kit_ca06_notice_choice = ""  // Synced scenario global
 VAR kit_ca06_done = false
+VAR kit_ca02_moved = false
 
 === start ===
 { kit_ca06_asked:
@@ -17,6 +18,9 @@ Zainab Hussain: Hiya. Help yourself to the drinks machine, it's just there.
 -> bye
 
 === ca02 ===
+{ kit_ca02_moved:
+    -> bye
+}
 { kit_key_caught:
     Zainab Hussain: Nice catch on that CV. One file that wants a second click to open, and you're off the road for a week.
 - else:

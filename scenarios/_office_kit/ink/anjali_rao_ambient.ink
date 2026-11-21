@@ -1,6 +1,7 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca05_moved = false
 
 === start ===
 { kit_defend_done:
@@ -20,6 +21,9 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 -> bye
 
 === ca05 ===
+{ kit_ca05_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Anjali Rao: Good spot. The page was a near-perfect copy of our own sign-in.
 - else:

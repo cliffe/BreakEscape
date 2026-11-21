@@ -5,10 +5,17 @@ VAR kit_ca09_asked = false
 VAR kit_ca09_note_choice = ""  // Synced scenario global
 VAR kit_ca09_note_seen = false
 VAR kit_ca09_done = false
+VAR kit_ca02_asked = false
+VAR kit_ca02_cv_choice = ""  // Synced scenario global
+VAR kit_ca02_moved = false
+VAR kit_ca02_done = false
 
 === start ===
 { kit_ca09_asked:
     -> ca09_note
+}
+{ kit_ca02_asked:
+    -> ca02_cv
 }
 { kit_defend_done:
     { kit_ep == "ca02": -> ca02 }
@@ -73,6 +80,34 @@ Chidi Okeke: Right, sorted. New one's on a sticky note on my screen so I don't f
     -> DONE
 + [\[Say nothing\]]
     ~ kit_ca09_note_choice = "silent"
+    #exit_conversation
+    -> DONE
+
+// Reached from the request bark. A bark's knot sticks, so a second entry never re-answers.
+// Once the beat is over a late click gets the stub, so no answer lands after the recap.
+=== ca02_cv ===
+{ kit_ca02_moved:
+    -> bye
+}
+{ kit_ca02_cv_choice == "report" || kit_ca02_cv_choice == "enable" || kit_ca02_cv_choice == "silent" || kit_ca02_done:
+    -> ca02
+}
+Chidi Okeke: Blank page, just a box saying enable editing and content. Do I click?
+{ kit_ca02_cv_choice == "":
+    ~ kit_ca02_cv_choice = "asked"
+}
++ [Report it and tell Fatima. A real CV opens without that.]
+    ~ kit_ca02_cv_choice = "report"
+    Chidi Okeke: Right. Reported it, and I'll give Fatima a shout.
+    #exit_conversation
+    -> DONE
++ [Click it. Word says that about anything downloaded from email.]
+    ~ kit_ca02_cv_choice = "enable"
+    Chidi Okeke: Grand. Clicked it. #delivery: cheerful, unbothered
+    #exit_conversation
+    -> DONE
++ [\[Say nothing\]]
+    ~ kit_ca02_cv_choice = "silent"
     #exit_conversation
     -> DONE
 

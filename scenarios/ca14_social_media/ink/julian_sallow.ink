@@ -16,6 +16,9 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca14_host_said = false
+VAR kit_ca14_out = false
+VAR kit_ca14_done = false
+VAR kit_ca14_moved = false
 VAR hub_quiet = false
 
 === start ===
@@ -25,14 +28,15 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca14_host_said:
-        { kit_key_caught:
+    { kit_defend_done && (kit_ca14_done || not kit_ca14_out) && not kit_ca14_host_said:
+        {
+        - kit_key_caught && not kit_ca14_moved:
             { kit_caught:
                 Julian Sallow: You checked the new contact before you answered, so the account trading on a partner's name got nothing out of the studio.
             - else:
                 Julian Sallow: You stopped the one worth stopping, the message wearing a colleague's name, before it collected anything useful.
             }
-        - else:
+        - not kit_key_caught:
             Julian Sallow: It knew real details and wore a trusted name, so one reply handed over a security answer we then had to reset.
         }
         Julian Sallow: A new contact gets checked by a route you already know before you tell them anything, however well they seem to know us.

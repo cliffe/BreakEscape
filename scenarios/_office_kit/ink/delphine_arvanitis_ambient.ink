@@ -1,6 +1,7 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca14_moved = false
 
 === start ===
 { kit_defend_done:
@@ -11,6 +12,9 @@ Delphine Arvanitis: Morning. The studio's just through here.
 -> bye
 
 === ca14 ===
+{ kit_ca14_moved:
+    -> bye
+}
 { kit_key_caught:
     Delphine Arvanitis: Good eye. Those public posts are exactly what they build on.
 - else:

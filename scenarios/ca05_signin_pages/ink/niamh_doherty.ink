@@ -13,6 +13,10 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca05_host_said = false
+VAR kit_ca05_out = false
+VAR kit_ca05_done = false
+VAR kit_ca05_moved = false
+VAR kit_ca05_prompt_choice = ""
 VAR hub_quiet = false
 
 === start ===
@@ -22,13 +26,18 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca05_host_said:
-        { kit_key_caught:
+    { kit_defend_done && (kit_ca05_done || not kit_ca05_out) && not kit_ca05_host_said:
+        {
+        - kit_key_caught && not kit_ca05_moved:
             { kit_caught:
                 Niamh Doherty: You read the address and didn't type your password into the copy, so there was nothing for the attacker to catch.
             - else:
                 Niamh Doherty: You kept your password off the fake page, so your account held. A couple of the others are worth another look in the debrief.
             }
+            Niamh Doherty: Read the address bar before you type a password. A padlock doesn't make a page ours.
+        - kit_key_caught:
+            Niamh Doherty: Read the address bar before you type a password. A padlock doesn't make a page ours.
+        - kit_ca05_prompt_choice == "stop":
             Niamh Doherty: Read the address bar before you type a password. A padlock doesn't make a page ours.
         - else:
             Niamh Doherty: Your password went into the copy, so the attacker had your real account, the claimant data behind it and a seat to phish the rest of us from.

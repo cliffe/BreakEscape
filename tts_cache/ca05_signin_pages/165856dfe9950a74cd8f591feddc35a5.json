@@ -1,0 +1,13 @@
+{
+  "key": "165856dfe9950a74cd8f591feddc35a5",
+  "npc": "kit_darren_price",
+  "text": "Voicemail's come through by email. Signing in to hear it.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:24Z"
+}

@@ -160,16 +160,16 @@
     {
       "id": "ca02_cv_lures",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "tarrowby_logistics",
       "ep": "ca02",
       "ambient": [
         "chidi_okeke",
         "zainab_hussain"
       ],
-      "setPiece": null,
+      "setPiece": "ca02_enable_editing",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e2_enable_content",
       "hostLine": true
     },
@@ -208,16 +208,16 @@
     {
       "id": "ca05_signin_pages",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "quayholt_insurance",
       "ep": "ca05",
       "ambient": [
         "anjali_rao",
         "darren_price"
       ],
-      "setPiece": null,
+      "setPiece": "ca05_signin_prompt",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e5_sso_lookalike",
       "hostLine": true
     },
@@ -322,32 +322,32 @@
     {
       "id": "ca13_ai_assistant",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "brightwell_foods",
       "ep": "ca13",
       "ambient": [
         "agnieszka_duda",
         "graham_whitfield"
       ],
-      "setPiece": null,
+      "setPiece": "ca13_summary_says_send",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e13_supplier_injection",
       "hostLine": true
     },
     {
       "id": "ca14_social_media",
       "handAuthored": true,
-      "tier": "T",
+      "tier": "E",
       "company": "merrin_sallow",
       "ep": "ca14",
       "ambient": [
         "lorna_easton",
         "delphine_arvanitis"
       ],
-      "setPiece": null,
+      "setPiece": "ca14_team_photo",
       "attack": true,
-      "stepAway": false,
+      "stepAway": true,
       "keyMessage": "e14_fake_merrin",
       "hostLine": true
     },
