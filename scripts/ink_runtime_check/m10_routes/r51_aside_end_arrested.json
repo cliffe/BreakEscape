@@ -1,0 +1,38 @@
+{
+ "imports": {
+  "m08_nightshade_arrested": true
+ },
+ "steps": [
+  {
+   "note": "Aside with Nightshade arrested in m08: HaX says they have brought him up in cuffs. No payment line, and the silent-branch tether does not follow."
+  },
+  {
+   "set": {
+    "briefing_done": true
+   }
+  },
+  {
+   "talk": "netherton",
+   "picks": [
+    "Do we know who"
+   ]
+  },
+  {
+   "said": [
+    "They've brought Nightshade up in cuffs. He asked for you.",
+    "Start the gate console on your way past."
+   ],
+   "notSaid": [
+    "brought his payment",
+    "Nightshade's at the table.",
+    "Nightshade's in the van."
+   ]
+  },
+  {
+   "expect": {
+    "aside_done": true,
+    "door_scene_done": false
+   }
+  }
+ ]
+}
