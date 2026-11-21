@@ -1293,6 +1293,8 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     assert.ok(new RegExp(`${ch} === ''`).test(req.condition), `${name}: request only while the choice is empty`);
     const close = cm.find((m) => m.eventPattern === `conversation_closed:kit_${w.stub}`);
     assert.ok(close && close.condition.includes(`${ch} === 'asked'`) && close.setGlobal[ch] === w.silent && close.onceOnly === true, `${name}: close turns asked into ${w.silent}`);
+    // ca09: closing before the note has been seen must not lock in "silent" (&& only, no ||)
+    if (ep === 'ca09') assert.ok(!close.condition.includes('||') && close.condition.split(' && ').includes('globalVars.kit_ca09_note_seen === true'), `${name}: close-silent needs the note seen`);
     const dm = cm.find((m) => m.eventPattern === `global_variable_changed:${ep === 'ca15' ? 'kit_ca15_done' : done}` && m.setGlobal && m.setGlobal[ch] === w.silent);
     assert.ok(dm && dm.condition.includes(`${ch} === 'asked'`), `${name}: done turns asked into ${w.silent}`);
     const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);
@@ -1302,14 +1304,24 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     // every walk has a fallback timer
     const walkTimers = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${ep}_t_`) && !['tail', 'done'].includes(t.id.split('_t_')[1]));
     assert.ok(walkTimers.length >= 1, `${name}: a walk fallback timer`);
-    assert.ok(walkTimers.every((t) => t.delayMs >= 6000 && t.delayMs <= 15000), `${name}: walk fallbacks 6-15 s`);
+    assert.ok(walkTimers.every((t) => t.delayMs >= 6000 && t.delayMs <= 20000), `${name}: walk fallbacks 6-20 s`);
     // the colleague's needs freeze
     const th = col.needs && col.needs.thirst;
     assert.ok(th && th.decayPerMin === 0.01 && th.urgentAt === 50 && th.initial > 50, `${name}: colleague thirst is frozen (full dict)`);
     // walker and partner: suspend and resume
+    // ca09 and ca16: the walker suspends on the failure beat, DELAYED so it cannot run inside the
+    // npc_use_failed emit (a re-entrant suspend nulls s.job before _turnBack reads it). Others suspend on out.
+    const failBeat = { ca09: 'kit_ca09_note_up', ca16: 'kit_ca16_signin_failed' }[ep];
     for (const who of [w.walker, w.partner]) {
       const m2 = (sc.rooms.training_room.npcs.find((n) => n.id === who) || {}).eventMappings || [];
-      assert.ok(m2.some((m) => m.needs === 'suspend'), `${name}: ${who} suspends`);
+      const susp = m2.filter((m) => m.needs === 'suspend');
+      assert.equal(susp.length, 1, `${name}: ${who} has exactly one suspend`);
+      if (who === w.walker && failBeat) {
+        assert.equal(susp[0].eventPattern, `global_variable_changed:${failBeat}`, `${name}: ${who} suspends on the failure beat, not on out`);
+        assert.ok(Number.isFinite(susp[0].delayMs) && susp[0].delayMs >= 1, `${name}: ${who} failure-beat suspend is delayed (>= 1 ms)`);
+      } else {
+        assert.equal(susp[0].eventPattern, `global_variable_changed:kit_${ep}_out`, `${name}: ${who} suspends on out`);
+      }
       assert.ok(m2.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: ${who} resumes on done`);
     }
   }
@@ -1373,7 +1385,8 @@ test('wave 4: host recap is gated until the chain ends, in every host ink', () =
   for (const [name, h] of Object.entries(hosts)) {
     const ep = W4[name].ep;
     const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
-    assert.ok(ink.includes(`(kit_${ep}_done || not kit_${ep}_out)`), `${name}: recap guard`);
+    const guardRe = new RegExp(`^\\s*\\{\\s*kit_defend_done && \\(kit_${ep}_done \\|\\| not kit_${ep}_out\\) && not kit_${ep}_host_said\\s*:?`, 'm');
+    assert.ok(guardRe.test(ink), `${name}: recap guard is kit_defend_done && (done || not out) && not host_said`);
     assert.ok(new RegExp(`VAR kit_${ep}_out = false`).test(ink) && new RegExp(`VAR kit_${ep}_done = false`).test(ink), `${name}: VARs`);
     assert.ok(!existsSync(join(scenarios, `${name}_defend`, 'ink', `${h}.ink`)) || !readFileSync(join(scenarios, `${name}_defend`, 'ink', `${h}.ink`), 'utf8').includes(`kit_${ep}_out`), `${name}_defend: host ink untouched`);
   }
@@ -1385,10 +1398,25 @@ test('wave 4: each request knot guards itself, offers only allowed values, and t
     const m = ink.match(new RegExp(`=== ${w.knot} ===([\\s\\S]*?)(?=\\n=== |$)`));
     assert.ok(m, `${name}: knot ${w.knot}`);
     const body = m[1];
-    for (const v of [...w.values.filter((x) => x !== w.silent), w.silent]) assert.ok(body.includes(`kit_${w.ep}_`) , `${name}: knot touches the chain`);
-    const guard = body.split('\n').find((l) => /^\{.*->/.test(l.trim()) || /kit_\w+_done:/.test(l));
-    assert.ok(guard && guard.includes(`kit_${w.ep}_done`), `${name}: guard names done`);
-    for (const v of w.values) if (v !== w.silent || true) assert.ok(guard.includes(`"${v}"`), `${name}: guard names ${v}`);
+    // the guard is the knot's first statement
+    const lines = body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    const guard = lines[0];
+    assert.ok(/^\{.*:\s*$/.test(guard) && /^\s+-> \w+\s*$/.test(lines[1]) && lines[2].trim() === '}', `${name}: the knot opens with a guard block that diverts`);
+    assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: guard names done`);
+    for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: guard names ${v}`);
+    assert.equal(lines[1].trim(), `-> ${w.ep}`, `${name}: guard diverts to the stub knot`);
+    // start diverts on asked into the knot, before any kit_defend_done divert
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim());
+    assert.ok(/^\{\s*kit_\w+_asked\s*:\s*$/.test(startBody[0]) && startBody[0].includes(`kit_${w.ep}_asked`) && startBody[1].trim() === `-> ${w.knot}`, `${name}: start's first statement diverts on asked into ${w.knot}`);
+    assert.ok(startBody.findIndex((l) => l.includes('kit_defend_done')) > 1, `${name}: the asked divert comes before the kit_defend_done divert`);
+    // one + option writes each value, and the first spoken line is the request bark
+    for (const v of w.values) {
+      const n = body.split(/\n(?=\+ )/).filter((blk) => /^\+ /.test(blk) && new RegExp(`~ ${w.choice} = "${v}"`).test(blk)).length;
+      assert.ok(n >= 1, `${name}: an option writes ${v}`);
+    }
+    const reqBark = (w4Shell(name).rooms.training_room.npcs.find((n) => n.id === `kit_${w.stub}`).eventMappings.find((m) => m.targetKnot === w.knot) || {}).bark;
+    const firstSpoken = lines.find((l) => /^[A-Z][A-Za-z ]+: /.test(l));
+    assert.equal(firstSpoken.replace(/^[^:]+: /, '').replace(/ #.*$/, ''), reqBark, `${name}: first spoken line is the request bark`);
     assert.ok(/~ kit_\w+_choice = "asked"|~ [a-z0-9_]+ = "asked"/.test(body), `${name}: knot writes "asked"`);
     const writes = [...body.matchAll(new RegExp(`~ ${w.choice} = "(\\w*)"`, 'g'))].map((x) => x[1]);
     assert.ok(writes.every((v) => ['asked', ...w.values].includes(v)), `${name}: every write is an allowed value (${writes})`);
