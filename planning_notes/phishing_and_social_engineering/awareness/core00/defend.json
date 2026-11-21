@@ -30,7 +30,7 @@
       "briefCards": [
         {
           "heading": "Welcome",
-          "text": "This is practice at Quayholt Insurance, a company we made up for the course. Nothing here is real, and nobody is trying to catch you out.\n\nYou will meet the kinds of messages, calls and pages that turn up in a normal working day, and take a few minutes to decide what you would do."
+          "text": "This is practice at Quayholt Insurance, a company we made up for the course. Nothing here is real, and nobody is trying to catch you out.\n\nYou will meet the kinds of messages, calls and pages that turn up in a normal working day, and decide what you would do.\n\nThis brief takes about 5 minutes. Each episode after it takes roughly 10 to 15."
         },
         {
           "heading": "How it works",
@@ -42,7 +42,7 @@
         },
         {
           "heading": "What we record, and who sees it",
-          "text": "We record the items, your verdicts, the flags you tick and the times. There is no free text, and nothing that identifies you.\n\nResults go to you, and to an organiser as a group figure only. Your choices here are practice and are never used for discipline."
+          "text": "We record the items, your verdicts, the flags you tick and the times. There is no free text, so nothing you type is kept, and the record holds no name.\n\nYou see your own results in each debrief. Your organiser, the person who runs this course for your team, can see whether you have finished, and results for the group, never your answers by name. Your choices here are practice and are never used for discipline."
         },
         {
           "heading": "Why anyone targets you",
@@ -58,6 +58,8 @@
         }
       ],
       "briefDone": "Got it",
+      "finishedHeading": "Brief read",
+      "finished": "Close the kiosk to carry on.",
       "alreadySeen": "You have seen this already. Start your first episode whenever you are ready."
     }
   }
