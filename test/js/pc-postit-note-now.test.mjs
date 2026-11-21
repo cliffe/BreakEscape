@@ -113,9 +113,34 @@ test('a submit with an empty field and a submitText does nothing: no line, no re
   assert.equal(f.view.gameData.attempts, 0);
 });
 
-test('hideNotepadButton is passed through the starter and honoured by every chin-button site', () => {
-  const starter = readFileSync(join(root, 'public/break_escape/js/systems/minigame-starters.js'), 'utf8');
-  assert.match(starter, /hideNotepadButton: options\.hideNotepadButton === true/);
-  const pm = readFileSync(join(root, 'public/break_escape/js/minigames/password/password-minigame.js'), 'utf8');
-  assert.equal((pm.match(/hideNotepadButton/g) || []).length, 4);   // the param (twice) and the two button sites
+// hideNotepadButton: start the view (init, the plain-password path) with a stubbed document and
+// record the buttons it puts in the controls row. The base scene's init is stubbed: it only
+// builds the frame markup.
+async function startedButtons(gameData) {
+  const PM = await loadMinigame();
+  const { MinigameScene } = await import('../../public/break_escape/js/minigames/framework/base-minigame.js');
+  const realBase = MinigameScene.prototype.init;
+  MinigameScene.prototype.init = function () {};
+  const realCreate = globalThis.document.createElement;
+  globalThis.document.createElement = () => ({ style: {}, className: '', id: '', innerHTML: '', appendChild() {}, setAttribute() {}, addEventListener() {} });
+  const row = [];
+  const view = {
+    params: {}, gameData, signIn: null, join: null,
+    headerElement: { innerHTML: '' }, gameContainer: { innerHTML: '', querySelector: () => null },
+    isPcScreen: () => false, wrapInFrame() {}, mountMonitor() {}, setupPasswordInterface() {}, setupEventListeners() {},
+    ensureControlsRow: () => ({ appendChild: (el) => row.push(el) }),
+    addEventListener() {}, pcMonitor: null,
+  };
+  try { PM.prototype.init.call(view); } finally {
+    MinigameScene.prototype.init = realBase;
+    globalThis.document.createElement = realCreate;
+  }
+  return row.map((el) => el.id);
+}
+
+test('hideNotepadButton true leaves the Add to Notepad button out; without it the button is there', async () => {
+  const base = { showPostit: true, postitNote: 'Tarrowby2468' };
+  assert.deepEqual(await startedButtons({ ...base, hideNotepadButton: true }), []);
+  assert.deepEqual(await startedButtons({ ...base }), ['minigame-notebook-postit']);
+  assert.deepEqual(await startedButtons({ ...base, hideNotepadButton: false }), ['minigame-notebook-postit']);
 });
