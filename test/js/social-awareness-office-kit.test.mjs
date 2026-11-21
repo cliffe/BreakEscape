@@ -861,6 +861,36 @@ const W4 = {
   ca16_insider_risk: { ep: 'ca16', company: 'quayholt_insurance', setPiece: 'ca16_borrowed_login', walker: 'kit_niamh_doherty', partner: 'kit_darren_price', hostId: 'anjali_rao', there: 'kit_ca16_there', choice: 'kit_ca16_signin_choice', silent: 'silent', knot: 'ca16_signin', stub: 'niamh_doherty', staffBarks: 2, verdicts: ['report', 'verify'], values: ['desk', 'lend', 'silent'], panelEntries: 2, arrayWrap: false },
 };
 const W34 = { ...W3, ...W4 };
+// Wave 5 (WAVE5_BUILD.md s12): ca13, ca14, ca05 and ca02 are colleague requests with a follow-through. The map is EMPTY
+// until each shell's kit step (sheet s13 steps 3-6) adds its entry; every W5 case loops over it, so an empty map passes.
+// Fields: ep, company, setPiece, colleague (the seated asker's kit id), stub (his ambient ink), partner (the walked and
+// suspended follow-through speaker; ca02: Zainab, the suspended bystander), partnerStub, partnerGuard (the first guard of
+// the partner's episode knot), hostId (host ink file), hostSpeaks (ca02: the host gives the follow-through),
+// there, choice, silent, knot, right, wrong, values, staffBarks, panelEntries, arrayWrap, walks, spawn, pcPos, pcName,
+// pron, movedSprite, hostBarks. Optional: walkTarget (set only if step 0 moves a partner's walk off her needsHome, e.g. Anjali).
+//   ca13_ai_assistant: { ep: 'ca13', company: 'brightwell_foods', setPiece: 'ca13_summary_says_send', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield',
+//     partner: 'kit_agnieszka_duda', partnerStub: 'agnieszka_duda', partnerGuard: 'kit_ca13_moved && kit_key_caught', hostId: 'gwen_pritchard', hostSpeaks: false,
+//     there: 'kit_ca13_there', choice: 'kit_ca13_send_choice', silent: 'silent', knot: 'ca13_send', right: 'ring', wrong: 'send', values: ['ring', 'send', 'silent'],
+//     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+//     pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1' },
+//   ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
+//     partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
+//     there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
+//     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+//     pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1' },
+//   ca05_signin_pages: { ep: 'ca05', company: 'quayholt_insurance', setPiece: 'ca05_signin_prompt', colleague: 'kit_darren_price', stub: 'darren_price',
+//     partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca05_moved && kit_key_caught', hostId: 'niamh_doherty', hostSpeaks: false,
+//     there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
+//     staffBarks: 3, hostBarks: 0, panelEntries: 2, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+//     pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1' },
+//   ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
+//     partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
+//     there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
+//     staffBarks: 2, hostBarks: 1, panelEntries: 2, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+//     pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated' },
+const W5 = {};
+const W45 = { ...W4, ...W5 };
+const W345 = { ...W34, ...W5 };
 const KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet === false';
 const w3Kiosk = (sc) => sc.rooms.training_room.objects.find((o) => o.type === 'kiosk');
 const w3Npc = (sc, id) => sc.rooms.training_room.npcs.find((n) => n.id === id);
