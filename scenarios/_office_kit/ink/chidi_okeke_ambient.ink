@@ -120,3 +120,35 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca02_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good spot. That "enable content" box is the whole trick. Click it and you run whatever's tucked inside. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A real CV just opens. One that begs you to enable content is after that one click to let it loose. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca09_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good one. That "IT" number on the message isn't ours. Ring it and you reach them, not our service desk. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A number that says it's IT is easy to plant. Trust the one you already hold, not one a message gives you. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca15_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good call. A stick left lying about is bait, dropped there hoping someone plugs it in for a look. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A found USB stick is a tempting thing, and that's the point of leaving it. It goes to IT, lid never opened. #delivery: easy-going, matter-of-fact
+}
+-> bye
+
+=== ca20_react ===
+{ kit_key_caught:
+    Chidi Okeke: Good eye. No wifi page needs your work password. One that asks is just after it, to sign in as you later. #delivery: easy-going, approving
+- else:
+    Chidi Okeke: A café wifi page wanting your work password is the trap, dressed up on a near-enough web address. Accept the terms, nowt else. #delivery: easy-going, matter-of-fact
+}
+-> bye

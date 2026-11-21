@@ -38,3 +38,11 @@ Gwen Pritchard: Hello there. Grab a coffee if you need one.
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca01_react ===
+{ kit_key_caught:
+    Gwen Pritchard: Someone caught that bank change. They swap the details and let our own payment run pay them instead. #delivery: warm, approving
+- else:
+    Gwen Pritchard: A changed bank detail sails through if nobody checks. One call on the number you already hold stops it dead. #delivery: practical, matter-of-fact
+}
+-> bye

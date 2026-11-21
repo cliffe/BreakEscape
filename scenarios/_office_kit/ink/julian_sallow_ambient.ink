@@ -26,3 +26,11 @@ Julian Sallow: {kit_key_caught: Glad the gate held. Most of what's on my desk is
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca04_react ===
+{ kit_key_caught:
+    Julian Sallow: Well judged. The rush and the "keep it between us" are there to stop you picking up the phone to check. #delivery: measured, dry
+- else:
+    Julian Sallow: "Pay before I land, keep it quiet" is the whole trick. A genuine request survives a quick call to confirm. #delivery: measured, wry
+}
+-> bye

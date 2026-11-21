@@ -49,3 +49,11 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca03_react ===
+{ kit_key_caught:
+    Anjali Rao: Someone clocked that reset push for what it was. All they're after is a password to sign in as one of us. #delivery: approving, calm
+- else:
+    Anjali Rao: Those reset calls keep coming till someone gives in. A prompt you never started is the attacker knocking. #delivery: calm, matter-of-fact
+}
+-> bye
