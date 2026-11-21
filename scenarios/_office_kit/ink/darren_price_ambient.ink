@@ -44,6 +44,19 @@ Darren Price: Welcome aboard. Good to have you on the floor with us.
 }
 -> bye
 
+// D265: the ca05 defend twin's after-sort reaction bark. Triggered only in the twin, by the
+// kit_darren_price eventMapping on kit_defend_done (gen_e3_e5_shells.py); the engine speaks the
+// first line aloud. Reads only kit_key_caught and is true on every path (trust, delete, report
+// or leave). Not reached by start: the twin has no set-piece flow, and the full ca05 shell never
+// carries the mapping, so its Darren is untouched.
+=== ca05_react ===
+{ kit_key_caught:
+    Darren Price: Saw you clock that lookalike sign-in. The address gave it away, same as it always does. #delivery: approving, dry
+- else:
+    Darren Price: Those copied sign-in pages are catching folk out all week. The address bar's where they slip. #delivery: dry, matter-of-fact
+}
+-> bye
+
 === ca08 ===
 { kit_key_caught:
     Darren Price: Good call flagging that one fast. A quick shout saves us a lot of grief later.

@@ -56,6 +56,22 @@
     }
   },
   "setPieces": {
+    "ca05_defend_react": {
+      "_note": "D265: the ca05 defend twin's after-sort colleague beat. A blind persona playtest found the twin flat once the sort was done: nobody reacts. Darren speaks one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close, so it lands after the sort. targetKnot (no literal bark) makes the engine speak ca05_react's first line via TTS, so the line lives in the ambient ink and branches there on kit_key_caught, true on every path. Twin only; the full ca05 shell uses ca05_signin_prompt. No globals/objects/timers/mappings: the twin is defend-only (tier S).",
+      "staff": {
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca05_react"
+            }
+          ]
+        }
+      }
+    },
     "ca03_people_locked_out": {
       "globals": {
         "kit_ca03_there": false,
