@@ -1,6 +1,6 @@
 {
  "mission": "m02",
- "id": "m02_trailer60_v3",
+ "id": "m02_trailer60_v4",
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -1407,7 +1407,7 @@
   {
    "id": "ghost_reveal",
    "type": "gameplay",
-   "duration": 1.4333,
+   "duration": 0.6667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1415,7 +1415,7 @@
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
     "in": 2.7,
-    "out": 4.1333
+    "out": 3.3667
    },
    "note": "v3b: muted. With 'Look up' voiced (t17 2.4-4.1) it overlapped the pre-roll of ghost_close's Money line by 0.66 s, and the closing bumper leaves no room for both lines in full; the user's note was that the Money line was cut off, so it plays whole and 'Look up' stays as the game's on-screen subtitle only. v3: voiced. Ghost's voice in t17 2.4-4.1 (measured); picture 2.7-4.13 (hooded figure, subtitle), audio from 2.4 (pre 0.3). Level 0 dB: the take's Ghost voice is -15.5 LUFS, the same as HaX.",
    "framing": {
@@ -1450,7 +1450,7 @@
   {
    "id": "ghost_close",
    "type": "gameplay",
-   "duration": 3.3333,
+   "duration": 4.1,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1458,7 +1458,7 @@
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
     "in": 19.1,
-    "out": 22.4333
+    "out": 23.2
    },
    "note": "v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below.",
    "alt_close": {
@@ -1485,11 +1485,11 @@
     }
    },
    "audio": {
-    "gain_db": 3.5,
+    "gain_db": 6,
     "dialogue": true,
     "duck_music": true,
-    "pre": 0.7,
-    "post": 0.25
+    "pre": 0.1,
+    "post": 0.85
    },
    "spoiler": {
     "reviewed": true,
@@ -1504,8 +1504,8 @@
     {
      "speaker": "Ghost",
      "text": "Money is simply a means to hasten your inevitable end.",
-     "start": -0.7,
-     "end": 3.45
+     "start": 0.09,
+     "end": 4.87
     }
    ]
   },

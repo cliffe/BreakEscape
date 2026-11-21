@@ -1,6 +1,6 @@
 {
  "mission": "m03",
- "id": "m03_trailer60_v1c",
+ "id": "m03_trailer60_v2",
  "title": "SAFETYNET: Licence to Hack, m03 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -1122,7 +1122,40 @@
    "keypad_partial": "137_"
   },
   {
-   "id": "t17_guard",
+   "id": "t17_guard_map",
+   "type": "gameplay",
+   "duration": 0.9,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_guard.trimmed.mkv",
+    "in": 0.8,
+    "out": 1.7
+   },
+   "note": "exec hallway, Terry's sight cone on the player at the office door (vivian_ashby), just before the catch",
+   "framing": {
+    "16:9": {
+     "cx": 0.64,
+     "cy": 0.62,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "map, sight cone, no text"
+   }
+  },
+  {
+   "id": "t17_guard_line",
    "type": "gameplay",
    "duration": 3.0,
    "snap": false,
@@ -1130,114 +1163,79 @@
     "type": "cut"
    },
    "source": {
-    "file": "t12_terry.trimmed.mkv",
-    "in": 5.0,
-    "out": 8.0
+    "file": "t17_guard.trimmed.mkv",
+    "in": 9.8,
+    "out": 12.8
    },
-   "note": "PLACEHOLDER: t17_guard (caught-picking sight-cone beat) not recorded. Stand-in picture from t12; Terry's 3.29 s line has no audio source yet. Real beat: line J-cuts in under the crescendo cut at about 44.2 s.",
-   "framing": {
-    "16:9": {
-     "cx": 0.62,
-     "cy": 0.5,
-     "zoom": 1.6
-    }
-   },
+   "note": "Terry catches the pick: 'Picks. Right. We're done talking.' voice 9.44-12.73 in the take, J-cut 0.36 s under the map shot",
    "audio": {
-    "gain_db": -120
+    "gain_db": 0.5,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.36,
+    "post": 0
    },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "stand-in guard patrol, no text"
-   },
-   "placeholder": true,
    "lines": [
     {
-     "speaker": "Terry",
+     "speaker": "Terry Mott",
      "text": "Picks. Right. We're done talking.",
-     "start": 0.0,
-     "end": 3.0
+     "start": -0.36,
+     "end": 2.93
     }
-   ]
-  },
-  {
-   "id": "t18_victoria_wide",
-   "type": "gameplay",
-   "duration": 1.4,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t13_walk_conf.trimmed.mkv",
-    "in": 2.9,
-    "out": 4.3
-   },
-   "note": "PLACEHOLDER: t18_victoria (conference room wide) not recorded; stand-in is the t13 conference-door walk.",
-   "framing": {
-    "16:9": {
-     "cx": 0.55,
-     "cy": 0.5,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
+   ],
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "stand-in door walk"
-   },
-   "placeholder": true
+    "note": "Terry portrait, his line"
+   }
   },
   {
    "id": "t18_victoria_close",
    "type": "gameplay",
-   "duration": 3.1,
+   "duration": 3.6,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t13_walk_conf.trimmed.mkv",
-    "in": 3.3,
-    "out": 6.4
+    "file": "t18_victoria.trimmed.mkv",
+    "in": 23.95,
+    "out": 27.55
    },
-   "note": "PLACEHOLDER: t18_victoria close-up not recorded; 3x crop on the conference door. Line 'Competent is cheap. That's not why you're here.' (3.98 s) has no audio source yet; the shot is 3.1 s so the real take must extend it.",
+   "note": "Victoria Sterling, day interview: 'Competent is cheap. That's not why you're here.' voice 23.73-27.67, J-cut 0.22 s, L-cut 0.15 s into the bumper",
    "framing": {
     "16:9": {
-     "cx": 0.45,
-     "cy": 0.5,
-     "zoom": 3
+     "cx": 0.66,
+     "cy": 0.34,
+     "zoom": 1.5
     }
    },
    "audio": {
-    "gain_db": -120
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.22,
+    "post": 0.15
    },
+   "lines": [
+    {
+     "speaker": "Victoria Sterling",
+     "text": "Competent is cheap. That's not why you're here.",
+     "start": -0.22,
+     "end": 3.72
+    }
+   ],
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "stand-in door crop"
-   },
-   "placeholder": true,
-   "lines": [
-    {
-     "speaker": "Victoria Sterling",
-     "text": "Competent is cheap. That's not why you're here.",
-     "start": 0.0,
-     "end": 3.1
-    }
-   ]
+    "note": "Victoria portrait close, the briefed target"
+   }
   },
   {
    "preset": "hacktivity-close",
