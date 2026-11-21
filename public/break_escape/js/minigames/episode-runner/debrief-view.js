@@ -1,6 +1,6 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, globals, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, globals, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore, readOnly }) -> { destroy, getState }
 // `showScore` (optional, default true): when false, the score figures are dropped: the "Round score: N%"
 // summary, the per-message "Score for this message: N of 100" line, and the "Reported N% of the phish"
 // line. The item counts (Phish caught: N of M) stay. Set false in facilitated mode and when the host
@@ -431,7 +431,7 @@ function conceptEntryShown(entry, globals) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
+    concernRecap = null, showScore = true, readOnly = false, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -674,10 +674,13 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             str(strings, critical ? 'noBlameLineCritical' : 'noBlameLine')));
     }
 
-    const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
-    finish.type = 'button';
-    finish.addEventListener('click', () => { if (typeof onFinish === 'function') onFinish(); });
-    root.appendChild(finish);
+    // D263: a re-read after Finish is read only; the kiosk's X closes it, so there is no Finish.
+    if (!readOnly) {
+        const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
+        finish.type = 'button';
+        finish.addEventListener('click', () => { if (typeof onFinish === 'function') onFinish(); });
+        root.appendChild(finish);
+    }
     container.appendChild(root);
 
     return {

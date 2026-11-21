@@ -134,6 +134,10 @@ const SEND_OFF_TEXT = 'Thanks for working through this one. Take the habit with 
 // ENG-10: the once-per-learner finished line (strings.alreadySeen), and the multi-card brief's
 // button defaults (strings.briefDone). Card copy and the done global are data.
 const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
+// D263: the kiosk's close hint beside the X (strings.closeHint; '' drops it), and the finished
+// panel's "read the debrief again" button (strings.rereadLink).
+const CLOSE_HINT_TEXT = 'Press X to close';
+const REREAD_TEXT = 'Read the debrief again';
 const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' });
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
@@ -376,6 +380,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             const cap = el('div', 'epr-kiosk-cap');
             cap.textContent = 'Security Awareness';
             top.appendChild(cap);
+            // D263: gate players did not know how to leave the kiosk. A short pixel-font hint sits
+            // beside the X (strings.closeHint overrides it; '' drops it).
+            const hint = isStr(this.strings.closeHint) ? this.strings.closeHint
+                : (this.strings.closeHint === '' ? '' : CLOSE_HINT_TEXT);
+            if (hint) top.appendChild(el('span', 'epr-kiosk-hint', hint));
             // R2 m2 (a): a kiosk is a diegetic device like the PC monitor, so it closes with the
             // themed steel X (the PC monitor's close look); the bar's SE overlay X has the same skin since D216.
             this.mountThemedCloseControl(top, 'Close', 'epr-kiosk-close');
@@ -447,7 +456,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._destroyView();
         const stage = this.state.stage;
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
-        if (this.alreadySeen) this._renderFinished();
+        if (this.rereading && this._canReread()) this._renderDebrief();
+        else if (this.alreadySeen) this._renderFinished();
         else if (this.pauseAfter && stage) this._renderPause();
         else if (this.stepAwayPanel && stage === 'debrief') this._renderStepAway();
         else if (stage === 'brief') this._renderBrief();
@@ -901,7 +911,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (prompt) this.body.insertBefore(prompt, this.body.firstChild);
     }
 
+    /** D263: a finished episode that ran a debrief can show it again (read only, memory only). */
+    _canReread() {
+        return !this.state.stage && this.state.done.includes('debrief') && stagesFor(this.episode).includes('debrief');
+    }
+
     _renderDebrief() {
+        const reread = this.rereading === true;
         const stored = this.state.defend || {};
         // EC1 (c): a step-away episode keeps the defend answers in the state, so the per-item
         // cards survive a look-up and a reload; every other episode passes an empty list as before.
@@ -927,8 +943,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // and, when scores show, the score in large type.
         const folded = foldsResult(this.episode, 'defend') && isObj(this.defendSet);
         const bandHeadline = folded ? foldedHeadline(raw, this.defendSet) : null;
-        this._debriefShown = true;
+        // A re-read changes nothing: no seen-mark on close, no Finish, no new write.
+        this._debriefShown = !reread;
         this.view = this.deps.renderDebrief(this.body, {
+            readOnly: reread,
             result,
             showScore,
             folded,
@@ -978,6 +996,14 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._sendOffDue = false;
         const sendOff = typeof this.strings.sendOff === 'string' ? this.strings.sendOff : SEND_OFF_TEXT;
         if (due && sendOff.trim()) panel.appendChild(el('p', 'epr-send-off', sendOff));
+        // D263: the debrief cannot be re-read from the bare panel, so offer it (shell strings.rereadLink).
+        if (this._canReread() && this.strings.rereadLink !== '') {
+            this._button(panel, isStr(this.strings.rereadLink) ? this.strings.rereadLink : REREAD_TEXT, () => {
+                this.rereading = true;
+                this._render();
+                this._focus();
+            }, 'epr-reread aw-button-secondary');
+        }
     }
 
     _complete(stageId, patch = {}) {
