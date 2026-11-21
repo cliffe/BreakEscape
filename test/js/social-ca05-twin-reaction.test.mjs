@@ -70,21 +70,23 @@ test('ca05_react: a caught line and a not-caught line, branched on kit_key_caugh
 });
 
 // Live proof found the caught branch never played: a knot bark reads the cached ink engine without a
-// conversation, so kit_key_caught stayed at its ink default (false). _showBarkFromKnot now syncs globals.
-test('knot bark: syncGlobals makes ca05_react take the caught branch from the scenario global', async () => {
+// conversation, so kit_key_caught stayed at its ink default (false). _showBarkFromKnot now runs the
+// conversation-start global sync (syncGlobalVariablesToStory) before goToKnot.
+test('knot bark: synced kit_key_caught makes ca05_react take the right branch', async () => {
     globalThis.inkjs = createRequire(import.meta.url)(join(root, 'public/break_escape/assets/vendor/ink.js'));
     const Eng = (await import(pathToFileURL(join(root, 'public/break_escape/js/systems/ink/ink-engine.js')).href)).default;
     const json = readJson('scenarios/_office_kit/ink/darren_price_ambient.json');
-    const line = (globals) => {
+    const line = (caught) => {
         const e = new Eng('t'); e.loadStory(json);
-        e.syncGlobals(globals); e.goToKnot('ca05_react');
+        if (caught !== undefined) e.story.variablesState.kit_key_caught = caught;
+        e.goToKnot('ca05_react');
         return e.continue().text.trim();
     };
-    assert.match(line({ kit_key_caught: true }), /clock that lookalike/);
-    assert.match(line({ kit_key_caught: false }), /catching folk out/);
-    assert.match(line({ unknown_global: 1 }), /catching folk out/); // undeclared names are skipped
+    assert.match(line(true), /clock that lookalike/);
+    assert.match(line(false), /catching folk out/);
+    assert.match(line(undefined), /catching folk out/); // unsynced: the ink default (the bug)
     const mgr = readFileSync(join(root, 'public/break_escape/js/systems/npc-manager.js'), 'utf8');
-    const sync = mgr.indexOf('inkEngine.syncGlobals?.(window.gameState?.globalVariables)');
-    assert.ok(sync > 0 && sync < mgr.indexOf('inkEngine.goToKnot(knotName)', sync) && mgr.indexOf('inkEngine.goToKnot(knotName)', sync) - sync < 200,
-        '_showBarkFromKnot must sync globals before goToKnot');
+    const sync = mgr.indexOf('window.npcConversationStateManager?.syncGlobalVariablesToStory(inkEngine.story)');
+    const go = mgr.indexOf('inkEngine.goToKnot(knotName)', sync);
+    assert.ok(sync > 0 && go > sync && go - sync < 200, '_showBarkFromKnot must sync globals before goToKnot');
 });

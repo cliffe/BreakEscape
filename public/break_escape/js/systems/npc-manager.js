@@ -2460,7 +2460,9 @@ export default class NPCManager {
       
       // A knot bark has no conversation to sync the scenario globals first, so a knot that
       // branches on one (ca05_react on kit_key_caught) would read the ink default.
-      inkEngine.syncGlobals?.(window.gameState?.globalVariables);
+      // Same helper as a conversation start: only scenario-declared globals, so an
+      // ink-local VAR that shares a name with a gameState key keeps its own value.
+      window.npcConversationStateManager?.syncGlobalVariablesToStory(inkEngine.story);
 
       // Navigate to the knot
       inkEngine.goToKnot(knotName);

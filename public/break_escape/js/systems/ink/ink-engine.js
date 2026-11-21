@@ -131,20 +131,6 @@ export default class InkEngine {
         return val;
   }
 
-  /**
-   * Copy the scenario globals this story declares into it, so a knot read without a
-   * conversation (a bark from a knot) branches on the current state, not the ink default.
-   * Names the story does not declare, and null/undefined values, are skipped.
-   */
-  syncGlobals(globals) {
-        const declared = this.story?.variablesState?._defaultGlobalVariables;
-        if (!declared || !globals) return;
-        for (const [name, value] of Object.entries(globals)) {
-            if (!declared.has(name) || value === undefined || value === null) continue;
-            try { this.story.variablesState[name] = value; } catch (e) { /* type mismatch: keep the ink value */ }
-        }
-  }
-
   setVariable(name, value) {
         if (!this.story) throw new Error('Story not loaded');
 
