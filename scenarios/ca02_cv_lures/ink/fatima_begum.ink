@@ -30,7 +30,7 @@ VAR hub_quiet = false
 - else:
     { kit_defend_done && (kit_ca02_done || not kit_ca02_out) && not kit_ca02_host_said:
         {
-        - kit_key_caught && not kit_ca02_moved:
+        - kit_key_caught && not kit_ca02_moved && (kit_ca02_cv_choice == "" || kit_ca02_cv_choice == "report"):
             { kit_caught:
                 Fatima Begum: You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean.
             - else:
