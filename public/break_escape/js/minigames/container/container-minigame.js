@@ -353,6 +353,19 @@ export function scrollingAncestor(el) {
 }
 
 /**
+ * Whether the Notepad already holds this note (same title and base text, as the reader and
+ * addNote de-duplicate), so taking it again must not announce it a second time. Read before
+ * the reader opens: opening it adds the note.
+ */
+export function noteAlreadyInNotepad(item) {
+    const notes = window.gameState?.notes;
+    if (!item || !Array.isArray(notes)) return false;
+    const title = item.name || 'Note';
+    const base = String(item.text == null ? '' : item.text).split('\n\nObservation:')[0];
+    return notes.some(n => n && n.title === title && String(n.text || '').split('\n\nObservation:')[0] === base);
+}
+
+/**
  * Whether a note read on pickup was the last thing in an ordinary container, so closing the
  * note ends in the world instead of an empty list. Desktops, shares, folders, sign-in PCs,
  * NPC containers and takeable containers (the Take Container button) keep their own return.
@@ -2454,6 +2467,8 @@ export class ContainerMinigame extends MinigameScene {
                 contents: this.contents,
                 isTakeable: this.isTakeable,
                 itemToTake: item,  // Store the item to take after minigame
+                // Held before the reader opens (opening it adds the note): a repeat take says nothing
+                noteAlreadyHeld: noteAlreadyInNotepad(item),
                 // Where the list was scrolled to, so the container comes back there
                 scrollTop: scrollingAncestor(document.getElementById('container-contents-grid'))?.scrollTop || 0,
                 itemElement: itemElement,
@@ -2737,8 +2752,12 @@ export class ContainerMinigame extends MinigameScene {
             const noteText = /^notes\d*$/.test(item.type) ? (item.text || item.observations || '') : '';
             if (noteText && window.addNote) {
                 const body = item.observations && item.text ? `${item.text}\n\nObservation: ${item.observations}` : noteText;
-                window.addNote(item.name || 'Note', body, !!item.important);
-                this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
+                const added = window.addNote(item.name || 'Note', body, !!item.important);
+                // addNote returns the existing note (marked read) for a duplicate: say nothing
+                // for a note already in the Notepad, as the other take routes do
+                if (!(added && added.read === true)) {
+                    this.showMessage(displayDashes(window.noteAddedText?.(item.name) || `Added ${item.name} to your notes`), 'success');
+                }
             } else {
                 this.showMessage(fromSignIn ? `Moved ${displayDashes(item.name)} to inventory` : `Added ${displayDashes(item.name)} to inventory`, 'success');
             }
@@ -2966,8 +2985,12 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // its window (a toast would be held until it closed: m09 "no confirmation").
             // A route that reopens nothing (the last note, a blocked reader, a session that
             // ended) has no window to carry it, so it gets the toast, shown at once.
-            noteNotice = window.noteAddedText?.(containerState.itemToTake.name) || '';
-            if (!reopen || lastNoteClosesToWorld(containerState) || pcSessionEnded(containerState)) {
+            // A note already in the Notepad is not announced again, in the window or as a toast
+            const repeatTake = containerState.noteAlreadyHeld === true;
+            noteNotice = repeatTake ? '' : (window.noteAddedText?.(containerState.itemToTake.name) || '');
+            if (repeatTake) {
+                window.clearExpectedPanel?.();
+            } else if (!reopen || lastNoteClosesToWorld(containerState) || pcSessionEnded(containerState)) {
                 noteNotice = '';
                 window.clearExpectedPanel?.();
                 window.announceNoteAdded?.(containerState.itemToTake.name);
