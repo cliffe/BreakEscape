@@ -775,6 +775,7 @@ export function flipPage(episode, social, globals) {
             fields: [],
             button: '',
             tells: ['fake_check_paste'],
+            hostId: isObj(choices.check) && isStr(choices.check.hostId) ? choices.check.hostId : null,
             pageDef: isStr(def.id) ? def : null,
             choices: { ...choices }
         };
