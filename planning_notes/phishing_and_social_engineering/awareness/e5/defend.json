@@ -11,7 +11,7 @@
     ],
     "realHosts": "sso.quayholt.example (sign-in), servicedesk.quayholt.example, hr.quayholt.example, benefits.quayholt.example, learning.quayholt.example, intranet.quayholt.example, survey.quayholt.example, expenses.quayholt.example, mail.quayholt.example",
     "lookalikes": "Episode: quayholt-sso.example (added word), quayho1t.example (swapped character, as calendar.quayho1t.example), quayholt-support.example (added word); all three already in the roster. Forms add quayholt-benefits.example and quayholt-learning.example (added word)",
-    "thirdParties": "Ashcombe Solicitors (ashcombelaw.example), a firm Quayholt staff have no matter with; Spamwarden (spamwarden-notify.example, spamwarden-review.example), a mail-filtering service Quayholt does not use. fileharbour-login.example is the roster's shared file-share sign-in page"
+    "thirdParties": "Ashcombe Solicitors (ashcombelaw.example), a firm Quayholt staff have no matter with; Spamwarden (spamwarden-notify.example, spamwarden-review.example), a mail-filtering service Quayholt does not use. sharetide-login.example is the roster's shared file-share sign-in page"
   },
   "_formPairing": {
     "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags, header results and difficulty. Per form: 10 items (4 phish, 6 genuine; 7 emails, 3 pages); flags lookalike_domain 2, padlock_myth 1, senderTrust 2, secrecy_or_bypass 1, urgencyCalibrated 1, linkCredible 1 (C2-M6: row 6 is now a visible look-alike-domain spoof scored senderTrust + lookalike_domain, not senderAuth + reply_to_differs; row 9 is a plain all-pass genuine item, no header dependency). difficulty 4 easy, 5 medium, 1 hard. The real site (row 2) comes before the look-alike that imitates it (row 3), so a learner doing the check sees the genuine address first (m19). m11: within rows 2 and 3 the earlier timestamp (08:32) now sits on the row shown first.",
@@ -341,13 +341,13 @@
           "subject": "Ashcombe Solicitors shared 'Settlement papers' with you",
           "time": "11:02",
           "body": "Ashcombe Solicitors has shared a document with you.\n{{link:view}}\nThis link expires in 24 hours.",
-          "links": [ { "id": "view", "text": "View 'Settlement papers' on ashcombelaw.example", "destination": "https://fileharbour-login.example/ashcombe/settlement" } ],
+          "links": [ { "id": "view", "text": "View 'Settlement papers' on ashcombelaw.example", "destination": "https://sharetide-login.example/ashcombe/settlement" } ],
           "auth": { "spf": "pass", "dkim": "none", "dmarc": "none", "envelopeFrom": "ashcombelaw.example", "replyTo": "documents@ashcombelaw.example" },
           "truth": {
             "isPhish": true,
             "flags": ["linkCredible"],
             "perFlagNote": {
-              "linkCredible": "The link text says ashcombelaw.example, but it goes to fileharbour-login.example"
+              "linkCredible": "The link text says ashcombelaw.example, but it goes to sharetide-login.example"
             },
             "ifTrusted": "The link opens a sign-in page that collects your Quayholt password.",
             "reportReply": "Thanks. Nobody here has a matter with Ashcombe, and the link went to a sign-in page we've now blocked."
