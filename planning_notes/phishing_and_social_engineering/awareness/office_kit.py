@@ -163,11 +163,24 @@ def step_away_defaults(piece):
     mapping on the same event waits with it. Both need a delayMs to wait on, so at least 1 ms."""
     piece = copy.deepcopy(piece)
     asked = set()
+    old_reply = None
     for t in piece.get('timers', []):
         sg = t.get('setGlobal') or {}
         if str(t.get('startOnGlobal', '')).endswith('_asked') and any(str(k).endswith('_choice') for k in sg):
+            old_reply = t['delayMs'] if old_reply is None else old_reply
             t['delayMs'] = piece.get('replyMs', REPLY_MS)
             asked.add(t['startOnGlobal'])
+    # The `_t_done` fallback counted from `out`, but the ask now waits until it can be noticed, so a
+    # fixed time from `out` can end the episode before the reply window lapses and the follow-through
+    # runs (ca05 busy run: done at 60 s, silent at 100 s, so the follow-through never played). Count it
+    # from the ask instead, keeping the same tail the piece allowed after its (old) reply window.
+    if len(asked) == 1:
+        (ask,) = asked
+        for t in piece.get('timers', []):
+            if str(t.get('id', '')).endswith('_t_done') and str(t.get('startOnGlobal', '')) != ask \
+                    and str(t.get('startOnGlobal', '')).endswith(('{out}', '_out')):
+                t['delayMs'] = max(t['delayMs'] - old_reply, 20000) + piece.get('replyMs', REPLY_MS)
+                t['startOnGlobal'] = ask
     for rec in piece.get('staff', {}).values():
         maps = rec.get('eventMappings', [])
         for m in maps:

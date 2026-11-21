@@ -1162,6 +1162,34 @@ class StepAwayDefaults(unittest.TestCase):
         ask = ok.step_away_defaults(p)['staff']['p']['eventMappings'][1]
         self.assertEqual(ask['delayMs'], 1)
 
+    def test_done_fallback_counts_from_the_ask(self):
+        """The `_t_done` fallback must not fire before the reply window and follow-through can run: the
+        ask waits until it can be noticed, so a fixed time from `out` ended ca05 before its follow-through."""
+        p = self.piece()
+        p['timers'] += [{'id': 'kit_x_t_done', 'startOnGlobal': '{out}', 'delayMs': 60000, 'setGlobal': {'kit_x_done': True}}]
+        done = [t for t in ok.step_away_defaults(p)['timers'] if t['id'] == 'kit_x_t_done'][0]
+        self.assertEqual(done['startOnGlobal'], 'kit_x_asked')
+        self.assertEqual(done['delayMs'], 40000 + 45000)   # the old 40 s tail after the window, over the new window
+        out = ok.step_away_defaults(self.piece(replyMs=60000, timers=p['timers']))
+        done = [t for t in out['timers'] if t['id'] == 'kit_x_t_done'][0]
+        self.assertEqual(done['delayMs'], 40000 + 60000)
+        # a done timer in a piece with no ask timer keeps counting from out
+        q = {'timers': [{'id': 'kit_y_t_done', 'startOnGlobal': 'kit_y_out', 'delayMs': 12000, 'setGlobal': {'kit_y_done': True}}]}
+        self.assertEqual(ok.step_away_defaults(q), q)
+
+    def test_every_step_away_shell_done_timer_follows_the_window(self):
+        import glob
+        for f in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'scenarios', 'ca*', 'scenario.json.erb')):
+            sc = json.load(open(f))
+            ts = sc.get('timers', [])
+            tails = [t for t in ts if str(t.get('id', '')).endswith('_t_tail') and str(t.get('startOnGlobal', '')).endswith('_asked')]
+            done = [t for t in ts if str(t.get('id', '')).endswith('_t_done')]
+            for t in tails:
+                for d in done:
+                    if d['id'].split('_')[1] == t['id'].split('_')[1]:
+                        self.assertEqual(d['startOnGlobal'], t['startOnGlobal'], f)
+                        self.assertGreaterEqual(d['delayMs'], t['delayMs'] + 20000, f)
+
     def test_other_pieces_untouched(self):
         p = {'timers': [{'id': 't', 'startOnGlobal': 'kit_x_done', 'delayMs': 60000, 'setGlobal': {'kit_x_done': True}}]}
         self.assertEqual(ok.step_away_defaults(p), p)
