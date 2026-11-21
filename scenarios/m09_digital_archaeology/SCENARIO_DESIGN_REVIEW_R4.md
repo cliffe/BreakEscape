@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: scenario design review, round 4
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 4. Part 1 checks R3's findings and the fixes for them. Part 2 runs `.claude/skills/scenario-design-review/SKILL.md` again, aimed at what earlier rounds covered least: the loop in each room, dead time, how optional content is signposted, whether the player knows why the next thing matters, and whether the educational additions read as part of the world. I didn't reopen rulings settled in CONTRACT.md or earlier rounds.
+2026-10-22. Fresh reviewer (read-only on game files). Phase 3 of the AGENTS.md five-phase loop, round 4. Part 1 checks R3's findings and the fixes for them. Part 2 runs `.claude/skills/scenario-design-review/SKILL.md` again, aimed at what earlier rounds covered least: the loop in each room, dead time, how optional content is signposted, whether the player knows why the next thing matters, and whether the educational additions read as part of the world. I didn't reopen rulings settled in CONTRACT.md or earlier rounds.
 
 **Commits.** R3's fixes landed in e20cb0b0 ("educational round 1 and scenario design round 3 fixes"). A dialogue round 2 commit, fc26a4bb, landed four minutes later and rewords some of the same lines (the first-job line, the Tomb Beta line, the leaver line, the safe text). I reviewed HEAD at fc26a4bb, and line numbers below are from that commit. The working tree was clean for m09 when I finished.
 

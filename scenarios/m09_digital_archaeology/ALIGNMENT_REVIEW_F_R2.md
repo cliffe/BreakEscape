@@ -2,7 +2,7 @@
 
 ## Scope and method
 
-2026-10-22. Phase 1 (alignment), round 2, of the AGENTS.md five-phase loop. A fresh Opus reviewer, read-only, static only. I ran the `mission-alignment-plan` rubric (ten rows) as a single reviewer, as round 1 did. I judged the working tree after commit 774a82e7 ("alignment round 1 fixes"): `scenario.json.erb`, every `ink/*.ink`, `mission.json`, `texts/`, and CONTRACT §15. I read the R1 diff line by line, then read the whole mission again against m01/m02 and the brief's aim: earlier choices visibly change what happens, and m09 sets up m10 so the ending lands. No SecGen file, VM plan or field guide was opened.
+2026-10-22. Phase 1 (alignment), round 2, of the AGENTS.md five-phase loop. A fresh reviewer, read-only, static only. I ran the `mission-alignment-plan` rubric (ten rows) as a single reviewer, as round 1 did. I judged the working tree after commit 774a82e7 ("alignment round 1 fixes"): `scenario.json.erb`, every `ink/*.ink`, `mission.json`, `texts/`, and CONTRACT §15. I read the R1 diff line by line, then read the whole mission again against m01/m02 and the brief's aim: earlier choices visibly change what happens, and m09 sets up m10 so the ending lands. No SecGen file, VM plan or field guide was opened.
 
 **Counts: 0 blockers, 0 majors, 14 minors.** Every R1 finding that was m09's to fix is closed. Most of the new minors come from the fixes themselves (wording, timing, task state, documents left behind). The rest are small gaps seen on the fresh read.
 

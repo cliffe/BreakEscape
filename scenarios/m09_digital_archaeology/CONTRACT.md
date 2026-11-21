@@ -662,7 +662,7 @@ From the repo root. Report each command's result honestly; a finding you leave g
 
 For the orchestrator. None stops the writers; each says what the writers do meanwhile.
 
-1. **VM steers for flags 2–4.** S4 §7.1 topics 4 and 12 wait for the opus48 VM plan's game-design-level steer. Meanwhile A writes story-level lines that make no technical claim, marked `// VM-STEER`. Flag 1's steer is fixed.
+1. **VM steers for flags 2–4.** S4 §7.1 topics 4 and 12 wait for the VM plan's game-design-level steer. Meanwhile A writes story-level lines that make no technical claim, marked `// VM-STEER`. Flag 1's steer is fixed.
 2. **The credential's first line** (A1 `identity_scene.opening`) is whatever the VM shows beside flag 3. A writes it in story terms only; stage 9 or the VM plan aligns the wording.
 3. **FA §13's gate**: "the timed VM run (item 45) comes first" for stage 7. It affects the published length, not the ink; the orchestrator decides whether writing starts before it.
 4. **A new mapping for the dock call** (§5.5 M1). No stage document says how HaX's Beat 1.1 lines arrive. A1's `dock` also runs from `start` on first open, so the lines can't be missed whichever way stage 9 wires it.
@@ -909,7 +909,7 @@ Voiced delta (TtsLineExtractor, 373 → 376 lines):
 - E-M1/E-m1: the full-disclosure lines (`hour_read`) restore "in full, to everyone" and "Usually", and the coordinated kind ends "then the public" (§2.1 `hour_read`).
 - E-M2: the keypad topic's tier 2 adds "A cipher this time, not an encoding. Without the key, nobody reads it." and tier 3 opens "ROT13 moved every letter thirteen places. This moves each letter by the next letter of the key." Gary's hint says "Vigenère: every letter shifted by the next letter of the bay's word." A new text, A3-37, arrives when the salvage cage opens.
 - E-M3: two texts. A3-38 names the notes column's motives after the legacy remark. A3-39 names the recruiter's method once Noor is told; departure: a text rather than the review's in-scene HaX line, so no audio.
-- E-M4: HaX's "[About the name.]" topic adds "When someone leaves, we take back their kit and shut their accounts the same day. Not his." (the shipped line, `m09_phone_agent0x99.ink` support hub; this entry corrected by teaching R2-n8) The wording was drafted and checked against the VM plan by the opus48 agent; I opened no VM file. The A3-40 text that said nearly the same thing was withdrawn, so the fact isn't said twice. E-m6 is left to the VM drafting.
+- E-M4: HaX's "[About the name.]" topic adds "When someone leaves, we take back their kit and shut their accounts the same day. Not his." (the shipped line, `m09_phone_agent0x99.ink` support hub; this entry corrected by teaching R2-n8) The wording was drafted and checked against the VM plan by the VM agent; I opened no VM file. The A3-40 text that said nearly the same thing was withdrawn, so the fact isn't said twice. E-m6 is left to the VM drafting.
 - E-m2: HaX's "[Not yet.]" on the notice names the keep-or-tell call.
 - E-m3: the notice topic separates m04's inquiry from the vendor notice (on `m04_disclosure_choice`; since scenario design R4 m1, "inquiry" only on `full or m04_crew_lost`, else "What you said about Albion…").
 - E-m9: the safe text credits the lease date when the ledger was read (A3-12b).
@@ -932,7 +932,7 @@ Voiced delta: two Netherton lines reworded (briefing n3, debrief n2), so 2 clips
 - m1: the identity scene's teaching line is "He taught me. The margins in that notebook are his." unconditionally. The phone applies a batch's tags after the batch, so R1 n6's `hand_matched` branch never fired on the main route.
 - m2: on the SAFETYNET cover with `noor_told`, Sorensen opens "Noor went home without saying goodnight. She always says goodnight. SAFETYNET, then. There's a chair on your side." (`noor_told` is now declared in the hatch ink).
 - m3: Tran's price is "Fine. I stop it, I walk out that door, and I make a phone call on the way."
-- m4: the leaver line is "When someone leaves, their accounts and their kit go back the same day. We never took his back." It is concept only, with no VM-facing change from the opus48-checked wording.
+- m4: the leaver line is "When someone leaves, their accounts and their kit go back the same day. We never took his back." It is concept only, with no VM-facing change from the VM-agent-checked wording.
 - m5: A3-12b ends "That's what makes them easy to find."
 - Nits:
   - n1: "Somebody over there is careful with you." at the hatch and the door.
@@ -1022,7 +1022,7 @@ Voiced delta: +1 HaX line (378 → 379).
    - HaX's catalogue topic adds "It runs on a staff service account. Somebody left its login on a slip at the drop desk.", and the `catalogue_guide_offered` status row points at the slip.
    - HaX's flag-3 steer adds "Its web login's in the enrolment binder, in the crate stencilled BETA.", and a new status row above the other salvage rows reads, until the binder is read, "Flag three. His box's login is in the enrolment binder, in the BETA crate. Then find out whose box it is."
 
-**PLACEHOLDER (VM):** the four account strings (`catalogue_login_user`/`_password`, `tomb_beta_login_user`/`_password`, the Codes block of the ERB) must equal what the SecGen build creates. The scenario binding carries flags only, so like m01's password list they are fixed strings. Until the opus48 agent or the user fills them, the player sees the PLACEHOLDER markers.
+**PLACEHOLDER (VM):** the four account strings (`catalogue_login_user`/`_password`, `tomb_beta_login_user`/`_password`, the Codes block of the ERB) must equal what the SecGen build creates. The scenario binding carries flags only, so like m01's password list they are fixed strings. Until the VM agent or the user fills them, the player sees the PLACEHOLDER markers.
 
 All unvoiced: voiced delta 0.
 
@@ -1044,7 +1044,7 @@ Voiced delta: +1 Netherton line, 1 HaX line reworded (379 → 380).
 - F4: in the debrief, "[Montana, sir.]" with any topic still unasked goes to `montana_confirm`. Netherton: "Then I sign, and that is the night closed. Anything else first?" The buttons are "[Sign it, sir.]" and "[One more thing.]" (back to the hub).
 - F5: on Noor's shredder cover (`noor_cover == "contractor"`, not `noor_told`), Sorensen opens "Noor says you've come about my shredder. It has never jammed in eleven years. There's a chair on your side." and her own choices knot `opening_contractor` follows ("[Then you won't mind me looking at the feed.]" with "Look all you like. Keep your sleeves clear of it." / "[I'll stand.]"). Recognition then says "You're not here for my shredder." Every cover value was checked in inkjs: auditor and none keep the auditor guess; SAFETYNET gets "Noor rang through" or the goodnight line; contractor with `noor_told` falls back to the auditor guess, because Noor went home without passing the cover on.
 - F6/F9: HaX's clip line is "Session two." (the annotation sheets' word), so it no longer implies a missed tape one. The 1–3 s before the clip opens is engine: the deck's mapping has no delay.
-- F13: the login slip adds "Host:" and the binder "Enrolment site, on…", from a new ERB helper `vm_ip_for`. In Hacktivity it reads the VmSet's VM by title; in standalone it reads `vm_ips`, as `vm_object` does for the launchers. PLACEHOLDER fallback (`PLACEHOLDER_catalogue_ip`, `PLACEHOLDER_tomb_beta_ip`) when neither is present. m02 hard-codes its target address, so the opus48 agent or the user may replace the fallbacks with the build's fixed addresses.
+- F13: the login slip adds "Host:" and the binder "Enrolment site, on…", from a new ERB helper `vm_ip_for`. In Hacktivity it reads the VmSet's VM by title; in standalone it reads `vm_ips`, as `vm_object` does for the launchers. PLACEHOLDER fallback (`PLACEHOLDER_catalogue_ip`, `PLACEHOLDER_tomb_beta_ip`) when neither is present. m02 hard-codes its target address, so the VM agent or the user may replace the fallbacks with the build's fixed addresses.
 
 Voiced delta: +4 (Netherton's confirm; Sorensen's shredder greeting, reply and recognition line), 1 HaX line reworded. 380 → 384, 5 clips.
 
@@ -1063,7 +1063,7 @@ Voiced delta: +4 (Netherton's confirm; Sorensen's shredder greeting, reply and r
 
 Voiced delta: +1 (Netherton, the debrief line), 384 → 385 by `TtsLineExtractor`. The task titles, hub line and HaX text are unvoiced.
 
-**Teaching R2, VM-adjacent** (opus48, checked against the finale VM plan's F12/F13 gating; no SecGen or exploit-detail file beyond the plan was opened). The one m09 item that sits next to VM content:
+**Teaching R2, VM-adjacent** (VM agent, checked against the finale VM plan's F12/F13 gating; no SecGen or exploit-detail file beyond the plan was opened). The one m09 item that sits next to VM content:
 - R2-n2: the hub topic "[I'm on his box. Where do I look?]", `flag3_submitted` arm, gains a second line naming why flag 4 needs full control: "The copy job runs as the box's keeper. To read it, you have to be the keeper." True to the VM: flag 4 is root on `tomb_beta_server`, and the mirror job to Tomb Gamma sits in root's home, readable only at keeper (root) level, as flag 2's ledger did on the catalogue server (FINALE_VM_PLAN §1; §6 m09 flag 4). Concept level, no technique. Unvoiced hub ink, so no voiced delta.
 
 **F30: the mission clock (2026-10-23).** The scenario now sets `gameClock`, so phone bubbles show story time (commit 585e191e hides the time without one). Start `04:45`, rate 1, one anchor: `start_debrief === true` jumps to `10:00`. The clock is UTC, as §8.2 requires and as m10's screens already are. The night operation is the local night of day 11, about 22:45 in Helena (UTC-6), which the Citadel's clock reads as 04:45 on day 12 (FINALE_ARC §1.5). The anchor makes Netherton's "Oh-six-hundred, day thirteen. Twenty hours." true at the hangar (10:00 to 06:00 is twenty hours). Playtests that show the first task at about 22:45 are the local reading; setting the clock to 22:45 would put the debrief nearer six hours from the Publication and contradict that line. To switch to the local reading, set `start` to `22:45`; the "Twenty hours" line would then need rewording. Not a spoken-time conflict at 04:45: "The plane leaves in ninety minutes" and "By morning you won't need to" are relative. No ink or text line was edited.

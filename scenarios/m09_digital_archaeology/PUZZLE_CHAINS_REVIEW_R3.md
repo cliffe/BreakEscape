@@ -1,6 +1,6 @@
 # m09 Digital Archaeology: puzzle chains, round 3 review
 
-2026-10-22. Fresh reviewer (Opus, read-only on game files). Phase 2 of the AGENTS.md five-phase loop, run with `.claude/skills/mission-puzzle-chains/SKILL.md` on the tree at 1e9e4a4e ("puzzle chains round 2 fixes"). Round 2 is `PUZZLE_CHAINS_REVIEW_R2.md`; its record is CONTRACT §15, "Puzzle chains round 2" (CONTRACT.md:837).
+2026-10-22. Fresh reviewer (read-only on game files). Phase 2 of the AGENTS.md five-phase loop, run with `.claude/skills/mission-puzzle-chains/SKILL.md` on the tree at 1e9e4a4e ("puzzle chains round 2 fixes"). Round 2 is `PUZZLE_CHAINS_REVIEW_R2.md`; its record is CONTRACT §15, "Puzzle chains round 2" (CONTRACT.md:837).
 
 **Method.** Read the 1e9e4a4e diff. Recompiled `m09_phone_agent0x99.ink` with inklecate, and the output is identical to the committed JSON. Ran `room_depth.py`, the validator (`--skip-ink --no-graph`), `dialoguelint` and `reopencheck`. Traced the Tran topic against every `cage_bin` value it can see, against Tran's own ink and against room depth. No engine file and no erb has changed since d2fd06fe, so I re-ran R2's audit tables and spot-checked them instead of rebuilding them. I opened no VM plan, SecGen file or field guide. VM flags are treated as black boxes, and I took as settled that the H&L file number is reachable only through flag 2 and that no cage clue feeds flag 3. No browser run.
 

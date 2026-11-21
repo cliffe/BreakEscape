@@ -216,7 +216,7 @@ Gating tags and where they fire: `hatch_talked` (hatch `start`, every hatch rout
 
 ## Findings
 
-ERB line numbers are the live file's after opus48's VM-WIRE edits on 2026-10-21. They may shift again while that pass continues.
+ERB line numbers are the live file's after the VM agent's VM-WIRE edits on 2026-10-21. They may shift again while that pass continues.
 
 ### Blocker
 
@@ -244,7 +244,7 @@ None.
 
 **m-08. The validator flags `unlockDoor` mappings as having "no visible effect".** `scripts/validate_scenario.rb:2400-2405`: nine false warnings on HaX. **Fix**: count `unlockDoor` (and `setVisible`, `patrolOverride`) as effects. This is a tooling change, outside this mission.
 
-**m-09. The dungeon graph doesn't draw HaX's door openings, the hatch clone or Victoria's route.** Checklist §4.2 expects the stacks door, office and Victoria gate drawn as opened by HaX's mappings, plus the room-level critical path. **Fix**: add `puzzle_graph_unlocks: ["sorensen_office"]` to an item or object the generator reads (the task's at ERB:581 isn't read), and a node or note for the hatch Sorensen's card and Victoria's code on `restricted_cage`. Also add `puzzle_graph_unlocks: ["salvage_cage"]` on `shelf_code_legend` (ERB:2040) and `puzzle_graph_role`/`unlocks` on `field_kit_link` and `tomb_beta_station` (ERB:2128, 2141) so flags 3-4 hang off the salvage cage. VM-adjacent fields: leave them to the opus48 pass or wait until it's done.
+**m-09. The dungeon graph doesn't draw HaX's door openings, the hatch clone or Victoria's route.** Checklist §4.2 expects the stacks door, office and Victoria gate drawn as opened by HaX's mappings, plus the room-level critical path. **Fix**: add `puzzle_graph_unlocks: ["sorensen_office"]` to an item or object the generator reads (the task's at ERB:581 isn't read), and a node or note for the hatch Sorensen's card and Victoria's code on `restricted_cage`. Also add `puzzle_graph_unlocks: ["salvage_cage"]` on `shelf_code_legend` (ERB:2040) and `puzzle_graph_role`/`unlocks` on `field_kit_link` and `tomb_beta_station` (ERB:2128, 2141) so flags 3-4 hang off the salvage cage. VM-adjacent fields: leave them to the VM-agent pass or wait until it's done.
 
 **m-10. Globals that are written but never read.** `tran_ko` (ERB:1273), `sorensen_ko` (ERB:1590) and `alpha_clip_played` (ink `m09_alpha_recording.ink:25`). **Fix**: drop the setters, or use them (e.g. a credits clause).
 
@@ -269,7 +269,7 @@ From checklist §4.5, none of which a static trace can settle:
 1. The hatch: reach `sorensen_hatch` from a tile at the counter, and check the MIFARE custom-keys clone runs from the hatch conversation.
 2. `flag1_read` closed early: reopen, and see where it lands and whether the note arrives (m-01).
 3. M-01: submit flag 1 without clicking the laptop and confirm `get_in` stays open (then confirm the fix).
-4. The two launchers open one VM session; flags 3-4 are refused at `drop_terminal` (VM-WIRE, after opus48).
+4. The two launchers open one VM session; flags 3-4 are refused at `drop_terminal` (VM-WIRE, after the VM agent).
 5. `HL2015-0477` types into the password pad (hyphen).
 6. `hax_voice` vs the phone contact for "Agent HaX:" lines in the debrief; the three Sorensen records share one voice and portrait.
 7. Tap test in the restricted stacks' north-west corner (office vs tape room door).
