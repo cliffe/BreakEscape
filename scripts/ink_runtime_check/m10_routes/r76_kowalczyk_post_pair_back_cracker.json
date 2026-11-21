@@ -1,0 +1,35 @@
+{
+ "imports": {
+  "m09_completed": true
+ },
+ "steps": [
+  {
+   "note": "Kowalczyk at the forward post once the pair are back and m09 was finished: the 'Where did you go?' reply replaces the case question, the cracker line refers to Helena, and she closes with 'I always am'."
+  },
+  {
+   "set": {
+    "pair_back": true
+   }
+  },
+  {
+   "talk": "kowalczyk",
+   "picks": [
+    "Where did you go",
+    "The cracker",
+    "See you down there"
+   ]
+  },
+  {
+   "said": [
+    "Back in one piece. Mostly mud.",
+    "Door end. Service door's real. Steel, a reader, a camera that doesn't move.",
+    "Same one as Helena. Bring it back this time.",
+    "I'll be a room ahead. I always am."
+   ],
+   "notSaid": [
+    "Kit check.",
+    "What's in the case?"
+   ]
+  }
+ ]
+}
