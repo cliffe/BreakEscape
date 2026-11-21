@@ -304,7 +304,8 @@
           "postitNoteVariants": [
             {
               "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
-              "value": "Tarrowby2468"
+              "value": "Tarrowby2468",
+              "submitText": "You stop before signing in. It isn't your account, but anyone walking past could use it."
             }
           ],
           "observations": "Chidi's PC."

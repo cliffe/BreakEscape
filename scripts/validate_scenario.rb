@@ -6858,6 +6858,9 @@ def check_engine_limits(json_data)
             end
             next
           end
+          if vk == 'postitNoteVariants' && v.key?('submitText') && !(v['submitText'].is_a?(String) && !v['submitText'].strip.empty?)
+            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' submitText must be a non-empty string (the line a submit shows, with no server check)."
+          end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."

@@ -5492,7 +5492,8 @@
             "required": ["condition", "value"],
             "properties": {
               "condition": { "type": "string" },
-              "value": { "type": "string" }
+              "value": { "type": "string" },
+              "submitText": { "type": "string", "description": "Optional. The fixed line the view shows when the learner submits a password while it is open (where the error message shows). With it the submit makes no server check and counts no attempt, and nothing signs in. Without it a submit is checked as usual." }
             },
             "additionalProperties": false
           }
