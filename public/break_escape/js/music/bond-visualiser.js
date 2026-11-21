@@ -29,7 +29,7 @@
 import MusicController from './music-controller.js';
 import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus, creditsThreat } from './credits-theme.js';
 import { cardHoldMs } from './closing-sequence.js';
 import { returnToMissions } from '../ui/success-screen.js';
 import { cctvFeeds } from './cctv-feeds.js';
@@ -1794,7 +1794,12 @@ function _updateStats(data, audio) {
     const pv = document.getElementById('bv-peak-val'); if (pv) pv.textContent=String(Math.floor(peak *999)).padStart(3,'0');
 
     const tl = document.getElementById('bv-threat-level');
-    if (tl) {
+    const held = creditsThreat({ threatText: _threatText, headerText: _headerText, statusText: _statusText,
+        credits: _lastCredits, over: _missionOver || !!_lastCredits?.length });
+    if (tl && held) {
+        tl.textContent = held.text;
+        tl.style.color = held.tone === 'bad' ? 'var(--bv-red)' : held.tone === 'good' ? 'var(--bv-green)' : 'var(--bv-cyan)';
+    } else if (tl) {
         if (kickHit)       { tl.textContent='BREACH';   tl.style.color='var(--bv-red)'; }
         else if (avg>0.7)  { tl.textContent='CRITICAL';  tl.style.color='var(--bv-red)'; }
         else if (avg>0.5)  { tl.textContent='HIGH';      tl.style.color='var(--bv-gold)'; }
@@ -1935,9 +1940,11 @@ let _resizeHandler = null;
  */
 let _headerText = null;  // set by a credits entry's headerText; survives later open({})
 let _statusText = null;  // the same for statusText (the STATUS row)
+let _threatText = null;  // the same for threatText (the THREAT row)
 function _applyTheme(opts) {
     _headerText = nextCreditsHeader(_headerText, opts);
     _statusText = nextCreditsText(_statusText, opts, 'statusText');
+    _threatText = nextCreditsText(_threatText, opts, 'threatText');
     if (opts.credits?.length) _lastCredits = opts.credits;
     _theme    = resolveCreditsTheme(window.gameScenario);
     _themeDef = getCreditsTheme(_theme);
@@ -2252,6 +2259,7 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.missionOver]  - the mission has concluded: × becomes EXIT MISSION and nothing closes it
      * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
      * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
+     * @param {string}   [opts.threatText]   - THREAT row value once the credits roll; without it the row shows CONTAINED, or ACTIVE for a failed ending
      */
     open(opts) { _open_overlay(opts || {}); },
     /**

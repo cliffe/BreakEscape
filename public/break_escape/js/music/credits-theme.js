@@ -164,6 +164,30 @@ export function creditsStatus(statusText, themeStatus) {
     return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
 }
 
+/**
+ * The THREAT row once the story is over. While the visualiser is live the row follows the
+ * audio (LOW to CRITICAL), so it read CRITICAL over a win. A concluded mission (credits
+ * rolling) holds the outcome instead: the ending's threatText when it sets one, else
+ * ACTIVE for a failed ending (header, status or a title line saying FAILED or COMPROMISED)
+ * and CONTAINED for any other. Null means the row stays audio-driven (no credits yet).
+ * @param {object} o
+ * @param {string|null} [o.threatText] - a credits entry's own value
+ * @param {string|null} [o.headerText]
+ * @param {string|null} [o.statusText]
+ * @param {Array<{text:string,style?:string}>} [o.credits] - the resolved credits lines
+ * @param {boolean} [o.over] - the credits are rolling or the mission has concluded
+ * @returns {{text:string, tone:'good'|'bad'|'custom'}|null}
+ */
+export function creditsThreat({ threatText, headerText, statusText, credits, over } = {}) {
+    if (!over) return null;
+    if (typeof threatText === 'string' && threatText.trim()) return { text: threatText.trim(), tone: 'custom' };
+    if (typeof statusText === 'string' && /PENDING/i.test(statusText)) return { text: 'PENDING', tone: 'custom' };
+    const bad = /FAIL|COMPROMIS/i;
+    const titles = (credits || []).filter(l => l && l.style === 'title').map(l => l.text || '');
+    const failed = [headerText, statusText, ...titles].some(t => typeof t === 'string' && bad.test(t));
+    return failed ? { text: 'ACTIVE', tone: 'bad' } : { text: 'CONTAINED', tone: 'good' };
+}
+
 /** What the header shows: the ending's text, else the theme's heading, else the default. */
 export function creditsHeader(headerText, themeHeading) {
     return headerText || themeHeading || DEFAULT_CREDITS_HEADER;

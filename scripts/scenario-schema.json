@@ -190,6 +190,7 @@
               "disableClose": { "type": "boolean", "description": "Hide the visualiser's close button." },
               "headerText": { "type": "string", "description": "The visualiser's header, such as \"MISSION FAILED // AUDIO INTEL\"." },
               "statusText": { "type": "string", "description": "The visualiser's status line, such as \"COMPROMISED\"." },
+              "threatText": { "type": "string", "description": "The visualiser's THREAT row once the credits roll, such as \"CONTAINED\". Without it the row shows CONTAINED, or ACTIVE when the ending's header, status or title line says FAILED or COMPROMISED; it never follows the audio level after the mission is over." },
               "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js)." },
               "closingCard": { "type": "object", "x-id-map": false, "description": "The closing card shown before the credits (closing-sequence.js)." }
             }
