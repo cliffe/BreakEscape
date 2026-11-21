@@ -83,6 +83,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca07",
+    "kit_ca07_out": false,
+    "kit_ca07_there": false,
+    "kit_ca07_asked": false,
+    "kit_ca07_moved": false,
+    "kit_ca07_done": false,
+    "kit_ca07_call_choice": "",
     "kit_ca07_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +104,35 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca07_t_there",
+      "startOnGlobal": "kit_ca07_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca07_there",
+      "setGlobal": {
+        "kit_ca07_there": true
+      }
+    },
+    {
+      "id": "kit_ca07_t_tail",
+      "startOnGlobal": "kit_ca07_asked",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca07_call_choice === ''",
+      "setGlobal": {
+        "kit_ca07_call_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca07_t_done",
+      "startOnGlobal": "kit_ca07_out",
+      "delayMs": 60000,
+      "condition": "!globalVars.kit_ca07_done",
+      "setGlobal": {
+        "kit_ca07_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -341,6 +376,7 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. First you're on the red team: write an email in the name of Brightwell's chief executive, Ravinder Sandhu, asking for something he would never ask for. It's the message that would land alongside a cloned-voice call to accounts payable. Then you swap seats: you're Tom Reilly in accounts payable, covering the finance office's phone and inbox, with three voicemails and two emails waiting. Only the second part is scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the message you wrote, as Tom in the finance office would find it. The lines picked out below are what make it believable.",
@@ -361,15 +397,28 @@
           "heading": "How a voice gets copied",
           "text": "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager."
         },
-        "conceptPanel": {
-          "heading": "When the voice wins",
-          "text": "To a real attacker, a payment released on a familiar voice is a large sum moved straight on and gone before anyone checks, and the plea to keep it quiet buys exactly that time. Ringing back on a number you already hold, and treating the voice as no proof at all, is where the chain breaks, because the payment is confirmed before it ever leaves.\n\nA voice you recognise is not proof of who is calling, and neither is an email that backs it up. The payment released here, £18,400, was moved on before anyone looked, and finance lost the afternoon re-checking a frozen run to be sure nothing else had slipped through. Ring the person back on a number you already hold before any money moves. Before you leave, have a word with Agnieszka."
-        }
+        "conceptPanel": [
+          {
+            "heading": "When the voice wins",
+            "text": "To a real attacker, a payment released on a familiar voice is a large sum moved straight on and gone before anyone checks, and the plea to keep it quiet buys exactly that time. Ringing back on a number you already hold, and treating the voice as no proof at all, is where the chain breaks, because the payment is confirmed before it ever leaves.\n\nA voice you recognise is not proof of who is calling, and neither is an email that backs it up. The payment released here, £18,400, was moved on before anyone looked, and finance lost the afternoon re-checking a frozen run to be sure nothing else had slipped through. Ring the person back on a number you already hold before any money moves."
+          },
+          {
+            "heading": "Ringing back",
+            "text": "The attacker had set the call up to show Ravinder's saved mobile, and built the voice from recordings of him speaking in public. Graham hung up, rang Ravinder on the mobile in his contacts and Ashcarr on the number in the supplier file. Ravinder had never called, and Ashcarr hadn't changed bank, so the attacker was left with a call that went nowhere and a payment that never left. A faked number only works on a call coming in: ring out on the saved number and it reaches Ravinder's own phone.",
+            "condition": "globalVars.kit_ca07_call_choice === 'ringback'"
+          },
+          {
+            "heading": "What the call bought",
+            "text": "Graham paid Ashcarr Haulage's invoice to the new account. The call came from the attacker: a caller can fake the number that shows, so the screen showed Ravinder's saved mobile, and the voice was built from recordings of him. The money landed in an account they control and was moved on within minutes. To them, one payment released is a reference for the next call: they rang Agnieszka straight away, named Graham's payment, and asked for Ravinder's salary to go to a new account. Agnieszka changed nothing and rang Ravinder on his saved mobile; he had made neither call. Brightwell asked their bank to try to recall the payment and reported it to Report Fraud. They put Ashcarr's bank details back to the ones on file, rang Ashcarr on the supplier-file number to warn them that someone knew their invoice was due and to ask who could have seen it, and warned finance and payroll that the number on an incoming call proves nothing, but a call you make to a number you hold reaches the real person: hang up and ring that number yourself.",
+            "condition": "globalVars.kit_ca07_call_choice === 'pay' || globalVars.kit_ca07_call_choice === 'silent'"
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -840,6 +889,29 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca07_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca07_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Ravinder's rung me too, Graham. He knew about Ashcarr, and wants his salary paid somewhere new."
             }
           ]
         },
@@ -891,7 +963,34 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_out",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_out",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 3,
+                  "y": 3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_done",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_graham_whitfield",
@@ -899,20 +998,15 @@
           "person": "graham_whitfield",
           "npcType": "person",
           "position": {
-            "x": 8,
-            "y": 4
+            "x": 3.0,
+            "y": 6.0
           },
           "spriteSheet": "graham_whitfield",
           "spriteTalk": "assets/characters/graham_whitfield_talk.png",
           "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/graham_whitfield_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 8,
-            "y": 3,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca07_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -925,7 +1019,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "caffeine": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -941,7 +1035,85 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_out",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca07_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_out",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Ravinder's on the line, from his mobile."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_there",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && globalVars.kit_ca07_call_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?",
+              "targetKnot": "ca07_call"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_there",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca07_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_graham_whitfield",
+              "condition": "globalVars.kit_ca07_call_choice === 'asked' && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca07_call_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca07_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_call_choice",
+              "condition": "value === 'ringback' && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca07_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_moved",
+              "condition": "value === true && globalVars.kit_ca07_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca07_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca07_done",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_ca07_call_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca07_call_choice": "silent"
+              }
+            }
+          ]
         }
       ],
       "objects": [
@@ -956,7 +1128,7 @@
           "observations": "A touch-screen training kiosk for the Brightwell Foods finale: first the red-team brief and research, then the finance office's phone and inbox.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e7_voice_ceo_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Brightwell Foods finale. Episode finished."
             }
           ],
@@ -1000,6 +1172,72 @@
               "dx": 0,
               "dy": -1
             }
+          }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca07_pc",
+          "name": "Graham's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_graham_whitfield",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca07_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Graham's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca07_moved === true",
+              "value": "Graham's PC. The Ashcarr Haulage payment shows as sent, to the new account read out on the call."
+            },
+            {
+              "condition": "globalVars.kit_ca07_call_choice === 'ringback'",
+              "value": "Graham's PC. The call is ended, and the Ashcarr Haulage invoice is still unpaid, on the bank details already on file."
+            },
+            {
+              "condition": "globalVars.kit_ca07_out === true",
+              "value": "Graham's PC. The phone app has a call on hold from 'Ravinder Sandhu, mobile', the number saved in Brightwell's contacts. Beside it, the Ashcarr Haulage invoice, with a new bank account typed in from the call."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca07_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca07_call_choice === 'ringback'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca07_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Graham's PC."
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_ca07_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.21875,
+            "y": 7.125
           }
         }
       ]

@@ -1028,6 +1028,256 @@
           ]
         }
       }
+    },
+    "ca18_reset_password": {
+      "_note": "ca18 colleague request (WAVE6_BUILD.md s6, D259 wording). Lorna has reset her password after the morning's spray and typed her old one with the season moved on. The room teaches NCSC-style advice: do not just tweak the old password, make a new one (three random words). Wrong or no answer: Ama (host, row 8) says this morning's attackers have already guessed the new password and to turn down sign-in prompts nobody started, and the PC shows Fenlow's lock notice (moved). Right answer (words): done after 4 s. Lorna is frozen on needs and never suspended; Delphine is moved to (4.5, 4.5), suspended and walked there. No mapping reads her arrival.",
+      "globals": {
+        "kit_ca18_there": false,
+        "kit_ca18_asked": false,
+        "kit_ca18_moved": false,
+        "kit_ca18_done": false,
+        "kit_ca18_reset_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca18_pc",
+          "name": "Lorna's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_lorna_easton",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca18_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Lorna's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "Lorna's PC. A notice from Fenlow on screen: her account is locked until she sets a new password, not the old one with a season or a number changed, and any sign-in prompts she didn't start are to be turned down and reported."
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "Lorna's PC. She's cleared the 'Choose a new password' page and is typing three random words."
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "Lorna's PC. The Merrin & Sallow 'Choose a new password' page, filled in and waiting for her to press Save."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Lorna's PC."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca18_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca18_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca18_there",
+          "setGlobal": {
+            "kit_ca18_there": true
+          }
+        },
+        {
+          "id": "kit_ca18_t_tail",
+          "startOnGlobal": "kit_ca18_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca18_reset_choice === ''",
+          "setGlobal": {
+            "kit_ca18_reset_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca18_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca18_done",
+          "setGlobal": {
+            "kit_ca18_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+          "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca18_done",
+          "onceOnly": true,
+          "delayMs": 8000,
+          "bark": "Lorna, this morning's attackers have already guessed your new password. Turn down sign-in prompts you didn't start."
+        }
+      ],
+      "staff": {
+        "delphine_arvanitis": {
+          "position": {
+            "x": 4.5,
+            "y": 4.5
+          },
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4.5,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "lorna_easton": {
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca18_pc",
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca18_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Fenlow have made me reset my password after this morning."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && globalVars.kit_ca18_reset_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+              "targetKnot": "ca18_reset"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca18_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca18_reset_choice === 'asked' && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca18_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value === 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_moved",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            }
+          ]
+        }
+      }
     }
   }
 }
