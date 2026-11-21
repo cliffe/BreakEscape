@@ -131,7 +131,7 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 
 === ca09_react ===
 { kit_key_caught:
-    Chidi Okeke: Good one. That message wants your sign-in number read back, and that number's sat on their screen. Real IT never asks for it. #delivery: easy-going, approving
+    Chidi Okeke: That message wants your sign-in number read back, and that number's sat on their screen. Real IT never asks for it. #delivery: easy-going, approving
 - else:
     Chidi Okeke: No real IT desk asks you to read back a code or tap approve. Do either and you've handed them the account. #delivery: easy-going, matter-of-fact
 }
@@ -141,7 +141,7 @@ Chidi Okeke: Blank page, just a box saying enable editing and content. Do I clic
 { kit_key_caught:
     Chidi Okeke: Good call. Posted in or dropped in a car park, it's the same bait, left hoping someone plugs it in for a look. #delivery: easy-going, approving
 - else:
-    Chidi Okeke: A stick that turns up, posted or found, is a tempting thing, and that's the whole point of it. It goes to IT, lid never opened. #delivery: easy-going, matter-of-fact
+    Chidi Okeke: A stick that turns up, posted or found, is a tempting thing, and that's the whole point of it. It goes to IT, never into your PC. #delivery: easy-going, matter-of-fact
 }
 -> bye
 

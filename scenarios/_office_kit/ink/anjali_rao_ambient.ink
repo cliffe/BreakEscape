@@ -52,7 +52,7 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 
 === ca03_react ===
 { kit_key_caught:
-    Anjali Rao: Someone clocked that reset push for what it was. They've already got the password, and that tap is the only thing left in their way. #delivery: approving, calm
+    Anjali Rao: Someone clocked that late-night sign-in prompt for what it was. They've already got the password, and that tap is the only thing left in their way. #delivery: approving, calm
 - else:
     Anjali Rao: A sign-in prompt you never kicked off means someone already has the password and is hoping you'll tap yes. Deny it. #delivery: calm, matter-of-fact
 }
