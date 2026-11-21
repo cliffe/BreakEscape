@@ -1,7 +1,7 @@
 {
-  "key": "db9e181c315783de4fe19b991a8c1584",
+  "key": "c7f8de65a143695ba9085418994619a3",
   "npc": "thandiwe_moyo",
-  "text": "It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.",
+  "text": "The sender wants the retainer in an account they control. Skipping Yasmin's approval is how it gets there, and the real Catherine never asked for it.",
   "voice": "Pulcherrima",
   "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
   "language": "en-GB",
@@ -9,5 +9,5 @@
   "scenario": "ca04_exec_whaling_defend",
   "source": "generate",
   "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T14:50:36Z"
+  "recorded_at": "2026-11-21T20:48:35Z"
 }
