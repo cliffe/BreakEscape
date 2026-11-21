@@ -1580,3 +1580,171 @@ test('wave 5: kit staff patches stay inside their own set piece (no other kit sh
     else assert.ok(!chainRe.test(text.replace(/kit_ca\d\d_host_said/g, '')), `${name}: twin carries no chain id`);
   }
 });
+
+// ---------------------------------------------------------------------------------------------------
+// Wave 5 only (WAVE5_BUILD.md s12, "New W5 cases" and the replacement table). Each case loops over W5 or reads
+// one entry by name and skips while it is absent, so the suite stays green with the empty map.
+// ---------------------------------------------------------------------------------------------------
+const W5_WALK = { ca13: { x: 6, y: 3 }, ca14: { x: 7, y: 4.5 }, ca05: { x: 7.4, y: 8.3 } };   // s8 "Walked to"; Anjali's live criterion is within 32 px
+const w5Each = (fn) => { for (const [name, w] of Object.entries(W5)) fn(name, w, readShell(name)); };
+const w5CM = (sc, w) => w3Maps(w3Npc(sc, w.colleague));
+const w5PM = (sc, w) => w3Maps(w3Npc(sc, w.partner));
+const w5Ink = (stub) => readFileSync(join(root, 'scenarios/_office_kit/ink', `${stub}_ambient.ink`), 'utf8');
+const w5Knot = (ink, knot) => { const m = ink.match(new RegExp(`=== ${knot} ===([\\s\\S]*?)(?=\\n=== |$)`)); return m ? m[1] : null; };
+const w5Lines = (body) => body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+const w5Conds = (w) => {
+  const O = `globalVars.kit_${w.ep}_out === true`, Q = 'globalVars.kit_quiet === true', nD = `!globalVars.kit_${w.ep}_done`;
+  const wrong = `value !== '' && value !== 'asked' && value !== '${w.right}'`;
+  return { O, Q, nD, wrong, seen: 'globalVars.kit_ca14_seen === true', v: `value === true && ${O}` };
+};
+const w5Out = (w) => `global_variable_changed:kit_${w.ep}_out`;
+
+test('wave 5: knot guard: the request knot opens with the moved guard, then the value guard; start diverts on asked before defend_done', () => {
+  w5Each((name, w) => {
+    const ink = w5Ink(w.stub);
+    const body = w5Knot(ink, w.knot);
+    assert.ok(body, `${name}: knot ${w.knot}`);
+    const lines = w5Lines(body);
+    // lines 0-2: the moved guard
+    assert.ok(/^\{.*:\s*$/.test(lines[0]) && lines[0].includes(`kit_${w.ep}_moved`), `${name}: line 0 is the moved guard`);
+    assert.equal(lines[1].trim(), '-> bye', `${name}: the moved guard diverts to bye`);
+    assert.equal(lines[2].trim(), '}', `${name}: the moved guard closes`);
+    if (w.ep === 'ca13') assert.ok(lines[0].includes(`${w.choice} == "${w.right}" && not kit_key_caught`), `${name}: the moved guard also sends "${w.right}" with the key message not caught to bye`);
+    else assert.ok(!lines[0].includes('kit_key_caught'), `${name}: the moved guard has no key-message term`);
+    // lines 3-5: the value guard
+    const guard = lines[3];
+    assert.ok(/^\{.*:\s*$/.test(guard) && lines[4].trim() === `-> ${w.ep}` && lines[5].trim() === '}', `${name}: lines 3-5 are a value guard that diverts to the stub knot`);
+    assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: value guard names done`);
+    for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: value guard names ${v}`);
+    if (w.ep === 'ca14') assert.ok(!guard.includes('"asked"'), `${name}: the value guard does not divert on asked (the knot re-offers)`);
+    // start: the asked divert is three lines, before the kit_defend_done divert
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim());
+    const idx = startBody.findIndex((l) => l.includes(`kit_${w.ep}_asked`));
+    assert.equal(idx, w.ep === 'ca02' ? 3 : 0, `${name}: the asked divert is ${w.ep === 'ca02' ? 'right after the kit_ca09_asked divert' : "start's first statement"}`);
+    if (w.ep === 'ca02') assert.ok(startBody[0].includes('kit_ca09_asked'), `${name}: the kit_ca09_asked divert stays first`);
+    assert.ok(/^\{\s*kit_\w+_asked\s*:\s*$/.test(startBody[idx]) && startBody[idx + 1].trim() === `-> ${w.knot}` && startBody[idx + 2].trim() === '}', `${name}: start diverts on asked into ${w.knot} (three lines)`);
+    const dIdx = startBody.findIndex((l) => l.includes('kit_defend_done'));
+    assert.ok(dIdx > idx + 2, `${name}: the asked divert comes before the kit_defend_done divert`);
+    // the rest is the W4 knot unchanged
+    for (const v of w.values) {
+      const n = body.split(/\n(?=\+ )/).filter((blk) => /^\+ /.test(blk) && new RegExp(`~ ${w.choice} = "${v}"`).test(blk)).length;
+      assert.ok(n >= 1, `${name}: an option writes ${v}`);
+    }
+    const reqBark = (w5CM(readShell(name), w).find((m) => m.targetKnot === w.knot) || {}).bark;
+    const firstSpoken = lines.find((l) => /^[A-Z][A-Za-z ]+: /.test(l));
+    assert.equal(firstSpoken.replace(/^[^:]+: /, '').replace(/ #.*$/, ''), reqBark, `${name}: first spoken line is the request bark`);
+    assert.ok(new RegExp(`~ ${w.choice} = "asked"`).test(body), `${name}: knot writes "asked"`);
+    const writes = [...body.matchAll(new RegExp(`~ ${w.choice} = "(\\w*)"`, 'g'))].map((x) => x[1]);
+    assert.ok(writes.every((v) => ['asked', ...w.values].includes(v)), `${name}: every write is an allowed value (${writes})`);
+    assert.ok(/\[\\\[Say nothing\\\]\]/.test(body), `${name}: a Say nothing option`);
+    assert.ok(/^\+ /m.test(body) && !/^\* /m.test(body), `${name}: + options only`);
+    assert.ok(existsSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.json`)), `${name}: compiled`);
+  });
+});
+
+test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share trigger and delay, timers t_there, t_tail, t_done', () => {
+  w5Each((name, w, sc) => {
+    const c = w5Conds(w), cm = w5CM(sc, w), ep = w.ep, ch = w.choice;
+    const there = `global_variable_changed:${w.there}`;
+    const only = (m, label) => assert.ok(m && m.onceOnly === true, `${name}: ${label} exists and is onceOnly`);
+    const r3 = cm.find((m) => m.eventPattern === w5Out(w) && m.setGlobal && m.setGlobal[w.there] === true);
+    only(r3, 'row 3');
+    assert.deepEqual([r3.condition, r3.delayMs, r3.setGlobal], [c.v, 1500, { [w.there]: true }], `${name}: row 3 sets there after 1500`);
+    const r4 = cm.find((m) => m.eventPattern === w5Out(w) && m.bark);
+    only(r4, 'row 4');
+    assert.deepEqual([r4.condition, r4.delayMs, r4.targetKnot], [`${c.v} && ${c.Q}`, 1500, undefined], `${name}: row 4 first line, quiet only`);
+    const r5 = cm.find((m) => m.eventPattern === there && m.bark && m.targetKnot === w.knot);
+    const r6 = cm.find((m) => m.eventPattern === there && m.setGlobal && m.setGlobal[`kit_${ep}_asked`] === true);
+    only(r5, 'row 5'); only(r6, 'row 6');
+    assert.equal(r5.condition, `${c.v} && ${c.Q} && ${ch} === ''`.replace(`${ch} ===`, `globalVars.${ch} ===`), `${name}: row 5 reads quiet and an empty choice`);
+    assert.equal(r6.condition, `${c.v} && ${c.Q}`, `${name}: row 6 reads quiet too (no asked for a request nobody heard)`);
+    assert.deepEqual([r5.delayMs, r6.delayMs], [4500, 4500], `${name}: rows 5 and 6 share the 4500 delay`);
+    assert.deepEqual(r6.setGlobal, { [`kit_${ep}_asked`]: true }, `${name}: row 6 sets only asked`);
+    assert.ok(r5.delayMs - r4.delayMs >= 4000, `${name}: chain barks start at least 4 s apart`);
+    const close = cm.find((m) => m.eventPattern === `conversation_closed:${w.colleague}`);
+    only(close, 'row 7');
+    assert.equal(close.condition, `globalVars.${ch} === 'asked' && ${c.O}${ep === 'ca14' ? ` && ${c.seen}` : ''}`, `${name}: row 7 close turns asked into ${w.silent}`);
+    assert.deepEqual(close.setGlobal, { [ch]: w.silent }, `${name}: row 7 writes ${w.silent}`);
+    assert.ok(close.delayMs === undefined, `${name}: row 7 has no delay`);
+    const r12 = cm.find((m) => m.eventPattern === `global_variable_changed:kit_${ep}_done` && m.setGlobal && m.setGlobal[ch] === w.silent);
+    only(r12, 'row 12');
+    assert.equal(r12.condition, `${c.v} && globalVars.${ch} === 'asked'`, `${name}: row 12 done turns asked into ${w.silent}`);
+    const T = (id) => (sc.timers || []).find((t) => t.id === `kit_${ep}_t_${id}`);
+    assert.deepEqual([T('there').startOnGlobal, T('there').delayMs, T('there').condition, T('there').setGlobal], [`kit_${ep}_out`, 4000, `!globalVars.${w.there}`, { [w.there]: true }], `${name}: t_there`);
+    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 20000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
+    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_out`, 60000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
+  });
+});
+
+test('wave 5: follow-through pairing: rows 8 and 9 share trigger and delay, row 8 is row 9 plus quiet, row 10 and row 11 are literal', () => {
+  w5Each((name, w, sc) => {
+    const c = w5Conds(w), cm = w5CM(sc, w), ep = w.ep;
+    const trig = `global_variable_changed:${w.choice}`;
+    const r9 = cm.find((m) => m.eventPattern === trig && m.setGlobal && m.setGlobal[`kit_${ep}_moved`] === true);
+    assert.ok(r9 && r9.onceOnly === true, `${name}: row 9 sets moved`);
+    assert.deepEqual([r9.condition, r9.delayMs, r9.setGlobal], [`${c.wrong} && ${c.O} && ${c.nD}`, 8000, { [`kit_${ep}_moved`]: true }], `${name}: row 9`);
+    // row 8: the speaker's bark (ca02: a host mapping)
+    const pool = w.hostSpeaks ? w3Maps(hostOf(sc)) : w5PM(sc, w);
+    const r8 = pool.find((m) => m.eventPattern === trig && m.bark);
+    assert.ok(r8 && r8.onceOnly === true, `${name}: row 8 is a bark on ${w.hostSpeaks ? 'the host' : w.partner}`);
+    assert.equal(r8.condition, `${c.wrong} && ${c.O} && ${c.Q} && ${c.nD}`, `${name}: row 8 condition`);
+    assert.equal(r8.condition, r9.condition.replace(` && ${c.O}`, ` && ${c.O} && ${c.Q}`), `${name}: row 8 is row 9 with quiet inserted after the out global`);
+    assert.equal(r8.delayMs, r9.delayMs, `${name}: rows 8 and 9 share the delay`);
+    assert.ok(!cm.some((m) => m.eventPattern === trig && m.bark), `${name}: the colleague does not speak the follow-through`);
+    if (w.hostSpeaks) assert.ok(r8.condition.includes(c.nD), `${name}: the host line reads !done`);
+    const r10 = cm.find((m) => m.eventPattern === trig && m.setGlobal && m.setGlobal[`kit_${ep}_done`] === true);
+    assert.ok(r10 && r10.onceOnly === true, `${name}: row 10 exists`);
+    assert.deepEqual([r10.condition, r10.delayMs], [`value === '${w.right}' && ${c.O} && ${c.nD}`, 4000], `${name}: row 10 right answer, 4000`);
+    const r11 = cm.find((m) => m.eventPattern === `global_variable_changed:kit_${ep}_moved` && m.setGlobal && m.setGlobal[`kit_${ep}_done`] === true);
+    assert.ok(r11 && r11.onceOnly === true, `${name}: row 11 exists`);
+    assert.deepEqual([r11.condition, r11.delayMs], [c.v, 5000], `${name}: row 11 on moved, 5000`);
+  });
+});
+
+test('wave 5: replacement for the fallback-timer case: no mapping reads npc_arrived, the only timers are t_there, t_tail, t_done (and ca14 t_unseen)', () => {
+  w5Each((name, w, sc) => {
+    const mappings = [...sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_')).flatMap((n) => w3Maps(n)), ...w3Maps(hostOf(sc))];
+    assert.ok(!mappings.some((m) => /^npc_arrived/.test(m.eventPattern)), `${name}: no mapping reads npc_arrived`);
+    const ids = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${w.ep}_t_`)).map((t) => t.id.split('_t_')[1]).sort();
+    assert.deepEqual(ids, (w.ep === 'ca14' ? ['done', 'tail', 'there', 'unseen'] : ['done', 'tail', 'there']), `${name}: the timers`);
+  });
+});
+
+test('wave 5: replacement for the frozen-thirst case: every need in the colleague entry is frozen, with no work need or resource', () => {
+  w5Each((name, w, sc) => {
+    const col = w3Npc(sc, w.colleague);
+    const needs = Object.entries(col.needs || {});
+    assert.ok(needs.length >= 1, `${name}: the colleague carries a needs dict`);
+    for (const [k, n] of needs) assert.ok(n.decayPerMin === 0.01 && n.urgentAt === 50 && n.initial > 50, `${name}: ${k} is frozen (0.01 / 50 / initial > 50)`);
+    assert.ok(!(col.needs || {}).work && !(col.workNeeds || []).length, `${name}: no work need`);
+    assert.ok(!Object.keys(sc.resources || {}).some((k) => k.startsWith(`kit_${w.ep}_`)), `${name}: no chain resource`);
+    assert.ok(!w5CM(sc, w).some((m) => /^npc_use_failed/.test(m.eventPattern)), `${name}: no npc_use_failed mapping`);
+  });
+});
+
+test('wave 5: replacement for the suspend case: the colleague has no suspend or resume; the speaker is suspended, walked and resumed once', () => {
+  w5Each((name, w, sc) => {
+    const c = w5Conds(w);
+    assert.ok(!w5CM(sc, w).some((m) => m.needs), `${name}: the colleague has no suspend or resume`);
+    const pm = w5PM(sc, w);
+    const susp = pm.filter((m) => m.needs === 'suspend'), res = pm.filter((m) => m.needs === 'resume');
+    assert.equal(susp.length, 1, `${name}: ${w.partner} has exactly one suspend`);
+    assert.equal(res.length, 1, `${name}: ${w.partner} has exactly one resume`);
+    assert.deepEqual([susp[0].eventPattern, susp[0].condition, susp[0].onceOnly], [w5Out(w), c.v, true], `${name}: suspend on out`);
+    assert.deepEqual([res[0].eventPattern, res[0].condition, res[0].onceOnly], [`global_variable_changed:kit_${w.ep}_done`, c.v, true], `${name}: resume on done`);
+    const walks = pm.filter((m) => m.patrolOverride);
+    if (w.ep === 'ca02') {
+      assert.equal(walks.length, 0, `${name}: Zainab is not walked`);
+      assert.ok(!pm.some((m) => m.bark), `${name}: Zainab has no lines`);
+      return;
+    }
+    assert.equal(walks.length, 1, `${name}: ${w.partner} has exactly one walk`);
+    const wk = walks[0];
+    assert.deepEqual([wk.eventPattern, wk.condition, wk.onceOnly, wk.delayMs, wk.patrolOverride.speed], [w5Out(w), c.v, true, 1000, 90], `${name}: walk on out, delay 1000, speed 90`);
+    const target = w.walkTarget || W5_WALK[w.ep];
+    assert.deepEqual(wk.patrolOverride.targetTile, { x: target.x, y: target.y }, `${name}: the walk target is the s8 post`);
+    const home = w3Npc(sc, w.partner).needsHome;
+    if (home && typeof home === 'object') assert.deepEqual([home.x, home.y], [W5_WALK[w.ep].x, W5_WALK[w.ep].y], `${name}: the patch home is the s8 post`);
+    assert.ok(pm.indexOf(wk) > pm.indexOf(susp[0]), `${name}: the walk comes after the suspend`);
+  });
+});
