@@ -6858,13 +6858,23 @@ def check_engine_limits(json_data)
             end
             next
           end
-          if vk == 'postitNoteVariants' && v.key?('submitText') && !(v['submitText'].is_a?(String) && !v['submitText'].strip.empty?)
-            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' submitText must be a non-empty string (the line a submit shows, with no server check)."
+          if vk == 'postitNoteVariants' && !(v['submitText'].is_a?(String) && !v['submitText'].strip.empty?)
+            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' needs a non-empty submitText (the line a submit shows, with no server check): " \
+                      "the note view has no lock, and without the line the engine refuses to open it."
           end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."
           end
+        end
+      end
+
+      if node['postitNoteVariants']
+        if node['locked'] == true
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and locked: true. The note view opens in place of the unlock, so the PC could never be opened."
+        end
+        if node['triggerOnInteract'].is_a?(Array) && !node['triggerOnInteract'].empty?
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and a non-empty triggerOnInteract. The note view pre-empts it while a note is up."
         end
       end
 

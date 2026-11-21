@@ -5486,14 +5486,14 @@
         },
         "postitNoteVariants": {
           "type": "array",
-          "description": "A plain PC (type pc, not lockType login) whose sticky note is on the screen only in some states: [{ condition, value }], first match wins (the observationVariants syntax). When one matches, a click opens the shared sign-in post-it view showing value on the post-it, with no sign-in; otherwise the click goes on as before. Pair it with a spriteVariants note sprite. ca09's Chidi.",
+          "description": "A plain PC (type pc, not lockType login) whose sticky note is on the screen only in some states: [{ condition, value }], first match wins (the observationVariants syntax). When one matches, a click opens the shared sign-in post-it view showing value on the post-it, with no sign-in; otherwise the click goes on as before. Must not sit beside locked: true or a non-empty triggerOnInteract (the validator errors). The view has no Add-to-notepad button. Pair it with a spriteVariants note sprite. ca09's Chidi.",
           "items": {
             "type": "object",
-            "required": ["condition", "value"],
+            "required": ["condition", "value", "submitText"],
             "properties": {
               "condition": { "type": "string" },
               "value": { "type": "string" },
-              "submitText": { "type": "string", "description": "Optional. The fixed line the view shows when the learner submits a password while it is open (where the error message shows). With it the submit makes no server check and counts no attempt, and nothing signs in. Without it a submit is checked as usual." }
+              "submitText": { "type": "string", "description": "Required. The fixed line the view shows (in the neutral info colour) when the learner submits a non-empty field while it is open. The submit makes no server check and counts no attempt, and nothing signs in. An entry without it is refused: the click goes on as before." }
             },
             "additionalProperties": false
           }
