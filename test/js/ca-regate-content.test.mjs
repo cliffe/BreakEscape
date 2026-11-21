@@ -46,3 +46,23 @@ test('ca13: the "your brief" debrief names the contact list the brief asked for,
   assert.ok(!/small invoice is paid/.test(t));
   assert.match(t, /the brief you handed the assistant is Brightwell's site contact list/);
 });
+
+test('ca18: the brief asks for the staff list and address pattern; the debrief and flip follow whether the spray ran', () => {
+  const t = erb('ca18_credential_attacks_at_scale');
+  assert.ok(!/not individual staff/.test(t), 'brief still steers away from the staff pins');
+  assert.match(t, /The team list and the address pattern are what the spray needs/);
+  assert.match(t, /"sprayedGlobal": "guess_e18_sprayed"/);
+  assert.match(t, /"guess_e18_sprayed": false/);
+  assert.match(t, /"flipGuessIntroNoSpray": "You built no staff list/);
+  assert.match(t, /"flipDefenderLineNoSpray"/);
+  // the "you built and sprayed" claim sits only under the sprayed condition
+  const panels = [...t.matchAll(/\{\s*"heading": "([^"]+)",\s*"text": "((?:[^"\\]|\\.)*)"(?:,\s*"condition": "([^"]*)")?/g)];
+  const claim = panels.filter((m) => /you built and sprayed/.test(m[2]));
+  assert.equal(claim.length, 1);
+  assert.equal(claim[0][3], 'globalVars.guess_e18_sprayed');
+  const noSpray = panels.find((m) => m[1] === 'What a spray would have needed');
+  assert.equal(noSpray[3], 'globalVars.guess_e18_landed && !globalVars.guess_e18_sprayed');
+  assert.match(noSpray[2], /You built no staff list, so the spray never ran/);
+  assert.equal(panels.find((m) => m[1] === 'What the campaign would have needed')[3], '!globalVars.guess_e18_landed');
+  assert.ok(!/sprayed and stuffed from its public pages/.test(t));
+});

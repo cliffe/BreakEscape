@@ -802,7 +802,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (sent?.kind === 'guess') {
             const landed = guessLanded(this.episode, globals);
             const aftermath = landed ? flipAftermathFor(this.episode, { landed }) : null;
-            return { message: null, page: null, call: null, guess: landed, missed: !landed, ...(aftermath ? { aftermath } : {}) };
+            // The spray needs the staff list. When the episode names a sprayedGlobal and the run never
+            // set it, the flip must not say a spray opened accounts (only the stolen list did).
+            const sprayName = isObj(this.episode?.guess) ? this.episode.guess.sprayedGlobal : null;
+            const noSpray = landed && typeof sprayName === 'string' && !!sprayName && globals[sprayName] !== true;
+            return { message: null, page: null, call: null, guess: landed, ...(noSpray ? { noSpray } : {}), missed: !landed, ...(aftermath ? { aftermath } : {}) };
         }
         if (sent?.kind === 'call') {
             const call = flipCall(this.episode, this.social, sent, globals);

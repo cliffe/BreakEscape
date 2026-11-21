@@ -1427,6 +1427,16 @@ module ValidateSocial
       elsif ctx.all_globals[name] != false
         issues << err("awarenessEpisode.guess.landedGlobal '#{name}' must be declared false (it starts not landed), not #{ctx.all_globals[name].inspect}")
       end
+      sprayed = g['sprayedGlobal']
+      unless sprayed.nil?
+        if Mail.blank?(sprayed) || !sprayed.is_a?(String)
+          issues << err('awarenessEpisode.guess.sprayedGlobal must be a non-empty string naming a declared global')
+        elsif !ctx.all_globals.key?(sprayed)
+          issues << err("awarenessEpisode.guess.sprayedGlobal '#{sprayed}' is not declared in globalVariables; an undeclared name is not saved (declare it false)")
+        elsif ctx.all_globals[sprayed] != false
+          issues << err("awarenessEpisode.guess.sprayedGlobal '#{sprayed}' must be declared false, not #{ctx.all_globals[sprayed].inspect}")
+        end
+      end
       issues.concat(guess_credential_checks(g, 'awarenessEpisode.guess'))
       issues
     end

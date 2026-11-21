@@ -21,6 +21,8 @@
 //            there is a message, page or landed guess and at least one valid item.
 //   guess    ENG-02: true after a landed password guess (the runner's guess stage). It shows
 //            strings.flipGuessIntro, then the aftermath; with `missed` it is ignored.
+//   noSpray  true when the guess landed but its spray never ran (no staff list was built): the view
+//            then uses strings.flipGuessIntroNoSpray and strings.flipDefenderLineNoSpray when authored.
 // A page may come with a message (E5 sends the email that links to it). With none of them,
 // the view shows flipMissed when `missed` is true (something was sent but did not land, so
 // there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
@@ -96,7 +98,8 @@ const str = (strings, key) => (strings && typeof strings[key] === 'string' && st
  * quotes back the lever the learner pulled; otherwise the single flipDefenderLine (then DEFAULT).
  * The map is keyed by template id, so one episode can carry a line per pretext branch.
  */
-export function defenderLine(strings, templateId) {
+export function defenderLine(strings, templateId, noSpray = false) {
+    if (noSpray === true && isStr(strings?.flipDefenderLineNoSpray)) return strings.flipDefenderLineNoSpray;
     const byChoice = isObj(strings) ? strings.flipDefenderLineByChoice : null;
     if (isObj(byChoice) && isStr(templateId) && isStr(byChoice[templateId])) return byChoice[templateId];
     return str(strings, 'flipDefenderLine');
@@ -168,7 +171,7 @@ function renderMontage(root, container, { beats, flipBeat, strings, onContinue }
     };
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, noSpray = false, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     if (montage === true) {
         const own = isStr(strings?.flipHeading) ? strings.flipHeading : DEFAULTS.flipMontageHeading;
@@ -209,7 +212,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
     // ENG-02: a landed password guess has nothing to replay; it leads straight into the aftermath below.
     if (hasGuess) {
         parts.push('guess');
-        root.appendChild(el('p', 'aw-lead', str(strings, 'flipGuessIntro')));
+        root.appendChild(el('p', 'aw-lead', noSpray === true && isStr(strings?.flipGuessIntroNoSpray) ? strings.flipGuessIntroNoSpray : str(strings, 'flipGuessIntro')));
     }
 
     if (hasMessage) {
@@ -326,7 +329,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
     }
 
     if (parts.length) {
-        root.appendChild(el('p', 'aw-defender-line', defenderLine(strings, templateId)));
+        root.appendChild(el('p', 'aw-defender-line', defenderLine(strings, templateId, hasGuess && noSpray)));
     } else if (missed || landedNoTells) {
         const landed = !missed && landedNoTells;
         parts.push(landed ? 'landedNoTells' : 'missed');

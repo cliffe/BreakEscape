@@ -2895,6 +2895,7 @@
           "additionalProperties": false
         },
         "landedGlobal": {"type": "string", "description": "A declared global (default false) the guesser sets true when an account opens; the flip shows flipAftermath only then"},
+        "sprayedGlobal": {"type": "string", "description": "Optional declared global (default false) the guesser sets true when the spray itself opened accounts (needs the staff list); the flip and debrief can then tell a run with no spray from one with it"},
         "note": {"type": "string", "description": "The on-screen line saying nothing real is typed; strings.guessNote wins"},
         "strings": {"type": "object", "description": "The guesser's own lines over its defaults (password-guesser-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
       },
