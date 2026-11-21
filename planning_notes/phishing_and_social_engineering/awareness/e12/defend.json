@@ -58,6 +58,16 @@
         "not_expected": "Checking a visitor against today's list and their paperwork",
         "unlocked_screen": "Spotting a screen left unlocked and unattended"
       },
+      "_nudges": "CA-1 (UI sweep, Major): the folded debrief's weakest-skill line appends a next-step pointer; with no set.nudges it falls through foldedWeakestNudge -> awarenessWeakestLineFor, which for this all-`call` set reads with phone wording ('If a caller, prompt or voicemail pushes you...') in a visitor episode. set.nudges authors that next step per tell id so the reception-desk wording wins (debrief-view.js reads set.nudges[weak.id] first, then resultCopy.weakest, then the generic kind line). One line per tell that the debrief can name as weakest: the five scenario-local tells plus the two shared-library tells (borrowed_authority, secrecy_or_bypass) that appear on items 3 and 4. Shown text only, never spoken; no method, no blame.",
+      "nudges": {
+        "tailgating": "A held door is the easiest way in. Let each visitor badge in for themselves, and send anyone who follows you through back to the desk to sign in.",
+        "no_escort": "The visitor left on their own is the one who gets to wander. Walk them to their host or back to reception instead.",
+        "uniform_pretext": "A hi-vis, a clipboard or a job title are easy to put on and prove nothing on their own. Check the visitor is actually expected before letting them through.",
+        "not_expected": "The day's list and the visitor's own paperwork are what settle whether they belong. When the two don't match, hold the door and check with their host.",
+        "unlocked_screen": "An unlocked, unattended screen is someone's account left open to anyone nearby. Lock it or report it, and lock your own whenever you step away.",
+        "borrowed_authority": "A partner's name or 'they're expecting me' is used to wave away the sign-in, but a name you can't check is not a booking. Check the list before you let anyone through.",
+        "secrecy_or_bypass": "'Don't bother signing me in' or 'I'll let myself in' is a nudge to skip the one check that matters. That's exactly the moment to slow down and check."
+      },
       "_callActions": "MA3 (E12 C1, spec section 20.2 ruling: relabel). The built CALL_ACTIONS (triage-kinds.js) read for a phone call ('Say no and hang up', 'Hang up and ring back on a number you already hold'), which is wrong for a visitor standing at the desk. labels.callActions carries label + hint + past for each of the four call actions (triage-kinds.js relabel), so the buttons, their sub-hints and the summary-list past-tense tags all read for a desk. The verdict mapping (comply=trust, escalate=report, refuse=delete, verify_callback=verify) is unchanged. The set brief above names the new button words.",
       "labels": {
         "itemNoun": "visitor",
