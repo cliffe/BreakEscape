@@ -16,7 +16,7 @@
     "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Dermot Lynch (and both 'Dermot' and 'Lynch' on their own) had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-29. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
     "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
     "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (QR notices, added word), tarrowby-depot.example, tarrowby-team.example (row-6 look-alike sender domains, added word).",
-    "thirdParties": "ASAParcels (asaparcels-redelivery.example), a courier name on a fake fee text; Fuelr (fuelr-rewards.example), a fuel-card offer nobody asked for (WP-15: no longer used in any shipped item after e6_fuel_card_offer was swapped out; left as an unused brand); Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; Shiftle (shiftle-mail.example) and Payrollery (payrollery-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
+    "thirdParties": "ASAParcels (asaparcels-redelivery.example), a courier name on a fake fee text; Fuelr (fuelr-rewards.example), a fuel-card offer nobody asked for (WP-15: no longer used in any shipped item after e6_fuel_card_offer was swapped out; left as an unused brand); Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; Kerbsettle (kerbsettle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; Shiftle (shiftle-mail.example) and Payrollery (payrollery-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
     "preShipCheck": "Web-search Tarrowby, ASAParcels, Fuelr, Telvoro, Shiftle and Payrollery for real businesses of the same name before release."
   },
   "_formPairing": {
@@ -491,7 +491,7 @@
           "from": { "address": "07700 900649 (not in your contacts)" },
           "time": "10:15",
           "body": "Parking Charge Notice: £60 unpaid at Leeds Station car park. Pay within 24 hrs or it rises to £120: {{link:pay}} Reply STOP to opt out",
-          "links": [ { "id": "pay", "text": "shrtn.example/Pc4n9", "destination": "https://pcn-settle.example/pay" } ],
+          "links": [ { "id": "pay", "text": "shrtn.example/Pc4n9", "destination": "https://kerbsettle.example/pay" } ],
           "truth": {
             "isPhish": true,
             "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
