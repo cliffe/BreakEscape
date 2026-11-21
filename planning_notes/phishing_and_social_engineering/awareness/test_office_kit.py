@@ -692,7 +692,8 @@ class RegenerateTheChain(unittest.TestCase):
         # asks for the bare build. strip_kit must give the bare shell back from the kitted one.
         import gen_e1_shells as g
         r = ok.row_for('ca01_invoice_fraud_defend')
-        self.assertEqual((r['tier'], r['setPiece'], bool(r.get('stepAway')), bool(r.get('attack'))), ('S', None, False, False))
+        # D280: the twin's only set piece is its colleague's reaction after the sort (no step-away, no attack)
+        self.assertEqual((r['tier'], r['setPiece'], bool(r.get('stepAway')), bool(r.get('attack'))), ('S', 'ca01_defend_react', False, False))
         kitted = g.defend_only()[1]
         self.assertIn('npcThoughts', kitted)
         self.assertNotIn('npcThoughts', twin_shell())
