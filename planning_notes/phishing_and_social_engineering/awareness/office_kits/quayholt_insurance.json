@@ -1,11 +1,19 @@
 {
   "company": "quayholt_insurance",
   "_note": "Quayholt Insurance office kit (WAVE2_BUILD.md D12, P-KQ). Tiles are px/32 on the 10x10 room_aw_quayholt map. The map draws no source for a non-work need, so the kit declares a water_cooler with an explicit position, using the preloaded water_cooler1.png (24x47); rooms.js creates the sprite by the fallback (findMatchFor null, createSpriteAtRandomPosition, applyScenarioObjectPosition) and moves it to position. The cooler has no collision body (the engine gives static bodies only to tables and wheeled chairs, rooms.js ~2805-2834); click-to-move routes round it (path-avoid.js water_cooler pattern) as round Tarrowby's vending machine, checked in gate D proof 11. position (8.2,5.6) is the sprite top-left corner; free floor in room_aw_quayholt is x1-9, y2-9, and column 8 rows 5-7 (below the wall-hung extinguisher) is clear (kiosk covers cols 7-8 rows 3-4, the desk row 8 with its chair column 7). useFrom is from the sprite centre. Staff homes are drawn desk chairs: Darren and Niamh at the left desk (chairs ~2.9 and 4.1, y6.8), Anjali at the right desk (chair ~7.4, y8.3); confirmed/adjusted live in gate D. Every colleague carries one thirst need so they leave home, drink at the cooler and sit again. Pool kit_quayholt, capacity-2, three lines; each of Darren, Niamh and Anjali two chatterLines. Voices from VOICE_CAST.md.",
-  "scenario": { "npcThoughts": false },
+  "scenario": {
+    "npcThoughts": false
+  },
   "pool": {
     "key": "kit_quayholt",
-    "lines": ["Phones haven't stopped today.", "Claims backlog's easing off.", "Cooler's cold for once."],
-    "requireGlobal": { "kit_quiet": false }
+    "lines": [
+      "Phones haven't stopped today.",
+      "Claims backlog's easing off.",
+      "Cooler's cold for once."
+    ],
+    "requireGlobal": {
+      "kit_quiet": false
+    }
   },
   "sources": [
     {
@@ -16,43 +24,550 @@
       "takeable": false,
       "interactable": false,
       "observations": "The office water cooler. Staff wander over for a refill.",
-      "position": { "x": 8.2, "y": 5.6 },
-      "affordance": { "satisfies": "thirst", "restores": 70, "useSeconds": 20, "useFrom": { "dx": 0, "dy": 1.25 }, "capacity": 2, "chatter": "pool" }
+      "position": {
+        "x": 8.2,
+        "y": 5.6
+      },
+      "affordance": {
+        "satisfies": "thirst",
+        "restores": 70,
+        "useSeconds": 20,
+        "useFrom": {
+          "dx": 0,
+          "dy": 1.25
+        },
+        "capacity": 2,
+        "chatter": "pool"
+      }
     }
   ],
   "staff": {
     "darren_price": {
       "displayName": "Darren Price",
       "spriteSheet": "darren_price",
-      "voice": { "name": "Orus", "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.", "language": "en-GB" },
-      "position": { "x": 2.5, "y": 7.0 },
-      "needsHome": { "room": "training_room", "x": 2.5, "y": 7.0, "facing": "south" },
+      "voice": {
+        "name": "Orus",
+        "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": {
+        "x": 2.5,
+        "y": 7.0
+      },
+      "needsHome": {
+        "room": "training_room",
+        "x": 2.5,
+        "y": 7.0,
+        "facing": "south"
+      },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
-      "chatterLines": ["Busy on the awareness side.", "Just grabbing some water."]
+      "needs": {
+        "thirst": {
+          "decayPerMin": 30,
+          "urgentAt": 50,
+          "initial": 65
+        }
+      },
+      "chatterLines": [
+        "Busy on the awareness side.",
+        "Just grabbing some water."
+      ]
     },
     "niamh_doherty": {
       "displayName": "Niamh Doherty",
       "spriteSheet": "niamh_doherty",
-      "voice": { "name": "Leda", "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.", "language": "en-GB" },
-      "position": { "x": 4.0, "y": 7.0 },
-      "needsHome": { "room": "training_room", "x": 4.0, "y": 7.0, "facing": "south" },
+      "voice": {
+        "name": "Leda",
+        "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": {
+        "x": 4.0,
+        "y": 7.0
+      },
+      "needsHome": {
+        "room": "training_room",
+        "x": 4.0,
+        "y": 7.0,
+        "facing": "south"
+      },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 } },
-      "chatterLines": ["Newsletter's nearly done.", "Could murder a cuppa."]
+      "needs": {
+        "thirst": {
+          "decayPerMin": 30,
+          "urgentAt": 50,
+          "initial": 55
+        }
+      },
+      "chatterLines": [
+        "Newsletter's nearly done.",
+        "Could murder a cuppa."
+      ]
     },
     "anjali_rao": {
       "displayName": "Anjali Rao",
       "spriteSheet": "anjali_rao",
-      "voice": { "name": "Kore", "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.", "language": "en-GB" },
-      "position": { "x": 7.4, "y": 8.3 },
-      "needsHome": { "room": "training_room", "x": 7.4, "y": 8.3, "facing": "south" },
+      "voice": {
+        "name": "Kore",
+        "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+        "language": "en-GB"
+      },
+      "position": {
+        "x": 7.4,
+        "y": 8.3
+      },
+      "needsHome": {
+        "room": "training_room",
+        "x": 7.4,
+        "y": 8.3,
+        "facing": "south"
+      },
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
-      "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 70 } },
-      "chatterLines": ["Quiet on the alerts today.", "Need a proper break."]
+      "needs": {
+        "thirst": {
+          "decayPerMin": 30,
+          "urgentAt": 50,
+          "initial": 70
+        }
+      },
+      "chatterLines": [
+        "Quiet on the alerts today.",
+        "Need a proper break."
+      ]
+    }
+  },
+  "setPieces": {
+    "ca03_people_locked_out": {
+      "globals": {
+        "kit_ca03_there": false,
+        "kit_ca03_done": false
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca03_spare_pc",
+          "name": "Spare workstation",
+          "sprite": "pc4",
+          "takeable": false,
+          "interactable": false,
+          "observations": "A spare workstation at the head of the table.",
+          "position": {
+            "x": 4.1875,
+            "y": 7.09375,
+            "elevation": 22
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca03_out === true",
+              "value": "pc4_locked"
+            }
+          ]
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca03_t_done",
+          "startOnGlobal": "kit_ca03_out",
+          "delayMs": 12000,
+          "condition": "!globalVars.kit_ca03_done",
+          "setGlobal": {
+            "kit_ca03_done": true
+          }
+        }
+      ],
+      "staff": {
+        "anjali_rao": {
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_anjali_rao",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca03_there": true
+              },
+              "bark": "I came over to use the spare and it's on the sign-in screen, asking for everything again. Darren, is it doing this to everyone?"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume",
+              "delayMs": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "niamh_doherty": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca03_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      },
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca03_there",
+          "condition": "value === true && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
+          "onceOnly": true,
+          "delayMs": 4500,
+          "setGlobal": {
+            "kit_ca03_done": true
+          },
+          "bark": "Someone's password got out, and whoever had it wanted to walk in as a name we'd all trust. That's why IT is signing everyone out."
+        }
+      ]
+    },
+    "ca08_machine_out": {
+      "globals": {
+        "kit_ca08_there": false,
+        "kit_ca08_done": false
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca08_screen",
+          "name": "Darren's workstation",
+          "sprite": "pc1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "Darren's workstation.",
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca08_out === true",
+              "value": "pc1_locked"
+            }
+          ]
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca08_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca08_t_done",
+          "startOnGlobal": "kit_ca08_out",
+          "delayMs": 12000,
+          "condition": "!globalVars.kit_ca08_done",
+          "setGlobal": {
+            "kit_ca08_done": true
+          }
+        }
+      ],
+      "staff": {
+        "darren_price": {
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4.5,
+                  "y": 4.0
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_darren_price",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca08_there": true
+              },
+              "bark": "My screen's locked me out and a shared folder won't open. If someone's in my account, they'll be sending as me. Reporting it now."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume",
+              "delayMs": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "niamh_doherty": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca08_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      },
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca08_there",
+          "condition": "value === true && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
+          "onceOnly": true,
+          "delayMs": 4500,
+          "setGlobal": {
+            "kit_ca08_done": true
+          },
+          "bark": "Thank you. We can shut that account down before it gets past your machine."
+        }
+      ]
+    },
+    "ca19_isolated_beside_running": {
+      "_todo_ca19_art": "ca19 isolated-screen sprite NOT yet wired (owner pick pending, WAVE3_BUILD.md s8). To finish: (1) add assets/objects/<key>.png (28x23); (2) add this.load.image('<key>','objects/<key>.png') in game.js by pc1_locked; (3) add spriteVariants [{condition: globalVars.kit_ca19_out === true, value: <key>}] to kit_ca19_isolated. Tests for this part are pending/skipped.",
+      "globals": {
+        "kit_ca19_there": false,
+        "kit_ca19_done": false
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca19_isolated",
+          "name": "Niamh's workstation",
+          "sprite": "pc1",
+          "takeable": false,
+          "interactable": true,
+          "observations": "Niamh's workstation.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca19_out === true",
+              "value": "Isolated by IT. Do not use. Recovering."
+            }
+          ],
+          "position": {
+            "x": 3.9375,
+            "y": 6.96875,
+            "elevation": 24.2
+          }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca19_running",
+          "name": "Darren's workstation",
+          "sprite": "pc1",
+          "takeable": false,
+          "interactable": false,
+          "observations": "Darren's workstation, still running.",
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          }
+        },
+        {
+          "type": "binders",
+          "id": "kit_ca19_binders",
+          "name": "Binders",
+          "sprite": "binders1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 6.47,
+            "y": 7.75
+          },
+          "observations": "Box files, moved over to clear the desk."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca19_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "notes",
+          "id": "kit_ca19_paper",
+          "name": "Niamh's notes",
+          "sprite": "notes1",
+          "takeable": false,
+          "position": {
+            "x": 6.47,
+            "y": 7.55,
+            "elevation": 20
+          },
+          "revealOnGlobal": "kit_ca19_out",
+          "observations": "Pen and paper, till IT rebuild her machine."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca19_t_done",
+          "startOnGlobal": "kit_ca19_out",
+          "delayMs": 12000,
+          "condition": "!globalVars.kit_ca19_done",
+          "setGlobal": {
+            "kit_ca19_done": true
+          }
+        }
+      ],
+      "staff": {
+        "niamh_doherty": {
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 5.5,
+                  "y": 7
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_niamh_doherty",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca19_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca19_there": true
+              },
+              "bark": "IT have taken mine offline while they rebuild it, so I'm on pen and paper for the afternoon."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_there",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume",
+              "delayMs": 3000
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "darren_price": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_out",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_there",
+              "condition": "value === true && globalVars.kit_ca19_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca19_done": true
+              },
+              "bark": "Mine's still running. Whoever's behind this locks whatever it can reach, then waits for someone to pay. IT got to hers first."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca19_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
     }
   }
 }
