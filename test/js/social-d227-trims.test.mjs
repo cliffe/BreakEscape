@@ -242,7 +242,7 @@ test('A1: the debrief opens with the band headline and the score in large type; 
     assert.ok(folded.querySelector('.aw-debrief')?.children[1]?.className === 'aw-heading', 'heading follows the band');
     // CSL R2 m1: the runner's focus lands on the band, so a screen reader starts at the headline and score
     const bandEl = folded.querySelector('.aw-band');
-    assert.ok(bandEl.tabIndex === -1, 'the band is programmatically focusable');
+    assert.ok(bandEl.getAttribute('tabindex') === '-1', 'the band is programmatically focusable');
     const runnerSrc = readFileSync(join(js, 'minigames/episode-runner/episode-runner-minigame.js'), 'utf8');
     const sel = /_focus\(\) \{\s*const target = this\.body\?\.querySelector\?\.\('([^']+)'\)/.exec(runnerSrc)?.[1] || '';
     assert.ok(sel.startsWith('.aw-band,'), `the runner's focus selector starts with the band (got ${sel})`);
