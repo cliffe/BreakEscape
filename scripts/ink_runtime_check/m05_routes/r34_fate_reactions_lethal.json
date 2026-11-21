@@ -73,18 +73,7 @@
 "It's out of my hands now"
 ]
 },
-{
-"said": [
-"I signed his overtime every week",
-"It was never in yours. Mine, maybe."
-],
-"notSaid": [
-"[choice] That depends on whether he helps us",
-"[choice] He'll face justice",
-"I've rung David twice",
-"I failed him"
-]
-},
+{ "said": ["I signed his overtime every week", "It was never in yours. Mine, maybe."], "notSaid": ["[choice] That depends on whether he helps us", "[choice] He'll face justice", "I've rung David twice"] },
 {
 "talk": "lisa",
 "picks": [

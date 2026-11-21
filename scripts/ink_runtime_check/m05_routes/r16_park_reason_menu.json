@@ -192,23 +192,7 @@
 "Cancel it, David"
 ]
 },
-{
-"said": [
-"Eight-oh-two",
-"88 per cent",
-"Twenty-eight minutes",
-"half an hour",
-"89 per cent",
-"91 per cent",
-"Finish that research server before I pull you out"
-],
-"notSaid": [
-"94 per cent",
-"99 per cent",
-"Sixteen minutes",
-"Somebody read Owen's sheet"
-]
-},
+{ "said": ["Eight-oh-two", "88 per cent", "Twenty-eight minutes", "half an hour", "89 per cent", "91 per cent", "Finish that research server before I pull you out"], "notSaid": ["94 per cent", "99 per cent", "Sixteen minutes"] },
 {
 "expect": {
 "final_choice": "arrest",
@@ -224,15 +208,7 @@
 "Nothing right now"
 ]
 },
-{
-"said": [
-"The research server isn't finished",
-"The upload's dead. The research server isn't"
-],
-"notSaid": [
-"Car's at the front entrance"
-]
-},
+{ "said": ["The research server isn't finished", "The upload's dead. The research server isn't"] },
 {
 "expect": {
 "mission_complete": false

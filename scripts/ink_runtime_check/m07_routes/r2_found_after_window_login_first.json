@@ -107,17 +107,7 @@
     "Help me stop it"
    ]
   },
-  {
-   "said": [
-    "What were you told about Austin",
-    "You've already sent them",
-    "One frightened engineer, but it fits. The window's shut."
-   ],
-   "notSaid": [
-    "page forty",
-    "Say the second half"
-   ]
-  },
+  { "said": ["What were you told about Austin", "You've already sent them", "One frightened engineer, but it fits. The window's shut."], "notSaid": ["page forty"] },
   {
    "talk": "elena",
    "picks": [

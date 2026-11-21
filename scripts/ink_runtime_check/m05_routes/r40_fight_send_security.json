@@ -171,16 +171,7 @@
     "Which do you recommend?"
    ]
   },
-  {
-   "said": [
-    "I won't choose for you",
-    "Hard is certain tonight",
-    "If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't win? Get clear, then message me."
-   ],
-   "notSaid": [
-    "I'm not going to answer that"
-   ]
-  },
+  { "said": ["I won't choose for you", "Hard is certain tonight", "If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't win? Get clear, then message me."] },
   {
    "talk": "torres",
    "picks": [

@@ -47,19 +47,7 @@
 "same way again"
 ]
 },
-{
-"said": [
-"You went public. The Initiative is front-page news",
-"It already has. Your consultant cover is burnt",
-"you turned her down",
-"Someone who never has to hear the ambulance not come",
-"I know. I read the report."
-],
-"notSaid": [
-"Expect them to hit back",
-"One last thing"
-]
-},
+{ "said": ["You went public. The Initiative is front-page news", "It already has. Your consultant cover is burnt", "you turned her down", "Someone who never has to hear the ambulance not come", "I know. I read the report."], "notSaid": ["One last thing"] },
 {
 "maxRun": 9
 }

@@ -34,11 +34,9 @@
 { "flag": 1 }, { "flag": 2 }, { "flag": 3 }, { "flag": 4 },
 { "enter": "interrogation_room" },
 { "talk": "confront", "picks": ["Face him", "Tell me why", "flight to Montana", "What happens to you now", "No deals"] },
-{ "said": ["By then you'd been through my locker"] },
-{ "notSaid": ["So I tidied"] },
+{ "said": ["By then you'd been through my locker"], "notSaid": ["So I tidied"] },
 { "talk": "debrief", "picks": ["He's the crime", "code server", "Nothing more"] },
 { "credits": true },
-{ "said": ["GO-BAG: Packed nine days ago"] },
-{ "notSaid": ["Gone from his locker"] }
+{ "said": ["GO-BAG: Packed nine days ago"], "notSaid": ["Gone from his locker"] }
 ]
 }
