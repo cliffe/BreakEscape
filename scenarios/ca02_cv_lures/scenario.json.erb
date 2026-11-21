@@ -131,6 +131,15 @@
       "setGlobal": {
         "kit_ca02_done": true
       }
+    },
+    {
+      "id": "kit_ca02_t_done_out",
+      "startOnGlobal": "kit_ca02_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca02_done",
+      "setGlobal": {
+        "kit_ca02_done": true
+      }
     }
   ],
   "social": {
@@ -1064,7 +1073,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_there",
-              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_ca02_cv_choice === '' && !globalVars.kit_ca02_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Blank page, just a box saying enable editing and content. Do I click?",
@@ -1073,14 +1082,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_there",
-              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca02_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",
@@ -1124,6 +1135,38 @@
               "setGlobal": {
                 "kit_ca02_cv_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Blank page, just a box saying enable editing and content. Do I click?",
+              "targetKnot": "ca02_cv",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca02_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000
             }
           ]
         },

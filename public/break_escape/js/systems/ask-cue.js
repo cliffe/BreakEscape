@@ -53,13 +53,18 @@ export class AskCue {
         return askPerceivable(facts);
     }
 
-    /** Show the toast and the marker for this NPC. Returns the toast text. */
-    fire(npcId, { ms = CUE_MARKER_MS } = {}) {
+    /**
+     * Show the toast and the marker for this NPC. Returns the toast text. `ms` is the reply window
+     * (the marker's longest life). `until` names the piece's choice global: the marker then stays
+     * until that global leaves '' (answered, or the reply clock lapsed), not until any conversation
+     * with the colleague closes, and is not drawn at all if it has already left ''.
+     */
+    fire(npcId, { ms = CUE_MARKER_MS, until = null } = {}) {
         const w = win();
         const name = w.npcManager?.getNPC?.(npcId)?.displayName || npcId;
         const text = askToastText(name);
         try { w.showNotification?.(text, 'info', 'Colleague', 6000); } catch (e) { /* cosmetic */ }
-        try { this._mark(npcId, ms); } catch (e) { console.debug('[ask-cue] marker failed', e); }
+        try { this._mark(npcId, ms, until); } catch (e) { console.debug('[ask-cue] marker failed', e); }
         return text;
     }
 
@@ -83,8 +88,9 @@ export class AskCue {
         return null;
     }
 
-    _mark(npcId, ms) {
+    _mark(npcId, ms, until = null) {
         this.clear(npcId);
+        if (until && (win().gameState?.globalVariables?.[until] ?? '') !== '') return;
         const sprite = this._sprite(npcId);
         const scene = sprite?.scene || this.scene;
         if (!sprite || !scene?.add?.graphics) return;
@@ -105,12 +111,16 @@ export class AskCue {
         scene.events.on('postupdate', place);
         const done = () => this.clear(npcId);
         const ev = win().eventDispatcher;
-        const closed = `conversation_closed:${npcId}`;
-        try { ev?.on?.(closed, done); } catch (e) { /* no dispatcher */ }
+        // Without a choice global the marker goes when a conversation with the colleague closes (the
+        // old rule). With one it goes when the piece's answer is recorded: a conversation that closes
+        // unanswered leaves the reply clock running, so the marker stays for it.
+        const gone = until ? `global_variable_changed:${until}` : `conversation_closed:${npcId}`;
+        const onGone = until ? (p) => { if ((p?.value ?? '') !== '') done(); } : done;
+        try { ev?.on?.(gone, onGone); } catch (e) { /* no dispatcher */ }
         const timer = setTimeout(done, ms);
         this.markers.set(npcId, {
             gfx: g, timer,
-            off: () => { scene.events?.off?.('postupdate', place); try { ev?.off?.(closed, done); } catch (e) { /* ok */ } }
+            off: () => { scene.events?.off?.('postupdate', place); try { ev?.off?.(gone, onGone); } catch (e) { /* ok */ } }
         });
     }
 }

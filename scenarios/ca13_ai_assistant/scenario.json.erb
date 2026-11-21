@@ -130,6 +130,15 @@
       "setGlobal": {
         "kit_ca13_done": true
       }
+    },
+    {
+      "id": "kit_ca13_t_done_out",
+      "startOnGlobal": "kit_ca13_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca13_done",
+      "setGlobal": {
+        "kit_ca13_done": true
+      }
     }
   ],
   "social": {
@@ -1053,7 +1062,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca13_send_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca13_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Graham, that supplier's replied already, thanking you for the list. Now they want each buyer's direct line."
@@ -1129,7 +1138,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca13_there",
-              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && globalVars.kit_ca13_send_choice === ''",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_ca13_send_choice === '' && !globalVars.kit_ca13_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
@@ -1138,14 +1147,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca13_there",
-              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca13_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_graham_whitfield",
@@ -1189,6 +1200,38 @@
               "setGlobal": {
                 "kit_ca13_send_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "targetKnot": "ca13_send",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca13_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000
             }
           ]
         }

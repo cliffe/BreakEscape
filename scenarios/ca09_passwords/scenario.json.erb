@@ -152,6 +152,15 @@
       "setGlobal": {
         "kit_ca09_done": true
       }
+    },
+    {
+      "id": "kit_ca09_t_done_out",
+      "startOnGlobal": "kit_ca09_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca09_done",
+      "setGlobal": {
+        "kit_ca09_done": true
+      }
     }
   ],
   "resources": {
@@ -1083,7 +1092,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
-              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && globalVars.kit_ca09_note_choice === ''",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_choice === '' && !globalVars.kit_ca09_done",
               "onceOnly": true,
               "delayMs": 3500,
               "bark": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
@@ -1092,14 +1101,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
-              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "condition": "value === true && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done && globalVars.kit_ca09_note_choice === ''",
               "onceOnly": true,
               "delayMs": 3500,
               "setGlobal": {
                 "kit_ca09_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca09_note_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",
@@ -1178,6 +1189,38 @@
               "setGlobal": {
                 "kit_ca09_closed_unseen": true
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done && globalVars.kit_ca09_note_choice === '' && globalVars.kit_ca09_asked !== true",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "bark": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
+              "targetKnot": "ca09_note",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done && globalVars.kit_ca09_note_choice === '' && globalVars.kit_ca09_asked !== true",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "setGlobal": {
+                "kit_ca09_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca09_note_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done && globalVars.kit_ca09_note_choice === '' && globalVars.kit_ca09_asked === true",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca09_note_choice",
+              "askCueMs": 45000
             }
           ]
         }

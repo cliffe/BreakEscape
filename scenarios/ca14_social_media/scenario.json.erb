@@ -143,6 +143,15 @@
       "setGlobal": {
         "kit_ca14_done": true
       }
+    },
+    {
+      "id": "kit_ca14_t_done_out",
+      "startOnGlobal": "kit_ca14_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca14_done",
+      "setGlobal": {
+        "kit_ca14_done": true
+      }
     }
   ],
   "social": {
@@ -1154,7 +1163,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_there",
-              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && globalVars.kit_ca14_photo_choice === ''",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === '' && !globalVars.kit_ca14_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "It's all of us at our desks. Fine to post?",
@@ -1163,14 +1172,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_there",
-              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca14_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_lorna_easton",
@@ -1222,6 +1233,38 @@
               "setGlobal": {
                 "kit_ca14_closed_unseen": true
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It's all of us at our desks. Fine to post?",
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca14_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
             }
           ]
         },
@@ -1296,7 +1339,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca14_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me."

@@ -132,6 +132,15 @@
       "setGlobal": {
         "kit_ca10_done": true
       }
+    },
+    {
+      "id": "kit_ca10_t_done_out",
+      "startOnGlobal": "kit_ca10_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca10_done",
+      "setGlobal": {
+        "kit_ca10_done": true
+      }
     }
   ],
   "social": {
@@ -1252,7 +1261,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca10_check_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca10_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Your account's being used from somewhere we've never seen, Darren. That's not you, is it?"
@@ -1327,7 +1336,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca10_there",
-              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true && globalVars.kit_ca10_check_choice === ''",
+              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_ca10_check_choice === '' && !globalVars.kit_ca10_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
@@ -1336,14 +1345,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca10_there",
-              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca10_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_darren_price",
@@ -1387,6 +1398,38 @@
               "setGlobal": {
                 "kit_ca10_check_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
+              "targetKnot": "ca10_check",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca10_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000
             }
           ]
         }

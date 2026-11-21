@@ -134,6 +134,15 @@
       "setGlobal": {
         "kit_ca05_done": true
       }
+    },
+    {
+      "id": "kit_ca05_t_done_out",
+      "startOnGlobal": "kit_ca05_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca05_done",
+      "setGlobal": {
+        "kit_ca05_done": true
+      }
     }
   ],
   "social": {
@@ -1211,7 +1220,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca05_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Darren, have you just sent me a sign-in link? It's gone to the whole claims team."
@@ -1286,7 +1295,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_there",
-              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && globalVars.kit_ca05_prompt_choice === ''",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_ca05_prompt_choice === '' && !globalVars.kit_ca05_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
@@ -1295,14 +1304,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_there",
-              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca05_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_darren_price",
@@ -1346,6 +1357,38 @@
               "setGlobal": {
                 "kit_ca05_prompt_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
+              "targetKnot": "ca05_prompt",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca05_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000
             }
           ]
         }

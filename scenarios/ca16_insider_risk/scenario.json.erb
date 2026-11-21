@@ -118,6 +118,15 @@
       "setGlobal": {
         "kit_ca16_done": true
       }
+    },
+    {
+      "id": "kit_ca16_t_done_out",
+      "startOnGlobal": "kit_ca16_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca16_done",
+      "setGlobal": {
+        "kit_ca16_done": true
+      }
     }
   ],
   "resources": {
@@ -984,7 +993,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca16_there",
-              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true && globalVars.kit_ca16_signin_choice === ''",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_choice === '' && !globalVars.kit_ca16_done",
               "onceOnly": true,
               "delayMs": 2000,
               "bark": "It won't take my password at all. Could I borrow your login for an hour?",
@@ -993,14 +1002,16 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca16_there",
-              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "condition": "value === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === ''",
               "onceOnly": true,
               "delayMs": 2000,
               "setGlobal": {
                 "kit_ca16_asked": true
               },
               "askCue": true,
-              "whenPerceivable": true
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_niamh_doherty",
@@ -1049,6 +1060,38 @@
                   "work": 90
                 }
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked !== true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "bark": "It won't take my password at all. Could I borrow your login for an hour?",
+              "targetKnot": "ca16_signin",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked !== true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "setGlobal": {
+                "kit_ca16_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000
             }
           ]
         }
