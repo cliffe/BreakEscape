@@ -98,14 +98,7 @@
     "projection_revised": false
    }
   },
-  {
-   "said": [
-    "If a row in there doesn't match"
-   ],
-   "notSaid": [
-    "briefed low on purpose"
-   ]
-  },
+  { "said": ["If a row in there doesn't match"] },
   {
    "hud": null
   },
@@ -116,11 +109,7 @@
     "Meltdown"
    ]
   },
-  {
-   "said": [
-    "That isn't what I'm reading"
-   ]
-  },
+  { "said": ["That isn't what I'm reading"], "notSaid": ["briefed low on purpose"] },
   {
    "expect": {
     "projection_revised": false
