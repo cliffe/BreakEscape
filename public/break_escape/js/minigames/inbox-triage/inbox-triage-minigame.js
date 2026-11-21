@@ -569,6 +569,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         else if (this.feedbackMode === 'end') when = briefSaysEnd ? '' : endLine;
         else when = `You'll get feedback after each ${noun}.`;
         if (when) p.appendChild(el('p', 'tri-brief-when', when));
+        // The episode trims lock a Trust at once, with no tick step (D227 A3), so a set's "then
+        // tick what you noticed" holds for the other answers only. Say so before the round.
+        if (this.episodeTrims) {
+            const trustWords = [...new Set(this.messages.filter((m) => kindOf(m) !== 'choice').map((m) => {
+                const k = kindOf(m);
+                return actionsFor(isNonEmail(m) ? k : 'email', this.verifyEnabled, this.labels).find((a) => a.verdict === 'trust')?.label;
+            }).filter(Boolean))];
+            if (trustWords.length) {
+                p.appendChild(el('p', 'tri-brief-trust', `${trustWords.join(' or ')} locks your answer straight away. The other answers ask what you noticed.`));
+            }
+        }
         // F12: closing or reloading mid-round restarts it from the top (only the result is
         // ever saved), so say so here rather than leave a student puzzled by a reset.
         // Batch 11 item 8: a launcher that saves each verdict (params.onProgress) resumes instead.
@@ -638,6 +649,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // The "Verdict locked" line is about the message just sorted; opening another must not leave it
         // reading as that message's verdict (lab R18 F-d).
         if (this._live && this._live !== this._lockedLine(rec.id)) this._announce('');
+        // A pending verdict (the "What made you say that?" sheet) belongs to the message it was
+        // chosen on. Opening another message clears it, so a lock never lands on a message the
+        // player is not looking at (D254 R5 M1). The verdict is not kept: they choose again.
+        if (this.sheet && this.sheet.messageId !== rec.id) this._closeSheet(false);
         rec.read = true;
         this.openedAt.set(rec.id, Date.now());
     }
