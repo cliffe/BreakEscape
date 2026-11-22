@@ -207,6 +207,17 @@ test('N7: the report line counts a phish checked by another route as a catch', (
     assert.equal(num(s, 'phishCaught'), '2 of 2');
 });
 
+test('N-19b: a launcher that saves each verdict (onProgress) closes at once, with no "won\'t be kept" ask', () => {
+    const saved = [];
+    const s = open(awareSet([phishMail, realMail]), { onProgress: (a) => saved.push(a.length) });
+    click($(s, '.tri-start'));
+    act(s, 'phish_mail', 'report', ['lookalike_domain']);
+    assert.deepEqual(saved, [1], 'the verdict was handed to the launcher');
+    click($(s, '.se-overlay-close'));
+    assert.equal($(s, '.tri-close-ask'), null, 'no stale warning: the answers are kept');
+    assert.equal(s.gameState.isActive, false, 'X closes at once');
+});
+
 test('N-19: Close partway through asks first; Keep going resumes, Close anyway leaves', () => {
     const s = open(awareSet([phishMail, realMail]));
     click($(s, '.tri-start'));
