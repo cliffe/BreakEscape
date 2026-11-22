@@ -33,3 +33,15 @@
 - Edit m03_trailer60_v2: placeholders replaced by t17_guard_map (0.9 s, cone), t17_guard_line (3.0 s, J-cut 0.36), t18_victoria_close (3.6 s, zoom 1.5, J 0.22, L 0.15 into the bumper); the wide Victoria shot dropped to fit her full line. Shots needed shot-level `dialogue: true` for the .srt (audio.dialogue alone is not enough).
 - Render `~/video-takes-local/m03/renders/m03_trailer60_v2_16x9.mp4`: 60.000 s, -14.01 LUFS, TP -1.49, 6 cues. Momentary peaks per cue: HaX -8.5, Ffion -10.4, Zainab -9.2, Yusuf -10.3, Terry -9.8, Victoria -10.4. Ending frames checked at 4 fps (43.5-52.5 s).
 - Page tab m03 · v2, doc feedback/m03_trailer_v2 (v1 had no answers), asset 0316a336526d96b9bc87ab47e412c8f7.
+
+## v2 feedback (2026-11-22, user, pasted from the page)
+Verdict: **revise, and a new cut**. Notes, with the task each one became:
+- 0:15 the RFID beat must stay on screen longer (new mechanic); drop the phone and PIN flashes from that section. → v3 gives RFID its own card and a read-save-emulate-door sequence of about 3.5 s.
+- Replace "Uncover the Mystery": cards advertise this mission's story, as m02's did; "Real Hacking" stays (USP). → house rule now (recipe card pattern).
+- 0:24 the walk zig-zags. → straight key-driven walks (video-takes rule).
+- 0:27 Ffion says "this late", then the next shot is bright day and Zainab glitches against her desk. → day shots grouped before the night turn; re-take Zainab away from the desk.
+- Zainab blinks one eye only. → game fix on branch fix/m03-zainab-blink-terry-revoice (viseme blink frame).
+- 0:36 Terry's torch brighter. → engine option on branch feat/npc-torch-strength, set on Terry.
+- 0:46 empty desktop: not a good example. → a desktop with content, or drop it.
+- 0:45 show the player at the door, then the lockpicking, then the guard's line; re-voice Terry's line angrier/frustrated (the user's yes for that one line). → sequence in v3; re-voice on the fix branch.
+- Ending "Competent is cheap" is not exciting. Less spoiler caution: trailers sell ENTROPY's threat, the puzzles, real hacking, action and new mechanics. → new cut v3, ending on Victoria's confrontation line. Rules written into GUIDELINES.md, recipes/README.md, mission-trailer.md, video-scout and video-takes skills.
