@@ -23,7 +23,8 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const textFont = Math.max(16, Math.round((w * (stacked ? 0.05 : 0.027)) / 8) * 8);
   const nameSize = Math.max(32, Math.round((Math.min(w, h) * 0.075) / 16) * 16);
   const tagline = cfg.tagline ?? '15 minutes, in your browser · No installs';
-  const tagSize = fitSize([tagline], VT_FONT, stacked ? [64, 48, 32] : [96, 80, 64, 48], w * (stacked ? 0.92 : 0.8)); // large enough to read on a phone and on a 16:9 course page
+  const tagLines = stacked ? tagline.split(' · ') : [tagline]; // stacked: one clause per line so it can be larger on a phone
+  const tagSize = fitSize(tagLines, VT_FONT, stacked ? [96, 80, 64, 48] : [96, 80, 64, 48], w * (stacked ? 0.92 : 0.8)); // large enough to read on a phone and on a 16:9 course page
   const cwWord = textWidth('CYBER AWARE', PIXEL_FONT, textFont);
   // mark group position: upper centre, glyph and text in a row on 16:9, text under the glyph when stacked
   const gap = Math.round(mS * 0.2); // glyph-to-word gap: one lock-up
@@ -69,7 +70,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
       {touch ? <div style={{ position: 'absolute', zIndex: 3, background: CA.line, ...(stacked ? { left: 0, width: w, top: h / 2 - 2 * u, height: 4 * u } : { top: 0, height: h, left: w / 2 - 2 * u, width: 4 * u }) }} /> : null}
       {textIn ? <div style={{ position: 'absolute', left: tx, top: ty, fontFamily: PIXEL_FONT, fontSize: textFont, lineHeight: 1, color: CA.mark, whiteSpace: 'nowrap', ...crisp }}>CYBER AWARE</div> : null}
       {textIn && cfg.name ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY, textAlign: 'center', fontFamily: GNF_FONT, fontSize: nameSize, lineHeight: 1.1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{cfg.name}</div> : null}
-      {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameSize * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{tagline}</div> : null}
+      {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameSize * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{tagLines.map((l, i) => <div key={i}>{l}</div>)}</div> : null}
       {hackIn ? (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
           <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: CA.line, marginBottom: 6 * u }} />
