@@ -2,9 +2,9 @@
  "mission": "ca12",
  "id": "ca12_trailer_r3",
  "theme": "ca",
- "title": "Cyber Aware ca12 trailer, round 3 (narrator VO, Camila opens, points over footage)",
+ "title": "Cyber Aware ca12 trailer, round 3, script R2 (narrator VO, captions only until the owner signs off D341)",
  "fps": 30,
- "length": 55.3,
+ "length": 58.8,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -94,18 +94,19 @@
     "title": "Visitors and tailgating",
     "company": "Merrin & Sallow Architects",
     "stripe": "#8a5a2b"
-   }
+   },
+   "duration": 3.1
   },
   {
    "id": "topic",
    "type": "gameplay",
-   "duration": 5.6,
+   "duration": 4.5,
    "join": {
     "type": "seam"
    },
    "source": {
     "file": "t09_step_away.trimmed.mkv",
-    "in": 41,
+    "in": 42.1,
     "out": 46.6
    },
    "audio": {
@@ -117,7 +118,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Camila walks in through the studio door past the staff, unchallenged (the tailgate); before her C1 bubble at 47.4"
+    "note": "Camila walks up to the studio door past the staff; nobody checks she is expected"
    },
    "seat": {
     "seat": "full"
@@ -278,7 +279,7 @@
    },
    "seat": {
     "seat": "attack",
-    "chip": "FRONT DESK CALL",
+    "chip": "FRONT DESK",
     "stripe": "#8a5a2b"
    },
    "framing": {
@@ -358,7 +359,7 @@
    },
    "seat": {
     "seat": "attack",
-    "chip": "FRONT DESK CALL",
+    "chip": "FRONT DESK",
     "stripe": "#8a5a2b"
    },
    "framing": {
@@ -390,35 +391,7 @@
     "9:16": true,
     "1:1": true
    },
-   "dialogue": true,
-   "insets": [
-    {
-     "src": {
-      "x": 355,
-      "y": 722,
-      "w": 350,
-      "h": 166
-     },
-     "label": "INFLUENCE",
-     "at": {
-      "16:9": {
-       "x": 140,
-       "y": 150,
-       "scale": 2.4
-      },
-      "9:16": {
-       "x": 60,
-       "y": 260,
-       "scale": 2.6
-      },
-      "1:1": {
-       "x": 60,
-       "y": 60,
-       "scale": 2.4
-      }
-     }
-    }
-   ]
+   "dialogue": true
   },
   {
    "id": "flip",
@@ -476,7 +449,7 @@
     "type": "seam"
    },
    "text": [
-    "Then you take the desk"
+    "You run the front desk"
    ],
    "spoiler": {
     "reviewed": true,
@@ -488,16 +461,16 @@
    }
   },
   {
-   "id": "defend",
+   "id": "tailgater",
    "type": "gameplay",
-   "duration": 5,
+   "duration": 5.5,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t08_triage.trimmed.mkv",
-    "in": 5.1,
-    "out": 10.1
+    "file": "t12_tailgater_card.trimmed.mkv",
+    "in": 0,
+    "out": 5.5
    },
    "audio": {
     "gain_db": -6
@@ -508,7 +481,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Triage list and one card, buttons visible (same four generic labels on every card); ends before any verdict; Today's list line masked | CA: spoilers not an issue (owner r3), masks dropped"
+    "note": "Unknown visitor 09:12 card: slips in behind a badge-holder (the tailgate, as card text)"
    },
    "seat": {
     "seat": "defend",
@@ -539,14 +512,14 @@
   {
    "id": "queue_slot",
    "type": "gameplay",
-   "duration": 7,
+   "duration": 10,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t11_defend_queue.trimmed.mkv",
-    "in": 7,
-    "out": 14
+    "in": 6.8,
+    "out": 16.8
    },
    "audio": {
     "gain_db": -6
@@ -668,76 +641,81 @@
   {
    "id": "v1",
    "start": 5,
-   "end": 8,
-   "text": "Cyber Aware is Cyber Security training you play."
+   "end": 7.9,
+   "text": "Cyber Aware: Cyber Security training you play."
   },
   {
    "id": "v1b",
    "start": 8.2,
-   "end": 12.4,
-   "text": "This episode: visitors and tailgating. Strangers who walk in like they belong."
+   "end": 12.2,
+   "text": "Nobody checks she's expected. This episode: visitors and tailgating."
   },
   {
    "id": "v2",
-   "start": 13.8,
-   "end": 15.7,
+   "start": 12.9,
+   "end": 15.3,
    "text": "First, you play the attacker.",
    "onCard": "hide"
   },
   {
    "id": "v3",
    "start": 16.2,
-   "end": 18.9,
-   "text": "Dig into what the firm posts in public,"
+   "end": 18.8,
+   "text": "Dig into what staff post in public."
   },
   {
    "id": "v4",
-   "start": 19.6,
-   "end": 22.7,
-   "text": "build a cover story that fits what you found,"
+   "start": 19.7,
+   "end": 22.8,
+   "text": "Build a cover story from what you found."
   },
   {
    "id": "v5",
-   "start": 23.55,
-   "end": 25.25,
-   "text": "then talk your way in."
+   "start": 23.2,
+   "end": 25.2,
+   "text": "Then talk your way in."
   },
   {
    "id": "v6",
    "start": 30,
-   "end": 31.5,
-   "text": "Then the seats swap."
+   "end": 31.4,
+   "text": "The seats swap."
   },
   {
    "id": "v7",
-   "start": 32,
-   "end": 34.5,
-   "text": "Now you are on the front desk.",
-   "onCard": "hide"
+   "start": 32.1,
+   "end": 34.8,
+   "text": "Now the same tricks come to your desk."
   },
   {
-   "id": "v8",
-   "start": 35.1,
-   "end": 39.7,
-   "text": "Sort today's visitors and calls. Decide who gets in, and who gets checked."
+   "id": "v8a",
+   "start": 35.2,
+   "end": 38.4,
+   "text": "Tailgating: slipping in behind someone with a pass."
+  },
+  {
+   "id": "v8b",
+   "start": 40.6,
+   "end": 43.4,
+   "text": "Decide who gets in, and who gets checked."
   },
   {
    "id": "v9",
-   "start": 40.2,
-   "end": 44,
-   "text": "Every trick you just used is one you now have to spot."
+   "start": 43.6,
+   "end": 46.6,
+   "text": "You've used the tricks, so you know the signs."
   },
   {
    "id": "v10",
-   "start": 44.5,
-   "end": 46.7,
-   "text": "And the office around you keeps moving."
+   "start": 46.8,
+   "end": 49.9,
+   "text": "Check the list. Walk them up. Lock your screen."
   },
   {
    "id": "v11",
-   "start": 50.05,
-   "end": 55.2,
-   "text": "Play the attack, then learn to stop it. Cyber Aware, on Hacktivity.co.uk."
+   "start": 54,
+   "end": 58.6,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
   }
  ]
 }

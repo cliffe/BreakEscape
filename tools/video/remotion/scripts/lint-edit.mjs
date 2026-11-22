@@ -263,7 +263,7 @@ if (edit.vo != null) {
       if (c.gain_db != null && !num(c.gain_db)) E(id, 'gain_db must be a number');
       if (c.text.length > 90) W(id, `text is ${c.text.length} characters (over 90): too long for a plate on 9:16`);
       const words = c.text.trim().split(/\s+/).length, wps = words / (c.end - c.start);
-      if (wps > 3.2) W(id, `${words} words in ${(c.end - c.start).toFixed(2)} s is ${wps.toFixed(1)} words/s (over 3.2): too fast to say`);
+      if (wps > 3.0) W(id, `${words} words in ${(c.end - c.start).toFixed(2)} s is ${wps.toFixed(1)} words/s (over 3.0): too fast to say`);
       let fileOk = false;
       if (c.file != null) {
         const f = typeof c.file === 'string' ? (path.isAbsolute(c.file) ? c.file : path.join(takesDir || '', c.file)) : null;

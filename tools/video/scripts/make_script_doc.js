@@ -20,7 +20,7 @@ for (const s of e.shots) {
 const md = [
   '# ca12 trailer script (Visitors and tailgating)',
   '',
-  'Status: round 3 draft, captions only, not voiced. Edit: `tools/video/edits/ca12_trailer_r3.json` (' + t.toFixed(1) + ' s). Owner card: D341.',
+  'Status: script round 2, captions only, not voiced. Edit: `tools/video/edits/ca12_trailer_r3.json` (' + t.toFixed(1) + ' s). Owner card: D341.',
   '',
   'Owner brief (2026-11-22): the trailer must stand alone as a sell for the training; narrator VO about the course throughout; say "you play the attacker" and speak the attack steps over the footage that shows them; open on Camila\'s line; at least one VO line naming the topic over on-screen tailgating; end on a call to action to learn on Hacktivity.co.uk; tagline "Play the attack · Learn to stop it". Spoilers are not an issue for Cyber Aware. No narrator line talks over a character line.',
   '',
@@ -28,7 +28,7 @@ const md = [
   '|---|---|---|---|---|',
   ...rows,
   '',
-  'VO pace limit: 3.2 words per second (lint). Every VO line is also a burned caption.',
+  'VO pace limit: 3.0 words per second (lint). Every VO line is also a burned caption.',
   '',
 ].join('\n');
 fs.writeFileSync(outFile, md);
