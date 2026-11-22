@@ -1,0 +1,17 @@
+# ca12 takes (trailer pilot)
+
+Recorded 2026-11-22, keyless :3447, display :147, `FOOTAGE_ROOT=$HOME/video-takes-local` (footage in `~/video-takes-local/ca12/takes`, outside the repo; not committed). 1920x1080 full frame, 30 fps, `--hide-hud --zoom-step 1`, `--music 0`. t10 dropped.
+
+| take | trimmed s | drop % | A/V offset start/end ms | retakes | notes |
+|---|---|---|---|---|---|
+| t01_studio_wide | 12.94 | 0.66 | -78/-92 | 0 | |
+| t02_two_rooms | 8.4 | 0.95 | -103/-90 | 0 | BE_SPRITE female_office_worker_v2 |
+| t03_kiosk_strip | 11.0 | 0.25 | -43/-38 | 0 | |
+| t04_osint_note | 11.0 | 0.77 | -73/-75 | 0 | |
+| t05_pretext_card | 9.84 | 0.84 | -93/-93 | 0 | |
+| t06_the_call | 23.5 | 0.39 | -97/-112 | 2 | D3 played in setup, unheard by the watcher; script now presses Approach in the take body. Pretext-card panel is on screen for the first moment (cut before frame:npc-portrait-up) |
+| t07_flip | 24.3 | 0.38 | -93/-85 | 0 | player not the avatar (bust view) |
+| t08_triage | 10.57 | 0.79 | -73/-70 | 0 | |
+| t09_step_away | 54.94 | 0.18 | -85/-87 | 1 | BE_SPRITE; retake: the `--set` JSON must be passed without inner single quotes (run-take splits the flags unquoted) |
+
+Voice: every voiced line played (t06 D3/D2/D1, t07 L1); no 503s on the server. t06 shows the reply choice menu and "Last change" reason lines in the meter panel by design (script holds 1.1 s on the choices).
