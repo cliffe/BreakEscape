@@ -39,9 +39,11 @@ The times are a 0.5 s grid; move each card onto a lift of the CA track once it i
 | 6 | 22.0 | 2.0 | Flip | the join | the step strip ticks to Defend; the seats swap (theme "flip") | flip |
 | 7 | 24.0 | 6.0 | Defend | defender | triage list with mixed kinds before any verdict; one card opened, no result | cut |
 | 8 | 30.0 | 5.0 | Living office | defender, full frame | the step-away Look up; the room beat (ca12: the open screen, Camila walks to the door) | cut |
-| 9 | 35.0 | 2.5 | What you'll spot | card | one pattern-level line, never the tell list (ca12: "A good story isn't a check") | seam |
+| 9 | 35.0 | 2.5 | What you'll spot | card | one pattern-level line, never the tell list (ca12: "A good story isn't a check"). Round 2 replaces this with the blue chapter card (see the chapter-card rule below) | seam |
 | 10 | 37.5 | 4.5 | End line | full frame | the best cached line, portrait view with the game's own bar (ca12: Camila C1) | cut |
 | 11 | 42.0 | 3.0 | End card | closes | preset `ca-close`: halves close into the Cyber Aware mark, course name, "15 minutes, in your browser", Hacktivity small | seam |
+
+**Chapter-card rule (from ca12 round 1, 22 Nov).** The owner asked for clearer title pages that say what the offence covers, then gameplay of the defence. So an episode runs: a **red chapter card** (what the attack covers, up to three short bullets at pattern level, no tells), short attack footage, the flip, a **blue chapter card** (what the defend half covers), then mostly defend gameplay. One red and one blue card per episode, red first. The cards use the `ca` card style with `"chapter": "attack"` or `"defend"` (`CaChapter.tsx`). In the beat table the blue card replaces beat 9 and the red card sits between beats 2 and 3; attack beats shrink to about 3 s each and beat 7 grows. ca12 round 2 is the worked example (`docs/video/edits/CA12_TRAILER_R2_SELECTS.md`).
 
 Total 45.0 s. The **20 s catalogue cut** is beats 1 (2 s), 2, 3 (3 s), 5 (4 s), 6, 7 (4 s), 11 = 20 s; it has no end line, so its last voiced moment is the attack landing.
 
@@ -60,6 +62,8 @@ There is no attacker to play, so these trailers never claim one. The attacker se
 | 9 | framed as a habit ("Check who it's going to before you send") |
 
 The USP card reads "See where the shortcut led" in place of a tool name.
+
+The chapter-card rule applies here too, with the left seat as `THE SHORTCUT`: a card saying what the choices cover (shortcut seat colour), the short "where it led" footage, the flip, a blue card saying what the sort covers, then mostly defend gameplay. The shortcut card never claims an attacker to play.
 
 Tier S and T episodes (ca00, ca04, ca17, ca20) have no step-away: beat 8 becomes 3 s of ambient room, and the 2 s goes to beat 7.
 
