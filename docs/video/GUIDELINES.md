@@ -14,6 +14,7 @@ Draft from the m01 trial (October 2026). The later video skill builds on this. P
 - **Sound:** live game audio (sound effects and voice) under a music bed. Game music muted during capture (`be_music_vol=0`). 5-10 ms fades at every cut; montage audio about -6 dB; dialogue at full with the music ducked 10 dB; final loudness -14 LUFS, true peak under -1 dBTP.
 - **Music:** from the game's own sets (`public/break_escape/assets/music/`). Analyse the beat grid first (`tools/video/edits/music/analyse_music.py`); card changes land on strong hits, montage cuts on beats.
 - **Spoilers:** show mechanics, hide answers. No full codes, PINs, passwords or flag values; partial keypad entry only with digits that aren't the code; naming the antagonist is fine when he is plain from the start (m01's Derek, user 2026-10-29), but pixelate any real answer on screen (passwords, codes, flags); no casualty figures; no ending or choice screens.
+- **Do not over-protect the story** (user, m03 v2, 2026-11-22: "maybe we are being too careful about spoilers, this is a mystery spy game"). A trailer sells the threat ENTROPY poses, the puzzles, the real hands-on hacking, the action and the mission's new mechanics. The antagonist's menace, a confrontation line (not its outcome), NPC faces and the stakes are all fair game. What stays off is narrow: answers (codes, PINs, passwords, flags), choice and outcome screens, the debrief, and a twist the mission itself withholds until the end. Pick each voiced line for interest first, then check it against that short list.
 
 ## By kind of video
 

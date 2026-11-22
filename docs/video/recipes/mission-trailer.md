@@ -6,6 +6,8 @@ Template from the m01 v8.5 trailer, shipped 2026-11-02 (`tools/video/edits/m01_t
 
 Sell one mission to a player who knows nothing: who you are, what the place is, the real tools, the people, the threat, then "Play now". It is the main cut; the teaser and social cuts come from its takes.
 
+What every mission trailer must sell (user, m03 v2, 2026-11-22): **the threat ENTROPY poses** in this mission, **the puzzles**, **the real hands-on hacking**, **the action** (a chase, a guard turning hostile, a strike in the dark), and **the mission's new mechanics**. Judge each cut against those five before the spoiler list; a trailer that is safe but flat has failed.
+
 ## Length and aspect ratios
 
 60 s (59.9 to 60.1, music window of 60 s). Render **16:9 first** (YouTube, Hacktivity page, Steam), then **9:16** (Shorts, Reels, TikTok) and **1:1** (LinkedIn) after the user has picked the glitch or dissolve variant. Burned captions on 9:16 and 1:1 (see `mission-teaser.md`); `.srt` always.
@@ -36,7 +38,9 @@ Time is in seconds on the timeline. Lifts in m01's music were at 12, 18, 26, 34 
 
 Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gradient with the glitched mirrored reflection. The m01 cut shows the card text in two lines; keep lines short (about 12 characters per line at this size).
 
-**Card text pattern.** `Mission N / <name>`; `Real / Hacking` (only if the real-hacking slot exists, otherwise drop the card and its slot and give the time to montage A); `Uncover / the Mystery` before the NPC lines (the user, m01 v8.4: NPC dialogue is not a consequence of the player's actions, so it is not introduced as one); `Choices with / Consequences` before the exploration montage; a threat card in the mission's own words (m01: `And Hold Back / The Entropy!`). Do not write a generic "Your Mission" (the user's note: it is a mission trailer, name the mission).
+**Card text pattern.** `Mission N / <name>`; `Real / Hacking` (only if the real-hacking slot exists, otherwise drop the card and its slot and give the time to montage A; it is the game's USP and stays on every mission); every other card **advertises this mission's story and appeal** in its own words (house rule: the user asked for it on m02 and again on m03 v2, "like we did for m02 we should update the title pages to advertise the story/appeal of this specific mission"). m02: `Hack them / back`, `to Hold back / the ENTROPY`, `Before the / Ward Goes Dark`. Generic cards from m01 (`Uncover / the Mystery`, `Choices with / Consequences`) are not reused as they are. A new mechanic earns a card of its own. Do not write a generic "Your Mission" (the user's note: it is a mission trailer, name the mission).
+
+**Story order with a day/night turn** (m03 v2): keep the day shots together and the night shots together, so a "this late" line never lands next to an afternoon shot.
 
 ## Shot types and what each slot needs from the scout
 
@@ -59,6 +63,10 @@ Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gra
 ## Must include
 
 - **The trailer tells a story, it is not a feature list** (the user's lesson, 2026-11-02). Order the cuts as a narrative: establish the premise and its human stakes first (the attack, and who it hurts), then the response and the investigation, then the climax. Place each NPC line where it advances that arc, a stakes-setting line early to set up the problem, a challenge or obstacle line in the investigation, rather than grouping the NPC lines together. Reorder footage to serve the story even when it means showing a minigame or room out of the order a player meets them.
+- **The mission's new mechanic gets a readable beat, about 3 s or more, on its own** (user, m03 v2: "have the RFID on screen for longer, it's a new mechanic, remove the phone message and PIN flashes from this section"). Show it working start to finish (read the card, emulate it, the door opens); do not bury it among 1 s flashes of mechanics the earlier missions already sold.
+- **End on the most interesting line in the mission**, usually the antagonist's menace or confrontation, not a polite opener (m03 v2: "Competent is cheap" was "not a very exciting line to end on").
+- **An action beat plays as a sequence**: set it up, show the action, then the payoff (m03 v2: the player at the door, then the lockpicking, then the guard's line). A voiced line in an action beat needs an angry or urgent delivery; if the cached take is flat, ask for a re-voice with a stronger style.
+- **Every screen in the crescendo shows something happening**: no empty desktops, no idle panels (m03 v2).
 - **A quick cut of every minigame in the mission** (the user's aim, 2026-11-01), in the crescendo before the antagonist's line. A minigame that cannot be shown safely (an answer on screen that no crop removes) is left out and named in the picks file.
 - **Every NPC who does not get a spoken (or on-screen-dialogue) beat elsewhere in the trailer appears in the crescendo** (the user's rule, 2026-11-02), as a short face/presence flash interleaved with the minigame cuts, so no character the player meets is absent from the trailer. An NPC who already carries a dialogue beat (a voiced line, or a featured text beat like a phone/video-call) is exempt. One who cannot be shown without a spoiler (a culprit's face, a badge id) appears only in an obscured or partial frame, or is named in the picks file as dropped. Lengthen the crescendo a little rather than drop a minigame type to make room.
 - The game title first and Hacktivity Games last. "Play now". Mission name on a card. At least two NPC voices and the handler. A real-hacking slot (placeholder allowed, marked).

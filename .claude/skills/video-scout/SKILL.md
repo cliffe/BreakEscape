@@ -86,8 +86,8 @@ bin/rails runner tools/video/scout/dump-lines.rb <mission> <scratch>/lines.json 
 
 **Filters.** Keep a line only if it is:
 
-- 12 words or fewer and 4.5 s or shorter (shorter is better: 2 to 4 s, with a hook that works out of context);
-- spoiler-free: drop anything that names the culprit or implies it by pronoun, carries a code or PIN, gives a casualty figure, or belongs to the ending or debrief (the m01 closing debrief was 260 lines and none were tested);
+- 12 words or fewer and 4.5 s or shorter (shorter is better: 2 to 4 s, with a hook that works out of context); the villain's closing line may run to about 6.5 s, and its knot's longer lines are worth testing too;
+- spoiler-free: drop anything that carries a code or PIN, gives a casualty figure, belongs to the debrief or a choice outcome, or names a culprit the mission keeps hidden until its end (the m01 closing debrief was 260 lines and none were tested). The villain's menace and confrontation lines are **in**: test them and rank them, because the most interesting line usually closes the trailer (user, m03 v2, 2026-11-22: a polite interview line was "not a very exciting line to end on");
 - reachable: record the conversation path and the cheapest entry state. A line behind a long hub (Kevin's audit answer was about nine choices) is a last resort.
 
 Note, but do not test, lines that are excluded on purpose (Agent HaX phone lines have no cached audio in m01: the briefing lines do; the finale lines are outside the spoiler rule unless the recipe names them).
