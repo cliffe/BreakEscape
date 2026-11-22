@@ -1,10 +1,24 @@
 import { staticFile, delayRender, continueRender } from 'remotion';
 let started = false;
-/** Loads Press Start 2P from public/fonts (synced from the game's assets) before any frame is captured. */
+/**
+ * Loads the fonts from public/fonts (synced by scripts/sync-assets.mjs from the game's own assets) before any frame is captured.
+ * Nothing is fetched at render time. Press Start 2P: SAFETYNET and Cyber Aware. GNF, VT323, Source Sans 3: the Cyber Aware theme.
+ */
+const FACES: [string, string][] = [
+  ['Press Start 2P', 'fonts/PressStart2P-Regular.woff2'],
+  ['GNF', 'fonts/gnf.woff2'],
+  ['VT323', 'fonts/VT323-latin.woff2'],
+  ['Source Sans 3', 'fonts/SourceSans3-latin.woff2'],
+];
 export function loadFonts() {
   if (started) return; started = true;
-  const h = delayRender('font Press Start 2P');
-  const ff = new FontFace('Press Start 2P', `url(${staticFile('fonts/PressStart2P-Regular.woff2')})`);
-  ff.load().then((f) => { (document as any).fonts.add(f); continueRender(h); }).catch((e) => { console.error('font load failed', e); continueRender(h); });
+  for (const [family, file] of FACES) {
+    const h = delayRender(`font ${family}`);
+    const ff = new FontFace(family, `url(${staticFile(file)})`);
+    ff.load().then((f) => { (document as any).fonts.add(f); continueRender(h); }).catch((e) => { console.error('font load failed', family, e); continueRender(h); });
+  }
 }
 export const PIXEL_FONT = "'Press Start 2P', monospace";
+export const GNF_FONT = "'GNF', 'Press Start 2P', monospace";
+export const VT_FONT = "'VT323', monospace";
+export const CAPTION_FONT = "'Source Sans 3', sans-serif";

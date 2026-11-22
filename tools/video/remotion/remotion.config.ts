@@ -1,5 +1,7 @@
 import { Config } from '@remotion/cli/config';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 // Container Chromium (see tools/video/capture/launch.mjs). Override with BE_CHROMIUM.
 const candidates = [
@@ -7,6 +9,13 @@ const candidates = [
   '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome',
   '/opt/pw-browsers/chromium-1243/chrome-linux/chrome',
 ].filter(Boolean) as string[];
+// then a Playwright cache (newest first) and the system chromium-browser
+try {
+  const cache = path.join(os.homedir(), '.cache/ms-playwright');
+  const dirs = fs.readdirSync(cache).filter((d) => /^chromium-\d+$/.test(d)).sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]));
+  for (const d of dirs) candidates.push(path.join(cache, d, 'chrome-linux64/chrome'), path.join(cache, d, 'chrome-linux/chrome'));
+} catch {}
+candidates.push('/usr/bin/chromium-browser');
 const exe = candidates.find((p) => fs.existsSync(p));
 if (exe) Config.setBrowserExecutable(exe);
 

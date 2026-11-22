@@ -1,0 +1,21 @@
+{
+ "id": "ca_open",
+ "type": "ca_open",
+ "duration": 2.0,
+ "join": {
+  "type": "seam"
+ },
+ "ca": {
+  "title": "Episode title",
+  "company": "",
+  "stripe": null
+ },
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Cyber Aware opening: seam, two seat halves, episode title card; no footage"
+ }
+}

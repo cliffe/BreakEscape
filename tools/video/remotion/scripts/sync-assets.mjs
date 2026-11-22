@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Populates remotion/public/ (git-ignored) from the repo, so nothing is duplicated in git:
-//   fonts/PressStart2P-Regular.woff2   copied from public/break_escape/assets/fonts
+//   fonts/{PressStart2P-Regular,gnf,VT323-latin,SourceSans3-latin}.woff2   copied from public/break_escape/assets/fonts
 //   brand/<file>                       copies of tools/video/assets/brand/* (logos, title SVG, keyhole art)
 //   brand-derived/logo-*.svg           the Hacktivity logos split into the shared word and the sub-lines (same viewBox, so they register)
 //   takes/<name>                       copies of <takes dir>/*.trimmed.mkv (video_out/<mission>/takes)
@@ -22,7 +22,9 @@ const takesDir = ti >= 0 ? argv[ti + 1] : process.env.BE_TAKES_DIR || (editArg ?
 if (!takesDir) { console.error('usage: sync-assets.mjs <edit.json> | --takes-dir DIR (or BE_TAKES_DIR)'); process.exit(2); }
 fs.mkdirSync(path.join(pub, 'fonts'), { recursive: true });
 fs.mkdirSync(path.join(pub, 'takes'), { recursive: true });
-fs.copyFileSync(path.join(assets, 'fonts/PressStart2P-Regular.woff2'), path.join(pub, 'fonts/PressStart2P-Regular.woff2'));
+for (const [from, to] of [['PressStart2P-Regular.woff2', 'PressStart2P-Regular.woff2'], ['gnf.woff2', 'gnf.woff2'], ['VT323/VT323-latin.woff2', 'VT323-latin.woff2'], ['SourceSans3/SourceSans3-latin.woff2', 'SourceSans3-latin.woff2']]) {
+  fs.copyFileSync(path.join(assets, 'fonts', from), path.join(pub, 'fonts', to)); // Cyber Aware theme fonts come from the game's own assets
+}
 // brand art
 const brandDir = path.join(repo, 'tools/video/assets/brand');
 fs.mkdirSync(path.join(pub, 'brand'), { recursive: true }); fs.mkdirSync(path.join(pub, 'brand-derived'), { recursive: true });

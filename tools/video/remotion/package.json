@@ -6,7 +6,8 @@
   "scripts": {
     "sync": "node scripts/sync-assets.mjs",
     "lint": "node scripts/lint-edit.mjs",
-    "studio": "remotion studio"
+    "studio": "remotion studio",
+    "test": "node --test tests/ca-lint.test.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.530",
