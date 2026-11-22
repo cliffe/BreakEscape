@@ -26,9 +26,10 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const tagSize = fitSize([tagline], VT_FONT, stacked ? [64, 48, 32] : [96, 80, 64, 48], w * (stacked ? 0.92 : 0.8)); // large enough to read on a phone and on a 16:9 course page
   const cwWord = textWidth('CYBER AWARE', PIXEL_FONT, textFont);
   // mark group position: upper centre, glyph and text in a row on 16:9, text under the glyph when stacked
-  const rowW = gw + Math.round(mS * 0.5) + cwWord;
+  const gap = Math.round(mS * 0.2); // glyph-to-word gap: one lock-up
+  const rowW = gw + gap + cwWord;
   const groupW = stacked ? Math.max(gw, cwWord) : rowW;
-  const gx = Math.round((w - gw - (stacked ? 0 : Math.round(mS * 0.5) + cwWord)) / 2);
+  const gx = Math.round((w - gw - (stacked ? 0 : gap + cwWord)) / 2);
   const gy = Math.round(h * (lay.mark_y ?? (stacked ? 0.3 : 0.27)));
   const sqA = { x: snapTo(gx, q), y: snapTo(gy, q), s: mS }, sqD = { x: snapTo(gx + off, q), y: snapTo(gy + off, q), s: mS };
 
@@ -51,7 +52,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const gnfW = textWidth('Hacktivity', GNF_FONT, hackSize);
 
   const rectStyle = (r: any, c: string): React.CSSProperties => ({ position: 'absolute', left: Math.round(r.x), top: Math.round(r.y), width: Math.round(r.w), height: Math.round(r.h), boxSizing: 'border-box', background: c, border: `${2 * u}px solid ${CA.ink}`, overflow: 'hidden' });
-  const textX = gx + gw + Math.round(mS * 0.5);
+  const textX = gx + gw + gap;
   const tx = stacked ? Math.round((w - cwWord) / 2) : textX;
   const ty = stacked ? gy + gw + Math.round(mS * 0.5) : gy + Math.round((gw - textFont) / 2);
   const belowY = stacked ? ty + textFont + 6 * u * 2 : gy + gw + Math.round(mS * 0.45);
