@@ -44,3 +44,27 @@ export async function toCall(page, bridge, mark = () => {}) {
   while (Date.now() - t0 < 12000) { const s = await bridge.getState(); if (s.dialogue) return s; await sleep(250); }
   throw new Error('call never opened');
 }
+
+/** Play the call to D1 (sample box, then buzz ask), waiting for each Delphine line, then close it (the Done/exit path). Off camera. */
+export async function playCallAndClose(page, bridge, mark = () => {}) {
+  const steps = [/sample box for Catherine/, /buzz me through/];
+  for (const re of steps) {
+    const t0 = Date.now(); let d;
+    while (Date.now() - t0 < 30000) { d = (await bridge.getState()).dialogue; if (d && d.awaitingChoice && d.choices && d.choices.length) break; await sleep(200); }
+    await sleep(900); await bridge.minigame.choose(re); mark('choose:' + re.source.slice(0, 14));
+  }
+  const t0 = Date.now();
+  while (Date.now() - t0 < 25000) { const d = (await bridge.getState()).dialogue; if (d && d.awaitingChoice && d.choices && d.choices.length) break; await sleep(250); }
+  await sleep(800);
+  await bridge.minigame.close().catch(() => {});
+  await sleep(1200);
+}
+
+/** Reload the page (the flip needs it), then Resume, Skip tutorial and close the Brief again. */
+export async function reloadAndPrepare(page, bridge, mark = () => {}) {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => !!window.__test, null, { timeout: 60000 });
+  await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 })).catch(() => {});
+  await page.evaluate(() => window.__test.throttleFps && window.__test.throttleFps(20)).catch(() => {});
+  await prepare(page, bridge, mark);
+}
