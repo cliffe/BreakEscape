@@ -2,14 +2,22 @@
  "mission": "ca15",
  "id": "ca15_trailer_r2",
  "theme": "ca",
- "title": "Cyber Aware ca15 trailer, round 2, script R2 (captions only; narrator not voiced; takes pending)",
+ "title": "Cyber Aware ca15 trailer, round 3, script R3 (captions only; narrator not voiced; takes pending)",
  "script": {
   "heading": "ca15 trailer script (Shadow IT)",
-  "owner_card": "none yet (script R2)",
-  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the left seat reads THE SHORTCUT (edit-level seat_labels; the right seat stays DEFENDER), the red card reads \"Take the shortcut\" / \"See where it led\", and the close tagline reads \"Take the shortcut · See where it leads\" (open question for the owner)."
+  "owner_card": "none yet (script R3; close line D351 pending)",
+  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with the Hacktivity.co.uk call (ca12 tagline \"Play the attack · Learn to stop it\"). Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the left seat reads THE SHORTCUT (edit-level seat_labels; the right seat stays DEFENDER), and the red card reads \"Take the shortcut\" / \"See where it led\". ca15: Take the shortcut · See where it leads (D351 pending).",
+  "pace": "VO pace limit: 2.3 words per second + 0.2 s (lint). Every VO line is also a burned caption.",
+  "open_questions": [
+   "Close tagline: \"Take the shortcut · See where it leads\" replaces \"Play the attack · Learn to stop it\" (ca15 has no attacker to play). D351 pending an owner check.",
+   "Left seat label: `THE SHORTCUT` (edit-level `seat_labels`; the right seat stays `DEFENDER`). Red card: \"Take the shortcut\" / \"See where it led\".",
+   "The 9:16 minigame framing (zoom 1.4, per-shot cy) crops the 700 px panel to about 430 px of width; frame check on the first take render.",
+   "`nilesh_ask` out time and the `nilesh_noblame` entry state are estimates until the takes are marked.",
+   "R3: v8 starts inside the inbox shot. If t06 shows the list by about 1.4 s, the swap/inbox boundary can move earlier (swap 3.0-6.2, inbox from 1.4) and the inbox shortens by 0.6 s; takes_ca15.md does not say yet."
+  ]
  },
  "fps": 30,
- "length": 71.9,
+ "length": 72.0,
  "music": {
   "none": true,
   "note": "silent bed until D331; game room sound and voiced lines only"
@@ -316,19 +324,19 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 4 pick 'Hold off, and ask IT'; See where they led at mark reveal (assumed 21.9 s: r1 20.5 + 1.4); in = reveal mark - 0.2 s (21.7), retime to the logged mark; hold the page still about 12 s; CSS: hide every 'Your call...' label, one neutral left border; 9:16 zoom 1.4 cy 0.40 from the scout stills (FRAME CHECK)"
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 4 pick 'Hold off, and ask IT'; See where they led at mark reveal (assumed 21.9 s: r1 20.5 + 1.4); in = reveal mark - 0.2 s (21.7), retime to the logged mark; hold the page still about 13.5 s; CSS: hide every 'Your call...' label, one neutral left border; 9:16 zoom 1.4 cy 0.40 from the scout stills (FRAME CHECK)"
   },
   {
    "id": "led_email",
    "type": "gameplay",
-   "duration": 5.7,
+   "duration": 5.3,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t03_choices_reveal.trimmed.mkv",
     "in": 25.7,
-    "out": 31.4
+    "out": 31.0
    },
    "audio": {
     "gain_db": -6
@@ -364,19 +372,19 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t03_choices_reveal: same reveal page, held still (the take holds it about 12 s from reveal, to continue_click at about 33.9 s); same CSS hides; punch-in on card 1's consequence; 9:16 zoom 1.4 cy 0.36 (card 1 consequence is at 0.36 of the frame in s4_six_months_later.png; FRAME CHECK)"
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: same reveal page, held still (R3: the take holds it about 13.5 s from reveal, to continue_click at about 35.4 s); same CSS hides; punch-in on card 1's consequence; 9:16 zoom 1.4 cy 0.36 (card 1 consequence is at 0.36 of the frame in s4_six_months_later.png; FRAME CHECK)"
   },
   {
    "id": "led_stick",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 3.4,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t03_choices_reveal.trimmed.mkv",
-    "in": 31.4,
-    "out": 32.9
+    "in": 31.0,
+    "out": 34.4
    },
    "audio": {
     "gain_db": -6
@@ -412,7 +420,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t03_choices_reveal: same reveal page held still; card 3 (the surveyor's stick) consequence punched in for 1.5 s so a silent viewer sees what came of the stick pick (silent: no VO over it); framing cy 0.645 from s4_six_months_later.png (card 3 spans 0.58-0.71); FRAME CHECK in all three aspects"
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: same reveal page held still; card 3 (the surveyor's stick) consequence punched in for 3.4 s, v12 \"Two clients had to be told.\" spoken over it (R3); framing cy 0.645 from s4_six_months_later.png (card 3 spans 0.58-0.71); FRAME CHECK in all three aspects"
   },
   {
    "id": "flip",
@@ -423,8 +431,8 @@
    },
    "source": {
     "file": "t03_choices_reveal.trimmed.mkv",
-    "in": 33.1,
-    "out": 35.7
+    "in": 34.6,
+    "out": 37.2
    },
    "audio": {
     "gain_db": -6
@@ -460,7 +468,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; press Continue at mark continue_click (about 33.9 s after the longer reveal hold; flip in = click - 0.8 s); hold the Swap Shop launch panel 3 s (strip on Defend); 9:16 zoom 1.4 cy 0.50 from the scout stills (FRAME CHECK)"
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; press Continue at mark continue_click (about 35.4 s after the R3 13.5 s reveal hold; flip in = click - 0.8 s = 34.6); hold the Swap Shop launch panel 3 s (strip on Defend); 9:16 zoom 1.4 cy 0.50 from the scout stills (FRAME CHECK)"
   },
   {
    "id": "nilesh_ask",
@@ -529,7 +537,7 @@
    "type": "card",
    "style": "ca",
    "chapter": "defend",
-   "duration": 2.3,
+   "duration": 1.5,
    "join": {
     "type": "seam"
    },
@@ -551,14 +559,14 @@
   {
    "id": "swap",
    "type": "gameplay",
-   "duration": 3.8,
+   "duration": 2.4,
    "join": {
     "type": "seam"
    },
    "source": {
     "file": "t05_swap_shop.trimmed.mkv",
     "in": 3.0,
-    "out": 6.8
+    "out": 5.4
    },
    "audio": {
     "gain_db": -6
@@ -594,19 +602,19 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t05_swap_shop: --set state done brief/mistake/flip (takes_ca15.md t05); open the kiosk, Open the Swap Shop, Start; card 1 at mark card1, hover the bins, never pick; hide the score line; 9:16 zoom 1.4 cy 0.52 from the scout stills (FRAME CHECK); R2: 3.8 s window (card 1 held 3 s then hover 3 s covers it)"
+   "placeholder_note": "PENDING TAKE t05_swap_shop: --set state done brief/mistake/flip (takes_ca15.md t05); open the kiosk, Open the Swap Shop, Start; card 1 at mark card1, hover the bins, never pick; hide the score line; 9:16 zoom 1.4 cy 0.52 from the scout stills (FRAME CHECK); R3: 2.4 s window (3.0-5.4)"
   },
   {
    "id": "inbox",
    "type": "gameplay",
-   "duration": 8.5,
+   "duration": 9.1,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t06_inbox_list.trimmed.mkv",
     "in": 2.0,
-    "out": 10.5
+    "out": 11.1
    },
    "audio": {
     "gain_db": -6
@@ -617,7 +625,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Inbox list of six sticks and shortcut messages (held 4 s), then the Benmoor Packaging \"USB catalogue\" row open with the four verbs (held 4.5 s); nothing pressed | CA: spoilers fine (owner), no masks"
+    "note": "Inbox list of six sticks and shortcut messages (held 4 s), then the Benmoor Packaging \"USB catalogue\" row open with the four verbs (held 5.1 s); nothing pressed | CA: spoilers fine (owner), no masks"
    },
    "seat": {
     "seat": "defend",
@@ -642,7 +650,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t06_inbox_list: same --set as t05; Swap Shop 4 picks and Done before the take body; Open the inbox, Start; list at mark list (hold 4 s), click the Benmoor Packaging row ('Great to meet you at the Expo, here's our catalogue on a USB', .mail-row, NOT row 1, the padded envelope) at mark row_usb; hold 4.5 s; never press a verb; CSS hide the 'Risky shortcuts stopped' badge; 9:16 zoom 1.4 cy 0.50 (FRAME CHECK: the list and the open message differ in height)"
+   "placeholder_note": "PENDING TAKE t06_inbox_list: same --set as t05; Swap Shop 4 picks and Done before the take body; Open the inbox, Start; list at mark list (hold 4 s), click the Benmoor Packaging row ('Great to meet you at the Expo, here's our catalogue on a USB', .mail-row, NOT row 1, the padded envelope) at mark row_usb; hold 5.1 s (R3: out 11.1); never press a verb; CSS hide the 'Risky shortcuts stopped' badge; 9:16 zoom 1.4 cy 0.50 (FRAME CHECK: the list and the open message differ in height)"
   },
   {
    "id": "office",
@@ -789,7 +797,7 @@
      "CYBER AWARE"
     ]
    },
-   "duration": 4.7
+   "duration": 4.9
   }
  ],
  "vo": [
@@ -840,20 +848,26 @@
   {
    "id": "v5b",
    "start": 26.45,
-   "end": 31.87,
-   "text": "The personal inbox was broken into. The client got a fake invoice.",
-   "caption": "The personal inbox was broken into.\nThe client got a fake invoice."
+   "end": 31.5,
+   "text": "The personal inbox was hacked. The client got a fake invoice.",
+   "caption": "The personal inbox was hacked.\nThe client got a fake invoice."
+  },
+  {
+   "id": "v12",
+   "start": 31.8,
+   "end": 34.65,
+   "text": "Two clients had to be told."
   },
   {
    "id": "v6",
-   "start": 33.5,
-   "end": 35.87,
+   "start": 35.0,
+   "end": 37.37,
    "text": "So what's the approved way?"
   },
   {
    "id": "v7",
-   "start": 45.3,
-   "end": 48.54,
+   "start": 45.0,
+   "end": 48.24,
    "text": "Match each shortcut to the approved way.",
    "onCard": "hide"
   },
@@ -861,24 +875,26 @@
    "id": "v8",
    "start": 48.8,
    "end": 52.48,
-   "text": "Sort the inbox: risky shortcuts and real messages."
+   "text": "Sort the inbox: risky shortcuts and real messages.",
+   "caption": "Sort the inbox:\nrisky shortcuts and real messages."
   },
   {
    "id": "v9",
-   "start": 52.75,
-   "end": 57.73,
-   "text": "Is it an approved tool? Found sticks go to IT, unplugged."
+   "start": 52.73,
+   "end": 57.71,
+   "text": "Is it an approved tool? Found sticks go to IT, unplugged.",
+   "caption": "Is it an approved tool?\nFound sticks go to IT, unplugged."
   },
   {
    "id": "v10",
-   "start": 58.1,
-   "end": 60.04,
+   "start": 57.96,
+   "end": 59.9,
    "text": "Then a colleague asks."
   },
   {
    "id": "v11",
-   "start": 67.3,
-   "end": 71.85,
+   "start": 67.25,
+   "end": 71.8,
    "text": "Take the shortcut, see where it leads. Learn on Hacktivity.co.uk.",
    "caption": "Take the shortcut, see where it leads.\nLearn on Hacktivity.co.uk."
   }

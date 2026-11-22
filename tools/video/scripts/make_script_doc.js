@@ -17,7 +17,7 @@ for (const s of e.shots) {
   rows.push('| ' + a.toFixed(1) + '–' + b.toFixed(1) + ' | ' + s.id + ' | ' + screen + ' | ' + (vo || '—') + ' | ' + (game || '—') + ' |');
   t = b;
 }
-// Header text: the edit's optional "script" block ({ heading, owner_card, brief }); without one, the ca12 text this tool was written for.
+// Header text: the edit's optional "script" block ({ heading, owner_card, brief, pace?, open_questions? }); without one, the ca12 text this tool was written for.
 const sc = e.script || {
   heading: 'ca12 trailer script (Visitors and tailgating)',
   owner_card: 'D341',
@@ -34,8 +34,9 @@ const md = [
   '|---|---|---|---|---|',
   ...rows,
   '',
-  'VO pace limit: 3.0 words per second (lint). Every VO line is also a burned caption.',
+  sc.pace || 'VO pace limit: 3.0 words per second (lint). Every VO line is also a burned caption.',
   '',
+  ...(sc.open_questions ? ['## Open questions for the owner', '', ...sc.open_questions.map((q) => '- ' + q), ''] : []),
 ].join('\n');
 fs.writeFileSync(outFile, md);
 console.log(md);
