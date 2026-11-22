@@ -394,7 +394,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Triage list and one card, buttons visible; ends before any verdict"
+    "note": "Triage list and one card, buttons visible; ends before any verdict; reply buttons and the Today's list line masked"
    },
    "seat": {
     "seat": "defend",
@@ -417,7 +417,23 @@
      "cy": 0.5,
      "zoom": 1
     }
-   }
+   },
+   "masks": [
+    {
+     "x": 836,
+     "y": 410,
+     "w": 562,
+     "h": 176,
+     "rows": 4
+    },
+    {
+     "x": 850,
+     "y": 352,
+     "w": 548,
+     "h": 28,
+     "rows": 1
+    }
+   ]
   },
   {
    "id": "away",
