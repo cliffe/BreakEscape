@@ -157,7 +157,7 @@ export function buildCaTitleDom(doc, container, config, artUrl) {
     const text = el('div', 'ca-ts-text');
     const mark = el('span', 'ca-ts-mark');
     mark.appendChild(el('i'));
-    mark.appendChild(el('b', '', 'CYBER AWARE'));
+    mark.appendChild(el('span', 'ca-ts-mark-text', 'CYBER AWARE'));
     text.appendChild(mark);
     text.appendChild(el('div', 'ca-ts-title', titleScreenName(config)));
     const company = titleScreenCompany(config);

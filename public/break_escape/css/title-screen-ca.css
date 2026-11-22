@@ -74,7 +74,7 @@
 /* title block: right half, vertically centred */
 .ca-ts-text {
     left: 56%; right: 3%; top: 50%;
-    transform: translateY(-58%);
+    transform: translateY(-64%);
     max-width: 560px;
     z-index: 2;
 }
@@ -87,7 +87,7 @@
     background: rgba(10, 14, 16, 0.55);
 }
 .ca-ts-mark i { display: block; width: 16px; height: 16px; background: var(--ca-amber); }
-.ca-ts-mark b { font-weight: 400; font-size: 16px; line-height: 1; color: var(--ca-amber); letter-spacing: 1px; }
+.ca-ts-mark-text { font-weight: 400; font-size: 16px; line-height: 1; color: var(--ca-amber); letter-spacing: 1px; }
 .ca-ts-title {
     margin-top: 24px;
     font-family: 'GNF', 'Press Start 2P', monospace;
@@ -128,7 +128,7 @@
 .ca-ts-sbar-r { right: 0; border-left: 0; }
 .ca-ts-sbar-l s.on { background: var(--ca-atk); }
 .ca-ts-sbar-r s.on { background: var(--ca-def); }
-.ca-ts-seam-bar { top: -8px; height: 44px; }
+.ca-ts-seam-bar { position: absolute; top: -8px; height: 44px; }
 
 .ca-ts-status, .ca-ts-hint {
     left: 0; right: 0;

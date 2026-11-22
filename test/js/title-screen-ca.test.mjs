@@ -54,7 +54,7 @@ test('the CA DOM has bands, seam, tabs, mark, title, company, tagline, bar and s
     assert.equal(q('.ca-ts-seam').length, 3);
     assert.equal(q('.ca-ts-tab-a')[0].textContent, 'ATTACKER');
     assert.equal(q('.ca-ts-tab-d')[0].textContent, 'DEFENDER');
-    assert.equal(q('.ca-ts-mark b')[0].textContent, 'CYBER AWARE');
+    assert.equal(q('.ca-ts-mark-text')[0].textContent, 'CYBER AWARE');
     assert.equal(q('.ca-ts-title')[0].textContent, 'Invoice fraud'); // titleScreenName: own name wins
     assert.equal(q('.ca-ts-company')[0].textContent, 'Merrin & Sallow Architects');
     assert.equal(q('.ca-ts-company')[0].style.getPropertyValue('--ca-accent'), '#2f6f5e');
