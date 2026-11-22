@@ -63,6 +63,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
+    <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
     <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
     <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
     <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
@@ -82,6 +83,35 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  lines2: {
+    doc: "feedback/trailer_lines_round2",
+    title: "New lines, round 2: m04 Voltage, m07 hook, m09 Sorensen",
+    noVideo: true, noVerdict: true,
+    intro: "You kept m05, m06, the m07 ending and m08 as voiced, and asked for alternatives on these three. I drafted four for each and had them reviewed against each mission's ink. Five were dropped as off-canon or spoilers, for example a \"one team, four targets\" hook (the team goes to one of three, and none is a blackout) and a \"no right answer\" line (that is HaX's debrief reveal). Three were fixed. Each line goes into the game where it plays naturally. Your pick gets voiced under the standing TTS yes. Pick one per mission, or write your own in the box. Full notes: docs/video/edits/TRAILER_LINES_ROUND2.md.",
+    changedLabel: "Where each line plays",
+    changed: [
+      "m04: Voltage's confrontation in the battery hall. The fake maintenance firm (OptiGrid) got his crew in, the overcharge runs on a timer, and the Architect has six cities lined up.",
+      "m07: Netherton's briefing at 2:41 am, just after \"The other two go unanswered.\" The player hasn't chosen where the one team goes yet, so the line is not an outcome.",
+      "m09: Sorensen at the shredder (the cage), or at the hatch when she recognises you. ENTROPY's \"placed\" people are filed in her boxes."
+    ],
+    questions: [
+      {k:"m04", t:"m04 ending: Voltage, cleverer menace", o:[
+        ["clock","\"Take me in, if you like. The racks don't need me. They have the clock.\"","New, replaces the \"sums\" line. Level and certain. Reviewer's pick",1],
+        ["schedule","\"I didn't bring a bomb, agent. I brought a maintenance schedule.\"","New, after \"...we walked in the front.\" Dry, proud of the craft"],
+        ["contract","\"Every city has a hall like this. And every one of them has a maintenance contract.\"","New, after \"six cities lined up\". Widens the threat"],
+        ["hand","\"Look at my hand. Then look at the clock.\"","Existing, no voicing"],
+        ["sums","\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\"","Voiced in round 1"]]},
+      {k:"m07hook", t:"m07 hook: Netherton's briefing, before the choice", o:[
+        ["impossible","\"We are faced with an impossible decision, Agent, and it is yours.\"","Your wording. Grave and quiet",1],
+        ["onedecision","\"ENTROPY did not plan four attacks tonight, Agent. It planned one decision.\"","Names the gambit without saying who set it"],
+        ["notthere","\"Whichever you choose, two cities wake up tomorrow knowing we were not there.\"","The cost of the choice, with no numbers"]]},
+      {k:"m09", t:"m09 ending: Margaret Sorensen, more narrative weight", o:[
+        ["lies","\"Every lie they ever lived went through my hands, dear. I'm the last one who can tell you which were lies.\"","New, at the shredder. Quietly wistful; sets up her \"give me a pencil\" path. Reviewer's pick",1],
+        ["index","\"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"","New, replaces \"It's only paper...\". Gentle, without looking up"],
+        ["saved","\"Yours is in tonight's run, dear. I saved it for last.\"","Voiced in round 1"]]},
+      {k:"other", t:"Anything else, or a line of your own?", o:null}
+    ]
+  },
   voiced: {
     doc: "feedback/trailer_lines_voiced",
     title: "The 8 new lines, voiced (ear check)",
@@ -222,7 +252,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m03v3";
+let current = "lines2";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
