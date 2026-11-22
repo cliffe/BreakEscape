@@ -3,6 +3,7 @@ import { OffthreadVideo, staticFile } from 'remotion';
 import { Placeholder } from './Placeholder';
 import { framingAt, visibleRect, sourceRef } from '../timeline.js';
 import { Caption } from './Caption';
+import { CaCaption } from './CaSeats';
 
 /**
  * A gameplay shot: the 1920x1080 take or clip (or a placeholder pattern) scaled with nearest-neighbour (image-rendering: pixelated),
@@ -29,8 +30,23 @@ export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: strin
         ) : (
           <Placeholder shot={shot} localSec={frame / fps} sourceSec={sourceSec} />
         )}
+        <Masks masks={shot.masks} localSec={frame / fps} />
       </div>
-      {shot.caption?.[aspect] ? <Caption shot={shot} w={w} h={h} localSec={frame / fps} /> : null}
+      {shot.caption?.[aspect] ? (shot.seat ? <CaCaption shot={shot} w={w} h={h} localSec={frame / fps} /> : <Caption shot={shot} w={w} h={h} localSec={frame / fps} />) : null}
     </div>
   );
+};
+
+/**
+ * Mask primitive: flat bars over a rectangle of the take, for a time window. shot.masks = [{ x, y, w, h, from, to, rows, gap, color }]
+ * in source pixels (drawn inside the scaled box, so every aspect keeps it), from/to in shot-local seconds (default the whole shot),
+ * rows = how many bars the rectangle is cut into (default 1, one solid bar), gap = source px between bars (default 4).
+ */
+export const Masks: React.FC<{ masks?: any[]; localSec: number }> = ({ masks, localSec }) => {
+  if (!masks?.length) return null;
+  return <>{masks.flatMap((m, i) => {
+    if (localSec < (m.from ?? 0) || localSec >= (m.to ?? Infinity)) return [];
+    const rows = Math.max(1, m.rows ?? 1), gap = rows > 1 ? (m.gap ?? 4) : 0, bh = (m.h - gap * (rows - 1)) / rows;
+    return Array.from({ length: rows }, (_, r) => <div key={`${i}-${r}`} style={{ position: 'absolute', left: m.x, top: m.y + r * (bh + gap), width: m.w, height: bh, background: m.color || '#1f2933' }} />);
+  })}</>;
 };

@@ -4,7 +4,15 @@ import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath }
 import { loadEdit } from './load-edit.mjs';
 import { bundle } from '@remotion/bundler';
 const here = path.dirname(fileURLToPath(import.meta.url)); export const root = path.resolve(here, '..');
-export const browserExecutable = [process.env.BE_CHROMIUM, '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/opt/pw-browsers/chromium-1243/chrome-linux/chrome'].filter(Boolean).find((p) => fs.existsSync(p));
+import os from 'node:os';
+/** Chromium: BE_CHROMIUM, then the container's /opt/pw-browsers, then a Playwright cache (~/.cache/ms-playwright/chromium-N, newest first), then the system chromium-browser. */
+export function findChromium() {
+  const fixed = [process.env.BE_CHROMIUM, '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/opt/pw-browsers/chromium-1243/chrome-linux/chrome'].filter(Boolean);
+  const cache = path.join(os.homedir(), '.cache/ms-playwright'); let cached = [];
+  try { cached = fs.readdirSync(cache).filter((d) => /^chromium-\d+$/.test(d)).sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1])).flatMap((d) => [path.join(cache, d, 'chrome-linux64/chrome'), path.join(cache, d, 'chrome-linux/chrome')]); } catch {}
+  return [...fixed, ...cached, '/usr/bin/chromium-browser'].find((p) => fs.existsSync(p));
+}
+export const browserExecutable = findChromium();
 export function readProps(editFile, aspect) {
   const edit = loadEdit(editFile);
   const man = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.json'), 'utf8'));

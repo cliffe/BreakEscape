@@ -1,0 +1,81 @@
+import React from 'react';
+import { CA, CaTab, unit, stepped, snapTo, easeOut, isStacked, tabFont, textWidth, crisp } from '../ca';
+import { GNF_FONT, VT_FONT, PIXEL_FONT } from '../fonts';
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const GRID = (u: number) => `repeating-linear-gradient(0deg, transparent 0, transparent ${7 * u}px, rgba(0,0,0,0.12) ${7 * u}px, rgba(0,0,0,0.12) ${8 * u}px), repeating-linear-gradient(90deg, transparent 0, transparent ${7 * u}px, rgba(0,0,0,0.12) ${7 * u}px, rgba(0,0,0,0.12) ${8 * u}px)`;
+
+/**
+ * ca-close: two big halves (attacker #8c3b2e, defender #2f5f8a, each half the frame, with their tabs) slide in from the
+ * edges and meet at the seam (frames 0-24, a flash on the seam when they touch), hold a beat, then shrink in stepped moves
+ * into the two overlapped squares of the Cyber Aware mark (30-52) on the ca-surface frame. Then CYBER AWARE, the episode
+ * name, the small Hacktivity line at the foot (from 56) and "15 minutes, in your browser · No installs" (from 64).
+ * shot.ca = { name, tagline, hacktivity }. Stacked (attacker above) on 9:16 and 1:1.
+ */
+export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string; frame: number; frames: number }> = ({ shot, w, h, aspect, frame, frames }) => {
+  const cfg = shot.ca || {}; const lay = cfg.layout?.[aspect] || {};
+  const u = unit(w, h), stacked = isStacked(w, h), q = 4 * u;
+  const f = frame, tf = tabFont(w, h);
+  const scale = frames / 90; // timings are written for 3 s at 30 fps
+  const T = (n: number) => Math.round(n * scale);
+  const mS = Math.max(48, Math.round((Math.min(w, h) * (stacked ? 0.11 : 0.12)) / 2) * 2); // mark square side
+  const off = Math.round(mS * 0.55), gw = mS + off;
+  const textFont = Math.max(16, Math.round((w * (stacked ? 0.05 : 0.027)) / 8) * 8);
+  const nameSize = Math.max(32, Math.round((Math.min(w, h) * 0.075) / 16) * 16);
+  const tagSize = Math.max(32, Math.round((Math.min(w, h) * (stacked ? 0.048 : 0.05)) / 16) * 16);
+  const tagline = cfg.tagline ?? '15 minutes, in your browser · No installs';
+  const cwWord = textWidth('CYBER AWARE', PIXEL_FONT, textFont);
+  // mark group position: upper centre, glyph and text in a row on 16:9, text under the glyph when stacked
+  const rowW = gw + Math.round(mS * 0.5) + cwWord;
+  const groupW = stacked ? Math.max(gw, cwWord) : rowW;
+  const gx = Math.round((w - gw - (stacked ? 0 : Math.round(mS * 0.5) + cwWord)) / 2);
+  const gy = Math.round(h * (lay.mark_y ?? (stacked ? 0.3 : 0.27)));
+  const sqA = { x: snapTo(gx, q), y: snapTo(gy, q), s: mS }, sqD = { x: snapTo(gx + off, q), y: snapTo(gy + off, q), s: mS };
+
+  // phases
+  const tIn = easeOut(stepped(f / T(24), 8));                 // halves slide in
+  const tShrink = stepped((f - T(30)) / T(22), 10);           // halves shrink into the squares
+  const half = stacked ? h / 2 : w / 2;
+  const slide = Math.round((1 - tIn) * half);
+  const A = stacked ? { x: 0, y: -slide, w, h: h / 2 } : { x: -slide, y: 0, w: w / 2, h };
+  const D = stacked ? { x: 0, y: h / 2 + slide, w, h: h / 2 } : { x: w / 2 + slide, y: 0, w: w / 2, h };
+  const lerpRect = (r: any, sq: any) => ({ x: lerp(r.x, sq.x, tShrink), y: lerp(r.y, sq.y, tShrink), w: lerp(r.w, sq.s, tShrink), h: lerp(r.h, sq.s, tShrink) });
+  const rA = lerpRect(A, sqA), rD = lerpRect(D, sqD);
+  const halvesDone = tShrink >= 1;
+  const touch = f >= T(24) && f < T(28); // flash on the seam as they meet
+  const showTabs = tShrink < 0.35;
+  const textIn = f >= T(52);
+  const hackIn = f >= T(56), tagIn = f >= T(64);
+  const hackW = Math.round(w * 0.18);
+  const hackSize = Math.max(32, Math.round((hackW / 5.2) / 16) * 16);
+  const gnfW = textWidth('Hacktivity', GNF_FONT, hackSize);
+
+  const rectStyle = (r: any, c: string): React.CSSProperties => ({ position: 'absolute', left: Math.round(r.x), top: Math.round(r.y), width: Math.round(r.w), height: Math.round(r.h), boxSizing: 'border-box', background: c, border: `${2 * u}px solid ${CA.ink}`, overflow: 'hidden' });
+  const textX = gx + gw + Math.round(mS * 0.5);
+  const tx = stacked ? Math.round((w - cwWord) / 2) : textX;
+  const ty = stacked ? gy + gw + Math.round(mS * 0.5) : gy + Math.round((gw - textFont) / 2);
+  const belowY = stacked ? ty + textFont + 6 * u * 2 : gy + gw + Math.round(mS * 0.45);
+  void groupW;
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: CA.surface }}>
+      {/* the two halves: moving blocks that become the mark's squares */}
+      <div style={{ ...rectStyle(rA, CA.attack), backgroundImage: halvesDone ? 'none' : GRID(u), zIndex: 1 }}>
+        {showTabs ? <CaTab label="ATTACKER" bg={CA.attack} size={tf} u={u} style={{ left: 8 * u, top: 8 * u, border: `${2 * u}px solid ${CA.ink}` }} /> : null}
+      </div>
+      <div style={{ ...rectStyle(rD, CA.defend), backgroundImage: halvesDone ? 'none' : GRID(u), zIndex: 2 }}>
+        {showTabs ? <CaTab label="DEFENDER" bg={CA.defend} size={tf} u={u} style={{ left: 8 * u, top: 8 * u }} /> : null}
+      </div>
+      {touch ? <div style={{ position: 'absolute', zIndex: 3, background: CA.line, ...(stacked ? { left: 0, width: w, top: h / 2 - 2 * u, height: 4 * u } : { top: 0, height: h, left: w / 2 - 2 * u, width: 4 * u }) }} /> : null}
+      {textIn ? <div style={{ position: 'absolute', left: tx, top: ty, fontFamily: PIXEL_FONT, fontSize: textFont, lineHeight: 1, color: CA.mark, whiteSpace: 'nowrap', ...crisp }}>CYBER AWARE</div> : null}
+      {textIn && cfg.name ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY, textAlign: 'center', fontFamily: GNF_FONT, fontSize: nameSize, lineHeight: 1.1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{cfg.name}</div> : null}
+      {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameSize * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{tagline}</div> : null}
+      {hackIn ? (
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
+          <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: CA.line, marginBottom: 6 * u }} />
+          <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: CA.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>
+        </div>
+      ) : null}
+      <div style={{ position: 'absolute', inset: 0, border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', zIndex: 5 }} />
+    </div>
+  );
+};

@@ -94,7 +94,7 @@ Off screen: tells (the details that give an item away), the tells checklist, che
 
 1. `video-scout` (adapted to CA): `docs/video/scout/<ep>_scout.md`.
 2. Shot list or picks: `docs/video/edits/<EP>_TRAILER45_SHOTLIST.md`.
-3. `video-takes`: takes under `tools/video/takes/<ep>/`, from a worktree of local main, avatar window agreed with VID1 and AC0 if BE_SPRITE is set.
+3. `video-takes`: takes under `tools/video/takes/<ep>/`, from a worktree of local main, avatar window agreed with VID1 and AC0 if BE_SPRITE is set. Always `FOOTAGE_ROOT=$HOME/video-takes-local`, never `~/safetynet-footage` (a one-way Drive mirror whose timer moves unsynced folders to `~/safetynet-footage-deleted/`); a display other than VID1's 113, with its own `VIDEO_STATE_DIR`. Pass `--set` JSON to `run-take.sh` without single quotes. Runbook pattern: `docs/video/edits/CA12_CAPTURE_RUNBOOK.md`.
 4. `video-edit`: `tools/video/edits/<ep>_trailer45.json`, first shot `{"preset": "ca-open"}`, last `{"preset": "ca-close"}` (to be built: see the theme doc).
 5. `video-review`: one page per round with the questions below, scored against the rubric's F1, F4, O1, O2, O4 and A2.
 

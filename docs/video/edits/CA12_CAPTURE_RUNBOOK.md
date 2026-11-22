@@ -5,7 +5,9 @@ For the capture window. Shot list: `CA12_TRAILER45_SHOTLIST.md`. Scripts: `tools
 (off camera) is not in the durations. Durations are the take body in game seconds, from the headless dry runs (throttled to 20 fps, so
 walking and physics shots may differ by a second or two in a real capture).
 
-Before each batch: `pgrep -af 'remotion|render.mjs|render.sh'` must be empty; `tools/video/capture/env-up.sh 97` (see the video-takes skill).
+Before each batch: `pgrep -af 'remotion|render.mjs|render.sh'` must be empty; `tools/video/capture/env-up.sh <display>` (see the video-takes skill). VID1 uses display 113 with `VIDEO_STATE_DIR=$HOME/.cache/be-video-state-113`; use another number and its own state dir (the pilot used 147).
+
+**Footage root: always `FOOTAGE_ROOT=$HOME/video-takes-local`. Never write into `~/safetynet-footage`.** That folder is a one-way rclone mirror of Google Drive (the owner's `footage-sync.timer`, every :00 and :30), so anything not on Drive is moved to `~/safetynet-footage-deleted/<date>/` at the next run. It did this to the pilot's ca12 folder mid-capture on 2026-11-22.
 
 ## Order and commands
 
@@ -25,10 +27,10 @@ Run all as `tools/video/takes/run-take.sh ca12_visitor_tailgater <take> "<new-ga
 | 9 | t09_step_away | **yes** (player visible in the studio) | see below | 54 (A1 at 3 s, C1 at 42 s after Look up) | cut before the choice menu |
 | 10 | t10_ambient_spares | no | `""` | up to 300 | **unscriptable as random chatter** (see below) |
 
-t09 flags (verified entry state; `kit_defend_done` alone is not enough):
+t09 flags (verified entry state; `kit_defend_done` alone is not enough). Pass them to `run-take.sh` **without** single quotes round the JSON: it splits the flags string itself, so quotes reach the state as literal characters and corrupt it (the pilot's first t09 attempt failed this way):
 
 ```
---set 'episode_e12_visitor_tailgater_state={"done":["brief","osint","write","flip","defend"]}' --set episode_e12_visitor_tailgater_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e12_visitor_tailgater_defend_percent=100
+--set episode_e12_visitor_tailgater_state={"done":["brief","osint","write","flip","defend"]} --set episode_e12_visitor_tailgater_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e12_visitor_tailgater_defend_percent=100
 ```
 
 Group the avatar-window takes (t02, t07, t08, t09) into one block: set BE_SPRITE once per take, restore at the end.
@@ -57,10 +59,10 @@ BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/restore-sprite.rb <
 Verify with this read-only check (it reads, never writes):
 
 ```
-BREAK_ESCAPE_STANDALONE=true bin/rails runner 'puts BreakEscape::PlayerPreference.joins(:player).where(break_escape_players: {id: 1}).pluck(:selected_sprite).inspect' 
+BREAK_ESCAPE_STANDALONE=true bin/rails runner 'p BreakEscape::PlayerPreference.find_by(id: 1)&.selected_sprite'
 ```
 
-Expected `["female_hacker_hood_v2"]`. If the join does not fit this schema, use `bin/rails runner 'p BreakEscape::PlayerPreference.find_by(id: <pref id from the sprite-restore file>)&.selected_sprite'`.
+Expected `"female_hacker_hood_v2"`. (The demo user's preference is id 1. A `joins(:player)` form raises on this schema; the pilot used this `find_by` form.) Check after every avatar take, including one that crashed, not only at the end.
 `restore-sprite.rb` only restores if the preference still holds the sprite the take set, so someone else's change is left alone.
 
 ## Spoiler rules held in the scripts

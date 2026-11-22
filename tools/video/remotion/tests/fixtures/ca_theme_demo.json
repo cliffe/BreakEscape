@@ -1,0 +1,239 @@
+{
+ "mission": "ca12",
+ "id": "ca_theme_demo",
+ "theme": "ca",
+ "title": "Cyber Aware theme demo (stills and lint fixture)",
+ "fps": 30,
+ "length": 17.0,
+ "music": {
+  "none": true,
+  "note": "silent bed; music_slot: a CA track is still to be chosen"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 7.9,
+    "out": 10.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   },
+   "seat": {
+    "seat": "full"
+   }
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Visitors and tailgating",
+    "company": "Merrin & Sallow Architects",
+    "stripe": "#8a5a2b"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t04_osint_note.trimmed.mkv",
+    "in": 4.4,
+    "out": 7.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#8a5a2b"
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_pretext_card.trimmed.mkv",
+    "in": 4.3,
+    "out": 7.3
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PRETEXT CALL",
+    "stripe": "#8a5a2b"
+   },
+   "masks": [
+    {
+     "x": 670,
+     "y": 344,
+     "w": 590,
+     "h": 88,
+     "from": 0.0,
+     "to": 1.2,
+     "rows": 3
+    }
+   ],
+   "caption": {
+    "16:9": true
+   },
+   "lines": [
+    {
+     "start": 0.2,
+     "end": 1.9,
+     "speaker": "Camila",
+     "text": "Right, that's me back, thanks."
+    }
+   ]
+  },
+  {
+   "id": "defend",
+   "type": "gameplay",
+   "duration": 2.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t08_triage.trimmed.mkv",
+    "in": 5.1,
+    "out": 8.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "VISITOR TRIAGE",
+    "stripe": "#8a5a2b"
+   }
+  },
+  {
+   "id": "spot",
+   "type": "card",
+   "style": "ca",
+   "duration": 2.0,
+   "join": {
+    "type": "dissolve",
+    "block": 16
+   },
+   "text": [
+    "What you'll spot"
+   ],
+   "body": [
+    "A good story isn't a check",
+    "A friendly voice isn't a badge"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   }
+  },
+  {
+   "id": "tool",
+   "type": "card",
+   "style": "ca",
+   "duration": 2.0,
+   "join": {
+    "type": "seam"
+   },
+   "seat": "attack",
+   "tool": "PRETEXT CALL",
+   "text": [
+    "Sound like you belong"
+   ],
+   "body": [
+    "Borrow a name, a rush, a reason."
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "theme demo"
+   }
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Visitors and tailgating",
+    "tagline": "15 minutes, in your browser · No installs",
+    "hacktivity": "Hacktivity"
+   }
+  }
+ ]
+}

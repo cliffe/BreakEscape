@@ -3,16 +3,19 @@ export const ASPECTS = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [108
 export const dims = (edit, aspect) => (edit.aspects || ASPECTS)[aspect] || ASPECTS[aspect];
 
 /** Join types that are drawn as an effect (anything else is a hard cut). */
-export const JOIN_EFFECTS = ['glitch', 'blur', 'dissolve'];
+export const JOIN_EFFECTS = ['glitch', 'blur', 'dissolve', 'seam', 'flip'];
+/** Joins that only a Cyber Aware edit (theme "ca") may use / that a CA edit may not use. */
+export const CA_ONLY_JOINS = ['seam', 'flip'];
+export const CA_BANNED_JOINS = ['glitch', 'blur'];
 /** Default and allowed frame counts per join type (lint enforces the ranges). */
-export const JOIN_FRAMES = { glitch: { def: 6, min: 6, max: 10 }, blur: { def: 10, min: 6, max: 14 }, dissolve: { def: 8, min: 6, max: 10 } };
+export const JOIN_FRAMES = { glitch: { def: 6, min: 6, max: 10 }, blur: { def: 10, min: 6, max: 14 }, dissolve: { def: 8, min: 6, max: 10 }, seam: { def: 7, min: 6, max: 8 }, flip: { def: 14, min: 12, max: 16 } };
 
 /** The join type a shot really uses: edit.effects.cardJoin ("glitch" | "dissolve") re-points every glitch/dissolve join, so one edit list renders A/B. Blur and cut are never changed. */
 export function resolveJoin(edit, shot) {
   let t = shot.join?.type || 'cut';
   const sw = edit.effects?.cardJoin;
-  if (sw && !shot.join?.pin && (t === 'glitch' || t === 'dissolve' || t === 'card')) t = sw; // join.pin: true keeps this join's own type (per-join override)
-  else if (t === 'card') t = 'glitch';
+  if (sw && edit.theme !== 'ca' && !shot.join?.pin && (t === 'glitch' || t === 'dissolve' || t === 'card')) t = sw; // join.pin: true keeps this join's own type (per-join override)
+  else if (t === 'card') t = edit.theme === 'ca' ? 'seam' : 'glitch';
   const n = t === 'cut' ? 0 : (shot.join?.frames ?? JOIN_FRAMES[t]?.def ?? 6);
   return { type: t, frames: n };
 }
@@ -35,7 +38,7 @@ export function buildTimeline(edit) {
     if (t === 'cut') return null;
     // first shot: effect only on the incoming side (from black); dissolve needs an outgoing shot
     let pre = i === 0 ? 0 : Math.floor(n / 2); let post = i === 0 ? n : Math.ceil(n / 2);
-    if (t === 'dissolve') { pre = 0; post = n; }
+    if (t === 'dissolve' || t === 'seam' || t === 'flip') { pre = 0; post = n; } // outgoing shot frozen on its last frame, drawn over the incoming one
     return { type: t, frames: n, pre, post, boundary: s.startFrame, from: s.startFrame - pre, to: s.startFrame + post, index: i };
   });
   return { fps, shots, joins, totalFrames: shots.length ? shots[shots.length - 1].endFrame : 0 };
@@ -90,4 +93,4 @@ export function sourceRef(shot) {
 /** `placeholder: true` marks stand-in footage (the lint lists it; --final refuses it). A string `placeholder` is only the label of the test pattern shown when a take is missing. */
 export const isPlaceholderShot = (s) => s.placeholder === true;
 /** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */
-export const isCardLike = (s) => s.type === 'card' || s.type === 'title' || s.type === 'cta';
+export const isCardLike = (s) => s.type === 'card' || s.type === 'title' || s.type === 'cta' || s.type === 'ca_open' || s.type === 'ca_close';
