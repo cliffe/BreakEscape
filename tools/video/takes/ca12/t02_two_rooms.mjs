@@ -16,7 +16,8 @@ export async function setup(page, bridge, mark = () => {}) {
   await pressButton(page, /Prepare the call/i); await sleep(1200);
   await playCallToUnlock(page, bridge, mark);
   mark('call-played');
-  await pressButton(page, /^Done$/, 20000); await sleep(1500);   // the Call debrief modal: Done closes the call (minigame.close() alone leaves it up)
+  await bridge.minigame.close().catch(() => {}); await sleep(1200);   // close() brings up the Call debrief modal
+  await pressButton(page, /^Done$/, 20000); await sleep(1500);   // the Call debrief modal: Done closes the call (it stays up until pressed)
   await bridge.waitForMinigameClosed({ timeoutMs: 5000 }).catch(() => {}); await sleep(1500);
 }
 
