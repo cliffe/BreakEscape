@@ -9,11 +9,11 @@
 // may still crop above y=<rect.y> for the meter-only framing. Does not press Done and does not end the call.
 // Marks: frame:npc-portrait-up (first frame where Delphine's name and portrait are up; in the call the player's portrait never
 // shows), line-start/line-end from the voice watcher (D3, D2, D1), choose:N, meter:<value> on every change, toast-door.
-import { sleep, toCall } from './_ca12b.mjs';
+import { sleep, toCall, pressButton } from './_ca12b.mjs';
 import { watchVoice } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) {
-  await toCall(page, bridge); await sleep(300);
+  await toCall(page, bridge, () => {}, { stopBeforeApproach: true }); await sleep(300);
   await page.addStyleTag({ content: '.pretext-tells{visibility:hidden !important}' });
 }
 
@@ -22,6 +22,7 @@ const state = async (bridge) => (await bridge.getState());
 
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
+  await pressButton(page, /Approach/);   // D3 starts as the call opens: press it here so the voice watcher hears it (it played in setup, unheard, when setup pressed it)
   mark('call-open');
   const meter = async () => page.evaluate(() => window.MinigameFramework?.currentMinigame?.getTestState?.().se?.bar?.value).catch(() => undefined);
   let last;

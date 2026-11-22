@@ -18,7 +18,7 @@ export async function waitEl(page, re, timeoutMs = 12000) {
 
 /** From a fresh game to the call with Delphine open (about 25 s off camera): kiosk, Start, browser, pin the post, close, card,
  *  recipient, Approach. Leaves the call on its first line. Retries the kiosk interact up to 3 times (prepare() also). */
-export async function toCall(page, bridge, mark = () => {}) {
+export async function toCall(page, bridge, mark = () => {}, opts = {}) {
   await prepare(page, bridge, mark);
   await openKiosk(page, bridge, mark);
   await pressButton(page, /^Start$/);
@@ -39,6 +39,7 @@ export async function toCall(page, bridge, mark = () => {}) {
   await sleep(700);
   await waitEl(page, /^Catherine Merrin$/);
   await sleep(500);
+  if (opts.stopBeforeApproach) return null;   // the take presses Approach itself so D3 plays on camera (it starts at once, before a take's voice watcher exists)
   await pressButton(page, /Approach/);
   const t0 = Date.now();
   while (Date.now() - t0 < 12000) { const s = await bridge.getState(); if (s.dialogue) return s; await sleep(250); }
