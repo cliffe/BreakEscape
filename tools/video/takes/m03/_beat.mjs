@@ -5,7 +5,7 @@
 import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 const SPEED = 145;
-export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy', targets, lingerMs = 1000, preMs = 350, steps = [] }) {
+export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy', targets, lingerMs = 1000, preMs = 350, steps = [], align = false }) {
   let npc = null;
   const find = async (bridge) => (await bridge.getState()).nearby.find(n => n.id === npcId);
   const setup = async (page, bridge) => {
@@ -13,6 +13,15 @@ export function makeBeat({ npcId, start: [sx, sy], stop: [tx, ty], order = 'xy',
     npc = await find(bridge);
     if (!npc) throw new Error(npcId + ' not nearby');
     await bridge.moveTo(npc.x + sx, npc.y + sy, { timeoutMs: 20000 });
+    if (align) { // off camera: pulse the player onto the exact start point so the on-camera walk is one clean axis
+      for (let i = 0; i < 10; i++) {
+        const p = (await bridge.getState()).player; const dx = npc.x + sx - p.x, dy = npc.y + sy - p.y;
+        if (Math.abs(dx) <= 2 && Math.abs(dy) <= 2) break;
+        const useY = Math.abs(dy) > 2;
+        await bridge.walk(useY ? (dy > 0 ? 'down' : 'up') : (dx > 0 ? 'right' : 'left'), Math.max(30, Math.round(Math.abs(useY ? dy : dx) / SPEED * 1000)));
+        await sleep(150);
+      }
+    }
     await sleep(900);
     console.error('SETUP', JSON.stringify({ npc, player: (await bridge.getState()).player }));
   };

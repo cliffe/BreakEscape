@@ -16,3 +16,6 @@ Run everything from the worktree .claude/worktrees/v-trailers-1120. Rig: keyless
 ## Gotchas
 - pgrep for remotion matches the own shell; use ps -eo pid,args | grep with brackets.
 - /tmp/claude-1000/marks.py prints trimmed marks from a .trimmed.markers.json (scratch; recreate if gone).
+
+## Update (phase 1 finished, 2026-11-22)
+All six dry takes pass (t01b, t19, t20, t09b, t21, t16d); table in docs/video/takes_m03.md "v3 takes". t20 frames 3.7-8.1 s checked: the UID block is blurred, nothing readable. Dry files moved to ~/video-takes-local/m03/takes/old/. _beat.mjs has `align: true` (off-camera pulse alignment) for straight walks. Rig (:3017, display 113) stopped. Next: re-record finals with the plan's avatars (BE_SPRITE per M03_TRAILER60_V3_PLAN.md), then window 2 (t10b_zainab, t17b_guard).
