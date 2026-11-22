@@ -1,0 +1,13 @@
+{
+  "key": "22d7b713ca46df660e5a6d7b02994616",
+  "npc": "kit_delphine_arvanitis",
+  "text": "Visitor book's filling up.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:02:04Z"
+}
