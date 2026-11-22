@@ -2,6 +2,19 @@
 
 Draft from the m01 trial (October 2026). The later video skill builds on this. Plan and history: `M01_TRIAL_PLAN.md`, `TRIAL_LOG.md`.
 
+## Product lines
+
+Each product line has its own visual identity (title, cards, palette, bumpers, music) and **its own trailer rules** (user, 2026-11-22). The house style below and the recipes in `recipes/` were written for SAFETYNET and apply there as they stand.
+
+| Line | Identity | Trailer rules |
+|---|---|---|
+| SAFETYNET: Licence to Hack (m01 to m10) | spy noir: keyhole title, glitch cards, red hex curtain | `recipes/mission-trailer.md` |
+| Eldritch Hacker (game 2) | its own, not yet designed | to write when its trailers start |
+| Courses (lab and teaching use) | its own, not yet designed (to do later) | to write |
+| Cyber Aware courses | its own, neutral corporate skin (`aw-*` tokens) | the CA session's `recipes/course-trailer.md`, from `CA_TRAILER_BRIEF.md` |
+
+A new line starts with a theme proposal on a review page (title, a content card, the end card, music) before any cut.
+
 ## House style (all kinds)
 
 - **Fonts:** pixel fonts only. Press Start 2P for cards, captions and titles (`public/break_escape/assets/fonts/PressStart2P-Regular.woff2`); Pixelify Sans only where a second pixel face is needed.
