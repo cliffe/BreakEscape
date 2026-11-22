@@ -35,7 +35,12 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
   const colW = inner - sq - 3 * sq;
   const bSize = bSizes.find((s) => bullets.every((b) => vtW(b, s) <= colW * (stacked ? 2 : 1) * 0.92)) || bSizes[bSizes.length - 1];
   const fps = 30;
-  const revealAt = (i: number) => 14 + Math.round(i * 0.7 * fps * (bullets.length > 2 ? 0.8 : 1)); // bullets one after another
+  // bullets one after another; shot.reveal {start, each} (seconds) paces them for reading (owner, ca12 r3: "slower for each sentence")
+  const rv = shot.reveal;
+  const revealAt = (i: number) => rv
+    ? Math.round(((rv.start ?? 1.2) + i * (rv.each ?? 2)) * fps)
+    : 14 + Math.round(i * 0.7 * fps * (bullets.length > 2 ? 0.8 : 1));
+  const fadeIn = (i: number) => Math.min(1, Math.max(0, (frame - revealAt(i)) / 6)); // 0.2 s fade, stepped by frame
   const tabDrop = Math.round((1 - Math.min(1, Math.max(0, (frame - 2) / 4))) * -tf * 3);
   const mS = Math.max(16, Math.round(tf * 0.9 / 2) * 2);
   const markFont = Math.max(8, Math.round(tf * 0.5 / 8) * 8);
@@ -50,7 +55,7 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
         {hLines.map((l, i) => <div key={i} style={{ fontFamily: GNF_FONT, fontSize: hSize, lineHeight: 1.15, color: '#fff', whiteSpace: 'nowrap' }}>{l}</div>)}
         <div style={{ height: snapTo(hSize * 0.55, 4 * u) }} />
         {bullets.map((b, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: sq, marginBottom: Math.round(bSize * 0.3), opacity: frame >= revealAt(i) ? 1 : 0, width: inner }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: sq, marginBottom: Math.round(bSize * 0.3), opacity: rv ? fadeIn(i) : (frame >= revealAt(i) ? 1 : 0), width: inner }}>
             <div style={{ flex: 'none', width: sq, height: sq, marginTop: Math.round((bSize * 0.9 - sq) / 2), boxSizing: 'border-box', background: '#fff', border: `${2 * u}px solid ${CA.ink}` }} />
             <div style={{ fontFamily: VT_FONT, fontSize: bSize, lineHeight: 0.95, color: '#fff', maxWidth: colW }}>{b}</div>
           </div>

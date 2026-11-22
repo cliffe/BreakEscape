@@ -118,6 +118,12 @@ tl.shots.forEach((s, i) => {
         if ((s.body || []).some((b) => typeof b !== 'string' || b.length > 60)) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
         if (s.text?.[0] && String(typeof s.text[0] === 'string' ? s.text[0] : s.text[0].text).length > 28) W(id, 'chapter card: heading over 28 characters');
         if (s.tool || s.tab || s.seat) E(id, 'chapter card sets its own tab: no tool, tab or seat');
+        if (s.reveal != null) {
+          const st = s.reveal.start ?? 1.2, ea = s.reveal.each ?? 2, n = (s.body || []).length;
+          if (!(st >= 0) || !(ea > 0)) E(id, 'chapter card: reveal.start must be >= 0 and reveal.each > 0 (seconds)');
+          else if (n && s.duration != null && st + (n - 1) * ea + 1.5 > s.duration) E(id, `chapter card: the last bullet shows at ${(st + (n - 1) * ea).toFixed(1)} s and needs 1.5 s on screen; duration is ${s.duration} s`);
+          if (ea > 0 && ea < 1.5) W(id, 'chapter card: reveal.each under 1.5 s is too quick to read a sentence');
+        }
       } else {
       if ((s.text || []).length > 2) W(id, 'ca card: more than two GNF lines');
       if ((s.body || []).length > 3) W(id, 'ca card: more than three VT323 lines');
@@ -173,7 +179,7 @@ if (ca) {
   const shots = tl.shots;
   const opens = shots.filter((s) => s.type === 'ca_open'), closes = shots.filter((s) => s.type === 'ca_close');
   if (opens.length !== 1) E('edit', `a CA edit needs exactly one ca_open shot (the ca-open preset), found ${opens.length}`);
-  else if (opens[0].index > 1 || (opens[0].index === 1 && !(shots[0].type === 'gameplay' && shots[0].duration <= 4))) E(opens[0].id, 'ca_open must be the first shot, or the second after one cold-open gameplay shot of at most 4 s');
+  else if (opens[0].index > 1 || (opens[0].index === 1 && !(shots[0].type === 'gameplay' && shots[0].duration <= 5))) E(opens[0].id, 'ca_open must be the first shot, or the second after one cold-open gameplay shot of at most 5 s (one voiced line)');
   if (closes.length !== 1) E('edit', `a CA edit needs exactly one ca_close shot (the ca-close preset), found ${closes.length}`);
   else if (closes[0].index !== shots.length - 1) E(closes[0].id, 'ca_close must be the last shot');
   rawShots.forEach((r, i) => {
