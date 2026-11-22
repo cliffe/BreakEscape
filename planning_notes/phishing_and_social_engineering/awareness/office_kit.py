@@ -505,12 +505,14 @@ def _merge_override(dst, patch):
 
 
 def apply_override(kit, row):
-    """A copy of the kit with the row's `override` applied (sources by id, staff by person).
+    """A copy of the kit with the row's `override` applied (pool, sources by id, staff by person).
     Used only to pin a test fixture to its frozen placeholder positions and timings (4.3)."""
     ov = (row or {}).get('override')
     if not ov:
         return kit
     kit = copy.deepcopy(kit)
+    if ov.get('pool') and kit.get('pool'):
+        _merge_override(kit['pool'], ov['pool'])
     for src in kit.get('sources', []):
         patch = ov.get('sources', {}).get(src.get('id'))
         if patch:

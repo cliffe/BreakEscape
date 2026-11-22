@@ -36,6 +36,7 @@
       "stepAway": true,
       "stepAwayBark": "Have you got a minute? Someone in finance just took a call like that one.",
       "override": {
+        "pool": { "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."] },
         "sources": {
           "kit_coffee": { "position": { "x": 2, "y": 7 }, "affordance": { "useSeconds": 8 } },
           "kit_cooler": { "position": { "x": 7, "y": 7 }, "affordance": { "useSeconds": 6 } }
