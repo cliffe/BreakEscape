@@ -23,7 +23,7 @@ export const FlipTransition: React.FC<{ k: number; n: number; w: number; h: numb
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, clipPath: clip, WebkitClipPath: clip }}>{children}</div>
       {bar.map((b, i) => <div key={i} style={{ position: 'absolute', ...b }} />)}
-      <CaTab label={label} bg={CA.defend} size={tf} u={u} style={stacked ? { left: 6 * u, top: pos - tf - 3 * u - tabDrop, } : { left: pos + 6 * u, top: 6 * u - tabDrop }} />
+      <CaTab label={label} bg={CA.defend} size={tf} u={u} style={stacked ? { left: '50%', transform: 'translateX(-50%)', top: pos - tf - 3 * u - tabDrop } : { left: pos + 6 * u, top: '50%', transform: `translateY(-50%) translateY(${-tabDrop}px)` }} />
     </div>
   );
 };

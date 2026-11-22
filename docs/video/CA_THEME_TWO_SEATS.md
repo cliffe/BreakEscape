@@ -44,10 +44,12 @@ Pixel fonts only for everything designed (UI rule): the game ships all three in 
 ## Cards
 
 - A flat `ca-surface` panel with a **2 px `ca-ink` border** and a 2 px inset rule, like the in-game kiosk. No radius, no gradient, no reflection, no drop shadow.
-- A **tab** sits on the top edge of every card, in the seat's colour with white Press Start 2P: `ATTACKER` or `DEFENDER` (consequence-first episodes: `THE SHORTCUT`). Neutral cards (title, "What you'll spot", end card) have a `ca-mark` tab reading `CYBER AWARE`.
+- A **tab** sits on the top edge of every card, in the seat's colour with white Press Start 2P: `ATTACKER` or `DEFENDER` (consequence-first episodes: `THE SHORTCUT`). Neutral cards (title, end card) have a `ca-mark` tab reading `CYBER AWARE`.
 - A tool card names the tool in Press Start 2P beneath the tab (`OPEN-SOURCE RESEARCH`, `PRETEXT CALL`, `LOOK-ALIKE PAGE BUILDER`), then one VT323 line of what it does, at pattern level.
 - Card text: up to two lines of about 22 characters in GNF, or three lines of about 34 in VT323.
 - Cards in a seat fill that seat only; neutral cards fill the frame.
+- **Chapter cards** (round 2): the owner wanted clearer title pages for what the attack covers, then the defence. A trailer shows a red chapter card (what the attack covers), short attack footage, the flip, a blue chapter card (what the defend half covers), then mostly defend gameplay. A chapter card fills the whole frame in its seat colour (`attack` red, `defend` blue) with the grid, the seat tab, a GNF heading (one line, two when stacked), up to three VT323 bullets revealed in turn, and a small `CYBER AWARE` plate. Pattern level only: no tell, verdict or answer. One red and one blue per trailer, red first. Edit fields: `"style": "ca"`, `"chapter": "attack"|"defend"`, `"text"` (heading), `"body"` (bullets). Lint enforces the order and counts.
+- ca-close: the mark's two squares and the `CYBER AWARE` word read as one lock-up (gap 0.2 of a square). Stacked, the tagline splits at the dot onto two lines.
 
 ## Split-screen grammar
 
