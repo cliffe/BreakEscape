@@ -57,3 +57,34 @@ every card; they are plain role labels, not tells, though "Expected client" is m
 Dry-run caveat: the `frame:` screenshots are taken asynchronously, so the `frame:brief-screen` and `frame:list` images can show the
 state one beat later than their mark (the first run's brief-screen image already showed the list). Mark times are right; judge
 the exact first frame of each card from the click marks above.
+
+## Real capture (22 Nov 2026, display 147, game 12156): geometry differs from the dry run, use these
+
+Take `t11_defend_queue.trimmed.mkv`, 16.80 s, drop 0.53%, A/V offset -88/-68 ms, no retakes. Body 15.93 s (take-begin at 0.41 s in the trimmed
+file; marks below are seconds from `panel-queue`, which is at 0.413 s in the file). In the real capture the kiosk window sits at y 20 to 918
+(black band above and below), not centred, so the dry-run rects for m1, m3 and the buttons are 20 to 28 px too high and **would miss the
+last row of card 1's list line, the Staff list line on card 3, and the bottom of the buttons**. Measured from frames at 5.2, 7.95, 10.8 and 14.6 s:
+
+| s | event (real capture) |
+|---|---|
+| 0.00 | panel-queue |
+| 1.50 | click Open the queue |
+| 2.90 | click Start (brief screen up 1.4 s) |
+| 4.53 | card 1 (Visitor with a clipboard) |
+| 7.26 | card 2 (Courier) |
+| 10.00 | card 3 (Colleague back from leave) |
+| 12.11 | mouse over buttons; hover frame at 15.5, end at 15.93 |
+
+| id | x | y | w | h | window (s from panel-queue) | covers |
+|---|---|---|---|---|---|---|
+| m1 | 848 | 374 | 548 | 78 | 4.43 to 7.36 | card 1 Today's list (3 rows, text y 378 to 446) |
+| m2 | 848 | 374 | 548 | 54 | 7.16 to 10.10 | card 2 Today's list (2 rows, y 378 to 422; matches the dry run) |
+| m3 | 848 | 374 | 548 | 30 | 9.90 to 15.93 | card 3 Staff list (1 row, y 378 to 398) |
+| b1 | 832 | 456 | 570 | 200 | 4.43 to 10.10 | buttons on cards 1 and 2 (card 1 y 483 to 652, card 2 y 460 to 627) |
+| b2 | 832 | 430 | 570 | 180 | 9.90 to 15.93 | buttons on card 3 (y 436 to 603) |
+
+Frames read: card 1 at 5.2 s, card 2 at 7.95 s, card 3 at 10.8 s, hover at 14.6 s (Turn away brightened, nothing pressed). With the new rects
+stacked on those frames (ffmpeg drawbox) every list line and all four buttons are covered. Unmasked, each frame shows only the visitor's own
+pretext lines; no verdict panel, reason, score or tooltip appears, counters stay at "0 of 6 sorted" and "checked for the team: 0".
+Left-list names are visible as before. The dry-run table above holds for the timeline only to within about 0.1 s up to card 3; the hover pass is
+0.65 s longer in the real capture.
