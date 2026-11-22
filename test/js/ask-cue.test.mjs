@@ -29,7 +29,7 @@ class TTSManager {}
 ` + rd('systems/npc-barks.js').replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
 
 globalThis.window = { gameState: { globalVariables: {} } };
-const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER, markerPosition } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
+const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER, markerPosition, headRowsFor } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
 const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
@@ -440,6 +440,20 @@ test('marker hangs just above the top of the asker\'s frame, not half a frame hi
     assert.equal(markerPosition(sprite, 2).y, p.y + 2, 'the bob moves it by its own amount only');
     // origin at the feet (originY 1): the frame top is y - displayHeight
     assert.equal(markerPosition({ x: 0, y: 200, displayHeight: 80, originY: 1 }).y + MARKER.h, 120 - 2);
-    // the live path uses it
-    assert.match(rd('systems/ask-cue.js'), /markerPosition\(sprite, bob\)/);
+    // headInset moves it down onto a figure that sits lower in its frame (seated)
+    assert.equal(markerPosition(sprite, 0, { headInset: 16 }).y, p.y + 16);
+    // the live path measures the inset and passes it
+    assert.match(rd('systems/ask-cue.js'), /markerPosition\(sprite, bob, \{ headInset:/);
+});
+
+test('headRowsFor counts the empty rows above the figure, once per frame, and falls back to 0', () => {
+    let calls = 0;
+    const alpha = (x, y) => { calls++; return (y >= 16 && x === 40) ? 255 : 0; };
+    const sprite = { texture: { key: 'npc_a' }, frame: { name: 'sit_south_frame_000', width: 80, height: 80 } };
+    assert.equal(headRowsFor(sprite, alpha), 16);
+    const first = calls;
+    assert.equal(headRowsFor(sprite, alpha), 16, 'cached');
+    assert.equal(calls, first, 'no second scan');
+    assert.equal(headRowsFor({ texture: { key: 'npc_b' }, frame: { name: 'f', width: 4, height: 4 } }, () => 0), 0, 'empty frame keeps the frame top');
+    assert.equal(headRowsFor(sprite, null), 0, 'no texture manager: frame top');
 });

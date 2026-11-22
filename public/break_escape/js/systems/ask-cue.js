@@ -27,16 +27,43 @@ export const MARKER = Object.freeze({
 });
 
 /**
- * Pure: the marker's top-left for this sprite. Its bottom edge sits 2 px above the top of the
- * sprite's frame (y - displayHeight * originY), so it hangs over the asker's head. The old
- * placement subtracted the whole displayHeight from the centre, which left the marker a half
- * frame (about 40 world px) above the head, over empty floor (re-gate minor, 22 Nov).
+ * Pure: the marker's top-left for this sprite. Its bottom edge sits 2 px above the asker's head:
+ * the frame top (y - displayHeight * originY) moved down by `headInset`, the empty rows above the
+ * figure in its current frame, scaled. A seated figure sits lower in its 80 px frame than a
+ * standing one, so a frame-top anchor alone left a gap over a seated asker. The old placement
+ * subtracted the whole displayHeight from the centre, a half frame higher still (re-gate minor,
+ * 22 Nov).
  */
-export function markerPosition(sprite, bob = 0, { w = MARKER.w, h = MARKER.h } = {}) {
+export function markerPosition(sprite, bob = 0, { w = MARKER.w, h = MARKER.h, headInset = 0 } = {}) {
     const dh = sprite.displayHeight || 48;
     const oy = sprite.originY ?? 0.5;
-    const frameTop = sprite.y - dh * oy;
-    return { x: Math.round(sprite.x - w / 2), y: Math.round(frameTop - h - 2 + bob) };
+    const headTop = sprite.y - dh * oy + headInset;
+    return { x: Math.round(sprite.x - w / 2), y: Math.round(headTop - h - 2 + bob) };
+}
+
+// Empty rows above the figure in a texture frame, measured once per frame and cached.
+const headRows = new Map();
+/**
+ * Rows of transparent pixels above the first opaque one in this sprite's current frame, in
+ * texture pixels (0 when the texture manager cannot be read, as in tests). `alphaAt` is
+ * textures.getPixelAlpha(x, y, key, frame).
+ */
+export function headRowsFor(sprite, alphaAt) {
+    const key = sprite?.texture?.key, frame = sprite?.frame;
+    if (!key || !frame || typeof alphaAt !== 'function') return 0;
+    const id = `${key}|${frame.name}`;
+    if (headRows.has(id)) return headRows.get(id);
+    let rows = 0;
+    try {
+        const fw = frame.realWidth || frame.width, fh = frame.realHeight || frame.height;
+        search: for (let y = 0; y < fh; y++) {
+            for (let x = 0; x < fw; x++) if ((alphaAt(x, y, key, frame.name) || 0) > 0) { rows = y; break search; }
+            rows = y + 1;
+        }
+        if (rows >= fh) rows = 0; // an empty frame: keep the frame-top anchor
+    } catch (e) { rows = 0; }
+    headRows.set(id, rows);
+    return rows;
 }
 
 /**
@@ -125,7 +152,9 @@ export class AskCue {
         const place = () => {
             if (!sprite.active || sprite.destroyed) { this.clear(npcId); return; }
             const bob = Math.round(Math.sin(scene.time.now / 180) * 2);
-            const p = markerPosition(sprite, bob);
+            const tm = scene.textures;
+            const rows = headRowsFor(sprite, tm?.getPixelAlpha ? tm.getPixelAlpha.bind(tm) : null);
+            const p = markerPosition(sprite, bob, { headInset: rows * (sprite.scaleY || 1) });
             g.setPosition(p.x, p.y);
             // a panel covers the world: hide the marker while one is open, show it again after
             g.setVisible(!win().MinigameFramework?.currentMinigame);
