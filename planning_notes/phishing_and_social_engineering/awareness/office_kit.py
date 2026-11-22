@@ -474,6 +474,19 @@ def scenario_fields(kit, row):
     return f
 
 
+TTS_FLAG = 'ttsPregenerateChatter'
+
+
+def shell_flags(row):
+    """Shell-level flags the kit sets on a course shell (D306 step 2): ttsPregenerateChatter, so a voicing batch
+    lists the kit's chatter and exchange lines. Kept out of scenario_fields/build (and so out of kit_owned)
+    because the pinned gate A fixture must stay byte-identical: the fixture and the test_ scenarios get none.
+    Empty for tier none. Checks and the annual are refused by the kit before they get here."""
+    if not active(row) or row.get('fixture') or str(row.get('id', '')).startswith('test_'):
+        return {}
+    return {TTS_FLAG: True}
+
+
 def kiosk_condition(row):
     """The kiosk's finished-text condition in a shell with the step-away panel, else None."""
     return KIOSK_FINISHED if active(row) and row.get('stepAway') else None
@@ -492,12 +505,14 @@ def _merge_override(dst, patch):
 
 
 def apply_override(kit, row):
-    """A copy of the kit with the row's `override` applied (sources by id, staff by person).
+    """A copy of the kit with the row's `override` applied (pool, sources by id, staff by person).
     Used only to pin a test fixture to its frozen placeholder positions and timings (4.3)."""
     ov = (row or {}).get('override')
     if not ov:
         return kit
     kit = copy.deepcopy(kit)
+    if ov.get('pool') and kit.get('pool'):
+        _merge_override(kit['pool'], ov['pool'])
     for src in kit.get('sources', []):
         patch = ov.get('sources', {}).get(src.get('id'))
         if patch:
@@ -649,6 +664,7 @@ def strip_kit(sc, host_id=None):
         del gv[k]
     for k in KIT_TOP_KEYS:
         sc.pop(k, None)
+    sc.pop(TTS_FLAG, None)         # set by shell_flags on a course shell, never on the fixture
     if isinstance(sc.get('chatter'), dict):
         sc['chatter'] = {k: v for k, v in sc['chatter'].items() if not str(k).startswith('kit_')}
         if not sc['chatter']:
@@ -722,6 +738,7 @@ def apply_kit(sc, kit, row, host_id=None):
             out['chatter'] = {**out['chatter'], **v}      # the shell's own pools stay; the kit adds its kit_ ones
         else:
             after.append((k, v))
+    after.extend(shell_flags(row).items())
     if b['timers']:
         if 'timers' in out:
             out['timers'] = out['timers'] + b['timers']

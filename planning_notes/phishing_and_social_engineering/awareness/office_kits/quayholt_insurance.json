@@ -52,7 +52,7 @@
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
       "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 70 } },
-      "chatterLines": ["Quiet on the alerts today.", "Need a proper break."]
+      "chatterLines": ["Queue's moving along.", "Need a proper break."]
     }
   },
   "setPieces": {
