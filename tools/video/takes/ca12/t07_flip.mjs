@@ -22,8 +22,10 @@ export async function setup(page, bridge) {
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   mark('start-hold'); await sleep(1200);
+  const up = waitNpcPortrait(page, bridge, mark, /Lorna/i, 30000);   // polls while the interact runs, so the mark is the true first frame
+  up.catch(() => {});
   await interactRetry(bridge, 'lorna_easton', mark);
-  await waitNpcPortrait(page, bridge, mark, /Lorna/i);
+  await up;
   const l1 = await vw.waitForLine(/talked your way through|held that door/, 25000);
   if (!l1) throw new Error('L1 never voiced');
   await sleep(300);
