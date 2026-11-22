@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 globalThis.window = globalThis.window || {};
-const { npcWalkTick } = await import('../../public/break_escape/js/systems/seating.js');
+const { npcWalkTick, resetWalk } = await import('../../public/break_escape/js/systems/seating.js');
 
 function npc(x, y) {
     const sprite = {
@@ -109,7 +109,9 @@ test('the window resets between route legs: a fresh m does not inherit a stall',
     const b = npc(100, 233), m = fresh();
     assert.equal(run(b, m, target).r, 'arrived');
     // next leg: resetWalk-equivalent state, blocked for a short while then free
-    Object.assign(m, { ticks: 0, still: 0, wait: 0, hist: [] });
+    m.wait = 5; m.hist = [9, 8, 7]; m.pf = { x: 1, y: 1 };
+    resetWalk(m);
+    assert.deepEqual([m.ticks, m.still, m.wait, m.hist.length, m.pf, m.t], [0, 0, 0, 0, undefined, undefined]);
     b.sprite.y = 233;
     assert.equal(run(b, m, target, { speedAt: (i) => (i < 4 ? 0 : 1) }).r, 'arrived');
 });
@@ -135,4 +137,32 @@ test('after a stall wait the retry probe starts idle and walks only once the fee
     const retry = rows.slice(13, 17);
     assert.equal(retry[0].moving, false, 'first retry tick idles');
     assert.ok(rows[rows.length - 2].moving, 'walk animation plays while actually moving');
+});
+
+test('a slide at 0.945 px per tick (above the stall floor) is not stalled and keeps animating', () => {
+    const b = npc(100, 233), m = fresh();
+    const { rows } = run(b, m, target, { speedAt: () => 0.27, max: 9 });
+    assert.ok(rows.every((x) => x.r === 'moving'), 'not stalled');
+    assert.ok(rows.every((x) => x.moving === true && x.anim === 'walk'), 'walk animation while moving');
+    assert.ok(!b.anims.includes('idle'));
+});
+
+test('resetWalk clears the clock: the first tick after a reset uses the 50 ms step, not the stale gap', () => {
+    const b = npc(100, 224), m = fresh();
+    b.sprite.scene.time.now += 50;
+    npcWalkTick(b, m, target);
+    b.sprite.scene.time.now += 200;
+    resetWalk(m);
+    npcWalkTick(b, m, target);
+    assert.ok(Math.abs(b.sprite.body.velocity.y + 60) < 1e-6, `vy ${b.sprite.body.velocity.y}`);
+});
+
+test('a long real gap (1 s) with a short distance commands at most d / gap, no overshoot', () => {
+    const b = npc(100, 224), m = fresh();
+    b.sprite.scene.time.now += 50;
+    npcWalkTick(b, m, target);
+    b.sprite.scene.time.now += 1000;
+    assert.equal(npcWalkTick(b, m, target), 'moving');
+    assert.ok(Math.abs(b.sprite.body.velocity.y) <= 3 / 1.0 + 1e-6, `vy ${b.sprite.body.velocity.y}`);
+    assert.ok(Math.abs(b.sprite.body.velocity.y) * 1.0 <= 3 + 1e-6, 'a 1 s frame cannot pass the target');
 });

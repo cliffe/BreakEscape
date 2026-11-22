@@ -1267,10 +1267,12 @@ export function swivelEnabled(rec, scenario) {
 const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
 const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
 const NPC_STUCK_WINDOW = 4;        // ticks the progress check looks back over
-const NPC_STUCK_STALLS = 2;        // failed tries (a stall, a wait, a retry) before the walk gives up
+const NPC_STUCK_STALLS = 2;        // stalled windows (a full window under the progress floor); the second one ends the walk as stuck
 const NPC_STALL_WAIT_TICKS = 8;    // a stall is a real wait: held still and idle this many ticks (0.4 s), then retried
 const NPC_STUCK_FRACTION = 0.25;   // the window must cover at least this share of the expected distance (17.5 px/s at full speed, up from 10)
-const NPC_MOVE_ANIM_PX = 1;        // the walk animation plays only if the feet moved this far since the last tick
+// the walk animation plays only if the feet moved this far since the last tick: just under the stall floor
+// (0.875 px per 50 ms tick), so a slow slide that is not stalled still animates
+const NPC_MOVE_ANIM_PX = NPC_STUCK_FRACTION * NPC_SEAT_SPEED * NPC_TICK_S * 0.9;
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
 const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
 const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
@@ -1397,7 +1399,7 @@ export function npcWalkTick(behavior, m, target) {
     if (stalled) m.still++;
     if ((stalled && m.still >= NPC_STUCK_STALLS) || m.ticks > NPC_MOVE_MAX_TICKS) { idle(); return 'stuck'; }
     if (stalled) { m.wait = NPC_STALL_WAIT_TICKS; idle(); return 'moving'; }
-    const v = Math.min(NPC_SEAT_SPEED, d / dt);
+    const v = Math.min(NPC_SEAT_SPEED, d / Math.max(dt, gap));   // never overshoot, even across a long real gap
     sprite.body.setVelocity(dx / d * v, dy / d * v);
     const dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
     if (!moved) {
@@ -1415,7 +1417,7 @@ export function npcWalkTick(behavior, m, target) {
     return 'moving';
 }
 
-function resetWalk(m) { m.ticks = 0; m.still = 0; m.wait = 0; m.hist = []; m.pf = undefined; }
+export function resetWalk(m) { m.ticks = 0; m.still = 0; m.wait = 0; m.hist = []; m.pf = undefined; m.t = undefined; }
 
 /**
  * Whether the straight walk from `from` to the work spot `ref` is clear for a walking body:
