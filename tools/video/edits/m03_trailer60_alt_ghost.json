@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m03 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3 (2026-11-22): new cut per docs/video/edits/M03_TRAILER60_V3_PLAN.md. ALT ending: Ghost line. t17b and t20 shots are PROVISIONAL (re-take pending). Music Shadow Code 1 from 51.619 s (unchanged); no lift falls at the night turn.",
+ "status": "v3 (2026-11-22): new cut per docs/video/edits/M03_TRAILER60_V3_PLAN.md. ALT ending: Ghost line. t17b and t20 shots re-timed to the 22 Nov re-takes. Music Shadow Code 1 from 51.619 s (unchanged); no lift falls at the night turn.",
  "music": {
   "track": "CutScene/Shadow Code 1.mp3",
   "analysis": "shadow_code_1_60.json",
@@ -190,7 +190,7 @@
     }
    },
    "audio": {
-    "gain_db": 3.0,
+    "gain_db": 1.9,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.12,
@@ -236,7 +236,7 @@
     }
    },
    "audio": {
-    "gain_db": 7.6,
+    "gain_db": 5.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.05,
@@ -269,8 +269,8 @@
     "type": "glitch"
    },
    "text": [
-    "Clone",
-    "Their Cards"
+    "RFID",
+    "Cloning"
    ],
    "spoiler": {
     "reviewed": true,
@@ -348,52 +348,19 @@
    }
   },
   {
-   "id": "rfid_reader",
-   "type": "gameplay",
-   "duration": 0.6,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t20_rfid_emulate.trimmed.mkv",
-    "in": 3.8,
-    "out": 4.4
-   },
-   "note": "PROVISIONAL: re-take pending. reader: choose card",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.7
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "reader: choose card; PROVISIONAL: re-take pending"
-   }
-  },
-  {
    "id": "rfid_emulate",
    "type": "gameplay",
-   "duration": 0.9,
+   "duration": 0.7,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t20_rfid_emulate.trimmed.mkv",
-    "in": 4.5,
-    "out": 5.4
+    "in": 3.9,
+    "out": 4.6
    },
-   "note": "PROVISIONAL: re-take pending. Emulating...; info block blurred",
+   "note": "reader: Emulate the saved card (UID blurred in the take)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -410,7 +377,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Emulating...; info block blurred; PROVISIONAL: re-take pending"
+    "note": "reader: Emulate the saved card (UID blurred in the take)"
    }
   },
   {
@@ -423,10 +390,10 @@
    },
    "source": {
     "file": "t20_rfid_emulate.trimmed.mkv",
-    "in": 5.4,
-    "out": 6.0
+    "in": 5.9,
+    "out": 6.5
    },
-   "note": "PROVISIONAL: re-take pending. Access Granted",
+   "note": "reader: green tick, access granted",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -443,28 +410,28 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Access Granted; PROVISIONAL: re-take pending"
+    "note": "reader: green tick, access granted"
    }
   },
   {
    "id": "rfid_door",
    "type": "gameplay",
-   "duration": 0.7,
+   "duration": 1.5,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t20_rfid_emulate.trimmed.mkv",
-    "in": 7.8,
-    "out": 8.5
+    "in": 8.0,
+    "out": 9.5
    },
-   "note": "PROVISIONAL: re-take pending. door open onto the lit server room (walk-through not yet in the take)",
+   "note": "door opens, player steps through into the server room",
    "framing": {
     "16:9": {
-     "cx": 0.6,
-     "cy": 0.55,
-     "zoom": 1.5
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.4
     }
    },
    "audio": {
@@ -476,7 +443,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "door open onto the lit server room (walk-through not yet in the take); PROVISIONAL: re-take pending"
+    "note": "door opens, player steps through into the server room"
    }
   },
   {
@@ -623,7 +590,7 @@
     }
    },
    "audio": {
-    "gain_db": 2.3,
+    "gain_db": 2.7,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.1,
@@ -671,21 +638,21 @@
   {
    "id": "t17b_map",
    "type": "gameplay",
-   "duration": 0.7333,
+   "duration": 0.7,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t17b_guard.trimmed.mkv",
-    "in": 86.5,
-    "out": 87.2333
+    "in": 86.0,
+    "out": 86.7
    },
-   "note": "PROVISIONAL: re-take pending. player at the door, Terry's torch and cone",
+   "note": "dark hall, bright torch pool, player at the door (take 85-88)",
    "framing": {
     "16:9": {
-     "cx": 0.64,
-     "cy": 0.63,
+     "cx": 0.55,
+     "cy": 0.6,
      "zoom": 1.8
     }
    },
@@ -698,7 +665,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "player at the door, Terry's torch and cone; PROVISIONAL: re-take pending"
+    "note": "dark hall, bright torch pool, player at the door (take 85-88)"
    }
   },
   {
@@ -737,17 +704,17 @@
   {
    "id": "t17b_terry",
    "type": "gameplay",
-   "duration": 3.2,
+   "duration": 3.0,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t17b_guard.trimmed.mkv",
-    "in": 95.2,
-    "out": 98.4
+    "in": 95.18,
+    "out": 98.18
    },
-   "note": "PROVISIONAL: re-take pending. PROVISIONAL: re-take pending. Terry 'Picks. Right. We're done talking.' voice 95.25-98.28",
+   "note": "Terry 'Picks. Right. We're done talking.' voice 94.88-97.92 (J-cut 0.3)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -756,10 +723,10 @@
     }
    },
    "audio": {
-    "gain_db": 1.5,
+    "gain_db": 3.7,
     "dialogue": true,
     "duck_music": true,
-    "pre": 0.1,
+    "pre": 0.3,
     "post": 0
    },
    "spoiler": {
@@ -768,36 +735,36 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Terry portrait, his line"
+    "note": "Terry's line over the chat"
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Terry Mott",
      "text": "Picks. Right. We're done talking.",
-     "start": 0.05,
-     "end": 3.08
+     "start": -0.3,
+     "end": 2.74
     }
    ]
   },
   {
    "id": "t17b_chase",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 1.7333,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t17b_guard.trimmed.mkv",
-    "in": 101.9,
-    "out": 103.4
+    "in": 100.9,
+    "out": 102.6333
    },
-   "note": "PROVISIONAL: re-take pending. Terry gives chase, damage hit",
+   "note": "Terry closes in on the player (take 101-102.5)",
    "framing": {
     "16:9": {
-     "cx": 0.32,
-     "cy": 0.63,
+     "cx": 0.47,
+     "cy": 0.55,
      "zoom": 1.9
     }
    },
@@ -810,7 +777,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Terry gives chase, damage hit; PROVISIONAL: re-take pending"
+    "note": "Terry closes in on the player (take 101-102.5)"
    }
   },
   {
@@ -1167,7 +1134,7 @@
     }
    },
    "audio": {
-    "gain_db": 6.1,
+    "gain_db": 7.3,
     "dialogue": true,
     "duck_music": true,
     "pre": 0,
