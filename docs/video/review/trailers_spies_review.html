@@ -66,7 +66,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
     <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
     <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
-    <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
+    <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
   </nav>
 
   <main id="cut"></main>
@@ -167,25 +167,27 @@ const CUTS = {
       {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
     ]
   },
-  m01: {
-    doc: "feedback/m01_trailer_v9",
-    title: "m01 First Contact · 60 s trailer · round v9",
-    video: "/_blob/3021ff150f46d501657f75bf4378eb0a", poster: "/_blob/53b8b9ee10fc798ca73d454f9bcc1d17",
-    stats: ["60.000 s", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.52 dB", "16:9 only"],
+  m01v10: {
+    doc: "feedback/m01_trailer_v10",
+    title: "m01 First Contact · 60 s trailer · round v10",
+    video: "/_blob/9b69be9e6b7ee1417429942fedbc2fdc", poster: "/_blob/53b8b9ee10fc798ca73d454f9bcc1d17",
+    stats: ["60.000 s", "1920×1080 30 fps", "−14.1 LUFS", "true peak −1.4 dB", "16:9 only"],
     changed: [
-      "Same cut as the shipped v8.5, with every gameplay shot re-recorded on today's build and a different noir spy in each map shot.",
-      "Voiced lines re-timed to today's clips (each 0.03 to 0.13 s shorter).",
-      "HaX's first call now rings in the main office; the takes close the ringer so its banner stays out of the shots.",
-      "Lights-on beat moved to the storage closet: the main office now starts lit because office-life staff work there.",
-      "Derek's wide shot is cropped to hide his name bar; the Hydra console clip is cropped to remove the Kali login post-it."
+      "Derek now ends on the line you asked for, whole: \"Sixty deaths to save tens of thousands per year. That's not murder.\" on the wide shot, then a hard cut to the close-up on \"That's optimisation.\" (as in the old trailer). New take, same build; the audio was already cached, so no TTS cost.",
+      "His line starts 2.6 s early under the minigame crescendo, as before. The wide shot stays cropped so his name bar is out.",
+      "Everything else is v9 (today's build, a different spy in each map shot). v9's questions are carried over below, since v9 had no answers yet."
     ],
     standin: ["Real hacking console clips are the same as v8.5. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
-    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,070 --> 00:00:47,800\nDerek Lawson: Entropy is inevitable. Trust is a lie.\n\n6\n00:00:47,800 --> 00:00:52,000\nDerek Lawson: Security through obscurity fails.",
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,930 --> 00:00:49,290\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,023 --> 00:00:51,683\nDerek Lawson: That's optimisation.",
     questions: [
+      {k:"derek", t:"Derek's ending: the whole \"optimisation\" line, wide then close-up", o:[["keep","Keep","As in this cut",1],["cut","Cut on \"That's not murder\" too","Close-up earlier, for both short sentences"]]},
+      {k:"derekvol", t:"\"That's optimisation\" is delivered softer than the rest of his line; raised in the mix, it now matches HaX and Sarah but sits below the first half", o:[["ok","Fine by ear","",1],["louder","Louder","I'll duck the music under it instead"]]},
+      {k:"cards", t:"m01 still uses the generic cards \"Uncover the Mystery\" and \"Choices with Consequences\", which the new card rule retires", o:[["keep","Keep them on m01","It shipped with them",1],["new","Rewrite in m01's own words","For example a card naming its mechanic; I'll propose wording"]]},
+      {k:"cyberchef", t:"The crescendo's CyberChef flash (about 45.0 s) is mostly white page: the \"no empty screens\" rule", o:[["keep","Fine at that speed","It is a quarter of a second",1],["swap","Swap it for a fuller frame","Another minigame or CyberChef with output"]]},
       {k:"lights", t:"Lights-on beat now in the storage closet (the main office starts lit since office life)", o:[["keep","Keep the closet","Same beat, a smaller room",1],["office","Make the main office start dark","Needs a scenario change, then a re-record"],["drop","Drop the lights beat","Give its time to another shot"]]},
       {k:"toast", t:"Sarah's shot keeps a small green \"Influence\" toast for about half a second", o:[["keep","Keep","Hard to notice at speed",1],["trim","Trim it out","The shot then runs 3.5 s and the grid shifts"]]},
       {k:"avatars", t:"Avatar mix: a different spy in each map shot", o:[["keep","Keep the rotation","Shows the cast of starters",1],["one","One spy throughout","Reads as one agent's story"]]},
-      {k:"pace", t:"Pace: anything too fast or too slow after the re-record?", o:null},
+      {k:"pace", t:"Pace: anything too fast or too slow?", o:null},
       {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
     ]
   }
