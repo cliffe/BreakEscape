@@ -167,7 +167,11 @@ export function buildCaTitleDom(doc, container, config, artUrl) {
         if (accent) c.style.setProperty('--ca-accent', accent);
         text.appendChild(c);
     }
-    text.appendChild(el('div', 'ca-ts-tag', 'Play the attack · Learn to stop it'));
+    const tag = el('div', 'ca-ts-tag');
+    tag.appendChild(el('span', 'ca-ts-tag-a', 'Play the attack'));
+    tag.appendChild(el('span', 'ca-ts-tag-dot', ' \u00b7 '));
+    tag.appendChild(el('span', 'ca-ts-tag-b', 'Learn to stop it'));
+    text.appendChild(tag);
     root.appendChild(text);
 
     const bar = el('div', 'ca-ts-bar');

@@ -148,6 +148,8 @@
     .ca-ts-title { font-size: 32px; }
     .ca-ts-company { font-size: 32px; }
     .ca-ts-tag { font-size: 24px; }
+    .ca-ts-tag span { display: block; }
+    .ca-ts-tag-dot { display: none !important; }
     .ca-ts-bar { bottom: 72px; }
 }
 @media (max-height: 520px) {
