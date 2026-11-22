@@ -1150,19 +1150,21 @@ class CaRegateMinors(unittest.TestCase):
         self.assertEqual(t['status'], 'locked')
         self.assertIn('screen', t['title'])
         self.assertIn('board', t['title'])
-        kit = ok.load_kit('merrin_sallow')['setPieces']['ca14_team_photo']['staff']['lorna_easton']['eventMappings']
+        staff = ok.load_kit('merrin_sallow')['setPieces']['ca14_team_photo']['staff']
         by = {}
-        for m in kit:
-            for k in ('unlockTask', 'completeTask', 'skipTask'):
-                if m.get(k) == 'look_at_team_photo':
-                    by[k] = m
-        self.assertEqual(set(by), {'unlockTask', 'completeTask', 'skipTask'})
+        for npc, who in (('lorna_easton', 'lorna'), ('delphine_arvanitis', 'delphine')):
+            for m in staff[npc]['eventMappings']:
+                for k in ('unlockTask', 'completeTask', 'skipTask'):
+                    if m.get(k) == 'look_at_team_photo':
+                        by[k] = m
+                        by[k + '_npc'] = who
+        self.assertEqual({k for k in by if not k.endswith('_npc')}, {'unlockTask', 'completeTask', 'skipTask'})
         self.assertEqual(by['unlockTask']['eventPattern'], 'conversation_closed:kit_lorna_easton')
         self.assertEqual(by['unlockTask']['setGlobal'], {'kit_ca14_closed_unseen': True})
-        # the completion and the skip fire only on the unseen-close path, and sit after the original mappings
+        # completion and skip fire only on the unseen-close path, and are appended (no index shift)
         self.assertIn('kit_ca14_closed_unseen === true', by['completeTask']['condition'])
         self.assertIn('kit_ca14_closed_unseen === true', by['skipTask']['condition'])
-        self.assertGreater(kit.index(by['completeTask']), kit.index(by['unlockTask']))
+        self.assertEqual(by['completeTask_npc'], 'delphine')
         # the shell carries the same mappings (the splice is in step with the kit data)
         text = json.dumps(sh)
         for k in ('unlockTask', 'completeTask', 'skipTask'):
