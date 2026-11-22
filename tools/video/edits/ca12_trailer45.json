@@ -81,7 +81,8 @@
    "caption": {
     "9:16": true,
     "1:1": true
-   }
+   },
+   "dialogue": true
   },
   {
    "preset": "ca-open",
@@ -263,7 +264,8 @@
      "h": 26,
      "rows": 1
     }
-   ]
+   ],
+   "dialogue": true
   },
   {
    "id": "lorna",
@@ -322,7 +324,8 @@
    "caption": {
     "9:16": true,
     "1:1": true
-   }
+   },
+   "dialogue": true
   },
   {
    "id": "flip",
@@ -333,8 +336,8 @@
    },
    "source": {
     "file": "t07_flip.trimmed.mkv",
-    "in": 21.3,
-    "out": 23.3
+    "in": 21.9,
+    "out": 23.9
    },
    "audio": {
     "gain_db": -6
@@ -472,7 +475,8 @@
    "caption": {
     "9:16": true,
     "1:1": true
-   }
+   },
+   "dialogue": true
   },
   {
    "id": "spot",
@@ -556,7 +560,8 @@
    "caption": {
     "9:16": true,
     "1:1": true
-   }
+   },
+   "dialogue": true
   },
   {
    "preset": "ca-close",
