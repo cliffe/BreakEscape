@@ -46,8 +46,8 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
   const padX = Math.round(size * 0.5), padY = Math.round(size * 0.22);
   return (
     <div style={{ position: 'absolute', left: 0, right: 0, ...(top != null ? { top } : { bottom }), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-      <div style={{ maxWidth: Math.round(w * (portrait ? 0.9 : w === h ? 0.9 : 0.74)), boxSizing: 'border-box', padding: `${padY}px ${padX}px`, background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, fontFamily: VT_FONT, fontSize: size, lineHeight: 1, color: CA.ink, textAlign: 'center', ...crisp }}>
-        {cue.text}
+      <div style={{ maxWidth: Math.round(w * (portrait ? 0.9 : w === h ? 0.9 : 0.74)), boxSizing: 'border-box', padding: `${padY}px ${padX}px`, background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, fontFamily: VT_FONT, fontSize: size, lineHeight: 1, color: CA.ink, textAlign: 'center', whiteSpace: cue.caption ? 'pre-line' : undefined, ...crisp }}>
+        {cue.caption ?? cue.text /* cue.caption: burned text with chosen line breaks (\n) where the spoken text would wrap badly */}
       </div>
     </div>
   );
