@@ -11,3 +11,10 @@ Earlier rounds (v1 to v8.5) are logged in `docs/video/TRIAL_LOG.md`. Newest at t
 - Render (16:9): `$HOME/video-takes-local/m01/renders/m01_trailer60_v9_16x9.mp4` (+ `.srt` 6 cues, `.contact.png`). 60.000 s, -14.00 LUFS, true peak -1.52 dBTP. Contact sheet checked shot by shot, plus 0.1 s strips around the lights beat and the Hydra frame (post-it gone, password still mosaicked). Not watched in full.
 - Review page: https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (m02 v2 and m01 v9 tabs; feedback docs `feedback/m02_trailer_v2`, `feedback/m01_trailer_v9`).
 - Open for the user: NPC shot 3 keeps the green "Influence: Sarah O'Brien" toast for about 0.5 s (a toast-free window is only 3.5 s); Derek wide shows no name subtitle because of the crop (the .srt has it); the cr_cyberchef shot shows the worked-example text; avatar mix. 9:16 and 1:1 not rendered this round.
+
+## v10 (2026-11-22)
+- User: m01 should end on Derek's line from the original trailer, the whole "That's not murder, that's optimisation" line. Ink `m01_derek_confrontation.ink:234` (evil_monologue_part3): "Sixty deaths to save tens of thousands per year. That's not murder. That's optimisation." Cached (tts-test 200, no generation).
+- New take t09c_derek_optimisation (no BE_SPRITE; portrait shot): line 43.09-52.16, gap before "That's optimisation" 49.45-50.19, choice menu at 52.2. Commit edbbd26bc.
+- Edit: derek_wide t09c 45.66-50.0 (audio pre 2.57 under the crescendo, crop cx .5 cy .4 zoom 1.3), hard cut to derek_close 50.0-52.16 on "That's optimisation". Gains wide +1.5, close +5.5 (the soft last phrase moved only 1.9 dB: dialogue bus compression). "Sixty deaths" is a casualty figure, kept on the user's word.
+- Render `~/video-takes-local/m01/renders/m01_trailer60_v10_16x9.mp4`: 60.000 s, -14.1 LUFS, TP -1.4. Cue peaks: HaX -13.0, Kevin -11.5, Maya -6.1, Sarah -13.8, Derek -10.7 / -13.8 (v9's spread, approved then).
+- Page tab "m01 · v10" replaces v9 (no v9 answers), doc `feedback/m01_trailer_v10`, asset 9b69be9e6b7ee1417429942fedbc2fdc. Asks: Derek cut, his last phrase's level, retiring m01's generic cards, the white CyberChef flash at 45 s, plus v9's open questions.
