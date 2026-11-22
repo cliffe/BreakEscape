@@ -1,0 +1,13 @@
+{
+  "key": "fb042f57efc23300dfeb94d8be967351",
+  "npc": "kit_lorna_easton",
+  "text": "Reception's been non-stop.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:46Z"
+}

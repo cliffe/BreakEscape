@@ -1,0 +1,13 @@
+{
+  "key": "9595ae1393c32b6797b3a2b22b832f56",
+  "npc": "kit_graham_whitfield",
+  "text": "Year-end's creeping up.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:14Z"
+}

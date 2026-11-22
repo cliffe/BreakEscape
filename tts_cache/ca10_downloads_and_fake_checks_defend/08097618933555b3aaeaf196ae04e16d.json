@@ -1,0 +1,13 @@
+{
+  "key": "08097618933555b3aaeaf196ae04e16d",
+  "npc": "kit_darren_price",
+  "text": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:06Z"
+}

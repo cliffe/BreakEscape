@@ -1,0 +1,13 @@
+{
+  "key": "ffb3868cb7db290bb18ee8a34cfd4a84",
+  "npc": "kit_chidi_okeke",
+  "text": "Fleet's all out today.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T14:59:06Z"
+}

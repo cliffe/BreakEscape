@@ -1,0 +1,13 @@
+{
+  "key": "ffe1fcc75e79b9fc2b2a9b8aea9a60c4",
+  "npc": "kit_graham_whitfield",
+  "text": "Busy inbox today.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:01:25Z"
+}

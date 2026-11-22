@@ -1,0 +1,13 @@
+{
+  "key": "3cf980fcb6ae6503c206be4c76e3f7f1",
+  "npc": "fatima_begum",
+  "text": "Who's on the Shipley run?",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T14:58:59Z"
+}
