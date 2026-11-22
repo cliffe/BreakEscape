@@ -108,3 +108,23 @@ test('ca11: teamLine has a comma after "alone"; only see/correct/delete are call
     assert.ok(!/a complaint about how it was used, is a legal right/.test(t), n);
   }
 });
+
+test('ca11: the choice-2 verdict agrees with the inbox breach and the debrief, for both picks', () => {
+  const t = erb('ca11_misdirected_data');
+  const safe = t.match(/"check_then_send": "([^"]*)"/)[1];
+  const unsafe = t.match(/"send_wrong_sam": "([^"]*)"/)[1];
+  const panel = t.match(/"conceptPanel": \{[^}]*?"text": "([^"]*)"/)[1];
+  // Safe pick: the learner's sheet stayed in; the inbox sheet is named as someone else's send.
+  assert.match(safe, /your sheet stayed inside/);
+  assert.match(safe, /different send, by someone else/);
+  // Unsafe pick: no "three days unnoticed" claim, since the inbox has Sam writing in at once.
+  assert.ok(!/three days/.test(unsafe), 'unsafe line still says three days');
+  assert.match(unsafe, /today's inbox/);
+  // Debrief does not say details never leave, against the inbox breach.
+  assert.ok(!/never leave the building/.test(panel), 'debrief still says details never leave');
+  assert.match(panel, /slips out anyway/);
+  // The inbox item and Yusuf still treat the sheet as already sent outside.
+  assert.match(t, /"id": "e11_wrong_sam_breach"/);
+  const ink = readFileSync(join(root, 'scenarios/_office_kit/ink/yusuf_demir_ambient.ink'), 'utf8');
+  assert.match(ink, /had already gone outside Carrholme/);
+});
