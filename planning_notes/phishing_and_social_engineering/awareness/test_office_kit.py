@@ -1135,6 +1135,76 @@ class SetPieceHostBarksAreGuarded(unittest.TestCase):
             self.check(json.loads(text), shell, n)
 
 
+class CaRegateMinors(unittest.TestCase):
+    """Persona re-gate minors (2026-11-22): non-spoken cues and debrief lines, pinned."""
+
+    @staticmethod
+    def shell(name):
+        with open(os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')) as f:
+            return json.loads(f.read())
+
+    def test_ca14_look_first_unlocks_a_task_toast_pointing_at_the_pc_and_board(self):
+        sh = self.shell('ca14_social_media')
+        tasks = [t for a in sh['objectives'] for t in a['tasks']]
+        t = next(t for t in tasks if t['taskId'] == 'look_at_team_photo')
+        self.assertEqual(t['status'], 'locked')
+        # F1 (scenario_ending_bypass_test): a skipped task must not sit in a missionConclusion aim
+        aim = next(a for a in sh['objectives'] if t in a['tasks'])
+        self.assertFalse(aim.get('missionConclusion'))
+        self.assertEqual(aim['status'], 'locked')
+        self.assertTrue(t.get('optional'))
+        self.assertIn('screen', t['title'])
+        self.assertIn('board', t['title'])
+        staff = ok.load_kit('merrin_sallow')['setPieces']['ca14_team_photo']['staff']
+        by = {}
+        for npc, who in (('lorna_easton', 'lorna'), ('delphine_arvanitis', 'delphine')):
+            for m in staff[npc]['eventMappings']:
+                for k in ('unlockTask', 'completeTask', 'skipTask'):
+                    if m.get(k) == 'look_at_team_photo':
+                        by[k] = m
+                        by[k + '_npc'] = who
+        self.assertEqual({k for k in by if not k.endswith('_npc')}, {'unlockTask', 'completeTask', 'skipTask'})
+        self.assertEqual(by['unlockTask']['eventPattern'], 'conversation_closed:kit_lorna_easton')
+        self.assertEqual(by['unlockTask']['setGlobal'], {'kit_ca14_closed_unseen': True})
+        # completion and skip fire only on the unseen-close path, and are appended (no index shift)
+        self.assertIn('kit_ca14_closed_unseen === true', by['completeTask']['condition'])
+        self.assertIn('kit_ca14_closed_unseen === true', by['skipTask']['condition'])
+        self.assertEqual(by['completeTask_npc'], 'delphine')
+        # the shell carries the same mappings (the splice is in step with the kit data)
+        text = json.dumps(sh)
+        for k in ('unlockTask', 'completeTask', 'skipTask'):
+            self.assertIn('"%s": "look_at_team_photo"' % k, text)
+
+    def test_ca05_debrief_has_a_panel_for_each_phone_prompt_outcome(self):
+        # live-proved 2026-11-22: approve and stop each show their own panel on reopening the debrief
+        panels = self.shell('ca05_signin_pages')['social']['awarenessEpisode']['strings']['conceptPanel']
+        for choice in ('stop', 'approve', 'silent'):
+            cond = "globalVars.kit_ca05_prompt_choice === '%s'" % choice
+            self.assertEqual(len([p for p in panels if p.get('condition') == cond and p.get('text')]), 1, choice)
+
+    def test_ca18_words_path_states_the_share_nothing_rule_in_the_pc_text_and_debrief(self):
+        sh = self.shell('ca18_credential_attacks_at_scale')
+        rule = 'shares nothing with the old one'
+        panels = sh['social']['awarenessEpisode']['strings']['conceptPanel']
+        words = [p for p in panels if p.get('condition') == "globalVars.kit_ca18_reset_choice === 'words'"]
+        self.assertEqual(len(words), 1)
+        self.assertIn(rule, words[0]['text'])
+        # the save/silent outcome keeps its own panel
+        self.assertTrue(any("'save'" in p.get('condition', '') and "'silent'" in p.get('condition', '') for p in panels))
+        piece = ok.load_kit('merrin_sallow')['setPieces']['ca18_reset_password']
+        pc = next(o for o in piece['objects'] if o['id'] == 'kit_ca18_pc')
+        v = next(v for v in pc['requiresItemHintVariants'] if "'words'" in v['condition'])
+        self.assertIn('nothing carried over from her old password', v['value'])
+        shell_pc = next(o for o in json.dumps(sh) and self._objects(sh) if o.get('id') == 'kit_ca18_pc')
+        self.assertIn(v['value'], [x['value'] for x in shell_pc['requiresItemHintVariants']])
+
+    @staticmethod
+    def _objects(sh):
+        for room in sh['rooms'].values():
+            for o in room.get('objects', []):
+                yield o
+
+
 class StepAwayDefaults(unittest.TestCase):
     """The shared step-away mechanism: 45 s reply window (overridable), ask cue, perceivable gate."""
 

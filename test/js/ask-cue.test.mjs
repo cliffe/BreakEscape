@@ -29,7 +29,7 @@ class TTSManager {}
 ` + rd('systems/npc-barks.js').replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
 
 globalThis.window = { gameState: { globalVariables: {} } };
-const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
+const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER, markerPosition, headRowsFor } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
 const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
@@ -286,6 +286,27 @@ test('scene end: removing the colleague cancels a held ask, so nothing fires lat
     } finally { t.restore(); }
 });
 
+test('marker: 18x24 box, 2 px border, "!" bars inside the fill, drawn from rectangles in whole pixels', () => {
+    assert.equal(MARKER.w, 18);
+    assert.equal(MARKER.h, 24);
+    assert.equal(MARKER.border, 2);
+    const rects = [];
+    const g = { setDepth() { return g; }, setPosition() { return g; }, setVisible() { return g; }, destroy() {}, fillStyle() { return g; },
+        fillRect(...a) { rects.push(a); return g; } };
+    const sprite = { x: 40, y: 60, depth: 0, displayHeight: 48, active: true, scene: { add: { graphics: () => g },
+        events: { on() {}, off() {} }, time: { now: 0 } } };
+    Object.assign(window, { npcManager: { getNPC: () => ({ displayName: 'D' }) }, npcBehaviorManager: { getBehavior: () => ({ sprite }) },
+        showNotification() {}, gameState: { globalVariables: {} }, eventDispatcher: { on() {}, off() {} } });
+    const realSet = globalThis.setTimeout; globalThis.setTimeout = () => 0;
+    try { new AskCue().fire('n'); } finally { globalThis.setTimeout = realSet; }
+    assert.deepEqual(rects[0], [0, 0, 18, 24], 'border box');
+    assert.deepEqual(rects[1], [2, 2, 14, 20], 'fill inside the 2 px border');
+    assert.equal(rects.length, 2 + MARKER.bars.length);
+    for (const [x, y, w, h] of MARKER.bars) {
+        assert.ok(Number.isInteger(x + y + w + h) && x >= 2 && y >= 2 && x + w <= 16 && y + h <= 22, 'bar inside the fill');
+    }
+});
+
 test('marker: lasts the given reply window, stays through an unanswered conversation, goes when the choice global is answered', () => {
     const handlers = new Map(); const bus = new Map(); const timeouts = [];
     const realSet = globalThis.setTimeout; globalThis.setTimeout = (cb, ms) => { const t = { cb, ms }; timeouts.push(t); return t; };
@@ -408,4 +429,31 @@ test('backstop: an ask held for 100+ s after `out` still gets its whole window a
         assert.equal(at(never.log, choice, tail.setGlobal[choice]), undefined);
     }
     assert.equal(n, 11);
+});
+
+test('marker hangs just above the top of the asker\'s frame, not half a frame higher', () => {
+    // 80 px frame, origin 0.5, centre y 185: the frame top is 145
+    const sprite = { x: 400, y: 185, displayHeight: 80, originY: 0.5 };
+    const p = markerPosition(sprite);
+    assert.equal(p.y + MARKER.h, 145 - 2, 'bottom edge 2 px above the frame top');
+    assert.equal(p.x, 400 - MARKER.w / 2, 'centred on the asker');
+    assert.equal(markerPosition(sprite, 2).y, p.y + 2, 'the bob moves it by its own amount only');
+    // origin at the feet (originY 1): the frame top is y - displayHeight
+    assert.equal(markerPosition({ x: 0, y: 200, displayHeight: 80, originY: 1 }).y + MARKER.h, 120 - 2);
+    // headInset moves it down onto a figure that sits lower in its frame (seated)
+    assert.equal(markerPosition(sprite, 0, { headInset: 16 }).y, p.y + 16);
+    // the live path measures the inset and passes it
+    assert.match(rd('systems/ask-cue.js'), /markerPosition\(sprite, bob, \{ headInset:/);
+});
+
+test('headRowsFor counts the empty rows above the figure, once per frame, and falls back to 0', () => {
+    let calls = 0;
+    const alpha = (x, y) => { calls++; return (y >= 16 && x === 40) ? 255 : 0; };
+    const sprite = { texture: { key: 'npc_a' }, frame: { name: 'sit_south_frame_000', width: 80, height: 80 } };
+    assert.equal(headRowsFor(sprite, alpha), 16);
+    const first = calls;
+    assert.equal(headRowsFor(sprite, alpha), 16, 'cached');
+    assert.equal(calls, first, 'no second scan');
+    assert.equal(headRowsFor({ texture: { key: 'npc_b' }, frame: { name: 'f', width: 4, height: 4 } }, () => 0), 0, 'empty frame keeps the frame top');
+    assert.equal(headRowsFor(sprite, null), 0, 'no texture manager: frame top');
 });
