@@ -1961,10 +1961,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * Close or Esc partway through a round, with at least one answer given, asks first (N-19):
      * the round is not kept, so reopening starts it again. "Keep going" (or Esc) returns to the
      * round; "Close anyway" (or Close pressed again) leaves as before. A round with no answers
-     * yet, and the Result step, close at once.
+     * yet, and the Result step, close at once. A launcher that saves each verdict
+     * (params.onProgress, the episode runner) resumes the round, so nothing is lost and
+     * there is nothing to ask: X closes at once, matching the brief's "saved as you go".
      */
     requestClose() {
-        if (this.closeMode === 'abort' && !this.stored && this.answers.size > 0) {
+        if (this.closeMode === 'abort' && !this.stored && this.answers.size > 0
+            && typeof this.params?.onProgress !== 'function') {
             if (this._closeAsk) { this._dropCloseAsk(); this.abort(); return; }
             this._askClose();
             return;
