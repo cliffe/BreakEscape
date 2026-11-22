@@ -294,7 +294,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet', 'unlockTask', 'completeTask', 'skipTask'];
 // Bark gates. The ask bark (a targetKnot bark on there, and its game_loaded re-arm copy) does not read kit_quiet in a
 // shell with the done backstop: reopening and closing the debrief sets kit_quiet false, which would drop the ask.
 // It reads !done and an empty choice instead. A follow-through bark on the answer reads !done and may keep or drop
@@ -1347,7 +1347,8 @@ test('wave 4: no || in any kit mapping, timer or variant of the four shells; eve
     for (const { m, who } of w4Chain(sc, w)) {
       assert.ok(!String(m.condition || '').includes('||'), `${name} ${who}: no ||`);
       assert.ok(m.onceOnly === true, `${name} ${who}: onceOnly on ${m.eventPattern}`);
-      assert.ok(globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name} ${who}: ${m.eventPattern} reads the out global`);
+      // a task complete/skip keys on kit_<ep>_closed_unseen, which only the beat itself sets (ca14 Look first)
+      if (!m.completeTask && !m.skipTask) assert.ok(globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name} ${who}: ${m.eventPattern} reads the out global`);
       if (/^npc_arrived/.test(m.eventPattern)) assert.ok(/data\.owner !== 'needs'/.test(m.condition), `${name} ${who}: arrival filters needs walks`);
       if (m.bark) assert.ok(barkGateOk(m, sc), `${name} ${who}: bark gate on ${m.eventPattern}`);
       if (m.patrolOverride) assert.ok(m.patrolOverride.speed === 90 && Number.isFinite(m.patrolOverride.targetTile.x), `${name} ${who}: walk speed 90`);
