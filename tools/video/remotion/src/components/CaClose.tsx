@@ -9,8 +9,8 @@ const GRID = (u: number) => `repeating-linear-gradient(0deg, transparent 0, tran
  * ca-close: two big halves (attacker #8c3b2e, defender #2f5f8a, each half the frame, with their tabs) slide in from the
  * edges and meet at the seam (frames 0-24, a flash on the seam when they touch), hold a beat, then shrink in stepped moves
  * into the two overlapped squares of the Cyber Aware mark (30-52) on the ca-surface frame. Then CYBER AWARE, the episode
- * name, the small Hacktivity line at the foot (from 56) and "15 minutes, in your browser · No installs" (from 64).
- * shot.ca = { name, tagline, hacktivity }. Stacked (attacker above) on 9:16 and 1:1.
+ * name, the small Hacktivity line at the foot (from 56) and the tagline (default "Play the attack · Learn to stop it"; the owner dropped "15 minutes, in your browser · No installs", 2026-11-22) (from 64).
+ * shot.ca = { name, tagline, hacktivity, cta? } (cta replaces the Hacktivity line with a plate, e.g. "Learn on Hacktivity.co.uk"). Stacked (attacker above) on 9:16 and 1:1.
  */
 export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string; frame: number; frames: number }> = ({ shot, w, h, aspect, frame, frames }) => {
   const cfg = shot.ca || {}; const lay = cfg.layout?.[aspect] || {};
@@ -22,7 +22,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const off = Math.round(mS * 0.55), gw = mS + off;
   const textFont = Math.max(16, Math.round((w * (stacked ? 0.05 : 0.027)) / 8) * 8);
   const nameSize = Math.max(32, Math.round((Math.min(w, h) * 0.075) / 16) * 16);
-  const tagline = cfg.tagline ?? '15 minutes, in your browser · No installs';
+  const tagline = cfg.tagline ?? 'Play the attack · Learn to stop it';
   const tagLines = stacked ? tagline.split(' · ') : [tagline]; // stacked: one clause per line so it can be larger on a phone
   const tagSize = fitSize(tagLines, VT_FONT, stacked ? [96, 80, 64, 48] : [96, 80, 64, 48], w * (stacked ? 0.92 : 0.8)); // large enough to read on a phone and on a 16:9 course page
   const cwWord = textWidth('CYBER AWARE', PIXEL_FONT, textFont);
@@ -74,7 +74,10 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
       {hackIn ? (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
           <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: CA.line, marginBottom: 6 * u }} />
-          <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: CA.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>
+          {cfg.cta
+            // call to action (owner r3: "end on a CTA to learn on Hacktivity.co.uk"): a seat-coloured plate in place of the plain Hacktivity line, fitted to the frame
+            ? <div style={{ background: CA.defend, border: `${2 * u}px solid ${CA.ink}`, padding: `${4 * u}px ${10 * u}px`, fontFamily: GNF_FONT, fontSize: fitSize([cfg.cta], GNF_FONT, stacked ? [88, 80, 72, 64, 56, 48] : [hackSize, Math.round(hackSize * 0.8 / 8) * 8, Math.round(hackSize * 0.65 / 8) * 8, 24], w * 0.8), lineHeight: 1, color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>{cfg.cta}</div>
+            : <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: CA.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>}
         </div>
       ) : null}
       <div style={{ position: 'absolute', inset: 0, border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', zIndex: 5 }} />

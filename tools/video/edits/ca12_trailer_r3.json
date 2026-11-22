@@ -4,7 +4,7 @@
  "theme": "ca",
  "title": "Cyber Aware ca12 trailer, round 3 (narrator VO, Camila opens, points over footage)",
  "fps": 30,
- "length": 47.7,
+ "length": 55.3,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -97,13 +97,57 @@
    }
   },
   {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t09_step_away.trimmed.mkv",
+    "in": 41,
+    "out": 46.6
+   },
+   "audio": {
+    "gain_db": -4
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Camila walks in through the studio door past the staff, unchallenged (the tailgate); before her C1 bubble at 47.4"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.33,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
    "id": "red_card",
    "type": "card",
    "style": "ca",
    "chapter": "attack",
    "duration": 3.5,
    "join": {
-    "type": "seam"
+    "type": "cut"
    },
    "text": [
     "You play the attacker"
@@ -281,7 +325,11 @@
       }
      }
     }
-   ]
+   ],
+   "voPos": {
+    "16:9": "top",
+    "9:16": "top"
+   }
   },
   {
    "id": "lands",
@@ -483,6 +531,9 @@
      "cy": 0.5,
      "zoom": 1
     }
+   },
+   "voPos": {
+    "16:9": "top"
    }
   },
   {
@@ -529,6 +580,9 @@
      "cy": 0.5,
      "zoom": 1
     }
+   },
+   "voPos": {
+    "16:9": "top"
    }
   },
   {
@@ -598,9 +652,16 @@
    },
    "ca": {
     "name": "Visitors and tailgating",
-    "tagline": "15 minutes, in your browser · No installs",
-    "hacktivity": "Hacktivity"
-   }
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    }
+   },
+   "duration": 5
   }
  ],
  "vo": [
@@ -611,66 +672,72 @@
    "text": "Cyber Aware is Cyber Security training you play."
   },
   {
-   "id": "v2",
+   "id": "v1b",
    "start": 8.2,
-   "end": 10.1,
+   "end": 12.4,
+   "text": "This episode: visitors and tailgating. Strangers who walk in like they belong."
+  },
+  {
+   "id": "v2",
+   "start": 13.8,
+   "end": 15.7,
    "text": "First, you play the attacker.",
    "onCard": "hide"
   },
   {
    "id": "v3",
-   "start": 10.6,
-   "end": 13.3,
+   "start": 16.2,
+   "end": 18.9,
    "text": "Dig into what the firm posts in public,"
   },
   {
    "id": "v4",
-   "start": 14,
-   "end": 17.1,
+   "start": 19.6,
+   "end": 22.7,
    "text": "build a cover story that fits what you found,"
   },
   {
    "id": "v5",
-   "start": 17.95,
-   "end": 19.65,
+   "start": 23.55,
+   "end": 25.25,
    "text": "then talk your way in."
   },
   {
    "id": "v6",
-   "start": 24.4,
-   "end": 25.9,
+   "start": 30,
+   "end": 31.5,
    "text": "Then the seats swap."
   },
   {
    "id": "v7",
-   "start": 26.6,
-   "end": 28.6,
+   "start": 32,
+   "end": 34.5,
    "text": "Now you are on the front desk.",
    "onCard": "hide"
   },
   {
    "id": "v8",
-   "start": 29.5,
-   "end": 34.1,
+   "start": 35.1,
+   "end": 39.7,
    "text": "Sort today's visitors and calls. Decide who gets in, and who gets checked."
   },
   {
    "id": "v9",
-   "start": 34.6,
-   "end": 38.4,
+   "start": 40.2,
+   "end": 44,
    "text": "Every trick you just used is one you now have to spot."
   },
   {
    "id": "v10",
-   "start": 38.9,
-   "end": 41.1,
+   "start": 44.5,
+   "end": 46.7,
    "text": "And the office around you keeps moving."
   },
   {
    "id": "v11",
-   "start": 44.9,
-   "end": 47.5,
-   "text": "Cyber Aware. Short episodes, in your browser."
+   "start": 50.05,
+   "end": 55.2,
+   "text": "Play the attack, then learn to stop it. Cyber Aware, on Hacktivity.co.uk."
   }
  ]
 }

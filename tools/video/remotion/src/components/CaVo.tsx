@@ -22,7 +22,7 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
   if (!cue || !cue.text) return null;
   const shot = tl.shots.find((s: any) => frame >= s.startFrame && frame < s.endFrame) || tl.shots[tl.shots.length - 1];
   if (!shot) return null;
-  if (shot.type === 'ca_open' || shot.type === 'ca_close') return null;
+  if (shot.type === 'ca_close') return null; // the close's own tagline is the message (ca_open shows the cue at the foot: owner r3, silent viewers need the opening line)
   const onCard = shot.type === 'card';
   if (onCard && cue.onCard === 'hide') return null;
   const u = unit(w, h), size = voSize(w, h), portrait = h > w;
@@ -40,9 +40,12 @@ export const CaVo: React.FC<{ edit: any; tl: any; frame: number; w: number; h: n
       else bottom = Math.round(h * 0.06);
     }
   }
+  // shot.voPos: "top" (or per aspect {"16:9": "top"}) lifts the plate to the top, under the seat tab, where the game UI fills the foot (defend panel buttons, call choices)
+  const vp = typeof shot.voPos === 'string' ? shot.voPos : shot.voPos?.[aspect];
+  const top = vp === 'top' ? 12 * u + Math.round(tabFont(w, h) * 1.8) + gap : null;
   const padX = Math.round(size * 0.5), padY = Math.round(size * 0.22);
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, bottom, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, ...(top != null ? { top } : { bottom }), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
       <div style={{ maxWidth: Math.round(w * (portrait ? 0.9 : w === h ? 0.9 : 0.74)), boxSizing: 'border-box', padding: `${padY}px ${padX}px`, background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, fontFamily: VT_FONT, fontSize: size, lineHeight: 1, color: CA.ink, textAlign: 'center', ...crisp }}>
         {cue.text}
       </div>

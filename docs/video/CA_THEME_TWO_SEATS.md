@@ -90,7 +90,7 @@ Parameters for the preset JSON: `title`, `company`, `stripe`, `duration`, and pe
 
 1. In on `seam`. The attacker and defender halves slide together from the edges, and they meet at the seam.
 2. Where they meet, the **Cyber Aware mark** forms: two 2 px-bordered squares, one red-brown and one blue, overlapped at a corner, with `CYBER AWARE` in Press Start 2P beside them in `ca-mark`. (A placeholder mark until the brand has one. The user may supply or approve a mark.)
-3. Under it, in VT323: the episode or course name, then "15 minutes, in your browser · No installs".
+3. Under it, in VT323: the episode or course name, then "Play the attack · Learn to stop it" (owner, 2026-11-22: no "15 minutes, in your browser · No installs").
 4. Last 1 s: a thin rule and the Hacktivity logo, small (about 18% of the width), bottom centre.
 5. The last frame holds for 0.5 s; music ends on a cadence.
 
