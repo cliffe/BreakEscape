@@ -20,19 +20,20 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
   const m = Math.round(Math.min(w, h) * 0.07);
   const inner = w - 2 * m - (stacked ? 0 : 0);
   // heading: one line while it still reads big, else two balanced lines
-  const sizes = stacked ? [112, 96, 80, 64] : [160, 144, 128, 112, 96];
+  const sizes = stacked ? [128, 112, 96, 80] : [160, 144, 128, 112, 96];
   let hLines = [heading];
-  if (textWidth(heading, GNF_FONT, sizes[Math.min(2, sizes.length - 1)]) > inner) {
+  if (textWidth(heading, GNF_FONT, stacked ? 112 : 128) > inner) { // one line only while it still reads big; else two balanced lines
     const words = heading.split(' '); let best = [heading], bd = 1e9;
     for (let i = 1; i < words.length; i++) { const a = words.slice(0, i).join(' '), b = words.slice(i).join(' '); const d = Math.abs(textWidth(a, GNF_FONT, 96) - textWidth(b, GNF_FONT, 96)); if (d < bd) { bd = d; best = [a, b]; } }
     hLines = best;
   }
   const hSize = fitSize(hLines, GNF_FONT, sizes, inner);
   // bullets wrap inside the column, so the size is chosen for two lines at most
-  const bSizes = stacked ? [64, 56, 48] : [80, 72, 64, 56];
+  const bSizes = stacked ? [72, 64, 56] : [96, 88, 80, 72];
+  const vtW = (t: string, sz: number) => t.length * sz * 0.42; // VT323 advance is 0.4 em; measured by rule so a cold canvas cannot fool the fit
   const sq = Math.round(Math.min(w, h) * 0.032 / 2) * 2;
   const colW = inner - sq - 3 * sq;
-  const bSize = bSizes.find((s) => bullets.every((b) => textWidth(b, VT_FONT, s) <= colW * 2 * 0.92)) || bSizes[bSizes.length - 1];
+  const bSize = bSizes.find((s) => bullets.every((b) => vtW(b, s) <= colW * (stacked ? 2 : 1) * 0.92)) || bSizes[bSizes.length - 1];
   const fps = 30;
   const revealAt = (i: number) => 14 + Math.round(i * 0.7 * fps * (bullets.length > 2 ? 0.8 : 1)); // bullets one after another
   const tabDrop = Math.round((1 - Math.min(1, Math.max(0, (frame - 2) / 4))) * -tf * 3);
