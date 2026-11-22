@@ -42,7 +42,7 @@ export const CaCaption: React.FC<{ shot: any; w: number; h: number; localSec: nu
   const u = unit(w, h); const portrait = h > w;
   const size = Math.round(Math.min(w, h) * 0.052);
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, top: Math.round(h * (portrait ? 0.7 : 0.8)), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, ...(w > h ? { top: Math.round(h * 0.8) } : { bottom: Math.round(h * 0.05) }), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
       <div style={{ maxWidth: Math.round(w * (portrait ? 0.88 : 0.7)), padding: `${Math.round(size * 0.35)}px ${Math.round(size * 0.6)}px`, background: 'rgba(31,41,51,0.8)', border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', fontFamily: CAPTION_FONT, fontSize: size, lineHeight: 1.25, color: '#fff', textAlign: 'center' }}>
         {line.speaker ? <span style={{ color: CA.line, marginRight: Math.round(size * 0.4) }}>{line.speaker}:</span> : null}{line.text}
       </div>
