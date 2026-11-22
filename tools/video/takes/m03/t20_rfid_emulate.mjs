@@ -49,6 +49,14 @@ export async function setup(page, bridge) {
   // 3. to the main hallway and under the server-room door
   await goRoom(page, bridge, 'main_hallway');
   await bridge.moveToNear(DOOR, { timeoutMs: 25000 });
+  // line up under the door's centre (off camera): pulse the player onto the door's x so the walk-through is one straight key-driven leg
+  const dx0 = (await bridge.getState()).nearby.find(n => n.id === DOOR).x;
+  for (let i = 0; i < 10; i++) {
+    const px = (await bridge.getState()).player.x; const d = dx0 - px;
+    if (Math.abs(d) <= 2) break;
+    await bridge.walk(d > 0 ? 'right' : 'left', Math.max(30, Math.round(Math.abs(d) / 145 * 1000)));
+    await sleep(150);
+  }
   await sleep(900);
   const s = await bridge.getState();
   console.error('SETUP end', JSON.stringify({ player: s.player, door: s.nearby.filter(n => /server_room/.test(n.id)).map(n => [n.id, n.x, n.y, n.inRange]) }));
@@ -73,10 +81,10 @@ export default async (page, bridge, mark) => {
   await sleep(600);
   const st = await bridge.getState();
   mark('door-open', { room: st.player.room, mg: st.activeMinigame });
-  // step through: straight north
+  // step through: straight north, about 2 s (aligned under the door centre in setup)
   const p = st.player;
   mark('walk-start', { player: p });
-  await keyLegs(bridge, [['up', p.y - 110]], 145, mark);
+  await keyLegs(bridge, [['up', p.y - 290]], 145, mark);
   mark('walk-end', { player: (await bridge.getState()).player });
   await sleep(1500);
 };

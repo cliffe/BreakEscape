@@ -1,10 +1,11 @@
-// t17b_guard (m03 v3): NIGHT, executive_wing_hallway. One action sequence: the map shows Terry's torch sweeping the wing with the player at the executive office door (hold 3 s),
+// t17b_guard (m03 v3): NIGHT (clone_call_done + act2_infiltration, so the torch is lit), executive_wing_hallway. One action sequence: the map shows Terry's torch sweeping the wing with the player at the executive office door (hold 3 s),
 // the player starts picking (interact on the door); the take marks whatever minigame state appears BEFORE the catch (lockpick screen? or person-chat straight away) and keeps it on screen;
 // the game then opens Terry's one-line person-chat (Narrator torch line, then Terry "Picks. Right. We're done talking." re-voiced); the full voiced line plays (NEVER click during a voiced line);
 // the chat closes, then the player runs straight away for about 3 s while Terry chases, hold 1 s while Terry turns hostile and comes for the player (the action payoff).
 // Same start as t03_lockpick WITHOUT guard_told_safetynet, so the lockpick_used_in_view mapping fires.
-// Entry state: new-game.rb m03_ghost_in_the_machine --start-room executive_wing_hallway --set briefing_played=true
-// Record: BE_SPRITE=vivian_ashby tools/video/takes/run-take.sh m03 t17b_guard "--start-room executive_wing_hallway --set briefing_played=true" "--hide-hud --zoom-step 1"
+// Entry state: new-game.rb m03_ghost_in_the_machine --start-room executive_wing_hallway --set briefing_played=true --set clone_call_done=true --set mission_phase=act2_infiltration --set guard_waved_on=true
+// guard_waved_on=true is the real global Terry sets once he has waved the player on: the scenario's challengeOnSight (player_spotted:terry_mott) skips it, so he does NOT challenge on sight; the lockpick_used_in_view mapping still fires (only skipped for guard_told_safetynet/guard_bribed/guard_attacking) and on_lockpick_detected sets guard_waved_on false itself.
+// Record (no BE_SPRITE for dry runs): tools/video/takes/run-take.sh m03 t17b_guard "--start-room executive_wing_hallway --set briefing_played=true --set clone_call_done=true --set mission_phase=act2_infiltration --set guard_waved_on=true" "--hide-hud --zoom-step 1"
 // Marks: map-hold, interact-door, minigame-seen:<name> (before the catch), chat-open, line:<text>, line-start:/line-end: (voice), terry-done, chat-closed, hostile-hold-end (terry state + distance), terry-pos:<n> samples.
 import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
 const DOOR = 'door:executive_wing_hallway->executive_office';
