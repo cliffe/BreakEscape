@@ -112,6 +112,33 @@ CA scenarios set no music in game, and every track in `public/break_escape/asset
 
 ## Not verified
 
-- S4 to S11 were not driven in the browser. Their entry states come from the scenario and the ink.
+- S4 to S11 were driven in the browser on 22 Nov and are in the table above (S3 to S11 confirmed or corrected).
 - Durations of lines in the game (with the visemes and the bar) may run 0.2 to 0.4 s past the clip length.
-- Whether the live technique chips show in the call's frame by default (`showTechniqueNames: live`) and where they sit.
+- Technique "chips": there are none. The technique name is a sentence under the meter (see the spoiler cuts above).
+
+## Browser check of S4 to S11 (22 Nov 2026, headless, game 12049 and 12050 on :3446, keyless)
+
+Screenshots in `docs/video/scout/ca12_play_shots/`. Load to a usable room took about 15 s (Resume the saved game, Skip tutorial, close the Brief). The training room is lit in day colours with no overlay (`s1_studio_day.png`). Spoiler rule held: the call, flip and triage frames saved here are only for entry-state work; the flip (S8) and the call's lower-left text are not for the trailer, see the cuts below.
+
+| # | Result | Entry state | Action that brings it up | What the frame shows | Time from game load |
+|---|---|---|---|---|---|
+| S3 | confirmed | fresh | `__test.interact('training_kiosk')` (retry up to 3 times) | brown MERRIN & SALLOW tab, six-step strip, Start | about 5 s |
+| S4 | **corrected** | kiosk, Start, then the stage button is **Open the browser** (not "Research") | click `Open the browser`; click the `Friendface` tab, then the `Catherine Merrin` link, then **Pin** on the first post | a **navy** "Browser" window (SAFETYNET dark chrome), two tabs, a cream page. Posts are pinned with a **Pin** button, and a green "Noted: Catherine Merrin, a partner, is often out at project sites..." line appears. Closing the browser (x) moves the strip to Write whether or not anything was pinned | about 10 s from the kiosk |
+| S5 | **corrected** | after S4 | button `Prepare the call` | a **navy** card, heading "Your aim: talk the front desk into buzzing you through the badge door without a badge", "Calling: Delphine Arvanitis", "What you found", three pretext lines, a **Recipient: choose...** picker (a custom list, click the span `Catherine Merrin`), then `Approach` | about 3 s |
+| S6 | **corrected** | after S5, press `Approach` | `Approach` **teleports the player to the lobby and opens the call directly** (no walk, no courier sprite is visible in the call) | a black ground (no chat background), Delphine's bust on the right, five numbered choices, the **Influence meter bottom-left** (bar, three markers, "Wary at -30 / Refuses at -50 / Reports at -70") and, once a line lands, **two lines of explanation text under the meter** | 4 s |
+| S6 lines | confirmed | in the call | `minigame.choose(/sample box for Catherine/)`, then `choose(/buzz me through/)` | "Morning. Can I help you?" (D3), then D2, then D1, all as scripted. D1 shows a green `Door unlocked: Studio` toast and the meter reading -5. No technique chips as such: the technique is a sentence under the meter | about 12 s of play |
+| S7 | confirmed | same | the toast on D1 | `Door unlocked: Studio` | at D1 |
+| S8 | **corrected** | the call ends with **Done** (the last menu item, or `minigame.close()`); reload, then the kiosk opens at the flip, strip on "4 The call" | kiosk, then `Continue` | the flip screen (heading "Now you're the one on the desk", then a replay of the call with explanation text: **spoiler, crop to the heading and strip only**). The tick to **Defend** happens **on Continue**, with a clean "Take the calls" panel and button `Open the queue` (`s8_strip_defend.png`): use that frame for the tick | about 8 s from load |
+| S9 | confirmed, with a step the scout missed | after S8, `Open the queue` | triage opens on a **navy Brief screen** with `Start`; Start shows "0 of 6 sorted" and the six visitor rows; clicking a row opens its card with four verdict buttons | list plus one card (use "Expected client" or "Unknown visitor"), before any verdict | about 10 s from the kiosk |
+| S10 | confirmed (shortcut works) | `--set` below | kiosk | brown panel "Before the debrief" with `Look up` and `Carry on`, all five steps ticked | about 5 s |
+| S11 | **confirmed** | S10, `Look up` | `Look up` (no further input) | the room beat runs on its own: Thandiwe leaves her open screen and says A1 at about 5 s (`s11_thandiwe_a1.png`), sits at about 20 s, Camila is already in the room and says C1 beside the kiosk at about 46 s (`s11_camila_c1.png`: she stands at the upper right, not at a studio door). The door and screen choices open at about 46 s and default to `silent` at about 91 s; the beat is done at about 96 s. A toast "The kiosk. Your place is saved." sits at the bottom of every frame | 46 s of game time after Look up for C1 |
+
+**Cheapest entry states** (new-game.rb, all verified to load):
+
+- S3 to S6: a plain fresh game. Reaching the call from a cold load is about 25 s: Resume, close Brief, kiosk, Start, Open the browser, close it, Prepare the call, pick Catherine Merrin, Approach. The pinned post is **not required** to progress here (the card still lists "What you found" only if pinned), so for the shot do pin it.
+- S8 and S9: the call must have been finished once (Done). There is no `--set` shortcut tested for the flip, so replay the call (about 12 s) or reuse the same run.
+- S10 and S11: `--set 'episode_e12_visitor_tailgater_state={"done":["brief","osint","write","flip","defend"]}' --set episode_e12_visitor_tailgater_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e12_visitor_tailgater_defend_percent=100`. The kiosk then opens straight on the step-away panel. (The bare `kit_defend_done=true` from the shot list is not enough; the kiosk reads the episode state.)
+
+**Spoiler cuts to add.** The call screen puts the technique and tell sentences under the meter ("+5 CALM! ..." and "ASK OK needs ..."). Crop the call frame above them (Delphine, the toast, the choices and the first lines of the meter only), or hide them. The strip of the flip screen is safe, its body is not.
+
+**Look notes for the theme.** Only the kiosk panels use the brand tab and cream (brown for Merrin & Sallow). The OSINT browser, the pretext card, the call and the triage are navy SAFETYNET-style windows. The theme's "ca-surface" cards will not match them inside a seat; frame them as footage.

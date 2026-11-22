@@ -24,7 +24,7 @@ The base is the in-game `aw-*` skin (`public/break_escape/css/awareness-skin.css
 | `ca-defend-tint` | `#e1eaf2` | defender card ground |
 | company stripe | from the episode's `brand.accent` (Merrin & Sallow `#8a5a2b`) | a 6 px stripe on the seat label, so each company is recognisable |
 
-The attack and defence colours match the feature map's `atk` and `def` tokens in spirit. Check the exact values against that artifact before the first render; this doc wins if they differ.
+Checked 22 Nov against `public/break_escape/css/awareness-skin.css`: `ca-surface`, `ca-ink`, `ca-line` and `ca-mark` match `--aw-surface`, `--aw-ink`, `--aw-line` and `--aw-accent` exactly. Note the game overrides `--aw-accent` per company from `brand.accent` (Merrin & Sallow shows brown `#8a5a2b` on the kiosk), so in-game panels are brown, not `ca-mark` green. The attack and defend colours have no game token (the skin has only `--aw-warn: #8a5a00`); they are this spec's own. The feature map artifact was not opened (not reachable from here), so its `atk` and `def` hexes remain unchecked.
 
 Both seat colours pass 4.5:1 against `ca-surface` for label text (`#8c3b2e` and `#2f5f8a` on `#f6f8f7` are about 7:1 and 6:1).
 
