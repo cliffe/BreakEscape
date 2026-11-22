@@ -2,6 +2,19 @@
 
 Draft from the m01 trial (October 2026). The later video skill builds on this. Plan and history: `M01_TRIAL_PLAN.md`, `TRIAL_LOG.md`.
 
+## Product lines
+
+Each product line has its own visual identity (title, cards, palette, bumpers, music) and **its own trailer rules** (user, 2026-11-22). The house style below and the recipes in `recipes/` were written for SAFETYNET and apply there as they stand.
+
+| Line | Identity | Trailer rules |
+|---|---|---|
+| SAFETYNET: Licence to Hack (m01 to m10) | spy noir: keyhole title, glitch cards, red hex curtain | `recipes/mission-trailer.md` |
+| Eldritch Hacker (game 2) | its own, not yet designed | to write when its trailers start |
+| Courses (lab and teaching use) | its own, not yet designed (to do later) | to write |
+| Cyber Aware courses | its own, neutral corporate skin (`aw-*` tokens) | the CA session's `recipes/course-trailer.md`, from `CA_TRAILER_BRIEF.md` |
+
+A new line starts with a theme proposal on a review page (title, a content card, the end card, music) before any cut.
+
 ## House style (all kinds)
 
 - **Fonts:** pixel fonts only. Press Start 2P for cards, captions and titles (`public/break_escape/assets/fonts/PressStart2P-Regular.woff2`); Pixelify Sans only where a second pixel face is needed.
@@ -13,15 +26,15 @@ Draft from the m01 trial (October 2026). The later video skill builds on this. P
 - **Dialogue:** use the game's own portrait view and subtitle bar. Never add a second subtitle layer on top of it. Where a crop loses the bar (9:16), add a small Press Start 2P caption from the line text instead. Strong lines get a slow push-in ending on a UI-free close-up.
 - **Sound:** live game audio (sound effects and voice) under a music bed. Game music muted during capture (`be_music_vol=0`). 5-10 ms fades at every cut; montage audio about -6 dB; dialogue at full with the music ducked 10 dB; final loudness -14 LUFS, true peak under -1 dBTP.
 - **Music:** from the game's own sets (`public/break_escape/assets/music/`). Analyse the beat grid first (`tools/video/edits/music/analyse_music.py`); card changes land on strong hits, montage cuts on beats.
-- **Spoilers:** show mechanics, hide answers. No full codes, PINs, passwords or flag values; partial keypad entry only with digits that aren't the code; naming the antagonist is fine when he is plain from the start (m01's Derek, user 2026-10-29), but pixelate any real answer on screen (passwords, codes, flags); no casualty figures; no ending or choice screens.
-- **Do not over-protect the story** (user, m03 v2, 2026-11-22: "maybe we are being too careful about spoilers, this is a mystery spy game"). A trailer sells the threat ENTROPY poses, the puzzles, the real hands-on hacking, the action and the mission's new mechanics. The antagonist's menace, a confrontation line (not its outcome), NPC faces and the stakes are all fair game. What stays off is narrow: answers (codes, PINs, passwords, flags), choice and outcome screens, the debrief, and a twist the mission itself withholds until the end. Pick each voiced line for interest first, then check it against that short list.
+- **Spoilers:** show mechanics, hide answers. No full codes, PINs, passwords or flag values; partial keypad entry only with digits that aren't the code; the antagonist may be named and shown (m01's Derek, user 2026-10-29; see the next point), but pixelate any real answer on screen (passwords, codes, flags); no casualty figures; no ending or choice screens.
+- **Do not over-protect the story** (user, m03 v2, 2026-11-22: "maybe we are being too careful about spoilers, this is a mystery spy game"). A trailer sells the threat ENTROPY poses, the puzzles, the real hands-on hacking, the action and the mission's new mechanics. The antagonist's menace, a confrontation line (not its outcome), NPC faces and the stakes are all fair game. What stays off is narrow: answers (codes, PINs, passwords, flag values), choice and outcome screens, the debrief, and any end twist the mission itself withholds. Pick each voiced line for interest first, then check it against that short list.
 
 ## By kind of video
 
 | Kind | Length | Shape | Notes |
 |---|---|---|---|
 | Mission teaser | 15-30 s | logo, title, one hook line, card, montage on the drop, antagonist line, call to action | m01 is the template (`tools/video/edits/m01_teaser.json`). One voiced line each from the handler and the antagonist at most. |
-| Mission trailer | 60-120 s | as the 1:15 reference: cards between movements ("Your Mission", "Real Hacking", "Choices with Consequences", "Uncover the Mystery", "Hold Back the Entropy"), two or three dialogue beats, longer montage | Real VM footage needs a machine with the VM; record it separately. |
+| Mission trailer | 60-120 s | cards between movements: the mission's name, `Real / Hacking`, one naming each new mechanic, and story cards in the mission's own words (`recipes/mission-trailer.md`); two or three dialogue beats, longer montage | Real VM footage needs a machine with the VM; record it separately. |
 | Whole-game trailer | 90-120 s | one beat per mission arc, recurring characters, the Entropy threat | Build after several mission teasers exist; reuse their takes. |
 | Social clip | 15-30 s | vertical 9:16 first; cards with larger type; captions always on | Every shot needs a 9:16 framing check. |
 | Screenshot slideshow | 45-60 s | opening card, 12-20 stills at 2.5-3 s with slow pans, end card | Crossfades allowed (not a montage). `tools/video/slideshow/make-slideshow.sh`. |

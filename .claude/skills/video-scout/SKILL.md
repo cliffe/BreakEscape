@@ -31,7 +31,7 @@ Brief a scout agent like this: point at this skill, the recipe, and the mission 
 1. Headline: counts, top picks per speaker, top set pieces.
 2. Environment notes (what was started, what was left running).
 3. **Part A, voiced lines.** One table per speaker: ID, exact text, ink file:line, knot, conversation path from the NPC's start, cheapest entry state, words, spoken length in seconds, live result.
-4. **Part B, set pieces and minigames.** Minigame inventory: **every distinct minigame type in the mission** (where, object ids, a moment of visible action, answer or post-it on screen), because the trailer aims to show a quick cut of each (the crescendo in `mission-trailer.md`); then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
+4. **Part B, set pieces and minigames.** Minigame inventory: **every distinct minigame type in the mission** (where, object ids, a moment of visible action, answer or post-it on screen), because the trailer aims to show a quick cut of each (the crescendo in `mission-trailer.md`); then **the mission's new mechanics** (below), then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
 5. Rooms with several NPCs visible together (usually none: plan walking shots as one NPC plus the player).
 6. Entry-state notes (key and gate notes: which door needs which PIN, which hub choice needs which global).
 7. Music: candidate tracks not used by an earlier mission (`docs/video/recipes/README.md`, mission-to-music table), with BPM from `tools/video/edits/music/summary.json` where analysed.
@@ -87,10 +87,10 @@ bin/rails runner tools/video/scout/dump-lines.rb <mission> <scratch>/lines.json 
 **Filters.** Keep a line only if it is:
 
 - 12 words or fewer and 4.5 s or shorter (shorter is better: 2 to 4 s, with a hook that works out of context); the villain's closing line may run to about 6.5 s, and its knot's longer lines are worth testing too;
-- spoiler-free: drop anything that carries a code or PIN, gives a casualty figure, belongs to the debrief or a choice outcome, or names a culprit the mission keeps hidden until its end (the m01 closing debrief was 260 lines and none were tested). The villain's menace and confrontation lines are **in**: test them and rank them, because the most interesting line usually closes the trailer (user, m03 v2, 2026-11-22: a polite interview line was "not a very exciting line to end on");
+- spoiler-free: drop anything that carries a code or PIN, gives a casualty figure, belongs to the debrief or a choice outcome, or names a culprit the mission keeps hidden until its end (the m01 closing debrief was 260 lines and none were tested). The villain's menace and confrontation lines are **in**: test them and rank them, because the most interesting line usually closes the trailer (user, m03 v2, 2026-11-22: a polite interview line was "not a very exciting line to end on"). If no existing line is strong enough to close or open the trailer, propose new lines to author into the ink (`recipes/mission-trailer.md`, "Write a better line");
 - reachable: record the conversation path and the cheapest entry state. A line behind a long hub (Kevin's audit answer was about nine choices) is a last resort.
 
-Note, but do not test, lines that are excluded on purpose (Agent HaX phone lines have no cached audio in m01: the briefing lines do; the finale lines are outside the spoiler rule unless the recipe names them).
+Note, but do not test, lines that are excluded on purpose (Agent HaX phone lines have no cached audio in m01: the briefing lines do; the finale's confrontation lines are in: only an end twist the mission withholds is out).
 
 **Live test, through the real endpoint.** A line "has audio" only if the real `/tts` endpoint returns it. Reading the cache folder or predicting from the text is not a test (it matched in m01, but only the live run is evidence). The tester posts as the client does (game page for the session cookie and CSRF token, then `POST <game>/tts` with `npc_id` and `text`), prints status and duration for each line, and always adds a control line:
 
@@ -113,7 +113,7 @@ The game id comes from `new-game.rb` above (`GAME_ID=`). Use only a keyless serv
 
 The cache is keyed on text, voice, style wording, language and model. **A rewritten line has no cached audio.** If the mission's dialogue was edited after audio was generated, expect 503s and say so. Generating new audio is never part of a scout: see "Money" below.
 
-**Money.** New TTS costs money. If the best hook line has no cached audio, list it with its exact text and the line count (a count of lines, not words) as a question for the user. Do not generate. Voice generation, pruning and the style rules live in the `tts-audio` skill, and the orchestrator asks the user each time with a line count. Cached lines are free.
+**Money.** New TTS costs money. If the best hook line has no cached audio, list it with its exact text and the line count (a count of lines, not words) as a question for the user. Do not generate. If the best line's cached delivery is too flat for a trailer, say so and propose a `#delivery:` re-voice (`tts-audio` rule 10: it needs the user's yes, and the dialogue around it in the game gets the same treatment). Voice generation, pruning and the style rules live in the `tts-audio` skill, and the orchestrator asks the user each time with a line count. Cached lines are free.
 
 ## Step 3: set pieces (Part B)
 
@@ -137,6 +137,8 @@ Things that bit m01:
 - **Footage from an old trailer** may mix missions: m01's old trailer shows Hydra and the SSH shell (m01) next to sqlmap and dirb (other missions). Ask or check which tools belong to this mission before planning real-hacking footage, and measure how much of it there is (m01: 1.27 s).
 - **Notes and container contents** can carry a real code in an innocent-looking example (Patricia's CyberChef note: Base64 of a real PIN). Read every note a shot opens.
 - **The minigame inventory comes from the engine as well as the scenario:** key locks open a key selection screen, takeable devices (m01's launch device) open their own minigame from the inventory, and `--give <item id>` can put an NPC-held item straight into the inventory for a take.
+
+**New mechanics.** List each mission's new mechanics by diffing its scenario against the earlier missions' (m01 up to the one before this): `lockType` values, `minigame` and object types, and special systems (RFID cloning, fingerprints, guard sight cones, lighting, needs, VM or flag stations, anything in `scenario.json.erb` or the engine that no earlier scenario uses). For each give where it is played and its entry state, and **propose the mechanic's card text naming it** (`RFID / Cloning`, not a story phrase) with a shot of at least 3 s of it working from start to finish (`mission-trailer.md`). Also list action candidates (a chase, a guard turning hostile, a strike in the dark) as set-up, action and payoff beats.
 
 Do not play the mission through. Entry states come from the scenario and ink and may be listed as "expected, not played"; the take stage proves them.
 
