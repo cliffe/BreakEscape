@@ -1360,5 +1360,40 @@ class StepAwayDefaults(unittest.TestCase):
         self.assertEqual(ok.step_away_defaults(p), p)
 
 
+class CA02LiamBark(unittest.TestCase):
+    """D290: a set piece's own messageGlobals (kit_ names only) is written beside the row's keyMessage one,
+    and Fatima's password bark is the last host mapping of ca02_cv_lures."""
+    LINE = 'IT have asked anyone who opened that careers link to change their password today.'
+
+    def build(self):
+        rows = {r['id']: r for r in json.load(open(os.path.join(HERE, 'office_kits', 'episodes.json')))['episodes']}
+        r = rows['ca02_cv_lures']
+        return r, ok.build(ok.load_kit(r['company']), r, 'episode_e2_cv_lures_defend_', 'episode_e2_cv_lures_state')
+
+    def test_message_globals_merged(self):
+        r, b = self.build()
+        self.assertEqual(b['messageGlobals'], {'e2_enable_content': 'kit_key_caught',
+                                               'e2_portfolio_lookalike': 'kit_ca02_portal_caught'})
+        self.assertIs(b['globals']['kit_ca02_portal_caught'], False)
+
+    def test_bark_is_last_host_mapping(self):
+        r, b = self.build()
+        self.assertEqual(b['mappings'][-1]['bark'], self.LINE)
+        self.assertEqual([m for m in b['mappings'] if m.get('bark') == self.LINE], [b['mappings'][-1]])
+        self.assertTrue(b['mappings'][-1]['whenPerceivable'])
+
+    def test_piece_message_globals_must_be_kit_names(self):
+        r, _ = self.build()
+        kit = copy.deepcopy(ok.load_kit(r['company']))
+        kit['setPieces'][r['setPiece']]['messageGlobals'] = {'m': 'plain_name'}
+        with self.assertRaises(ValueError):
+            ok.piece_message_globals(kit, r)
+
+    def test_twin_and_tier_none_get_none(self):
+        r, _ = self.build()
+        kit = ok.load_kit(r['company'])
+        self.assertEqual(ok.piece_message_globals(kit, dict(r, tier='none')), {})
+
+
 if __name__ == '__main__':
     unittest.main()
