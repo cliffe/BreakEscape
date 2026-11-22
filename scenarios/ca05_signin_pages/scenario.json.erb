@@ -120,7 +120,7 @@
     {
       "id": "kit_ca05_t_tail",
       "startOnGlobal": "kit_ca05_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca05_prompt_choice === ''",
       "setGlobal": {
         "kit_ca05_prompt_choice": "silent"
@@ -128,9 +128,18 @@
     },
     {
       "id": "kit_ca05_t_done",
-      "startOnGlobal": "kit_ca05_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca05_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca05_done",
+      "setGlobal": {
+        "kit_ca05_done": true
+      }
+    },
+    {
+      "id": "kit_ca05_t_done_out",
+      "startOnGlobal": "kit_ca05_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca05_done && globalVars.kit_ca05_asked !== true",
       "setGlobal": {
         "kit_ca05_done": true
       }
@@ -420,7 +429,7 @@
           },
           {
             "heading": "What the approval let in",
-            "text": "You said nothing, so nobody stopped Darren, and he approved the prompt himself. The page had passed his password straight on to the real Quayholt sign-in, so the prompt was genuine. The page would have shown a number to match, copied from the real sign-in, so it matched too: a prompt that is real says nothing about whether the page that caused it was. Approving let the attacker in within seconds. They added a phone of their own as a way to sign in, set a mailbox rule to hide the replies, and sent a sign-in link from his account to Anjali and the claims team, who trust mail from the service desk lead. A forced reset on its own would leave them in: the session they opened and the phone they added both outlast it. To shut them out, IT sign Darren out of every session, reset his password, remove their phone and the mailbox rule, and check his other sign-in methods and rules. They block the page's address, pull the email that sent him there and the link from everyone they reached and warn them, and anyone who signed in on either gets the same clean-up.",
+            "text": "Darren asked, got no answer and went ahead: he approved the prompt himself. The page had passed his password straight on to the real Quayholt sign-in, so the prompt was genuine. The page would have shown a number to match, copied from the real sign-in, so it matched too: a prompt that is real says nothing about whether the page that caused it was. Approving let the attacker in within seconds. They added a phone of their own as a way to sign in, set a mailbox rule to hide the replies, and sent a sign-in link from his account to Anjali and the claims team, who trust mail from the service desk lead. A forced reset on its own would leave them in: the session they opened and the phone they added both outlast it. To shut them out, IT sign Darren out of every session, reset his password, remove their phone and the mailbox rule, and check his other sign-in methods and rules. They block the page's address, pull the email that sent him there and the link from everyone they reached and warn them, and anyone who signed in on either gets the same clean-up.",
             "condition": "globalVars.kit_ca05_prompt_choice === 'silent'"
           }
         ]
@@ -1211,7 +1220,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca05_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Darren, have you just sent me a sign-in link? It's gone to the whole claims team."
@@ -1286,20 +1295,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_there",
-              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && globalVars.kit_ca05_prompt_choice === ''",
+              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_ca05_prompt_choice === '' && !globalVars.kit_ca05_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
-              "targetKnot": "ca05_prompt"
+              "targetKnot": "ca05_prompt",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca05_there",
-              "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca05_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_darren_price",
@@ -1343,6 +1357,39 @@
               "setGlobal": {
                 "kit_ca05_prompt_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Password's in, and now my phone wants me to approve it. Fine to say yes?",
+              "targetKnot": "ca05_prompt",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca05_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca05_there === true && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done && globalVars.kit_ca05_prompt_choice === '' && globalVars.kit_ca05_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca05_prompt_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         }

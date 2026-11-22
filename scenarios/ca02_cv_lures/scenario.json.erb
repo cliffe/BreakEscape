@@ -117,7 +117,7 @@
     {
       "id": "kit_ca02_t_tail",
       "startOnGlobal": "kit_ca02_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca02_cv_choice === ''",
       "setGlobal": {
         "kit_ca02_cv_choice": "silent"
@@ -125,9 +125,18 @@
     },
     {
       "id": "kit_ca02_t_done",
-      "startOnGlobal": "kit_ca02_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca02_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca02_done",
+      "setGlobal": {
+        "kit_ca02_done": true
+      }
+    },
+    {
+      "id": "kit_ca02_t_done_out",
+      "startOnGlobal": "kit_ca02_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca02_done && globalVars.kit_ca02_asked !== true",
       "setGlobal": {
         "kit_ca02_done": true
       }
@@ -478,7 +487,7 @@
           },
           {
             "heading": "What Enable let in",
-            "text": "You said nothing, so nobody stopped Chidi, and he clicked Enable. That ran the attacker's code. They wanted a hiring manager's machine, because applicants' details sit on it. In the seconds before IT's alert cut it off, they copied the driver applications: names, addresses, licence details. Tarrowby is now working out whether it has to report to the ICO and who to tell. The gap was a setting: macros in files from email were allowed to run, and Tarrowby is switching that off.",
+            "text": "Chidi asked, got no answer and went ahead: he clicked Enable. That ran the attacker's code. They wanted a hiring manager's machine, because applicants' details sit on it. In the seconds before IT's alert cut it off, they copied the driver applications: names, addresses, licence details. Tarrowby is now working out whether it has to report to the ICO and who to tell. The gap was a setting: macros in files from email were allowed to run, and Tarrowby is switching that off.",
             "condition": "globalVars.kit_ca02_cv_choice === 'silent'"
           }
         ]
@@ -1000,7 +1009,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca02_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
@@ -1069,20 +1078,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_there",
-              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_ca02_cv_choice === '' && !globalVars.kit_ca02_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Blank page, just a box saying enable editing and content. Do I click?",
-              "targetKnot": "ca02_cv"
+              "targetKnot": "ca02_cv",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca02_there",
-              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca02_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_chidi_okeke",
@@ -1126,6 +1140,39 @@
               "setGlobal": {
                 "kit_ca02_cv_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Blank page, just a box saying enable editing and content. Do I click?",
+              "targetKnot": "ca02_cv",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca02_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca02_there === true && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done && globalVars.kit_ca02_cv_choice === '' && globalVars.kit_ca02_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca02_cv_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         },

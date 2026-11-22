@@ -117,7 +117,7 @@
     {
       "id": "kit_ca07_t_tail",
       "startOnGlobal": "kit_ca07_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca07_call_choice === ''",
       "setGlobal": {
         "kit_ca07_call_choice": "silent"
@@ -125,9 +125,18 @@
     },
     {
       "id": "kit_ca07_t_done",
-      "startOnGlobal": "kit_ca07_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca07_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca07_done",
+      "setGlobal": {
+        "kit_ca07_done": true
+      }
+    },
+    {
+      "id": "kit_ca07_t_done_out",
+      "startOnGlobal": "kit_ca07_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca07_done && globalVars.kit_ca07_asked !== true",
       "setGlobal": {
         "kit_ca07_done": true
       }
@@ -908,7 +917,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca07_call_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca07_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ringback' && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Ravinder's rung me too, Graham. He knew about Ashcarr, and wants his salary paid somewhere new."
@@ -1055,20 +1064,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca07_there",
-              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true && globalVars.kit_ca07_call_choice === ''",
+              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_ca07_call_choice === '' && !globalVars.kit_ca07_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?",
-              "targetKnot": "ca07_call"
+              "targetKnot": "ca07_call",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca07_there",
-              "condition": "value === true && globalVars.kit_ca07_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done && globalVars.kit_ca07_call_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca07_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca07_call_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_graham_whitfield",
@@ -1112,6 +1126,39 @@
               "setGlobal": {
                 "kit_ca07_call_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca07_there === true && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done && globalVars.kit_ca07_call_choice === '' && globalVars.kit_ca07_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Sounds just like him. Ashcarr Haulage have changed bank, and he wants them paid today. Go ahead?",
+              "targetKnot": "ca07_call",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca07_there === true && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done && globalVars.kit_ca07_call_choice === '' && globalVars.kit_ca07_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca07_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca07_call_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca07_there === true && globalVars.kit_ca07_out === true && !globalVars.kit_ca07_done && globalVars.kit_ca07_call_choice === '' && globalVars.kit_ca07_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca07_call_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         }

@@ -147,7 +147,136 @@ def _set_piece(kit, row):
     pieces = kit.get('setPieces', {})
     if name not in pieces:
         raise KeyError(f'kit {kit.get("company")!r} has no set piece {name!r}')
-    return pieces[name]
+    return step_away_defaults(pieces[name])
+
+
+REPLY_MS = 45000   # the step-away reply window; a set piece may override it with `replyMs`
+BACKSTOP_MS = 60000   # `_t_done_out` ends the beat this long after the ask-based `_t_done` would have
+
+
+def _strip_quiet(cond):
+    if not cond:
+        return cond
+    return cond.replace(' && globalVars.kit_quiet === true', '')
+
+
+def _ask_condition(cond, done_key, choice_key):
+    """The ask's condition without the quiet flag, and with `not done` and `not answered yet`."""
+    cond = _strip_quiet(cond) or 'true'
+    for term in (f'!globalVars.{done_key}', f"globalVars.{choice_key} === ''"):
+        if term not in cond:
+            cond += f' && {term}'
+    return cond
+
+
+def _rearm_mappings(ask, twins, out_key, asked_key, done_key, choice_key):
+    """Re-arm after a reload. Pending and held mappings live in memory only, so a player who reloaded while
+    the ask waited (its trigger already true, so it never fires again) would never be asked. On `game_loaded`:
+    ask now if the beat is live, nobody has been asked and it is not over; or, if the ask was made and not
+    yet answered, show the marker again (the reply timer resumes by itself)."""
+    if ':' not in str(ask['eventPattern']):
+        return []   # not a global-change trigger: nothing to catch up after a reload
+    trigger = str(ask['eventPattern']).split(':', 1)[1]
+    live = f'globalVars.{trigger} === true && globalVars.{out_key} === true && !globalVars.{done_key} && globalVars.{choice_key} === \'\''
+    out = []
+    for src in twins + [ask]:
+        m = copy.deepcopy(src)
+        m['eventPattern'] = 'game_loaded'
+        m['condition'] = f'{live} && globalVars.{asked_key} !== true'
+        m['onceOnly'] = True
+        out.append(m)
+    cue = {'eventPattern': 'game_loaded', 'condition': f'{live} && globalVars.{asked_key} === true',
+           'onceOnly': True, 'delayMs': ask['delayMs'], 'askCue': True, 'whenPerceivable': True,
+           'askCueUntil': choice_key, 'askCueMs': ask['askCueMs'], 'askCueQuiet': True}
+    out.append(cue)
+    return out
+
+
+def step_away_defaults(piece):
+    """The one shared step-away mechanism (ask cue, fair reply window), applied to every set piece
+    whose reply timer starts on an `*_asked` global and lapses a `*_choice` to its no-answer value ('silent', or 'leave' in ca15). Returns a
+    copy. The timer's delayMs becomes the piece's `replyMs` (default REPLY_MS). The mapping that sets
+    the asked global gets `askCue` (a marker and a toast naming the colleague when it fires) and
+    `whenPerceivable` (it waits until no minigame is open and the colleague is on camera or in the
+    player's room, so the clock starts when the ask can be noticed); the colleague's ask bark
+    mapping on the same event waits with it. Both need a delayMs to wait on, so at least 1 ms."""
+    piece = copy.deepcopy(piece)
+    asked = set()
+    choice_key = None
+    old_reply = None
+    for t in piece.get('timers', []):
+        sg = t.get('setGlobal') or {}
+        if str(t.get('startOnGlobal', '')).endswith('_asked') and any(str(k).endswith('_choice') for k in sg):
+            old_reply = t['delayMs'] if old_reply is None else old_reply
+            t['delayMs'] = piece.get('replyMs', REPLY_MS)
+            asked.add(t['startOnGlobal'])
+            choice_key = next(k for k in sg if str(k).endswith('_choice'))
+    done_key = None
+    out_key = None
+    # The `_t_done` fallback counted from `out`, but the ask now waits until it can be noticed, so a
+    # fixed time from `out` can end the episode before the reply window lapses and the follow-through
+    # runs (ca05 busy run: done at 60 s, silent at 100 s, so the follow-through never played). Count it
+    # from the ask instead, keeping the same tail the piece allowed after its (old) reply window.
+    # That timer never starts if the ask never fires (it was dropped, or the player reloaded while it
+    # waited), and the success screen is held until `done`, so a second timer, `_t_done_out`, counts
+    # from `out` with a margin of BACKSTOP_MS over the first and ends the beat regardless.
+    if len(asked) == 1:
+        (ask,) = asked
+        extra = []
+        for t in piece.get('timers', []):
+            if str(t.get('id', '')).endswith('_t_done') and str(t.get('startOnGlobal', '')) != ask \
+                    and str(t.get('startOnGlobal', '')).endswith(('{out}', '_out')):
+                out_start = t['startOnGlobal']
+                t['delayMs'] = max(t['delayMs'] - old_reply, 20000) + piece.get('replyMs', REPLY_MS)
+                t['startOnGlobal'] = ask
+                backstop = copy.deepcopy(t)
+                backstop['id'] = t['id'] + '_out'
+                backstop['startOnGlobal'] = out_start
+                backstop['delayMs'] = t['delayMs'] + BACKSTOP_MS
+                # a live ask belongs to `_t_done` (it starts on the ask); the backstop only ends a beat
+                # that was never asked, so it cannot cut a reply window held past BACKSTOP_MS
+                bc = backstop.get('condition') or 'true'
+                backstop['condition'] = f"{bc} && globalVars.{ask} !== true"
+                extra.append(backstop)
+                done_key = next(iter(t.get('setGlobal') or {}), None)
+                out_key = out_start
+        piece['timers'] = [t for t in piece.get('timers', []) if t['id'] not in {e['id'] for e in extra}] + extra
+    for rec in piece.get('staff', {}).values():
+        maps = rec.get('eventMappings', [])
+        rearm = []
+        for m in maps:
+            if asked & set((m.get('setGlobal') or {}).keys()):
+                m['askCue'] = True
+                m['whenPerceivable'] = True
+                m['delayMs'] = max(1, m.get('delayMs') or 0)
+                if choice_key:
+                    m['askCueUntil'] = choice_key
+                m['askCueMs'] = piece.get('replyMs', REPLY_MS)
+                twins = [b for b in maps if b is not m and b.get('bark') and b.get('targetKnot')
+                         and b['eventPattern'] == m['eventPattern'] and (b.get('delayMs') or 0) == (m.get('delayMs') or 0)]
+                for b in twins:
+                    b['whenPerceivable'] = True
+                if done_key and choice_key:
+                    # the ask holds (delayMs, perceivable) and is judged again when it lapses: it must not
+                    # depend on the kiosk's quiet flag (closing the debrief again clears it, and the dropped
+                    # ask left the success screen held for ever), and must not run once the colleague has
+                    # been answered or the beat is over
+                    for x in [m] + twins:
+                        x['condition'] = _ask_condition(x.get('condition'), done_key, choice_key)
+                    rearm += _rearm_mappings(m, twins, out_key, ask, done_key, choice_key)
+        if done_key and choice_key:
+            # the follow-through (a witness reacts to the colleague's answer) is not tied to the quiet flag either
+            for m in maps:
+                if str(m.get('eventPattern', '')).endswith(f':{choice_key}'):
+                    m['condition'] = _strip_quiet(m.get('condition'))
+        # appended last: the server keys a mapping by its index
+        maps.extend(rearm)
+    if done_key and choice_key:
+        # a follow-through spoken by the host (ca02, ca07, ca18: the piece's own `mappings`) gets the same treatment
+        for m in piece.get('mappings', []):
+            if str(m.get('eventPattern', '')).endswith(f':{choice_key}'):
+                m['condition'] = _strip_quiet(m.get('condition'))
+    return piece
 
 
 def _subst(node, prefix, row):
