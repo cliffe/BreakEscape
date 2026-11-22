@@ -66,6 +66,7 @@ const LANDING_PAGES_KEY = 'se_landing_pages';
 const LANDING_DRAFTS_KEY = 'se_landing_drafts';
 const LANDING_RECORD_KEYS = ['pageId', 'targetId', 'choices', 'credibility', 'gatesPassed', 'meetsThreshold', 'tellsFound', 'victim', 'built'];
 const LANDING_CHOICE_KEYS = ['brand', 'purpose', 'domainId', 'logo', 'wording', 'fields', 'padlock'];
+const LANDING_CHECK_KEYS = ['hostId', 'pretextId', 'urgencyId', 'stepsId'];
 const LANDING_VICTIM_KEYS = ['visited', 'submitted', 'noticed'];
 const LANDING_TELL_IDS = ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock', 'formOrigin', 'hoverMismatch'];
 
@@ -218,7 +219,23 @@ const pickKeys = (obj, keys) => {
 };
 
 // The seven draft choice keys only (null everything else away).
-const sanitizeLandingChoices = choices => (isPlainObject(choices) ? pickKeys(choices, LANDING_CHOICE_KEYS) : {});
+// A fake-check page (ENG-03b) also carries a closed `check` block of four menu ids. It must
+// survive the sync boundary, or a reload restores a record with no host and the replay shows
+// the genuine one. Only the four ids are kept, each a string or null.
+const sanitizeLandingCheck = check => {
+  const out = {};
+  for (const k of LANDING_CHECK_KEYS) {
+    const v = isPlainObject(check) ? check[k] : null;
+    out[k] = typeof v === 'string' ? v : null;
+  }
+  return out;
+};
+const sanitizeLandingChoices = choices => {
+  if (!isPlainObject(choices)) return {};
+  const out = pickKeys(choices, LANDING_CHOICE_KEYS);
+  if (isPlainObject(choices.check)) out.check = sanitizeLandingCheck(choices.check);
+  return out;
+};
 
 // One closed landing-page record: the nine record keys, with choices and tellsFound and
 // victim cleaned inside. A tellsFound id outside the nine, or a choice/victim key outside
