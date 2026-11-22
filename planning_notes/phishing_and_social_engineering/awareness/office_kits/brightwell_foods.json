@@ -362,7 +362,7 @@
               "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && globalVars.kit_ca13_send_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
-              "bark": "The assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Send it?",
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
               "targetKnot": "ca13_send"
             },
             {
