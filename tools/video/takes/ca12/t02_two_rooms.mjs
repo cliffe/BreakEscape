@@ -6,7 +6,7 @@
 // Entry state: PLAYTEST_PORT=<port> tools/playtest/new-game.sh ca12_visitor_tailgater
 // Record: run-take.sh ca12_visitor_tailgater t02_two_rooms "" "--hide-hud --zoom-step 1"
 // Marks: hold-start, frame:hold, walk-start, leg:*, frame:walking, walk-end. Needs the avatar window (player in frame, back in the lobby).
-import { sleep, prepare, kioskStart, openFriendface, pressButton, pressEl } from './_ca12a.mjs';
+import { sleep, prepare, kioskStart, openFriendface, pressButton, playCallToUnlock } from './_ca12a.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 
 export async function setup(page, bridge, mark = () => {}) {
@@ -14,11 +14,7 @@ export async function setup(page, bridge, mark = () => {}) {
   await pressButton(page, /Pin$/); await sleep(900);
   await bridge.minigame.close().catch(() => {}); await sleep(1000);
   await pressButton(page, /Prepare the call/i); await sleep(1200);
-  await pressEl(page, /Recipient|choose/i, 8000); await sleep(600);
-  await pressEl(page, /^Catherine Merrin$/); await sleep(600);
-  await pressButton(page, /^Approach$/); await sleep(2500);
-  await bridge.minigame.choose(/sample box for Catherine/i).catch(() => {}); await sleep(3500);
-  await bridge.minigame.choose(/buzz me through/i).catch(() => {}); await sleep(3500);
+  await playCallToUnlock(page, bridge, mark);
   mark('call-played');
   await bridge.minigame.close().catch(() => {}); await sleep(1200);
 }

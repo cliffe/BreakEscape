@@ -30,3 +30,19 @@ export async function openFriendface(page, mark = () => {}) {
   await pressEl(page, /^Friendface$/); mark('friendface-tab'); await sleep(1000);
   await pressEl(page, /^Catherine Merrin$/); mark('merrin-link'); await sleep(1000);
 }
+
+/** From the open pretext card (recipient not yet picked) to the door unlock: pick Catherine Merrin, Approach, then play the call
+ *  (sample box, then the buzz ask), waiting for each menu to be pickable. Leaves the call open after D1. Unrecorded; setup only. */
+export async function playCallToUnlock(page, bridge, mark = () => {}) {
+  await pressEl(page, /Recipient|choose/i, 8000); await sleep(600);
+  await pressEl(page, /^Catherine Merrin$/); await sleep(600);
+  await pressButton(page, /^Approach$/);
+  for (const re of [/sample box for Catherine/i, /buzz me through/i]) {
+    const t0 = Date.now(); let d;
+    while (Date.now() - t0 < 30000) { d = (await bridge.getState()).dialogue; if (d && d.awaitingChoice && d.choices && d.choices.length) break; await sleep(200); }
+    await sleep(900); await bridge.minigame.choose(re); mark('choose:' + re.source.slice(0, 14));
+  }
+  const t0 = Date.now();
+  while (Date.now() - t0 < 25000) { const d = (await bridge.getState()).dialogue; if (d && d.awaitingChoice && d.choices && d.choices.length) break; await sleep(250); }
+  await sleep(800);
+}
