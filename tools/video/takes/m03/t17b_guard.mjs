@@ -1,7 +1,7 @@
 // t17b_guard (m03 v3): NIGHT, executive_wing_hallway. One action sequence: the map shows Terry's torch sweeping the wing with the player at the executive office door (hold 3 s),
 // the player starts picking (interact on the door); the take marks whatever minigame state appears BEFORE the catch (lockpick screen? or person-chat straight away) and keeps it on screen;
 // the game then opens Terry's one-line person-chat (Narrator torch line, then Terry "Picks. Right. We're done talking." re-voiced); the full voiced line plays (NEVER click during a voiced line);
-// the chat closes, then a 4 s hold on the map while Terry turns hostile and comes for the player (the action payoff).
+// the chat closes, then the player runs straight away for about 3 s while Terry chases, hold 1 s while Terry turns hostile and comes for the player (the action payoff).
 // Same start as t03_lockpick WITHOUT guard_told_safetynet, so the lockpick_used_in_view mapping fires.
 // Entry state: new-game.rb m03_ghost_in_the_machine --start-room executive_wing_hallway --set briefing_played=true
 // Record: BE_SPRITE=vivian_ashby tools/video/takes/run-take.sh m03 t17b_guard "--start-room executive_wing_hallway --set briefing_played=true" "--hide-hud --zoom-step 1"
@@ -65,7 +65,14 @@ export default async (page, bridge, mark) => {
   await sleep(1200);
   for (let i = 0; i < 4 && (await bridge.getState()).activeMinigame; i++) { await bridge.minigame.close().catch(() => {}); await sleep(400); }
   mark('chat-closed');
-  for (let i = 0; i < 8; i++) { const t = await terryOf(bridge); mark('terry-pos:after' + i, { terry: t && { x: Math.round(t.x), y: Math.round(t.y), hostile: t.state && t.state.hostile, d: Math.round(t.distance) } }); await sleep(500); }
+  // THE CHASE: Terry is hostile and adjacent (chaseSpeed 100 < the player's 145 px/s). The player runs straight away, key-driven, about 3 s, then a 1 s hold.
+  const dir = process.env.CHASE_DIR || 'right'; const ps = [];
+  const sample = async (tag) => { const st = await bridge.getState(); const t = st.nearby.find(n => /terry/i.test(n.id)); mark('chase:' + tag, { player: st.player, terry: t && { x: Math.round(t.x), y: Math.round(t.y), hostile: t.state && t.state.hostile, d: Math.round(t.distance) }, hp: st.player.hp }); };
+  await sample('start');
+  const wk = bridge.walk(dir, Number(process.env.CHASE_MS || 3000));
+  for (let i = 0; i < 6; i++) { await sleep(500); await sample('run' + i); }
+  await wk.catch(() => {});
+  await sleep(1000); await sample('hold-end');
   await vw.stop();
   const t = await terryOf(bridge);
   mark('hostile-hold-end', { terry: t && { hostile: t.state && t.state.hostile, d: Math.round(t.distance) } });
