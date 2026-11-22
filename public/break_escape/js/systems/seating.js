@@ -1267,6 +1267,7 @@ export function swivelEnabled(rec, scenario) {
 const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
 const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
 const NPC_STUCK_TICKS = 4;         // ticks of too little progress: blocked
+const NPC_STUCK_STALLS = 2;        // stalled ticks (after the window) before the walk gives up
 const NPC_STUCK_FRACTION = 0.25;   // a tick that covers under this share of the expected step is no progress
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
 const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
@@ -1358,13 +1359,24 @@ export function npcWalkTick(behavior, m, target) {
     const f = bodyFeet(sprite);
     const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy);
     if (d <= ARRIVE_PX) { sprite.body.setVelocity(0, 0); moveFeetTo(sprite, target.x, target.y); return 'arrived'; }
-    // Progress is judged against the step this tick should cover, not a flat 0.5 px: a body
-    // grinding against the player at ~0.6 px per tick (about 12 px/s) used to pass as moving.
-    const expected = Math.min(NPC_SEAT_SPEED * NPC_TICK_S, m.last === Infinity ? Infinity : m.last);
-    m.still = (m.last !== Infinity && m.last - d < Math.max(0.5, expected * NPC_STUCK_FRACTION)) ? m.still + 1 : 0;
+    // Progress is judged over a window against the distance the walk should cover, not a flat
+    // 0.5 px per tick: a body grinding against the player at ~0.6 px per tick (about 12 px/s)
+    // used to pass as moving, with the walk animation playing and the velocity flipping 70 / 0.
+    const hist = m.hist || (m.hist = []);
+    hist.push(d);
+    if (hist.length > NPC_STUCK_TICKS + 1) hist.shift();
+    const expected = Math.min(NPC_SEAT_SPEED * NPC_TICK_S, d);
+    const stalled = hist.length > NPC_STUCK_TICKS && hist[0] - d < NPC_STUCK_TICKS * expected * NPC_STUCK_FRACTION;
+    m.still = stalled ? m.still + 1 : 0;
     m.last = d;
     m.ticks++;
-    if (m.still >= NPC_STUCK_TICKS || m.ticks > NPC_MOVE_MAX_TICKS) { sprite.body.setVelocity(0, 0); return 'stuck'; }
+    if (m.still >= NPC_STUCK_STALLS || m.ticks > NPC_MOVE_MAX_TICKS) { sprite.body.setVelocity(0, 0); return 'stuck'; }
+    if (stalled) {
+        // Blocked: wait where it stands (no walk in place), and keep counting towards stuck
+        sprite.body.setVelocity(0, 0);
+        if (behavior.isMoving) { behavior.isMoving = false; behavior.playAnimation?.('idle', behavior.direction); }
+        return 'moving';
+    }
     const v = Math.min(NPC_SEAT_SPEED, d / NPC_TICK_S);
     sprite.body.setVelocity(dx / d * v, dy / d * v);
     const dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
@@ -1377,7 +1389,7 @@ export function npcWalkTick(behavior, m, target) {
     return 'moving';
 }
 
-function resetWalk(m) { m.ticks = 0; m.still = 0; m.last = Infinity; }
+function resetWalk(m) { m.ticks = 0; m.still = 0; m.last = Infinity; m.hist = []; }
 
 /**
  * Whether the straight walk from `from` to the work spot `ref` is clear for a walking body:

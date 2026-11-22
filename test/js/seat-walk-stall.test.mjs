@@ -26,6 +26,20 @@ test('a walk creeping 0.58 px per tick is stuck within a few ticks', () => {
     assert.equal(r, 'stuck');
     assert.ok(n <= 8, `stuck after ${n} ticks`);
     assert.equal(b.sprite.body.velocity.y, 0);
+    assert.equal(b.anims[b.anims.length - 1], 'idle', 'no walk animation while blocked');
+});
+
+test('while stalled the body is held still and idles before the walk gives up', () => {
+    const b = npc(100, 233), m = fresh(), target = { x: 100, y: 221 };
+    const vy = [];
+    for (let i = 0; i < 12; i++) {
+        const r = npcWalkTick(b, m, target);
+        vy.push(b.sprite.body.velocity.y);
+        if (r === 'stuck') break;
+        b.sprite.y -= 0.58;
+    }
+    assert.ok(vy.includes(0) && vy[vy.length - 1] === 0);
+    assert.equal(b.isMoving, false);
 });
 
 test('a walk making full progress keeps moving and arrives', () => {
