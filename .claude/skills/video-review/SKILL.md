@@ -22,7 +22,7 @@ Nothing reaches the user unchecked. For each render:
 - `ffprobe` duration within one frame of the recipe's length; `loudnorm` result -14 LUFS (13.9 to 14.1), true peak under -1 dBTP (the render prints both);
 - the contact sheet reviewed by eye (every card, join, minigame panel, title frame, closing frames);
 - the spoiler checklist in `video-edit` run shot by shot;
-- the `.srt` exists and matches the voiced lines; burned captions are present where the recipe says;
+- the `.srt` has a cue for every voiced line and the voice cue levels pass the `video-edit` Audio gate; burned captions are present where the recipe says;
 - no "Break Escape" on screen; the call to action says "Play now"; the game title opens and Hacktivity Games signs off at the end;
 - the list of placeholders (`lint-edit` prints it) is on the page, so the user sees what is stand-in footage (real hacking until in-game VM capture exists).
 
@@ -43,7 +43,7 @@ Review copies are for viewing only; the export (Step 6) uses the full renders. S
 
 ## Step 3: build the page
 
-Load `artifact-design` first, and `artifact-capabilities` before passing `capabilities` or writing any `window.claude.*` code. A page that needs uploaded videos and a saved feedback form declares those capabilities (an asset store for the videos and a shared database for the feedback; the capability skill lists the exact names and limits). Write the HTML to a file (scratchpad, or `docs/video/review/<mission>_<kind>.html` if it should be kept), publish with the Artifact tool. **Republish the same file path each round so the link stays the same**; use `url` if the page came from an earlier conversation (read it first).
+Load `artifact-design` first, and `artifact-capabilities` before passing `capabilities` or writing any `window.claude.*` code. A page that needs uploaded videos and a saved feedback form declares those capabilities (an asset store for the videos and a shared database for the feedback; the capability skill lists the exact names and limits). Write the HTML to a file (scratchpad, or `docs/video/review/<mission>_<kind>.html` if it should be kept), publish with the Artifact tool. **Republish the same file path each round so the link stays the same, with a tab per round**; use `url` if the page came from an earlier conversation (read it first).
 
 Page contents, in this order:
 
