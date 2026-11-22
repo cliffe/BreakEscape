@@ -669,7 +669,7 @@ Narrator: The guard reaches for his radio.
 - else:
     Narrator: The guard has stopped walking. He's looking at your hands, and the pick in them.
 }
-Terry Mott: Picks. Right. We're done talking. #delivery: angry and frustrated, his patience gone; hard clipped stress on every word, bitten off and tight, close to shouting but held low
+Terry Mott: Picks. Right. We're done talking. #delivery: properly angry now, his patience gone and his voice hard and raised; every word spat out, sharp and clipped, but still clearly enunciated, starting with a hard Picks
 ~ idle_quiet = true
 #exit_conversation
 -> guard_idle
