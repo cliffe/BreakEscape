@@ -1,0 +1,13 @@
+{
+  "key": "b7c73837c8521e5398f5324427c075e2",
+  "npc": "kit_darren_price",
+  "text": "Right, denied. I'll report it now and change my password.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca05_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:10Z"
+}

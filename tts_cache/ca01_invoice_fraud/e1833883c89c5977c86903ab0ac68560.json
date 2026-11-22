@@ -1,0 +1,13 @@
+{
+  "key": "e1833883c89c5977c86903ab0ac68560",
+  "npc": "kit_agnieszka_duda",
+  "text": "Long week.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T15:00:57Z"
+}
