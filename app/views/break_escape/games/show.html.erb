@@ -241,6 +241,16 @@
       <% if _title_name.present? %>missionTitleName: <%= raw json_escape(_title_name.to_json) %>,<% end %>
       <% _title_art = @mission.title_art_path %>
       <% if _title_art.present? %>missionTitleArt: <%= raw json_escape(("/break_escape/assets/" + _title_art).to_json) %>,<% end %>
+      <%# Cyber Aware loading screen (mission.json "title_style": "ca"): company name and accent come from the scenario's awarenessEpisode.brand %>
+      <% if @mission.title_style == 'ca' %>
+        <% _brand = @game.scenario_data.is_a?(Hash) ? @game.scenario_data.dig('awarenessEpisode', 'brand') : nil %>
+        <% _brand = {} unless _brand.is_a?(Hash) %>
+        <% _company = _brand['name'].to_s.gsub(/[[:cntrl:]]/, ' ').strip[0, 80] %>
+        <% _accent = _brand['accent'].to_s.strip %>
+        missionTitleStyle: 'ca',
+        <% if _company.present? %>missionCompany: <%= raw json_escape(_company.to_json) %>,<% end %>
+        <% if _accent.match?(/\A#[0-9a-fA-F]{6}\z/) %>missionAccent: <%= raw json_escape(_accent.to_json) %>,<% end %>
+      <% end %>
       <% if _awareness.present? %>awareness: <%= raw json_escape(_awareness.to_json) %>,<% end %>
       uiTheme: '<%= ui_theme %>',
       // Set when a host game shell launched this mission (BreakEscape.configuration.shell_links)

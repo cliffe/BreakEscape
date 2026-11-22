@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS, titleScreenName, titleScreenArt } from './title-screen-input.js';
+import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS, titleScreenName, titleScreenArt,
+    titleScreenStyle, buildCaTitleDom, setCaBar, caBarSegments } from './title-screen-input.js';
 import { isDesktopApp } from '../../utils/desktop-app.js';
 
 // Load title screen CSS
@@ -9,6 +10,16 @@ titleScreenCSS.href = '/break_escape/css/title-screen.css';
 titleScreenCSS.id = 'title-screen-css';
 if (!document.getElementById('title-screen-css')) {
     document.head.appendChild(titleScreenCSS);
+}
+// Cyber Aware loading screen (mission.json "title_style": "ca"); only linked for those missions,
+// so the SAFETYNET screen never loads it.
+function ensureCaCss() {
+    if (document.getElementById('title-screen-ca-css')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/break_escape/css/title-screen-ca.css';
+    link.id = 'title-screen-ca-css';
+    document.head.appendChild(link);
 }
 
 /**
@@ -29,6 +40,11 @@ export class TitleScreenMinigame extends MinigameScene {
     }
 
     init() {
+        this._caStyle = titleScreenStyle(window.breakEscapeConfig) === 'ca';
+        if (this._caStyle) {
+            this._initCa();
+            return;
+        }
         // Opt-in painted backdrop (mission.json "title_art"); missions without it are unchanged.
         const artUrl = titleScreenArt(window.breakEscapeConfig);
         this.container.innerHTML = `
@@ -70,28 +86,94 @@ export class TitleScreenMinigame extends MinigameScene {
         this._detachContinue = null;
     }
 
+    // Cyber Aware branch: the bands-and-seam-bar screen (D350). Same phases and game_loaded hook
+    // as the SAFETYNET screen, but no logo zoom, typed text, CRT overlay or green.
+    _initCa() {
+        ensureCaCss();
+        this.container.innerHTML = '<div class="title-screen-container ca-title"></div>';
+        this.container.style.cssText = `
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            margin: 0;
+            padding: 0;
+        `;
+        this.titleScreenContainer = this.container.querySelector('.title-screen-container');
+        this._ca = buildCaTitleDom(document, this.titleScreenContainer, window.breakEscapeConfig,
+            titleScreenArt(window.breakEscapeConfig));
+        this._ended = false;
+        this._loadingTimer = null;
+        this._gameLoaded = false;
+        this._playerClicked = false;
+        this._detachContinue = null;
+        this._caStart = Date.now();
+        setCaBar(this._ca.bar, 0);
+    }
+
+    _caTick() {
+        if (this._ended || !this._ca) return;
+        setCaBar(this._ca.bar, caBarSegments(Date.now() - this._caStart, this._gameLoaded));
+    }
+
+    _caReady() {
+        if (this._ended) return;
+        const { status, hint } = this._ca;
+        const proceed = () => {
+            this._detachContinue = null;
+            this._playerClicked = true;
+            if (this._gameLoaded) {
+                this.complete(true);
+            } else {
+                status.textContent = 'LOADING';
+                hint.textContent = '';
+            }
+        };
+        if (isDesktopApp()) {
+            this._detachContinue = startDesktopHold(this.container, document, DESKTOP_HOLD_MS, proceed);
+            return;
+        }
+        status.textContent = 'CONTINUE?';
+        hint.textContent = 'Click, or press Space or Enter';
+        this._detachContinue = attachContinueHandlers(this.container, document, proceed);
+    }
+
     start() {
         super.start();
         console.log('🎬 Title Screen started');
 
-        const logo      = this.container.querySelector('.title-screen-logo');
-        const titleEl   = this.container.querySelector('.title-screen-title');
-        const typedText = this.container.querySelector('.title-screen-typed-text');
-        const promptEl  = this.container.querySelector('.title-screen-prompt');
+        if (this._caStyle) {
+            // The bar creeps while the world builds and fills on game_loaded.
+            this._loadingTimer = setInterval(() => this._caTick(), 150);
+            this._phaseTimer = setTimeout(() => { this._phaseTimer = null; this._caReady(); }, 2500);
+        }
 
-        // Fade the backdrop in (CSS drops the transition under prefers-reduced-motion).
-        const art = this.container.querySelector('.title-screen-art');
-        if (art) requestAnimationFrame(() => art.classList.add('is-in'));
+        if (!this._caStyle) {
+            const logo      = this.container.querySelector('.title-screen-logo');
+            const titleEl   = this.container.querySelector('.title-screen-title');
+            const typedText = this.container.querySelector('.title-screen-typed-text');
+            const promptEl  = this.container.querySelector('.title-screen-prompt');
 
-        // Phase 1 → 2: fixed timer matching the CSS animation duration.
-        // animationend is unreliable when CSS loads async after the element is in the DOM.
-        this._phaseTimer = setTimeout(() => {
-            this._phaseTimer = null;
-            if (this._ended) return;
-            logo.style.visibility = 'hidden';
-            titleEl.style.visibility = 'visible'; // cursor blinks immediately
-            this._startTyping(typedText, promptEl);
-        }, 2500);
+            // Fade the backdrop in (CSS drops the transition under prefers-reduced-motion).
+            const art = this.container.querySelector('.title-screen-art');
+            if (art) requestAnimationFrame(() => art.classList.add('is-in'));
+
+            // Phase 1 → 2: fixed timer matching the CSS animation duration.
+            // animationend is unreliable when CSS loads async after the element is in the DOM.
+            this._phaseTimer = setTimeout(() => {
+                this._phaseTimer = null;
+                if (this._ended) return;
+                logo.style.visibility = 'hidden';
+                titleEl.style.visibility = 'visible'; // cursor blinks immediately
+                this._startTyping(typedText, promptEl);
+            }, 2500);
+        }
 
         // game_loaded fires when the world finishes building.
         // We close only when BOTH this fires AND the player has clicked.
@@ -100,6 +182,7 @@ export class TitleScreenMinigame extends MinigameScene {
             this._onGameLoaded = null;
             console.log('🎬 Title screen: game_loaded received');
             this._gameLoaded = true;
+            if (this._caStyle) this._caTick();
             if (this._playerClicked) {
                 this.complete(true);
             }
@@ -224,7 +307,7 @@ export class TitleScreenMinigame extends MinigameScene {
             window.eventDispatcher?.off('game_loaded', this._onGameLoaded);
             this._onGameLoaded = null;
         }
-        if (this._loadingTimer) clearTimeout(this._loadingTimer);
+        if (this._loadingTimer) { clearTimeout(this._loadingTimer); clearInterval(this._loadingTimer); }
         if (this._clickHandler) {
             this.container.removeEventListener('click', this._clickHandler);
             this._clickHandler = null;
