@@ -1126,7 +1126,7 @@
             },
             {
               "condition": "globalVars.kit_ca18_reset_choice === 'words'",
-              "value": "Lorna's PC. She's cleared the 'Choose a new password' page and is typing three random words."
+              "value": "Lorna's PC. She's cleared the 'Choose a new password' page and is typing three random words, with nothing carried over from her old password."
             },
             {
               "condition": "globalVars.kit_ca18_out === true",

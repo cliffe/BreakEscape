@@ -1170,6 +1170,35 @@ class CaRegateMinors(unittest.TestCase):
         for k in ('unlockTask', 'completeTask', 'skipTask'):
             self.assertIn('"%s": "look_at_team_photo"' % k, text)
 
+    def test_ca05_debrief_has_a_panel_for_each_phone_prompt_outcome(self):
+        # live-proved 2026-11-22: approve and stop each show their own panel on reopening the debrief
+        panels = self.shell('ca05_signin_pages')['social']['awarenessEpisode']['strings']['conceptPanel']
+        for choice in ('stop', 'approve', 'silent'):
+            cond = "globalVars.kit_ca05_prompt_choice === '%s'" % choice
+            self.assertEqual(len([p for p in panels if p.get('condition') == cond and p.get('text')]), 1, choice)
+
+    def test_ca18_words_path_states_the_share_nothing_rule_in_the_pc_text_and_debrief(self):
+        sh = self.shell('ca18_credential_attacks_at_scale')
+        rule = 'shares nothing with the old one'
+        panels = sh['social']['awarenessEpisode']['strings']['conceptPanel']
+        words = [p for p in panels if p.get('condition') == "globalVars.kit_ca18_reset_choice === 'words'"]
+        self.assertEqual(len(words), 1)
+        self.assertIn(rule, words[0]['text'])
+        # the save/silent outcome keeps its own panel
+        self.assertTrue(any("'save'" in p.get('condition', '') and "'silent'" in p.get('condition', '') for p in panels))
+        piece = ok.load_kit('merrin_sallow')['setPieces']['ca18_reset_password']
+        pc = next(o for o in piece['objects'] if o['id'] == 'kit_ca18_pc')
+        v = next(v for v in pc['requiresItemHintVariants'] if "'words'" in v['condition'])
+        self.assertIn('nothing carried over from her old password', v['value'])
+        shell_pc = next(o for o in json.dumps(sh) and self._objects(sh) if o.get('id') == 'kit_ca18_pc')
+        self.assertIn(v['value'], [x['value'] for x in shell_pc['requiresItemHintVariants']])
+
+    @staticmethod
+    def _objects(sh):
+        for room in sh['rooms'].values():
+            for o in room.get('objects', []):
+                yield o
+
 
 class StepAwayDefaults(unittest.TestCase):
     """The shared step-away mechanism: 45 s reply window (overridable), ask cue, perceivable gate."""
