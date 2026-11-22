@@ -6,7 +6,7 @@ Paths: `JS/` is `public/break_escape/js/`. Engine features are in `features/brea
 
 ## Build status
 
-The awareness product on main (Incident Simulations: Critical Cases: episodes E1 to E7, seven defend-only variants and 24 check missions) is built on the social-engineering overlays, so its accessibility today is what those overlays give. The rest of this file stays as the plan. Where it and the build disagree, the build wins (`../04_BUILT_SO_FAR.md`).
+The awareness product on main (Cyber Aware: the ca00 opening brief, nineteen full episodes, 21 spot-it missions including E17 and the year-end review, and 28 check missions; 69 scenarios) is built on the social-engineering overlays, so its accessibility today is what those overlays give. The rest of this file stays as the plan. Where it and the build disagree, the build wins (`../04_BUILT_SO_FAR.md`).
 
 **Built: what the social overlays already do.** Every overlay the awareness product uses (the episode runner and its step strip, the OSINT browser, the mail client, the landing-page builder, inbox triage with its call, voicemail, push, page, text and QR cards, the flip view and the debrief) follows the social build's conventions:
 
