@@ -52,7 +52,7 @@ Graham Whitfield: Morning. Help yourself to a brew.
 { kit_ca13_send_choice == "ring" || kit_ca13_send_choice == "send" || kit_ca13_send_choice == "silent" || kit_ca13_done:
     -> ca13
 }
-Graham Whitfield: Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?
+Graham Whitfield: The assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Send it?
 { kit_ca13_send_choice == "":
     ~ kit_ca13_send_choice = "asked"
 }

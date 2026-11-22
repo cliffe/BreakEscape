@@ -4,7 +4,7 @@
   "scenario": { "npcThoughts": false },
   "pool": {
     "key": "kit_brightwell",
-    "lines": ["Busy inbox today.", "Kettle's on in a sec.", "Audit week again."],
+    "lines": ["Busy inbox today.", "Audit week again."],
     "requireGlobal": { "kit_quiet": false }
   },
   "sources": [
@@ -39,7 +39,7 @@
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
       "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
-      "chatterLines": ["Anyone for a brew?", "Tea round shortly?", "Kettle's just boiled."]
+      "chatterLines": ["Anyone for a brew?", "Kettle's just boiled."]
     },
     "agnieszka_duda": {
       "displayName": "Agnieszka Duda",
@@ -50,7 +50,7 @@
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
       "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 }, "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 60 } },
-      "chatterLines": ["Long week.", "Any biscuits left?", "Just need a top-up."]
+      "chatterLines": ["Long week.", "Any biscuits left?", "Just topping up my water."]
     },
     "graham_whitfield": {
       "displayName": "Graham Whitfield",
@@ -61,7 +61,7 @@
       "needsSpeed": 90,
       "chatterCooldownMin": 5,
       "needs": { "caffeine": { "decayPerMin": 30, "urgentAt": 50, "initial": 65 } },
-      "chatterLines": ["Year-end's creeping up.", "Steady day on the ledgers.", "That's my second cup."]
+      "chatterLines": ["Year-end's creeping up.", "Ledgers won't balance themselves.", "That's my second cup."]
     }
   },
   "setPieces": {
@@ -362,7 +362,7 @@
               "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true && globalVars.kit_ca13_send_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
-              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "bark": "The assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Send it?",
               "targetKnot": "ca13_send"
             },
             {
