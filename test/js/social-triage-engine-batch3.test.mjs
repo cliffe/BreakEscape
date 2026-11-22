@@ -305,3 +305,36 @@ test('the overlay title follows the kinds present; set.title overrides; an email
     assert.equal($(wifi, '.tri-title').textContent, 'Wi-Fi networks');
     assert.notEqual($(wifi, '.tri-title').textContent, 'Inbox check');
 });
+
+// ── in-person `call` items (CA-12 reception desk): labels.callHeading / callAria / kind.call ──────
+test('a call card reads "Incoming call" by default and takes labels.callHeading / callAria', () => {
+    const rec = { id: 'v', kind: 'call', callerId: 'Courier', from: { name: 'Courier', address: 'At the badge door' }, transcript: [] };
+    const def = renderKindSurface(rec, h);
+    assert.equal(def.querySelector('.tri-kind-label').textContent, 'Incoming call');
+    assert.equal(def.getAttribute('aria-label'), 'Phone call');
+    const over = renderKindSurface(rec, h, { callHeading: 'Visitor at reception', callAria: 'Visitor at reception' });
+    assert.equal(over.querySelector('.tri-kind-label').textContent, 'Visitor at reception');
+    assert.equal(over.getAttribute('aria-label'), 'Visitor at reception');
+    assert.equal(over.dataset.kindSurface, 'call', 'the kind itself stays call');
+});
+
+test('labels.kind.call words the list tag and a per-item subject replaces "Incoming call"', () => {
+    const rec = { kind: 'call', subject: 'At the desk', callerId: 'Client' };
+    assert.equal(kindLabelFor(rec, { kind: { call: 'Visitor' } }), 'Visitor');
+    assert.equal(kindLabelFor(rec, null), 'Call');
+    assert.equal(kindLabelFor({ ...rec, kindTag: "At a colleague's desk" }, { kind: { call: 'Visitor' } }), "At a colleague's desk");
+});
+
+test('the CA-12 reception-desk sets show no phone wording on their visitor cards', () => {
+    for (const f of ['ca12_visitor_tailgater', 'ca12_visitor_tailgater_defend', 'test_ca12_fallback']) {
+        const txt = readFileSync(join(here, `../../scenarios/${f}/scenario.json.erb`), 'utf8');
+        const start = txt.indexOf('"id": "e12_reception_desk"');
+        assert.ok(start > 0, f);
+        const set = txt.slice(start);
+        assert.match(set, /"kind": \{ "call": "Visitor" \}/, f);
+        assert.match(set, /"callHeading": "Visitor at reception"/, f);
+        const calls = set.match(/"kind": "call",/g) || [];
+        assert.equal(calls.length, 6, f);
+        assert.equal((set.match(/"kind": "call",\n(?: +"kindTag": "[^"]*",\n)? +"subject": "(?:At|By)[^"]*",/g) || []).length, 6, `${f}: every visitor item carries a place subject`);
+    }
+});

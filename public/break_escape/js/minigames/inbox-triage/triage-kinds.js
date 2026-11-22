@@ -81,6 +81,7 @@ export const KIND_LABEL = Object.freeze({
 
 /**
  * Set-level wording over the defaults in this file (`set.labels`), all optional:
+ *   callHeading / callAria  the call card's top line and accessible name (default "Incoming call" / "Phone call")
  *   kind        { email, sms, voicemail, qr, page, call, push, choice }: the short kind words (KIND_LABEL)
  *   verdict     { trust|report|delete|verify: { label?, past?, hint? } }
  *   callActions { comply|escalate|refuse|verify_callback: { label?, past?, hint? } }
@@ -881,10 +882,13 @@ const PAGE_STATES = {
     wifiList: stateWifiList
 };
 
-function call(rec) {
+function call(rec, h, labels = null) {
+    // A set whose `call` items are really in-person (a reception desk) words the card through
+    // labels.callHeading / labels.callAria; the kind stays `call`, so the verdict rows and
+    // scoring are unchanged. Absent, the card reads "Incoming call" as before.
     const box = el('section', 'tri-kind tri-kind-call');
-    box.setAttribute('aria-label', 'Phone call');
-    box.appendChild(el('p', 'tri-kind-label', 'Incoming call'));
+    box.setAttribute('aria-label', isStr(labels?.callAria) ? labels.callAria : 'Phone call');
+    box.appendChild(el('p', 'tri-kind-label', isStr(labels?.callHeading) ? labels.callHeading : 'Incoming call'));
     box.appendChild(heading(rec.callerId || senderName(rec) || 'Unknown caller'));
     const meta = [];
     if (rec.from?.address) meta.push(rec.from.address);

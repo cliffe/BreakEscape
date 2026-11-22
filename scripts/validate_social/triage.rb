@@ -419,7 +419,7 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading itemNoun next queue choice teamBadge teamBadgeTitle teamBadgeCountsChecked phishCaughtLabel scoreLine]
+      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading callHeading callAria itemNoun next queue choice teamBadge teamBadgeTitle teamBadgeCountsChecked phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
       # batch-12 item 2: a boolean; false keeps a Verify out of the team badge count.
