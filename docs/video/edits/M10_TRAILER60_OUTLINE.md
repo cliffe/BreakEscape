@@ -86,3 +86,29 @@ Off: the casualty range (`:279`, "Eleven hundred to twenty-six hundred") and "Yo
 - **The tunnel guard's line delivery** may be flat for an action beat; ask for an angry re-voice if so (via AC0).
 - **Tesseract #1** needs the finale seed and the case menu; if the take fails, #2 is the safe swap.
 - **Crescendo cast.** Fresh-game NPCs only; carry-over NPCs (Voltage, Static, Vector, Phantom, Mercer, Vance, Elena) are named in the picks file as dropped or on a seeded save.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. Tesseract is fair game (named in the briefing). Neither line goes near WREN or Kowalczyk. `m10_tesseract.ink` already uses `#delivery:` (7 tags).
+
+**Ending**
+
+1. **Pick.** Dr Adrian Tesseract: "I had the blast door read one badge tonight. Yours." (10 words, about 3.5 s)
+   - Insertion: `ink/m10_tesseract.ink`, knot `arrival`, **added** after `:112` ("Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you."), before the `m06_assets_seized` line and HaX's "...back. 0x00."
+   - `#delivery: quiet and matter-of-fact, a host who has gone to some trouble`
+   - State: the cheapest one. Arrival at the core, every game (the outline's #2 route).
+   - Why: the shortest threat in the finale, and the most personal. It needs no context, and it does not overlap the hook below.
+2. Dr Adrian Tesseract: "Your service spent decades hoarding the world's weak points. At six, I give them back." (15 words, about 5 s)
+   - Insertion: `ink/m10_tesseract.ink`, the core pitch, **added** after `:280` ("Hospitals, dispatch, water. In the hands of people who could never have got in before."), before the choices "You'd kill eleven hundred people..." / "And then what?" (keep those choice labels off screen: they carry a figure).
+   - `#delivery: calm and reasonable, almost generous`
+   - State: the core after all four flags, the pitch before `case_why` (the finale proof's seed, `tools/playtest/m10-finale-proof.mjs`).
+   - Why: the whole threat and his ideology in one quotable line, with the six o'clock clock. Use it as the ending if the hook is HaX's rather than Netherton's (otherwise the two say the same thing).
+
+**Hook** (HaX's "Well enough to know he's expecting us." needs the question before it to make sense)
+
+- **Pick, no new voicing.** Director Magnus Netherton: "At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone." (`ink/m10_director_netherton.ink:125`, `briefing_stakes`, about 6 s). States the stakes, plays in every game; check its cached take.
+- New alternative. Agent HaX: "Well enough to know he's set a place for each of us." (12 words, about 3.5 s)
+  - Insertion: `ink/m10_director_netherton.ink:116`, `briefing_name`, choice "You knew him well, then.". **Replaces** "Well enough to know he's expecting us." Before it: "Our former chief strategist. He trained me, and half the field. He walked out seven years ago."
+  - `#delivery: dry and quiet, one beat of old familiarity` (keep her calm-under-pressure style, tts-audio rule 3)
+  - State: fresh game (no `m09_completed`), `t02_briefing`, the first choice.
+  - Why: it makes "he invited SAFETYNET in" chilling on its own. It is the host image Tesseract's arrival line pays off.

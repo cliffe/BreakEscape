@@ -83,3 +83,22 @@ The insider's identity is this mission's answer, withheld until the player names
 - **Office life:** the espresso exchange needs the right two NPCs and their needs timing (`scenario.json.erb:1919-1921`); budget waiting time or set the needs.
 - **Day/night day-take risk:** Patricia's office and the lab keep `mode: on`; only some rooms time out, so pick the corridor for the turn.
 - **Cached audio:** unchecked for all lines; the Recruiter and Netherton may be uncached.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. The Recruiter's call is a voiced phone call, so `#delivery:` notes reach her lines (tts-audio, "Delivery note"). She says "agent" in lower case throughout. Both lines name no one and give no gender for the insider.
+
+**Ending**
+
+1. **Pick.** Recruiter: "I find people the week before they break, agent. Then I make them an offer." (15 words, about 5 s)
+   - Insertion: `ink/m05_phone_recruiter.ink`, knot `recruiter_introduction`, **added** after `:110` ("Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score."). After it: the choices "You're talking about him like a receipt." / "What were you actually after?". Every route through the call passes this knot.
+   - `#delivery: warm and confiding, a headhunter's smile in the voice`
+   - State: the first Recruiter call (after the insider is named, `torres_identified`); any opening choice. Film the line, not the call screen's history if it shows the name.
+   - Why: "Everyone has a price" is a stock phrase. This line is her method, and it is the mission's threat: the insider is a person she picked at their weakest.
+2. Recruiter: "Shame. I'd have placed you somewhere nobody would ever think to look." (12 words, about 4 s)
+   - Insertion: `ink/m05_phone_recruiter.ink`, knot `recruiter_deal_refused`, **added** after `:270` ("Noted. For what it's worth, I expected it. Your file reads like someone who finishes what they start."), before "You won't reach all of them before I've closed on a few more."
+   - `#delivery: lightly regretful, then cool`
+   - State: first call through to `recruiter_deal`, then `Not interested. That list is going to SAFETYNET.` The deal menu stays off screen.
+   - Why: it turns the recruiter on the viewer and on the player. It is personal and quotable, and it reveals nothing.
+
+**Hook:** Netherton's "Someone inside a Home Office contractor is handing ENTROPY the crown jewels." is not weak. No new hook.

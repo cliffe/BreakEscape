@@ -83,3 +83,24 @@ Off screen: the job card's port and the jump-server address (`scenario.json.erb:
 - **Voltage's line:** the knot sits behind dialogue choices; one take can get both ending lines if the route is planned. Never film the menu.
 - **ESD in the crescendo:** only the unauthorised panel; check its text holds no hint the player should earn.
 - **Cached audio:** none of these lines is checked; Nightshade and Netherton may be uncached. New lines need the user's yes and a count.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` on the new lines, and the user's yes through AC0 before TTS. Voltage's knots already carry `#delivery:` tags (`:90`, `:230`, `:252`), so a tagged new line fits in with them.
+
+**Ending**
+
+1. **Pick.** Voltage: "I've done the sums. The city goes dark at eight, and I'll sleep fine." (14 words, about 4.5 s)
+   - Insertion: `ink/m04_npc_voltage.ink:258`, knot `voltage_owns_it`. **Replaces** "There's no version of this where I blink. You should have worked that out on the way in." Before it: "A grid that kills fifty when it stumbles was built wrong. Somebody has to make that legible." or "I don't need their names to know the number." After it: the narration that opens `confrontation_choice`. It reads as his closing word on the number.
+   - `#delivery: quiet and level, a man reading out a sum he has already checked`
+   - State: first talk in the plant room. `It's over, Voltage` > `Make me understand it first.` > `Why infrastructure? Why civilians?` > either choice (`voltage_states_the_number` plays its casualty lines: keep them off the cut) > this line.
+   - Why: it says what happens, when, and how he feels about it. It also echoes HaX's fallback hook ("they've done the sums"), so the trailer is bookended.
+2. Voltage: "But you're late. Three days we've had this hall, and every light in the city with it." (17 words, about 5.5 s)
+   - Insertion: `ink/m04_npc_voltage.ink:140`, knot `voltage_confrontation_start`. **Replaces** "But you're late. This place has no security worth the name, and we've had three days in it." Before it: his count of downed operatives (and the klaxon line if `crew_warned`). After it: the two opening choices. The inverted word order suits his Afrikaans-tinged voice ("Ja").
+   - `#delivery: unhurried, almost bored, the threat taken for granted`
+   - State: the cheapest one. His first line on entering the plant room after `anomaly_detected`; plays in every game.
+   - Why: the current line is about the site's security. This one says the city is already in his hands.
+
+Already in the ink and not in the candidates above: "Look at my hand. Then look at the clock." (`:187`, `voltage_threatens_trigger`, via `You're not burning this hall down.`). It is 9 words and needs no new voicing, so check its cached take first.
+
+**Hook:** Netherton's "ENTROPY used to steal. Now they break the things people can't live without." is not weak. No new hook.

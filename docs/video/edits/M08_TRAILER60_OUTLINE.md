@@ -75,3 +75,22 @@ The whole mission is one night (`lighting.defaultMode: "on"`, motion lights only
 - **ATHENA's hologram** depends on `npc-sprite-style.js` alpha, glow and flicker rendering in the capture build; the briefing itself is a person-chat cutscene, so the hologram look shows only on the reception ATHENA (`receptionist_ai`).
 - **Lights strike** only in the server room, archives and suite; the archives shot needs the passphrase door already open (entry state, not filmed).
 - Netherton's stakes line comes from the first briefing, which runs once: one take per fresh game.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. The villain is the mole, and his identity is the mission's twist. So the menace comes from the two voices that watch all three suspects: Netherton and ATHENA. Neither line points at one suspect (all three have planning access, `m08_director_netherton.ink:134`).
+
+**Ending**
+
+1. **Pick.** Director Magnus Netherton: "They have read our plans for months, Agent. Tonight they will be reading you." (14 words, about 4.5 s)
+   - Insertion: `ink/m08_director_netherton.ink`, opening of the first talk, **added** after `:97` ("There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing."), before "Ask me what you need. Then go and prove something."
+   - `#delivery: low and grave, each word placed`
+   - State: the cheapest one. First talk with Netherton in his office (`met` false).
+   - Why: the current #1 states the premise. This line turns it on the player, and it can follow #1 in the cut as its button.
+2. ATHENA: "Whoever it is, Agent, they are still in the building. So are you." (13 words, about 4 s)
+   - Insertion: `ink/m08_receptionist_ai.ink`, `hub`, option "What have you seen tonight, ATHENA?", **added** after `:40` ("I will say only this. The calmest person in a frightened building..."), before `-> back`.
+   - `#delivery: serene and pleasant, faintly unsettling`
+   - State: talk to ATHENA in the lobby and take that option.
+   - Why: an eerie, short closer from the hologram that names no trait, so it does not single out the calm suspect the way `:40` does.
+
+**Hook:** ATHENA's "The leak came from inside this building." works if it is cut at the first sentence. No new hook.

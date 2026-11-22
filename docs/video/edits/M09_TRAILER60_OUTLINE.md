@@ -76,3 +76,28 @@ Two blocks: the Citadel briefing (indoors, no windows) and then Helena at night.
 - **Motion lights** in the open stacks, Sorensen's office, tape room and cage: the dark lead-in must be in the take.
 - **Briefing lines vary on carry-over globals**; a fresh game with no carry-over gives the `else` branch.
 - Every NPC needs a frame: Gary, Torres and Nightshade are phone-only; the crescendo can use their phone contact cards.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. Sorensen's menace is her courtesy: she calls the player "dear" (`m09_sorensen_cage.ink:64`) and talks like a clerk keeping records. Neither line touches the Architect's identity, WREN or the sleeper's name.
+
+**Ending**
+
+1. **Pick.** Margaret Sorensen: "Yours is in tonight's run, dear. I saved it for last." (11 words, about 3.5 s)
+   - Insertion: `ink/m09_sorensen_hatch.ink`, knot `recognition`, **added** after the closing brace at `:112` (just after "You're the one the Architect writes about.", `:107-111`), before HaX's "...She's got a file on you." (`:113`). HaX's line becomes her reaction to it.
+   - `#delivery: mild and pleasant, like a librarian mentioning an overdue book`
+   - State: first visit to the hatch (`hatch_met` false); either opening choice. It plays on every route through `recognition`.
+   - Why: "It's only paper" undersells the threat and needs context. This line is a quiet threat aimed at the player, in eleven words.
+2. Margaret Sorensen: "They're all still at their desks, dear. By morning, nobody will know which ones." (14 words, about 4.5 s)
+   - Insertion: `ink/m09_sorensen_cage.ink:33`, knot `start`. **Replaces** "It's only paper. The people are where they've always been, at their desks, doing what they were placed to do." Before it: "She feeds another sheaf into the shredder and doesn't turn round." After it: "Paper was the only thing that could ever have hurt them. So the paper goes." ("them" still refers to the placed people.)
+   - `#delivery: gentle, almost kind, without looking up from the feed`
+   - State: `cage_opened`, first talk with the cage Sorensen at the shredder (`cage_met` false).
+   - Why: it keeps the current line's idea (the sleepers stay hidden) but adds a deadline and a loss, and it is half the length.
+
+**Hook** (the current one sets up a mystery but states no stakes)
+
+- **Pick.** Director Magnus Netherton: "We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it." (16 words, about 5 s)
+  - Insertion: `ink/m09_briefing.ink`, knot `start`, **added** after `:61` ("The label named the building. Mountain States Records & Retention, a commercial archive on the edge of Helena."). It is unconditional, so it plays on a fresh game. After it come the carry-over conditionals (silent on a fresh game) and HaX's first line.
+  - `#delivery: level and grave`
+  - State: fresh game, the briefing cutscene.
+  - Why: it says what is in the building and what is happening to it, which the courier line leaves out. It also sets up the `Stop the / Wipe` and `Before It's / All Ash` cards.

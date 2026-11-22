@@ -92,3 +92,24 @@ Not for the ending: "I wasn't playing for tonight." and the sign-off call (both 
 - **The wall countdown** needs `cascade_armed`, set by the flag 3 login on the VM: seed it with `--flags` (memory: VM playtests elsewhere) and check the screen shows a clock and nothing else.
 - **Park or Mercer hostile**: the combat route and its line need an urgent read; a re-voice needs a yes.
 - Real hacking footage is planned elsewhere; placeholder until then.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. The Architect's calls are voiced phone calls (`#delivery:` notes apply). Neither line says who planted the sequence on site.
+
+**Ending**
+
+1. **Pick.** The Architect: "Four fires tonight, and only one of you. I set them so you'd have to choose." (16 words, about 5 s)
+   - Insertion: `ink/m07_architect_comms.ink`, knot `taunt_t30`, **added** after `:94` ("I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch."), before `taunt_t30_choices` ("Who am I speaking to?" / "I don't take calls from ENTROPY."). It sits two lines after the current #1 ("Don't look for the trace. It isn't there."), so one take covers both.
+   - `#delivery: soft and measured, faintly pleased, in no hurry at all`
+   - State: first contact. `architect_contact` set by the ops-floor mapping, then answer the withheld call.
+   - Why: it is the mission's premise (four operations, one agent, HaX's "One team, three fires") in his own voice. He owns the design, and the line points at the player.
+2. The Architect: "Fifteen minutes on your wall. I had rather longer to plan them." (12 words, about 4 s)
+   - Insertion: `ink/m07_architect_comms.ink`, knot `taunt_t10`, **added** in the `cascade_armed` branch after `:226` ("You logged in. The door closed behind you."), before "Stop this, and something else fails..."
+   - `#delivery: quiet and patient, a teacher stating a fact`
+   - State: log in to the attack host (`cascade_armed`, the wall clock running), then the T-10 call.
+   - Why: it ties to the on-screen countdown the trailer already shows, and it puts the player's minutes against his preparation.
+
+Already in the ink and worth a scout check: "The beauty of entropy is that it doesn't require me to win. It only requires you to wait." (`taunt_t10`, the `else` branch, about 17 words).
+
+**Hook:** Netherton's "Four ENTROPY operations went live inside the same sixty seconds." is not weak. No new hook.

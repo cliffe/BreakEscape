@@ -90,3 +90,24 @@ Spares: `Bank of` / `ENTROPY`; `Follow` / `Every Hop` (Nightshade's "Follow enou
 - **Satoshi ending** route runs through the asset choice; the take must set `found_architects_fund` and `found_wallet_keys` or go the monitor route. Lip-sync on a seated or leaning pose untested.
 - **Lights strike**: the server room is motion mode, but HaX's timed texts or toasts may land on the same frames.
 - Real hacking footage is planned elsewhere; the slot is a placeholder until then.
+
+## New lines (proposed, 2026-11-22)
+
+Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `npc-dialog-review` and the user's yes through AC0 before TTS. m06's existing endings are already strong, so these are cheaper-route alternatives, not repairs. Satoshi talks like a dry financier, so both lines keep to money.
+
+**Ending**
+
+1. **Pick.** Satoshi Nakamoto II: "Take me in if you like. The money already knows where it's going." (13 words, about 4 s)
+   - Insertion: `ink/m06_satoshi_confrontation.ink`, knot `philosophy_challenge`, **added** between `:256` ("You won't agree. You work for the people who'd lose the most if I'm right.") and "So. You've found the network. What are you going to do with it?". It says "take me in", not "arrest", because SAFETYNET cannot arrest.
+   - `#delivery: relaxed, a little amused, entirely sure`
+   - State: `evidence_reveal` > `Need it most? They're terrorists.` > `You're a criminal with a manifesto.` > `criminal_accusation` > here. No asset choice or arrest on the way, so no wrists or menus are in shot.
+   - Why: it carries the fund's own clock (it "goes out on its own in 72 hours") as a threat to the player, on a cheaper route than the current #1, with no casualty word.
+2. Satoshi Nakamoto II: "Every ransom, every blackout, every riot. It all clears through my signature." (12 words, about 4 s)
+   - Insertion: `ink/m06_satoshi_confrontation.ink`, knot `evidence_reveal`, **added** after `:144` ("Sure. HashChain is ENTROPY's bank. Every cell."), before "You'd call it laundering. I call it financial freedom for people who need it most."
+   - `#delivery: easy, almost proud, a banker reading out his book`
+   - State: the cheapest one. The opening, then `evidence_reveal`.
+   - Why: it names what the money buys in three concrete words. A viewer with no context gets the threat at once.
+
+Still the strongest line, if its route can be filmed cleanly: "Murder's what they call it when you lose. The winners get statues." (`:566`). Also in the ink, and short: "The Architect calls them lessons. I just pay the invoices." (`:192`, `calculated_cruelty`).
+
+**Hook:** Netherton's "Every cell we have hit is being paid by someone. Tonight we chase the money." is not weak. No new hook.
