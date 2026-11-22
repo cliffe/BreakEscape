@@ -27,6 +27,19 @@ export const MARKER = Object.freeze({
 });
 
 /**
+ * Pure: the marker's top-left for this sprite. Its bottom edge sits 2 px above the top of the
+ * sprite's frame (y - displayHeight * originY), so it hangs over the asker's head. The old
+ * placement subtracted the whole displayHeight from the centre, which left the marker a half
+ * frame (about 40 world px) above the head, over empty floor (re-gate minor, 22 Nov).
+ */
+export function markerPosition(sprite, bob = 0, { w = MARKER.w, h = MARKER.h } = {}) {
+    const dh = sprite.displayHeight || 48;
+    const oy = sprite.originY ?? 0.5;
+    const frameTop = sprite.y - dh * oy;
+    return { x: Math.round(sprite.x - w / 2), y: Math.round(frameTop - h - 2 + bob) };
+}
+
+/**
  * Pure: could the player notice something happening at this NPC now? `facts` is
  * npcWorldBubbles.viewFacts(npcId): { hasSprite, npcRoom, playerRoom, minigameOpen, onCamera }.
  * No facts (no bubble layer yet) counts as perceivable unless a minigame is open.
@@ -112,7 +125,8 @@ export class AskCue {
         const place = () => {
             if (!sprite.active || sprite.destroyed) { this.clear(npcId); return; }
             const bob = Math.round(Math.sin(scene.time.now / 180) * 2);
-            g.setPosition(Math.round(sprite.x - w / 2), Math.round(sprite.y - (sprite.displayHeight || 48) - h - 2 + bob));
+            const p = markerPosition(sprite, bob);
+            g.setPosition(p.x, p.y);
             // a panel covers the world: hide the marker while one is open, show it again after
             g.setVisible(!win().MinigameFramework?.currentMinigame);
         };

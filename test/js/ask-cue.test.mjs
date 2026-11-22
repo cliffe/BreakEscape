@@ -29,7 +29,7 @@ class TTSManager {}
 ` + rd('systems/npc-barks.js').replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
 
 globalThis.window = { gameState: { globalVariables: {} } };
-const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
+const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER, markerPosition } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
 const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
@@ -429,4 +429,17 @@ test('backstop: an ask held for 100+ s after `out` still gets its whole window a
         assert.equal(at(never.log, choice, tail.setGlobal[choice]), undefined);
     }
     assert.equal(n, 11);
+});
+
+test('marker hangs just above the top of the asker\'s frame, not half a frame higher', () => {
+    // 80 px frame, origin 0.5, centre y 185: the frame top is 145
+    const sprite = { x: 400, y: 185, displayHeight: 80, originY: 0.5 };
+    const p = markerPosition(sprite);
+    assert.equal(p.y + MARKER.h, 145 - 2, 'bottom edge 2 px above the frame top');
+    assert.equal(p.x, 400 - MARKER.w / 2, 'centred on the asker');
+    assert.equal(markerPosition(sprite, 2).y, p.y + 2, 'the bob moves it by its own amount only');
+    // origin at the feet (originY 1): the frame top is y - displayHeight
+    assert.equal(markerPosition({ x: 0, y: 200, displayHeight: 80, originY: 1 }).y + MARKER.h, 120 - 2);
+    // the live path uses it
+    assert.match(rd('systems/ask-cue.js'), /markerPosition\(sprite, bob\)/);
 });
