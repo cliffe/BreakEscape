@@ -2,7 +2,7 @@
  "mission": "ca12",
  "id": "ca12_trailer_r3",
  "theme": "ca",
- "title": "Cyber Aware ca12 trailer, round 3, script R2 (narrator VO, captions only until the owner signs off D341)",
+ "title": "Cyber Aware ca12 trailer, round 3, script R3 (narrator VO, captions only until the owner signs off D341)",
  "fps": 30,
  "length": 58.8,
  "music": {
@@ -229,7 +229,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Pretext option lines masked (first reply menu options) | CA: spoilers not an issue (owner r3), masks dropped"
+    "note": "Pretext card filling from found facts | CA: spoilers not an issue (owner r3)"
    },
    "seat": {
     "seat": "attack",
@@ -355,7 +355,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "D1 line only; Last change row masked; ends before the third reply menu at 21.0 | CA: spoilers not an issue (owner r3), masks dropped"
+    "note": "D1 line only; ends before the third reply menu at 21.0 | CA: spoilers not an issue (owner r3)"
    },
    "seat": {
     "seat": "attack",
@@ -469,8 +469,8 @@
    },
    "source": {
     "file": "t12_tailgater_card.trimmed.mkv",
-    "in": 0,
-    "out": 5.5
+    "in": 6,
+    "out": 11.5
    },
    "audio": {
     "gain_db": -6
@@ -481,7 +481,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Unknown visitor 09:12 card: slips in behind a badge-holder (the tailgate, as card text)"
+    "note": "Unknown visitor 09:12 card, readable: slips in behind a badge-holder at the gate (the tailgate, as card text)"
    },
    "seat": {
     "seat": "defend",
@@ -530,7 +530,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t11 real capture: courier then colleague back from leave (card 1 for the first 0.7 s), then hover over the four buttons, nothing pressed; Today's list / Staff list lines masked; action buttons visible (same generic labels on every card, owner decision) | CA: spoilers not an issue (owner r3), masks dropped"
+    "note": "t11 real capture: courier then colleague back from leave, hover over the four buttons, nothing pressed | CA: spoilers not an issue (owner r3)"
    },
    "seat": {
     "seat": "defend",
@@ -647,8 +647,14 @@
   {
    "id": "v1b",
    "start": 8.2,
-   "end": 12.2,
-   "text": "Nobody checks she's expected. This episode: visitors and tailgating."
+   "end": 9.9,
+   "text": "Nobody checks she's expected."
+  },
+  {
+   "id": "v1c",
+   "start": 10.1,
+   "end": 12.45,
+   "text": "This episode: visitors and tailgating."
   },
   {
    "id": "v2",
@@ -672,26 +678,32 @@
   {
    "id": "v5",
    "start": 23.2,
-   "end": 25.2,
+   "end": 25.1,
    "text": "Then talk your way in."
   },
   {
    "id": "v6",
-   "start": 30,
-   "end": 31.4,
-   "text": "The seats swap."
+   "start": 30.1,
+   "end": 31.8,
+   "text": "You're in. Now swap seats."
   },
   {
    "id": "v7",
    "start": 32.1,
    "end": 34.8,
-   "text": "Now the same tricks come to your desk."
+   "text": "The same tricks come to your desk."
   },
   {
    "id": "v8a",
    "start": 35.2,
-   "end": 38.4,
+   "end": 37.9,
    "text": "Tailgating: slipping in behind someone with a pass."
+  },
+  {
+   "id": "v8a2",
+   "start": 38.1,
+   "end": 40.2,
+   "text": "Inside: a floor of open screens."
   },
   {
    "id": "v8b",
@@ -702,14 +714,14 @@
   {
    "id": "v9",
    "start": 43.6,
-   "end": 46.6,
-   "text": "You've used the tricks, so you know the signs."
+   "end": 45.6,
+   "text": "You've used these tricks yourself."
   },
   {
    "id": "v10",
-   "start": 46.8,
-   "end": 49.9,
-   "text": "Check the list. Walk them up. Lock your screen."
+   "start": 45.9,
+   "end": 50.4,
+   "text": "Check the list. Walk them up. Everyone badges in. Lock your screen."
   },
   {
    "id": "v11",
