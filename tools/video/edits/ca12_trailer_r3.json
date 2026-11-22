@@ -2,9 +2,9 @@
  "mission": "ca12",
  "id": "ca12_trailer_r3",
  "theme": "ca",
- "title": "Cyber Aware ca12 trailer, round 3, script R3 (narrator VO, captions only until the owner signs off D341)",
+ "title": "Cyber Aware ca12 trailer, round 3, script R4 (narrator VO, captions only until the owner signs off D341)",
  "fps": 30,
- "length": 58.8,
+ "length": 55.4,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -233,7 +233,7 @@
    },
    "seat": {
     "seat": "attack",
-    "chip": "PRETEXT CALL",
+    "chip": "COVER STORY",
     "stripe": "#8a5a2b"
    },
    "framing": {
@@ -559,65 +559,6 @@
    }
   },
   {
-   "id": "away",
-   "type": "gameplay",
-   "duration": 3.4,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t09_step_away.trimmed.mkv",
-    "in": 21,
-    "out": 24.4
-   },
-   "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Thandiwe A2 voiced line; no tells | CA: spoilers not an issue (owner r3), masks dropped"
-   },
-   "seat": {
-    "seat": "full"
-   },
-   "framing": {
-    "16:9": {
-     "cx": 0.4,
-     "cy": 0.5,
-     "zoom": 2
-    },
-    "9:16": {
-     "cx": 0.265,
-     "cy": 0.5,
-     "zoom": 1.2
-    },
-    "1:1": {
-     "cx": 0.33,
-     "cy": 0.55,
-     "zoom": 1.4
-    }
-   },
-   "lines": [
-    {
-     "start": 0.73,
-     "end": 3.4,
-     "speaker": "Thandiwe",
-     "text": "Right, that's me back. Anything I should know?"
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
-   },
-   "dialogue": true
-  },
-  {
    "preset": "ca-close",
    "id": "close",
    "join": {
@@ -696,14 +637,14 @@
   {
    "id": "v8a",
    "start": 35.2,
-   "end": 37.9,
-   "text": "Tailgating: slipping in behind someone with a pass."
+   "end": 38,
+   "text": "Tailgating: slipping in behind a badge-holder."
   },
   {
    "id": "v8a2",
-   "start": 38.1,
+   "start": 38.15,
    "end": 40.2,
-   "text": "Inside: a floor of open screens."
+   "text": "Inside: client plans on open screens."
   },
   {
    "id": "v8b",
@@ -720,13 +661,13 @@
   {
    "id": "v10",
    "start": 45.9,
-   "end": 50.4,
-   "text": "Check the list. Walk them up. Everyone badges in. Lock your screen."
+   "end": 50.2,
+   "text": "Check the list. Walk them to reception. Badge in. Lock your screen."
   },
   {
    "id": "v11",
-   "start": 54,
-   "end": 58.6,
+   "start": 50.6,
+   "end": 55.2,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
   }
  ]

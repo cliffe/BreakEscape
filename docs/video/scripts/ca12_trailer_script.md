@@ -1,6 +1,6 @@
 # ca12 trailer script (Visitors and tailgating)
 
-Status: script round 3, captions only, not voiced. Edit: `tools/video/edits/ca12_trailer_r3.json` (58.8 s). Owner card: D341.
+Status: script round 4, captions only, not voiced. Edit: `tools/video/edits/ca12_trailer_r3.json` (55.4 s). Owner card: D341.
 
 Owner brief (2026-11-22): the trailer must stand alone as a sell for the training; narrator VO about the course throughout; say "you play the attacker" and speak the attack steps over the footage that shows them; open on Camila's line; at least one VO line naming the topic over on-screen tailgating; end on a call to action to learn on Hacktivity.co.uk; tagline "Play the attack · Learn to stop it". Spoilers are not an issue for Cyber Aware. No narrator line talks over a character line.
 
@@ -11,14 +11,13 @@ Owner brief (2026-11-22): the trailer must stand alone as a sell for the trainin
 | 8.0–12.5 | topic | t09_step_away 42.1-46.6 s · Camila walks up to the studio door past the staff; nobody checks she is expected | **v1b** "Nobody checks she's expected."<br>**v1c** "This episode: visitors and tailgating." | — |
 | 12.5–16.0 | red_card | attack card: "You play the attacker" | **v2** "First, you play the attacker." | — |
 | 16.0–19.5 | research | t04_osint_note 4.9-8.4 s · tab OPEN-SOURCE RESEARCH · Public profile page and a noted detail; no code | **v3** "Dig into what staff post in public." | — |
-| 19.5–23.0 | build | t05_pretext_card 5.3-8.8 s · tab PRETEXT CALL · Pretext card filling from found facts | **v4** "Build a cover story from what you found." | — |
+| 19.5–23.0 | build | t05_pretext_card 5.3-8.8 s · tab COVER STORY · Pretext card filling from found facts | **v4** "Build a cover story from what you found." | — |
 | 23.0–25.3 | talk | t06_the_call 12.2-14.5 s · tab FRONT DESK · INFLUENCE inset · Choice menu on the call (owner: CA spoilers fine); ends before the player line at 14.54 (test player name) | **v5** "Then talk your way in." | — |
 | 25.3–29.9 | lands | t06_the_call 16.6-21.2 s · tab FRONT DESK · D1 line only; ends before the third reply menu at 21.0 | — | Delphine: "Go on then, I'll buzz you through. Studio's up the stairs on your left." |
 | 29.9–31.9 | flip | t07_flip 21.9-23.9 s · tab YOUR TURN · Kiosk flips to Defend; no verdicts | **v6** "You're in. Now swap seats." | — |
 | 31.9–34.9 | blue_card | defend card: "You run the front desk" | **v7** "The same tricks come to your desk." | — |
-| 34.9–40.4 | tailgater | t12_tailgater_card 6-11.5 s · tab VISITOR QUEUE · Unknown visitor 09:12 card, readable: slips in behind a badge-holder at the gate (the tailgate, as card text) | **v8a** "Tailgating: slipping in behind someone with a pass."<br>**v8a2** "Inside: a floor of open screens." | — |
-| 40.4–50.4 | queue_slot | t11_defend_queue 6.8-16.8 s · tab VISITOR QUEUE · t11 real capture: courier then colleague back from leave, hover over the four buttons, nothing pressed | **v8b** "Decide who gets in, and who gets checked."<br>**v9** "You've used these tricks yourself."<br>**v10** "Check the list. Walk them up. Everyone badges in. Lock your screen." | — |
-| 50.4–53.8 | away | t09_step_away 21-24.4 s · Thandiwe A2 voiced line; no tells | — | Thandiwe: "Right, that's me back. Anything I should know?" |
-| 53.8–58.8 | close | End card: Visitors and tailgating / Play the attack · Learn to stop it / plate "Learn on Hacktivity.co.uk" | **v11** "Play the attack, learn to stop it, on Hacktivity.co.uk." | — |
+| 34.9–40.4 | tailgater | t12_tailgater_card 6-11.5 s · tab VISITOR QUEUE · Unknown visitor 09:12 card, readable: slips in behind a badge-holder at the gate (the tailgate, as card text) | **v8a** "Tailgating: slipping in behind a badge-holder."<br>**v8a2** "Inside: client plans on open screens." | — |
+| 40.4–50.4 | queue_slot | t11_defend_queue 6.8-16.8 s · tab VISITOR QUEUE · t11 real capture: courier then colleague back from leave, hover over the four buttons, nothing pressed | **v8b** "Decide who gets in, and who gets checked."<br>**v9** "You've used these tricks yourself."<br>**v10** "Check the list. Walk them to reception. Badge in. Lock your screen." | — |
+| 50.4–55.4 | close | End card: Visitors and tailgating / Play the attack · Learn to stop it / plate "Learn on Hacktivity.co.uk" | **v11** "Play the attack, learn to stop it, on Hacktivity.co.uk." | — |
 
 VO pace limit: 3.0 words per second (lint). Every VO line is also a burned caption.
