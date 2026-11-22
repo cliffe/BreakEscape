@@ -58,12 +58,13 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 21 Nov 2026</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 22 Nov 2026</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m03" aria-selected="true" data-cut="m03">m03 · v2</button>
+    <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
+    <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
     <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
     <button class="tab" role="tab" id="tab-m01" aria-selected="false" data-cut="m01">m01 · v9</button>
   </nav>
@@ -80,31 +81,69 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
-  m03: {
-    doc: "feedback/m03_trailer_v2",
-    title: "m03 Ghost in the Machine · 60 s trailer · round v2",
-    video: "/_blob/0316a336526d96b9bc87ab47e412c8f7", poster: "/_blob/20818451951427c8dba44855d6f407d3",
-    stats: ["60.000 s", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.49 dB", "16:9 only"],
+  m03v3: {
+    doc: "feedback/m03_trailer_v3",
+    title: "m03 Ghost in the Machine · 60 s trailer · round v3 (new cut)",
+    videoLabel: "Main cut: ends on \"I sleep perfectly\"",
+    video: "/_blob/ef1c12a85fb189fde489590213edc754", poster: "/_blob/2fff5f87c8caf5a47cef39e26074e5c9",
+    video2Label: "Alternative ending: the Ghost line (only the last 6 s differ)",
+    video2: "/_blob/feade6d3530fe7008c475f59f3d484a4",
+    stats: ["60.000 s each", "1920×1080 30 fps", "−14.0 LUFS", "true peak −1.4 / −1.1 dB", "16:9 only"],
     changed: [
-      "First cut. Music: CutScene \"Shadow Code 1\" (the mission's night playlist), picked by beat analysis; the drop lands on the motion lights in the main hallway.",
-      "Built like m02: HaX hook, gameplay montage, Real Hacking (nmap recon, MAC line cropped), three character beats each with an approach first, a crescendo, then the guard and the villain.",
-      "The guard catches a pick in his torch beam: the sight cone on the map, then Terry, \"Picks. Right. We're done talking.\"",
-      "Victoria Sterling closes it: \"Competent is cheap. That's not why you're here.\" Her last syllable runs into the bumper.",
-      "Every line starts before its cut and finishes; all voices peak within about 2 dB of HaX.",
-      "Recorded on today's build (deeper Ghost voice and the lip-sync fix are in the game); the guard and Victoria takes measure within about one frame of lip sync.",
-      "A different spy in each map shot. Danny Foster left out (a face flash was allowed but not needed)."
+      "A new cut built on your v2 notes: day first (Zainab, then Victoria's pitch), then the night (the lights strike, Ffion, the guard), then the crescendo and Victoria at night.",
+      "New hook from HaX: \"Every life St. Catherine's lost, it lost to something Zero Day sold.\"",
+      "RFID gets its own card, named for the mechanic (\"RFID / Cloning\"), and about 4 s of its own: read the badge, save it, emulate it at the reader, the door opens, walk through. No phone or PIN flashes in that section.",
+      "Cards in m03's own words: \"RFID / Cloning\", \"Real / Hacking\", \"Don't Get / Caught\", \"Before the / Next Sale\". \"Uncover the Mystery\" and \"Choices with Consequences\" are gone.",
+      "Straight walks only. Zainab is filmed away from her desk (no jitter), and her blink now uses both eyes (game fix).",
+      "Guard beat in order: Terry's torch (now brighter) sweeps the wing with the player at the door, the lockpick, Terry's re-voiced angry line, then he comes after the player.",
+      "Crescendo flashes include Danny's desktop with content (a \"GHOST - Hospital\" folder) in place of the empty one.",
+      "Ending: Victoria at night, unrepentant. Two endings to pick from (below)."
     ],
-    standin: ["None. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
-    srt: "1\n00:00:05,820 --> 00:00:08,850\nAgent HaX: They don't run the attacks. They arm the cells that do.\n\n2\n00:00:24,570 --> 00:00:27,290\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n3\n00:00:28,080 --> 00:00:31,450\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n4\n00:00:31,900 --> 00:00:35,890\nYusuf Demir: Afternoon. If you're my client, you're very late.\n\n5\n00:00:45,040 --> 00:00:48,330\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:48,180 --> 00:00:52,120\nVictoria Sterling: Competent is cheap. That's not why you're here.",
+    standin: ["None. Real Hacking is the m03 console clip. Only 16:9 is rendered; 9:16 and 1:1 follow your verdict."],
+    srt: "1\n00:00:04,800 --> 00:00:08,550\nAgent HaX: Every life St. Catherine's lost, it lost to something Zero Day sold.\n\n2\n00:00:12,043 --> 00:00:15,883\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n3\n00:00:16,113 --> 00:00:21,293\nVictoria Sterling: We find it, we price it, and we find the somebody.\n\n4\n00:00:31,600 --> 00:00:34,970\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n5\n00:00:37,067 --> 00:00:40,107\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:46,800 --> 00:00:48,290\nVictoria Sterling: I sleep perfectly.\n\n7\n00:00:48,783 --> 00:00:51,833\nVictoria Sterling: That's the part people like you can never forgive.",
     questions: [
-      {k:"hook", t:"HaX's hook line under the title", o:[["cells","\"They don't run the attacks. They arm the cells that do.\"","States the mission's premise (in this cut)",1],["hospital","\"You worked St. Catherine's last month. The hospital that went dark.\"","Links back to m02; recorded and ready to swap in"]]},
-      {k:"card", t:"Threat card wording (m01 \"The Entropy\", m02 \"Before the Ward Goes Dark\")", o:[["sale","\"Before the Next Sale\"","As in this cut",1],["other","Other wording","Write it in the note"]]},
-      {k:"music", t:"Music: \"Shadow Code 1\". The lull after 44 s carries the guard and Victoria beats", o:[["keep","Keep","Night-playlist track, unused by m01/m02",1],["midnight","SpyAction \"Midnight Trigger\"","Fallback from the scouting notes"],["cold","\"Cold Bond Circuit\"","Second fallback"]]},
-      {k:"victoria", t:"Victoria Sterling as the villain close (she is the briefed target, not a twist)", o:[["yes","Show her","Close-up with her line, as in this cut",1],["no","Leave her out","End on the guard beat instead"]]},
-      {k:"voices", t:"Voice levels: every line peaks within about 2 dB of HaX (the music is louder after the drop)", o:[["ok","Fine as is","Close enough at speed",1],["music","Duck the music more under them","Voices stay, the bed drops"]]},
-      {k:"console", t:"Real Hacking: nmap recon only, as agreed for m02", o:[["keep","Enough","2.2 s, four service banners",1],["more","Show more of the solve","Needs a longer console beat"]]},
+      {k:"ending", t:"Ending line", o:[["sleep","\"I sleep perfectly. That's the part people like you can never forgive.\"","Main cut. Menace without explaining the plot",1],["ghost","\"Ghost wanted somewhere that would pay. I told them where. That's consultancy.\"","Alternative cut. Reveals she picked the hospital, the mission's payoff"]]},
+      {k:"cards", t:"Cards: \"RFID / Cloning\", \"Real / Hacking\", \"Don't Get / Caught\", \"Before the / Next Sale\"", o:[["keep","Keep all four","As in both cuts",1],["other","Change one","Say which and the wording in the note"]]},
+      {k:"hook", t:"HaX's hook: \"Every life St. Catherine's lost, it lost to something Zero Day sold.\"", o:[["keep","Keep","Ties m03 to m02's hospital and names the target",1],["cells","Back to \"They don't run the attacks. They arm the cells that do.\"","The v2 hook"]]},
+      {k:"terry", t:"Terry's re-voiced line (\"Picks. Right. We're done talking.\") in the cut", o:[["keep","Angry enough","You approved the read in the game",1],["more","Still too flat","Another re-voice pass"]]},
+      {k:"rfid", t:"The RFID beat (about 4 s, from 22.8 s)", o:[["keep","Long and clear enough","Read, save, emulate, door, walk",1],["longer","Longer still","Take time from the Real Hacking walk"]]},
+      {k:"ffion", t:"Ffion says \"this late\" in front of a bright reception (the conversation backgrounds have no night version)", o:[["keep","Fine","The shots either side are dark",1],["night","Make a night background for reception","Art work in the game, then a re-take"],["drop","Drop Ffion","Give the time to the guard beat"]]},
+      {k:"music", t:"Music: \"Shadow Code 1\" again. Its drop lands at 12.1 s (on Zainab), not on the night turn at 30.5 s, because the track has no lift between 14 and 44 s", o:[["keep","Keep","Works with the day/night order",1],["track","Try another track","Pick one whose lift lands on the night turn"]]},
+      {k:"close", t:"The last half of the ending line is about 1.5 dB quieter than the other voices (the mix compresses it; raising the gain moved it 0.2 dB)", o:[["ok","Fine by ear","",1],["louder","Louder","I'll duck the music under it instead"]]},
       {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
       {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  lines: {
+    doc: "feedback/trailer_lines_m04_m10",
+    title: "New trailer lines for m04 to m10 (proposals)",
+    noVideo: true, noVerdict: true,
+    intro: "You said authoring new lines to make the trailers \"trailer perfect\" is in scope. Each proposal goes into the ink at a point where it plays naturally in the game, never as a trailer-only line. Nothing is in the ink or voiced yet. After your picks: a dialogue review of the new lines, then I ask AC0 for your TTS yes with the count. The suggested picks would need 8 new lines voiced (at most 11 with optional matching re-voices). Full details, with the lines either side of each one, are in docs/video/edits/TRAILER_LINES_PROPOSED.md.",
+    changedLabel: "What the outlines found (one per mission, in docs/video/edits/M0X_TRAILER60_OUTLINE.md)",
+    changed: [
+      "m04 Critical Failure: new mechanic fingerprint dusting and the biometric door, card \"Fingerprint / Dusting\".",
+      "m05 Insider Trading: no new minigame; the card is \"Name the / Insider\" (fallback \"Fingerprint / Matching\").",
+      "m06 Follow the Money: the Settlement Tracer, card \"Blockchain / Tracing\".",
+      "m07 Architect's Gambit: the Architect calls from a withheld number, card \"Withheld / Caller\".",
+      "m08 The Mole: interviewing the three suspects, card \"Interview / Suspects\".",
+      "m09 Digital Archaeology: stopping the tape wipe, card \"Stop the / Wipe\".",
+      "m10 Full Disclosure: cutting the bunker's security by hand, card \"Disable the / Security\"."
+    ],
+    questions: [
+      {k:"m04", t:"m04 ending (Voltage)", o:[["sums","\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\"","New, replaces the \"blink\" line in his confrontation. Quiet and level",1],["late","\"But you're late. Three days we've had this hall, and every light in the city with it.\"","New, replaces a line earlier in the confrontation"],["hand","\"Look at my hand. Then look at the clock.\"","Existing line, needs only a cache check"],["blink","\"There's no version of this where I blink...\"","Current; you called it weak"]]},
+      {k:"m05", t:"m05 ending (the Recruiter, on the phone)", o:[["week","\"I find people the week before they break, agent. Then I make them an offer.\"","New, added to his introduction. Warm and confiding",1],["shame","\"Shame. I'd have placed you somewhere nobody would ever think to look.\"","New, after you refuse his deal"],["price","\"Everyone has a price, agent. I'm asking what yours is.\"","Existing"]]},
+      {k:"m06", t:"m06 ending (Satoshi Nakamoto II)", o:[["money","\"Take me in if you like. The money already knows where it's going.\"","New, cheap route to film",1],["signature","\"Every ransom, every blackout, every riot. It all clears through my signature.\"","New, in the evidence reveal"],["invoices","\"The Architect calls them lessons. I just pay the invoices.\"","Existing"],["statues","\"Murder's what they call it when you lose. The winners get statues.\"","Existing, but needs the arrest route filmed around its menus"]]},
+      {k:"m07", t:"m07 ending (the Architect, withheld call)", o:[["fires","\"Four fires tonight, and only one of you. I set them so you'd have to choose.\"","New. HaX's own call already says \"four fires tonight\"",1],["fifteen","\"Fifteen minutes on your wall. I had rather longer to plan them.\"","New"],["wait","\"The beauty of entropy is that it doesn't require me to win. It only requires you to wait.\"","Existing"],["trace","\"Don't look for the trace. It isn't there.\"","Existing, the outline's pick"]]},
+      {k:"m07hook", t:"m07: the outline's HaX line \"One team, three fires. ENTROPY built that arithmetic on purpose.\" comes after two fires went unanswered, so it may read as an outcome", o:[["swap","Use it only as a mid-trailer line, not the hook","Outcome lines stay off",1],["keep","Fine as the hook",""]]},
+      {k:"m08", t:"m08 ending (the mole stays hidden, so the menace goes to Netherton or ATHENA)", o:[["read","Netherton: \"They have read our plans for months, Agent. Tonight they will be reading you.\"","New, in his opening briefing",1],["athena","ATHENA: \"Whoever it is, Agent, they are still in the building. So are you.\"","New"],["mole","Netherton: \"There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.\"","Existing, the outline's pick"]]},
+      {k:"m09", t:"m09 ending (Margaret Sorensen)", o:[["saved","\"Yours is in tonight's run, dear. I saved it for last.\"","New, at her recognition beat. Mild, like a librarian",1],["desks","\"They're all still at their desks, dear. By morning, nobody will know which ones.\"","New, replaces \"It's only paper...\""],["paper","\"It's only paper...\"","Current; you called it weak"]]},
+      {k:"m09hook", t:"m09 hook (Netherton)", o:[["burning","\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\"","New, in his briefing",1],["current","Keep the outline's current hook",""]]},
+      {k:"m10", t:"m10 ending (Dr Adrian Tesseract, named in m10's opening)", o:[["badge","\"I had the blast door read one badge tonight. Yours.\"","New, on arrival",1],["weak","\"Your service spent decades hoarding the world's weak points. At six, I give them back.\"","New; repeats the hook's idea, so pair it with the HaX hook"],["confession","\"It has to be one of you. If I press it, it's a crime. If you press it, it's a confession.\"","Existing, late in the mission"],["six","\"Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you.\"","Existing, plays on arrival"]]},
+      {k:"m10hook", t:"m10 hook", o:[["catalogued","Netherton: \"At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone.\"","Existing, no voicing",1],["place","HaX: \"Well enough to know he's set a place for each of us.\"","New, replaces \"...expecting us.\""]]},
+      {k:"casualty", t:"The recipes still bar casualty figures (lines like Voltage's \"forty-odd\" were left out). Keep that rule?", o:[["keep","Keep it","Threat without numbers",1],["relax","Relax it","Figures allowed when they are the stakes"]]},
+      {k:"m05twist", t:"m05: the outline keeps the insider (Torres) off screen as the mission's twist", o:[["keep","Keep him hidden","",1],["show","Show him","He is fair game"]]},
+      {k:"voice", t:"Once you've picked: voice the new lines? (8 with the suggested picks, about 16 s of audio)", o:[["yes","Yes, after the dialogue review","I send the count to AC0 for the go",1],["later","Not yet","Hold until each mission's trailer starts"]]},
+      {k:"other", t:"Anything else on these lines, or a line of your own?", o:null}
     ]
   },
   m02: {
@@ -153,8 +192,8 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m03";
-let answers = {m03:{}, m02:{}, m01:{}};
+let current = "m03v3";
+let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
 try { const s = JSON.parse(localStorage.getItem(LS) || "null"); if (s) answers = Object.assign(answers, s); } catch (_) {}
@@ -166,16 +205,18 @@ function render(){
   const main = document.getElementById("cut"); main.replaceChildren();
   const top = el("section",{class:"card"});
   top.append(el("h2",{text:c.title}));
-  if (c.video){ const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
-  else top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
-  if (c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
-  const ch=el("div",{}, el("div",{class:"kicker",text:"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch);
-  const sd=el("div",{}, el("div",{class:"kicker",text:"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd);
+  if (c.intro) top.append(el("p",{class:"why",text:c.intro}));
+  if (c.video){ if (c.videoLabel) top.append(el("div",{class:"kicker",text:c.videoLabel})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
+  else if (!c.noVideo) top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.video2){ top.append(el("div",{class:"kicker",text:c.video2Label||"Alternative"})); const v2=el("video",{controls:"",preload:"metadata",playsinline:""}); v2.src=c.video2; top.append(v2); }
+  if (c.stats && c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
+  if (c.changed){ const ch=el("div",{}, el("div",{class:"kicker",text:c.changedLabel||"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch); }
+  if (c.standin){ const sd=el("div",{}, el("div",{class:"kicker",text:"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd); }
   if (c.srt){ const d=el("details"); d.append(el("summary",{text:"Captions (.srt)"}), el("pre",{text:c.srt})); top.append(d); }
   main.append(top);
 
   const form=el("section",{class:"card"}); form.append(el("h2",{text:"Questions"}));
-  const qs=[{k:"verdict",t:"Verdict",o:VERDICT.map(([v,l,d])=>[v,l,d])}].concat(c.questions);
+  const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT.map(([v,l,d])=>[v,l,d])}]).concat(c.questions);
   qs.forEach((q,i)=>{
     const box=el("div",{class:"q"}); box.append(el("h3",{text:(i+1)+". "+q.t}));
     if (q.o){ const opts=el("div",{class:"opts",role:"radiogroup","aria-label":q.t});
@@ -195,7 +236,7 @@ function render(){
 
 function fillCopy(){
   const lines=[];
-  for (const key of ["m03","m02","m01"]){ const c=CUTS[key], a=answers[key]||{}; const qs=[{k:"verdict",t:"Verdict",o:VERDICT}].concat(c.questions);
+  for (const key of Object.keys(CUTS)){ const c=CUTS[key], a=answers[key]||{}; const qs=(c.noVerdict?[]:[{k:"verdict",t:"Verdict",o:VERDICT}]).concat(c.questions);
     const got=qs.filter(q=>a[q.k]||a[q.k+"_note"]); if (!got.length) continue; lines.push("["+c.title+"]");
     got.forEach(q=>{ const opt=q.o&&q.o.find(o=>o[0]===a[q.k]); lines.push(q.k+" ("+q.t+"): "+(opt?opt[1]:"-")+(a[q.k+"_note"]?" - "+a[q.k+"_note"]:"")); }); }
   document.getElementById("copybox").value=lines.join("\n");
@@ -217,6 +258,6 @@ document.getElementById("copybtn").addEventListener("click",async()=>{ const box
 render();
 
 (async()=>{ try{ if (!window.claude || !window.claude.use) return; db = await window.claude.use("db"); if (!db) return;
-  for (const key of ["m03","m02","m01"]){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
+  for (const key of Object.keys(CUTS)){ try{ const snap=await db.doc(CUTS[key].doc).get(); const d=snap&&snap.data&&snap.data(); if (d){ const local=answers[key]||{}; answers[key]=Object.assign({}, d, local); } }catch(_){} }
   render(); } catch(_){} })();
 </script>

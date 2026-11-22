@@ -1,10 +1,10 @@
 {
  "mission": "m03",
- "id": "m03_trailer60_v2",
+ "id": "m03_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m03 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-21): first cut. Music Shadow Code 1 from 51.619 s (drop 12.136 s = the lights strike). Hook 'They don't run the attacks. They arm the cells that do.', threat card 'Before the Next Sale'. t17_guard and t18_victoria are marked placeholders (stand-in pictures, no audio). Danny not shown. Rough cut.",
+ "status": "v3 (2026-11-22): new cut per docs/video/edits/M03_TRAILER60_V3_PLAN.md. Ending: Victoria 'I sleep perfectly'. t17b and t20 shots re-timed to the 22 Nov re-takes. Music Shadow Code 1 from 51.619 s (unchanged); no lift falls at the night turn.",
  "music": {
   "track": "CutScene/Shadow Code 1.mp3",
   "analysis": "shadow_code_1_60.json",
@@ -70,17 +70,17 @@
   {
    "id": "hax_hook",
    "type": "gameplay",
-   "duration": 3.4,
+   "duration": 3.6,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
-    "file": "t01_hax_hook.trimmed.mkv",
-    "in": 8.3,
-    "out": 11.7
+    "file": "t01b_hax_stakes.trimmed.mkv",
+    "in": 32.24,
+    "out": 35.84
    },
-   "note": "hook_1 voice 8.12-11.15; audio from 7.95 (pre 0.35 under the held title). Out 11.7 before the choice menu (about 12.0).",
+   "note": "hook: voice 31.04-35.79 starts under the title (pre 1.4); out 35.84 before the menu (36.25)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -89,10 +89,10 @@
     }
    },
    "audio": {
-    "gain_db": 0,
+    "gain_db": 1.9,
     "dialogue": true,
     "duck_music": true,
-    "pre": 0.35,
+    "pre": 1.4,
     "post": 0
    },
    "spoiler": {
@@ -101,29 +101,30 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "HaX hook: premise line, no code or culprit"
+    "note": "HaX stakes line, no code or culprit"
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Agent HaX",
-     "text": "They don't run the attacks. They arm the cells that do.",
-     "start": -0.18,
-     "end": 2.85
+     "text": "Every life St. Catherine's lost, it lost to something Zero Day sold.",
+     "start": -1.2,
+     "end": 2.55
     }
    ]
   },
   {
    "id": "card_mission",
    "type": "card",
-   "duration": 1.8,
+   "duration": 1.5,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "text": [
     "Mission 3",
-    "Ghost in the Machine"
+    "Ghost in the",
+    "Machine"
    ],
    "spoiler": {
     "reviewed": true,
@@ -135,155 +136,169 @@
    }
   },
   {
-   "id": "m_lights",
+   "id": "walk_zainab",
    "type": "gameplay",
-   "duration": 2.1,
+   "duration": 1.0333,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
-    "file": "t02_hall_lights.trimmed.mkv",
-    "in": 2.55,
-    "out": 4.65
+    "file": "t10b_zainab.trimmed.mkv",
+    "in": 1.4,
+    "out": 2.4333
    },
-   "note": "day take; strike at take 3.92 lands on the music drop (12.136 s)",
-   "framing": {
-    "16:9": {
-     "cx": 0.675,
-     "cy": 0.4,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "reception then hallway lights on, no text"
-   }
-  },
-  {
-   "id": "m_lockpick",
-   "type": "gameplay",
-   "duration": 1.1,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t03_lockpick.trimmed.mkv",
-    "in": 4.0,
-    "out": 5.1
-   },
-   "note": "pins setting mid-pick",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.48,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "lockpick pins only"
-   }
-  },
-  {
-   "id": "m_rfid",
-   "type": "gameplay",
-   "duration": 1.1,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t04_rfid_clone.trimmed.mkv",
-    "in": 8.3,
-    "out": 9.4
-   },
-   "note": "progress to 'Saved Staff Access Badge'; UID row blurred in the take",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.8
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "no hex readable"
-   }
-  },
-  {
-   "id": "m_phone",
-   "type": "gameplay",
-   "duration": 1.1,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t05_phone.trimmed.mkv",
-    "in": 3.95,
-    "out": 5.05
-   },
-   "note": "phone hub choices, HaX",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.35,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "neutral hub choices"
-   }
-  },
-  {
-   "id": "m_keypad",
-   "type": "gameplay",
-   "duration": 1.1,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t06_keypad.trimmed.mkv",
-    "in": 4.5,
-    "out": 5.6
-   },
-   "note": "137_ partial, real code differs, no ENTER",
+   "note": "DAY straight walk down to Zainab; camera scrolls, crop checked on frames only roughly",
    "framing": {
     "16:9": {
      "cx": 0.5,
      "cy": 0.42,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "DAY straight walk down to Zainab; camera scrolls, crop checked on frames only roughly"
+   }
+  },
+  {
+   "id": "npc_zainab",
+   "type": "gameplay",
+   "duration": 3.9,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10b_zainab.trimmed.mkv",
+    "in": 9.85,
+    "out": 13.75
+   },
+   "note": "voice 9.76-13.60 (chat opens at 9.8, black frame 9.7); eyes shut at 13.5 kept; out 13.75, menu later",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 1.9,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.12,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Zainab line"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Zainab Hussain",
+     "text": "Hiya. Here to see Sterling? Good luck.",
+     "start": -0.09,
+     "end": 3.75
+    }
+   ]
+  },
+  {
+   "id": "npc_victoria_pitch",
+   "type": "gameplay",
+   "duration": 5.5667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_victoria_pitch.trimmed.mkv",
+    "in": 63.3,
+    "out": 68.8667
+   },
+   "note": "DAY; voice 63.38-68.56; previous line's subtitle gone by 63.4; menu 69.1",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 5.5,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.05,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Victoria pitch line"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Victoria Sterling",
+     "text": "We find it, we price it, and we find the somebody.",
+     "start": 0.08,
+     "end": 5.26
+    }
+   ]
+  },
+  {
+   "id": "card_clone",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "RFID",
+    "Cloning"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "rfid_read",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t04_rfid_clone.trimmed.mkv",
+    "in": 2.6,
+    "out": 3.3
+   },
+   "note": "cloner read results; hex blurred in take",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
      "zoom": 1.7
     }
    },
@@ -296,9 +311,140 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "keypad partial, real code differs in every position"
+    "note": "cloner read results; hex blurred in take"
+   }
+  },
+  {
+   "id": "rfid_saved",
+   "type": "gameplay",
+   "duration": 0.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
    },
-   "keypad_partial": "137_"
+   "source": {
+    "file": "t04_rfid_clone.trimmed.mkv",
+    "in": 8.5,
+    "out": 9.1
+   },
+   "note": "Saved Staff Access Badge",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Saved Staff Access Badge"
+   }
+  },
+  {
+   "id": "rfid_emulate",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_rfid_emulate.trimmed.mkv",
+    "in": 3.9,
+    "out": 4.6
+   },
+   "note": "reader: Emulate the saved card (UID blurred in the take)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reader: Emulate the saved card (UID blurred in the take)"
+   }
+  },
+  {
+   "id": "rfid_granted",
+   "type": "gameplay",
+   "duration": 0.6,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_rfid_emulate.trimmed.mkv",
+    "in": 5.9,
+    "out": 6.5
+   },
+   "note": "reader: green tick, access granted",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reader: green tick, access granted"
+   }
+  },
+  {
+   "id": "rfid_door",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_rfid_emulate.trimmed.mkv",
+    "in": 8.0,
+    "out": 9.5
+   },
+   "note": "door opens, player steps through into the server room",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "door opens, player steps through into the server room"
+   }
   },
   {
    "id": "card_real",
@@ -324,7 +470,7 @@
   {
    "id": "walk_vm",
    "type": "gameplay",
-   "duration": 0.8,
+   "duration": 0.6,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -332,9 +478,9 @@
    "source": {
     "file": "t07_walk_vm.trimmed.mkv",
     "in": 2.1,
-    "out": 2.9
+    "out": 2.7
    },
-   "note": "walk to the Training Lab Terminal, camera settled",
+   "note": "walk to the training terminal",
    "framing": {
     "16:9": {
      "cx": 0.43,
@@ -351,13 +497,13 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "walking shot, no text"
+    "note": "walk to the training terminal"
    }
   },
   {
    "id": "real_hacking_console",
    "type": "gameplay",
-   "duration": 2.2,
+   "duration": 1.8,
    "snap": false,
    "join": {
     "type": "cut"
@@ -366,7 +512,7 @@
     "type": "clip",
     "file": "m03_console_recon_clip.mp4",
     "in": 0.4,
-    "out": 2.6
+    "out": 2.2
    },
    "placeholder": false,
    "note": "m03 console recon (~/safetynet-footage/m03/solution/vm_console_recon_s949.trimmed.mkv, 38.4-41.0 s): crop x0-560 y0-178 of 1024x768 scaled 3.35x nearest on #21242D, 1920x1080. nmap command, 'Starting Nmap', then four service banners (ftp, ssh, http, distccd). MAC/vendor line is below the crop. BE_CLIPS_DIR=$HOME/video-takes-local/m03/clips",
@@ -390,435 +536,22 @@
    }
   },
   {
-   "id": "m_cyberchef",
+   "id": "m_lights",
    "type": "gameplay",
-   "duration": 0.9,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t08_cyberchef.trimmed.mkv",
-    "in": 7.65,
-    "out": 8.55
-   },
-   "note": "neutral ROT13 input and decoded output (Hello, world), no secret",
-   "framing": {
-    "16:9": {
-     "cx": 0.62,
-     "cy": 0.35,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "neutral test text"
-   }
-  },
-  {
-   "id": "card_uncover",
-   "type": "card",
    "duration": 1.2,
    "snap": false,
    "join": {
-    "type": "glitch"
-   },
-   "text": [
-    "Uncover",
-    "the Mystery"
-   ],
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "card text only"
-   }
-  },
-  {
-   "id": "mb_ffion",
-   "type": "gameplay",
-   "duration": 0.8,
-   "snap": false,
-   "join": {
-    "type": "glitch"
-   },
-   "source": {
-    "file": "t09_ffion.trimmed.mkv",
-    "in": 1.6,
-    "out": 2.4
-   },
-   "note": "approach to Ffion, night, muted",
-   "framing": {
-    "16:9": {
-     "cx": 0.45,
-     "cy": 0.42,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "walking shot"
-   }
-  },
-  {
-   "id": "npc_ffion",
-   "type": "gameplay",
-   "duration": 2.6,
-   "snap": false,
-   "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t09_ffion.trimmed.mkv",
-    "in": 9.4,
-    "out": 12.0
+    "file": "t02_hall_lights.trimmed.mkv",
+    "in": 3.3,
+    "out": 4.5
    },
-   "note": "voice 9.17-11.89; audio from 9.07 (pre 0.33); menu at 12.3 never shown",
+   "note": "NIGHT TURN: hallway lights strike (take 3.92); no lift in the music here",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 2.0,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.33,
-    "post": 0
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Ffion line, no code or culprit"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Ffion Rees",
-     "text": "Is Ms. Sterling expecting you this late?",
-     "start": -0.23,
-     "end": 2.49
-    }
-   ]
-  },
-  {
-   "id": "mb_zainab",
-   "type": "gameplay",
-   "duration": 0.8,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t10_zainab.trimmed.mkv",
-    "in": 7.5,
-    "out": 8.3
-   },
-   "note": "approach to Zainab (room sits low in frame: crop up from the bottom), muted",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.72,
-     "zoom": 1.6
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "walking shot"
-   }
-  },
-  {
-   "id": "npc_zainab",
-   "type": "gameplay",
-   "duration": 3.4,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t10_zainab.trimmed.mkv",
-    "in": 10.95,
-    "out": 14.35
-   },
-   "note": "voice 10.83-14.2; audio from 10.65 (pre 0.3, after the black frame at 10.5); menu 14.9 never shown",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 3.0,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.3,
-    "post": 0
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Zainab line"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Zainab Hussain",
-     "text": "Hiya. Here to see Sterling? Good luck.",
-     "start": -0.12,
-     "end": 3.25
-    }
-   ]
-  },
-  {
-   "id": "mb_yusuf",
-   "type": "gameplay",
-   "duration": 0.8,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t11_yusuf.trimmed.mkv",
-    "in": 1.9,
-    "out": 2.7
-   },
-   "note": "approach to Yusuf, muted",
-   "framing": {
-    "16:9": {
-     "cx": 0.55,
-     "cy": 0.5,
-     "zoom": 1.4
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "walking shot"
-   }
-  },
-  {
-   "id": "npc_yusuf",
-   "type": "gameplay",
-   "duration": 3.5333,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t11_yusuf.trimmed.mkv",
-    "in": 4.1,
-    "out": 7.6333
-   },
-   "note": "voice 3.6-7.59; audio from 3.5 (pre 0.6 under the approach); menu dims in from 8.0",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 5.5,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.6,
-    "post": 0.2
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Yusuf line"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Yusuf Demir",
-     "text": "Afternoon. If you're my client, you're very late.",
-     "start": -0.5,
-     "end": 3.49
-    }
-   ]
-  },
-  {
-   "id": "m_terry",
-   "type": "gameplay",
-   "duration": 1.0,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t12_terry.trimmed.mkv",
-    "in": 4.5,
-    "out": 5.5
-   },
-   "note": "Terry patrol, torch beam and sight cone, night",
-   "framing": {
-    "16:9": {
-     "cx": 0.62,
-     "cy": 0.5,
-     "zoom": 1.6
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "guard with sight cone, no text"
-   }
-  },
-  {
-   "id": "card_choices",
-   "type": "card",
-   "duration": 1.2,
-   "snap": false,
-   "join": {
-    "type": "dissolve",
-    "pin": true
-   },
-   "text": [
-    "Choices with",
-    "Consequences"
-   ],
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "card text only"
-   }
-  },
-  {
-   "id": "walk_conf",
-   "type": "gameplay",
-   "duration": 0.6,
-   "snap": false,
-   "join": {
-    "type": "dissolve",
-    "pin": true
-   },
-   "source": {
-    "file": "t13_walk_conf.trimmed.mkv",
-    "in": 2.2,
-    "out": 2.8
-   },
-   "note": "walk west to the conference door, hallway",
-   "framing": {
-    "16:9": {
-     "cx": 0.55,
-     "cy": 0.5,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "walking shot"
-   }
-  },
-  {
-   "id": "walk_exec",
-   "type": "gameplay",
-   "duration": 0.6,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t14_walk_exec.trimmed.mkv",
-    "in": 1.7,
-    "out": 2.3
-   },
-   "note": "exec wing walk, Terry and cone",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.5
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "walking shot"
-   }
-  },
-  {
-   "id": "walk_desk",
-   "type": "gameplay",
-   "duration": 0.6,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t15_walk_desk.trimmed.mkv",
-    "in": 1.8,
-    "out": 2.4
-   },
-   "note": "walk past Ffion's desk",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
+     "cx": 0.675,
      "cy": 0.4,
      "zoom": 1.5
     }
@@ -832,11 +565,223 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "walking shot"
+    "note": "NIGHT TURN: hallway lights strike (take 3.92); no lift in the music here"
    }
   },
   {
-   "id": "card_threat",
+   "id": "npc_ffion",
+   "type": "gameplay",
+   "duration": 3.0333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t09b_ffion.trimmed.mkv",
+    "in": 7.4,
+    "out": 10.4333
+   },
+   "note": "night; voice 7.50-10.77; picture out 10.45 before the menu, L-cut post 0.35 finishes 'late?' under the next card",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 2.7,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.1,
+    "post": 0.35
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Ffion line"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Ffion Rees",
+     "text": "Is Ms. Sterling expecting you this late?",
+     "start": -0.1,
+     "end": 3.27
+    }
+   ]
+  },
+  {
+   "id": "card_caught",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Don't Get",
+    "Caught"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "t17b_map",
+   "type": "gameplay",
+   "duration": 0.7,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t17b_guard.trimmed.mkv",
+    "in": 86.0,
+    "out": 86.7
+   },
+   "note": "dark hall, bright torch pool, player at the door (take 85-88)",
+   "framing": {
+    "16:9": {
+     "cx": 0.55,
+     "cy": 0.6,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "dark hall, bright torch pool, player at the door (take 85-88)"
+   }
+  },
+  {
+   "id": "t17b_lockpick",
+   "type": "gameplay",
+   "duration": 0.7333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_lockpick.trimmed.mkv",
+    "in": 4.0,
+    "out": 4.7333
+   },
+   "note": "pins setting mid-pick",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins setting mid-pick"
+   }
+  },
+  {
+   "id": "t17b_terry",
+   "type": "gameplay",
+   "duration": 3.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17b_guard.trimmed.mkv",
+    "in": 95.18,
+    "out": 98.18
+   },
+   "note": "Terry 'Picks. Right. We're done talking.' voice 94.88-97.92 (J-cut 0.3)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 3.7,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.3,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Terry's line over the chat"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Terry Mott",
+     "text": "Picks. Right. We're done talking.",
+     "start": -0.3,
+     "end": 2.74
+    }
+   ]
+  },
+  {
+   "id": "t17b_chase",
+   "type": "gameplay",
+   "duration": 1.7333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17b_guard.trimmed.mkv",
+    "in": 100.9,
+    "out": 102.6333
+   },
+   "note": "Terry closes in on the player (take 101-102.5)",
+   "framing": {
+    "16:9": {
+     "cx": 0.47,
+     "cy": 0.55,
+     "zoom": 1.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Terry closes in on the player (take 101-102.5)"
+   }
+  },
+  {
+   "id": "card_sale",
    "type": "card",
    "duration": 1.2,
    "snap": false,
@@ -857,24 +802,24 @@
    }
   },
   {
-   "id": "cr_rfid_reader",
+   "id": "cr_keypad",
    "type": "gameplay",
-   "duration": 0.7333,
+   "duration": 0.4,
    "snap": false,
    "join": {
-    "type": "glitch"
+    "type": "cut"
    },
    "source": {
-    "file": "t16b_minigames.trimmed.mkv",
-    "in": 5.5,
-    "out": 6.2333
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 5.4,
+    "out": 5.8
    },
-   "note": "RFID reader, Emulate Staff Access Badge, no hex",
+   "note": "137_ partial, no ENTER",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 2.2
+     "cy": 0.42,
+     "zoom": 1.7
     }
    },
    "audio": {
@@ -886,61 +831,29 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "RFID cloner reader menu"
-   }
+    "note": "keypad partial, real code differs"
+   },
+   "keypad_partial": "137_"
   },
   {
-   "id": "cr_ffion",
+   "id": "cr_phone",
    "type": "gameplay",
-   "duration": 0.1,
+   "duration": 0.4,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t09_ffion.trimmed.mkv",
-    "in": 9.6,
-    "out": 9.7
+    "file": "t05_phone.trimmed.mkv",
+    "in": 3.95,
+    "out": 4.35
    },
-   "note": "face flash, no subtitle bar",
-   "framing": {
-    "16:9": {
-     "cx": 0.73,
-     "cy": 0.25,
-     "zoom": 2.5
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "portrait only"
-   }
-  },
-  {
-   "id": "cr_desktop",
-   "type": "gameplay",
-   "duration": 0.7,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t16c_minigames.trimmed.mkv",
-    "in": 4.4,
-    "out": 5.1
-   },
-   "note": "pc desktop, 'Desktop is empty', crop y<=864 keeps the post-it (y>875) out",
+   "note": "phone hub choices, HaX",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cy": 0.35,
+     "zoom": 1.5
     }
    },
    "audio": {
@@ -952,46 +865,13 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "empty desktop, post-it cropped out"
-   }
-  },
-  {
-   "id": "cr_zainab",
-   "type": "gameplay",
-   "duration": 0.1,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t10_zainab.trimmed.mkv",
-    "in": 11.0,
-    "out": 11.1
-   },
-   "note": "face flash",
-   "framing": {
-    "16:9": {
-     "cx": 0.72,
-     "cy": 0.25,
-     "zoom": 2.5
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "portrait only"
+    "note": "neutral hub choices"
    }
   },
   {
    "id": "cr_flag",
    "type": "gameplay",
-   "duration": 0.7333,
+   "duration": 0.5,
    "snap": false,
    "join": {
     "type": "cut"
@@ -999,7 +879,7 @@
    "source": {
     "file": "t16a_minigames.trimmed.mkv",
     "in": 11.0,
-    "out": 11.7333
+    "out": 11.5
    },
    "note": "flag station, 'No flags submitted yet'",
    "framing": {
@@ -1055,7 +935,7 @@
    }
   },
   {
-   "id": "cr_lockpick",
+   "id": "cr_cyberchef",
    "type": "gameplay",
    "duration": 0.4,
    "snap": false,
@@ -1063,9 +943,42 @@
     "type": "cut"
    },
    "source": {
+    "file": "t08_cyberchef.trimmed.mkv",
+    "in": 7.65,
+    "out": 8.05
+   },
+   "note": "neutral ROT13 input and decoded output (Hello, world), no secret",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.35,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "neutral test text"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
     "file": "t03_lockpick.trimmed.mkv",
     "in": 5.5,
-    "out": 5.9
+    "out": 5.8333
    },
    "note": "pins set",
    "framing": {
@@ -1088,24 +1001,24 @@
    }
   },
   {
-   "id": "cr_keypad",
+   "id": "cr_reader",
    "type": "gameplay",
-   "duration": 0.5,
+   "duration": 0.2667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t06_keypad.trimmed.mkv",
-    "in": 5.4,
-    "out": 5.9
+    "file": "t16b_minigames.trimmed.mkv",
+    "in": 5.5,
+    "out": 5.7667
    },
-   "note": "137_ partial, no ENTER",
+   "note": "RFID reader, Emulate Staff Access Badge, no hex",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.42,
-     "zoom": 1.7
+     "cy": 0.5,
+     "zoom": 2.2
     }
    },
    "audio": {
@@ -1117,96 +1030,102 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "keypad partial, real code differs"
-   },
-   "keypad_partial": "137_"
-  },
-  {
-   "id": "t17_guard_map",
-   "type": "gameplay",
-   "duration": 0.9,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t17_guard.trimmed.mkv",
-    "in": 0.8,
-    "out": 1.7
-   },
-   "note": "exec hallway, Terry's sight cone on the player at the office door (vivian_ashby), just before the catch",
-   "framing": {
-    "16:9": {
-     "cx": 0.64,
-     "cy": 0.62,
-     "zoom": 1.8
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "map, sight cone, no text"
+    "note": "RFID cloner reader menu"
    }
   },
   {
-   "id": "t17_guard_line",
+   "id": "cr_desktop",
    "type": "gameplay",
-   "duration": 3.0,
+   "duration": 1.1167,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t17_guard.trimmed.mkv",
-    "in": 9.8,
-    "out": 12.8
+    "file": "t16d_desktop.trimmed.mkv",
+    "in": 4.4,
+    "out": 5.5167
    },
-   "note": "Terry catches the pick: 'Picks. Right. We're done talking.' voice 9.44-12.73 in the take, J-cut 0.36 s under the map shot",
-   "audio": {
-    "gain_db": 1.5,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.36,
-    "post": 0
-   },
-   "lines": [
-    {
-     "speaker": "Terry Mott",
-     "text": "Picks. Right. We're done talking.",
-     "start": -0.36,
-     "end": 2.93
+   "note": "Danny's Workstation desktop with its icons (no password, no empty desktop)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.9
     }
-   ],
+   },
+   "audio": {
+    "gain_db": -120
+   },
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Terry portrait, his line"
-   },
-   "dialogue": true
+    "note": "Danny's Workstation desktop with its icons (no password, no empty desktop)"
+   }
   },
   {
-   "id": "t18_victoria_close",
+   "id": "villain_wide",
    "type": "gameplay",
-   "duration": 3.6,
+   "duration": 1.8233,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t18_victoria.trimmed.mkv",
-    "in": 23.95,
-    "out": 27.55
+    "file": "t21_victoria_reckoning.trimmed.mkv",
+    "in": 72.8,
+    "out": 74.6233
    },
-   "note": "Victoria Sterling, day interview: 'Competent is cheap. That's not why you're here.' voice 23.73-27.67, J-cut 0.22 s, L-cut 0.15 s into the bumper",
+   "note": "night confrontation wide, in 72.80 after the player portrait (it says \"playtest\" up to 72.78), voice 72.79-77.68; cut in the gap at 74.63",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 7.2,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Victoria"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Victoria Sterling",
+     "text": "I sleep perfectly.",
+     "start": 0.0,
+     "end": 1.49
+    }
+   ]
+  },
+  {
+   "id": "villain_close",
+   "type": "gameplay",
+   "duration": 3.3667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_victoria_reckoning.trimmed.mkv",
+    "in": 74.62,
+    "out": 77.9867
+   },
+   "note": "UI-free 1.5x close-up for the rest; out 77.99 before the narrator line (78.2)",
    "framing": {
     "16:9": {
      "cx": 0.66,
@@ -1215,29 +1134,29 @@
     }
    },
    "audio": {
-    "gain_db": 5.5,
+    "gain_db": 8.4,
     "dialogue": true,
     "duck_music": true,
-    "pre": 0.22,
-    "post": 0.15
+    "pre": 0,
+    "post": 0
    },
-   "lines": [
-    {
-     "speaker": "Victoria Sterling",
-     "text": "Competent is cheap. That's not why you're here.",
-     "start": -0.22,
-     "end": 3.72
-    }
-   ],
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Victoria portrait close, the briefed target"
+    "note": "Victoria close"
    },
-   "dialogue": true
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Victoria Sterling",
+     "text": "That's the part people like you can never forgive.",
+     "start": 0.15,
+     "end": 3.2
+    }
+   ]
   },
   {
    "preset": "hacktivity-close",

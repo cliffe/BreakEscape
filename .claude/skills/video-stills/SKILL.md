@@ -77,7 +77,8 @@ Every still, at full size, against the checklist:
 - no PIN, code, password or flag value on screen, including post-its on monitors, CyberChef inputs and subtitle text. Pixelate (blocky mosaic, not blur) if the shot is otherwise essential, as in the placeholder Hydra clip;
 - keypads show 3 or fewer digits that are not the code, never an accepted entry;
 - no casualty figures, no choice screens, no ending, debrief or credits;
-- the antagonist is shown only if the recipe or the user says so (m01's Derek is plain from the start: user, 2026-10-29);
+- the antagonist may be shown (m01's Derek, user 2026-10-29); an end twist the mission withholds may not;
+- no dev text in the UI (a portrait showing the save name "playtest" in the subtitle bar);
 - no toasts ("Influence: ..."), objective panels, notifications or stray text boxes in frame unless they are the point;
 - no "Continue?" or resume prompts, no `Break Escape` text (it is the engine; the game is SAFETYNET: Licence to Hack);
 - sharp: pixel edges crisp, no motion smear, no half-faded transitions, mouths not caught mid-blink if avoidable.

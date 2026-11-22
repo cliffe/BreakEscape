@@ -21,7 +21,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 | 20 | 10 | Real Hacking | the real-hacking slot (placeholder until in-game VM capture exists), then real tools from the missions that show them (a lock pick, a keypad, CyberChef, later RFID, fingerprint, network tools) |
 | 30 | 30 | One beat per mission | six to eight short beats, 4 to 5 s each: **one signature moment per mission arc**, chosen from each mission's own trailer takes. Each beat is one setting, one tool and one voiced line or a strong silent shot; hard cuts between them, a glitch on the card only |
 | 60 | 10 | Choices with Consequences | three NPC lines from different missions, portrait view, with their captions |
-| 70 | 10 | The enemy | ENTROPY: a series of threat lines and the antagonists the user allows (no culprit reveals from any mission); a card in the game's own words |
+| 70 | 10 | The enemy | ENTROPY: a series of threat lines and the antagonists' menace (no end twist or culprit reveal from any mission); a card in the game's own words |
 | 80 | 10 | Build to the drop | a fast montage of cuts on the beat across missions (every join a hard cut) |
 | 90 | 10 | Call to action | the Veo launch clip, **"Play now"**, the red hex curtain, the Hacktivity Games logo and the URL |
 
@@ -29,7 +29,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 
 ## Must include
 
-- The game's title first; Hacktivity Games sign-off last, on the curtain; "Play now".
+- The game's title first; Hacktivity Games sign-off last, on the curtain; "Play now". End on the most interesting line; no empty screens (`mission-trailer.md`).
 - Agent HaX and ENTROPY (the recurring through-line); at least one shot from every released mission, or a stated reason.
 - Real hacking: the placeholder slot, marked, until real capture exists.
 - A track of the game's own that is **not** a mission track (see the table in `README.md`), mixed to -14 LUFS, true peak under -1 dBTP.
@@ -37,7 +37,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 ## Must avoid
 
 - "Break Escape" on screen; any mission-specific "Play Mission N".
-- Reveals: who the traitors or culprits are, endings, casualty figures, answers, flag values, mission debriefs. Do not carry m01's "naming Derek is fine" over: that was the user's decision for the m01 trailer only. Decide any other character with the user.
+- Reveals: who the traitors or culprits are, endings, casualty figures, answers, flag values, mission debriefs. Do not carry m01's "naming Derek is fine" over: that was the user's decision for the m01 trailer only. Show a villain's menace freely; ask the user only about a character whose identity is a withheld twist.
 - Reusing a mission's music track.
 - Re-recording what a mission trailer already has. Reuse takes by id and keep their spoiler notes.
 - Gameplay-to-gameplay effects (hard cuts only).
