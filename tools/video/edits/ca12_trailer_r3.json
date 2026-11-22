@@ -2,7 +2,7 @@
  "mission": "ca12",
  "id": "ca12_trailer_r3",
  "theme": "ca",
- "title": "Cyber Aware ca12 trailer, round 3, script R4 (narrator VO, captions only until the owner signs off D341)",
+ "title": "Cyber Aware ca12 trailer, round 3, script R5 (narrator VO, captions only until the owner signs off D341)",
  "fps": 30,
  "length": 55.4,
  "music": {
@@ -637,13 +637,13 @@
   {
    "id": "v8a",
    "start": 35.2,
-   "end": 38,
+   "end": 37.9,
    "text": "Tailgating: slipping in behind a badge-holder."
   },
   {
    "id": "v8a2",
-   "start": 38.15,
-   "end": 40.2,
+   "start": 38,
+   "end": 40.3,
    "text": "Inside: client plans on open screens."
   },
   {
@@ -662,7 +662,7 @@
    "id": "v10",
    "start": 45.9,
    "end": 50.2,
-   "text": "Check the list. Walk them to reception. Badge in. Lock your screen."
+   "text": "Check the list. Escort them. Badge in. Lock your screen."
   },
   {
    "id": "v11",
