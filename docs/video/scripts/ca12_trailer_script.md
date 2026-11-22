@@ -14,7 +14,7 @@ Owner brief (2026-11-22): the trailer must stand alone as a sell for the trainin
 | 19.5–23.0 | build | t05_pretext_card 5.3-8.8 s · tab COVER STORY · Pretext card filling from found facts | **v4** "Build a cover story from what you found." | — |
 | 23.0–25.3 | talk | t06_the_call 12.2-14.5 s · tab FRONT DESK · INFLUENCE inset · Choice menu on the call (owner: CA spoilers fine); ends before the player line at 14.54 (test player name) | **v5** "Then talk your way in." | — |
 | 25.3–29.9 | lands | t06_the_call 16.6-21.2 s · tab FRONT DESK · D1 line only; ends before the third reply menu at 21.0 | — | Delphine: "Go on then, I'll buzz you through. Studio's up the stairs on your left." |
-| 29.9–31.9 | flip | t07_flip 21.9-23.9 s · tab YOUR TURN · Kiosk flips to Defend; no verdicts | **v6** "You're in. Now swap seats." | — |
+| 29.9–31.9 | flip | t07_flip 21.9-23.9 s · tab YOUR TURN · Kiosk flips to Defend; no verdicts | **v6** "You're in." | — |
 | 31.9–38.0 | lorna_flip | t13_lorna_flip 2.5-8.6 s · tab YOUR TURN · Lorna L1 after the call (cached voice); no menu, chat closes after the line | — | Lorna: "You talked your way through that door just now. Here you're the one being asked, same visitors." |
 | 38.0–40.5 | blue_card | defend card: "You run the front desk" | — | — |
 | 40.5–46.0 | tailgater | t12_tailgater_card 6-11.5 s · tab VISITOR QUEUE · Unknown visitor 09:12 card, readable: slips in behind a badge-holder at the gate (the tailgate, as card text) | **v8a** "Tailgating: slipping in behind a badge-holder."<br>**v8a2** "Inside: client plans on open screens." | — |
