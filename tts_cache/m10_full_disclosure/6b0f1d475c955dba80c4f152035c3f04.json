@@ -1,0 +1,14 @@
+{
+  "key": "6b0f1d475c955dba80c4f152035c3f04",
+  "npc": "tesseract",
+  "text": "I had the blast door read one badge tonight. Yours.",
+  "delivery": "quiet and matter-of-fact, a host who has gone to some trouble",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, in person at his own console. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused and courteous to the end. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T23:39:05Z"
+}
