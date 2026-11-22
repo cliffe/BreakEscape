@@ -6,8 +6,9 @@ export { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk 
 /** Click the first visible element whose own text matches `re` (links, tabs, spans); returns its text or null. */
 export const clickEl = (page, re, sel = 'a,button,span,li,p,h3,h4,label,div') => page.evaluate(([src, fl, s]) => {
   const r = new RegExp(src, fl);
-  const els = [...document.querySelectorAll(s)].filter(e => e.offsetParent && r.test((e.innerText || '').trim()) && (e.innerText || '').trim().length < 80);
-  const el = els.sort((a, b) => a.innerText.length - b.innerText.length)[0];   // the tightest match
+  const els = [...document.querySelectorAll(s)].reverse().filter(e => e.offsetParent && r.test((e.innerText || '').trim()) && (e.innerText || '').trim().length < 80);
+  const el = els.sort((a, b) => a.innerText.length - b.innerText.length)[0];   // the tightest match; ties go to the deepest element (the link, not its card)
+  if (el) { const inner = [...el.querySelectorAll('a,button')].find(x => x.offsetParent && r.test(x.innerText.trim())); if (inner) { inner.click(); return inner.innerText.trim(); } }
   if (!el) return null; el.click(); return el.innerText.trim();
 }, [re.source, re.flags, sel]);
 
