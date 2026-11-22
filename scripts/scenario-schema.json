@@ -4596,14 +4596,16 @@
               "description": "Shrinks the physics body for static-sprite NPCs. 'bottom_half' restricts collision to the lower half of the sprite -- useful for tall prop-style NPCs where only the base should be solid."
             },
             "torch": {
-              "description": "Lighting: the NPC carries a torch beam the way they face, shown only in a dim room. true, or { condition (globalVars syntax), color }.",
+              "description": "Lighting: the NPC carries a torch beam the way they face, shown only in a dim room. true, or { condition (globalVars syntax), color, strength, length }.",
               "anyOf": [
                 { "type": "boolean" },
                 {
                   "type": "object",
                   "properties": {
                     "condition": { "type": "string" },
-                    "color": { "type": "string" }
+                    "color": { "type": "string" },
+                    "strength": { "type": "number", "minimum": 0, "maximum": 3, "description": "Multiplier on the beam's brightness once the room is dim (default 1; 1.5 is a strong torch, 0.5 a weak one). Does not make the beam show in a lit room." },
+                    "length": { "type": "number", "minimum": 0.25, "maximum": 2.5, "description": "Multiplier on how far the beam reaches (default 1), still cut short at the wall." }
                   },
                   "additionalProperties": false
                 }

@@ -25,7 +25,7 @@ writeFileSync(join(dir, 'npc-sprite-style.mjs'), readFileSync(join(js, 'systems/
 writeFileSync(join(dir, 'room-hearing.mjs'), readFileSync(join(js, 'systems/room-hearing.js'), 'utf8'));
 writeFileSync(join(dir, 'workstation-state.mjs'), readFileSync(join(js, 'systems/workstation-state.js'), 'utf8'));
 writeFileSync(join(dir, 'npc-los.mjs'), readFileSync(join(js, 'systems/npc-los.js'), 'utf8'));
-const { npcTorchStrength } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
+const { npcTorchStrength, npcTorchTuning } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 test('no beam in a lit office', () => {
   assert.equal(npcTorchStrength(0xe4e8ee), 0);   // bright lobby
@@ -42,4 +42,32 @@ test('strength never leaves 0..1 and rises as the room darkens', () => {
   const vals = [0xffffff, 0xa0a0a0, 0x808080, 0x606060, 0x404040, 0x000000].map(npcTorchStrength);
   for (const v of vals) assert.ok(v >= 0 && v <= 1);
   for (let i = 1; i < vals.length; i++) assert.ok(vals[i] >= vals[i - 1]);
+});
+
+test('torch strength and length default to 1 when unset, so other NPCs are unchanged', () => {
+  const std = { strength: 1, length: 1 };
+  assert.deepEqual(npcTorchTuning(true), std);
+  assert.deepEqual(npcTorchTuning(undefined), std);
+  assert.deepEqual(npcTorchTuning({ condition: 'globalVars.night' }), std);
+  assert.deepEqual(npcTorchTuning({ color: '#fff0d8' }), std);
+  assert.deepEqual(npcTorchTuning({ strength: 'high', length: null }), std);
+  assert.deepEqual(npcTorchTuning({ strength: NaN, length: Infinity }), std);
+});
+
+test('torch strength and length read as numbers and are clamped', () => {
+  assert.deepEqual(npcTorchTuning({ strength: 1.6, length: 1.4 }), { strength: 1.6, length: 1.4 });
+  assert.equal(npcTorchTuning({ strength: 0.5 }).strength, 0.5);
+  assert.equal(npcTorchTuning({ strength: 0 }).strength, 0);
+  assert.equal(npcTorchTuning({ strength: 9 }).strength, 3);
+  assert.equal(npcTorchTuning({ strength: -2 }).strength, 0);
+  assert.equal(npcTorchTuning({ length: 9 }).length, 2.5);
+  assert.equal(npcTorchTuning({ length: 0 }).length, 0.25);
+  assert.equal(npcTorchTuning({ strength: 2 }).length, 1);
+});
+
+test('strength scales the beam but a lit room still shows none', () => {
+  // The lit-room cutoff reads npcTorchStrength (the room's ambient), not the NPC's setting.
+  assert.equal(npcTorchStrength(0xbcb6ae) * npcTorchTuning({ strength: 3 }).strength, 0);
+  const night = npcTorchStrength(0x343a50);
+  assert.ok(night * npcTorchTuning({ strength: 1.6 }).strength > night);
 });
