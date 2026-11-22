@@ -1,6 +1,6 @@
 // t11_defend_queue: the defender's queue, read visitor by visitor (round 2 blue half, "how the defend half actually plays").
 // Starts on the "Take the calls" panel, presses Open the queue and Start, then opens three visitor cards one after another
-// (Unknown visitor, Visitor with a clipboard, Colleague back from leave), holding on each so the viewer can read who is
+// (Visitor with a clipboard, Courier, Colleague back from leave), holding on each so the viewer can read who is
 // at the desk, with a slow mouse pass over the four action buttons on the last card. It STOPS before any action is pressed:
 // no verdict, no reason panel, no score, no result.
 // Entry state (kiosk opens on the Defend panel, flip already done, no call needed): fresh game, new-game with
@@ -19,7 +19,9 @@ export async function setup(page, bridge) {
   await sleep(500);
 }
 
-const ROWS = [/Unknown visitor/, /Visitor with a clipboard/, /Colleague back from/];
+// Not "Unknown visitor" (its card says it slips in behind a badge-holder: the answer) nor "Signed-in visitor" ("having a good look").
+// The three chosen cards each carry one verdict line (Today's list / Staff list) that CA12_T11_MASKS.md hides.
+const ROWS = [/Visitor with a clipboard/, /Courier/, /Colleague back from/];
 
 export default async (page, bridge, mark) => {
   mark('panel-queue'); await sleep(1500);
