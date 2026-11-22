@@ -1071,7 +1071,20 @@
               "onceOnly": true,
               "setGlobal": {
                 "kit_ca14_closed_unseen": true
-              }
+              },
+              "unlockTask": "look_at_team_photo"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_seen",
+              "condition": "value === true && globalVars.kit_ca14_closed_unseen === true",
+              "onceOnly": true,
+              "completeTask": "look_at_team_photo"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_closed_unseen === true && globalVars.kit_ca14_seen !== true",
+              "onceOnly": true,
+              "skipTask": "look_at_team_photo"
             }
           ]
         }

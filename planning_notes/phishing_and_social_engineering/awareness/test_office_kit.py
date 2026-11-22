@@ -1134,5 +1134,39 @@ class SetPieceHostBarksAreGuarded(unittest.TestCase):
             self.check(json.loads(text), shell, n)
 
 
+class CaRegateMinors(unittest.TestCase):
+    """Persona re-gate minors (2026-11-22): non-spoken cues and debrief lines, pinned."""
+
+    @staticmethod
+    def shell(name):
+        with open(os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')) as f:
+            return json.loads(f.read())
+
+    def test_ca14_look_first_unlocks_a_task_toast_pointing_at_the_pc_and_board(self):
+        sh = self.shell('ca14_social_media')
+        tasks = [t for a in sh['objectives'] for t in a['tasks']]
+        t = next(t for t in tasks if t['taskId'] == 'look_at_team_photo')
+        self.assertEqual(t['status'], 'locked')
+        self.assertIn('screen', t['title'])
+        self.assertIn('board', t['title'])
+        kit = ok.load_kit('merrin_sallow')['setPieces']['ca14_team_photo']['staff']['lorna_easton']['eventMappings']
+        by = {}
+        for m in kit:
+            for k in ('unlockTask', 'completeTask', 'skipTask'):
+                if m.get(k) == 'look_at_team_photo':
+                    by[k] = m
+        self.assertEqual(set(by), {'unlockTask', 'completeTask', 'skipTask'})
+        self.assertEqual(by['unlockTask']['eventPattern'], 'conversation_closed:kit_lorna_easton')
+        self.assertEqual(by['unlockTask']['setGlobal'], {'kit_ca14_closed_unseen': True})
+        # the completion and the skip fire only on the unseen-close path, and sit after the original mappings
+        self.assertIn('kit_ca14_closed_unseen === true', by['completeTask']['condition'])
+        self.assertIn('kit_ca14_closed_unseen === true', by['skipTask']['condition'])
+        self.assertGreater(kit.index(by['completeTask']), kit.index(by['unlockTask']))
+        # the shell carries the same mappings (the splice is in step with the kit data)
+        text = json.dumps(sh)
+        for k in ('unlockTask', 'completeTask', 'skipTask'):
+            self.assertIn('"%s": "look_at_team_photo"' % k, text)
+
+
 if __name__ == '__main__':
     unittest.main()
