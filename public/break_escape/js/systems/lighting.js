@@ -58,6 +58,12 @@
  * ink tag #lighting_dip[:level]. One slow dip of the room lights; screens and racks hold (UPS). It
  * waits until any conversation or minigame has closed, and is skipped under prefers-reduced-motion.
  * Torch on an NPC (scenario npc "behavior"): "torch": true, or { "condition": "globalVars.night", "color": "#fff0d8" }.
+ * Optional "strength" (default 1) multiplies how bright the beam is once the room is dim: 1 is the
+ * standard beam, 1.5 a strong torch (past full alpha the beam is stamped again, so it keeps getting
+ * brighter), 0.5 a weak one. It does not make a torch show in a lit room (that still needs a dim room).
+ * Optional "length" (default 1) multiplies how far the beam reaches (still cut short at the wall);
+ * 1.5 is a long torch. Both are clamped (strength 0 to 3, length 0.25 to 2.5); a missing or
+ * non-numeric value means the default. Example: { "condition": "...", "strength": 1.6, "length": 1.4 }.
  * The NPC carries a beam the way they face, like the player's phone torch; it shows only in a dim
  * room (strength from the room's current ambient, npcTorchStrength), so it is invisible in a lit office.
  * The beam starts at the NPC's right hand (npc-los.js torchHandOffset: about 10 px out from the body
@@ -480,6 +486,18 @@ export function resolveRoomLighting(block, globalVars = {}) {
  */
 export function npcTorchStrength(ambient) {
   return Math.max(0, Math.min(1, (0.62 - luma(ambient)) / 0.4));
+}
+
+/**
+ * The optional strength and length multipliers on an NPC's behavior.torch (see the header
+ * comment). Anything missing or not a finite number gives 1, so an NPC that sets neither draws
+ * exactly the standard beam.
+ */
+export function npcTorchTuning(torch) {
+  const num = (v, lo, hi) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 1);
+  if (!torch || typeof torch !== 'object') return { strength: 1, length: 1 };
+  const length = num(torch.length, 0.25, 2.5);
+  return { strength: num(torch.strength, 0, 3), length };
 }
 
 /** A scenario emitter variant with its colours parsed. */
@@ -1647,7 +1665,8 @@ export class LightingSystem {
       // smoothed, and the hand follows it round the body, so turns don't jump.
       const hand = npcTorchOrigin(npc, now) || { x: sp.x, y: fy - 4 };
       const color = parseColor(typeof torch === 'object' ? torch.color : null, 0xfff0d8);
-      this.stampBeam(rt, stamp, ox, oy, room, hand.x, hand.y, angle, k * 0.85, color, sp.x, fy - 4);
+      const tune = npcTorchTuning(torch);
+      this.stampBeam(rt, stamp, ox, oy, room, hand.x, hand.y, angle, k * 0.85 * tune.strength, color, sp.x, fy - 4, tune.length);
     }
   }
 
@@ -1690,7 +1709,7 @@ export class LightingSystem {
    * A torch: a beam from (px, py) along `angle`, cut short at the wall it points at, and a
    * faint pool at (poolX, poolY), default the beam's start (NPCs: the pool is at their feet).
    */
-  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color, poolX = px, poolY = py) {
+  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color, poolX = px, poolY = py, length = 1) {
     const rad = Phaser.Math.DegToRad(angle);
     const dx = Math.cos(rad), dy = Math.sin(rad);
     let reach = Infinity;
@@ -1698,14 +1717,20 @@ export class LightingSystem {
     if (dx < -0.01) reach = Math.min(reach, (room.position.x - px) / dx);
     if (dy > 0.01) reach = Math.min(reach, (room.position.y + room.map.heightInPixels - py) / dy);
     if (dy < -0.01) reach = Math.min(reach, (room.position.y + TILE_SIZE - py) / dy);
-    stamp(poolX, poolY + 2, 30, color, 0.4 * k);
+    stamp(poolX, poolY + 2, 30, color, 0.4 * Math.min(k, 1));
     const opts = this.beamOpts || (this.beamOpts = { blendMode: Phaser.BlendModes.ADD, originX: 0, originY: 0.5, tint: 0xfff0d8, scaleX: 1.1, scaleY: 1.1, angle: 0, alpha: 1, skipBatch: true });
     opts.tint = color;
     opts.angle = angle;
-    opts.scaleX = Phaser.Math.Clamp((reach + 24) / LIGHT_TEX_SIZE, 0.35, 1.1) * RES;
+    // length 1 is the standard beam; a longer torch lengthens the beam and keeps the cap at the wall
+    opts.scaleX = Phaser.Math.Clamp((reach + 24) / LIGHT_TEX_SIZE, 0.35, 1.1 * length) * RES;
     opts.scaleY = 1.1 * RES;
-    opts.alpha = Math.min(1, 0.95 * k);
-    rt.stamp(CONE_TEX, null, (px - ox) * RES, (py - oy) * RES, opts);
+    // Up to full alpha in one stamp (the standard beam); a strength past that adds more stamps
+    let left = 0.95 * k;
+    for (let pass = 0; pass < 3 && left > 0.01; pass++) {
+      opts.alpha = Math.min(1, left);
+      rt.stamp(CONE_TEX, null, (px - ox) * RES, (py - oy) * RES, opts);
+      left -= 1;
+    }
   }
 
   /**
