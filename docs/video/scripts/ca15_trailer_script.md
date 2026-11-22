@@ -1,25 +1,34 @@
 # ca15 trailer script (Shadow IT)
 
-Status: script round 1, captions only, not voiced. Edit: `tools/video/edits/ca15_trailer_r1.json` (69.9 s). Owner card: none yet (script R1).
+Status: script round 2, captions only, not voiced. Edit: `tools/video/edits/ca15_trailer_r2.json` (71.9 s). Owner card: none yet (script R2).
 
-Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with "Play the attack · Learn to stop it" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the red card reads "You take the shortcuts" (open question for the owner).
+Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with "Play the attack · Learn to stop it" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the left seat reads THE SHORTCUT (edit-level seat_labels; the right seat stays DEFENDER), the red card reads "Take the shortcut" / "See where it led", and the close tagline reads "Take the shortcut · See where it leads" (open question for the owner).
 
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
-| 0.0–4.6 | hook | t07_stick_beat 1.2-5.8 s · Fatima's bark: a memory stick on the depot floor; cold open, no tells · **pending take** | — | Fatima: "Hang on, someone's dropped a memory stick over here." |
-| 4.6–9.7 | open | Title: Shadow IT / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
-| 9.7–14.6 | topic | t03_choices_reveal 3-7.9 s · Choice 1 of 4 before any pick: Colin's 'email the pack to your personal address' and the two options · **pending take** | **v1b** "Slow file share. Pack due Monday."<br>**v1c** "This episode: Shadow IT." | — |
-| 14.6–17.9 | red_card | attack card: "You take the shortcuts" | **v2** "First, take the shortcuts anyone would." | — |
-| 17.9–21.3 | pick_email | t03_choices_reveal 6.8-10.2 s · tab FRIDAY DEADLINE · Card 1: 'Send the pack to your personal email' picked; no marks before Next · **pending take** | **v3** "Email the pack to your own inbox." | — |
-| 21.3–24.3 | pick_stick | t03_choices_reveal 14-17 s · tab FRIDAY DEADLINE · Card 3: 'Plug the visitor's stick into your laptop' picked; no marks · **pending take** | **v4** "Plug in a visitor's stick." | — |
-| 24.3–28.3 | led_page | t03_choices_reveal 20.5-24.5 s · tab SIX MONTHS LATER · Six months later page, all four cards, 'Your call' labels hidden and borders neutral · **pending take** | **v5** "Six months on, see where each one led." | — |
-| 28.3–33.6 | led_email | t03_choices_reveal 24.5-29.8 s · tab SIX MONTHS LATER · Punch-in on card 1's consequence: personal inbox broken into, client sent a fake invoice; labels hidden · **pending take** | **v5b** "The inbox was broken into. The client got a fake invoice." | — |
-| 33.6–36.2 | flip | t03_choices_reveal 30.2-32.8 s · tab YOUR TURN · Continue: the strip ticks to 4 Defend, Swap Shop launch panel; no verdicts · **pending take** | **v6** "So what's the approved way?" | — |
-| 36.2–43.6 | nilesh_ask | t08_nilesh_ask 1.8-9.2 s · tab THE SERVICE DESK · Nilesh N1 at the start of a fresh game (cached voice); cut before N2 'Start at the kiosk' · **pending take** | — | Nilesh: "Nilesh, service desk. That slow share? Ask us first, we'd rather help than clean up." |
-| 43.6–46.1 | blue_card | defend card: "You sort the shortcuts" | — | — |
-| 46.1–49.5 | swap | t05_swap_shop 3-6.4 s · tab SWAP SHOP · Swap Shop card 1 (partner's computer) and the four approved ways; no pick, no reason panel · **pending take** | **v7** "Match each shortcut to the approved way." | — |
-| 49.5–57.6 | inbox | t06_inbox_list 2-10.1 s · tab SHORTCUTS INBOX · Inbox list of six sticks and shortcut messages, then row 1 (padded envelope) open with the four verbs; nothing pressed · **pending take** | **v8** "Then sort the sticks and shortcut messages."<br>**v9** "Check it's an approved tool. Sticks go to IT, unplugged." | — |
-| 57.6–64.5 | office | t07_stick_beat 5-11.9 s · tab THE DEPOT · Fatima at the stick asks the player; cut before the menu and long before Chidi/Nilesh (53 s) · **pending take** | **v10** "Then a colleague asks you." | Fatima: "No name on it, nothing. What do you reckon I do with it?" |
-| 64.5–69.9 | close | End card: Shadow IT / Play the attack · Learn to stop it / plate "Learn on Hacktivity.co.uk" | **v11** "Play the attack, learn to stop it, on Hacktivity.co.uk." | — |
+| 0.0–3.9 | hook | t07_stick_beat 1.2-5.1 s · Fatima's bark: a memory stick on the depot floor; cold open, no tells · **pending take** | — | Fatima: "Hang on, someone's dropped a memory stick over here." |
+| 3.9–9.0 | open | Title: Shadow IT / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play."<br>**v1b** "Slow file share. Pack due Monday." | — |
+| 9.0–13.1 | topic | t03_choices_reveal 3-7.1 s · Choice 1 of 4 before any pick: Colin's 'email the pack to your personal address' and the two options · **pending take** | **v1c** "This episode: Shadow IT." | — |
+| 13.1–16.2 | red_card | attack card: "Take the shortcut" | **v2** "First, take the shortcuts anyone would." | — |
+| 16.2–19.6 | pick_email | t03_choices_reveal 7.6-11 s · tab FRIDAY DEADLINE · Card 1: 'Send the pack to your personal email' picked; no marks before Next · **pending take** | **v3** "Email the pack to your personal address." | — |
+| 19.6–22.2 | pick_stick | t03_choices_reveal 15.4-18 s · tab FRIDAY DEADLINE · Card 3: 'Plug the visitor's stick into your laptop' picked; no marks · **pending take** | **v4** "Plug in a visitor's stick." | — |
+| 22.2–26.2 | led_page | t03_choices_reveal 21.7-25.7 s · tab SIX MONTHS LATER · Six months later page, all four cards, 'Your call' labels hidden and borders neutral · **pending take** | **v5** "Six months on, see where each one led." | — |
+| 26.2–31.9 | led_email | t03_choices_reveal 25.7-31.4 s · tab SIX MONTHS LATER · Punch-in on card 1's consequence: personal inbox broken into, client sent a fake invoice; labels hidden · **pending take** | **v5b** "The personal inbox was broken into. The client got a fake invoice." | — |
+| 31.9–33.4 | led_stick | t03_choices_reveal 31.4-32.9 s · tab SIX MONTHS LATER · Punch-in on card 3's consequence: the surveyor's stick had been in three other firms' laptops first, and Tarrowby had to tell two clients; labels hidden · **pending take** | — | — |
+| 33.4–36.0 | flip | t03_choices_reveal 33.1-35.7 s · tab YOUR TURN · Continue: the strip ticks to 4 Defend, Swap Shop launch panel; no verdicts · **pending take** | **v6** "So what's the approved way?" | — |
+| 36.0–43.3 | nilesh_ask | t08_nilesh_ask 1.8-9.1 s · tab THE SERVICE DESK · Nilesh N1 at the start of a fresh game (cached voice); cut before N2 'Start at the kiosk' · **pending take** | — | Nilesh: "Nilesh, service desk. That slow share? Ask us first, we'd rather help than clean up." |
+| 43.3–45.6 | blue_card | defend card: "You sort the shortcuts" | **v7** "Match each shortcut to the approved way." | — |
+| 45.6–49.4 | swap | t05_swap_shop 3-6.8 s · tab SWAP SHOP · Swap Shop card 1 (partner's computer) and the four approved ways; no pick, no reason panel · **pending take** | **v8** "Sort the inbox: risky shortcuts and real messages." | — |
+| 49.4–57.9 | inbox | t06_inbox_list 2-10.5 s · tab SHORTCUTS INBOX · Inbox list of six sticks and shortcut messages (held 4 s), then the Benmoor Packaging "USB catalogue" row open with the four verbs (held 4.5 s); nothing pressed · **pending take** | **v9** "Is it an approved tool? Found sticks go to IT, unplugged." | — |
+| 57.9–64.4 | office | t07_stick_beat 5-11.5 s · tab THE DEPOT · Fatima at the stick asks the player; cut before the menu and long before Chidi/Nilesh (53 s) · **pending take** | **v10** "Then a colleague asks." | Fatima: "No name on it, nothing. What do you reckon I do with it?" |
+| 64.4–67.2 | nilesh_noblame | t09_nilesh_noblame 0-2.8 s · tab THE SERVICE DESK · Nilesh's tone line after defend is complete (cached 2.57 s); no grade, no verdict · **pending take** | — | Nilesh: "Nobody's in trouble for a workaround." |
+| 67.2–71.9 | close | End card: Shadow IT / Take the shortcut · See where it leads / plate "Learn on Hacktivity.co.uk" | **v11** "Take the shortcut, see where it leads. Learn on Hacktivity.co.uk." | — |
 
 VO pace limit: 3.0 words per second (lint). Every VO line is also a burned caption.
+
+## Open questions for the owner
+
+- Close tagline: R2 sets "Take the shortcut · See where it leads" in place of "Play the attack · Learn to stop it" (ca15 has no attacker to play). Pending an owner check.
+- Left seat label: `THE SHORTCUT` (edit-level `seat_labels`; the right seat stays `DEFENDER`, as the course-trailer recipe gives it). Red card: "Take the shortcut" / "See where it led".
+- The 9:16 minigame framing (zoom 1.4, per-shot cy) crops the 700 px panel to about 430 px of width; frame check on the first take render.
+- `nilesh_ask` out time and the `nilesh_noblame` entry state are estimates until the takes are marked.

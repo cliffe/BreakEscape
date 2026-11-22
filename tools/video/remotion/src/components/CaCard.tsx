@@ -13,7 +13,7 @@ export const CaCard: React.FC<{ shot: any; w: number; h: number; frame: number }
   const u = unit(w, h), stacked = isStacked(w, h), tf = tabFont(w, h);
   const seat = shot.seat === 'attack' || shot.seat?.seat === 'attack' ? 'attack' : shot.seat === 'defend' || shot.seat?.seat === 'defend' ? 'defend' : null;
   const tabBg = seat === 'attack' ? CA.attack : seat === 'defend' ? CA.defend : CA.mark;
-  const tabLabel = shot.tab || (seat === 'attack' ? 'ATTACKER' : seat === 'defend' ? 'DEFENDER' : 'CYBER AWARE');
+  const tabLabel = shot.tab || (seat === 'attack' ? (shot.seat_labels?.attack ?? 'ATTACKER') : seat === 'defend' ? (shot.seat_labels?.defend ?? 'DEFENDER') : 'CYBER AWARE');
   const ground = seat === 'attack' ? CA.attackTint : seat === 'defend' ? CA.defendTint : CA.surface;
   const text = cardLines(shot).map((l: any) => l.text);
   const body: string[] = shot.body || [];

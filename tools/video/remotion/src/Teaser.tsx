@@ -24,7 +24,9 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
   loadFonts();
   const frame = useCurrentFrame();
   const { width: w, height: h, fps } = useVideoConfig();
-  const tl = buildTimeline(edit);
+  const tl0 = buildTimeline(edit);
+  // edit-level seat_labels {attack, defend} override the ATTACKER / DEFENDER tab text on every Cyber Aware component (absent: unchanged)
+  const tl = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: edit.seat_labels })) } : tl0;
   const source: [number, number] = edit.source_size || [1920, 1080];
 
   const shots = tl.shots.map((s: any) => (

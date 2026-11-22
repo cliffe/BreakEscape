@@ -19,6 +19,7 @@ export const CaSeats: React.FC<{ shot: any; w: number; h: number; children: Reac
   const band = 5 * u;
   const chipSize = Math.max(8, Math.round(tf * 0.67 / 8) * 8);
   const framed = seat.seat !== 'full';
+  const tabLabelText: string = seat.seat === 'attack' ? (shot.seat_labels?.attack ?? 'ATTACKER') : (shot.seat_labels?.defend ?? 'DEFENDER'); // tab width follows the label (8 characters = the old 9.6 em)
   const tabH = tf + Math.round(tf * 1) + 4 * u + (seat.stripe ? 3 * u : 0);
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -26,10 +27,10 @@ export const CaSeats: React.FC<{ shot: any; w: number; h: number; children: Reac
       {framed ? <>
         <div style={{ position: 'absolute', inset: 0, border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box' }} />
         <div style={{ position: 'absolute', inset: 2 * u, border: `${3 * u}px solid ${col}`, boxSizing: 'border-box' }} />
-        <CaTab label={seat.seat === 'attack' ? 'ATTACKER' : 'DEFENDER'} bg={col} size={tf} u={u} stripe={seat.stripe} style={{ left: band, top: band }} />
+        <CaTab label={tabLabelText} bg={col} size={tf} u={u} stripe={seat.stripe} style={{ left: band, top: band }} />
       </> : null}
       {seat.chip ? (
-        <div style={{ position: 'absolute', left: framed ? band + Math.round(tf * 9.6) + 3 * u : 3 * u * 2, top: framed ? band : 3 * u * 2, height: framed ? tabH : undefined, boxSizing: 'border-box', background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, color: CA.ink, fontFamily: "'Press Start 2P', monospace", fontSize: chipSize, lineHeight: 1, padding: `${Math.round(chipSize * 0.7)}px ${Math.round(chipSize * 0.8)}px`, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', ...crisp }}>{seat.chip}</div>
+        <div style={{ position: 'absolute', left: framed ? band + Math.round(tf * (tabLabelText.length + 1.6)) + 3 * u : 3 * u * 2, top: framed ? band : 3 * u * 2, height: framed ? tabH : undefined, boxSizing: 'border-box', background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, color: CA.ink, fontFamily: "'Press Start 2P', monospace", fontSize: chipSize, lineHeight: 1, padding: `${Math.round(chipSize * 0.7)}px ${Math.round(chipSize * 0.8)}px`, display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', ...crisp }}>{seat.chip}</div>
       ) : null}
     </div>
   );

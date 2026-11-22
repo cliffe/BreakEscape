@@ -67,10 +67,10 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: CA.surface }}>
       {/* the two halves: moving blocks that become the mark's squares */}
       <div style={{ ...rectStyle(rA, CA.attack), backgroundImage: halvesDone ? 'none' : GRID(u), zIndex: 1 }}>
-        {showTabs ? <CaTab label="ATTACKER" bg={CA.attack} size={tf} u={u} style={{ left: 8 * u, top: 8 * u, border: `${2 * u}px solid ${CA.ink}` }} /> : null}
+        {showTabs ? <CaTab label={shot.seat_labels?.attack ?? 'ATTACKER'} bg={CA.attack} size={tf} u={u} style={{ left: 8 * u, top: 8 * u, border: `${2 * u}px solid ${CA.ink}` }} /> : null}
       </div>
       <div style={{ ...rectStyle(rD, CA.defend), backgroundImage: halvesDone ? 'none' : GRID(u), zIndex: 2 }}>
-        {showTabs ? <CaTab label="DEFENDER" bg={CA.defend} size={tf} u={u} style={{ left: 8 * u, top: 8 * u }} /> : null}
+        {showTabs ? <CaTab label={shot.seat_labels?.defend ?? 'DEFENDER'} bg={CA.defend} size={tf} u={u} style={{ left: 8 * u, top: 8 * u }} /> : null}
       </div>
       {touch ? <div style={{ position: 'absolute', zIndex: 3, background: CA.line, ...(stacked ? { left: 0, width: w, top: h / 2 - 2 * u, height: 4 * u } : { top: 0, height: h, left: w / 2 - 2 * u, width: 4 * u }) }} /> : null}
       {textIn ? <div style={{ position: 'absolute', left: tx, top: ty, fontFamily: PIXEL_FONT, fontSize: textFont, lineHeight: 1, color: CA.mark, whiteSpace: 'nowrap', textAlign: stacked ? 'center' : 'left', width: stacked ? cwWord : undefined, ...crisp }}>{wmLines.map((l, i) => <div key={i} style={{ marginTop: i ? wmLead - textFont : 0 }}>{l}</div>)}</div> : null}

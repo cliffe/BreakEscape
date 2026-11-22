@@ -44,7 +44,7 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
   const tabDrop = Math.round((1 - Math.min(1, Math.max(0, (frame - 2) / 4))) * -tf * 3);
   const mS = Math.max(16, Math.round(tf * 0.9 / 2) * 2);
   const markFont = Math.max(8, Math.round(tf * 0.5 / 8) * 8);
-  const tabLabel = attack ? 'ATTACKER' : 'DEFENDER';
+  const tabLabel = attack ? (shot.seat_labels?.attack ?? 'ATTACKER') : (shot.seat_labels?.defend ?? 'DEFENDER');
   const grid = GRID(u, 'rgba(0,0,0,0.12)');
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: ground, backgroundImage: grid }}>
