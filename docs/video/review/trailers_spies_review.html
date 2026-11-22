@@ -63,6 +63,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
+    <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
     <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
     <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
     <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
@@ -81,6 +82,33 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  voiced: {
+    doc: "feedback/trailer_lines_voiced",
+    title: "The 8 new lines, voiced (ear check)",
+    noVideo: true, noVerdict: true,
+    intro: "AC0 relayed that you want the trailers moving, so I took the suggested picks from the Lines tab and the standing TTS yes. The 8 lines are now in the game's ink at the points in the table (the dialogue review changed no wording) and voiced once each with the character's usual voice. Branch video/trailer-lines-m04-m10, sent to AC0 for a train. Nobody has listened to them yet: this is the ear check. A line you mark \"redo\" gets one more TTS pass with your note as direction.",
+    clips: [
+      ["m04 · Voltage (replaces the \"blink\" line)", "/_blob/da8fff7e2e395b9c1d7e6ccf18a72ec5", "\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\" Direction: quiet and level, a man reading out a sum he has already checked."],
+      ["m05 · the Recruiter (phone)", "/_blob/9e50ce257907d402a66265ac2bd485be", "\"I find people the week before they break, agent. Then I make them an offer.\" Direction: warm and confiding, a headhunter's smile in the voice."],
+      ["m06 · Satoshi Nakamoto II", "/_blob/6861aaa13b104e4694d316597b4d6e6c", "\"Take me in if you like. The money already knows where it's going.\" Direction: relaxed, a little amused, entirely sure."],
+      ["m07 · the Architect (withheld call)", "/_blob/8d68e67840a46a4624865a4b55da6799", "\"Four fires tonight, and only one of you. I set them so you'd have to choose.\" Direction: soft and measured, faintly pleased. Same voice as m10's Tesseract (the scenarios already share it)."],
+      ["m08 · Director Netherton (opening)", "/_blob/e1e28a84e54faab551c08380e688f73c", "\"They have read our plans for months, Agent. Tonight they will be reading you.\" Direction: low and grave, each word placed."],
+      ["m09 · Margaret Sorensen", "/_blob/357f6dc6ff75a6924960c33b0866e8f6", "\"Yours is in tonight's run, dear. I saved it for last.\" Direction: mild and pleasant, like a librarian mentioning an overdue book."],
+      ["m09 hook · Director Netherton (briefing)", "/_blob/e6a5463b209f113c5350aa384e96ed05", "\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\" Direction: level and grave."],
+      ["m10 · Dr Adrian Tesseract (arrival)", "/_blob/c0545bb6c043c5c316755643eec34b8e", "\"I had the blast door read one badge tonight. Yours.\" Direction: quiet and matter-of-fact, a host who has gone to some trouble. It plays just after his \"Take your time...\" line."]
+    ],
+    questions: [
+      {k:"m04", t:"m04 Voltage", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m05", t:"m05 Recruiter", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m06", t:"m06 Satoshi", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m07", t:"m07 Architect", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m08", t:"m08 Netherton", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09", t:"m09 Sorensen", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09hook", t:"m09 Netherton hook", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m10", t:"m10 Tesseract", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"other", t:"Anything else on these lines?", o:null}
+    ]
+  },
   m03v3: {
     doc: "feedback/m03_trailer_v3",
     title: "m03 Ghost in the Machine · 60 s trailer · round v3 (new cut)",
@@ -210,6 +238,7 @@ function render(){
   if (c.intro) top.append(el("p",{class:"why",text:c.intro}));
   if (c.video){ if (c.videoLabel) top.append(el("div",{class:"kicker",text:c.videoLabel})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
   else if (!c.noVideo) top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.clips){ c.clips.forEach(([lab,src,txt])=>{ const b=el("div",{class:"q"}); b.append(el("h3",{text:lab}), el("p",{class:"why",text:txt})); const au=el("audio",{controls:"",preload:"metadata"}); au.src=src; au.style.width="100%"; b.append(au); top.append(b); }); }
   if (c.video2){ top.append(el("div",{class:"kicker",text:c.video2Label||"Alternative"})); const v2=el("video",{controls:"",preload:"metadata",playsinline:""}); v2.src=c.video2; top.append(v2); }
   if (c.stats && c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
   if (c.changed){ const ch=el("div",{}, el("div",{class:"kicker",text:c.changedLabel||"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch); }
