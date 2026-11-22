@@ -58,6 +58,7 @@ Write a recipe of your own, `docs/video/recipes/course-trailer.md`, as a variant
   - Afterwards, check by DB read that id 1 is `female_hacker_hood_v2`, and tell AC0.
   - Without BE_SPRITE, nothing changes.
 - **Database:** worktrees share the dev database. Never run db:create, schema:load, migrate or reset. Never edit a game row's scenario or state. Fresh games via new-game.sh are fine.
+- **Where takes go:** set `FOOTAGE_ROOT=$HOME/video-takes-local` on every `run-take.sh` call. Never write into `~/safetynet-footage`: it is a one-way rclone mirror of Google Drive (`footage-sync.timer`, every :00 and :30), and anything there that is not on Drive is moved to `~/safetynet-footage-deleted/<date>/` at the next run (ca12 lost its folder mid-capture this way, 2026-11-22).
 - **Where to record:** record from a worktree of local main. Commit on a branch, never on main, and send hashes to AC0.
 
 ## Tasking subagents (what worked)
