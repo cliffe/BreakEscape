@@ -70,7 +70,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
       {textIn && cfg.name ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY, textAlign: 'center', fontFamily: GNF_FONT, fontSize: nameSize, lineHeight: 1.1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{cfg.name}</div> : null}
       {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameSize * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{tagline}</div> : null}
       {hackIn ? (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 10 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
           <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: CA.line, marginBottom: 6 * u }} />
           <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: CA.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>
         </div>
