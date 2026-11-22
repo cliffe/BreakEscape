@@ -1266,7 +1266,13 @@ export function swivelEnabled(rec, scenario) {
 
 const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
 const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
-const NPC_STUCK_TICKS = 4;         // ticks without 0.5 px of progress: blocked
+const NPC_STUCK_WINDOW = 4;        // ticks the progress check looks back over
+const NPC_STUCK_STALLS = 2;        // stalled windows (a full window under the progress floor); the second one ends the walk as stuck
+const NPC_STALL_WAIT_TICKS = 8;    // a stall is a real wait: held still and idle this many ticks (0.4 s), then retried
+const NPC_STUCK_FRACTION = 0.25;   // the window must cover at least this share of the expected distance (17.5 px/s at full speed, up from 10)
+// the walk animation plays only if the feet moved this far since the last tick: just under the stall floor
+// (0.875 px per 50 ms tick), so a slow slide that is not stalled still animates
+const NPC_MOVE_ANIM_PX = NPC_STUCK_FRACTION * NPC_SEAT_SPEED * NPC_TICK_S * 0.9;
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
 const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
 const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
@@ -1352,19 +1358,57 @@ function fitSeatedBody(sprite, st) {
 }
 
 /** One tick of an NPC walk to `target`: 'moving', 'arrived' (placed exactly) or 'stuck'. */
-function npcWalkTick(behavior, m, target) {
+export function npcWalkTick(behavior, m, target) {
     const sprite = behavior.sprite;
     const f = bodyFeet(sprite);
     const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy);
     if (d <= ARRIVE_PX) { sprite.body.setVelocity(0, 0); moveFeetTo(sprite, target.x, target.y); return 'arrived'; }
-    m.still = (m.last - d < 0.5) ? m.still + 1 : 0;
-    m.last = d;
+    // The walk animation follows real movement: a probe that is pushing against something (velocity
+    // set, feet not moving) idles in the facing direction. A walk's first tick has no history and animates.
+    const moved = !m.pf || Math.hypot(f.x - m.pf.x, f.y - m.pf.y) >= NPC_MOVE_ANIM_PX;
+    m.pf = { x: f.x, y: f.y };
+    // Progress is judged over a window against the distance the walk should cover, not a flat
+    // 0.5 px per tick: a body grinding against the player at ~0.6 px per tick (about 12 px/s)
+    // used to pass as moving, with the walk animation playing and the velocity flipping 70 / 0.
+    // A tick can be longer than 50 ms (the NPC update runs on a frame clock): dt follows the scene
+    // clock so the step and the expected distance scale with it and the last approach cannot overshoot.
+    const now = sprite.scene?.time?.now;
+    const gap = (now !== undefined && m.t !== undefined) ? (now - m.t) / 1000 : 0;
+    const dt = gap > 0.25 ? NPC_TICK_S : Math.max(NPC_TICK_S, gap);   // a long gap is a stage change, not a slow tick
+    if (now !== undefined) m.t = now;
     m.ticks++;
-    if (m.still >= NPC_STUCK_TICKS || m.ticks > NPC_MOVE_MAX_TICKS) { sprite.body.setVelocity(0, 0); return 'stuck'; }
-    const v = Math.min(NPC_SEAT_SPEED, d / NPC_TICK_S);
+    const idle = () => {
+        sprite.body.setVelocity(0, 0);
+        if (behavior.isMoving) { behavior.isMoving = false; behavior.playAnimation?.('idle', behavior.direction); }
+    };
+    if (m.wait > 0) {
+        // Waiting out a stall: still and idle, no progress judged; the next try starts with a clean window
+        m.wait--;
+        if (m.wait === 0) m.hist = [];
+        if (m.ticks > NPC_MOVE_MAX_TICKS) { idle(); return 'stuck'; }
+        idle();
+        return 'moving';
+    }
+    const hist = m.hist || (m.hist = []);
+    hist.push(d);
+    if (hist.length > NPC_STUCK_WINDOW + 1) hist.shift();
+    const expected = Math.min(NPC_SEAT_SPEED * dt, d);
+    const full = hist.length > NPC_STUCK_WINDOW;
+    const stalled = full && hist[0] - d < NPC_STUCK_WINDOW * expected * NPC_STUCK_FRACTION;
+    if (full && !stalled) m.still = 0;
+    if (stalled) m.still++;
+    if ((stalled && m.still >= NPC_STUCK_STALLS) || m.ticks > NPC_MOVE_MAX_TICKS) { idle(); return 'stuck'; }
+    if (stalled) { m.wait = NPC_STALL_WAIT_TICKS; idle(); return 'moving'; }
+    const v = Math.min(NPC_SEAT_SPEED, d / Math.max(dt, gap));   // never overshoot, even across a long real gap
     sprite.body.setVelocity(dx / d * v, dy / d * v);
     const dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
-    if (behavior.direction !== dir || !behavior.isMoving) {
+    if (!moved) {
+        if (behavior.isMoving || behavior.direction !== dir) {
+            behavior.direction = dir;
+            behavior.isMoving = false;
+            behavior.playAnimation?.('idle', dir);
+        }
+    } else if (behavior.direction !== dir || !behavior.isMoving) {
         behavior.direction = dir;
         behavior.isMoving = true;
         behavior.playAnimation?.('walk', dir);
@@ -1373,7 +1417,7 @@ function npcWalkTick(behavior, m, target) {
     return 'moving';
 }
 
-function resetWalk(m) { m.ticks = 0; m.still = 0; m.last = Infinity; }
+export function resetWalk(m) { m.ticks = 0; m.still = 0; m.wait = 0; m.hist = []; m.pf = undefined; m.t = undefined; }
 
 /**
  * Whether the straight walk from `from` to the work spot `ref` is clear for a walking body:
@@ -1457,7 +1501,7 @@ function npcHold(behavior, chair) {
 function startSeatMove(behavior, chair, seat, opts) {
     const sprite = behavior.sprite;
     const m = { chair, seat, opts, stopKey: opts.needsStop, savedImm: sprite.body.immovable, savedBody: null,
-                stage: null, ticks: 0, still: 0, last: Infinity };
+                stage: null, ticks: 0, still: 0 };
     sprite.body.immovable = false; // an immovable body walks through walls
     sprite.body.setVelocity(0, 0);
     behavior._seatMove = m;
@@ -1706,7 +1750,7 @@ export function unseatNPC(behavior, opts = {}) {
                 moveFeetTo(sprite, spot.x, spot.y);
             } else {
                 behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
-                                       savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
+                                       savedImm: b.immovable, savedBody: null, ticks: 0, still: 0 };
                 b.immovable = false;
             }
         }
