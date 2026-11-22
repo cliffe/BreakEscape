@@ -50,7 +50,7 @@ VAR fight_was_reset = false
 { guard_hostile:
     #display:guard-hostile
     // Pass 2 blind fixes 2: after a lockpick catch he never told them to leave.
-    Terry Mott: {ordered_out:I told you to leave.|Not another word.} I'm calling the police.
+    Terry Mott: {ordered_out:I told you to leave.|Not another word.} I'm calling the police. #delivery: hard and frustrated, his patience gone, clipped and aggressive but not shouting Every word clearly enunciated, his South London accent and age kept.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -67,7 +67,7 @@ VAR fight_was_reset = false
     // afternoon face folded into each line (D5-2); then the face alone (D4-3).
     {
     - guard_detection_count > 0:
-        Terry Mott: You. The one with the picks. Let's hear it, then.
+        Terry Mott: You. The one with the picks. Let's hear it, then. #delivery: suspicious and hard, his patience wearing thin, low and tight and slow, a step below shouting Every word clearly enunciated, his South London accent and age kept.
     - ffion_night_story == "notebook":
         Terry Mott: Ffion said there'd be someone about. Notebook, was it?{day_greeted: Should've known it'd be you.} Conference room's the other end of the building.
     - ffion_night_story == "sterling":
@@ -124,7 +124,7 @@ VAR fight_was_reset = false
 { guard_hostile:
     #display:guard-hostile
     #hostile:terry_mott
-    Terry Mott: Right. I warned you.
+    Terry Mott: Right. I warned you. #delivery: cold and final, flat and low, no shouting; a tired man done with it, each word measured Every word clearly enunciated, his South London accent and age kept.
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
@@ -132,7 +132,7 @@ VAR fight_was_reset = false
 { ordered_out:
     #display:guard-hostile
     Narrator: The torch finds you again.
-    Terry Mott: I told you to leave. You didn't.
+    Terry Mott: I told you to leave. You didn't. #delivery: frustrated and hard, his anger rising; the last two words bitten off, sharp and aggressive Every word clearly enunciated, his South London accent and age kept.
     -> hostile_count
 }
 -> start
@@ -600,15 +600,15 @@ Terry Mott: Ms. Sterling? She's the boss. Signs my wages, never learnt my name. 
 #set_global:guard_waved_on:false
 #set_global:guard_lie_believed:false
 #display:guard-hostile
-Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
+Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police. #delivery: frustrated and aggressive, firm and raised, a hard ultimatum with real menace behind it Every word clearly enunciated, his South London accent and age kept.
 * [Alright, I'm going.]
-    Terry Mott: Good. Off you go. I see you in here again, I'm not talking.
+    Terry Mott: Good. Off you go. I see you in here again, I'm not talking. #delivery: curt and still angry, grudging on Good, then a hard warning with clipped, aggressive edges Every word clearly enunciated, his South London accent and age kept.
     ~ ordered_out = true
     ~ idle_quiet = true
     #exit_conversation
     -> guard_idle
 * [Try to run past the guard]
-    Terry Mott: HEY! STOP!
+    Terry Mott: HEY! STOP! #delivery: a sudden full-throated shout, loud and harsh, startled and furious, each word barked Every word clearly enunciated, his South London accent and age kept.
     #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation
@@ -632,7 +632,7 @@ Terry Mott: I'm giving you one chance. Leave now, or I'm calling the police.
 === hostile_confrontation ===
 #speaker:npc
 #display:guard-hostile
-Terry Mott: Right. That's the police, then. Stay where you are.
+Terry Mott: Right. That's the police, then. Stay where you are. #delivery: frustrated and aggressive, hard and raised, clipped; he means to be obeyed Every word clearly enunciated, his South London accent and age kept.
 Narrator: The guard reaches for his radio.
 * [Tackle the guard before he can call]
     #hostile:terry_mott
@@ -640,10 +640,10 @@ Narrator: The guard reaches for his radio.
     #exit_conversation
     -> guard_idle
 * [Wait, wait! Hear me out.]
-    Terry Mott: No more talking. You're trespassing.
+    Terry Mott: No more talking. You're trespassing. #delivery: angry and sharp, cutting the player off, hard and raised and clipped Every word clearly enunciated, his South London accent and age kept.
     -> trespass_warning
 * [Run]
-    Terry Mott: Oi! Get back here!
+    Terry Mott: Oi! Get back here! #delivery: a loud angry shout, harsh and raised, bellowed as he gives chase Every word clearly enunciated, his South London accent and age kept.
     #hostile:terry_mott
     ~ idle_quiet = true
     #exit_conversation

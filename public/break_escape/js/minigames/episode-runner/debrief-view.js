@@ -441,7 +441,7 @@ function conceptEntryShown(entry, globals) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true, readOnly = false, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
+    concernRecap = null, showScore = true, readOnly = false, globals = null, folded = false, bandHeadline = null, weakestNudge = null, hostId = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -645,6 +645,13 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     for (const panel of conceptList) root.appendChild(panel);
     const voice = buildPanel(strings, 'voicePanel');
     if (voice) root.appendChild(voice);
+    // D286: a fake-check episode can add one line keyed to the host the learner built the page on
+    // (strings.debriefHostLineByHost[hostId], the same id the flip's ByHost lines use). The runner
+    // reads the id from the stored landing record; no id, or no line for it, draws nothing.
+    const byHost = isObj(strings) ? strings.debriefHostLineByHost : null;
+    if (isObj(byHost) && isStr(hostId) && isStr(byHost[hostId]) && byHost[hostId]) {
+        root.appendChild(el('p', 'aw-host-line', byHost[hostId]));
+    }
 
     // aw6: a thank-you for the phish the learner kept from the team. Positive only: no
     // denominator and nothing about what was missed.

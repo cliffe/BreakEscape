@@ -920,6 +920,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return !this.state.stage && this.state.done.includes('debrief') && stagesFor(this.episode).includes('debrief');
     }
 
+    /** D286: the host option id the learner built the fake-check page on, read from the stored landing record (null if none). */
+    _chosenHostId() {
+        try { return flipPage(this.episode, this.social, this.globals)?.hostId ?? null; } catch (e) { return null; }
+    }
+
     _renderDebrief() {
         const reread = this.rereading === true;
         const stored = this.state.defend || {};
@@ -959,6 +964,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             set: this.defendSet,
             strings: this.strings,
             globals: this.globals,
+            hostId: this._chosenHostId(),
             variant: variantOf(this.episode),
             reportRoute: reportRouteFor(this.episode, this.social, config),
             ruleOfThumb: settings.ruleOfThumb,
