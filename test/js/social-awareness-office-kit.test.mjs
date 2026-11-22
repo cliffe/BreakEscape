@@ -294,7 +294,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet'];
 // Bark gates. The ask bark (a targetKnot bark on there, and its game_loaded re-arm copy) does not read kit_quiet in a
 // shell with the done backstop: reopening and closing the debrief sets kit_quiet false, which would drop the ask.
 // It reads !done and an empty choice instead. A follow-through bark on the answer reads !done and may keep or drop
@@ -1411,7 +1411,7 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     assert.ok(fb && fb.startOnGlobal === asked && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 115000 : 85000), `${name}: done fallback`);
     // backstop: done is also set 60 s after the ask's own tail, started from out alone (reload / reopened-debrief cannot strand it)
     const fbo = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done_out`);
-    assert.ok(fbo && fbo.startOnGlobal === `kit_${ep}_out` && fbo.setGlobal[done] === true && fbo.condition === `!globalVars.${done}` && fbo.delayMs === fb.delayMs + 60000, `${name}: done backstop from out`);
+    assert.ok(fbo && fbo.startOnGlobal === `kit_${ep}_out` && fbo.setGlobal[done] === true && fbo.condition === `!globalVars.${done} && globalVars.${asked} !== true` && fbo.delayMs === fb.delayMs + 60000, `${name}: done backstop from out`);
     // the ask is gated on not answered and not done; the re-arm copies the same and add asked !== true / === true
     assert.ok(ask.condition.includes(`!globalVars.${done}`) && ask.condition.includes(`globalVars.${ch} === ''`) && !/kit_quiet/.test(ask.condition) && ask.askCue === true && ask.askCueUntil === ch && ask.askCueMs === 45000, `${name}: ask gated on !done and empty choice, no kit_quiet, marker lasts the reply window`);
     const rearm = cm.filter((m) => m.eventPattern === 'game_loaded');
@@ -1757,7 +1757,7 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 45000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
     assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_asked`, 85000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
     // the backstop: started from out alone, 60 s after t_done would have fired
-    assert.deepEqual([T('done_out').startOnGlobal, T('done_out').delayMs, T('done_out').condition, T('done_out').setGlobal], [`kit_${ep}_out`, 85000 + 60000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done_out backstop`);
+    assert.deepEqual([T('done_out').startOnGlobal, T('done_out').delayMs, T('done_out').condition, T('done_out').setGlobal], [`kit_${ep}_out`, 85000 + 60000, `${c.nD} && globalVars.kit_${ep}_asked !== true`, { [`kit_${ep}_done`]: true }], `${name}: t_done_out backstop`);
   });
 });
 
