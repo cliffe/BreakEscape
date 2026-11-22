@@ -51,8 +51,8 @@
   "flipMontageByChoice": {
     "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
     "overtime_sheet": {
-      "send_wrong_sam": "The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three days the data protection lead never had, to warn the staff and limit the harm.",
-      "check_then_send": "The version where it went to the first Sam instead: staff health notes reached someone outside Carrholme, unnoticed for three days. A glance at the address stopped it here."
+      "send_wrong_sam": "The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox until he wrote in to ask whether it was meant for him. That is the first email waiting in today's inbox. Every hour before it was time the data protection lead never had, to warn the staff and limit the harm.",
+      "check_then_send": "The version where it went to the first Sam instead: staff health notes reached someone outside Carrholme. A glance at the address stopped it here, so your sheet stayed inside. The sheet in today's inbox is a different send, by someone else on the desk, and it did go astray."
     },
     "caller_bernadette": {
       "give_details": "Two weeks on, a stranger was waiting for Bernadette outside her school. The birthday-surprise call was how he learned where a lone worker would be, and when.",
