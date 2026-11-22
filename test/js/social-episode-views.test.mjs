@@ -610,3 +610,22 @@ test('P3 N-6 / flip split: nothing to replay gets the miss heading; a landing wi
     renderFlipView(h4, { message: null, page: { url: 'https://x.example/', fields: [] }, strings: { flipHeading: 'Now it lands on you' }, onContinue() {} });
     assert.equal(h4.querySelector('.aw-heading').textContent, 'Now it lands on you', 'a replay keeps the episode heading');
 });
+
+// ── ca10: the flip's page intro and defender line follow the host the learner chose ──
+test('flip page intro and defender line follow page.hostId when the strings carry per-host lines; otherwise the base lines', () => {
+    const strings = {
+        flipPageIntro: 'Base intro.', flipDefenderLine: 'Base defender.',
+        flipPageIntroByHost: { genuine: 'Bookmark intro.', lookalike: 'Link intro.' },
+        flipDefenderLineByHost: { genuine: 'Bookmark defender.', lookalike: 'Link defender.' }
+    };
+    const run = (hostId) => {
+        const h = host();
+        renderFlipView(h, { page: { url: 'https://x.example/', fields: [], hostId }, strings, onContinue() {} });
+        return [h.querySelector('.aw-lead').textContent, h.querySelector('.aw-defender-line').textContent];
+    };
+    assert.deepEqual(run('genuine'), ['Bookmark intro.', 'Bookmark defender.']);
+    assert.deepEqual(run('lookalike'), ['Link intro.', 'Link defender.']);
+    assert.deepEqual(run('unrelated'), ['Base intro.', 'Base defender.']);
+    assert.deepEqual(run(null), ['Base intro.', 'Base defender.']);
+    assert.equal(defenderLine(strings, null, false, 'lookalike'), 'Link defender.');
+});

@@ -569,6 +569,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         else if (this.feedbackMode === 'end') when = briefSaysEnd ? '' : endLine;
         else when = `You'll get feedback after each ${noun}.`;
         if (when) p.appendChild(el('p', 'tri-brief-when', when));
+        // The episode trims lock a Trust at once, with no tick step (D227 A3), so a set's "then
+        // tick what you noticed" holds for the other answers only. Say so before the round.
+        if (this.episodeTrims) {
+            const trustWords = [...new Set(this.messages.filter((m) => kindOf(m) !== 'choice').map((m) => {
+                const k = kindOf(m);
+                return actionsFor(isNonEmail(m) ? k : 'email', this.verifyEnabled, this.labels).find((a) => a.verdict === 'trust')?.label;
+            }).filter(Boolean))];
+            if (trustWords.length) {
+                p.appendChild(el('p', 'tri-brief-trust', `${trustWords.join(' or ')} locks your answer straight away. The other answers ask what you noticed.`));
+            }
+        }
         // F12: closing or reloading mid-round restarts it from the top (only the result is
         // ever saved), so say so here rather than leave a student puzzled by a reset.
         // Batch 11 item 8: a launcher that saves each verdict (params.onProgress) resumes instead.
@@ -638,6 +649,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // The "Verdict locked" line is about the message just sorted; opening another must not leave it
         // reading as that message's verdict (lab R18 F-d).
         if (this._live && this._live !== this._lockedLine(rec.id)) this._announce('');
+        // A pending verdict (the "What made you say that?" sheet) belongs to the message it was
+        // chosen on. Opening another message clears it, so a lock never lands on a message the
+        // player is not looking at (D254 R5 M1). The verdict is not kept: they choose again.
+        if (this.sheet && this.sheet.messageId !== rec.id) this._closeSheet(false);
         rec.read = true;
         this.openedAt.set(rec.id, Date.now());
     }
@@ -1098,8 +1113,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return fb || {
             trust: 'Right call. This one was real.',
             report: aware
-                ? "Reported, and that's never wrong. For next time, here is why this one was fine."
-                : "That one was real, but reporting is never wrong when you're unsure. Here's what to check next time.",
+                ? "Reported, which is safe, though a genuine message costs a colleague a little time to check. For next time, here is why this one was fine."
+                : "That one was real. Reporting when you're unsure is safe, but it costs a colleague a little time. Here's what to check next time.",
             // F-E13-3: the right call named for a deleted real item is Trust or Verify, so the line
             // no longer recommends reporting (which contradicted it); it names the cost of binning
             // real mail instead. A set override (labels.verdictFeedback.delete.real) still wins.
@@ -1208,7 +1223,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // D227 A3: after a Trust with no sheet the learner was never asked what they noticed,
             // so the rows name the tells neutrally ("What gave them away:"), never "Missed:".
             const softMiss = ans.sheetless === true ? 'gave' : this._isRight(rec, ans.verdict);
-            for (const u of units) if (u.caught) ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
+            for (const u of units) {
+                if (!u.caught) continue;
+                ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
+                // A second tick from the same either-tick group: say it is covered, not ignored.
+                for (const extra of Array.isArray(u.also) ? u.also : []) ul.appendChild(this._alsoTickedRow(extra, u.shown));
+            }
             for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note], softMiss));
             card.appendChild(ul);
         }
@@ -1330,6 +1350,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // A score figure: hidden with the host's show_result false, as in the episode debrief.
         if (this.showResult) card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
+    }
+
+    /** The row for a second tick in an either-tick group: acknowledged, covered by the first tick. */
+    _alsoTickedRow(id, firstId) {
+        const li = el('li', 'tri-flag caught tri-flag-also');
+        li.dataset.flag = id;
+        li.append(icon('mark-tick'), el('span', 'tri-flag-word', 'Also ticked:'),
+            el('span', 'tri-flag-text', `${chipLabel(this.set, id)}. This names the same tell as '${chipLabel(this.set, firstId)}', so it is covered by that tick and not counted twice.`));
+        return li;
     }
 
     _flagRow(rec, id, caught, note, softMiss = false) {

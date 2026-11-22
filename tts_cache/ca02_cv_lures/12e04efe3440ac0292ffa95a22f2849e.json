@@ -1,0 +1,14 @@
+{
+  "key": "12e04efe3440ac0292ffa95a22f2849e",
+  "npc": "kit_zainab_hussain",
+  "text": "Lovely. I'll get it sorted now, then.",
+  "delivery": "cheerful, breezy",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:20Z"
+}

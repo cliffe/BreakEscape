@@ -61,6 +61,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca16",
+    "kit_ca16_out": false,
+    "kit_ca16_signin_failed": false,
+    "kit_ca16_there": false,
+    "kit_ca16_asked": false,
+    "kit_ca16_done": false,
+    "kit_ca16_signin_choice": "",
     "kit_ca16_host_said": false,
     "kit_key_caught": false
   },
@@ -74,6 +80,60 @@
       "requireGlobal": {
         "kit_quiet": false
       }
+    }
+  },
+  "timers": [
+    {
+      "id": "kit_ca16_t_fail",
+      "startOnGlobal": "kit_ca16_out",
+      "delayMs": 6000,
+      "condition": "!globalVars.kit_ca16_signin_failed",
+      "setGlobal": {
+        "kit_ca16_signin_failed": true
+      }
+    },
+    {
+      "id": "kit_ca16_t_there",
+      "startOnGlobal": "kit_ca16_signin_failed",
+      "delayMs": 6000,
+      "condition": "!globalVars.kit_ca16_there",
+      "setGlobal": {
+        "kit_ca16_there": true
+      }
+    },
+    {
+      "id": "kit_ca16_t_tail",
+      "startOnGlobal": "kit_ca16_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca16_signin_choice === ''",
+      "setGlobal": {
+        "kit_ca16_signin_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca16_t_done",
+      "startOnGlobal": "kit_ca16_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca16_done",
+      "setGlobal": {
+        "kit_ca16_done": true
+      }
+    },
+    {
+      "id": "kit_ca16_t_done_out",
+      "startOnGlobal": "kit_ca16_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca16_done && globalVars.kit_ca16_asked !== true",
+      "setGlobal": {
+        "kit_ca16_done": true
+      }
+    }
+  ],
+  "resources": {
+    "kit_ca16_signin": {
+      "name": "Quayholt sign-in",
+      "kind": "intranet",
+      "offWhen": "kit_ca16_out"
     }
   },
   "social": {
@@ -554,6 +614,7 @@
         }
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "sandbox": {
           "intro": "A few ordinary choices from an ordinary day. They aren't scored, but the debrief comes back to any that are worth a second look, so choose what you would really do."
         },
@@ -584,7 +645,17 @@
           },
           {
             "heading": "The report you built",
-            "text": "At the kiosk you built a concern as a short report. What belonged in it was what you saw yourself, as facts: the approach for access, when it came, where, and who it reached. A verdict on a person did not, because a report is for whoever looks into it to weigh. A worry about a colleague's wellbeing is not a security report either; that one goes to your manager or HR.\n\nTo a real attacker, the sign-in you were asked to lend, and the leaver's export you could have waved through, are a way to act as someone else with no trail back and company data sitting in a personal inbox beyond the firm's reach. The next move is to do the work under the lender's name so any audit points the wrong way, or to keep the exported data long after the leaver has gone. Keeping a sign-in to yourself and sending handovers through the shared place keeps every action tied to the person who did it.\n\nUnder a shared login, everything the other person did is logged as yours, and the audit conversation that follows is about actions that were never yours, while the leaver's export has to be tracked down and recalled from a personal inbox. Before you leave, have a word with Anjali."
+            "text": "At the kiosk you built a concern as a short report. What belonged in it was what you saw yourself, as facts: the approach for access, when it came, where, and who it reached. A verdict on a person did not, because a report is for whoever looks into it to weigh. A worry about a colleague's wellbeing is not a security report either; that one goes to your manager or HR.\n\nTo a real attacker, the sign-in you were asked to lend, and the leaver's export you could have waved through, are a way to act as someone else with no trail back and company data sitting in a personal inbox beyond the firm's reach. The next move is to do the work under the lender's name so any audit points the wrong way, or to keep the exported data long after the leaver has gone. Keeping a sign-in to yourself and sending handovers through the shared place keeps every action tied to the person who did it.\n\nUnder a shared login, everything the other person did is logged as yours, and the audit conversation that follows is about actions that were never yours, while the leaver's export has to be tracked down and recalled from a personal inbox."
+          },
+          {
+            "heading": "Keeping your login",
+            "text": "The service desk reset Niamh's own login in minutes, and everything she did is logged under her name. Saying so out loud helps: a borrowed login is never the quick favour it looks like.",
+            "condition": "globalVars.kit_ca16_signin_choice === 'desk' || globalVars.kit_ca16_signin_choice === 'silent'"
+          },
+          {
+            "heading": "A borrowed login",
+            "text": "Niamh worked the afternoon under your sign-in. Whatever she opened, sent or deleted is logged as you, so if anyone looks at it later, the record points at the wrong person.",
+            "condition": "globalVars.kit_ca16_signin_choice === 'lend'"
           }
         ],
         "flipMontageByChoice": {
@@ -614,7 +685,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "awareness": {
       "ruleOfThumb": {
@@ -732,6 +804,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_out": true
+              }
             }
           ]
         },
@@ -782,7 +870,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_niamh_doherty",
@@ -798,12 +900,7 @@
           "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/niamh_doherty_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 4.0,
-            "y": 7.0,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca16_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -816,9 +913,14 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 55
+            },
+            "work": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 90
             }
           },
           "chatter": {
@@ -831,7 +933,168 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "workNeeds": [
+            "kit_ca16_signin"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_out",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Hang on, my screen's thrown me out."
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_niamh_doherty",
+              "condition": "data.objectId === 'kit_ca16_pc' && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_failed": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "delayMs": 250,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_niamh_doherty",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_failed === true && !globalVars.kit_ca16_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_there",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_choice === '' && !globalVars.kit_ca16_done",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "bark": "It won't take my password at all. Could I borrow your login for an hour?",
+              "targetKnot": "ca16_signin",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_there",
+              "condition": "value === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === ''",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "setGlobal": {
+                "kit_ca16_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_niamh_doherty",
+              "condition": "globalVars.kit_ca16_signin_choice === 'asked' && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
+              "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
+              "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
+              "onceOnly": true,
+              "delayMs": 6000,
+              "setGlobal": {
+                "kit_ca16_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca16_signin_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca16_done",
+              "condition": "value === true && globalVars.kit_ca16_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 90
+                }
+              }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked !== true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "bark": "It won't take my password at all. Could I borrow your login for an hour?",
+              "targetKnot": "ca16_signin",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked !== true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "setGlobal": {
+                "kit_ca16_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca16_there === true && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done && globalVars.kit_ca16_signin_choice === '' && globalVars.kit_ca16_asked === true",
+              "onceOnly": true,
+              "delayMs": 2000,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca16_signin_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         }
       ],
       "objects": [
@@ -846,7 +1109,7 @@
           "observations": "A touch-screen training kiosk for the Quayholt leaver-week exercise: first this week's ordinary choices, then where each led, then the messages to handle and a fair way to raise a concern.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e16_insider_risk_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Quayholt leaver-week exercise. Episode finished."
             }
           ],
@@ -877,6 +1140,68 @@
             "capacity": 2,
             "chatter": "kit_quayholt"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca16_pc",
+          "name": "Niamh's PC",
+          "sprite": "pc1",
+          "workstation": true,
+          "owner": "kit_niamh_doherty",
+          "lockChance": 0,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 2,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca16_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Niamh's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca16_signin_choice === 'lend'",
+              "value": "Niamh's PC, signed in under your login."
+            },
+            {
+              "condition": "globalVars.kit_ca16_out === true",
+              "value": "Niamh's PC, on the sign-in screen."
+            }
+          ],
+          "position": {
+            "x": 3.9375,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca16_signin_choice === 'lend'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca16_out === true",
+              "value": "pc1_locked"
+            }
+          ],
+          "observations": "Niamh's PC."
+        },
+        {
+          "type": "binders",
+          "id": "kit_ca16_binders",
+          "name": "Binders",
+          "sprite": "binders1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 6.47,
+            "y": 7.75
+          },
+          "observations": "Box files, moved over to clear the desk."
         }
       ]
     }

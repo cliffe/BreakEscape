@@ -1,0 +1,14 @@
+{
+  "key": "63ce931e72184f078cf33bd532e05ce6",
+  "npc": "kit_delphine_arvanitis",
+  "text": "An \"account locked\" warning goes out wide, hoping a few click through and type their password straight into the attacker's page.",
+  "delivery": "polite, matter-of-fact",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:45:32Z"
+}

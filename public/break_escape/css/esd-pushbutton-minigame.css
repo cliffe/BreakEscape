@@ -182,6 +182,12 @@
     color: #f2f2f2;
     padding: 16px;
     box-sizing: border-box;
+    position: relative;   /* anchors its X at the top right */
+}
+
+.esd-confirm-card .esd-confirm-close {
+    top: 8px;
+    right: 8px;
 }
 
 .esd-confirm-card h3 {
@@ -190,6 +196,7 @@
     font-size: 8px;
     color: #ffd159;
     line-height: 16px;
+    padding-right: 40px;   /* clear of the X */
 }
 
 .esd-confirm-card p {
@@ -205,12 +212,12 @@
     margin-top: 12px;
 }
 
-.esd-confirm,
-.esd-cancel {
+.esd-confirm {
     border: 2px solid #4b4b4b;
     background: #222;
     color: #efefef;
     padding: 8px 10px;
+    min-height: 44px;
     font-family: 'GNF', monospace;
     font-size: 24px;
     cursor: pointer;
@@ -221,8 +228,7 @@
     color: #ff5f5f;
 }
 
-.esd-confirm:hover,
-.esd-cancel:hover {
+.esd-confirm:hover {
     filter: brightness(1.12);
 }
 

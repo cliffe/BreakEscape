@@ -1,0 +1,13 @@
+{
+  "key": "1119ebe83efd6bbeb4d925f6999820e8",
+  "npc": "kit_darren_price",
+  "text": "My screen's locked me out and a shared folder won't open. If someone's in my account, they'll be sending as me. Reporting it now.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:22:57Z"
+}

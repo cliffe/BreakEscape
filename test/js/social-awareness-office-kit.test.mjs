@@ -294,7 +294,18 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet'];
+// Bark gates. The ask bark (a targetKnot bark on there, and its game_loaded re-arm copy) does not read kit_quiet in a
+// shell with the done backstop: reopening and closing the debrief sets kit_quiet false, which would drop the ask.
+// It reads !done and an empty choice instead. A follow-through bark on the answer reads !done and may keep or drop
+// kit_quiet (nothing that sets done reads it). Every other chain bark keeps kit_quiet === true.
+const hasBackstop = (sc) => (sc.timers || []).some((t) => /^kit_ca\d+_t_done_out$/.test(t.id));
+const barkGateOk = (m, sc) => {
+  const c = m.condition || '';
+  if (m.targetKnot && hasBackstop(sc)) return !/kit_quiet/.test(c) && /!globalVars\.kit_ca\d+_done/.test(c) && /_choice === ''/.test(c);
+  if (/^global_variable_changed:kit_ca\d+_\w+_choice$/.test(m.eventPattern) && hasBackstop(sc)) return /!globalVars\.kit_ca\d+_done/.test(c);
+  return /globalVars\.kit_quiet === true/.test(c);
+};
 const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
 // the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
 const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);
@@ -360,11 +371,16 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     }
     // at most two chain barks (three for ca12, the flagship: owner ruling D212, 20 Nov 2026, which adds
     // Thandiwe's departure bark), each gated on kit_quiet and on the out global, at least 4 s apart is a timing proof
+    // the game_loaded re-arm copy of the ask bark is counted apart: exactly one, onceOnly, the same knot as the ask bark
+    const rearmBarks = staffMaps.filter((x) => x.m.bark && x.m.eventPattern === 'game_loaded');
+    // (a shell with an ask has exactly one; ca03 has no ask and no re-arm)
+    const hasAsk = hasBackstop(sc);
+    assert.ok(rearmBarks.length === (hasAsk ? 1 : 0) && rearmBarks.every((x) => x.m.onceOnly === true && x.m.targetKnot), where('one onceOnly game_loaded re-arm bark when there is an ask'));
     const barks = staffMaps.filter((x) => x.m.bark);
-    const barkCap = name === 'ca12_visitor_tailgater' ? 3 : 2;
-    assert.ok(barks.length >= 1 && barks.length <= barkCap, where(`1 to ${barkCap} chain barks, found ${barks.length}`));
+    const barkCap = (row && row.tier === 'E' ? 3 : 2) + (hasAsk ? 1 : 0);   // every end-to-end row: ca12, ca06, ca09, ca15, ca16 (and the fixture, which is not a chain shell)
+    assert.ok(barks.length >= 1 && barks.length <= barkCap, where(`1 to ${barkCap} chain barks (including the re-arm), found ${barks.length}`));
     for (const { m, who } of barks) {
-      assert.ok(/globalVars\.kit_quiet === true/.test(m.condition || ''), where(`${who} bark needs kit_quiet === true`));
+      assert.ok(barkGateOk(m, sc), where(`${who} bark gate (ask: no kit_quiet, !done, empty choice; others: kit_quiet)`));
       assert.ok(globalsRead(m.condition).includes(outG), where(`${who} bark needs ${outG} (plan 4.5)`));
     }
     // the only episode_step_away mapping is the host's, and it sets only the out global
@@ -372,7 +388,7 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     assert.ok(steps.length === 1 && steps[0].host, where('one step-away mapping, on the host'));
     assert.deepEqual(Object.keys(steps[0].m.setGlobal), [outG], where('step-away sets only the out global'));
     // every staff mapping listens on the out global, a kit_ global, or a chain event, with the out global in its condition
-    const chainEvents = /^(npc_returned_post|workstation_owner_\w+|npc_use_failed|conversation_closed|npc_arrived:[\w]+|npc_use_started:[\w]+)/;
+    const chainEvents = /^(npc_returned_post|workstation_owner_\w+|npc_use_failed|conversation_closed|game_loaded|npc_arrived:[\w]+|npc_use_started:[\w]+)/;
     for (const { m, who } of staffMaps) {
       const ev = m.eventPattern;
       if (ev === `global_variable_changed:${outG}` || /^global_variable_changed:kit_/.test(ev)) continue;
@@ -389,11 +405,16 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith('kit_'))) {
       assert.ok(!o.interactionWarning, where(`${o.id} has no interactionWarning`));
       if (o.revealOnGlobal) assert.ok(/^kit_/.test(o.revealOnGlobal) && o.revealOnGlobal !== 'kit_attack_done', where(`${o.id} reveal`));
+      // variants split on && only: a term holding || is unsupported and evaluates false (WAVE4_BUILD.md 3.2)
+      for (const key of ['spriteVariants', 'observationVariants', 'requiresItemHintVariants']) {
+        for (const v of o[key] || []) assert.ok(!String(v.condition || '').includes('||'), where(`${o.id} ${key} condition has no ||`));
+      }
     }
     // timers: only kit_ ids, started on a kit_ global (not kit_attack_done), writing only kit_ globals / set_global / emit_event kit_<ep>_
     for (const t of (sc.timers || []).filter((x) => String(x.id).startsWith('kit_'))) {
       assert.ok(/^kit_/.test(t.startOnGlobal || '') && t.startOnGlobal !== 'kit_attack_done', where(`timer ${t.id} start`));
       assert.ok(Object.keys(t.setGlobal || {}).every((k) => k.startsWith('kit_')), where(`timer ${t.id} sets kit_ only`));
+      assert.ok(!String(t.condition || '').includes('||'), where(`timer ${t.id} condition has no ||`));
       for (const a of t.actions || []) {
         const ok = (a.type === 'set_global' && String(a.name || a.global || '').startsWith('kit_')) ||
           (a.type === 'emit_event' && String(a.event_name || '').startsWith(`kit_${ep}_`));
@@ -451,14 +472,15 @@ test('ca01 twin: tier S kit (staff, pool, stubs) with the conceptPanel, and no c
   const twin = readFileSync(join(scenarios, 'ca01_invoice_fraud_defend/scenario.json.erb'), 'utf8');
   const sc = JSON.parse(twin);
   const row = kitRows.find((r) => r.id === 'ca01_invoice_fraud_defend');
-  assert.ok(row && row.tier === 'S' && !row.setPiece && row.stepAway !== true, 'the twin has a tier S row, no set piece, no step-away (plan 5)');
+  assert.ok(row && row.tier === 'S' && (!row.setPiece || row.setPiece === 'ca01_defend_react') && row.stepAway !== true, 'the twin has a tier S row, at most the D280 reaction-only set piece, no step-away (plan 5)');
   const cp = sc.social.awarenessEpisode.strings.conceptPanel;
   assert.ok(typeof cp === 'object' && cp.heading === 'If one gets through');
   assert.ok(!/patrolOverride|stepAway|npc_arrived|"timers"|_out"|resume|suspend/i.test(twin), 'no chain');
   assert.ok(!('timers' in sc) && !Object.keys(sc.globalVariables).some((k) => /^kit_.*_out$/.test(k)));
   assert.ok(sc.social.awarenessEpisode.stepAway !== true);
   for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) {
-    assert.ok(!(n.eventMappings || []).length, `${n.id}: a twin's kit staff carry no mappings`);
+    // D280: the only mapping a twin's kit staff may carry is the after-sort reaction (kit_defend_done)
+    assert.ok((n.eventMappings || []).every((m) => m.eventPattern === 'global_variable_changed:kit_defend_done'), `${n.id}: a twin's kit staff carry no mappings but the after-sort reaction`);
   }
   const allMaps = [];
   const walk = (o) => {
@@ -734,6 +756,7 @@ test('pool exemption and ca00: a shell with no pool or a convention row carries 
 // its tile position or (Quayholt) its chatter fails here.
 const COOLER_COMPANIES = { quayholt_insurance: 7, carrholme_services: 2 };
 const NEEDS_COMPANIES = ['tarrowby_logistics', 'quayholt_insurance', 'carrholme_services'];
+const PC_HOMES = { 'ca09_passwords/kit_chidi_okeke': 'kit_ca09_pc', 'ca16_insider_risk/kit_niamh_doherty': 'kit_ca16_pc', 'ca05_signin_pages/kit_darren_price': 'kit_ca05_pc', 'ca02_cv_lures/kit_chidi_okeke': 'kit_ca02_pc', 'ca10_downloads_and_fake_checks/kit_darren_price': 'kit_ca10_pc' };
 test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst need and a coordinate needsHome', () => {
   const visited = {};
   for (const r of courseRows.filter((x) => NEEDS_COMPANIES.includes(x.company))) {
@@ -743,6 +766,10 @@ test('kit NPCs: every Tarrowby, Quayholt and Carrholme kit NPC carries a thirst 
     for (const n of npcs) {
       assert.ok(n.needs && typeof n.needs.thirst === 'object' && n.needs.thirst !== null, `${r.id}: ${n.id} has no thirst need`);
       const h = n.needsHome;
+      // Exactly five string homes (ca09, ca16, ca05, ca02, ca10). The work need (ca09, ca16) only uses an own-station PC, and the own station is a
+      // string needsHome; with a coordinate home the PC is "another desk" and npc_use_failed never fires (WAVE4_BUILD.md 3.3).
+      const pcHome = PC_HOMES[`${r.id}/${n.id}`];
+      if (pcHome) { assert.equal(h, pcHome, `${r.id}: ${n.id} needsHome is its PC's id`); continue; }
       assert.ok(h && Number.isFinite(h.x) && Number.isFinite(h.y), `${r.id}: ${n.id} needsHome is not a coordinate`);
     }
   }
@@ -844,6 +871,80 @@ const W3 = {
   ca11_misdirected_data: { ep: 'ca11', setPiece: 'ca11_stray_printout', walker: 'kit_yusuf_demir', partner: null, hostId: null, there: 'kit_ca11_at_tray', hostReply: false, push: false, verdicts: ['report'] },
   ca19_malware_and_updates: { ep: 'ca19', setPiece: 'ca19_isolated_beside_running', walker: 'kit_niamh_doherty', partner: 'kit_darren_price', hostId: 'anjali_rao', there: 'kit_ca19_there', hostReply: false, push: false, verdicts: ['report', 'verify'] },
 };
+const W4 = {
+  ca06_texts_and_qr: { ep: 'ca06', company: 'tarrowby_logistics', setPiece: 'ca06_notice', walker: 'kit_zainab_hussain', partner: 'kit_fatima_begum', hostId: 'chidi_okeke', there: 'kit_ca06_there', choice: 'kit_ca06_notice_choice', silent: 'silent', knot: 'ca06_notice', stub: 'zainab_hussain', staffBarks: 2, verdicts: ['report', 'verify'], values: ['check', 'fine', 'silent'], panelEntries: 2, arrayWrap: true },
+  ca09_passwords: { ep: 'ca09', company: 'tarrowby_logistics', setPiece: 'ca09_note_on_screen', walker: 'kit_chidi_okeke', partner: 'kit_fatima_begum', hostId: 'nilesh_solanki', there: 'kit_ca09_note_up', choice: 'kit_ca09_note_choice', silent: 'silent', knot: 'ca09_note', stub: 'chidi_okeke', staffBarks: 2, verdicts: undefined, values: ['mention', 'fine', 'silent'], panelEntries: 2, arrayWrap: false },
+  ca15_shadow_it: { ep: 'ca15', company: 'tarrowby_logistics', setPiece: 'ca15_found_stick', walker: 'kit_fatima_begum', partner: 'kit_chidi_okeke', hostId: 'nilesh_solanki', there: 'kit_ca15_there', choice: 'kit_ca15_stick_choice', silent: 'leave', knot: 'ca15_stick', stub: 'fatima_begum', staffBarks: 3, verdicts: ['report', 'verify'], values: ['handin', 'lost', 'leave'], panelEntries: 3, arrayWrap: true },
+  ca16_insider_risk: { ep: 'ca16', company: 'quayholt_insurance', setPiece: 'ca16_borrowed_login', walker: 'kit_niamh_doherty', partner: 'kit_darren_price', hostId: 'anjali_rao', there: 'kit_ca16_there', choice: 'kit_ca16_signin_choice', silent: 'silent', knot: 'ca16_signin', stub: 'niamh_doherty', staffBarks: 2, verdicts: ['report', 'verify'], values: ['desk', 'lend', 'silent'], panelEntries: 2, arrayWrap: false },
+};
+const W34 = { ...W3, ...W4 };
+// Wave 5 (WAVE5_BUILD.md s12): ca13, ca14, ca05 and ca02 are colleague requests with a follow-through. The map is EMPTY
+// until each shell's kit step (sheet s13 steps 3-6) adds its entry; every W5 case loops over it, so an empty map passes.
+// Fields: ep, company, setPiece, colleague (the seated asker's kit id), stub (his ambient ink), partner (the walked and
+// suspended follow-through speaker; ca02: Zainab, the suspended bystander), partnerStub, partnerGuard (the first guard of
+// the partner's episode knot), hostId (host ink file), hostSpeaks (ca02: the host gives the follow-through),
+// there, choice, silent, knot, right, wrong, values, staffBarks, panelEntries, arrayWrap, walks, spawn, pcPos, pcName,
+// pron, movedSprite, hostBarks. Optional: walkTarget (set only if step 0 moves a partner's walk off her needsHome, e.g. Anjali).
+const W5 = {
+  ca13_ai_assistant: { ep: 'ca13', company: 'brightwell_foods', setPiece: 'ca13_summary_says_send', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield',
+    partner: 'kit_agnieszka_duda', partnerStub: 'agnieszka_duda', partnerGuard: 'kit_ca13_moved && kit_key_caught', hostId: 'gwen_pritchard', hostSpeaks: false,
+    there: 'kit_ca13_there', choice: 'kit_ca13_send_choice', silent: 'silent', knot: 'ca13_send', right: 'ring', wrong: 'send', values: ['ring', 'send', 'silent'],
+    staffBarks: 3, hostBarks: 0, panelEntries: 5, extraReads: ['phish_assist_reader_landed', 'phish_assist_reader_plain_sent'], arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1', requestDelay: 5500 },
+  ca14_social_media: { ep: 'ca14', company: 'merrin_sallow', setPiece: 'ca14_team_photo', colleague: 'kit_lorna_easton', stub: 'lorna_easton',
+    partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca14_moved', hostId: 'julian_sallow', hostSpeaks: false,
+    there: 'kit_ca14_there', choice: 'kit_ca14_photo_choice', silent: 'silent', knot: 'ca14_photo', right: 'crop', wrong: 'post', values: ['crop', 'post', 'silent'],
+    staffBarks: 3, hostBarks: 0, panelEntries: 3, arrayWrap: true, walks: 1, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1', requestDelay: 5500 },
+  ca05_signin_pages: { ep: 'ca05', company: 'quayholt_insurance', setPiece: 'ca05_signin_prompt', colleague: 'kit_darren_price', stub: 'darren_price',
+    partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca05_moved && kit_key_caught', hostId: 'niamh_doherty', hostSpeaks: false,
+    there: 'kit_ca05_there', choice: 'kit_ca05_prompt_choice', silent: 'silent', knot: 'ca05_prompt', right: 'stop', wrong: 'approve', values: ['stop', 'approve', 'silent'],
+    staffBarks: 3, hostBarks: 0, panelEntries: 3, arrayWrap: true, walks: 1, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1', requestDelay: 5500 },
+  ca02_cv_lures: { ep: 'ca02', company: 'tarrowby_logistics', setPiece: 'ca02_enable_editing', colleague: 'kit_chidi_okeke', stub: 'chidi_okeke',
+    partner: 'kit_zainab_hussain', partnerStub: 'zainab_hussain', partnerGuard: 'kit_ca02_moved', hostId: 'fatima_begum', hostSpeaks: true,
+    there: 'kit_ca02_there', choice: 'kit_ca02_cv_choice', silent: 'silent', knot: 'ca02_cv', right: 'report', wrong: 'enable', values: ['report', 'enable', 'silent'],
+    staffBarks: 2, hostBarks: 1, panelEntries: 3, arrayWrap: true, walks: 0, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Chidi's PC", pron: 'his', movedSprite: 'pc1_locked_isolated', requestDelay: 5500 },
+};
+// Wave 6 (WAVE6_BUILD.md s12): ca10, ca07 and ca18, in the wave 5 shape. EMPTY until each shell's kit step (sheet s13 steps 3-5)
+// adds its entry; every W6 case loops over it, so an empty map passes. Fields as W5's, plus askedFirst, kioskVariants and requestDelay.
+const W6 = {
+  ca10_downloads_and_fake_checks: {
+    ep: 'ca10', company: 'quayholt_insurance', setPiece: 'ca10_paste_check', colleague: 'kit_darren_price', stub: 'darren_price', hostId: 'niamh_doherty',
+    hostSpeaks: false, hostBarks: 0, staffBarks: 3,
+    partner: 'kit_anjali_rao', partnerStub: 'anjali_rao', partnerGuard: 'kit_ca10_moved',
+    there: 'kit_ca10_there', choice: 'kit_ca10_check_choice', silent: 'silent', knot: 'ca10_check', right: 'close', wrong: 'paste', values: ['close', 'paste', 'silent'],
+    askedFirst: 'kit_ca05_asked', kioskVariants: 2, requestDelay: 5500, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Darren's workstation", pron: 'his', movedSprite: 'pc1', panelEntries: 2, arrayWrap: false, walks: 1,
+  },
+  ca07_voice_ceo: {
+    ep: 'ca07', company: 'brightwell_foods', setPiece: 'ca07_call_on_hold', colleague: 'kit_graham_whitfield', stub: 'graham_whitfield', hostId: 'agnieszka_duda',
+    hostSpeaks: true, hostBarks: 1, staffBarks: 2,
+    partner: 'kit_gwen_pritchard', partnerStub: 'gwen_pritchard', partnerGuard: 'kit_ca07_moved && kit_key_caught',
+    there: 'kit_ca07_there', choice: 'kit_ca07_call_choice', silent: 'silent', knot: 'ca07_call', right: 'ringback', wrong: 'pay', values: ['ringback', 'pay', 'silent'],
+    askedFirst: 'kit_ca13_asked', kioskVariants: 1, requestDelay: 5500, spawn: { x: 3, y: 6 }, pcPos: { x: 2.6875, y: 6.96875, elevation: 24.2 },
+    pcName: "Graham's PC", pron: 'his', movedSprite: 'pc1', panelEntries: 2, arrayWrap: true, walks: 1,
+  },
+  ca18_credential_attacks_at_scale: {
+    ep: 'ca18', company: 'merrin_sallow', setPiece: 'ca18_reset_password', colleague: 'kit_lorna_easton', stub: 'lorna_easton', hostId: 'ama_owusu',
+    hostSpeaks: true, hostBarks: 1, staffBarks: 2,
+    partner: 'kit_delphine_arvanitis', partnerStub: 'delphine_arvanitis', partnerGuard: 'kit_ca18_moved && kit_key_caught',
+    there: 'kit_ca18_there', choice: 'kit_ca18_reset_choice', silent: 'silent', knot: 'ca18_reset', right: 'words', wrong: 'save', values: ['words', 'save', 'silent'],
+    askedFirst: 'kit_ca14_asked', kioskVariants: 1, requestDelay: 5500, spawn: { x: 3.9, y: 6 }, pcPos: { x: 3.28125, y: 6.96875, elevation: 24.2 },
+    pcName: "Lorna's PC", pron: 'hers', movedSprite: 'pc1', panelEntries: 2, arrayWrap: false, walks: 1,
+  },
+};
+// keyed by shell name (the map's own keys), not by `ep` as W5_WALK is
+const W6_WALK = {
+  ca10_downloads_and_fake_checks: { x: 7.4, y: 8.3 },
+  ca07_voice_ceo: { x: 3, y: 3 },
+  ca18_credential_attacks_at_scale: { x: 4.5, y: 4.5 },
+};
+const W45 = { ...W4, ...W5 };
+const W456 = { ...W45, ...W6 };
+const W56 = { ...W5, ...W6 };
+const W345 = { ...W34, ...W5 };
 const KIOSK_FINISHED = 'globalVars.kit_defend_done === true && globalVars.kit_quiet === false';
 const w3Kiosk = (sc) => sc.rooms.training_room.objects.find((o) => o.type === 'kiosk');
 const w3Npc = (sc, id) => sc.rooms.training_room.npcs.find((n) => n.id === id);
@@ -861,7 +962,8 @@ test('wave 3: each shell has its set piece, a stepAway row that matches the shel
     }
     // the _defend twin is untouched by wave 3: no chain, no stepAway, no set piece
     const twin = kitRows.find((r) => r.id === `${name}_defend`);
-    assert.ok(twin && twin.setPiece === null && twin.stepAway === false, `${name}: twin row`);
+    // D280: a twin may carry only its reaction-only set piece <ca>_defend_react (one after-sort colleague bark)
+    assert.ok(twin && twin.setPiece === `${name.slice(0, 4)}_defend_react` && twin.stepAway === false, `${name}: twin row`);
     const tsc = readShell(`${name}_defend`);
     assert.ok(tsc.social.awarenessEpisode.stepAway !== true, `${name}_defend: no stepAway`);
     assert.ok(!Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|at_tray)$/.test(k)), `${name}_defend: no chain global`);
@@ -869,7 +971,7 @@ test('wave 3: each shell has its set piece, a stepAway row that matches the shel
 });
 
 test('wave 3: the kiosk carries the hand-authored finished variant, and the quiet release is on the host', () => {
-  for (const [name, w] of Object.entries(W3)) {
+  for (const [name, w] of Object.entries(W34)) {
     const sc = readShell(name);
     const ov = w3Kiosk(sc).observationVariants || [];
     assert.ok(ov.length === 1 && ov[0].condition === KIOSK_FINISHED, `${name}: kiosk finished condition`);
@@ -887,7 +989,7 @@ test('wave 3: the kiosk carries the hand-authored finished variant, and the quie
 });
 
 test('wave 3: the layer-1 host pointer is gone from the panel (the stepAway parity test below covers the shared run)', () => {
-  for (const name of Object.keys(W3)) {
+  for (const name of Object.keys(W345)) {
     const sc = readShell(name);
     const texts = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel);
     assert.ok(texts.length > 0 && texts.every((t) => !/have a word with/i.test(t) && !/Before you leave/.test(t)), `${name}: no host pointer`);
@@ -896,7 +998,7 @@ test('wave 3: the layer-1 host pointer is gone from the panel (the stepAway pari
 
 test('wave 3: stepAway full rows keep the layer-1 text in step with their fragment (no pointer, shared run, twin equals the fragment)', () => {
   const rows = courseRows.filter((r) => FULL_TIERS.includes(r.tier) && r.attack === true && r.stepAway === true && fragmentPanel(r.ep) !== null);
-  for (const n of Object.keys(W3)) assert.ok(rows.some((r) => r.id === n), `${n} is among the stepAway rows this test visits`);
+  for (const n of Object.keys(W345)) assert.ok(rows.some((r) => r.id === n), `${n} is among the stepAway rows this test visits`);
   for (const r of rows) {
     const sc = readShell(r.id);
     const erb = conceptPanelTexts(sc.social.awarenessEpisode.strings.conceptPanel).join('\n');
@@ -1018,7 +1120,7 @@ test('wave 3: ca19 notice states (plain before the look-up, isolated after) and 
   const sc = readShell('ca19_malware_and_updates');
   const iso = w3Obj(sc, 'kit_ca19_isolated');
   assert.ok(iso.observations === "Niamh's workstation.", 'base notice is plain');
-  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'Isolated by IT. Do not use. Recovering.' }]);
+  assert.deepEqual(iso.observationVariants, [{ condition: 'globalVars.kit_ca19_out === true', value: 'IT have isolated this PC. The post-it with a big X on it says it\'s not to be used.' }]);
   assert.ok(iso.interactable === true && iso.takeable === false);
   assert.ok(!('lighting' in iso) && iso.lockType !== 'ransomware_display', 'no emitter, no ransomware_display');
   const run = w3Obj(sc, 'kit_ca19_running');
@@ -1077,7 +1179,7 @@ const tableRects = (roomName) => {
 // Moved table items (a Tiled table_items placeholder claimed by a kit object and put elsewhere) join the table group at
 // table depth + n*0.01, so they are surfaces too: anything placed over one has to draw above it. They need no elevation
 // themselves, but they must land on a table or the engine stores them at their own depth.
-const MOVED_TYPES = new Set(['journal_stack', 'binders', 'm09_folder']);
+const MOVED_TYPES = new Set(['journal_stack', 'binders', 'm09_folder', 'aes_clipboard']);
 const kitObjects = (sc, pre) => sc.rooms.training_room.objects.filter((x) => String(x.id).startsWith(pre) && x.position && x.sprite);
 const objRect = (o) => { const [pw, ph] = pngSize(o.sprite); const left = o.position.x * 32, top = o.position.y * 32; return { left, top, right: left + pw, bottom: top + ph }; };
 const hits = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
@@ -1096,7 +1198,7 @@ const tablePlaceholderTypes = (roomName) => {
 const overlapArea = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
 test('wave 3: every kit set-piece object over a table or a moved table item has an elevation that draws it above (depth, not a sliver overlap)', () => {
   let overlaps = 0, movedChecked = 0;
-  for (const [name] of Object.entries({ ...W3, test_ca_office_kit: null })) {
+  for (const [name] of Object.entries({ ...W3, ...W4, ...W5, ...W6, test_ca_office_kit: null })) {
     const sc = readShell(name);
     const roomType = sc.rooms.training_room.type;
     const tables = tableRects(roomType);
@@ -1132,13 +1234,12 @@ test('wave 3: every kit set-piece object over a table or a moved table item has 
       }
     }
   }
-  assert.ok(movedChecked >= 4, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
-  assert.ok(overlaps >= 6, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
+  assert.ok(movedChecked >= 13 && movedChecked >= 6 + Object.keys(W5).length + Object.keys(W6).length, `saw the moved table items of the four shells and the fixture (saw ${movedChecked})`);
+  assert.ok(overlaps >= 15 && overlaps >= 8 + Object.keys(W5).length + Object.keys(W6).length, `compared at least the ca03 spare PC, the ca08 screen, the two ca19 PCs, the ca19 paper and the fixture spare PC (saw ${overlaps})`);
 });
 
-// ca19's isolated-screen look has no sprite yet (art pending an owner pick, WAVE3_BUILD.md s8). Marked skipped
-// until the pick lands: then add the PNG, the game.js load line and the spriteVariants, and remove `skip`.
-const CA19_ART = { skip: 'ca19 isolated sprite pick pending (set piece key _todo_ca19_art)' };
+// ca19's isolated-screen look (owner pick D235: post-it with an X): pc1_locked_isolated.
+const CA19_ART = {};
 test('wave 3 ca19 art: kit_ca19_isolated carries a spriteVariants swap to a loaded, existing key', CA19_ART, () => {
   const o = w3Obj(readShell('ca19_malware_and_updates'), 'kit_ca19_isolated');
   assert.ok(Array.isArray(o.spriteVariants) && o.spriteVariants.length === 1);
@@ -1174,4 +1275,934 @@ test('wave 3 fixture: test_ca_office_kit has the done fallback, the resume liste
   assert.ok(room.objects.some((o) => o.id === 'kit_e1_folder' && o.type === 'm09_folder'), 'a moved table item');
   const host = room.npcs.find((n) => n.id === 'ep_host');
   assert.ok(!host.voice, 'the fixture host has no voice, so its test bark is never voiced');
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Wave 4 (WAVE4_BUILD.md s9): ca06, ca09, ca15 and ca16 are end-to-end chains: the learner steps away as a
+// member of staff, a colleague asks for an answer, and the answer changes the room and the debrief.
+// ---------------------------------------------------------------------------------------------------
+const OUT = (w) => `globalVars.kit_${w.ep}_out === true`;
+const w4Shell = (name) => readShell(name);
+const w4Maps = (sc, w) => {   // every staff patch mapping, in order, plus the host's kit mappings
+  const tr = sc.rooms.training_room;
+  return [...tr.npcs.filter((n) => n.id.startsWith('kit_')).flatMap((n) => (n.eventMappings || []).map((m) => ({ m, who: n.id, host: false }))),
+    ...(hostOf(sc).eventMappings || []).filter(isKitMapping).map((m) => ({ m, who: 'host', host: true }))];
+};
+// the host's chain mappings only (not the generator's quiet / step-away mappings)
+const w4Chain = (sc, w) => w4Maps(sc, w).filter((x) => !x.host || new RegExp(`kit_${w.ep}_`).test(JSON.stringify(x.m)) && x.m.eventPattern !== 'episode_step_away');
+
+test('wave 4: each shell has its set piece, a tier E stepAway row that matches the shell, and its globals declared', () => {
+  const kits = Object.fromEntries(['tarrowby_logistics', 'quayholt_insurance', 'brightwell_foods', 'merrin_sallow'].map((c) => [c, readKit(`${c}.json`).setPieces]));
+  for (const [name, w] of Object.entries(W456)) {
+    const row = kitRows.find((r) => r.id === name);
+    const sc = w4Shell(name);
+    assert.ok(row && row.setPiece === w.setPiece && row.tier === 'E' && row.handAuthored === true, `${name}: row`);
+    assert.ok(row.stepAway === true && sc.social.awarenessEpisode.stepAway === true, `${name}: stepAway in row and shell`);
+    assert.ok(kits[w.company][w.setPiece], `${name}: the ${w.company} kit has ${w.setPiece}`);
+    for (const g of [`kit_${w.ep}_out`, w.there, `kit_${w.ep}_done`, `kit_${w.ep}_host_said`]) assert.ok(sc.globalVariables[g] === false, `${name}: ${g} declared false`);
+    assert.ok(sc.globalVariables[w.choice] === '', `${name}: ${w.choice} declared ""`);
+    const twin = kitRows.find((r) => r.id === `${name}_defend`);
+    // D265: the ca05 twin carries a reaction-only set piece (one after-sort colleague bark, no
+    // step-away, no chain globals, no moved look); every other twin stays null. The "untouched"
+    // assertions below (no step-away flag, no kit_ca\d\d_(out|there|done|asked) globals, no
+    // step-away line) still hold for it, since the set piece adds nothing but Darren's mapping.
+    const expectTwinSetPiece = `${name.slice(0, 4)}_defend_react`;
+    assert.ok(twin && twin.setPiece === expectTwinSetPiece && twin.stepAway === false, `${name}: twin row`);
+    const tsc = w4Shell(`${name}_defend`);
+    assert.ok(tsc.social.awarenessEpisode.stepAway !== true && !Object.keys(tsc.globalVariables).some((k) => /^kit_ca\d\d_(out|there|done|asked)$/.test(k)), `${name}_defend: untouched`);
+    assert.ok(!Object.keys(tsc.resources || {}).some((k) => /^kit_ca\d\d_signin$/.test(k)), `${name}_defend: no sign-in resource`);
+    assert.ok(!/Look up from the kiosk and carry on in the room/.test(JSON.stringify(tsc.social)), `${name}_defend: no step-away line`);
+  }
+});
+
+test('wave 4: strings.stepAway is the shared line and the first key; the kiosk and panel carry the hand edits', () => {
+  for (const [name, w] of Object.entries(W456)) {
+    const sc = w4Shell(name);
+    const sa = sc.social.awarenessEpisode.strings;
+    assert.equal(Object.keys(sa)[0], 'stepAway', `${name}: stepAway first`);
+    assert.equal(sa.stepAway, 'Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.', `${name}: stepAway text`);
+    assert.ok(!('stepAwayHeading' in sa), `${name}: no stepAwayHeading`);
+    const panel = sa.conceptPanel;
+    assert.ok(Array.isArray(panel), `${name}: conceptPanel is an array`);
+    // Entries conditioned on a guess global (ca18's guess_e18_* debrief branches) are ordinary panel text, not step-away entries.
+    const isKit = (e) => e.condition && !/\bguess_e18_(?:landed|sprayed)\b/.test(e.condition);
+    const plain = panel.filter((e) => !isKit(e)), cond = panel.filter(isKit);
+    assert.ok(plain.length >= 1 && !/have a word with/i.test(plain[0].text), `${name}: entry 0 has no host pointer`);
+    if (name in W5 || name in W6) for (const e of plain) assert.ok(!/have a word with/i.test(e.text), `${name}: no unconditioned entry has a host pointer`);
+    assert.equal(cond.length, w.panelEntries, `${name}: ${w.panelEntries} conditioned entries`);
+    for (const e of cond) {
+      assert.ok(typeof e.heading === 'string' && e.heading.length > 0 && typeof e.text === 'string' && e.text.length > 0, `${name}: entry has heading and text`);
+      assert.ok(!/\b(Zainab|Chidi|Nilesh|Niamh|Fatima|Darren|Anjali|Graham|Agnieszka|Lorna|Delphine|Gwen|Ravinder|Ama|Thandiwe|Julian)\b/.test(e.heading), `${name}: heading "${e.heading}" names nobody`);
+      const reads = globalsRead(e.condition);
+      assert.ok(reads.length >= 1 && reads.every((g) => g === w.choice || (w.extraReads || []).includes(g)), `${name}: panel condition reads only ${w.choice}${(w.extraReads || []).length ? ' or the write-stage outcome' : ''}`);
+    }
+    // every answer value has an entry
+    for (const v of w.values) assert.ok(cond.some((e) => new RegExp(`=== '${v}'`).test(e.condition)), `${name}: an entry for ${v}`);
+  }
+});
+
+test('wave 4: no || in any kit mapping, timer or variant of the four shells; every chain mapping is onceOnly and reads the out global', () => {
+  for (const [name, w] of Object.entries(W456)) {
+    const sc = w4Shell(name);
+    for (const { m, who } of w4Chain(sc, w)) {
+      assert.ok(!String(m.condition || '').includes('||'), `${name} ${who}: no ||`);
+      assert.ok(m.onceOnly === true, `${name} ${who}: onceOnly on ${m.eventPattern}`);
+      assert.ok(globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name} ${who}: ${m.eventPattern} reads the out global`);
+      if (/^npc_arrived/.test(m.eventPattern)) assert.ok(/data\.owner !== 'needs'/.test(m.condition), `${name} ${who}: arrival filters needs walks`);
+      if (m.bark) assert.ok(barkGateOk(m, sc), `${name} ${who}: bark gate on ${m.eventPattern}`);
+      if (m.patrolOverride) assert.ok(m.patrolOverride.speed === 90 && Number.isFinite(m.patrolOverride.targetTile.x), `${name} ${who}: walk speed 90`);
+      assert.ok(!/kit_attack_done/.test(JSON.stringify(m)), `${name} ${who}: no kit_attack_done`);
+    }
+    for (const t of (sc.timers || []).filter((x) => /^kit_ca\d\d_t_/.test(x.id) && x.id.startsWith(`kit_${w.ep}_`))) assert.ok(!String(t.condition || '').includes('||'), `${name} timer ${t.id}`);
+  }
+});
+
+test('wave 4: exact staff-bark count per shell; Nilesh barks are host mappings, gated; no bark reads what its mapping sets', () => {
+  for (const [name, w] of Object.entries(W456)) {
+    const sc = w4Shell(name);
+    const staffAll = w4Maps(sc, w).filter((x) => !x.host && x.m.bark);
+    // the game_loaded re-arm copy of the ask bark is the one extra: counted apart, exactly one
+    const staff = staffAll.filter((x) => x.m.eventPattern !== 'game_loaded');
+    assert.equal(staffAll.length - staff.length, 1, `${name}: one game_loaded re-arm bark`);
+    assert.equal(staff.length, w.staffBarks, `${name}: staff barks`);
+    const host = w4Maps(sc, w).filter((x) => x.host && x.m.bark);
+    if (w.ep === 'ca09') assert.equal(host.length, 1, 'ca09: one Nilesh bark');
+    if (w.ep === 'ca15') assert.equal(host.length, 2, 'ca15: two Nilesh barks');
+    for (const { m } of [...staffAll, ...host]) {
+      const gate = barkGateOk(m, sc);
+      assert.ok(gate && globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name}: bark gated`);
+      assert.deepEqual(globalsRead(m.condition).filter((g) => Object.keys(m.setGlobal || {}).includes(g)), [], `${name}: bark reads what it sets`);
+    }
+  }
+});
+
+test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked, fallbacks) is in every shell', () => {
+  for (const [name, w] of Object.entries(W456)) {
+    const sc = w4Shell(name);
+    const ch = w.choice, ep = w.ep, done = `kit_${ep}_done`, asked = `kit_${ep}_asked`;
+    const col = (sc.rooms.training_room.npcs.find((n) => n.id === `kit_${w.stub}`) || {});
+    const cm = col.eventMappings || [];
+    const reqTrigger = `global_variable_changed:${w.there}`;
+    const req = cm.find((m) => m.eventPattern === reqTrigger && m.bark && m.targetKnot === w.knot);
+    const ask = cm.find((m) => m.eventPattern === reqTrigger && m.setGlobal && m.setGlobal[asked] === true);
+    assert.ok(req && ask && req.delayMs === ask.delayMs && req.delayMs >= 2000, `${name}: request bark and asked on the same trigger and delay`);
+    assert.ok(new RegExp(`${ch} === ''`).test(req.condition), `${name}: request only while the choice is empty`);
+    const close = cm.find((m) => m.eventPattern === `conversation_closed:kit_${w.stub}`);
+    assert.ok(close && close.condition.includes(`${ch} === 'asked'`) && close.setGlobal[ch] === w.silent && close.onceOnly === true, `${name}: close turns asked into ${w.silent}`);
+    // ca09: closing before the note has been seen must not lock in "silent" (&& only, no ||)
+    if (ep === 'ca09') assert.ok(!close.condition.includes('||') && close.condition.split(' && ').includes('globalVars.kit_ca09_note_seen === true'), `${name}: close-silent needs the note seen`);
+    // ca09: an unseen close starts a short timer that settles "asked" to silent (no wait for the 60 s fallback),
+    // from a mapping that is last in the colleague's list, onceOnly, && only; the knot re-offers while the choice is 'asked'
+    if (ep === 'ca09') {
+      const last = cm.filter((m) => m.eventPattern !== 'game_loaded').slice(-1)[0];   // the three re-arm mappings are appended after it
+      assert.ok(last.eventPattern === `conversation_closed:kit_${w.stub}` && last.onceOnly === true && !last.condition.includes('||') && last.condition.split(' && ').includes("globalVars.kit_ca09_note_seen !== true") && last.condition.includes(`${ch} === 'asked'`) && last.setGlobal && last.setGlobal.kit_ca09_closed_unseen === true, `${name}: last mapping marks an unseen close`);
+      const tu = (sc.timers || []).find((t) => t.id === 'kit_ca09_t_unseen');
+      assert.ok(tu && tu.startOnGlobal === 'kit_ca09_closed_unseen' && tu.delayMs >= 6000 && tu.delayMs <= 20000 && tu.condition === `globalVars.${ch} === 'asked' && globalVars.kit_ca09_note_seen !== true` && tu.setGlobal[ch] === 'silent', `${name}: unseen-close timer settles asked to silent`);
+      assert.ok(sc.globalVariables.kit_ca09_closed_unseen === false, `${name}: kit_ca09_closed_unseen is a scenario global`);
+      const ink = readFileSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.ink`), 'utf8');
+      const g = ink.match(/=== ca09_note ===\n(\{[^\n]*:)\n/)[1];
+      assert.ok(!g.includes('"asked"'), `${name}: knot guard does not divert while the choice is asked (it re-offers)`);
+    }
+    const dm = cm.find((m) => m.eventPattern === `global_variable_changed:${ep === 'ca15' ? 'kit_ca15_done' : done}` && m.setGlobal && m.setGlobal[ch] === w.silent);
+    assert.ok(dm && dm.condition.includes(`${ch} === 'asked'`), `${name}: done turns asked into ${w.silent}`);
+    const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);
+    assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 45000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
+    const fb = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done`);
+    assert.ok(fb && fb.startOnGlobal === asked && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 115000 : 85000), `${name}: done fallback`);
+    // backstop: done is also set 60 s after the ask's own tail, started from out alone (reload / reopened-debrief cannot strand it)
+    const fbo = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done_out`);
+    assert.ok(fbo && fbo.startOnGlobal === `kit_${ep}_out` && fbo.setGlobal[done] === true && fbo.condition === `!globalVars.${done} && globalVars.${asked} !== true` && fbo.delayMs === fb.delayMs + 60000, `${name}: done backstop from out`);
+    // the ask is gated on not answered and not done; the re-arm copies the same and add asked !== true / === true
+    assert.ok(ask.condition.includes(`!globalVars.${done}`) && ask.condition.includes(`globalVars.${ch} === ''`) && !/kit_quiet/.test(ask.condition) && ask.askCue === true && ask.askCueUntil === ch && ask.askCueMs === 45000, `${name}: ask gated on !done and empty choice, no kit_quiet, marker lasts the reply window`);
+    const rearm = cm.filter((m) => m.eventPattern === 'game_loaded');
+    assert.ok(rearm.length === 3 && rearm.every((m) => m.onceOnly === true && m.delayMs === ask.delayMs && m.condition.includes(`globalVars.${w.there} === true`) && m.condition.includes(`!globalVars.${done}`)), `${name}: three onceOnly game_loaded re-arm mappings, same delay as the ask`);
+    assert.deepEqual(cm.slice(-3), rearm, `${name}: re-arm mappings are appended last`);
+    if (!(name in W5 || name in W6)) {
+      // every walk has a fallback timer
+      const walkTimers = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${ep}_t_`) && !['tail', 'done', 'done_out'].includes(t.id.split('_t_')[1]));
+      assert.ok(walkTimers.length >= 1, `${name}: a walk fallback timer`);
+      assert.ok(walkTimers.every((t) => t.delayMs >= 6000 && t.delayMs <= 20000), `${name}: walk fallbacks 6-20 s`);
+      // the colleague's needs freeze
+      const th = col.needs && col.needs.thirst;
+      assert.ok(th && th.decayPerMin === 0.01 && th.urgentAt === 50 && th.initial > 50, `${name}: colleague thirst is frozen (full dict)`);
+      // walker and partner: suspend and resume
+      // ca09 and ca16: the walker suspends on the failure beat, DELAYED so it cannot run inside the
+      // npc_use_failed emit (a re-entrant suspend nulls s.job before _turnBack reads it). Others suspend on out.
+      const failBeat = { ca09: 'kit_ca09_note_up', ca16: 'kit_ca16_signin_failed' }[ep];
+      for (const who of [w.walker, w.partner]) {
+        const m2 = (sc.rooms.training_room.npcs.find((n) => n.id === who) || {}).eventMappings || [];
+        const susp = m2.filter((m) => m.needs === 'suspend');
+        assert.equal(susp.length, 1, `${name}: ${who} has exactly one suspend`);
+        if (who === w.walker && failBeat) {
+          assert.equal(susp[0].eventPattern, `global_variable_changed:${failBeat}`, `${name}: ${who} suspends on the failure beat, not on out`);
+          assert.ok(Number.isFinite(susp[0].delayMs) && susp[0].delayMs >= 1, `${name}: ${who} failure-beat suspend is delayed (>= 1 ms)`);
+        } else {
+          assert.equal(susp[0].eventPattern, `global_variable_changed:kit_${ep}_out`, `${name}: ${who} suspends on out`);
+        }
+        assert.ok(m2.some((m) => m.needs === 'resume' && m.eventPattern === `global_variable_changed:${done}`), `${name}: ${who} resumes on done`);
+      }
+    }
+  }
+});
+
+test('wave 4: walk-issued flags: an arrival that reads one has a walk mapping that sets it (ca15)', () => {
+  const w = W4.ca15_shadow_it, sc = w4Shell('ca15_shadow_it');
+  const all = w4Maps(sc, w);
+  for (const flag of ['kit_ca15_sent', 'kit_ca15_chidi_sent']) {
+    const readers = all.filter((x) => /^npc_arrived/.test(x.m.eventPattern) && globalsRead(x.m.condition).includes(flag));
+    assert.ok(readers.length >= 1, `${flag} is read by an arrival`);
+    const setters = all.filter((x) => x.m.patrolOverride && x.m.setGlobal && x.m.setGlobal[flag] === true);
+    assert.ok(setters.length >= 1, `${flag} is set by a walk mapping`);
+    for (const s of setters) assert.ok(s.m.onceOnly === true, `${flag}: walk mapping onceOnly`);
+  }
+});
+
+test('wave 4: ca09 note-seen mapping names the PC by its real name; ca09 and ca16 give the colleague the PC as home and a work need', () => {
+  const sc9 = w4Shell('ca09_passwords');
+  const pc9 = w3Obj(sc9, 'kit_ca09_pc');
+  const seen = w4Maps(sc9, W4.ca09_passwords).find((x) => x.host && x.m.setGlobal && x.m.setGlobal.kit_ca09_note_seen === true);
+  assert.ok(seen && seen.m.condition.includes(`data.objectName === ${JSON.stringify(pc9.name)}`), 'row 10 matches the PC name');
+  for (const [name, w, pcId, who, res] of [['ca09_passwords', W4.ca09_passwords, 'kit_ca09_pc', 'kit_chidi_okeke', 'kit_ca09_signin'], ['ca16_insider_risk', W4.ca16_insider_risk, 'kit_ca16_pc', 'kit_niamh_doherty', 'kit_ca16_signin']]) {
+    const sc = w4Shell(name);
+    const n = w3Npc(sc, who);
+    assert.equal(n.needsHome, pcId, `${name}: ${who} home is the PC`);
+    assert.deepEqual(n.workNeeds, [res], `${name}: workNeeds`);
+    assert.ok(n.needs.work && n.needs.work.initial === 90 && n.needs.work.decayPerMin === 0.01 && n.needs.thirst.decayPerMin === 0.01, `${name}: needs dict`);
+    assert.deepEqual(sc.resources[res] && Object.keys(sc.resources[res]).sort(), ['kind', 'name', 'offWhen'], `${name}: resource`);
+    assert.equal(sc.resources[res].offWhen, `kit_${w.ep}_out`);
+    const pc = w3Obj(sc, pcId);
+    assert.ok(pc.workstation === true && pc.owner === who && pc.lockChance === 0 && pc.interactable === true && pc.takeable === false, `${name}: PC flags`);
+    assert.ok(pc.affordance.satisfies === 'work' && pc.affordance.useSeconds === 2 && pc.affordance.restores === 60, `${name}: PC affordance`);
+    assert.ok(!pc.observationVariants, `${name}: PC has no observationVariants`);
+    assert.deepEqual((pc.requiresItemHintVariants || []).map((v) => v.condition).filter((c) => c).length, pc.requiresItemHintVariants.length, `${name}: hint variants`);
+    const m = w4Maps(sc, w);
+    assert.ok(m.some((x) => x.who === who && x.m.eventPattern === `npc_use_failed:${who}` && x.m.condition.includes(`data.objectId === '${pcId}'`)), `${name}: use-failed mapping`);
+    assert.ok(m.some((x) => x.who === who && x.m.needs && x.m.needs.set && x.m.needs.set.work === 10), `${name}: work set to 10 on out`);
+    assert.ok(m.some((x) => x.who === who && x.m.needs && x.m.needs.set && x.m.needs.set.work === 90), `${name}: work set to 90 on done`);
+  }
+  for (const name of Object.keys(W4)) if (!['ca09_passwords', 'ca16_insider_risk'].includes(name)) assert.ok(!(w4Shell(name).resources || {}).kit_ca09_signin, `${name}: no sign-in resource`);
+});
+
+test('wave 4: PC text order matches the sprite order; text objects are interactable and not takeable', () => {
+  for (const [name, w] of Object.entries(W456)) {
+    const sc = w4Shell(name);
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith(`kit_${w.ep}_`))) {
+      if (o.requiresItemHintVariants) {
+        assert.equal(o.requiresItemHintVariants.length, (o.spriteVariants || []).length, `${o.id}: one hint per sprite variant`);
+        o.requiresItemHintVariants.forEach((v, i) => assert.equal(v.condition, o.spriteVariants[i].condition, `${o.id}: hint ${i} in sprite order`));
+      }
+      if (o.observations && o.type !== 'pc' && o.type !== 'binders' && o.type !== 'aes_clipboard' && o.type !== 'journal_stack' && o.type !== 'm09_folder') {
+        assert.ok(o.interactable === true && o.takeable === false, `${o.id}: text object is interactable, not takeable`);
+      }
+    }
+  }
+});
+
+test('wave 4: host recap is gated until the chain ends, in every host ink', () => {
+  const hosts = { ca06_texts_and_qr: 'chidi_okeke', ca09_passwords: 'nilesh_solanki', ca15_shadow_it: 'nilesh_solanki', ca16_insider_risk: 'anjali_rao', ca13_ai_assistant: 'gwen_pritchard', ca14_social_media: 'julian_sallow', ca05_signin_pages: 'niamh_doherty', ca02_cv_lures: 'fatima_begum', ca10_downloads_and_fake_checks: 'niamh_doherty', ca07_voice_ceo: 'agnieszka_duda', ca18_credential_attacks_at_scale: 'ama_owusu' };
+  for (const [name, h] of Object.entries(hosts)) {
+    const ep = ({ ...W4, ...W5, ...W6 })[name].ep;
+    const ink = readFileSync(join(scenarios, name, 'ink', `${h}.ink`), 'utf8');
+    const guardRe = new RegExp(`^\\s*\\{\\s*kit_defend_done && \\(kit_${ep}_done \\|\\| not kit_${ep}_out\\) && not kit_${ep}_host_said\\s*:?`, 'm');
+    assert.ok(guardRe.test(ink), `${name}: recap guard is kit_defend_done && (done || not out) && not host_said`);
+    assert.ok(new RegExp(`VAR kit_${ep}_out = false`).test(ink) && new RegExp(`VAR kit_${ep}_done = false`).test(ink), `${name}: VARs`);
+    assert.ok(!existsSync(join(scenarios, `${name}_defend`, 'ink', `${h}.ink`)) || !readFileSync(join(scenarios, `${name}_defend`, 'ink', `${h}.ink`), 'utf8').includes(`kit_${ep}_out`), `${name}_defend: host ink untouched`);
+  }
+});
+
+test('wave 4: each request knot guards itself, offers only allowed values, and the options carry no names', () => {
+  for (const [name, w] of Object.entries(W4)) {
+    const ink = readFileSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.ink`), 'utf8');
+    const m = ink.match(new RegExp(`=== ${w.knot} ===([\\s\\S]*?)(?=\\n=== |$)`));
+    assert.ok(m, `${name}: knot ${w.knot}`);
+    const body = m[1];
+    // the guard is the knot's first statement
+    const lines = body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    const guard = lines[0];
+    assert.ok(/^\{.*:\s*$/.test(guard) && /^\s+-> \w+\s*$/.test(lines[1]) && lines[2].trim() === '}', `${name}: the knot opens with a guard block that diverts`);
+    assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: guard names done`);
+    for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: guard names ${v}`);
+    assert.equal(lines[1].trim(), `-> ${w.ep}`, `${name}: guard diverts to the stub knot`);
+    // start diverts on asked into the knot, before any kit_defend_done divert
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    // the divert may also fire on an early click: asked || (out && not done) (social-early-click-request.test.mjs)
+    assert.ok(/^\{\s*kit_\w+_asked(\s*\|\|\s*\(kit_\w+_out && not kit_\w+_done\))?\s*:\s*$/.test(startBody[0]) && startBody[0].includes(`kit_${w.ep}_asked`) && startBody[1].trim() === `-> ${w.knot}`, `${name}: start's first statement diverts on asked into ${w.knot}`);
+    assert.ok(startBody.findIndex((l) => l.includes('kit_defend_done')) > 1, `${name}: the asked divert comes before the kit_defend_done divert`);
+    // one + option writes each value, and the first spoken line is the request bark
+    for (const v of w.values) {
+      const n = body.split(/\n(?=\+ )/).filter((blk) => /^\+ /.test(blk) && new RegExp(`~ ${w.choice} = "${v}"`).test(blk)).length;
+      assert.ok(n >= 1, `${name}: an option writes ${v}`);
+    }
+    const reqBark = (w4Shell(name).rooms.training_room.npcs.find((n) => n.id === `kit_${w.stub}`).eventMappings.find((m) => m.targetKnot === w.knot) || {}).bark;
+    const firstSpoken = lines.find((l) => /^[A-Z][A-Za-z ]+: /.test(l));
+    assert.equal(firstSpoken.replace(/^[^:]+: /, '').replace(/ #.*$/, ''), reqBark, `${name}: first spoken line is the request bark`);
+    assert.ok(/~ kit_\w+_choice = "asked"|~ [a-z0-9_]+ = "asked"/.test(body), `${name}: knot writes "asked"`);
+    const writes = [...body.matchAll(new RegExp(`~ ${w.choice} = "(\\w*)"`, 'g'))].map((x) => x[1]);
+    assert.ok(writes.every((v) => ['asked', ...w.values].includes(v)), `${name}: every write is an allowed value (${writes})`);
+    assert.ok(/\[\\\[Say nothing\\\]\]/.test(body), `${name}: a Say nothing option`);
+    assert.ok(/^\+ /m.test(body) && !/^\* /m.test(body), `${name}: + options`);
+    assert.ok(existsSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.json`)), `${name}: compiled`);
+  }
+});
+
+const PX = (o) => { const [w, h] = pngSize(o.sprite); return { left: o.position.x * 32, top: o.position.y * 32, right: o.position.x * 32 + w, bottom: o.position.y * 32 + h }; };
+test('wave 4: image sizes, preloads, and sprite files the shells use', () => {
+  const same = (a, b) => assert.deepEqual(pngSize(a), pngSize(b), `${a} vs ${b}`);
+  same('pc1_locked_note', 'pc1'); same('pc1_locked_note', 'pc1_locked'); same('pc1_locked', 'pc1');
+  assert.deepEqual(pngSize('usb_storage_swivel'), [14, 6]); same('usb_storage_swivel_taken', 'usb_storage_swivel');
+  assert.deepEqual(pngSize('aw_notice_qr_parking1'), [16, 21]);
+  assert.deepEqual(pngSize('drop_box1'), [20, 24]);
+  const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+  for (const k of ['aw_notice_qr_parking1', 'pc1_locked_note', 'usb_storage_swivel_taken', 'usb_storage_swivel', 'pc1_locked', 'drop_box1']) assert.ok(game.includes(`this.load.image('${k}', 'objects/${k}.png')`), `${k} preloaded`);
+});
+
+// Placement (WAVE4_BUILD.md 3.7): a stand point is the pixel point (x*32, y*32), a prop is its sprite rectangle,
+// overlap is strict, no padding. Tiled item rectangles: y is the bottom edge.
+test('wave 4: placement: new floor and wall props and every new stand point clear the kiosk, its approach column, chairs and items', () => {
+  const layerRects = (roomType, names) => {
+    const d = JSON.parse(readFileSync(join(rooms, `${roomType}.json`), 'utf8'));
+    return d.layers.filter((l) => names.includes(l.name)).flatMap((l) => l.objects.map((o) => ({ left: o.x, right: o.x + o.width, top: o.y - o.height, bottom: o.y, name: o.name || l.name })));
+  };
+  const inside = (p, r) => p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
+  const strict = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  for (const [name, w] of Object.entries(W4)) {
+    const sc = w4Shell(name);
+    const roomType = sc.rooms.training_room.type;
+    const kiosk = { left: 238, right: 265, top: 98, bottom: 140 }, column = { left: 238, right: 265, top: 140, bottom: 224 };
+    const fixed = layerRects(roomType, ['items', 'tables']).filter((r) => !/wall|poster|logo|blinds|board|map|screen|alarm|hook|queue|radiator/.test(r.name));
+    const objs = sc.rooms.training_room.objects.filter((o) => o.id.startsWith(`kit_${w.ep}_`) && o.position && o.sprite);
+    const props = objs.filter((o) => ['kit_ca06_notice', 'kit_ca15_stick', 'kit_ca15_lost_property'].includes(o.id));
+    const others = objs.filter((o) => !props.includes(o) && o.position.elevation === undefined);
+    for (const o of props) {
+      const r = PX(o);
+      assert.ok(o.position.elevation === undefined, `${o.id}: floor and wall props take no elevation`);
+      assert.ok(!strict(r, kiosk) && !strict(r, column), `${o.id}: clear of the kiosk and its approach column`);
+      // the stick is a 14x6 object that may sit under a table edge only if it is on the floor: it must not overlap drawn items
+      for (const f of fixed) if (!(o.id === 'kit_ca06_notice' && /poster|aw_poster/.test(f.name))) assert.ok(!strict(r, f), `${o.id}: clear of ${f.name}`);
+      for (const q of others) assert.ok(!strict(r, PX(q)), `${o.id}: clear of ${q.id}`);
+      for (const q of objs.filter((x) => x !== o && x.position.elevation === undefined)) void q;
+    }
+    const chairs = layerRects(roomType, ['items']);
+    const stands = [];
+    for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) for (const m of n.eventMappings || []) if (m.patrolOverride) stands.push({ x: m.patrolOverride.targetTile.x * 32, y: m.patrolOverride.targetTile.y * 32, who: n.id });
+    for (const m of (hostOf(sc).eventMappings || [])) if (m.patrolOverride) stands.push({ x: m.patrolOverride.targetTile.x * 32, y: m.patrolOverride.targetTile.y * 32, who: 'host' });
+    assert.ok(stands.length >= 1, `${name}: has walks`);
+    for (const p of stands) {
+      assert.ok(!inside(p, kiosk) && !inside(p, column), `${name}: ${p.who} stand (${p.x}, ${p.y}) is clear of the kiosk and column`);
+      for (const f of chairs) assert.ok(!inside(p, f), `${name}: ${p.who} stand is inside ${f.name}`);
+      for (const o of props) assert.ok(!inside(p, PX(o)), `${name}: ${p.who} stand is inside ${o.id}`);
+      for (const o of objs.filter((x) => x.position.elevation === undefined && !props.includes(x))) assert.ok(!inside(p, PX(o)), `${name}: ${p.who} stand is inside ${o.id}`);
+    }
+  }
+});
+
+test('wave 5: placement: new floor and wall props and every new stand point clear the kiosk, its approach column, chairs and items', () => {
+  const layerRects = (roomType, names) => {
+    const d = JSON.parse(readFileSync(join(rooms, `${roomType}.json`), 'utf8'));
+    return d.layers.filter((l) => names.includes(l.name)).flatMap((l) => l.objects.map((o) => ({ left: o.x, right: o.x + o.width, top: o.y - o.height, bottom: o.y, name: o.name || l.name })));
+  };
+  const inside = (p, r) => p.x > r.left && p.x < r.right && p.y > r.top && p.y < r.bottom;
+  const strict = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  for (const [name, w] of Object.entries(W56)) {
+    const sc = w4Shell(name);
+    const roomType = sc.rooms.training_room.type;
+    const kiosk = { left: 238, right: 265, top: 98, bottom: 140 }, column = { left: 238, right: 265, top: 140, bottom: 224 };
+    const fixed = layerRects(roomType, ['items', 'tables']).filter((r) => !/wall|poster|logo|blinds|board|map|screen|alarm|hook|queue|radiator/.test(r.name));
+    const objs = sc.rooms.training_room.objects.filter((o) => o.id.startsWith(`kit_${w.ep}_`) && o.position && o.sprite);
+    const props = objs.filter((o) => ['kit_ca06_notice', 'kit_ca15_stick', 'kit_ca15_lost_property'].includes(o.id));
+    const others = objs.filter((o) => !props.includes(o) && o.position.elevation === undefined);
+    for (const o of props) {
+      const r = PX(o);
+      assert.ok(o.position.elevation === undefined, `${o.id}: floor and wall props take no elevation`);
+      assert.ok(!strict(r, kiosk) && !strict(r, column), `${o.id}: clear of the kiosk and its approach column`);
+      // the stick is a 14x6 object that may sit under a table edge only if it is on the floor: it must not overlap drawn items
+      for (const f of fixed) if (!(o.id === 'kit_ca06_notice' && /poster|aw_poster/.test(f.name))) assert.ok(!strict(r, f), `${o.id}: clear of ${f.name}`);
+      for (const q of others) assert.ok(!strict(r, PX(q)), `${o.id}: clear of ${q.id}`);
+      for (const q of objs.filter((x) => x !== o && x.position.elevation === undefined)) void q;
+    }
+    const chairs = layerRects(roomType, ['items']);
+    const stands = [];
+    for (const n of sc.rooms.training_room.npcs.filter((x) => x.id.startsWith('kit_'))) for (const m of n.eventMappings || []) if (m.patrolOverride) stands.push({ x: m.patrolOverride.targetTile.x * 32, y: m.patrolOverride.targetTile.y * 32, who: n.id });
+    for (const m of (hostOf(sc).eventMappings || [])) if (m.patrolOverride) stands.push({ x: m.patrolOverride.targetTile.x * 32, y: m.patrolOverride.targetTile.y * 32, who: 'host' });
+    assert.equal(stands.length, w.walks, `${name}: stand points`);
+    for (const p of stands) {
+      assert.ok(!inside(p, kiosk) && !inside(p, column), `${name}: ${p.who} stand (${p.x}, ${p.y}) is clear of the kiosk and column`);
+      for (const f of chairs) assert.ok(!inside(p, f), `${name}: ${p.who} stand is inside ${f.name}`);
+      for (const o of props) assert.ok(!inside(p, PX(o)), `${name}: ${p.who} stand is inside ${o.id}`);
+      for (const o of objs.filter((x) => x.position.elevation === undefined && !props.includes(x))) assert.ok(!inside(p, PX(o)), `${name}: ${p.who} stand is inside ${o.id}`);
+    }
+  }
+});
+
+test('wave 4: kit staff patches stay inside their own set piece (no other kit shell holds a wave 4 id)', () => {
+  for (const name of kitShellNames()) {
+    if (name in W4 || name in W5 || name in W6) continue;
+    const text = JSON.stringify(readShell(name));
+    if (!/^ca(06|09|15|16)_/.test(name)) assert.ok(!/kit_ca(06|09|15|16)_/.test(text), `${name}: carries a wave 4 id`);
+    if (/^ca(06|09|15|16)_/.test(name) && name.endsWith('_defend')) assert.ok(!/kit_ca(06|09|15|16)_(asked|there|done|signin|note|stick)/.test(text.replace(/kit_ca\d\d_host_said/g, '')), `${name}: twin carries no chain id`);
+  }
+});
+
+test('wave 5: kit staff patches stay inside their own set piece (no other kit shell holds a wave 5 id)', () => {
+  const eps = Object.values(W5).map((w) => w.ep.replace(/^ca/, ''));
+  if (eps.length === 0) return;
+  const idRe = new RegExp(`kit_ca(${eps.join('|')})_`), chainRe = new RegExp(`kit_ca(${eps.join('|')})_(asked|there|done|signin|note)`);
+  for (const name of kitShellNames()) {
+    if (name in W5) continue;
+    const text = JSON.stringify(readShell(name));
+    const own = Object.values(W5).some((w) => name === `${Object.keys(W5).find((k) => W5[k] === w)}_defend`);
+    if (!own) assert.ok(!idRe.test(text), `${name}: carries a wave 5 id`);
+    else assert.ok(!chainRe.test(text.replace(/kit_ca\d\d_host_said/g, '')), `${name}: twin carries no chain id`);
+  }
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Wave 5 only (WAVE5_BUILD.md s12, "New W5 cases" and the replacement table). Each case loops over W5 or reads
+// one entry by name and skips while it is absent, so the suite stays green with the empty map.
+// ---------------------------------------------------------------------------------------------------
+const W5_WALK = { ca13: { x: 6, y: 3 }, ca14: { x: 7, y: 4.5 }, ca05: { x: 7.4, y: 8.3 } };   // s8 "Walked to"; Anjali's live criterion is within 32 px
+const w5Each = (fn) => { for (const [name, w] of Object.entries(W5)) fn(name, w, readShell(name)); };
+const w56Each = (fn) => { for (const [name, w] of Object.entries(W56)) fn(name, w, readShell(name)); };
+const w6Each = (fn) => { for (const [name, w] of Object.entries(W6)) fn(name, w, readShell(name)); };
+const w5CM = (sc, w) => w3Maps(w3Npc(sc, w.colleague));
+const w5PM = (sc, w) => w3Maps(w3Npc(sc, w.partner));
+const w5Ink = (stub) => readFileSync(join(root, 'scenarios/_office_kit/ink', `${stub}_ambient.ink`), 'utf8');
+const w5Knot = (ink, knot) => { const m = ink.match(new RegExp(`=== ${knot} ===([\\s\\S]*?)(?=\\n=== |$)`)); return m ? m[1] : null; };
+const w5Lines = (body) => body.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+const w5Conds = (w) => {
+  const O = `globalVars.kit_${w.ep}_out === true`, Q = 'globalVars.kit_quiet === true', nD = `!globalVars.kit_${w.ep}_done`;
+  const wrong = `value !== '' && value !== 'asked' && value !== '${w.right}'`;
+  return { O, Q, nD, wrong, seen: 'globalVars.kit_ca14_seen === true', v: `value === true && ${O}` };
+};
+const w5Out = (w) => `global_variable_changed:kit_${w.ep}_out`;
+
+test('wave 5: knot guard: the request knot opens with the moved guard, then the value guard; start diverts on asked before defend_done', () => {
+  w5Each((name, w) => {
+    const ink = w5Ink(w.stub);
+    const body = w5Knot(ink, w.knot);
+    assert.ok(body, `${name}: knot ${w.knot}`);
+    const lines = w5Lines(body);
+    // lines 0-2: the moved guard
+    assert.ok(/^\{.*:\s*$/.test(lines[0]) && lines[0].includes(`kit_${w.ep}_moved`), `${name}: line 0 is the moved guard`);
+    assert.equal(lines[1].trim(), '-> bye', `${name}: the moved guard diverts to bye`);
+    assert.equal(lines[2].trim(), '}', `${name}: the moved guard closes`);
+    if (w.ep === 'ca13') assert.ok(lines[0].includes(`${w.choice} == "${w.right}" && not kit_key_caught`), `${name}: the moved guard also sends "${w.right}" with the key message not caught to bye`);
+    else assert.ok(!lines[0].includes('kit_key_caught'), `${name}: the moved guard has no key-message term`);
+    // lines 3-5: the value guard
+    const guard = lines[3];
+    assert.ok(/^\{.*:\s*$/.test(guard) && lines[4].trim() === `-> ${w.ep}` && lines[5].trim() === '}', `${name}: lines 3-5 are a value guard that diverts to the stub knot`);
+    assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: value guard names done`);
+    for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: value guard names ${v}`);
+    if (w.ep === 'ca14') assert.ok(!guard.includes('"asked"'), `${name}: the value guard does not divert on asked (the knot re-offers)`);
+    // start: the asked divert is three lines, before the kit_defend_done divert
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    const idx = startBody.findIndex((l) => l.includes(`kit_${w.ep}_asked`));
+    assert.equal(idx, w.ep === 'ca02' ? 3 : 0, `${name}: the asked divert is ${w.ep === 'ca02' ? 'right after the kit_ca09_asked divert' : "start's first statement"}`);
+    if (w.ep === 'ca02') assert.ok(startBody[0].includes('kit_ca09_asked'), `${name}: the kit_ca09_asked divert stays first`);
+    // early click: the divert also fires once the beat is out and not done (social-early-click-request.test.mjs)
+    assert.ok(new RegExp(`^\\{\\s*kit_${w.ep}_asked \\|\\| \\(kit_${w.ep}_out && not kit_${w.ep}_done\\)\\s*:\\s*$`).test(startBody[idx]) && startBody[idx + 1].trim() === `-> ${w.knot}` && startBody[idx + 2].trim() === '}', `${name}: start diverts on asked into ${w.knot} (three lines)`);
+    const dIdx = startBody.findIndex((l) => l.includes('kit_defend_done'));
+    assert.ok(dIdx > idx + 2, `${name}: the asked divert comes before the kit_defend_done divert`);
+    // the rest is the W4 knot unchanged
+    for (const v of w.values) {
+      const n = body.split(/\n(?=\+ )/).filter((blk) => /^\+ /.test(blk) && new RegExp(`~ ${w.choice} = "${v}"`).test(blk)).length;
+      assert.ok(n >= 1, `${name}: an option writes ${v}`);
+    }
+    const reqBark = (w5CM(readShell(name), w).find((m) => m.targetKnot === w.knot) || {}).bark;
+    const firstSpoken = lines.find((l) => /^[A-Z][A-Za-z ]+: /.test(l));
+    assert.equal(firstSpoken.replace(/^[^:]+: /, '').replace(/ #.*$/, ''), reqBark, `${name}: first spoken line is the request bark`);
+    assert.ok(new RegExp(`~ ${w.choice} = "asked"`).test(body), `${name}: knot writes "asked"`);
+    const writes = [...body.matchAll(new RegExp(`~ ${w.choice} = "(\\w*)"`, 'g'))].map((x) => x[1]);
+    assert.ok(writes.every((v) => ['asked', ...w.values].includes(v)), `${name}: every write is an allowed value (${writes})`);
+    assert.ok(/\[\\\[Say nothing\\\]\]/.test(body), `${name}: a Say nothing option`);
+    assert.ok(/^\+ /m.test(body) && !/^\* /m.test(body), `${name}: + options only`);
+    assert.ok(existsSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.json`)), `${name}: compiled`);
+  });
+});
+
+test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share trigger and delay, timers t_there, t_tail, t_done', () => {
+  w56Each((name, w, sc) => {
+    const c = w5Conds(w), cm = w5CM(sc, w), ep = w.ep, ch = w.choice;
+    const there = `global_variable_changed:${w.there}`;
+    const only = (m, label) => assert.ok(m && m.onceOnly === true, `${name}: ${label} exists and is onceOnly`);
+    const r3 = cm.find((m) => m.eventPattern === w5Out(w) && m.setGlobal && m.setGlobal[w.there] === true);
+    only(r3, 'row 3');
+    assert.deepEqual([r3.condition, r3.delayMs, r3.setGlobal], [c.v, 1500, { [w.there]: true }], `${name}: row 3 sets there after 1500`);
+    const r4 = cm.find((m) => m.eventPattern === w5Out(w) && m.bark);
+    only(r4, 'row 4');
+    assert.deepEqual([r4.condition, r4.delayMs, r4.targetKnot], [`${c.v} && ${c.Q}`, 1500, undefined], `${name}: row 4 first line, quiet only (a race is impossible 1.5 s after out)`);
+    const r5 = cm.find((m) => m.eventPattern === there && m.bark && m.targetKnot === w.knot);
+    const r6 = cm.find((m) => m.eventPattern === there && m.setGlobal && m.setGlobal[`kit_${ep}_asked`] === true);
+    only(r5, 'row 5'); only(r6, 'row 6');
+    // the ask carries no kit_quiet (reopening the debrief clears it and dropped the ask): it reads an empty choice and !done
+    assert.equal(r5.condition, `${c.v} && globalVars.${ch} === '' && ${c.nD}`, `${name}: row 5 reads an empty choice and not done, no quiet`);
+    assert.equal(r6.condition, `${c.v} && ${c.nD} && globalVars.${ch} === ''`, `${name}: row 6 reads not done and an empty choice, no quiet`);
+    assert.ok(!/kit_quiet/.test(r5.condition + r6.condition), `${name}: neither ask row reads kit_quiet`);
+    assert.deepEqual([r6.askCue, r6.askCueUntil, r6.askCueMs, r6.whenPerceivable], [true, ch, 45000, true], `${name}: row 6 marker lasts the reply window and until the answer`);
+    const rd = w.requestDelay ?? 4500;   // 5500 after Fc (the first-line clip runs 4.70 s from 1.5 s)
+    assert.deepEqual([r5.delayMs, r6.delayMs], [rd, rd], `${name}: rows 5 and 6 share the ${rd} delay`);
+    assert.deepEqual(r6.setGlobal, { [`kit_${ep}_asked`]: true }, `${name}: row 6 sets only asked`);
+    // row 5 fires from `there`, which row 3 sets after its own delay
+    assert.ok(r3.delayMs + r5.delayMs - r4.delayMs >= 4000, `${name}: chain barks start at least 4 s apart`);
+    const close = cm.find((m) => m.eventPattern === `conversation_closed:${w.colleague}`);
+    only(close, 'row 7');
+    assert.equal(close.condition, `globalVars.${ch} === 'asked' && ${c.O}${ep === 'ca14' ? ` && ${c.seen}` : ''}`, `${name}: row 7 close turns asked into ${w.silent}`);
+    assert.deepEqual(close.setGlobal, { [ch]: w.silent }, `${name}: row 7 writes ${w.silent}`);
+    assert.ok(close.delayMs === undefined, `${name}: row 7 has no delay`);
+    const r12 = cm.find((m) => m.eventPattern === `global_variable_changed:kit_${ep}_done` && m.setGlobal && m.setGlobal[ch] === w.silent);
+    only(r12, 'row 12');
+    assert.equal(r12.condition, `${c.v} && globalVars.${ch} === 'asked'`, `${name}: row 12 done turns asked into ${w.silent}`);
+    const T = (id) => (sc.timers || []).find((t) => t.id === `kit_${ep}_t_${id}`);
+    assert.deepEqual([T('there').startOnGlobal, T('there').delayMs, T('there').condition, T('there').setGlobal], [`kit_${ep}_out`, 4000, `!globalVars.${w.there}`, { [w.there]: true }], `${name}: t_there`);
+    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 45000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
+    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_asked`, 85000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
+    // the backstop: started from out alone, 60 s after t_done would have fired
+    assert.deepEqual([T('done_out').startOnGlobal, T('done_out').delayMs, T('done_out').condition, T('done_out').setGlobal], [`kit_${ep}_out`, 85000 + 60000, `${c.nD} && globalVars.kit_${ep}_asked !== true`, { [`kit_${ep}_done`]: true }], `${name}: t_done_out backstop`);
+  });
+});
+
+test('wave 5: follow-through pairing: rows 8 and 9 share trigger, delay and condition (neither reads quiet), row 10 and row 11 are literal', () => {
+  w56Each((name, w, sc) => {
+    const c = w5Conds(w), cm = w5CM(sc, w), ep = w.ep;
+    const trig = `global_variable_changed:${w.choice}`;
+    const r9 = cm.find((m) => m.eventPattern === trig && m.setGlobal && m.setGlobal[`kit_${ep}_moved`] === true);
+    assert.ok(r9 && r9.onceOnly === true, `${name}: row 9 sets moved`);
+    assert.deepEqual([r9.condition, r9.delayMs, r9.setGlobal], [`${c.wrong} && ${c.O} && ${c.nD}`, 8000, { [`kit_${ep}_moved`]: true }], `${name}: row 9`);
+    // row 8: the speaker's bark (ca02: a host mapping)
+    const pool = w.hostSpeaks ? w3Maps(hostOf(sc)) : w5PM(sc, w);
+    const r8 = pool.find((m) => m.eventPattern === trig && m.bark);
+    assert.ok(r8 && r8.onceOnly === true, `${name}: row 8 is a bark on ${w.hostSpeaks ? 'the host' : w.partner}`);
+    // the follow-through is not tied to kit_quiet (the debrief reopened and closed cleared it): row 8 is row 9's condition
+    assert.equal(r8.condition, `${c.wrong} && ${c.O} && ${c.nD}`, `${name}: row 8 condition`);
+    assert.equal(r8.condition, r9.condition, `${name}: row 8 is row 9's condition (no quiet)`);
+    assert.ok(!/kit_quiet/.test(r8.condition), `${name}: row 8 does not read kit_quiet`);
+    assert.equal(r8.delayMs, r9.delayMs, `${name}: rows 8 and 9 share the delay`);
+    assert.ok(!cm.some((m) => m.eventPattern === trig && m.bark), `${name}: the colleague does not speak the follow-through`);
+    if (w.hostSpeaks) assert.ok(r8.condition.includes(c.nD), `${name}: the host line reads !done`);
+    const r10 = cm.find((m) => m.eventPattern === trig && m.setGlobal && m.setGlobal[`kit_${ep}_done`] === true);
+    assert.ok(r10 && r10.onceOnly === true, `${name}: row 10 exists`);
+    assert.deepEqual([r10.condition, r10.delayMs], [`value === '${w.right}' && ${c.O} && ${c.nD}`, 4000], `${name}: row 10 right answer, 4000`);
+    const r11 = cm.find((m) => m.eventPattern === `global_variable_changed:kit_${ep}_moved` && m.setGlobal && m.setGlobal[`kit_${ep}_done`] === true);
+    assert.ok(r11 && r11.onceOnly === true, `${name}: row 11 exists`);
+    assert.deepEqual([r11.condition, r11.delayMs], [c.v, 5000], `${name}: row 11 on moved, 5000`);
+  });
+});
+
+test('wave 5: replacement for the fallback-timer case: no mapping reads npc_arrived, the only timers are t_there, t_tail, t_done, t_done_out (and ca14 t_unseen)', () => {
+  w56Each((name, w, sc) => {
+    const mappings = [...sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_')).flatMap((n) => w3Maps(n)), ...w3Maps(hostOf(sc))];
+    assert.ok(!mappings.some((m) => /^npc_arrived/.test(m.eventPattern)), `${name}: no mapping reads npc_arrived`);
+    const ids = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${w.ep}_t_`)).map((t) => t.id.split('_t_')[1]).sort();
+    assert.deepEqual(ids, (w.ep === 'ca14' ? ['done', 'done_out', 'tail', 'there', 'unseen'] : ['done', 'done_out', 'tail', 'there']), `${name}: the timers`);
+  });
+});
+
+test('wave 5: replacement for the frozen-thirst case: every need in the colleague entry is frozen, with no work need or resource', () => {
+  w56Each((name, w, sc) => {
+    const col = w3Npc(sc, w.colleague);
+    const needs = Object.entries(col.needs || {});
+    assert.ok(needs.length >= 1, `${name}: the colleague carries a needs dict`);
+    for (const [k, n] of needs) assert.ok(n.decayPerMin === 0.01 && n.urgentAt === 50 && n.initial > 50, `${name}: ${k} is frozen (0.01 / 50 / initial > 50)`);
+    assert.ok(!(col.needs || {}).work && !(col.workNeeds || []).length, `${name}: no work need`);
+    assert.ok(!Object.keys(sc.resources || {}).some((k) => k.startsWith(`kit_${w.ep}_`)), `${name}: no chain resource`);
+    assert.ok(!w5CM(sc, w).some((m) => /^npc_use_failed/.test(m.eventPattern)), `${name}: no npc_use_failed mapping`);
+  });
+});
+
+test('wave 5: replacement for the suspend case: the colleague has no suspend or resume; the speaker is suspended, walked and resumed once', () => {
+  w5Each((name, w, sc) => {
+    const c = w5Conds(w);
+    assert.ok(!w5CM(sc, w).some((m) => m.needs), `${name}: the colleague has no suspend or resume`);
+    const pm = w5PM(sc, w);
+    const susp = pm.filter((m) => m.needs === 'suspend'), res = pm.filter((m) => m.needs === 'resume');
+    assert.equal(susp.length, 1, `${name}: ${w.partner} has exactly one suspend`);
+    assert.equal(res.length, 1, `${name}: ${w.partner} has exactly one resume`);
+    assert.deepEqual([susp[0].eventPattern, susp[0].condition, susp[0].onceOnly], [w5Out(w), c.v, true], `${name}: suspend on out`);
+    assert.deepEqual([res[0].eventPattern, res[0].condition, res[0].onceOnly], [`global_variable_changed:kit_${w.ep}_done`, c.v, true], `${name}: resume on done`);
+    const walks = pm.filter((m) => m.patrolOverride);
+    if (w.ep === 'ca02') {
+      assert.equal(walks.length, 0, `${name}: Zainab is not walked`);
+      assert.ok(!pm.some((m) => m.bark), `${name}: Zainab has no lines`);
+      return;
+    }
+    assert.equal(walks.length, 1, `${name}: ${w.partner} has exactly one walk`);
+    const wk = walks[0];
+    assert.deepEqual([wk.eventPattern, wk.condition, wk.onceOnly, wk.delayMs, wk.patrolOverride.speed], [w5Out(w), c.v, true, 1000, 90], `${name}: walk on out, delay 1000, speed 90`);
+    const target = w.walkTarget || W5_WALK[w.ep];
+    assert.deepEqual(wk.patrolOverride.targetTile, { x: target.x, y: target.y }, `${name}: the walk target is the s8 post`);
+    const home = w3Npc(sc, w.partner).needsHome;
+    if (home && typeof home === 'object') assert.deepEqual([home.x, home.y], [W5_WALK[w.ep].x, W5_WALK[w.ep].y], `${name}: the patch home is the s8 post`);
+    assert.ok(pm.indexOf(wk) > pm.indexOf(susp[0]), `${name}: the walk comes after the suspend`);
+  });
+});
+
+test('wave 5: kiosk: the last variant is the finished one, every earlier one reads !defend_complete; stepAway first key; host release and step-away mappings', () => {
+  w5Each((name, w, sc) => {
+    const ov = w3Kiosk(sc).observationVariants || [];
+    assert.equal(ov.length, w.ep === 'ca14' ? 2 : 1, `${name}: kiosk variant count`);
+    assert.equal(ov[ov.length - 1].condition, KIOSK_FINISHED, `${name}: the last variant is the finished condition`);
+    assert.ok(typeof ov[ov.length - 1].value === 'string' && ov[ov.length - 1].value.length > 0, `${name}: kiosk finished text`);
+    for (const v of ov.slice(0, -1)) assert.ok(/!globalVars\.episode_\w+_defend_complete/.test(v.condition), `${name}: earlier variant reads !defend_complete (${v.condition})`);
+    const sa = sc.social.awarenessEpisode.strings;
+    assert.equal(sa.stepAway, 'Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.', `${name}: stepAway text`);
+    assert.equal(Object.keys(sa)[0], 'stepAway', `${name}: stepAway is the first strings key`);
+    const host = hostOf(sc);
+    assert.ok(w3Maps(host).some((m) => m.eventPattern === 'episode_step_away' && m.condition === 'globalVars.kit_defend_done === true' &&
+      JSON.stringify(m.setGlobal) === JSON.stringify({ [`kit_${w.ep}_out`]: true })), `${name}: step-away mapping sets only the out global`);
+    const release = (cond) => w3Maps(host).some((m) => /^global_variable_changed:episode_e\d+_\w+_state$/.test(m.eventPattern) &&
+      m.condition === cond && JSON.stringify(m.setGlobal) === JSON.stringify({ kit_quiet: false }));
+    assert.ok(release("data.value.done.includes('debrief')") && release('data.value.debriefSeen === true'), `${name}: quiet release on debrief done and debriefSeen`);
+  });
+});
+
+test('wave 5: PC: three mirrored literal variant entries (moved, right answer, out), base pc1_locked, the exact affordance', () => {
+  w56Each((name, w, sc) => {
+    const pc = w3Obj(sc, `kit_${w.ep}_pc`);
+    assert.ok(pc, `${name}: kit_${w.ep}_pc exists`);
+    assert.deepEqual([pc.type, pc.sprite, pc.workstation, pc.owner, pc.lockChance, pc.interactable, pc.takeable, pc.requiresItem, pc.triggerOnInteract],
+      ['pc', 'pc1_locked', true, w.colleague, 0, true, false, `kit_${w.ep}_gate_item`, []], `${name}: PC flags`);
+    assert.equal(pc.name, w.pcName, `${name}: PC name`);
+    assert.deepEqual(pc.affordance, { useFrom: { dx: 0, dy: -1 } }, `${name}: affordance is exactly useFrom (no satisfies)`);
+    assert.ok(!pc.observationVariants, `${name}: no observationVariants`);
+    assert.deepEqual(pc.position, w.pcPos, `${name}: PC position`);
+    assert.equal(pc.requiresItemHint, `${w.pcName}. It's ${w.pron} to sign in to.`, `${name}: base hint`);
+    const conds = [`globalVars.kit_${w.ep}_moved === true`, `globalVars.${w.choice} === '${w.right}'`, `globalVars.kit_${w.ep}_out === true`];
+    assert.deepEqual((pc.spriteVariants || []).map((v) => v.condition), conds, `${name}: spriteVariants conditions, in order`);
+    assert.deepEqual((pc.spriteVariants || []).map((v) => v.value), [w.movedSprite, 'pc1', 'pc1'], `${name}: spriteVariants values`);
+    assert.deepEqual((pc.requiresItemHintVariants || []).map((v) => v.condition), conds, `${name}: hint variants mirror the sprite variants`);
+    for (const v of pc.requiresItemHintVariants) assert.ok(typeof v.value === 'string' && v.value.startsWith(w.pcName), `${name}: hint variant text names the PC`);
+    assert.equal(w.movedSprite, w.ep === 'ca02' ? 'pc1_locked_isolated' : 'pc1', `${name}: moved sprite`);
+  });
+});
+
+test('wave 5: homes and spawn: the colleague sits at the PC id and spawns on the chair; the speaker keeps a coordinate home', () => {
+  w56Each((name, w, sc) => {
+    const col = w3Npc(sc, w.colleague);
+    assert.equal(col.needsHome, `kit_${w.ep}_pc`, `${name}: the colleague home is the PC id`);
+    assert.deepEqual(col.position, w.spawn, `${name}: the colleague spawn`);
+    const home = w3Npc(sc, w.partner).needsHome;
+    assert.ok(home === undefined || typeof home === 'object', `${name}: the speaker home is a coordinate, not an id`);
+  });
+});
+
+test('wave 5: Delphine (ca14): position and needsHome both (7.0, 4.5), and row 2b targets the same', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const sc = readShell(name), d = w3Npc(sc, 'kit_delphine_arvanitis');
+  assert.deepEqual([d.position.x, d.position.y], [7, 4.5], 'position');
+  assert.deepEqual([d.needsHome.x, d.needsHome.y, d.needsHome.room], [7, 4.5, 'training_room'], 'needsHome');
+  const walk = w3Maps(d).find((m) => m.patrolOverride);
+  assert.deepEqual(walk.patrolOverride.targetTile, { x: 7, y: 4.5 }, 'row 2b target equals the home');
+});
+
+test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs seen, unseen close is last before the re-arm mappings, t_unseen, globals, option gates', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const w = W5[name], sc = readShell(name), c = w5Conds(w);
+  const board = w3Obj(sc, 'kit_ca14_board');
+  assert.ok(board, 'kit_ca14_board exists');
+  const seenMaps = w3Maps(hostOf(sc)).filter((m) => m.eventPattern === 'object_interacted' && m.setGlobal && m.setGlobal.kit_ca14_seen === true);
+  assert.deepEqual(seenMaps.map((m) => m.condition), [`data.objectName === "Lorna's PC" && ${c.O} && ${c.nD}`, `data.objectName === ${JSON.stringify(board.name)} && ${c.O} && ${c.nD}`], 'the two seen mappings');
+  assert.ok(['Project board', 'Flip chart'].includes(board.name), 'the board is the Project board (or the step 0 fallback Flip chart)');
+  assert.ok(seenMaps.every((m) => m.onceOnly === true && JSON.stringify(m.setGlobal) === '{"kit_ca14_seen":true}'), 'seen mappings are onceOnly and set only seen');
+  const lm = w5CM(sc, w);
+  // the three game_loaded re-arm mappings are appended after it (the server keys a mapping by index), so it is the last of the rest
+  assert.deepEqual(lm.slice(-3).map((m) => m.eventPattern), ['game_loaded', 'game_loaded', 'game_loaded'], 'the re-arm mappings are last');
+  const last = lm.filter((m) => m.eventPattern !== 'game_loaded').slice(-1)[0];
+  assert.deepEqual([last.eventPattern, last.condition, last.onceOnly, last.setGlobal], ['conversation_closed:kit_lorna_easton', `globalVars.${w.choice} === 'asked' && ${c.O} && globalVars.kit_ca14_seen !== true`, true, { kit_ca14_closed_unseen: true }], 'the unseen close is last in Lorna\'s list');
+  const tu = (sc.timers || []).find((t) => t.id === 'kit_ca14_t_unseen');
+  assert.deepEqual([tu.startOnGlobal, tu.delayMs, tu.condition, tu.setGlobal], ['kit_ca14_closed_unseen', 20000, `globalVars.${w.choice} === 'asked' && globalVars.kit_ca14_seen !== true`, { [w.choice]: 'silent' }], 't_unseen');
+  assert.ok(sc.globalVariables.kit_ca14_seen === false && sc.globalVariables.kit_ca14_closed_unseen === false, 'seen and closed_unseen declared false');
+  const body = w5Knot(w5Ink(w.stub), w.knot);
+  assert.ok(body, `knot ${w.knot} exists`);
+  const blocks = body.split(/\n(?=\+ )/);
+  assert.ok(blocks.some((b) => b.startsWith('+ {kit_ca14_seen} [') && new RegExp(`~ ${w.choice} = "crop"`).test(b)), 'the crop option is gated {kit_ca14_seen}');
+  const look = blocks.find((b) => b.startsWith('+ {not kit_ca14_seen} [Let me have a look first.]'));
+  assert.ok(look && !/~ /.test(look) && look.includes('#exit_conversation') && look.includes('-> DONE'), 'the look-first option is gated, writes nothing and exits');
+  assert.ok(!w5Lines(body)[3].includes('"asked"'), 'the value guard does not divert on asked');
+});
+
+test('wave 5: Graham, Niamh and Darren specifics: Graham\'s two-term guard, Niamh\'s stop branch and VAR, Darren\'s plain guard', () => {
+  if ('ca13_ai_assistant' in W5) {
+    const gk = w5Knot(w5Ink('graham_whitfield'), 'ca13_send');
+    assert.ok(gk, 'Graham: knot ca13_send exists');
+    const l = w5Lines(gk)[0];
+    assert.equal(l, '{ kit_ca13_moved || (kit_ca13_send_choice == "ring" && not kit_key_caught):', 'Graham: the first guard has both terms');
+  }
+  if ('ca05_signin_pages' in W5) {
+    const dk = w5Knot(w5Ink('darren_price'), 'ca05_prompt');
+    assert.ok(dk, 'Darren: knot ca05_prompt exists');
+    const l = w5Lines(dk)[0];
+    assert.equal(l.trim(), '{ kit_ca05_moved:', 'Darren: the first guard is the plain moved guard');
+    const ink = readFileSync(join(scenarios, 'ca05_signin_pages', 'ink', 'niamh_doherty.ink'), 'utf8');
+    assert.ok(/^VAR kit_ca05_prompt_choice = ""\s*$/m.test(ink), 'Niamh: declares VAR kit_ca05_prompt_choice = ""');
+    const stop = ink.match(/- kit_ca05_prompt_choice == "stop":\n([\s\S]*?)(?=\n\s*- else:)/);
+    // the else after the stop branch (an earlier, nested `- else:` belongs to the caught/not-caught-in-kiosk pair)
+    const els = ink.slice(ink.indexOf('- kit_ca05_prompt_choice == "stop":')).match(/- else:\n([\s\S]*?)\n\s*\}/);
+    assert.ok(stop && els, 'Niamh: stop and else branches');
+    const last = (s) => w5Lines(s).pop().trim();
+    assert.equal(last(stop[1]), last(els[1]), 'Niamh: the stop branch plays the habit line, the last line of the else pair');
+  }
+});
+
+test('wave 5: host and speaker inks: moved VAR, the s3.5 recap branches, and the speakers\' moved guards', () => {
+  const BR = {
+    ca13: ['- kit_key_caught && not kit_ca13_moved && (kit_ca13_send_choice == "" || kit_ca13_send_choice == "ring"):', '- not kit_key_caught && not kit_ca13_moved && kit_ca13_send_choice != "ring":'],
+    ca14: ['- kit_key_caught && not kit_ca14_moved && (kit_ca14_photo_choice == "" || kit_ca14_photo_choice == "crop"):', '- not kit_key_caught:'],
+    ca05: ['- kit_key_caught && not kit_ca05_moved && (kit_ca05_prompt_choice == "" || kit_ca05_prompt_choice == "stop"):', '- kit_key_caught:', '- kit_ca05_prompt_choice == "stop":', '- else:'],
+    ca02: ['- kit_key_caught && not kit_ca02_moved && (kit_ca02_cv_choice == "" || kit_ca02_cv_choice == "report"):', '- kit_key_caught:', '- kit_ca02_cv_choice == "report":', '- else:'],
+  };
+  w5Each((name, w) => {
+    const ep = w.ep;
+    const hink = readFileSync(join(scenarios, name, 'ink', `${w.hostId}.ink`), 'utf8');
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(hink), `${name}: host ink declares kit_${ep}_moved`);
+    if (ep !== 'ca14') assert.ok(new RegExp(`^VAR ${w.choice} = ""`, 'm').test(hink), `${name}: host ink declares ${w.choice}`);
+    let at = -1;
+    for (const b of BR[ep]) { const i = hink.indexOf(b, at + 1); assert.ok(i > at, `${name}: host branch "${b}" in order`); at = i; }
+    // the habit line follows the block (ca13, ca14) or sits in each branch (ca05, ca02)
+    if (ep === 'ca13' || ep === 'ca14') {
+      const after = hink.slice(hink.indexOf('}', at)).split('\n').slice(1).find((l) => l.trim());
+      assert.ok(/^[A-Z][A-Za-z ]+: /.test(after.trim()), `${name}: a spoken (habit) line follows the block, not another branch`);
+    }
+    // speaker stubs
+    const p = w5Ink(w.partnerStub), ck = w5Ink(w.stub);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved = false\\s*$`, 'm').test(p), `${name}: ${w.partnerStub} declares VAR kit_${ep}_moved = false`);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(ck), `${name}: ${w.stub} declares VAR kit_${ep}_moved`);
+    const pl = w5Lines(w5Knot(p, ep));
+    assert.deepEqual([pl[0].trim(), pl[1].trim(), pl[2].trim()], [`{ ${w.partnerGuard}:`, '-> bye', '}'], `${name}: ${w.partnerStub}'s ${ep} knot opens with its moved guard`);
+    if (ep === 'ca05') assert.ok(!/kit_ca05_moved/.test(w5Knot(p, 'ca10') || ''), `${name}: Anjali's ca10 knot is unchanged`);
+  });
+});
+
+test('wave 5: board: kit_ca14_board claims hce_art_canvas with no position (fallback: the flip chart placement)', () => {
+  const name = 'ca14_social_media';
+  if (!(name in W5)) return;
+  const b = w3Obj(readShell(name), 'kit_ca14_board');
+  assert.ok(b && b.interactable === true && b.takeable === false && typeof b.observations === 'string', 'the board is a text object');
+  if (b.type === 'hce_art_canvas') assert.ok(b.sprite === 'm10_map_board1' && b.position === undefined, 'the board claims the canvas: no position');
+  else assert.ok(b.sprite === 'flip_chart1' && b.position && b.position.x === 5.75 && b.position.y === 2.2, 'fallback: the flip chart at (5.75, 2.2)');
+});
+
+test('wave 5: preloads and dims: every base sprite and variant value is preloaded and exists; pc1_locked_isolated 28x23, m10_map_board1 40x28', () => {
+  const game = readFileSync(join(root, 'public/break_escape/js/core/game.js'), 'utf8');
+  assert.deepEqual(pngSize('pc1_locked_isolated'), [28, 23], 'pc1_locked_isolated is 28x23');
+  assert.deepEqual(pngSize('m10_map_board1'), [40, 28], 'm10_map_board1 is 40x28');
+  for (const k of ['pc1', 'pc1_locked', 'pc1_locked_isolated', 'm10_map_board1']) assert.ok(game.includes(`this.load.image('${k}', 'objects/${k}.png')`), `${k} preloaded`);
+  w56Each((name, w, sc) => {
+    const keys = new Set();
+    for (const o of sc.rooms.training_room.objects.filter((x) => x.id.startsWith(`kit_${w.ep}_`))) {
+      if (o.sprite) keys.add(o.sprite);
+      for (const v of o.spriteVariants || []) keys.add(v.value);
+    }
+    for (const k of ['pc1', 'pc1_locked']) assert.ok(keys.has(k), `${name}: uses ${k}`);
+    for (const k of keys) {
+      assert.ok(game.includes(`this.load.image('${k}', 'objects/${k}.png')`), `${name}: ${k} preloaded`);
+      assert.ok(existsSync(join(root, 'public/break_escape/assets/objects', `${k}.png`)), `${name}: ${k}.png exists`);
+    }
+    assert.deepEqual(pngSize('pc1_locked'), pngSize('pc1'), `${name}: pc1_locked is pc1's size`);
+    if (w.ep === 'ca02') { assert.ok(keys.has('pc1_locked_isolated'), `${name}: uses pc1_locked_isolated`); assert.deepEqual(pngSize('pc1_locked_isolated'), [28, 23]); }
+    if (w.ep === 'ca14') { assert.ok(keys.has('m10_map_board1') || keys.has('flip_chart1'), `${name}: the board sprite`); if (keys.has('m10_map_board1')) assert.deepEqual(pngSize('m10_map_board1'), [40, 28]); }
+  });
+});
+
+test('wave 6: ca07 kiosk text: the genuine voicemail no longer rests on a saved number (1c)', () => {
+  const erb = readFileSync(join(scenarios, 'ca07_voice_ceo', 'scenario.json.erb'), 'utf8');
+  assert.ok(!erb.includes("It came from Ravinder's mobile, which is already in the office contacts."), 'old first sentence gone');
+  assert.ok(erb.includes('It asks you to do nothing, and he tells you to ring his own mobile'), 'new opening present');
+});
+
+test('wave 6: ca07 panel: the pay or silent entry names Report Fraud; neither entry nor the erb says Action Fraud', () => {
+  const erb = readFileSync(join(scenarios, 'ca07_voice_ceo', 'scenario.json.erb'), 'utf8');
+  assert.ok(!erb.includes('Action Fraud'), 'no Action Fraud anywhere in the erb');
+  const pay = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'pay' });
+  const silent = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'silent' });
+  const back = shownPanels('ca07_voice_ceo', { kit_ca07_call_choice: 'ringback' });
+  assert.match(pay, /Report Fraud/);
+  assert.match(silent, /Report Fraud/);
+  assert.doesNotMatch(back, /Report Fraud/);
+  assert.doesNotMatch(back + pay + silent, /Action Fraud/);
+});
+
+test('wave 6: map sizes: three shells, one walk each, the walk keys match, and the depth floors read 13 and 15', () => {
+  assert.equal(Object.keys(W6).length, 3);
+  assert.equal(Object.keys(W6_WALK).length, 3);
+  assert.deepEqual(Object.keys(W6_WALK).sort(), Object.keys(W6).filter((n) => W6[n].walks === 1).sort());
+  assert.equal(6 + Object.keys(W5).length + Object.keys(W6).length, 13);
+  assert.equal(8 + Object.keys(W5).length + Object.keys(W6).length, 15);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// Wave 6 copies (WAVE6_BUILD.md s12, "W6 copies"): each loops over W6 only, so the empty map passes until a kit step adds a shell.
+test('wave 6: knot guard: the request knot opens with the moved guard, then the value guard; start diverts on asked at index 3', () => {
+  w6Each((name, w, sc) => {
+    const ink = w5Ink(w.stub);
+    const body = w5Knot(ink, w.knot);
+    assert.ok(body, `${name}: knot ${w.knot}`);
+    const lines = w5Lines(body);
+    assert.ok(/^\{.*:\s*$/.test(lines[0]) && lines[0].includes(`kit_${w.ep}_moved`), `${name}: line 0 is the moved guard`);
+    assert.equal(lines[1].trim(), '-> bye', `${name}: the moved guard diverts to bye`);
+    assert.equal(lines[2].trim(), '}', `${name}: the moved guard closes`);
+    const guard = lines[3];
+    assert.ok(/^\{.*:\s*$/.test(guard) && lines[4].trim() === `-> ${w.ep}` && lines[5].trim() === '}', `${name}: lines 3-5 are a value guard that diverts to the stub knot`);
+    assert.ok(guard.includes(`kit_${w.ep}_done`), `${name}: value guard names done`);
+    for (const v of w.values) assert.ok(guard.includes(`== "${v}"`), `${name}: value guard names ${v}`);
+    const startBody = ink.match(/=== start ===([\s\S]*?)(?=\n=== )/)[1].split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
+    const idx = startBody.findIndex((l) => l.includes(`kit_${w.ep}_asked`));
+    assert.equal(idx, 3, `${name}: the asked divert is start's fourth statement`);
+    assert.ok(startBody[0].includes(w.askedFirst), `${name}: startBody[0] names ${w.askedFirst}`);
+    // The early-click clause (out && not done) lets a click before the request lands still open it.
+    assert.ok(/^\{\s*kit_(\w+)_asked(\s*\|\|\s*\(kit_\1_out && not kit_\1_done\))?\s*:\s*$/.test(startBody[idx]) && startBody[idx + 1].trim() === `-> ${w.knot}` && startBody[idx + 2].trim() === '}', `${name}: start diverts on asked into ${w.knot} (three lines)`);
+    const dIdx = startBody.findIndex((l) => l.includes('kit_defend_done'));
+    assert.ok(dIdx > idx + 2, `${name}: the asked divert comes before the kit_defend_done divert`);
+    for (const v of w.values) {
+      const n = body.split(/\n(?=\+ )/).filter((blk) => /^\+ /.test(blk) && new RegExp(`~ ${w.choice} = "${v}"`).test(blk)).length;
+      assert.ok(n >= 1, `${name}: an option writes ${v}`);
+    }
+    const reqBark = (w5CM(sc, w).find((m) => m.targetKnot === w.knot) || {}).bark;
+    const firstSpoken = lines.find((l) => /^[A-Z][A-Za-z ]+: /.test(l));
+    assert.equal(firstSpoken.replace(/^[^:]+: /, '').replace(/ #.*$/, ''), reqBark, `${name}: first spoken line is the request bark`);
+    assert.ok(new RegExp(`~ ${w.choice} = "asked"`).test(body), `${name}: knot writes "asked"`);
+    const writes = [...body.matchAll(new RegExp(`~ ${w.choice} = "(\\w*)"`, 'g'))].map((x) => x[1]);
+    assert.ok(writes.every((v) => ['asked', ...w.values].includes(v)), `${name}: every write is an allowed value (${writes})`);
+    assert.ok(/\[\\\[Say nothing\\\]\]/.test(body), `${name}: a Say nothing option`);
+    assert.ok(/^\+ /m.test(body) && !/^\* /m.test(body), `${name}: + options only`);
+    assert.ok(existsSync(join(root, 'scenarios/_office_kit/ink', `${w.stub}_ambient.json`)), `${name}: compiled`);
+  });
+});
+
+test('wave 6: suspend: the colleague has no suspend; the partner is suspended, walked and resumed once', () => {
+  w6Each((name, w, sc) => {
+    const c = w5Conds(w);
+    assert.ok(!w5CM(sc, w).some((m) => m.needs), `${name}: the colleague has no suspend or resume`);
+    const pm = w5PM(sc, w);
+    const susp = pm.filter((m) => m.needs === 'suspend'), res = pm.filter((m) => m.needs === 'resume');
+    assert.equal(susp.length, 1, `${name}: ${w.partner} has exactly one suspend`);
+    assert.equal(res.length, 1, `${name}: ${w.partner} has exactly one resume`);
+    assert.deepEqual([susp[0].eventPattern, susp[0].condition, susp[0].onceOnly], [w5Out(w), c.v, true], `${name}: suspend on out`);
+    assert.deepEqual([res[0].eventPattern, res[0].condition, res[0].onceOnly], [`global_variable_changed:kit_${w.ep}_done`, c.v, true], `${name}: resume on done`);
+    const walks = pm.filter((m) => m.patrolOverride);
+    assert.equal(walks.length, w.walks, `${name}: ${w.partner} has exactly ${w.walks} walk`);
+    const wk = walks[0], target = W6_WALK[name];
+    assert.deepEqual([wk.eventPattern, wk.condition, wk.onceOnly, wk.delayMs, wk.patrolOverride.speed], [w5Out(w), c.v, true, 1000, 90], `${name}: walk on out, delay 1000, speed 90`);
+    assert.deepEqual(wk.patrolOverride.targetTile, { x: target.x, y: target.y }, `${name}: the walk target is the s3.3 post`);
+    assert.ok(pm.indexOf(wk) > pm.indexOf(susp[0]), `${name}: the walk comes after the suspend`);
+    const stub = w5Ink(w.partnerStub), knot = w5Lines(w5Knot(stub, w.ep));
+    assert.deepEqual([knot[0].trim(), knot[1].trim(), knot[2].trim()], [`{ ${w.partnerGuard}:`, '-> bye', '}'], `${name}: ${w.partnerStub}'s ${w.ep} knot opens with its moved guard`);
+    if (w.ep === 'ca10') assert.ok(!/kit_ca10_moved/.test(w5Knot(stub, 'ca05') || ''), `${name}: Anjali's ca05 knot is unchanged`);
+    const home = w3Npc(sc, w.partner).needsHome;
+    assert.ok(home === undefined || typeof home === 'object', `${name}: the partner home is a coordinate, not an id`);
+  });
+});
+
+test('wave 6: kiosk: the last variant is the finished one, every earlier one reads !defend_complete; host release and step-away mappings', () => {
+  w6Each((name, w, sc) => {
+    const ov = w3Kiosk(sc).observationVariants || [];
+    assert.equal(ov.length, w.kioskVariants, `${name}: kiosk variant count`);
+    assert.equal(ov[ov.length - 1].condition, KIOSK_FINISHED, `${name}: the last variant is the finished condition`);
+    for (const v of ov.slice(0, -1)) assert.ok(v.condition.includes(`!globalVars.episode_${w.ep}_defend_complete`) || v.condition.includes(`!globalVars.episode_`), `${name}: earlier variants read !defend_complete`);
+    const sa = sc.social.awarenessEpisode.strings;
+    assert.equal(Object.keys(sa)[0], 'stepAway', `${name}: stepAway is the first key`);
+    assert.equal(sa.stepAway, 'Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.', `${name}: stepAway text`);
+  });
+});
+
+test('wave 6: host and speaker inks: out/done/moved VARs, the recap branches in order, and the host-bark count', () => {
+  const BR = {
+    ca10: ['- kit_key_caught && not kit_ca10_moved && (kit_ca10_check_choice == "" || kit_ca10_check_choice == "close"):', '- else:\n            Niamh Doherty: Follow a page like that'],
+    ca07: ['- kit_key_caught && not kit_ca07_moved && (kit_ca07_call_choice == "" || kit_ca07_call_choice == "ringback"):', '- kit_key_caught:', '- else:\n            Agnieszka Duda: When a payment goes out on a voice alone'],
+    ca18: ['- kit_key_caught && not kit_ca18_moved && (kit_ca18_reset_choice == "" || kit_ca18_reset_choice == "words"):', '{ kit_caught && not kit_ca18_out:', '- not kit_key_caught:'],
+  };
+  w6Each((name, w, sc) => {
+    const ep = w.ep;
+    const hink = readFileSync(join(scenarios, name, 'ink', `${w.hostId}.ink`), 'utf8');
+    for (const v of ['out', 'done', 'moved']) assert.ok(new RegExp(`^VAR kit_${ep}_${v}\\b`, 'm').test(hink), `${name}: host ink declares kit_${ep}_${v}`);
+    assert.ok(new RegExp(`^\\s*\\{\\s*kit_defend_done && \\(kit_${ep}_done \\|\\| not kit_${ep}_out\\) && not kit_${ep}_host_said`, 'm').test(hink), `${name}: recap guard`);
+    let at = -1;
+    for (const b of BR[ep]) { const i = hink.indexOf(b, at + 1); assert.ok(i > at, `${name}: host branch "${b}" in order`); at = i; }
+    const p = w5Ink(w.partnerStub), ck = w5Ink(w.stub);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved = false\\s*$`, 'm').test(p), `${name}: ${w.partnerStub} declares VAR kit_${ep}_moved = false`);
+    assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(ck), `${name}: ${w.stub} declares VAR kit_${ep}_moved`);
+    // host barks: exactly w.hostBarks, each gated on out and !done (not quiet)
+    const c = w5Conds(w), hb = w3Maps(hostOf(sc)).filter((m) => m.bark && m.eventPattern === `global_variable_changed:${w.choice}`);
+    assert.equal(hb.length, w.hostBarks, `${name}: host barks`);
+    // no kit_quiet: reopening and closing the debrief clears it, and the follow-through must not depend on it
+    for (const m of hb) assert.ok([c.O, c.nD].every((t) => m.condition.includes(t)) && !m.condition.includes(c.Q), `${name}: host bark reads out and !done, not quiet`);
+  });
+});
+
+test('wave 6: kit staff patches stay inside their own set piece (no other kit shell holds a wave 6 id)', () => {
+  const eps = Object.values(W6).map((w) => w.ep.replace(/^ca/, ''));
+  if (eps.length === 0) return;
+  const idRe = new RegExp(`kit_ca(${eps.join('|')})_`), chainRe = new RegExp(`kit_ca(${eps.join('|')})_(asked|there|done|moved)`);
+  for (const name of kitShellNames()) {
+    if (name in W6) continue;
+    const text = JSON.stringify(readShell(name));
+    const own = Object.keys(W6).some((k) => name === `${k}_defend`);
+    if (!own) assert.ok(!idRe.test(text), `${name}: carries a wave 6 id`);
+    else assert.ok(!chainRe.test(text.replace(/kit_ca\d\d_host_said/g, '')), `${name}: twin carries no chain id`);
+  }
+});
+
+// Debrief claims about the player's own work must hold on every path (D254). The panel list a learner
+// sees, with the global-condition grammar (globalVars.x, !globalVars.x, x === literal, && and ||) evaluated.
+function shownPanels(shellId, globals) {
+  const cp = readShell(shellId).social.awarenessEpisode.strings.conceptPanel;
+  const list = Array.isArray(cp) ? cp : [cp];
+  const holds = (term) => {
+    const t = term.trim();
+    let m = t.match(/^globalVars\.(\w+)\s*===\s*(.+)$/);
+    if (m) return String(globals[m[1]]) === m[2].trim().replace(/^'|'$/g, '');
+    m = t.match(/^!globalVars\.(\w+)$/);
+    if (m) return !globals[m[1]];
+    m = t.match(/^globalVars\.(\w+)$/);
+    return m ? !!globals[m[1]] : false;
+  };
+  return list.filter((e) => !e || typeof e === 'string' || !e.condition || e.condition.split('||').some((alt) => alt.split('&&').every(holds)))
+    .map((e) => (typeof e === 'string' ? e : `${e.heading || ''}\n${e.text}`)).join('\n\n');
+}
+
+test('ca13: a plain brief gets no hidden-line, told-the-assistant or brief-you-handed claim on the player side', () => {
+  const claims = /hidden line bought|told the assistant|brief you handed|A line hidden in it told/i;
+  for (const send of ['', 'send', 'silent', 'ring']) {
+    const txt = shownPanels('ca13_ai_assistant', { phish_assist_reader_plain_sent: true, kit_ca13_send_choice: send });
+    assert.ok(!claims.test(txt), `plain brief, send_choice '${send}': ${txt.match(claims)}`);
+    assert.match(txt, /ordinary invoice/);
+  }
+  const hidden = shownPanels('ca13_ai_assistant', { phish_assist_reader_landed: true, kit_ca13_send_choice: 'send' });
+  assert.match(hidden, /To a real attacker, the brief you handed the assistant/);
+  assert.doesNotMatch(hidden, /ordinary invoice/);
+  const graham = shownPanels('ca13_ai_assistant', { phish_assist_reader_plain_sent: true, kit_ca13_send_choice: 'send' });
+  assert.match(graham, /Graham's assistant and Graham's inbox, not your brief/);
+});
+
+test('ca02: layer 0 does not say the player asked the recruiter for a second action', () => {
+  const txt = shownPanels('ca02_cv_lures', { kit_ca02_cv_choice: 'report' });
+  assert.match(txt, /To a real attacker/);
+  assert.doesNotMatch(txt, /you asked the recruiter|asked the recruiter to take/i);
+  for (const c of ['enable', 'silent', '']) assert.doesNotMatch(shownPanels('ca02_cv_lures', { kit_ca02_cv_choice: c }), /you asked the recruiter/i);
+});
+
+test('ca05: a silent Darren is described as nobody stopping him; no voicemail email or shown number is claimed', () => {
+  const silent = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'silent' });
+  assert.match(silent, /^Darren asked, got no answer and went ahead/m);
+  assert.doesNotMatch(silent, /You said nothing|nobody stopped/);
+  assert.doesNotMatch(silent, /You chose Approve/);
+  const approve = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'approve' });
+  assert.match(approve, /You chose Approve/);
+  for (const c of ['silent', 'approve', 'stop']) {
+    const t = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: c });
+    assert.doesNotMatch(t, /showed the number to match|pull the voicemail email/, `ca05 ${c}`);
+  }
+});
+
+test('wave 5: each silent-keyed debrief entry says the player said nothing and nobody stopped the colleague; wrong and silent are separate entries', () => {
+  for (const [name, w] of Object.entries(W5)) {
+    const cp = readShell(name).social.awarenessEpisode.strings.conceptPanel;
+    const silent = cp.filter((e) => e.condition && new RegExp(`${w.choice} === 'silent'`).test(e.condition));
+    assert.equal(silent.length, 1, `${name}: one silent entry`);
+    assert.doesNotMatch(silent[0].condition, /\|\|/, `${name}: silent shares no entry with the wrong answer`);
+    assert.match(silent[0].text, /^\w+ asked, got no answer and went ahead/, `${name}: says the colleague asked and went ahead`);
+    assert.doesNotMatch(silent[0].text, /You said nothing|nobody stopped/, `${name}: no blame wording`);
+    assert.ok(!cp.some((e) => e !== silent[0] && e.condition && /silent/.test(e.condition)), `${name}: silent keyed once`);
+  }
 });

@@ -312,7 +312,7 @@
             "kind": "page",
             "subject": "A page that took the whole screen",
             "time": "11:02",
-            "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+            "body": "Your computer has been locked. Call support now on 0808 157 0000 to unlock it.",
             "page": {
               "url": "https://secure-alert.example/locked",
               "padlock": true,
@@ -457,7 +457,7 @@
         "conceptPanel": [
           {
             "heading": "Where software comes from",
-            "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
+            "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address typed in by hand, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
           },
           {
             "heading": "Read the address",
@@ -693,7 +693,16 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca10_react"
+            }
+          ]
         }
       ],
       "objects": [

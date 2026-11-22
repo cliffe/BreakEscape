@@ -1,0 +1,13 @@
+{
+  "key": "1ec2e072a6fb2d6ec83b6b551cc8b9d8",
+  "npc": "nilesh_solanki",
+  "text": "That posted stick came to us unplugged, so nothing on it ran on a work machine. Some of the other shortcuts got past you.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:32:08Z"
+}

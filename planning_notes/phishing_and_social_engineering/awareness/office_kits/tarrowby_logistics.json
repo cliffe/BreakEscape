@@ -53,5 +53,1230 @@
       "needs": { "thirst": { "decayPerMin": 30, "urgentAt": 50, "initial": 55 } },
       "chatterLines": ["Back off the road at last.", "Could murder a cold drink."]
     }
+  },
+  "setPieces": {
+    "ca02_defend_react": {
+      "_note": "D280: the ca02 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca02_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "chidi_okeke": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca02_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca06_defend_react": {
+      "_note": "D280: the ca06 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca06_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "zainab_hussain": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca06_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca09_defend_react": {
+      "_note": "D280: the ca09 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca09_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "chidi_okeke": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca09_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca15_defend_react": {
+      "_note": "D280: the ca15 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca15_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "chidi_okeke": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca15_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca17_defend_react": {
+      "_note": "D280: the ca17 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca17_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "fatima_begum": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca17_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca20_defend_react": {
+      "_note": "D280: the ca20 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca20_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "chidi_okeke": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca20_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca06_notice": {
+      "globals": {
+        "kit_ca06_there": false,
+        "kit_ca06_asked": false,
+        "kit_ca06_done": false,
+        "kit_ca06_notice_choice": ""
+      },
+      "objects": [
+        {
+          "type": "aw_notice_qr_parking",
+          "id": "kit_ca06_notice",
+          "name": "Parking notice",
+          "sprite": "aw_notice_qr_parking1",
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_ca06_out",
+          "position": {
+            "x": 0.4375,
+            "y": 4.2
+          },
+          "observations": "A printed notice about staff parking permits. The code is on a sticker, stuck over whatever was printed there.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca06_notice_choice === 'check'",
+              "value": "A printed notice about staff parking permits, with a sticker over the code. Zainab's ringing Facilities about it."
+            }
+          ]
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca06_t_there",
+          "startOnGlobal": "kit_ca06_out",
+          "delayMs": 8000,
+          "condition": "!globalVars.kit_ca06_there",
+          "setGlobal": {
+            "kit_ca06_there": true
+          }
+        },
+        {
+          "id": "kit_ca06_t_tail",
+          "startOnGlobal": "kit_ca06_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca06_notice_choice === ''",
+          "setGlobal": {
+            "kit_ca06_notice_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca06_t_done",
+          "startOnGlobal": "kit_ca06_out",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca06_done",
+          "setGlobal": {
+            "kit_ca06_done": true
+          }
+        }
+      ],
+      "staff": {
+        "fatima_begum": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "zainab_hussain": {
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 55
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Is that new? I've not seen a parking notice up in here before."
+            },
+            {
+              "eventPattern": "npc_arrived:kit_zainab_hussain",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true && globalVars.kit_ca06_notice_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "This one says my parking permit needs renewing. Is it one of ours?",
+              "targetKnot": "ca06_notice"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_zainab_hussain",
+              "condition": "globalVars.kit_ca06_notice_choice === 'asked' && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value === 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
+    },
+    "ca09_note_on_screen": {
+      "globals": {
+        "kit_ca09_note_up": false,
+        "kit_ca09_note_seen": false,
+        "kit_ca09_asked": false,
+        "kit_ca09_to_host": false,
+        "kit_ca09_at_host": false,
+        "kit_ca09_done": false,
+        "kit_ca09_closed_unseen": false,
+        "kit_ca09_note_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca09_pc",
+          "name": "Chidi's PC",
+          "sprite": "pc1",
+          "workstation": true,
+          "owner": "kit_chidi_okeke",
+          "lockChance": 0,
+          "affordance": {
+            "satisfies": "work",
+            "restores": 60,
+            "useSeconds": 2,
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca09_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Chidi's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca09_note_choice === 'mention'",
+              "value": "Chidi's PC, on the sign-in screen. The note has gone."
+            },
+            {
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
+              "value": "Chidi's PC, on the sign-in screen. A sticky note on the edge of the screen has a word and some numbers on it."
+            },
+            {
+              "condition": "globalVars.kit_ca09_out === true",
+              "value": "Chidi's PC, on the sign-in screen."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca09_note_choice === 'mention'",
+              "value": "pc1_locked"
+            },
+            {
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
+              "value": "pc1_locked_note"
+            },
+            {
+              "condition": "globalVars.kit_ca09_out === true",
+              "value": "pc1_locked"
+            }
+          ],
+          "postitNoteVariants": [
+            {
+              "condition": "globalVars.kit_ca09_note_up === true && globalVars.kit_ca09_note_choice !== 'mention'",
+              "value": "Tarrowby2468",
+              "submitText": "You stop before signing in. It isn't your account, but anyone walking past could use it."
+            }
+          ],
+          "observations": "Chidi's PC."
+        },
+        {
+          "type": "aes_clipboard",
+          "id": "kit_ca09_clipboard",
+          "name": "Clipboard",
+          "sprite": "aes_clipboard1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          }
+        }
+      ],
+      "resources": {
+        "kit_ca09_signin": {
+          "name": "Tarrowby sign-in",
+          "kind": "intranet",
+          "offWhen": "kit_ca09_out"
+        }
+      },
+      "timers": [
+        {
+          "id": "kit_ca09_t_note",
+          "startOnGlobal": "kit_ca09_out",
+          "delayMs": 6000,
+          "condition": "!globalVars.kit_ca09_note_up",
+          "setGlobal": {
+            "kit_ca09_note_up": true
+          }
+        },
+        {
+          "id": "kit_ca09_t_tail",
+          "startOnGlobal": "kit_ca09_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca09_note_choice === ''",
+          "setGlobal": {
+            "kit_ca09_note_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca09_t_unseen",
+          "startOnGlobal": "kit_ca09_closed_unseen",
+          "delayMs": 12000,
+          "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_note_seen !== true",
+          "setGlobal": {
+            "kit_ca09_note_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca09_t_host",
+          "startOnGlobal": "kit_ca09_to_host",
+          "delayMs": 12000,
+          "condition": "!globalVars.kit_ca09_at_host",
+          "setGlobal": {
+            "kit_ca09_at_host": true
+          }
+        },
+        {
+          "id": "kit_ca09_t_done",
+          "startOnGlobal": "kit_ca09_out",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca09_done",
+          "setGlobal": {
+            "kit_ca09_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "object_interacted",
+          "condition": "data.objectName === \"Chidi's PC\" && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_up === true && !globalVars.kit_ca09_done",
+          "onceOnly": true,
+          "setGlobal": {
+            "kit_ca09_note_seen": true
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca09_at_host",
+          "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca09_done",
+          "onceOnly": true,
+          "delayMs": 1000,
+          "bark": "Right, Chidi. A password manager remembers it for you, so nothing goes on the screen."
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca09_at_host",
+          "condition": "value === true && globalVars.kit_ca09_out === true",
+          "onceOnly": true,
+          "delayMs": 5000,
+          "setGlobal": {
+            "kit_ca09_done": true
+          }
+        }
+      ],
+      "staff": {
+        "fatima_begum": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "chidi_okeke": {
+          "needsHome": "kit_ca09_pc",
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 60
+            },
+            "work": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 90
+            }
+          },
+          "workNeeds": [
+            "kit_ca09_signin"
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 10
+                }
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_out",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "That's me booted out. Wants a brand new password, of course."
+            },
+            {
+              "eventPattern": "npc_use_failed:kit_chidi_okeke",
+              "condition": "data.objectId === 'kit_ca09_pc' && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_up": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 250,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && globalVars.kit_ca09_note_choice === ''",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "bark": "Right, sorted. New one's on a sticky note on my screen so I don't forget it. Owt I should flag?",
+              "targetKnot": "ca09_note"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_up",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 3500,
+              "setGlobal": {
+                "kit_ca09_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_choice",
+              "condition": "value === 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_to_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_to_host",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_to_host === true && !globalVars.kit_ca09_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_at_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_note_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca09_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_note_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca09_done",
+              "condition": "value === true && globalVars.kit_ca09_out === true",
+              "onceOnly": true,
+              "needs": {
+                "set": {
+                  "work": 90
+                }
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen !== true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca09_closed_unseen": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ca15_found_stick": {
+      "globals": {
+        "kit_ca15_there": false,
+        "kit_ca15_asked": false,
+        "kit_ca15_stick_taken": false,
+        "kit_ca15_sent": false,
+        "kit_ca15_at_host": false,
+        "kit_ca15_at_tray": false,
+        "kit_ca15_chidi_go": false,
+        "kit_ca15_chidi_there": false,
+        "kit_ca15_chidi_sent": false,
+        "kit_ca15_chidi_at_host": false,
+        "kit_ca15_done": false,
+        "kit_ca15_stick_choice": ""
+      },
+      "objects": [
+        {
+          "type": "usb_storage_swivel",
+          "id": "kit_ca15_stick",
+          "name": "Memory stick",
+          "sprite": "usb_storage_swivel",
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_ca15_out",
+          "position": {
+            "x": 1.15,
+            "y": 5.4
+          },
+          "observations": "A small memory stick on the floor. No name, no label.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca15_stick_taken === true",
+              "value": "Nothing there now."
+            }
+          ],
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca15_stick_taken === true",
+              "value": "usb_storage_swivel_taken"
+            }
+          ]
+        },
+        {
+          "type": "drop_box",
+          "id": "kit_ca15_lost_property",
+          "name": "Lost property",
+          "sprite": "drop_box1",
+          "takeable": false,
+          "interactable": true,
+          "position": {
+            "x": 8.35,
+            "y": 5.5
+          },
+          "observations": "A box for lost property.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca15_at_tray === true",
+              "value": "Lost property. A memory stick has gone in with the rest, waiting for its owner."
+            }
+          ]
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca15_t_there",
+          "startOnGlobal": "kit_ca15_out",
+          "delayMs": 8000,
+          "condition": "!globalVars.kit_ca15_there",
+          "setGlobal": {
+            "kit_ca15_there": true
+          }
+        },
+        {
+          "id": "kit_ca15_t_tail",
+          "startOnGlobal": "kit_ca15_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca15_stick_choice === ''",
+          "setGlobal": {
+            "kit_ca15_stick_choice": "leave"
+          }
+        },
+        {
+          "id": "kit_ca15_t_walk",
+          "startOnGlobal": "kit_ca15_sent",
+          "delayMs": 15000,
+          "condition": "!globalVars.kit_ca15_done",
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        },
+        {
+          "id": "kit_ca15_t_chidi",
+          "startOnGlobal": "kit_ca15_chidi_go",
+          "delayMs": 20000,
+          "condition": "!globalVars.kit_ca15_done",
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        },
+        {
+          "id": "kit_ca15_t_done",
+          "startOnGlobal": "kit_ca15_out",
+          "delayMs": 90000,
+          "condition": "!globalVars.kit_ca15_done",
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_at_host",
+          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
+          "onceOnly": true,
+          "delayMs": 1000,
+          "bark": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything."
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_at_host",
+          "condition": "value === true && globalVars.kit_ca15_out === true",
+          "onceOnly": true,
+          "delayMs": 5000,
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_at_tray",
+          "condition": "value === true && globalVars.kit_ca15_out === true",
+          "onceOnly": true,
+          "delayMs": 3000,
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+          "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+          "onceOnly": true,
+          "delayMs": 3000,
+          "setGlobal": {
+            "kit_ca15_chidi_go": true
+          }
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
+          "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
+          "onceOnly": true,
+          "delayMs": 2000,
+          "bark": "Ta, Chidi. That's sat on the floor all afternoon. Anyone could've pocketed it first."
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
+          "condition": "value === true && globalVars.kit_ca15_out === true",
+          "onceOnly": true,
+          "delayMs": 7500,
+          "setGlobal": {
+            "kit_ca15_done": true
+          }
+        }
+      ],
+      "staff": {
+        "fatima_begum": {
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 65
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Hang on, someone's dropped a memory stick over here."
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && globalVars.kit_ca15_stick_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "bark": "No name on it, nothing. What do you reckon I do with it?",
+              "targetKnot": "ca15_stick"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 4500,
+              "setGlobal": {
+                "kit_ca15_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_fatima_begum",
+              "condition": "globalVars.kit_ca15_stick_choice === 'asked' && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_choice": "leave"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_stick_taken": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'handin' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'lost' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca15_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 8.45,
+                  "y": 6.6
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'handin' && !globalVars.kit_ca15_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_at_host": true
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_fatima_begum",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'lost' && !globalVars.kit_ca15_at_tray",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_at_tray": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
+              "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_ca15_stick_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_choice": "leave"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "chidi_okeke": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_out",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_go",
+              "condition": "value === true && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_go === true && !globalVars.kit_ca15_chidi_there && !globalVars.kit_ca15_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_chidi_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_stick_taken": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 500,
+              "bark": "Whose is this, then? I'll take it to Nilesh."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "delayMs": 3000,
+              "setGlobal": {
+                "kit_ca15_chidi_sent": true
+              },
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4,
+                  "y": 4
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "npc_arrived:kit_chidi_okeke",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_sent === true && !globalVars.kit_ca15_chidi_at_host",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca15_chidi_at_host": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca15_done",
+              "condition": "value === true && globalVars.kit_ca15_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        }
+      }
+    },
+    "ca02_enable_editing": {
+      "_note": "ca02 colleague request (WAVE5_BUILD.md s7). Chidi, the fleet coordinator, has opened a CV for the driver job. The page is blank except for a box telling him to enable editing, then content. Word's yellow bar shows on any file from email, so the lure is the document's own text. Wrong or no answer: Fatima, the host, says IT have cut Chidi's machine off (row 8, a host mapping), and the PC shows the isolated look (moved). Right answer (report): done after 4 s. Chidi is frozen on needs and never suspended. Zainab is suspended on out and resumed on done, with no lines and no walk, so she cannot talk over Chidi.",
+      "globals": {
+        "kit_ca02_there": false,
+        "kit_ca02_asked": false,
+        "kit_ca02_moved": false,
+        "kit_ca02_done": false,
+        "kit_ca02_cv_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca02_pc",
+          "name": "Chidi's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_chidi_okeke",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca02_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Chidi's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca02_moved === true",
+              "value": "Chidi's PC. IT have isolated this PC. The post-it with a big X on it says it's not to be used."
+            },
+            {
+              "condition": "globalVars.kit_ca02_cv_choice === 'report'",
+              "value": "Chidi's PC. The CV is closed, nothing enabled, and reported."
+            },
+            {
+              "condition": "globalVars.kit_ca02_out === true",
+              "value": "Chidi's PC. A CV for the driver job, open in Word. The page is blank except for a box: 'This document is protected. Enable editing, then enable content, to view it.'"
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca02_moved === true",
+              "value": "pc1_locked_isolated"
+            },
+            {
+              "condition": "globalVars.kit_ca02_cv_choice === 'report'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca02_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Chidi's PC."
+        },
+        {
+          "type": "aes_clipboard",
+          "id": "kit_ca02_clipboard",
+          "name": "Clipboard",
+          "sprite": "aes_clipboard1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          }
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca02_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca02_there",
+          "setGlobal": {
+            "kit_ca02_there": true
+          }
+        },
+        {
+          "id": "kit_ca02_t_tail",
+          "startOnGlobal": "kit_ca02_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca02_cv_choice === ''",
+          "setGlobal": {
+            "kit_ca02_cv_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca02_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca02_done",
+          "setGlobal": {
+            "kit_ca02_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+          "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca02_done",
+          "onceOnly": true,
+          "delayMs": 8000,
+          "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
+        }
+      ],
+      "staff": {
+        "zainab_hussain": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_done",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "chidi_okeke": {
+          "position": {
+            "x": 3.0,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca02_pc",
+          "needs": {
+            "thirst": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 60
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca02_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Got a CV in for the driver job."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_there",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Blank page, just a box saying enable editing and content. Do I click?",
+              "targetKnot": "ca02_cv"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_there",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca02_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_chidi_okeke",
+              "condition": "globalVars.kit_ca02_cv_choice === 'asked' && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca02_cv_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca02_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
+              "condition": "value === 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca02_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_moved",
+              "condition": "value === true && globalVars.kit_ca02_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca02_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_done",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_ca02_cv_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca02_cv_choice": "silent"
+              }
+            }
+          ]
+        }
+      }
+    }
   }
 }

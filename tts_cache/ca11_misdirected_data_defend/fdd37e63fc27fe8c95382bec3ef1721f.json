@@ -1,0 +1,14 @@
+{
+  "key": "fdd37e63fc27fe8c95382bec3ef1721f",
+  "npc": "kit_yusuf_demir",
+  "text": "Well spotted. Once it's in the wrong inbox you can't call it back, but a fast report keeps it small.",
+  "delivery": "steady, approving",
+  "voice": "Alnilam",
+  "style": "Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca11_misdirected_data_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:45:09Z"
+}

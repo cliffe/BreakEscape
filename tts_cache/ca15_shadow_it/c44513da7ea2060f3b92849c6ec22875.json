@@ -1,0 +1,13 @@
+{
+  "key": "c44513da7ea2060f3b92849c6ec22875",
+  "npc": "kit_fatima_begum",
+  "text": "Hang on, someone's dropped a memory stick over here.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:23:29Z"
+}

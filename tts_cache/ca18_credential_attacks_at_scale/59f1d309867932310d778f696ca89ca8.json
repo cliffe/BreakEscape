@@ -1,0 +1,14 @@
+{
+  "key": "59f1d309867932310d778f696ca89ca8",
+  "npc": "kit_lorna_easton",
+  "text": "Fenlow have made me reset my password after this morning.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca18_credential_attacks_at_scale",
+  "source": "retake D278",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T00:17:39Z",
+  "pronunciation_note": "Fenlow is one word, a company name, said FEN-loh (rhymes with 'Ben-oh'), never 'Fenn and Love'. Say it smoothly as a single word."
+}

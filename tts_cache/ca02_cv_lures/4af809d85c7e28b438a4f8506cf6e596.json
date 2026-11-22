@@ -1,0 +1,13 @@
+{
+  "key": "4af809d85c7e28b438a4f8506cf6e596",
+  "npc": "kit_chidi_okeke",
+  "text": "Right. Reported it, and I'll give Fatima a shout.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:38:48Z"
+}

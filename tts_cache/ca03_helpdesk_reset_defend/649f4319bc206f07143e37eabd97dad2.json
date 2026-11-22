@@ -1,0 +1,13 @@
+{
+  "key": "649f4319bc206f07143e37eabd97dad2",
+  "npc": "darren_price",
+  "text": "A prompt you didn't start means someone has your password. Deny it and report it, whatever the hour.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:09Z"
+}

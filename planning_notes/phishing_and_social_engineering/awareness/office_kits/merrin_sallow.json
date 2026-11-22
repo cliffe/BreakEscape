@@ -144,6 +144,54 @@
     }
   },
   "setPieces": {
+    "ca04_defend_react": {
+      "_note": "D280: the ca04 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca04_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "julian_sallow": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca04_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca14_defend_react": {
+      "_note": "D280: the ca14 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca14_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "delphine_arvanitis": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca14_react"
+            }
+          ]
+        }
+      }
+    },
+    "ca18_defend_react": {
+      "_note": "D280: the ca18 defend twin's after-sort colleague beat (pattern of ca05_defend_react). The speaker says one line aloud when the defend set finishes (kit_defend_done -> true); delayMs lets the delayed-mapping runner wait for the kiosk to close. targetKnot (no literal bark) makes the engine speak ca18_react's first line via TTS; the knot branches on kit_key_caught and is true on every path. The twin has no host bark, so nothing overlaps. Twin only; the full shell is untouched.",
+      "staff": {
+        "delphine_arvanitis": {
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "targetKnot": "ca18_react"
+            }
+          ]
+        }
+      }
+    },
     "ca12_visitor": {
       "globals": {
         "kit_ca12_screen_choice": "",
@@ -732,6 +780,550 @@
               "initial": 100
             }
           }
+        }
+      }
+    },
+    "ca14_team_photo": {
+      "_note": "ca14 colleague request (WAVE5_BUILD.md s5). Lorna has a team photo for the studio page with the Harbour job's project board in shot. Wrong or no answer: Delphine says the new Catherine Merrin account has liked the photo and asked to connect (row 8), and the PC shows the photo live (moved). Right answer (crop): done after 4 s. The learner has to look at the PC or the board first (seen gate, host mappings): the crop option and the unseen-close timer depend on it. Lorna is frozen on needs and never suspended; Delphine is suspended and walked to her post (7.0, 4.5). No mapping reads her arrival. The board has no position and claims the art canvas's spot.",
+      "globals": {
+        "kit_ca14_there": false,
+        "kit_ca14_asked": false,
+        "kit_ca14_seen": false,
+        "kit_ca14_closed_unseen": false,
+        "kit_ca14_moved": false,
+        "kit_ca14_done": false,
+        "kit_ca14_photo_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca14_pc",
+          "name": "Lorna's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_lorna_easton",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca14_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Lorna's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca14_moved === true",
+              "value": "Lorna's PC. The team photo is live on the studio page, the project board readable behind them."
+            },
+            {
+              "condition": "globalVars.kit_ca14_photo_choice === 'crop'",
+              "value": "Lorna's PC. The team photo, cropped to the four of them."
+            },
+            {
+              "condition": "globalVars.kit_ca14_out === true",
+              "value": "Lorna's PC. A team photo ready for the studio page: Lorna, Delphine and two colleagues at their desks, the project board in shot behind them."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca14_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca14_photo_choice === 'crop'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca14_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Lorna's PC."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca14_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "hce_art_canvas",
+          "id": "kit_ca14_board",
+          "name": "Project board",
+          "sprite": "m10_map_board1",
+          "takeable": false,
+          "interactable": true,
+          "observations": "The Harbour job's site plan, with the client's name and the handover date pinned beside it."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca14_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca14_there",
+          "setGlobal": {
+            "kit_ca14_there": true
+          }
+        },
+        {
+          "id": "kit_ca14_t_tail",
+          "startOnGlobal": "kit_ca14_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca14_photo_choice === ''",
+          "setGlobal": {
+            "kit_ca14_photo_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca14_t_unseen",
+          "startOnGlobal": "kit_ca14_closed_unseen",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_seen !== true",
+          "setGlobal": {
+            "kit_ca14_photo_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca14_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca14_done",
+          "setGlobal": {
+            "kit_ca14_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "object_interacted",
+          "condition": "data.objectName === \"Lorna's PC\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+          "onceOnly": true,
+          "setGlobal": {
+            "kit_ca14_seen": true
+          }
+        },
+        {
+          "eventPattern": "object_interacted",
+          "condition": "data.objectName === \"Project board\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+          "onceOnly": true,
+          "setGlobal": {
+            "kit_ca14_seen": true
+          }
+        }
+      ],
+      "staff": {
+        "delphine_arvanitis": {
+          "position": {
+            "x": 7.0,
+            "y": 4.5
+          },
+          "needsHome": {
+            "room": "training_room",
+            "x": 7.0,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.0,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "lorna_easton": {
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca14_pc",
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca14_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Got a lovely one of the team for the studio page."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_there",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && globalVars.kit_ca14_photo_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It's all of us at our desks. Fine to post?",
+              "targetKnot": "ca14_photo"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_there",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca14_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_photo_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca14_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value === 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca14_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_moved",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca14_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_photo_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen !== true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_closed_unseen": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ca18_reset_password": {
+      "_note": "ca18 colleague request (WAVE6_BUILD.md s6, D259 wording). Lorna has reset her password after the morning's spray and typed her old one with the season moved on. The room teaches NCSC-style advice: do not just tweak the old password, make a new one (three random words). Wrong or no answer: Ama (host, row 8) says this morning's attackers have already guessed the new password and to turn down sign-in prompts nobody started, and the PC shows Fenlow's lock notice (moved). Right answer (words): done after 4 s. Lorna is frozen on needs and never suspended; Delphine is moved to (4.5, 4.5), suspended and walked there. No mapping reads her arrival.",
+      "globals": {
+        "kit_ca18_there": false,
+        "kit_ca18_asked": false,
+        "kit_ca18_moved": false,
+        "kit_ca18_done": false,
+        "kit_ca18_reset_choice": ""
+      },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_ca18_pc",
+          "name": "Lorna's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_lorna_easton",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca18_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Lorna's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "Lorna's PC. A notice from Fenlow on screen: her account is locked until she sets a new password, not the old one with a season or a number changed, and any sign-in prompts she didn't start are to be turned down and reported."
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "Lorna's PC. She's cleared the 'Choose a new password' page and is typing three random words."
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "Lorna's PC. The Merrin & Sallow 'Choose a new password' page, filled in and waiting for her to press Save."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Lorna's PC."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca18_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        }
+      ],
+      "timers": [
+        {
+          "id": "kit_ca18_t_there",
+          "startOnGlobal": "{out}",
+          "delayMs": 4000,
+          "condition": "!globalVars.kit_ca18_there",
+          "setGlobal": {
+            "kit_ca18_there": true
+          }
+        },
+        {
+          "id": "kit_ca18_t_tail",
+          "startOnGlobal": "kit_ca18_asked",
+          "delayMs": 20000,
+          "condition": "globalVars.kit_ca18_reset_choice === ''",
+          "setGlobal": {
+            "kit_ca18_reset_choice": "silent"
+          }
+        },
+        {
+          "id": "kit_ca18_t_done",
+          "startOnGlobal": "{out}",
+          "delayMs": 60000,
+          "condition": "!globalVars.kit_ca18_done",
+          "setGlobal": {
+            "kit_ca18_done": true
+          }
+        }
+      ],
+      "mappings": [
+        {
+          "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+          "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca18_done",
+          "onceOnly": true,
+          "delayMs": 8000,
+          "bark": "Lorna, this morning's attackers have already guessed your new password. Turn down sign-in prompts you didn't start."
+        }
+      ],
+      "staff": {
+        "delphine_arvanitis": {
+          "position": {
+            "x": 4.5,
+            "y": 4.5
+          },
+          "needsHome": {
+            "room": "training_room",
+            "x": 4.5,
+            "y": 4.5,
+            "facing": "south"
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.{out} === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4.5,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
+        },
+        "lorna_easton": {
+          "position": {
+            "x": 3.9,
+            "y": 6.0
+          },
+          "needsHome": "kit_ca18_pc",
+          "needs": {
+            "rest": {
+              "decayPerMin": 0.01,
+              "urgentAt": 50,
+              "initial": 70
+            }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca18_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:{out}",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Fenlow have made me reset my password after this morning."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && globalVars.kit_ca18_reset_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+              "targetKnot": "ca18_reset"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca18_asked": true
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca18_reset_choice === 'asked' && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca18_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value === 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_moved",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            }
+          ]
         }
       }
     }

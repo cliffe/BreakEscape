@@ -413,7 +413,7 @@ require 'base64'
       "tasks": [
         {
           "taskId": "talk_to_priya_s",
-          "title": "Go through the debrief with Priya S. (NCSC)",
+          "title": "Go through the debrief with Priya S. (NCSC) in the control room",
           "type": "npc_conversation",
           "targetNPC": "priya_s",
           "status": "active"
@@ -536,7 +536,8 @@ require 'base64'
           { "text": "Dial or screen: you read the dial but never said which you believed", "style": "entry", "condition": "globalVars.anomaly_detected && globalVars.gauge_verdict === '' && !globalVars.esd_before_dial" },
           { "text": "Gas alarm before the dial was read: the hall was rightly left alone", "style": "entry", "condition": "!globalVars.anomaly_detected && !globalVars.esd_before_dial && globalVars.hydrogen_alarm && !globalVars.entered_hall_in_gas_alarm" },
           { "text": "Shutdown argued on the hazard, before the cause was known", "style": "entry", "condition": "globalVars.shutdown_argument === 'hazard'" },
-          { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence'" },
+          { "text": "Shutdown held back for evidence first", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence' && !(globalVars.esd_activated && !globalVars.hydrogen_alarm)" },
+          { "text": "Logs asked for first; the ESD still went in before the gas", "style": "entry", "condition": "globalVars.shutdown_argument === 'evidence' && globalVars.esd_activated && !globalVars.hydrogen_alarm" },
           { "text": "ESD pressed before anyone had read the dial: a precaution that happened to be right", "style": "entry", "condition": "globalVars.esd_before_dial && globalVars.early_esd_activation && !globalVars.hydrogen_alarm" },
           { "text": "ESD pressed on the dial reading, before the historian was checked", "style": "entry", "condition": "globalVars.early_esd_activation && !globalVars.esd_before_dial && !globalVars.hydrogen_alarm" },
           { "text": "ESD pressed before the hydrogen alarm: Racks A1 to A4 off charge and cooling", "style": "entry", "condition": "globalVars.esd_activated && !globalVars.hydrogen_alarm" },
@@ -2063,7 +2064,8 @@ require 'base64'
             },
             "flagActionLabel": "FLAG SESSION",
             "flagConfirmTitle": "CONFIRM SESSION FLAG",
-            "flagConfirmBody": "c.ellison left in January 2025. Active session since 01:47 from ALB-SRV-02, an enterprise print server. A dormant contractor account, live inside the SCADA network.",
+            "flagConfirmBody": "c.ellison left in January 2025. A session under that account began at 01:47 from ALB-SRV-02, an enterprise print server. A dormant contractor account, used inside the SCADA network.",
+            "flagConfirmBodyClosed": "c.ellison left in January 2025. This session came in from ALB-SRV-02, an enterprise print server, at 01:47 and ran until the cable was pulled. A dormant contractor account was live inside the SCADA network.",
 <%# F4: the SIS engineering protocol keeps no log. The 03:22 time comes from HMI-ENG-02's own
     engineering tool history (tab id kept as sis_audit for the progress action). %>
             "additionalTabs": [
@@ -2176,7 +2178,7 @@ require 'base64'
               "type": "confirm_action",
               "text": "Disconnect cable JS-SCADA-LAN?",
               "confirmLabel": "Disconnect",
-              "cancelLabel": "Leave it",
+              "closeX": true,
               "onConfirm": [
                 { "type": "set_global", "key": "jump_server_isolated", "value": true }
               ]

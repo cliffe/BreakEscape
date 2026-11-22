@@ -1,0 +1,13 @@
+{
+  "key": "af4e1fe10622223f69ce3bd976c033a6",
+  "npc": "nilesh_solanki",
+  "text": "Ta, Chidi. That's sat on the floor all afternoon. Anyone could've pocketed it first.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:54:56Z"
+}

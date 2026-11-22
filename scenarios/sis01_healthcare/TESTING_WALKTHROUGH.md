@@ -116,7 +116,7 @@ No blocking gaps. The scenario can be played end to end.
 - [ ] `ehr-terminal` minigame opens
 - [ ] Screen shows the SYSTEM UNAVAILABLE error, including the line telling staff not to prescribe from memory and to use the paper MAR charts
 - [ ] `ehr_terminal_viewed_offline` -> `true`
-- [ ] Close button works
+- [ ] The window X (and Esc) closes it
 
 ### Collect: MAR Charts (`mar_charts_stack`)
 - [ ] Item added to inventory on pickup
@@ -125,8 +125,8 @@ No blocking gaps. The scenario can be played end to end.
 
 ### Interact: Ward Monitoring Station (`ward_monitoring_station`, `ransomware_display`)
 - [ ] Opening it completes `check_monitoring_station` and sets `monitoring_station_viewed`
-- [ ] The display is read-only: skull and padlock icons, "YOUR FILES HAVE BEEN ENCRYPTED", the Trust name, the encrypted systems, the ransom (16 BITCOIN, £1,200,000), the wallet address, a "DO NOT attempt recovery" line, the support portal, and a live "TIME REMAINING" countdown starting from 62 hours
-- [ ] There are no action buttons. The only control is the Close button; nothing else on the panel is clickable
+- [ ] The display is read-only: skull and padlock icons, "YOUR FILES HAVE BEEN ENCRYPTED", the Trust name, the encrypted systems, the ransom (16 BITCOIN, £1,200,000), the wallet address, a "DO NOT attempt recovery" line, the support portal, and a live "TIME REMAINING" countdown in step with the HUD's ICO timer: 63 hours over 45 minutes of play (about 1 h 24 min per real minute), counted from game start, so it is already below 63 h on first look and survives a reload
+- [ ] There are no action buttons. The only control is the window X (Esc too); nothing else on the panel is clickable
 - [ ] The observation text changes after `network_isolated`, `debrief_started` and `patient_bed4_deceased` (station still unusable)
 
 ### Interact: Bed 4 Monitor (`bed4_monitor`)
@@ -140,10 +140,10 @@ No blocking gaps. The scenario can be played end to end.
 - [ ] **Without the MAR charts read:** the "PAPER MAR CHARTS REQUIRED" screen shows for 3 s and the minigame closes; `paper_charts_collected` must be `true` before dose entry
 - [ ] **With the MAR charts:** Phaser pump UI renders; the prescription panel shows `MORPHINE SULPHATE 2.0 mg/hr` (patient OKAFOR, A.; Ward 7, Bed 2)
 - [ ] **Library still tampered (the pump runs the raised limits, 20-40 mg/hr, until `drug_library_restored`):**
-  - [ ] enter `2` -> conflict modal titled DOSE BELOW LIBRARY MINIMUM, showing the library minimum, your entry, the MAR prescription and the line "The pump and the paper prescription disagree." Two buttons: **KEEP THIS RATE** (then a dash or arrow and PHONE PHARMACY) and **RE-ENTER RATE**
-  - [ ] KEEP THIS RATE with `2` entered: the display reads PHARMACY AGREED, `drug_library_override` and `pump_dose_correct` -> `true`, `pump_programmed_at` records the game clock time, and `pump_dose_check` completes
-  - [ ] RE-ENTER RATE: the modal closes and the entry clears; nothing is set
-  - [ ] entering another value below 20 (for example `1`) also raises the modal; choosing KEEP THIS RATE flashes PHARMACY: NOT PRESCRIBED, closes the modal and sets nothing (pharmacy only agrees to the prescribed rate)
+  - [ ] enter `2` -> conflict modal titled DOSE BELOW LIBRARY MINIMUM, showing the library minimum, your entry, the MAR prescription and the line "The pump and the paper prescription disagree." Two buttons: **KEEP MY ENTRY** and **ENTER A NEW RATE**
+  - [ ] KEEP MY ENTRY with `2` entered: the display reads PHARMACY AGREED, `drug_library_override` and `pump_dose_correct` -> `true`, `pump_programmed_at` records the game clock time, and `pump_dose_check` completes
+  - [ ] ENTER A NEW RATE: the modal closes and the entry clears; nothing is set
+  - [ ] entering another value below 20 (for example `1`) also raises the modal; choosing KEEP MY ENTRY flashes PHARMACY: NOT PRESCRIBED, closes the modal and sets nothing (pharmacy only agrees to the prescribed rate)
   - [ ] entering a value above 40 flashes ABOVE MAX 40 and clears the entry
   - [ ] enter `20` (decimal misread, inside 20-40): accepted silently -> `pump_dose_error` -> `true`; `patient_bed2_state` -> `"sedated"` at once; 90 s later `"critical"`; 180 s after the error `"deceased"` and `patient_bed2_deceased` -> `true`; `state_deceased` knots on Ms Okafor and Mrs Kowalski. Sarah barks "Crash call, Bed 2!" after 1.5 s (with "Amy, now!" if Mr Ahmed is not escalated), Mrs Kowalski barks after 5 s that Ms Okafor stopped breathing, David after 8 s, Helen after 14.4 s
   - [ ] **Raise the alarm in time:** Mrs Kowalski's "I'll get the nurse now" (after her warning bark), or the Sarah hub option about Ms Okafor barely breathing (needs `bed2_seen_unwell`, set at the bedside or by Mrs Kowalski), sets `bed2_alarm_raised`, which cancels both timers (naloxone; she survives). Amy or Sarah walks to Bed 2 and stays
@@ -199,7 +199,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Card appears in inventory
 - [ ] The north door to the IT Security office is an RFID lock (`requires: ravi_rfid_card`) and opens with the card; before the card it stays locked. Ward 7 itself is never locked
 
-> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP THIS RATE, CORRECT, INCORRECT, YES, NO, SEVER ENTERPRISE) rather than the full text.
+> **Button labels.** The game's button labels contain a dash or arrow character that this file does not reproduce. Match on the leading words (for example KEEP MY ENTRY, CORRECT, INCORRECT, YES, SEVER ENTERPRISE) rather than the full text.
 
 > **Ravi aim gate.** The Investigate the Attack aim (`investigate_attack`: `meet_ravi`, `access_siem`, `vpn_anomaly`) stays locked until Assess Ward 7 (`assess_ward`) is complete (`unlockCondition: aimCompleted assess_ward`, scenario.json.erb), so Sarah (`talk_to_sarah`) and the MAR charts (`collect_mar_charts`) must be done first.
 
@@ -231,7 +231,7 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] `vpn_threat_intel_checked` -> `true` (on the IP lookup for the anomalous row)
 - [ ] `vpn_impossible_travel_identified` -> `true` (on the account history for the anomalous row)
 - [ ] Flagging a different row gives a "not this one" message and sets nothing
-- [ ] [FLAG ACCOUNT] on the anomalous row opens "CONFIRM - FLAG VPN ANOMALY" with [CANCEL] and [CONFIRM: FLAG ACTIVE SESSION]. Confirming sets `vpn_anomaly_identified` -> `true` and completes `vpn_anomaly`. The two lookups are optional progress globals; the flag alone completes the task
+- [ ] [FLAG ACCOUNT] on the anomalous row opens "CONFIRM - FLAG VPN ANOMALY" with the X and [CONFIRM: FLAG ACTIVE SESSION]. Confirming sets `vpn_anomaly_identified` -> `true` and completes `vpn_anomaly`. The two lookups are optional progress globals; the flag alone completes the task
 - [ ] Ravi barks about a contractor's stolen login; `ravi_vpn_briefed` -> `true`
 
 ### Return to Ravi: give_itsec_code
@@ -246,8 +246,8 @@ There is no `major_incident` global: the Major Incident was declared at 22:38 on
 - [ ] Three legacy exception rules (WARD 5, WARD 7, FLEET), each an orange dashed line with a ! marker and a label. WARD 5 and FLEET are straight lines from the enterprise zone to the clinical zone; WARD 7 is the curved arc from the enterprise zone to the legacy segment, drawn under a "NO SEGMENTATION" caption that is plain text, not a control
 - [ ] The consequence panel opens with a "3 legacy exception rules" intro that disappears when the first rule is opened, so the layout shifts by a few pixels on the first click. Click the line, the ! marker or the label (all three work); a second click closes that rule again
 - [ ] First rule opened: `network_rules_reviewed` -> `true`; SEVER unlocks; the hint changes to the "Risk paths reviewed" text naming both signed forms
-- [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and **NO** (then a dash and CANCEL)
-- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and stays open on the severed state: SEVER gives way to CONTINUE; CONTINUE, the X or Esc close it (complete(true)). The radio chatter (Ravi, Helen, Sarah, David) plays after it closes. Without both forms only `network_isolated` is set (see Phase 3)
+- [ ] SEVER button text: "SEVER ENTERPRISE" then an arrow, then "CLINICAL LINK". Pressing it opens CONFIRM NETWORK ISOLATION, listing the clinical consequences and the DUAL AUTHORISATION STATUS: a tick or a "not received" line for each of IT Security (Ravi Anand) and Clinical Engineering (David Osei), and a warning citing CLAIM-HC-007 if either is missing. Buttons: **YES** (then a dash and SEVER LINK) and the dialog's X (Esc too)
+- [ ] Confirming with both forms: `network_isolation_authorised` -> `true` and `network_isolated` -> `true`; the map shows LINK SEVERED and stays open on the severed state: SEVER is hidden and the hint says to close with the X; the X or Esc closes it (complete(true)). The radio chatter (Ravi, Helen, Sarah, David) plays after it closes. Without both forms only `network_isolated` is set (see Phase 3)
 
 ---
 
@@ -424,7 +424,7 @@ After a complete test run, verify all expected global variables:
 | `debrief_complete` | Priya S. ink `debrief_end` knot | `true` |
 | `pump_dose_correct` | infusion_pump minigame | `true` (correct path) |
 | `pump_dose_error` | infusion_pump minigame | `true` (wrong dose accepted) |
-| `drug_library_override` | infusion_pump minigame, KEEP THIS RATE - PHONE PHARMACY | `true` (hold path) |
+| `drug_library_override` | infusion_pump minigame, KEEP MY ENTRY | `true` (hold path) |
 | `pump_programmed_at` | infusion_pump minigame | game clock time when the rate went in |
 | `patient_bed2_state` | pump_dose_error eventMapping and timers | `"sedated"`, then `"critical"` at 90 s, `"deceased"` at 180 s if the alarm is not raised and the library is not restored |
 | `bed2_alarm_raised` | Mrs Kowalski ink or Sarah ink | `true` (cancels both Bed 2 timers) |

@@ -224,7 +224,9 @@ function sprayPanel(config, roster, words) {
         const id = isStr(pass.id) ? pass.id : `pass_${i + 1}`;
         const candidate = isStr(pass.literal) ? pass.literal : (isStr(pass.fromSlot) ? words.get(pass.fromSlot) : null);
         if (!isStr(candidate) || !roster.accounts) {
-            rows.push({ id, text: textFor(config, 'sprayMissing'), outcome: 'missing' });
+            // With no address list the pass was never tried, whatever the word: it reads "not run",
+            // not "not found" (a word the learner did not collect still reads "not found").
+            rows.push({ id, text: textFor(config, 'sprayMissing'), outcome: roster.accounts ? 'missing' : 'blocked' });
             return;
         }
         ran += 1;
@@ -335,5 +337,10 @@ export class GuesserRun {
     /** Some revealed row opened an account. */
     get landed() {
         return this.rows.slice(0, this.index).some((r) => r.outcome === 'opens');
+    }
+
+    /** A revealed spray row opened accounts: the spray ran (it needs the staff list) and landed. */
+    get sprayLanded() {
+        return this.rows.slice(0, this.index).some((r) => r.panelId === 'spray' && r.outcome === 'opens');
     }
 }

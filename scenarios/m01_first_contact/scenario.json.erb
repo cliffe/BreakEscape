@@ -104,17 +104,22 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         "fade": true,
         "_comment": "Final debrief begins — spy-action mood while Agent HaX debrief plays"
       },
+<%# One credits list, two endings: the STATUS row reads per ending (gate m01 item 1). The first
+    entry whose condition holds also drives the credits on reload of a concluded game. %>
+<% [["!globalVars.player_launched_attack", "SHATTER NEUTRALISED"], ["globalVars.player_launched_attack", "SHATTER EXECUTED"]].each_with_index do |(ending_cond, ending_status), ending_i| %>
       {
         "trigger": "conversation_closed:closing_debrief_person",
+        "condition": "<%= ending_cond %>",
         "playlist": "victory",
         "track": "Ghost in the Wire",
         "autoStop": true,
         "disableClose": true,
         "fade": true,
+        "statusText": "<%= ending_status %>",
         "_comment": "Debrief ends — play one specific victory track with mission credits scroll",
         "credits": [
           { "text": "MISSION COMPLETE",                          "style": "title",    "condition": "!globalVars.player_launched_attack" },
-          { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack" },
+          { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack", "outcome": "active" },
           { "text": "FIRST CONTACT",                             "style": "subtitle" },
           { "text": "" },
           { "text": "OPERATION SHATTER: NEUTRALISED",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
@@ -146,7 +151,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           { "text": "" },
           { "text": "The Architect remains at large...",         "style": "warning" }
         ]
-      }
+      }<%= ending_i.zero? ? "," : "" %>
+<% end %>
     ]
   },
 

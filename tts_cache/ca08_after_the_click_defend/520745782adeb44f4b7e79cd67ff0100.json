@@ -1,0 +1,14 @@
+{
+  "key": "520745782adeb44f4b7e79cd67ff0100",
+  "npc": "kit_darren_price",
+  "text": "A locked screen with a countdown and a demand to pay is ransomware. Get security on it fast, from another phone, before it spreads further.",
+  "delivery": "dry, matter-of-fact",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca08_after_the_click_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:21Z"
+}

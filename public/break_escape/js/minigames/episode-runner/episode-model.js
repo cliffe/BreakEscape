@@ -31,7 +31,7 @@
 // Stage order (P7-X lints it): osint -> build? -> write (mail or call) -> mfa? -> flip -> defend.
 // `mfa` may also sit straight after `flip`. `build` and `mfa` are attack stages.
 
-import { fieldLabel } from '../landing-page-builder/landing-page-model.js';
+import { fieldLabel, checkHostFor } from '../landing-page-builder/landing-page-model.js';
 
 export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip', 'defend', 'debrief', 'check']);
 export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip']);
@@ -77,6 +77,28 @@ export function stepAwayOn(episode) {
     return at >= 0 && stages.indexOf('debrief') > at;
 }
 
+/** Whether the episode's debrief comes after `stage` in its stage list. */
+export function debriefFollows(episode, stage) {
+    const stages = stagesFor(episode);
+    const at = stages.indexOf(stage);
+    return at >= 0 && stages.indexOf('debrief') > at;
+}
+
+/**
+ * Whether a step-away beat is live: Look up set a shell's `kit_<ep>_out` global and its
+ * `kit_<ep>_done` is not yet true. The shell's mapping on the step-away event sets `_out`, and a
+ * Carry on never does, so with no `_out` this is false. Read from the globals alone, so it holds
+ * after a reload. A shell declares one beat, so any such pair counts.
+ */
+export function stepAwayBeatLive(globals) {
+    if (!isObj(globals)) return false;
+    for (const key of Object.keys(globals)) {
+        const m = /^(kit_.+)_out$/.exec(key);
+        if (m && globals[key] === true && globals[`${m[1]}_done`] !== true) return true;
+    }
+    return false;
+}
+
 /**
  * EC1 (d): whether the success screen waits, read from saved state alone so it holds after a
  * reload: a step-away episode whose defend round is complete and whose debrief is neither
@@ -88,6 +110,9 @@ export function stepAwayOn(episode) {
 export function stepAwayHeld(episode, raw, globals = null) {
     if (!stepAwayOn(episode)) return false;
     const state = readState(episode, raw);
+    // A beat that Look up started and that has not ended keeps the screen held even after the
+    // debrief was reopened and seen or finished, so it cannot cover the room mid-request.
+    if (stepAwayBeatLive(globals)) return true;
     if (state.done.includes('debrief') || state.debriefSeen === true) return false;
     if (state.done.includes('defend')) return true;
     return state.stage === 'defend' && isObj(globals) && globals[`${defendPrefix(episode.id)}complete`] === true;
@@ -488,6 +513,8 @@ export function readState(episode, raw) {
     if (defendProgress) state.defendProgress = defendProgress;
     // EC1 (d): a step-away episode's debrief was closed (any route), so the success screen may open.
     if (src.debriefSeen === true && stepAwayOn(episode)) state.debriefSeen = true;
+    // The step-away prompt (Look up / Carry on) was answered; one boolean, written once.
+    if (src.stepAwayPicked === true && stepAwayOn(episode)) state.stepAwayPicked = true;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -504,11 +531,11 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     // item 8: writing the defend summary means the round finished, so the saved per-verdict
-    // progress is no longer needed and is cleared. EC1 (c): a step-away episode keeps the cleaned
-    // list (verdicts only, no answer key), so the debrief's per-item cards survive a look-up.
+    // progress is no longer needed and is cleared. EC1 (c): an episode with a debrief after defend keeps the
+    // cleaned list (verdicts only, no answer key), so the debrief's per-item cards survive a look-up, a close and a reload.
     if ('defend' in patch) {
         next.defend = cleanDefend(patch.defend);
-        if (!(stageId === 'defend' && stepAwayOn(episode) && next.defendProgress)) delete next.defendProgress;
+        if (!(stageId === 'defend' && debriefFollows(episode, 'defend') && next.defendProgress)) delete next.defendProgress;
     }
     if ('defendProgress' in patch) { const p = cleanAnswerList(patch.defendProgress); if (p) next.defendProgress = p; else delete next.defendProgress; }
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
@@ -739,7 +766,7 @@ export function flipPage(episode, social, globals) {
     // (flip-view passes pageDef + choices to renderLandingPage), and the one tell is fake_check_paste.
     if (def.pageType === 'fakeCheck') {
         const check = isObj(def.check) ? def.check : {};
-        const chost = isStr(check.host) ? check.host : '';
+        const chost = checkHostFor(check, isObj(choices.check) ? choices.check.hostId : null);
         if (!chost) return null;
         return {
             url: /^[a-z]+:\/\//i.test(chost) ? chost : `https://${chost}/`,
@@ -748,6 +775,7 @@ export function flipPage(episode, social, globals) {
             fields: [],
             button: '',
             tells: ['fake_check_paste'],
+            hostId: isObj(choices.check) && isStr(choices.check.hostId) ? choices.check.hostId : null,
             pageDef: isStr(def.id) ? def : null,
             choices: { ...choices }
         };

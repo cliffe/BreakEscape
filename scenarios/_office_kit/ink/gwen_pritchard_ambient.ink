@@ -1,6 +1,7 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca07_moved = false
 
 === start ===
 { kit_defend_done:
@@ -11,6 +12,9 @@ Gwen Pritchard: Hello there. Grab a coffee if you need one.
 -> bye
 
 === ca07 ===
+{ kit_ca07_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Gwen Pritchard: Good catch. Someone wanting it kept quiet is the real warning.
 - else:
@@ -34,3 +38,11 @@ Gwen Pritchard: Hello there. Grab a coffee if you need one.
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca01_react ===
+{ kit_key_caught:
+    Gwen Pritchard: Someone caught that bank change. They swap the details and let our own payment run pay them instead. #delivery: warm, approving
+- else:
+    Gwen Pritchard: A changed bank detail sails through if nobody checks. One call on the number you already hold stops it dead. #delivery: practical, matter-of-fact
+}
+-> bye

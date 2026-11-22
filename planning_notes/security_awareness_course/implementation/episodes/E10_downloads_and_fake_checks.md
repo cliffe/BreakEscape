@@ -18,7 +18,7 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 - Teaching source of truth: `modules/core_08_safe_web_and_downloads/concepts.md` (the whole file: the four tricks, reading the address, browser warnings, downloads, "if you pasted/downloaded/called"); `modules/core_07_malware_ransomware_and_updates/concepts.md` (how it gets in, the signs, "report and leave it", the device instruction); `modules/core_08_.../game_design.md` (the E10 "The Download" design, the decisions and the Practise bank) and `modules/core_08_.../assessment.md` for the scored behaviours and mirror pairs.
 - The nearest built episode, end to end: **E5** `scenarios/ca05_signin_pages/` (same company and room, the page-triage defend set with the `page` card kind, the look-alike-page builder for the attack half) and the fragments `planning_notes/phishing_and_social_engineering/awareness/e5/{attack,defend}.json`. E5 is the model for every `page` card and for the attack half.
 - Shapes and ids: `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` (the shared channel-tell library: `lookalike_domain`, `padlock_myth`, `linkCredible`; the `page` card in a triageSet `truth`) and `designs/07_landing_page_builder.md` (the builder E5 and E10 share) and `designs/11_awareness_product_episodes.md`.
-- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt roster and the E5 `_brandAdditions`: real hosts, look-alikes, Fileharbour, Ashcombe Solicitors, Spamwarden); `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md` (the E10 row: Niamh Doherty plus a Quayholt IT colleague).
+- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt roster and the E5 `_brandAdditions`: real hosts, look-alikes, Sharetide, Ashcombe Solicitors, Spamwarden); `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md` (the E10 row: Niamh Doherty plus a Quayholt IT colleague).
 - Runner: `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `childLaunch`, `flipPage`).
 - Engine packet: `implementation/02_ENGINE_WORK.md`, packet **ENG-03a** (and ENG-08 for new channel tells and any verdict-label change).
 
@@ -48,7 +48,7 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 - The software portal: **Quayholt Apps** (the core_08 Quayholt slot). Security software: **Quayholt Protect** (core_07 slot). Approved converter: **Pagewrangle** (core_08 slot). Report route: the browser Report button, the "Report an incident" form, or the security team on extension 4444 (core_08/core_07 slots).
 - A PDF software vendor: **Pagewright** (`pagewright.co.uk` the real vendor; `pagewright-download.com` the advert look-alike). *Note:* these are `.com`/`.co.uk` in the module docs, but the awareness product rule is every domain ends `.example`. **Use `pagewright.example` and the look-alike `pagewright-download.example`.** Flag the swap.
 - Suppliers: **Fernside Catering** (`fernside.example`), **Paperclip & Sons** (`paperclipandsons.example`, look-alike `paperclip-trade-login.example`). Hacked-site fake check sits on Fernside's real site.
-- Reuse from E5 `_brandAdditions`: the real Quayholt hosts (`sso.`, `servicedesk.`, `intranet.`, `mail.quayholt.example`), the look-alike shapes, and `fileharbour-login.example`.
+- Reuse from E5 `_brandAdditions`: the real Quayholt hosts (`sso.`, `servicedesk.`, `intranet.`, `mail.quayholt.example`), the look-alike shapes, and `sharetide-login.example`.
 - The manager who sets the task (chat only) and the desk neighbour who recommends an extension: the core_08 design used the pool names Lena Fischer and Leo Brennan (03_WORLD_AND_CAST lists both as no-clash pool names). Reuse them only if the orchestrator wants named colleagues in cards; otherwise keep the chat unattributed. Flag.
 
 All people and companies fictional; every domain `.example`; no homographs.
@@ -358,7 +358,7 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   "kind": "page",
   "subject": "A page that took the whole screen",
   "time": "11:02",
-  "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+  "body": "Your computer has been locked. Call support now on 0808 157 0000 to unlock it.",
   "page": {
     "url": "https://secure-alert.example/locked",
     "padlock": true,

@@ -43,6 +43,24 @@ function normalizeStatus(status) {
     return String(status || 'GREEN').toUpperCase();
 }
 
+// The line under the panel's buttons. Only rows that are not GREEN open a detail, so the line
+// never tells the player to select rows when none can be selected (sis02 blind playtest m7)
+// The Confirm button waits for the certification record; this line says so in words (the
+// grey button is not the only cue) without naming where the record is
+export const SIS_CONFIRM_LOCKED_TEXT = 'Certification document needed to confirm tampering';
+
+export function sisHelpText(canCompare, selectableCount) {
+    const nothingToSelect = !(selectableCount > 0);
+    if (canCompare) {
+        return nothingToSelect
+            ? 'No row is flagged. Compare with the certification document to check the values.'
+            : 'Select a highlighted row for its detail, or compare with the certification document.';
+    }
+    return nothingToSelect
+        ? 'No row is flagged. Retrieve the SIS certification document to unlock side-by-side comparison.'
+        : 'Select a highlighted row for its detail. Retrieve the SIS certification document to unlock side-by-side comparison.';
+}
+
 export class SisConfigThresholdMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): title bar and X come from there
     static consoleWindow = true;
@@ -69,6 +87,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.setScenarioGlobal('sis_config_seen', true);
         this.render();
         this.bindEvents();
+        this.subscribeCertificationGate();
     }
 
     render() {
@@ -110,10 +129,11 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             </table>
             <div class="sis-actions">
                 <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${escapeHtml(displayDashes(this.compareTitle))}</button>
-                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${escapeHtml(displayDashes(this.confirmLabel))}</button>
+                <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn" ${canCompare ? '' : 'disabled aria-describedby="sis-confirm-reason"'}>${escapeHtml(displayDashes(this.confirmLabel))}</button>
             </div>
+            <div class="sis-confirm-reason" id="sis-confirm-reason" role="status">${canCompare ? '' : escapeHtml(SIS_CONFIRM_LOCKED_TEXT)}</div>
             <div class="sis-help" id="sis-help-text">
-                ${canCompare ? 'Select highlighted rows to inspect deviations.' : 'Retrieve the SIS certification document to unlock side-by-side comparison.'}
+                ${escapeHtml(sisHelpText(canCompare, this.rows.filter((r) => normalizeStatus(r.status) !== 'GREEN').length))}
             </div>
             </div>
         `;
@@ -127,6 +147,40 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.overlayEl.id = 'sis-detail-overlay';
         this.container.appendChild(this.overlayEl);
         this.helpTextEl = container.querySelector('#sis-help-text');
+    }
+
+    // Enable Compare and Confirm once the certification record has been seen. The server
+    // still decides whether the tamper report counts.
+    refreshCertificationGate() {
+        const seen = this.hasCertificationDoc();
+        const compareBtn = this.gameContainer?.querySelector?.('#sis-compare-btn');
+        const confirmBtn = this.gameContainer?.querySelector?.('#sis-confirm-btn');
+        const reason = this.gameContainer?.querySelector?.('#sis-confirm-reason');
+        if (compareBtn) compareBtn.disabled = !seen;
+        if (confirmBtn) {
+            confirmBtn.disabled = !seen;
+            if (seen) confirmBtn.removeAttribute('aria-describedby');
+            else confirmBtn.setAttribute('aria-describedby', 'sis-confirm-reason');
+        }
+        if (reason) reason.textContent = seen ? '' : SIS_CONFIRM_LOCKED_TEXT;
+        if (this.helpTextEl) {
+            this.helpTextEl.textContent = sisHelpText(seen, this.rows.filter((r) => normalizeStatus(r.status) !== 'GREEN').length);
+        }
+    }
+
+    subscribeCertificationGate() {
+        if (!window.eventDispatcher?.on) return;
+        this._certHandler = () => this.refreshCertificationGate();
+        this._certEvent = 'global_variable_changed:sis_certification_seen';
+        window.eventDispatcher.on(this._certEvent, this._certHandler);
+    }
+
+    cleanup() {
+        if (this._certHandler && window.eventDispatcher?.off) {
+            window.eventDispatcher.off(this._certEvent, this._certHandler);
+        }
+        this._certHandler = null;
+        super.cleanup();
     }
 
     bindEvents() {
@@ -150,6 +204,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         if (compareBtn) {
             this.addEventListener(compareBtn, 'click', () => {
                 if (!this.hasCertificationDoc()) return;
+                this._detailOpener = compareBtn;   // focus comes back here when the dialog closes
                 this.showCompare();
             });
         }
@@ -157,6 +212,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         const confirmBtn = this.gameContainer.querySelector('#sis-confirm-btn');
         if (confirmBtn) {
             this.addEventListener(confirmBtn, 'click', () => {
+                if (!this.hasCertificationDoc()) return;
+                this._detailOpener = confirmBtn;   // focus comes back here when the dialog closes
                 this.showConfirm();
             });
         }
@@ -188,6 +245,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-detail-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
@@ -226,31 +284,36 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
         const closeBtn = this.overlayEl.querySelector('#sis-compare-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
+        // Focus the X (the way out), so Tab does not walk the panel underneath
+        closeBtn.focus({ preventScroll: true });
     }
 
     showConfirm() {
         if (!this.overlayEl) return;
 
         this.overlayEl.innerHTML = `
-            <div class="sis-modal">
+            <div class="sis-modal sis-modal-with-x">
+                <button type="button" class="minigame-close-button sis-modal-close" id="sis-confirm-close" aria-label="Close">&times;</button>
                 <h4>Confirm SIS Tamper Report</h4>
                 <p>Report detected SIS setpoint deviations to security operations?</p>
                 <div class="sis-modal-actions">
-                    <button class="sis-btn" id="sis-confirm-no">Cancel</button>
-                    <button class="sis-btn sis-btn-confirm" id="sis-confirm-yes">Confirm</button>
+                    <button class="sis-btn sis-btn-confirm" id="sis-confirm-yes">Confirm Tamper Report</button>
                 </div>
             </div>
         `;
         this.overlayEl.classList.add('show');
         this._hideSceneX(true);
+        this._lockPanel(true);
 
-        const noBtn = this.overlayEl.querySelector('#sis-confirm-no');
+        const closeBtn = this.overlayEl.querySelector('#sis-confirm-close');
         const yesBtn = this.overlayEl.querySelector('#sis-confirm-yes');
-        this.addEventListener(noBtn, 'click', () => this.closeOverlay());
+        this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
         this.addEventListener(yesBtn, 'click', () => this.applyConfirm());
+        closeBtn.focus({ preventScroll: true });
     }
 
     applyConfirm() {
@@ -262,6 +325,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             source: 'sis-config-threshold'
         };
 
+        this._detailOpener = null;   // the scene ends; nothing to hand focus back to
         this.closeOverlay();
         this.showSuccess('SIS tamper reported. Priya has been notified.', true, 900);
     }
@@ -278,14 +342,23 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.overlayEl.classList.remove('show');
         this.overlayEl.innerHTML = '';
         this._hideSceneX(false);
+        this._lockPanel(false);
         // Hand focus back to the row that opened the detail
         const opener = this._detailOpener;
         this._detailOpener = null;
         if (opener && opener.isConnected) opener.focus({ preventScroll: true });
     }
 
-    // One X on screen at a time: the pop-ups carry their own X and the confirm has two named
-    // buttons and no X (user rule), so the scene X hides while the overlay is open
+    // The panel's buttons and rows are out of reach (not focusable, not clickable) while a
+    // dialog is open; the overlay is opaque, so they are not drawn through it either
+    _lockPanel(locked) {
+        const main = this.gameContainer?.querySelector?.('.sis-threshold-main');
+        if (!main) return;
+        if (locked) main.setAttribute('inert', ''); else main.removeAttribute('inert');
+    }
+
+    // One X on screen at a time: every pop-up carries its own X (the confirm adds its one
+    // named button), so the scene X hides while the overlay is open
     _hideSceneX(hidden) {
         const x = this.container?.querySelector?.('#minigame-close');
         if (x) x.style.visibility = hidden ? 'hidden' : '';

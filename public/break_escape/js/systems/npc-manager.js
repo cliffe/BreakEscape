@@ -963,6 +963,11 @@ export default class NPCManager {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
+      // An ask the player could not see or hear waits (no conversation open, the colleague on camera or in the room)
+      if (config.whenPerceivable && window.askCue && !window.askCue.perceivable(npcId)) {
+        pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
+        return;
+      }
       pending.delete(check.eventKey);
       this._handleEventMapping(npcId, eventPattern, config, eventData);
     };
@@ -1496,6 +1501,11 @@ export default class NPCManager {
         cooldown: mapping.cooldown,
         condition: mapping.condition,
         delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
+        whenPerceivable: mapping.whenPerceivable === true,   // with delayMs: also wait until the player could notice it (ask-cue.js)
+        askCue: mapping.askCue === true,                     // show the colleague-is-asking cue (marker and toast) when it fires
+        askCueMs: Number(mapping.askCueMs) > 0 ? Number(mapping.askCueMs) : 0,   // how long the marker stays: the reply window (0: the default)
+        askCueQuiet: mapping.askCueQuiet === true,           // marker only, no toast (a reload restoring an ask already announced)
+        askCueUntil: typeof mapping.askCueUntil === 'string' ? mapping.askCueUntil : null,  // the marker goes when this global leaves ''
         barkDelay: Number(mapping.barkDelay) > 0 ? Number(mapping.barkDelay) : 0,  // ms: the bark alone waits this long (_delayBark)
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
@@ -1816,6 +1826,7 @@ export default class NPCManager {
       // changed sends nothing.
       if (globalChanged) window.stateSync?.requestSoon?.();
     }
+    if (config.askCue) { try { window.askCue?.fire(npcId, { ms: config.askCueMs || undefined, until: config.askCueUntil || undefined, quiet: config.askCueQuiet }); } catch (e) { console.debug('[npc] ask cue failed', e); } }
 
     // A reconciliation re-announce (eventData._reconcile, from
     // ObjectivesManager#reconcileCompletedFlagTasks on game_loaded) only needs
@@ -2458,6 +2469,12 @@ export default class NPCManager {
         this.inkEngineCache.set(npcId, inkEngine);
       }
       
+      // A knot bark has no conversation to sync the scenario globals first, so a knot that
+      // branches on one (ca05_react on kit_key_caught) would read the ink default.
+      // Same helper as a conversation start: only scenario-declared globals, so an
+      // ink-local VAR that shares a name with a gameState key keeps its own value.
+      window.npcConversationStateManager?.syncGlobalVariablesToStory(inkEngine.story);
+
       // Navigate to the knot
       inkEngine.goToKnot(knotName);
       
@@ -2492,6 +2509,8 @@ export default class NPCManager {
           npcId: npc.id,
           npcName: npc.displayName,
           message: result.text,
+          // The line's ink tags: npc-barks reads its #delivery: note for the clip's key
+          tags: result.tags || null,
           avatar: npc.avatar,
           inkStoryPath: npc.storyPath,
           startKnot: knotName,

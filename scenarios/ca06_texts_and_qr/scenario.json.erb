@@ -83,6 +83,11 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca06",
+    "kit_ca06_out": false,
+    "kit_ca06_there": false,
+    "kit_ca06_asked": false,
+    "kit_ca06_done": false,
+    "kit_ca06_notice_choice": "",
     "kit_ca06_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +103,44 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca06_t_there",
+      "startOnGlobal": "kit_ca06_out",
+      "delayMs": 8000,
+      "condition": "!globalVars.kit_ca06_there",
+      "setGlobal": {
+        "kit_ca06_there": true
+      }
+    },
+    {
+      "id": "kit_ca06_t_tail",
+      "startOnGlobal": "kit_ca06_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca06_notice_choice === ''",
+      "setGlobal": {
+        "kit_ca06_notice_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca06_t_done",
+      "startOnGlobal": "kit_ca06_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca06_done",
+      "setGlobal": {
+        "kit_ca06_done": true
+      }
+    },
+    {
+      "id": "kit_ca06_t_done_out",
+      "startOnGlobal": "kit_ca06_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca06_done && globalVars.kit_ca06_asked !== true",
+      "setGlobal": {
+        "kit_ca06_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -349,6 +392,7 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. First you're on the red team: look at what's public about Tarrowby, then write one email to depot staff, as Facilities, asking them to scan a code. Then you swap seats and go through what's waiting on a Tarrowby work phone. Only the phone is scored.",
         "flipHeading": "Now it lands on you",
         "flipIntro": "This is the message you just wrote, as Kaylee would see it on her phone. The parts picked out below are what make it believable.",
@@ -366,15 +410,28 @@
         "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. A message from a new number saying 'it's me' is a warning sign, not proof: reach the person on the number you already hold. Open the app or site the way you normally would, or ring the sender on a number you already have, then report the message using the route in the box below. At home, forward a scam text to 7726 for free, call 159 for a call that says it's your bank, and report fraud to Report Fraud.",
         "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "defendIntro": "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
-        "conceptPanel": {
-          "heading": "When a code is trusted",
-          "text": "To a real attacker, one scan from a staff phone is a card number to drain or a work sign-in to wear into the depot, and either one is spent within the hour. A charged card funds the next move; a stolen sign-in opens the way to staff and customer records, and a follow-up message keeps the thread warm for the next ask. Reaching Facilities the way you always do, instead of through a code or a short link, is where that chain breaks: the notice on the wall never gets to decide where you go.\n\nWhen a barrier code is trusted on sight, it can take a colleague's own card details or a work sign-in, and either one turns into an afternoon chasing the bank and a forced reset at work. A code or a short link is never the route you trust. Before you leave, have a word with Chidi."
-        }
+        "conceptPanel": [
+          {
+            "heading": "When a code is trusted",
+            "text": "To a real attacker, one scan from a staff phone is a card number to drain or a work sign-in to wear into the depot, and either one is spent within the hour. A charged card funds the next move; a stolen sign-in opens the way to staff and customer records, and a follow-up message keeps the thread warm for the next ask. Reaching Facilities the way you always do, instead of through a code or a short link, is where that chain breaks: the notice on the wall never gets to decide where you go.\n\nWhen a barrier code is trusted on sight, it can take a colleague's own card details or a work sign-in, and either one turns into an afternoon chasing the bank and a forced reset at work. A code or a short link is never the route you trust."
+          },
+          {
+            "heading": "Checking with Facilities",
+            "text": "Zainab rang Facilities on the number she already had. There was no new permit scheme. The sticker came down, and Facilities warned the depot.",
+            "condition": "globalVars.kit_ca06_notice_choice === 'check'"
+          },
+          {
+            "heading": "Where the code led",
+            "text": "The code led to a lookalike parking page. Within the hour a card payment had gone through for a 'renewal', and a text from a new number was already asking for a code to 'link the permit'. That code was the way in to the work account.",
+            "condition": "globalVars.kit_ca06_notice_choice === 'fine' || globalVars.kit_ca06_notice_choice === 'silent'"
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -855,6 +912,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e6_texts_and_qr_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_out": true
+              }
             }
           ]
         },
@@ -905,7 +978,21 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_zainab_hussain",
@@ -939,7 +1026,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 55
             }
@@ -954,7 +1041,138 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 1.5,
+                  "y": 5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_out",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Is that new? I've not seen a parking notice up in here before."
+            },
+            {
+              "eventPattern": "npc_arrived:kit_zainab_hussain",
+              "condition": "data.owner !== 'needs' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_there",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === '' && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "This one says my parking permit needs renewing. Is it one of ours?",
+              "targetKnot": "ca06_notice",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_there",
+              "condition": "value === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === ''",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_zainab_hussain",
+              "condition": "globalVars.kit_ca06_notice_choice === 'asked' && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value === 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "setGlobal": {
+                "kit_ca06_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca06_notice_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca06_done",
+              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked !== true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "This one says my parking permit needs renewing. Is it one of ours?",
+              "targetKnot": "ca06_notice",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked !== true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         }
       ],
       "objects": [
@@ -969,7 +1187,7 @@
           "observations": "A touch-screen training kiosk for the Tarrowby Logistics exercise: first the red-team brief and research, then the work phone.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e6_texts_and_qr_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Tarrowby Logistics exercise. That's this one finished."
             }
           ],
@@ -996,6 +1214,26 @@
             "capacity": 2,
             "chatter": "kit_tarrowby"
           }
+        },
+        {
+          "type": "aw_notice_qr_parking",
+          "id": "kit_ca06_notice",
+          "name": "Parking notice",
+          "sprite": "aw_notice_qr_parking1",
+          "takeable": false,
+          "interactable": true,
+          "revealOnGlobal": "kit_ca06_out",
+          "position": {
+            "x": 0.4375,
+            "y": 4.2
+          },
+          "observations": "A printed notice about staff parking permits. The code is on a sticker, stuck over whatever was printed there.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.kit_ca06_notice_choice === 'check'",
+              "value": "A printed notice about staff parking permits, with a sticker over the code. Zainab's ringing Facilities about it."
+            }
+          ]
         }
       ]
     }

@@ -1,0 +1,13 @@
+{
+  "key": "7f537e2ad59e5c5cb712d8551de75c64",
+  "npc": "thandiwe_moyo",
+  "text": "A voice can be copied. When a voicemail says don't ring back, ring her on the number you already hold.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca04_exec_whaling_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:50:28Z"
+}

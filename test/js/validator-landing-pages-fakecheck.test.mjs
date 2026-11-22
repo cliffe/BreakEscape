@@ -94,6 +94,13 @@ test('a fakeCheck page whose host is not .example fails the host lint', { skip }
   assert.ok(errors(out).some((e) => /check\.host/.test(e)), out.join('\n'));
 });
 
+test('a fakeCheck host option\'s own address gets the same host lint as check.host', { skip }, () => {
+  const ok = lint(mutated(fakeCheckScenario, (s) => { s.social.landingPages[0].check.hosts.push({ id: 'la', label: 'A look-alike', host: 'orders-fernside.example', trust: 'lookalike' }); }));
+  assert.deepEqual(errors(ok), [], ok.join('\n'));
+  const bad = lint(mutated(fakeCheckScenario, (s) => { s.social.landingPages[0].check.hosts.push({ id: 'la', label: 'A look-alike', host: 'orders-fernside.co.uk', trust: 'lookalike' }); }));
+  assert.ok(errors(bad).some((e) => /check\.hosts\[1\]\.host/.test(e)), bad.join('\n'));
+});
+
 test('a fakeCheck clipboardReveal that reads as a command is rejected', { skip }, () => {
   const out = lint(mutated(fakeCheckScenario, (s) => { s.social.landingPages[0].check.clipboardReveal = 'powershell -enc AAAA'; }));
   assert.ok(errors(out).some((e) => /clipboardReveal must be a plain description/.test(e)), out.join('\n'));

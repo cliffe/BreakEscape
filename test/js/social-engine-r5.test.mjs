@@ -143,7 +143,7 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     // keeps "A report warns everyone else."
     act('r1', 'report');
     assert.ok($('.tri-card-verdict.aw-report-thanks'), 'the card verdict line carries the thanks class');
-    assert.match($('.tri-card-verdict').textContent, /never wrong/);
+    assert.match($('.tri-card-verdict').textContent, /which is safe, though .* costs/);
     act('p1', 'report');
     assert.match($('.tri-card-verdict').textContent, /A report warns everyone else/);
     // P5-1: Finish lives in the result bar, the last child of the scrolling result panel (the

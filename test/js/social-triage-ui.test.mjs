@@ -234,7 +234,7 @@ test('immediate feedback: the review card names caught, missed and false flags a
     assert.match($(s, '.tri-review-card').textContent, /Safe, but not reported/);
     assert.match($(s, '.tri-review-card').textContent, /What this one was after: Opening it/);
     verdict(s, 'm4_jed', 'report', ['senderAuth']);
-    assert.match($(s, '.tri-review-card').textContent, /real, but reporting is never wrong/);
+    assert.match($(s, '.tri-review-card').textContent, /real\. Reporting when you're unsure is safe/);
     const mark = $(s, '.tri-card-verdict');
     assert.ok(mark.classList.contains('acceptable'));
     assert.equal(mark.classList.contains('wrong'), false);
@@ -557,4 +557,53 @@ test('C-X7 golden: the step strip outerHTML is unchanged (done, current, future)
         + '<li class="tri-step current" data-step="sort" aria-current="step">2 Sort</li>'
         + '<li class="tri-step" data-step="review">3 Review</li>'
         + '<li class="tri-step" data-step="result">4 Result</li></ol>');
+});
+
+test('D254 M1: a pending verdict is cleared when another message is opened, and a later lock lands on the message on screen', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    pick(s, 'm2_payroll');
+    click($(s, '.tri-verdict[data-verdict="report"]'));
+    assert.equal(s.sheet?.messageId, 'm2_payroll');
+    // switch rows with the sheet open (a synthetic click reaches an inert row)
+    pick(s, 'm3_parcel');
+    assert.equal(s.sheet, null, 'the pending verdict is gone');
+    assert.equal($$(s, '.tri-sheet').length, 0);
+    assert.equal(s.answers.size, 0, 'nothing was locked by the switch');
+    assert.equal(s.stageEl.inert, false);
+    assert.equal($$(s, '.tri-confirm').length, 0);
+    click($(s, '.tri-verdict[data-verdict="delete"]'));
+    assert.equal(s.sheet.messageId, 'm3_parcel');
+    assert.match($(s, '.tri-sheet-chosen').textContent, /Delete/);
+    click($(s, '.tri-confirm'));
+    assert.deepEqual([...s.answers.keys()], ['m3_parcel']);
+    assert.equal(s.answers.get('m3_parcel').verdict, 'delete');
+    assert.equal(s.answers.has('m2_payroll'), false);
+    assert.match($(s, '.mail-row[data-id="m3_parcel"]').textContent, /Deleted/);
+    assert.doesNotMatch($(s, '.mail-row[data-id="m2_payroll"]').textContent, /Reported|Deleted|Trusted/);
+});
+
+test('D254 M1: re-opening the same message keeps its pending sheet', () => {
+    const s = open(makeSet());
+    click($(s, '.tri-start'));
+    pick(s, 'm2_payroll');
+    click($(s, '.tri-verdict[data-verdict="report"]'));
+    pick(s, 'm2_payroll');
+    assert.equal(s.sheet?.messageId, 'm2_payroll');
+});
+
+test('D254 m5: under the episode trims Trust locks with no tick step and the brief says so; a check keeps the sheet', () => {
+    const s = open(makeSet(), { episodeTrims: true });
+    assert.match($(s, '.tri-brief-trust').textContent, /Trust locks your answer straight away/);
+    click($(s, '.tri-start'));
+    pick(s, 'm1_it');
+    click($(s, '.tri-verdict[data-verdict="trust"]'));
+    assert.equal(s.sheet, null);
+    assert.equal(s.answers.get('m1_it').sheetless, true);
+    pick(s, 'm2_payroll');
+    click($(s, '.tri-verdict[data-verdict="report"]'));
+    assert.ok(s.sheet, 'Report still asks what you noticed');
+    const pre = open(makeSet({ stage: 'pre', feedbackMode: 'end' }), { episodeTrims: true });
+    assert.equal($(pre, '.tri-brief-trust'), null);
+    assert.equal($(open(makeSet()), '.tri-brief-trust'), null);
 });

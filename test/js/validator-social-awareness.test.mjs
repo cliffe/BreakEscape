@@ -422,6 +422,30 @@ test('conceptPanel: an array needs text in every entry; the string and object fo
   expectIn(lint(j), /strings\.voicePanel has no text/);
 });
 
+// Task 4 (ca debrief): an unconditioned conceptPanel entry in a shell with a write stage must not
+// claim the learner did something ("you sent ...") that a learner on another path did not do.
+test('conceptPanel: an unconditioned "you sent" entry in a write-stage shell warns; third person, a condition or no write stage do not', { skip }, () => {
+  const re = /strings\.conceptPanel entry 2 has no condition but says "you sent"/;
+  let j = fx('clean_full.json');
+  assert.ok(ep(j).stages.includes('write'));
+  ep(j).strings.conceptPanel = [{ text: 'Plain.' }, { text: 'Here you sent the mail and it worked.' }];
+  expectIn(lint(j), re);
+  for (const phrase of ['you handed', 'you asked', 'you typed', 'you enabled', 'you postponed']) {
+    j = fx('clean_full.json');
+    ep(j).strings.conceptPanel = [{ text: `Then ${phrase.toUpperCase()} it.` }];
+    expectIn(lint(j), new RegExp(`says "${phrase}"`, 'i'));
+  }
+  j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = [{ text: 'Plain.' }, { text: 'A sender who sent that mail gets caught.' }];
+  expectIn(lint(j), re, 0);
+  j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = [{ text: 'Plain.' }, { text: 'You sent the mail.', condition: 'globalVars.sent' }];
+  expectIn(lintWithGrammar(j), /has no condition but says/, 0);
+  j = fx('clean_defend_only.json');
+  ep(j).strings.conceptPanel = [{ text: 'Plain.' }, { text: 'You sent the mail.' }];
+  expectIn(lint(j), /has no condition but says/, 0);
+});
+
 // conceptPanel entry `condition` (ca12 debrief panel): grammar error, undeclared global warning,
 // all-conditional warning; the schema takes the key on array entries only.
 test('conceptPanel: an entry condition is checked for grammar and declared globals', { skip }, () => {
@@ -999,6 +1023,14 @@ test('guess spray: a stuffing row is a generic label and a flag, never a value',
   expectIn(lint(withSpray((g) => { delete g.stuff.rows[1].opens; })), /stuff\.rows\[1\]\.opens must be true or false/);
   expectIn(lint(withSpray((g) => { g.stuff.rows = Array.from({ length: 9 }, (_, i) => ({ label: `Login ${i}`, opens: false })); })), /stuff\.rows has 9 entries; keep it to 8/);
   expectIn(lint(withSpray((g) => { g.stuff.rows.forEach((r) => { r.opens = false; }); })), /stuff has no row that opens/);
+});
+
+test('guess: sprayedGlobal is optional; when named it must be a declared string global that starts false', { skip }, () => {
+  assert.deepEqual(lint(withSpray((g, j) => { g.sprayedGlobal = 'guess_stub_sprayed'; j.globalVariables.guess_stub_sprayed = false; })), []);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = 'guess_stub_sprayed'; })), /sprayedGlobal 'guess_stub_sprayed' is not declared in globalVariables/);
+  expectIn(lint(withSpray((g, j) => { g.sprayedGlobal = 'guess_stub_sprayed'; j.globalVariables.guess_stub_sprayed = true; })), /sprayedGlobal 'guess_stub_sprayed' must be declared false/);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = ''; })), /sprayedGlobal must be a non-empty string/);
+  expectIn(lint(withSpray((g) => { g.sprayedGlobal = 7; })), /sprayedGlobal must be a non-empty string/);
 });
 
 test('guess spray: the common checks still apply (landedGlobal, credential keys); target-only keys are caught', { skip }, () => {

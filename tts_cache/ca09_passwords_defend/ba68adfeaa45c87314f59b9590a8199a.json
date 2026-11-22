@@ -1,0 +1,13 @@
+{
+  "key": "ba68adfeaa45c87314f59b9590a8199a",
+  "npc": "nilesh_solanki",
+  "text": "IT never asks you to read back a number or approve a prompt. Whoever asks is holding your password.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca09_passwords_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:52:01Z"
+}

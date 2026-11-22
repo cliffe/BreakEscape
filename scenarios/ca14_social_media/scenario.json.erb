@@ -84,6 +84,14 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca14",
+    "kit_ca14_out": false,
+    "kit_ca14_there": false,
+    "kit_ca14_asked": false,
+    "kit_ca14_seen": false,
+    "kit_ca14_closed_unseen": false,
+    "kit_ca14_moved": false,
+    "kit_ca14_done": false,
+    "kit_ca14_photo_choice": "",
     "kit_ca14_host_said": false,
     "kit_key_caught": false
   },
@@ -99,6 +107,53 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca14_t_there",
+      "startOnGlobal": "kit_ca14_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca14_there",
+      "setGlobal": {
+        "kit_ca14_there": true
+      }
+    },
+    {
+      "id": "kit_ca14_t_tail",
+      "startOnGlobal": "kit_ca14_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca14_photo_choice === ''",
+      "setGlobal": {
+        "kit_ca14_photo_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca14_t_unseen",
+      "startOnGlobal": "kit_ca14_closed_unseen",
+      "delayMs": 20000,
+      "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_seen !== true",
+      "setGlobal": {
+        "kit_ca14_photo_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca14_t_done",
+      "startOnGlobal": "kit_ca14_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca14_done",
+      "setGlobal": {
+        "kit_ca14_done": true
+      }
+    },
+    {
+      "id": "kit_ca14_t_done_out",
+      "startOnGlobal": "kit_ca14_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca14_done && globalVars.kit_ca14_asked !== true",
+      "setGlobal": {
+        "kit_ca14_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -477,13 +532,31 @@
         "strings": {
           "leaveOff": "Why it matters: "
         },
-        "note": "Each change closes a found fact on the board. The same settings are the ones to check on your own profile."
+        "note": "Each change closes a fact an attacker could find on a public profile, whether or not you pinned it. The same settings are the ones to check on your own profile."
       },
       "strings": {
-        "conceptPanel": {
-          "heading": "Where your posts lead",
-          "text": "To a real attacker, the message you composed under a colleague's name is the start of a second account in a partner's name that the studio trusts. The next move is to trade on that borrowed name, nudging someone into resetting a security answer or opening a warmer approach to the rest of the office. Checking a new contact by a route you already know leaves the fake account and its flattery with nowhere to go.\n\nA handful of public posts, a leaving card, a lanyard, a pet, were enough to build the approach, and one trusted reply gave up a security answer that then had to be reset. A week on, the fake partner account was reported and the studio had the awkward round of comparing notes. Before you leave, have a word with Julian."
-        },
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
+        "conceptPanel": [
+          {
+            "heading": "Where your posts lead",
+            "text": "To a real attacker, the message you composed under a colleague's name is the start of a second account in a partner's name that the studio trusts. The next move is to trade on that borrowed name, nudging someone into resetting a security answer or opening a warmer approach to the rest of the office. Checking a new contact by a route you already know leaves the fake account and its flattery with nowhere to go.\n\nDani's public posts held enough to build an approach like this: a leave countdown, a photo with a lanyard in shot, a dog's name given as a security-question answer. A colleague who trusted the borrowed name and acted on it could hand over access, or a security answer that then has to be reset. A week on, the fake partner account was reported and the studio had the awkward round of comparing notes."
+          },
+          {
+            "heading": "Cropping the board out",
+            "text": "An attacker reads team photos for names, faces and what's on the walls. With the board cropped out, the studio page gave them faces and first names, and nothing about the work to build a story on.",
+            "condition": "globalVars.kit_ca14_photo_choice === 'crop'"
+          },
+          {
+            "heading": "What the photo gave away",
+            "text": "Lorna posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
+            "condition": "globalVars.kit_ca14_photo_choice === 'post'"
+          },
+          {
+            "heading": "What the photo gave away",
+            "text": "Lorna asked, got no answer and went ahead: she posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
+            "condition": "globalVars.kit_ca14_photo_choice === 'silent'"
+          }
+        ],
         "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
@@ -508,7 +581,8 @@
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -991,6 +1065,38 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_out": true
+              }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === \"Lorna's PC\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_seen": true
+              }
+            },
+            {
+              "eventPattern": "object_interacted",
+              "condition": "data.objectName === \"Project board\" && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_seen": true
+              }
             }
           ]
         },
@@ -1000,20 +1106,15 @@
           "person": "lorna_easton",
           "npcType": "person",
           "position": {
-            "x": 4.5,
-            "y": 4.5
+            "x": 3.9,
+            "y": 6.0
           },
           "spriteSheet": "lorna_easton",
           "spriteTalk": "assets/characters/lorna_easton_talk.png",
           "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/lorna_easton_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 4.5,
-            "y": 4.5,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca14_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -1026,7 +1127,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "rest": {
-              "decayPerMin": 20,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 70
             }
@@ -1042,7 +1143,131 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_out",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca14_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_out",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Got a lovely one of the team for the studio page."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_there",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === '' && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It's all of us at our desks. Fine to post?",
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_there",
+              "condition": "value === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca14_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_photo_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca14_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value === 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca14_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_moved",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca14_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_photo_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca14_photo_choice === 'asked' && globalVars.kit_ca14_out === true && globalVars.kit_ca14_seen !== true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca14_closed_unseen": true
+              }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It's all of us at our desks. Fine to post?",
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca14_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         },
         {
           "id": "kit_delphine_arvanitis",
@@ -1050,7 +1275,7 @@
           "person": "delphine_arvanitis",
           "npcType": "person",
           "position": {
-            "x": 7.5,
+            "x": 7.0,
             "y": 4.5
           },
           "spriteSheet": "delphine_arvanitis",
@@ -1060,7 +1285,7 @@
           "currentKnot": "start",
           "needsHome": {
             "room": "training_room",
-            "x": 7.5,
+            "x": 7.0,
             "y": 4.5,
             "facing": "south"
           },
@@ -1092,7 +1317,41 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_out",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_out",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.0,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -1111,7 +1370,7 @@
               "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. Your message to Yasmin is sent and it worked; next, the feed, the inbox and the settings."
             },
             {
-              "condition": "globalVars.episode_e14_social_media_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. The message is sent and the feed, inbox and settings are all done."
             }
           ],
@@ -1138,6 +1397,82 @@
             "capacity": 2,
             "chatter": "kit_merrin"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca14_pc",
+          "name": "Lorna's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_lorna_easton",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca14_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Lorna's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca14_moved === true",
+              "value": "Lorna's PC. The team photo is live on the studio page, the project board readable behind them."
+            },
+            {
+              "condition": "globalVars.kit_ca14_photo_choice === 'crop'",
+              "value": "Lorna's PC. The team photo, cropped to the four of them."
+            },
+            {
+              "condition": "globalVars.kit_ca14_out === true",
+              "value": "Lorna's PC. A team photo ready for the studio page: Lorna, Delphine and two colleagues at their desks, the project board in shot behind them."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca14_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca14_photo_choice === 'crop'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca14_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Lorna's PC."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca14_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
+        },
+        {
+          "type": "hce_art_canvas",
+          "id": "kit_ca14_board",
+          "name": "Project board",
+          "sprite": "m10_map_board1",
+          "takeable": false,
+          "interactable": true,
+          "observations": "The Harbour job's site plan, with the client's name and the handover date pinned beside it."
         }
       ]
     }

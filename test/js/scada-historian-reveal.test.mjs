@@ -318,8 +318,8 @@ test('R2 M1: one X. The report has none; the scene X closes the report and keeps
     hitAt(scene2, '23:12:07').fire('click');
     annotateBtn().fire('click');
     fakeDoc.querySelector('.sh-choice-btn[data-choice="written"]').fire('click');
-    assert.ok(fakeDoc.querySelector('.sh-modal-cancel-btn'), 'the confirm keeps its named cancel');
-    assert.equal(sceneX().style.visibility, 'hidden', 'the scene X hides on the confirm');
+    assert.ok(fakeDoc.querySelector('.sh-modal-cancel-btn') === null, 'the confirm has no Cancel (sis02 m1)');
+    assert.notEqual(sceneX().style.visibility, 'hidden', 'the scene X stays and closes the report');
 });
 
 test('R2 m3: the already-confirmed key comes from the completion actions, not a hard-coded name', () => {

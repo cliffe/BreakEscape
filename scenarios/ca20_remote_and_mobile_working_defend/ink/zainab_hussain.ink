@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e20_remote_and_mobile_working_defend_defend_complete:
         { kit_key_caught:
-            Zainab Hussain: You treated that Wi-Fi sign-in page as a trap and used your hotspot, so your work password never reached a look-alike network.
-            Zainab Hussain: A page on the café network asking for your work password is the fake. A lost device reported at once is locked in minutes.
+            Zainab Hussain: You treated that Wi-Fi sign-in page as a trap, so your work password never reached a look-alike site.
+            Zainab Hussain: A Wi-Fi page has no reason to want your work password. If one asks, close it and use your hotspot.
         - else:
             Zainab Hussain: That look-alike Wi-Fi page asking for your work password was the one to stop.
-            Zainab Hussain: The password went in, so the account was used from another town and had to be reset and traced.
+            Zainab Hussain: That page only wants one thing, your work password. Whoever put it up could sign in as you from anywhere.
         }
     - else:
         Zainab Hussain: The kiosk has the networks and pages you meet on the road, all made up. Connect, report or ask the venue. A page wanting your work password is a trap.

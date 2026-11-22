@@ -225,14 +225,20 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
     }
 
     _writeLanded() {
-        const name = this.config.landedGlobal;
-        if (!this.built || !this.run.landed || !isStr(name)) return;
-        try {
-            if (typeof this.params.write === 'function') this.params.write(name, true);
-            else writeGlobal(name, true, { openChat: false });
-            if (typeof window !== 'undefined') window.stateSync?.sync?.();
-        } catch (e) {
-            console.error('[guess] could not write the landed global:', e);
+        if (!this.built) return;
+        // landedGlobal: any account opened. sprayedGlobal (optional): the spray itself opened some,
+        // which needs the staff list the learner may not have built.
+        const names = [];
+        if (this.run.landed && isStr(this.config.landedGlobal)) names.push(this.config.landedGlobal);
+        if (this.run.sprayLanded && isStr(this.config.sprayedGlobal)) names.push(this.config.sprayedGlobal);
+        for (const name of names) {
+            try {
+                if (typeof this.params.write === 'function') this.params.write(name, true);
+                else writeGlobal(name, true, { openChat: false });
+                if (typeof window !== 'undefined') window.stateSync?.sync?.();
+            } catch (e) {
+                console.error('[guess] could not write the global:', e);
+            }
         }
     }
 
@@ -248,6 +254,7 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
                 total: this.run.total,
                 revealed: this.run.index,
                 landed: !!this.built && this.run.landed,
+                sprayLanded: !!this.built && this.run.sprayLanded,
                 switchedOff: this.switchedOff,
                 rows: (this.built?.rows ?? []).map((r, i) => ({ id: r.id, text: r.text, state: this.run.stateOf(i) }))
             }

@@ -496,6 +496,7 @@ export function preload() {
     this.load.image('lw_delivery_hatch1', 'objects/lw_delivery_hatch1.png');
     this.load.image('usb_badusb_flat', 'objects/usb_badusb_flat.png');
     this.load.image('usb_storage_swivel', 'objects/usb_storage_swivel.png');
+    this.load.image('usb_storage_swivel_taken', 'objects/usb_storage_swivel_taken.png');
     this.load.image('keylogger_flat', 'objects/keylogger_flat.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
@@ -849,6 +850,9 @@ export function preload() {
     // The key `pc` is pc1.png, so `pc_locked` is an alias of `pc1_locked`, made in create()
     // (one fetch instead of two).
     this.load.image('pc1_locked', 'objects/pc1_locked.png');
+    this.load.image('pc1_locked_note', 'objects/pc1_locked_note.png');
+    this.load.image('pc1_locked_isolated', 'objects/pc1_locked_isolated.png');
+    this.load.image('aw_notice_qr_parking1', 'objects/aw_notice_qr_parking1.png');
     // ca12's break reminder: Thandiwe's screen left on a break notice while she steps away.
     // Preloaded so the swap shows at 0 s with a cold cache (core/rooms.js loads variant keys on demand otherwise).
     this.load.image('pc1_break', 'objects/pc1_break.png');
@@ -2126,6 +2130,7 @@ export async function create() {
                     // NPC poses (docs/achitechture/NPC_POSES.md): drink, use and phone frames during uses, when the atlas has them
                     import('../systems/npc-poses.js').then(m => m.installNpcPoses(sceneRef)).catch(e => console.warn('npc poses failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
+                    import('../systems/ask-cue.js').then(m => m.installAskCue(sceneRef)).catch(e => console.warn('ask cue failed', e));
                     import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
                     // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's
                     // onOwnerNoticesMissing actions when the owner returns and finds a left-behind
@@ -2661,13 +2666,12 @@ export async function create() {
 
     // [Phase 5] Initialize scenario timer dispatcher (fires timers and dispatches events)
     if (gameScenario?.timers && gameScenario.timers.length > 0) {
-        // Resumes from its own saved elapsed time (normally the game clock's); a new game
-        // starts with the game clock
+        // Always counts from the game clock's start, so every clock reader (HUD timers,
+        // mail, command board, needs, ransom note) agrees however long this page took to
+        // load. The saved block only carries fired, cancelled and started state. With no
+        // game clock the dispatcher falls back to its own saved elapsed time.
         const savedTimers = gameScenario.savedScenarioClock?.timers || null;
-        window.scenarioTimerDispatcher = new ScenarioTimerDispatcher(gameScenario, {
-            startTime: Number.isFinite(savedTimers?.elapsedMs) ? undefined : window.gameClock?.startTime,
-            saved: savedTimers
-        });
+        window.scenarioTimerDispatcher = ScenarioTimerDispatcher.forGame(gameScenario, window.gameClock, savedTimers, gameScenario.savedScenarioClock?.elapsedMs);
         console.log(`⏱️ Scenario timer dispatcher initialized`);
     }
 

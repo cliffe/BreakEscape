@@ -82,6 +82,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca13",
+    "kit_ca13_out": false,
+    "kit_ca13_there": false,
+    "kit_ca13_asked": false,
+    "kit_ca13_moved": false,
+    "kit_ca13_done": false,
+    "kit_ca13_send_choice": "",
     "kit_ca13_host_said": false,
     "kit_key_caught": false
   },
@@ -97,6 +103,44 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca13_t_there",
+      "startOnGlobal": "kit_ca13_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca13_there",
+      "setGlobal": {
+        "kit_ca13_there": true
+      }
+    },
+    {
+      "id": "kit_ca13_t_tail",
+      "startOnGlobal": "kit_ca13_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca13_send_choice === ''",
+      "setGlobal": {
+        "kit_ca13_send_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca13_t_done",
+      "startOnGlobal": "kit_ca13_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca13_done",
+      "setGlobal": {
+        "kit_ca13_done": true
+      }
+    },
+    {
+      "id": "kit_ca13_t_done_out",
+      "startOnGlobal": "kit_ca13_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca13_done && globalVars.kit_ca13_asked !== true",
+      "setGlobal": {
+        "kit_ca13_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -444,6 +488,7 @@
         "stage": null
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. Brightwell has just switched on its own approved assistant, Brightwell Assist. First you're on the red team: write a supplier brief for the assistant to read, plain or with a line hidden in it meant for the assistant to act on. Then you swap seats and use the assistant for real work, and handle what comes at you: supplier emails, voicemails and video calls. Gwen Pritchard from IT is with you, and a test is coming, she'll say when. Only the second part is scored. Nothing you write leaves the game.",
         "stages": {
           "write": {
@@ -469,10 +514,37 @@
         "assistantRecapHeading": "In the assistant window: what to check next time",
         "mondayCard": "On Monday: an assistant can't tell an instruction in an email from a request from a colleague, so when a summary or note suggests you do something, check where that came from before you act on it. If you use an assistant yourself, keep passwords and personal details out of what you give it, and check the figures and claims in what it writes against the source. And if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
         "defendOnly": "These messages were built to look right, a real supplier's address, a voice you know, a face you trust. Any you were caught out by are shown below, with what gave each one away and why checking another way works whoever is speaking.",
-        "conceptPanel": {
-          "heading": "Where the fakes came from",
-          "text": "The voice and the faces were built from public material, a keynote, a webinar, holiday videos. That's all public, and that's all it takes. You can't reliably spot a fake, so the answer is always to check another way.\n\nTo a real attacker, the brief you handed the assistant is a small payment banked or Brightwell's customer list handed to a stranger. With the payment they come back for the next one, and with the list they ring those customers in a trusted voice, already knowing what each one orders. Checking a request through a route you already trust, rather than acting on the assistant's confident summary, stops both before either leaves the building.\n\nWhen the summary is trusted instead, a small invoice is paid to a stranger and chased for weeks for more than it was worth, or customers field calls asking why they were contacted, and someone loses the afternoon putting it right. Before you leave, have a word with Gwen."
-        }
+        "conceptPanel": [
+          {
+            "heading": "Where the fakes came from",
+            "text": "The voice and the faces were built from public material, a keynote, a webinar, holiday videos. That's all public, and that's all it takes. You can't reliably spot a fake, so the answer is always to check another way."
+          },
+          {
+            "heading": "Your brief, from the attacker's side",
+            "text": "To a real attacker, the brief you handed the assistant is Brightwell's site contact list handed to a stranger. With the list they ring those contacts in a trusted voice, already knowing who works where and what they deal with. Checking a request through a route you already trust, rather than acting on the assistant's confident summary, stops it before the list leaves the building.\n\nWhen the summary is trusted instead, the list goes to an address Brightwell has never used, contacts field calls asking why they were contacted, and someone loses the afternoon putting it right.",
+            "condition": "globalVars.phish_assist_reader_landed === true"
+          },
+          {
+            "heading": "Your brief, from the attacker's side",
+            "text": "Your brief was an ordinary invoice, so the assistant had nothing to act on: it summarised the cleaning invoice and that was all. A real attacker would have added a line for the assistant to follow, such as one asking for the site contact list to be sent to an address they control. With the list they ring those contacts in a trusted voice. Checking a request through a route you already trust, rather than acting on an assistant's confident summary, stops it before the list leaves the building.",
+            "condition": "globalVars.phish_assist_reader_plain_sent === true"
+          },
+          {
+            "heading": "The recall email: checked by a known route",
+            "text": "A separate email, a recall notice from Pennine, reached Graham's own assistant, and its summary said a supplier wanted the customer list. A line hidden in the email was written for that assistant, and the attacker needed Graham to trust the summary. He rang Pennine on the number on file instead. They had sent nothing, and the draft went nowhere. This was Graham's assistant and Graham's inbox, not your brief.",
+            "condition": "globalVars.kit_ca13_send_choice === 'ring'"
+          },
+          {
+            "heading": "The recall email: the reply went out",
+            "text": "In Graham's own inbox, an email that looked like a Pennine recall notice carried a line hidden for his assistant, and the summary did the asking. Graham sent the reply. The attacker wrote straight back for each buyer's direct line. Then the calls began: Brightwell's trade customers were rung by 'Brightwell' and asked to pay the next invoice to 'our new bank details'. Brightwell has to warn every customer on the list. This was Graham's assistant and Graham's inbox, not your brief.",
+            "condition": "globalVars.kit_ca13_send_choice === 'send'"
+          },
+          {
+            "heading": "The recall email: the reply went out",
+            "text": "Graham asked, got no answer and went ahead. In his own inbox, an email that looked like a Pennine recall notice carried a line hidden for his assistant, and the summary did the asking. Graham sent the reply. The attacker wrote straight back for each buyer's direct line. Then the calls began: Brightwell's trade customers were rung by 'Brightwell' and asked to pay the next invoice to 'our new bank details'. Brightwell has to warn every customer on the list. This was Graham's assistant and Graham's inbox, not your brief.",
+            "condition": "globalVars.kit_ca13_send_choice === 'silent'"
+          }
+        ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -590,7 +662,8 @@
             "body": "On-time delivery, September: 96.1% (no 'Q3 logistics review' document exists). August dip: a depot refrigeration fault over one weekend; no staffing cause recorded. Refund requests: clustered on chilled lines."
           }
         ]
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -894,6 +967,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_out": true
+              }
             }
           ]
         },
@@ -950,7 +1039,41 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_out",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_out",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 6,
+                  "y": 3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Graham, that supplier's replied already, thanking you for the list. Now they want each buyer's direct line."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_graham_whitfield",
@@ -958,20 +1081,15 @@
           "person": "graham_whitfield",
           "npcType": "person",
           "position": {
-            "x": 8,
-            "y": 4
+            "x": 3.0,
+            "y": 6.0
           },
           "spriteSheet": "graham_whitfield",
           "spriteTalk": "assets/characters/graham_whitfield_talk.png",
           "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/graham_whitfield_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 8,
-            "y": 3,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca13_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -984,7 +1102,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "caffeine": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -1000,7 +1118,123 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_out",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca13_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_out",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Assistant's done the inbox for me. Lovely, saves me reading."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_ca13_send_choice === '' && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "targetKnot": "ca13_send",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_there",
+              "condition": "value === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca13_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_graham_whitfield",
+              "condition": "globalVars.kit_ca13_send_choice === 'asked' && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca13_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_send_choice",
+              "condition": "value === 'ring' && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_moved",
+              "condition": "value === true && globalVars.kit_ca13_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca13_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca13_done",
+              "condition": "value === true && globalVars.kit_ca13_out === true && globalVars.kit_ca13_send_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca13_send_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?",
+              "targetKnot": "ca13_send",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca13_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca13_there === true && globalVars.kit_ca13_out === true && !globalVars.kit_ca13_done && globalVars.kit_ca13_send_choice === '' && globalVars.kit_ca13_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca13_send_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         }
       ],
       "objects": [
@@ -1015,7 +1249,7 @@
           "observations": "A touch-screen training kiosk for the Brightwell assistant exercise: first the one supplier brief to write, then the assistant and the messages to handle.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e13_ai_assistant_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Brightwell assistant exercise. Episode finished."
             }
           ],
@@ -1059,6 +1293,72 @@
               "dx": 0,
               "dy": -1
             }
+          }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca13_pc",
+          "name": "Graham's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_graham_whitfield",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca13_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Graham's PC. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "Graham's PC. The reply has gone with the customer list. A new email from the same address asks for each buyer's direct line."
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "Graham's PC. The supplier's email is closed and reported to Gwen."
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "Graham's PC. Brightwell Assist's summary of a recall notice: Pennine Oat Mills need the customer list for a recall check. A reply is drafted to an address Brightwell has not used before, with the list attached."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca13_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_send_choice === 'ring'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca13_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Graham's PC."
+        },
+        {
+          "type": "m09_folder",
+          "id": "kit_ca13_folder",
+          "name": "Folder",
+          "sprite": "m09_folder1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.21875,
+            "y": 7.125
           }
         }
       ]

@@ -208,7 +208,7 @@
           "kind": "page",
           "subject": "A page that took the whole screen",
           "time": "11:02",
-          "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+          "body": "Your computer has been locked. Call support now on 0808 157 0000 to unlock it.",
           "page": {
             "url": "https://secure-alert.example/locked",
             "padlock": true,
@@ -303,7 +303,7 @@
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
       "flipHeading": "Now it lands on a colleague",
       "flipIntro": "This is the email you sent Leo, the operations colleague who places the weekly Fernside order. The parts picked out below are what would give it away.",
-      "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+      "flipDefenderLine": "Leo reached your page between jobs. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
       "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
       "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
       "flipMissedHeading": "Nothing to replay this time",
@@ -314,7 +314,7 @@
       "defendOnly": "These pages are built to look like an ordinary morning's browsing, and anyone can be caught by one, a familiar site that has been hacked most of all. Any you were caught out by are shown below, with what gave each one away and the safe way through.",
       "defendIntro": "Go through the morning's web pages and decide what to do with each one: carry on, close and report, or go the trusted way. The rule holds as you go: no honest web page ever needs you to paste, run, install or call. Take them at your own pace.",
       "conceptPanel": [
-        { "heading": "Where software comes from", "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards." },
+        { "heading": "Where software comes from", "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address typed in by hand, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards." },
         { "heading": "Read the address", "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked." },
         { "heading": "The tricks a page tries", "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, an extension that asks to read and change everything, or a download that is really a program dressed up as a document. None of them is real. Close the page." },
         { "heading": "If you slipped", "text": "If a page talked you into pasting, running, installing, calling or allowing, report it straight away: the browser Report button, the 'Report an incident' form, or the security team on extension 4444. Don't restart the computer, don't clear anything, and don't run tools from the web. If you're asked to, unplug the network cable or turn off Wi-Fi and leave the machine on." },

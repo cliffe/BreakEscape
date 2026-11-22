@@ -5,6 +5,17 @@ work moves to Opus: an Opus session orchestrates, and Opus agents write and revi
 note is everything the next orchestrator needs that is not already in a plan file. Read it with
 `docs/agents/OPS_LAYER_BRIEF.md` (the shared brief every agent reads) and `AGENTS.md`.
 
+## 0. Picking this up (status 2026-11-21)
+
+The planning is finished. All seven plans have nothing open above nit level (confirm delta
+`docs/agents/ops_layer/reviews/OPS_CONFIRM_DELTA_R14.md`), and they are on main from train T280.
+The build is on hold until the owner says go (D233). To start it:
+1. Read `docs/agents/OPS_LAYER_BRIEF.md`, `AGENTS.md` and `docs/achitechture/OPS_CORE_PLAN.md`.
+   The core plan sets the slice order, starting at L1a.
+2. Each plan's section 14 lists what it relies on from the others. The plans are written as final
+   design, so you do not need the review files to build.
+3. Read the NEWEST blocks below for the rulings made since the plans were last revised.
+
 ## 1. The job
 
 The user asked for plans, not builds, for a set of access-control, sign-in and abstract network
@@ -41,6 +52,8 @@ S4, S10, S12 (`ACTORS_AND_DEFENCE_PLAN_OUTLINE.md`) and S11 (`VM_OR_GAME_BACKING
 resolved, leftover privilege/MFA/log-rows minors were already fixed, two citation nits fixed. N1
 (append-only ids) stays as is (AC0, 2026-11-21). Plans branch training as T279; build go-ahead is
 D233 on the owner's page. Nothing running.
+D233 (corrected 2026-11-21): the build is ON HOLD until the owner says so. It is not tied to the CA
+work, and it may start on another Claude account. Do not build anything without the owner's word.
 
 **NEWEST-8.** ROUND 3 SETTLED ACROSS ALL SEVEN PLANS. Skin R12 fixed
 `c04b2bf95` (generated `docs/REALISM_CATALOG_INDEX.md`, append-only ids, catalog task owns the

@@ -190,7 +190,10 @@
               "disableClose": { "type": "boolean", "description": "Hide the visualiser's close button." },
               "headerText": { "type": "string", "description": "The visualiser's header, such as \"MISSION FAILED // AUDIO INTEL\"." },
               "statusText": { "type": "string", "description": "The visualiser's status line, such as \"COMPROMISED\"." },
-              "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js)." },
+              "threatText": { "type": "string", "description": "The visualiser's THREAT row once the credits roll, such as \"CONTAINED\". Without it the row shows CONTAINED, or ACTIVE when the ending's header, status or title line says FAILED or COMPROMISED; it never follows the audio level after the mission is over. Known words pick their own colour (ACTIVE, CRITICAL, BREACH red; CONTAINED, SECURE, CLEAR green); anything else is cyan unless threatTone says otherwise." },
+              "threatTone": { "type": "string", "enum": ["red", "green", "cyan"], "description": "The colour of threatText, overriding the colour its words would pick." },
+              "outcome": { "type": "string", "enum": ["contained", "active"], "description": "The end state the THREAT row shows when threatText is not set: CONTAINED (green) or ACTIVE (red). A credit line may carry the same field (so a conditional title line can say it); active wins over contained. Without any, the row reads the header, status and title lines for FAILED, FAILURE or COMPROMISED." },
+              "credits": { "type": "array", "x-id-map": false, "description": "The credits shown with this cue (closing-sequence.js). A line may carry an optional \"outcome\" (\"contained\" or \"active\") for the THREAT row." },
               "closingCard": { "type": "object", "x-id-map": false, "description": "The closing card shown before the credits (closing-sequence.js)." }
             }
           }
@@ -568,7 +571,7 @@
                   "host": {"type": "string", "description": "The genuine site the check sits on (host-only .example, linted)"},
                   "heading": {"type": "string"},
                   "clipboardReveal": {"type": "string", "description": "One harmless description of what the page copied; never a working command (linted for shell metacharacters)"},
-                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "host": {"type": "string", "description": "Optional address the page shows when this option is picked (host-only .example); absent, check.host is shown"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "pretexts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "urgencies": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
                   "steps": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
@@ -1006,6 +1009,7 @@
         },
         "confirmLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the confirm button's label, a named action (\"Switch off\", \"Flip it\"). Absent: Confirm." },
         "cancelLabel": { "type": "string", "minLength": 1, "pattern": "\\S", "description": "confirm_action: the cancel button's label (\"Leave it\"). Absent: Cancel." },
+        "closeX": { "type": "boolean", "description": "confirm_action: true gives the dialog a corner X and one named button (confirmLabel); the X is the leave-it answer and cancelLabel is not drawn." },
         "objectId": { "type": "string", "x-ref": "object" },
         "itemId": { "type": "string", "x-ref": "item", "description": "wear: the held wearable item to put on; take_off: the worn item to take off (absent: whatever is worn)" },
         "room_id": { "type": "string", "x-ref": "room" },
@@ -2891,6 +2895,7 @@
           "additionalProperties": false
         },
         "landedGlobal": {"type": "string", "description": "A declared global (default false) the guesser sets true when an account opens; the flip shows flipAftermath only then"},
+        "sprayedGlobal": {"type": "string", "description": "Optional declared global (default false) the guesser sets true when the spray itself opened accounts (needs the staff list); the flip and debrief can then tell a run with no spray from one with it"},
         "note": {"type": "string", "description": "The on-screen line saying nothing real is typed; strings.guessNote wins"},
         "strings": {"type": "object", "description": "The guesser's own lines over its defaults (password-guesser-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
       },
@@ -3087,6 +3092,8 @@
             "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
             "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
             "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
+            "closeHint": {"type": "string", "description": "D263: the kiosk's hint beside the X; default 'Close with X'; '' drops it"},
+            "rereadLink": {"type": "string", "description": "D263: the finished panel's button that shows the debrief again, read only; default 'Read the debrief again'; '' drops it"},
             "sendOff": {"type": "string", "description": "batch-13 item 4: a short closing line under the end-of-episode panel, shown straight after the debrief's Finish only (not on a reopen); '' drops it. Default: a generic 'stop and check' thank-you."},
             "concernRecapHeading": {"type": "string", "description": "batch-13 item 2: heading over the debrief's recap of the concern form report; default 'Your report'"},
             "concernRecapFacts": {"type": "string", "description": "batch-13 item 2: the lead before the list of facts the learner filed; default 'The facts you included:'"},
@@ -3101,6 +3108,7 @@
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
+            "flipDefenderLineNoSpray": {"type": "string", "description": "The defender line instead of flipDefenderLine when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "flipDefenderLineByChoice": {
               "type": "object",
               "description": "aw2: the flip's defender line per chosen pretext, keyed by the template id the learner picked (state.sent.templateId). A matching entry replaces flipDefenderLine for that branch; any other branch falls back to flipDefenderLine. Keys are social.templates ids",
@@ -3149,6 +3157,9 @@
             "flipPageHeading": {"type": "string", "description": "E10 MA4: the heading over the page section when the flip shows both a message and a page; default 'The page it links to'. A no-link design (a fake check on the site's own address) overrides it, e.g. 'The page you built', so it does not claim a link"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
+            "flipPageIntroByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's page intro per chosen host option id (check.hosts[].id), used instead of flipPageIntro when the id matches; any other host keeps flipPageIntro"},
+            "flipDefenderLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's defender line per chosen host option id (check.hosts[].id); any other host keeps flipDefenderLine"},
+            "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {
@@ -5476,6 +5487,20 @@
             "properties": {
               "condition": { "type": "string" },
               "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "postitNoteVariants": {
+          "type": "array",
+          "description": "A plain PC (type pc, not lockType login) whose sticky note is on the screen only in some states: [{ condition, value }], first match wins (the observationVariants syntax). When one matches, a click opens the shared sign-in post-it view showing value on the post-it, with no sign-in; otherwise the click goes on as before. Must not sit beside locked: true or a non-empty triggerOnInteract (the validator errors). The view has no Add-to-notepad button. Pair it with a spriteVariants note sprite. ca09's Chidi.",
+          "items": {
+            "type": "object",
+            "required": ["condition", "value", "submitText"],
+            "properties": {
+              "condition": { "type": "string" },
+              "value": { "type": "string" },
+              "submitText": { "type": "string", "description": "Required. The fixed line the view shows (in the neutral info colour) when the learner submits a non-empty field while it is open. The submit makes no server check and counts no attempt, and nothing signs in. An entry without it is refused: the click goes on as before." }
             },
             "additionalProperties": false
           }

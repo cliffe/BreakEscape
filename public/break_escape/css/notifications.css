@@ -287,7 +287,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     background: #a93226;
 }
 
-/* Room for the close X. A confirm has no X (UX q99), so its message runs the full width. */
+/* Room for the close X. A confirm has no X unless options.closeX (UX q99), so its message runs the full width. */
 .game-display-dialog .game-display-title {
     padding-right: 40px;
 }
@@ -367,6 +367,24 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     color: #fff;
 }
 
+/* A confirm with one named button and the corner X (options.closeX): the X sits inside the
+   frame and the message stops short of it. Its hit area is the shared one below. */
+.game-confirm-has-x {
+    position: relative;
+}
+
+.game-confirm-has-x .game-confirm-message {
+    padding-right: 40px;
+}
+
+/* One hit area for every themed dialog X: the drawn 30px box keeps its size and the target
+   reaches 44px (the same -14px reach as .minigame-close-button::after). Nothing is drawn. */
+.game-modal-close::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+}
+
 /* Display modal (gameDisplay) — extends confirm dialog styles */
 .game-display-dialog {
     max-width: 700px; /* keep in step with --be-dialog-max in hud.css: 700 less padding and frame leaves a 586-600px text column */
@@ -405,8 +423,12 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     /* Scrolls inside the frame; gameDisplay adds the shared .pixel-scroll class for the bar */
 }
 
-/* With no title the body starts at the top edge, under the close X */
-.game-display-dialog .game-display-body:first-child {
+/* With no title the body follows the close X directly: start it below the X's 44px target
+   (the X is 10px from the top, 30px tall; the ::after inset is from the padding box, inside the
+   skin's 6px border, with a 14px reach: 10 + 30 - 6 + 14 = 48px) and clear of it on the
+   right, so neither the text nor the scrollbar sits under the target */
+.game-display-dialog .game-modal-close + .game-display-body {
+    margin-top: 20px;
     padding-right: 40px;
 }
 

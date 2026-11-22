@@ -244,12 +244,12 @@ test('EC1 (a): a reopen with stepAwayAfter for an episode not at the debrief sho
     assert.ok(epState().stepAwayPanel === false);
 });
 
-test('EC1 (a): Carry on and Look up each leave the saved state unchanged', () => {
+test('EC1 (a): Carry on and Look up each store only stepAwayPicked, once', () => {
     const ep = fullEpisode();
     playDefend(ep, { kit_defend_done: true });
     const before = structuredClone(stored(ep.id));
     click('.epr-carry-on');
-    assert.ok(isDeepStrictEqual(stored(ep.id), before));
+    assert.ok(isDeepStrictEqual(stored(ep.id), { ...before, stepAwayPicked: true }));
     assert.ok(calls.debrief.length === 1, 'Carry on shows the debrief');
     assert.ok(epState().stepAwayPanel === false);
 
@@ -258,8 +258,8 @@ test('EC1 (a): Carry on and Look up each leave the saved state unchanged', () =>
     const writes = stateEvents(ep.id).length;
     click('.epr-look-up');
     assert.ok(cur() === null);
-    assert.ok(isDeepStrictEqual(stored(ep.id), before2));
-    assert.ok(stateEvents(ep.id).length === writes, 'Look up writes nothing');
+    assert.ok(isDeepStrictEqual(stored(ep.id), { ...before2, stepAwayPicked: true }));
+    assert.ok(stateEvents(ep.id).length === writes + 1, 'Look up writes the one flag, once');
 });
 
 test('EC1 (c of the task): Look up closes the runner, then emits episode_step_away once, even on a double click', () => {
@@ -334,7 +334,7 @@ test('EC1 (b): Carry on drops the ready listener', () => {
 
 // ── (c) stored defend answers ────────────────────────────────────────────────
 
-test('EC1 (c): a stepAway episode keeps the cleaned defend answers; a plain full shell and a twin do not', () => {
+test('EC1 (c): every episode with a debrief after defend keeps the cleaned defend answers (stepAway or not, twin or full)', () => {
     const ep = fullEpisode();
     playDefend(ep);
     assert.ok(isDeepStrictEqual(stored(ep.id).defendProgress, CLEANED), 'verdicts only, no score or answer key');
@@ -343,7 +343,9 @@ test('EC1 (c): a stepAway episode keeps the cleaned defend answers; a plain full
 
     for (const plain of [fullEpisode({ stepAway: undefined }), twinEpisode()]) {
         playDefend(plain);
-        assert.ok(('defendProgress' in stored(plain.id)) === false, plain.id);
+        assert.ok(isDeepStrictEqual(stored(plain.id).defendProgress, CLEANED), plain.id);
+        assert.ok(!JSON.stringify(stored(plain.id)).includes('"correct"'));
+        assert.ok(('stepAwayPicked' in stored(plain.id)) === false, 'no panel, no flag');
     }
 });
 
@@ -371,14 +373,14 @@ test('EC1 (c): the in-progress list is replaced by the final one at the end of t
     cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, answers: ANSWERS.map((a) => ({ ...a })) };
     cur().complete(true);
     assert.ok(isDeepStrictEqual(stored(ep.id).defendProgress, CLEANED));
-    // a plain shell still clears the in-progress list (today's shape)
+    // a plain shell with a debrief after defend replaces the in-progress list the same way
     const plain = fullEpisode({ stepAway: undefined });
     setup(plain, { [M.stateKey(plain.id)]: { v: 1, done: [...ATTACK_DONE], defendProgress: [{ id: 'm1', verdict: 'keep', flags: [], ms: 1 }] } });
     open(plain);
     click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0.5, answers: ANSWERS.map((a) => ({ ...a })) };
     cur().complete(true);
-    assert.ok(('defendProgress' in stored(plain.id)) === false);
+    assert.ok(isDeepStrictEqual(stored(plain.id).defendProgress, CLEANED));
 });
 
 test('EC1 (c): a reopen after Look up lands on the debrief, no panel, with the answers from storage', () => {
@@ -393,11 +395,11 @@ test('EC1 (c): a reopen after Look up lands on the debrief, no panel, with the a
     const shown = calls.debrief.at(-1).result;
     assert.ok(isDeepStrictEqual(shown.answers, CLEANED));
     assert.ok(shown.percent === 50);
-    // a plain shell's stored reopen still passes an empty list
+    // a plain shell's stored reopen now rescores the kept list too (Bug 1 of the D254 gate)
     const plain = fullEpisode({ stepAway: undefined });
     setup(plain, { [M.stateKey(plain.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50, reportRate: 0.5, verifyCount: 0 }, defendProgress: CLEANED } });
     open(plain);
-    assert.ok(isDeepStrictEqual(calls.debrief.at(-1).result.answers, []));
+    assert.ok(calls.debrief.at(-1).result.answers.length === 2);
 });
 
 test('conceptPanel condition: the debrief is handed the live globals after Carry on and after Look up', () => {
@@ -731,6 +733,39 @@ test('gate B D3: the hold also holds at the triage result (stage defend, defend 
     }
 });
 
+test('early click 2: a live step-away beat keeps the success screen held after a debrief reopen', () => {
+    const ep = fullEpisode();
+    const key = M.stateKey(ep.id);
+    const defendDone = { v: 1, done: [...ATTACK_DONE, 'defend'] };
+    const seen = { ...defendDone, debriefSeen: true };
+    const finished = { v: 1, done: [...ATTACK_DONE, 'defend', 'debrief'], debriefSeen: true };
+    const live = { kit_ca05_out: true, kit_ca05_done: false };
+    // Look up picked, debrief reopened and seen: still held while the beat runs
+    assert.ok(M.stepAwayHeld(ep, seen, live) === true);
+    assert.ok(M.stepAwayHeld(ep, finished, live) === true, 'Finish mid-beat still waits for the beat');
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca05_out: true }) === true, 'done absent counts as not done');
+    // the beat is done: released again (accepted: overlay shows once the beat ends)
+    const over = { kit_ca05_out: true, kit_ca05_done: true };
+    assert.ok(M.stepAwayHeld(ep, seen, over) === false);
+    assert.ok(M.stepAwayHeld(ep, finished, over) === false);
+    // Carry on (no out) or no globals: unchanged
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca05_out: false, kit_ca05_done: false }) === false);
+    assert.ok(M.stepAwayHeld(ep, seen, {}) === false);
+    assert.ok(M.stepAwayHeld(ep, seen) === false);
+    assert.ok(M.stepAwayHeld(ep, defendDone, { kit_ca05_out: false }) === true, 'unseen debrief still holds as before');
+    // any shell's kit_<ep> pair works; a non-stepAway episode never holds
+    assert.ok(M.stepAwayHeld(ep, seen, { kit_ca16_out: true, kit_ca16_done: false }) === true);
+    assert.ok(M.stepAwayHeld(fullEpisode({ stepAway: false }), seen, live) === false);
+    assert.ok(M.stepAwayHeld(twinEpisode(), { v: 1, done: ['brief'] }, live) === false);
+    // through the starter's live read and the success screen's registry
+    setup(ep, { [key]: seen, ...live });
+    assert.ok(stepAwayHoldNow() === true);
+    assert.ok(SS.successScreenHeld() === true);
+    window.gameState.globalVariables.kit_ca05_done = true;
+    assert.ok(stepAwayHoldNow() === false);
+    assert.ok(SS.successScreenHeld() === false);
+});
+
 test('gate B D3: a reload on the triage result opens the defend launch, the result restores, Continue shows the panel', () => {
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE], defendProgress: CLEANED }, [DEFEND_COMPLETE]: true, kit_defend_done: true });
@@ -820,23 +855,22 @@ test('gate B D1: a reopened debrief has the same cards and summary as the live o
 
 test('gate B D1: a reopen with no stored answers falls back to the stored figures', () => {
     const ep = fullEpisode();
-    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 40, reportRate: 0.25, verifyCount: 0 } } });
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], stepAwayPicked: true, defend: { percent: 40, reportRate: 0.25, verifyCount: 0 } } });
     open(ep);
     const shown = calls.debrief.at(-1).result;
     assert.ok(isDeepStrictEqual(shown.answers, []));
     assert.ok(shown.percent === 40);
 });
 
-test('gate B D1: a non-stepAway episode reopened at the debrief shows what it did before (stored figures, empty list)', () => {
+test('gate B D1: a non-stepAway episode reopened at the debrief rescores its kept verdicts (D254 R8)', () => {
     const plain = fullEpisode({ stepAway: undefined });
     setup(plain, { [M.stateKey(plain.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50, reportRate: 0.5, verifyCount: 0 }, defendProgress: CLEANED } });
     window.gameScenario.social.triageSets = [truthSet()];
     open(plain);
     const shown = calls.debrief.at(-1).result;
-    assert.ok(isDeepStrictEqual(shown.answers, []));
+    assert.ok(shown.answers.length === 2);
     assert.ok(shown.percent === 50);
     assert.ok(shown.reportRate === 0.5);
-    assert.ok(('phishTotal' in shown) === false, 'nothing rescored');
 });
 
 const flush = async () => { for (let i = 0; i < 6; i += 1) await new Promise((r) => setTimeout(r, 0)); };
@@ -1053,6 +1087,140 @@ test('messageGlobals: the Gate B D2 re-emit hands the defend set to the starter,
     assert.ok(window.gameState.globalVariables.kit_m1_caught === true);
     assert.ok(window.gameState.globalVariables.kit_defend_done === true);
     delete window.stateSync;
+});
+
+// ── D254 R8: a close before Finish and a reopen rebuild the same debrief ──────
+
+const headlineText = () => cur().container.querySelector('.aw-band-headline')?.textContent ?? null;
+const scoreText = () => cur().container.querySelector('.aw-band-score')?.textContent ?? null;
+
+for (const [label, make] of [['a defendOnly twin', () => twinEpisode()], ['a full shell without stepAway', () => fullEpisode({ stepAway: undefined })]]) {
+    test(`D254 R8: ${label} reopens with the first view's summary, headline, score and cards`, () => {
+        const ep = make();
+        const set = truthSet();
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ep.variant === 'defendOnly' ? ['brief'] : [...ATTACK_DONE] } });
+        window.gameScenario.social.triageSets = [set];
+        open(ep, { deps: realDeps });
+        click('.epr-launch');
+        const result = liveResult(set, TRUTH_STORED);
+        cur().gameResult = { ...result, verifyCount: 0 };
+        cur().complete(true);
+        assert.ok(epState().stepAwayPanel === false);
+        const live = { cards: cardIds(), summary: summaryText(), headline: headlineText(), score: scoreText() };
+        assert.ok(live.summary && live.cards.length > 0);
+        const kept = stored(ep.id).defendProgress;
+        assert.ok(Array.isArray(kept) && kept.length === 4, 'the verdict list is stored');
+        assert.ok(!JSON.stringify(kept).includes('score') && !JSON.stringify(kept).includes('isPhish'), 'verdicts only');
+        assert.ok(JSON.stringify(kept).length < 600, 'small');
+        // the kiosk X before Finish, then reopen (twice, to match a reload's second look)
+        for (let i = 0; i < 2; i += 1) {
+            while (FW.currentMinigame) FW.forceCloseMinigame();
+            const before = structuredClone(stored(ep.id));
+            open(ep, { deps: realDeps });
+            assert.ok(epState().stage === 'debrief');
+            assert.ok(summaryText() === live.summary, `summary ${summaryText()}`);
+            assert.ok(!/Reported \d+% of the fakes/.test(summaryText() || ''));
+            assert.ok(isDeepStrictEqual(cardIds(), live.cards));
+            assert.ok(headlineText() === live.headline);
+            assert.ok(scoreText() === live.score);
+            assert.ok(isDeepStrictEqual(stored(ep.id), before), 'a reopen writes nothing');
+        }
+    });
+}
+
+test('D254 R8: a step-away full shell still reopens with the first view (regression)', () => {
+    const ep = fullEpisode();
+    const set = truthSet();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE] }, kit_defend_done: true });
+    window.gameScenario.social.triageSets = [set];
+    open(ep, { deps: realDeps });
+    click('.epr-launch');
+    cur().gameResult = { ...liveResult(set, TRUTH_STORED), verifyCount: 0 };
+    cur().complete(true);
+    click('.epr-carry-on');
+    const live = { cards: cardIds(), summary: summaryText(), headline: headlineText() };
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep, { deps: realDeps });
+    assert.ok(isDeepStrictEqual(cardIds(), live.cards) && summaryText() === live.summary && headlineText() === live.headline);
+});
+
+test('D254 R8: completeStage keeps defendProgress for a twin and a plain full shell, drops it for a check shell', () => {
+    for (const ep of [twinEpisode(), fullEpisode({ stepAway: undefined }), fullEpisode()]) {
+        const state = M.completeStage(ep, { v: 1, done: ep.variant === 'defendOnly' ? ['brief'] : [...ATTACK_DONE] }, 'defend', { defend: { percent: 50, reportRate: 0.5 }, defendProgress: ANSWERS });
+        assert.ok(state.defendProgress?.length === 2, ep.id);
+    }
+    const chk = checkEpisode();
+    const cs = M.completeStage(chk, { v: 1, done: [] }, 'check', { defend: { percent: 50 }, defendProgress: ANSWERS });
+    assert.ok(M.debriefFollows(chk, 'defend') === false);
+    assert.ok(cs.done.includes('check'));
+});
+
+// ── D254 R5: the prompt stays until the player picks ────────────────────────
+
+test('D254 R5: closing at the step-away prompt and reopening shows the prompt again, until a pick', () => {
+    const ep = fullEpisode();
+    playDefend(ep, { kit_defend_done: true });
+    assert.ok(q('.epr-step-away'));
+    const before = structuredClone(stored(ep.id));
+    assert.ok(!('stepAwayPicked' in before), 'closing needs no write');
+    for (let i = 0; i < 2; i += 1) {
+        while (FW.currentMinigame) FW.forceCloseMinigame();
+        assert.ok(stored(ep.id).debriefSeen !== true, 'the success screen hold stays');
+        open(ep);
+        assert.ok(epState().stage === 'debrief');
+        assert.ok(epState().stepAwayPanel === true, 'the prompt is back');
+        assert.ok(q('.epr-look-up') && q('.epr-carry-on'));
+        assert.ok(calls.debrief.length === 0, 'no debrief yet');
+        assert.ok(epState().debriefSeen === false);
+        assert.ok(stepAwayHoldNow() === true);
+    }
+});
+
+test('D254 R5: Look up after a reopen runs the beat once, and the next reopen goes to the debrief', () => {
+    const ep = fullEpisode();
+    playDefend(ep, { kit_defend_done: true });
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    assert.ok(epState().stepAwayPanel === true);
+    click('.epr-look-up');
+    assert.ok(cur() === null);
+    assert.ok(named('episode_step_away').length === 1);
+    assert.ok(stored(ep.id).stepAwayPicked === true);
+    open(ep);
+    assert.ok(epState().stepAwayPanel === false);
+    assert.ok(calls.debrief.length === 1, 'the debrief now');
+});
+
+test('D254 R5: Carry on after a reopen shows the debrief and a later reopen skips the prompt', () => {
+    const ep = fullEpisode();
+    playDefend(ep, { kit_defend_done: true });
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    click('.epr-carry-on');
+    assert.ok(calls.debrief.length === 1);
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+    open(ep);
+    assert.ok(epState().stepAwayPanel === false);
+});
+
+test('D254 R5: a reload (state read from storage alone, no params) shows the prompt; a seen debrief never does', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50 }, defendProgress: CLEANED }, kit_defend_done: true });
+    open(ep);
+    assert.ok(epState().stepAwayPanel === true);
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: [...ATTACK_DONE, 'defend'], defend: { percent: 50 }, defendProgress: CLEANED, debriefSeen: true } });
+    open(ep);
+    assert.ok(epState().stepAwayPanel === false);
+});
+
+test('D254 R5: a twin and a facilitated run never store stepAwayPicked', () => {
+    for (const ep of [twinEpisode(), fullEpisode({ facilitated: true })]) {
+        playDefend(ep, { kit_defend_done: true });
+        while (FW.currentMinigame) FW.forceCloseMinigame();
+        open(ep);
+        assert.ok(epState().stepAwayPanel === false);
+        assert.ok(!('stepAwayPicked' in stored(ep.id)));
+    }
 });
 
 test('EC1: no console errors across the cases', () => {

@@ -15,6 +15,10 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca02_host_said = false
+VAR kit_ca02_out = false
+VAR kit_ca02_done = false
+VAR kit_ca02_moved = false
+VAR kit_ca02_cv_choice = ""
 VAR hub_quiet = false
 
 === start ===
@@ -24,16 +28,21 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca02_host_said:
-        { kit_key_caught:
+    { kit_defend_done && (kit_ca02_done || not kit_ca02_out) && not kit_ca02_host_said:
+        {
+        - kit_key_caught && not kit_ca02_moved && (kit_ca02_cv_choice == "" || kit_ca02_cv_choice == "report"):
             { kit_caught:
                 Fatima Begum: You spotted the one that wanted a second click to open, so nothing ran and the inbox is clean.
             - else:
                 Fatima Begum: You stopped the one that wanted enabling, so nothing ran. A couple of the others are worth another look, and the debrief goes through them.
             }
             Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
+        - kit_key_caught:
+            Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
+        - kit_ca02_cv_choice == "report":
+            Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
         - else:
-            Fatima Begum: That application was opened and the file ran, so the attacker had a foothold on a machine full of candidate records before anyone noticed.
+            Fatima Begum: A CV that wants content switched on is after a foothold. If the file runs, the attacker is on an HR machine full of candidate records.
             Fatima Begum: A real CV opens in the viewer. Anything that asks you to switch something on first is the one to flag.
         }
         ~ kit_ca02_host_said = true

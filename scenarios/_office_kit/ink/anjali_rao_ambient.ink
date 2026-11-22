@@ -1,6 +1,8 @@
 VAR kit_defend_done = false
 VAR kit_ep = ""
 VAR kit_key_caught = false
+VAR kit_ca05_moved = false
+VAR kit_ca10_moved = false
 
 === start ===
 { kit_defend_done:
@@ -20,6 +22,9 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 -> bye
 
 === ca05 ===
+{ kit_ca05_moved && kit_key_caught:
+    -> bye
+}
 { kit_key_caught:
     Anjali Rao: Good spot. The page was a near-perfect copy of our own sign-in.
 - else:
@@ -28,6 +33,9 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 -> bye
 
 === ca10 ===
+{ kit_ca10_moved:
+    -> bye
+}
 { kit_key_caught:
     Anjali Rao: Nicely done. Those fake security checks are built to look completely routine.
 - else:
@@ -41,3 +49,11 @@ Anjali Rao: Hello. Grab a drink from the cooler whenever you like.
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca03_react ===
+{ kit_key_caught:
+    Anjali Rao: Someone clocked that late-night sign-in prompt for what it was. They've already got the password, and that tap is the only thing left in their way. #delivery: approving, calm
+- else:
+    Anjali Rao: A sign-in prompt you never kicked off means someone already has the password and is hoping you'll tap yes. Deny it. #delivery: calm, matter-of-fact
+}
+-> bye

@@ -230,7 +230,7 @@ export function kindVerdictLine(kind, isPhish, verdict) {
         } : {
             trust: 'Right call. You started this sign-in, so approving it is fine.',
             delete: "That one was yours. Denying it only means signing in again.",
-            report: "That one was yours, but reporting a prompt you aren't sure about is never wrong."
+            report: "That one was yours. Reporting a prompt you aren't sure about is safe, but it costs someone a little time to check."
         })[verdict] || null;
     }
     if (kind === 'call') {
@@ -242,7 +242,7 @@ export function kindVerdictLine(kind, isPhish, verdict) {
         } : {
             // Comply on a genuine caller is not full marks: the check is the lesson (P3 N16).
             trust: 'This caller was genuine, but you did what they asked without checking. An impostor sounds just the same, so ring back on the number you hold first.',
-            report: 'That caller was genuine, but escalating when unsure is never wrong.',
+            report: 'That caller was genuine. Escalating when unsure is safe, but it costs a colleague a little time.',
             delete: 'That caller was genuine. Hanging up without offering a safe way to check left them stuck.',
             verify: 'Checking first is fine. This caller was genuine, and ringing back confirmed it.'
         })[verdict] || null;

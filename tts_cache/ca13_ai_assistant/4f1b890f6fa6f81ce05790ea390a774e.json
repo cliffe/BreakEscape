@@ -1,0 +1,13 @@
+{
+  "key": "4f1b890f6fa6f81ce05790ea390a774e",
+  "npc": "kit_graham_whitfield",
+  "text": "Assistant's done the inbox for me. Lovely, saves me reading.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca13_ai_assistant",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T16:39:45Z"
+}

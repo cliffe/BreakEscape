@@ -377,7 +377,7 @@ def build(bare=False):
         (TASK, 'Read the brief'), DONE, globals_, {'awarenessEpisode': EP}, HOST, HOST['id'],
         ('A touch-screen kiosk with a short brief for new learners, ready to read.',
          'A touch-screen kiosk. The brief has been read.'),
-        ("You're set", "That's the brief. Start your first episode whenever you're ready."),
+        ("You're set", "Start your first episode whenever you're ready."),
         tier=office_kit.tier_of(row), kit_row=row)
     # scenario() keys the kiosk's "done" variant on episode_<id>_defend_done; a brief has none, so use DONE.
     for o in sc['rooms']['training_room']['objects']:
@@ -385,6 +385,17 @@ def build(bare=False):
             continue
         for v in o.get('observationVariants', []):
             v['condition'] = f'globalVars.{DONE}'
+    # The host asks for a hello before the kiosk (anjali_rao.ink), so the task list shows that step.
+    # It is optional (a learner who goes straight to the kiosk is not held back) and is completed by
+    # the host's own mappings when either seated colleague's conversation closes. Appended after the
+    # existing mapping (the server keys eventMappings by index).
+    tasks = sc['objectives'][0]['tasks']
+    tasks.insert(0, {'taskId': 'say_hello', 'title': 'Say hello to a colleague', 'type': 'custom',
+                     'status': 'active', 'optional': True})
+    host_mappings = next(n for n in sc['rooms']['training_room']['npcs'] if n['id'] == HOST['id'])['eventMappings']
+    for colleague in ('kit_niamh_doherty', 'kit_darren_price'):
+        host_mappings.append({'eventPattern': f'conversation_closed:{colleague}', 'onceOnly': True,
+                              'completeTask': 'say_hello'})
     ink = open(f'{AW}/core00/ink/anjali_rao.ink').read()
     return MISSION, sc, META, HOST['id'], ink
 

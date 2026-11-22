@@ -1,7 +1,7 @@
-// Network segmentation map after SEVER: the map no longer closes itself; CONTINUE takes
-// SEVER's place; once severed CONTINUE, the X and Esc end with complete(true); before SEVER
-// the X and Esc end with complete(false); a reopen after SEVER shows the severed state with
-// CONTINUE. The real module runs against jsdom.
+// Network segmentation map after SEVER: the map no longer closes itself; SEVER gives way to a
+// hint; there is no CONTINUE (sis01 gate m15: it did what the X does); once severed the X and
+// Esc end with complete(true); before SEVER they end with complete(false); a reopen after SEVER
+// shows the severed state. The real module runs against jsdom.
 // Run with: node --test test/js/nsm-continue-after-sever.test.mjs
 // NSM_JS_ROOT points at a copy of the engine (used to show the tests fail on old code).
 import test from 'node:test';
@@ -77,17 +77,16 @@ test('after SEVER the map stays open: no self-close, even 60 s later', (t) => {
     assert.ok(q('.nsm-cons-severed'), 'the severed consequence panel is still shown');
 });
 
-test('after SEVER, CONTINUE replaces SEVER and ends with complete(true)', (t) => {
+test('after SEVER there is no CONTINUE: SEVER is hidden and the X is the only way on', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const mg = setup();
-    assert.ok(!visible(q('#nsm-continue-btn')), 'no CONTINUE before SEVER');
+    assert.ok(q('#nsm-continue-btn') === null, 'no CONTINUE before SEVER');
     sever(mg);
-    const cont = q('#nsm-continue-btn');
-    assert.ok(visible(cont), 'CONTINUE shown');
+    assert.ok(q('#nsm-continue-btn') === null, 'no CONTINUE after SEVER');
+    assert.ok(!/CONTINUE/.test(q('#mg').textContent), 'no CONTINUE text anywhere');
     assert.ok(!visible(q('#nsm-sever-btn')), 'SEVER hidden');
-    assert.ok(cont.classList.contains('minigame-button'), 'CONTINUE takes the theme button skin');
-    assert.equal(cont.textContent.trim(), 'CONTINUE');
-    cont.click();
+    assert.ok(q('#minigame-close') !== null, 'the X is there');
+    q('#minigame-close').click();
     assert.deepEqual(ends, [true]);
     assert.equal(events.at(-1).name, 'minigame_completed');
 });
@@ -120,43 +119,41 @@ test('before SEVER, the X and Esc end with complete(false)', (t) => {
     assert.deepEqual(ends, [false]);
 });
 
-test('before SEVER, a cancelled confirm leaves SEVER up and no CONTINUE', (t) => {
+test('before SEVER, a confirm closed with its X leaves SEVER up and no CONTINUE', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const mg = setup();
     mg._toggleRule('r1');
     q('#nsm-sever-btn').click();
-    q('#nsm-modal-no').click();
+    q('#nsm-modal-x').click();
     assert.ok(visible(q('#nsm-sever-btn')));
     assert.ok(!visible(q('#nsm-continue-btn')));
     assert.equal(window.gameState.globalVariables.network_isolated, false);
 });
 
-test('reopen after SEVER: severed state with CONTINUE, which (and the X) give complete(true)', (t) => {
+test('reopen after SEVER: severed state, no CONTINUE, the X gives complete(true)', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     setup({ network_isolated: true });
     assert.ok(q('.nsm-cons-severed'), 'severed consequence panel on reopen');
-    assert.ok(visible(q('#nsm-continue-btn')), 'CONTINUE on reopen');
+    assert.ok(q('#nsm-continue-btn') === null, 'no CONTINUE on reopen');
     assert.ok(!visible(q('#nsm-sever-btn')), 'SEVER hidden on reopen');
-    q('#nsm-continue-btn').click();
-    assert.deepEqual(ends, [true]);
-    setup({ network_isolated: true });
     q('#minigame-close').click();
     assert.deepEqual(ends, [true]);
     t.mock.timers.tick(10000);
     assert.deepEqual(ends, [true], 'nothing else closes it');
 });
 
-// Review R1 n1: CONTINUE is the only way on, so a hint beside it (nsm-sever-hint) says what it does
-test('after SEVER the hint beside CONTINUE says to press it (neutral default; severedHint overrides)', (t) => {
+// The hint (nsm-sever-hint) says how to go on
+test('after SEVER the hint says to close with the X (neutral default; severedHint overrides)', (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     let mg = setup();
     sever(mg);
     const hint = q('#nsm-sever-hint');
-    assert.match(hint.textContent, /CONTINUE/, 'default hint names CONTINUE');
+    assert.match(hint.textContent, /X to carry on/, 'default hint names the X');
+    assert.ok(!/CONTINUE/.test(hint.textContent), 'default hint does not name CONTINUE');
     assert.ok(!hint.classList.contains('nsm-sever-hint-locked'), 'not in the locked colour');
-    mg = setup({}, { severedHint: 'Link cut. Press CONTINUE when ready.' });
+    mg = setup({}, { severedHint: 'Link cut. Close the map when ready.' });
     sever(mg);
-    assert.equal(q('#nsm-sever-hint').textContent, 'Link cut. Press CONTINUE when ready.');
+    assert.equal(q('#nsm-sever-hint').textContent, 'Link cut. Close the map when ready.');
     setup({ network_isolated: true });
-    assert.match(q('#nsm-sever-hint').textContent, /CONTINUE/, 'the hint is there on a reopen too');
+    assert.match(q('#nsm-sever-hint').textContent, /X to carry on/, 'the hint is there on a reopen too');
 });

@@ -1,6 +1,6 @@
 // ================================================
 // Awareness E3, full episode: Darren Price (person, Training Room)
-// Quayholt's security awareness lead, 50s, measured and dry. He frames the
+// Quayholt's service desk team lead, 50s, measured and dry. He frames the
 // exercise; the kiosk does the rest. His record carries the mappings that
 // complete place_vishing_call (on the pretext call outcome) and
 // work_service_desk_queue (on the defend set's done global), so the ink only

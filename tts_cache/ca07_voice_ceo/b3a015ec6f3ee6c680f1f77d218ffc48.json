@@ -1,0 +1,13 @@
+{
+  "key": "b3a015ec6f3ee6c680f1f77d218ffc48",
+  "npc": "kit_graham_whitfield",
+  "text": "You're right. I'll hang up and ring them both myself.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T21:10:01Z"
+}

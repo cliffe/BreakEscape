@@ -267,20 +267,10 @@
     font-size: 16px;
     cursor: pointer;
     padding: 6px 16px;
+    min-height: 44px;
     letter-spacing: 0.03em;
 }
 .sh-modal-confirm-btn:hover { background: #224422; color: #ffffff; }
-.sh-modal-cancel-btn {
-    background: #1a1a2e;
-    border: 2px solid #445566;
-    color: #8899bb;
-    font-family: inherit;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 6px 16px;
-    letter-spacing: 0.03em;
-}
-.sh-modal-cancel-btn:hover { background: #223355; color: #aabbdd; }
 
 /* ── Hint line (sis02 playtests: the finding was hard to discover; D167: the player marks it) ── */
 .sh-hint {

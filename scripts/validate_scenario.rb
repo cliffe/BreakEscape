@@ -189,6 +189,39 @@ def check_duplicate_show_scenario_brief(rendered_json)
   issues
 end
 
+# THREAT row `outcome` checks for a music event's credits (credits-theme.js creditsThreat).
+# A line, person, clause or section may carry `outcome`; only "contained" and "active" are read.
+# A title, headerText or statusText that says FAILED or COMPROMISED, with no outcome and no
+# threatText anywhere, is left to the engine's word sniffing: warn so the author states it.
+CREDITS_OUTCOMES = %w[contained active].freeze
+CREDITS_BAD_WORDS = /\b(?:FAILED|FAILURES?|COMPROMISED)\b/i
+
+def credits_nodes(items)
+  Array(items).flat_map do |item|
+    next [] unless item.is_a?(Hash)
+
+    [item] + credits_nodes(item['lines']) + credits_nodes(item['people']) + credits_nodes(item['clauses'])
+  end
+end
+
+def credits_outcome_issues(event, path)
+  nodes = credits_nodes(event['credits'])
+  found = []
+  nodes.each do |n|
+    next unless n.key?('outcome') && !CREDITS_OUTCOMES.include?(n['outcome'])
+
+    found << "❌ ERROR: '#{path}/credits' has outcome #{n['outcome'].inspect}; use \"contained\" or \"active\", lowercase, as the schema enum does for an entry."
+  end
+  stated = event.key?('outcome') || nodes.any? { |n| n.key?('outcome') } || event['threatText'].to_s.strip != ''
+  titles = nodes.select { |n| n['style'] == 'title' }.map { |n| n['text'].to_s }
+  wording = [event['headerText'], event['statusText'], *titles].compact.select { |t| t.to_s.match?(CREDITS_BAD_WORDS) }
+  if !stated && wording.any?
+    found << "⚠️ WARNING: '#{path}' reads #{wording.first.inspect} but sets no \"outcome\" (\"contained\" or \"active\") or threatText, " \
+             "so the THREAT row guesses from the words. Set outcome on the entry or its title line to say what it shows."
+  end
+  found
+end
+
 # Validate JSON against schema
 def validate_json(json_data, schema_path)
   unless File.exist?(schema_path)
@@ -4364,6 +4397,7 @@ def check_common_issues(json_data, valid_item_types = nil)
     music_events = json_data['music']['events'] || []
     music_events.each_with_index do |event, idx|
       music_path = "music/events[#{idx}]"
+      issues.concat(credits_outcome_issues(event, music_path)) if event.is_a?(Hash)
       next unless event['trigger']
       if (m = event['trigger'].match(/^conversation_closed:(.+)$/))
         npc_id = m[1]
@@ -6813,7 +6847,7 @@ def check_engine_limits(json_data)
         issues << "⚠️ WARNING: '#{path}' has requiresItemConditionHint(Variants) but no requiresItemCondition, so those hints are never shown."
       end
 
-      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants postitNoteVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if vk == 'requiresItemConditionHintVariants' && v.key?('condition')
@@ -6824,10 +6858,27 @@ def check_engine_limits(json_data)
             end
             next
           end
+          if vk == 'postitNoteVariants' && !(v['submitText'].is_a?(String) && !v['submitText'].strip.empty?)
+            issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' needs a non-empty submitText (the line a submit shows, with no server check): " \
+                      "the note view has no lock, and without the line the engine refuses to open it."
+          end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."
           end
+        end
+      end
+
+      if node['postitNoteVariants']
+        if node['type'] != 'pc' || node['lockType']
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants but is #{node['type'] != 'pc' ? "type '#{node['type']}', not 'pc'" : "a PC with lockType '#{node['lockType']}'"}. " \
+                    "Only a plain PC (no lockType) shows the note, so it would never appear."
+        end
+        if node['locked'] == true
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and locked: true. The note view opens in place of the unlock, so the PC could never be opened."
+        end
+        if node['triggerOnInteract'].is_a?(Array) && !node['triggerOnInteract'].empty?
+          issues << "❌ ERROR: '#{path}' has postitNoteVariants and a non-empty triggerOnInteract. The note view pre-empts it while a note is up."
         end
       end
 
@@ -6936,7 +6987,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|conceptPanel)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants|postitNoteVariants|conceptPanel)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node

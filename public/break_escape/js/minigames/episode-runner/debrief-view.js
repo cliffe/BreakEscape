@@ -1,6 +1,6 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, globals, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, globals, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore, readOnly }) -> { destroy, getState }
 // `showScore` (optional, default true): when false, the score figures are dropped: the "Round score: N%"
 // summary, the per-message "Score for this message: N of 100" line, and the "Reported N% of the phish"
 // line. The item counts (Phish caught: N of M) stay. Set false in facilitated mode and when the host
@@ -41,7 +41,7 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { evaluateActionCondition } from '../../utils/global-condition.js';
-import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
+import { redFlagString, skillName, chipLabel } from '../inbox-triage/triage-flags.js';
 import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences, caughtHow } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride } from '../inbox-triage/triage-kinds.js';
 
@@ -232,6 +232,16 @@ function buildCard(answer, msg, set = null, routeName = null, showScore = true) 
             li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : missWord),
                 el('span', 'aw-flag-text', typeof notes[id] === 'string' && notes[id] ? `${sentence} (${notes[id]})` : sentence));
             ul.appendChild(li);
+            // A second tick from the same either-tick group is covered by the first: say so.
+            if (caught) {
+                for (const extra of unitAccepts(unit).filter((m) => m !== hit && picked.has(m))) {
+                    const more = el('li', 'aw-flag aw-flag-caught aw-flag-also');
+                    more.dataset.flag = extra;
+                    more.append(el('span', 'aw-flag-word', 'Also ticked: '),
+                        el('span', 'aw-flag-text', `${chipLabel(set, extra)}. This names the same tell as '${chipLabel(set, id)}', so it is covered by that tick and not counted twice.`));
+                    ul.appendChild(more);
+                }
+            }
         }
         card.appendChild(ul);
     }
@@ -431,7 +441,7 @@ function conceptEntryShown(entry, globals) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null, showScore = true, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
+    concernRecap = null, showScore = true, readOnly = false, globals = null, folded = false, bandHeadline = null, weakestNudge = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -674,10 +684,13 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             str(strings, critical ? 'noBlameLineCritical' : 'noBlameLine')));
     }
 
-    const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
-    finish.type = 'button';
-    finish.addEventListener('click', () => { if (typeof onFinish === 'function') onFinish(); });
-    root.appendChild(finish);
+    // D263: a re-read after Finish is read only; the kiosk's X closes it, so there is no Finish.
+    if (!readOnly) {
+        const finish = el('button', 'aw-button aw-finish', DEFAULTS.finish);
+        finish.type = 'button';
+        finish.addEventListener('click', () => { if (typeof onFinish === 'function') onFinish(); });
+        root.appendChild(finish);
+    }
     container.appendChild(root);
 
     return {

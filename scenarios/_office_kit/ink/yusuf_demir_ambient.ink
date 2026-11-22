@@ -11,7 +11,7 @@ Yusuf Demir: Morning. I'm Yusuf, I keep an eye on security here. Grab a water if
 
 === ca11 ===
 { kit_key_caught:
-    Yusuf Demir: Good catch on that export bound for the wrong inbox. A checked recipient keeps residents' details inside the building.
+    Yusuf Demir: Good catch on Sam's email. Staff overtime and health notes had already gone outside Carrholme, and a quick report is what lets us contain it.
 - else:
     Yusuf Demir: Handovers go out fast when it's busy. One wrong recipient and resident details land where they shouldn't.
 }
@@ -24,3 +24,11 @@ Yusuf Demir: Morning. I'm Yusuf, I keep an eye on security here. Grab a water if
 + [See you later.]
     #exit_conversation
     -> DONE
+
+=== ca11_react ===
+{ kit_key_caught:
+    Yusuf Demir: Well spotted. Once it's in the wrong inbox you can't call it back, but a fast report keeps it small. #delivery: steady, approving
+- else:
+    Yusuf Demir: One wrong recipient and people's details are out, and that's a breach to report. The quicker it's flagged, the less the harm. #delivery: steady, matter-of-fact
+}
+-> bye

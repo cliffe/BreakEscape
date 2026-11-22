@@ -1059,6 +1059,16 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A PC with a sticky note on its screen in some states (`postitNoteVariants`, ca09): the click
+    // shows the note in the shared sign-in view (the post-it m01's Derek PC shows). The PC itself
+    // is not signed in to: the password the note carries is never checked against a lock here.
+    const noteNow = requiresItemModule.pcPostitVariantNow?.(sprite.scenarioData);
+    if (noteNow && window.startPasswordMinigame) {
+        window.startPasswordMinigame(sprite, 'item', null, () => {}, { postitNote: noteNow.note, showPostit: true, maxAttempts: 3,
+            submitText: noteNow.submitText, hideNotepadButton: true });
+        return;
+    }
+
     // triggerOnInteract: fire scenario-defined actions immediately on interaction,
     // with no minigame or flag entry required. Defined at the object's top level in the scenario.
     if (hasTriggerOnInteract(sprite.scenarioData)) {
@@ -2026,7 +2036,8 @@ export function handleObjectInteraction(sprite) {
         readInPlace = true;
         if (data.addToNotes !== false && !filedInHolder && window.addNote) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
-            if (addedNote) {
+            // addNote returns the existing note on a re-read (marked read): toast only a new note
+            if (addedNote && addedNote.read !== true) {
                 window.announceNoteAdded?.(data.name);
             }
         }
@@ -2084,7 +2095,8 @@ export function handleObjectInteraction(sprite) {
         // Skip notepad items since they're handled specially, and items filed in a holder
         if (resolvedText.trim().length > 0 && data.type !== 'notepad' && !filedInHolder) {
             const addedNote = window.addNote(data.name, resolvedText, data.important || false);
-            if (addedNote) {
+            // addNote returns the existing note on a re-read (marked read): toast only a new note
+            if (addedNote && addedNote.read !== true) {
                 window.announceNoteAdded?.(data.name);
             }
         }

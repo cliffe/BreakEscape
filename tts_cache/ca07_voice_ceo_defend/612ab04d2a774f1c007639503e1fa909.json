@@ -1,0 +1,13 @@
+{
+  "key": "612ab04d2a774f1c007639503e1fa909",
+  "npc": "agnieszka_duda",
+  "text": "A fake voicemail and a fake email can come from the same sender. Paid, it goes to an account they control, and finance loses the afternoon re-checking.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca07_voice_ceo_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T20:48:49Z"
+}

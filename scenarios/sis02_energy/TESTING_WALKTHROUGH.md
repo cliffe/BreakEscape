@@ -171,7 +171,7 @@ On HMI-OPS-01, open the **Historian Trend Viewer** (sub-object inside the PC, `t
 - **dZ/dt** toggle (rate-of-change overlay): sets `rate_of_change_viewed` = `true` (`progressActions: overlay_enabled`)
 - **COMPARE RACKS** (side-by-side comparison): sets `compare_racks_viewed` = `true` (`progressActions: compare_racks_opened`). It shows all four racks together and a neutral banner; it no longer unlocks the annotation or names the time
 - **Mark the moment**: click or tap a reading (or focus the chart with Tab, move the cursor with Left/Right, Shift+Left/Right for 10 readings, PageUp/PageDown for 60, Home/End, and press Enter or Space). Hover only shows the reading. The mark is judged. With a mouse or keyboard it must fall between 2 minutes before and 10 minutes after the first flat reading. A screen-pixel allowance helps fingers: a reading within 14 px after the cliff, or 4 px before it, also counts (measured on a 390px phone at 12h: about 13 minutes before and 31 minutes after). Too early gives "Still moving like a real sensor reading. The moment is later."; too late gives "Not moving, but it was already like this before. Find where it starts.", or, when the start is off the left edge of a short range (1h, 3h, 6h), "The start is before this time range: widen the range." An accepted mark draws a grey mark line and the hint reads "Marked 23:12:07. Now say what the data shows: press [ANNOTATE FINDING] on the left." The button is locked until then ("Mark the moment on the chart first.")
-- Press **[ANNOTATE FINDING]**. The report shows the variable and the marked time and asks **"What does the data show from that moment?"** with three choices: "Real cooling: the cells cooled fast, then held a steady temperature.", "Written in: values were put into the system, not read from the sensor." (right) and "Sensor dropout: the sensor failed, so the historian repeats its last good reading." The two wrong ones each give a one-line reason from the data (cooling: cells cannot cool by 8.5°C in 1 second, and a real sensor never reads exactly the same for hours) and are marked "(ruled out)"; the player chooses again. There is one X, the scene X at the top right: while the question is up it closes the report and keeps the mark, and ANNOTATE reopens it. Only the right choice shows the finding and interpretation rows and the confirm button (with a named **[CANCEL]**; the scene X is hidden on that screen). The chart then gains the red injection line and anomaly tooltips. Confirming fires `completionActions`. Reopening the viewer after confirming starts already revealed. **No flag station.** Esc closes the report first, and closes the viewer when no report is open.
+- Press **[ANNOTATE FINDING]**. The report shows the variable and the marked time and asks **"What does the data show from that moment?"** with three choices: "Real cooling: the cells cooled fast, then held a steady temperature.", "Written in: values were put into the system, not read from the sensor." (right) and "Sensor dropout: the sensor failed, so the historian repeats its last good reading." The two wrong ones each give a one-line reason from the data (cooling: cells cannot cool by 8.5°C in 1 second, and a real sensor never reads exactly the same for hours) and are marked "(ruled out)"; the player chooses again. There is one X, the scene X at the top right: while the question is up it closes the report and keeps the mark, and ANNOTATE reopens it. Only the right choice shows the finding and interpretation rows and one confirm button; the scene X stays on screen and closes the report (Esc too). The chart then gains the red injection line and anomaly tooltips. Confirming fires `completionActions`. Reopening the viewer after confirming starts already revealed. **No flag station.** Esc closes the report first, and closes the viewer when no report is open.
 
 **Verify**:
 - `historian_flatline_found` = `true` (`completionActions: set_global`)
@@ -249,7 +249,7 @@ Enter the Engineering Workshop. Objects in this room include:
 **Controls**: select a row to open SESSION DETAIL, which has **[LOOK UP IP]**, **[INVESTIGATE ACCOUNT]** and **[FLAG SESSION]** (available on every row; a wrong row gets a "not this one" message).
 - The IP lookup shows an internal address on the enterprise VLAN, a print management server that nobody logs in from, with a firewall note about HTTPS to Tor exit `198.51.100.45` every 15 minutes since 3 March (sets `jump_server_threat_intel_viewed`)
 - The account history shows `c.ellison` as a commissioning engineer for Fosse Controls, deprovisioned 2025-01-17, with the jump server's **local account not removed** and the default password never changed
-- **[FLAG SESSION]** on the c.ellison row opens "CONFIRM SESSION FLAG" with **[CANCEL]** and **[CONFIRM: FLAG ACTIVE SESSION]**
+- **[FLAG SESSION]** on the c.ellison row opens "CONFIRM SESSION FLAG" with **[CONFIRM: FLAG ACTIVE SESSION]** and the X (Esc too) to go back
 
 **Second tab: ENG TOOL HISTORY** (`sis_audit`): the engineering workstation's own record of SIS configurator commands. The safety controller keeps no change log, so this is the only trace. At 03:22 the c.ellison session wrote `THERMAL_RUNAWAY_T` 55°C to 85°C and `H2_ALARM_THRESHOLD` 1.0% to 3.8% by volume, with no change request. A 06:00 BACKUP_FAILED line closes the list.
 
@@ -295,7 +295,7 @@ There are three ESD stations, all wired to the same relays and **none gated** (`
 Interact with a station. The flow:
 1. The ESD panel opens with the status "Flip guard to arm ESD control."
 2. Flip the yellow guard (click it); the guard opens and the button arms. (In the harness, the guard and button have no accessible labels; click the `.esd-guard` element.)
-3. Press the button: a confirmation modal "CONFIRM EMERGENCY SHUTDOWN?" shows what it does (takes Racks A1 to A4 off charge, opens the DC contactors, starts forced cooling, needs a manual reset at the hall panel) with **CONFIRM - INITIATE SHUTDOWN** and **CANCEL**
+3. Press the button: a confirmation modal "CONFIRM EMERGENCY SHUTDOWN?" shows what it does (takes Racks A1 to A4 off charge, opens the DC contactors, starts forced cooling, needs a manual reset at the hall panel) with **CONFIRM - INITIATE SHUTDOWN** and the X (Esc too) to go back
 4. Confirm: ESD activates
 
 **Verify**:
@@ -323,7 +323,7 @@ The aim opens when the jump server session is found (Step 15). The two tasks can
 
 ### Step 19: Pull the Jump Server Ethernet Cable
 
-Return to the Engineering Workshop. Find the `jump_server_cable`. Interact with it: a confirm asks "Disconnect cable JS-SCADA-LAN?" with two buttons, **Disconnect** and **Leave it**. Choose **Disconnect**.
+Return to the Engineering Workshop. Find the `jump_server_cable`. Interact with it: a confirm asks "Disconnect cable JS-SCADA-LAN?" with one button, **Disconnect**, and the X (Esc too) to leave it. Choose **Disconnect**.
 
 **Verify**:
 - `jump_server_isolated` = `true` (set by the confirm's Disconnect button) and Helen's mapping completes `pull_ethernet_cable`
@@ -383,7 +383,7 @@ The minigame shows a table of SIS setpoints with deviation status:
 | H2_ALARM_THRESHOLD | 3.8% vol | 1.0% vol | AMBER |
 | CHARGE_INHIBIT_TEMP | 45C | 45C | GREEN |
 
-Clicking an AMBER row shows the detail text. The certified values appear in the table data, but the **Compare with Certification Document** button is disabled until `sis_certification_seen = true`. The **Confirm SIS Tamper - Report to Security** button is not gated (see below).
+Clicking an AMBER row shows the detail text. The certified values appear in the table data, but the **Compare with Certification Document** button is disabled until `sis_certification_seen = true`, and so is **Confirm SIS Tamper - Report to Security**. A "[!] Certification document needed to confirm tampering" line says why.
 
 **Verify**:
 - `sis_config_seen` = `true` (set when the minigame opens)
@@ -414,15 +414,13 @@ Shows certified setpoints: thermal trip 55°C, hydrogen alarm 1.0% by volume, ch
 Return to the `sis_config_panel` and interact with it again. The **Compare with Certification Document** button is now enabled.
 
 - Click **Compare with Certification Document** to see a side-by-side comparison of current and certified values
-- Click **Confirm SIS Tamper - Report to Security**; a dialog "Confirm SIS Tamper Report" offers **Cancel** and **Confirm**
+- Click **Confirm SIS Tamper - Report to Security**; a dialog "Confirm SIS Tamper Report" has the X and one **Confirm Tamper Report** button (the X and Esc go back without reporting)
 
 **Verify**:
 - `sis_tamper_confirmed` = `true` (set by the minigame's Confirm) and `confirm_sis_tamper` completes
 - Helen's mapping on `sis_tamper_confirmed` also sets `incident_aware`
 - Helen's hub shows the SIS and patch options; Marcus's hub shows **Why was the SIS patch deferred?**
 - **Alarm panel**: SIS STATUS lamp changes to RED, SETPOINT DEVIATION (flashing)
-
-> **Gating note**: only Compare is gated on the certification document; Confirm can be pressed before it, so the tamper can be reported without comparing. Whether that is intended is an open design question.
 
 ### Step 25: Read the Deferred Patch Risk Assessment (optional)
 

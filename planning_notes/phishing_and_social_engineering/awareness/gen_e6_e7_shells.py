@@ -394,17 +394,17 @@ HOSTS = {
 LINES = {
     ('e6', 'defend'): (
         "Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.",
-        {'catch': ("You didn't scan that barrier QR or tap the parking text, so no card number and no work sign-in went anywhere.",
-                   'A code on an official-looking notice is the easy one to trust. Opening the app yourself skips the whole thing.'),
-         'miss': ('That barrier QR, and the parking-permit text behind it, were the one to stop.',
-                  'One tap later, a personal card was charged or a work sign-in captured, and the afternoon went on the phone to the bank.')},
+        {'catch': ("You flagged that QR code taped to the car park barrier, so nobody's card details went to its page.",
+                   'Anyone can tape a code to a barrier. Check with Facilities before a code gets your card details.'),
+         'miss': ('That QR code taped to the car park barrier was the one to stop.',
+                  "Nobody can see where a taped-up code goes before they scan it. The page behind it would take your card details and number plate.")},
         'Thanks, Chidi.', 'Any time.'),
     ('e7', 'defend'): (
         "Thanks for covering the phones while we're in the quarter-end meeting. Three voicemails and two emails have come in on the kiosk. Take your time with each.",
         {'catch': ("You held that payment back, so a voice that sounded like the boss didn't move money out the door.",
                    'The "keep this quiet" is the real tell. It\'s there to buy time before anyone checks.'),
-         'miss': ("That call in the boss's voice, asking to release a payment quietly, was the one to stop.",
-                  'The payment went, the whole run froze while every recent one was re-checked, and finance lost the afternoon to it.')},
+         'miss': ("That email in the boss's name, with a voicemail in his voice to back it, was the one to stop.",
+                  "A fake voicemail and a fake email can come from the same sender. Paid, it goes to an account they control, and finance loses the afternoon re-checking.")},
         'Thanks, Agnieszka.', 'See you after the meeting.'),
 }
 

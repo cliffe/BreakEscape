@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e15_shadow_it_defend_defend_complete:
         { kit_key_caught:
-            Nilesh Solanki: You handed that found stick to us unopened, so nothing on it ever ran on a work machine.
-            Nilesh Solanki: A dull non-event is the point. The free shortcut is where a client pack ends up somewhere we can't account for.
+            Nilesh Solanki: You passed that posted stick to us without plugging it in, so nothing on it ran on a work machine.
+            Nilesh Solanki: A stick in the post is a found stick, whatever the note says. It comes to us, and nobody plugs it in.
         - else:
-            Nilesh Solanki: That stick left to be found, or the free tool for the client pack, was the one to stop.
-            Nilesh Solanki: It got used, so months on nobody could say where that client data was or who could read it.
+            Nilesh Solanki: That stick posted in, marked from the client, was the one to bring to us.
+            Nilesh Solanki: The moment someone opens a file on that stick, it could run malware, first on that machine and then on the share.
         }
     - else:
         Nilesh Solanki: Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.

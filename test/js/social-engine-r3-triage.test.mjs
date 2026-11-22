@@ -106,7 +106,7 @@ test('P3 N-2: a Report on a genuine item counts as handled right in the grid, as
     const s = open(awareSet([realMail, phishMail]));
     click($(s, '.tri-start'));
     act(s, 'real_mail', 'report');
-    assert.match($(s, '.tri-card-verdict').textContent, /never wrong/);
+    assert.match($(s, '.tri-card-verdict').textContent, /which is safe, though .* costs/);
     act(s, 'phish_mail', 'report', ['lookalike_domain', 'urgencyCalibrated']);
     toResult(s);
     assert.equal(state(s).result.percent, 100);
@@ -180,13 +180,17 @@ test('P3 N17: an approved attacker prompt costs CRITICAL_PENALTY more and caps t
     assert.match($(s, '.tri-critical').textContent, /let an attacker straight in/);
 });
 
-test('P3 N-3: the twin of a credited tell (a flagAlternatives alternate) is never "Not a flag here"; one row per group', () => {
+test('P3 N-3: the twin of a credited tell (a flagAlternatives alternate) is never "Not a flag here"; one scored row per group, the second tick acknowledged as covered', () => {
     const s = open(awareSet([phishMail]));
     click($(s, '.tri-start'));
     act(s, 'phish_mail', 'report', ['senderTrust', 'lookalike_domain', 'urgencyCalibrated']);
     assert.equal($(s, '.tri-false-flag'), null);
     const rows = $$(s, '.tri-flag').map((r) => [r.dataset.flag, r.classList.contains('caught')]);
-    assert.deepEqual(rows, [['lookalike_domain', true], ['urgencyCalibrated', true]]);
+    assert.deepEqual(rows, [['lookalike_domain', true], ['senderTrust', true], ['urgencyCalibrated', true]]);
+    const also = $(s, '.tri-flag-also');
+    assert.equal(also.dataset.flag, 'senderTrust');
+    assert.match(also.textContent, /Also ticked/);
+    assert.match(also.textContent, /covered by that tick and not counted twice/);
     assert.match($(s, '.tri-card-score').textContent, /100 of 100/);
 });
 
@@ -202,6 +206,11 @@ test('P3 N6: the debrief lists an either-tick group once', () => {
     renderDebrief(host, { result: { percent: 80, answers: [{ id: 'phish_mail', verdict: 'report', flags: ['lookalike_domain'], score: 80 }] }, set });
     const flags = [...host.querySelectorAll('.aw-flag')].map((li) => [li.dataset.flag, li.classList.contains('aw-flag-caught')]);
     assert.deepEqual(flags, [['lookalike_domain', true], ['urgencyCalibrated', false]]);
+    host.replaceChildren();
+    renderDebrief(host, { result: { percent: 80, answers: [{ id: 'phish_mail', verdict: 'report', flags: ['senderTrust', 'lookalike_domain'], score: 80 }] }, set });
+    const both = [...host.querySelectorAll('.aw-flag')].map((li) => [li.dataset.flag, li.classList.contains('aw-flag-also')]);
+    assert.deepEqual(both, [['senderTrust', false], ['lookalike_domain', true], ['urgencyCalibrated', false]]);
+    assert.match(host.querySelector('.aw-flag-also').textContent, /covered by that tick and not counted twice/);
 });
 
 test('P3 F7: awareness header ticks appear only once the header details are open; the lab is unchanged', () => {

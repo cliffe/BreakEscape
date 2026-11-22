@@ -20,6 +20,10 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca18_host_said = false
+VAR kit_ca18_out = false
+VAR kit_ca18_done = false
+VAR kit_ca18_moved = false
+VAR kit_ca18_reset_choice = ""
 VAR hub_quiet = false
 
 === start ===
@@ -29,14 +33,15 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca18_host_said:
-        { kit_key_caught:
-            { kit_caught:
+    { kit_defend_done && (kit_ca18_done || not kit_ca18_out) && not kit_ca18_host_said:
+        {
+        - kit_key_caught && not kit_ca18_moved && (kit_ca18_reset_choice == "" || kit_ca18_reset_choice == "words"):
+            { kit_caught && not kit_ca18_out:
                 Ama Owusu: You read the page before you signed in, so the fake alert got nothing and the spraying had nothing to open.
             - else:
                 Ama Owusu: You stopped the one that mattered, the lookalike sign-in page, before a reused password turned into a live account.
             }
-        - else:
+        - not kit_key_caught:
             Ama Owusu: The alert looked like us and you were trying to protect your account, but the password went to their page, and that opens a lot.
         }
         Ama Owusu: A unique password per account in a manager, plus MFA, is the one habit that beats both spraying and stuffing.

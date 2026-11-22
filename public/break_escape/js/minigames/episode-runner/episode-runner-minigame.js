@@ -27,7 +27,7 @@
 //            strings.defendIntro, else a default; the heading and button fit the set
 //            (messages, pages, calls, phone or voice)
 //   check    (check missions) the same, with defend.stage ('pre' or 'post')
-//   debrief  drawn here with renderDebrief (P7-B); Finish closes the runner
+//   debrief  drawn here with renderDebrief (P7-B); Finish shows the "Episode finished" panel, and the kiosk X closes the runner
 //
 // Progress lives in the declared global episode_<id>_state (ids and numbers only), written
 // through the shared writer, so a reopen from the kiosk resumes at the stage it left. A
@@ -49,8 +49,9 @@
 // Step-away panel (EC1, living office), when episode.stepAway is true on a full episode:
 //   - the triage reopen carries stepAwayAfter: 'defend' (memory only, like pauseAfter), and the
 //     runner shows the panel in place of the debrief: Look up closes the runner and emits
-//     episode_step_away once; Carry on renders the debrief. Neither writes the state, which
-//     already says debrief, so a reopen or a reload resumes at the debrief with no panel;
+//     episode_step_away once; Carry on renders the debrief. Each stores stepAwayPicked (one
+//     boolean, once), so until one is picked a reopen or a reload shows the panel again, and
+//     after that it resumes at the debrief; the stage still says debrief either way;
 //   - Look up is enabled only while kit_defend_done is true (read at render, then on its change
 //     event), so after a failed save only Carry on can be used;
 //   - a facilitated run shows Look up on the pause after the defend stage instead;
@@ -133,6 +134,10 @@ const SEND_OFF_TEXT = 'Thanks for working through this one. Take the habit with 
 // ENG-10: the once-per-learner finished line (strings.alreadySeen), and the multi-card brief's
 // button defaults (strings.briefDone). Card copy and the done global are data.
 const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
+// D263: the kiosk's close hint beside the X (strings.closeHint; '' drops it), and the finished
+// panel's "read the debrief again" button (strings.rereadLink).
+const CLOSE_HINT_TEXT = 'Close with X';
+const REREAD_TEXT = 'Read the debrief again';
 const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' });
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
@@ -375,6 +380,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             const cap = el('div', 'epr-kiosk-cap');
             cap.textContent = 'Security Awareness';
             top.appendChild(cap);
+            // D263: gate players did not know how to leave the kiosk. A short pixel-font hint sits
+            // beside the X (strings.closeHint overrides it; '' drops it).
+            const hint = isStr(this.strings.closeHint) ? this.strings.closeHint
+                : (this.strings.closeHint === '' ? '' : CLOSE_HINT_TEXT);
+            if (hint) top.appendChild(el('span', 'epr-kiosk-hint', hint));
             // R2 m2 (a): a kiosk is a diegetic device like the PC monitor, so it closes with the
             // themed steel X (the PC monitor's close look); the bar's SE overlay X has the same skin since D216.
             this.mountThemedCloseControl(top, 'Close', 'epr-kiosk-close');
@@ -400,8 +410,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.pauseAfter = this.facilitated && isStr(after) && this.state.stage && this.state.done.includes(after)
             ? after : null;
         // EC1: the step-away panel, carried by the triage reopen only (memory, never stored).
+        // The prompt shows until the player picks Look up or Carry on (stepAwayPicked, stored once), so
+        // a close at the prompt and a reopen or reload shows it again. A debrief already seen or
+        // finished never brings it back.
         this.stepAwayPanel = !this.facilitated && !this.alreadySeen && stepAwayOn(this.episode)
-            && this.params.stepAwayAfter === 'defend' && this.state.done.includes('defend') && this.state.stage === 'debrief';
+            && this.state.done.includes('defend') && this.state.stage === 'debrief'
+            && this.state.stepAwayPicked !== true && this.state.debriefSeen !== true;
         this.strip = this.deps.renderStepStrip(this.stripHost, {
             stages: stagesFor(this.episode), current: this.state.stage, done: this.state.done,
             skipped: this._skippedStages(), labels: this._stripLabels(), brand: this.episode.brand
@@ -442,7 +456,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._destroyView();
         const stage = this.state.stage;
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
-        if (this.alreadySeen) this._renderFinished();
+        if (this.rereading && this._canReread()) this._renderDebrief();
+        else if (this.alreadySeen) this._renderFinished();
         else if (this.pauseAfter && stage) this._renderPause();
         else if (this.stepAwayPanel && stage === 'debrief') this._renderStepAway();
         else if (stage === 'brief') this._renderBrief();
@@ -497,6 +512,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         panel.classList.add('epr-step-away');
         this._lookUpButton(panel);
         this._button(panel, STEP_AWAY_COPY.carryOn, () => {
+            this._markStepAwayPicked();
             this.stepAwayPanel = false;
             this._render();
             this._focus();
@@ -548,6 +564,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _lookUp() {
         if (this._steppedAway || !this._stepAwayReady()) return;
         this._steppedAway = true;
+        this._markStepAwayPicked();
         this.stepAwayPanel = false;
         this.pauseAfter = null;
         const episodeId = this.episode.id ?? null;
@@ -586,6 +603,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         Promise.resolve(run).then((r) => {
             if (Array.isArray(r?.emitted) && r.emitted.length) REEMITTED.add(id);
         }).catch((e) => console.error('[episode] re-emitting the defend round failed:', e));
+    }
+
+    /** The step-away prompt was answered: store one boolean so a reopen or reload skips the prompt. */
+    _markStepAwayPicked() {
+        if (this.facilitated || !stepAwayOn(this.episode)) return;
+        const s = this._readState();
+        if (s.stepAwayPicked === true) return;
+        this._saveState({ ...s, stepAwayPicked: true });
+        this.state = this._readState();
     }
 
     /** EC1 (d): the debrief view closed (Finish or the kiosk's X): release the success screen once. */
@@ -776,7 +802,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (sent?.kind === 'guess') {
             const landed = guessLanded(this.episode, globals);
             const aftermath = landed ? flipAftermathFor(this.episode, { landed }) : null;
-            return { message: null, page: null, call: null, guess: landed, missed: !landed, ...(aftermath ? { aftermath } : {}) };
+            // The spray needs the staff list. When the episode names a sprayedGlobal and the run never
+            // set it, the flip must not say a spray opened accounts (only the stolen list did).
+            const sprayName = isObj(this.episode?.guess) ? this.episode.guess.sprayedGlobal : null;
+            const noSpray = landed && typeof sprayName === 'string' && !!sprayName && globals[sprayName] !== true;
+            return { message: null, page: null, call: null, guess: landed, ...(noSpray ? { noSpray } : {}), missed: !landed, ...(aftermath ? { aftermath } : {}) };
         }
         if (sent?.kind === 'call') {
             const call = flipCall(this.episode, this.social, sent, globals);
@@ -885,11 +915,17 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (prompt) this.body.insertBefore(prompt, this.body.firstChild);
     }
 
+    /** D263: a finished episode that ran a debrief can show it again (read only, memory only). */
+    _canReread() {
+        return !this.state.stage && this.state.done.includes('debrief') && stagesFor(this.episode).includes('debrief');
+    }
+
     _renderDebrief() {
+        const reread = this.rereading === true;
         const stored = this.state.defend || {};
         // EC1 (c): a step-away episode keeps the defend answers in the state, so the per-item
         // cards survive a look-up and a reload; every other episode passes an empty list as before.
-        const kept = stepAwayOn(this.episode) && Array.isArray(this.state.defendProgress) ? this.state.defendProgress : [];
+        const kept = debriefAfter(this.episode, 'defend') && Array.isArray(this.state.defendProgress) ? this.state.defendProgress : [];
         // Gate B D1: the stored list keeps verdicts only (no score, no isPhish), so a reopen scores
         // it again with the live round's scorer; the stored figures win where both have one.
         let raw = this.params.triageResult;
@@ -911,8 +947,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // and, when scores show, the score in large type.
         const folded = foldsResult(this.episode, 'defend') && isObj(this.defendSet);
         const bandHeadline = folded ? foldedHeadline(raw, this.defendSet) : null;
-        this._debriefShown = true;
+        // A re-read changes nothing: no seen-mark on close, no Finish, no new write.
+        this._debriefShown = !reread;
         this.view = this.deps.renderDebrief(this.body, {
+            readOnly: reread,
             result,
             showScore,
             folded,
@@ -962,6 +1000,14 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._sendOffDue = false;
         const sendOff = typeof this.strings.sendOff === 'string' ? this.strings.sendOff : SEND_OFF_TEXT;
         if (due && sendOff.trim()) panel.appendChild(el('p', 'epr-send-off', sendOff));
+        // D263: the debrief cannot be re-read from the bare panel, so offer it (shell strings.rereadLink).
+        if (this._canReread() && this.strings.rereadLink !== '') {
+            this._button(panel, isStr(this.strings.rereadLink) ? this.strings.rereadLink : REREAD_TEXT, () => {
+                this.rereading = true;
+                this._render();
+                this._focus();
+            }, 'epr-reread aw-button-secondary');
+        }
     }
 
     _complete(stageId, patch = {}) {
@@ -1274,7 +1320,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             }
         }
         // EC1 (c): a step-away episode keeps the round's verdicts (the result's list, cleaned).
-        const keep = stepAwayOn(episode) && stage === 'defend' && Array.isArray(result?.answers) && result.answers.length
+        const keep = debriefAfter(episode, 'defend') && stage === 'defend' && Array.isArray(result?.answers) && result.answers.length
             ? { defendProgress: result.answers } : {};
         const state = completeStage(episode, this._readState(), stage, { defend: defendSummary(result), ...keep });
         this._saveState(state);

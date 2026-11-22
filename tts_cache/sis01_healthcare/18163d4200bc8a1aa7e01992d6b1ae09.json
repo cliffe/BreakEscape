@@ -1,0 +1,13 @@
+{
+  "key": "18163d4200bc8a1aa7e01992d6b1ae09",
+  "npc": "sarah_mitchell",
+  "text": "No time means I plan for hours. I can't leave him on a guess.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:18:29Z"
+}

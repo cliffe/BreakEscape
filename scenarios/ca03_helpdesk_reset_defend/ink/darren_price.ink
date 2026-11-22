@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e3_helpdesk_reset_defend_defend_complete:
         { kit_key_caught:
-            Darren Price: You turned down that overnight sign-in prompt nobody had started, so no claims account was handed to a stranger.
-            Darren Price: Prompt-bombing just wears people down until they tap yes. Number matching takes the idle tap out of it.
+            Darren Price: You turned down that overnight sign-in prompt Leila hadn't started, so no claims account was handed to a stranger.
+            Darren Price: A prompt you didn't start means someone has your password. Deny it and report it, whatever the hour.
         - else:
-            Darren Price: That overnight sign-in prompt, the one nobody had started, was the one to turn down.
-            Darren Price: It went through, so a claims account opened to a stranger and the team lost the afternoon to forced resets.
+            Darren Price: That sign-in prompt at two in the morning, the one Leila hadn't started, was the one to turn down.
+            Darren Price: One tap on Approve and a stranger is in Leila's account, with her service desk access, from a computer she's never used.
         }
     - else:
         Darren Price: You're in Leila's seat this morning. Three calls are queued on the kiosk, and there's a sign-in prompt from overnight on her phone. Take your time with each one.

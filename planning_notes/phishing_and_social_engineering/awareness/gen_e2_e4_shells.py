@@ -71,17 +71,17 @@ HOSTS = {
 LINES = {
     ('e2', 'defend'): (
         "Thanks for covering the recruitment inbox while I'm in interviews. Six messages are waiting on the kiosk. Treat them the way you would on a normal day.",
-        {'catch': ('You held back that application whose attachment wanted a second click to open it, so nothing ran on the HR machine behind it.',
-                   'A real CV just opens. The one asking for an extra step to view it is worth a second look.'),
-         'miss': ('That application with the attachment that wanted a second click was the one to stop.',
-                  'It ran, so we lost the HR machine for a rebuild and recruitment paused while we re-contacted candidates by hand.')},
+        {'catch': ('You held back that application whose CV wanted content switched on, so nothing ran on the HR machine.',
+                   'A real CV just opens. One that asks you to enable content first is the one to report.'),
+         'miss': ('That application whose CV wanted content switched on was the one to stop.',
+                  "Enable Content is the step that lets a file run a small program, and that could give the sender a way into Tarrowby's network.")},
         'Thanks, Fatima.', 'Any time.'),
     ('e4', 'defend'): (
         "Morning, Tomás. Catherine flies out today, and her inbox and voicemail have filled up already. Five things are waiting on the kiosk. Take them one at a time.",
-        {'catch': ("You held that urgent payment in Catherine's name until you'd reached her, so it never left for an account that wasn't hers.",
-                   "A voicemail that sounds like her and says don't ring back is the exact bit to distrust."),
+        {'catch': ("You held that urgent payment in Catherine's name, so it never left for an account that wasn't hers.",
+                   "A voice can be copied. When a voicemail says don't ring back, ring her on the number you already hold."),
          'miss': ("That urgent payment in Catherine's name, pushed through on a voicemail that sounded like her, was the one to stop.",
-                  "It went to the attacker's account, the real supplier later chased what it was owed, and finance spent the afternoon unpicking it.")},
+                  "The sender wants the retainer in an account they control. Skipping Yasmin's approval is how it gets there, and the real Catherine never asked for it.")},
         'Thanks, Thandiwe.', 'Shout if anything else comes in.'),
     ('e2', 'pre'): (
         "Hi. Before the training there's a short check on the kiosk: ten emails from the recruitment inbox. Just do what you'd normally do with them.",

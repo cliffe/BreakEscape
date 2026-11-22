@@ -18,6 +18,10 @@ VAR kit_defend_done = false
 VAR kit_caught = false
 VAR kit_key_caught = false
 VAR kit_ca10_host_said = false
+VAR kit_ca10_out = false
+VAR kit_ca10_done = false
+VAR kit_ca10_moved = false
+VAR kit_ca10_check_choice = ""
 VAR hub_quiet = false
 
 === start ===
@@ -27,8 +31,9 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { kit_defend_done && not kit_ca10_host_said:
-        { kit_key_caught:
+    { kit_defend_done && (kit_ca10_done || not kit_ca10_out) && not kit_ca10_host_said:
+        {
+        - kit_key_caught && not kit_ca10_moved && (kit_ca10_check_choice == "" || kit_ca10_check_choice == "close"):
             { kit_caught:
                 Niamh Doherty: You closed that page instead of following its steps, so nothing it wanted ever ran on the machine.
             - else:

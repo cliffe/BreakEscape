@@ -1,0 +1,13 @@
+{
+  "key": "41d116f3b9f30a95f86e392244a4430f",
+  "npc": "chidi_okeke",
+  "text": "Anyone can tape a code to a barrier. Check with Facilities before a code gets your card details.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca06_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T14:51:04Z"
+}

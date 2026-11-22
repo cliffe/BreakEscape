@@ -1,0 +1,14 @@
+{
+  "key": "93723b4ed0b1e55457fd68c3afab47b4",
+  "npc": "kit_chidi_okeke",
+  "text": "A stick that turns up, posted or found, is a tempting thing, and that's the whole point of it. It goes to IT, never into your PC.",
+  "delivery": "easy-going, matter-of-fact",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca15_shadow_it_defend",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T22:43:59Z"
+}

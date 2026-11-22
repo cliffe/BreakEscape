@@ -84,6 +84,12 @@
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca10",
+    "kit_ca10_out": false,
+    "kit_ca10_there": false,
+    "kit_ca10_asked": false,
+    "kit_ca10_moved": false,
+    "kit_ca10_done": false,
+    "kit_ca10_check_choice": "",
     "kit_ca10_host_said": false,
     "kit_key_caught": false
   },
@@ -99,6 +105,44 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca10_t_there",
+      "startOnGlobal": "kit_ca10_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca10_there",
+      "setGlobal": {
+        "kit_ca10_there": true
+      }
+    },
+    {
+      "id": "kit_ca10_t_tail",
+      "startOnGlobal": "kit_ca10_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca10_check_choice === ''",
+      "setGlobal": {
+        "kit_ca10_check_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca10_t_done",
+      "startOnGlobal": "kit_ca10_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca10_done",
+      "setGlobal": {
+        "kit_ca10_done": true
+      }
+    },
+    {
+      "id": "kit_ca10_t_done_out",
+      "startOnGlobal": "kit_ca10_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca10_done && globalVars.kit_ca10_asked !== true",
+      "setGlobal": {
+        "kit_ca10_done": true
+      }
+    }
+  ],
   "social": {
     "awareness": {
       "ruleOfThumb": {
@@ -330,7 +374,7 @@
             "kind": "page",
             "subject": "A page that took the whole screen",
             "time": "11:02",
-            "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+            "body": "Your computer has been locked. Call support now on 0808 157 0000 to unlock it.",
             "page": {
               "url": "https://secure-alert.example/locked",
               "padlock": true,
@@ -493,13 +537,19 @@
         "stage": null
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "teamLine": "By reporting or avoiding {n} of these pages rather than carrying on, you kept a fake page away from the rest of your team.",
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
         "flipHeading": "Now it lands on a colleague",
         "flipIntro": "This is the email you sent Leo, the operations colleague who places the weekly Fernside order. The parts picked out below are what would give it away.",
-        "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+        "flipDefenderLine": "Leo reached your page between jobs. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+        "flipDefenderLineByHost": {
+          "genuine": "Leo opened the Fernside portal between jobs, the way he does every week. The page looked like the portal he already trusts, padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+          "lookalike": "Your page sat on a look-alike address, not Fernside's own portal. When Leo reached it between jobs, it looked enough like the portal he trusts, padlock and all. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+          "unrelated": "Your page sat on an address with nothing to do with Fernside, which on its own should have stopped him. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does."
+        },
         "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
         "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
         "flipMissedHeading": "Nothing to replay this time",
@@ -512,7 +562,7 @@
         "conceptPanel": [
           {
             "heading": "Where software comes from",
-            "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
+            "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address typed in by hand, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
           },
           {
             "heading": "Read the address",
@@ -532,16 +582,32 @@
           },
           {
             "heading": "When a page drives the machine",
-            "text": "To a real attacker, one step followed on a page dressed as a routine check is a rogue extension or a download on an operations machine, and from there a reach into the finance system and the intranet, or a live caller already on the line. Starting software and sites only from a route the staff member already trusts is where the chain breaks, because a page gets no say in what runs on the computer.\n\nAn extension picked up from a fake check reached the finance system and the intranet, and the machine was out of use for the afternoon while IT rebuilt it and worked out what it could have seen. If a page ever talks you into pasting, running, installing or calling, use the Report button or the incident form straight away. Before you leave, have a word with Niamh."
+            "text": "To a real attacker, one step followed on a page dressed as a routine check is a rogue extension or a download on an operations machine, and from there a reach into the finance system and the intranet, or a live caller already on the line. Starting software and sites only from a route the staff member already trusts is where the chain breaks, because a page gets no say in what runs on the computer.\n\nAn extension picked up from a fake check reached the finance system and the intranet, and the machine was out of use for the afternoon while IT rebuilt it and worked out what it could have seen. If a page ever talks you into pasting, running, installing or calling, use the Report button or the incident form straight away."
+          },
+          {
+            "heading": "Closing the tab",
+            "text": "The attacker had planted the check on a supplier page Darren trusted, and needed him to run one line. He closed the tab and rang security. The page was blocked and Fernside were warned their site had been broken into, so the attacker lost the page as well as the click.",
+            "condition": "globalVars.kit_ca10_check_choice === 'close'"
+          },
+          {
+            "heading": "What the pasted line did",
+            "text": "Darren pasted the line the page had already put on his clipboard. It ran the attacker's downloader, which fetched a tool that copies the browser's saved passwords and the sessions it is already signed in to. Within a minute they were in Darren's Quayholt account from their own machine. The phone prompt never came up: a copied session is already past the password and the prompt, and nothing showed on his screen. Signing him out or changing his password on its own would leave them a way back: anything they added while they were in outlasts both. So IT take his workstation away to be cleaned, sign him out of every site the browser was signed in to, change every password it had saved from a clean machine, remove any sign-in method or mailbox rule they added, and check what his account touched. They also block the page and warn Fernside that their site has been broken into.",
+            "condition": "globalVars.kit_ca10_check_choice === 'paste' || globalVars.kit_ca10_check_choice === 'silent'"
           }
         ],
-        "flipPageIntro": "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below.",
+        "flipPageIntro": "This is the page you built, as Leo Brennan meets it. Anything that would give it away is picked out below.",
+        "flipPageIntroByHost": {
+          "genuine": "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below.",
+          "lookalike": "This is the page you built, as Leo Brennan meets it on your look-alike address, which he takes for the Fernside portal. Anything that would give it away is picked out below.",
+          "unrelated": "This is the page you built, as Leo Brennan meets it on an address with nothing to do with Fernside. Anything that would give it away is picked out below."
+        },
         "flipPageHeading": "The page you built"
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -816,11 +882,13 @@
             {
               "id": "lookalike",
               "label": "A look-alike you set up (orders-fernside.example)",
+              "host": "orders-fernside.example",
               "trust": "lookalike"
             },
             {
               "id": "unrelated",
               "label": "An unrelated page nobody expects",
+              "host": "weekly-menu-offers.example",
               "trust": "unrelated"
             }
           ],
@@ -1116,6 +1184,22 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e10_downloads_and_fake_checks_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca10_out": true
+              }
             }
           ]
         },
@@ -1166,7 +1250,41 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_out",
+              "condition": "value === true && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_out",
+              "condition": "value === true && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 7.4,
+                  "y": 8.3
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_check_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Your account's being used from somewhere we've never seen, Darren. That's not you, is it?"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_done",
+              "condition": "value === true && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         },
         {
           "id": "kit_darren_price",
@@ -1174,20 +1292,15 @@
           "person": "darren_price",
           "npcType": "person",
           "position": {
-            "x": 2.5,
-            "y": 7.0
+            "x": 3.0,
+            "y": 6.0
           },
           "spriteSheet": "darren_price",
           "spriteTalk": "assets/characters/darren_price_talk.png",
           "spriteVisemes": "assets/characters/darren_price_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/darren_price_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 2.5,
-            "y": 7.0,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca10_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -1200,7 +1313,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "thirst": {
-              "decayPerMin": 30,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 65
             }
@@ -1215,7 +1328,123 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_out",
+              "condition": "value === true && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca10_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_out",
+              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Supplier portal's asking me to prove I'm human now."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_there",
+              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_ca10_check_choice === '' && !globalVars.kit_ca10_done",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
+              "targetKnot": "ca10_check",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_there",
+              "condition": "value === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca10_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_darren_price",
+              "condition": "globalVars.kit_ca10_check_choice === 'asked' && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca10_check_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_check_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca10_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_check_choice",
+              "condition": "value === 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca10_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_moved",
+              "condition": "value === true && globalVars.kit_ca10_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca10_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca10_done",
+              "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_ca10_check_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca10_check_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It says press Windows and R, then paste and press Enter. It's off my bookmarks. Shall I?",
+              "targetKnot": "ca10_check",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca10_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca10_there === true && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done && globalVars.kit_ca10_check_choice === '' && globalVars.kit_ca10_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca10_check_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         }
       ],
       "objects": [
@@ -1234,7 +1463,7 @@
               "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. Your fake check is live on the supplier's own site and the email is away to your colleague; next, sort the morning's browser screens."
             },
             {
-              "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. Episode finished."
             }
           ],
@@ -1265,6 +1494,73 @@
             "capacity": 2,
             "chatter": "kit_quayholt"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca10_pc",
+          "name": "Darren's workstation",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_darren_price",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca10_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Darren's workstation. It's his to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca10_moved === true",
+              "value": "Darren's workstation. The Fernside portal tab is still open. Nothing on screen looks wrong."
+            },
+            {
+              "condition": "globalVars.kit_ca10_check_choice === 'close'",
+              "value": "Darren's workstation. The Fernside portal tab is closed."
+            },
+            {
+              "condition": "globalVars.kit_ca10_out === true",
+              "value": "Darren's workstation. The Fernside portal, opened from his bookmarks, shows a 'Verify you are human' box. It says press Windows and R, then paste and press Enter."
+            }
+          ],
+          "position": {
+            "x": 2.6875,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca10_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca10_check_choice === 'close'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca10_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Darren's workstation."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca10_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 1.125,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
         }
       ]
     }

@@ -53,7 +53,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Credential attacks at scale: finished",
-        "body": "You've seen a whole practice sprayed and stuffed from its public pages, then worked through the alerts from your own seat. That's this episode finished. The debrief goes through each one."
+        "body": "You've seen how a whole practice is attacked from its public pages, then worked through the alerts from your own seat. That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -78,11 +78,18 @@
     "se_intel_ms_motto": false,
     "se_intel_ms_place": false,
     "guess_e18_landed": false,
+    "guess_e18_sprayed": false,
     "kit_attack_done": false,
     "kit_defend_done": false,
     "kit_quiet": false,
     "kit_caught": false,
     "kit_ep": "ca18",
+    "kit_ca18_out": false,
+    "kit_ca18_there": false,
+    "kit_ca18_asked": false,
+    "kit_ca18_moved": false,
+    "kit_ca18_done": false,
+    "kit_ca18_reset_choice": "",
     "kit_ca18_host_said": false,
     "kit_key_caught": false
   },
@@ -98,6 +105,44 @@
       }
     }
   },
+  "timers": [
+    {
+      "id": "kit_ca18_t_there",
+      "startOnGlobal": "kit_ca18_out",
+      "delayMs": 4000,
+      "condition": "!globalVars.kit_ca18_there",
+      "setGlobal": {
+        "kit_ca18_there": true
+      }
+    },
+    {
+      "id": "kit_ca18_t_tail",
+      "startOnGlobal": "kit_ca18_asked",
+      "delayMs": 45000,
+      "condition": "globalVars.kit_ca18_reset_choice === ''",
+      "setGlobal": {
+        "kit_ca18_reset_choice": "silent"
+      }
+    },
+    {
+      "id": "kit_ca18_t_done",
+      "startOnGlobal": "kit_ca18_asked",
+      "delayMs": 85000,
+      "condition": "!globalVars.kit_ca18_done",
+      "setGlobal": {
+        "kit_ca18_done": true
+      }
+    },
+    {
+      "id": "kit_ca18_t_done_out",
+      "startOnGlobal": "kit_ca18_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca18_done && globalVars.kit_ca18_asked !== true",
+      "setGlobal": {
+        "kit_ca18_done": true
+      }
+    }
+  ],
   "social": {
     "triageSets": [
       {
@@ -488,6 +533,7 @@
           "neverLands": true
         },
         "landedGlobal": "guess_e18_landed",
+        "sprayedGlobal": "guess_e18_sprayed",
         "note": "No real password is typed here; every account, word and pair is made up for the exercise."
       },
       "defend": {
@@ -520,14 +566,17 @@
         "line": "Most of the harm comes from acting on the fake alert instead of the real one."
       },
       "strings": {
+        "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
         "stages": {
           "osint": {
-            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; the useful lines are the patterns and projects, not individual staff. Five useful facts are there to find, and the more you note, the more the campaign has to work with."
+            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes. The lines worth noting are the one listing the team, the one showing how staff email addresses are built, and the words the practice uses: a project, its strapline, its street. Five useful facts are there to find. The team list and the address pattern are what the spray needs to aim at anyone, so note those first, and the more you note, the more the campaign has to work with."
           }
         },
         "flipHeading": "Now it's your inbox.",
         "flipGuessIntro": "You watched one password open the predictable accounts across the whole practice, and a stolen one open the accounts where it had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+        "flipGuessIntroNoSpray": "The spray needs both the staff names and the address pattern, and you did not note both, so it had no addresses to try and never ran. The stolen list did run, and opened the accounts where a password had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+        "flipDefenderLineNoSpray": "The spray never ran because it needs both the staff names and the address pattern to aim at anyone, but the People and Contact pages hand over both to anyone who reads them, and a real attacker would collect them first. The stolen pair opened the accounts where a password had been reused. A different password for every account, and not a word off the website, is what stops both. Now the alerts are arriving, and some are fakes.",
         "flipDefenderLine": "One password off the website, tried once across everyone, opened the predictable accounts. No clever cracking, just reuse and words anyone could read. A different password for every account, and not a word off the website, is what would have stopped it. Now the alerts are arriving, and some are fakes.",
         "flipNoSend": "Nothing of the practice's was opened to replay, but the lesson holds: a reused password, or a word off the website, is what opens an account. Next, you tell the real alerts from the fakes.",
         "flipMissed": "The attack opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
@@ -553,14 +602,40 @@
           },
           {
             "heading": "What the practice does",
-            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses.\n\nTo a real attacker, the guess list you built and sprayed hands back a few working sign-ins, each one worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nOne opened account reached client files and the finance controller's mail, so the cost ran from a single password up to a confidentiality and near-payment incident, and the provider spent the afternoon forcing resets and combing the sign-in logs. Before you leave, have a word with Ama."
+            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses."
+          },
+          {
+            "heading": "What the guess list gave an attacker",
+            "text": "To a real attacker, the guess list you built and sprayed hands back a few working sign-ins, each one worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nOne opened account reached client files and the finance controller's mail, so the cost ran from a single password up to a confidentiality and near-payment incident, and the provider spent the afternoon forcing resets and combing the sign-in logs.",
+            "condition": "globalVars.guess_e18_sprayed"
+          },
+          {
+            "heading": "What a spray would have needed",
+            "text": "The spray needs both the staff names and the address pattern, and you did not note both, so it never ran and no account opened that way. A real attacker would collect the names from the People page and the address pattern from the Contact page first, then try one likely password against every address. The stolen list you ran did open a work email account and a supplier portal login, where a password had been reused. To a real attacker, a pair like that is worth trying across every other service the firm uses. The next move is a fake lockout alert that draws the password onto a look-alike page, turning one reused pair into a live account that opens work email, client project files and a supplier portal. Reading the address in the bar before signing in is where that breaks, so the fake alert never gets the password.\n\nAn account opened that way can reach client files and the finance controller's mail, so the cost can run from a single password up to a confidentiality and near-payment incident, with the provider spending the afternoon forcing resets and combing the sign-in logs.",
+            "condition": "globalVars.guess_e18_landed && !globalVars.guess_e18_sprayed"
+          },
+          {
+            "heading": "What the campaign would have needed",
+            "text": "Nothing in the campaign opened an account this time, so there was no cost to follow. A real attacker would collect the names from the People page and the address pattern from the Contact page, then try one likely password against every address, and run a stolen breach list across the services the firm uses. One predictable password or one reused pair is all it takes to open work email, client project files and a supplier portal, and the cost can run from a single password up to a confidentiality and near-payment incident.",
+            "condition": "!globalVars.guess_e18_landed"
+          },
+          {
+            "heading": "A new password, not the old one moved on",
+            "text": "The attacker's list still held Lorna's old password from the morning's attack. On an account that has just been reset, their first tries are that password with a small change: the next season, the next year, a number on the end. Lorna made a new password out of three random words instead of tweaking the old one, so those tries opened nothing, and the password they held was worth little to them. Three random words suit a password she has to type from memory each morning; a password manager keeps every other one, each different.",
+            "condition": "globalVars.kit_ca18_reset_choice === 'words'"
+          },
+          {
+            "heading": "What the new season gave away",
+            "text": "Lorna saved her old password with the season moved on. The reset page turned down the old password itself, but not a small change to it. The attacker's list still held the old one from the morning's attack. On an account that has just been reset, their first tries are small changes to it: the next season, the next year, a number on the end, a few tries an account so nothing locks. One of the first was right. Only the sign-in prompt on her phone stood between them and her mail, and sending prompts until someone taps Approve is their next move. Fenlow locked her account until she sets a new password, not the old one with a tweak, checked that no prompt was approved, signed her out everywhere to be sure, and told her to turn down and report any prompts she didn't start. They are checking every reset made today for the same pattern.",
+            "condition": "globalVars.kit_ca18_reset_choice === 'save' || globalVars.kit_ca18_reset_choice === 'silent'"
           }
         ]
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
         "noBlameLine": true
-      }
+      },
+      "stepAway": true
     },
     "people": [
       {
@@ -884,6 +959,29 @@
               "setGlobal": {
                 "kit_quiet": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_state",
+              "condition": "data.value.debriefSeen === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_quiet": false
+              }
+            },
+            {
+              "eventPattern": "episode_step_away",
+              "condition": "globalVars.kit_defend_done === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_out": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "bark": "Lorna, this morning's attackers have already guessed your new password. Turn down sign-in prompts you didn't start."
             }
           ]
         },
@@ -893,20 +991,15 @@
           "person": "lorna_easton",
           "npcType": "person",
           "position": {
-            "x": 4.5,
-            "y": 4.5
+            "x": 3.9,
+            "y": 6.0
           },
           "spriteSheet": "lorna_easton",
           "spriteTalk": "assets/characters/lorna_easton_talk.png",
           "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
           "storyPath": "scenarios/_office_kit/ink/lorna_easton_ambient.json",
           "currentKnot": "start",
-          "needsHome": {
-            "room": "training_room",
-            "x": 4.5,
-            "y": 4.5,
-            "facing": "south"
-          },
+          "needsHome": "kit_ca18_pc",
           "needsRooms": [
             "training_room"
           ],
@@ -919,7 +1012,7 @@
           "chatterCooldownMin": 5,
           "needs": {
             "rest": {
-              "decayPerMin": 20,
+              "decayPerMin": 0.01,
               "urgentAt": 50,
               "initial": 70
             }
@@ -935,7 +1028,123 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_out",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "setGlobal": {
+                "kit_ca18_there": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_out",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "onceOnly": true,
+              "delayMs": 1500,
+              "bark": "Fenlow have made me reset my password after this morning."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === '' && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+              "targetKnot": "ca18_reset",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_there",
+              "condition": "value === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === ''",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca18_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "conversation_closed:kit_lorna_easton",
+              "condition": "globalVars.kit_ca18_reset_choice === 'asked' && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 8000,
+              "setGlobal": {
+                "kit_ca18_moved": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
+              "condition": "value === 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_moved",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 5000,
+              "setGlobal": {
+                "kit_ca18_done": true
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === 'asked'",
+              "onceOnly": true,
+              "setGlobal": {
+                "kit_ca18_reset_choice": "silent"
+              }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+              "targetKnot": "ca18_reset",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca18_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
+            }
+          ]
         },
         {
           "id": "kit_delphine_arvanitis",
@@ -943,7 +1152,7 @@
           "person": "delphine_arvanitis",
           "npcType": "person",
           "position": {
-            "x": 7.5,
+            "x": 4.5,
             "y": 4.5
           },
           "spriteSheet": "delphine_arvanitis",
@@ -953,7 +1162,7 @@
           "currentKnot": "start",
           "needsHome": {
             "room": "training_room",
-            "x": 7.5,
+            "x": 4.5,
             "y": 4.5,
             "facing": "south"
           },
@@ -985,7 +1194,34 @@
                 "kit_quiet": false
               }
             }
-          }
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_out",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "needs": "suspend"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_out",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "delayMs": 1000,
+              "patrolOverride": {
+                "targetTile": {
+                  "x": 4.5,
+                  "y": 4.5
+                },
+                "speed": 90
+              }
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca18_done",
+              "condition": "value === true && globalVars.kit_ca18_out === true",
+              "onceOnly": true,
+              "needs": "resume"
+            }
+          ]
         }
       ],
       "objects": [
@@ -1000,7 +1236,7 @@
           "observations": "A touch-screen training kiosk for the Merrin & Sallow credential exercise: first a campaign built from the practice's public pages, then the security alerts to handle from your own seat.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e18_credential_attacks_at_scale_defend_complete",
+              "condition": "globalVars.kit_defend_done === true && globalVars.kit_quiet === false",
               "value": "A touch-screen training kiosk for the Merrin & Sallow credential exercise. Episode finished."
             }
           ],
@@ -1027,6 +1263,73 @@
             "capacity": 2,
             "chatter": "kit_merrin"
           }
+        },
+        {
+          "type": "pc",
+          "id": "kit_ca18_pc",
+          "name": "Lorna's PC",
+          "sprite": "pc1_locked",
+          "workstation": true,
+          "owner": "kit_lorna_easton",
+          "lockChance": 0,
+          "affordance": {
+            "useFrom": {
+              "dx": 0,
+              "dy": -1
+            }
+          },
+          "takeable": false,
+          "interactable": true,
+          "requiresItem": "kit_ca18_gate_item",
+          "triggerOnInteract": [],
+          "requiresItemHint": "Lorna's PC. It's hers to sign in to.",
+          "requiresItemHintVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "Lorna's PC. A notice from Fenlow on screen: her account is locked until she sets a new password, not the old one with a season or a number changed, and any sign-in prompts she didn't start are to be turned down and reported."
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "Lorna's PC. She's cleared the 'Choose a new password' page and is typing three random words."
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "Lorna's PC. The Merrin & Sallow 'Choose a new password' page, filled in and waiting for her to press Save."
+            }
+          ],
+          "position": {
+            "x": 3.28125,
+            "y": 6.96875,
+            "elevation": 24.2
+          },
+          "spriteVariants": [
+            {
+              "condition": "globalVars.kit_ca18_moved === true",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_reset_choice === 'words'",
+              "value": "pc1"
+            },
+            {
+              "condition": "globalVars.kit_ca18_out === true",
+              "value": "pc1"
+            }
+          ],
+          "observations": "Lorna's PC."
+        },
+        {
+          "type": "journal_stack",
+          "id": "kit_ca18_journals",
+          "name": "Journal stack",
+          "sprite": "journal_stack1",
+          "takeable": false,
+          "interactable": false,
+          "position": {
+            "x": 2.46875,
+            "y": 6.84375
+          },
+          "observations": "A stack of trade journals, moved over to make room for the workstation."
         }
       ]
     }

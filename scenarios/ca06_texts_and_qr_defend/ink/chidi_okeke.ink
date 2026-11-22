@@ -21,11 +21,11 @@ VAR hub_quiet = false
 - else:
     { episode_e6_texts_and_qr_defend_defend_complete:
         { kit_key_caught:
-            Chidi Okeke: You didn't scan that barrier QR or tap the parking text, so no card number and no work sign-in went anywhere.
-            Chidi Okeke: A code on an official-looking notice is the easy one to trust. Opening the app yourself skips the whole thing.
+            Chidi Okeke: You flagged that QR code taped to the car park barrier, so nobody's card details went to its page.
+            Chidi Okeke: Anyone can tape a code to a barrier. Check with Facilities before a code gets your card details.
         - else:
-            Chidi Okeke: That barrier QR, and the parking-permit text behind it, were the one to stop.
-            Chidi Okeke: One tap later, a personal card was charged or a work sign-in captured, and the afternoon went on the phone to the bank.
+            Chidi Okeke: That QR code taped to the car park barrier was the one to stop.
+            Chidi Okeke: Nobody can see where a taped-up code goes before they scan it. The page behind it would take your card details and number plate.
         }
     - else:
         Chidi Okeke: Grab a seat, you're on your break. The kiosk's set up like a work phone, with texts, a couple of notices from the yard and an email. No rush.

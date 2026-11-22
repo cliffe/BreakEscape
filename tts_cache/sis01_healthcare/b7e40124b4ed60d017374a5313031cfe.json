@@ -1,0 +1,13 @@
+{
+  "key": "b7e40124b4ed60d017374a5313031cfe",
+  "npc": "dr_sharma",
+  "text": "Closer. But the exec can't see the clinical cost from there. David can.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-21",
+  "recorded_at": "2026-11-21T13:18:33Z"
+}
