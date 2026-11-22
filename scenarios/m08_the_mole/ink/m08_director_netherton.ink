@@ -95,6 +95,7 @@ Director Magnus Netherton: Two of ours are dead at the sites the team could not 
 
 Director Magnus Netherton: I have run field operations for five years. I have never had to say the next sentence.
 Director Magnus Netherton: There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing.
+Director Magnus Netherton: They have read our plans for months, Agent. Tonight they will be reading you. #delivery: low and grave, each word placed
 Director Magnus Netherton: Ask me what you need. Then go and prove something.
 // Engine robustness audit (m01-m08): set after the opening lines, not before them, so an
 // Esc and a reload mid-opening replay it instead of losing it.

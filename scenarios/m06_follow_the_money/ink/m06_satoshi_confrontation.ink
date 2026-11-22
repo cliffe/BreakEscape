@@ -255,6 +255,8 @@ Satoshi Nakamoto II: I don't accept it. You knew that walking in.
 
 Satoshi Nakamoto II: You won't agree. You work for the people who'd lose the most if I'm right.
 
+Satoshi Nakamoto II: Take me in if you like. The money already knows where it's going. #delivery: relaxed, a little amused, entirely sure
+
 Satoshi Nakamoto II: So. You've found the network. What are you going to do with it?
 
 -> choice_presentation
