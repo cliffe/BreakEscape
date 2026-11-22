@@ -2,9 +2,9 @@
  "mission": "ca12",
  "id": "ca12_trailer_r3",
  "theme": "ca",
- "title": "Cyber Aware ca12 trailer, round 3, script R5 (narrator VO, captions only until the owner signs off D341)",
+ "title": "Cyber Aware ca12 trailer, round 3, script R6 (narrator VO + Lorna lines; retime to the chosen voice pending D348)",
  "fps": 30,
- "length": 55.4,
+ "length": 64.9,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -440,11 +440,72 @@
    }
   },
   {
+   "id": "lorna_flip",
+   "type": "gameplay",
+   "duration": 6.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_lorna_flip.trimmed.mkv",
+    "in": 2.5,
+    "out": 8.6
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lorna L1 after the call (cached voice); no menu, chat closes after the line | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.21,
+     "end": 5.85,
+     "speaker": "Lorna",
+     "text": "You talked your way through that door just now. Here you're the one being asked, same visitors."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
    "id": "blue_card",
    "type": "card",
    "style": "ca",
    "chapter": "defend",
-   "duration": 3,
+   "duration": 2.5,
    "join": {
     "type": "seam"
    },
@@ -559,6 +620,67 @@
    }
   },
   {
+   "id": "lorna_noblame",
+   "type": "gameplay",
+   "duration": 3.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_lorna_noblame.trimmed.mkv",
+    "in": 11.2,
+    "out": 15.1
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lorna L5 after the defend set (cached voice); no verdicts, chat closes before the menu | CA: spoilers not an issue (owner r3)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE TEAM",
+    "stripe": "#8a5a2b"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.19,
+     "end": 3.52,
+     "speaker": "Lorna",
+     "text": "Nobody's in trouble for slowing a pushy visitor down."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
    "preset": "ca-close",
    "id": "close",
    "join": {
@@ -629,45 +751,39 @@
    "text": "You're in. Now swap seats."
   },
   {
-   "id": "v7",
-   "start": 32.1,
-   "end": 34.8,
-   "text": "The same tricks come to your desk."
-  },
-  {
    "id": "v8a",
-   "start": 35.2,
-   "end": 37.9,
+   "start": 40.8,
+   "end": 43.5,
    "text": "Tailgating: slipping in behind a badge-holder."
   },
   {
    "id": "v8a2",
-   "start": 38,
-   "end": 40.3,
+   "start": 43.6,
+   "end": 45.9,
    "text": "Inside: client plans on open screens."
   },
   {
    "id": "v8b",
-   "start": 40.6,
-   "end": 43.4,
+   "start": 46.2,
+   "end": 49,
    "text": "Decide who gets in, and who gets checked."
   },
   {
    "id": "v9",
-   "start": 43.6,
-   "end": 45.6,
+   "start": 49.2,
+   "end": 51.2,
    "text": "You've used these tricks yourself."
   },
   {
    "id": "v10",
-   "start": 45.9,
-   "end": 50.2,
+   "start": 51.5,
+   "end": 55.8,
    "text": "Check the list. Escort them. Badge in. Lock your screen."
   },
   {
    "id": "v11",
-   "start": 50.6,
-   "end": 55.2,
+   "start": 60.1,
+   "end": 64.7,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
   }
  ]
