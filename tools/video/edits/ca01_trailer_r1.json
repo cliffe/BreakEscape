@@ -1,0 +1,680 @@
+{
+ "mission": "ca01",
+ "id": "ca01_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca01 trailer, round 1, script R1 (captions only, takes pending; narrator Sulafat budgeted at 2.3 words/s)",
+ "script": {
+  "heading": "ca01 trailer script (Invoice fraud)",
+  "owner_card": "none yet (script R1)",
+  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Gwen G2); open card with v1; name the topic in VO over footage that shows it; red chapter card, each attack step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; end on Adaeze's in-episode line (D336 default (a)+(c): A6, scout-verified state, not the ca13 seeded Agnieszka line); ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. VO lengths budgeted at 2.3 words/s (Sulafat)."
+ },
+ "fps": 30,
+ "length": 69.97,
+ "music": {
+  "none": true,
+  "note": "silent bed until D331; game room sound and voiced lines only"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_gwen_hook.trimmed.mkv",
+    "in": 0.0,
+    "out": 4.5
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Gwen G2 after the defend set (cached, 3.94 s): mild, not a verdict; in/out from line-start minus 0.3 s | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t01_gwen_hook: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true (kit_key_caught unset), BE_SPRITE female_office_worker_v2, Skip tutorial, close the Brief, walk to Gwen, talk: G2 plays; close the chat before the 'See you later.' choice. in/out from marks line-start/line-end",
+   "lines": [
+    {
+     "start": 0.3,
+     "end": 4.25,
+     "speaker": "Gwen",
+     "text": "Heard you've been through the inbox. Some real traps in there lately."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Invoice fraud",
+    "company": "Brightwell Foods",
+    "stripe": "#2f6f5e"
+   },
+   "duration": 5.0
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 5.41,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_payments_inbox.trimmed.mkv",
+    "in": 9.0,
+    "out": 14.41
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Lure card 'Updated bank details, please action today', body readable: change the payee account on INV-2217; framed on subject and body; no verdict | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.42,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks",
+   "voPos": {
+    "16:9": "top"
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card: what the attack half covers, pattern level | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 3.2,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 8.0,
+    "out": 11.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Brightwell suppliers page: Harlow and Derek Mason noted, then the finance update with INV-2217 (public facts only) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.39,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks"
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 6.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 30.0,
+    "out": 36.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Mail template: pretext picked (closed drop-down), the three From/invoice slots filling, Red flags counter 2 to 1; framed above the Red flags box | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "LOOK-ALIKE EMAIL BUILDER",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.35,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1.4
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks"
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 3.17,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 44.0,
+    "out": 47.17
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Send click, then the green It landed panel (She would open it / From the supplier contact she deals with / Ties to an invoice); pattern level | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE SEND",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks"
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 1.8,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 52.0,
+    "out": 53.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Mail client closes onto 'Now it lands on you'; framed on the heading and strip | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks"
+  },
+  {
+   "id": "adaeze_flip",
+   "type": "gameplay",
+   "duration": 8.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_adaeze_flip.trimmed.mkv",
+    "in": 2.5,
+    "out": 10.7
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Adaeze A1 after the send (cached, 7.70 s); chat closes before the choice menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_adaeze_flip: fresh ca01 game with --set episode_e1_invoice_fraud_state={\"done\":[\"brief\",\"osint\",\"write\",\"flip\"]} --set phish_supplier_contact_attempts=1, BE_SPRITE female_office_worker_v2, talk to Adaeze: A1 plays; close the chat before the 'Thanks, Adaeze.' choice. in/out from marks",
+   "lines": [
+    {
+     "start": 0.25,
+     "end": 7.95,
+     "speaker": "Adaeze",
+     "text": "Your message has gone. Now take the other seat at the kiosk and read the payments inbox the way it would land on a busy afternoon."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.5,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You run the payments inbox"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card: what the defend half is; no tell, verdict or answer | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "triage",
+   "type": "gameplay",
+   "duration": 12.92,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_payments_inbox.trimmed.mkv",
+    "in": 3.0,
+    "out": 15.92
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "List '0 of 6 sorted', click the lure row; card From 'Brightwell Foods Accounts <accounts@brightwel1foods.example>' readable; hover Trust/Report/Delete/Verify, nothing pressed | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "PAYMENTS INBOX",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.59,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks",
+   "voPos": {
+    "16:9": "top"
+   }
+  },
+  {
+   "id": "adaeze_end",
+   "type": "gameplay",
+   "duration": 7.8,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_adaeze_end.trimmed.mkv",
+    "in": 21.0,
+    "out": 28.8
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Adaeze A6 after the defend set, not-caught branch (cached, 7.46 s); in = A6 subtitle start, never earlier: A7 before it carries the cost figure (D317); chat closes before the menu | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE TEAM",
+    "stripe": "#2f6f5e"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t05_adaeze_end: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true (scout-verified E2 state; kit_key_caught unset), BE_SPRITE female_office_worker_v2, talk to Adaeze: A7 (19.1 s, cost line, never in frame) then A6; close the chat before the 'Thanks, Adaeze.' choice. in = mark a6-subtitle-start (A7's bar must not show)",
+   "lines": [
+    {
+     "start": 0.05,
+     "end": 7.51,
+     "speaker": "Adaeze",
+     "text": "Ring the person back on a number you already hold before you change who gets paid. That one call is what stops this."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Invoice fraud",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.47
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.6,
+   "end": 9.3,
+   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
+   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play."
+  },
+  {
+   "id": "v1b",
+   "start": 9.75,
+   "end": 12.27,
+   "text": "Same invoice, new bank account."
+  },
+  {
+   "id": "v1c",
+   "start": 12.52,
+   "end": 14.61,
+   "text": "This episode: invoice fraud."
+  },
+  {
+   "id": "v2",
+   "start": 15.51,
+   "end": 17.91,
+   "text": "First, you play the attacker.",
+   "onCard": "hide"
+  },
+  {
+   "id": "v3",
+   "start": 18.61,
+   "end": 21.27,
+   "text": "Find the supplier and its invoice."
+  },
+  {
+   "id": "v4",
+   "start": 21.81,
+   "end": 24.47,
+   "text": "Write the email as the supplier."
+  },
+  {
+   "id": "v4b",
+   "start": 24.72,
+   "end": 27.81,
+   "text": "Each real fact cuts a red flag."
+  },
+  {
+   "id": "v5",
+   "start": 28.31,
+   "end": 29.66,
+   "text": "Then send it."
+  },
+  {
+   "id": "v6",
+   "start": 30.01,
+   "end": 30.93,
+   "text": "It landed."
+  },
+  {
+   "id": "v8a",
+   "start": 43.98,
+   "end": 46.64,
+   "text": "Now you sort the payments inbox."
+  },
+  {
+   "id": "v8b",
+   "start": 46.89,
+   "end": 49.55,
+   "text": "Read the address letter by letter."
+  },
+  {
+   "id": "v9",
+   "start": 49.8,
+   "end": 51.59,
+   "text": "You've written one yourself."
+  },
+  {
+   "id": "v10",
+   "start": 51.84,
+   "end": 56.4,
+   "text": "New bank details, and a rush? Stop and check.",
+   "caption": "New bank details, and a rush?\nStop and check."
+  },
+  {
+   "id": "v11",
+   "start": 64.7,
+   "end": 69.67,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
+  }
+ ]
+}
