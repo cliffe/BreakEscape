@@ -16,8 +16,15 @@
 export const DEFAULT_REPLY_MS = 45000;
 /** How long the marker stays over the colleague (the reply window). */
 export const CUE_MARKER_MS = DEFAULT_REPLY_MS;
-/** Marker: 2 px border, a dark fill and a light "!" (pixel art, never scaled). */
-export const MARKER = Object.freeze({ w: 11, h: 15, border: 2, fill: 0x1a1a2e, edge: 0xffffff, bang: 0xffd23f });
+/**
+ * Marker: 2 px border, a dark fill and a light "!" (pixel art, never scaled). 18x24 (was 11x15,
+ * which a tester missed); the white border on the dark fill and a yellow "!" 4 px wide keep the
+ * contrast high. `bars` are the "!" rectangles as [x, y, w, h] inside the box.
+ */
+export const MARKER = Object.freeze({
+    w: 18, h: 24, border: 2, fill: 0x1a1a2e, edge: 0xffffff, bang: 0xffd23f,
+    bars: Object.freeze([[7, 5, 4, 10], [7, 17, 4, 4]])
+});
 
 /**
  * Pure: could the player notice something happening at this NPC now? `facts` is
@@ -95,11 +102,12 @@ export class AskCue {
         const sprite = this._sprite(npcId);
         const scene = sprite?.scene || this.scene;
         if (!sprite || !scene?.add?.graphics) return;
-        const { w, h, border, fill, edge, bang } = MARKER;
+        const { w, h, border, fill, edge, bang, bars } = MARKER;
         const g = scene.add.graphics();
         g.fillStyle(edge, 1).fillRect(0, 0, w, h);
         g.fillStyle(fill, 1).fillRect(border, border, w - 2 * border, h - 2 * border);
-        g.fillStyle(bang, 1).fillRect(5, 4, 2, 5).fillRect(5, 10, 2, 2);
+        g.fillStyle(bang, 1);
+        for (const [bx, by, bw, bh] of bars) g.fillRect(bx, by, bw, bh);
         g.setDepth((sprite.depth || 0) + 1000);
         const place = () => {
             if (!sprite.active || sprite.destroyed) { this.clear(npcId); return; }

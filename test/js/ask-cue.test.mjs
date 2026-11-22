@@ -29,7 +29,7 @@ class TTSManager {}
 ` + rd('systems/npc-barks.js').replace(/^import [\s\S]*?;\s*$/gm, '').replace('export default class', 'export class'));
 
 globalThis.window = { gameState: { globalVariables: {} } };
-const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
+const { askPerceivable, askToastText, AskCue, DEFAULT_REPLY_MS, MARKER } = await import(pathToFileURL(join(dir, 'ask-cue.mjs')).href);
 const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manager.mjs')).href);
 const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
@@ -284,6 +284,27 @@ test('scene end: removing the colleague cancels a held ask, so nothing fires lat
         assert.equal(t.g.kit_ca05_asked, undefined);
         assert.equal(t.cues.length, 0);
     } finally { t.restore(); }
+});
+
+test('marker: 18x24 box, 2 px border, "!" bars inside the fill, drawn from rectangles in whole pixels', () => {
+    assert.equal(MARKER.w, 18);
+    assert.equal(MARKER.h, 24);
+    assert.equal(MARKER.border, 2);
+    const rects = [];
+    const g = { setDepth() { return g; }, setPosition() { return g; }, setVisible() { return g; }, destroy() {}, fillStyle() { return g; },
+        fillRect(...a) { rects.push(a); return g; } };
+    const sprite = { x: 40, y: 60, depth: 0, displayHeight: 48, active: true, scene: { add: { graphics: () => g },
+        events: { on() {}, off() {} }, time: { now: 0 } } };
+    Object.assign(window, { npcManager: { getNPC: () => ({ displayName: 'D' }) }, npcBehaviorManager: { getBehavior: () => ({ sprite }) },
+        showNotification() {}, gameState: { globalVariables: {} }, eventDispatcher: { on() {}, off() {} } });
+    const realSet = globalThis.setTimeout; globalThis.setTimeout = () => 0;
+    try { new AskCue().fire('n'); } finally { globalThis.setTimeout = realSet; }
+    assert.deepEqual(rects[0], [0, 0, 18, 24], 'border box');
+    assert.deepEqual(rects[1], [2, 2, 14, 20], 'fill inside the 2 px border');
+    assert.equal(rects.length, 2 + MARKER.bars.length);
+    for (const [x, y, w, h] of MARKER.bars) {
+        assert.ok(Number.isInteger(x + y + w + h) && x >= 2 && y >= 2 && x + w <= 16 && y + h <= 22, 'bar inside the fill');
+    }
 });
 
 test('marker: lasts the given reply window, stays through an unanswered conversation, goes when the choice global is answered', () => {
