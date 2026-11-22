@@ -15,7 +15,7 @@ export default async (page, bridge, mark) => {
   await pressEl(page, /^Friendface$/); mark('friendface-tab'); await sleep(1500);
   await pressEl(page, /^Catherine Merrin$/); mark('merrin-link'); await sleep(1800);
   mark('frame:merrin-page');
-  await pressButton(page, /^Pin$/); mark('pin'); await sleep(1200);
+  await pressButton(page, /Pin$/); mark('pin'); await sleep(1200);
   mark('frame:noted');
   await sleep(1500);
   await bridge.minigame.close().catch(() => {}); mark('browser-closed');
