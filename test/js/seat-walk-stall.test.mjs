@@ -113,3 +113,26 @@ test('the window resets between route legs: a fresh m does not inherit a stall',
     b.sprite.y = 233;
     assert.equal(run(b, m, target, { speedAt: (i) => (i < 4 ? 0 : 1) }).r, 'arrived');
 });
+
+test('a blocked probe shows no walk animation after the first tick; a free walk animates from tick one', () => {
+    const b = npc(100, 233), m = fresh();
+    const { rows } = run(b, m, target, { speedAt: () => 0 });
+    // rows[i].anim is the last animation played; count ticks after the first where a walk was (re)played while the feet did not move
+    const walkPlays = b.anims.filter((a) => a === 'walk').length;
+    assert.ok(walkPlays <= 2, `walk played ${walkPlays} times while blocked`);
+    assert.ok(rows.slice(1).every((x) => x.moving === false || x.r === 'stuck'), 'not flagged moving after the first tick');
+    // free walk: walk animation from the very first tick
+    const b2 = npc(100, 233), m2 = fresh();
+    npcWalkTick(b2, m2, target);
+    assert.equal(b2.anims[0], 'walk');
+    assert.equal(b2.isMoving, true);
+});
+
+test('after a stall wait the retry probe starts idle and walks only once the feet move', () => {
+    const b = npc(100, 233), m = fresh();
+    const { r, rows } = run(b, m, target, { speedAt: (i) => (i < 14 ? 0 : 1) });
+    assert.equal(r, 'arrived');
+    const retry = rows.slice(13, 17);
+    assert.equal(retry[0].moving, false, 'first retry tick idles');
+    assert.ok(rows[rows.length - 2].moving, 'walk animation plays while actually moving');
+});

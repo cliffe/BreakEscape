@@ -1270,6 +1270,7 @@ const NPC_STUCK_WINDOW = 4;        // ticks the progress check looks back over
 const NPC_STUCK_STALLS = 2;        // failed tries (a stall, a wait, a retry) before the walk gives up
 const NPC_STALL_WAIT_TICKS = 8;    // a stall is a real wait: held still and idle this many ticks (0.4 s), then retried
 const NPC_STUCK_FRACTION = 0.25;   // the window must cover at least this share of the expected distance (17.5 px/s at full speed, up from 10)
+const NPC_MOVE_ANIM_PX = 1;        // the walk animation plays only if the feet moved this far since the last tick
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
 const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
 const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
@@ -1360,6 +1361,10 @@ export function npcWalkTick(behavior, m, target) {
     const f = bodyFeet(sprite);
     const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy);
     if (d <= ARRIVE_PX) { sprite.body.setVelocity(0, 0); moveFeetTo(sprite, target.x, target.y); return 'arrived'; }
+    // The walk animation follows real movement: a probe that is pushing against something (velocity
+    // set, feet not moving) idles in the facing direction. A walk's first tick has no history and animates.
+    const moved = !m.pf || Math.hypot(f.x - m.pf.x, f.y - m.pf.y) >= NPC_MOVE_ANIM_PX;
+    m.pf = { x: f.x, y: f.y };
     // Progress is judged over a window against the distance the walk should cover, not a flat
     // 0.5 px per tick: a body grinding against the player at ~0.6 px per tick (about 12 px/s)
     // used to pass as moving, with the walk animation playing and the velocity flipping 70 / 0.
@@ -1395,7 +1400,13 @@ export function npcWalkTick(behavior, m, target) {
     const v = Math.min(NPC_SEAT_SPEED, d / dt);
     sprite.body.setVelocity(dx / d * v, dy / d * v);
     const dir = COMPASS_TO_PLAYER[compassToward(dx, dy)];
-    if (behavior.direction !== dir || !behavior.isMoving) {
+    if (!moved) {
+        if (behavior.isMoving || behavior.direction !== dir) {
+            behavior.direction = dir;
+            behavior.isMoving = false;
+            behavior.playAnimation?.('idle', dir);
+        }
+    } else if (behavior.direction !== dir || !behavior.isMoving) {
         behavior.direction = dir;
         behavior.isMoving = true;
         behavior.playAnimation?.('walk', dir);
@@ -1404,7 +1415,7 @@ export function npcWalkTick(behavior, m, target) {
     return 'moving';
 }
 
-function resetWalk(m) { m.ticks = 0; m.still = 0; m.wait = 0; m.hist = []; }
+function resetWalk(m) { m.ticks = 0; m.still = 0; m.wait = 0; m.hist = []; m.pf = undefined; }
 
 /**
  * Whether the straight walk from `from` to the work spot `ref` is clear for a walking body:
