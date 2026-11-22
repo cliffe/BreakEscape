@@ -629,3 +629,29 @@ test('flip page intro and defender line follow page.hostId when the strings carr
     assert.deepEqual(run(null), ['Base intro.', 'Base defender.']);
     assert.equal(defenderLine(strings, null, false, 'lookalike'), 'Link defender.');
 });
+
+test('D286 debrief: debriefHostLineByHost draws the line for the chosen host; no host or an unknown id draws none', () => {
+    const t = readFileSync(join(here, '../../scenarios/ca10_downloads_and_fake_checks/scenario.json.erb'), 'utf8');
+    const body = t.match(/"debriefHostLineByHost": \{([^}]*)\}/)[1];
+    const byHost = JSON.parse('{' + body + '}');
+    assert.deepEqual(Object.keys(byHost).sort(), ['genuine', 'lookalike', 'unrelated']);
+    assert.match(byHost.lookalike, /look-alike address.*quick glance.*right-hand end/);
+    assert.match(byHost.genuine, /broken into.*gave nothing away.*paste and run/);
+    assert.match(byHost.unrelated, /nothing to do with Fernside.*easiest sign/);
+    const strings = { mondayCard: 'On Monday.', debriefHostLineByHost: byHost };
+    for (const id of ['genuine', 'lookalike', 'unrelated']) {
+        const h = host();
+        renderDebrief(h, { result: result(), set: set(), strings, hostId: id, variant: 'full', onFinish() {} });
+        const lines = [...h.querySelectorAll('.aw-host-line')];
+        assert.equal(lines.length, 1, id);
+        assert.equal(lines[0].textContent, byHost[id]);
+    }
+    for (const id of [null, undefined, 'other']) {
+        const h = host();
+        renderDebrief(h, { result: result(), set: set(), strings, hostId: id, variant: 'full', onFinish() {} });
+        assert.equal(h.querySelectorAll('.aw-host-line').length, 0, String(id));
+    }
+    const h = host();
+    renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday.' }, hostId: 'lookalike', variant: 'full', onFinish() {} });
+    assert.equal(h.querySelectorAll('.aw-host-line').length, 0);
+});

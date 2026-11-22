@@ -63,6 +63,22 @@
           "status": "active"
         }
       ]
+    },
+    {
+      "aimId": "team_photo_aim",
+      "title": "Lorna's team photo",
+      "description": "Optional: see what the photo Lorna posted gives away.",
+      "status": "locked",
+      "order": 2,
+      "tasks": [
+        {
+          "taskId": "look_at_team_photo",
+          "title": "Look at Lorna's team photo: her screen, then the board behind them",
+          "type": "manual",
+          "status": "locked",
+          "optional": true
+        }
+      ]
     }
   ],
   "globalVariables": {
@@ -1232,7 +1248,8 @@
               "onceOnly": true,
               "setGlobal": {
                 "kit_ca14_closed_unseen": true
-              }
+              },
+              "unlockTask": "look_at_team_photo"
             },
             {
               "eventPattern": "game_loaded",
@@ -1350,6 +1367,18 @@
               "condition": "value === true && globalVars.kit_ca14_out === true",
               "onceOnly": true,
               "needs": "resume"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_seen",
+              "condition": "value === true && globalVars.kit_ca14_closed_unseen === true",
+              "onceOnly": true,
+              "completeTask": "look_at_team_photo"
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca14_done",
+              "condition": "value === true && globalVars.kit_ca14_closed_unseen === true && globalVars.kit_ca14_seen !== true",
+              "onceOnly": true,
+              "skipTask": "look_at_team_photo"
             }
           ]
         }

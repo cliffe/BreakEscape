@@ -1053,13 +1053,17 @@
       }
     },
     "ca02_enable_editing": {
-      "_note": "ca02 colleague request (WAVE5_BUILD.md s7). Chidi, the fleet coordinator, has opened a CV for the driver job. The page is blank except for a box telling him to enable editing, then content. Word's yellow bar shows on any file from email, so the lure is the document's own text. Wrong or no answer: Fatima, the host, says IT have cut Chidi's machine off (row 8, a host mapping), and the PC shows the isolated look (moved). Right answer (report): done after 4 s. Chidi is frozen on needs and never suspended. Zainab is suspended on out and resumed on done, with no lines and no walk, so she cannot talk over Chidi.",
+      "_note": "ca02 colleague request (WAVE5_BUILD.md s7). Chidi, the fleet coordinator, has opened a CV for the driver job. The page is blank except for a box telling him to enable editing, then content. Word's yellow bar shows on any file from email, so the lure is the document's own text. Wrong or no answer: Fatima, the host, says IT have cut Chidi's machine off (row 8, a host mapping), and the PC shows the isolated look (moved). Right answer (report): done after 4 s. Chidi is frozen on needs and never suspended. Zainab is suspended on out and resumed on done, with no lines and no walk, so she cannot talk over Chidi. D290: Trusting Liam's look-alike careers link (e2_portfolio_lookalike) leaves kit_ca02_portal_caught false (the engine writes the caught side only: Report, Delete or Verify sets it); 9 s after Chidi's ask Fatima says the password line, once, whenPerceivable, and only if Chidi's choice has not already started the enable reaction (enable or silent), so her two lines can never overlap.",
       "globals": {
         "kit_ca02_there": false,
         "kit_ca02_asked": false,
         "kit_ca02_moved": false,
         "kit_ca02_done": false,
-        "kit_ca02_cv_choice": ""
+        "kit_ca02_cv_choice": "",
+        "kit_ca02_portal_caught": false
+      },
+      "messageGlobals": {
+        "e2_portfolio_lookalike": "kit_ca02_portal_caught"
       },
       "objects": [
         {
@@ -1165,6 +1169,14 @@
           "onceOnly": true,
           "delayMs": 8000,
           "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
+        },
+        {
+          "eventPattern": "global_variable_changed:kit_ca02_asked",
+          "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_portal_caught !== true && globalVars.kit_ca02_cv_choice !== 'enable' && globalVars.kit_ca02_cv_choice !== 'silent'",
+          "onceOnly": true,
+          "delayMs": 9000,
+          "whenPerceivable": true,
+          "bark": "IT have asked anyone who opened that careers link to change their password today."
         }
       ],
       "staff": {

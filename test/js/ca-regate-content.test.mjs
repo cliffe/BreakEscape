@@ -128,3 +128,21 @@ test('ca11: the choice-2 verdict agrees with the inbox breach and the debrief, f
   const ink = readFileSync(join(root, 'scenarios/_office_kit/ink/yusuf_demir_ambient.ink'), 'utf8');
   assert.match(ink, /had already gone outside Carrholme/);
 });
+
+test('ca07 D287: the brief before the calls says caller ID can be faked, and voicemail 1 feedback says a matching number is not proof', () => {
+  for (const n of ['ca07_voice_ceo', 'ca07_voice_ceo_defend']) {
+    const t = erb(n);
+    assert.match(t, /Nobody will ask whether a voice sounded real: what counts is what each message asks you to do\. Caller ID can be faked, so the number on the screen alone doesn't prove who is calling\./, n);
+    assert.match(t, /"default": "The number matched, but that alone doesn't prove it\. It asks you to do nothing/, n);
+  }
+  const frag = readFileSync(join(root, 'planning_notes/phishing_and_social_engineering/awareness/e7/defend.json'), 'utf8');
+  assert.match(frag, /Caller ID can be faked/);
+  assert.match(frag, /The number matched, but that alone doesn't prove it\./);
+});
+
+test('ca10 D286: the shell has a debrief line per host and the schema knows the key', () => {
+  const t = erb('ca10_downloads_and_fake_checks');
+  const b = t.match(/"debriefHostLineByHost": \{([^}]*)\}/)[1];
+  for (const h of ['genuine', 'lookalike', 'unrelated']) assert.match(b, new RegExp('"' + h + '": "'));
+  assert.match(readFileSync(join(root, 'scripts/scenario-schema.json'), 'utf8'), /"debriefHostLineByHost"/);
+});

@@ -89,6 +89,7 @@
     "kit_ca02_moved": false,
     "kit_ca02_done": false,
     "kit_ca02_cv_choice": "",
+    "kit_ca02_portal_caught": false,
     "kit_ca02_host_said": false,
     "kit_key_caught": false
   },
@@ -171,7 +172,8 @@
           "setGlobalPrefix": "episode_e2_cv_lures_defend_",
           "passPercent": 0,
           "messageGlobals": {
-            "e2_enable_content": "kit_key_caught"
+            "e2_enable_content": "kit_key_caught",
+            "e2_portfolio_lookalike": "kit_ca02_portal_caught"
           }
         },
         "messages": [
@@ -1013,6 +1015,14 @@
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
+            },
+            {
+              "eventPattern": "global_variable_changed:kit_ca02_asked",
+              "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_portal_caught !== true && globalVars.kit_ca02_cv_choice !== 'enable' && globalVars.kit_ca02_cv_choice !== 'silent'",
+              "onceOnly": true,
+              "delayMs": 9000,
+              "whenPerceivable": true,
+              "bark": "IT have asked anyone who opened that careers link to change their password today."
             }
           ]
         },

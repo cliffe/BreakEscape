@@ -395,6 +395,19 @@ def message_globals(row):
     return {row['keyMessage']: KEY_GLOBAL}
 
 
+def piece_message_globals(kit, row):
+    """The set piece's own outcome.messageGlobals entries (message id -> a kit_ global), written beside the
+    row's keyMessage one. The engine writes each true when that message was caught (Report, Delete or Verify)
+    and false otherwise, so a kit_ global that stays false on a phish means it was trusted (or left unanswered)."""
+    if not active(row) or is_convention(row):
+        return {}
+    mg = copy.deepcopy(_set_piece(kit, row).get('messageGlobals', {}))
+    bad = [v for v in mg.values() if not str(v).startswith('kit_')]
+    if bad:
+        raise ValueError(f"{row['id']}: set piece messageGlobals names must start kit_, not {bad!r}")
+    return mg
+
+
 CAUGHT_VERDICTS = ('report', 'delete', 'verify')
 
 
@@ -537,8 +550,9 @@ def build(kit, row, prefix, state_global):
         'scenario': scenario_fields(kit, row),
         'stepAway': bool(active(row) and row.get('stepAway')),
     }
-    if message_globals(row):
-        out['messageGlobals'] = message_globals(row)
+    mg = {**message_globals(row), **piece_message_globals(kit, row)}
+    if mg:
+        out['messageGlobals'] = mg
     if message_caught_verdicts(row):
         out['messageCaughtVerdicts'] = message_caught_verdicts(row)
     out.update(kit_keyed(kit, row))     # resources / roles: present only when the kit has them
