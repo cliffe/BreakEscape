@@ -4,7 +4,7 @@
  "theme": "ca",
  "title": "Cyber Aware ca12 trailer pilot, round 2 (red and blue chapter cards)",
  "fps": 30,
- "length": 48.1,
+ "length": 52.5,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -385,7 +385,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Triage list and one card, buttons visible; ends before any verdict; reply buttons and the Today's list line masked"
+    "note": "Triage list and one card, buttons visible (same four generic labels on every card); ends before any verdict; Today's list line masked"
    },
    "seat": {
     "seat": "defend",
@@ -411,13 +411,6 @@
    },
    "masks": [
     {
-     "x": 836,
-     "y": 410,
-     "w": 562,
-     "h": 176,
-     "rows": 4
-    },
-    {
      "x": 850,
      "y": 352,
      "w": 548,
@@ -429,16 +422,14 @@
   {
    "id": "queue_slot",
    "type": "gameplay",
-   "placeholder": true,
-   "placeholder_note": "T11 SLOT: t11_defend_queue footage goes here once captured (three visitor cards read one after another, hover over the actions, no action pressed). Masks: Today's list line and the four action buttons per card, see docs/video/edits/CA12_T11_MASKS.md",
-   "duration": 6.0,
+   "duration": 8.4,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t11_defend_queue.trimmed.mkv",
-    "in": 0.0,
-    "out": 6.0
+    "in": 7.0,
+    "out": 15.4
    },
    "audio": {
     "gain_db": -6
@@ -449,7 +440,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PLACEHOLDER: t11 not captured yet; review frames and masks before final"
+    "note": "t11 real capture: courier then colleague back from leave (card 1 for the first 0.7 s), then hover over the four buttons, nothing pressed; Today's list / Staff list lines masked; action buttons visible (same generic labels on every card, owner decision)"
    },
    "seat": {
     "seat": "defend",
@@ -473,7 +464,35 @@
      "zoom": 1
     }
    },
-   "masks": []
+   "masks": [
+    {
+     "x": 848,
+     "y": 374,
+     "w": 548,
+     "h": 78,
+     "rows": 3,
+     "from": 0,
+     "to": 0.8
+    },
+    {
+     "x": 848,
+     "y": 374,
+     "w": 548,
+     "h": 54,
+     "rows": 2,
+     "from": 0.6,
+     "to": 3.52
+    },
+    {
+     "x": 848,
+     "y": 374,
+     "w": 548,
+     "h": 30,
+     "rows": 1,
+     "from": 3.31,
+     "to": 8.4
+    }
+   ]
   },
   {
    "id": "away",
