@@ -7,7 +7,8 @@
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca18_credential_attacks_at_scale",
-  "source": "generate",
-  "generated": "2026-11-21",
-  "recorded_at": "2026-11-21T21:10:29Z"
+  "source": "retake D278",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T00:17:39Z",
+  "pronunciation_note": "Fenlow is one word, a company name, said FEN-loh (rhymes with 'Ben-oh'), never 'Fenn and Love'. Say it smoothly as a single word."
 }
