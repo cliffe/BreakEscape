@@ -4,7 +4,7 @@
  "theme": "ca",
  "title": "Cyber Aware ca12 trailer, round 3, script R6 (narrator VO + Lorna lines; retime to the chosen voice pending D348)",
  "fps": 30,
- "length": 64.9,
+ "length": 64.29,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -530,8 +530,8 @@
    },
    "source": {
     "file": "t12_tailgater_card.trimmed.mkv",
-    "in": 6,
-    "out": 11.5
+    "in": 5.9,
+    "out": 11.4
    },
    "audio": {
     "gain_db": -6
@@ -573,14 +573,14 @@
   {
    "id": "queue_slot",
    "type": "gameplay",
-   "duration": 10,
+   "duration": 9.39,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t11_defend_queue.trimmed.mkv",
-    "in": 6.8,
-    "out": 16.8
+    "in": 6.58,
+    "out": 15.97
    },
    "audio": {
     "gain_db": -6
@@ -777,13 +777,13 @@
   {
    "id": "v10",
    "start": 51.5,
-   "end": 55.8,
+   "end": 55.29,
    "text": "Check the list. Escort them. Badge in. Lock your screen."
   },
   {
    "id": "v11",
-   "start": 60.1,
-   "end": 64.7,
+   "start": 59.49,
+   "end": 64.09,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
   }
  ]
