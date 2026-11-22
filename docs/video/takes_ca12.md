@@ -14,5 +14,6 @@ Recorded 2026-11-22, keyless :3447, display :147, `FOOTAGE_ROOT=$HOME/video-take
 | t08_triage | 10.57 | 0.79 | -73/-70 | 0 | |
 | t09_step_away | 54.94 | 0.18 | -85/-87 | 1 | BE_SPRITE; retake: the `--set` JSON must be passed without inner single quotes (run-take splits the flags unquoted) |
 | t11_defend_queue | 16.8 | 0.53 | -88/-68 | 0 | `--set episode_e12_visitor_tailgater_state={"done":["brief","osint","write","flip"]}` (no inner quotes); no avatar; masks needed (real geometry in CA12_T11_MASKS.md); nothing pressed, no verdict on screen once masked |
+| t12_tailgater_card | 18.97 | 0.47 | -88/-80 | 0 | same `--set` as t11; Unknown visitor (09:12) card open from 5.75 s (text readable at 1x), hold to 11.76 s, hover pass to 16.5 s, end 18.5 s; no masks (Cyber Aware), nothing pressed; "Let them in" shows a default highlight until the mouse moves |
 
 Voice: every voiced line played (t06 D3/D2/D1, t07 L1); no 503s on the server. t06 shows the reply choice menu and "Last change" reason lines in the meter panel by design (script holds 1.1 s on the choices).
