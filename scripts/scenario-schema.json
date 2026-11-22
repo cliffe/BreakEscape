@@ -3158,6 +3158,7 @@
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
             "flipPageIntroByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's page intro per chosen host option id (check.hosts[].id), used instead of flipPageIntro when the id matches; any other host keeps flipPageIntro"},
+            "debriefHostLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "D286: one debrief line per chosen fake-check host option id (check.hosts[].id), drawn after the concept panels; no chosen host, or an id with no entry, draws nothing"},
             "flipDefenderLineByHost": {"type": "object", "additionalProperties": {"type": "string"}, "description": "A fake-check flip's defender line per chosen host option id (check.hosts[].id); any other host keeps flipDefenderLine"},
             "flipGuessIntroNoSpray": {"type": "string", "description": "The flip intro instead of flipGuessIntro when the guess landed but the spray never ran (guess.sprayedGlobal not set)"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
