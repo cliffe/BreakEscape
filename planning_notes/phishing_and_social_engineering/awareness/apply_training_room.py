@@ -517,6 +517,9 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     for k, v in b['scenario'].items():
         if k != 'npcThoughts' and not (k == 'chatter' and ch_own):
             adds.append((k, v))
+    flags = office_kit.shell_flags(row)
+    text = _splice_object(text, _root(text), lambda k: k == office_kit.TTS_FLAG, [])   # re-added with adds, so a rerun is stable
+    adds.extend(flags.items())
     if b['timers'] and not tl:
         adds.append(('timers', b['timers']))
     for key in office_kit.KIT_KEYED:   # kit-owned entries are replaced inside the shell's collection, or the collection is created

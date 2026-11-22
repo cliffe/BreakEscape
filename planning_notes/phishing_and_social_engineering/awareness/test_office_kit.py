@@ -1395,5 +1395,39 @@ class CA02LiamBark(unittest.TestCase):
         self.assertEqual(ok.piece_message_globals(kit, dict(r, tier='none')), {})
 
 
+class TtsPregenerateFlag(unittest.TestCase):
+    """D306 step 2: course shells carry ttsPregenerateChatter; checks, the annual and the fixture do not."""
+
+    def test_course_rows_get_the_flag_and_rerun_is_stable(self):
+        sc = twin_shell()
+        kit = ok.load_kit('brightwell_foods')
+        r = row(tier='S')
+        self.assertEqual(ok.shell_flags(r), {'ttsPregenerateChatter': True})
+        out = ok.apply_kit(sc, kit, r)
+        self.assertIs(out['ttsPregenerateChatter'], True)
+        self.assertEqual(ok.apply_kit(out, kit, r), out)
+        self.assertEqual(list(ok.apply_kit(out, kit, r)), list(out))
+
+    def test_convention_row_gets_it_too(self):
+        self.assertEqual(ok.shell_flags(row(tier='S', convention=True)), {'ttsPregenerateChatter': True})
+
+    def test_tier_none_fixture_and_test_rows_get_none(self):
+        self.assertEqual(ok.shell_flags(row(tier='none')), {})
+        self.assertEqual(ok.shell_flags(row(fixture=True)), {})
+        self.assertEqual(ok.shell_flags(row(id='test_ca01_panel')), {})
+        self.assertNotIn('ttsPregenerateChatter', ok.apply_kit(twin_shell(), ok.load_kit('brightwell_foods'), row(tier='none')))
+
+    def test_checks_and_annual_are_refused_and_carry_no_flag_in_the_repo(self):
+        import glob
+        files = (glob.glob(os.path.join(REPO, 'scenarios', 'ca_pre_*', 'scenario.json.erb'))
+                 + glob.glob(os.path.join(REPO, 'scenarios', 'ca_post_*', 'scenario.json.erb'))
+                 + glob.glob(os.path.join(REPO, 'scenarios', 'ca_annual_*', 'scenario.json.erb')))
+        self.assertTrue(files)
+        for f in files:
+            self.assertNotIn('ttsPregenerateChatter', open(f).read(), f)
+        kit_ids = {r['id'] for r in ok.load_rows() if ok.active(r)}
+        self.assertFalse([i for i in kit_ids if i.startswith(('ca_pre_', 'ca_post_', 'ca_annual_'))])
+
+
 if __name__ == '__main__':
     unittest.main()
