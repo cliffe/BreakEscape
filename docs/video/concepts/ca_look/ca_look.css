@@ -1,0 +1,31 @@
+/* Shared tokens and parts for the CA look mockups (Two seats). Fonts come from the game's own files. */
+@font-face{font-family:'GNF';src:url('../../../../public/break_escape/assets/fonts/gnf.woff2')}
+@font-face{font-family:'Press Start 2P';src:url('../../../../public/break_escape/assets/fonts/PressStart2P-Regular.woff2')}
+@font-face{font-family:'VT323';src:url('../../../../public/break_escape/assets/fonts/VT323/VT323-latin.woff2')}
+:root{--surface:#f6f8f7;--ink:#1f2933;--line:#cfd8d4;--mark:#2f6f5e;--atk:#8c3b2e;--atk-t:#f3e4df;--def:#2f5f8a;--def-t:#e1eaf2;--stripe:#8a5a2b}
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0}
+html,body{background:var(--ink)}
+body{-webkit-font-smoothing:none;text-rendering:optimizeSpeed;font-family:'VT323',monospace;color:var(--ink)}
+.stage{position:relative;overflow:hidden;background:var(--surface);border:2px solid var(--ink)}
+.grid{background-image:repeating-linear-gradient(0deg,transparent 0,transparent 15px,rgba(0,0,0,.12) 15px,rgba(0,0,0,.12) 16px),repeating-linear-gradient(90deg,transparent 0,transparent 15px,rgba(0,0,0,.12) 15px,rgba(0,0,0,.12) 16px)}
+.grid-l{background-image:repeating-linear-gradient(0deg,transparent 0,transparent 15px,var(--line) 15px,var(--line) 16px),repeating-linear-gradient(90deg,transparent 0,transparent 15px,var(--line) 15px,var(--line) 16px)}
+.abs{position:absolute}
+.tab{position:absolute;background:var(--atk);border:2px solid var(--ink);color:#fff;font-family:'Press Start 2P',monospace;font-size:16px;line-height:1;padding:12px 14px;white-space:nowrap}
+.tab.def{background:var(--def)}.tab.neutral{background:var(--mark)}
+.plate{position:absolute;background:var(--surface);border:2px solid var(--ink);text-align:center}
+.plate::before{content:'';position:absolute;inset:3px;border:2px solid var(--line);pointer-events:none}
+.plate .stripe{position:absolute;left:0;right:0;bottom:0;height:6px;background:var(--stripe)}
+.mark{display:inline-flex;align-items:center;gap:12px}
+.mark .g{position:relative;width:46px;height:46px;flex:none}
+.mark .g i{position:absolute;width:28px;height:28px;border:2px solid var(--ink);display:block}
+.mark .g i:first-child{left:0;top:0;background:var(--atk);z-index:1}
+.mark .g i:last-child{left:16px;top:16px;background:var(--def);z-index:2}
+.mark b{font:400 16px/1 'Press Start 2P',monospace;color:var(--mark);white-space:nowrap}
+.gnf{font-family:'GNF','Press Start 2P',monospace}
+.vt{font-family:'VT323',monospace}
+.ps{font-family:'Press Start 2P',monospace}
+/* pixel progress bar: a 2px ink frame and hard segments, no radius, no gradient */
+.bar{position:absolute;height:32px;border:2px solid var(--ink);background:var(--surface);padding:4px;display:flex;gap:4px}
+.bar s{flex:1;display:block;text-decoration:none;background:var(--line)}
+.bar s.on{background:var(--mark)}
+.bar s.atk{background:var(--atk)}.bar s.def{background:var(--def)}
