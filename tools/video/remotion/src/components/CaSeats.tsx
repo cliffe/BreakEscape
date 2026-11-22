@@ -1,5 +1,5 @@
 import React from 'react';
-import { CA, CaTab, unit, tabFont, crisp } from '../ca';
+import { CA, CaTab, unit, tabFont, crisp, textWidth } from '../ca';
 import { CAPTION_FONT } from '../fonts';
 
 export const seatOf = (shot: any): { seat: 'attack' | 'defend' | 'full'; chip?: string; stripe?: string } | null => {
@@ -48,4 +48,15 @@ export const CaCaption: React.FC<{ shot: any; w: number; h: number; localSec: nu
       </div>
     </div>
   );
+};
+
+/** Height of the burned dialogue caption's box (CaCaption) at this size, estimated from the text width, so the VO plate can sit above it. */
+export const caCaptionBox = (w: number, h: number, line: any): { size: number; height: number; occupied: number } => {
+  const u = unit(w, h), portrait = h > w, size = Math.round(Math.min(w, h) * 0.052);
+  const padX = Math.round(size * 0.6), padY = Math.round(size * 0.35), maxW = Math.round(w * (portrait ? 0.88 : 0.7));
+  const text = `${line.speaker ? line.speaker + ': ' : ''}${line.text}`;
+  const lines = Math.max(1, Math.ceil((textWidth(text, CAPTION_FONT, size) * 1.06) / (maxW - 2 * padX - 4 * u)));
+  const height = Math.round(lines * size * 1.25 + 2 * padY + 4 * u);
+  // occupied: distance from the frame's bottom edge to the top of the caption box (CaCaption sits at 80% height in 16:9, 5% from the bottom otherwise)
+  return { size, height, occupied: w > h ? h - Math.round(h * 0.8) : Math.round(h * 0.05) + height };
 };

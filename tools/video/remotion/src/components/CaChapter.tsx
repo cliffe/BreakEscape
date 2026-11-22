@@ -53,7 +53,7 @@ export const CaChapter: React.FC<{ shot: any; w: number; h: number; frame: numbe
       <CaTab label={tabLabel} bg={ground} size={tf} u={u} style={{ left: 12 * u, top: 12 * u + tabDrop, border: `${2 * u}px solid #fff` }} />
       <div style={{ position: 'absolute', left: m, right: m, top: 0, bottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', ...crisp }}>
         {hLines.map((l, i) => <div key={i} style={{ fontFamily: GNF_FONT, fontSize: hSize, lineHeight: 1.15, color: '#fff', whiteSpace: 'nowrap' }}>{l}</div>)}
-        <div style={{ height: snapTo(hSize * 0.55, 4 * u) }} />
+        {bullets.length ? <div style={{ height: snapTo(hSize * 0.55, 4 * u) }} /> : null}
         {bullets.map((b, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: sq, marginBottom: Math.round(bSize * 0.3), opacity: rv ? fadeIn(i) : (frame >= revealAt(i) ? 1 : 0), width: inner }}>
             <div style={{ flex: 'none', width: sq, height: sq, marginTop: Math.round((bSize * 0.9 - sq) / 2), boxSizing: 'border-box', background: '#fff', border: `${2 * u}px solid ${CA.ink}` }} />

@@ -18,6 +18,7 @@ import { CaChapter } from './components/CaChapter';
 import { CaSeats, seatOf } from './components/CaSeats';
 import { SeamWipe } from './components/SeamWipe';
 import { FlipTransition } from './components/FlipTransition';
+import { CaVo } from './components/CaVo';
 
 export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<string, boolean> }> = ({ edit, aspect, available }) => {
   loadFonts();
@@ -66,7 +67,7 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
       </>
     );
   } else if (fx?.type === 'blur') out = <BlurStreak intensity={fx.intensity} frame={frame} w={w} h={h} side={fx.side as any}>{shots}</BlurStreak>;
-  return <AbsoluteFill style={{ background: '#000' }}>{out}</AbsoluteFill>;
+  return <AbsoluteFill style={{ background: '#000' }}>{out}{edit.vo?.length ? <CaVo edit={edit} tl={tl} frame={frame} w={w} h={h} aspect={aspect} fps={fps} /> : null}</AbsoluteFill>;
 };
 
 const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source }) => {

@@ -59,6 +59,12 @@ Pixel fonts only for everything designed (UI rule): the game ships all three in 
 - **9:16 and 1:1.** The seats stack: attacker on top, defender below, the seam horizontal. The flip slides upward.
 - **Seat labels** stay on screen for the whole time a seat is active, top-left of the seat, so a silent viewer always knows whose side this is.
 
+## Voice-over lane and insets (round 3)
+
+**`vo` (edit level).** `"vo": [{ "id", "start", "end", "text", "file"?, "onCard"?, "gain_db"? }]`, times in global seconds. Every cue is burned as a caption in all three aspects (`CaVo`): a CA surface plate with ink VT323 text (56 px at 1080, never under 48), a 2 unit square ink border, no speaker label, so it reads differently from the dark dialogue caption. Where a dialogue line is playing it sits above that line's caption (or above the game's own subtitle bar in 16:9). On a CA card it stacks above the `CYBER AWARE` plate; `"onCard": "hide"` drops the caption there but keeps the audio. `ca_open` and `ca_close` never show it. With a `file` (relative to the takes dir, or absolute), `mix-audio.mjs` mixes it in at `start` and ducks the music and every take's own audio by `edit.duck`. Without one the lint says "not voiced yet (caption only)". The `.srt` merges VO cues, with no speaker prefix, into the dialogue cues in time order. Lint: inside the trailer, `start < end`, no two cues overlap, text over 90 characters and over 3.2 words per second warn, and overlapping a `dialogue` line by more than 0.3 s warns. Known limit: on a chapter card with three bullets the plate can crowd the last one in 16:9; use `onCard: "hide"` there.
+
+**`insets` (gameplay shot).** `"insets": [{ "src": {x,y,w,h}, "at": { "16:9": {x,y,scale}, "9:16": {...}, "1:1": {...} }, "from"?, "to"?, "label"? }]`. `src` is in source pixels of the take; `at` is the top-left in output pixels and a `scale` of 1.5 to 4. The inset is the shot's own frame at the same time, nearest-neighbour, with the shot's `masks` drawn in it and a 2 unit ink border, plus an optional upper-case `label` tab above (`INFLUENCE`). An aspect with no `at` entry draws nothing. `from` and `to` are shot seconds; it scales in over 0.2 s in four frame steps. Lint: `src` inside the frame, the box inside each output frame, scale 1.5 to 4, room above for the label.
+
 ## Joins and transitions
 
 Gameplay to gameplay inside a seat stays a hard cut (house rule). Into or out of a card or a seat change:
