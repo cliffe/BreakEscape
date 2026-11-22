@@ -1,6 +1,6 @@
 # Recipe: mission teaser and social cut (15 to 30 s)
 
-Priority 2. A cut-down of a mission trailer for Shorts, Reels, TikTok, LinkedIn and the Hacktivity feed. **9:16 first**, captions burned in, `.srt` always. No edit list exists for the new brand yet: `tools/video/edits/m01_teaser.json` is the old v1 style (Break Escape wordmark, no Veo clips) and must not be copied. Start from `m01_trailer60.json` and cut it down. House rules are in `README.md`.
+Priority 2. A cut-down of a mission trailer for Shorts, Reels, TikTok, LinkedIn and the Hacktivity feed. **9:16 first**, captions burned in, `.srt` always. No edit list exists for the new brand yet: `tools/video/edits/m01_teaser.json` is the old v1 style (Break Escape wordmark, no Veo clips) and must not be copied. Start from `m01_trailer60.json` and cut it down. House rules are in `README.md`; what a trailer sells, the spoiler line, the ending, day/night order and the no-empty-screens rule come from `mission-trailer.md` and apply here.
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Music: the same track the mission trailer uses (one track per mission), a window
 | 8.0 | 6.5 | Drop and montage | the lights strike 1.5 s, then lockpicking 1 s, keypad 1.5 s, phone 1.5 s, a real tool 1 s, hard cuts |
 | 14.5 | 1.5 | Card | one threat or choices card, in the mission's own words (optional: drop it for a longer NPC line) |
 | 16.0 | 4.0 | One NPC line | the strongest from the trailer's three, captioned |
-| 20.0 | 3.0 | Antagonist | the last part of his line as a UI-free close-up, hard cut in (skip the wide half), only if the user allows showing him |
+| 20.0 | 3.0 | Antagonist | the last part of his line as a UI-free close-up, hard cut in (skip the wide half), the villain's menace is fair game |
 | 23.0 | 7.0 | Call to action | `spy_laptop_out`: **"Play now"**, key press, red hex curtain, Hacktivity Labs morphs to Games, URL |
 
 15 s: hook line, four montage cuts, the antagonist close-up or one NPC line, then the closing logo on the curtain (a short end shot using the `logo_end` card kind: not tested at this length, check in a stills render). No Veo opening; the title card is 1.5 s.
@@ -51,7 +51,7 @@ Music: the same track the mission trailer uses (one track per mission), a window
 - The real-hacking placeholder in a social cut unless the user wants it (it is marked stand-in footage).
 - Gameplay-to-gameplay effects; pixel-dissolve at a hard join; a second subtitle layer over the game's own bar.
 - Captions outside the safe area; text smaller than 36 px on 9:16.
-- Spoilers: the antagonist line only with the user's say-so, never the ending.
+- Spoilers: never an answer, the debrief or an end twist the mission withholds.
 
 ## Inputs
 

@@ -37,6 +37,9 @@ Check the first and last frame of every window, and every frame where something 
 - **Dialogue** (`dialogue: true`): cut to the target line's start and end marks; the subtitle shows 0.1 to 0.2 s before the start mark. Cut around skipped lines. A strong antagonist line plays wide, then **hard-cuts to a UI-free close-up** for its last part (not a slow push-in): m01's `derek_wide` then `derek_close` with a 3-frame glitch `hit` on the cut, at the silence before "Security".
 - **Minigames:** show the whole panel with a margin at 1x (CyberChef is the exception: crop to the working panes at 2x). Phone and chat shots hold about 0.5 s longer so the reply choices show. PIN shots show at least 3 digits typed and held.
 - **Walking shots:** 1 s excerpts around the motion; one NPC plus the player.
+- **Order and content** (rules in `mission-trailer.md`, applied here): day shots together and night shots together in story order; a new mechanic on a card that names it, then 3 s or more of it working from start to finish; action beats as set-up, action, payoff; no empty screens anywhere; the last line is the most interesting one.
+- **Adjacent visible shots never share a spy avatar.** Crop name bars and Skip buttons out wherever they would name a secret.
+- **Cut-in after the portrait swap.** A dialogue shot starts only once the NPC's portrait has replaced the player's; the player's portrait can show the save name ("playtest") in the subtitle bar before that. Check each shot for dev text, a lit torch and NPCs not jittering against furniture.
 - **No second subtitle layer** over the game's own bar. Where a 9:16 crop loses the bar, set `"caption": {"9:16": true}` on the shot and the Press Start 2P caption appears from `lines`.
 - **Spoilers:** see the checklist below; every shot carries a reviewed `spoiler` block.
 - **Real-hacking footage** is a placeholder until in-game VM capture exists (user, 2026-10-30): the shot is `source.type: "clip"`, `placeholder: true`, with a note. Reusing `real_hacking_kali.mp4`: its Hydra shot names user `derek` and is m01-specific, so for another mission cut only the later part (about 20.8 to 23.4 s of the old trailer, after the Hydra line), check the frames for anything m01-specific, and leave the slot easy to swap. The lint lists placeholders and `--final` refuses them: a final render of a trailer with a slot needs the user's explicit say-so.
@@ -53,7 +56,7 @@ nice -n 19 "$BE_MUSIC_VENV/bin/python" tools/video/edits/music/analyse_music.py 
 # writes tools/video/edits/music/<slug>_60.json: bpm, beat offset, bars, strongest hits, per-bar energy, best windows
 ```
 
-Look for a window with a quiet opening (title and the hook line), a drop at about 10 to 14 s, further lifts for the back half and a clean end. `tools/video/edits/music/summary.json` lists tracks already analysed (six, with 30 s windows); m01 used Noir "Midnight Cipher Chase" (120 BPM, window start 109.023 s, a downbeat; lifts at 12, 18, 26, 34 and 52 s; quiet bar at 48 s; strong hits at 52, 54, 56, 58 s). Cards land on lifts and strong hits, montage cuts on beats, every `snap: true` boundary on the grid. Put the choice in the edit's `music` block with `alternatives`.
+Look for a window with a quiet opening (title and the hook line), a drop at about 10 to 14 s, further lifts for the back half and a clean end. `tools/video/edits/music/summary.json` lists tracks already analysed (six, with 30 s windows); m01 used Noir "Midnight Cipher Chase" (120 BPM, window start 109.023 s, a downbeat; lifts at 12, 18, 26, 34 and 52 s; quiet bar at 48 s; strong hits at 52, 54, 56, 58 s). Cards land on lifts and strong hits, montage cuts and the night turn on beats, every `snap: true` boundary on the grid. Put the choice in the edit's `music` block with `alternatives`.
 
 ## Step 3: fill the edit list
 
@@ -118,15 +121,15 @@ nice -n 19 tools/video/remotion/render.sh tools/video/edits/<mission>_<kind>.jso
 |---|---|
 | Selects | each window checked against frames, logged in the selects note |
 | Lint | `--final` exits 0 (or only the user-approved placeholders remain, listed) |
-| Audio | per render: -14.0 LUFS (13.9 to 14.1), true peak under -1 dBTP, dialogue 3 dB or more over the ducked music at its quietest |
+| Audio | per render: -14.0 LUFS (13.9 to 14.1), true peak under -1 dBTP, dialogue 3 dB or more over the ducked music at its quietest; each voice cue's ebur128 momentary max between -8.5 and -10.5 LUFS |
 | Length | within one frame of the recipe's length; `ffprobe` duration |
 | Contact sheet (orchestrator) | every card, join, minigame frame (panel border visible with a margin), the title frame, the key-press and logo frames of the closing clip, and the last frame all checked by eye |
 | Spoilers (orchestrator) | the checklist below, shot by shot |
-| Captions | `.srt` exists and matches the voiced lines; burned captions present wherever the recipe says (social cuts) |
+| Captions | `.srt` has a cue for every voiced line (shot-level `"dialogue": true`) and matches them; burned captions present wherever the recipe says (social cuts) |
 
 ### Spoiler checklist
 
-No code, PIN, password, flag value or answer on screen, including post-its, CyberChef inputs, subtitle text and the old-trailer placeholder (pixelate real answers; the Hydra shot's password was mosaicked). Keypad shots show 3 digits that differ from the real code. No casualty figures, no ending or choice screens, no debrief lines. An antagonist may be shown or named only if the recipe or the user says he is plain from the start (m01's Derek, 2026-10-29). Check the pre-target audio of a dialogue take: skipped lines can be partly audible.
+No code, PIN, password, flag value or answer on screen, including post-its, CyberChef inputs, subtitle text and the old-trailer placeholder (pixelate real answers; the Hydra shot's password was mosaicked). Keypad shots show 3 digits that differ from the real code. No casualty figures, no ending or choice screens, no debrief lines. The antagonist's menace and confrontation lines are fair game; only an end twist the mission withholds stays off. Check the pre-target audio of a dialogue take: skipped lines can be partly audible.
 
 ## Captions
 
