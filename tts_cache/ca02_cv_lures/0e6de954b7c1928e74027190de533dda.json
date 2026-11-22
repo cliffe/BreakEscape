@@ -1,0 +1,13 @@
+{
+  "key": "0e6de954b7c1928e74027190de533dda",
+  "npc": "fatima_begum",
+  "text": "IT have asked anyone who opened that careers link to change their password today.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T01:56:44Z"
+}
