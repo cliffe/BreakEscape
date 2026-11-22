@@ -1266,7 +1266,8 @@ export function swivelEnabled(rec, scenario) {
 
 const NPC_TICK_S = 0.05;           // npc-behavior.js updateInterval
 const NPC_SEAT_SPEED = 70;         // px/s onto and off a seat
-const NPC_STUCK_TICKS = 4;         // ticks without 0.5 px of progress: blocked
+const NPC_STUCK_TICKS = 4;         // ticks of too little progress: blocked
+const NPC_STUCK_FRACTION = 0.25;   // a tick that covers under this share of the expected step is no progress
 const NPC_MOVE_MAX_TICKS = 40;     // 2 s
 const POST_HOME_WAIT_MS = 5000;    // needs clock: a post seat waits this long for a resolved home
 const NPC_WALK_GIVE_UP_PX = 8;     // blocked this far from the work spot: work standing
@@ -1352,12 +1353,15 @@ function fitSeatedBody(sprite, st) {
 }
 
 /** One tick of an NPC walk to `target`: 'moving', 'arrived' (placed exactly) or 'stuck'. */
-function npcWalkTick(behavior, m, target) {
+export function npcWalkTick(behavior, m, target) {
     const sprite = behavior.sprite;
     const f = bodyFeet(sprite);
     const dx = target.x - f.x, dy = target.y - f.y, d = Math.hypot(dx, dy);
     if (d <= ARRIVE_PX) { sprite.body.setVelocity(0, 0); moveFeetTo(sprite, target.x, target.y); return 'arrived'; }
-    m.still = (m.last - d < 0.5) ? m.still + 1 : 0;
+    // Progress is judged against the step this tick should cover, not a flat 0.5 px: a body
+    // grinding against the player at ~0.6 px per tick (about 12 px/s) used to pass as moving.
+    const expected = Math.min(NPC_SEAT_SPEED * NPC_TICK_S, m.last === Infinity ? Infinity : m.last);
+    m.still = (m.last !== Infinity && m.last - d < Math.max(0.5, expected * NPC_STUCK_FRACTION)) ? m.still + 1 : 0;
     m.last = d;
     m.ticks++;
     if (m.still >= NPC_STUCK_TICKS || m.ticks > NPC_MOVE_MAX_TICKS) { sprite.body.setVelocity(0, 0); return 'stuck'; }
