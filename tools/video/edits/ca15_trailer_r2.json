@@ -12,8 +12,7 @@
    "Close tagline: \"Take the shortcut · See where it leads\" replaces \"Play the attack · Learn to stop it\" (ca15 has no attacker to play). D351 pending an owner check.",
    "Left seat label: `THE SHORTCUT` (edit-level `seat_labels`; the right seat stays `DEFENDER`). Red card: \"Take the shortcut\" / \"See where it led\".",
    "The 9:16 minigame framing (zoom 1.4, per-shot cy) crops the 700 px panel to about 430 px of width; frame check on the first take render.",
-   "`nilesh_ask` out time and the `nilesh_noblame` entry state are estimates until the takes are marked.",
-   "R3: v8 starts inside the inbox shot. If t06 shows the list by about 1.4 s, the swap/inbox boundary can move earlier (swap 3.0-6.2, inbox from 1.4) and the inbox shortens by 0.6 s; takes_ca15.md does not say yet."
+   "`nilesh_ask` out time and the `nilesh_noblame` entry state are estimates until the takes are marked."
   ]
  },
  "fps": 30,
@@ -551,10 +550,7 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "Defend chapter card, two lines: \"You sort the shortcuts\" / \"Found sticks · Free tools · The approved swap\"; no tell, verdict or answer | CA: spoilers fine (owner), no masks"
-   },
-   "body": [
-    "Found sticks · Free tools · The approved swap"
-   ]
+   }
   },
   {
    "id": "swap",
@@ -602,7 +598,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t05_swap_shop: --set state done brief/mistake/flip (takes_ca15.md t05); open the kiosk, Open the Swap Shop, Start; card 1 at mark card1, hover the bins, never pick; hide the score line; 9:16 zoom 1.4 cy 0.52 from the scout stills (FRAME CHECK); R3: 2.4 s window (3.0-5.4)"
+   "placeholder_note": "PENDING TAKE t05_swap_shop: --set state done brief/mistake/flip (takes_ca15.md t05); open the kiosk, Open the Swap Shop, Start; card 1 at mark card1, hover the bins, never pick; hide the score line; 9:16 zoom 1.4 cy 0.52 from the scout stills (FRAME CHECK); R3: 2.4 s window (3.0-5.4) R4: set in = card1 mark, out = in + 2.4 (cursor sweep starts about 0.8 s in)."
   },
   {
    "id": "inbox",

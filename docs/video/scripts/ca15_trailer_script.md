@@ -1,6 +1,6 @@
 # ca15 trailer script (Shadow IT)
 
-Status: script round 3, captions only, not voiced. Edit: `tools/video/edits/ca15_trailer_r2.json` (72.0 s). Owner card: none yet (script R3; close line D351 pending).
+Status: script round 4, captions only, not voiced. Edit: `tools/video/edits/ca15_trailer_r2.json` (72.0 s). Owner card: none yet (script R3; close line D351 pending).
 
 Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with the Hacktivity.co.uk call (ca12 tagline "Play the attack · Learn to stop it"). Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the left seat reads THE SHORTCUT (edit-level seat_labels; the right seat stays DEFENDER), and the red card reads "Take the shortcut" / "See where it led". ca15: Take the shortcut · See where it leads (D351 pending).
 
@@ -32,4 +32,3 @@ VO pace limit: 2.3 words per second + 0.2 s (lint). Every VO line is also a burn
 - Left seat label: `THE SHORTCUT` (edit-level `seat_labels`; the right seat stays `DEFENDER`). Red card: "Take the shortcut" / "See where it led".
 - The 9:16 minigame framing (zoom 1.4, per-shot cy) crops the 700 px panel to about 430 px of width; frame check on the first take render.
 - `nilesh_ask` out time and the `nilesh_noblame` entry state are estimates until the takes are marked.
-- R3: v8 starts inside the inbox shot. If t06 shows the list by about 1.4 s, the swap/inbox boundary can move earlier (swap 3.0-6.2, inbox from 1.4) and the inbox shortens by 0.6 s; takes_ca15.md does not say yet.
