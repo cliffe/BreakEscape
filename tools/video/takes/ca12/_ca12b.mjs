@@ -1,7 +1,7 @@
 // Entry-state drivers for the ca12 take scripts t06 to t10 (second author's helpers; _ca12.mjs holds the shared ones).
 // Everything drives the real UI: kiosk buttons, the OSINT browser, the pretext card, the call. No globals are set.
-import { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk, interactRetry } from './_ca12.mjs';
-export { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk, interactRetry };
+import { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk, interactRetry, watchBubbles, waitNpcPortrait } from './_ca12.mjs';
+export { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk, interactRetry, watchBubbles, waitNpcPortrait };
 
 /** Click the deepest visible element (any tag) whose own text matches `re`. Returns its text or null. */
 export const clickEl = (page, re, sel = 'a,button,span,div,li,p,h3,h4,label') => page.evaluate(([src, fl, s]) => {
