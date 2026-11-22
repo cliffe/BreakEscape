@@ -1148,6 +1148,11 @@ class CaRegateMinors(unittest.TestCase):
         tasks = [t for a in sh['objectives'] for t in a['tasks']]
         t = next(t for t in tasks if t['taskId'] == 'look_at_team_photo')
         self.assertEqual(t['status'], 'locked')
+        # F1 (scenario_ending_bypass_test): a skipped task must not sit in a missionConclusion aim
+        aim = next(a for a in sh['objectives'] if t in a['tasks'])
+        self.assertFalse(aim.get('missionConclusion'))
+        self.assertEqual(aim['status'], 'locked')
+        self.assertTrue(t.get('optional'))
         self.assertIn('screen', t['title'])
         self.assertIn('board', t['title'])
         staff = ok.load_kit('merrin_sallow')['setPieces']['ca14_team_photo']['staff']
