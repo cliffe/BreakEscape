@@ -294,7 +294,18 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
 // ---- plan 4.5 chain rules ----------------------------------------------------------------------
 // A chain shell is one with the step-away panel. Every kit mapping (host and kit staff) is walked.
 // _comment: engine-ignored note, used by retired-in-place slots that keep later once-only indices.
-const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible'];
+const ALLOWED_MAPPING_FIELDS = ['_comment', 'eventPattern', 'condition', 'onceOnly', 'delayMs', 'setGlobal', 'bark', 'knot', 'targetKnot', 'needs', 'patrolOverride', 'setVisible', 'whenPerceivable', 'askCue', 'askCueMs', 'askCueUntil', 'askCueQuiet'];
+// Bark gates. The ask bark (a targetKnot bark on there, and its game_loaded re-arm copy) does not read kit_quiet in a
+// shell with the done backstop: reopening and closing the debrief sets kit_quiet false, which would drop the ask.
+// It reads !done and an empty choice instead. A follow-through bark on the answer reads !done and may keep or drop
+// kit_quiet (nothing that sets done reads it). Every other chain bark keeps kit_quiet === true.
+const hasBackstop = (sc) => (sc.timers || []).some((t) => /^kit_ca\d+_t_done_out$/.test(t.id));
+const barkGateOk = (m, sc) => {
+  const c = m.condition || '';
+  if (m.targetKnot && hasBackstop(sc)) return !/kit_quiet/.test(c) && /!globalVars\.kit_ca\d+_done/.test(c) && /_choice === ''/.test(c);
+  if (/^global_variable_changed:kit_ca\d+_\w+_choice$/.test(m.eventPattern) && hasBackstop(sc)) return /!globalVars\.kit_ca\d+_done/.test(c);
+  return /globalVars\.kit_quiet === true/.test(c);
+};
 const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
 // the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
 const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);
@@ -360,11 +371,16 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     }
     // at most two chain barks (three for ca12, the flagship: owner ruling D212, 20 Nov 2026, which adds
     // Thandiwe's departure bark), each gated on kit_quiet and on the out global, at least 4 s apart is a timing proof
+    // the game_loaded re-arm copy of the ask bark is counted apart: exactly one, onceOnly, the same knot as the ask bark
+    const rearmBarks = staffMaps.filter((x) => x.m.bark && x.m.eventPattern === 'game_loaded');
+    // (a shell with an ask has exactly one; ca03 has no ask and no re-arm)
+    const hasAsk = hasBackstop(sc);
+    assert.ok(rearmBarks.length === (hasAsk ? 1 : 0) && rearmBarks.every((x) => x.m.onceOnly === true && x.m.targetKnot), where('one onceOnly game_loaded re-arm bark when there is an ask'));
     const barks = staffMaps.filter((x) => x.m.bark);
-    const barkCap = row && row.tier === 'E' ? 3 : 2;   // every end-to-end row: ca12, ca06, ca09, ca15, ca16 (and the fixture, which is not a chain shell)
-    assert.ok(barks.length >= 1 && barks.length <= barkCap, where(`1 to ${barkCap} chain barks, found ${barks.length}`));
+    const barkCap = (row && row.tier === 'E' ? 3 : 2) + (hasAsk ? 1 : 0);   // every end-to-end row: ca12, ca06, ca09, ca15, ca16 (and the fixture, which is not a chain shell)
+    assert.ok(barks.length >= 1 && barks.length <= barkCap, where(`1 to ${barkCap} chain barks (including the re-arm), found ${barks.length}`));
     for (const { m, who } of barks) {
-      assert.ok(/globalVars\.kit_quiet === true/.test(m.condition || ''), where(`${who} bark needs kit_quiet === true`));
+      assert.ok(barkGateOk(m, sc), where(`${who} bark gate (ask: no kit_quiet, !done, empty choice; others: kit_quiet)`));
       assert.ok(globalsRead(m.condition).includes(outG), where(`${who} bark needs ${outG} (plan 4.5)`));
     }
     // the only episode_step_away mapping is the host's, and it sets only the out global
@@ -372,7 +388,7 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
     assert.ok(steps.length === 1 && steps[0].host, where('one step-away mapping, on the host'));
     assert.deepEqual(Object.keys(steps[0].m.setGlobal), [outG], where('step-away sets only the out global'));
     // every staff mapping listens on the out global, a kit_ global, or a chain event, with the out global in its condition
-    const chainEvents = /^(npc_returned_post|workstation_owner_\w+|npc_use_failed|conversation_closed|npc_arrived:[\w]+|npc_use_started:[\w]+)/;
+    const chainEvents = /^(npc_returned_post|workstation_owner_\w+|npc_use_failed|conversation_closed|game_loaded|npc_arrived:[\w]+|npc_use_started:[\w]+)/;
     for (const { m, who } of staffMaps) {
       const ev = m.eventPattern;
       if (ev === `global_variable_changed:${outG}` || /^global_variable_changed:kit_/.test(ev)) continue;
@@ -1333,7 +1349,7 @@ test('wave 4: no || in any kit mapping, timer or variant of the four shells; eve
       assert.ok(m.onceOnly === true, `${name} ${who}: onceOnly on ${m.eventPattern}`);
       assert.ok(globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name} ${who}: ${m.eventPattern} reads the out global`);
       if (/^npc_arrived/.test(m.eventPattern)) assert.ok(/data\.owner !== 'needs'/.test(m.condition), `${name} ${who}: arrival filters needs walks`);
-      if (m.bark) assert.ok(/globalVars\.kit_quiet === true/.test(m.condition), `${name} ${who}: bark needs kit_quiet`);
+      if (m.bark) assert.ok(barkGateOk(m, sc), `${name} ${who}: bark gate on ${m.eventPattern}`);
       if (m.patrolOverride) assert.ok(m.patrolOverride.speed === 90 && Number.isFinite(m.patrolOverride.targetTile.x), `${name} ${who}: walk speed 90`);
       assert.ok(!/kit_attack_done/.test(JSON.stringify(m)), `${name} ${who}: no kit_attack_done`);
     }
@@ -1344,13 +1360,17 @@ test('wave 4: no || in any kit mapping, timer or variant of the four shells; eve
 test('wave 4: exact staff-bark count per shell; Nilesh barks are host mappings, gated; no bark reads what its mapping sets', () => {
   for (const [name, w] of Object.entries(W456)) {
     const sc = w4Shell(name);
-    const staff = w4Maps(sc, w).filter((x) => !x.host && x.m.bark);
+    const staffAll = w4Maps(sc, w).filter((x) => !x.host && x.m.bark);
+    // the game_loaded re-arm copy of the ask bark is the one extra: counted apart, exactly one
+    const staff = staffAll.filter((x) => x.m.eventPattern !== 'game_loaded');
+    assert.equal(staffAll.length - staff.length, 1, `${name}: one game_loaded re-arm bark`);
     assert.equal(staff.length, w.staffBarks, `${name}: staff barks`);
     const host = w4Maps(sc, w).filter((x) => x.host && x.m.bark);
     if (w.ep === 'ca09') assert.equal(host.length, 1, 'ca09: one Nilesh bark');
     if (w.ep === 'ca15') assert.equal(host.length, 2, 'ca15: two Nilesh barks');
-    for (const { m } of [...staff, ...host]) {
-      assert.ok(/globalVars\.kit_quiet === true/.test(m.condition) && globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name}: bark gated`);
+    for (const { m } of [...staffAll, ...host]) {
+      const gate = barkGateOk(m, sc);
+      assert.ok(gate && globalsRead(m.condition).includes(`kit_${w.ep}_out`), `${name}: bark gated`);
       assert.deepEqual(globalsRead(m.condition).filter((g) => Object.keys(m.setGlobal || {}).includes(g)), [], `${name}: bark reads what it sets`);
     }
   }
@@ -1374,7 +1394,7 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     // ca09: an unseen close starts a short timer that settles "asked" to silent (no wait for the 60 s fallback),
     // from a mapping that is last in the colleague's list, onceOnly, && only; the knot re-offers while the choice is 'asked'
     if (ep === 'ca09') {
-      const last = cm[cm.length - 1];
+      const last = cm.filter((m) => m.eventPattern !== 'game_loaded').slice(-1)[0];   // the three re-arm mappings are appended after it
       assert.ok(last.eventPattern === `conversation_closed:kit_${w.stub}` && last.onceOnly === true && !last.condition.includes('||') && last.condition.split(' && ').includes("globalVars.kit_ca09_note_seen !== true") && last.condition.includes(`${ch} === 'asked'`) && last.setGlobal && last.setGlobal.kit_ca09_closed_unseen === true, `${name}: last mapping marks an unseen close`);
       const tu = (sc.timers || []).find((t) => t.id === 'kit_ca09_t_unseen');
       assert.ok(tu && tu.startOnGlobal === 'kit_ca09_closed_unseen' && tu.delayMs >= 6000 && tu.delayMs <= 20000 && tu.condition === `globalVars.${ch} === 'asked' && globalVars.kit_ca09_note_seen !== true` && tu.setGlobal[ch] === 'silent', `${name}: unseen-close timer settles asked to silent`);
@@ -1386,12 +1406,20 @@ test('wave 4: the request recipe (bark + knot, asked, close, tail, done-on-asked
     const dm = cm.find((m) => m.eventPattern === `global_variable_changed:${ep === 'ca15' ? 'kit_ca15_done' : done}` && m.setGlobal && m.setGlobal[ch] === w.silent);
     assert.ok(dm && dm.condition.includes(`${ch} === 'asked'`), `${name}: done turns asked into ${w.silent}`);
     const tail = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_tail`);
-    assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 20000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
+    assert.ok(tail && tail.startOnGlobal === asked && tail.delayMs === 45000 && tail.condition === `globalVars.${ch} === ''` && tail.setGlobal[ch] === w.silent, `${name}: tail timer`);
     const fb = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done`);
-    assert.ok(fb && fb.startOnGlobal === `kit_${ep}_out` && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 90000 : 60000), `${name}: done fallback`);
+    assert.ok(fb && fb.startOnGlobal === asked && fb.setGlobal[done] === true && fb.condition === `!globalVars.${done}` && fb.delayMs === (ep === 'ca15' ? 115000 : 85000), `${name}: done fallback`);
+    // backstop: done is also set 60 s after the ask's own tail, started from out alone (reload / reopened-debrief cannot strand it)
+    const fbo = (sc.timers || []).find((t) => t.id === `kit_${ep}_t_done_out`);
+    assert.ok(fbo && fbo.startOnGlobal === `kit_${ep}_out` && fbo.setGlobal[done] === true && fbo.condition === `!globalVars.${done} && globalVars.${asked} !== true` && fbo.delayMs === fb.delayMs + 60000, `${name}: done backstop from out`);
+    // the ask is gated on not answered and not done; the re-arm copies the same and add asked !== true / === true
+    assert.ok(ask.condition.includes(`!globalVars.${done}`) && ask.condition.includes(`globalVars.${ch} === ''`) && !/kit_quiet/.test(ask.condition) && ask.askCue === true && ask.askCueUntil === ch && ask.askCueMs === 45000, `${name}: ask gated on !done and empty choice, no kit_quiet, marker lasts the reply window`);
+    const rearm = cm.filter((m) => m.eventPattern === 'game_loaded');
+    assert.ok(rearm.length === 3 && rearm.every((m) => m.onceOnly === true && m.delayMs === ask.delayMs && m.condition.includes(`globalVars.${w.there} === true`) && m.condition.includes(`!globalVars.${done}`)), `${name}: three onceOnly game_loaded re-arm mappings, same delay as the ask`);
+    assert.deepEqual(cm.slice(-3), rearm, `${name}: re-arm mappings are appended last`);
     if (!(name in W5 || name in W6)) {
       // every walk has a fallback timer
-      const walkTimers = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${ep}_t_`) && !['tail', 'done'].includes(t.id.split('_t_')[1]));
+      const walkTimers = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${ep}_t_`) && !['tail', 'done', 'done_out'].includes(t.id.split('_t_')[1]));
       assert.ok(walkTimers.length >= 1, `${name}: a walk fallback timer`);
       assert.ok(walkTimers.every((t) => t.delayMs >= 6000 && t.delayMs <= 20000), `${name}: walk fallbacks 6-20 s`);
       // the colleague's needs freeze
@@ -1702,12 +1730,15 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     assert.deepEqual([r3.condition, r3.delayMs, r3.setGlobal], [c.v, 1500, { [w.there]: true }], `${name}: row 3 sets there after 1500`);
     const r4 = cm.find((m) => m.eventPattern === w5Out(w) && m.bark);
     only(r4, 'row 4');
-    assert.deepEqual([r4.condition, r4.delayMs, r4.targetKnot], [`${c.v} && ${c.Q}`, 1500, undefined], `${name}: row 4 first line, quiet only`);
+    assert.deepEqual([r4.condition, r4.delayMs, r4.targetKnot], [`${c.v} && ${c.Q}`, 1500, undefined], `${name}: row 4 first line, quiet only (a race is impossible 1.5 s after out)`);
     const r5 = cm.find((m) => m.eventPattern === there && m.bark && m.targetKnot === w.knot);
     const r6 = cm.find((m) => m.eventPattern === there && m.setGlobal && m.setGlobal[`kit_${ep}_asked`] === true);
     only(r5, 'row 5'); only(r6, 'row 6');
-    assert.equal(r5.condition, `${c.v} && ${c.Q} && ${ch} === ''`.replace(`${ch} ===`, `globalVars.${ch} ===`), `${name}: row 5 reads quiet and an empty choice`);
-    assert.equal(r6.condition, `${c.v} && ${c.Q}`, `${name}: row 6 reads quiet too (no asked for a request nobody heard)`);
+    // the ask carries no kit_quiet (reopening the debrief clears it and dropped the ask): it reads an empty choice and !done
+    assert.equal(r5.condition, `${c.v} && globalVars.${ch} === '' && ${c.nD}`, `${name}: row 5 reads an empty choice and not done, no quiet`);
+    assert.equal(r6.condition, `${c.v} && ${c.nD} && globalVars.${ch} === ''`, `${name}: row 6 reads not done and an empty choice, no quiet`);
+    assert.ok(!/kit_quiet/.test(r5.condition + r6.condition), `${name}: neither ask row reads kit_quiet`);
+    assert.deepEqual([r6.askCue, r6.askCueUntil, r6.askCueMs, r6.whenPerceivable], [true, ch, 45000, true], `${name}: row 6 marker lasts the reply window and until the answer`);
     const rd = w.requestDelay ?? 4500;   // 5500 after Fc (the first-line clip runs 4.70 s from 1.5 s)
     assert.deepEqual([r5.delayMs, r6.delayMs], [rd, rd], `${name}: rows 5 and 6 share the ${rd} delay`);
     assert.deepEqual(r6.setGlobal, { [`kit_${ep}_asked`]: true }, `${name}: row 6 sets only asked`);
@@ -1723,12 +1754,14 @@ test('wave 5: request pairing: rows 3-7 and 12 are literal, rows 5 and 6 share t
     assert.equal(r12.condition, `${c.v} && globalVars.${ch} === 'asked'`, `${name}: row 12 done turns asked into ${w.silent}`);
     const T = (id) => (sc.timers || []).find((t) => t.id === `kit_${ep}_t_${id}`);
     assert.deepEqual([T('there').startOnGlobal, T('there').delayMs, T('there').condition, T('there').setGlobal], [`kit_${ep}_out`, 4000, `!globalVars.${w.there}`, { [w.there]: true }], `${name}: t_there`);
-    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 20000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
-    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_out`, 60000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
+    assert.deepEqual([T('tail').startOnGlobal, T('tail').delayMs, T('tail').condition, T('tail').setGlobal], [`kit_${ep}_asked`, 45000, `globalVars.${ch} === ''`, { [ch]: w.silent }], `${name}: t_tail`);
+    assert.deepEqual([T('done').startOnGlobal, T('done').delayMs, T('done').condition, T('done').setGlobal], [`kit_${ep}_asked`, 85000, c.nD, { [`kit_${ep}_done`]: true }], `${name}: t_done`);
+    // the backstop: started from out alone, 60 s after t_done would have fired
+    assert.deepEqual([T('done_out').startOnGlobal, T('done_out').delayMs, T('done_out').condition, T('done_out').setGlobal], [`kit_${ep}_out`, 85000 + 60000, `${c.nD} && globalVars.kit_${ep}_asked !== true`, { [`kit_${ep}_done`]: true }], `${name}: t_done_out backstop`);
   });
 });
 
-test('wave 5: follow-through pairing: rows 8 and 9 share trigger and delay, row 8 is row 9 plus quiet, row 10 and row 11 are literal', () => {
+test('wave 5: follow-through pairing: rows 8 and 9 share trigger, delay and condition (neither reads quiet), row 10 and row 11 are literal', () => {
   w56Each((name, w, sc) => {
     const c = w5Conds(w), cm = w5CM(sc, w), ep = w.ep;
     const trig = `global_variable_changed:${w.choice}`;
@@ -1739,8 +1772,10 @@ test('wave 5: follow-through pairing: rows 8 and 9 share trigger and delay, row 
     const pool = w.hostSpeaks ? w3Maps(hostOf(sc)) : w5PM(sc, w);
     const r8 = pool.find((m) => m.eventPattern === trig && m.bark);
     assert.ok(r8 && r8.onceOnly === true, `${name}: row 8 is a bark on ${w.hostSpeaks ? 'the host' : w.partner}`);
-    assert.equal(r8.condition, `${c.wrong} && ${c.O} && ${c.Q} && ${c.nD}`, `${name}: row 8 condition`);
-    assert.equal(r8.condition, r9.condition.replace(` && ${c.O}`, ` && ${c.O} && ${c.Q}`), `${name}: row 8 is row 9 with quiet inserted after the out global`);
+    // the follow-through is not tied to kit_quiet (the debrief reopened and closed cleared it): row 8 is row 9's condition
+    assert.equal(r8.condition, `${c.wrong} && ${c.O} && ${c.nD}`, `${name}: row 8 condition`);
+    assert.equal(r8.condition, r9.condition, `${name}: row 8 is row 9's condition (no quiet)`);
+    assert.ok(!/kit_quiet/.test(r8.condition), `${name}: row 8 does not read kit_quiet`);
     assert.equal(r8.delayMs, r9.delayMs, `${name}: rows 8 and 9 share the delay`);
     assert.ok(!cm.some((m) => m.eventPattern === trig && m.bark), `${name}: the colleague does not speak the follow-through`);
     if (w.hostSpeaks) assert.ok(r8.condition.includes(c.nD), `${name}: the host line reads !done`);
@@ -1753,12 +1788,12 @@ test('wave 5: follow-through pairing: rows 8 and 9 share trigger and delay, row 
   });
 });
 
-test('wave 5: replacement for the fallback-timer case: no mapping reads npc_arrived, the only timers are t_there, t_tail, t_done (and ca14 t_unseen)', () => {
+test('wave 5: replacement for the fallback-timer case: no mapping reads npc_arrived, the only timers are t_there, t_tail, t_done, t_done_out (and ca14 t_unseen)', () => {
   w56Each((name, w, sc) => {
     const mappings = [...sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_')).flatMap((n) => w3Maps(n)), ...w3Maps(hostOf(sc))];
     assert.ok(!mappings.some((m) => /^npc_arrived/.test(m.eventPattern)), `${name}: no mapping reads npc_arrived`);
     const ids = (sc.timers || []).filter((t) => t.id.startsWith(`kit_${w.ep}_t_`)).map((t) => t.id.split('_t_')[1]).sort();
-    assert.deepEqual(ids, (w.ep === 'ca14' ? ['done', 'tail', 'there', 'unseen'] : ['done', 'tail', 'there']), `${name}: the timers`);
+    assert.deepEqual(ids, (w.ep === 'ca14' ? ['done', 'done_out', 'tail', 'there', 'unseen'] : ['done', 'done_out', 'tail', 'there']), `${name}: the timers`);
   });
 });
 
@@ -1860,7 +1895,7 @@ test('wave 5: Delphine (ca14): position and needsHome both (7.0, 4.5), and row 2
   assert.deepEqual(walk.patrolOverride.targetTile, { x: 7, y: 4.5 }, 'row 2b target equals the home');
 });
 
-test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs seen, unseen close is last, t_unseen, globals, option gates', () => {
+test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs seen, unseen close is last before the re-arm mappings, t_unseen, globals, option gates', () => {
   const name = 'ca14_social_media';
   if (!(name in W5)) return;
   const w = W5[name], sc = readShell(name), c = w5Conds(w);
@@ -1870,7 +1905,10 @@ test('wave 5: ca14 seen gate: two object_interacted host mappings, close needs s
   assert.deepEqual(seenMaps.map((m) => m.condition), [`data.objectName === "Lorna's PC" && ${c.O} && ${c.nD}`, `data.objectName === ${JSON.stringify(board.name)} && ${c.O} && ${c.nD}`], 'the two seen mappings');
   assert.ok(['Project board', 'Flip chart'].includes(board.name), 'the board is the Project board (or the step 0 fallback Flip chart)');
   assert.ok(seenMaps.every((m) => m.onceOnly === true && JSON.stringify(m.setGlobal) === '{"kit_ca14_seen":true}'), 'seen mappings are onceOnly and set only seen');
-  const lm = w5CM(sc, w), last = lm[lm.length - 1];
+  const lm = w5CM(sc, w);
+  // the three game_loaded re-arm mappings are appended after it (the server keys a mapping by index), so it is the last of the rest
+  assert.deepEqual(lm.slice(-3).map((m) => m.eventPattern), ['game_loaded', 'game_loaded', 'game_loaded'], 'the re-arm mappings are last');
+  const last = lm.filter((m) => m.eventPattern !== 'game_loaded').slice(-1)[0];
   assert.deepEqual([last.eventPattern, last.condition, last.onceOnly, last.setGlobal], ['conversation_closed:kit_lorna_easton', `globalVars.${w.choice} === 'asked' && ${c.O} && globalVars.kit_ca14_seen !== true`, true, { kit_ca14_closed_unseen: true }], 'the unseen close is last in Lorna\'s list');
   const tu = (sc.timers || []).find((t) => t.id === 'kit_ca14_t_unseen');
   assert.deepEqual([tu.startOnGlobal, tu.delayMs, tu.condition, tu.setGlobal], ['kit_ca14_closed_unseen', 20000, `globalVars.${w.choice} === 'asked' && globalVars.kit_ca14_seen !== true`, { [w.choice]: 'silent' }], 't_unseen');
@@ -2084,10 +2122,11 @@ test('wave 6: host and speaker inks: out/done/moved VARs, the recap branches in 
     const p = w5Ink(w.partnerStub), ck = w5Ink(w.stub);
     assert.ok(new RegExp(`^VAR kit_${ep}_moved = false\\s*$`, 'm').test(p), `${name}: ${w.partnerStub} declares VAR kit_${ep}_moved = false`);
     assert.ok(new RegExp(`^VAR kit_${ep}_moved\\b`, 'm').test(ck), `${name}: ${w.stub} declares VAR kit_${ep}_moved`);
-    // host barks: exactly w.hostBarks, each gated on quiet, out and !done
+    // host barks: exactly w.hostBarks, each gated on out and !done (not quiet)
     const c = w5Conds(w), hb = w3Maps(hostOf(sc)).filter((m) => m.bark && m.eventPattern === `global_variable_changed:${w.choice}`);
     assert.equal(hb.length, w.hostBarks, `${name}: host barks`);
-    for (const m of hb) assert.ok([c.O, c.Q, c.nD].every((t) => m.condition.includes(t)), `${name}: host bark reads out, quiet and !done`);
+    // no kit_quiet: reopening and closing the debrief clears it, and the follow-through must not depend on it
+    for (const m of hb) assert.ok([c.O, c.nD].every((t) => m.condition.includes(t)) && !m.condition.includes(c.Q), `${name}: host bark reads out and !done, not quiet`);
   });
 });
 
@@ -2145,7 +2184,8 @@ test('ca02: layer 0 does not say the player asked the recruiter for a second act
 
 test('ca05: a silent Darren is described as nobody stopping him; no voicemail email or shown number is claimed', () => {
   const silent = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'silent' });
-  assert.match(silent, /You said nothing, so nobody stopped Darren/);
+  assert.match(silent, /^Darren asked, got no answer and went ahead/m);
+  assert.doesNotMatch(silent, /You said nothing|nobody stopped/);
   assert.doesNotMatch(silent, /You chose Approve/);
   const approve = shownPanels('ca05_signin_pages', { kit_ca05_prompt_choice: 'approve' });
   assert.match(approve, /You chose Approve/);
@@ -2161,7 +2201,8 @@ test('wave 5: each silent-keyed debrief entry says the player said nothing and n
     const silent = cp.filter((e) => e.condition && new RegExp(`${w.choice} === 'silent'`).test(e.condition));
     assert.equal(silent.length, 1, `${name}: one silent entry`);
     assert.doesNotMatch(silent[0].condition, /\|\|/, `${name}: silent shares no entry with the wrong answer`);
-    assert.match(silent[0].text, /^You said nothing, so nobody stopped \w+/, `${name}: says plainly nobody stopped them`);
+    assert.match(silent[0].text, /^\w+ asked, got no answer and went ahead/, `${name}: says the colleague asked and went ahead`);
+    assert.doesNotMatch(silent[0].text, /You said nothing|nobody stopped/, `${name}: no blame wording`);
     assert.ok(!cp.some((e) => e !== silent[0] && e.condition && /silent/.test(e.condition)), `${name}: silent keyed once`);
   }
 });

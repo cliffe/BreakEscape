@@ -118,7 +118,7 @@
     {
       "id": "kit_ca18_t_tail",
       "startOnGlobal": "kit_ca18_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca18_reset_choice === ''",
       "setGlobal": {
         "kit_ca18_reset_choice": "silent"
@@ -126,9 +126,18 @@
     },
     {
       "id": "kit_ca18_t_done",
-      "startOnGlobal": "kit_ca18_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca18_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca18_done",
+      "setGlobal": {
+        "kit_ca18_done": true
+      }
+    },
+    {
+      "id": "kit_ca18_t_done_out",
+      "startOnGlobal": "kit_ca18_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca18_done && globalVars.kit_ca18_asked !== true",
       "setGlobal": {
         "kit_ca18_done": true
       }
@@ -969,7 +978,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca18_reset_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca18_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'words' && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Lorna, this morning's attackers have already guessed your new password. Turn down sign-in prompts you didn't start."
@@ -1039,20 +1048,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca18_there",
-              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true && globalVars.kit_ca18_reset_choice === ''",
+              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_ca18_reset_choice === '' && !globalVars.kit_ca18_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
-              "targetKnot": "ca18_reset"
+              "targetKnot": "ca18_reset",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca18_there",
-              "condition": "value === true && globalVars.kit_ca18_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca18_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_lorna_easton",
@@ -1096,6 +1110,39 @@
               "setGlobal": {
                 "kit_ca18_reset_choice": "silent"
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "Kept my old one, changed the season. One less thing to remember. That'll do, won't it?",
+              "targetKnot": "ca18_reset",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca18_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca18_there === true && globalVars.kit_ca18_out === true && !globalVars.kit_ca18_done && globalVars.kit_ca18_reset_choice === '' && globalVars.kit_ca18_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca18_reset_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         },

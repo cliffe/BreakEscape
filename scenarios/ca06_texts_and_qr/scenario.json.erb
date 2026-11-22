@@ -116,7 +116,7 @@
     {
       "id": "kit_ca06_t_tail",
       "startOnGlobal": "kit_ca06_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca06_notice_choice === ''",
       "setGlobal": {
         "kit_ca06_notice_choice": "silent"
@@ -124,9 +124,18 @@
     },
     {
       "id": "kit_ca06_t_done",
-      "startOnGlobal": "kit_ca06_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca06_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca06_done",
+      "setGlobal": {
+        "kit_ca06_done": true
+      }
+    },
+    {
+      "id": "kit_ca06_t_done_out",
+      "startOnGlobal": "kit_ca06_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca06_done && globalVars.kit_ca06_asked !== true",
       "setGlobal": {
         "kit_ca06_done": true
       }
@@ -1070,20 +1079,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca06_there",
-              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true && globalVars.kit_ca06_notice_choice === ''",
+              "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === '' && !globalVars.kit_ca06_done",
               "onceOnly": true,
               "delayMs": 4000,
               "bark": "This one says my parking permit needs renewing. Is it one of ours?",
-              "targetKnot": "ca06_notice"
+              "targetKnot": "ca06_notice",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca06_there",
-              "condition": "value === true && globalVars.kit_ca06_out === true",
+              "condition": "value === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === ''",
               "onceOnly": true,
               "delayMs": 4000,
               "setGlobal": {
                 "kit_ca06_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_zainab_hussain",
@@ -1124,6 +1138,39 @@
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
               "needs": "resume"
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked !== true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "bark": "This one says my parking permit needs renewing. Is it one of ours?",
+              "targetKnot": "ca06_notice",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked !== true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "setGlobal": {
+                "kit_ca06_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca06_there === true && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done && globalVars.kit_ca06_notice_choice === '' && globalVars.kit_ca06_asked === true",
+              "onceOnly": true,
+              "delayMs": 4000,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca06_notice_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         }

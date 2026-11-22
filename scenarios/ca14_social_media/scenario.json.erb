@@ -120,7 +120,7 @@
     {
       "id": "kit_ca14_t_tail",
       "startOnGlobal": "kit_ca14_asked",
-      "delayMs": 20000,
+      "delayMs": 45000,
       "condition": "globalVars.kit_ca14_photo_choice === ''",
       "setGlobal": {
         "kit_ca14_photo_choice": "silent"
@@ -137,9 +137,18 @@
     },
     {
       "id": "kit_ca14_t_done",
-      "startOnGlobal": "kit_ca14_out",
-      "delayMs": 60000,
+      "startOnGlobal": "kit_ca14_asked",
+      "delayMs": 85000,
       "condition": "!globalVars.kit_ca14_done",
+      "setGlobal": {
+        "kit_ca14_done": true
+      }
+    },
+    {
+      "id": "kit_ca14_t_done_out",
+      "startOnGlobal": "kit_ca14_out",
+      "delayMs": 145000,
+      "condition": "!globalVars.kit_ca14_done && globalVars.kit_ca14_asked !== true",
       "setGlobal": {
         "kit_ca14_done": true
       }
@@ -544,7 +553,7 @@
           },
           {
             "heading": "What the photo gave away",
-            "text": "You said nothing, so nobody stopped Lorna, and she posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
+            "text": "Lorna asked, got no answer and went ahead: she posted it. The new Catherine Merrin account, the one asking staff to connect, was already watching the studio page. It liked the photo within seconds and asked the people in it to connect. Zoomed in, the photo gave the attacker the Harbour job, the client's name, the handover date and who works on it. Their next message as Catherine asked the team about the Harbour handover. Knowing those details made it sound real.",
             "condition": "globalVars.kit_ca14_photo_choice === 'silent'"
           }
         ],
@@ -1154,20 +1163,25 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_there",
-              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && globalVars.kit_ca14_photo_choice === ''",
+              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_ca14_photo_choice === '' && !globalVars.kit_ca14_done",
               "onceOnly": true,
               "delayMs": 5500,
               "bark": "It's all of us at our desks. Fine to post?",
-              "targetKnot": "ca14_photo"
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_there",
-              "condition": "value === true && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true",
+              "condition": "value === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === ''",
               "onceOnly": true,
               "delayMs": 5500,
               "setGlobal": {
                 "kit_ca14_asked": true
-              }
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
             },
             {
               "eventPattern": "conversation_closed:kit_lorna_easton",
@@ -1219,6 +1233,39 @@
               "setGlobal": {
                 "kit_ca14_closed_unseen": true
               }
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "bark": "It's all of us at our desks. Fine to post?",
+              "targetKnot": "ca14_photo",
+              "whenPerceivable": true
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked !== true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "setGlobal": {
+                "kit_ca14_asked": true
+              },
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000
+            },
+            {
+              "eventPattern": "game_loaded",
+              "condition": "globalVars.kit_ca14_there === true && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done && globalVars.kit_ca14_photo_choice === '' && globalVars.kit_ca14_asked === true",
+              "onceOnly": true,
+              "delayMs": 5500,
+              "askCue": true,
+              "whenPerceivable": true,
+              "askCueUntil": "kit_ca14_photo_choice",
+              "askCueMs": 45000,
+              "askCueQuiet": true
             }
           ]
         },
@@ -1293,7 +1340,7 @@
             },
             {
               "eventPattern": "global_variable_changed:kit_ca14_photo_choice",
-              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca14_done",
+              "condition": "value !== '' && value !== 'asked' && value !== 'crop' && globalVars.kit_ca14_out === true && !globalVars.kit_ca14_done",
               "onceOnly": true,
               "delayMs": 8000,
               "bark": "Odd. Catherine's got a new account. It's just liked Lorna's photo and asked to connect with me."
