@@ -111,8 +111,17 @@ tl.shots.forEach((s, i) => {
   } else if (s.type === 'card') {
     if (s.style === 'ca') {
       if (!(s.text?.length || s.body?.length || s.tool)) E(id, 'ca card needs text[] (GNF lines), body[] (VT323 lines) or tool');
+      if (s.chapter != null) {
+        if (!['attack', 'defend'].includes(s.chapter)) E(id, `chapter must be attack|defend, got ${s.chapter}`);
+        if (!(s.text?.length === 1)) E(id, 'chapter card needs exactly one text[] line (the GNF heading)');
+        if ((s.body || []).length > 3) E(id, 'chapter card: at most three bullet lines (body[])');
+        if ((s.body || []).some((b) => typeof b !== 'string' || b.length > 60)) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
+        if (s.text?.[0] && String(typeof s.text[0] === 'string' ? s.text[0] : s.text[0].text).length > 28) W(id, 'chapter card: heading over 28 characters');
+        if (s.tool || s.tab || s.seat) E(id, 'chapter card sets its own tab: no tool, tab or seat');
+      } else {
       if ((s.text || []).length > 2) W(id, 'ca card: more than two GNF lines');
       if ((s.body || []).length > 3) W(id, 'ca card: more than three VT323 lines');
+      }
     } else if (ca) E(id, 'card in a Cyber Aware edit needs "style": "ca"');
     else if (s.style) W(id, `unknown card style ${s.style}`);
     if (s.style !== 'ca' && s.kind !== 'logo' && s.kind !== 'logo_end' && !(s.text?.length)) E(id, 'card needs text[]');
@@ -186,6 +195,19 @@ if (ca) {
   const flips = shots.filter((s) => s.joinType === 'flip');
   if (flips.length > 1) E(flips[1].id, `at most one flip join per trailer, found ${flips.length} (${flips.map((f) => f.id).join(', ')})`);
   for (const f of flips) { const sd = (x) => (typeof x?.seat === 'string' ? x.seat : x?.seat?.seat); if (sd(shots[f.index - 1]) !== 'attack' || sd(f) !== 'defend') W(f.id, 'flip should go from an attack seat to a defend seat'); }
+  // Chapter cards: at most one attack and one defend chapter, attack first (the red page says what the attack half covers, the blue page opens the defend half)
+  const chapters = shots.filter((s) => s.type === 'card' && s.chapter != null);
+  const atkCh = chapters.filter((s) => s.chapter === 'attack'), defCh = chapters.filter((s) => s.chapter === 'defend');
+  if (atkCh.length > 1) E(atkCh[1].id, `at most one attack chapter card, found ${atkCh.length}`);
+  if (defCh.length > 1) E(defCh[1].id, `at most one defend chapter card, found ${defCh.length}`);
+  if (atkCh[0] && defCh[0] && atkCh[0].index > defCh[0].index) E(defCh[0].id, 'the attack chapter card must come before the defend chapter card');
+  if (defCh[0] && !atkCh[0]) W(defCh[0].id, 'defend chapter card without an attack chapter card (every CA episode trailer has both)');
+  if (atkCh[0] && !defCh[0]) W(atkCh[0].id, 'attack chapter card without a defend chapter card (every CA episode trailer has both)');
+  if (atkCh[0] && defCh[0]) {
+    const fl = shots.find((s) => s.joinType === 'flip');
+    if (fl && defCh[0].index < fl.index) W(defCh[0].id, 'defend chapter card comes before the flip');
+    if (fl && atkCh[0].index > fl.index) W(atkCh[0].id, 'attack chapter card comes after the flip');
+  }
   // UK English and banned vocabulary on every designed text field (cards, ca blocks, seat chips)
   const bannedWords = /\b(delve[sd]?|intricate|tapestry|pivotal|underscore[sd]?|landscape|foster(?:s|ed|ing)?|enhance[sd]?|crucial|robust|profound)\b/i;
   const us = /\b(color|organization|recogniz\w*|behavior|center|favorite|analyz\w*)\b/i;

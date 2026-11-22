@@ -105,6 +105,38 @@ test('SAFETYNET edits are unchanged: glitch joins still lint, seam is rejected t
     assert.equal(r.status, 0, r.stdout);
   }
 });
+const chap = (id, chapter, body = ['One line', 'Another line']) => ({ id, type: 'card', style: 'ca', chapter, duration: 3, join: { type: 'seam' }, text: ['A heading'], body, spoiler: { reviewed: true, shows_code: false, shows_identity: false, shows_ending: false, keypad_partial: null, note: 'chapter test' } });
+test('chapter cards: one attack then one defend lints clean', () => {
+  const e = base(); e.shots.splice(2, 0, chap('red', 'attack')); e.shots.splice(shot(e, 'spot') ? e.shots.indexOf(shot(e, 'spot')) : 5, 0, chap('blue', 'defend'));
+  const r = lint(e); assert.equal(r.code, 0, r.out);
+});
+test('chapter cards: a second attack or defend chapter, or defend before attack, is an error', () => {
+  const e = base(); e.shots.splice(2, 0, chap('red', 'attack'), chap('red2', 'attack'));
+  assert.match(lint(e).out, /at most one attack chapter/);
+  const e2 = base(); e2.shots.splice(2, 0, chap('blue', 'defend'), chap('blue2', 'defend'));
+  assert.match(lint(e2).out, /at most one defend chapter/);
+  const e3 = base(); e3.shots.splice(2, 0, chap('blue', 'defend'), chap('red', 'attack'));
+  assert.match(lint(e3).out, /attack chapter card must come before/);
+});
+test('chapter cards: bullets, heading, kind and banned words are checked', () => {
+  const e = base(); e.shots.splice(2, 0, chap('red', 'attack', ['a', 'b', 'c', 'd']));
+  assert.match(lint(e).out, /at most three bullet lines/);
+  const e2 = base(); e2.shots.splice(2, 0, chap('red', 'sideways'));
+  assert.match(lint(e2).out, /chapter must be attack\|defend/);
+  const e3 = base(); e3.shots.splice(2, 0, chap('red', 'attack', ['A crucial step', 'Fine'])); 
+  const r3 = lint(e3); assert.equal(r3.code, 1); assert.match(r3.out, /banned word/);
+  const e4 = base(); e4.shots.splice(2, 0, chap('red', 'attack')); e4.shots[2].text = ['One', 'Two'];
+  assert.match(lint(e4).out, /exactly one text/);
+  const e5 = base(); e5.shots.splice(2, 0, chap('red', 'attack')); e5.shots[2].tab = 'X';
+  assert.match(lint(e5).out, /sets its own tab/);
+});
+test('the round-2 ca12 edit lints with no errors and has both chapter cards in order', () => {
+  const f = path.join(root, '../edits/ca12_trailer_r2.json');
+  const r = spawnSync('node', [path.join(root, 'scripts/lint-edit.mjs'), f, '--takes-dir', path.join(tmp, 'none')], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stdout);
+  const e = loadEdit(f); const i = (c) => e.shots.findIndex((s) => s.chapter === c);
+  assert.ok(i('attack') > 0 && i('defend') > i('attack'));
+});
 test('timeline: seam and flip are dissolve-like (whole window after the boundary); ca card join defaults to seam', () => {
   const tl = buildTimeline(loadEdit(fixture));
   const j = tl.joins.find((x) => x && x.type === 'flip');

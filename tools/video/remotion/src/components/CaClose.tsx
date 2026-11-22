@@ -1,5 +1,5 @@
 import React from 'react';
-import { CA, CaTab, unit, stepped, snapTo, easeOut, isStacked, tabFont, textWidth, crisp } from '../ca';
+import { CA, CaTab, unit, stepped, snapTo, easeOut, isStacked, tabFont, textWidth, fitSize, crisp } from '../ca';
 import { GNF_FONT, VT_FONT, PIXEL_FONT } from '../fonts';
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -22,8 +22,8 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const off = Math.round(mS * 0.55), gw = mS + off;
   const textFont = Math.max(16, Math.round((w * (stacked ? 0.05 : 0.027)) / 8) * 8);
   const nameSize = Math.max(32, Math.round((Math.min(w, h) * 0.075) / 16) * 16);
-  const tagSize = Math.max(32, Math.round((Math.min(w, h) * (stacked ? 0.048 : 0.05)) / 16) * 16);
   const tagline = cfg.tagline ?? '15 minutes, in your browser · No installs';
+  const tagSize = fitSize([tagline], VT_FONT, stacked ? [64, 48, 32] : [96, 80, 64, 48], w * (stacked ? 0.92 : 0.8)); // large enough to read on a phone and on a 16:9 course page
   const cwWord = textWidth('CYBER AWARE', PIXEL_FONT, textFont);
   // mark group position: upper centre, glyph and text in a row on 16:9, text under the glyph when stacked
   const rowW = gw + Math.round(mS * 0.5) + cwWord;

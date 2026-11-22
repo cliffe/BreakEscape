@@ -14,6 +14,7 @@ import { GlitchFX } from './components/GlitchFX';
 import { CaOpen } from './components/CaOpen';
 import { CaClose } from './components/CaClose';
 import { CaCard } from './components/CaCard';
+import { CaChapter } from './components/CaChapter';
 import { CaSeats, seatOf } from './components/CaSeats';
 import { SeamWipe } from './components/SeamWipe';
 import { FlipTransition } from './components/FlipTransition';
@@ -74,6 +75,7 @@ const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source })
   if (shot.type === 'cta') return <CtaShot shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} aspect={aspect} />;
   if (shot.type === 'ca_open') return <CaOpen shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
   if (shot.type === 'ca_close') return <CaClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'card' && shot.style === 'ca' && shot.chapter) return <CaChapter shot={shot} w={w} h={h} frame={frame} />;
   if (shot.type === 'card' && shot.style === 'ca') return <CaCard shot={shot} w={w} h={h} frame={frame} />;
   if (shot.type === 'card') {
     if (shot.kind === 'logo' || shot.kind === 'logo_end') return <EndLogos shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} />;

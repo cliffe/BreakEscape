@@ -27,7 +27,8 @@ export const CaOpen: React.FC<{ shot: any; w: number; h: number; aspect: string;
   const seam: React.CSSProperties = stacked ? { left: 0, width: seamLen, top: half - u, height: 2 * u } : { top: 0, height: seamLen, left: half - u, width: 2 * u };
   const tabPos = (side: 'a' | 'd'): React.CSSProperties => {
     const drop = Math.round((1 - tabP) * -tf * 3);
-    if (stacked) return { left: 8 * u, top: (side === 'a' ? 8 * u : half + 8 * u) + drop };
+    // stacked: the ATTACKER tab hangs at the top of the frame and the DEFENDER tab sits at the bottom edge, clear of the title card in the middle
+    if (stacked) return side === 'a' ? { left: 8 * u, top: 8 * u + drop } : { left: 8 * u, bottom: 8 * u + drop };
     return { left: (side === 'a' ? 8 * u : half + 8 * u), top: 8 * u + drop };
   };
 
