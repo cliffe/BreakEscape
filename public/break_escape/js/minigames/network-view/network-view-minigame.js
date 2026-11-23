@@ -78,6 +78,7 @@ import {
     findingNeeds, needLine, isFixed, FIXED_TEXT, checkTarget, parseCheckTarget, findFinding,
     techniqueList, techniqueItemId, accessTag, isTechniqueSession, parseUseTarget, useTarget, refusalLine
 } from './ops-model.js';
+import { createBoltCanvas } from '../../utils/compromise-bolt.js';
 
 export { pendingKey };
 
@@ -345,13 +346,11 @@ export class NetworkViewMinigame extends MinigameScene {
         this._viewedKeys = new Set();
         this.noticeRowId = null;
         // S3: the finding (built id) and the card (technique id) picked for Use; the last session
-        // a card granted, drawn in the Techniques panel; the bolt module once it has loaded
+        // a card granted, drawn in the Techniques panel
         this.selectedFinding = null;
         this.selectedTechnique = null;
         this.lastGrant = null;
         this._dragCard = null;
-        this._boltModule = null;
-        this._boltLoad = null;
     }
 
     links() { return window.networkLinks || null; }
@@ -907,7 +906,11 @@ export class NetworkViewMinigame extends MinigameScene {
         const reason = falseReason(f);
         if (reason) body += `<p class="network-finding-reason">${escapeHtml(reason)}</p>`;
         const picked = this.selectedFinding === f.id;
-        return `<li class="network-finding network-finding-${status}${picked ? ' network-finding-selected' : ''}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}" data-selected="${picked ? 'true' : 'false'}"><span class="network-finding-head"><button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="${picked ? 'true' : 'false'}">${escapeHtml(f.alias ?? '')}</button> <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity ${severityClass(f.severity)}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
+        // The alias is a select control only while a card is held; with none it is the plain chip (R1 m5)
+        const aliasHtml = techniqueList(this.view).length
+            ? `<button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="${picked ? 'true' : 'false'}">${escapeHtml(f.alias ?? '')}</button>`
+            : `<span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span>`;
+        return `<li class="network-finding network-finding-${status}${picked ? ' network-finding-selected' : ''}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}" data-selected="${picked ? 'true' : 'false'}"><span class="network-finding-head">${aliasHtml} <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity ${severityClass(f.severity)}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
     }
 
     /** The compromise bolt beside a row's icon: a placeholder the render fills with the canvas (paintBolts). */
@@ -922,30 +925,14 @@ export class NetworkViewMinigame extends MinigameScene {
         return tag ? `<span class="network-access-tag" data-access="admin">${escapeHtml(tag)}</span>` : '';
     }
 
-    /** The bolt module, loaded once and on demand (a static import would join every harness copy list). */
-    _loadBolt() {
-        if (!this._boltLoad) {
-            this._boltLoad = import('../../utils/compromise-bolt.js')
-                .then((m) => { this._boltModule = m; return m; })
-                .catch(() => null);
-        }
-        return this._boltLoad;
-    }
-
     /** Draw the bolt canvas into each placeholder the last render made. */
     paintBolts() {
-        const spots = [...(this.gameContainer?.querySelectorAll?.('.network-row-bolt') || [])];
-        if (!spots.length) return;
-        const draw = (m) => {
-            if (!m || typeof document === 'undefined') return;
-            for (const spot of this.gameContainer?.querySelectorAll?.('.network-row-bolt') || []) {
-                if (spot.firstChild) continue;
-                const canvas = m.createBoltCanvas(document, 2);
-                if (canvas) { canvas.className = 'network-bolt-canvas'; spot.appendChild(canvas); }
-            }
-        };
-        if (this._boltModule) draw(this._boltModule);
-        else this._loadBolt().then(draw);
+        if (typeof document === 'undefined') return;
+        for (const spot of this.gameContainer?.querySelectorAll?.('.network-row-bolt') || []) {
+            if (spot.firstChild) continue;
+            const canvas = createBoltCanvas(document, 2);
+            if (canvas) { canvas.className = 'network-bolt-canvas'; spot.appendChild(canvas); }
+        }
     }
 
     /** Selection can name only what the view still lists: a finding that went, or a card no longer held, is let go. */
@@ -1366,7 +1353,9 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!hit || !techniqueList(this.view).some(t => t.id === cardId)) return { sent: false };
         this.selectedFinding = hit.finding.id;
         this.selectedTechnique = cardId;
-        return this.perform({ action: 'use', target: useTarget(cardId, hit.finding.id) });
+        const out = await this.perform({ action: 'use', target: useTarget(cardId, hit.finding.id) });
+        if (!out?.sent) this.redraw();
+        return out;
     }
 
     /** The host row an ops offer is about: a scan's target, a check's host, a confirm's finding's host. */
@@ -1457,7 +1446,12 @@ export class NetworkViewMinigame extends MinigameScene {
     handOverSession(t, answer) {
         const hostId = this.lastGrant?.hostId || findFinding(this.view, t?.finding)?.row.id;
         if (!hostId) return false;
-        try { window.pcSessions?.noteTechniqueSession?.(hostId, answer.session, answer.endedPcIds ?? null); } catch (e) { console.warn('[network-view] noting the session threw', e); }
+        // A repeat (`already: true`) changes nothing (plan 5.4): a copy already held is not re-recorded,
+        // so no sign-out and sign-in fire again; a copy the client lacks (a reload) is still recorded
+        const held = answer.already === true && !!window.pcSessions?.remoteViewFoothold?.(hostId);
+        if (!held) {
+            try { window.pcSessions?.noteTechniqueSession?.(hostId, answer.session, answer.endedPcIds ?? null, answer.tokenExpiredPcIds ?? null); } catch (e) { console.warn('[network-view] noting the session threw', e); }
+        }
         const start = window.openRemoteDesktop;
         if (typeof start !== 'function' || this._reported || this._ending || this.status !== 'ready') return false;
         this.exitReason = 'handover';

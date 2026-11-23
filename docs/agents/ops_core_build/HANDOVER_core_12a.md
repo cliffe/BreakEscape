@@ -10,11 +10,8 @@ Files: `public/break_escape/js/minigames/network-view/network-view-minigame.js` 
 `boltPixels()` -> `[{x,y,kind}]`, `drawBolt(ctx, x, y, scale = 1)` (whole-pixel scale, any object with `fillStyle` and `fillRect`; returns `{width,height}`),
 `createBoltCanvas(doc, scale = 1)` (canvas element with the bolt drawn, or null). 12b: use `drawBolt` for the world sprites' texture or `createBoltCanvas`.
 
-## Import departure (needs a ruling)
-The view loads the bolt with a dynamic `import('../../utils/compromise-bolt.js')` (cached, errors swallowed: no bolt drawn if the file is absent), NOT a static
-import. A static import would break the copy lists of `network-view-ops`, `minigame-consoles-fit`, `pc-monitor-frame` and `escaping-shared-helpers` tests, which
-I was told not to edit. So no harness copy list changed. If the orchestrator prefers the static import (plan 11.3), add `utils/compromise-bolt.js` to those five lists
-(the five tests that copy `network-view-minigame.js`) and swap `_loadBolt` for an import.
+## Import (settled in S3 client R1, view fix)
+The view now imports `utils/compromise-bolt.js` STATICALLY (the ruling); `_loadBolt` and `paintBolts`'s deferral are gone and the bolt draws in the same tick. The helper is on the copy lists of `network-view.test.mjs`, `network-view-ops.test.mjs` and `network-view-techniques.test.mjs` (the others only read the source).
 
 ## View: perform, guard, hooks
 - `use` goes through `perform({ action: 'use', target: { card: '<techniqueId>', finding: '<finding id>' } })`; pending key `use:<card>|<finding>` (`pendingKey` of the object).
@@ -44,6 +41,7 @@ Row (only for such a session): `bolt: true`, `access: 'admin'`. Finding entries 
 
 ## Shapes assumed
 - `openHere` on `session` of a host row, true only in the view of the foothold the technique session came through; absent = false. `access: "admin"` on `session` (row and answer), absent = user.
+- `techniques` map: the server sends it at the TOP LEVEL of the `GET /network` body, beside `footholds`; `networkLinks.refresh` copies it onto the stored view as `view.techniques` (S3 client R1 B1), and the view and `ops-model.js` read `view.techniques` from there. The tests' fixture is the body shape (techniques beside `footholds`, none on the entry) fed through the real `refresh`.
 - `techniques` entry `{ name, summary?, worksOn: { class, product?, versions[]? }, itemId }` as the 10b handover says; a missing or malformed map = no panel.
 - Answers as 10b: success `{ success, already?, grant: 'session'|'credential', session?, endedPcIds?, keyringChanged? }`; refusal body (4xx, via `err.body`) `{ success:false, reason, need? { kind, label } }`.
 - The host row id is the PC id (`openRemoteDesktop(row.id, foothold)` as the Open control does); a session grant's `session` is the object `noteTechniqueSession` takes.
@@ -57,3 +55,8 @@ Row (only for such a session): `bolt: true`, `access: 'admin'`. Finding entries 
 ## Live proof should click
 On a `test_ops_*` with cards: scan, Check, Confirm; pick a finding (alias button), pick a card, Use (Enter works); a wrong card shows the refusal line; a right session card opens the desktop (check the remote view frame,
 12b) and the host row shows the bolt and, for admin, the tag; a credential card shows the keyring line and the keyring refetches; drag a card onto a finding; a long card name and summary wrap inside the card.
+
+
+## S3 client R1 (view) changes
+- A repeat session grant (`already: true`) on a copy `pcSessions.remoteViewFoothold(host)` already holds is not recorded again (no sign-out or sign-in event); the desktop still opens. A copy the client lacks is recorded. `noteTechniqueSession` is called with a fourth argument, `answer.tokenExpiredPcIds ?? null`.
+- With no card held a finding's alias is the plain chip (no select control); `dropCard` redraws when the guard turns the drop away; the alias button has its own border and colour; a grid row (card) no longer stretches to the tallest card in its row, so content starts at the top.

@@ -151,6 +151,9 @@
        at its own width, not a 340px row that scrolls sideways */
     grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
     gap: 4px 6px;
+    /* A short card beside a tall one (findings open) keeps its own height, content at the top,
+       rather than stretching to the tall one's height with its content floating in the middle (S2 PT4) */
+    align-items: start;
 }
 
 .network-view-rows > .network-row-group,
@@ -647,11 +650,15 @@
 /* Ops (S3): the Techniques panel, select-then-Use, the access tag and the compromise bolt on a
    host row. Same pixel-art rule: 2px solid square borders, flat fills, no radius or shadow, and
    long text wraps inside its card. */
+/* The alias is a control, so it looks like one: the selected state's blue border at rest, filled when picked (S3 R1 m9) */
 button.network-finding-alias {
     font: inherit;
-    color: inherit;
+    color: #9ee6ff;
     cursor: pointer;
+    border-color: #4aa3d8;
 }
+
+button.network-finding-alias:hover { background: #1b3a4d; }
 
 .network-finding-selected { border-color: #4aa3d8; }
 .network-finding-selected .network-finding-alias { border-color: #4aa3d8; background: #1b3a4d; }

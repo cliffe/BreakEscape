@@ -44,6 +44,7 @@ const SWEPT_PRINTER = { ...PRINTER, scanned: true,
     services: [{ name: 'web', label: 'web', port: 80, product: 'Brackley PrintPanel', version: '2.0' }] };
 const PC = { id: 'desk_pc', kind: 'pc', name: 'Desk PC', host: 'LAB-01', sprite: 'pc_desktop', headless: false, remoteSignIn: true };
 
+const heldCopies = new Set();
 let calls, answer, events, scanImpl, checkImpl, confirmImpl, techImpl, jacks, opened, noted, keyringCalls;
 const view = () => window.MinigameFramework.currentMinigame;
 const q = (sel) => document.querySelector(sel);
@@ -76,11 +77,16 @@ function framework() {
     };
 }
 
-// `entry` is the foothold's GET /network entry fields beyond the foothold itself
+// `entry` is the foothold's GET /network entry fields beyond the foothold itself, EXCEPT `techniques`:
+// the server sends that map at the TOP LEVEL of the body, beside `footholds` (network_ops.rb
+// network_view; plan line 1294), so it is lifted out of `entry` into the body here. The view is then
+// fed by the real NetworkLinks.refresh, which is what carries the map on to the stored view (B1).
 function setup(entry = {}, { unplug = false } = {}) {
+    const { techniques, ...entryFields } = entry;
     window.MinigameFramework?.endMinigame?.(false, null);
     calls = []; events = []; scanImpl = null; checkImpl = null; confirmImpl = null; techImpl = null; opened = []; noted = []; keyringCalls = 0;
-    answer = { footholds: [{ ...foothold, hosts: [], networks: [], ...entry }] };
+    answer = { footholds: [{ ...foothold, hosts: [], networks: [], ...entryFields }], ...(techniques ? { techniques } : {}) };
+    assert.equal('techniques' in answer.footholds[0], false, 'the fixture is the server body shape: no techniques on the entry');
     document.body.innerHTML = '';
     window.eventDispatcher = { emit: (n, d) => events.push([n, d]) };
     window.gameAlert = () => {};
@@ -111,7 +117,8 @@ function setup(entry = {}, { unplug = false } = {}) {
         },
         networkUnplug: async (jackId) => { calls.push(['unplug', jackId]); return { success: true, added: [], removed: ['netlink_jack_a'], endedPcIds: [] }; }
     };
-    window.pcSessions = { noteTechniqueSession: (...a) => noted.push(a) };
+    window.pcSessions = { noteTechniqueSession: (...a) => noted.push(a), remoteViewFoothold: (id) => (heldCopies.has(id) ? 'jack_a' : null) };
+    heldCopies.clear();
     window.keyring = { refresh: () => { keyringCalls++; return Promise.resolve(); } };
     window.openRemoteDesktop = (pcId, fid) => opened.push([pcId, fid]);
     window.MinigameFramework = framework();
@@ -351,7 +358,7 @@ test('a session grant records the session, hands over to the desktop through thi
     const v = view();
     useBtn().click();
     await settle();
-    assert.deepEqual(noted, [['desk_pc', session, ['other_pc']]]);
+    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], null]]);
     assert.deepEqual(opened, [['desk_pc', 'jack_a']]);
     assert.equal(v.exitReason, 'handover');
     assert.deepEqual(named('network_technique_used'), [{ findingId: 'desk_pc.web.factory_login', techniqueId: 'factory_defaults', grant: 'session' }]);
@@ -467,11 +474,12 @@ test('a refetch that drops the picked card or finding lets the pick go; a refetc
     d.resolve({ success: false, reason: 'no_grant' });
     await settle();
     assert.equal(useBtn().disabled, false);
-    answer.footholds[0] = { ...answer.footholds[0], techniques: { old_firmware: CARD_B } };
+    answer.techniques = { old_firmware: CARD_B };
     await view().refetch({ sync: false });
     assert.equal(view().getTestState().selectedTechnique, null);
     assert.equal(q('[data-technique="factory_defaults"]'), null);
-    answer.footholds[0] = { ...answer.footholds[0], hosts: [], networks: [], techniques: undefined };
+    answer.footholds[0] = { ...answer.footholds[0], hosts: [], networks: [] };
+    delete answer.techniques;
     await view().refetch({ sync: false });
     assert.equal(q('[data-techniques]'), null, 'no card held: no panel');
     assert.ok(!view().getTestState().selectedFinding);
@@ -499,4 +507,118 @@ test('onSent and onEnded fire for use like any other move, onSent before the req
     techImpl = async () => ({ success: true, grant: 'credential', keyringChanged: true });
     await v.perform({ action: 'use', target: { card: 'factory_defaults', finding: F1.id } }, { echo: 'use f1' });
     assert.deepEqual(order, [['sent', 'use', 'use f1', 0], ['ended', 'use', 'credential']]);
+});
+
+test('B1: the view lists the cards of the server body shape (top-level techniques) and the stored view carries the map', async () => {
+    setup(ENTRY());
+    // the body as network_technique_test.rb asserts it: `techniques` beside `footholds`, none on the entry
+    assert.deepEqual(Object.keys(answer).sort(), ['footholds', 'techniques']);
+    assert.equal('techniques' in answer.footholds[0], false);
+    await open();
+    assert.deepEqual([...document.querySelectorAll('[data-technique]')].map(c => c.dataset.technique), ['factory_defaults', 'old_firmware']);
+    assert.deepEqual(Object.keys(window.networkLinks.lastView('jack_a').techniques), ['factory_defaults', 'old_firmware']);
+    assert.equal(M.techniqueItemId(window.networkLinks.lastView('jack_a'), 'factory_defaults'), 'card_a_item');
+    // a body with no map (no card held) draws no panel, as before
+    setup(ENTRY({ techniques: undefined }));
+    assert.deepEqual(Object.keys(answer), ['footholds']);
+    await open();
+    assert.equal(document.querySelectorAll('[data-techniques], [data-technique]').length, 0);
+});
+
+test('m2: a repeat session grant (already: true) on a copy the client holds records nothing; on a copy it lacks it is recorded', async () => {
+    setup(ENTRY({}, { id: 'desk_pc', kind: 'pc', host: 'LAB-01', name: 'Desk PC', sprite: undefined }));
+    answer.footholds[0].hosts = [{ ...PC, scanned: true, services: [SVC], findings: [mkFinding({ hostId: 'desk_pc', id: 'desk_pc.web.factory_login' })] }];
+    answer.footholds[0].networks[0].hosts = answer.footholds[0].hosts;
+    await open();
+    const session = { npcId: 'sam', username: 'sam', displayName: 'Sam', via: 'technique', remote: true, footholdId: 'jack_a', host: 'desk_pc' };
+    techImpl = async () => ({ success: true, already: true, grant: 'session', session });
+    window.openRemoteDesktop = (pcId, fid) => { opened.push([pcId, fid]); window.MinigameFramework.endMinigame(false, null); };
+    heldCopies.add('desk_pc');
+    await pick('f1', 'factory_defaults');
+    useBtn().click();
+    await settle();
+    assert.deepEqual(noted, [], 'no copy re-recorded, so no sign-out or sign-in event can fire');
+    assert.deepEqual(events.filter(([e]) => /^pc_signed_/.test(e)), []);
+    assert.deepEqual(opened, [['desk_pc', 'jack_a']], 'the desktop still opens');
+    // the same repeat with no copy held on the client (a reload) is recorded
+    setup(answer.footholds[0] && ENTRY({}, { id: 'desk_pc', kind: 'pc', host: 'LAB-01', name: 'Desk PC', sprite: undefined }));
+    answer.footholds[0].hosts = [{ ...PC, scanned: true, services: [SVC], findings: [mkFinding({ hostId: 'desk_pc', id: 'desk_pc.web.factory_login' })] }];
+    answer.footholds[0].networks[0].hosts = answer.footholds[0].hosts;
+    await open();
+    techImpl = async () => ({ success: true, already: true, grant: 'session', session });
+    window.openRemoteDesktop = (pcId, fid) => { opened.push([pcId, fid]); window.MinigameFramework.endMinigame(false, null); };
+    await pick('f1', 'factory_defaults');
+    useBtn().click();
+    await settle();
+    assert.equal(noted.length, 1);
+});
+
+test('m1: a grant that ended token sessions passes tokenExpiredPcIds on to the session record', async () => {
+    setup(ENTRY({}, { id: 'desk_pc', kind: 'pc', host: 'LAB-01', name: 'Desk PC', sprite: undefined }));
+    answer.footholds[0].hosts = [{ ...PC, scanned: true, services: [SVC], findings: [mkFinding({ hostId: 'desk_pc', id: 'desk_pc.web.factory_login' })] }];
+    answer.footholds[0].networks[0].hosts = answer.footholds[0].hosts;
+    await open();
+    const session = { npcId: 'sam', username: 'sam', displayName: 'Sam', via: 'technique', remote: true, footholdId: 'jack_a', host: 'desk_pc' };
+    techImpl = async () => ({ success: true, grant: 'session', session, endedPcIds: ['a', 'b'], tokenExpiredPcIds: ['b'] });
+    window.openRemoteDesktop = (pcId, fid) => { opened.push([pcId, fid]); window.MinigameFramework.endMinigame(false, null); };
+    await pick('f1', 'factory_defaults');
+    useBtn().click();
+    await settle();
+    assert.deepEqual(noted, [['desk_pc', session, ['a', 'b'], ['b']]]);
+});
+
+test('m4: a drop the guard turns away (the pair is already pending) still redraws with the new pick', async () => {
+    setup(ENTRY());
+    await open();
+    const d = deferred();
+    techImpl = () => d.p;
+    await pick('f1', 'factory_defaults');
+    useBtn().click();
+    await settle();
+    assert.equal(techCalls().length, 1);
+    // drag the other card onto f1: a new pair, sent; then the SAME pair again is turned away
+    const out = await view().dropCard('factory_defaults', 'f1');
+    assert.equal(out.sent, false);
+    // a drop on f2 of a card with no item id: turned away, and the pick moved
+    const v = view();
+    v.view.techniques.old_firmware.itemId = null;
+    q('[data-finding="f1"]').dataset.stale = 'x';
+    const before = q('[data-finding="f1"]');
+    const turned = await v.dropCard('old_firmware', 'f2');
+    assert.equal(turned.sent, false);
+    assert.equal(v.selectedFinding, 'print01.web.old_banner');
+    assert.notEqual(q('[data-finding="f1"]'), before, 'the list was redrawn');
+    assert.equal(q('[data-finding="f2"]').dataset.selected, 'true');
+    assert.equal(q('[data-technique="old_firmware"]').dataset.selected, 'true');
+    d.resolve({ success: false, reason: 'not_held' });
+    await settle();
+});
+
+test('m5: with no card held a finding carries no select control; with a card held it does', async () => {
+    setup(ENTRY({ techniques: undefined }));
+    await open();
+    assert.equal(document.querySelectorAll('[data-action="select-finding"]').length, 0);
+    assert.equal(q('[data-finding="f1"] .network-finding-alias').tagName, 'SPAN');
+    assert.equal(q('[data-finding="f1"] .network-finding-alias').textContent, 'f1');
+    setup(ENTRY());
+    await open();
+    assert.equal(document.querySelectorAll('[data-action="select-finding"]').length, 2);
+});
+
+test('T6: onSent then onEnded for a use that is refused, one that throws and one with no reply; the key goes each time', async () => {
+    setup(ENTRY());
+    await open();
+    const v = view();
+    const order = [];
+    v.onSent = (offer) => order.push(['sent', techCalls().length]);
+    v.onEnded = (offer, ans) => order.push(['ended', ans === null ? 'null' : (ans?.reason ?? 'answer')]);
+    const target = { card: 'factory_defaults', finding: F1.id };
+    techImpl = async () => { throw Object.assign(new Error('no'), { status: 403, body: { success: false, reason: 'not_held' } }); };
+    await v.perform({ action: 'use', target });
+    techImpl = async () => { throw new Error('network down'); };
+    await v.perform({ action: 'use', target });
+    techImpl = async () => null;
+    await v.perform({ action: 'use', target });
+    assert.deepEqual(order, [['sent', 0], ['ended', 'not_held'], ['sent', 1], ['ended', 'null'], ['sent', 2], ['ended', 'null']]);
+    assert.equal(v.pending.size, 0, 'no key left pending');
 });
