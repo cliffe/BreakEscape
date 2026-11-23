@@ -140,6 +140,31 @@ module BreakEscape
       refute_equal want, check_answer(OFFICE, 'sam_pc', 'web'), 'an earned service answers differently'
     end
 
+    test 'check: a host on a discovery network that is reached but not swept answers as an invented one' do
+      findings_ready
+      want = check_answer(OFFICE, 'invented_target', 'backup')
+      pivot_through_lena
+      assert_response :success
+      assert_equal want, check_answer(OFFICE, 'sv_fs02', 'backup'), 'server_net is in reach and not swept'
+      assert_equal want, check_answer(OFFICE, 'sv_dev', 'mgmt'), 'a device on the unswept network'
+      assert_equal [404, { success: false, reason: 'not_found' }.to_json], want
+      ops_scan(OFFICE, network_id: 'server_net')
+      ops_scan(OFFICE, host_id: 'sv_dev')
+      refute_equal want, check_answer(OFFICE, 'sv_dev', 'mgmt'), 'swept and scanned it answers differently'
+    end
+
+    test 'confirm: a weakness that was fixed before any check answers as an invented finding, byte for byte' do
+      hold_office_foothold({}, NOS.findings_scenario(patched: true))
+      ops_scan(OFFICE, network_id: 'office_lan')
+      ops_scan(OFFICE, host_id: 'sam_pc')
+      want = confirm_answer(OFFICE, 'invented.finding.id')
+      body = ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+      assert_nil body['findings'].find { |f| f['id'] == NOS::FACTORY }, 'the fixed weakness is not listed'
+      assert_equal want, confirm_answer(OFFICE, NOS::FACTORY)
+      assert_nil ops_state['opsFindings'][NOS::FACTORY]
+      refute_equal want, confirm_answer(OFFICE, NOS::OLD_BANNER), 'a held decoy answers differently'
+    end
+
     test 'confirm: a real finding never checked, or of a host not listed, answers as an invented one' do
       findings_ready
       want = confirm_answer(OFFICE, 'invented.finding.id')
@@ -148,6 +173,7 @@ module BreakEscape
         assert_equal want, confirm_answer(OFFICE, id), "#{id} never checked"
       end
       assert_equal want, confirm_answer('jack_not_held', NOS::FACTORY)
+      assert_equal want, confirm_answer('not a foothold!', NOS::FACTORY), 'a foothold string that is not of the id form'
       INVENTED.reject(&:empty?).each { |id| assert_equal want, confirm_answer(OFFICE, id), id }
       ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
       assert_equal want, confirm_answer(OFFICE, NOS::SPOOL), 'a real finding of another host, not held'

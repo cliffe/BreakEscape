@@ -147,7 +147,6 @@ module BreakEscape
 
     test 'S2: the bootstrap and every room name no weakness, decoy or finding string, before and after a check and confirms' do
       findings_run
-      forbidden = nil
       check = lambda do |label|
         bootstrap_scenario
         texts = [response.body]
@@ -168,7 +167,6 @@ module BreakEscape
       ops_confirm(OFFICE, NOS::FACTORY)
       ops_confirm(OFFICE, NOS::OLD_BANNER)
       check.call('after the confirms')
-      assert_nil forbidden
     end
 
     test 'S2: GET /network before a check carries no class, summary or finding key; the check answer is the first to' do

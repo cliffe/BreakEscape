@@ -42,6 +42,7 @@ module BreakEscape
       ops_findings.each { |id| ops_confirm(OFFICE, id) }
       after = ops_state
       %w[inventory globalVariables sessions signedInPcs footholds credentialClock keyringGained].each do |key|
+        assert before.key?(key), "the state has no #{key} to compare" if %w[inventory globalVariables footholds].include?(key)
         assert_equal before[key], after[key], key
       end
     end
@@ -63,6 +64,13 @@ module BreakEscape
       assert_equal comparable(before).except('opsDiscovered'), comparable(after).except('opsDiscovered')
       assert_equal before.keys.sort, after.keys.sort
       assert_equal %w[hosts networks services], after['opsDiscovered'].keys.sort
+      assert_equal ['sam_pc.web'], before['opsDiscovered']['services']
+      assert_equal %w[print_srv.queue sam_pc.files sam_pc.web], after['opsDiscovered']['services'].sort,
+                   'each check adds its service to the checked list'
+      assert_equal [NOS::SPOOL], after['opsFindings'].keys - before['opsFindings'].keys,
+                   'the print server check adds exactly its one finding'
+      assert_equal before['opsFindings'], after['opsFindings'].slice(*before['opsFindings'].keys),
+                   'a check never changes a finding already held'
     end
   end
 end
