@@ -161,6 +161,19 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # not leave exactly one finding, nothing is earned (fail closed) and `ops_steps: ["granted:credential:<id>", ...]`
 # names the step. A new session at a host takes the earlier foothold and admin step for that host back.
 #
+# Ops privilege S5a unit 16 (OPS_PRIVILEGE_ACCOUNTS_PLAN.md), steps earned PER PC like the S3 ones. `access: "admin"` on a
+# session answer, a mirror entry or a host row is earned a second way: a successful sign-in answer (POST /login, typed or
+# keyring) for an account the scenario marks `creds.admin: true` and that PC admits earns `admin:<pc id>`. The PC is named by
+# the recorder's `login` tag (`row['login']['pcId']`), else by the answer's `host` label, else by the one PC that admits the
+# account; with none of those the sign-in earns nothing (fail closed) and `ops_steps: ["admin:<pc id>"]` names the step. A
+# later sign-in at a PC takes the step back. Structural rules (rule `ops_string`): the key `admin` inside any NPC record or
+# `creds` object is a leak wherever it appears (`ops:key:admin`); an item of an account profile in a GET /container answer is
+# a leak (rule `profile_admin_read`) unless the session held there is of an account the profile's `for` admits, or `admin:<pc>`
+# is earned at a PC whose OWNER the profile admits (a folder answer names no PC: any such session will do); an ADMIN_READ row
+# in a /log_rows answer is a leak (rule `log_row`, owner `log:admin_read:<pc id>`) unless a successful admin read of a profile
+# at that PC earned `admin_read:<profile id>@<pc id>` earlier in the run (one earned read per row). These rules run only in a scenario that has an admin account
+# or an admin session grant, so a log of an older scenario is judged as before.
+#
 # Ops log reader L2a R2 S6 (OPS_LOG_ROWS_PLAN.md section 7 and 11, `scan_log_rows`): rule `log_row`, for
 # a GET .../log_rows answer. The IDENTITY cell of a SIGN_IN row is the player's own typed text and is
 # not judged by any rule. Findings: a key the answer or a row may not carry (a row has exactly id,
@@ -311,6 +324,14 @@ class AccessLeakScanner
     @ops_supplied = Set.new  # the steps the caller named in `ops_steps` (a held card by technique id)
     @ops_answer_pc = nil     # the host the technique answer being judged granted a session at
     @ops_host_by_label = {}  # a sign-in PC's label (`host` on a session answer) => its host id, when the label is unique
+    @priv_active = false     # the scenario has an admin account or an admin session grant (S5a): the privilege rules run
+    @priv_npcs = {}          # NPC id => NPC record (the accounts' ACL answers)
+    @priv_admins = Set.new   # ids of the NPCs whose creds.admin is the literal true
+    @priv_pcs = {}           # sign-in PC id => its object
+    @priv_profiles = {}      # profile id => its `for` list
+    @priv_folder_profile = {} # a folder id inside a profile => that profile's id
+    @priv_signin_pc = nil    # the PC the sign-in answer being judged resolved to
+    @ops_session_accounts = {} # PC id => the NPC id of the session the run's own answers last put there
     @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     @share_item_pairs = Set.new # [resource_id, item_id] for every item of every share, whether or not it holds a string
@@ -362,6 +383,7 @@ class AccessLeakScanner
     collect_items
     collect_network_secrets
     collect_ops_secrets
+    collect_privilege
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
@@ -463,6 +485,8 @@ class AccessLeakScanner
       scan_ops_techniques(body, ctx, add)
       scan_ops_technique_answer(body, ctx, add)
       scan_ops_session_keys(body, ctx, add)
+      scan_privilege_keys(body, add)
+      scan_privilege_log_rows(body, ctx, add)
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -498,6 +522,7 @@ class AccessLeakScanner
     'signin_content' => 'sign-in PC content outside its own container response',
     'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
+    'profile_admin_read' => 'an account profile\'s content in a container answer when the session there is not of an account the profile admits and no admin session was earned at a PC whose owner it admits',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
@@ -1685,6 +1710,9 @@ class AccessLeakScanner
     hits.each do |item_id, paths|
       info = scoped[item_id]
       if allowed_login_route?(info, ctx[:container]) || folder_unlock_answer?(info, ctx, paths)
+        if info[:scope] == :profile && ctx[:container] && !priv_profile_read_earned?(info[:profile], ctx[:container])
+          add.call('profile_admin_read', "item:#{item_id}", safe_path(paths.first))
+        end
         legit << item_id
         next
       end
@@ -2181,8 +2209,11 @@ class AccessLeakScanner
   # block (`id` and `name` together) and each row it shows, and `held` for a row with a session.
   def note_ops_steps(body, ctx, row = {})
     @ops_answer_pc = nil
+    @priv_signin_pc = nil
+    note_privilege_read(body, ctx, row)
     return unless body.is_a?(Hash)
 
+    note_privilege_signin(body, ctx, row)
     note_ops_technique_steps(body, ctx, row)
     if ctx[:ops_scan] && body['success'] == true
       @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
@@ -2505,6 +2536,7 @@ class AccessLeakScanner
     pc = found[:host_id]
     @ops_answer_pc = pc
     @ops_earned << "session:#{pc}"
+    @ops_session_accounts[pc] = session['npcId'].to_s
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
     @ops_earned << "admin:#{pc}" if session['access'] == 'admin'
@@ -2641,7 +2673,12 @@ class AccessLeakScanner
     by_label = label.is_a?(String) && (hash.key?('via') || hash.key?('access')) ? @ops_host_by_label[label] : nil
     return by_label if by_label
 
-    ctx[:ops_technique] ? @ops_answer_pc : nil
+    return @ops_answer_pc if ctx[:ops_technique]
+    return @priv_signin_pc if ctx[:login]
+
+    # a keyboard desktop's answer (GET /container/<pc id>) carries the session's level and no host label; a label that
+    # names no PC still fails closed
+    @priv_pcs.key?(ctx[:container].to_s) && !hash.key?('host') ? ctx[:container].to_s : nil
   end
 
   # Host label => the one PC id that carries it. Built over every sign-in object, networked or not, and every
@@ -2675,6 +2712,148 @@ class AccessLeakScanner
         add.call('ops_string', 'ops:key:openHere', '$.footholds') if hash.key?('openHere') && !own
         add.call('ops_string', 'ops:host_row', '$.footholds') if !own && hash['session'].is_a?(Hash) && hash['remoteSignIn'] == false
       end
+    end
+  end
+
+  # ---- ops privilege S5a: admin sessions, the owner's profile, the admin-read row (unit 16) ----------
+
+  # The facts the privilege rules need, read from the scenario alone. The rules run only when the scenario has an
+  # account marked `creds.admin: true` or a technique grant at `access: "admin"` (an older scenario's log is judged as before).
+  def collect_privilege
+    BreakEscape::Game.scenario_room_npcs(@data).each do |npc|
+      next unless npc.is_a?(Hash) && npc['id'].is_a?(String)
+
+      @priv_npcs[npc['id']] = npc
+      @priv_admins << npc['id'] if npc['creds'].is_a?(Hash) && npc['creds']['admin'] == true
+    end
+    @login_pcs.each { |id| @priv_pcs[id] = @object_by_id[id] if @object_by_id[id].is_a?(Hash) }
+    profiles = @data['accountProfiles'].is_a?(Hash) ? @data['accountProfiles'] : {}
+    profiles.each do |profile_id, profile|
+      next unless profile.is_a?(Hash)
+
+      @priv_profiles[profile_id.to_s] = profile['for']
+      note_priv_folders(profile['contents'], profile_id.to_s)
+    end
+    @priv_active = !@priv_admins.empty? || @ops_grant_findings.any? { |f| f[:kind] == 'session' && f[:access] == 'admin' }
+  end
+
+  def note_priv_folders(list, profile_id)
+    Array(list).each do |item|
+      next unless item.is_a?(Hash) && item['contents'].is_a?(Array)
+
+      @priv_folder_profile[item['id'].to_s] = profile_id if item['id']
+      note_priv_folders(item['contents'], profile_id)
+    end
+  end
+
+  def priv_acl_admits?(acl, npc_id)
+    npc = @priv_npcs[npc_id.to_s]
+    npc ? BreakEscape::AccessIdentities.acl_admits?(acl, npc) : false
+  end
+
+  # The PC owner's NPC id, as Game#login_pc_owner reads it (the explicit `owner` only).
+  def priv_owner(pc_id)
+    owner = @priv_pcs[pc_id.to_s]&.dig('owner')
+    owner.is_a?(String) && @priv_npcs.key?(owner) ? owner : nil
+  end
+
+  # The PCs that could be the one a sign-in answer is about: the recorder's `login` tag, the answer's host label
+  # (a remote sign-in), else every PC that admits the account. Returns [pcs, exact]: exact only for one named PC.
+  def priv_signin_candidates(body, row)
+    tag = row['login'].is_a?(Hash) ? row['login']['pcId'] : nil
+    return [[tag], true] if tag.is_a?(String) && @priv_pcs.key?(tag)
+
+    label = body['host']
+    by_label = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    return [[by_label], true] if by_label && @priv_pcs.key?(by_label)
+
+    npc = @priv_npcs[body['npcId'].to_s]
+    admitting = @priv_pcs.select { |_, pc| npc && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }.keys
+    # the caller may name the PC of an untagged sign-in with `ops_steps: ["admin:<pc id>"]`
+    named = admitting.select { |pc| @ops_supplied.include?("admin:#{pc}") }
+    named.size == 1 ? [named, true] : [admitting, admitting.size == 1]
+  end
+
+  # A successful sign-in answer (typed or keyring) puts that account at that PC and takes any earlier admin step at the
+  # PC back; it earns `admin:<pc>` only for an account marked creds.admin, at a PC that admits it, as a password or
+  # credential session that is not a relay, and only when the PC is known for certain.
+  def note_privilege_signin(body, ctx, row)
+    return unless @priv_active && ctx[:login] && body['success'] == true && body['npcId'].is_a?(String)
+
+    pcs, exact = priv_signin_candidates(body, row)
+    @priv_signin_pc = pcs.first if exact
+    pcs.each do |pc|
+      @ops_earned.delete("admin:#{pc}")
+      exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
+    end
+    return unless exact && @priv_admins.include?(body['npcId']) && %w[password credential].include?(body['via']) && body['relay'] != true
+
+    npc = @priv_npcs[body['npcId']]
+    @ops_earned << "admin:#{pcs.first}" if BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[pcs.first], npc)
+  end
+
+  # A successful read of a folder inside an account profile, by an admin session, earns `admin_read:<profile id>@<pc id>` for
+  # each PC where `admin:<pc>` is earned and the PC's owner is admitted by the profile: the server writes its audit row
+  # only then (no live session of an account the profile admits, an admin session at a PC whose owner it admits). A folder
+  # answer names no PC, so every such PC is credited.
+  def note_privilege_read(body, ctx, row)
+    return unless @priv_active && ctx[:container] && row['status'].to_i == 200 && body.is_a?(Hash) && body['contents'].is_a?(Array)
+
+    profile = @priv_folder_profile[ctx[:container]]
+    return unless profile
+
+    acl = @priv_profiles[profile]
+    return if @ops_session_accounts.values.any? { |id| priv_acl_admits?(acl, id) }
+
+    @priv_pcs.each_key { |pc| @ops_earned << "admin_read:#{profile}@#{pc}" if priv_admin_opens?(acl, pc) }
+  end
+
+  # Is `admin:<pc>` earned at a PC (the given one, or any) whose owner the list admits?
+  def priv_admin_opens?(acl, pc_id)
+    (pc_id ? [pc_id] : @priv_pcs.keys).any? do |pc|
+      @ops_earned.include?("admin:#{pc}") && (owner = priv_owner(pc)) && priv_acl_admits?(acl, owner)
+    end
+  end
+
+  # May this container answer hold the profile's items? `container` is a PC id (the desktop) or a folder id.
+  def priv_profile_read_earned?(profile_id, container)
+    return true unless @priv_active
+
+    acl = @priv_profiles[profile_id.to_s]
+    return false if acl.nil?
+
+    pc = @priv_pcs.key?(container.to_s) ? container.to_s : nil
+    own = pc ? [@ops_session_accounts[pc]].compact : @ops_session_accounts.values
+    own.any? { |id| priv_acl_admits?(acl, id) } || priv_admin_opens?(acl, pc)
+  end
+
+  # The key `admin` inside an NPC record or a `creds` object (creds.admin never leaves the server).
+  def scan_privilege_keys(body, add)
+    return unless @priv_active
+
+    walk_records(body, '$', false) { |rec, path| add.call('ops_string', 'ops:key:admin', safe_path("#{path}.admin")) if rec.key?('admin') }
+    walk_hashes(body, '$') do |hash, path|
+      creds = hash['creds']
+      add.call('ops_string', 'ops:key:admin', safe_path("#{path}.creds.admin")) if creds.is_a?(Hash) && creds.key?('admin')
+    end
+  end
+
+  # An ADMIN_READ row of a /log_rows answer needs an earned admin read at the PC its `where` names (the browser's row
+  # names the PC and the account, and shows only the word `profile` for the profile, never its id): one earned
+  # `admin_read:<profile>@<pc>` per row. A row whose `where` names no PC of the scenario, or more rows for a PC than
+  # earned reads, is judged unearned (fail closed).
+  def scan_privilege_log_rows(body, ctx, add)
+    return unless @priv_active && ctx[:log_rows] && body.is_a?(Hash)
+
+    seen = Hash.new(0)
+    Array(body['rows']).each_with_index do |row, i|
+      next unless row.is_a?(Hash) && row['event'] == 'ADMIN_READ'
+
+      pcs = @priv_pcs.select { |_, pc| pc['name'] == row['where'] }.keys
+      pc = pcs.size == 1 ? pcs.first : nil
+      seen[pc] += 1
+      earned = pc ? @ops_earned.count { |step| step.match?(/\Aadmin_read:.+@#{Regexp.escape(pc)}\z/) } : 0
+      add.call('log_row', "log:admin_read:#{pc || 'unknown'}", "$.rows[#{i}]") if seen[pc] > earned
     end
   end
 
