@@ -279,6 +279,8 @@ module BreakEscape
       player_state['inventory'] << link_item_for(foothold_id)
       # A worn device planted in a jack comes off (Wearables)
       release_worn_unless_held!
+      # Ops log L3: one row per plant (an already-planted jack returned above); the save below stores it
+      write_log_row!('net_link_up', as: nil, where: { kind: 'jack', id: jack_id })
       save!
 
       touched = [link_item_id(foothold_id), copy['id']]
@@ -313,6 +315,8 @@ module BreakEscape
       # Keyring K4 (plan 9): a `from` session carries no foothold, so the prune ends one whose
       # source (or the source's own route) went with the foothold, and the answer names it too
       ended += prune_unreachable_sessions!
+      # Ops log L3: one row per unplug (a jack with nothing planted returned above); the save below stores it
+      write_log_row!('net_link_down', as: nil, where: { kind: 'jack', id: jack[:object]['id'].to_s })
       save!
 
       device_id = device.is_a?(Hash) ? device['id'] : nil
@@ -389,6 +393,8 @@ module BreakEscape
       start_token_clocks!(foothold_id) # keyring K5 (plan 10)
       player_state['inventory'] = Array(player_state['inventory'])
       player_state['inventory'] << link_item_for(foothold_id)
+      # Ops log L3: one row per join (a network already held, or a wrong key, returned above)
+      write_log_row!('net_wifi_join', as: nil, where: { kind: 'ap', id: ap_object_id })
       save!
 
       { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), first: first
@@ -1625,29 +1631,31 @@ module BreakEscape
     # the list admits the session's identity). A resource with no network is reached by
     # nothing.
     def resource_admits_player?(resource)
-      return false unless resource.is_a?(Hash)
+      !resource_admitting(resource).nil?
+    end
+
+    # Ops log L3: what admits the player to a resource: the PC id (a String) of the
+    # first admitting session in sign-in-list order, else :foothold when only a held foothold does, else nil. A session is
+    # named before a foothold, so the share row names an account whenever one admits it.
+    def resource_admitting(resource)
+      return nil unless resource.is_a?(Hash)
       # A listed-only share has nothing to serve, so GET /container answers "not found"
-      return false if NetworkModel.listed_only_share?(resource)
+      return nil if NetworkModel.listed_only_share?(resource)
       # A resource whose own offWhen holds is off (5.2): not served, like one on a down
       # network. network_up? below also refuses a resource on a down network (player_reach).
-      return false if resource_down?(resource)
+      return nil if resource_down?(resource)
 
       network = resource['network']
-      return false unless NetworkModel.present_string?(network)
-      # An open share (no access list) is reached by any held foothold whose player_reach
-      # includes the resource's network (its own, or a linked network through a pivot).
-      if resource['access'].nil? && network_footholds.keys.any? { |fid| player_reach(fid).include?(network) }
-        return true
-      end
+      return nil unless NetworkModel.present_string?(network)
 
       # A session the player holds at a host whose network reaches the resource's network,
       # whose identity the list admits, opens it from that desktop. An access-listed share
       # maps across the pivot walk over up links (the member-of-staff model); an open share
       # is reached from a session only on its own network, never across a link (m3): a linked
-      # open share needs a foothold that pivots to it (the branch above), like every other
+      # open share needs a foothold that pivots to it (the branch below), like every other
       # resource on a linked network.
       open_share = resource['access'].nil?
-      access_sessions.any? do |pc_id, session|
+      session_pc = sessions_oldest_first.find do |pc_id, session|
         next false unless session.is_a?(Hash)
         # UI slice 6: a locked session maps no shares until the password is entered again.
         next false if session_locked?(session)
@@ -1668,7 +1676,12 @@ module BreakEscape
 
         reaches = open_share ? host_net == network : networks_reachable_from(host_net).include?(network)
         reaches && resource_acl_admits?(resource, npc)
-      end
+      end&.first
+      return session_pc if session_pc
+
+      # An open share (no access list) is reached by any held foothold whose player_reach
+      # includes the resource's network (its own, or a linked network through a pivot).
+      :foothold if resource['access'].nil? && network_footholds.keys.any? { |fid| player_reach(fid).include?(network) }
     end
 
     # The file shares a session at this PC maps on its desktop (4.5): every file_share on

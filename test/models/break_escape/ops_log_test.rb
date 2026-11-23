@@ -23,7 +23,9 @@ module BreakEscape
         'int_type'    => { label: 'A', places: [], results: %w[ok], detail: { 'x' => Integer } },
         'five_keys'   => { label: 'A', places: [], results: %w[ok],
                            detail: %w[a b c d e].to_h { |k| [k, %w[x]] } },
-        'bad_result'  => { label: 'A', places: [], results: %w[OK] }
+        'bad_result'  => { label: 'A', places: [], results: %w[OK] },
+        'merge_true'  => { label: 'A', places: [], results: %w[ok], merge: true },
+        'merge_str'   => { label: 'A', places: [], results: %w[ok], merge: 'false' }
       }
       bad.each do |name, entry|
         assert_not_empty OpsLogEvents.problems({ name => entry }, kinds), "#{name} should be refused"
@@ -32,6 +34,13 @@ module BreakEscape
                                detail: { 'm' => %w[a b], 'c' => { count: 9 }, 'i' => { id: 'npc', show: false },
                                          'al' => { alias: 'finding' } }, save_limit: { 'denied' => 99 } } }
       assert_empty OpsLogEvents.problems(good, kinds)
+      assert_empty OpsLogEvents.problems({ 'no_merge' => { label: 'NM', places: %w[pc], results: %w[ok], merge: false } }, kinds)
+    end
+
+    test 'only the link events are registered merge: false, and the option is only ever false' do
+      flagged = OpsLogEvents::EVENTS.select { |_, e| e.key?(:merge) }.keys
+      assert_equal %w[net_link_down net_link_up], flagged.sort
+      assert(OpsLogEvents::EVENTS.values.all? { |e| e.keys.all? { |k| %i[label places results detail save_limit merge].include?(k) } })
     end
   end
 
@@ -565,9 +574,9 @@ module BreakEscape
     end
 
     # Hand-kept: the event registry (lib/break_escape/ops_log_events.rb) records no per-event `as` rule, so there is nothing to derive this from.
-    OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused].freeze
+    OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused net_link_up net_link_down net_wifi_join].freeze
     # technique_used names the session's account (nil for a credential grant): the worst case is an account name.
-    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden].freeze
+    OPS_AS_ACCOUNT_EVENTS = %w[technique_used admin_profile_read usb_install_overridden share_folder_opened].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
       BreakEscape::OpsLog.events.each do |name, entry|

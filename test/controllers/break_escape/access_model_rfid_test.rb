@@ -964,5 +964,14 @@ module BreakEscape
       assert_nil Game.find(@game.id).player_state['opsLog']
       assert_nil Game.find(@game.id).player_state['opsLogSeq']
     end
+
+    # Ops log L3 (OPS_LOG_ROWS_PLAN.md 5.1): a card copy writes no row of any kind.
+    test 'badge: recording a card copy writes no row' do
+      every = { 'all' => { 'title' => 'All', 'events' => %w[badge_* signin_* session_* net_* share_*] } }
+      logged_build(inventory: [CLONER.dup], source: every)
+      assert_equal true, clone_card(JAKE_CARD_ID, npc_id: 'jake')['recorded']
+      assert_nil Game.find(@game.id).player_state['opsLog']
+      assert_nil Game.find(@game.id).player_state['opsLogSeq']
+    end
   end
 end

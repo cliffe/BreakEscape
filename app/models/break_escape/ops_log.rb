@@ -765,7 +765,7 @@ module BreakEscape
         rows = log[source_id].is_a?(Array) ? log[source_id].dup : []
         index = rows.length - 1
         found = nil
-        while index >= 0 && rows.length - index <= OpsLog::MERGE_WINDOW
+        while call[:definition][:merge] != false && index >= 0 && rows.length - index <= OpsLog::MERGE_WINDOW
           candidate = rows[index]
           if candidate.is_a?(Hash) && same.all? { |k| candidate[k] == built[k] }
             found = index
