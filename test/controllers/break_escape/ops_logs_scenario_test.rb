@@ -22,6 +22,15 @@ module BreakEscape
       JSON.parse(ScenarioBinding.render(File.read(SCENARIO_PATH)))
     end
 
+    # The client reads a missing `locked` as a key lock, so a click on the folder would never request
+    # it (the share would close and reopen). The share's folder must say `locked: false`.
+    test 'the share folder inbox_letters is authored unlocked' do
+      share = scenario.dig('resources', 'scanned_inbox') || scenario['resources'].values.find { |r| r.is_a?(Hash) && r['contents'] }
+      folder = Array(share['contents']).find { |o| o['id'] == 'inbox_letters' }
+      assert folder, 'inbox_letters is in the share'
+      assert_equal false, folder['locked']
+    end
+
     # office_open: start with the office door already open, as a player is once through it.
     def build(inventory: [CLONER.dup], scenario: self.scenario, office_open: false, security_open: false)
       @game = create_access_game(

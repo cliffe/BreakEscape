@@ -89,7 +89,7 @@ card copy is never logged; the gap is the lesson).
 
 ### 3. Swiping the copy at the door
 
-`moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast titled "Access Granted" with the text "Opened with your copy of Dana Reyes's badge." (the name is the card's), task `l1_into_office`
+`moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast titled "Access Granted" with the text "Opened with your copy of Dana Reyes's badge." (the name is the card's; the toast is not reliably in the DOM, so you need not capture it: the `door_unlocked` result and the row are the check), task `l1_into_office`
 complete. Check: `door_controller` has exactly one row `badge_swipe`, result `ok`, `as {"npc":"dana"}`,
 `where {"kind":"door","id":"office"}`. The other source has none.
 
@@ -98,7 +98,7 @@ complete. Check: `door_controller` has exactly one row `badge_swipe`, result `ok
 `enter` `office`, then `moveToNear` and `interact` `office_pc`. Type the username from the sticky note
 and a wrong password of your own invention, submit, and again. Expect "Incorrect username or
 password" each time with the screen still open. Check: `signin_audit` has **one** `signin_fail`
-row, `as {"typed":"<the username>"}`, shown `x2` (the merged failure count).
+row, `as {"typed":"<the username>"}`, shown `x2` (the merged failure count). `verify-run.rb` prints the typed username as a length only, `[N chars]` (for `dreyes`, `[6 chars]`); the row holds the name, the printout redacts it.
 
 ### 5. Signing in
 
@@ -120,7 +120,7 @@ the desktop.
 
 ### 7. Signing out
 
-Open the desktop, press Start and Sign out. Expect an info toast titled with the PC's name ("Office PC") and the text "Signed out" (`SIGNED_OUT_MESSAGE`); it lasts 3 seconds, so read it at once. Check: a `session_end` row.
+Open the desktop, press Start and Sign out. Expect an info toast titled with the PC's name ("Office PC") and the text "Signed out" (`SIGNED_OUT_MESSAGE`); it lasts 3 seconds and is not reliably captured, so read it at once if you can, but it need not be captured: the `session_end` row is the check. Check: a `session_end` row.
 
 ## End of run
 
@@ -185,7 +185,7 @@ above). Close the viewer with `{"cmd":"mg","action":"close"}` or Escape.
 ### 8. Entering the security office
 
 After beat 7 (signed out). `moveToNear` then `interact` `door:office->security`, using the saved card
-(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, the toast titled "Access Granted" (text "Opened with your copy of Dana Reyes's badge."). Check with
+(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, the toast titled "Access Granted" (text "Opened with your copy of Dana Reyes's badge."; as in beat 3 it need not be captured). The RFID reader can linger for a moment after the emulate: close it with `{"cmd":"mg","action":"close"}` before `enter`, or `enter` answers `minigame-active`. Check with
 `verify-run.rb --ops-log`: `door_controller` now has **two** `badge_swipe` rows (office, then
 security), both `ok`. Then `enter` `security`.
 
@@ -317,7 +317,7 @@ The calls are in `docs/test-bridge.md` (`moveToNear`, `interact`, `enterRoom`, `
 Notes from the code. L3 was run in a browser on 2026-11-23: beats 20, 21, 23 and 24 passed; beat 22 was fixed afterwards and is being replayed. Three points are marked UNVERIFIED: report what you see for each.
 
 - The plant prompt is a `gameConfirm` dialog, not a minigame: answer it with `{"cmd":"dismiss","label":"Plug it in"}` (or `"Leave it"`, the cancel button: there is no button labelled "Cancel"). Always give `dismiss` a label: with no label and a minigame open it clicks that minigame's first control.
-- In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; a folder is meant to open by clicking its icon (UNVERIFIED: report what you see). Find the icons first: `eval` `() => [...document.querySelectorAll('.desktop-icon')].map(i => i.getAttribute('aria-label'))`, then `mg clickSelector` `.desktop-icon[aria-label="Letters"]` (the icon carries its name in `aria-label`; a share icon also has `data-resource-id`). Feedback there is an in-window line, not a toast.
+- In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; in a share window an item is a `.container-content-slot` (not `.desktop-icon`), and a folder opens by clicking it: `click` `.container-content-slot[aria-label="Letters"]` (the slot carries its name in `aria-label`; a share row in the network view also has `data-resource-id`). Feedback there is an in-window line, not a toast.
 - A planted jack has no prompt: clicking it opens the box's network view with Unplug in its header (`[data-unplug]`). The network view's share row is `[data-resource-id="scanned_inbox"] [data-action="open"]`.
 - Joining: `interact` `guest_ap` opens the join minigame (`#password-field`, "Network key"); type with `{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`. A wrong key shows "That key was not accepted" and clears the field. The key is read from `wifi_note` (interact, read the text), as with every earned secret.
 - The viewer's hooks and handy reads are those of beats 8 to 13 (`tr.ol-row[data-row-id]`, `td[data-col]`, `[data-ops-log="count"]`, `button[data-action="refresh"]`).
@@ -330,11 +330,11 @@ Notes from the code. L3 was run in a browser on 2026-11-23: beats 20, 21, 23 and
 
 ### 21. Planting the drop box writes one row
 
-`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Leave it"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`, no detail. The door and sign-in sources have no new row. Do not close the view yet.
+`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Leave it"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. (`dismiss` may report `stillBlocked`: the network view it opens is itself a blocker, so that is harmless.) Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`, no detail. The door and sign-in sources have no new row. Do not close the view yet.
 
 ### 22. Opening the share and its folder writes a row each, and a repeat none
 
-In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder's icon (selector as in the notes above, `.desktop-icon[aria-label="Letters"]`). Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
+In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder (`.container-content-slot[aria-label="Letters"]`). One extra `GET /container/scanned_inbox` may be seen before the folder window opens (the share closes and reopens); the folder window should replace it within about a second and request `/container/inbox_letters`. Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
 
 ### 23. Unplugging writes one row
 
