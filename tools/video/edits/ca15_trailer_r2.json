@@ -18,8 +18,17 @@
  "fps": 30,
  "length": 74.48,
  "music": {
-  "none": true,
-  "note": "silent bed until D331; game room sound and voiced lines only"
+  "track": "PeaceFolk/Gently Decaying.mp3",
+  "analysis": "gently_decaying_75.json",
+  "start": 39.055,
+  "length": 74.48,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @56.19",
+   "PeaceFolk/Guitar Motif.mp3 @27.34"
+  ]
  },
  "beat": {
   "bpm": 120,

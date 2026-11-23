@@ -11,8 +11,17 @@
  "fps": 30,
  "length": 74.13,
  "music": {
-  "none": true,
-  "note": "silent bed until D331; game room sound and voiced lines only"
+  "track": "PeaceFolk/Guitar Motif.mp3",
+  "analysis": "guitar_motif_75.json",
+  "start": 19.758,
+  "length": 74.13,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @27.183",
+   "PeaceFolk/Gently Decaying Again.mp3 @25.061"
+  ]
  },
  "beat": {
   "bpm": 120,
