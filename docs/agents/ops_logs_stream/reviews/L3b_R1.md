@@ -349,3 +349,21 @@ link rows) needs a ruling.
 
 Checks not completed: none skipped. Not done by choice: no Rails test run, no validator run in
 the live worktree, no browser.
+
+## Outcomes (fixer)
+
+| Finding | Outcome |
+|---|---|
+| S1 | Scanner tightened as the review's tightest rule: a share's name passes in a `SHARE_OPEN` row's LOCATION only for a share with an earlier successful `GET /container/<share or item in it>` in the run, and only that owner is dropped (no `next`); a `/network` listing earns nothing. Seven unit cases added, the scenario run gains the bare-run case; plan section 11 gains one line |
+| S2 | Closed by the S1 tests |
+| C1 | Brief now says the flag is checked in the browser |
+| C2 | Not an engine or layout change: PLAYTEST asks the tester to confirm beat 3's walk on the first attempt, with the move-to-west-half fallback |
+| C3 | New test: the real comms room has no lock keys; a game starting with only the lobby is refused the room, opens it by the unlock call, then reads `net_log_pc` |
+| T1 | The raw-id check loops over all seven ids plus the host, the network name and the key |
+| T2 | Done in the call, helper untouched: `net_link_up` and `net_link_down` carry a stored-only, never shown detail `step` (registry `{ count: 9, show: false }`), a 0 to 9 counter taken from `player_state['netLinkSteps']` (written only when the scenario declares log sources). A plant after an unplug is its own row: up, down, up. Docs, plan 13.8 cell, tests and PLAYTEST updated |
+| T3 | Test title says four sources |
+| P1 | PLAYTEST: "from the code, not yet seen in a browser", three points marked UNVERIFIED, folder icon selector `.desktop-icon[aria-label="Letters"]` (client source) |
+| P2 | Bridge names as in `docs/test-bridge.md` (`enterRoom`), `enter` and `sync` named as session commands |
+| P3 | Beat 27 follows the S1 rule and says the `/container` answers must be in the capture files |
+| P4 | Beat 19 says four sources |
+| D1, D2, D3 | A24: "first session in sign-in-list order", "a request for a file writes no row", the S1 rule |

@@ -386,6 +386,7 @@ class AccessLeakScanner
     seen = Set.new
     @ops_supplied = Set.new(Array(ops_steps).map(&:to_s))
     @ops_earned = @ops_supplied | @ops_start_steps
+    @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
@@ -434,6 +435,7 @@ class AccessLeakScanner
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
       scan_log_rows(body, ctx, add)
+      note_share_opened(body, ctx, row)
     end
     findings
   end
@@ -1877,22 +1879,48 @@ class AccessLeakScanner
       # observations name the network the player has already reached (slice 9.3b W, 5.3),
       # so a network name there is not a leak.
       next if holder.to_s.start_with?('netlink_')
-      # Ops log L3: a share row's LOCATION cell is the share's own name. The row exists only after an
-      # admitted open of that share (the browser was served the name then), so the name alone in that
-      # cell is not a leak. Any other cell, a host or observations text, or a network name still is.
-      next if ctx[:log_rows] && json_path.to_s.match?(/\.rows\[\d+\]\.where\z/) && share_name?(str)
+      # Ops log L3 (L3b R1 S1): in a SHARE_OPEN row's LOCATION cell the name of a share this run opened
+      # earlier (a successful GET /container/<share or an item in it>) is not a leak: the browser was
+      # served that name by the open. Only that owner is dropped; every other owner of the string, any
+      # other cell or event, and a share not yet opened stays a finding. A /network listing is no open.
+      earned = earned_share_owners(body, json_path, str) if ctx[:log_rows]
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
 
-        owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+        owners.each do |owner|
+          next if earned&.include?(owner)
+
+          add.call('network_string', owner, safe_path(json_path))
+        end
       end
     end
   end
 
-  def share_name?(str)
+  # The `resource:<id>` owners a SHARE_OPEN row's LOCATION cell may carry: opened earlier, name equal.
+  def earned_share_owners(body, json_path, str)
+    match = json_path.to_s.match(/\A\$\.rows\[(\d+)\]\.where\z/)
+    return nil unless match && body.is_a?(Hash) && body['rows'].is_a?(Array)
+
+    row = body['rows'][match[1].to_i]
+    return nil unless row.is_a?(Hash) && row['event'] == 'SHARE_OPEN'
+
     resources = @data['resources'].is_a?(Hash) ? @data['resources'] : {}
-    resources.values.any? { |res| res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip }
+    @shares_opened.select do |id|
+      res = resources[id]
+      res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip
+    end.map { |id| "resource:#{id}" }
+  end
+
+  # Notes a successful GET /container/<share or an item in it> answer: that share is opened for this run.
+  def note_share_opened(body, ctx, row)
+    id = ctx[:container]
+    return unless id && row['status'].to_i == 200 && body.is_a?(Hash) && body['success'] != false && !body.key?('error')
+
+    resources = @data['resources'].is_a?(Hash) ? @data['resources'] : {}
+    @shares_opened << id if resources.key?(id)
+    item = @share_items[id]
+    @shares_opened << item[:resource] if item && item[:resource]
   end
 
   # ---- ops core S1: discovery and services (OPS_CORE_PLAN.md 11.4) ----------------------------

@@ -4,7 +4,7 @@
 
 TEST: Ops log rows
 
-A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a, L2b and L3). One lobby, a comms room, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is judged by the server. Nothing to solve.
+A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a, L2b and L3). One lobby, a comms room, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is checked in the browser. Nothing to solve.
 
 ## Scenario Statistics
 

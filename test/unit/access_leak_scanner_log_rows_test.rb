@@ -158,17 +158,75 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
     end
   end
 
-  test 'L3: a share name alone in a row LOCATION cell is no network_string finding; the host, or the name elsewhere, still is' do
-    data = scenario.merge('resources' => { 'inbox' => { 'kind' => 'file_share', 'name' => 'Scanned-Inbox', 'host' => 'OL-FS07', 'network' => 'lan' } },
-                          'networks' => { 'lan' => { 'name' => 'Harbour office LAN' } })
-    check = lambda do |body|
-      row = { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => body }
-      owners(AccessLeakScanner.new(data, log_secrets: []).scan([['r.jsonl', 1, row]]))
+  # L3b R1 S1: a share's name is allowed in a SHARE_OPEN row's LOCATION cell only for a share opened
+  # earlier in the same run by a successful GET /container/<share or an item in it>.
+  def share_data
+    scenario.merge('resources' => {
+                     'inbox' => { 'kind' => 'file_share', 'name' => 'Scanned-Inbox', 'host' => 'OL-FS07', 'network' => 'lan',
+                                  'contents' => [{ 'type' => 'folder', 'id' => 'letters', 'name' => 'Letters', 'contents' => [] }] },
+                     'archive' => { 'kind' => 'file_share', 'name' => 'Old-Archive', 'host' => 'OL-FS08', 'network' => 'lan' }
+                   },
+                   'networks' => { 'lan' => { 'name' => 'Harbour office LAN' } })
+  end
+
+  def share_run(*steps)
+    lines = steps.each_with_index.map do |(path, body, status), i|
+      ['r.jsonl', i + 1, { 'method' => 'GET', 'path' => path, 'status' => status || 200, 'body' => body }]
     end
-    assert_empty check.call(answer(good_row('event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox')))
-    assert_empty check.call(answer(good_row('event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'detail' => 'folder: Letters')))
-    assert_equal [%w[network_string resource:inbox]], check.call(answer(good_row('where' => 'OL-FS07')))
-    assert_equal [%w[network_string resource:inbox]], check.call(answer(good_row('detail' => 'at Scanned-Inbox')))
-    assert_equal [%w[network_string network:lan]], check.call(answer(good_row('where' => 'Harbour office LAN')))
+    owners(AccessLeakScanner.new(share_data, log_secrets: []).scan(lines))
+  end
+
+  def open_line(id, status: 200, body: { 'success' => true })
+    ["/break_escape/games/1/container/#{id}?foothold=x", body, status]
+  end
+
+  def log_line(*rows)
+    [PATH, answer(*rows)]
+  end
+
+  def share_row(name, event: 'SHARE_OPEN')
+    good_row('event' => event, 'as' => '-', 'where' => name)
+  end
+
+  INBOX = [%w[network_string resource:inbox]].freeze
+
+  test 'L3b S1: a lone SHARE_OPEN row naming the share, with no earlier open, is a finding' do
+    assert_equal INBOX, share_run(log_line(share_row('Scanned-Inbox')))
+  end
+
+  test 'L3b S1: an earlier successful open of the share, or of an item in it, clears the SHARE_OPEN row' do
+    assert_empty share_run(open_line('inbox'), log_line(share_row('Scanned-Inbox')))
+    assert_empty share_run(open_line('letters'), log_line(share_row('Scanned-Inbox')))
+    assert_empty share_run(open_line('inbox', body: { 'success' => true, 'contents' => [{ 'name' => 'Letters' }] }), log_line(good_row('event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'detail' => 'folder: Letters')))
+  end
+
+  test 'L3b S1: the open after the log answer, a /network listing, or a refused open does not clear it' do
+    assert_equal INBOX, share_run(log_line(share_row('Scanned-Inbox')), open_line('inbox'))
+    assert_equal INBOX, share_run(['/break_escape/games/1/network', { 'networks' => [{ 'id' => 'lan', 'resources' => [{ 'id' => 'inbox' }] }] }],
+                                  log_line(share_row('Scanned-Inbox')))
+    assert_equal INBOX, share_run(open_line('inbox', status: 404, body: { 'success' => false, 'reason' => 'not_found' }), log_line(share_row('Scanned-Inbox')))
+    assert_equal INBOX, share_run(open_line('inbox', body: { 'success' => false, 'reason' => 'denied' }), log_line(share_row('Scanned-Inbox')))
+  end
+
+  test 'L3b S1: opening share A does not clear a SHARE_OPEN row naming share B' do
+    assert_equal [%w[network_string resource:archive]], share_run(open_line('inbox'), log_line(share_row('Old-Archive')))
+  end
+
+  test 'L3b S1: an open of the share does not clear its name in the LOCATION cell of another event' do
+    assert_equal INBOX, share_run(open_line('inbox'), log_line(share_row('Scanned-Inbox', event: 'BADGE')))
+  end
+
+  test 'L3b S1: the host, the name elsewhere and a network name stay findings even after an open' do
+    assert_equal INBOX, share_run(open_line('inbox'), log_line(good_row('where' => 'OL-FS07')))
+    assert_equal INBOX, share_run(open_line('inbox'), log_line(good_row('event' => 'SHARE_OPEN', 'detail' => 'at Scanned-Inbox')))
+    assert_equal [%w[network_string network:lan]], share_run(open_line('inbox'), log_line(good_row('event' => 'SHARE_OPEN', 'where' => 'Harbour office LAN')))
+  end
+
+  test 'L3b S1: only the earned owner is dropped when another resource shares the name' do
+    data = share_data
+    data['resources']['archive']['name'] = 'Scanned-Inbox'
+    lines = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/container/inbox', 'status' => 200, 'body' => { 'success' => true } }],
+             ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
+    assert_equal [%w[network_string resource:archive]], owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines))
   end
 end

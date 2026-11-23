@@ -47,8 +47,10 @@ module BreakEscape
                             save_limit: { 'ok' => 10 } },
       # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
       # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
-      'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok] },
-      'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok] },
+      # `step` is a stored-only counter (L3b R1 T2): it keeps a plant after an unplug from merging into the
+      # earlier plant, so the log reads up, down, up in order.
+      'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok], detail: { 'step' => { count: 9, show: false } } },
+      'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok], detail: { 'step' => { count: 9, show: false } } },
       'net_wifi_join' => { label: 'NET_WIFI_JOIN', places: %w[ap], results: %w[ok] },
       'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } }
     }.freeze

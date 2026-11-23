@@ -59,7 +59,7 @@ module BreakEscape
       response.parsed_body
     end
 
-    test 'the scenario declares two sources, a clock, and a reader per source, and a new game holds no rows' do
+    test 'the scenario declares four sources, a clock, and a reader per source, and a new game holds no rows' do
       build
       data = fresh.scenario_data
       assert_equal %w[door_controller network_log night_log signin_audit], data['logSources'].keys.sort # night_log: L2b, network_log: L3
@@ -419,6 +419,26 @@ module BreakEscape
       assert_empty net_rows
     end
 
+    test 'L3: the real comms room carries no lock, and a game that starts with only the lobby opens it by the unlock call and reads its log' do
+      room = scenario['rooms']['comms_room']
+      assert_nil room['locked']
+      assert_nil room['lockType']
+      assert_nil room['requires']
+      @game = create_access_game(
+        mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user), scenario: scenario,
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby], 'encounteredNPCs' => %w[dana], 'inventory' => [] }
+      )
+      get game_url_for('room/comms_room'), as: :json
+      assert_response :forbidden, 'the helper pre-open is what let the other tests in; the room is not served before the door opens'
+      post game_url_for('unlock'), params: { targetType: 'door', targetId: 'comms_room' }, as: :json
+      assert_response :success, response.body
+      get game_url_for('room/comms_room'), as: :json
+      assert_response :success, response.body
+      body = read('net_log_pc')
+      assert_response :success, body.inspect
+      assert_equal 'Network log', body['title']
+    end
+
     test 'L3: plant, unplug, join and a share and folder open write their rows, read back from the network log with authored names' do
       build
       take_drop_box
@@ -426,26 +446,27 @@ module BreakEscape
       unplug
       plant
       assert_equal 'wrong_key', join('not-the-key')['reason']
-      assert_equal %w[net_link_up net_link_down], net_rows.map { |r| r['event'] }, 'a wrong key writes nothing, and the second plant merges into the first row'
-      assert_equal [2, nil], net_rows.map { |r| r['n'] }
+      assert_equal %w[net_link_up net_link_down net_link_up], net_rows.map { |r| r['event'] }, 'a wrong key writes nothing, and the second plant is its own row (13.8: one per plant or unplug)'
+      assert_equal [nil, nil, nil], net_rows.map { |r| r['n'] }
       assert_equal true, join(WIFI_KEY)['success']
       open_share('scanned_inbox')
       open_share('inbox_letters')
       body = read('net_log_pc')
       assert_response :success, body.inspect
       assert_equal [
-        { 'event' => 'NET_LINK_UP', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK x2', 'detail' => '' },
+        { 'event' => 'NET_LINK_UP', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK', 'detail' => '' },
         { 'event' => 'NET_LINK_DOWN', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK', 'detail' => '' },
+        { 'event' => 'NET_LINK_UP', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK', 'detail' => '' },
         { 'event' => 'NET_WIFI_JOIN', 'as' => '-', 'where' => 'Guest access point', 'result' => 'OK', 'detail' => '' },
         { 'event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'result' => 'OK', 'detail' => '' },
         { 'event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'result' => 'OK', 'detail' => 'folder: Letters' }
       ], shown(body)
       assert(body['rows'].all? { |r| r.keys.sort == SEVEN_KEYS })
       assert_answer_holds_no_secret(body)
-      assert_not_includes response.body, 'inbox_letters'
-      assert_not_includes response.body, 'letter.txt'
-      assert_not_includes response.body, 'comms_port'
-      assert_not_includes response.body, WIFI_KEY
+      # every raw id, the key, the host and the network name stay out of the answer (T1)
+      %w[inbox_letters letter.txt comms_port guest_ap scanned_inbox kit_dropbox jack_ wifi_ OL-FS07 Harbour\ office\ LAN].push(WIFI_KEY).each do |raw|
+        assert_not_includes response.body, raw
+      end
     end
 
     test 'L3: a repeat folder open writes no second row and saves nothing' do
@@ -502,6 +523,10 @@ module BreakEscape
       note.call('GET', "#{base}/log_rows?object_id=net_log_pc", read('net_log_pc'))
       findings = AccessLeakScanner.new(fresh.scenario_data, game: fresh).scan(lines)
       assert_equal [], findings.map { |f| [f.rule, f.owner] }
+      # the allowance is tied to the open (L3b S1): the same run without the two /container lines
+      # names the share in a row the player had not earned
+      bare = lines.reject { |l| l[2]['path'].include?('/container/') }
+      assert_includes AccessLeakScanner.new(fresh.scenario_data, game: fresh).scan(bare).map { |f| [f.rule, f.owner] }, %w[network_string resource:scanned_inbox]
     end
   end
 end

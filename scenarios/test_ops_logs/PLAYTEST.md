@@ -294,7 +294,7 @@ Open `night_log_pc` again (same page): `s3` is marked at once and there is no fl
 
 ### 19. The leak check
 
-`verify-run.rb <game_id> --ops-log` still exits 0 with `ops log OK` (it prints three sources; `night_log` has no stored row, and the play rows of the other two are as in beats 1 to 13). Run `tools/playtest/access-leak-check.rb` over the capture file. It must report no finding: it judges the `/log_rows` answers (no secret, seed rows and play rows with exactly their own seven keys, no raw id, no stored-only key); it holds no rule about the anomaly.
+`verify-run.rb <game_id> --ops-log` still exits 0 with `ops log OK` (it prints four sources, `network_log` among them with no row yet; `night_log` has no stored row, and the play rows of the other two are as in beats 1 to 13). Run `tools/playtest/access-leak-check.rb` over the capture file. It must report no finding: it judges the `/log_rows` answers (no secret, seed rows and play rows with exactly their own seven keys, no raw id, no stored-only key); it holds no rule about the anomaly.
 In the report: the four rows as the page showed them, the three wrong-flag notes, the right flag's marked row, global and toast, what the reload showed, and the exit status of both checks.
 
 ## L2b gotchas
@@ -312,16 +312,17 @@ Stage L3 (`OPS_LOG_ROWS_PLAN.md` 5.1, 11 and 13.8). The lobby has a door north t
 
 Run these in the same game, after beat 19 (and the same capture file or files, ports 3014 to 3016). If the page was reloaded after beat 18 and the capture file changed, keep every capture file: the leak check in beat 27 names all of them, oldest first. The game for the whole run (beats 1 to 27) is made with `env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin test_ops_logs`.
 
-Every bridge call is in `docs/test-bridge.md` (`moveToNear`, `interact`, `enter`, `waitFor`, `dismiss` with a label, `mg clickSelector`, `mg type`, `mg close`, `eval`, `sync`, `access.footholds`, `access.networkView`). No beat sends a request of the script's own making: every row comes from the real controls.
+The calls are in `docs/test-bridge.md` (`moveToNear`, `interact`, `enterRoom`, `waitFor`, `dismiss` with a label, `mg clickSelector`, `mg type`, `eval`, `access.footholds()`, `access.networkView()`) or are session commands of the playtest skill: `enter` is the session command that calls `enterRoom`, and `{"cmd":"sync"}` is listed in the skill (not in `test-bridge.md`; if the session refuses it, `eval` `() => window.stateSync.sync()`). No beat sends a request of the script's own making: every row comes from the real controls.
 
-Notes for the tester from earlier runs:
+Notes from the code, not yet seen in a browser (L3 has not been run yet). Three points are marked UNVERIFIED: report what you see for each.
 
 - The plant prompt is a `gameConfirm` dialog, not a minigame: answer it with `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`). Always give `dismiss` a label: with no label and a minigame open it clicks that minigame's first control.
-- In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; a folder opens by clicking its icon. Feedback there is an in-window line, not a toast.
+- In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; a folder is meant to open by clicking its icon (UNVERIFIED: report what you see). Find the icons first: `eval` `() => [...document.querySelectorAll('.desktop-icon')].map(i => i.getAttribute('aria-label'))`, then `mg clickSelector` `.desktop-icon[aria-label="Letters"]` (the icon carries its name in `aria-label`; a share icon also has `data-resource-id`). Feedback there is an in-window line, not a toast.
 - A planted jack has no prompt: clicking it opens the box's network view with Unplug in its header (`[data-unplug]`). The network view's share row is `[data-resource-id="scanned_inbox"] [data-action="open"]`.
 - Joining: `interact` `guest_ap` opens the join minigame (`#password-field`, "Network key"); type with `{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`. A wrong key shows "That key was not accepted" and clears the field. The key is read from `wifi_note` (interact, read the text), as with every earned secret.
 - The viewer's hooks and handy reads are those of beats 8 to 13 (`tr.ol-row[data-row-id]`, `td[data-col]`, `[data-ops-log="count"]`, `button[data-action="refresh"]`).
-- Plant, unplug and replant at one jack merge into one row (`OK x2`) and a share or folder open is one row per folder: expect fewer rows than actions.
+- Every plant and every unplug is its own row (13.8: one per plant or unplug), so plant, unplug, plant reads up, down, up and never `OK x2`. A share or folder open is one row per folder: a repeat open adds none.
+- Beat 3 walks east from the lobby past the two new lobby objects (`kit_dropbox` at tile 8,4 and `guest_ap` at 8,6, both solid, the room is 10 tiles wide). Confirm that `enter` `office` works on the first attempt in the full run (beats 1 to 27); if it is blocked, move the two objects to the west half of the lobby and report it.
 
 ### 20. The network log before anything happens
 
@@ -329,11 +330,11 @@ Notes for the tester from earlier runs:
 
 ### 21. Planting the drop box writes one row
 
-`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Cancel"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`. The door and sign-in sources have no new row. Do not close the view yet.
+`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Cancel"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`, detail only the hidden `step` counter (`verify-run.rb` may show it; the page never does). The door and sign-in sources have no new row. Do not close the view yet.
 
 ### 22. Opening the share and its folder writes a row each, and a repeat none
 
-In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder's icon. Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
+In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder's icon (selector as in the notes above, `.desktop-icon[aria-label="Letters"]`). Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
 
 ### 23. Unplugging writes one row
 
@@ -345,11 +346,11 @@ In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]
 
 ### 25. Reading the network log
 
-`enter` `comms_room`, `moveToNear` and `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect exactly **five** rows, in this order (EVENT / IDENTITY / LOCATION / RESULT / detail): `NET_LINK_UP` / `-` / `Spare wall port` / `OK`; `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (empty detail); `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (detail `folder: Letters`); `NET_LINK_DOWN` / `-` / `Spare wall port` / `OK`; `NET_WIFI_JOIN` / `-` / `Guest access point` / `OK`. The count text reads `5 rows`. No cell holds a raw id (`comms_port`, `guest_ap`, `scanned_inbox`, `inbox_letters`), the key, `jack_`, `wifi_` or a file name: `eval` `() => /comms_port|guest_ap|scanned_inbox|inbox_letters|seabreeze|jack_|wifi_|letter\.txt|reminder/.test(document.querySelector('.ol-wrapper').innerText)` must return `false`. Click the third row: the detail grid shows EVENT `SHARE_OPEN`, LOCATION `Scanned-Inbox`, DETAIL `folder: Letters`. Close the viewer.
+`enter` `comms_room`, `moveToNear` and `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect exactly **five** rows, in this order (EVENT / IDENTITY / LOCATION / RESULT / detail; the order is the order the actions were done in): `NET_LINK_UP` / `-` / `Spare wall port` / `OK`; `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (empty detail); `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (detail `folder: Letters`); `NET_LINK_DOWN` / `-` / `Spare wall port` / `OK`; `NET_WIFI_JOIN` / `-` / `Guest access point` / `OK`. The count text should read `5 rows` (UNVERIFIED wording: report the exact text the page shows). No cell holds a raw id (`comms_port`, `guest_ap`, `scanned_inbox`, `inbox_letters`), the key, `jack_`, `wifi_` or a file name: `eval` `() => /comms_port|guest_ap|scanned_inbox|inbox_letters|seabreeze|jack_|wifi_|letter\.txt|reminder/.test(document.querySelector('.ol-wrapper').innerText)` must return `false`. Click the third row: the detail grid shows EVENT `SHARE_OPEN`, LOCATION `Scanned-Inbox`, DETAIL `folder: Letters`. Close the viewer.
 
 ### 26. Refresh after another plant
 
-With the viewer closed, in the comms room `interact` `comms_port` and answer `Plug it in` (the box is back in your inventory since beat 23); close the view that opens. Open `net_log_pc` again: still **five** rows, but the first now reads `OK x2` (the replant merged into its row). Click `button[data-action="refresh"]`: the rows stay as they are (check in the capture file that the refresh request carried `rev=` and was answered `{rev, unchanged:true}`). Close the viewer.
+With the viewer closed, in the comms room `interact` `comms_port` and answer `Plug it in` (the box is back in your inventory since beat 23); close the view that opens. Open `net_log_pc` again: now **six** rows: the five of beat 25 unchanged and a sixth, `NET_LINK_UP` / `-` / `Spare wall port` / `OK` (a plant after an unplug is its own row: the log reads up, down, up, and no row reads `x2`; the count text should read `6 rows`). Click `button[data-action="refresh"]`: the six rows stay as they are (check in the capture file that the refresh request carried `rev=` and was answered `{rev, unchanged:true}`). Close the viewer.
 
 ### 27. The other readers, then the checks
 
@@ -361,10 +362,10 @@ With the viewer closed, in the comms room `interact` `comms_port` and answer `Pl
 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/<oldest>.jsonl $S/<next>.jsonl ... $S/<newest>.jsonl
 ```
 
-It must say `VERDICT: no leaks found`. It judges the `/log_rows` answers as before and, for a share row, allows the share's name in the LOCATION cell only. In the report: each beat's rows as the page showed them, the exact count wording, the capture-file list in the order given, and both exit statuses.
+It must say `VERDICT: no leaks found`. It judges the `/log_rows` answers as before and, in a `SHARE_OPEN` row, allows the name of a share this run opened earlier (a successful `GET /container/<the share or an item in it>`) in the LOCATION cell, and nothing else. The capture files must therefore include the `/container` answers of beat 22 (they do when every file is named). In the report: each beat's rows as the page showed them, the exact count wording, the capture-file list in the order given, and both exit statuses.
 
 ## L3 gotchas
 
 - Beats 1 to 19 are unchanged: the new objects are in the lobby (the box at the east table, the access point, the card) and in a new room north of it; no beat of the earlier stages uses them, and the `network_log` source only takes `jack:`, `ap:` and `share:` places, so no earlier action writes to it.
-- `net_wifi_join` shows no identity and the guest network has no share, so the view after a join is empty by design.
+- `net_wifi_join` shows no identity and the guest network has no share, so the view after a join is empty by design (UNVERIFIED: the view after a join has not been seen in a browser; report it).
 - The jack, the access point and the share are not told apart by any sign: only the lobby sign names the comms room.

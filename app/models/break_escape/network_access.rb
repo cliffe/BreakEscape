@@ -280,13 +280,25 @@ module BreakEscape
       # A worn device planted in a jack comes off (Wearables)
       release_worn_unless_held!
       # Ops log L3: one row per plant (an already-planted jack returned above); the save below stores it
-      write_log_row!('net_link_up', as: nil, where: { kind: 'jack', id: jack_id })
+      write_log_row!('net_link_up', as: nil, where: { kind: 'jack', id: jack_id }, detail: link_step_detail)
       save!
 
       touched = [link_item_id(foothold_id), copy['id']]
       { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), first: first
                            }.merge(inventory_answer_fields(delta, touched)) }
     end
+
+    # Ops log L3 (L3b R1 T2): a stored-only counter (0 to 9, wrapping) on each link row, so a plant after an
+    # unplug is its own row and the log reads up, down, up. Ten link events is the merge window, so a
+    # wrapped value never meets its own earlier row. Counts only when the scenario declares log sources.
+    def link_step_detail
+      return nil unless has_attribute?(:scenario_data) && OpsLog.sources_for(scenario_data).any?
+
+      steps = player_state['netLinkSteps'].to_i + 1
+      player_state['netLinkSteps'] = steps
+      { 'step' => steps % 10 }
+    end
+    private :link_step_detail
 
     # POST /network/unplug (section 5). Returns { status:, body: }.
     def unplug_device!(jack_id, delta: false)
@@ -316,7 +328,7 @@ module BreakEscape
       # source (or the source's own route) went with the foothold, and the answer names it too
       ended += prune_unreachable_sessions!
       # Ops log L3: one row per unplug (a jack with nothing planted returned above); the save below stores it
-      write_log_row!('net_link_down', as: nil, where: { kind: 'jack', id: jack[:object]['id'].to_s })
+      write_log_row!('net_link_down', as: nil, where: { kind: 'jack', id: jack[:object]['id'].to_s }, detail: link_step_detail)
       save!
 
       device_id = device.is_a?(Hash) ? device['id'] : nil

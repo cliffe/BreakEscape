@@ -74,7 +74,7 @@ module BreakEscape
       assert_equal 'ok', row['result']
       assert_nil row['as']
       assert_equal({ 'kind' => 'jack', 'id' => 'comms_port' }, row['where'])
-      assert_nil row['detail']
+      assert_equal({ 'step' => 1 }, row['detail'], 'a stored-only step, never shown')
       assert_equal 1, (row['n'] || 1)
       assert_ops_log_holds_no_secret(Game.find(@game.id))
     end
@@ -133,15 +133,16 @@ module BreakEscape
       assert_equal %w[net_link_up net_link_down], rows.map { |r| r['event'] }
     end
 
-    test 'a plant, unplug and plant again are three rows or merged repeats, never more than the plugs' do
+    test 'a plant, unplug and plant again are three rows in order, one per plant or unplug (13.8)' do
       build
       take_drop_box
       plant('comms_port')
       unplug('comms_port')
       plant('comms_port')
-      counts = rows.sum { |r| r['n'] || 1 }
-      assert_equal 3, counts
-      assert_equal 2, rows.select { |r| r['event'] == 'net_link_up' }.sum { |r| r['n'] || 1 }
+      assert_equal %w[net_link_up net_link_down net_link_up], rows.map { |r| r['event'] }
+      assert_equal [1, 1, 1], rows.map { |r| r['n'] || 1 }
+      assert_equal 3, rows.map { |r| r.dig('detail', 'step') }.uniq.size, 'the stored-only step keeps the plants apart'
+      assert_equal ['', '', ''], Game.find(@game.id).log_rows_for_client('net')[:rows].map { |r| r[:detail] }, 'the step never reaches the reader'
     end
 
     # ---- join -------------------------------------------------------------------------

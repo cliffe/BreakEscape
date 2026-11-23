@@ -680,6 +680,7 @@ terminal over both sources, L2b seed rows and an anomaly, L3 a jack and a share 
   the copy row's identity per the default; the `/log_rows` answers carry exactly the seven row
   keys; `tools/playtest/access-leak-check.rb`, extended to cover `/log_rows` responses and
   skipping the IDENTITY cell of a typed row, reports no secret; a second open answers `unchanged`.
+  The check also allows a share's name in the LOCATION cell of a `SHARE_OPEN` row, only for a share with an earlier successful `GET /container/<that share or an item in it>` in the same run, and drops only that owner (a `/network` listing does not earn it).
 
 **Live proof:** the same run on the keyless dev server (port 3001), real path, screenshots of both
 logs.
@@ -1185,7 +1186,7 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 | `signin_refused` | `{ typed: }` | `pc` | `attempt_login!` locked-out return | blocked | none | `save_limit: true`, 10 per PC (result `blocked`), whatever username is typed | `save!` only when `r&.stored?` |
 | `session_end` | `{ account: }` | `pc` | `logout_session!`, explicit sign-out only | ok | none | one per session | the method's save |
 | `session_lock` | `{ account: }` | `pc` | `lock_session!`, past its refusals | ok | none | merged repeats | the method's save |
-| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none | one per plant or unplug | the methods' saves |
+| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | stored-only `step` (a 0 to 9 counter, never shown), so a plant after an unplug is its own row | one per plant or unplug | the methods' saves |
 | `net_wifi_join` | none (an access point logs a device) | `ap` | `join_network!` (L3) | ok | none | one per join | the method's save |
 | `share_folder_opened` | `{ account: }` of the oldest session that admits the share; nil when only a foothold admits it | `share` | `#container`, admitted share branch (L3) | ok | `folder` (`{ id: 'object' }`; absent when the share itself is opened) | `once: true`: one per folder and account | `save!` only when `r&.stored?` |
 
