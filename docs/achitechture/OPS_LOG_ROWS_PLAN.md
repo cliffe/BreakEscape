@@ -305,7 +305,7 @@ also carries the `foothold` or `from` the container passed to `ApiClient.contain
 
 One new route. The helper adds no route of its own; every write rides on an existing route.
 
-**`GET /games/:id/log_rows?object_id=<id>&rev=<rev>[&foothold=<id> or &from=<id>]`** (L2a)
+**`GET /games/:id/log_rows?object_id=<id>&rev=<rev>[&foothold=<id>, &from=<id> or &relay=1]`** (L2a)
 
 - On `set_game` (`games_controller.rb:27`) and authorised like `keyring`. Not under
   `with_game_lock`: it reads only.

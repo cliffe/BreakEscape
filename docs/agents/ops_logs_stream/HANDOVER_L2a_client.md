@@ -45,3 +45,16 @@ prompt (`patch-panel`, `social-authenticator-wiring`) read `minigames/index.js` 
 copy list, so they needed no change. A live proof should: open a `test_ops_logs` reader, see
 LOADING then rows, filter, select with the keyboard, refresh, open one from a PC desktop and over a
 foothold (check the request carries `from=` / `foothold=`), and confirm a locked reader shows NO ACCESS.
+
+## R1 changes (contracts that moved; see HANDOVER_L2a_client_fix.md and reviews/L2a_client_R1.md)
+- Route: `sprite.sourceRoute` is now `{ foothold }`, `{ from }` or `{ relay: true }`; `ApiClient.logRows`
+  sends `relay=1` (only when true, never with another route). `routeExtra()` also derives the route for a
+  folder under a sign-in PC from that PC's session (`folderRouteQuery`). The answer cache key includes it.
+- RESULT filter works on the result's word (`resultWord`: `FAIL x3` and `FAIL` are `FAIL`); a select filter
+  whose value left the list is cleared on a new answer (`pruneFilters`).
+- The stylesheet is linked from `show.html.erb` (`id="ops-log-css"`, `be_asset_path`); the module's injection
+  is a fallback only. The table no longer carries the `lf-log-*` classes.
+- `minigameData.title` is not in the schema: the frame title is the object's `name`, the caption the server's title.
+- A non-refusal failure (not 400/403/404) keeps held rows and shows `NO SIGNAL - REFRESH` in the status line.
+- Rendering: the filters, the table frame and the status bar are built once; an `unchanged` answer renders
+  nothing; a click moves `ol-row-selected` between existing rows; one row is a tab stop (arrows move it).

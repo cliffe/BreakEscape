@@ -319,3 +319,32 @@ Section 11's list (PLAN:656-662) against the file:
 ## Checks completed
 
 All eight. Not done: nothing was played in a browser beyond the one CSS probe; F3 is reasoned from the code.
+
+---
+
+## R1 outcomes (fixer, 2026-11-23)
+
+Commits: W = `e262b6848` (wiring), V = `5f07c654b` (validator), M = `140aef76e` (viewer, CSS, tests). The plan's
+route line (308) gained `&relay=1` and the viewer handover gained an "R1 changes" section in the commit that
+holds this table.
+
+| Finding | Outcome |
+|---|---|
+| F1 | Fixed, M. `lf-log-table` / `lf-log-row` dropped from the markup. Headless probe (long 32-char identity, long detail, 900px table): before, every cell `white-space: nowrap`, IDENTITY 165px holds 313px, LOCATION 294, DETAIL 726 over 183 (5 cells overflow, rows 26px high); after, `normal`, `scrollWidth == clientWidth` in all 6 cells, rows wrap to 98px; LOADING cell padding 3px/cursor pointer before, 14px/default after. |
+| F2 | Fixed, W (plus M tests). `logRows` sends `relay=1`; `routeExtra()` returns `{ relay: true }` for a relay desktop and derives the route for a folder from its source PC's session; cache key has relay; plan line 308 gained the param. |
+| F3 | Fixed, M. Unchanged answer renders nothing; click moves the mark between existing rows; filters, table frame and status bar built once; scrollTop and the focused row restored on a changed answer. Mutation-proved. |
+| F4 | Fixed, M. `pruneFilters` clears a select filter whose value left the options; the select reads ALL. Test. |
+| F5 | Fixed, M. Tests run the real `handleInteractiveItem` (sliced) for both types on foothold, from, relay and walk-up desktops, feed the stand-in to the real interactions branch and the viewer; log-filter arguments compared with a room's. Mutation-proved. |
+| m1 | Fixed, W. Link in `show.html.erb` with `be_asset_path`, `id="ops-log-css"`; module guard kept as fallback. |
+| m2 | Fixed, M. Only 400/403/404 read NO ACCESS; anything else keeps held rows and shows `NO SIGNAL - REFRESH` (or the same message row if nothing is held). Test. |
+| m3 | Accepted as the review's option, no code change: a reopen draws the cached rows for one round trip, then NO ACCESS if refused. Rows were earned earlier. Noted in HANDOVER_L2a_client_fix.md. |
+| m4 | Fixed, M. One test with a hostile value in all seven fields, the title and a second event. |
+| m5 | Fixed, M. A Map of id to row element replaces the selector; test with `a"]b`. |
+| m6 | Fixed, M. Roving tabindex (one row in the tab order, Up/Down move it), `role="grid"` and row/cell roles. Test. |
+| m7 | Fixed, M. `.ops-log-fill` and the restated 16px rule removed. |
+| m8 | Fixed, M. Lifecycle tests (answer after close, stale answer, abort on close), non-refusal, stale filter, relay, unchanged-identity, log_filter_terminal schema key lists compared, dead `assert.ok(sprite)` gone. The FakeEl selector limit no longer matters (no selector from ids). |
+| m9 | Fixed, M. RESULT options and filter use the result's word; the cell still shows `FAIL x3`. Test. |
+| m10 | Not changed, needs the integrator: the additive form (a line in `childExtras()`) is outside the fixer's file list (`sourceExtras()` / `routeExtra()` only) and the plan names `sourceExtras()`. The two rewritten `sourceExtras()` returns and the `lighting.js` regex are the lines to expect in a merge with the core stream. |
+| m11 | Fixed, W. `ops_log_terminal` in `DESK_COMPUTER_TYPES`. |
+| m12 | Fixed, W. `title` removed from the schema entry (test updated). The validator then rejects the undeclared key in `scenarios/test_ops_logs/scenario.json.erb`, so the one `"title": "Sign-in audit"` in that reader's `minigameData` was removed there too (the server's logSource title is unaffected). |
+| validator sprite exemption | Fixed, V. `ops_log_terminal` exempt like `capture_log`; new node test (3 cases; 2 fail on the old validator); `test_ops_logs` validates with 0 errors. |
