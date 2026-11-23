@@ -294,3 +294,15 @@ D2, D3, and assign S6.
 - Whether real missions' rooms carry `name` (the S1 ruling question) was checked only as far as the schema
   allowing it and m01, m02 using `door_sign`.
 - `access-leak-check.rb` was only grepped for `log_rows` (S6), not read.
+
+## R2 outcomes
+
+| Id | Outcome | Commit |
+|---|---|---|
+| S1 (scenario half) | Fixed: no new field, the rooms keep `door_sign`; `ops_logs_scenario_test` asserts `['Finance office', 'Security office']` exactly, and passes against the server fixer's door_sign fallback (in the working tree when run) | 3ed1f9667, 549dcd14f |
+| S3 | Fixed: `tr.ol-row[data-row-id]` in the three places, `nosignal` state listed | 549dcd14f |
+| S4 | Fixed: renamed, asserts `:success` on both reads, row counts and no new row; text-cell secret scan added to the door and sign-in tests | 3ed1f9667 |
+| S5 | Fixed: L1b text marked beats 1 to 7; `2 rows` and `2 of 4 rows` stated | 549dcd14f |
+| S6 | Built: rule `log_row` in `access_leak_scanner.rb` (answer and row keys, stored-only keys, registered log secrets from `OpsLog.compared_secrets`, raw scenario ids; SIGN_IN identity cell skipped); 8 unit tests and a real-answer test | c587d49c4 |
+| D1, D2, D3 | Fixed in `docs/ACCESS_AND_NETWORKS.md` and `README_scenario_design.md` | 9ad9caee6 |
+| A24 validator line | True (server fixer's validator errors are committed, c956f2f73); kept and extended with the `lockType: login` error | 9ad9caee6 |
