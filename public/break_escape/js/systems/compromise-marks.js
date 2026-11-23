@@ -41,8 +41,8 @@ const EVENTS = ['pc_signed_in', 'pc_signed_out', 'network_foothold_gained', 'net
 function keepsAuthoredLook(sprite) {
     if (Array.isArray(sprite?.scenarioData?.spriteVariants) && sprite.scenarioData.spriteVariants.length) return true;
     if (sprite?.scenarioData?.tint !== undefined && sprite.scenarioData.tint !== null) return true;
-    // A tint the sprite already carries that this module did not put there
-    return sprite?.isTinted === true && sprite.compromiseTint === undefined;
+    // A tint the sprite already carries that this module did not put there (the proximity highlight's blue is not one)
+    return sprite?.isTinted === true && sprite.compromiseTint === undefined && sprite.isHighlighted !== true;
 }
 
 export class CompromiseMarks {

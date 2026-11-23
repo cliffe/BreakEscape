@@ -42,6 +42,8 @@ function sprite(id, extra = {}) {
     const s = {
         active: true, x: 100, y: 200, displayWidth: 40, displayHeight: 30, originX: 0.5, originY: 0.5, depth: 7,
         scenarioData: { id, ...(extra.data || {}) }, isHighlighted: false, tintTopLeft: 0xffffff, calls,
+        // Phaser: a sprite is tinted whenever its tint is not white (a highlight is a real tint)
+        get isTinted() { return this.tintTopLeft !== 0xffffff; },
         setTint(c) { calls.push(['setTint', c]); this.tintTopLeft = c; },
         clearTint() { calls.push(['clearTint']); this.tintTopLeft = 0xffffff; },
         scene: {
@@ -202,6 +204,27 @@ test('while the sprite is highlighted the property changes at once but setTint a
     await sessions.signOut('pc1');
     assert.equal('compromiseTint' in pc, false);
     assert.deepEqual(pc.calls, []);
+});
+
+// S3 client R1 M1: the proximity highlight's blue is a real tint (isTinted), not an authored look
+test('M1: a mark that arrives while the sprite is highlighted still sets the property, and the red shows after restTint', () => {
+    const pc = sprite('pc1');
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    pc.isHighlighted = true;
+    pc.tintTopLeft = 0x4da6ff;
+    assert.equal(pc.isTinted, true);
+    sessions._replace('pc1', { ...TECH });
+    assert.equal(pc.compromiseTint, MARK_TINT, 'the highlight is not an authored tint');
+    assert.deepEqual(pc.calls, []);
+    // interactions.js restTint, at the end of the hover
+    pc.isHighlighted = false;
+    pc.setTint(pc.compromiseTint);
+    assert.equal(marks.list()[0].tint, MARK_TINT);
+    // a genuinely authored tint (not highlighted) still keeps its look
+    const other = sprite('pc2');
+    other.tintTopLeft = 0x00ff00;
+    assert.equal(other.isTinted, true);
 });
 
 test('syncRoom marks the sprites of a room made after the event; list() reads the live tint; no timer is set', () => {
