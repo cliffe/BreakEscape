@@ -1255,3 +1255,19 @@ test('K5: an unplug answer naming tokenExpiredPcIds carries them (only those amo
     assert.deepEqual(named('network_device_unplugged').map(e => e.data),
         [{ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['fin_pc', 'door_box'], tokenExpiredPcIds: ['fin_pc'] }]);
 });
+
+// S3 client R1 B1: the server sends `techniques` at the TOP LEVEL of the GET /network body (beside
+// `footholds`, network_technique_test.rb); the stored view keeps it, so the view can list the cards.
+test('B1: view() keeps the body\'s top-level techniques map on the stored view; a body without one gives the plain entry', async () => {
+    await reset();
+    const techniques = { card_factory: { name: 'Factory kit', worksOn: { class: 'web' }, itemId: 'card_factory_item' } };
+    window.ApiClient.network = async () => ({ footholds: [viewEntry], techniques });
+    const out = await links.view('jack_comms_port');
+    assert.deepEqual(out.view.techniques, techniques);
+    assert.deepEqual(links.lastView('jack_comms_port').techniques, techniques);
+    assert.equal(out.view.hosts.length, 2, 'the entry is otherwise whole');
+    window.ApiClient.network = async () => ({ footholds: [viewEntry] });
+    const plain = await links.view('jack_comms_port');
+    assert.equal('techniques' in plain.view, false);
+    assert.deepEqual(links.lastView('jack_comms_port'), viewEntry);
+});

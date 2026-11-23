@@ -286,10 +286,12 @@ export class NetworkLinks {
             this._dropFoothold(footholdId);
             return { ok: false, reason: 'gone' };
         }
-        this.views.set(footholdId, entry);
+        // The server sends the held cards' `techniques` map beside `footholds`; the view reads it from the stored view
+        const view = body.techniques && typeof body.techniques === 'object' ? { ...entry, techniques: body.techniques } : entry;
+        this.views.set(footholdId, view);
         const clean = cleanFoothold(entry);
         if (clean) this.footholds.set(clean.id, { ...(this.footholds.get(clean.id) || {}), ...clean });
-        return stale ? { ok: true, view: entry, stale: true, synced } : { ok: true, view: entry };
+        return stale ? { ok: true, view, stale: true, synced } : { ok: true, view };
     }
 
     _dropFoothold(footholdId) {
