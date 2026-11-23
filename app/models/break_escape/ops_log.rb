@@ -791,10 +791,19 @@ module BreakEscape
       out
     end
 
-    # The scenario `flags` values (VM flag strings): beyond the plan, the safe side.
+    # The scenario `flags` values (VM flag strings): beyond the plan, the safe side. Also the
+    # literal answers on a flag station's (or launch device's) own `flags` list: an entry with no
+    # colon is a literal, one with a colon is a reference (game.rb reads them the same way).
     register_secret_source(:scenario_flags) do |game|
-      flags = game.scenario_data.is_a?(Hash) ? game.scenario_data['flags'] : nil
-      flags.is_a?(Hash) ? flags.values.flat_map { |group| group.is_a?(Hash) ? group.values.flat_map { |v| OpsLog.scalar_secret(v) } : [] } : []
+      data = game.scenario_data
+      flags = data.is_a?(Hash) ? data['flags'] : nil
+      out = flags.is_a?(Hash) ? flags.values.flat_map { |group| group.is_a?(Hash) ? group.values.flat_map { |v| OpsLog.scalar_secret(v) } : [] } : []
+      OpsLog.each_scenario_hash(data) do |node|
+        next unless %w[flag-station launch-device].include?(node['type']) && node['flags'].is_a?(Array)
+
+        node['flags'].each { |f| out.concat(OpsLog.scalar_secret(f)) if f.is_a?(String) && !f.include?(':') }
+      end
+      out
     end
 
     # A wifi network's psk.

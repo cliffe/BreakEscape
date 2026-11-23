@@ -261,3 +261,21 @@ test('schema: logSources is declared, closed, and every registered event passes 
     assert.doesNotMatch('Bad Name', pattern);
     assert.doesNotMatch('x', pattern);
 });
+
+// R2 N2 and N3: the authored combination and cryptexConfig.answer copies, and a flag station's literal
+// answers, are in the validator's secret list (a reference with a colon is not).
+test('warning: authored answer copies and station literal flags are secrets (R2 N2, N3)', { skip }, () => {
+    const cases = [
+        { id: 'c1', type: 'safe', locked: true, lockType: 'combination', requires: '12-30-05', combination: 'lobby' },
+        { id: 'c2', type: 'safe', locked: true, lockType: 'cryptex', requires: 'OTHERWORD', cryptexConfig: { answer: 'lobby' } },
+        { id: 'c3', type: 'flag-station', flags: ['lobby'] }
+    ];
+    for (const object of cases) {
+        const s = clean();
+        s.rooms.vault.objects.push(object);
+        assertHas(warnings(issues(s)), 'equals a username');
+    }
+    const ref = clean();
+    ref.rooms.vault.objects.push({ id: 'c4', type: 'flag-station', flags: ['lobby:flag_a'] });
+    assert.deepEqual(warnings(issues(ref)).filter(w => w.includes('equals a username')), []);
+});

@@ -824,7 +824,7 @@ module BreakEscape
       door('badge_door', card_ids: ['VISITOR-07'])
       object('finance_cabinet', card_ids: [JAKE_CARD_ID])
       assert_empty badge_rows
-      # a refusal at a lock that is not in force writes no denied row either
+      # a swipe at a lock that is in force still logs its refusal
       door('power_room', card_ids: ['VISITOR-07'])
       assert_equal %w[denied], badge_rows.map { |r| r['result'] }
     end

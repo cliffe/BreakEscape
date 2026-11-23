@@ -370,6 +370,11 @@ def log_registered_secrets(data)
     case node
     when Hash
       add.call(node['creds']['password']) if node['creds'].is_a?(Hash)
+      add.call(node['combination']) if node['lockType'] == 'combination'
+      add.call(node['cryptexConfig']['answer']) if node['cryptexConfig'].is_a?(Hash)
+      if %w[flag-station launch-device].include?(node['type']) && node['flags'].is_a?(Array)
+        node['flags'].each { |f| add.call(f) if f.is_a?(String) && !f.include?(':') }
+      end
       LOG_CAPTURE_KEYS.each { |key| add.call(node[key]['secret']) if node[key].is_a?(Hash) }
       node.each_value { |v| walk.call(v) }
     when Array then node.each { |v| walk.call(v) }

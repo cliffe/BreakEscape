@@ -63,6 +63,9 @@ module BreakEscape
     FLAG_VALUE = 'flag{ops-log-flag-77}'.freeze
     COMBO_ANSWER = '12-30-05'.freeze
     CRYPTEX_ANSWER = 'LANTERN'.freeze
+    COMBO_COPY = '33-44-55'.freeze
+    CRYPTEX_COPY = 'EMBERGLOW'.freeze
+    STATION_FLAG = 'flag{station-literal-91}'.freeze
     DOOR_CODE = '7390'.freeze
     TWO_DIGIT = '47'.freeze
     WIFI_KEY = 'Lantern-Key-5509'.freeze
@@ -132,6 +135,9 @@ module BreakEscape
                          { 'id' => 'combo_box', 'type' => 'safe', 'name' => 'Combo box', 'locked' => true, 'lockType' => 'combination', 'requires' => COMBO_ANSWER },
                          { 'id' => 'combo_list', 'type' => 'safe', 'name' => 'Combo list', 'locked' => true, 'lockType' => 'combination', 'requires' => [41, 7, 9] },
                          { 'id' => 'cryptex_box', 'type' => 'safe', 'name' => 'Cryptex', 'locked' => true, 'lockType' => 'cryptex', 'requires' => CRYPTEX_ANSWER },
+                         { 'id' => 'combo_copy_box', 'type' => 'safe', 'name' => 'Copy combo', 'locked' => true, 'lockType' => 'combination', 'requires' => '99-98-97', 'combination' => COMBO_COPY },
+                         { 'id' => 'cryptex_copy_box', 'type' => 'safe', 'name' => 'Copy cryptex', 'locked' => true, 'lockType' => 'cryptex', 'requires' => 'OTHERWORD', 'cryptexConfig' => { 'answer' => CRYPTEX_COPY } },
+                         { 'id' => 'flag_stn', 'type' => 'flag-station', 'name' => 'Flag station', 'flags' => [STATION_FLAG, 'vm_one:flag_a'] },
                          { 'id' => 'cap_box', 'type' => 'safe', 'name' => 'Cap box', 'capture' => { 'secret' => CAPTURE_SECRET } },
                          { 'id' => 'key_box', 'type' => 'safe', 'name' => 'Key box', 'locked' => true, 'lockType' => 'key', 'requires' => 'brass_key' },
                          { 'id' => 'card_door_box', 'type' => 'safe', 'name' => 'Card box', 'locked' => true, 'lockType' => 'rfid', 'requires' => ['master_card'] },
@@ -303,6 +309,21 @@ module BreakEscape
       game.save!
       again = Game.find(game.id)
       assert_equal before, [again.player_state['opsLogSaves'], again.player_state['opsLog'], again.updated_at]
+    end
+
+    test 'save_limit false neither spends the counter nor is stopped by a spent one (R1 m4 f)' do
+      game = make_game
+      at(T0) do
+        10.times { |i| write(game, 'tst_signin', as: typed("u#{i}"), where: pc('recep_pc'), result: 'denied', save_limit: true) }
+        key = game.player_state['opsLogSaves'].keys.first
+        assert_equal [10, T0], game.player_state['opsLogSaves'][key]
+        assert_nil write(game, 'tst_signin', as: typed('over'), where: pc('recep_pc'), result: 'denied', save_limit: true)
+        assert write(game, 'tst_signin', as: typed('free'), where: pc('recep_pc'), result: 'denied', save_limit: false).stored?
+        assert_equal [10, T0], game.player_state['opsLogSaves'][key]
+      end
+      fresh = make_game
+      at(T0) { 3.times { |i| write(fresh, 'tst_signin', as: typed("n#{i}"), where: pc('recep_pc'), result: 'denied', save_limit: false) } }
+      assert_empty fresh.player_state['opsLogSaves'].to_h
     end
 
     test 'save_limit window edges: t + 299_999 does not store, t + 300_000 stores and starts a new window' do
@@ -686,6 +707,11 @@ module BreakEscape
       # R1 M1: a combination and a cryptex lock's `requires`, and a door entry's own `requires` on an
       # inherited lock; R1 m4/rulings: NPC passwords in top-level npcs and phoneNPCs, and flag values.
       [COMBO_ANSWER, '41-7-9', '4179', CRYPTEX_ANSWER, DOOR_CODE, TOP_NPC_PASSWORD, PHONE_NPC_PASSWORD, FLAG_VALUE].each do |secret|
+        assert_includes values, secret
+      end
+      # R2 N2: authored answer copies that differ from `requires`; R2 N3: a literal answer on a flag
+      # station's own `flags` list (a reference there is not a secret).
+      [COMBO_COPY, CRYPTEX_COPY, STATION_FLAG].each do |secret|
         assert_includes values, secret
       end
       %w[j_price guard1 lobby vault recep_pc brass_key master_card Mrs\ Moo 00:11:22:33:44:55 j_price_npc].each do |plain|
