@@ -22,7 +22,11 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
 
 ## State (update after every step)
 
-- 2026-11-23: worktree, brief and this note created. L1a item 1 builder launched (Sonnet).
+- 2026-11-23: worktree, brief and this note created.
+- L1a item 1 DONE: `12cdea6b2`, `7121aa04e` (golden mechanism, two fixtures; note
+  `ops_core_build/HANDOVER_L1a_1.md`). Orchestrator replay check was queued on the test lock.
+- L1a items 2 to 4 builder running (Sonnet): helper, events file, secret registry; note will be
+  `HANDOVER_L1a_2-4.md`. Next: items 5 to 8 builder, then L1b, then review R1 (fable52L).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
