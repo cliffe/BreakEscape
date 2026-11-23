@@ -18,6 +18,9 @@ export async function run(page, bridge, mark, narrowPx) {
   for (let i = 0; i < 80; i++) { if (await page.evaluate(() => !!document.querySelector('.game-display-dialog'))) break; await sleep(100); }
   mark('panel-open'); await sleep(700);
   mark('rects', { dialog: await rectOf(page, '.game-display-dialog'), title: await rectOf(page, '.game-display-title') });
+  // Redact the "Hardwired to the SIS ... Not on SCADA." sentence from the DOM (spoiler list: never on screen); the edit then needs no two-strip crop.
+  mark('redact', await page.evaluate(() => { let n = 0; const w = document.createTreeWalker(document.querySelector('.game-display-dialog'), NodeFilter.SHOW_TEXT);
+    for (let t = w.nextNode(); t; t = w.nextNode()) { if (/Hardwired to the SIS/i.test(t.nodeValue)) { t.nodeValue = t.nodeValue.replace(/Hardwired to the SIS[^.]*\.(\s*Not on SCADA\.)?/i, ''); n++; } } return n; }));
   const text = await page.evaluate(() => (document.querySelector('.game-display-dialog') || document.body).innerText.replace(/\n+/g, ' | ').slice(0, 700));
   mark('text', text); mark('spoiler-read', { has38: /3\.8/.test(text), hasSIS: /SIS/i.test(text), hasAlarmWord: /alarm/i.test(text) });
   const t1 = Date.now();
