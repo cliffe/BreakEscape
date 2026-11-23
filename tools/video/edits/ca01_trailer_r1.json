@@ -497,7 +497,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks Card-open must fall at source 4-6 s (about 5 s) so v8a plays over the list and v8b over the open card; if it lands later, move the in point later.",
+   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks Card-open must fall at source 4-6 s (about 5 s) so v8a plays over the list and v8b over the open card; if it lands later, move the in and out points later by the same amount.",
    "voPos": {
     "16:9": "top"
    },
