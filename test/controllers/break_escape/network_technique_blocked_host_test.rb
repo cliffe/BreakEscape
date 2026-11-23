@@ -17,8 +17,13 @@ module BreakEscape
 
     # The S3 fixture with sam_pc on a policy that blocks remote sign-in, a folder on its desktop,
     # and (optionally) no screen or an off-switch.
-    def blocked_scenario(policy: 'hardened', headless: false, off: false, away: false)
+    def blocked_scenario(policy: 'hardened', headless: false, off: false, away: false, outage: false)
       data = NOS.techniques_scenario
+      # outage: the office network goes down while the global `office_down` is true
+      if outage
+        data['networks']['office_lan']['offWhen'] = 'office_down'
+        data['globalVariables'] = data['globalVariables'].merge('office_down' => false)
+      end
       pc = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }
       pc['policy'] = policy if policy
       pc['headless'] = true if headless
@@ -105,7 +110,7 @@ module BreakEscape
       assert_response :forbidden
     end
 
-    test 'a password session made at the keyboard is refused through a foothold, and the technique card changes nothing for it' do
+    test 'a password session made at the keyboard is refused through a foothold' do
       blocked_game(room: 'desk_room')
       sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD)
       assert_response :success, response.body
@@ -341,12 +346,198 @@ module BreakEscape
       assert_refused 'unreachable'
     end
 
-    test 'a lost route refuses a technique session as for any session' do
+    test 'a network outage over the route keeps a technique session, refuses it while down and serves it again after' do
+      blocked_game(second: true, outage: true)
+      grant!
+      set_global('office_down', true)
+      assert_equal 'technique', state['sessions']['sam_pc']['via'], 'the session is kept'
+      desktop(foothold: OFFICE)
+      assert_response :forbidden
+      refute_includes response.body, 'sam_local'
+      folder(foothold: OFFICE)
+      assert_response :forbidden
+      refute_includes response.body, 'FOLDER-NOTE'
+      assert_equal 'technique', state['sessions']['sam_pc']['via']
+      set_global('office_down', false)
+      desktop(foothold: OFFICE)
+      assert_served
+      assert_includes response.body, 'sam_local'
+      folder(foothold: OFFICE)
+      assert_served
+      assert_includes response.body, 'FOLDER-NOTE'
+    end
+
+    test 'during an outage the host row is in a down block with heldAs in the session\'s own foothold view only' do
+      blocked_game(second: true, outage: true)
+      grant!
+      set_global('office_down', true)
+      [OFFICE, SECOND].each do |foothold|
+        block = view_blocks(foothold).find { |b| b['route'] == 'down' }
+        assert block, "a down block in #{foothold}"
+        row = block['hosts'].find { |h| h['id'] == 'sam_pc' }
+        assert_nil row['session'], foothold
+        assert_nil row['openHere'], foothold
+        if foothold == OFFICE
+          assert_equal 'Sam Okafor', row['heldAs']
+        else
+          assert_nil row['heldAs'], 'the second foothold\'s view names no account'
+        end
+      end
+      set_global('office_down', false)
+      assert_equal true, sam_row['session']['openHere']
+      assert_nil sam_row(SECOND)['session']
+    end
+
+    # ---- T1 to T4, T9, T10, T12 (security review R1) -------------------------------------------------
+
+    test 'T1 a host that is off through the other foothold answers unreachable and lists nothing for it' do
+      blocked_game(second: true, off: true)
+      grant!
+      set_global('lab_off', true)
+      desktop(foothold: SECOND)
+      assert_refused 'unreachable'
+      folder(foothold: SECOND)
+      assert_response :forbidden
+      other = sam_row(SECOND)
+      assert_nil other['heldAs']
+      assert_nil other['session']
+      assert_nil other['openHere']
+      # through its own foothold the same host answers not_responding and names the account
+      desktop(foothold: OFFICE)
+      assert_refused 'not_responding'
+      assert_equal 'Sam Okafor', sam_row(OFFICE)['heldAs']
+      assert_equal 'technique', state['sessions']['sam_pc']['via']
+    end
+
+    test 'T2 a technique record whose foothold is unheld, or an invented foothold named for a real session, is refused' do
+      blocked_game
+      seed_session({ 'id' => 'sam', 'via' => 'technique', 'foothold' => 'jack_gone', 'access' => 'user' })
+      desktop(foothold: 'jack_gone')
+      assert_response :forbidden
+      refute_includes response.body, 'sam_local'
+      folder(foothold: 'jack_gone')
+      assert_response :forbidden
+      refute_includes response.body, 'FOLDER-NOTE'
+      assert_nil sam_row['session'], 'the held foothold lists nothing for a record through another one'
+      # a real session, the request naming an id that is no foothold at all
       blocked_game
       grant!
-      unplug('comms_port')
+      %w[jack_gone jack_invented sam_pc].each do |invented|
+        desktop(foothold: invented)
+        assert_response :forbidden, invented
+        refute_includes response.body, 'sam_local'
+        folder(foothold: invented)
+        assert_response :forbidden, invented
+        refute_includes response.body, 'FOLDER-NOTE'
+      end
       desktop(foothold: OFFICE)
-      assert_refused 'no_session'
+      assert_served
+    end
+
+    test 'T3 a technique session replaced by a typed sign-in at the keyboard is a plain password session' do
+      blocked_game(room: 'desk_room')
+      grant!
+      sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD)
+      assert_response :success, response.body
+      record = state['sessions']['sam_pc']
+      assert_equal 'password', record['via']
+      %w[foothold access technique from].each { |key| refute record.key?(key), key }
+      desktop(foothold: OFFICE)
+      assert_refused 'unreachable'
+      folder(foothold: OFFICE)
+      assert_response :forbidden
+      row = sam_row
+      assert_nil row['session']
+      assert_nil row['openHere']
+      assert_nil row['heldAs']
+    end
+
+    test 'T3 reverse: a keyboard password session, then the card, then the foothold opens it' do
+      blocked_game(room: 'desk_room')
+      sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD)
+      assert_response :success, response.body
+      desktop(foothold: OFFICE)
+      assert_refused 'unreachable'
+      grant!
+      record = state['sessions']['sam_pc']
+      assert_equal 'technique', record['via']
+      assert_equal OFFICE, record['foothold']
+      desktop(foothold: OFFICE)
+      assert_served
+      assert_includes response.body, 'sam_local'
+    end
+
+    test 'T4 a relay route at a technique session is refused with no contents' do
+      blocked_game
+      grant!
+      get game_path('container/sam_pc'), params: { relay: '1' }, as: :json
+      assert_response :forbidden
+      refute_includes response.body, 'sam_local'
+      get game_path('container/sam_folder'), params: { relay: '1' }, as: :json
+      assert_response :forbidden
+      refute_includes response.body, 'FOLDER-NOTE'
+      get game_path('container/sam_pc'), params: { relay: '1', foothold: OFFICE }, as: :json
+      assert_response :forbidden
+      refute_includes response.body, 'sam_local'
+      assert_equal 'technique', state['sessions']['sam_pc']['via']
+    end
+
+    test 'T9 the predicate refuses a technique record with no foothold, a nil one or an empty one' do
+      blocked_game
+      game = Game.find(@game.id)
+      base = { 'id' => 'sam', 'via' => 'technique' }
+      [base, base.merge('foothold' => nil), base.merge('foothold' => ''), base.merge('foothold' => '  ')].each do |record|
+        [OFFICE, SECOND, '', nil, '  '].each do |asked|
+          refute game.technique_session_through?(record, asked), "#{record.inspect} asked #{asked.inspect}"
+        end
+      end
+      refute game.technique_session_through?(base.merge('foothold' => OFFICE), 'jack_other')
+      refute game.technique_session_through?(base.merge('foothold' => OFFICE, 'via' => 'credential'), OFFICE)
+      refute game.technique_session_through?(base.merge('foothold' => OFFICE, 'via' => 'Technique'), OFFICE)
+    end
+
+    test 'T10 a technique session away from the PC is refused for every odd route parameter' do
+      blocked_game(room: 'lobby')
+      grant!
+      own = CGI.escape(OFFICE)
+      odd = ['foothold=', 'foothold=%20', "foothold[]=#{own}", 'foothold[a]=b', 'from', 'relay=0', "foothold=#{own}&from=lena_pc",
+             "foothold=#{own}&relay=1", 'from=%20']
+      odd.each do |query|
+        %w[sam_folder sam_pc].each do |id|
+          get "#{game_path("container/#{id}")}?#{query}", as: :json
+          # a bare `from` is a malformed parameter: the desktop answers 400 "malformed", the folder 403
+          assert_response(query == 'from' && id == 'sam_pc' ? :bad_request : :forbidden, "#{id}?#{query}")
+          refute_includes response.body, 'FOLDER-NOTE', "#{id}?#{query}"
+          refute_includes response.body, 'sam_local', "#{id}?#{query}"
+        end
+      end
+      assert_equal 'technique', state['sessions']['sam_pc']['via']
+      folder(foothold: OFFICE)
+      assert_served
+    end
+
+    test 'T10 the same array foothold for the desktop of a blocked host is refused beside the PC too' do
+      blocked_game(room: 'desk_room', second: true)
+      grant!
+      get "#{game_path('container/sam_pc')}?foothold[]=#{CGI.escape(OFFICE)}", as: :json
+      assert_response :forbidden
+      refute_includes response.body, 'sam_local'
+      get "#{game_path('container/sam_pc')}?foothold[]=#{CGI.escape(SECOND)}", as: :json
+      assert_response :forbidden
+    end
+
+    test 'T12 a host scan answers openHere only through the session\'s own foothold' do
+      blocked_game(second: true)
+      grant!
+      ops_scan(OFFICE, host_id: 'sam_pc')
+      assert_response :success, response.body
+      assert_equal true, response.parsed_body['host']['session']['openHere']
+      assert_equal 'technique', response.parsed_body['host']['session']['via']
+      ops_scan(SECOND, host_id: 'sam_pc')
+      assert_response :success, response.body
+      assert_nil response.parsed_body['host']['session']
+      assert_nil response.parsed_body['host']['openHere']
+      assert_nil response.parsed_body['host']['heldAs']
     end
 
     # ---- an allowed host behaves as before ---------------------------------------------------------------

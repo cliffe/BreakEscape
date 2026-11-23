@@ -156,6 +156,20 @@ module NetworkOpsScenario
     data
   end
 
+  # The S3 fixture with a host beyond the pivot (security review R1 T6, T7): sv_fs02 on server_net, which
+  # no foothold reaches by itself, gets an admin service with one weakness that grants a session as Ian.
+  # A technique session there is reached through a session at another PC (lena_pc).
+  PIVOT_FINDING = 'sv_fs02.admin.default_admin'.freeze
+
+  def pivot_techniques_scenario(**options)
+    data = techniques_scenario(**options)
+    sv = data['rooms']['server_room']['objects'].find { |o| o['id'] == 'sv_fs02' }
+    sv['services'] = [service('admin', 8443)]
+    sv['services'].first['weaknesses'] = [weak('default_admin', 'default_creds', 'low', 'grants' => { 'session' => { 'account' => 'ian', 'access' => 'user' } })]
+    sv['contents'] = [{ 'id' => 'sv_local', 'type' => 'text_file', 'name' => 'ops.txt', 'takeable' => false, 'text' => 'SV-LOCAL-TEXT' }]
+    data
+  end
+
   CLI_FIXTURE = File.expand_path('../fixtures/files/network_ops_cli.json', __dir__)
   CLI_STRINGS = %w[10.20.0.0/24 10.20.0.15 10.20.0.21 10.20.0.1 10.20.0.77 10.20.0.40 10.30.0.0/28 10.30.0.2 10.30.0.9 192.168.7.5
                    SVC-BANNER-TEXT BANNER-ONLY-TEXT BENCH-BANNER-TEXT].freeze

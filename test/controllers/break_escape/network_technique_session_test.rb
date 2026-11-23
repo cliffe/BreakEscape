@@ -25,10 +25,10 @@ module BreakEscape
       data
     end
 
-    def session_game(off: false, room: 'desk_room')
+    def session_game(off: false, room: 'desk_room', second: false)
       cards = [card_entry('card_factory'), BADUSB.dup]
       hold_state = { 'inventory' => cards, 'currentRoom' => room, 'unlockedRooms' => NetworkRequests::OPEN_ROOMS + %w[server_room] }
-      techniques_game(data: scenario(off: off), state: hold_state)
+      techniques_game(data: scenario(off: off), state: hold_state, second: second)
     end
 
     def state
@@ -169,6 +169,95 @@ module BreakEscape
       desktop(foothold: OFFICE)
       assert_response :forbidden
       assert_equal 'no_session', response.parsed_body['reason']
+    end
+
+    test 'T11 after the weakness is fixed a use through a second foothold is refused fixed and the record stays on the first' do
+      session_game(second: true)
+      grant!('sam_pc.web.patched_one')
+      record = state['sessions']['sam_pc'].dup
+      set_global(NOS::PATCHED_GLOBAL, true)
+      body = ops_technique(NOS::SECOND_JACK, 'sam_pc.web.patched_one', 'card_factory')
+      assert_response :unprocessable_entity
+      assert_equal 'fixed', body['reason']
+      assert_equal record, state['sessions']['sam_pc']
+      assert_equal OFFICE, state['sessions']['sam_pc']['foothold']
+      # the exact repeat through the first foothold still answers already
+      again = ops_technique(OFFICE, 'sam_pc.web.patched_one', 'card_factory')
+      assert_equal true, again['already']
+    end
+
+    # ---- T6, T7: a pivot through and to a technique session --------------------------------------------
+
+    def pivot_game
+      techniques_game(data: NOS.pivot_techniques_scenario, state: { 'currentRoom' => 'server_room' })
+    end
+
+    # A session at lena_pc opens server_net; the finding on sv_fs02 is found and confirmed over it.
+    def reach_sv_fs02
+      pivot_through_lena
+      ops_scan(OFFICE, network_id: 'server_net')
+      ops_scan(OFFICE, host_id: 'sv_fs02')
+      assert_response :success, response.body
+      ops_check(OFFICE, host_id: 'sv_fs02', service: 'admin')
+      ops_confirm(OFFICE, NOS::PIVOT_FINDING)
+      assert_response :success, response.body
+    end
+
+    test 'T6 a technique session reached over a pivot is pruned when the pivot session ends' do
+      pivot_game
+      reach_sv_fs02
+      ops_technique(OFFICE, NOS::PIVOT_FINDING, 'card_factory')
+      assert_response :success, response.body
+      assert_equal 'technique', state['sessions']['sv_fs02']['via']
+      assert_equal OFFICE, state['sessions']['sv_fs02']['foothold']
+      get game_path('container/sv_fs02'), params: { foothold: OFFICE }, as: :json
+      assert_response :success, response.body
+      assert_includes response.body, 'SV-LOCAL-TEXT'
+      post game_path('logout'), params: { pc_id: 'lena_pc' }, as: :json
+      assert_response :success, response.body
+      assert_nil state['sessions']['lena_pc']
+      assert_nil state['sessions']['sv_fs02'], 'the pivot is gone, so is the session reached over it'
+      get game_path('container/sv_fs02'), params: { foothold: OFFICE }, as: :json
+      assert_response :forbidden
+      refute_includes response.body, 'SV-LOCAL-TEXT'
+    end
+
+    test 'T6 a technique session through a pivot also ends when the pivot foothold is unplugged' do
+      pivot_game
+      reach_sv_fs02
+      ops_technique(OFFICE, NOS::PIVOT_FINDING, 'card_factory')
+      assert_response :success, response.body
+      unplug('comms_port')
+      assert_nil state['sessions']['sv_fs02']
+      assert_nil state['sessions']['lena_pc']
+    end
+
+    test 'T7 a technique session at sam_pc pivots to the second network and serves the account its share, and no other' do
+      session_game
+      get game_path('network'), params: { foothold: OFFICE }, as: :json
+      before = response.parsed_body['footholds'].first['networks'].map { |b| b['id'] }
+      refute_includes before, 'server_net'
+      grant!
+      after = view_blocks(OFFICE)
+      block = after.find { |b| b['id'] == 'server_net' }
+      assert block, 'the session at sam_pc is a pivot to server_net'
+      assert_equal 'up', block['route']
+      # the share on the desktop of the technique session is served as Sam (staff), not as finance or it
+      get game_path('container/sam_pc'), params: { foothold: OFFICE }, as: :json
+      assert_response :success, response.body
+      shares = response.parsed_body['contents'].select { |c| c['type'] == 'network_share' }.map { |c| c['id'] }
+      assert_equal %w[scanned_inbox], shares
+      get game_path('container/scanned_inbox'), params: { foothold: OFFICE }, as: :json
+      assert_response :success, response.body
+      assert_includes response.body, NetworkModelScenario::INBOX_LETTER_NAME
+      get game_path('container/no_such_share'), params: { foothold: OFFICE }, as: :json
+      invented = response.status
+      %w[ledger_archive backup_vault].each do |share|
+        get game_path("container/#{share}"), params: { foothold: OFFICE }, as: :json
+        assert_equal invented, response.status, 'a share the account may not open answers as one that does not exist'
+        refute_includes response.body, NetworkModelScenario::HANDOVER_NAME
+        refute_includes response.body, NetworkModelScenario::BACKUP_NOTE_TEXT
+      end
     end
 
     # ---- a finished NPC borrow (plan 5.4, "An NPC at the PC"; security review R1 F1, T8) ----------------
