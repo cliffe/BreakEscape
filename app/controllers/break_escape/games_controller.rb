@@ -3262,6 +3262,9 @@ module BreakEscape
 
       if route.nil?
         session = @game.access_sessions[pc_id.to_s]
+        # Network ops S3 (plan 5.4): a technique session's folders open only where the keyboard desktop would
+        return @game.desktop_request_allowed?(info, nil) if session.is_a?(Hash) && session['via'] == 'technique'
+
         return !@game.relay_session?(session)
       end
       @game.desktop_request_allowed?(info, route)

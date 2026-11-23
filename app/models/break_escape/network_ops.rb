@@ -446,15 +446,6 @@ module BreakEscape
 
     # --- S3: use a technique card (plan 5.4) ---------------------------------------------------
 
-    # The technique card registry is server-only (plan section 7): deleted by name with `networks`
-    # and `hosts`. NetworkOps is included after NetworkAccess, so this extends its list of withheld
-    # keys (the plan's one-word addition to WITHHELD_SCENARIO_KEYS belongs in network_access.rb).
-    def withhold_network_keys!(filtered)
-      super
-      filtered.delete('techniques')
-      filtered
-    end
-
     # GET /network gains a top-level `techniques` map for the cards the player holds, and nothing
     # else changes (a game holding no card answers exactly as before). NetworkOps is included after
     # NetworkAccess, so this wraps its builder.
@@ -484,16 +475,6 @@ module BreakEscape
         out[technique_id] = row
       end
       out.sort.to_h
-    end
-
-    # A held session on a host row carries `access: "admin"` when its level is admin and no key
-    # otherwise (plan section 0), through the same reader as the session answer. Wraps NetworkAccess's
-    # builder (NetworkOps is included after it); step 11's `openHere` work edits that builder itself.
-    def host_row(pc, foothold_id = nil)
-      row = super
-      held = row['session']
-      row['session'] = held.merge('access' => 'admin') if held.is_a?(Hash) && client_access_level(pc['id']) == 'admin'
-      row
     end
 
     # The registry key a held card names, or nil. The item must be held, unforged, with its id and
