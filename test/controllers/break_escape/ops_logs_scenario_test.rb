@@ -162,6 +162,15 @@ module BreakEscape
       login(DANA_PASSWORD)
     end
 
+    # No registered secret in the text cells of an answer (not the ids or the rev: a short secret could match a hex id).
+    def assert_answer_holds_no_secret(body)
+      secrets = OpsLog.compared_secrets(fresh)
+      assert_includes secrets, DANA_PASSWORD
+      (body['rows'] + [{ 'where' => body['title'] }]).each do |r|
+        assert_nil OpsLog.find_secret_hit(secrets, r.slice('as', 'where', 'detail')), "a secret in #{r.inspect}"
+      end
+    end
+
     def swipe_security
       post unlock_game_url(@game), params: { targetType: 'door', targetId: 'security', method: 'rfid', card_ids: [DANA_CARD] }, as: :json
       assert_response :success, response.body
@@ -191,8 +200,10 @@ module BreakEscape
       assert_equal 'BADGE', row['event']
       assert_equal 'OK', row['result']
       assert_equal 'Dana Reyes', row['as'], 'no source sets showCardHolder, so the holder shows (plan option d)'
-      assert_not_equal '-', row['where']
+      assert_equal ['Finance office', 'Security office'], body['rows'].map { |r| r['where'] },
+                   'a door shows the room name, or the sign on its door (what the player reads), never the kind word or an id'
       assert_equal '', row['detail']
+      assert_answer_holds_no_secret(body)
       assert_kind_of Integer, row['elapsedMs']
       assert_not_includes response.body, 'SIGN_IN'
     end
@@ -212,6 +223,7 @@ module BreakEscape
       assert_equal 'route: keyboard, method: password', rows[1]['detail']
       assert(rows.all? { |r| r.keys.sort == SEVEN_KEYS })
       assert_equal rows.map { |r| r['elapsedMs'] }.sort, rows.map { |r| r['elapsedMs'] }
+      assert_answer_holds_no_secret(body)
       assert_not_includes response.body, 'BADGE'
       assert_not_includes response.body, DANA_PASSWORD
       assert_not_includes response.body, DANA_CARD
@@ -243,13 +255,17 @@ module BreakEscape
       assert_empty read('signin_log_pc')['rows']
     end
 
-    test 'the readers answer nothing on a forged route and leave no row of their own' do
+    test 'a read writes no row, with or without a route param, and an unscoped reader ignores the route' do
       build
       play_the_beats
       swipe_security
       before = door_rows.size + signin_rows.size
-      read('door_log_pc')
-      read('signin_log_pc', foothold: 'x')
+      plain = read('door_log_pc')
+      assert_response :success
+      routed = read('signin_log_pc', foothold: 'x')
+      assert_response :success, 'both readers are room objects, so a route param names nothing and is ignored (the refusal by route is in log_rows_test)'
+      assert_equal 2, plain['rows'].size
+      assert_equal 2, routed['rows'].size
       assert_equal before, door_rows.size + signin_rows.size
     end
 
