@@ -21,9 +21,9 @@ Seeds (the same strings as `SEEDS` in `_ca19.mjs`; ST = `episode_e19_malware_and
 
 - t01, t02, t02b: proved earlier (commit bb6a8f470); t02b narrow frame not viewed, strip wrap noted above.
 - t03 and t03b: ran clean (20 marks); frames c1-picked and reveal viewed. Picks highlight, montage shows the two trimmed cards with tags hidden and neutral borders, `Continue` present. The "Where it led" strip step is active.
-- t04 (flip) clean; the intro is hidden and the "Defend" panel with `Open the inbox` frame viewed. t04b ran only as a script (not run).
+- t04 (flip) clean; the intro is hidden and the "Defend" panel with `Open the inbox` frame viewed. t04b (follow-up, flip seed then Continue) ran clean, 10 marks: Defend panel with `Open the inbox`, bezel 560 px, strip wraps to two rows at y386 to y498 (9:16 must cover the strip, about y386 to y498), intro box hidden (intro-proof hidden), no portrait, nothing spoiled; frames open and flipped viewed.
 - t05, t05b clean; list and card frames viewed (narrow card viewed).
-- t06 clean; the wide frame viewed; t06b ran, frame not viewed.
+- t06 clean; the wide frame viewed; t06b ran and its frame was viewed (follow-up): "Before the debrief" panel, bezel 560 px, strip two rows, `Look up` and `Carry on` shown, never pressed (kit_ca19_out and there stayed false), no portrait.
 - t07: POST /tts 200 audio/mpeg for both barks. Timing from the press: `out` +0.05 s, `there` (Niamh arrived) +1.92 to 1.95 s, `bark_start` +1.92 to 2.09 s, so bark_minus_press is about 2.0 s and the shot in = max(bark - 1.3, press + 0.1) is about press + 0.7 s (the walk is mostly in the shot; she is at her stop by +2 s). Niamh's audio is 5.12 s. **Darren's first sound is 4.4 to 4.5 s after Niamh's bark start**, 0.4 to 0.5 s BEFORE the script's out point (bark + 4.92) and the script's estimate (4.82); his audio is on a different element from Niamh's (no clipping, no play() wrap needed). The mute holds (maxVolWhilePlaying 0, peak 0, allMuted true in the second run). **Finding: Darren's bark also draws the DOM speech bar at the bottom ("Darren Price: Mine's still running ...") about 0.6 s before the cut.** The world-bubble hide does not touch it; the take now hides `#npc-speech-container` by CSS (proof `speech-bar-proof` visibility hidden). Niamh's bark did not draw that bar in frames t+2 to t+6. Niamh's position samples returned null (my accessor, not measured); in frames she stands at her stop beside Darren's desk by t+2, so the "walks back during her last 1.8 s" claim is not confirmed in frame (checked to t+9: still standing there, Darren walking at t+7). Her `needs: resume` fires 3 s after arrival, which is after the cut at bark + 4.92 only by about 1 s; re-check in the real run.
 
 ## Script changes needed
@@ -38,7 +38,7 @@ Seeds (the same strings as `SEEDS` in `_ca19.mjs`; ST = `episode_e19_malware_and
 
 - Real audio onsets (hook in/out, Niamh bark_start, Darren first sound) under capture with live audio.
 - Niamh's walk-back timing and her screen position (probe returned null).
-- t04b and t06b frames not viewed; t01 hook caption crop not recorded.
+- t01 hook caption crop not recorded.
 
 ## Recorded results
 
