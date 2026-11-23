@@ -110,7 +110,6 @@ Narrator: She goes out through the lock without looking back at him.
     Dr Adrian Tesseract: Nothing went at four. You were thorough.
 }
 Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you.
-Dr Adrian Tesseract: I had the blast door read one badge tonight. Yours. #delivery: quiet and matter-of-fact, a host who has gone to some trouble
 // FA row 72; alignment A6 moved it here from his case: the freeze.
 { m06_assets_seized:
     Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
@@ -276,8 +275,8 @@ Dr Adrian Tesseract: All four. Good. Now it's my turn.
     #exit_conversation
     -> parked
 -
-Dr Adrian Tesseract: At six it starts going out, city by city. Everything SAFETYNET ever found, free, with working detail.
-Dr Adrian Tesseract: Press this, and it goes everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month.
+Dr Adrian Tesseract: Your service spent decades hoarding the world's weak points. At six, I give them back. #delivery: calm and reasonable, almost generous
+Dr Adrian Tesseract: City by city. Or you press this, and they go everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month.
 Dr Adrian Tesseract: Hospitals, dispatch, water. In the hands of people who could never have got in before.
 + [You'd kill eleven hundred people to make a point.]
     Dr Adrian Tesseract: At the low end. I don't round down.
