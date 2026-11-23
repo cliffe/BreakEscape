@@ -610,7 +610,7 @@ test('m4: a drop the guard turns away (the pair is already pending) still redraw
     assert.notEqual(q('[data-finding="f1"]'), before, 'the list was redrawn');
     assert.equal(q('[data-finding="f2"]').dataset.selected, 'true');
     assert.equal(q('[data-technique="old_firmware"]').dataset.selected, 'true');
-    d.resolve({ success: false, reason: 'not_held' });
+    d.resolve({ success: false, reason: 'not_found' });
     await settle();
 });
 
@@ -633,12 +633,12 @@ test('T6: onSent then onEnded for a use that is refused, one that throws and one
     v.onSent = (offer) => order.push(['sent', techCalls().length]);
     v.onEnded = (offer, ans) => order.push(['ended', ans === null ? 'null' : (ans?.reason ?? 'answer')]);
     const target = { card: 'factory_defaults', finding: F1.id };
-    techImpl = async () => { throw Object.assign(new Error('no'), { status: 403, body: { success: false, reason: 'not_held' } }); };
+    techImpl = async () => { throw Object.assign(new Error('no'), { status: 404, body: { success: false, reason: 'not_found' } }); };
     await v.perform({ action: 'use', target });
     techImpl = async () => { throw new Error('network down'); };
     await v.perform({ action: 'use', target });
     techImpl = async () => null;
     await v.perform({ action: 'use', target });
-    assert.deepEqual(order, [['sent', 0], ['ended', 'not_held'], ['sent', 1], ['ended', 'null'], ['sent', 2], ['ended', 'null']]);
+    assert.deepEqual(order, [['sent', 0], ['ended', 'not_found'], ['sent', 1], ['ended', 'null'], ['sent', 2], ['ended', 'null']]);
     assert.equal(v.pending.size, 0, 'no key left pending');
 });
