@@ -99,6 +99,17 @@ module BreakEscape
       assert_nil entry('print_admin'), 'a finding that is merely held does not prove use'
     end
 
+    test 'a technique_card proof is served only for a saved_connection entry, whatever kind a used finding is named on' do
+      add_technique_entry
+      @game.player_state['opsUsed'] = ['print01.admin_page.factory_login']
+      assert entry('print_admin'), 'the saved_connection entry is served'
+      %w[token assist_invite password].each do |kind|
+        @game.scenario_data['credentials']['print_admin']['kind'] = kind
+        assert_nil entry('print_admin'), "a #{kind} entry is not served on a technique_card proof"
+        refute @game.credential_proof_holds?('print_admin', @game.scenario_data['credentials']['print_admin']), kind
+      end
+    end
+
     # --- label (K3a R1) -----------------------------------------------------------------------
 
     test 'a connecting credential label is its own label, else its item name, else empty and never the connectsTo id' do
