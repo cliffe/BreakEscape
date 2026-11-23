@@ -1,10 +1,10 @@
 {
  "mission": "m05",
- "id": "m05_trailer60_v1",
+ "id": "m05_trailer60_v2",
  "title": "SAFETYNET: Licence to Hack, m05 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-23): first cut. Music Midnight Double Agent from 47.992 s (downbeat): quiet bar, lift at 12.78 on the Mission card cut, track drops at 59.66. Real Hacking slot is the m02 slate placeholder. Missing footage (Bernadette face, walks, espresso) cut around.",
+ "status": "v2 (2026-11-23): night-turn J-cut now uses the Recruiter's 'Fanaticism is somebody else's department. I just staff the operation.' (t10 111.66-116.09) since D356 cut 'I find people the week before...' from the game; night_strike 60->54 frames, recruiter_night 48->54, no other shot moved. v1 (2026-11-23): first cut. Music Midnight Double Agent from 47.992 s (downbeat): quiet bar, lift at 12.78 on the Mission card cut, track drops at 59.66. Real Hacking slot is the m02 slate placeholder. Missing footage (Bernadette face, walks, espresso) cut around.",
  "music": {
   "track": "SpyAction/Midnight Double Agent.mp3",
   "analysis": "midnight_double_agent_60.json",
@@ -36,7 +36,7 @@
  },
  "spoiler_rules": [
   "Torres hidden: no face, name, office, mug text, subtitle or voice line naming him",
-  "t10 audio only 33.1-38.2 and 146.5-152.0 (Torres marks 11.61, 40.03, 80.82, 95.83, 117.85, 126.89)",
+  "t10 audio only 111.53-116.2 and 146.5-152.0 (Torres marks 11.61, 40.03, 80.82, 95.83, 117.85, 126.89)",
   "dusting: canvas only",
   "no codes, PINs, passwords or flags",
   "no naming menu, no ending"
@@ -100,7 +100,7 @@
     }
    },
    "caption": {
-    "16:9": true,
+    "16:9": false,
     "9:16": true,
     "1:1": true
    },
@@ -513,7 +513,7 @@
     }
    },
    "caption": {
-    "16:9": true,
+    "16:9": false,
     "9:16": true,
     "1:1": true
    },
@@ -701,7 +701,7 @@
     }
    },
    "caption": {
-    "16:9": true,
+    "16:9": false,
     "9:16": true,
     "1:1": true
    },
@@ -719,8 +719,8 @@
    "lines": [
     {
      "speaker": "The Recruiter",
-     "text": "I find people the week before they break, agent. Then I make them an offer.",
-     "start": 0.43,
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
+     "start": 0.66,
      "end": 99
     }
    ]
@@ -728,7 +728,7 @@
   {
    "id": "night_strike",
    "type": "gameplay",
-   "duration": 2.0,
+   "duration": 1.8,
    "snap": false,
    "join": {
     "type": "cut"
@@ -736,7 +736,7 @@
    "source": {
     "file": "t11_night_corridor.trimmed.mkv",
     "in": 87.9,
-    "out": 89.9
+    "out": 89.7
    },
    "note": "player walks back up, the corridor light strikes 88-89.5; 2x nearest (lines are caption-only; the voice and its duck belong to recruiter_night's pre)",
    "framing": {
@@ -757,7 +757,7 @@
     }
    },
    "caption": {
-    "16:9": true,
+    "16:9": false,
     "9:16": true,
     "1:1": true
    },
@@ -775,7 +775,7 @@
    "lines": [
     {
      "speaker": "The Recruiter",
-     "text": "I find people the week before they break, agent. Then I make them an offer.",
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
      "start": 0,
      "end": 99
     }
@@ -784,17 +784,17 @@
   {
    "id": "recruiter_night",
    "type": "gameplay",
-   "duration": 1.6,
+   "duration": 1.8,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t10_recruiter_call.trimmed.mkv",
-    "in": 36.6,
-    "out": 38.2
+    "in": 114.4,
+    "out": 116.2
    },
-   "note": "call screen shows 'I find people...' bold with 'Considered, agent...' dimmed (clean). Audio J-cut pre 3.5: take audio 33.10-38.20 ONLY (Torres marks 11.61, 40.03 outside). No caption: the phone shows the line",
+   "note": "cut to the phone on 'I just staff' (114.48); call screen shows 'I'm a recruiter who is very good at her job...' bold with 'YOU: You're a fanatic dressed up as a headhunter.' dimmed (clean). Audio J-cut pre 2.87: take audio 111.53-116.20 ONLY (a -33 dB blip at 111.45-111.52 stays out) ('her job.' ends 111.27; voice 111.66-116.09; next subtitle, naming Torres, at 117.85). No caption: the phone shows the line",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -816,7 +816,7 @@
     "gain_db": 2.0,
     "dialogue": true,
     "duck_music": true,
-    "pre": 3.5,
+    "pre": 2.87,
     "post": 0
    },
    "spoiler": {
@@ -825,15 +825,15 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Recruiter method line, names no one; window 33.1-38.2 per takes log"
+    "note": "Recruiter staffing line, names no one; window 111.53-116.2"
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "The Recruiter",
-     "text": "I find people the week before they break, agent. Then I make them an offer.",
-     "start": -3.17,
-     "end": 1.54
+     "text": "Fanaticism is somebody else's department. I just staff the operation.",
+     "start": -2.74,
+     "end": 1.69
     }
    ]
   },
@@ -1425,7 +1425,7 @@
     }
    },
    "caption": {
-    "16:9": true,
+    "16:9": false,
     "9:16": true,
     "1:1": true
    },

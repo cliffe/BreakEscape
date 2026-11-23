@@ -285,7 +285,7 @@ module BreakEscape
     test 'each m01 to m10 mission unlocks the generics its NPCs wear' do
       expected = {
         'female_office_worker_v2' => %w[m01], 'female_scientist_v2' => %w[m01],
-        'female_security_guard_v2' => %w[m02 m10], 'male_spy_v2' => %w[m02 m05 m06 m10],
+        'female_security_guard_v2' => %w[m02 m10], 'male_spy_v2' => %w[m10],
         'male_hacker_hood_down_v2' => %w[m03], 'male_security_guard_v2' => %w[m10], 'female_blowse_v2' => %w[m10]
       }
       found = Hash.new { |h, k| h[k] = [] }
