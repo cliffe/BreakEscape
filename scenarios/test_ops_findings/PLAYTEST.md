@@ -41,7 +41,9 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 `--ops-log` prints the `findings_audit` rows and exits 1 on a stored secret.
 The leak check must report no leaks after every beat. Its check-stage tags cover the class, severity and summary of a finding
 (`check:<host>.<service>`), a decoy's reason and a real finding's need labels (`confirm:<finding id>`); a string tagged `never`
-(a link id, a global name, an unlinked entry's module) is a leak at any stage.
+(a link id, a global name, an unlinked entry's module) is a leak at any stage. Structural rules
+need no distinctive string: a finding row before its confirm that carries `needs`, `fixed`, `falseBecause` or a status other than
+`unconfirmed`; a `fixedIf`, `grants`, `realism`, `weaknesses` or `decoys` key anywhere; the name of a gating global inside a finding row.
 
 ## Layout
 
@@ -113,7 +115,8 @@ Plant the box in `office_port` (`Plug it in`), click Sweep on `office_lan`. Then
 `jack_office_port`: `POST /network/check` with `host_id: "printer01", service: "admin_page"` (the printer is listed but not scanned), and again with
 `service: "invented_service"`.
 - Browser: both requests answer one identical body, `{"success":false,"reason":"not_found"}`, status 404 (compare byte for byte). The view
-  lists five rows with no tile and no Check control anywhere.
+  lists four host rows (Desk PC, File server, Camera recorder, Second floor printer; the sweep lists no share) with no tile and no
+  Check control anywhere.
 - Server: `opsDiscovered.networks` has `office_lan`; no `opsFindings`; one `network_swept` row and no `service_checked` row.
 
 ### 2. Scan the printer, check the admin page
@@ -152,20 +155,29 @@ Without a reload, take `printer_manual` from the supply cupboard (harness notes)
   Pressing Check again by `fetch` answers `already: true` with the same need met.
 - Server: unchanged (`met` is computed on read): same `opsFindings`, no new log row.
 
-### 6. Scan the file server, check its first service, confirm
+### 6. Scan the file server, check its first service
 
-Click Scan on `files01`, then Check on its `files` tile, then Confirm on the one finding.
-- Browser: one finding, `open_share` ("The share is open to anyone on the network.", misconfiguration, medium), `unconfirmed`, then
-  `confirmed` with no needs listed and no Fixed mark.
-- Server: `files01.files.open_share` is `c<n>`; `opsDiscovered.services` has `files01.files`; one more `service_checked` row and one more
-  `finding_confirmed` row.
+Click Scan on `files01`.
+- Browser: the file server's tiles appear (`files`, `backup`) and no finding.
 
-### 7. Flip the switch, reopen the view
+**6a (hostile, now, before any check of `files01`).** By `fetch`, `POST /network/confirm` with `finding_id: "files01.files.open_share"`
+(the weakness exists but has never been checked).
+- Browser: the one 404 `{"success":false,"reason":"not_found"}`, the same bytes as an invented id once the id is masked (beat 9 sends the
+  invented one and compares). Server: nothing written. After this, every finding in the scenario has been checked, so this is the only
+  moment for it.
 
-`interact` `share_switch`, `sync`, reopen the view.
-- Browser: the same finding now shows Fixed (`.network-finding-fixed`, `fixed: true` in the state) and stays `confirmed`. A finding fixed before it is
-  confirmed never shows Fixed: beat 11 covers it.
-- Server: the stored status is still `c`; nothing new is written.
+Then click Check on the `files` tile.
+- Browser: one finding, `open_share` ("The share is open to anyone on the network.", misconfiguration, medium), `unconfirmed`, with a
+  Confirm control. No Fixed mark.
+- Server: `files01.files.open_share` is `u<n>`; `opsDiscovered.services` has `files01.files`; one more `service_checked` row.
+
+### 7. Flip the switch before the confirm, then confirm
+
+`interact` `share_switch`, `sync`, reopen the view (the finding is still unconfirmed).
+- Browser: the finding is still `unconfirmed`: no `.network-finding-fixed`, no `fixed` in the state, the same keys as before the switch.
+  Now click Confirm: it becomes `confirmed` with no needs and shows Fixed at once (`.network-finding-fixed`, `fixed: true` in the state).
+  This is the plan's "Fixed only after its confirm" (11.5, S2). (Beat 11 is the other rule: a switch flipped before any check lists nothing.)
+- Server: the stored status is `c<n>` (never a fixed word); one more `finding_confirmed` row.
 
 ### 8. The camera recorder
 
@@ -188,12 +200,10 @@ Check the `backup` tile; Confirm both findings; then Confirm the first one again
 - Browser: the sync answers as any sync does; reopen the view: nothing differs.
 - Server: `opsFindings` and `opsDiscovered` unchanged.
 
-### 9. (hostile) an invented finding id and one never checked
+### 9. (hostile) an invented finding id
 
-By `fetch`, `POST /network/confirm` with `finding_id: "printer01.admin_page.nothing_here"`, and with `finding_id: "files01.files.open_share"`
-sent after the file server's scan and BEFORE its `files` check (so do this between the scan and the check of beat 6; the weakness exists but was
-never checked).
-- Browser: both answers are the same 404 `{"success":false,"reason":"not_found"}`, byte for byte once the id is masked.
+By `fetch`, `POST /network/confirm` with `finding_id: "printer01.admin_page.nothing_here"`. Compare it with the never-checked id of beat 6a.
+- Browser: the same 404 `{"success":false,"reason":"not_found"}` as 6a, byte for byte once the id is masked.
 - Server: nothing.
 
 ### 10. Reload, and the other port
@@ -206,8 +216,10 @@ Reload, reopen the view. Unplug, plant the box in `annex_port`, open the view.
 
 `{"cmd":"sync"}`, the leak check over the whole responses file, then `verify-run.rb <game_id> --access` and `verify-run.rb <game_id> --ops-log`
 as two commands, then `{"cmd":"quit"}`.
-- No class word or summary before a check; no reason or need before the confirm; no `grants`, `fixedIf` or `share_locked` in any answer
-  except the bootstrap's list of declared globals; the answers carry no `falseBecause` key on an unconfirmed finding.
+- No class word or summary before a check; no reason or need before the confirm; no `grants`, `fixedIf` or `realism` key anywhere; no
+  `share_locked` in any check, confirm or `GET /network` answer (it does appear in the bootstrap's declared globals and in the lobby switch's
+  room data, so a `grep` of the whole responses file will find it there: that is not a leak, and the leak check prints a note saying so);
+  the answers carry no `needs`, `fixed` or `falseBecause` key and no status but `unconfirmed` on a finding before its confirm.
 - `--ops-log` ends with `ops log OK`.
 
 ## Beat 11 (run B, a fresh game)
