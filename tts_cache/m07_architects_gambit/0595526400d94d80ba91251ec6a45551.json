@@ -1,0 +1,14 @@
+{
+  "key": "0595526400d94d80ba91251ec6a45551",
+  "npc": "opening_briefing_cutscene",
+  "text": "We are faced with an impossible decision, Agent.",
+  "delivery": "grave and quiet, a man who hates saying it",
+  "voice": "Charon",
+  "style": "SAFETYNET director reading a night that has already happened. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried even under a countdown. He does not raise his voice and he does not soften anything.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-23",
+  "recorded_at": "2026-11-23T01:26:21Z"
+}

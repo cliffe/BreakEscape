@@ -371,7 +371,7 @@ CFG = {
     'kiosk': ('A touch-screen kiosk with eight messages from across the year, waiting to be checked.',
               'A touch-screen kiosk with the year in review. Episode finished.'),
     'display': 'Year-end review: spot it',
-    'desc': "An awareness edition of about 10 minutes for all staff, on the defending side only. A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a web page, from three fictional companies. Your organiser places your existing role post-check after it, which compares against your role pre-check. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+    'desc': "An awareness edition of about 10 minutes for all staff, on the defending side only. A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a web page, from three fictional companies. In the Annual refresher course, the final check follows it. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
     'minutes': 10,
     'conclusion': ('Year in review done', "You've worked through the year's messages. The debrief goes through each one."),
 }

@@ -101,6 +101,8 @@ Director Magnus Netherton: The other two go unanswered.
 
 Narrator: The line holds for a second longer than a bad connection would explain.
 
+Director Magnus Netherton: We are faced with an impossible decision, Agent. #delivery: grave and quiet, a man who hates saying it
+
 Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
 
 Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.

@@ -1,6 +1,6 @@
 # Trailer lines, round 2 (2026-11-22)
 
-The owner kept m05, m06, the m07 ending and m08 as voiced. They asked for alternatives on three:
+The owner picked the existing lines for m05 ("Everyone has a price, agent..."), m06 ("...The winners get statues.") and m08 ("There is a mole in SAFETYNET..."), and the new "Four fires tonight..." for the m07 ending. The unpicked m08 line was taken back out on 2026-11-23; the new m05 and m06 lines stay in the game for now. When the round-2 picks arrive, replace or remove the rejected round-1 lines (m04, m07 hook, m09) in the same commit as the new ones. They asked for alternatives on three:
 
 - **m04 Voltage ending:** "Propose some alternatives with some more clever threat/menace."
 - **m07 hook:** "Maybe a new intro line from a briefing: 'we're faced with an impossible decision'." This is a pre-outcome line to replace HaX's "One team, three fires".
@@ -74,3 +74,24 @@ On the page:
 | m09 | lies | Every lie they ever lived went through my hands, dear. I'm the last one who can tell you which were lies. | cage `start`, after "So the paper goes." | quiet, slightly wistful |
 | m09 | index | Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask. | cage `start`, replacing "It's only paper..." (:33) | gentle, almost kind, without looking up |
 | m09 | saved | Yours is in tonight's run, dear. I saved it for last. | voiced in round 1 | as voiced |
+
+## After the independent review (2026-11-23)
+
+Opus 5.5 review of the T345 lines, the m10 pick and the casualty options: `docs/video/logs/T345_LINES_DIALOGUE_REVIEW.md` (on video/trailers-m01-m02-spies). Changes here:
+
+- **m04:** the casualty rule is relaxed (owner). Two options added to the page, both replacing the "sums" line in `voltage_owns_it`: `fifty` "Fifty people. I checked the sum twice. Find me wrong." and `signed` "Fifty people die if my sums are right. Check them. The last man did, and he signed." Delivery: flat and unhurried, a checked figure read aloud, then a dare. "Fifty" because 11 on site and forty-odd on the feed make fifty. Voltage is South African in the voice bible ("Ja" is Afrikaans), NOT German: the context note above is wrong. Don't direct takes as German.
+- **m09 ending:** `saved` is withdrawn and taken out of the game. The player's file is in Sorensen's safe, not in tonight's run (`scenario.json.erb:2285`).
+- **m09 hook (owner's pick, in the game):** the reviewer calls it a major, because the briefing doesn't know what is in the archive. Reworded option on the page: "Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it." Nothing changes until the owner says.
+- **m10 ending:** the owner's pick is in `m10_tesseract.ink` and voiced; the blast-door line is out; the next line is trimmed ("City by city. Or you press this...") and re-voiced.
+- **m05:** the new line moved above the Torres line. Same words, same clip.
+
+## Owner's round-2 picks (2026-11-23)
+
+| Mission | Line | State |
+|---|---|---|
+| m04 ending | "I didn't bring a bomb, agent. I brought a maintenance schedule." | In `m04_npc_voltage.ink`, before "Budget cuts, ageing cells..." (the as-inked review moved it up one line). The rejected "sums" line is out and the original "There's no version of this where I blink..." is back. |
+| m07 hook | "We are faced with an impossible decision, Agent." (the owner's shortened wording) | In `m07_opening_briefing.ink`, before the choice. |
+| m09 ending | "Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask." | Not in the game: "It's only paper..." is back in `m09_sorensen_cage.ink` until the owner answers (AC0 holds the line off main). The as-inked review calls "is filed in this room" a major: most of the file is elsewhere or already shredded by then. Suggested: "was filed in this building". With the owner. |
+| m09 hook | unchanged | With the owner (`m09hookfix` on the page). |
+
+The m04 casualty options (`fifty`, `signed`) are dropped: the owner picked the schedule line. The as-inked review is "As-inked review, round 2" in `docs/video/logs/T345_LINES_DIALOGUE_REVIEW.md`.
