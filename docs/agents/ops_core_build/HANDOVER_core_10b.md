@@ -19,7 +19,7 @@ Every refusal past the 404s (403 included): `technique_refused` row, `as` nil, `
 - Both append to `opsUsed` once; row `technique_used` (`as` `{account:}` for a session, nil for a credential; detail finding alias, technique id, grant, access for a session); new grant saves.
 
 ## One needs predicate
-`ops_needs_rows(needs, host_id)` is now the only reader; order credential, item, itemType, session, global. `ops_unmet_need` = first row with `met` false, used by `use_technique!`, so the tick and the refusal agree. New `session` row: `{ kind: 'session', label: <host_label of the PC>, met }`; met = a session at that PC, not locked, `user` any / `admin` only if stored `access` is admin (`client_access_level`; S5a points that at `session_access`). Existing finding rows are unchanged for scenarios without `needs.session`.
+`ops_needs_rows(needs, host_id)` is now the only reader; order credential, item, itemType, session, global. `ops_unmet_need` = first row with `met` false, used by `use_technique!`, so the tick and the refusal agree. New `session` row: `{ kind: 'session', label: <host_label of the PC>, met }`; met = a LIVE session at that PC (S3 server R1 M1: not a relay record, `relay_session?`, and not an expired token session, `credential_session_expired?`), not locked, `user` any / `admin` only if stored `access` is admin (`client_access_level`; S5a points that at `session_access`). Existing finding rows are unchanged for scenarios without `needs.session`.
 
 ## What `GET /network` now lists
 Top-level `techniques: { id => { name, summary?, worksOn, itemId } }` for held, unforged cards naming a registry key; first held item in id order is `itemId`; key absent when none (body is then byte-identical). Done by wrapping `network_view` in `NetworkOps` (included after `NetworkAccess`).
@@ -43,3 +43,10 @@ Forged `clientAdded` card; inventory copy with a changed `technique_card`; card 
 
 ## Departures
 The session need row's label is the PC's host label (plan fixes none). The `host_row`, `withhold_network_keys!` and `network_view` changes are wrappers in `network_ops.rb`, not edits to `network_access.rb`.
+
+## S3 server R1 changes of contract (fixer)
+
+- A `session` need is met only by a live session (relay and expired token records do not meet it); a `credential` need is met only by a keyring row that is neither `expired` nor `ended` (`ops_keyring_serves?`). The finding row's tick uses the same predicate.
+- `GET /network` `techniques[id].worksOn` is built by named keys only (`class`, `product`, `versions`); a technique whose `worksOn` is not a Hash with a class is not listed.
+- The keyring serves a `technique_card` proof only for a `saved_connection` entry.
+- Validator: `needs.session` on a `hosts` entry is an error; the loop warning says only a same-host credential connection is tested.

@@ -320,3 +320,21 @@ Check 13. No Ruby above 2.7 or Rails above 7.0 was seen (`filter_map`, `to_h` wi
 
 None. Limits of this review: no test was run; test findings m5 to m9 rest on a reader's digest of
 the test files; step 11's commit was not reviewed.
+
+## R1 outcomes (fixer)
+
+| Finding | Outcome |
+|---|---|
+| M1 | fixed, `7d535ab24`: `ops_need_session` also requires `!relay_session?` and `!credential_session_expired?`; `ops_keyring_serves?` excludes keyring rows marked `expired` or `ended` (the credential need, S2 R2 N1). Five route tests; each new condition removed in turn and the matching test failed |
+| m1 | fixed, `5ec3da98c`: `worksOn` built by named keys (`ops_works_on`); two tests |
+| m2 | fixed, `a40087041`: the host part of the proof pattern allows 64 characters (the existing id pattern) |
+| m3 | fixed, `4b6d16199`: the `technique_card` branch requires `kind == saved_connection`; model test for token, assist_invite, password |
+| m4 | fixed, `eac3f42fe` (landed inside the step 13a commit by the other builder, whole files): the warning says what it tests; node test asserts the wording |
+| m5 | fixed, `e3e288f0d`: four-need order test, itemType test (a held card never meets a `technique_card` itemType) |
+| m6 | fixed, `e3e288f0d`: no_grant before fixed |
+| m7 | fixed, `e3e288f0d`: refusal, grant and repeat rows carry `f<n>` and the log holds no finding id |
+| m8 | fixed, `e3e288f0d` and `d7543d0a2`: exact statuses and bodies for the other-player case (plus a second case: foothold and card held in the caller's other game), extras `credential`, `credential_id`, `pc_id`, `level` and a credential-grant extras test, exact statuses for the forged inventory and other-route posts, credential repeat save counts, `n == 10`, need kind and label, refusal body searched, PUT status. The unfixed item: none |
+| m9 | fixed, `b030bff6d`: technique cases in the indistinguishable, state delta and no-exposure files. Question noted: a room answer carries a card object's own `technique_card` registry key (authored field), so the no-exposure test forbids the registry's content, not that key |
+| m10 | fixed, `eac3f42fe` and `c53363233`: `needs.session` on a `hosts` entry is a validator error; node test |
+| m11 | noted for S5a |
+| m12 | step 13a (the N15 flip landed in `eac3f42fe`) |
