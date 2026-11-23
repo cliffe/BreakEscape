@@ -163,24 +163,34 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   Graph `6eecdc03a`. 13b DONE `c30f5b413`, `aa7edcd1e`, `fc32a3d80` (scanner S3, verify-run
   lines, docs N15; `HANDOVER_core_13b.md`). The plan's section 10 part 3 itself allows the two
   `pc-sessions.test.mjs` edits; the bridge test is added to it by the world-side fixer.
-- RUNNING in the build tree: S3 server fixer (M1 + credential need liveness, m1 to m10);
-  client fixer VIEW side (B1 view part, m2, m4, m5, m9, static bolt import, PT4 CSS); client
-  fixer WORLD side (B1 in `network-links.js` first, M1 to M4, m1, m3, m6, m7, m8, m10, the
-  three allowed test updates); 13a (`scenarios/test_ops_access/`, PLAYTEST, end-to-end test,
-  flip N15; `HANDOVER_core_13a.md`).
-- One unread failure: the security fixer's last full run of the four technique test files
-  had 1 failure it did not read (other agents were mid-edit in `network_ops.rb` and
-  `network_technique_test.rb`). CHECK at the delta round on a quiet tree.
-- Next: when all four report: on a quiet tree run the four technique files, the S1/S2
-  controller files and `bin/test-js -j 6` once myself (or a Haiku runner) to get clean
-  counts; delta review R2 (fable52L) over S3 fixes + step 13 + S2's scanner changes + the
-  security fixes; one 13a follow-up: run `access-leak-check.rb` on a real `test_ops_access`
-  game for `ops:grant:*` false leaks; Haiku playtest + live proof of `test_ops_access`
-  (11.5 S3) with screenshots (panel states, marked sprite, remote-view frame, bolt placement
-  m8, sign-out path m6); section 10 part 4 reruns; MERGE main into `ops-build` first (L2a
-  landed: `e61cfe5ae`; four keep-both hunks, list in the log branch's
-  `ops_logs_stream/reviews/L2a_R3.md` section 9) on a quiet tree, by a Sonnet agent; then ff
-  the train tree and train S2+S3; land; push; screenshot review page; card art question.
+- S3 R1 FIXES ALL IN (unconfirmed): server `7d535ab24` (M1: needs met only by live sessions
+  and credentials) + 7 more; client world side `74cd8623e` (B1), `cd112e613`, `05af6be2e`,
+  `a60384d0d`, `d29627282`; client view side `db006e737`, `f4c024b85`, `e023973c0` (m7). 13a
+  DONE `eac3f42fe` (`scenarios/test_ops_access/`, 26 end-to-end tests, N15 flipped;
+  `HANDOVER_core_13a.md`). Two fixers were stopped with TaskStop after their reports because
+  they kept re-waking on leftover timers and re-sending the same report (about 130k to 180k
+  tokens a wake): if a finished agent sends its report twice, stop it.
+- **Main (with L2a) MERGED into `ops-build`: `b84870d2c`.** Conflicts in three files, resolved
+  by hand as keep-both (controller `set_game` list, `policy_test` `DEVICE_ACTIONS`, three
+  places in `access_leak_scanner.rb`). After the merge, on a quiet tree: 476 Rails runs 0
+  failures (scanner tests, policy, log reader tests, the four technique files, `ops_log_test`),
+  golden compare 12 runs 0 failures, six node files of both streams pass. This also cleared
+  the one unread failure from the security fixer's run.
+- RUNNING in the build tree: delta review R2 (fable52L; `reviews/S3_R2.md`: the S3 fixes, a
+  first read of step 13 and the graph, and the merge resolution); Haiku playtest + live proof
+  of `test_ops_access` on port 3011 (scratchpad `s3-playtest/RESULTS.md`; real clicks, a real
+  keyboard for select-then-Use, no forged request, screenshots of every state).
+- Next: commit R2 findings (check LENGTH); LOOK at the screenshots (panel, each refusal text,
+  frame, marks, bolt placement, the tint edge case, phone width); one fix pass; a short
+  delta if anything above minor was fixed; then `git merge --ff-only ops-build` in the train
+  tree and train S2+S3; if only the 3 baseline JS files fail, merge `ops-core` into main,
+  push, merge main back into `ops-build` and `ops-logs`. Then: the screenshot review page for
+  the user (plan 11.5 last paragraph: view empty, swept, scanned, findings, a card selected,
+  a refusal; plus the marked sprite and remote-view frame), with the open questions on it;
+  the card art question; the BreakEscape gem bump for Hacktivity (`bump-version` skill).
+  After S3 on this stream: S5a (privilege), then S6, S8a, S7, S5b, S5c, S8b, S8c, each from
+  its own plan's sections 3, 12, 14, 15 (digest: scratchpad `deps/OPS_PARALLEL_DIGEST.md`,
+  with the plan conflicts it flagged).
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
