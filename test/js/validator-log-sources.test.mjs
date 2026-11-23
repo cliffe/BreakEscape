@@ -304,3 +304,13 @@ test('error: an ops_log_terminal naming an undeclared source, with or without lo
 test('error: an ops_log_terminal with lockType login', { skip }, () => {
     assertHas(errors(issues(withReader({ locked: true, lockType: 'login' }))), 'cannot have lockType login');
 });
+
+test('error: an ops_log_terminal nested in a PC desktop is reached by the same checks (R3-8)', { skip }, () => {
+    const s = clean();
+    s.rooms.lobby.objects.push({ id: 'desk_pc', type: 'pc', name: 'Desk PC', contents: [
+        { id: 'nested_reader', type: 'ops_log_terminal', name: 'Nested log', minigameData: { logSource: 'no_such_source' } }
+    ] });
+    assertHas(errors(issues(s)), 'is not a declared source');
+    s.rooms.lobby.objects[s.rooms.lobby.objects.length - 1].contents[0].minigameData.logSource = 'door_log';
+    assert.deepEqual(errors(issues(s)), []);
+});
