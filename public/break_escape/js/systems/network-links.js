@@ -29,6 +29,7 @@
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
  *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device | port_security
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
+ *   network_foothold_dropped  { footholdId, sourceId }  a foothold the server no longer holds (404 or left out of GET /network)
  *   network_view_closed       (foothold id) { footholdId, reason }   reason: closed |
  *                                           link_dropped | foothold_gone
  *
@@ -123,7 +124,7 @@ const LANDINGS = {
         // Note (K4 R2 m2): for a `from` target this reopens through the foothold, and that is only
         // safe because openRemoteDesktop redirects a held `from` session (unlock-system.js); keep
         // that redirect.
-        close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : { resume: true }),
+        close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : (self.trip?.toWorld ? { leave: 'closed' } : { resume: true })),
         handover: () => null
     },
     desktop: {
@@ -132,10 +133,11 @@ const LANDINGS = {
         switch: () => null,
         item: () => null,
         share: () => null,
-        sign_out: () => ({ resume: true }),
-        no_session: (self, d) => ({ resume: true, message: sessionEndedMessage(self._hostOf(d)) }),
-        unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
-        not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
+        // A trip a click in the world started (openSession toWorld) goes back to the world: there is no network view behind it
+        sign_out: (self) => (self.trip?.toWorld ? { leave: 'closed' } : { resume: true }),
+        no_session: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: sessionEndedMessage(self._hostOf(d)) }),
+        unreachable: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: unreachableMessage(self._hostOf(d)) }),
+        not_responding: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
         link_dropped: () => ({ leave: 'link_dropped' }),
         // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
@@ -144,7 +146,8 @@ const LANDINGS = {
         expired: () => ({ resume: true })
     },
     share: {
-        close: () => ({ resume: true }),
+        // A share is a step inside the desktop it was opened from: a world-click trip goes back to that desktop (S3 R2 N-C1)
+        close: (self) => (self.trip?.toWorld && self.trip.pcId ? { desktop: self.trip.pcId } : { resume: true }),
         handover: () => null,
         item: () => null
     }
@@ -285,10 +288,12 @@ export class NetworkLinks {
             this._dropFoothold(footholdId);
             return { ok: false, reason: 'gone' };
         }
-        this.views.set(footholdId, entry);
+        // The server sends the held cards' `techniques` map beside `footholds`; the view reads it from the stored view
+        const view = body.techniques && typeof body.techniques === 'object' ? { ...entry, techniques: body.techniques } : entry;
+        this.views.set(footholdId, view);
         const clean = cleanFoothold(entry);
         if (clean) this.footholds.set(clean.id, { ...(this.footholds.get(clean.id) || {}), ...clean });
-        return stale ? { ok: true, view: entry, stale: true, synced } : { ok: true, view: entry };
+        return stale ? { ok: true, view, stale: true, synced } : { ok: true, view };
     }
 
     _dropFoothold(footholdId) {
@@ -302,6 +307,8 @@ export class NetworkLinks {
             this._publishPlanted(f.sourceId, false);
             this._applyJackLookById(f.sourceId);
         }
+        // A foothold can go without an unplug; the world's compromise marks re-read their sources
+        this._emit('network_foothold_dropped', { footholdId, sourceId: f.sourceId ?? null });
     }
 
     _trayItem(id) {
@@ -727,10 +734,10 @@ export class NetworkLinks {
      * Open a held remote session's desktop through its foothold, starting a trip (offered to
      * the capture log, 13.4). The session's foothold comes from pcSessions (step 8 adds it).
      */
-    openSession(pcId, { returnTo = null } = {}) {
+    openSession(pcId, { returnTo = null, toWorld = false } = {}) {
         const session = win().pcSessions?.get?.(pcId) || null;
         const footholdId = session?.footholdId ?? null;
-        const trip = this._startTrip({ footholdId, start: 'session', pcId,
+        const trip = this._startTrip({ footholdId, start: 'session', pcId, ...(toWorld ? { toWorld: true } : {}),
             returnTo: typeof returnTo === 'function' ? returnTo : null });
         const startDesktop = win().openRemoteDesktop;
         // A session opened from another desktop (K4) has no foothold; it reopens by its source

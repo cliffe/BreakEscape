@@ -9,6 +9,7 @@
  *                       sprite's texture key and whether it shows the locked look
  *   screenTransitions() the screen look changes systems/screen-states.js recorded (last 50),
  *                       `[{ objectId, locked, sound, at }]`; every sound it plays is in there
+ *   compromiseMarks()   the world's compromise marks (systems/compromise-marks.js), `[{ objectId, sources, tint }]`
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
  *   hiddenDevices()     itemId -> { item, on, room, hostId? }: devices hidden in plants (plant-hiding.js);
@@ -175,6 +176,16 @@ export const accessBridge = {
     /** The screen look changes recorded so far (empty before the module is installed). */
     screenTransitions() {
         return json(window.screenStates?.transitions) || [];
+    },
+
+    /**
+     * The compromise marks applied in the world (systems/compromise-marks.js): `[{ objectId,
+     * sources, tint }]`, where `tint` is the sprite's live tintTopLeft read now (null for a
+     * sprite that keeps an authored look). Read it with the player out of range: in range the
+     * live tint is the highlight's blue.
+     */
+    compromiseMarks() {
+        return json(window.compromiseMarks?.list?.()) || [];
     },
 
     /** The card copier's saved cards, as card ids (the copier's client-written list). */

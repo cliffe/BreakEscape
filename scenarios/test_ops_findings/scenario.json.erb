@@ -1,0 +1,330 @@
+{
+  "scenario_brief": "TEST: Ops findings\n\nA test floor for the ops core's second stage (OPS_CORE_PLAN.md, S2). One lobby with a drop box, two office ports, a wall switch, a desk log and a sign; a supply cupboard; a comms room with a file server. Plug the box in, sweep the office network, scan a machine and check its services. Nothing to solve.",
+  "endGoal": "Test only: check, confirm and read what a finding needs.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_findings",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Office network", "discovery": "scan" }
+  },
+
+  "hosts": {
+    "printer01": {
+      "name": "Second floor printer",
+      "network": "office_lan",
+      "sprite": "pnw_portable_printer1",
+      "services": [
+        { "name": "print", "port": 9100, "product": "Inkvale JetServe", "version": "1.4" },
+        {
+          "name": "admin_page", "label": "Admin page", "port": 80, "product": "Inkvale WebPanel", "version": "2.0",
+          "weaknesses": [
+            {
+              "id": "factory_login", "class": "default_creds", "severity": "high",
+              "summary": "The admin page still accepts the account it shipped with.",
+              "needs": { "item": "printer_manual" }
+            }
+          ],
+          "decoys": [
+            {
+              "id": "old_banner", "class": "unpatched", "severity": "medium",
+              "summary": "The page reports an old build number.",
+              "falseBecause": "The build number is cosmetic. The panel was updated last month."
+            }
+          ]
+        }
+      ]
+    },
+    "camrec01": {
+      "name": "Camera recorder",
+      "network": "office_lan",
+      "sprite": "cctv_camera1",
+      "services": [
+        {
+          "name": "stream", "port": 554, "product": "Lookwell RecordView", "version": "5.0",
+          "decoys": [
+            {
+              "id": "old_firmware", "class": "unpatched", "severity": "low",
+              "summary": "The recorder reports a firmware date from years ago.",
+              "falseBecause": "The date is a leftover from the factory image. The firmware was replaced when the unit was installed."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "credentials": {
+    "archivist_login": {
+      "kind": "password",
+      "account": "ian",
+      "proof": { "session": "desk01" },
+      "foundIn": "vault_note"
+    }
+  },
+
+  "logSources": {
+    "findings_audit": {
+      "title": "Findings audit",
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed"]
+    }
+  },
+
+  "policies": {
+    "managed": { "remote": "allowed" }
+  },
+
+  "globalVariables": {
+    "share_locked": false
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "finding_beats",
+      "title": "Check and confirm",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "s1_check_admin", "title": "Check the printer's admin page", "type": "custom", "status": "active" },
+        { "taskId": "s2_confirm_false", "title": "Confirm a finding that turns out false", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "comms_room", "east": "back_office", "west": "supply_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "pc",
+          "id": "annex_port",
+          "name": "Annex wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the annex port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Annex. Something small could be plugged in here.",
+          "observations": "A wall port marked Annex."
+        },
+        {
+          "type": "pc",
+          "id": "share_switch",
+          "name": "Wall switch: file server",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "observations": "A wall switch marked File server access.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "share_locked", "value": true },
+            { "type": "hint", "title": "File server switch", "message": "The file server's open share is switched off." }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "maint_log",
+          "name": "Maintenance log",
+          "position": { "x": 4, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Maintenance log, second floor.\n\nPrinter: the panel was updated last month, so the build number it shows is only a label. The account it shipped with was never removed from the admin page. The manual is in the supply cupboard.\n\nThe ceiling cameras: the date their recorder shows is left over from the factory image. Nothing to do.\n\nFile server: the open share was left on after the move. The wall switch turns it off.",
+          "observations": "A maintenance log left on the desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops findings test. Take the drop box and plug it into a port. The office network opens empty: sweep it, scan a machine, then check one of its services. The log on the desk says what is real. The supply cupboard is to the west.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Okafor",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_findings/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "iokafor", "password": "Dockyard-Ian-41" },
+          "eventMappings": [
+            { "eventPattern": "network_service_checked", "condition": "data.hostId === 'printer01' && data.service === 'admin_page'", "onceOnly": true, "completeTask": "s1_check_admin" },
+            { "eventPattern": "network_finding_confirmed", "condition": "data.status === 'false'", "onceOnly": true, "completeTask": "s2_confirm_false" }
+          ]
+        }
+      ]
+    },
+
+    "supply_room": {
+      "type": "room_office",
+      "door_sign": "Supply room",
+      "connections": { "east": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "supply_cupboard",
+          "name": "Supply cupboard",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cupboard of manuals and sheets for the office equipment.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "printer_manual",
+              "name": "Printer manual",
+              "takeable": true,
+              "readable": true,
+              "text": "Printer manual. The admin page ships with a built-in account; the setup chapter says to remove it.",
+              "observations": "The printer's manual."
+            },
+            {
+              "type": "notes1",
+              "id": "installer_sheet",
+              "name": "Installer's sheet",
+              "takeable": true,
+              "readable": true,
+              "text": "Installer's sheet. The build number on the printer's page is printed from a template and does not change when the panel is updated. The shipped account is a real risk until it is removed.",
+              "observations": "A sheet left by the installer."
+            }
+          ]
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_servers",
+      "door_sign": "Comms room",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "files01",
+          "name": "File server",
+          "host": "FILES01",
+          "sprite": "pc_desktop",
+          "position": { "x": 4, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            {
+              "name": "files", "port": 445, "product": "Brackley ShareServe", "version": "3.1",
+              "weaknesses": [
+                {
+                  "id": "open_share", "class": "misconfig", "severity": "medium",
+                  "summary": "The share is open to anyone on the network.",
+                  "fixedIf": "share_locked"
+                }
+              ]
+            },
+            {
+              "name": "backup", "port": 873, "product": "Brackley CopyServe", "version": "2.2",
+              "weaknesses": [
+                {
+                  "id": "archive_login", "class": "weak_auth", "severity": "high",
+                  "summary": "The archive account is shared between several people.",
+                  "needs": { "credential": "archivist_login" }
+                },
+                {
+                  "id": "backup_list", "class": "cleartext", "severity": "low",
+                  "summary": "The list of backups can be read without signing in."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    "back_office": {
+      "type": "room_office",
+      "door_sign": "Back office",
+      "connections": { "west": "lobby" },
+      "network": "office_lan",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "7391",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "desk01",
+          "name": "Desk PC",
+          "host": "DESK01",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A desk PC in the back office."
+        },
+        {
+          "type": "notes1",
+          "id": "vault_note",
+          "name": "Note: archive login",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Archive login: iokafor / Dockyard-Ian-41",
+          "observations": "A note on the back office desk."
+        }
+      ]
+    }
+  }
+}

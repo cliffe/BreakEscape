@@ -15,7 +15,7 @@ module BreakEscape
     extend ActiveSupport::Concern
 
     # Top-level scenario keys the bootstrap never ships (section 6).
-    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources logSources hosts].freeze
+    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources logSources hosts techniques].freeze
     # Fields deleted from every object the server sends: membership, and the jack's
     # link name and holder, which arrive on the link item (section 6).
     WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn services].freeze
@@ -1039,25 +1039,30 @@ module BreakEscape
           return 'not_responding'
         end
       elsif foothold_id.present?
-        return 'not_responding' if host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && host_service_off?(pc)
+        if host_reachable_through?(foothold_id, pc) && host_service_off?(pc) &&
+           (!remote_blocked?(pc) || technique_session_through?(access_sessions[pc['id'].to_s], foothold_id))
+          return 'not_responding'
+        end
       elsif login_pc_reachable?(info) && !NetworkModel.headless?(pc) && host_service_off?(pc)
         return 'off'
       end
       'unreachable'
     end
 
-    # foothold_id: optional, unused for now (S3 reads it).
-    def host_row(pc, _foothold_id = nil)
+    # foothold_id: the foothold of the view being built; a technique session through it is listed on a
+    # host that blocks remote sign-in too (plan 5.4, `openHere`).
+    def host_row(pc, foothold_id = nil)
       row = { 'id' => pc['id'], 'kind' => 'pc', 'name' => pc['name'], 'host' => host_label(pc),
               'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc) }
       # Discovery's fields (address by the host's own network; scanned and services once scanned)
       ops_add_host_fields!(row, pc['id'], object_network(pc), NetworkModel.services_of(pc))
       remote = !remote_blocked?(pc)
       session = access_sessions[pc['id'].to_s]
+      open_here = !remote && technique_session_through?(session, foothold_id)
       held = nil
       # A claimed session is physical and not offered over the network (4.3); a relay session
       # is the holder's shared screen and never listed either (keyring K2, plan 3.8)
-      if remote && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session) &&
+      if (remote || open_here) && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session) &&
          !credential_session_expired?(session) # K5 (plan 10)
         npc = scenario_room_npc(session['id'])
         if npc && self.class.account_holder?(npc)
@@ -1069,6 +1074,8 @@ module BreakEscape
           # UI slice 6: a locked session is still held but refused until the password is
           # entered again; the view marks it Locked rather than offering Open.
           held['locked'] = true if session_locked?(session)
+          held['access'] = 'admin' if client_access_level(pc['id']) == 'admin'
+          held['openHere'] = true if open_here
         end
       end
       # A host whose service is off offers nothing: no sign-in and no session to open (5.2).
@@ -1516,7 +1523,8 @@ module BreakEscape
         credentials_declared? && session.is_a?(Hash) && session['from'].to_s == route[:from] &&
           !relay_session?(session) && session_route_up?(pc['id']) && !remote_blocked?(pc)
       elsif route && route[:foothold].present?
-        host_reachable_through?(route[:foothold], pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
+        host_reachable_through?(route[:foothold], pc) && !host_service_off?(pc) &&
+          (!remote_blocked?(pc) || technique_session_through?(session, route[:foothold])) &&
           !(session.is_a?(Hash) && session['via'] == 'claim') && !remote_route_session?(session)
       else
         return false if relay_session?(session)
@@ -1554,6 +1562,13 @@ module BreakEscape
       relay_session?(session) || (session.is_a?(Hash) && session['from'].present?)
     end
 
+    # A technique session at this PC that came through this very foothold (plan 5.4): the one
+    # exception to `remote: "blocked"` on the foothold route. Reads the server's own record only.
+    def technique_session_through?(session, foothold_id)
+      session.is_a?(Hash) && session['via'] == 'technique' && foothold_id.present? &&
+        session['foothold'].to_s == foothold_id.to_s
+    end
+
     # Whether a credential has been ended (plan 7.1). endedCredentials is written only by the
     # server (the 7.1 sync merge and bootstrap writer, a later run); read here without a default.
     def ended_credential?(cred_id)
@@ -1568,6 +1583,8 @@ module BreakEscape
       # Keyring K2 (plan 3.8): a credential session stays remote at the target's keyboard, so
       # a saved-connection session still ends on unplug (or, K4, with its `from` source)
       return if session['via'] == 'credential'
+      # Network ops S3 (plan 5.4): a technique session is never settled, so it keeps its foothold
+      return if session['via'] == 'technique'
 
       player_state['sessions'][pc_id.to_s] = session.except('foothold', 'from')
       save!

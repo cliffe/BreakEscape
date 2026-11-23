@@ -535,6 +535,7 @@ export function preload() {
     this.load.image('lockpick_set', 'objects/lockpick_set.png');
     this.load.image('charging_cable', 'objects/charging_cable.png');
     this.load.image('qr_card', 'objects/qr_card.png');
+    this.load.image('technique_card', 'objects/technique_card.png');
     this.load.image('icon_deviceB', 'objects/icon_deviceB.png');
     this.load.image('nfc-waves', 'icons/nfc-waves.png');
 
@@ -2141,7 +2142,9 @@ export async function create() {
                         const state = ws.installWorkstationState();
                         // The locked-screen look and its sounds follow the workstation events
                         return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; })
-                            .catch(e => { console.warn('screen states failed', e); return state; });
+                            .catch(e => { console.warn('screen states failed', e); return state; })
+                            .then(() => import('../systems/compromise-marks.js')).then(m => { m.installCompromiseMarks(); return state; })
+                            .catch(e => { console.warn('compromise marks failed', e); return state; });
                     });
                 });
             })
@@ -2267,6 +2270,7 @@ export async function create() {
         window.screenStates?.syncRoom?.(startRoomId);
         window.networkLinks?.syncRoom?.(startRoomId);
         window.plantHiding?.syncRoom?.(startRoomId);
+        window.compromiseMarks?.syncRoom?.(startRoomId);
         window.postitMarks?.syncRoom?.(startRoomId);
         // A propped door in the start room (slice 9.2 B); restore() covers it when the runner comes later
         window.npcWorkarounds?.syncRoom?.(startRoomId);

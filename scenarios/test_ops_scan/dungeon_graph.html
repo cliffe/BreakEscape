@@ -146,7 +146,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">6</td></tr>
       <tr><th>Rooms</th><td class="val">6</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">20 / 29</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">21 / 29</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -169,6 +169,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -195,6 +196,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   pivot_desk01((" + "))
   pivot_files01((" + "))
   comms_room("Comms room")
+  log_network_audit[("Network audit<br/>network_swept, host_scanned")]
 
   door_back_office --> back_office
   lobby --> lock_guest_kiosk
@@ -231,6 +233,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   class signin_ian,device_kit_dropbox key
   class host_camrec01,host_printer01,resource_office_drop,host_doorctl01 container
   class pivot_desk01,pivot_files01 gate
+  class log_network_audit note
   class node_start start`,
       story:      `flowchart TD
 
@@ -267,6 +270,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -293,6 +297,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   pivot_desk01((" + "))
   pivot_files01((" + "))
   comms_room("Comms room")
+  log_network_audit[("Network audit<br/>network_swept, host_scanned")]
   aim_scan_beats{{"Sweep, scan and pivot"}}
 
   door_back_office --> back_office
@@ -330,6 +335,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   class signin_ian,device_kit_dropbox key
   class host_camrec01,host_printer01,resource_office_drop,host_doorctl01 container
   class pivot_desk01,pivot_files01 gate
+  class log_network_audit note
   class aim_scan_beats aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -389,7 +395,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
   rc_guest_port_2{"Guest wall port"}
   rc_office_port_3{"Office wall port"}
   rc_guest_kiosk_4{"Guest kiosk"}
-  rc_camrec_switch_5{"Camera recorder power switch"}
+  rc_camrec_switch_5{"Wall power switch"}
   rc_it_note_6{"Note: file server sign-in"}
   rc_sign_lobby_7{"Sign: Start here"}
   rc_npc_ian_okafor_8("Ian Okafor")

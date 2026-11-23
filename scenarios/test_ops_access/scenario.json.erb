@@ -1,0 +1,489 @@
+{
+  "scenario_brief": "TEST: Ops access\n\nA test floor for the ops core's third stage (OPS_CORE_PLAN.md, S3). A lobby with a drop box, two wall ports, a wall switch and a cabinet; a supply room with a cupboard and a drawer; a comms room with two servers; a back office with a desk PC. Plug the box in, sweep and scan, check and confirm what you find, then use the field notes you gather. Nothing to solve.",
+  "endGoal": "Test only: use a technique card on a confirmed finding, then open what it gives.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_access",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Office network", "discovery": "scan" },
+    "plant_lan": { "name": "Plant network", "discovery": "scan" }
+  },
+
+  "networkLinks": [
+    ["office_lan", "plant_lan"]
+  ],
+
+  "hosts": {
+    "printer01": {
+      "name": "Second floor printer",
+      "network": "office_lan",
+      "sprite": "pnw_portable_printer1",
+      "services": [
+        { "name": "print", "port": 9100, "product": "Inkvale JetServe", "version": "1.4" },
+        {
+          "name": "admin_page", "label": "Admin page", "port": 80, "product": "Inkvale WebPanel", "version": "2.0",
+          "weaknesses": [
+            {
+              "id": "factory_login", "class": "default_creds", "severity": "high",
+              "summary": "The admin page still accepts the account it shipped with.",
+              "needs": { "item": "printer_manual" },
+              "grants": { "credential": "print_admin" }
+            }
+          ],
+          "decoys": [
+            {
+              "id": "old_banner", "class": "default_creds", "severity": "medium",
+              "summary": "The page greets visitors with a stock sign-in hint.",
+              "falseBecause": "The hint is only text on the page. The account it mentions was removed when the panel was set up."
+            }
+          ]
+        }
+      ]
+    },
+    "pumpctl01": {
+      "name": "Pump controller",
+      "network": "plant_lan",
+      "sprite": "m09_door_controller1",
+      "services": [
+        { "name": "control", "port": 502, "product": "Tidewell PumpLink", "version": "1.0" }
+      ]
+    }
+  },
+
+  "techniques": {
+    "factory_accounts": {
+      "name": "Factory accounts",
+      "summary": "Devices often ship with a published account that nobody changes.",
+      "worksOn": { "class": "default_creds" }
+    },
+    "release_notes": {
+      "name": "Release notes: current build",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["3.1"] }
+    },
+    "older_release_notes": {
+      "name": "Release notes: older build",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["2.4"] }
+    },
+    "config_review": {
+      "name": "Configuration review",
+      "summary": "For a setting somebody left open by mistake.",
+      "worksOn": { "class": "misconfig" }
+    }
+  },
+
+  "credentials": {
+    "print_admin": {
+      "kind": "saved_connection",
+      "account": "ian",
+      "connectsTo": "files01",
+      "proof": { "technique_card": "printer01.admin_page.factory_login" }
+    }
+  },
+
+  "logSources": {
+    "access_audit": {
+      "title": "Access audit",
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used"]
+    }
+  },
+
+  "policies": {
+    "managed": { "remote": "allowed" },
+    "sealed": { "remote": "blocked" }
+  },
+
+  "globalVariables": {
+    "share_locked": false,
+    "technique_used_seen": false
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "access_beats",
+      "title": "Use the field notes",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "a1_swept", "title": "Sweep the office network", "type": "custom", "status": "active" },
+        { "taskId": "a2_scanned", "title": "Scan a machine", "type": "custom", "status": "active" },
+        { "taskId": "a3_checked", "title": "Check a service", "type": "custom", "status": "active" },
+        { "taskId": "a4_confirmed", "title": "Confirm a finding", "type": "custom", "status": "active" },
+        { "taskId": "a5_refused", "title": "Use a note that does not fit", "type": "custom", "status": "active" },
+        { "taskId": "a6_used", "title": "Use a note that fits", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "comms_room", "east": "back_office", "west": "supply_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox_2",
+          "name": "Spare drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 5 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A second small grey box with a network port. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "pc",
+          "id": "annex_port",
+          "name": "Annex wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the annex port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Annex. Something small could be plugged in here.",
+          "observations": "A wall port marked Annex."
+        },
+        {
+          "type": "pc",
+          "id": "share_switch",
+          "name": "Wall switch: shared storage",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "observations": "A wall switch marked Shared storage.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "share_locked", "value": true },
+            { "type": "hint", "title": "Storage switch", "message": "The open share on the storage machine is switched off." }
+          ]
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "lobby_cabinet",
+          "name": "Cabinet by the front door",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cabinet of notes the front desk keeps.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_factory",
+              "name": "Field note: factory accounts",
+              "technique_card": "factory_accounts",
+              "takeable": true,
+              "observations": "A folded note about devices and the accounts they ship with."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "maint_log",
+          "name": "Maintenance log",
+          "position": { "x": 4, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Maintenance log.\n\nThe printer's admin page still takes the account it came with. The manual is in the supply cupboard.\n\nThe storage machines: one of them is on an old build and the other keeps a share open by mistake. The wall switch by the lobby desk turns the open share off. The back office desk machine can be reached without its password if you have the right note for it.\n\nThe notes for these are spread about: the cabinet by the door, the supply drawer, and Ian.",
+          "observations": "A maintenance log left on the desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops access test. Take the drop box and plug it into a port. Sweep the office network, scan a machine, check its services and confirm what you find. The field notes you gather can be used on a confirmed finding. The supply room is to the west, the comms room north and the back office east.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Okafor",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_access/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "iokafor", "password": "Dockyard-Ian-41" },
+          "itemsHeld": [
+            {
+              "type": "technique_card",
+              "id": "card_release",
+              "name": "Field note: storage updates",
+              "technique_card": "release_notes",
+              "takeable": true,
+              "observations": "Ian's notes from the last storage update."
+            }
+          ],
+          "eventMappings": [
+            { "eventPattern": "network_swept", "onceOnly": true, "completeTask": "a1_swept" },
+            { "eventPattern": "network_host_scanned", "onceOnly": true, "completeTask": "a2_scanned" },
+            { "eventPattern": "network_service_checked", "onceOnly": true, "completeTask": "a3_checked" },
+            { "eventPattern": "network_finding_confirmed", "onceOnly": true, "completeTask": "a4_confirmed" },
+            { "eventPattern": "network_technique_refused", "onceOnly": true, "completeTask": "a5_refused" },
+            { "eventPattern": "network_technique_used", "onceOnly": true, "completeTask": "a6_used", "setGlobal": { "technique_used_seen": true } }
+          ]
+        }
+      ]
+    },
+
+    "supply_room": {
+      "type": "room_office",
+      "door_sign": "Supply room",
+      "connections": { "east": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "supply_cupboard",
+          "name": "Supply cupboard",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cupboard of manuals for the office equipment.",
+          "contents": [
+            {
+              "type": "notes1",
+              "id": "printer_manual",
+              "name": "Printer manual",
+              "takeable": true,
+              "readable": true,
+              "text": "Printer manual. The admin page ships with a built-in account; the setup chapter says to remove it.",
+              "observations": "The printer's manual."
+            }
+          ]
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "supply_drawer",
+          "name": "Supply drawer",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A drawer of folded notes left by whoever did the last rounds.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_config",
+              "name": "Field note: reviewing settings",
+              "technique_card": "config_review",
+              "takeable": true,
+              "observations": "A folded note about settings left open."
+            },
+            {
+              "type": "technique_card",
+              "id": "card_older",
+              "name": "Field note: storage updates (earlier)",
+              "technique_card": "older_release_notes",
+              "takeable": true,
+              "observations": "A folded note about an earlier storage update."
+            }
+          ]
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_servers",
+      "door_sign": "Comms room",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "files01",
+          "name": "File server",
+          "host": "FILES01",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            {
+              "name": "files", "port": 445, "product": "Brackley ShareServe", "version": "3.1",
+              "weaknesses": [
+                {
+                  "id": "open_share", "class": "misconfig", "severity": "medium",
+                  "summary": "The share is open to anyone on the network.",
+                  "fixedIf": "share_locked",
+                  "grants": { "session": { "account": "ian", "access": "user" } }
+                }
+              ]
+            },
+            {
+              "name": "backup", "port": 873, "product": "Brackley CopyServe", "version": "2.2",
+              "weaknesses": [
+                {
+                  "id": "backup_list", "class": "cleartext", "severity": "low",
+                  "summary": "The list of backups can be read without signing in.",
+                  "fixedIf": "share_locked"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "vault01",
+          "name": "Vault server",
+          "host": "VAULT01",
+          "sprite": "pc_desktop",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "sealed",
+          "observations": "A locked-down server with no screen or keyboard. It takes no remote sign-in.",
+          "services": [
+            {
+              "name": "archive", "port": 445, "product": "Brackley ShareServe", "version": "3.1",
+              "weaknesses": [
+                {
+                  "id": "old_release", "class": "unpatched", "severity": "high",
+                  "summary": "The archive service is behind its published fixes.",
+                  "grants": { "session": { "account": "ian", "access": "user" } }
+                },
+                {
+                  "id": "old_release_admin", "class": "unpatched", "severity": "high",
+                  "summary": "The same service has a second flaw that matters once you are in.",
+                  "needs": { "session": "user" },
+                  "grants": { "session": { "account": "ian", "access": "admin" } }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    "back_office": {
+      "type": "room_office",
+      "door_sign": "Back office",
+      "connections": { "west": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "desk01",
+          "name": "Desk PC",
+          "host": "DESK01",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A desk PC in the back office.",
+          "services": [
+            {
+              "name": "remote_desk", "port": 3389, "product": "Larkspur RemoteDesk", "version": "1.8",
+              "weaknesses": [
+                {
+                  "id": "shipped_login", "class": "default_creds", "severity": "medium",
+                  "summary": "The remote desk tool still takes the account it shipped with.",
+                  "grants": { "session": { "account": "ian", "access": "user" } }
+                }
+              ]
+            },
+            { "name": "shares", "port": 445, "product": "Brackley ShareServe", "version": "2.4" }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "desk_note",
+          "name": "Note: desk login",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Desk login: iokafor / Dockyard-Ian-41",
+          "observations": "A note on the back office desk."
+        },
+        {
+          "type": "pc",
+          "id": "desk_implant",
+          "name": "Keystroke injector",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": true,
+          "usbClass": "hid",
+          "observations": "A USB device that types on its own once plugged into a PC. It needs a desk you are already signed in at."
+        },
+        {
+          "type": "pc",
+          "id": "desk_dock",
+          "name": "USB socket by the desk PC",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A spare USB socket on the desk. Useful only while you are signed in at the desk PC.",
+          "requiresItem": "desk_implant",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into the desk PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "desk01", "needsSession": true, "needsHeld": "desk_implant" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

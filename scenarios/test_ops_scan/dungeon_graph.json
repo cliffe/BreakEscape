@@ -121,6 +121,12 @@
       "label": "Comms room",
       "kind": "room",
       "optional": false
+    },
+    {
+      "id": "log_network_audit",
+      "label": "Network audit<br/>network_swept, host_scanned",
+      "kind": "note",
+      "optional": false
     }
   ],
   "edges": [

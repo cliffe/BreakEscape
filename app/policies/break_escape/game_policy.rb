@@ -173,6 +173,18 @@ module BreakEscape
       show?
     end
 
+    def network_check?
+      show?
+    end
+
+    def network_confirm?
+      show?
+    end
+
+    def network_technique?
+      show?
+    end
+
     def submit_flag?
       show?
     end

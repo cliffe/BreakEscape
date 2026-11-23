@@ -49,6 +49,14 @@
  *               `perform` (below): one pending guard keyed by action and target, two no-op
  *               hooks (onSent, onEnded), and the words of a refusal from ops-model.js only.
  *
+ * ops (S2)     a tile of a scanned, responding host offers Check (data-action "check", inside the
+ *               tile's data-service); the findings the host row carries sit under their tile, each
+ *               a data-finding (the alias) with class, severity, status and its line (the
+ *               summary, else one line per class from ops-model.js), Confirm (data-action
+ *               "confirm") while unconfirmed, a confirmed finding's needs with a tick or cross
+ *               per line, "Fixed" only on a confirmed finding that carries `fixed`, and a false
+ *               finding's reason. Check and Confirm go through `perform` like Scan.
+ *
  * Rows keep the server's order (sign-in hosts, then resources, each by id) and carry
  * data-host-id / data-resource-id, with data-action (sign-in, open, observe) on the control
  * that acts. Events: network_viewed (and :<networkId>) { footholdId, networkId, hostIds,
@@ -65,10 +73,16 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import {
-    pendingKey, refusalText, applyScanAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine
+    pendingKey, refusalText, applyOpsAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine,
+    offersCheck, offersConfirm, rowFindings, classWord, severityWord, statusWord, findingSummary, falseReason, severityClass,
+    findingNeeds, needLine, isFixed, FIXED_TEXT, checkTarget, parseCheckTarget, findFinding,
+    techniqueList, techniqueItemId, accessTag, isTechniqueSession, parseUseTarget, useTarget, refusalLine
 } from './ops-model.js';
+import { createBoltCanvas } from '../../utils/compromise-bolt.js';
 
 export { pendingKey };
+
+const TECHNIQUES_FOCUS = '@techniques';
 
 
 // The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
@@ -140,6 +154,21 @@ export const SWEEP_TEXT = 'Sweep';
 export const SWEEPING_TEXT = 'Sweeping...';
 export const SCAN_TEXT = 'Scan';
 export const SCANNING_TEXT = 'Scanning...';
+export const OPS_ACTIONS = Object.freeze(['sweep', 'scan', 'check', 'confirm', 'use']);
+export const CHECK_TEXT = 'Check';
+export const CHECKING_TEXT = 'Checking...';
+export const CONFIRM_TEXT = 'Confirm';
+export const CONFIRMING_TEXT = 'Confirming...';
+export const NO_FINDINGS_TEXT = 'Nothing was found on that service.';
+export const TECHNIQUES_HEADING = 'Techniques';
+export const USE_TEXT = 'Use';
+export const USING_TEXT = 'Using...';
+export const PICK_HINT_TEXT = 'Pick a finding, then a card.';
+export const CREDENTIAL_GRANT_TEXT = 'That gave you a saved sign-in. It is in your keyring.';
+export const sessionGrantText = (host, who) => `You now hold a session on ${host || 'that host'}${who ? ` as ${who}` : ''}.`;
+export const pickedText = (alias, name) => `Finding ${alias} with ${name}`;
+const COMPROMISED_TEXT = 'Compromised';
+export const NEEDS_HEADING = 'Needs';
 export const SWEEP_HINT_TEXT = 'Nothing is listed here yet. Sweep to see what answers.';
 const DEVICE_ICON = '/break_escape/assets/objects/network_rack1.png';
 const SPRITE_NAME = /^[A-Za-z0-9_-]{1,60}$/;
@@ -235,7 +264,9 @@ export function joinedStatus(n) {
  */
 export function hostAction(row) {
     if (row?.responding === false) return 'not_responding';
-    if (row?.remoteSignIn === false) return 'off';
+    // A blocked host stays off unless the server says this view's foothold can open the session it
+    // holds there (`session.openHere`, set only for a technique session through this foothold)
+    if (row?.remoteSignIn === false && row?.session?.openHere !== true) return 'off';
     // UI slice 6: a held-but-locked session is shown Locked, not Open: opening it is refused
     // by the server until the account's password is entered again.
     if (row?.session && row.session.via !== 'claim') return row.session.locked ? 'locked' : 'open';
@@ -303,6 +334,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this.refetchIdleMs = Number.isFinite(params?.refetchIdleMs) ? params.refetchIdleMs : REFETCH_IDLE_MS;
         this._refetchTimer = null;
         this._refetching = false;
+        this._refetchDropped = false;
         // Counts the moves of the ops loop (a request going out, an answer folded in); a refetch
         // that started before the count changed is stale and is dropped (S1 client R1 M1)
         this._opsEpoch = 0;
@@ -313,6 +345,12 @@ export class NetworkViewMinigame extends MinigameScene {
         this._headerHtml = null;
         this._viewedKeys = new Set();
         this.noticeRowId = null;
+        // S3: the finding (built id) and the card (technique id) picked for Use; the last session
+        // a card granted, drawn in the Techniques panel
+        this.selectedFinding = null;
+        this.selectedTechnique = null;
+        this.lastGrant = null;
+        this._dragCard = null;
     }
 
     links() { return window.networkLinks || null; }
@@ -348,6 +386,15 @@ export class NetworkViewMinigame extends MinigameScene {
         this.addEventListener(game, 'click', (e) => {
             const btn = e.target?.closest?.('[data-action]');
             if (!btn || !game.contains(btn)) return;
+            const act = btn.dataset.action;
+            if (act === 'select-technique' || act === 'use' || act === 'select-finding') {
+                e.preventDefault?.();
+                this.noteActivity();
+                if (act === 'use') { this.useSelected(); return; }
+                if (act === 'select-technique') this.selectTechnique(btn.closest('[data-technique]')?.dataset.technique);
+                else this.selectFinding(btn.closest('[data-finding]')?.dataset.finding);
+                return;
+            }
             if (btn.dataset.action === 'sweep') {
                 const block = btn.closest('[data-network-id]');
                 if (!block || !game.contains(block)) return;
@@ -366,7 +413,41 @@ export class NetworkViewMinigame extends MinigameScene {
                 this.perform({ action: 'scan', target: row.id });
                 return;
             }
+            if (btn.dataset.action === 'confirm') {
+                const alias = btn.closest('[data-finding]')?.dataset.finding;
+                const hit = alias ? findFinding(this.view, alias) : null;
+                if (!hit) return;
+                this.noteActivity();
+                this.perform({ action: 'confirm', target: hit.finding.id });
+                return;
+            }
+            if (btn.dataset.action === 'check') {
+                const service = btn.closest('[data-service]')?.dataset.service;
+                if (!service) return;
+                this.noteActivity();
+                this.perform({ action: 'check', target: checkTarget(row.id, service) });
+                return;
+            }
             this.act(row, btn.dataset.action);
+        });
+        // Drag is a pointer shortcut for select-then-Use: a card dropped on a finding sends the same request
+        this.addEventListener(game, 'dragstart', (e) => {
+            const id = e.target?.closest?.('[data-technique]')?.dataset.technique;
+            this._dragCard = id || null;
+            try { if (id && e.dataTransfer) { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', id); } } catch (err) { /* a drag without data still drops */ }
+        });
+        this.addEventListener(game, 'dragend', () => { this._dragCard = null; });
+        this.addEventListener(game, 'dragover', (e) => {
+            if (this._dragCard && e.target?.closest?.('[data-finding]')) e.preventDefault?.();
+        });
+        this.addEventListener(game, 'drop', (e) => {
+            const alias = e.target?.closest?.('[data-finding]')?.dataset.finding;
+            const card = this._dragCard;
+            this._dragCard = null;
+            if (!card || !alias) return;
+            e.preventDefault?.();
+            this.noteActivity();
+            this.dropCard(card, alias);
         });
         const root = this.frameElement || game;
         this.addEventListener(root, 'click', (e) => {
@@ -615,7 +696,11 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** Whether the host or network a keyed refusal was for is still in the view. */
     noticeTargetListed() {
-        const target = String(this.noticeKey || '').split(':').slice(1).join(':');
+        const key = String(this.noticeKey || '');
+        const target = key.split(':').slice(1).join(':');
+        if (key.startsWith('check:')) return this.allRows().some(r => r.id === parseCheckTarget(target)?.hostId);
+        if (key.startsWith('confirm:')) return !!findFinding(this.view, target);
+        if (key.startsWith('use:')) { const t = parseUseTarget(target); return !!t && !!findFinding(this.view, t.finding); }
         return this.allRows().some(r => r.id === target)
             || this.view?.network?.id === target
             || (this.view?.networks || []).some(b => b?.id === target);
@@ -631,16 +716,28 @@ export class NetworkViewMinigame extends MinigameScene {
         const el = typeof document !== 'undefined' ? document.activeElement : null;
         if (!el || !this.gameContainer?.contains?.(el)) return null;
         const btn = el.closest?.('[data-action]');
+        if (btn && btn.closest?.('[data-techniques]')) {
+            return { id: TECHNIQUES_FOCUS, action: btn.dataset.action, sub: btn.closest('[data-technique]')?.dataset.technique || null };
+        }
         const li = btn?.closest?.('[data-host-id], [data-resource-id], [data-network-id]');
         const id = li?.dataset?.hostId || li?.dataset?.resourceId || li?.dataset?.networkId;
-        return id ? { id, action: btn.dataset.action } : null;
+        if (!btn) return null;
+        const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
+        return id ? { id, action: btn.dataset.action, sub } : null;
     }
 
     restoreFocus(target) {
         if (!target) return;
         const match = [...(this.gameContainer?.querySelectorAll?.('[data-action]') || [])].find(btn => {
+            if (target.id === TECHNIQUES_FOCUS) {
+                return !!btn.closest('[data-techniques]') && btn.dataset.action === target.action
+                    && (target.sub ?? null) === (btn.closest('[data-technique]')?.dataset.technique || null);
+            }
+            if (btn.closest('[data-techniques]')) return false;
             const li = btn.closest('[data-host-id], [data-resource-id], [data-network-id]');
-            return (li?.dataset.hostId || li?.dataset.resourceId || li?.dataset.networkId) === target.id && btn.dataset.action === target.action;
+            const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
+            return (li?.dataset.hostId || li?.dataset.resourceId || li?.dataset.networkId) === target.id && btn.dataset.action === target.action
+                && (target.sub ?? null) === sub;
         });
         match?.focus?.();
     }
@@ -774,11 +871,98 @@ export class NetworkViewMinigame extends MinigameScene {
         return `<button type="button" class="minigame-button network-row-action network-scan" data-action="scan"${busy ? ' disabled' : ''}>${busy ? SCANNING_TEXT : SCAN_TEXT}</button>`;
     }
 
-    /** A scanned host's service tiles (name, port, product and version), as text. */
+    /**
+     * A scanned host's service tiles (name, port, product and version), as text. A tile of a
+     * responding host offers Check, and lists the findings the player holds for that service.
+     */
     servicesHtml(row) {
         const services = rowServices(row);
         if (!services.length) return '';
-        return `<ul class="network-service-tiles">${services.map(s => `<li class="network-service" data-service="${escapeHtml(s.name)}">${escapeHtml(serviceLine(s))}</li>`).join('')}</ul>`;
+        return `<ul class="network-service-tiles">${services.map(s => this.tileHtml(row, s)).join('')}</ul>`;
+    }
+
+    tileHtml(row, s) {
+        const findings = rowFindings(row, s.name);
+        let check = '';
+        if (offersCheck(row)) {
+            const busy = this.pending.has(pendingKey('check', checkTarget(row.id, s.name)));
+            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${busy ? CHECKING_TEXT : CHECK_TEXT}</button>`;
+        }
+        return `<li class="network-service${findings.length ? ' network-service-with-findings' : ''}" data-service="${escapeHtml(s.name)}"><span class="network-service-line">${escapeHtml(serviceLine(s))}</span>${check}${findings.length ? `<ul class="network-findings">${findings.map(f => this.findingHtml(row, f)).join('')}</ul>` : ''}</li>`;
+    }
+
+    /** One finding: alias, class, severity, status (Fixed on a confirmed one), the line, then Confirm, needs or the reason. */
+    findingHtml(row, f) {
+        const status = f.status === 'confirmed' || f.status === 'false' ? f.status : 'unconfirmed';
+        let body = '';
+        if (offersConfirm(row, f)) {
+            const busy = this.pending.has(pendingKey('confirm', f.id));
+            body += `<button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm"${busy ? ' disabled' : ''}>${busy ? CONFIRMING_TEXT : CONFIRM_TEXT}</button>`;
+        }
+        const needs = findingNeeds(f);
+        if (needs.length) {
+            body += `<ul class="network-finding-needs" aria-label="${NEEDS_HEADING}">${needs.map(n => `<li class="network-need network-need-${n.met ? 'met' : 'unmet'}" data-met="${n.met ? 'true' : 'false'}"><span class="network-need-mark" aria-hidden="true">${n.met ? '\u2713' : '\u2717'}</span> <span class="network-need-text">${escapeHtml(needLine(n))}</span></li>`).join('')}</ul>`;
+        }
+        const reason = falseReason(f);
+        if (reason) body += `<p class="network-finding-reason">${escapeHtml(reason)}</p>`;
+        const picked = this.selectedFinding === f.id;
+        // The alias is a select control only while a card is held; with none it is the plain chip (R1 m5)
+        const aliasHtml = techniqueList(this.view).length
+            ? `<button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="${picked ? 'true' : 'false'}">${escapeHtml(f.alias ?? '')}</button>`
+            : `<span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span>`;
+        return `<li class="network-finding network-finding-${status}${picked ? ' network-finding-selected' : ''}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}" data-selected="${picked ? 'true' : 'false'}"><span class="network-finding-head">${aliasHtml} <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity ${severityClass(f.severity)}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
+    }
+
+    /** The compromise bolt beside a row's icon: a placeholder the render fills with the canvas (paintBolts). */
+    boltHtml(row) {
+        return isTechniqueSession(row?.session)
+            ? `<span class="network-row-bolt" role="img" aria-label="${COMPROMISED_TEXT}" title="${COMPROMISED_TEXT}"></span>` : '';
+    }
+
+    /** The access tag of a session: "admin" when the server says so, nothing otherwise. */
+    accessTagHtml(session) {
+        const tag = accessTag(session);
+        return tag ? `<span class="network-access-tag" data-access="admin">${escapeHtml(tag)}</span>` : '';
+    }
+
+    /** Draw the bolt canvas into each placeholder the last render made. */
+    paintBolts() {
+        if (typeof document === 'undefined') return;
+        for (const spot of this.gameContainer?.querySelectorAll?.('.network-row-bolt') || []) {
+            if (spot.firstChild) continue;
+            const canvas = createBoltCanvas(document, 2);
+            if (canvas) { canvas.className = 'network-bolt-canvas'; spot.appendChild(canvas); }
+        }
+    }
+
+    /** Selection can name only what the view still lists: a finding that went, or a card no longer held, is let go. */
+    pruneSelection() {
+        if (this.selectedFinding && !findFinding(this.view, this.selectedFinding)) this.selectedFinding = null;
+        if (this.selectedTechnique && !techniqueList(this.view).some(t => t.id === this.selectedTechnique)) this.selectedTechnique = null;
+    }
+
+    /** The Techniques panel: the held cards (name, summary, works-on line), the picked pair, Use, and the last grant. */
+    techniquesHtml() {
+        const cards = techniqueList(this.view);
+        if (!cards.length) return '';
+        const hit = this.selectedFinding ? findFinding(this.view, this.selectedFinding) : null;
+        const card = cards.find(t => t.id === this.selectedTechnique) || null;
+        const ready = !!hit && !!card;
+        const busy = ready && this.pending.has(pendingKey('use', useTarget(card.id, hit.finding.id)));
+        const list = cards.map(t => {
+            const on = t.id === this.selectedTechnique;
+            return `<li class="network-technique${on ? ' network-technique-selected' : ''}" data-technique="${escapeHtml(t.id)}" data-selected="${on ? 'true' : 'false'}" draggable="true">`
+                + `<button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(t.name)}</button>`
+                + (t.summary ? `<span class="network-technique-summary">${escapeHtml(t.summary)}</span>` : '')
+                + (t.worksOn ? `<span class="network-technique-works">${escapeHtml(t.worksOn)}</span>` : '')
+                + '</li>';
+        }).join('');
+        const grant = this.lastGrant
+            ? `<p class="network-technique-grant" data-host="${escapeHtml(this.lastGrant.hostId)}">${escapeHtml(sessionGrantText(this.lastGrant.host, this.lastGrant.who))} ${this.accessTagHtml({ access: this.lastGrant.access })}</p>` : '';
+        return `<div class="network-block network-techniques" data-techniques><h5 class="network-block-title">${TECHNIQUES_HEADING}</h5>`
+            + `<ul class="network-technique-list">${list}</ul>`
+            + `<div class="network-technique-use"><span class="network-technique-pick">${ready ? escapeHtml(pickedText(hit.finding.alias ?? '', card.name)) : PICK_HINT_TEXT}</span>`
+            + `<button type="button" class="minigame-button network-row-action network-use" data-action="use"${ready && !busy ? '' : ' disabled'}>${busy ? USING_TEXT : USE_TEXT}</button></div>${grant}</div>`;
     }
 
     /** The icon of a device row: its sprite when it names a plain object file, else a plain device icon. */
@@ -794,7 +978,7 @@ export class NetworkViewMinigame extends MinigameScene {
         const tiles = this.servicesHtml(row);
         return `
                 <li class="network-row network-row-host network-row-device${ds.down ? ' network-row-down' : ''}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="device">
-                    <img class="network-row-icon" src="${escapeHtml(this.deviceIcon(row))}" alt="">
+                    <img class="network-row-icon" src="${escapeHtml(this.deviceIcon(row))}" alt="">${this.boltHtml(row)}
                     ${this.labelHtml(row.name || row.id, '', ds)}
                     ${this.downControlHtml(ds)}${scan ? `<span class="network-row-control">${scan}</span>` : ''}${tiles}
                 </li>`;
@@ -825,10 +1009,11 @@ export class NetworkViewMinigame extends MinigameScene {
             const down = ds.down ? ' network-row-down' : '';
             const scan = this.scanHtml(row, block);
             const tiles = this.servicesHtml(row);
+            if (control !== null) control = this.accessTagHtml(row.session) + control;
             if (scan && control !== null) control += scan;
             return `
                 <li class="network-row network-row-host${down}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
-                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
+                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">${this.boltHtml(row)}
                     ${this.labelHtml(row.host || row.id, row.name || '', ds)}
                     ${control === null ? this.downControlHtml(ds) + (scan ? `<span class="network-row-control">${scan}</span>` : '') : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}${tiles}
                 </li>`;
@@ -857,6 +1042,7 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     render() {
+        this.pruneSelection();
         const v = this.view || {};
         // UX access R2: the link's name alone as the title; its own network is a block heading
         // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
@@ -894,8 +1080,10 @@ export class NetworkViewMinigame extends MinigameScene {
                     </ul>
                 </div>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
+                ${this.techniquesHtml()}
                 <div class="network-view-notice" aria-live="polite">${escapeHtml(this.notice || '')}</div>
             </div>`;
+        this.paintBolts();
         this.updateScrollCue();
         // Images and fonts can change the height after this frame: look again once they settle
         // (the delegated load listener catches images, bindDelegates)
@@ -980,10 +1168,12 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.pending.has(key) || !this.gameState?.isActive || !this._canPerform(action, target)) return { sent: false };
         this.clearResult(action, target, key);
         this.pending.add(key);
-        this._pendingFocus = this.focusedControl();
-        this._opsEpoch++;
+        // The host of the offer, read now: the view may no longer list its row when the answer arrives (R1 m7)
+        const offerHostId = this.hostOfOffer(offer);
         let answer = null;
         try {
+            this._pendingFocus = this.focusedControl();
+            this._opsEpoch++;
             this._runHook('onSent', offer, echo);
             this._safely('redraw', () => this.redraw());
             try {
@@ -999,7 +1189,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this._safely('redraw', () => this.redraw());
         this._pendingFocus = null;
         this._safely('showResult', () => this.showResult(offer, answer));
-        await this.afterAnswer(offer, answer);
+        await this.afterAnswer(offer, answer, offerHostId);
         return { sent: true, answer };
     }
 
@@ -1015,12 +1205,31 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** The guard's other reasons: no control for it, a function missing from the links or the API. */
     _canPerform(action, target) {
+        if (action === 'use') {
+            // The card (a technique id the view holds, with its item id) and the finding (its built id, never
+            // an alias) together; the finding's status is not looked at: the server answers by its order
+            const t = parseUseTarget(target);
+            const hit = t ? findFinding(this.view, t.finding) : null;
+            return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkTechnique === 'function'
+                && !!hit && hit.finding.id === t.finding && !!techniqueItemId(this.view, t.card);
+        }
         if (typeof target !== 'string' || !target) return false;
         if (action === 'unplug') {
             return !!this.unplugJack && target === this.unplugJack && typeof this.links()?.unplugFromView === 'function';
         }
         if (action === 'sweep' || action === 'scan') {
             return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkScan === 'function';
+        }
+        if (action === 'check') {
+            const t = parseCheckTarget(target);
+            const row = t ? this.allRows().find(r => r.id === t.hostId) : null;
+            return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkCheck === 'function'
+                && !!row && offersCheck(row) && rowServices(row).some(s => s.name === t.service);
+        }
+        if (action === 'confirm') {
+            const hit = findFinding(this.view, target);
+            return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkConfirm === 'function'
+                && !!hit && hit.finding.id === target && offersConfirm(hit.row, hit.finding);
         }
         return false;
     }
@@ -1031,6 +1240,15 @@ export class NetworkViewMinigame extends MinigameScene {
     async _request(action, target) {
         if (action === 'unplug') return this.links().unplugFromView(target);
         try {
+            if (action === 'check') {
+                const t = parseCheckTarget(target);
+                return await this._api().networkCheck(this.footholdId, { hostId: t.hostId, service: t.service });
+            }
+            if (action === 'confirm') return await this._api().networkConfirm(this.footholdId, { findingId: target });
+            if (action === 'use') {
+                const t = parseUseTarget(target);
+                return await this._api().networkTechnique(this.footholdId, { findingId: t.finding, itemId: techniqueItemId(this.view, t.card) });
+            }
             return await this._api().networkScan(this.footholdId, { [action === 'sweep' ? 'networkId' : 'hostId']: target });
         } catch (err) {
             const body = err?.body;
@@ -1042,6 +1260,7 @@ export class NetworkViewMinigame extends MinigameScene {
     /** The previous result of this control goes first (after the guard, before the key goes in). */
     clearResult(action, target, key) {
         if (action === 'unplug') { this.setUnplugNotice(''); return; }
+        if (action === 'use') this.lastGrant = null;
         if (this.noticeKey === key) { this.showNotice(null); this.noticeKey = null; }
     }
 
@@ -1071,11 +1290,13 @@ export class NetworkViewMinigame extends MinigameScene {
             this.setUnplugNotice(answer?.message || 'The port did not respond. Try again.');
             return;
         }
-        if (action !== 'sweep' && action !== 'scan') return;
+        if (!OPS_ACTIONS.includes(action)) return;
         const key = pendingKey(action, target);
+        const hostId = this.hostOfOffer(offer);
         if (answer && answer.success !== false) {
             this._opsEpoch++;
-            this.view = applyScanAnswer(this.view, offer, answer);
+            this.view = applyOpsAnswer(this.view, offer, answer);
+            if (action === 'use') this.noteGrant(hostId, answer);
             // A view that has closed is not drawn again (R1 m3)
             if (this._reported || this._ending) return;
             // Scroll stays, and focus stays with the control's row or the next control (R1 m4)
@@ -1083,10 +1304,86 @@ export class NetworkViewMinigame extends MinigameScene {
             const hadFocus = !!this.focusedControl();
             this.render();
             if (this.gameContainer) this.gameContainer.scrollTop = top;
-            if (hadFocus) this.focusAfterMove(target);
+            if (hadFocus) this.focusAfterOps(offer, answer, hostId);
+            // A check that held nothing says so; the view records no "checked" mark of its own
+            if (action === 'check' && Array.isArray(answer.findings) && !answer.findings.length) this.showNotice(NO_FINDINGS_TEXT, hostId, key);
+            if (action === 'use') this.showNotice(answer.grant === 'credential' ? CREDENTIAL_GRANT_TEXT : sessionGrantText(this.lastGrant?.host, this.lastGrant?.who), hostId);
             return;
         }
-        this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : null, key);
+        this.showNotice(action === 'use' ? refusalLine(answer) : refusalText(answer ? answer.reason : 'no_answer'),
+            action === 'scan' ? target : (hostId || null), key);
+    }
+
+    /** What a session grant leaves in the Techniques panel: the host, the account and the access level. */
+    noteGrant(hostId, answer) {
+        if (answer.grant !== 'session' || !answer.session || typeof answer.session !== 'object') { this.lastGrant = null; return; }
+        const row = this.allRows().find(r => r.id === hostId);
+        this.lastGrant = {
+            hostId: hostId || '',
+            host: String(row?.host || row?.name || hostId || ''),
+            who: String(answer.session.displayName || answer.session.username || ''),
+            access: answer.session.access === 'admin' ? 'admin' : ''
+        };
+    }
+
+    /** Pick a finding by alias (or id) for Use; picking it again lets it go. */
+    selectFinding(aliasOrId) {
+        const hit = findFinding(this.view, aliasOrId);
+        if (!hit) return false;
+        this.selectedFinding = this.selectedFinding === hit.finding.id ? null : hit.finding.id;
+        this.redraw();
+        return true;
+    }
+
+    /** Pick a held card by technique id for Use; picking it again lets it go. */
+    selectTechnique(id) {
+        if (!techniqueList(this.view).some(t => t.id === id)) return false;
+        this.selectedTechnique = this.selectedTechnique === id ? null : id;
+        this.redraw();
+        return true;
+    }
+
+    /** Use: the picked card on the picked finding, through `perform`. Resolves like `perform`. */
+    async useSelected() {
+        if (!this.selectedFinding || !this.selectedTechnique) return { sent: false };
+        return this.perform({ action: 'use', target: useTarget(this.selectedTechnique, this.selectedFinding) });
+    }
+
+    /** A card dropped on a finding (the pointer shortcut): the same pick and the same `perform`. */
+    async dropCard(cardId, findingAlias) {
+        const hit = findFinding(this.view, findingAlias);
+        if (!hit || !techniqueList(this.view).some(t => t.id === cardId)) return { sent: false };
+        this.selectedFinding = hit.finding.id;
+        this.selectedTechnique = cardId;
+        const out = await this.perform({ action: 'use', target: useTarget(cardId, hit.finding.id) });
+        if (!out?.sent) this.redraw();
+        return out;
+    }
+
+    /** The host row an ops offer is about: a scan's target, a check's host, a confirm's finding's host. */
+    hostOfOffer(offer) {
+        if (offer?.action === 'scan') return offer.target;
+        if (offer?.action === 'check') return parseCheckTarget(offer.target)?.hostId ?? null;
+        if (offer?.action === 'confirm') return findFinding(this.view, offer.target)?.row.id ?? null;
+        if (offer?.action === 'use') return findFinding(this.view, parseUseTarget(offer.target)?.finding)?.row.id ?? null;
+        return null;
+    }
+
+    /** Focus after a move: a check or confirm keeps focus inside its tile; the rest as before. */
+    focusAfterOps(offer, answer, hostId) {
+        const root = this.gameContainer;
+        if (offer?.action === 'use') { this.restoreFocus({ id: TECHNIQUES_FOCUS, action: 'use', sub: null }); return; }
+        if (offer?.action === 'check' || offer?.action === 'confirm') {
+            const service = offer.action === 'check' ? parseCheckTarget(offer.target)?.service
+                : (answer?.finding?.service ?? findFinding(this.view, offer.target)?.finding.service);
+            const tile = [...(root?.querySelectorAll?.('[data-host-id] [data-service]') || [])]
+                .find(el => el.closest('[data-host-id]')?.dataset.hostId === hostId && el.dataset.service === service);
+            const next = tile ? [...tile.querySelectorAll('[data-action]')].find(b => !b.disabled) : null;
+            if (next) { next.focus?.(); return; }
+            this.focusAfterMove(hostId);
+            return;
+        }
+        this.focusAfterMove(offer?.target);
     }
 
     /** After a move redrew the list: focus the first control in the target's row or block, else the next one after it. */
@@ -1102,7 +1399,7 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /** What follows a finished move: the unplug that ends the trip, or the events and the refetch of an ops success. */
-    async afterAnswer(offer, answer) {
+    async afterAnswer(offer, answer, offerHostId = null) {
         const { action, target } = offer || {};
         if (action === 'unplug') {
             if (answer?.action === 'unplugged' || answer?.action === 'not_planted') {
@@ -1114,14 +1411,54 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!answer || answer.success === false) {
             // A refusal ends the move with no refetch of its own: if it made an earlier move's
             // refetch drop (or is about to drop) its answer, ask again now, not at the next tick (R2 N1)
-            if ((action === 'sweep' || action === 'scan') && (this._refetching || this._refetchDropped)) await this.refetchAfterOps();
+            if (action === 'use' && typeof answer?.reason === 'string') {
+                const t = parseUseTarget(target);
+                if (t) this._emit('network_technique_refused', { findingId: t.finding, reason: answer.reason }, t.finding);
+            }
+            if (OPS_ACTIONS.includes(action) && (this._refetching || this._refetchDropped)) await this.refetchAfterOps();
             return;
         }
         if (action === 'sweep') this._emit('network_swept', { networkId: target }, target);
         else if (action === 'scan') this._emit('network_host_scanned', { hostId: target }, target);
+        else if (action === 'check') {
+            const t = parseCheckTarget(target);
+            if (t) this._emit('network_service_checked', { hostId: t.hostId, service: t.service }, `${t.hostId}.${t.service}`);
+        } else if (action === 'confirm') {
+            this._emit('network_finding_confirmed', { findingId: target, status: answer.finding?.status ?? null }, target);
+        } else if (action === 'use') {
+            const t = parseUseTarget(target);
+            if (t) this._emit('network_technique_used', { findingId: t.finding, techniqueId: t.card, grant: answer.grant ?? null }, t.finding);
+            // A session grant hands over to the desktop (the screen it opens replaces this view); a
+            // credential grant asks the keyring to refetch, as any change to what it holds does
+            if (answer.grant === 'session' && this.handOverSession(t, answer, offerHostId)) return;
+            if (answer.grant === 'credential' && answer.keyringChanged === true) {
+                try { Promise.resolve(window.keyring?.refresh?.()).catch(() => {}); } catch (e) { console.warn('[network-view] keyring refresh threw', e); }
+            }
+        }
         // The answer holds what the click needs; the rest of what the move changed arrives by the
         // same GET /network refetch a sign-in or an unplug leads to
         await this.refetchAfterOps();
+    }
+
+    /**
+     * A technique session's desktop (plan 5.4): record the session the answer holds, then open the
+     * desktop through this view's foothold, as the Open control does. True when a screen replaced
+     * this view; false (the view stays, with its notice) when nothing could be opened.
+     */
+    handOverSession(t, answer, offerHostId = null) {
+        const hostId = offerHostId || this.lastGrant?.hostId || findFinding(this.view, t?.finding)?.row.id;
+        if (!hostId) return false;
+        // A repeat (`already: true`) changes nothing (plan 5.4): a copy already held is not re-recorded,
+        // so no sign-out and sign-in fire again; a copy the client lacks (a reload) is still recorded
+        const held = answer.already === true && !!window.pcSessions?.remoteViewFoothold?.(hostId);
+        if (!held) {
+            try { window.pcSessions?.noteTechniqueSession?.(hostId, answer.session, answer.endedPcIds ?? null, answer.tokenExpiredPcIds ?? null); } catch (e) { console.warn('[network-view] noting the session threw', e); }
+        }
+        const start = window.openRemoteDesktop;
+        if (typeof start !== 'function' || this._reported || this._ending || this.status !== 'ready') return false;
+        this.exitReason = 'handover';
+        start(hostId, this.footholdId);
+        return this.handedOver();
     }
 
     /** The view's own refetch, run now: after one already on its way has landed, as that one may predate the move. */
@@ -1217,6 +1554,61 @@ export class NetworkViewMinigame extends MinigameScene {
         return b ? { ownNetwork: { id: b.id, ...this.blockOpsState(b) } } : {};
     }
 
+    /**
+     * The findings facts of a host row for getTestState: `checks` (service name to the Check
+     * selector, only while offered) and `findings` (only when the player holds any), each with
+     * its alias, id, service, class, severity, summary (the server's),
+     * status, `fixed`, `needs` ({ kind, label, met }), `reason` (a false finding's) and the
+     * selector of its Confirm, only while offered.
+     */
+    findingsState(r) {
+        const out = {};
+        if (offersCheck(r)) {
+            const checks = {};
+            for (const s of rowServices(r)) checks[s.name] = `[data-host-id="${r.id}"] [data-service="${s.name}"] [data-action="check"]`;
+            if (Object.keys(checks).length) out.checks = checks;
+        }
+        const findings = rowFindings(r);
+        if (findings.length) {
+            out.findings = findings.map(f => ({
+                alias: f.alias ?? null, id: f.id, service: f.service ?? null, class: f.class ?? null,
+                severity: f.severity ?? null, summary: findingSummary(f), status: f.status ?? null,
+                fixed: isFixed(f), needs: findingNeeds(f), reason: falseReason(f) || null,
+                // The alias is a select control only while a card is held (drawn above); with none it is a plain chip
+                ...(techniqueList(this.view).length ? { select: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="select-finding"]` } : {}),
+                selected: this.selectedFinding === f.id,
+                ...(offersConfirm(r, f) ? { confirm: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="confirm"]` } : {})
+            }));
+        }
+        return out;
+    }
+
+    /**
+     * The Techniques panel's facts for getTestState, only when the view holds a card or something is picked:
+     * `techniques` (each card's face, its picked flag and the selector of its select control), the picked
+     * finding's alias and card, the Use selector with `canUse`, and the last grant. Nothing here says which
+     * card fits which finding.
+     */
+    techniquesState() {
+        const cards = techniqueList(this.view);
+        if (!cards.length && !this.selectedFinding && !this.selectedTechnique) return {};
+        const hit = this.selectedFinding ? findFinding(this.view, this.selectedFinding) : null;
+        const card = cards.find(t => t.id === this.selectedTechnique) || null;
+        const busy = !!hit && !!card && this.pending.has(pendingKey('use', useTarget(card.id, hit.finding.id)));
+        return {
+            techniques: cards.map(t => ({
+                id: t.id, name: t.name, summary: t.summary, worksOn: t.worksOn, itemId: t.itemId || null,
+                selected: t.id === this.selectedTechnique,
+                select: `[data-technique="${t.id}"] [data-action="select-technique"]`
+            })),
+            selectedFinding: hit ? (hit.finding.alias ?? null) : null,
+            selectedTechnique: card ? card.id : null,
+            use: '[data-techniques] [data-action="use"]',
+            canUse: !!hit && !!card && !busy,
+            ...(this.lastGrant ? { grant: { hostId: this.lastGrant.hostId, who: this.lastGrant.who, ...(this.lastGrant.access ? { access: this.lastGrant.access } : {}) } } : {})
+        };
+    }
+
     /** One row of getTestState; a host or device row in an ops block adds `scanned`, `services` and `scan`. */
     rowState(r, block, action) {
         const ops = isOpsBlock(block);
@@ -1224,11 +1616,14 @@ export class NetworkViewMinigame extends MinigameScene {
             return { id: r.id, kind: r.kind, host: r.host || null, name: r.name || null,
                 action: r.kind === 'device' ? (r.responding === false ? 'not_responding' : 'none') : action,
                 session: r.session ? (r.session.displayName || r.session.username || null) : null,
+                ...(accessTag(r.session) ? { access: 'admin' } : {}),
+                ...(isTechniqueSession(r.session) ? { bolt: true } : {}),
                 selector: `[data-host-id="${r.id}"] [data-action]`,
                 ...(ops || r.scanned ? {
                     scanned: r.scanned === true,
                     services: rowServices(r),
-                    ...(offersScan(r, block) ? { scan: `[data-host-id="${r.id}"] [data-action="scan"]` } : {})
+                    ...(offersScan(r, block) ? { scan: `[data-host-id="${r.id}"] [data-action="scan"]` } : {}),
+                    ...this.findingsState(r)
                 } : {}) };
         }
         return { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,
@@ -1255,6 +1650,7 @@ export class NetworkViewMinigame extends MinigameScene {
             // services answers the keys it always did. `pending` lists the keys of requests out.
             ...(this.pending.size ? { pending: [...this.pending] } : {}),
             ...this.ownOpsState(),
+            ...this.techniquesState(),
             rows: this.rows().map(r => this.rowState(r, this.ownOpsBlock(), hostAction(r))),
             networks: this.networkBlocks().map(b => ({
                 id: b.id, name: b.name || null, route: b.route || 'up', via: b.via?.hostId ?? null,

@@ -279,6 +279,41 @@ export function isLoginPc(lockable, type = 'item') {
     return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
 }
 
+/** PCs whose desktop open is waiting on the foothold's view fetch (N-C2). */
+const pendingRemoteOpens = new Set();
+
+/**
+ * A click on a world PC the player holds a technique session on opens its desktop through the
+ * session's foothold (core plan 5.4): the trip the network view uses, no sign-in screen, no
+ * password. True when it did. A network-view row (scenarioData.remote) is already mid-trip and
+ * keeps its own path; so does a PC with any other session, or none.
+ */
+function openRemoteViewIfHeld(lockable) {
+    const data = lockable?.scenarioData;
+    if (!data?.id || data.remote) return false;
+    if (!window.pcSessions?.remoteViewFoothold?.(data.id)) return false;
+    if (typeof window.networkLinks?.openSession !== 'function') return false;
+    // The desktop closes back to the world, where the click came from: nothing more to reopen
+    const open = () => window.networkLinks.openSession(data.id, { returnTo: () => {}, toWorld: true });
+    const footholdId = window.pcSessions.remoteViewFoothold(data.id);
+    const links = window.networkLinks;
+    // After a reload no view of this foothold is held yet: the taskbar's Switch user reads the host's row in it
+    // (pcSessions.canSwitchUser), so fetch it first. A foothold the server no longer holds takes today's path.
+    if (typeof links.lastView === 'function' && typeof links.view === 'function' && !links.lastView(footholdId)) {
+        // A second click while this PC's fetch is pending starts nothing (N-C2)
+        if (pendingRemoteOpens.has(data.id)) return true;
+        pendingRemoteOpens.add(data.id);
+        Promise.resolve().then(() => links.view(footholdId)).catch(() => null).then((out) => {
+            pendingRemoteOpens.delete(data.id);
+            if (out?.ok === false && out.reason === 'gone') openLoginPc(lockable);
+            else open();
+        });
+        return true;
+    }
+    open();
+    return true;
+}
+
 /** Open a sign-in PC: its desktop when the client holds a session there, else the sign-in screen. */
 export function openLoginPc(lockable) {
     const pcId = lockable?.scenarioData?.id;
@@ -287,6 +322,7 @@ export function openLoginPc(lockable) {
         showHeadlessObservations(lockable);
         return;
     }
+    if (openRemoteViewIfHeld(lockable)) return;
     // A locked session (UI slice 6) stays held, but opens the sign-in screen (account
     // pre-chosen), not the desktop: the player re-enters the password to continue.
     if (pcId && heldAtKeyboard(pcId) && !window.pcSessions?.isLocked?.(pcId)) {
@@ -341,7 +377,8 @@ export function remoteLockable(row, footholdId) {
 /** The host row for pcId from the last view fetched for this foothold, else what the session knows. */
 function remoteRowFor(pcId, footholdId) {
     const view = window.networkLinks?.lastView?.(footholdId);
-    const row = (view?.hosts || []).find(h => h?.id === pcId);
+    const hosts = [...(view?.hosts || []), ...(view?.networks || []).flatMap(n => n?.hosts || [])];
+    const row = hosts.find(h => h?.id === pcId);
     if (row) return row;
     const s = window.pcSessions?.get?.(pcId);
     return { id: pcId, name: s?.host || pcId, host: s?.host || null };
@@ -596,7 +633,7 @@ export async function showPcInUse(lockable, userAt = pcInUseBy(lockable)) {
  *   3. workstationState.onInteract: 'accessed' claims the owner's session through
  *      pc-sessions.js (the desktop on success, the sign-in screen on a refusal); anything
  *      else ('locked', 'signin', 'attended' from a race with step 1, null) the sign-in screen.
- * Resolves to what it did: 'headless' | 'off' | 'in_use' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
+ * Resolves to what it did: 'headless' | 'off' | 'in_use' | 'remote_view' | 'desktop' | 'claimed' | 'claim_refused' | 'signin'.
  */
 export async function interactLoginPc(lockable) {
     const data = lockable?.scenarioData || {};
@@ -626,6 +663,7 @@ export async function interactLoginPc(lockable) {
         await showPcInUse(lockable, userAt);
         return 'in_use';
     }
+    if (openRemoteViewIfHeld(lockable)) return 'remote_view';
     if (heldAtKeyboard(pcId, sessions)) {
         // A locked session (UI slice 6): the sign-in screen with the account pre-chosen, not
         // the desktop and never a claim (the player already holds the session here).

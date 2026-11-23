@@ -15,9 +15,13 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
 
 ## Where to work
 
-- Worktree `/data/be-ops-core` (also `/home/deploy/be-ops-core`), branch `ops-core`. Use
-  absolute paths under it. Never edit or commit in `/home/deploy/BreakEscape` (main) or any
-  other repo. Never edit `.claude/skills/*` or campaign missions (m01 to m10, sis*).
+- **Build worktree: `/data/be-ops-build`** (also `/home/deploy/be-ops-build`), branch
+  `ops-build`. All building, fixing and reviewing happens here; use absolute paths under it.
+  `/data/be-ops-core` (branch `ops-core`) is now the TRAIN tree: the orchestrator fast-forwards
+  it and runs train checks there. Never edit, commit or run anything in it. Older notes and
+  prompts that say `/data/be-ops-core` mean the build worktree. Never edit or commit in
+  `/home/deploy/BreakEscape` (main) or any other repo. Never edit `.claude/skills/*` or
+  campaign missions (m01 to m10, sis*).
 - Scratch files: the scratch folder your prompt names, never the repo.
 - Read narrowly: the plan sections and line ranges your prompt names, and the code you edit.
   The plans are long (core 2120 lines, log rows 1296); do not read them whole. Digests of the
@@ -29,7 +33,7 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop`, `db:setup` or `db:seed`.
   If a step seems to need a migration, stop and report.
 - **Tests.** Rails tests share one test database: run them under the shared lock,
-  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the worktree root. Do not set
+  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the build worktree's root. Do not set
   `BUNDLE_PATH` (the gems are system gems). The lock is shared with other sessions' trains, so
   a run can queue for many minutes: that is normal, wait for it. After any edit to an engine
   file, also run `bin/ops-golden-compare` with NO outer `flock` (it takes the lock itself; wrapping it deadlocks the queue for every session) to prove old scenarios answer as
@@ -124,3 +128,106 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   group, "Devices", listed after the PCs and before shares and other kinds. m4, focus stays on
   the control's row (or the next control) after a sweep or scan, and scroll is kept. A stale
   refetch answer must never overwrite a newer one (M1): drop it by an epoch counter.
+- 2026-11-23 (user: "parallelise further"): builders of one stage run side by side, split by
+  file, each told which files are its own. A builder NEVER edits a file outside its list; if
+  it needs a change there it reports it. Each commits only its own paths. Shared single-line
+  files (`ops_log_events.rb`, `config/routes.rb`, the controller lists, `game_policy.rb`,
+  the schema) are edited by exactly one builder per stage, named in the prompts. Rails tests
+  queue on the shared lock, so run few files at a time and expect waits. A test that fails
+  only because a neighbour's half is not in yet is reported, not "fixed".
+- For S2: R3-1 (the leak scanner checks a service's `name` and `port` too, by a structural
+  rule) goes into step 8's scanner work; R3-2 (`_refetchDropped` initialised in the view's
+  constructor) into step 7.
+- 2026-11-23, S2 client R1 rulings: m1, a decoy's reason is the key `falseBecause` and only
+  that; the client's fallbacks go. m2, the per-class default summary is the server's table
+  (`CLASS_SUMMARIES`); the client's `CLASS_DEFAULT_LINE` and the tests and doc lines that pin
+  it are removed. m7, a `severity` or `class` value reaches a class attribute only through a
+  fixed allow-list map. m8 is settled in the live proof, not in this fix pass.
+- 2026-11-23, S2 server R1 rulings: m9, the graph's need edges (a credential or item node
+  into its weakness, plan 9.3) are built now, not left to S3. m3, a `credential` need is met
+  by the keyring's own rule (the entry is one the keyring would serve), as plan 4.2 says, not
+  by a bare proof check. m11, a `technique_card` itemType need fails closed (never met).
+  m2, a finding's `cli` values are copied by type: strings and arrays of strings only, no
+  nested objects, so no `_` key can ride along. m12, the server resolves a weakness before a
+  decoy of the same id deterministically and the validator refuses the clash. The validator
+  minors (m14, m15, and m12's validator half) wait until builder 9a is out of
+  `scripts/validate_network_ops.rb`. From step 8b: the loader gains a small public method to
+  list entry ids (the scanner stops using a private one); the scanner also judges JSON KEYS
+  for a global's name; `scenarios/test_ops_findings/PLAYTEST.md` uses the `opsFindings`
+  verify-run line and the scanner's check-stage tags now that they exist; the N13 doc
+  paragraph that says N14 is "not built" is corrected.
+- 2026-11-23, step 10a: a sync body's `globalVariables.opsUsed` is stored as an ordinary
+  saved global, in the globals namespace; the server state key `player_state['opsUsed']` is
+  separate and untouched. Accepted: existing behaviour for any global name. A test should pin
+  that the keyring proof and `use_technique!` read only the state key.
+- 2026-11-23, S2 R2 rulings: M1 and M2 (leak scanner) are fixed by STRUCTURAL rules, not
+  strings: before `confirm:<id>` a finding row may carry only the unconfirmed key set
+  (`needs`, `fixed`, `falseBecause` or a settled status there is a leak); the key names
+  `fixedIf`, `grants`, `realism` (and any other key section 7 lists as never sent) are a leak
+  wherever they appear in an answer; a gating global's name inside a finding row is a leak
+  whatever is public elsewhere. N6, the `globalVariables` exemption applies only to the
+  bootstrap's top-level map. N4 stays (sound, loose). N5 and N1 are S3's: noted for the S3
+  scanner and needs work (a credential need met by an expired token or ended invite; labels
+  tagged confirm). N10, beat 1's count is whatever the server lists: the script states the
+  real number and what it counts.
+- 2026-11-23, step 10b rulings: `techniques` goes into `WITHHELD_SCENARIO_KEYS` in
+  `network_access.rb` (step 9 missed it; 10b's `withhold_network_keys!` override in
+  `network_ops.rb` is then removed); the `access: "admin"` line on a held session's host row
+  is folded into `host_row` itself and 10b's `host_row` wrapper removed; the `network_view`
+  wrapper for the `techniques` map may stay in `network_ops.rb`. All three by the step 11
+  builder, who owns `network_access.rb`. The `session` need's label is the PC's host label.
+- 2026-11-23, S3 validator: a `worksOn.versions` entry that equals no version of that
+  product in the scenario stays an ERROR (plan 9.2; it catches a typo that would make a card
+  silently useless). The plan's section 4.3 example now lists only the version its example
+  service has.
+- 2026-11-23, S3 step 11 security R1 rulings: verdict "safe to keep". F1 (major, fails
+  closed): `record_borrow_done!` in `npc_frustration.rb` deletes the player's record at that
+  PC only when it has neither `foothold` nor `from` (plan 5.4); assigned to a Ruby fixer with
+  test T8, plus T1 to T7 and T9 to T12, F3 and F7. F4 is left as built (the plan says no
+  refusal is added: during an outage a technique session's keyboard desktop is served while
+  its no-route folders are refused) and goes to the user as a question. F5 is noted for S5a.
+  F6 and F8 stay. From 12a: the view imports `utils/compromise-bolt.js` STATICALLY, as the
+  plan describes, with the module added to every harness copy list that copies the view; the
+  dynamic `import()` goes (in the S3 client fix pass).
+- 2026-11-23, S3 server R1 rulings: M1, a `session` need is met only by a LIVE session:
+  the predicate applies the same expiry and relay tests every other session reader applies.
+  The same goes for a `credential` need (S2 R2's N1): an expired token or an ended invite
+  does not meet it; if the keyring's own rule already says so, call that. m1, `worksOn` is
+  sent by named keys only (`class`, `product`, `versions`). m2, the schema's proof pattern
+  allows a host part as long as a sign-in PC id may be. m3, the keyring serves a
+  `technique_card` proof only for a `saved_connection` entry at run time too. m10, a
+  `needs.session` on a device host is a validator error (a device has no sessions), so the
+  empty label cannot occur. m11 is noted for S5a. m12 is step 13a's (the N15 flip).
+- 2026-11-23, S3 client R1 rulings: B1, the client keeps the top-level `techniques` map of
+  the `GET /network` body on the stored view (the server and plan line 1294 stand); a test
+  uses the server's real body shape. M3, the three existing assertions are updated EXACTLY as
+  the review's M3 section gives them (`pc-sessions.test.mjs:543` and `:568`,
+  `test-bridge-access.test.mjs:36`): the plan requires both behaviour changes (lines 889-895,
+  978-982, 1003-1004, 1543-1550); this instruction replaces "no existing assertion edited"
+  for those three assertions only, and the plan's section 10 part 3 gains the bridge test's
+  name. m1, a grant's `tokenExpiredPcIds` is applied as for any sign-in answer. m2, a repeat
+  grant (`already: true`) re-records nothing and fires no sign-in or sign-out event. m5, with
+  no card held the finding rows carry no select control. m6 and m8 are judged in the live
+  proof; fix m6 if the cause is plain (Sign out on a world-click remote view returns to the
+  world, not to the network view). The static bolt import needs the helper on two copy lists
+  only (`network-view.test.mjs`, `network-view-ops.test.mjs`).
+- 2026-11-23, S3 server fix pass: a card item's own `technique_card` registry key riding in
+  room data before pickup is the plan's design (section 4.3: the id reaches the browser on
+  the card item and should say nothing the card's face does not; the validator warns on a
+  telling id). It stays; the registry's content stays withheld. M1 residue from the client
+  fix pass (a fingerprint-view red on an unhighlighted sprite still counts as an authored
+  tint, so that sprite gets only the bolt) is accepted for now and goes on the screenshot
+  review list.
+- 2026-11-23, S3 R2 rulings: N-13-1 and N-13-2, the leak scanner earns steps PER THING
+  (a grant by its finding id, a session by its PC and foothold, a card by its item id), never
+  one whole-game step. N-13-3, no playtest script sends a hand-built or forged request from
+  the browser: those beats and the "Hostile requests" paragraph leave
+  `scenarios/test_ops_access/PLAYTEST.md`, replaced by one line naming the Rails tests that
+  make the checks; the only by-hand request a script may keep is the plain "an unearned id
+  answers the same 404 as an invented one" read. N-C1 is judged in the live proof. N-M1 (the
+  log reader shows an ops row's detail as `service: service`) goes to the log stream.
+- 2026-11-23, S3 R2 N-C1 ruling: Option B. For a remote view opened by a click on the PC in the
+  world (`trip.toWorld`), closing a share opened from that desktop reopens that desktop (the share
+  is a step inside it), and closing the sign-in screen with no session held leaves to the world; a
+  remote view opened from the network view keeps its landings. A player who clicked a PC in the
+  world never opened the network view, so nothing lands them in it.
