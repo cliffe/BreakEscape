@@ -78,3 +78,17 @@ with these differences, which win:**
   leak check judges IDENTITY on a successful or known-account sign-in row, and sees a
   stored-only key inside a detail string) are done now, with the other R3 minors, in one
   tidy pass after the playtest.
+- 2026-11-23, L2b: THE FLAG GOES BACK TO THE PLAN. The orchestrator's L2b prompt said the
+  flag must be judged on the server; that went beyond the plan and was a mistake. The plan as
+  landed with L2a (section 7 and 5.2) says `anomaly.rowId`, `flagActions` and
+  `completionActions` reach the browser and "the flag is checked on the client, best effort,
+  the same standing as log-filter's anomaly today; a server check belongs to the investigator
+  work". The review (`reviews/L2b_R1.md`) found the server-judged build enforced nothing (the
+  browser still ran the actions) and could lose a right flag's actions for good. So: the
+  route `POST /log_rows/flag`, its policy and role-test entries, the `opsLogFlagged` state key
+  and the three strip calls are removed; the viewer compares the selected row's id with
+  `anomaly.rowId` locally and reads "done" from the action's global, as log-filter does; the
+  plan file is restored to its text on main; the leak check's rule goes back to what the
+  plan's section 7 gives. The user was told and may still choose a server-judged flag, which
+  would be planned as its own piece (the server applying the actions and owning the globals
+  and tasks).
