@@ -535,6 +535,7 @@ export function preload() {
     this.load.image('lockpick_set', 'objects/lockpick_set.png');
     this.load.image('charging_cable', 'objects/charging_cable.png');
     this.load.image('qr_card', 'objects/qr_card.png');
+    this.load.image('technique_card', 'objects/technique_card.png');
     this.load.image('icon_deviceB', 'objects/icon_deviceB.png');
     this.load.image('nfc-waves', 'icons/nfc-waves.png');
 

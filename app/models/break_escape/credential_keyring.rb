@@ -30,9 +30,19 @@ module BreakEscape
       when 'foothold'
         held = player_state['footholds']
         held.is_a?(Hash) && held.key?(proof['foothold'])
+      when 'technique_card'
+        technique_finding_used?(proof['technique_card'])
       else
         false
       end
+    end
+
+    # Whether the server's `opsUsed` list (OPS_CORE_PLAN.md section 8, server-written only) records
+    # that this finding id was used with a grant. The one reader the technique route and the
+    # `technique_card` proof share.
+    def technique_finding_used?(finding_id)
+      used = player_state.is_a?(Hash) ? player_state['opsUsed'] : nil
+      finding_id.is_a?(String) && !finding_id.empty? && used.is_a?(Array) && used.include?(finding_id)
     end
 
     # The `held` proof (section 3.5): an inventory entry whose stored `credential` equals the
