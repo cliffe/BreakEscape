@@ -105,17 +105,29 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   note `HANDOVER_core_6a.md`; that builder reached 252k tokens: split server steps in three
   for S3); 6b loader `1bb0a2207`; 7 client `35545f827` (`HANDOVER_core_7.md`; reads a decoy's
   reason through a fallback chain until the key is settled); graph `e8cde9ce0`.
-- RUNNING for S2, four agents split by file: server review R1 (fable52L;
-  `reviews/S2_server_R1.md`), client review R1 (fable52L; `reviews/S2_client_R1.md`, with
-  the cross-check of the two halves), 8a (`test_ops_findings` scenario, PLAYTEST, end-to-end
-  test, flip N14; `HANDOVER_core_8a.md`), 8b (leak collector check stage + R3-1, verify-run
-  `opsFindings` line, docs N14, a flaky `ops_log_test` pid collision, the S1_R2 row
-  correction; `HANDOVER_core_8b.md`). Reviewers do not commit: check each findings file's
-  LENGTH, then commit it by path.
-- Next for S2: rulings; fixers split server / client; delta review R2 over fixes and step 8;
-  Haiku playtest + live proof of `test_ops_findings` (11.5 S2 beats; I look at the
-  screenshots); then `git merge --ff-only ops-build` in the train tree and the train check
-  there (S3 building continues meanwhile); land; push; merge main into `ops-build`.
+- S2 BUILT: 8a `eea31ed86` (`scenarios/test_ops_findings/`, PLAYTEST beats 1 to 12 + run B,
+  16 end-to-end tests, N14 flipped; `HANDOVER_core_8a.md`); 8b `98a5164fe`, `a499aff45`,
+  `677354b7f`, `af14f9aeb` (scanner check stage + R3-1, verify-run `opsFindings` line, docs
+  N14, flaky test fixed; `HANDOVER_core_8b.md`).
+- S2 reviews R1: client 0B 1M 9m `0234fb86c` (halves agree; decoy reason key is
+  `falseBecause`); server 0B 0M 17m `248ec9e75`. Rulings in the brief.
+- RUNNING in the build tree (split by file): S2 client fixer; S2 server fixer (m1 to m13,
+  m16, four step-8 tidy items; NOT the validator minors m14, m15, m12's validator half, which
+  wait for 9a); S3 step 9a (schema S3 rows, techniques helpers, validator S3 rules;
+  `HANDOVER_core_9a.md`); S3 step 9b (`technique_card.png` placeholder, `load.image` line,
+  `technique-card-item.test.mjs`, keyring proof kind; `HANDOVER_core_9b.md`).
+- Next for S2: when 9a reports, a tiny Sonnet pass for the deferred validator minors; delta
+  review R2 (fable52L) over both fix sets and step 8; Haiku playtest + live proof of
+  `test_ops_findings` (11.5 S2 beats incl. client m8: phone-width layout and tick/cross
+  glyphs; I look at the screenshots); then train S2 in the train tree. NOTE: S3 step 9
+  commits are on the same branch, so the S2 train hash will include step 9 code (inert: N15
+  stays "not built" in the validator and no route exists); say so when landing.
+- Next for S3: step 10 split in three (10a `start_login_session!` keywords, `access` through
+  the session answers, `opsUsed` in `ACCESS_STATE_DEFAULTS`; 10b `use_technique!`, the route,
+  policy, events, credential grant, `techniques` on `GET /network`; 10c the hostile and free
+  tests), step 11 alone (access-check changes, own commit, fable52L security review), step
+  12 client split in two (techniques panel and Use; remote-view frame, compromise marks,
+  click path), graph cards and grants, step 13 split (scenario + tests / tooling + docs).
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -125,9 +137,11 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   early per the digest: S5a, M1a, C1, K1 (need core S1 to S3), S5b (needs S5a and S7). The
   digest flagged plan conflicts to check when those stages start (who adds the `access:`
   parameter, S5a or core; H1 ordered after M3 though it needs none of S8a; K1 gated on S3).
-  L2a server DONE there `b0d5e98a8` (`HANDOVER_L2a_server.md`), its review R1 running
-  (fable52L; `ops_logs_stream/reviews/L2a_server_R1.md`; asked for a `showCardHolder` design).
-  RUNNING there: L2a client builder
+  L2a BUILT there: server `b0d5e98a8`, client `c6f27c685`, scenario step `56bcadf16` (2
+  validator sprite errors, in the client fixer's list). Reviews R1: server 0B 1M 12m
+  (`01ecc36e2`), FIXED `1bf1527c5`, `7874c1d2a` (stored `flagged` marker); client 0B 5M 12m
+  (`b75add8da`). RUNNING there: client fixer; server delta review R2 + scenario first read
+  (`reviews/L2a_server_R2.md`). Old line: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
