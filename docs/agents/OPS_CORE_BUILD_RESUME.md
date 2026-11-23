@@ -78,12 +78,20 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   built, the two `validate_network.rb` edits, `collect_ops_secrets`, verify-run line, graph
   nodes for devices, docs N13; note `HANDOVER_core_5.md`). That builder ran to 257k tokens:
   split a step like this in two next time (scenario + tests / tooling + docs).
-- RUNNING: S1 server R1 fixer (Sonnet).
-- Next: delta review R2 over both fix sets AND step 5 (fable52L; `reviews/S1_R2.md`); Haiku
-  scripted playtest + live proof of `test_ops_scan` (PLAYTEST.md; game via
-  `swap-scenario-game.rb test_access_signin test_ops_scan`; 11.5 S1 beats; screenshots, which
-  I look at); fix pass if needed; train check with the machine settings above; land; push.
-  Then S2 steps 6 to 8 (step 6 is large: split server model+routes / catalog loader+cli).
+- S1 server R1 FIXED (unconfirmed): `50a325b76`, `1d58cf407`, `d735fefee` (M1, M2, m1, m5),
+  `6cc0efa9a` (m3, m4, m6, m7). The reviewer had written only a header to its findings file;
+  rebuilt from its report in `d55562487`. LESSON: check a findings file's length before
+  committing it; the brief now says findings go in the file in full.
+- RUNNING: delta review R2 (fable52L; fixes of both halves plus a first read of step 5;
+  `reviews/S1_R2.md`, does not commit); Haiku scripted playtest + live proof of
+  `test_ops_scan` on port 3011 (real clicks on Sweep and Scan; results and screenshots in the
+  session scratchpad `s1-playtest/RESULTS.md`).
+- Next: commit R2 findings (check the file is complete); look at the playtest screenshots
+  myself; a Sonnet check of any "stuck"; one fix pass if needed; train check (machine
+  settings above; needs the worktree untouched while it runs); land; push. Then S2: step 6
+  split in two builders (6a model helpers, schema, validator, check/confirm routes,
+  `opsFindings`, events; 6b catalog loader, `cli` from `realism`, tests), step 7 client and
+  graph, step 8 split (scenario + tests / tooling + docs).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
