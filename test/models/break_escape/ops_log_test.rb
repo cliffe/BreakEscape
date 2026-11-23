@@ -626,6 +626,8 @@ module BreakEscape
       io = StringIO.new
       old = Rails.logger
       Rails.logger = Logger.new(io)
+      # The default formatter writes a timestamp and the process id, whose digits can equal a test PIN.
+      Rails.logger.formatter = proc { |severity, _time, _prog, message| "#{severity}: #{message}\n" }
       begin
         BreakEscape::OpsLog.with_guard(false) do
           malformed_calls(game).each { |call| assert_nil call.call }
@@ -659,6 +661,8 @@ module BreakEscape
       io = StringIO.new
       old = Rails.logger
       Rails.logger = Logger.new(io)
+      # The default formatter writes a timestamp and the process id, whose digits can equal a test PIN.
+      Rails.logger.formatter = proc { |severity, _time, _prog, message| "#{severity}: #{message}\n" }
       begin
         BreakEscape::OpsLog.with_guard(false) { assert_nil write(game, 'tst_note') }
         assert_raises(RuntimeError) { write(game, 'tst_note') }
