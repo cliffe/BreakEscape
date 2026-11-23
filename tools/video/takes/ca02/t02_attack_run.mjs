@@ -9,13 +9,13 @@
 // HOW IT IS DRIVEN (all real UI, as ca01): selects by page.selectOption (closed list), slots by real mouse click on button.mail-blank[data-slot=...] then .mail-picker-option.
 // Marks: start, browser-open, note-fatima, note-colin, careers-open, note-vacancy, browser-closed, mail-open, compose, pretext-set, slot1 (vacancy), slot2 (hiring manager), ask-set, attach-set,
 //   redflags:<n>, send, landed, reply-in (or reply-missing), mail-closed, flip-up, continue, strip-defend, end, frame:* (research, builder, panel, flip).
-import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, addCss, HIDE_MAIL, spriteCheck } from './_ca02.mjs';
+import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, addCss, HIDE_MAIL, spriteCheck, narrowPanel } from './_ca02.mjs';
 
 export async function setup(page, bridge) { await prepare(page, bridge); await sleep(400); }
 
 const flagCount = (page) => page.evaluate(() => { const e = [...document.querySelectorAll('.mail-redflag-count')].find(x => x.offsetParent); return e ? e.innerText.trim() : null; });
 
-export default async (page, bridge, mark) => {
+export async function run(page, bridge, mark, { narrow = false } = {}) {
   let lastFlags = null;
   const watchFlags = async () => { const c = await flagCount(page); if (c !== null && c !== lastFlags) { lastFlags = c; mark('redflags:' + c); } };
   await addCss(page, HIDE_MAIL);
@@ -26,7 +26,7 @@ export default async (page, bridge, mark) => {
 
   // research
   await pressButton(page, /Open the browser/);
-  await waitVisible(page, '.ob-root'); mark('browser-open'); await sleep(1500);
+  await waitVisible(page, '.ob-root'); if (narrow) await narrowPanel(page, '.osint-browser-game-container', 560); mark('browser-open'); await sleep(1500);
   const note = async (id, label) => {
     await mouseClick(page, `.ob-block[data-id="${id}"]`, null, { steps: 12, dwell: 450 });
     await waitVisible(page, `.ob-block.is-noted[data-id="${id}"]`); mark(label); await sleep(1300);
@@ -41,7 +41,7 @@ export default async (page, bridge, mark) => {
 
   // mail client
   await pressButton(page, /Open the mail client/);
-  await waitVisible(page, 'button.mail-compose-btn'); mark('mail-open'); await sleep(1500);
+  await waitVisible(page, 'button.mail-compose-btn'); if (narrow) { await narrowPanel(page, '.mail-client', 560); await page.evaluate(() => { for (const b of document.querySelectorAll('button')) if (/^\s*close\s*$/i.test(b.textContent) && b.closest('.mail-client')) b.style.visibility = 'hidden'; }); } mark('mail-open'); await sleep(1500);
   await mouseClick(page, 'button.mail-compose-btn', null, { steps: 12, dwell: 400 });
   await waitVisible(page, 'select.mail-compose-template'); mark('compose'); await sleep(1800);
   await watchFlags();
@@ -71,13 +71,16 @@ export default async (page, bridge, mark) => {
   // send (first Send is final)
   await waitVisible(page, 'button.mail-compose-send:not([disabled])', null, 8000);
   await mouseClick(page, 'button.mail-compose-send', null, { steps: 14, dwell: 500 });
-  mark('send');
+  const sendAt = Date.now(); mark('send');
   await waitVisible(page, 'body *', /It landed/i, 15000).catch(async () => { throw new Error('"It landed" never showed; text: ' + (await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').slice(0, 400)))); });
   mark('landed'); mark('frame:landed-panel');
-  const landedAt = Date.now();
-  let reply = false;
-  while (Date.now() - landedAt < 12000 && !reply) { reply = await visible(page, 'body *', /Thanks for your application/i); if (!reply) await sleep(150); }
-  if (reply) { mark('reply-in'); mark('frame:reply'); } else mark('reply-missing', { text: await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').slice(0, 500)) });
+  const landedAt = sendAt;
+  // The result panel covers the mail client, so innerText/visible never sees the reply row. Poll textContent (hidden DOM counts) for the reply text, and log the rows and the panel's pending line.
+  const peek = () => page.evaluate(() => ({ body: document.body.textContent.replace(/\s+/g, ' '), pending: !!document.querySelector('.mail-checklist-reply'), panel: !!document.querySelector('.mail-checklist'), rows: [...document.querySelectorAll('.mail-row')].map(e => e.textContent.replace(/\\s+/g, ' ').trim().slice(0, 120)) }));
+  let reply = false, snap = null;
+  while (Date.now() - landedAt < 12000 && !reply) { snap = await peek(); reply = /Re: Application/i.test(snap.rows.join(' | ')); if (!reply) await sleep(150); }
+  if (reply) { mark('reply-in', { sinceSendMs: Date.now() - landedAt, pendingLineStill: snap.pending }); mark('frame:reply'); }
+  else { const rows = await page.$$eval('.mail-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 120))); mark('reply-missing', { pendingLine: snap && snap.pending, panelUp: snap && snap.panel, rows, tail: snap && snap.body.slice(-400) }); }
   const wait = 7000 - (Date.now() - landedAt); if (wait > 0) await sleep(wait);
 
   // close the mail client: the kiosk flip screen opens at once
@@ -86,4 +89,5 @@ export default async (page, bridge, mark) => {
   await pressButton(page, /^Continue$/); mark('continue');
   if (!(await waitButton(page, /Open the inbox/, 10000))) throw new Error('Defend panel never showed after Continue; buttons: ' + JSON.stringify(await buttons(page)));
   mark('strip-defend'); await sleep(1200); mark('end');
-};
+}
+export default (page, bridge, mark) => run(page, bridge, mark, {});

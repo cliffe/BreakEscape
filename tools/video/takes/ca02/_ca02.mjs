@@ -21,4 +21,4 @@ export function watchTts2(page, mark) {
   return { log, stop() { page.off('response', on); } };
 }
 /** Hide the answer-giving chrome of the mail client (red-flag advice lines, clean-state line, checklist advisory, tallies). Keeps the red-flag counter. */
-export const HIDE_MAIL = '.mail-redflag-advice,.mail-redflag-clean,.mail-checklist-advisory,.mail-tally,.tri-tally{visibility:hidden !important}';
+export const HIDE_MAIL = '.mail-redflag-sub,.mail-redflag-advice,.mail-redflag-clean,.mail-checklist-advisory,.mail-tally,.tri-tally{visibility:hidden !important}';
