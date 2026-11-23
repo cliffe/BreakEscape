@@ -4,7 +4,9 @@
 // Marks: pizza-picked, floor-entered, pizza-dropped, watch-end (with npc positions).
 import { sleep, clearScreen } from '../lib/lib.mjs';
 import { goRoom } from '../m05/_live.mjs';
-export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await bridge.moveToNear('pizza', { timeoutMs: 25000 }); await sleep(800); }
+// The lab's start strip (above the long table) is sealed from the pizza pocket by 7 px gaps: pathing fails (23 Nov), so the player is placed beside the pizza and beside the door by setting the position directly (a cut in the edit; logged).
+const tp = (page, x, y) => page.evaluate(([x, y]) => { const p = window.player; p.setPosition(x, y); if (p.body && p.body.reset) p.body.reset(x, y); }, [x, y]);
+export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await tp(page, 100, 252); await sleep(600); await bridge.moveToNear('pizza', { timeoutMs: 25000 }); await sleep(800); }
 export default async (page, bridge, mark) => {
   await sleep(900);
   let r, inv = [];
@@ -16,7 +18,7 @@ export default async (page, bridge, mark) => {
     inv = (await bridge.getState()).inventory.map(x => x.name);
   }
   mark('pizza-picked', { ok: r && r.ok, inv }); if (!inv.some(n => /pizza/i.test(n))) throw new Error('pizza not in inventory ' + JSON.stringify(inv));
-  const DOOR = 'door:blockchain_lab->trading_floor';
+  const DOOR = 'door:blockchain_lab->trading_floor'; await sleep(1500); await tp(page, 40, 80); await sleep(700);
   const mv = await bridge.moveToNear(DOOR, { timeoutMs: 25000 }); mark('door-near', { r: JSON.stringify(mv).slice(0, 200), p: (await bridge.getState()).player });
   const it = await bridge.interact(DOOR, { timeoutMs: 20000, approach: false }); mark('door-interact', { r: JSON.stringify(it).slice(0, 200) });
   await sleep(4000);
