@@ -34,6 +34,11 @@
 # that order: run the check after every beat, over the responses so far (as the playtest-scenario
 # skill says), so each capture answer is judged against the proofs that held at that beat.
 #
+# Technique grants (ops core S3) are judged per thing: a credential by its finding, a session by its host. The capture
+# does not hold the technique request, so the scanner reads the finding from the answer (a grant that two findings could
+# have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
+# See the header of tools/playtest/lib/access_leak_scanner.rb.
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error.
 require_relative 'lib/access_leak_scanner'
 
