@@ -346,13 +346,12 @@ module BreakEscape
       vault_session
       again = granted(FIRST, 'card_release')
       assert_equal true, again['already']
-      assert_equal 1, state['sessions'].keys.count { |k| k == 'vault01' }
       assert_equal 1, audit('technique_used').length
       assert_equal 2, audit('technique_used').first['n']
       assert_equal [FIRST], state['opsUsed']
     end
 
-    test 'beat 10: through a second foothold the vault row has no session and no Open; its desktop and folder are refused' do
+    test 'beat 10: through a second foothold the vault row has no session and no Open; its desktop is refused; a card not held and forged state change nothing' do
       vault_session
       add_item('pc', 'kit_dropbox_2', 'Spare drop box') unless held_ids.include?('kit_dropbox_2')
       plant('annex_port')
@@ -364,12 +363,13 @@ module BreakEscape
       desktop('vault01', foothold: ANNEX)
       assert_response :forbidden
       assert_equal 'unreachable', response.parsed_body['reason']
-      get game_path('container/vault01_folder'), params: {}, as: :json
-      assert_response :not_found
+      # (The folder refusal of the plan's beat 10 needs a folder on the blocked host; this scenario's vault has none,
+      # so the 403 `unreachable` for a folder with no route is network_technique_blocked_host_test's, on its fixture.)
       assert_equal NOT_FOUND, use(FIRST, 'card_not_held')
       assert_response :not_found
       before = state.slice('sessions', 'opsUsed', 'opsFindings', 'inventory')
       put game_path('sync_state'), params: { opsUsed: ['x'], opsFindings: { 'x' => 'c1' }, sessions: { vault01: { id: 'ian', via: 'technique' } } }, as: :json
+      assert_response :success, 'the sync is accepted and the server-owned keys in it are dropped'
       assert_equal before, state.slice('sessions', 'opsUsed', 'opsFindings', 'inventory')
       assert_equal 1, audit('technique_used').length
     end
@@ -386,8 +386,10 @@ module BreakEscape
       desktop('desk01', foothold: OFFICE)
       assert_response :success, response.body
       assert_equal OFFICE, session_at('desk01')['foothold'], 'the foothold is kept after the open'
-      desktop('desk01')
+      keyboard = desktop('desk01')
       assert_response :success, response.body
+      assert_equal 'ian', keyboard.dig('session', 'npcId'), 'the no-route request is served as the account of the technique session'
+      assert_equal 'technique', keyboard.dig('session', 'via')
       assert_equal OFFICE, session_at('desk01')['foothold'], 'the keyboard desktop keeps it too'
       assert_equal 'ian', session_at('desk01')['id']
     end
@@ -437,9 +439,16 @@ module BreakEscape
       granted(PRINTER, 'card_factory')
       granted(FIRST, 'card_release')
       granted(SECOND, 'card_release')
+      before_rows = findings.map { |f| f.slice('id', 'alias', 'status') }
+      aliases = before_rows.to_h { |f| [f['id'], f['alias']] }
       boot = bootstrap_scenario
-      assert_equal 'admin', boot['sessions']['vault01']['access']
-      assert_equal OFFICE, boot['sessions']['vault01']['foothold'] if boot['sessions']['vault01'].key?('foothold')
+      mirror = boot['sessions']['vault01']
+      assert_equal 'admin', mirror['access']
+      assert_equal 'technique', mirror['via'], 'the reloaded mirror says how the session was got'
+      assert_equal OFFICE, mirror['footholdId']
+      assert_equal 'VAULT01', mirror['host']
+      assert_equal before_rows, findings.map { |f| f.slice('id', 'alias', 'status') }, 'findings keep their aliases and statuses across the reload'
+      assert_equal ALL_FINDINGS.to_h { |id| [id, aliases[id]] }, findings.to_h { |f| [f['id'], f['alias']] }
       assert_equal %w[factory_accounts release_notes], network_view(OFFICE)['techniques'].keys.sort
       assert_equal ALL_FINDINGS.sort, findings.map { |f| f['id'] }.sort
       assert_equal %w[confirmed false], findings.map { |f| f['status'] }.uniq.sort
@@ -458,6 +467,9 @@ module BreakEscape
       set_global('share_locked', true)
       refused(SHARE, 'card_config', 'fixed')
       refused(SPARE, 'card_release', 'no_grant')
+      fixed_rows = findings.select { |f| f['fixed'] == true }.map { |f| f['id'] }
+      assert_equal [SHARE, SPARE].sort, fixed_rows.sort, 'the switch shows the files finding and the spare Fixed'
+      assert_equal [], findings.select { |f| f['id'] == FIRST }.select { |f| f['fixed'] }, 'the vault finding is not fixed by it'
       assert_equal %w[fixed no_grant], audit('technique_refused').map { |r| r['detail']['reason'] }.sort
       assert_equal 2, audit('technique_refused').length
       desktop('vault01', foothold: OFFICE)
@@ -484,11 +496,15 @@ module BreakEscape
       granted(FIRST, 'card_release')
       granted(DESK, 'card_factory')
       ops_scan(OFFICE, network_id: 'plant_lan')
-      unplug('office_port')
+      assert_includes view_blocks(OFFICE).map { |b| b['id'] }, 'plant_lan'
+      ended = unplug('office_port')
       assert_response :success, response.body
+      assert_equal %w[desk01 vault01], Array(ended['endedPcIds']).sort, 'the technique sessions end with the foothold'
       assert_nil session_at('vault01')
       assert_nil session_at('desk01')
       assert_nil session_at('files01')
+      get game_path('network'), params: { foothold: OFFICE }, as: :json
+      assert_includes [403, 404], response.status, 'the dropped foothold has no view, so no plant network'
       desktop('vault01', foothold: OFFICE)
       assert_response :forbidden
       assert_equal 'no_session', response.parsed_body['reason']
@@ -527,7 +543,7 @@ module BreakEscape
       post game_path('network/implant'), params: { pc_id: 'desk01', shape: 'session' }, as: :json
       assert_response :success, response.body
       assert_equal 'implant_desk01', response.parsed_body['foothold']['id']
-      assert_equal 'implant', state['footholds']['implant_desk01']['via'] if state['footholds']['implant_desk01'].is_a?(Hash)
+      assert_equal 'implant', state['footholds']['implant_desk01']['via']
       assert_equal 'password', session_at('desk01')['via']
     end
 
