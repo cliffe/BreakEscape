@@ -1,0 +1,14 @@
+{
+  "key": "aeb37db86da55ffb7c3b4272c941bd0e",
+  "npc": "director_netherton",
+  "text": "They have read our plans for months, Agent. Tonight they will be reading you.",
+  "delivery": "low and grave, each word placed",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-22",
+  "recorded_at": "2026-11-22T23:38:52Z"
+}

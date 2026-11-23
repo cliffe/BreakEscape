@@ -109,6 +109,8 @@ I run TalentStack. You've spent tonight putting a name to one of my placements. 
 
 Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
 
+I find people the week before they break, agent. Then I make them an offer. #delivery: warm and confiding, a headhunter's smile in the voice
+
 -> recruiter_introduction_choices
 
 === recruiter_introduction_choices ===

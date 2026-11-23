@@ -255,7 +255,7 @@ Voltage: You think I don't know it. I know it to one decimal place.
 === voltage_owns_it ===
 #speaker:voltage
 
-Voltage: There's no version of this where I blink. You should have worked that out on the way in.
+Voltage: I've done the sums. The city goes dark at eight, and I'll sleep fine. #delivery: quiet and level, a man reading out a sum he has already checked
 
 -> confrontation_choice
 

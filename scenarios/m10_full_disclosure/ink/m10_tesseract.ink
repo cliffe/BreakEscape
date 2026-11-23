@@ -110,6 +110,7 @@ Narrator: She goes out through the lock without looking back at him.
     Dr Adrian Tesseract: Nothing went at four. You were thorough.
 }
 Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if someone presses this. I'd rather it was you.
+Dr Adrian Tesseract: I had the blast door read one badge tonight. Yours. #delivery: quiet and matter-of-fact, a host who has gone to some trouble
 // FA row 72; alignment A6 moved it here from his case: the freeze.
 { m06_assets_seized:
     Dr Adrian Tesseract: You froze my bank. I had to economise on guards. I expect you noticed.
