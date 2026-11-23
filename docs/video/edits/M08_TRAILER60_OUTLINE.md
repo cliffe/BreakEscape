@@ -1,5 +1,13 @@
 # m08 The Mole, 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** Netherton, "There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing." (existing).
+- **Hook:** ATHENA, as in the table. The proposed "reading you" line is out of the game.
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only. Model: `M03_TRAILER60_V3_PLAN.md`. Every line is "audio: check" until the scout tests the cache.
 
 ## Story
