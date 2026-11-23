@@ -13,7 +13,7 @@ The m09 lines are also placeholders, already in the game and voiced: cage "Every
 1. **Where "I find people the week before they break..." goes.** The decided block names only the price line. Recommended placeholder: over the night turn, as above, with the price line still the ending. Alternative: drop it and give the night turn no line.
 2. **Hook cut.** Keep only "Someone inside a Home Office contractor is handing ENTROPY the crown jewels." (about 5 s), or keep from "This one is close to home in a way I dislike." (about 9.5 s)? Recommended: the third sentence only, for time.
 3. **The `Name the / Insider` beat.** It ends on Patricia's ask, before the menu, and shows the evidence pointing at Halloran rather than the badge-log screen. Recommended placeholder: portraits only (Owen, Halloran, Patricia). Alternative: a 1 s insert of the badge log masked down to the spare-badge rows. That means masking rows frame by frame, because Torres' and Halloran's rows interleave.
-4. **Midnight Double Agent** is first choice in the m05, m06 and m08 outlines. Recommended: m05 takes it (it comes first and is the purest mole hunt), and m06 and m08 move to their second choices. Decide by ear after the analysis.
+4. **Music** (settled by the orchestrator, change if you like): m05 takes Midnight Double Agent; m06 moved to Shadow Cipher and m08 to Shadowline Protocol, so no two trailers share a track.
 
 ## m06
 1. **Second mechanic card.** The desk-phone decoy and the pizza bait are also firsts in the campaign. Give `Desk Phone / Decoy` its own card and a 3 s lever beat (costs Priya's line), or keep both as crescendo flashes? Recommended: crescendo flashes, so the tracer is the one new mechanic with a card.
@@ -29,7 +29,7 @@ The m09 lines are also placeholders, already in the game and voiced: cage "Every
 1. **Hook and stakes from one ATHENA line.** Split it across the mission card (first sentence as the hook, second as the stakes, as above), or play it whole on her portrait before the card (about 7.4 s after the title) and use Netherton's "Two of ours are dead..." as the stakes? Recommended: the split.
 2. **One line per suspect.** Vector's opener ("I know how it looks...") and Phantom's ("The Director's own bloodhound. Sit.") are left out so each suspect gets exactly one line and the twist stays even. Recommended: leave them out.
 3. **`Be Quiet. / Be Quick.`** It fits the time check, but only just. If the music's lifts don't allow it, drop it before cutting any line. Recommended: keep it, drop first.
-4. **Music.** Shadowline Protocol is also m06's second choice. Does m08 keep it, or move to Encrypted Shadows if m06 wants it? Recommended: m08 keeps Shadowline Protocol as placeholder, decided by ear after the analysis.
+4. **Music**: Shadowline Protocol (m06 moved to Shadow Cipher, so no clash), decided by ear after the analysis.
 
 ## m09
 1. **The two placeholder lines.** Keep the voiced hook ("Whatever ENTROPY cannot afford to keep...") and ending ("Everyone ENTROPY ever placed... the only index you can ask."), both played whole? Recommended: yes, whole. Neither cuts cleanly, and the time is found elsewhere (see the time check). The trailer uses both as placeholders.
