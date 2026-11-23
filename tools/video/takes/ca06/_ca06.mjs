@@ -14,8 +14,8 @@ export const ATTACK_HIDE = `
 
 /** Narrowed-panel CSS for the 9:16 and 1:1 cuts: the mail client (composer, result, triage list and card) is `.mail-client`; the OSINT browser frame is
  *  `.osint-browser-game-container`. Never `.minigame-game-container` (the full stage). */
-export const NARROW_MAIL = `
-.mail-client { width: 560px !important; max-width: 560px !important; }
+export const narrowMail = (w) => `
+.mail-client { width: ${w}px !important; max-width: ${w}px !important; }
 .mail-client *, .mail-compose-row, .mail-compose-blanks { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
 .mail-reader { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto minmax(0, 1fr) !important; }
 .mail-list-pane { overflow-y: visible !important; max-height: none !important; }
@@ -25,6 +25,7 @@ export const NARROW_MAIL = `
 .tri-verdicts { gap: 6px !important; }
 .tri-verdict-hint { display: none !important; }
 .tri-verdict { min-width: 0 !important; flex: 1 1 0 !important; }`;
+export const NARROW_MAIL = narrowMail(560);
 export const NARROW_BROWSER = `
 .osint-browser-game-container { width: 560px !important; max-width: 560px !important; }
 .osint-browser-game-container * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }`;

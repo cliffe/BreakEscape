@@ -86,10 +86,18 @@ export async function body(page, bridge, mark, narrow) {
   await sleep(300); mark('frame:send+0.3');
   await sleep(1200); mark('landed-held'); mark('frame:landed');
   if (process.env.CA06_REPLY) {
-    const t = Date.now();
-    while (Date.now() - tSend < 12000 && !(await visible(page, 'body *', /scanning it now/i))) await sleep(150);
-    if (await visible(page, 'body *', /scanning it now/i)) { mark('reply-seen', { msAfterSend: Date.now() - tSend }); await sleep(1500); mark('frame:reply'); }
-    else mark('reply-missing', { msAfterSend: Date.now() - tSend });
+    // The reply is a mail in Dev's inbox (mail-scheduler _deliverText, emailReplyDelay 6 s for this target), delivered by the scheduler tick; the result panel covers the inbox
+    // and never shows it. So: log the job queue at Send, click Done after the panel is held, and watch the inbox row ("Re: ..." from Kaylee) and the toast.
+    const mailInfo = () => page.evaluate(() => { const s = window.mailScheduler && window.mailScheduler.state; const box = s && s.mailboxes && Object.values(s.mailboxes)[0];
+      return { jobs: s ? s.jobs.map(j => ({ kind: j.kind, remainingMs: j.remainingMs, due: j.dueAt })) : null, inbox: box ? (box.messages || []).filter(m => m.folder === 'inbox').map(m => (m.subject || '') + ' | ' + ((m.from && m.from.name) || '')) : null }; });
+    mark('mail-at-send', await mailInfo());
+    await sleep(1800);
+    await mouseClick(page, 'button.mail-checklist-done', null, { steps: 12, dwell: 450 });
+    mark('done-clicked', { msAfterSend: Date.now() - tSend }); await sleep(500); mark('frame:after-done');
+    while (Date.now() - tSend < 16000 && !(await visible(page, '.mail-row, .mail-list-pane *', /Kaylee/i))) await sleep(150);
+    const seen = await visible(page, '.mail-row, .mail-list-pane *', /Kaylee/i);
+    mark(seen ? 'reply-seen' : 'reply-missing', { msAfterSend: Date.now() - tSend, mail: await mailInfo() });
+    if (seen) { await sleep(900); mark('frame:reply'); await mouseClick(page, '.mail-row', /Kaylee/i, { steps: 10, dwell: 300 }).catch(() => {}); await sleep(900); mark('frame:reply-open'); await sleep(1200); const body = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' ')); mark('reply-text-visible', { scanning: /scanning it now/i.test(body) }); }
   }
   const wait = 3000 - (Date.now() - tSend); if (wait > 0 && !process.env.CA06_REPLY) await sleep(wait);
   await bridge.minigame.close(); mark('mail-closed', { sSinceSend: +((Date.now() - tSend) / 1000).toFixed(2) });
