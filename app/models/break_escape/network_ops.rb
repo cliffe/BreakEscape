@@ -378,12 +378,16 @@ module BreakEscape
       row && { 'kind' => row['kind'], 'label' => row['label'] }
     end
 
-    # A session held at the host's PC, not locked, at the level named or above (plan 5.4). The level
-    # is the record's own `access` (client_access_level) until S5a points it at session_access.
+    # A LIVE session held at the host's PC, not locked, at the level named or above (plan 5.4; S3
+    # server R1 M1). Live is what every other reader of a held session means: not a relay record
+    # (relay_session?, the account holder's own screen) and not an expired token session
+    # (credential_session_expired?, the one expiry predicate). The level is the record's own
+    # `access` (client_access_level) until S5a points it at session_access.
     def ops_need_session(host_id, level)
       pc = host_id.is_a?(String) ? find_login_pc(host_id)&.dig(:object) : nil
       session = pc ? access_sessions[host_id] : nil
-      met = session.is_a?(Hash) && !session_locked?(session) &&
+      met = session.is_a?(Hash) && !relay_session?(session) && !credential_session_expired?(session) &&
+            !session_locked?(session) &&
             (level == 'user' || (level == 'admin' && client_access_level(host_id) == 'admin'))
       { 'kind' => 'session', 'label' => pc ? host_label(pc).to_s : '', 'met' => met }
     end
@@ -395,9 +399,13 @@ module BreakEscape
     end
 
     # Met by the keyring's own rule (plan 4.2): the registry entry is one the keyring would list now
-    # (its kind is built, its proof holds and its account names an NPC).
+    # (its kind is built, its proof holds and its account names an NPC) AND is still usable: the
+    # keyring also lists an expired token and an ended assist invite as greyed rows (`expired`,
+    # `ended`), which do not meet a need (S3 server R1 M1, S2 R2 N1).
     def ops_keyring_serves?(cred_id)
-      registry_keyring_entries.any? { |item| item['id'] == cred_id }
+      registry_keyring_entries.any? do |item|
+        item['id'] == cred_id && !item['expired'] && !item['ended']
+      end
     end
 
     # A credential's label: its own, else (a password) the name of the item it is found in.

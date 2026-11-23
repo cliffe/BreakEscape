@@ -16,7 +16,7 @@ module BreakEscape
     NOT_FOUND = { 'success' => false, 'reason' => 'not_found' }.freeze
     BAD_REQUEST = { 'success' => false, 'reason' => 'bad_request' }.freeze
 
-    SERVICE_OF = { 'files' => %w[gated step_up step_admin needy], 'mail' => %w[sheet_gated raw_one swap_in] }.freeze
+    SERVICE_OF = { 'files' => %w[gated step_up step_admin needy], 'mail' => %w[sheet_gated raw_one swap_in token_gated invite_gated] }.freeze
 
     # The finding id of a weakness or decoy of sam_pc (web unless the fixture puts it on files or mail).
     def fid(id)
@@ -373,6 +373,106 @@ module BreakEscape
       assert_equal ['lena_pc'], body['endedPcIds']
       assert_nil session_at('lena_pc')
       assert_equal 'ishaw', body['session']['username']
+    end
+
+    # ---- a need is met only by a LIVE session or a still-usable credential (S3 server R1 M1) -----
+
+    LIVE_T0 = Time.utc(2026, 11, 23, 9, 0, 0)
+
+    teardown { travel_back }
+
+    # The S3 fixture plus a token and an assist invite for Sam's PC, and two weaknesses on the mail service
+    # whose only need is each credential.
+    def live_need_scenario
+      data = NOS.techniques_scenario
+      data['credentials']['sam_token'] = { 'kind' => 'token', 'account' => 'sam', 'connectsTo' => 'sam_pc', 'label' => 'Sam token',
+                                           'proof' => { 'foothold' => OFFICE }, 'expiresMin' => 4 }
+      data['credentials']['sam_assist'] = { 'kind' => 'assist_invite', 'account' => 'sam', 'connectsTo' => 'sam_pc', 'label' => 'Sam assist',
+                                            'proof' => { 'held' => 'sam_assist_code' } }
+      data['rooms']['lobby']['objects'] << { 'id' => 'sam_assist_code', 'type' => 'text_file', 'name' => 'Assist code', 'takeable' => true,
+                                             'credential' => 'sam_assist', 'text' => 'Assist code.' }
+      mail = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['services'].find { |svc| svc['name'] == 'mail' }
+      mail['weaknesses'] += [NOS.weak('token_gated', 'default_creds', 'low', 'grants' => NOS.sam_grant, 'needs' => { 'credential' => 'sam_token' }),
+                             NOS.weak('invite_gated', 'default_creds', 'low', 'grants' => NOS.sam_grant, 'needs' => { 'credential' => 'sam_assist' })]
+      data
+    end
+
+    def live_game(state: {})
+      travel_to LIVE_T0
+      held = { 'id' => 'sam_assist_code', 'type' => 'text_file', 'name' => 'Assist code', 'takeable' => true, 'credential' => 'sam_assist', 'text' => 'Assist code.' }
+      techniques_game(data: live_need_scenario, state: { 'inventory' => [card_entry('card_factory'), held] }.merge(state))
+    end
+
+    def need_met(finding_id, kind)
+      body = ops_confirm(OFFICE, finding_id)
+      flunk body.inspect unless body['finding']
+      body['finding']['needs'].find { |need| need['kind'] == kind }['met']
+    end
+
+    def token_sign_in
+      post game_path('login'), params: { pc_id: 'sam_pc', credential: 'sam_token', foothold: OFFICE }, as: :json
+      assert_response :success, response.body
+    end
+
+    def assert_need_unmet(finding_id, kind)
+      before = state_without_log
+      body = refused(finding_id, 'card_factory', 'need_unmet')
+      assert_equal kind, body['need']['kind']
+      assert_equal before, state_without_log, 'a refused step up changes nothing'
+      assert_equal false, need_met(finding_id, kind), 'the row tick agrees with the refusal'
+    end
+
+    test 'an expired token session at the PC does not meet a session need; a live one does' do
+      live_game
+      token_sign_in
+      assert_equal 'credential', session_at('sam_pc')['via']
+      assert_equal true, need_met(fid('step_up'), 'session'), 'a live token session meets the need'
+      travel 5.minutes
+      assert_need_unmet(fid('step_up'), 'session')
+      assert_equal 'credential', session_at('sam_pc')['via'], 'the expired record is still in the slot'
+      assert_empty rows('technique_used')
+    end
+
+    test 'a live token session feeds the step up, which then grants the lasting admin technique session' do
+      live_game
+      token_sign_in
+      body = ops_technique(OFFICE, fid('step_up'), 'card_factory')
+      assert_response :success, response.body
+      assert_equal 'admin', body['session']['access']
+      assert_equal 'technique', session_at('sam_pc')['via']
+    end
+
+    test 'a relay record at the PC does not meet a session need; a live session does' do
+      live_game
+      post game_path('login'), params: { pc_id: 'sam_pc', credential: 'sam_assist', relay: true }, as: :json
+      assert_response :success, response.body
+      assert_equal true, session_at('sam_pc')['relay']
+      assert_need_unmet(fid('step_up'), 'session')
+      sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD, foothold: OFFICE)
+      assert_equal true, need_met(fid('step_up'), 'session')
+    end
+
+    test 'an expired token does not meet a credential need; a live one does' do
+      live_game
+      assert_equal true, need_met(fid('token_gated'), 'credential')
+      body = ops_technique(OFFICE, fid('token_gated'), 'card_factory')
+      assert_response :success, response.body
+      assert_equal true, body['success']
+      travel 5.minutes
+      game = Game.find(@game.id)
+      game.player_state['opsUsed'] = []
+      game.player_state['sessions'] = {}
+      game.save!
+      assert_need_unmet(fid('token_gated'), 'credential')
+    end
+
+    test 'an ended assist invite does not meet a credential need; a live one does' do
+      live_game
+      assert_equal true, need_met(fid('invite_gated'), 'credential')
+      game = Game.find(@game.id)
+      game.player_state['endedCredentials'] = ['sam_assist']
+      game.save!
+      assert_need_unmet(fid('invite_gated'), 'credential')
     end
 
     # ---- what reaches the browser ---------------------------------------------------------------
