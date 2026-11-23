@@ -133,3 +133,8 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - (17:00) Main 2f92032c4 (T359, m06 door fix) merged into this branch (e89dce0fd). Next m06 block (after CA0's render ping): re-shoot t14 tracer WITH the door walk (server_room → data_center, back to the original script start), then t11, t13, t15, t17-t29.
 - (17:15) D356 removal done on video/trailer-lines-m04-m10 24bcf8a36 (routes m05 47/47, m06 43/43, drift 0, validator 0 errors); hash sent to AC0. Validator regenerated dungeon_graph files in v-trailer-lines (unstaged, leave them).
 - (17:30) m05 v2 edit committed 30c46185f: night-turn line now "Fanaticism is somebody else's department. I just staff the operation." (t10 111.53-116.20, 4.43 s, by silencedetect: check by ear), lint 0/0, id m05_trailer60_v2 (renders won't overwrite v1). On CA0's render-done ping: render6.sh m05:16:9 m05:9:16 m05:1:1 (writes v2), check, encode, add a "m05 · v2" tab noting the swap (D356) and replacing v1's night question; then the m06 takes block. Merge main again before render if D356 (24bcf8a36) has landed, so the game ink matches.
+
+## (17:45) m05 v2 published
+- Tab "m05 · v2" on the review page (version 18), feedback doc feedback/m05_trailer_v2. Assets 16x9 3f32c64358a07e28d3798d2a27850488, 9x16 f328e586cd59dbcf0a41a0a06739575f, 1x1 14662292a077ff33212a5c43f15efe04.
+- Swap noted on the tab: "I find people..." (removed by D356) replaced by the in-game phone line "Fanaticism is somebody else's department. I just staff the operation." Night row checked on the 9:16 sheet.
+- m06 takes block 2 agent running on the rig.
