@@ -16,7 +16,7 @@ A test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby wi
 | Physical locks | 6 |
 | AND-gate convergences | 0 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 20 / 29 |
+| Puzzle graph nodes / edges | 21 / 29 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -67,6 +67,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -93,6 +94,7 @@ flowchart TD
   pivot_desk01((" + "))
   pivot_files01((" + "))
   comms_room("Comms room")
+  log_network_audit[("Network audit<br/>network_swept, host_scanned")]
 
   door_back_office --> back_office
   lobby --> lock_guest_kiosk
@@ -129,6 +131,7 @@ flowchart TD
   class signin_ian,device_kit_dropbox key
   class host_camrec01,host_printer01,resource_office_drop,host_doorctl01 container
   class pivot_desk01,pivot_files01 gate
+  class log_network_audit note
   class node_start start
 ```
 
@@ -179,6 +182,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -205,6 +209,7 @@ flowchart TD
   pivot_desk01((" + "))
   pivot_files01((" + "))
   comms_room("Comms room")
+  log_network_audit[("Network audit<br/>network_swept, host_scanned")]
   aim_scan_beats{{"Sweep, scan and pivot"}}
 
   door_back_office --> back_office
@@ -242,6 +247,7 @@ flowchart TD
   class signin_ian,device_kit_dropbox key
   class host_camrec01,host_printer01,resource_office_drop,host_doorctl01 container
   class pivot_desk01,pivot_files01 gate
+  class log_network_audit note
   class aim_scan_beats aim
   class node_start start
 ```

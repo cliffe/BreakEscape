@@ -16,7 +16,7 @@ A test floor for the ops core's third stage (OPS_CORE_PLAN.md, S3). A lobby with
 | Physical locks | 12 |
 | AND-gate convergences | 0 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 36 / 60 |
+| Puzzle graph nodes / edges | 37 / 60 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -70,6 +70,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -103,6 +104,7 @@ flowchart TD
   pivot_vault01((" + "))
   comms_room("Comms room")
   supply_room("Supply room")
+  log_access_audit[("Access audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used")]
   cred_print_admin{"Ian Okafor saved connection<br/>(iokafor)"}
   tech_factory_accounts{"Factory accounts"}
   cred_src_card_factory{"Field note: factory accounts"}
@@ -179,6 +181,7 @@ flowchart TD
   class lobby,net_office_lan,net_plant_lan,back_office,comms_room,supply_room room
   class host_printer01,host_pumpctl01 container
   class pivot_desk01,pivot_files01,pivot_vault01 gate
+  class log_access_audit note
   class cred_src_card_factory,cred_src_card_release,cred_src_card_older,cred_src_card_config item
   class node_start start
 ```
@@ -230,6 +233,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -263,6 +267,7 @@ flowchart TD
   pivot_vault01((" + "))
   comms_room("Comms room")
   supply_room("Supply room")
+  log_access_audit[("Access audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used")]
   cred_print_admin{"Ian Okafor saved connection<br/>(iokafor)"}
   tech_factory_accounts{"Factory accounts"}
   cred_src_card_factory{"Field note: factory accounts"}
@@ -340,6 +345,7 @@ flowchart TD
   class lobby,net_office_lan,net_plant_lan,back_office,comms_room,supply_room room
   class host_printer01,host_pumpctl01 container
   class pivot_desk01,pivot_files01,pivot_vault01 gate
+  class log_access_audit note
   class cred_src_card_factory,cred_src_card_release,cred_src_card_older,cred_src_card_config item
   class aim_access_beats aim
   class node_start start

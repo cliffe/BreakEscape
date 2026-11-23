@@ -165,6 +165,12 @@
       "optional": false
     },
     {
+      "id": "log_access_audit",
+      "label": "Access audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used",
+      "kind": "note",
+      "optional": false
+    },
+    {
       "id": "cred_print_admin",
       "label": "Ian Okafor saved connection<br/>(iokafor)",
       "kind": "key",

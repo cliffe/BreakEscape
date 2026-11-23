@@ -16,7 +16,7 @@ A test floor for the ops core's second stage (OPS_CORE_PLAN.md, S2). One lobby w
 | Physical locks | 9 |
 | AND-gate convergences | 0 |
 | Rooms | 5 |
-| Puzzle graph nodes / edges | 19 / 26 |
+| Puzzle graph nodes / edges | 20 / 26 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -66,6 +66,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -90,6 +91,7 @@ flowchart TD
   weak_printer01_admin_page_factory_login["Second floor printer<br/>Admin page :80<br/>default_creds / high<br/>(report only)"]
   comms_room("Comms room")
   supply_room("Supply room")
+  log_findings_audit[("Findings audit<br/>network_swept, host_scanned, service_checked, finding_confirmed")]
   cred_archivist_login{"Ian Okafor password<br/>(iokafor)"}
 
   door_back_office --> back_office
@@ -123,6 +125,7 @@ flowchart TD
   class back_office,lobby,net_office_lan,comms_room,supply_room room
   class signin_ian,device_kit_dropbox,cred_archivist_login key
   class host_camrec01,host_printer01 container
+  class log_findings_audit note
   class node_start start
 ```
 
@@ -173,6 +176,7 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -197,6 +201,7 @@ flowchart TD
   weak_printer01_admin_page_factory_login["Second floor printer<br/>Admin page :80<br/>default_creds / high<br/>(report only)"]
   comms_room("Comms room")
   supply_room("Supply room")
+  log_findings_audit[("Findings audit<br/>network_swept, host_scanned, service_checked, finding_confirmed")]
   cred_archivist_login{"Ian Okafor password<br/>(iokafor)"}
   aim_finding_beats{{"Check and confirm"}}
 
@@ -231,6 +236,7 @@ flowchart TD
   class back_office,lobby,net_office_lan,comms_room,supply_room room
   class signin_ian,device_kit_dropbox,cred_archivist_login key
   class host_camrec01,host_printer01 container
+  class log_findings_audit note
   class aim_finding_beats aim
   class node_start start
 ```

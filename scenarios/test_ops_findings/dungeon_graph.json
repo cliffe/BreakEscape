@@ -111,6 +111,12 @@
       "optional": false
     },
     {
+      "id": "log_findings_audit",
+      "label": "Findings audit<br/>network_swept, host_scanned, service_checked, finding_confirmed",
+      "kind": "note",
+      "optional": false
+    },
+    {
       "id": "cred_archivist_login",
       "label": "Ian Okafor password<br/>(iokafor)",
       "kind": "key",
