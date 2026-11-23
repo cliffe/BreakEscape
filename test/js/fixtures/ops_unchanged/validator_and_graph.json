@@ -158,7 +158,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "8bf83fdab8bd922eebba506b62b1e060496fb95b6df821f7113f0fca157b350c",
+      "graphHtmlHash": "212a415b510526735cbb243ffe3774e910b0d28b10c467573127969d0a09acf8"
     },
     "test_access_devices": {
       "sourceHash": "34f55a1da158a79ce66505b5d22140b8f78ccc8b6a45c640867ac1c48f441635",
@@ -560,7 +562,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "e6ba68a10787df960817bfb06288204bc22f131892d4d9c14c0a67cfc65613c7",
+      "graphHtmlHash": "31795b3de57cdc003af28cd6d5f4b987d94d8819f1f632e761d39e3e64d856a1"
     },
     "test_access_keyring": {
       "sourceHash": "58cb01c1295009dfb165e04fba02e41e7796dd3acd100ffdca1e695b0dda207e",
@@ -1055,7 +1059,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "652a71fd472f718387f2403702713868be8133b18b123b356404c513816b5529",
+      "graphHtmlHash": "e99f89e0fb16237e5889852d37535d3ea57d9014cda8c79da2081a653e8877f0"
     },
     "test_access_networks": {
       "sourceHash": "11ee2994c487c329782552c5c9bcf55f96ba9e73790f9addf66ba5a14dff16ec",
@@ -2017,7 +2023,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "a7bb00394fdbb6be7312be6b9a592d9930a9ca56910e3da4a5fc51dcaa8fecd4",
+      "graphHtmlHash": "4f43936fe4ad542cc678f1899c5ec65e12e199cb832eb819bfb3554c82dfdd01"
     },
     "ca20_remote_and_mobile_working": {
       "sourceHash": "33c6570d45e395fecd73b3c6bc4874e7f7372a81653584ee47cdcf2459a68791",
@@ -2121,7 +2129,9 @@
         "start_room": "training_room",
         "nodes": [],
         "edges": []
-      }
+      },
+      "graphMdHash": "23660b2453277a83b09a456943abe89c3d37633f9c5fbd9da3a9319bf312c0e0",
+      "graphHtmlHash": "6840c19fb68310a8dbf871fcc260ae48eae16b9de27de3095d09f781646783a5"
     },
     "ca20_remote_and_mobile_working_defend": {
       "sourceHash": "6aac391e1fd0e667a92ede5f175003eafe71c56c0451835e1c29b30f0190bd91",
@@ -2225,7 +2235,9 @@
         "start_room": "training_room",
         "nodes": [],
         "edges": []
-      }
+      },
+      "graphMdHash": "72879accccfec3d0ec8c3bf229a37a5898cc6b6ec4920536132dc6cc80a6510a",
+      "graphHtmlHash": "0132ea35769bde8f378327d6e2c342a3ae313e01db0206273266d2cba640e16d"
     },
     "demo_access_tour": {
       "sourceHash": "81fbb47329484f307f0b8f9152d8dc2d8fa07b3281a87b9581694114c71db2a0",
@@ -2992,7 +3004,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "c1b996a58b03a8f2d10ab488044a36c93075700767f999f59d5282d74ef61f13",
+      "graphHtmlHash": "de715f00a2bfcb71533e240d359f2f47dbf7e7cb6e96da0aeeec42cdbd0a2ff9"
     },
     "ca03_helpdesk_reset": {
       "sourceHash": "16e3ea877df592d796cac4d47357ccbd5b338afc9fb3e244c12bc5ce44e3ccf5",
@@ -3094,7 +3108,9 @@
         "start_room": "training_room",
         "nodes": [],
         "edges": []
-      }
+      },
+      "graphMdHash": "8137fdb2988bcced8cc93552927bf44ec6855ea62ae4978379050e7c0ed6df98",
+      "graphHtmlHash": "de1b3c6adbe190aac506506872cbcbea14e5779b2fcf5b11f28adbab5e5484b1"
     },
     "ca12_visitor_tailgater": {
       "sourceHash": "c386eb654fe511d3d03841ffc41ee13d2311bcaae510e18f6c8cba6790103259",
@@ -3206,7 +3222,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "2de129d87aa42bbf3b871cae53facee0f7b835dd399aff4bc2edea3d3c688d41",
+      "graphHtmlHash": "58e5ad8912dc1574708e9147ea45f8123ef552f1ca6aa6e8ed0ec37ddc2bcb49"
     },
     "test_dm_social": {
       "sourceHash": "46d2107e49a0cd79cd3e31a57bb4a2d43c71a6f1825fc2355c1047b3a4bc36f4",
@@ -3298,7 +3316,9 @@
         "start_room": "flat",
         "nodes": [],
         "edges": []
-      }
+      },
+      "graphMdHash": "e0dbca6f89da85dd499e87338f3c87d89d663526e1ef40d6aed18dd6ec585ae5",
+      "graphHtmlHash": "c1b96114dc3ffa73c60f4cfb79ea03c302d8c56701d500791079b9289059f0a6"
     },
     "test_social_m5_channels": {
       "sourceHash": "4c4272d7200a853f6e5e3ae1660c4731c9db644c68008fbb4e0b87c5645a8e5f",
@@ -3417,7 +3437,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "2ac3774ad13ddf0458d0110be2dafec5da18ddeb2f26575aae9cb199b18607e1",
+      "graphHtmlHash": "74146bd03116e0feeeeb093fc04df9539aa82487496e4600e7602836e475fe23"
     },
     "test_social_slice": {
       "sourceHash": "afe3bed35f4bdbae85be7c2369b2d8c6aa5fbaa388514580ee7b519afb7ee360",
@@ -3519,7 +3541,9 @@
         "start_room": "slice_room",
         "nodes": [],
         "edges": []
-      }
+      },
+      "graphMdHash": "9ffd288cc896b1aea1aa127d9ee186947900c34f5dcf2c4b24bc3da76089c364",
+      "graphHtmlHash": "848e8fbfc4175da0b17be063d9c7a7186d4e9558df390fed6a3a54babda12e83"
     },
     "lab_social_engineering": {
       "sourceHash": "d6596cb7549684a0b23d90844cce06db7fa87b508545e5e608fc8bc0b0c488aa",
@@ -3882,7 +3906,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "393ae562b389d0c9277e5e03a1b8558fe13dcb79bf426ad86e3e74529e7567d9",
+      "graphHtmlHash": "d20c35ad9dcf0139440cd3518077ec92e0dc58d3cf39d5309ad1f7c4a8eb8381"
     },
     "lab_physical_pentest": {
       "sourceHash": "86a6e12758afc5f7ec0a167aee6b946fb23efa8c63481d2de931ef86fbc16809",
@@ -4709,7 +4735,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "9ab7025a1b022a1c6f730284dbdde7527652a79c1f5594ac8a11927cb9e98063",
+      "graphHtmlHash": "9fc9c0ea4b7876239e4d5f591bc38c4822b54f85889424a5fdc4d86393f41a36"
     },
     "m01_first_contact": {
       "sourceHash": "27b07f0a77d5e5c875fd0ca2653cd7a03668c3fe2930e9072f8920b53d4d3bd5",
@@ -5485,7 +5513,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "fb973f84d9e336723f15d015850181a7875c2c06d93e92b1a39c8b28ff35f371",
+      "graphHtmlHash": "a34f9d2a8549c1dd05d097f5c3a05119923a4fd92ca25ba75aad9195581d589a"
     },
     "m02_ransomed_trust": {
       "sourceHash": "53476a848d962e42fe1bb1334fbde881d50d11c232521cdbecd8c2b2fd01c743",
@@ -6945,7 +6975,9 @@
             "soft": false
           }
         ]
-      }
+      },
+      "graphMdHash": "2811970521601bea8eb7713eff5e306ffdf49f28f206e8ea7a2dcbf0118b479a",
+      "graphHtmlHash": "6350d72ebb86edd4f25aaba9d7b52ef587e7a0dd21359ed5a4e64221e638cbd5"
     }
   },
   "description": "Validator lines and dungeon graph JSON for the scenarios of ops core plan section 10 part 2, recorded before any ops-core edit. Re-record only as test/js/ops-unchanged-validator.test.mjs says."
