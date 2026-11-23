@@ -259,3 +259,34 @@ test('installCompromiseMarks is idempotent and the test bridge reads compromiseM
     const rooms = readFileSync(join(js, 'core/rooms.js'), 'utf8');
     assert.match(rooms, /window\.compromiseMarks\?\.syncRoom\?\.\(roomId\)/);
 });
+
+// S3 client R1 m8: the bolt follows the sprite when its look (and size) is swapped after the mark
+test('m8: a later pass re-places the bolt on a sprite whose size changed (a jack\'s planted look) and copies its visibility', () => {
+    const jack = sprite('jack1');
+    setup([jack]);
+    links.footholds.set('fj', FH('fj', 'jack', 'jack1'));
+    marks.refresh();
+    assert.equal(images.length, 1);
+    const before = { x: images[0].x, y: images[0].y };
+    jack.displayWidth = 80; jack.displayHeight = 60;   // the planted sprite is bigger
+    jack.visible = false;
+    marks.syncRoom('lab');
+    assert.notDeepEqual({ x: images[0].x, y: images[0].y }, before);
+    assert.equal(images[0].x, jack.x + 80 * 0.5);
+    assert.equal(images[0].y, jack.y - 60 * 0.5);
+    assert.equal(images[0].visible, false);
+    assert.equal(images.length, 1, 'no second bolt');
+});
+
+// S3 client R1 T5: a reload before the server's answer catches up
+test('a reload whose loaded copy has no foothold held yet leaves the PC unmarked until the foothold loads', () => {
+    const pc = sprite('pc1');
+    setup([pc]);
+    sessions.load({ pc1: { ...TECH } }, ['pc1']);   // the reload restores the copy; networkLinks holds nothing yet
+    marks.syncRoom('lab');
+    assert.deepEqual(ids(), []);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'other'));
+    links.footholds.set('fh1', { ...FH('fh1', 'jack', 'other') });
+    marks.refresh();
+    assert.deepEqual(ids(), ['pc1'], 'the technique copy marks once its foothold is held');
+});

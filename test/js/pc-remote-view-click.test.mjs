@@ -154,3 +154,34 @@ test('a remote password copy is not displaced by npc_sat_at; a keyboard password
     assert.equal(await sessions.displaced('ops_pc', 'Ian'), true);
     assert.equal(sessions.has('ops_pc'), false);
 });
+
+// S3 client R1 M2/m6: a click with no view fetched fetches it first; the trip is one the world started
+test('a click with no view held fetches the foothold view first, then opens the trip back to the world; a foothold the server dropped takes the keyboard path', async () => {
+    setup();
+    const order = [];
+    let viewHeld = null;
+    let viewAnswer = { ok: true };
+    window.networkLinks = {
+        get: (id) => (held.has(id) ? { id, name: 'Jack A' } : null),
+        lastView: () => viewHeld,
+        view: async (id) => { order.push(['view', id]); if (viewAnswer.ok) viewHeld = {}; else held.delete(id); return viewAnswer; },
+        openSession: (pcId, opts) => { order.push(['open', pcId, opts.toWorld]); return {}; }
+    };
+    sessions._replace('ops_pc', { ...TECH });
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(order, [['view', 'jack_a'], ['open', 'ops_pc', true]]);
+    // a view already held: no fetch
+    order.length = 0;
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    assert.deepEqual(order, [['open', 'ops_pc', true]]);
+    // the server no longer holds the foothold: the click ends on today's path, no trip
+    viewHeld = null; viewAnswer = { ok: false, reason: 'gone' }; order.length = 0;
+    const starts = [];
+    window.startContainerMinigame = (...a) => starts.push(a);
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(order, [['view', 'jack_a']]);
+    assert.equal(starts.length, 1, 'the keyboard desktop');
+    delete window.startContainerMinigame;
+});

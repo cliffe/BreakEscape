@@ -1271,3 +1271,24 @@ test('B1: view() keeps the body\'s top-level techniques map on the stored view; 
     assert.equal('techniques' in plain.view, false);
     assert.deepEqual(links.lastView('jack_comms_port'), viewEntry);
 });
+
+// S3 client R1 m6: a trip a click in the world started (openSession toWorld) returns to the world
+test('m6: for a toWorld session trip, sign out, no session, unreachable and not responding leave to the world, not the view; another trip still resumes', async () => {
+    await reset({ planted: true });
+    const views = [];
+    window.startNetworkViewMinigame = (...a) => { views.push(a); };
+    window.openRemoteDesktop = () => {};
+    window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, footholdId: 'jack_comms_port', host: 'HB-FIN-02' }) };
+    for (const reason of ['sign_out', 'no_session', 'unreachable', 'not_responding']) {
+        links.openSession('lena_pc', { returnTo: () => {}, toWorld: true });
+        const out = links.landed('desktop', reason, { pcId: 'lena_pc' });
+        assert.equal(out.landing, 'world', reason);
+        assert.equal(links.trip, null, reason);
+    }
+    assert.deepEqual(views, [], 'the network view never reopened');
+    // a trip not started from the world (the capture log) keeps resuming the view
+    links.openSession('lena_pc', { returnTo: () => {} });
+    assert.equal(links.landed('desktop', 'sign_out', { pcId: 'lena_pc' }).landing, 'view');
+    delete window.startNetworkViewMinigame;
+    delete window.openRemoteDesktop;
+});
