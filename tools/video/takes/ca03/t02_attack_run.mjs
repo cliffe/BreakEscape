@@ -35,7 +35,7 @@ export async function run(page, bridge, mark, { narrow = false } = {}) {
   await mouseClick(page, '.ob-site', /Friendface/); await sleep(900); mark('ff_page'); mark('frame:friendface'); await sleep(600);
   await bridge.minigame.close(); await sleep(1000); mark('browser_closed'); mark('frame:make-the-call-panel');
   await pressButton(page, /Prepare the call/); await sleep(1200); mark('prepare_open'); mark('frame:prepare-open'); await sleep(800);
-  if (narrow) await narrowPanel(page, '.pretext-card, .pretext-panel', 560);
+  if (narrow) await narrowPanel(page, '.pretext-prep', 560);
   let n = 0;
   for (const f of ['Manager', 'Staff', 'Who', 'Team']) {
     await mouseClick(page, 'button.pretext-blank', new RegExp(f)); await sleep(600);
