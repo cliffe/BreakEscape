@@ -96,3 +96,49 @@ First the fixed 11, "Fifty people. I checked the sum twice. Find me wrong." Seco
 | 12 | drop | major | clashes with m10 |
 
 No blockers. Any ink change needs the recompile and every route for m04, m05, m09 or m10.
+
+## As-inked review, round 2
+
+Reviewed 2026-11-23 at `caa51729c` (`video/trailer-lines-m04-m10`). Paths under `scenarios/`. No ink edited. The six touched stories recompile to the same JSON as the committed files. Validator, routes and audio not run. No blockers.
+
+### 1. m04 `m04_npc_voltage.ink:222` "I didn't bring a bomb...": FIX, minor (move, no re-voice)
+Canon fine: three bypass modules and a lifted charge ceiling, no explosive anywhere in m04. Two problems of position. It sits directly on :224 "We didn't make it fragile. We just stopped pretending it wasn't.", the same "didn't X, Y" shape twice running, and it splits :220's "Budget cuts, ageing cells" from the "fragile" that answers it.
+Fix: swap :220 and :222, words and tag unchanged:
+
+    Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
+    Voltage: I didn't bring a bomb, agent. I brought a maintenance schedule. #delivery: dry, almost proud of the craft
+    Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
+    Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
+
+"One fake maintenance firm" then explains the joke's noun. Accept: it is his only "agent" in m04, and Vance's email (`scenario.json.erb:75`) says the crew was "not on our schedule", which the line can take as irony. Five lines before the choice, each with a job.
+`voltage_owns_it` :260 restored "There's no version of this where I blink...": OK. It follows ":249 ...Somebody has to make that legible." and the flat ":254 I don't need their names to know the number.", where "blink" also answers the narrator's beat about his eyes. No later line quotes the removed one.
+
+### 2. m07 `m07_opening_briefing.ink:104` "We are faced with an impossible decision, Agent.": OK
+Pause, line, then the three names works: the pause now leads to something he says, and "decision" is picked up by "Ask about any of them". Who decides is first said at :108 ("The team needs your call"), so nothing contradicts. "We" fits :321 "On the record, that is my decision as much as yours"; :277 "It is yours to make. I will log it..." is still the first time he says it outright, and :271 "You want me to make it." still has its turn. HaX's "a problem with no right answer" (`m07_closing_debrief.ink:562`) is close but hours later and is about the Architect. Four lines of his before the hub, each new. Delivery: keep.
+Trade-off only: the narrator's beat used to carry the feeling unsaid and the line now says it. Leave.
+
+### 3. m09 `m09_sorensen_cage.ink:33` "Everyone ENTROPY ever placed is filed in this room...": FIX, major (two words, one re-voice)
+"is filed in this room" is wrong against what the player sees:
+- WREN's record is in Harwick & Lowe's box in the open stacks (`scenario.json.erb:1553-1570`), and `cross_reference_wren` (:858) sends the player there. Torres says the old placements are filed under the firm that placed them (`m09_phone_torres.ink:38,40`). The line points the search at the cage.
+- The run sheet has all of Series R DONE the moment the cage opens (:1358), so nothing "is filed" there but the last box.
+- That box, Series L, is at Noor's desk on the warned branch (:1375, :2091-2097).
+- The ledger's print copy is in her office (:2138).
+Her whole character is accuracy ("I'll write down what I've destroyed, accurately"; debrief :237 "She even got the numbers right").
+Smallest rewrite: "Everyone ENTROPY ever placed **was** filed in this **building**, dear. By morning, I'll be the only index you can ask." ("was" was in the first draft.) Delivery: "gentle, almost kind, over the work" ("without looking up" is a stage direction, and the narrator has just said it).
+The rest is fine:
+- "only index you can ask" is untrue if the live ledger is already captured, but she doesn't know that, and it sets up the lever ("Your Architect kept his own papers off your list. Only yours burn."), the pencil list, and "[Who's WREN?]" / "I don't read them aloud."
+- Nightshade's file is in the plan cabinet, off her list by design; he was turned, not placed. The player's file is not a placement. m08's mole holds.
+- :34 "Paper was the only thing that could ever have hurt them. So the paper goes.": "them" now reads as everyone placed. Good. "only" twice running and "dear" again at :64: accept.
+- Nothing relied on "at their desks" / "only paper". m10's credits "her people at their desks" (`m10 scenario.json.erb:809-810`) are about the Recruiter and stand alone.
+Still open from round 1: `m09_briefing.ink:62` ("We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.") is unchanged and is now also the same fact as this line, told first by Netherton. With the reworded option there, this line is the first telling.
+
+### 4. m10 `m10_tesseract.ink:278-280` pitch: OK
+As round 1 recommended. "they" matches "weak points"; "City by city" keeps the contrast; "Then it stops" (:285) still answers "And then what?"; "its map" (:286) has a better antecedent than before. "At six" is said once here.
+Removed "Everything SAFETYNET ever found, free, with working detail": not needed later. The two publication modes are in Netherton's opening (`m10_director_netherton.ink:125-126`, every route of the briefing, cold start included), HaX's hour topic (`m10_phone_agent0x99.ink:245-246`) and his own arrival line at the core (`m10_tesseract.ink` `arrival`, "It goes at six whatever we say. Or now, if someone presses this."). A player who closes the briefing unheard still gets the facts from the arrival line and "they go everywhere". Exchange 2's button "You'll hand it to everyone at six" follows from :278-280. Delivery: keep.
+Arrival line removed: no ink or scenario text in m10 quotes it; the arrival run closes cleanly on the freeze line or HaX's "back".
+
+### 5. m05 `m05_phone_recruiter.ink:110` (moved above Torres): OK
+"Receipt", "him" and "line item" follow the Torres line again. Accept "agent" three times on the silent route ("Considered, agent" / "before they break, agent" / "a line item, agent"). Delivery: keep.
+
+### 6. m09 `m09_sorensen_hatch.ink:113` (line removed): OK
+The file matches its pre-T345 text. "You're the one the Architect writes about." then HaX's "...She's got a file on you." on all three cover branches, as on Victoria's route (`m09_sorensen_door.ink`).
