@@ -10,8 +10,8 @@ tests `test/js/ops-model.test.mjs`, `network-view-ops.test.mjs`, `api-client-net
 `await scene.perform({ action, target }, { echo })` resolves `{ sent: false }` for a guard turn-away (key already in
 `pending`, game not active, no such control: unplug needs `target === unplugJack` and `links.unplugFromView`;
 sweep/scan need status ready and `ApiClient.networkScan`; any other action is turned away until S2/S3 add them),
-else `{ sent: true, answer }`. `answer` is the server body, a refusal body (`{ success:false, reason }`, taken from
-`err.body` of a thrown 4xx), the unplug's `out` object, or `null` (throw, or no reply).
+else `{ sent: true, answer }` (also after a redraw or result throw: those are logged, the key is cleared in a `finally`). `answer` is the server body, a refusal body (`{ success:false, reason }`, taken from
+`err.body` of a thrown 4xx), the unplug's `out` object, or `null` (throw, or no reply: `undefined` becomes `null`).
 Key: `pendingKey(action, target)` from `ops-model.js` = `"<action>:<target>"`; `use` takes `{ card, finding }` ->
 `use:<card>|<finding>`. `scene.pending` is a Set; `scene.onSent(offer, echo)`, `scene.onEnded(offer, answer)` are
 instance properties, no-ops by default.
@@ -63,5 +63,6 @@ existing `network-view`, `minigame-consoles-fit`, `pc-monitor-frame`, `escaping-
 ## Gotchas
 - A view left open keeps a refetch timer: node tests must end the minigame (`endMinigame`) or the file hangs.
 - `ops-model.js` has no `window`/`document` use; a test greps for that.
-- `refetchAfterOps` waits for an in-flight timed refetch, then refetches with `sync:false`.
+- Stale refetches (S1 client R1 M1): `_opsEpoch` counts moves (a request going out, an answer folded in); a refetch that started before the count changed drops its answer. `refetchAfterOps` awaits the in-flight refetch (`_refetchDone`), then refetches with `sync:false`.
+- Device rows are their own group, "Devices", after Computers and before File shares (R1 m5). A sweep or scan success keeps scroll and focus (`focusAfterMove`); a closed view is not redrawn (R1 m3). `showNotice(text, rowId, key)`: only a refusal passes a key (R1 m6).
 - Not done: no live browser proof; `docs/ACCESS_AND_NETWORKS.md` and the feature index belong to the stage landing, not this step.

@@ -156,10 +156,10 @@ const KIND_ICONS = {
 
 // The order rows are shown in (UX access R1 finding 10): computers, then shares, then
 // printers and other devices, each group by its name. The server's order is the scenario's.
-const KIND_RANK = { pc: 0, file_share: 1, printer: 2, phone: 3 };
-const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices', phone: 'Phones' };
+const KIND_RANK = { pc: 0, device: 1, file_share: 2, printer: 3, phone: 4 };
+const KIND_GROUPS = { pc: 'Computers', device: 'Devices', file_share: 'File shares', printer: 'Printers and devices', phone: 'Phones' };
 const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
-const rowRank = (r) => KIND_RANK[r?.kind] ?? 4;
+const rowRank = (r) => KIND_RANK[r?.kind] ?? 5;
 
 /** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
 export function displayOrder(rows) {
@@ -303,6 +303,10 @@ export class NetworkViewMinigame extends MinigameScene {
         this.refetchIdleMs = Number.isFinite(params?.refetchIdleMs) ? params.refetchIdleMs : REFETCH_IDLE_MS;
         this._refetchTimer = null;
         this._refetching = false;
+        // Counts the moves of the ops loop (a request going out, an answer folded in); a refetch
+        // that started before the count changed is stale and is dropped (S1 client R1 M1)
+        this._opsEpoch = 0;
+        this._refetchDone = null;
         this._unchanged = 0;
         this._pointerDown = null;
         this._held = false;
@@ -552,6 +556,9 @@ export class NetworkViewMinigame extends MinigameScene {
         if (typeof document !== 'undefined' && document.hidden) return null;
         if (window.MinigameFramework?.currentMinigame && window.MinigameFramework.currentMinigame !== this) return null;
         this._refetching = true;
+        let done;
+        this._refetchDone = new Promise(r => { done = r; });
+        const epoch = this._opsEpoch;
         try {
             const answer = await this.links()?.view?.(this.footholdId, { sync });
             if (this._reported || this._ending) return answer ?? null;
@@ -564,6 +571,9 @@ export class NetworkViewMinigame extends MinigameScene {
                 this.complete(false);
                 return answer;
             }
+            // A move was sent or answered while this was on its way: it may predate the move, so
+            // it must not overwrite what the move drew. The next refetch brings the true view
+            if (epoch !== this._opsEpoch) return null;
             if (!answer.ok) {
                 // A failed answer counts as an idle one, so the gap widens while the link is
                 // down or erroring (R2 m2)
@@ -585,6 +595,8 @@ export class NetworkViewMinigame extends MinigameScene {
                     this.notice = null;
                     this.noticeRowId = null;
                 }
+                // A refusal for a control whose row or block has gone goes with it (R1 m6)
+                if (this.noticeKey && !this.noticeTargetListed()) { this.notice = null; this.noticeKey = null; }
                 this.render();
                 if (this.gameContainer) this.gameContainer.scrollTop = top;
                 this.restoreFocus(focus);
@@ -596,7 +608,16 @@ export class NetworkViewMinigame extends MinigameScene {
             return answer;
         } finally {
             this._refetching = false;
+            done();
         }
+    }
+
+    /** Whether the host or network a keyed refusal was for is still in the view. */
+    noticeTargetListed() {
+        const target = String(this.noticeKey || '').split(':').slice(1).join(':');
+        return this.allRows().some(r => r.id === target)
+            || this.view?.network?.id === target
+            || (this.view?.networks || []).some(b => b?.id === target);
     }
 
     /** A press is in progress; a press that never reports its release counts for a few seconds (R2 n3). */
@@ -959,22 +980,31 @@ export class NetworkViewMinigame extends MinigameScene {
         this.clearResult(action, target, key);
         this.pending.add(key);
         this._pendingFocus = this.focusedControl();
-        this._runHook('onSent', offer, echo);
-        this.redraw();
+        this._opsEpoch++;
         let answer = null;
         try {
-            answer = await this._request(action, target);
-        } catch (err) {
-            answer = null;
+            this._runHook('onSent', offer, echo);
+            this._safely('redraw', () => this.redraw());
+            try {
+                answer = (await this._request(action, target)) ?? null;
+            } catch (err) {
+                answer = null;
+            }
+            // The tail, on every ending: the hook, the key gone and the control redrawn, the result drawn
+            this._runHook('onEnded', offer, answer);
+        } finally {
+            this.pending.delete(key);
         }
-        // The tail, on every ending: the hook, the key gone and the control redrawn, the result drawn
-        this._runHook('onEnded', offer, answer);
-        this.pending.delete(key);
-        this.redraw();
+        this._safely('redraw', () => this.redraw());
         this._pendingFocus = null;
-        this.showResult(offer, answer);
+        this._safely('showResult', () => this.showResult(offer, answer));
         await this.afterAnswer(offer, answer);
         return { sent: true, answer };
+    }
+
+    /** A redraw or a result that throws is logged; the key is already gone and the move goes on. */
+    _safely(name, fn) {
+        try { fn(); } catch (e) { console.warn(`[network-view] ${name} threw`, e); }
     }
 
     /** A hook never breaks `perform`: a throw is logged and the move goes on. */
@@ -1043,12 +1073,31 @@ export class NetworkViewMinigame extends MinigameScene {
         if (action !== 'sweep' && action !== 'scan') return;
         const key = pendingKey(action, target);
         if (answer && answer.success !== false) {
+            this._opsEpoch++;
             this.view = applyScanAnswer(this.view, offer, answer);
+            // A view that has closed is not drawn again (R1 m3)
+            if (this._reported || this._ending) return;
+            // Scroll stays, and focus stays with the control's row or the next control (R1 m4)
+            const top = this.gameContainer?.scrollTop ?? 0;
+            const hadFocus = !!this.focusedControl();
             this.render();
+            if (this.gameContainer) this.gameContainer.scrollTop = top;
+            if (hadFocus) this.focusAfterMove(target);
             return;
         }
-        this.noticeKey = key;
-        this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : null);
+        this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : null, key);
+    }
+
+    /** After a move redrew the list: focus the first control in the target's row or block, else the next one after it. */
+    focusAfterMove(target) {
+        const root = this.gameContainer;
+        if (!root?.querySelectorAll) return;
+        const holder = [...root.querySelectorAll('[data-host-id], [data-network-id]')]
+            .find(el => el.dataset.hostId === target || el.dataset.networkId === target);
+        const controls = [...root.querySelectorAll('[data-action]')].filter(b => !b.disabled);
+        let next = holder ? controls.find(b => holder.contains(b)) : null;
+        if (!next && holder) next = controls.find(b => holder.compareDocumentPosition(b) & 4);
+        (next || controls[0])?.focus?.();
     }
 
     /** What follows a finished move: the unplug that ends the trip, or the events and the refetch of an ops success. */
@@ -1071,7 +1120,9 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** The view's own refetch, run now: after one already on its way has landed, as that one may predate the move. */
     async refetchAfterOps() {
-        for (let i = 0; i < 20 && this._refetching; i++) await new Promise(r => setTimeout(r, 0));
+        // A refetch still out was asked before the move (its epoch is old, so it drops its answer);
+        // wait for it to end, then ask again
+        if (this._refetching && this._refetchDone) await this._refetchDone;
         this._unchanged = 0;
         try { await this.refetch({ sync: false }); } catch (e) { console.warn('[network-view] refetch failed', e); }
     }
@@ -1084,9 +1135,11 @@ export class NetworkViewMinigame extends MinigameScene {
         el.hidden = !this.unplugNotice;
     }
 
-    showNotice(text, rowId = null) {
+    showNotice(text, rowId = null, key = null) {
         this.notice = text;
         this.noticeRowId = rowId;
+        // Only a refusal drawn for a control keeps its key; any other line clears it (R1 m6)
+        this.noticeKey = text ? key : null;
         const el = this.gameContainer?.querySelector('.network-view-notice');
         if (el) el.textContent = text;
     }

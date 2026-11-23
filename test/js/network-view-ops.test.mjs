@@ -409,3 +409,149 @@ test('a further network block offers its own Sweep and Scan, found by the block 
     assert.equal(view().getTestState().networks[0].swept, true);
     assert.equal('swept' in view().getTestState().rows[0] || 'ownNetwork' in view().getTestState(), false, 'the plain own block adds no ops key');
 });
+
+// ---- S1 client R1 fixes ----
+
+test('M1: a slow refetch that started before a scan cannot overwrite the scan result', async () => {
+    setup(SWEPT([PRINTER]));
+    await open();
+    const before = calls.filter(c => c[0] === 'network').length;
+    // the timed refetch: asked now, so it carries the unscanned view, and lands only after the scan's answer
+    const slow = deferred();
+    const realNetwork = window.ApiClient.network;
+    let first = true;
+    window.ApiClient.network = async (id) => {
+        if (!first) return realNetwork(id);
+        first = false;
+        calls.push(['network', id]);
+        const snapshot = JSON.parse(JSON.stringify(answer));
+        await slow.p;
+        return snapshot;
+    };
+    const timed = view().refetch({ sync: false });
+    scanImpl = async () => {
+        answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([SWEPT_PRINTER]) };
+        return { success: true, host: SWEPT_PRINTER };
+    };
+    const moved = view().perform({ action: 'scan', target: 'print01' });
+    await settle(30);
+    assert.equal(document.querySelectorAll('[data-service]').length, 1, 'the answer drew the tile at once');
+    await new Promise(r => setTimeout(r, 50));
+    slow.resolve();
+    await timed;
+    await moved;
+    await settle();
+    assert.equal(document.querySelectorAll('[data-service]').length, 1, 'the late old answer did not wipe the tile');
+    assert.equal(scanBtn('print01'), null, 'Scan is not offered again');
+    assert.equal(calls.filter(c => c[0] === 'network').length - before, 2, 'the late one, then a fresh refetch');
+});
+
+test('m1: a redraw that throws does not leave the key pending, and the result is still drawn', async () => {
+    setup(SWEPT([PRINTER]));
+    await open();
+    const m = view();
+    const realRedraw = m.redraw.bind(m);
+    m.redraw = () => { throw new Error('bad row'); };
+    scanImpl = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, reason: 'not_needed' } }); };
+    const out = await m.perform({ action: 'scan', target: 'print01' });
+    assert.equal(out.sent, true);
+    assert.equal(m.pending.size, 0, 'the key is cleared');
+    assert.equal(q('.network-view-notice').textContent, M.REFUSAL_TEXT.not_needed, 'the result is drawn');
+    m.redraw = realRedraw;
+    scanImpl = async () => ({ success: true, host: SWEPT_PRINTER });
+    assert.equal((await m.perform({ action: 'scan', target: 'print01' })).sent, true, 'the control works again');
+});
+
+test('m2 and T1: a request that gives no reply ends with answer null in the hook and the result', async () => {
+    setup(SWEPT([PRINTER]));
+    await open();
+    const m = view();
+    const seen = [];
+    m.onEnded = (offer, a) => seen.push(a);
+    scanImpl = async () => undefined;
+    const out = await m.perform({ action: 'scan', target: 'print01' });
+    assert.deepEqual(seen, [null]);
+    assert.equal(out.answer, null);
+    assert.equal(out.sent, true);
+    assert.equal(q('.network-view-notice').textContent, M.REFUSAL_TEXT.no_answer);
+    assert.equal(m.pending.size, 0);
+});
+
+test('T1: a 400 bad_request is drawn from the table', async () => {
+    setup(SWEPT([PRINTER]));
+    await open();
+    scanImpl = async () => { throw Object.assign(new Error('x'), { status: 400, body: { success: false, reason: 'bad_request' } }); };
+    scanBtn('print01').click();
+    await settle();
+    assert.equal(q('.network-view-notice').textContent, M.REFUSAL_TEXT.bad_request);
+    assert.equal(scanBtn('print01').disabled, false);
+    assert.equal(named('network_host_scanned').length, 0);
+});
+
+test('m3: an answer that lands after the view has closed draws nothing', async () => {
+    setup(SWEPT([PRINTER]));
+    await open();
+    const m = view();
+    const d = deferred();
+    scanImpl = () => d.p;
+    const moved = m.perform({ action: 'scan', target: 'print01' });
+    window.MinigameFramework.endMinigame(false, null);
+    let renders = 0;
+    const realRender = m.render.bind(m);
+    m.render = () => { renders++; realRender(); };
+    d.resolve({ success: true, host: SWEPT_PRINTER });
+    await moved;
+    await settle();
+    assert.equal(renders, 0, 'no redraw of a closed view');
+});
+
+test('m4: after a successful scan focus stays in the row or moves to the next control', async () => {
+    setup(SWEPT([PC, PRINTER]));
+    await open();
+    scanImpl = async () => { answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([PC, SWEPT_PRINTER]) };
+        return { success: true, host: SWEPT_PRINTER }; };
+    scanBtn('print01').focus();
+    assert.equal(document.activeElement, scanBtn('print01'));
+    const top = view().gameContainer.scrollTop;
+    await view().perform({ action: 'scan', target: 'print01' });
+    await settle();
+    assert.equal(document.querySelectorAll('[data-service]').length, 1);
+    assert.ok(document.activeElement?.closest?.('[data-action]'), 'a control has focus, not the page body');
+    assert.equal(view().gameContainer.scrollTop, top);
+});
+
+test('m5: device rows get their own group after the computers and before the shares', async () => {
+    setup(SWEPT([{ id: 'share1', kind: 'file_share', name: 'Docs', host: 'LAB-01', open: true }, PRINTER, PC]));
+    await open();
+    const heads = [...document.querySelectorAll('.network-row-group')].map(e => e.textContent);
+    assert.deepEqual(heads, ['Computers', 'Devices', 'File shares']);
+});
+
+test('m6: a refusal key is dropped when another notice replaces it, and when the refetch no longer lists its target', async () => {
+    setup(SWEPT([PRINTER, { id: 'share1', kind: 'file_share', name: 'Docs', host: 'LAB-01', open: true, observations: 'A share.' }]));
+    await open();
+    const m = view();
+    scanImpl = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, reason: 'not_needed' } }); };
+    await m.perform({ action: 'scan', target: 'print01' });
+    assert.equal(m.noticeKey, M.pendingKey('scan', 'print01'));
+    m.showNotice('Look text', 'share1');
+    assert.equal(m.noticeKey, null, 'another notice clears the key');
+    await m.perform({ action: 'scan', target: 'print01' });
+    assert.ok(q('.network-view-notice').textContent);
+    answer.footholds[0].hosts = [];
+    answer.footholds[0].networks[0].hosts = [];
+    await m.refetch({ sync: false });
+    assert.equal(m.noticeKey, null);
+    assert.equal(q('.network-view-notice').textContent, '', 'the line goes with its target');
+});
+
+test('m7: a block whose route is down never offers Sweep, even with swept false', async () => {
+    const down = { id: 'far_net', name: 'Far network', route: 'down', via: { hostId: 'desk_pc', host: 'LAB-01' }, hosts: [], swept: false };
+    setup({ hosts: [PC], networks: [{ id: 'lab_net', name: 'Lab network', route: 'up', via: null, hosts: [PC] }, down] });
+    await open();
+    assert.equal(document.querySelectorAll('[data-action="sweep"]').length, 0);
+    assert.equal(q('[data-network-id="far_net"]'), null);
+    assert.equal(M.offersSweep(down), false);
+    assert.equal('sweep' in (view().getTestState().networks[0] || {}), false);
+    assert.equal(await view().perform({ action: 'sweep', target: 'far_net' }).then(r => r.sent), true, 'perform itself is the server\'s to refuse');
+});
