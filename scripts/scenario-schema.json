@@ -322,7 +322,6 @@
       "type": "object",
       "description": "Ops log sources (OPS_LOG_ROWS_PLAN.md 4.1): source id to a source that says which events it records and, optionally, where. Withheld from the bootstrap. Needs a gameClock. The validator (scripts/validate_log_rows.rb) checks each event against lib/break_escape/ops_log_events.rb.",
       "maxProperties": 30,
-      "patternProperties": {"^_": {}},
       "additionalProperties": {
         "type": "object",
         "required": ["title", "events"],
