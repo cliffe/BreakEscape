@@ -30,7 +30,7 @@ VAR stop_asked = false
 {cage_met or sorensen_fate != "left": -> hub}
 // Puzzle chains R7 m2: cage_met is set after the opening, so a reload mid-opening replays it.
 Narrator: She feeds another sheaf into the shredder and doesn't turn round.
-Margaret Sorensen: It's only paper. The people are where they've always been, at their desks, doing what they were placed to do.
+Margaret Sorensen: Everyone ENTROPY ever placed was filed in this building, dear. By morning, I'll be the only index you can ask. #delivery: gentle, almost kind, without looking up
 Margaret Sorensen: Paper was the only thing that could ever have hurt them. So the paper goes.
 // Playtest R1 B-m2: Torres only for a player who played m05.
 {m05_completed:

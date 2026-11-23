@@ -59,7 +59,7 @@ Director Magnus Netherton: Last night a courier in Helena, Montana, carried this
     }
 }
 Director Magnus Netherton: The label named the building. Mountain States Records & Retention, a commercial archive on the edge of Helena.
-Director Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it. #delivery: level and grave
+Director Magnus Netherton: Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it. #delivery: level and grave
 // Beat 3 (fixed): the no-coordinate branch.
 { m08_completed and not m08_tomb_gamma_location_known:
     Director Magnus Netherton: We have Helena. Not the bunker. Not yet.
