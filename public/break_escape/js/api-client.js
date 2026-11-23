@@ -211,6 +211,19 @@ export class ApiClient {
     return this.post('/network/join', { ap_id: apId, delta: true, ...(key != null ? { key } : {}) });
   }
 
+  // The ops loop's one route, for its two moves (ops core plan 6): a sweep sends `networkId`, a
+  // host scan sends `hostId`, never both. `footholdId` is the link the view is open on. Answers
+  // { success, network: { id, swept, hosts } } or { success, host } (an `already` repeat carries the
+  // same fields); a refusal throws with err.status (400, 403, 404, 422) and err.body
+  // { success: false, reason }. No retry: one press is one request.
+  static async networkScan(footholdId, { networkId = null, hostId = null } = {}) {
+    return this.post('/network/scan', {
+      foothold: footholdId,
+      ...(networkId != null ? { network_id: networkId } : {}),
+      ...(hostId != null ? { host_id: hostId } : {})
+    });
+  }
+
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
   // held foothold, or only `footholdId` when given (404 when it is not held).
   static async network(footholdId = null) {

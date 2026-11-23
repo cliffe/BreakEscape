@@ -496,3 +496,44 @@
     text-align: center;
     color: #b8c4cc;
 }
+
+/* Ops (S1): Sweep on an unswept discovery block, Scan on a host row, and a scanned host's
+   service tiles. Pixel-art rule: 2px solid square borders, flat fills, no radius or shadow. */
+.network-block-ops {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.network-view .network-row-action[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.network-row[data-kind="device"] .network-row-icon {
+    object-fit: contain;
+    width: 72px;
+    height: 48px;
+}
+
+.network-row-scanned {
+    flex-wrap: wrap;
+}
+
+.network-service-tiles {
+    flex: 1 0 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0 2px 80px;
+    padding: 0;
+    list-style: none;
+}
+
+.network-service {
+    padding: 2px 6px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+    color: #cfe9f5;
+    font-size: 16px;
+}
