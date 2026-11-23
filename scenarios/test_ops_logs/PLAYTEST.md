@@ -90,7 +90,7 @@ card copy is never logged; the gap is the lesson).
 ### 3. Swiping the copy at the door
 
 `moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast titled "Access Granted" with the text "Opened with your copy of Dana Reyes's badge." (the name is the card's; the toast is not reliably in the DOM, so you need not capture it: the `door_unlocked` result and the row are the check), task `l1_into_office`
-complete. Check: `door_controller` has exactly one row `badge_swipe`, result `ok`, `as {"npc":"dana"}`,
+complete. The reader holds the emulate screen, then the result: the door opens and the toast shows about 4 seconds after the click. Wait 5 seconds (or `waitFor` the `door_unlocked` event) before reading the door, the toast or the row. One click only: a second attempt is not needed. Check: `door_controller` has exactly one row `badge_swipe`, result `ok`, `as {"npc":"dana"}`,
 `where {"kind":"door","id":"office"}`. The other source has none.
 
 ### 4. Failing the sign-in twice
@@ -106,7 +106,7 @@ Type the username and the password from the sticky note and submit. Expect the d
 `l2_signed_in` complete (read it from `completedTasks` in the state; its toast is not reliably in the DOM). Check: a `signin_ok` row after the failure row, `as {"account":"<the
 username>"}`, `where {"kind":"pc","id":"office_pc"}`, detail `{"method":"password","route":"keyboard"}`.
 
-Read `window.gameClock.elapsedMs()` straight after the desktop opens and note it. Compare it with
+Read `window.gameClock.elapsedMs()` in the SAME harness call as the sign-in submit, or one `eval` sent with it (a read in a later call is seconds late and proves nothing) and note it. Compare it with
 this row's `at <n>ms`: they must be within a few seconds of each other (allow 5 s). This is the
 "row time matches the on-screen clock" check.
 
@@ -185,7 +185,7 @@ above). Close the viewer with `{"cmd":"mg","action":"close"}` or Escape.
 ### 8. Entering the security office
 
 After beat 7 (signed out). `moveToNear` then `interact` `door:office->security`, using the saved card
-(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, the toast titled "Access Granted" (text "Opened with your copy of Dana Reyes's badge."; as in beat 3 it need not be captured). The RFID reader can linger for a moment after the emulate: close it with `{"cmd":"mg","action":"close"}` before `enter`, or `enter` answers `minigame-active`. Check with
+(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, the toast titled "Access Granted" (text "Opened with your copy of Dana Reyes's badge."; as in beat 3 it need not be captured). The RFID reader can linger for a moment after the emulate (give it the same 5 second wait as in beat 3 before reading the door or the row): close it with `{"cmd":"mg","action":"close"}` before `enter`, or `enter` answers `minigame-active`. Check with
 `verify-run.rb --ops-log`: `door_controller` now has **two** `badge_swipe` rows (office, then
 security), both `ok`. Then `enter` `security`.
 
@@ -314,12 +314,12 @@ Run these in the same game, after beat 19 (and the same capture file or files, p
 
 The calls are in `docs/test-bridge.md` (`moveToNear`, `interact`, `enterRoom`, `waitFor`, `dismiss` with a label, `mg clickSelector`, `mg type`, `eval`, `access.footholds()`, `access.networkView()`) or are session commands of the playtest skill: `enter` is the session command that calls `enterRoom`, and `{"cmd":"sync"}` is listed in the skill (not in `test-bridge.md`; if the session refuses it, `eval` `() => window.stateSync.sync()`). No beat sends a request of the script's own making: every row comes from the real controls.
 
-Notes from the code. L3 was run in a browser on 2026-11-23: beats 20, 21, 23 and 24 passed; beat 22 was fixed afterwards and is being replayed. Three points are marked UNVERIFIED: report what you see for each.
+Notes from the code. L3 was run in a browser on 2026-11-23 (run 3, game 64): beats 20 to 27 passed.
 
 - The plant prompt is a `gameConfirm` dialog, not a minigame: answer it with `{"cmd":"dismiss","label":"Plug it in"}` (or `"Leave it"`, the cancel button: there is no button labelled "Cancel"). Always give `dismiss` a label: with no label and a minigame open it clicks that minigame's first control.
 - In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; in a share window an item is a `.container-content-slot` (not `.desktop-icon`), and a folder opens by clicking it: `click` `.container-content-slot[aria-label="Letters"]` (the slot carries its name in `aria-label`; a share row in the network view also has `data-resource-id`). Feedback there is an in-window line, not a toast.
 - A planted jack has no prompt: clicking it opens the box's network view with Unplug in its header (`[data-unplug]`). The network view's share row is `[data-resource-id="scanned_inbox"] [data-action="open"]`.
-- Joining: `interact` `guest_ap` opens the join minigame (`#password-field`, "Network key"); type with `{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`. A wrong key shows "That key was not accepted" and clears the field. The key is read from `wifi_note` (interact, read the text), as with every earned secret.
+- Joining: `interact` `guest_ap` opens the join minigame (`#password-field`, "Network key"; the `interact` itself first sends a keyless probe join, answered 422 `wrong_key`, before the key screen opens); type with `{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`. A wrong key shows "That key was not accepted" and clears the field. The key is read from `wifi_note` (interact, read the text), as with every earned secret.
 - The viewer's hooks and handy reads are those of beats 8 to 13 (`tr.ol-row[data-row-id]`, `td[data-col]`, `[data-ops-log="count"]`, `button[data-action="refresh"]`).
 - Every plant and every unplug is its own row (13.8: one per plant or unplug), so plant, unplug, plant reads up, down, up and never `OK x2`. A share or folder open is one row per folder: a repeat open adds none.
 - Beat 3 walks east from the lobby past the two new lobby objects (`kit_dropbox` at tile 8,4 and `guest_ap` at 8,6, both solid, the room is 10 tiles wide). Confirm that `enter` `office` works on the first attempt in the full run (beats 1 to 27); if it is blocked, move the two objects to the west half of the lobby and report it.
@@ -334,7 +334,7 @@ Notes from the code. L3 was run in a browser on 2026-11-23: beats 20, 21, 23 and
 
 ### 22. Opening the share and its folder writes a row each, and a repeat none
 
-In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder (`.container-content-slot[aria-label="Letters"]`). One extra `GET /container/scanned_inbox` may be seen before the folder window opens (the share closes and reopens); the folder window should replace it within about a second and request `/container/inbox_letters`. Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
+In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]`. The share opens as a file window. Check `network_log`: a `share_folder_opened` row, `where {"kind":"share","id":"scanned_inbox"}`, no `as`, no detail. Click the "Letters" folder (`.container-content-slot[aria-label="Letters"]`). The click sends `POST /unlock` (answered with the folder's contents), then one `GET /container/scanned_inbox`, then `GET /container/inbox_letters`; the folder window replaces the share window and closing it returns to the share. If timed screenshots are wanted, take them with one command that waits on the page clock. Check: a second `share_folder_opened` row with detail `{"folder":"inbox_letters"}`. Close the folder, open it again, close the share and open the share again: no new row after either repeat (the row count stays at three: link up, share, folder). Open nothing else: a file is never logged. Close the windows back to the world.
 
 ### 23. Unplugging writes one row
 
@@ -342,15 +342,15 @@ In the open view, click `[data-resource-id="scanned_inbox"] [data-action="open"]
 
 ### 24. A wrong key then the right key at the access point
 
-`enter` `lobby`, then `moveToNear` and `interact` `wifi_note` and read the key from its text. `moveToNear` then `interact` `guest_ap`: the join minigame opens. Type a wrong key of your own invention and submit: "That key was not accepted", nothing joined, no row. Type the right key from the note and submit. Expect the join to succeed (`access.footholds()` lists a `wifi_` foothold) and a network view (it may list nothing: the guest network holds no share); close it. Check: `network_log` has a `net_wifi_join` row, `where {"kind":"ap","id":"guest_ap"}`, no `as`; five rows in all. Click `guest_ap` again: no second row.
+`enter` `lobby`, then `moveToNear` and `interact` `wifi_note` and read the key from its text. `moveToNear` then `interact` `guest_ap`: the join minigame opens. Type a wrong key of your own invention and submit: "That key was not accepted", nothing joined, no row. The capture shows a 422 `wrong_key` for the `interact` itself (the keyless probe) and a second for your wrong key: two refusals, no row for either. Type the right key from the note and submit. Expect the join to succeed (`access.footholds()` lists a `wifi_` foothold) and a network view (it may list nothing: the guest network holds no share); close it. Check: `network_log` has a `net_wifi_join` row, `where {"kind":"ap","id":"guest_ap"}`, no `as`; five rows in all. Click `guest_ap` again: the join is answered `already: true`, no view opens, no second row.
 
 ### 25. Reading the network log
 
-`enter` `comms_room`, `moveToNear` and `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect exactly **five** rows, in this order (EVENT / IDENTITY / LOCATION / RESULT / detail; the order is the order the actions were done in): `NET_LINK_UP` / `-` / `Spare wall port` / `OK`; `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (empty detail); `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (detail `folder: Letters`); `NET_LINK_DOWN` / `-` / `Spare wall port` / `OK`; `NET_WIFI_JOIN` / `-` / `Guest access point` / `OK`. The count text should read `5 rows` (UNVERIFIED wording: report the exact text the page shows). No cell holds a raw id (`comms_port`, `guest_ap`, `scanned_inbox`, `inbox_letters`), the key, `jack_`, `wifi_` or a file name: `eval` `() => /comms_port|guest_ap|scanned_inbox|inbox_letters|seabreeze|jack_|wifi_|letter\.txt|reminder/.test(document.querySelector('.ol-wrapper').innerText)` must return `false`. Click the third row: the detail grid shows EVENT `SHARE_OPEN`, LOCATION `Scanned-Inbox`, DETAIL `folder: Letters`. Close the viewer.
+`enter` `comms_room`, `moveToNear` and `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect exactly **five** rows, in this order (EVENT / IDENTITY / LOCATION / RESULT / detail; the order is the order the actions were done in): `NET_LINK_UP` / `-` / `Spare wall port` / `OK`; `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (empty detail); `SHARE_OPEN` / `-` / `Scanned-Inbox` / `OK` (detail `folder: Letters`); `NET_LINK_DOWN` / `-` / `Spare wall port` / `OK`; `NET_WIFI_JOIN` / `-` / `Guest access point` / `OK`. The count text should read `5 rows`. No cell holds a raw id (`comms_port`, `guest_ap`, `scanned_inbox`, `inbox_letters`), the key, `jack_`, `wifi_` or a file name: `eval` `() => /comms_port|guest_ap|scanned_inbox|inbox_letters|seabreeze|jack_|wifi_|letter\.txt|reminder/.test(document.querySelector('.ol-wrapper').innerText)` must return `false`. Click the third row: the detail grid shows EVENT `SHARE_OPEN`, LOCATION `Scanned-Inbox`, DETAIL `folder: Letters`. Close the viewer.
 
 ### 26. Refresh after another plant
 
-With the viewer closed, in the comms room `interact` `comms_port` and answer `Plug it in` (the box is back in your inventory since beat 23); close the view that opens. Open `net_log_pc` again: now **six** rows: the five of beat 25 unchanged and a sixth, `NET_LINK_UP` / `-` / `Spare wall port` / `OK` (a plant after an unplug is its own row: the log reads up, down, up, and no row reads `x2`; the count text should read `6 rows`). Click `button[data-action="refresh"]`: the six rows stay as they are (check in the capture file that the refresh request carried `rev=` and was answered `{rev, unchanged:true}`). Close the viewer.
+With the viewer closed, in the comms room `interact` `comms_port` and answer `Plug it in` (the box is back in your inventory since beat 23); no view opens this time (the view opens by itself only on the first plant); nothing to close. Open `net_log_pc` again: now **six** rows: the five of beat 25 unchanged and a sixth, `NET_LINK_UP` / `-` / `Spare wall port` / `OK` (a plant after an unplug is its own row: the log reads up, down, up, and no row reads `x2`; the count text should read `6 rows`). Click `button[data-action="refresh"]`: the six rows stay as they are (check in the capture file that the refresh request carried `rev=` and was answered `{rev, unchanged:true}`). Close the viewer.
 
 ### 27. The other readers, then the checks
 
@@ -367,5 +367,5 @@ It must say `VERDICT: no leaks found`. It judges the `/log_rows` answers as befo
 ## L3 gotchas
 
 - Beats 1 to 19 are unchanged: the new objects are in the lobby (the box at the east table, the access point, the card) and in a new room north of it; no beat of the earlier stages uses them, and the `network_log` source only takes `jack:`, `ap:` and `share:` places, so no earlier action writes to it.
-- `net_wifi_join` shows no identity and the guest network has no share, so the view after a join is empty by design (UNVERIFIED: the view after a join has not been seen in a browser; report it).
+- `net_wifi_join` shows no identity and the guest network has no share, so the view after a join is empty by design (the run saw "Joined. Reaches 0 hosts." and "Nothing answers on this network.").
 - The jack, the access point and the share are not told apart by any sign: only the lobby sign names the comms room.

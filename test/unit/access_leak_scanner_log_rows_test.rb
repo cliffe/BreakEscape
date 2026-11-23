@@ -245,4 +245,13 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
              ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
     assert_equal INBOX, owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines))
   end
+
+  test 'L3 R3-1: an item in a print queue (not a file share) opens no name' do
+    data = share_data
+    data['resources']['printer'] = { 'kind' => 'print_queue', 'name' => 'Scanned-Inbox', 'host' => 'OL-PR01', 'network' => 'lan',
+                                     'contents' => [{ 'type' => 'folder', 'id' => 'spool', 'name' => 'Spool', 'contents' => [] }] }
+    lines = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/container/spool', 'status' => 200, 'body' => { 'success' => true } }],
+             ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
+    assert_includes owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines)), %w[network_string resource:printer]
+  end
 end

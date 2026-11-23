@@ -1186,7 +1186,7 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 | `signin_refused` | `{ typed: }` | `pc` | `attempt_login!` locked-out return | blocked | none | `save_limit: true`, 10 per PC (result `blocked`), whatever username is typed | `save!` only when `r&.stored?` |
 | `session_end` | `{ account: }` | `pc` | `logout_session!`, explicit sign-out only | ok | none | one per session | the method's save |
 | `session_lock` | `{ account: }` | `pc` | `lock_session!`, past its refusals | ok | none | merged repeats | the method's save |
-| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none; registered `merge: false`, never merged, so a plant after an unplug is its own row | one per plant or unplug | the methods' saves |
+| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none; registered `merge: false`, never merged, so a plant after an unplug is its own row | one per plant or unplug (link rows are not merged, so a long plant and unplug loop can evict older rows of the source, a once-only folder row among them) | the methods' saves |
 | `net_wifi_join` | none (an access point logs a device) | `ap` | `join_network!` (L3) | ok | none | one per join | the method's save |
 | `share_folder_opened` | `{ account: }` of the first admitting session in sign-in-list order; nil when only a foothold admits it | `share` | `#container`, admitted share branch (L3) | ok | `folder` (`{ id: 'object' }`; absent when the share itself is opened) | `once: true`: one per folder and account | `save!` only when `r&.stored?` |
 
