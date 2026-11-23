@@ -388,4 +388,86 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal [], NM.weaknesses(nil)
     assert_equal [], NM.decoys({ 'hosts' => 'junk' })
   end
+
+  test 'findings_of merges the weaknesses and decoys of one service by finding id, four of each, with the right kind' do
+    data = findings_data
+    svc = NM.hosts_on_all(data).find { |h| h[:id] == 'files01' }[:services].find { |s| s['name'] == 'smb' }
+    found = NM.findings_of('files01', svc)
+    assert_equal %w[files01.smb.d1 files01.smb.d2 files01.smb.d3 files01.smb.d4 files01.smb.w1 files01.smb.w2 files01.smb.w3 files01.smb.w4],
+                 found.map { |r| r[:finding_id] }
+    assert_equal %w[decoy] * 4 + %w[weakness] * 4, found.map { |r| r[:kind] }
+    assert_equal ['files01'], found.map { |r| r[:host_id] }.uniq
+    assert_equal [], NM.findings_of('files01', 'junk')
+    assert_equal [], NM.findings_of('files01', { 'name' => 'x' })
+  end
+
+  test 'findings_of keeps one record per finding id, the weakness before a decoy of the same id' do
+    svc = { 'name' => 'web', 'weaknesses' => [{ 'id' => 'same', 'class' => 'misconfig', 'severity' => 'low' }],
+            'decoys' => [{ 'id' => 'same', 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'x' },
+                         { 'id' => 'other', 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'y' }] }
+    3.times do
+      found = NM.findings_of('h1', svc)
+      assert_equal %w[h1.web.other h1.web.same], found.map { |r| r[:finding_id] }
+      assert_equal 'weakness', found.last[:kind]
+    end
+  end
+
+  test 'hosts_on_all lists every host of every network once' do
+    all = NM.hosts_on_all(findings_data)
+    assert_equal %w[files01 print01], all.map { |h| h[:id] }.sort
+    assert_equal all.length, all.map { |h| h[:id] }.uniq.length
+    assert_equal [], NM.hosts_on_all(nil)
+  end
+
+  # ---- S3: technique cards (OPS_CORE_PLAN.md 5.1, 11.1) ----
+
+  test 'techniques reads the registry: hashes only, notes skipped, malformed data empty' do
+    reg = { '_note' => { 'name' => 'x' }, 'a' => { 'name' => 'A', 'worksOn' => { 'class' => 'misconfig' } }, 'b' => 'junk' }
+    assert_equal %w[a], NM.techniques({ 'techniques' => reg }).keys
+    assert_equal({}, NM.techniques(data))
+    assert_equal({}, NM.techniques(nil))
+    assert_equal({}, NM.techniques({ 'techniques' => [1] }))
+  end
+
+  test 'technique_matches? by class only, class and product, class product and version, and each near miss' do
+    service = { 'name' => 'web', 'product' => 'Brackley ShareServe', 'version' => '3.1' }
+    weakness = { 'id' => 'w', 'class' => 'unpatched' }
+    works = ->(extra) { { 'worksOn' => { 'class' => 'unpatched' }.merge(extra) } }
+    assert NM.technique_matches?(works.call({}), service, weakness), 'class only'
+    assert NM.technique_matches?(works.call('product' => 'Brackley ShareServe'), service, weakness), 'class and product'
+    assert NM.technique_matches?(works.call('product' => 'Brackley ShareServe', 'versions' => %w[3.0 3.1]), service, weakness)
+    assert NM.technique_matches?(works.call('versions' => %w[3.1]), service, weakness), 'versions without a product'
+    refute NM.technique_matches?({ 'worksOn' => { 'class' => 'misconfig' } }, service, weakness), 'class differs'
+    refute NM.technique_matches?(works.call('product' => 'Brackley ShareServ'), service, weakness), 'product is exact'
+    refute NM.technique_matches?(works.call('product' => 'brackley shareserve'), service, weakness), 'product is case-exact'
+    refute NM.technique_matches?(works.call('versions' => %w[3.0 3.2]), service, weakness), 'version not listed'
+    refute NM.technique_matches?(works.call('versions' => '3.1'), service, weakness), 'versions must be a list'
+    refute NM.technique_matches?({}, service, weakness), 'no worksOn'
+    refute NM.technique_matches?(nil, service, weakness)
+    refute NM.technique_matches?(works.call({}), nil, weakness)
+    refute NM.technique_matches?(works.call({}), service, nil)
+  end
+
+  test 'technique_items finds a card in a room, a container, an NPC, a share, the start inventory and a grant' do
+    card = ->(id) { { 'id' => id, 'type' => 'technique_card', 'name' => id, 'technique_card' => 'factory_accounts' } }
+    other = { 'id' => 'plain', 'type' => 'notes', 'name' => 'plain' }
+    scenario = {
+      'startItemsInInventory' => [card.call('c_start'), other],
+      'resources' => { 'share1' => { 'kind' => 'file_share', 'contents' => [card.call('c_share')] }, '_n' => 'junk' },
+      'timers' => [{ 'id' => 't', 'afterMs' => 1, 'actions' => [{ 'type' => 'give_item', 'item' => card.call('c_grant') }] }],
+      'rooms' => { 'lobby' => {
+        'objects' => [card.call('c_room'), other,
+                      { 'id' => 'crate', 'type' => 'safe', 'name' => 'Crate', 'contents' => [card.call('c_box')] }],
+        'npcs' => [{ 'id' => 'npc1', 'itemsHeld' => [card.call('c_npc'), 'junk'] }]
+      } }
+    }
+    found = NM.technique_items(scenario).to_h { |rec| [rec[:item]['id'], rec[:home]] }
+    assert_equal({ 'c_room' => 'room', 'c_box' => 'container', 'c_start' => 'start', 'c_npc' => 'npc',
+                   'c_share' => 'share', 'c_grant' => 'grant' }, found)
+    rec = NM.technique_items(scenario).find { |r| r[:item]['id'] == 'c_box' }
+    assert_equal 'rooms/lobby/objects[2]/contents[0]', rec[:path]
+    assert_equal [], NM.technique_items(data)
+    assert_equal [], NM.technique_items(nil)
+    assert_equal [], NM.technique_items({ 'rooms' => 'junk', 'startItemsInInventory' => 'junk' })
+  end
 end

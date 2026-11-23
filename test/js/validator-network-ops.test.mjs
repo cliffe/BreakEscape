@@ -403,3 +403,189 @@ test('S2: the rules stay off while N14 is not built (the table reports the field
     assert.equal(out.filter(m => m.includes('used twice')).length, 0);
     assertHas(out, 'not built yet: N14');
 });
+
+// ---- S3: technique cards, grants, credentials ----
+const FID = 'print01.admin_page.factory_login';
+const card = (id, key, extra = {}) => ({ id, type: 'technique_card', name: 'Field note', technique_card: key, takeable: true, ...extra });
+// clean() plus one granting weakness of each kind, the registry, two cards and the credential
+function s3(patch = (s) => s) {
+    const s = clean();
+    s.hosts.print01.services[1].weaknesses = [weak('factory_login', { class: 'default_creds', grants: { credential: 'print_admin' } })];
+    s.rooms.lobby.objects[0].services[0].weaknesses = [weak('svc_flaw', { class: 'unpatched', grants: { session: { account: 'it_admin', access: 'user' } } })];
+    s.techniques = {
+        factory_accounts: { name: 'Factory accounts', worksOn: { class: 'default_creds' } },
+        share_flaw: { name: 'Service flaw', worksOn: { class: 'unpatched', product: 'Brackley ShareServe', versions: ['3.1'] } }
+    };
+    s.startItemsInInventory = [card('card_factory', 'factory_accounts'), card('card_flaw', 'share_flaw')];
+    s.credentials = { print_admin: { kind: 'saved_connection', account: 'it_admin', connectsTo: 'files01', proof: { technique_card: FID } } };
+    return patch(s);
+}
+const s3errors = (s, built = BUILT) => errors(issues(s, built));
+
+test('S3: a clean fixture with both kinds of grant, two cards and the credential raises no error or warning', { skip }, () => {
+    const out = issues(s3());
+    assert.deepEqual(errors(out).concat(warnings(out)), []);
+});
+
+test('S3: the rules stay off while N15 is not built (the table reports the fields)', { skip }, () => {
+    const out = errors(issues(s3(s => { s.techniques.unused = { name: 'U', worksOn: { class: 'misconfig' } }; return s; }), { ...BUILT, N15: false }));
+    assert.equal(out.filter(m => m.includes('is carried by no item')).length, 0);
+    assertHas(out, 'not built yet: N15');
+});
+
+test('S3 error: a card whose type is not technique_card, and an item of that type with no technique_card', { skip }, () => {
+    const a = s3(s => { s.startItemsInInventory[0].type = 'notes'; return s; });
+    assertHas(s3errors(a), "has `technique_card` but its type is 'notes'");
+    const b = s3(s => { s.startItemsInInventory.push({ id: 'blank_card', type: 'technique_card', name: 'Blank' }); return s; });
+    assertHas(s3errors(b), 'is of type "technique_card" but has no `technique_card`');
+});
+
+test('S3 error: an item whose technique_card is not a registry key; a registry entry no item carries', { skip }, () => {
+    const a = s3(s => { s.startItemsInInventory[0].technique_card = 'nope'; return s; });
+    const out = s3errors(a);
+    assertHas(out, "technique_card 'nope' is not a key of the technique card registry");
+    assertHas(out, "registry entry 'factory_accounts' is carried by no item");
+});
+
+test('S3 error: more than 32 registry entries; a registry key over 40 characters or not an id', { skip }, () => {
+    const many = s3(s => { for (let i = 0; i < 31; i++) s.techniques[`extra_${i}`] = { name: 'E', worksOn: { class: 'misconfig' } }; return s; });
+    assertHas(s3errors(many), '33 entries in `techniques`; at most 32');
+    const ok = s3(s => { for (let i = 0; i < 30; i++) s.techniques[`extra_${i}`] = { name: 'E', worksOn: { class: 'misconfig' } }; return s; });
+    assert.equal(s3errors(ok).filter(m => m.includes('at most 32')).length, 0);
+    const long = s3(s => { s.techniques['k'.repeat(41)] = { name: 'L', worksOn: { class: 'misconfig' } }; return s; });
+    assertHas(s3errors(long), 'is longer than 40 characters');
+    const bad = s3(s => { s.techniques.Bad_Key = { name: 'B', worksOn: { class: 'misconfig' } }; return s; });
+    assertHas(s3errors(bad), "registry key 'Bad_Key' must match");
+});
+
+test('S3 error: worksOn.product equal to no service product; a versions entry equal to no version of that product', { skip }, () => {
+    const a = s3(s => { s.techniques.share_flaw.worksOn.product = 'Brackley ShareServ'; return s; });
+    assertHas(s3errors(a), "worksOn.product 'Brackley ShareServ' equals no service's product");
+    const b = s3(s => { s.techniques.share_flaw.worksOn.versions = ['3.1', '9.9']; return s; });
+    const out = s3errors(b);
+    assertHas(out, "worksOn.versions entry '9.9' equals no version of the product 'Brackley ShareServe'");
+    assert.equal(out.filter(m => m.includes("entry '3.1'")).length, 0);
+});
+
+test('S3 error: grants.session on a hosts entry, an account that is no account holder, one the access list does not admit', { skip }, () => {
+    const device = s3(s => { s.hosts.cam01.services = [svc('web')]; s.hosts.cam01.services[0].weaknesses = [weak('cam_flaw', { class: 'unpatched', grants: { session: { account: 'it_admin', access: 'user' } } })]; return s; });
+    assertHas(s3errors(device), 'grants.session on a `hosts` entry');
+    const nobody = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].grants.session.account = 'ghost'; return s; });
+    assertHas(s3errors(nobody), "grants.session.account 'ghost' is not an account holder");
+    const closed = s3(s => {
+        s.rooms.lobby.npcs.push({ id: 'intern', displayName: 'Intern', npcType: 'person', creds: { username: 'intern1', password: 'Other-Pass-12' } });
+        s.rooms.lobby.objects[0].services[0].weaknesses[0].grants.session.account = 'intern';
+        return s;
+    });
+    assertHas(s3errors(closed), "grants.session.account 'intern' is not admitted by the access list");
+});
+
+test('S3 error: grants.credential naming no credentials entry; the entry not naming this finding back', { skip }, () => {
+    const none = s3(s => { s.credentials = {}; return s; });
+    assertHas(s3errors(none), "grants.credential 'print_admin' names no entry in 'credentials'");
+    const wrongProof = s3(s => { s.credentials.print_admin.proof = { technique_card: 'print01.admin_page.other' }; return s; });
+    const out = s3errors(wrongProof);
+    assertHas(out, 'must have proof { "technique_card": "print01.admin_page.factory_login" }');
+    assertHas(out, "proof.technique_card 'print01.admin_page.other' names no weakness");
+    const otherProof = s3(s => { s.credentials.print_admin.proof = { held: 'card_factory' }; return s; });
+    assertHas(s3errors(otherProof), 'must have proof');
+});
+
+test('S3 error: a credential proof naming a weakness that grants nothing or another credential', { skip }, () => {
+    const s = s3(s => {
+        s.credentials.second = { kind: 'saved_connection', account: 'it_admin', connectsTo: 'files01', proof: { technique_card: 'files01.files.svc_flaw' } };
+        return s;
+    });
+    assertHas(s3errors(s), "credential 'second': proof.technique_card 'files01.files.svc_flaw' names a weakness whose `grants` does not name this credential");
+});
+
+test('S3 error: two weaknesses granting one credential', { skip }, () => {
+    const s = s3(s => {
+        s.hosts.print01.services[1].weaknesses.push(weak('second_login', { class: 'default_creds', grants: { credential: 'print_admin' } }));
+        return s;
+    });
+    assertHas(s3errors(s), "grants.credential 'print_admin' is also granted by weakness 'print01.admin_page.factory_login'");
+});
+
+test('S3 error: a granted credential of a kind other than saved_connection', { skip }, () => {
+    const s = s3(s => { s.credentials.print_admin.kind = 'token'; return s; });
+    assertHas(s3errors(s), "is of kind 'token'; a granted credential must be of kind saved_connection");
+});
+
+test('S3 error: a granted credential whose connectsTo PC blocks remote sign-in, refuses saved_connection, or does not admit the account', { skip }, () => {
+    const blocked = s3(s => { s.policies = { strict: { remote: 'blocked' } }; s.rooms.lobby.objects[0].policy = 'strict'; return s; });
+    assertHas(s3errors(blocked), "whose policy blocks remote sign-in; the granted entry could never be used");
+    const refuses = s3(s => { s.policies = { pw_only: { accepts: ['password'] } }; s.rooms.lobby.objects[0].policy = 'pw_only'; return s; });
+    assertHas(s3errors(refuses), 'whose policy does not accept saved_connection');
+    const closed = s3(s => {
+        s.rooms.lobby.npcs.push({ id: 'intern', displayName: 'Intern', npcType: 'person', creds: { username: 'intern1', password: 'Other-Pass-12' } });
+        s.credentials.print_admin.account = 'intern';
+        return s;
+    });
+    assertHas(s3errors(closed), "credential 'print_admin' account is not admitted by the access list of 'files01'");
+});
+
+test('S3 error: a weakness with grants that no card registry entry matches', { skip }, () => {
+    const a = s3(s => { s.techniques.factory_accounts.worksOn.class = 'misconfig'; return s; });
+    assertHas(s3errors(a), "weakness 'factory_login': has `grants` but no technique card registry entry matches it");
+    const b = s3(s => { s.techniques.share_flaw.worksOn.versions = ['3.0']; return s; });
+    assertHas(s3errors(b), "weakness 'svc_flaw': has `grants` but no technique card registry entry matches it");
+});
+
+test('S3 error: needs.session on a weakness that grants no session on the host; "admin" with a "user" grant', { skip }, () => {
+    const a = s3(s => { s.hosts.print01.services[1].weaknesses[0].needs = { session: 'user' }; return s; });
+    assertHas(s3errors(a), 'needs.session is allowed only on a weakness that grants a session on this host');
+    const b = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].needs = { session: 'admin' }; return s; });
+    assertHas(s3errors(b), 'needs.session is "admin" but grants.session.access is "user"');
+    const ok = s3(s => { const w = s.rooms.lobby.objects[0].services[0].weaknesses[0]; w.needs = { session: 'user' }; w.grants.session.access = 'admin'; return s; });
+    assert.deepEqual(s3errors(ok), []);
+});
+
+test('S3 warning: a weakness with no grants, and needs on one, in a scenario that has cards; none without cards', { skip }, () => {
+    const a = s3(s => { s.hosts.print01.services[0].weaknesses = [weak('read_only', { needs: { item: 'card_factory' } })]; return s; });
+    // needs.item may name a card item by id (only itemType "technique_card" is refused)
+    const out = warnings(issues(a));
+    assertHas(out, "weakness 'read_only': grants nothing, so a technique card used on it is refused with no_grant");
+    assertHas(out, "weakness 'read_only': has `needs` but grants nothing");
+    const noCards = withFindings([weak('read_only', { needs: { item: 'printer_manual' } })]);
+    assert.deepEqual(warnings(issues(noCards)).filter(m => m.includes('grants nothing')), []);
+});
+
+test('S3 warning: a registry key holding a word of a product name', { skip }, () => {
+    const s = s3(s => {
+        s.techniques.shareserve_3x = s.techniques.share_flaw; delete s.techniques.share_flaw;
+        s.startItemsInInventory[1].technique_card = 'shareserve_3x';
+        return s;
+    });
+    assertHas(warnings(issues(s)), "registry key 'shareserve_3x' holds 'shareserve', a word of a product name");
+});
+
+test('S3 warning: a registry entry that fits only decoys', { skip }, () => {
+    const s = s3(s => {
+        s.techniques.decoy_only = { name: 'Fits a decoy', worksOn: { class: 'cleartext' } };
+        s.startItemsInInventory.push(card('card_decoy', 'decoy_only'));
+        s.hosts.print01.services[0].decoys = [decoy('old_banner', { class: 'cleartext' })];
+        return s;
+    });
+    assertHas(warnings(issues(s)), "registry entry 'decoy_only' fits only decoys, no weakness");
+});
+
+test('S3 warning: a session grant on a PC a sign-in task, a capture proof or a keyring session proof also names', { skip }, () => {
+    const task = s3(s => { s.objectives = [{ aims: [{ tasks: [{ type: 'unlock_object', targetObject: 'files01' }] }] }]; return s; });
+    assertHas(warnings(issues(task)), "a card can complete that step without the password");
+    const capture = s3(s => { s.rooms.lobby.npcs[0].captureProof = [{ session: 'files01' }]; return s; });
+    assertHas(warnings(issues(capture)), 'a card can complete that step');
+    const keyring = s3(s => { s.credentials.sess = { kind: 'password', account: 'it_admin', foundIn: 'x', proof: { session: 'files01' } }; return s; });
+    assertHas(warnings(issues(keyring)), 'a card can complete that step');
+});
+
+test('S3 warning: a session grant that needs a credential connecting to the same host (a loop)', { skip }, () => {
+    const s = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].needs = { credential: 'print_admin' }; return s; });
+    assertHas(warnings(issues(s)), 'the way in needs the way in (a loop)');
+});
+
+test('S3: existing scenarios without these fields stay silent with N15 built', { skip }, () => {
+    const s = withFindings([weak('w1')]);
+    assert.deepEqual(warnings(issues(s)).filter(m => m.includes('technique card')), []);
+    assert.deepEqual(errors(issues(s, BUILT)).filter(m => m.includes('technique card')), []);
+});

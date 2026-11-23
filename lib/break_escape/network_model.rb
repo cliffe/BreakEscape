@@ -429,8 +429,10 @@ module BreakEscape
     # { finding_id:, host_id:, service_name:, service:, kind:, id:, entry: }. The one reader the
     # server's finding builder uses, so a decoy and a weakness are read the same way.
     def findings_of(host_id, service)
+      # One record per finding id, a weakness before a decoy of the same id (sort_by is not stable), so
+      # a scenario that was never validated still reads the same way every time.
       (findings_in(host_id, service, 'weaknesses', 'weakness') + findings_in(host_id, service, 'decoys', 'decoy'))
-        .sort_by { |rec| rec[:finding_id] }
+        .uniq { |rec| rec[:finding_id] }.sort_by { |rec| rec[:finding_id] }
     end
 
     def findings_in(host_id, svc, key, kind)
@@ -440,6 +442,73 @@ module BreakEscape
         { finding_id: finding_id(host_id, svc['name'], entry['id']), host_id: host_id,
           service_name: svc['name'], service: svc, kind: kind, id: entry['id'], entry: entry }
       end
+    end
+
+    # Ops core S3 (OPS_CORE_PLAN.md 4.3 and 5.1). The technique card registry and the cards that
+    # carry its keys. A malformed entry is skipped, never raised on.
+
+    # { techniqueId => entry } for the top-level `techniques` map: hashes only, `_` notes skipped.
+    def techniques(data)
+      map = data.is_a?(Hash) ? data['techniques'] : nil
+      return {} unless map.is_a?(Hash)
+
+      map.select { |id, entry| entry.is_a?(Hash) && !(id.is_a?(String) && id.start_with?('_')) }
+    end
+
+    # Can this registry entry be used on this weakness of this service? `technique` is the entry
+    # (with its `worksOn`), `service` the service hash, `weakness` the weakness hash. The class must
+    # be equal; the product must equal the service's product when `worksOn` gives one; the service's
+    # version must be in the `versions` list when it gives one. No version comparison.
+    def technique_matches?(technique, service, weakness)
+      works = technique.is_a?(Hash) ? technique['worksOn'] : nil
+      return false unless works.is_a?(Hash) && service.is_a?(Hash) && weakness.is_a?(Hash)
+      return false unless present_string?(works['class']) && works['class'] == weakness['class']
+      return false if works.key?('product') && works['product'] != service['product']
+      return false if works.key?('versions') &&
+                      !(works['versions'].is_a?(Array) && works['versions'].include?(service['version']))
+
+      true
+    end
+
+    # Every item carrying `technique_card`, where an item can be: [{ item:, home:, path: }], home one
+    # of 'room', 'container', 'start', 'npc', 'share', 'grant'. Found the way rogue_device_definitions
+    # finds devices, plus a share's `contents`; a container item's own `contents` are walked too.
+    # Items inside a sign-in PC's desktop are not listed (a card is a tray item, not a desktop file).
+    def technique_items(data)
+      out = []
+      return out unless data.is_a?(Hash)
+
+      add = lambda do |item, home, path|
+        out << { item: item, home: home, path: path } if item.is_a?(Hash) && item.key?('technique_card')
+      end
+      walk = lambda do |list, home, path|
+        next unless list.is_a?(Array)
+
+        list.each_with_index do |item, idx|
+          next unless item.is_a?(Hash)
+
+          add.call(item, home, "#{path}[#{idx}]")
+          walk.call(item['contents'], home, "#{path}[#{idx}]/contents")
+        end
+      end
+
+      room_objects(data).each do |entry|
+        add.call(entry[:object], entry[:container] ? 'container' : 'room', entry[:path])
+      end
+      walk.call(data['startItemsInInventory'], 'start', 'startItemsInInventory')
+      rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
+      rooms.each do |room_id, room|
+        next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+        room['npcs'].each_with_index do |npc, i|
+          walk.call(npc['itemsHeld'], 'npc', "rooms/#{room_id}/npcs[#{i}]/itemsHeld") if npc.is_a?(Hash)
+        end
+      end
+      resources(data).each do |id, resource|
+        walk.call(resource['contents'], 'share', "resources/#{id}/contents") if resource.is_a?(Hash)
+      end
+      DeclaredGrants.for(data).each { |grant| add.call(grant['item'], 'grant', grant['path']) }
+      out
     end
 
     def present_string?(value)

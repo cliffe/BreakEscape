@@ -297,14 +297,15 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": { "^_": {} },
-            "description": "Exactly one of session, planted, dropped, held or foothold (check_credentials enforces exactly one).",
+            "description": "Exactly one of session, planted, dropped, held, foothold or technique_card (check_credentials enforces exactly one).",
             "properties": {
               "session": { "type": "string", "description": "A sign-in PC id: holds once the player has ever held a non-relay session there (signedInPcs)." },
               "planted": { "type": "string", "description": "A capture proof: an item planted at an object." },
               "on": { "type": "string", "description": "Optional, with planted: the object id it was planted on." },
               "dropped": { "type": "string", "description": "A capture proof: an item accepted as a player drop." },
               "held": { "type": "string", "description": "A scenario item id: holds while an inventory entry carrying the server's own `credential` field for this id is held (identity-strict)." },
-              "foothold": { "type": "string", "description": "A foothold id: holds while the foothold is held now." }
+              "foothold": { "type": "string", "description": "A foothold id: holds while the foothold is held now." },
+              "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}$", "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a finding id (<hostId>.<serviceName>.<weaknessId>): holds once a technique card has been used on that finding, which must be a weakness whose `grants.credential` names this entry (the validator checks that both name each other). The entry's kind must be saved_connection. Not built until N15." }
             }
           },
           "connectsTo": { "type": "string", "description": "The sign-in PC a connecting kind opens. Required for connecting kinds; not allowed on password." },
@@ -415,6 +416,32 @@
           "_comment": { "type": "string" }
         },
         "required": ["name", "network"]
+      }
+    },
+    "techniques": {
+      "x-id-map": true, "x-serverOnly": true, "x-servedBy": ["GET /network"],
+      "type": "object",
+      "maxProperties": 32,
+      "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): the technique card registry, key to { name, summary?, worksOn }. At most 32 entries, each key at most 40 characters (the validator checks the key pattern and the limit; a map node carries no patternProperties). A card is an item of type `technique_card` whose `technique_card` names a key here. Never sent in the bootstrap; GET /network sends an entry only when its card is held. Not built until N15 (the validator refuses it). Not the pretext line's `technique` field and not an NPC's `tells.techniques`.",
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} },
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 40, "description": "What the card is called to the player." },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Plain text, game design terms: what the technique is, never how to carry it out." },
+          "worksOn": {
+            "type": "object", "additionalProperties": false, "patternProperties": { "^_": {} },
+            "description": "Which findings the card can be used on: the class, and optionally a product (equal to a service's product) and an explicit list of exact versions. No version comparison.",
+            "properties": {
+              "class": { "type": "string", "enum": ["default_creds", "unpatched", "misconfig", "weak_auth", "cleartext"] },
+              "product": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "versions": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "type": "string", "minLength": 1, "maxLength": 40 } },
+              "_comment": { "type": "string" }
+            },
+            "required": ["class"]
+          },
+          "_comment": { "type": "string" }
+        },
+        "required": ["name", "worksOn"]
       }
     },
     "roles": {
@@ -5310,6 +5337,7 @@
         "blocksSight": { "type": "boolean", "description": "true: this prop blocks NPC sight like a wall; false: it never does. Unset: tall racks, shelving, cabinets, lockers and vending machines block (npc-sight-occlusion.js)" },
         "readable": { "type": "boolean" },
         "credential": { "type": "string", "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.4): names a top-level `credentials` registry id this item carries (a saved connection or a written assist code). Server-only: joins ItemIdentity::FORGEABLE_ITEM_FIELDS, so a client-built item can never carry it, and the stored field always comes from the server's own copy of the definition. The item must use a type with a tray slot that is not always-allowed (text_file), never a notes-family or always-allowed type. Cross-references are enforced only by check_credentials." },
+        "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$", "maxLength": 40, "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a key of the top-level `techniques` technique card registry. Allowed only on an item of type `technique_card`, and such an item must carry it (the validator checks both). It stays on the item the browser receives, as `credential` does; the registry entry it names does not. Not built until N15 (the validator refuses it)." },
         "interactable": { "type": "boolean" },
         "active": { "type": "boolean" },
         "locked": { "type": "boolean" },
