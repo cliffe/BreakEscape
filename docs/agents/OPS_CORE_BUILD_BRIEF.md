@@ -198,3 +198,16 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   `technique_card` proof only for a `saved_connection` entry at run time too. m10, a
   `needs.session` on a device host is a validator error (a device has no sessions), so the
   empty label cannot occur. m11 is noted for S5a. m12 is step 13a's (the N15 flip).
+- 2026-11-23, S3 client R1 rulings: B1, the client keeps the top-level `techniques` map of
+  the `GET /network` body on the stored view (the server and plan line 1294 stand); a test
+  uses the server's real body shape. M3, the three existing assertions are updated EXACTLY as
+  the review's M3 section gives them (`pc-sessions.test.mjs:543` and `:568`,
+  `test-bridge-access.test.mjs:36`): the plan requires both behaviour changes (lines 889-895,
+  978-982, 1003-1004, 1543-1550); this instruction replaces "no existing assertion edited"
+  for those three assertions only, and the plan's section 10 part 3 gains the bridge test's
+  name. m1, a grant's `tokenExpiredPcIds` is applied as for any sign-in answer. m2, a repeat
+  grant (`already: true`) re-records nothing and fires no sign-in or sign-out event. m5, with
+  no card held the finding rows carry no select control. m6 and m8 are judged in the live
+  proof; fix m6 if the cause is plain (Sign out on a world-click remote view returns to the
+  world, not to the network view). The static bolt import needs the helper on two copy lists
+  only (`network-view.test.mjs`, `network-view-ops.test.mjs`).
