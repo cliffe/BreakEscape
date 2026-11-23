@@ -4,7 +4,10 @@
  *
  * Reads GET /log_rows through ApiClient.logRows(objectId, { rev, signal, foothold|from }) and
  * shows the rows the server built. Every cell goes in through textContent; no row is ever
- * tinted or marked. No flag button yet: the anomaly flow is stage L2b.
+ * tinted or marked before the server has said a flag was right. A reader with an anomaly
+ * (minigameData.anomaly, an empty object here: the row is never sent) offers a flag control on
+ * the selected row's detail: FLAG, then CONFIRM or CANCEL; the server judges through
+ * ApiClient.logFlag and the viewer only shows the answer (L2b).
  *
  * The reader's id is sprite.scenarioData.id (never sprite.objectId, which is a throwaway when
  * the terminal is opened from a desktop). The route the screen was reached by arrives as
@@ -30,6 +33,7 @@ if (typeof document !== 'undefined' && document.head && !document.getElementById
 
 // Last answer per reader and route, so a reopen sends its rev and an unchanged answer keeps the rows
 const answerCache = new Map();
+const FLAG_LABEL = 'FLAG AS ANOMALY';
 export function clearOpsLogCache() { answerCache.clear(); }
 
 export class OpsLogMinigame extends MinigameScene {
@@ -47,6 +51,13 @@ export class OpsLogMinigame extends MinigameScene {
         this._frameTitle = sd.name || params?.title || 'Log terminal';
         const route = params?.sprite?.sourceRoute;
         this._route = route && typeof route === 'object' ? route : null;
+        const data = sd.minigameData && typeof sd.minigameData === 'object' ? sd.minigameData : {};
+        this._flaggable = !!data.anomaly && typeof data.anomaly === 'object';
+        this._flagLabel = typeof data.flagActionLabel === 'string' && data.flagActionLabel.trim() && data.flagActionLabel.length <= 40
+            ? data.flagActionLabel.trim() : FLAG_LABEL;
+        this._flagState = 'idle';         // 'idle' | 'confirm' | 'sending' | 'wrong' | 'error'
+        this._flaggedId = null;           // the row the server said was the anomaly (never before)
+        this._closed = false;
         this._cacheKey = `${this._objectId}|${this._route?.foothold || ''}|${this._route?.from || ''}|${this._route?.relay === true ? 'relay' : ''}`;
 
         this._state = 'loading';          // 'loading' | 'ready' | 'denied' | 'nosignal'
@@ -75,6 +86,7 @@ export class OpsLogMinigame extends MinigameScene {
             this._rows = cached.rows;
             this._title = cached.title;
             this._rev = cached.rev;
+            this._flaggedId = cached.flaggedId || null;
             this._state = 'ready';
         }
         this._render();
@@ -82,6 +94,7 @@ export class OpsLogMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this._closed = true;
         this._epoch += 1;
         if (this._abort) { try { this._abort.abort(); } catch (e) { /* ignore */ } }
         super.cleanup();
@@ -123,9 +136,10 @@ export class OpsLogMinigame extends MinigameScene {
             this._rows = cleanRows(answer.rows);
             this._title = typeof answer.title === 'string' ? answer.title : '';
             this._rev = typeof answer.rev === 'string' ? answer.rev : null;
+            if (typeof answer.flaggedRow === 'string' && answer.flaggedRow) this._flaggedId = answer.flaggedRow;
             this._state = 'ready';
             this._note = '';
-            answerCache.set(this._cacheKey, { rows: this._rows, title: this._title, rev: this._rev });
+            this._cacheAnswer();
             if (this._selectedId && !this._rows.some(r => r.id === this._selectedId)) this._selectedId = null;
             // A filter whose value left the list is cleared (its select then reads ALL)
             pruneFilters(this._filters, this._rows);
@@ -136,6 +150,10 @@ export class OpsLogMinigame extends MinigameScene {
         this._render();
     }
 
+    _cacheAnswer() {
+        answerCache.set(this._cacheKey, { rows: this._rows, title: this._title, rev: this._rev, flaggedId: this._flaggedId });
+    }
+
     _deny() {
         this._note = '';
         answerCache.delete(this._cacheKey);
@@ -143,6 +161,8 @@ export class OpsLogMinigame extends MinigameScene {
         this._title = '';
         this._rev = null;
         this._selectedId = null;
+        this._flaggedId = null;
+        this._flagState = 'idle';
         this._state = 'denied';
         this._render();
     }
@@ -322,8 +342,10 @@ export class OpsLogMinigame extends MinigameScene {
 
     _rowEl(row) {
         const selected = row.id === this._selectedId;
-        const tr = this._el('tr', `ol-row${selected ? ' ol-row-selected' : ''}`, {
+        const flagged = row.id === this._flaggedId;
+        const tr = this._el('tr', `ol-row${selected ? ' ol-row-selected' : ''}${flagged ? ' ol-row-flagged' : ''}`, {
             'data-row-id': row.id,
+            ...(flagged ? { 'data-flagged': 'true' } : {}),
             role: 'row',
             tabindex: '-1',
             'aria-selected': selected ? 'true' : 'false'
@@ -365,6 +387,7 @@ export class OpsLogMinigame extends MinigameScene {
     // A click or Enter moves the mark between the two existing rows; the table is not rebuilt
     _select(id) {
         this._mark(this._rowEls.get(this._selectedId), false);
+        if (id !== this._selectedId && this._flagState !== 'sending') this._flagState = 'idle';
         this._selectedId = id;
         const el = this._rowEls.get(id);
         this._mark(el, true);
@@ -392,6 +415,103 @@ export class OpsLogMinigame extends MinigameScene {
             grid.appendChild(v);
         }
         host.appendChild(grid);
+        this._renderFlag(host, row);
+    }
+
+    // The flag control (L2b). Nothing here knows which row is the anomaly: it is offered on whatever row
+    // is selected, and only the server's answer marks one.
+    _renderFlag(host, row) {
+        if (!this._flaggable) return;
+        const box = this._el('div', 'ol-flag', { 'data-ops-log': 'flag' });
+        const note = (word, kind) => {
+            const n = this._el('div', `ol-flag-note ol-flag-${kind}`, { 'data-ops-log': 'flag-note', 'data-state': kind, role: 'status' });
+            n.textContent = word;
+            box.appendChild(n);
+        };
+        const button = (action, word, onClick, disabled = false) => {
+            const b = this._el('button', 'ol-btn', { type: 'button', 'data-action': action });
+            b.textContent = word;
+            if (disabled) b.setAttribute('disabled', 'disabled');
+            else b.addEventListener('click', onClick);
+            box.appendChild(b);
+            return b;
+        };
+        if (this._flaggedId) {
+            // Once the server has accepted a flag there is nothing more to offer
+            if (row.id === this._flaggedId) note('FLAGGED', 'done');
+            else return;
+        } else if (this._flagState === 'confirm' || this._flagState === 'sending') {
+            const busy = this._flagState === 'sending';
+            note(busy ? 'CHECKING...' : 'FLAG THIS ROW AS THE ANOMALY?', 'confirm');
+            button('flag-confirm', 'CONFIRM', () => this._sendFlag(row.id), busy);
+            button('flag-cancel', 'CANCEL', () => { this._flagState = 'idle'; this._renderDetail(); }, busy);
+        } else {
+            if (this._flagState === 'wrong') note('NOT THIS ONE', 'wrong');
+            else if (this._flagState === 'error') note('NO SIGNAL - TRY AGAIN', 'error');
+            button('flag', this._flagLabel, () => { this._flagState = 'confirm'; this._renderDetail(); this._focusFlag('flag-confirm'); });
+        }
+        host.appendChild(box);
+    }
+
+    _focusFlag(action) {
+        const b = this._dom.detail.querySelector(`[data-action="${action}"]`);
+        if (b && typeof b.focus === 'function') b.focus();
+    }
+
+    async _sendFlag(rowId) {
+        if (this._flagState === 'sending') return;
+        this._flagState = 'sending';
+        this._renderDetail();
+        let answer;
+        try {
+            answer = await ApiClient.logFlag(this._objectId, rowId, this._route || {});
+        } catch (err) {
+            if (this._closed) return;
+            if ([400, 403, 404].includes(err && err.status)) { this._deny(); return; }
+            this._flagState = 'error';
+            this._renderDetail();
+            return;
+        }
+        if (answer && answer.correct === true) {
+            const first = answer.already !== true;
+            this._flaggedId = typeof answer.rowId === 'string' && answer.rowId ? answer.rowId : rowId;
+            this._flagState = 'idle';
+            this._cacheAnswer();
+            // The actions run once, on the first right flag, even if the viewer was closed meanwhile
+            if (first) { this._runActions(answer.flagActions); this._runActions(answer.completionActions); }
+            if (this._closed) return;
+            this._renderTable();
+            this._renderDetail();
+            return;
+        }
+        if (this._closed) return;
+        this._flagState = answer && answer.correct === false ? 'wrong' : 'error';
+        this._renderDetail();
+        this._focusFlag('flag');
+    }
+
+    // The same global-setting path log-filter uses (its _executeActions): set_global and complete_task
+    _runActions(actions) {
+        if (!Array.isArray(actions)) return;
+        for (const action of actions) {
+            if (!action || typeof action !== 'object') continue;
+            if (action.type === 'set_global' && typeof action.key === 'string') {
+                this._setGlobalAndNotify(action.key, action.value);
+            } else if (action.type === 'complete_task') {
+                window.objectivesManager?.completeTask(action.taskId);
+            }
+        }
+    }
+
+    _setGlobalAndNotify(name, value) {
+        if (window.npcManager?.setGlobalVariable) {
+            window.npcManager.setGlobalVariable(name, value);
+            return;
+        }
+        const oldValue = window.gameState?.globalVariables?.[name];
+        if (window.gameState?.globalVariables) window.gameState.globalVariables[name] = value;
+        window.npcConversationStateManager?.broadcastGlobalVariableChange(name, value, null);
+        window.eventDispatcher?.emit(`global_variable_changed:${name}`, { name, value, oldValue });
     }
 
     _renderStatus() {

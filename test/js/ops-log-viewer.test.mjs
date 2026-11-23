@@ -58,7 +58,12 @@ const clockWith = (day) => ({
 // Scripted ApiClient: each call takes the next queued answer (or throws it when it is an Error)
 const calls = [];
 let queue = [];
-globalThis.__api = { logRows: async (id, opts) => { calls.push({ id, opts }); const a = queue.shift(); if (a instanceof Error) throw a; return a; } };
+const flagCalls = [];
+let flagQueue = [];
+globalThis.__api = {
+    logRows: async (id, opts) => { calls.push({ id, opts }); const a = queue.shift(); if (a instanceof Error) throw a; return a; },
+    logFlag: async (id, rowId, route) => { flagCalls.push({ id, rowId, route }); const a = flagQueue.shift(); if (a instanceof Error) throw a; return a; }
+};
 
 const dir = mkdtempSync(join(tmpdir(), 'ops-log-viewer-'));
 writeFileSync(join(dir, 'ops-log-rows.js'), read('minigames/ops-log/ops-log-rows.js'));
@@ -389,15 +394,16 @@ test('m5: a row id with a quote or a bracket is selectable (no selector is built
     assert.equal(globalThis.__focused.attrs['data-row-id'], 'a"]b');
 });
 
-test('no row is tinted or marked, with or without an anomaly; no flag button in this stage', async () => {
+test('no row is tinted or marked, with or without an anomaly, before a right flag', async () => {
     clearOpsLogCache();
-    const m = await open({ answers: [answer([seed('s1', '07:12'), play('a1', H)])], data: { anomaly: { rowId: 's1' }, flagActionLabel: 'FLAG', flagActions: [{ type: 'set_global', key: 'k', value: true }] } });
+    const m = await open({ answers: [answer([seed('s1', '07:12'), play('a1', H)])], data: { anomaly: {}, flagActionLabel: 'FLAG' } });
     await settle();
     const classesOf = (tr) => [...tr.classes].sort().join(' ');
     assert.equal(classesOf(bodyRows(m)[0]), classesOf(bodyRows(m)[1]));
     assert.ok(bodyRows(m).every(r => ![...r.classes].some(c => /anomal|flag|alert|warn|tint/.test(c))));
+    assert.ok(bodyRows(m).every(r => r.attrs['data-flagged'] === undefined));
     bodyRows(m)[0].click();
-    assert.equal(root(m).all('button').map(b => b.attrs['data-action']).join(), 'refresh');
+    assert.equal(root(m).all('button').map(b => b.attrs['data-action']).join(), 'flag,refresh');
     const css = read('../css/ops-log-minigame.css');
     assert.doesNotMatch(css, /anomal|border-radius:\s*[1-9]|blur|box-shadow/);
 });
@@ -655,4 +661,150 @@ test('wiring: scene registered, texture and screen glow set, API call shape, sch
     await C.logRows('r4', { relay: false });
     await C.logRows('r5', { relay: true, from: 'ops_pc' });
     assert.deepEqual(urls, ['/g/log_rows?object_id=security%20log&rev=ab&foothold=jack_a', '/g/log_rows?object_id=r1&from=ops_pc', '/g/log_rows?object_id=r2', '/g/log_rows?object_id=r3&relay=1', '/g/log_rows?object_id=r4', '/g/log_rows?object_id=r5&from=ops_pc']);
+});
+
+// ---- the flag flow (L2b): the server judges; the viewer shows its answer ----
+
+const flagBtn = (m, action) => root(m).all('button').find(b => b.attrs['data-action'] === action);
+const flagNote = (m) => root(m).querySelector('[data-ops-log="flag-note"]');
+const rowsWithAnomaly = () => [seed('s1', 'Mon 23:58'), seed('s2', 'Tue 02:14'), play('a1', H)];
+async function openFlaggable(extra = {}) {
+    clearOpsLogCache();
+    flagCalls.length = 0;
+    const m = await open({ answers: [answer(rowsWithAnomaly(), extra.answer || {})], data: { anomaly: {}, ...(extra.data || {}) }, sprite: extra.sprite || {} });
+    await settle();
+    return m;
+}
+
+test('flag: the control appears only with an anomaly, and only on a selected row', async () => {
+    clearOpsLogCache();
+    const plain = await open({ answers: [answer(rowsWithAnomaly())] });
+    await settle();
+    bodyRows(plain)[0].click();
+    assert.equal(flagBtn(plain, 'flag'), undefined);
+    const m = await openFlaggable();
+    assert.equal(flagBtn(m, 'flag'), undefined, 'no row selected, no control');
+    bodyRows(m)[0].click();
+    assert.equal(flagBtn(m, 'flag').textContent, 'FLAG AS ANOMALY');
+    const custom = await openFlaggable({ data: { flagActionLabel: 'Report this entry' } });
+    bodyRows(custom)[1].click();
+    assert.equal(flagBtn(custom, 'flag').textContent, 'Report this entry');
+});
+
+test('flag: FLAG opens a confirm with CONFIRM and CANCEL; CANCEL returns and sends nothing', async () => {
+    const m = await openFlaggable();
+    bodyRows(m)[1].click();
+    flagBtn(m, 'flag').click();
+    assert.equal(flagNote(m).attrs['data-state'], 'confirm');
+    assert.ok(flagBtn(m, 'flag-confirm') && flagBtn(m, 'flag-cancel'));
+    assert.equal(flagBtn(m, 'flag'), undefined);
+    flagBtn(m, 'flag-cancel').click();
+    assert.ok(flagBtn(m, 'flag'));
+    assert.equal(flagCalls.length, 0);
+});
+
+test('flag: CONFIRM sends the reader id, the row id and the screen route; a wrong answer says so and marks nothing', async () => {
+    const m = await openFlaggable({ sprite: { sourceRoute: { foothold: 'jack_1' } } });
+    bodyRows(m)[0].click();
+    flagBtn(m, 'flag').click();
+    flagQueue = [{ correct: false }];
+    flagBtn(m, 'flag-confirm').click();
+    assert.equal(flagNote(m).attrs['data-state'], 'confirm', 'CHECKING while the answer is out');
+    assert.equal(flagBtn(m, 'flag-confirm').attrs.disabled, 'disabled');
+    await settle();
+    assert.deepEqual(flagCalls, [{ id: 'security_log_pc', rowId: 's1', route: { foothold: 'jack_1' } }]);
+    assert.equal(flagNote(m).textContent, 'NOT THIS ONE');
+    assert.ok(flagBtn(m, 'flag'), 'it can be tried again');
+    assert.ok(bodyRows(m).every(r => r.attrs['data-flagged'] === undefined && !r.classes.has('ol-row-flagged')));
+    bodyRows(m)[1].click();
+    assert.equal(flagNote(m), null, 'selecting another row clears the note');
+});
+
+test('flag: a right answer marks that row, runs both action lists once, and offers nothing more', async () => {
+    const m = await openFlaggable();
+    const set = [];
+    window.npcManager = { setGlobalVariable: (k, v) => set.push([k, v]) };
+    const done = [];
+    window.objectivesManager = { completeTask: (t) => done.push(t) };
+    bodyRows(m)[1].click();
+    flagBtn(m, 'flag').click();
+    flagQueue = [{ correct: true, rowId: 's2', flagActions: [{ type: 'set_global', key: 'found_night_swipe', value: true }], completionActions: [{ type: 'complete_task', taskId: 't_log' }, { type: 'bogus' }] }];
+    flagBtn(m, 'flag-confirm').click();
+    await settle();
+    assert.deepEqual(set, [['found_night_swipe', true]]);
+    assert.deepEqual(done, ['t_log']);
+    const flagged = bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true');
+    assert.deepEqual(flagged.map(r => r.attrs['data-row-id']), ['s2']);
+    assert.ok(flagged[0].classes.has('ol-row-flagged'));
+    assert.equal(flagNote(m).textContent, 'FLAGGED');
+    assert.equal(flagBtn(m, 'flag'), undefined);
+    bodyRows(m)[0].click();
+    assert.equal(flagBtn(m, 'flag'), undefined, 'no second flag after a right one');
+    assert.equal(flagNote(m), null);
+    delete window.npcManager; delete window.objectivesManager;
+});
+
+test('flag: an already-flagged answer marks the row and runs no action', async () => {
+    const m = await openFlaggable();
+    const set = [];
+    window.npcManager = { setGlobalVariable: (k, v) => set.push([k, v]) };
+    bodyRows(m)[1].click();
+    flagBtn(m, 'flag').click();
+    flagQueue = [{ correct: true, already: true, rowId: 's2', flagActions: [{ type: 'set_global', key: 'k', value: 1 }] }];
+    flagBtn(m, 'flag-confirm').click();
+    await settle();
+    assert.deepEqual(set, []);
+    assert.equal(bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true').length, 1);
+    delete window.npcManager;
+});
+
+test('flag: the server may name the flagged row when the reader opens (a reload or a reopen)', async () => {
+    const m = await openFlaggable({ answer: { flaggedRow: 's1' } });
+    assert.deepEqual(bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true').map(r => r.attrs['data-row-id']), ['s1']);
+    // a reopen from the cache keeps it, and an unchanged answer does not clear it
+    queue = [{ rev: 'abc123', unchanged: true }];
+    const again = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc', type: 'ops_log_terminal', name: 'x', minigameData: { logSource: 'door_controller', anomaly: {} } } } });
+    again.start();
+    assert.deepEqual(bodyRows(again).filter(r => r.attrs['data-flagged'] === 'true').map(r => r.attrs['data-row-id']), ['s1']);
+    await settle();
+    assert.equal(bodyRows(again).filter(r => r.attrs['data-flagged'] === 'true').length, 1);
+});
+
+test('flag: a flaggedRow on a reader with no anomaly object does not add a control', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer(rowsWithAnomaly(), { flaggedRow: 's1' })] });
+    await settle();
+    bodyRows(m)[0].click();
+    assert.equal(flagBtn(m, 'flag'), undefined);
+});
+
+test('flag: a dropped connection says so and keeps the control; a refusal reads NO ACCESS', async () => {
+    const m = await openFlaggable();
+    bodyRows(m)[0].click();
+    flagBtn(m, 'flag').click();
+    flagQueue = [Object.assign(new Error('API Error: 500'), { status: 500 })];
+    flagBtn(m, 'flag-confirm').click();
+    await settle();
+    assert.equal(flagNote(m).textContent, 'NO SIGNAL - TRY AGAIN');
+    assert.ok(flagBtn(m, 'flag'));
+    flagBtn(m, 'flag').click();
+    flagQueue = [Object.assign(new Error('API Error: 404'), { status: 404 })];
+    flagBtn(m, 'flag-confirm').click();
+    await settle();
+    assert.equal(root(m).querySelector('.ol-message').textContent, 'NO ACCESS');
+    assert.equal(bodyRows(m).length, 0);
+});
+
+test('flag: the viewer never holds the anomaly: the object it was given has no row id, and answers name none', async () => {
+    const m = await openFlaggable();
+    const text = JSON.stringify(m.params.sprite.scenarioData.minigameData);
+    assert.doesNotMatch(text, /rowId|flagActions|completionActions/);
+    const src = read('minigames/ops-log/ops-log-minigame.js');
+    assert.doesNotMatch(src, /anomaly\??\.rowId/);
+});
+
+test('flag: ApiClient.logFlag posts the route the screen was reached by, one at a time', () => {
+    const src = read('api-client.js');
+    assert.match(src, /static async logFlag\(objectId, rowId, \{ foothold, from, relay \} = \{\}\)/);
+    assert.match(src, /this\.post\('\/log_rows\/flag', \{ object_id: objectId, row_id: rowId, \.\.\.route \}\)/);
 });

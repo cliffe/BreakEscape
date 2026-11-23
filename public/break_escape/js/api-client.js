@@ -289,6 +289,18 @@ export class ApiClient {
     return this.get(`/log_rows?${params.join('&')}`, { signal });
   }
 
+  // Flag a row of a log reader as its anomaly (ops log L2b): POST /log_rows/flag { object_id, row_id }
+  // with the screen's route. The server judges: { correct: false } for any wrong row; { correct: true,
+  // rowId, flagActions, completionActions } for the right one the first time, then { correct: true,
+  // already: true, rowId }. A refusal (400, 404) throws with err.status.
+  static async logFlag(objectId, rowId, { foothold, from, relay } = {}) {
+    let route = {};
+    if (foothold !== undefined && foothold !== null && foothold !== '') route = { foothold };
+    else if (typeof from === 'string' && from) route = { from };
+    else if (relay === true) route = { relay: true };
+    return this.post('/log_rows/flag', { object_id: objectId, row_id: rowId, ...route });
+  }
+
   // Sign in with a keyring credential (keyring K2, plan 7): POST /login { pc_id, credential }
   // with the screen's route. Never sends relay: false. Answers as login() with kind and label;
   // a refusal throws with err.status and err.body (wrongPc, kindRefused, notPermitted,
