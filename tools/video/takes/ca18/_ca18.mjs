@@ -21,10 +21,19 @@ export const GUESSER_HIDE_CSS = `
 /* the result row prints "3 of 5 accounts opened" while still queued: hide its text until the row opens */
 .epr-gs-row[data-row="spray_result"].epr-gs-queued .epr-gs-text { visibility: hidden !important; }
 `;
-/** Alerts shots: the triage brief paragraph, the team badge, the flag chips (class names confirmed at the dry run, see takes_ca18.md). */
+/** Alerts shots (class names confirmed in the dry run): the team badge and the sorted tally, the brief panel, the flag chips and the verdict hint words are hidden; the open card's
+ *  .mail-body is clipped to its first line ("Hello,"), because the advisory sits in the same text block as sentence 1 and a crop cannot split it. */
 export const DEFEND_HIDE_CSS = `
-.triage-client .aw-team-tally, .mail-redflag-advice, .mail-redflag-clean, .mail-redflag-sub, .mail-checklist-advisory { display: none !important; }
+.triage-client .aw-team-tally, .triage-client .tri-progress, .triage-client .tri-brief-text, .triage-client .tri-flags, .triage-client .tri-false-flags, .triage-client .tri-live { display: none !important; }
 span.tri-verdict-hint { visibility: hidden !important; }
+.triage-client .mail-body { height: 26px !important; overflow: hidden !important; }
+`;
+/** Narrow inbox for 9:16 and 1:1 (760 px; the 560 default in NARROW_CSS is too tight for the list plus reader). */
+export const NARROW_INBOX_CSS = (px = 760) => `
+.mail-client.triage-client { max-width: ${px}px !important; width: ${px}px !important; overflow-x: hidden !important; }
+.epr-kiosk-bezel { max-width: ${px}px !important; }
+body:has(.mail-client) .epr-kiosk-bezel { visibility: hidden !important; }
+.triage-client .tri-verdicts { flex-wrap: wrap !important; }
 `;
 /** Narrowed panels for 9:16 and 1:1 (real frame classes): OSINT browser (outer shell stays 1100, crop the middle), mail client 960, the kiosk bezel. */
 export const NARROW_CSS = (px = 560) => `
