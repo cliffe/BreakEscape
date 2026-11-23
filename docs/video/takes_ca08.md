@@ -54,3 +54,11 @@ Display 147, keyless server :3456 (worktree b-ca-trailers-next), player `female_
 | t05_machine_out | t05_machine_out.trimmed.mkv | 19.94 | pass (0.45) | player-sprite 0.51, kiosk-open 3.02, **look_up 4.52**, ca08-out-set 4.70 (screen locks), d1 bubble 7.29, ca08-there-set 7.35, **D1 audio onset 8.00** (mark audio-start 7.65), **D1 sentence 1 ends 11.88** (silence 11.88 to 12.16), a10 bubble 11.85, **A10 audio onset 12.16** (mark 12.13), A10 audio end 16.42, D1 audio end 16.50, bubble-end D1 17.35, A10 19.05, end 19.47 | Look-up to D1 audio is +3.5 s (dry run +2.7 to 2.9). A10's bubble opens 11.85 s, 4.5 s after D1's, as in the dry run, and its audio overlaps D1 from 12.16. Clean first-sentence cut: out at 11.88 + 0.1 = 11.98 at the latest (before A10's audio at 12.16 and its bubble at 11.85: cut at or before 11.85 to keep A10's bubble out, so out about 11.80, which clips about 0.08 s of D1's last word: check on a frame). Room view only, Darren and Anjali in frame, locked screen visible |
 
 Things to look at first: t01's walk (34 px short, fallback move) and the 3.3 s before the portrait; t05's out point against the A10 bubble (11.85) and D1 sentence end (11.88); t02b's right edge at full size; the t03 walk (6 to 14 s, small room in the 1x frame).
+
+## Re-recorded 23 Nov (Niamh visemes)
+
+Niamh's viseme sheet was regenerated in 9584d3bb8 (mouth now opens; face about 2.5x bigger). t01_niamh_hook re-recorded on display 147, keyless server :3456, `BE_SPRITE=female_office_worker_v2`, hook flags as above. Old take files kept in `~/video-takes-local/ca08/takes/old_niamh_v1/`. A Remotion endcard render ran on the machine during this take (drop 0.82 %, still passes).
+
+| take | file | length | check | marks (trimmed s) | notes |
+|---|---|---|---|---|---|
+| t01_niamh_hook | t01_niamh_hook.trimmed.mkv | 10.10 | pass, drop 0.82 %, fullFrame true | player-sprite 0.51, portrait up 3.1, chat-closed 8.67, end 9.67. **Speech (silencedetect -35 dB, d 0.08): onset 3.272; sentence 1 ends 5.716 (pause to 6.156); sentence 2 ends 7.867.** | Mouth opens (teeth visible). Edit: in 3.12 (onset - 0.15), out 5.92 (end + 0.2), duration 2.8 kept; caption line end 2.6. Framing as ca03 (16:9 cx 0.62 cy 0.355 zoom 1.5; 9:16 cx 0.67 cy 0.377 zoom 1.4; 1:1 cx 0.667 cy 0.377 zoom 1.4). |

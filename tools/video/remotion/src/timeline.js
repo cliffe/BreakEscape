@@ -14,8 +14,8 @@ export const JOIN_FRAMES = { glitch: { def: 6, min: 6, max: 10 }, blur: { def: 1
 export function resolveJoin(edit, shot) {
   let t = shot.join?.type || 'cut';
   const sw = edit.effects?.cardJoin;
-  if (sw && edit.theme !== 'ca' && !shot.join?.pin && (t === 'glitch' || t === 'dissolve' || t === 'card')) t = sw; // join.pin: true keeps this join's own type (per-join override)
-  else if (t === 'card') t = edit.theme === 'ca' ? 'seam' : 'glitch';
+  if (sw && edit.theme !== 'ca' && edit.theme !== 'cc' && !shot.join?.pin && (t === 'glitch' || t === 'dissolve' || t === 'card')) t = sw; // join.pin: true keeps this join's own type (per-join override)
+  else if (t === 'card') t = edit.theme === 'ca' ? 'seam' : edit.theme === 'cc' ? 'dissolve' : 'glitch';
   const n = t === 'cut' ? 0 : (shot.join?.frames ?? JOIN_FRAMES[t]?.def ?? 6);
   return { type: t, frames: n };
 }
@@ -94,4 +94,4 @@ export function sourceRef(shot) {
 /** `placeholder: true` marks stand-in footage (the lint lists it; --final refuses it). A string `placeholder` is only the label of the test pattern shown when a take is missing. */
 export const isPlaceholderShot = (s) => s.placeholder === true;
 /** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */
-export const isCardLike = (s) => s.type === 'card' || s.type === 'title' || s.type === 'cta' || s.type === 'ca_open' || s.type === 'ca_close';
+export const isCardLike = (s) => s.type === 'card' || s.type === 'title' || s.type === 'cta' || s.type === 'ca_open' || s.type === 'ca_close' || s.type === 'cc_open' || s.type === 'cc_close';

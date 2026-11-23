@@ -78,7 +78,7 @@ Framing checks (speaker in the upper two thirds, room framed for 9:16, no bar te
 8. PLACEHOLDER (owner question) Music: CutScene under the hook and title, Noir from card_a onward. Recommendation: as above, analysed for the beat grid at the edit stage.
 9. PLACEHOLDER (owner question) Skin: the neutral Critical Cases skin (recipe question A) needs the theme page before the edit; sis02's accent is hazard amber. The page should also show the name plates and the montage labels. Recommendation: build it with sis01's title and end card, then re-accent.
 10. PLACEHOLDER (owner question) Priya S. (the NCSC debriefer) is left out of the crescendo (debrief). Recommendation: leave her out and name her in the picks file.
-11. PLACEHOLDER (owner question) The store page: `mission.json`'s description already says the attacker "quietly raised the safety system's trip points", which is the twist the trailer hides. Should the description change? Recommendation: yes, rewrite it to the setup only (a gas alarm, a screen that reads normal, a button anyone can press), since the page sits next to the trailer.
+11. Resolved (D368, 23 Nov): the store page description now describes the setup only and no longer names the falsified readings or the raised trip points (commit 2bb09ef67).
 
 ## Blockers for takes
 

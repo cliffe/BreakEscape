@@ -1,0 +1,16 @@
+{
+ "id": "cc_close",
+ "type": "cc_close",
+ "duration": 4.8,
+ "join": {
+  "type": "dissolve"
+ },
+ "spoiler": {
+  "reviewed": true,
+  "shows_code": false,
+  "shows_identity": false,
+  "shows_ending": false,
+  "keypad_partial": null,
+  "note": "Critical Cases end card: case name, series name, call to action; no footage"
+ }
+}

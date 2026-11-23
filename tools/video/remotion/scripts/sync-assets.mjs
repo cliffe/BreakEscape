@@ -25,6 +25,9 @@ fs.mkdirSync(path.join(pub, 'takes'), { recursive: true });
 for (const [from, to] of [['PressStart2P-Regular.woff2', 'PressStart2P-Regular.woff2'], ['gnf.woff2', 'gnf.woff2'], ['VT323/VT323-latin.woff2', 'VT323-latin.woff2'], ['SourceSans3/SourceSans3-latin.woff2', 'SourceSans3-latin.woff2']]) {
   fs.copyFileSync(path.join(assets, 'fonts', from), path.join(pub, 'fonts', to)); // Cyber Aware theme fonts come from the game's own assets
 }
+// Critical Cases theme fonts (IBM Plex, SIL OFL, licences beside them): tools/video/assets/fonts-cc -> public/fonts
+const ccFonts = path.join(repo, 'tools/video/assets/fonts-cc');
+if (fs.existsSync(ccFonts)) for (const f of fs.readdirSync(ccFonts)) if (/\.(ttf|woff2)$/i.test(f)) fs.copyFileSync(path.join(ccFonts, f), path.join(pub, 'fonts', f));
 // brand art
 const brandDir = path.join(repo, 'tools/video/assets/brand');
 fs.mkdirSync(path.join(pub, 'brand'), { recursive: true }); fs.mkdirSync(path.join(pub, 'brand-derived'), { recursive: true });
