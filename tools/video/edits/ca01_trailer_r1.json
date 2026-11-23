@@ -2,14 +2,14 @@
  "mission": "ca01",
  "id": "ca01_trailer_r1",
  "theme": "ca",
- "title": "Cyber Aware ca01 trailer, script R3 (narrator VO, not yet voiced)",
+ "title": "Cyber Aware ca01 trailer, script R4 (narrator VO, not yet voiced)",
  "script": {
   "heading": "ca01 trailer script (Invoice fraud)",
   "owner_card": "none yet (script R1)",
   "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Gwen G2; E2 needs a 5.85 s shot, over the 5 s cold-open lint); open card with v1; name the topic in VO over footage that shows it; red chapter card, each attack step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; end on Adaeze's in-episode line (D336 default (a)+(c); R2: A3, caught branch, --set kit_key_caught=true); ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. VO lengths budgeted at 2.3 words/s (Sulafat)."
  },
  "fps": 30,
- "length": 72.69,
+ "length": 73.13,
  "music": {
   "none": true,
   "note": "silent bed until D331; game room sound and voiced lines only"
@@ -76,7 +76,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t01_gwen_hook: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true (kit_key_caught unset), BE_SPRITE female_office_worker_v2, Skip tutorial, close the Brief, walk to Gwen, talk: G2 plays; close the chat before the 'See you later.' choice. in/out from marks line-start/line-end Out = g2-audio-end + 0.25.",
+   "placeholder_note": "PENDING TAKE t01_gwen_hook: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true (kit_key_caught unset), BE_SPRITE female_office_worker_v2, Skip tutorial, close the Brief, walk to Gwen, talk: G2 plays; close the chat before the 'See you later.' choice. in/out from marks line-start/line-end. Out = g2-audio-end + 0.25.",
    "lines": [
     {
      "start": 0.3,
@@ -454,14 +454,14 @@
   {
    "id": "triage",
    "type": "gameplay",
-   "duration": 14.22,
+   "duration": 14.66,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04_payments_inbox.trimmed.mkv",
     "in": 3,
-    "out": 17.22
+    "out": 17.66
    },
    "audio": {
     "gain_db": -6
@@ -497,7 +497,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks",
+   "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks Card-open must fall at source 4-6 s (about 5 s) so v8a plays over the list and v8b over the open card; if it lands later, move the in point later.",
    "voPos": {
     "16:9": "top"
    },
@@ -526,7 +526,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Adaeze A3 after the defend set, caught branch (kit_key_caught=true; cached, 6.82 s); in = A3 subtitle start, after the A4 verdict line; chat closes before the menu"
+    "note": "Adaeze A3 after the defend set, caught branch (kit_key_caught=true; cached, 6.82 s); in = A3 audio start minus 0.25 s, after the A4 verdict line; chat closes before the menu"
    },
    "seat": {
     "seat": "defend",
@@ -551,7 +551,7 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t05_adaeze_end: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true --set kit_key_caught=true (caught branch), BE_SPRITE female_office_worker_v2, talk to Adaeze: A4 (verdict) then A3; close the chat before the Thanks, Adaeze. choice. in = mark a3-audio-start minus 0.2 (no A4 audio or subtitle may show)",
+   "placeholder_note": "PENDING TAKE t05_adaeze_end: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true --set kit_key_caught=true (caught branch), BE_SPRITE female_office_worker_v2, talk to Adaeze: A4 (verdict) then A3; close the chat before the Thanks, Adaeze. choice. in = mark a3-audio-start minus 0.25 (no A4 audio or subtitle may show)",
    "lines": [
     {
      "start": 0.25,
@@ -661,27 +661,28 @@
    "start": 48.86,
    "end": 52.54,
    "text": "Spot the one where the L should be.",
-   "caption": "Spot the 1 where\nthe l should be."
+   "caption": "Spot the \"1\" where\nthe letter \"l\" should be."
   },
   {
    "id": "v9",
    "start": 52.79,
-   "end": 55.16,
-   "text": "Yours used his real address."
+   "end": 55.6,
+   "text": "Yours used the supplier's real address."
   },
   {
    "id": "v10",
-   "start": 55.41,
-   "end": 59.52,
+   "start": 55.85,
+   "end": 59.96,
    "text": "New bank details, and a rush? Stop and check.",
    "caption": "New bank details, and a rush?\nStop and check."
   },
   {
    "id": "v11",
-   "start": 67.42,
-   "end": 72.39,
+   "start": 67.86,
+   "end": 72.83,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
-   "file_note": "reuse ca12 vo/Sulafat/trim/v11.mp3 (same text, voice and style; 4.97 s)"
+   "file_note": "reuse ca12 vo/Sulafat/trim/v11.mp3 (same text, voice and style; 4.97 s)",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk."
   }
  ]
 }
