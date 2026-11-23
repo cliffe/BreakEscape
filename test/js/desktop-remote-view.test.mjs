@@ -353,3 +353,24 @@ test('N-C1: a world-opened trip goes back to its desktop on a share close and to
     }
     delete window.startNetworkViewMinigame; delete window.openRemoteDesktop;
 });
+
+// Ops core tidy (client), R3-2: three rarer desktop endings, by where the remote view was opened
+test('R3-2: displaced, token_expired and expired leave to the world for a world-opened trip and resume the view for a network-view trip', async () => {
+    setup();
+    const { NetworkLinks } = await imp('systems/network-links.js');
+    const nl = new NetworkLinks();
+    const views = [];
+    window.startNetworkViewMinigame = (...a) => views.push(a);
+    window.openRemoteDesktop = () => {};
+    window.pcSessions = { has: () => true, get: () => ({ footholdId: 'jack_a' }) };
+    for (const reason of ['displaced', 'token_expired', 'expired']) {
+        views.length = 0;
+        nl.openSession('ops_pc', { returnTo: () => {}, toWorld: true });
+        assert.deepEqual(nl.landed('desktop', reason, { pcId: 'ops_pc' }), { landing: 'world', reason: 'closed' }, `${reason} (world)`);
+        assert.equal(nl.trip, null, reason);
+        assert.deepEqual(views, [], `${reason}: the network view is not opened`);
+        nl.openSession('ops_pc', { returnTo: () => {} });
+        assert.equal(nl.landed('desktop', reason, { pcId: 'ops_pc' }).landing, 'view', `${reason} (network view)`);
+    }
+    delete window.startNetworkViewMinigame; delete window.openRemoteDesktop;
+});

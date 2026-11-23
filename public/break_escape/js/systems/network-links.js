@@ -138,12 +138,12 @@ const LANDINGS = {
         no_session: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: sessionEndedMessage(self._hostOf(d)) }),
         unreachable: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: unreachableMessage(self._hostOf(d)) }),
         not_responding: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: notRespondingMessage(self._hostOf(d)) }),
-        displaced: () => ({ resume: true }),
+        displaced: (self) => (self.trip?.toWorld ? { leave: 'closed' } : { resume: true }),
         link_dropped: () => ({ leave: 'link_dropped' }),
         // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
         // already said which token; the view reopens without it (R12: the box no longer reaches the host)
-        token_expired: () => ({ resume: true }),
-        expired: () => ({ resume: true })
+        token_expired: (self) => (self.trip?.toWorld ? { leave: 'closed' } : { resume: true }),
+        expired: (self) => (self.trip?.toWorld ? { leave: 'closed' } : { resume: true })
     },
     share: {
         // A share is a step inside the desktop it was opened from: a world-click trip goes back to that desktop (S3 R2 N-C1)
