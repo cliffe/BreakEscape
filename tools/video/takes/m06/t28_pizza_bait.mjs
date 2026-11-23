@@ -1,6 +1,6 @@
 // t28_pizza_bait (m06, keyless, NOT YET RUN): blockchain_lab pizza (pizza_boxes, takeable, droppable, magnet tempt 60, only hunger-need NPCs, the two trading-floor extras). Pick it up, walk it through the unlocked lab door to trading_floor (lab connects west to the floor), drop it ("Drop here" via inventoryAct), watch about 12 s for staff drifting to it. Needs office-life sims running. The whole run is long; the edit takes 0.5 s.
-// Entry state (new-game): --imports=none --unlock trading_floor --start-room blockchain_lab --set briefing_played=true   Record flags: "--hide-hud --zoom-step 1"   (hud hidden: the drop uses inventoryAct, no tray needed on camera)
-// Record: MISSION=m06 run.sh daniel_seo t28_pizza_bait "<flags above>" "--hide-hud --zoom-step 1"
+// Entry state (new-game): --imports=none --unlock trading_floor --start-room blockchain_lab --set briefing_played=true   Record flags: "--zoom-step 1"   (HUD ON: with --hide-hud the tray is hidden and inventoryAct "Drop here" fails with item-off-screen)
+// Record: MISSION=m06 run.sh daniel_seo t28_pizza_bait "<flags above>" "--zoom-step 1"
 // Marks: pizza-picked, floor-entered, pizza-dropped, watch-end (with npc positions).
 import { sleep, clearScreen } from '../lib/lib.mjs';
 import { goRoom } from '../m05/_live.mjs';
