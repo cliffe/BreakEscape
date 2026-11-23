@@ -88,13 +88,41 @@ export function distinctValues(rows, key) {
     return seen;
 }
 
-/** The option lists the filter bar offers: EVENT, RESULT and LOCATION values present. */
+/**
+ * The word of a RESULT cell, without the merge count or the open-ended plus: "FAIL x3" and
+ * "FAIL" are both "FAIL", "DENIED x10+" is "DENIED", "BLOCKED+" is "BLOCKED". The RESULT filter
+ * works on this word, so a count that grows never makes a chosen filter value disappear.
+ */
+export function resultWord(result) {
+    return text(result).replace(/\s+x\d+\+?$/, '').replace(/\+$/, '');
+}
+
+/** The option lists the filter bar offers: EVENT, RESULT (as words) and LOCATION values present. */
 export function buildFilterOptions(rows) {
+    const words = [];
+    for (const r of rows) {
+        const w = resultWord(r.result);
+        if (w !== '' && !words.includes(w)) words.push(w);
+    }
     return {
         event: distinctValues(rows, 'event'),
-        result: distinctValues(rows, 'result'),
+        result: words,
         where: distinctValues(rows, 'where')
     };
+}
+
+/**
+ * Clears (in place) every select filter whose value is no longer among the options the rows
+ * offer, and returns the keys it cleared. A filter must never stay set to a value the player
+ * cannot see in its select.
+ */
+export function pruneFilters(filters, rows) {
+    const opts = buildFilterOptions(rows);
+    const cleared = [];
+    for (const key of ['event', 'result', 'where']) {
+        if (filters[key] && !opts[key].includes(filters[key])) { filters[key] = ''; cleared.push(key); }
+    }
+    return cleared;
 }
 
 export const EMPTY_FILTERS = Object.freeze({ event: '', result: '', where: '', as: '', time: '' });
@@ -105,7 +133,7 @@ export function applyFilters(rows, filters, clock) {
     const who = f.as.trim().toLowerCase();
     return rows.filter(r =>
         (!f.event || text(r.event) === f.event) &&
-        (!f.result || text(r.result) === f.result) &&
+        (!f.result || resultWord(r.result) === f.result) &&
         (!f.where || text(r.where) === f.where) &&
         (!who || text(r.as).toLowerCase().includes(who)) &&
         (!f.time || timeRangeOf(r, clock) === f.time));

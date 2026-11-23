@@ -1,10 +1,7 @@
 /* Ops log viewer (OpsLogMinigame, scene "ops-log"). Pixel look: 2px borders, square corners, flat.
    Sits inside the shared console window; no row is tinted. */
-.ops-log-fill, .ol-wrapper {
-    box-sizing: border-box;
-}
-
 .ol-wrapper {
+    box-sizing: border-box;
     position: absolute;
     inset: 0;
     display: flex;
@@ -123,6 +120,5 @@
 .ol-btn:hover { background: #1e2240; border-color: #6688aa; color: #ccddee; }
 
 @media (max-width: 600px) {
-    .ol-wrapper, .ol-table { font-size: 16px; }
     .ol-th[data-col="detail"], .ol-cell[data-col="detail"] { display: none; }
 }

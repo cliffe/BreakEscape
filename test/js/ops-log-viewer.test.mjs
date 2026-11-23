@@ -16,7 +16,7 @@ const read = (p) => readFileSync(join(js, p), 'utf8');
 class FakeEl {
     constructor(tag) {
         this.tag = tag; this.children = []; this.parent = null; this.listeners = {}; this.attrs = {};
-        this.classes = new Set(); this.style = {}; this._text = ''; this.value = ''; this.innerHTMLSets = [];
+        this.classes = new Set(); this.style = {}; this.scrollTop = 0; this._text = ''; this.value = ''; this.innerHTMLSets = [];
         const self = this;
         this.classList = {
             add: (...c) => c.forEach(x => self.classes.add(x)),
@@ -25,7 +25,7 @@ class FakeEl {
         };
     }
     set className(v) { this.classes = new Set(String(v).split(' ').filter(Boolean)); }
-    set textContent(v) { this._text = String(v); this.children = []; }
+    set textContent(v) { this._text = String(v); this.children = []; this.scrollTop = 0; /* a browser resets the scroll of an emptied box */ }
     get textContent() { return this._text + this.children.map(c => c.textContent).join(''); }
     set innerHTML(v) { this.innerHTMLSets.push(v); this.children = []; this._text = ''; }
     setAttribute(k, v) { this.attrs[k] = String(v); }
@@ -45,7 +45,7 @@ class FakeEl {
     querySelectorAll(sel) { return this.all(sel); }
     querySelector(sel) { return this.all(sel)[0] || null; }
 }
-globalThis.document = { createElement: (t) => new FakeEl(t), head: null, getElementById: () => null };
+globalThis.document = { createElement: (t) => new FakeEl(t), head: null, getElementById: () => null, get activeElement() { return globalThis.__focused || null; } };
 globalThis.window = { gameClock: null };
 
 // A clock that prints like game-clock.js: day-less "HH:MM" or "Tue 07:42"
@@ -208,6 +208,185 @@ test('keyboard: rows take focus and Enter or Space select them', async () => {
     tr.fire('keydown', { key: 'Enter' });
     assert.equal(bodyRows(m)[0].attrs['aria-selected'], 'true');
     assert.equal(globalThis.__focused.attrs['data-row-id'], 'a1');
+    assert.equal(root(m).querySelector('table').attrs.role, 'grid');
+});
+
+test('keyboard (m6): one row is in the tab order and Up and Down move it', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([play('a1', H), play('a2', 2 * H), play('a3', 3 * H)])] });
+    await settle();
+    const tabs = () => bodyRows(m).map(r => r.attrs.tabindex).join();
+    assert.equal(tabs(), '0,-1,-1');
+    bodyRows(m)[0].fire('keydown', { key: 'ArrowDown' });
+    assert.equal(tabs(), '-1,0,-1');
+    assert.equal(globalThis.__focused.attrs['data-row-id'], 'a2');
+    bodyRows(m)[1].fire('keydown', { key: 'ArrowUp' });
+    bodyRows(m)[0].fire('keydown', { key: 'ArrowUp' });
+    assert.equal(tabs(), '0,-1,-1', 'Up from the first row stays on it');
+    bodyRows(m)[2].click();
+    assert.equal(tabs(), '-1,-1,0', 'the selected row is the tab stop, also after a refresh');
+});
+
+const wrapOf = (m) => root(m).querySelector('[data-ops-log="table-wrap"]');
+const refreshBtn = (m) => root(m).querySelector('[data-action="refresh"]');
+
+test('F3: an unchanged answer and a row click do not rebuild the list; scroll, focus and REFRESH are kept', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([play('a1', H), play('a2', 2 * H), play('a3', 3 * H)])] });
+    await settle();
+    const before = bodyRows(m);
+    const btn = refreshBtn(m);
+    const sel = filterEl(m, 'event');
+    wrapOf(m).scrollTop = 120;
+    globalThis.__focused = btn;
+    queue = [{ rev: 'abc123', unchanged: true }];
+    btn.click();
+    await settle();
+    assert.deepEqual(bodyRows(m).map((r, i) => r === before[i]), [true, true, true], 'the same row elements');
+    assert.equal(refreshBtn(m), btn, 'the same REFRESH button');
+    assert.equal(wrapOf(m).scrollTop, 120);
+    assert.equal(globalThis.__focused, btn, 'focus stays on REFRESH');
+
+    // a click moves the mark between the two existing rows
+    before[2].click();
+    assert.deepEqual(bodyRows(m).map((r, i) => r === before[i]), [true, true, true]);
+    assert.deepEqual(before.map(r => r.attrs['aria-selected']), ['false', 'false', 'true']);
+    assert.equal(wrapOf(m).scrollTop, 120);
+    assert.equal(globalThis.__focused, before[2]);
+    before[0].click();
+    assert.deepEqual(before.map(r => r.attrs['aria-selected']), ['true', 'false', 'false']);
+    assert.equal(before[2].classes.has('ol-row-selected'), false);
+    assert.equal(root(m).querySelector('[data-ops-log="detail-grid"]').all('div').find(d => d.attrs['data-field'] === 'TIME').textContent, 'Tue 01:00');
+
+    // a changed answer rebuilds the rows but keeps the scroll, the focused row, the button and the filter control
+    before[1].click();
+    queue = [answer([play('a1', H), play('a2', 2 * H), play('a3', 3 * H), play('a4', 4 * H)], { rev: 'def456' })];
+    btn.click();
+    await settle();
+    assert.equal(bodyRows(m).length, 4);
+    assert.equal(wrapOf(m).scrollTop, 120, 'scroll restored');
+    assert.equal(globalThis.__focused.attrs['data-row-id'], 'a2', 'focus back on the same row');
+    assert.equal(bodyRows(m)[1], globalThis.__focused);
+    assert.equal(refreshBtn(m), btn);
+    assert.equal(filterEl(m, 'event'), sel, 'the filter control is kept');
+});
+
+test('F4 and m9: RESULT filters on the word, so a growing count keeps the filter and the rows', async () => {
+    clearOpsLogCache();
+    const list = (n) => [play('a1', H, { result: 'OK' }), play('a2', 2 * H, { event: 'SIGN_IN_FAIL', result: `FAIL x${n}` }), play('a3', 3 * H, { result: 'DENIED x10+' }), play('a4', 4 * H, { result: 'BLOCKED+' }), play('a5', 5 * H, { result: 'FAIL' })];
+    const m = await open({ answers: [answer(list(2))] });
+    await settle();
+    const ids = () => bodyRows(m).map(r => r.attrs['data-row-id']);
+    choose(m, 'result', 'FAIL');
+    assert.deepEqual(ids(), ['a2', 'a5'], 'FAIL finds FAIL x2 and a bare FAIL');
+    choose(m, 'result', 'DENIED'); assert.deepEqual(ids(), ['a3']);
+    choose(m, 'result', 'BLOCKED'); assert.deepEqual(ids(), ['a4']);
+    choose(m, 'result', 'FAIL');
+    queue = [answer(list(3), { rev: 'r2' })];
+    refreshBtn(m).click();
+    await settle();
+    assert.equal(filterEl(m, 'result').value, 'FAIL');
+    assert.deepEqual(ids(), ['a2', 'a5']);
+    assert.equal(bodyRows(m)[0].all('td')[4].textContent, 'FAIL x3');
+    assert.deepEqual(filterEl(m, 'result').all('option').map(o => o.value), ['', 'OK', 'FAIL', 'DENIED', 'BLOCKED']);
+});
+
+test('F4: a filter whose value left the list is cleared and shown as cleared, not left invisible', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([play('a1', H), play('a2', 2 * H, { event: 'LOCKOUT', where: 'Server room', result: 'BLOCKED' })])] });
+    await settle();
+    choose(m, 'event', 'LOCKOUT');
+    choose(m, 'where', 'Server room');
+    choose(m, 'result', 'BLOCKED');
+    choose(m, 'time', 'night');
+    assert.equal(bodyRows(m).length, 1);
+    queue = [answer([play('a1', H), play('a3', 3 * H)], { rev: 'r2' })];
+    refreshBtn(m).click();
+    await settle();
+    assert.equal(m._filters.event, '');
+    assert.equal(m._filters.where, '');
+    assert.equal(m._filters.result, '');
+    assert.equal(filterEl(m, 'event').value, '', 'the select reads ALL');
+    assert.equal(filterEl(m, 'where').value, '');
+    assert.equal(filterEl(m, 'result').value, '');
+    assert.equal(filterEl(m, 'time').value, 'night', 'a filter whose value is still valid is kept');
+    assert.equal(bodyRows(m).length, 2, 'the rows the cleared filters hid are back (both are at night)');
+});
+
+test('m2: a failure that is not a refusal keeps the rows and says so; a refusal still reads NO ACCESS', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([play('a1', H)])] });
+    await settle();
+    for (const err of [new Error('network down'), Object.assign(new Error('API Error: 500'), { status: 500 }), Object.assign(new Error('API Error: 401'), { status: 401 })]) {
+        queue = [err];
+        refreshBtn(m).click();
+        await settle();
+        assert.equal(bodyRows(m).length, 1, 'rows still held');
+        assert.match(root(m).querySelector('[data-ops-log="count"]').textContent, /NO SIGNAL - REFRESH/);
+    }
+    queue = [{ rev: 'abc123', unchanged: true }];
+    refreshBtn(m).click();
+    await settle();
+    assert.doesNotMatch(root(m).querySelector('[data-ops-log="count"]').textContent, /NO SIGNAL/);
+    for (const status of [400, 403, 404]) {
+        clearOpsLogCache();
+        const d = await open({ answers: [Object.assign(new Error('x'), { status })] });
+        await settle();
+        assert.equal(root(d).querySelector('.ol-message').textContent, 'NO ACCESS', String(status));
+    }
+    clearOpsLogCache();
+    const first = await open({ answers: [new Error('offline')] });
+    await settle();
+    assert.equal(root(first).querySelector('.ol-message').textContent, 'NO SIGNAL - REFRESH');
+});
+
+test('lifecycle (m8): an answer after close changes nothing; a stale answer never overwrites a newer one; close aborts the request', async () => {
+    clearOpsLogCache();
+    let release;
+    globalThis.__api.logRows = (id, opts) => { calls.push({ id, opts }); return new Promise(r => { release = r; }); };
+    try {
+        calls.length = 0;
+        window.gameClock = clockWith('Tue');
+        const m = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc' } } });
+        m.start();
+        const signal = calls[0].opts.signal;
+        assert.equal(signal.aborted, false);
+        const lateRelease = release;
+        m.cleanup();
+        assert.equal(signal.aborted, true, 'close aborts the request');
+        lateRelease(answer([play('a1', H)]));
+        await settle();
+        assert.equal(bodyRows(m).length, 0, 'no render after close');
+        const reopened = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc' } } });
+        reopened.start();
+        assert.equal(calls.at(-1).opts.rev, undefined, 'nothing was written to the cache');
+        reopened.cleanup();
+
+        // two fetches in flight: the first answers last and is dropped
+        clearOpsLogCache();
+        const n = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc' } } });
+        n.start();
+        const first = release;
+        refreshBtn(n).click();
+        const second = release;
+        second(answer([play('b1', H)], { rev: 'new' }));
+        await settle();
+        first(answer([play('a1', H)], { rev: 'old' }));
+        await settle();
+        assert.deepEqual(bodyRows(n).map(r => r.attrs['data-row-id']), ['b1']);
+        assert.equal(n._rev, 'new');
+    } finally {
+        globalThis.__api.logRows = async (id, opts) => { calls.push({ id, opts }); const a = queue.shift(); if (a instanceof Error) throw a; return a; };
+    }
+});
+
+test('m5: a row id with a quote or a bracket is selectable (no selector is built from it)', async () => {
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([play('a"]b', H), play('x\\y', 2 * H)])] });
+    await settle();
+    bodyRows(m)[0].click();
+    assert.equal(bodyRows(m)[0].attrs['aria-selected'], 'true');
+    assert.equal(globalThis.__focused.attrs['data-row-id'], 'a"]b');
 });
 
 test('no row is tinted or marked, with or without an anomaly; no flag button in this stage', async () => {
@@ -245,13 +424,34 @@ test('every cell and detail field goes in by textContent: a hostile typed userna
     for (const el of [root(m), ...root(m).all('div')]) assert.ok(el.innerHTMLSets.every(v => v === ''));
 });
 
+test('m4: a hostile value in every field and in the title stays text in the cells, the detail panel and the options', async () => {
+    clearOpsLogCache();
+    const evil = (k) => `<img src=x onerror=alert('${k}')>`;
+    const row = { id: evil('id'), at: evil('at'), event: evil('event'), as: evil('as'), where: evil('where'), result: evil('result'), detail: evil('detail') };
+    const m = await open({ answers: [answer([row, seed('s2', '07:12', { event: evil('e2') })], { title: evil('title') })] });
+    await settle();
+    const tr = bodyRows(m)[0];
+    assert.equal(tr.attrs['data-row-id'], evil('id'));
+    assert.deepEqual(cells(tr), [evil('at'), evil('event'), evil('as'), evil('where'), evil('result'), evil('detail')]);
+    for (const td of tr.all('td')) assert.equal(td.children.length, 0, 'no element made from a cell');
+    tr.click();
+    const vals = root(m).querySelector('[data-ops-log="detail-grid"]').all('div').filter(d => d.attrs['data-field']);
+    assert.equal(vals.length, 6);
+    assert.deepEqual(vals.map(v => v.textContent), [evil('at'), evil('event'), evil('as'), evil('where'), evil('result'), evil('detail')]);
+    for (const v of vals) assert.equal(v.children.length, 0);
+    assert.equal(root(m).querySelector('.ol-caption').textContent, evil('title'));
+    for (const k of ['event', 'where', 'result']) for (const o of filterEl(m, k).all('option')) assert.equal(o.children.length, 0);
+    // no node anywhere holds an element made from the text
+    assert.equal(root(m).all('img').length, 0);
+});
+
 test('merged rows show their count and a + exactly as the answer text carries it', async () => {
     clearOpsLogCache();
     const m = await open({ answers: [answer([play('a1', H, { result: 'FAIL x3' }), play('a2', 2 * H, { result: 'DENIED x10+' }), play('a3', 3 * H, { result: 'BLOCKED+' })])] });
     await settle();
     assert.deepEqual(bodyRows(m).map(r => cells(r)[4]), ['FAIL x3', 'DENIED x10+', 'BLOCKED+']);
-    // filter values are the whole result text
-    assert.deepEqual(filterEl(m, 'result').all('option').map(o => o.value), ['', 'FAIL x3', 'DENIED x10+', 'BLOCKED+']);
+    // filter values are the result's word, without the count or the plus (m9)
+    assert.deepEqual(filterEl(m, 'result').all('option').map(o => o.value), ['', 'FAIL', 'DENIED', 'BLOCKED']);
 });
 
 test('rows keep only the answer keys: an extra field is dropped and a stray id-less row is skipped', () => {
@@ -276,7 +476,8 @@ test('a reader opened from a desktop asks for its own scenarioData.id with the s
     assert.equal(calls[0].opts.from, undefined);
 });
 
-// The paths a reader is opened through (source reads, as the container tests do)
+// The paths a reader is opened through: the real container and interactions code, sliced out of
+// the source files and run (the same way the other source tests do)
 
 function slice(src, startRe, endRe) {
     const a = src.search(startRe);
@@ -287,47 +488,139 @@ function slice(src, startRe, endRe) {
     return rest.slice(0, b);
 }
 
-test('interactions.js: ops_log_terminal opens ops-log with no Cancel; log_filter_terminal still opens log-filter as before', () => {
-    const src = read('systems/interactions.js');
-    const run = (type, scenarioData) => {
-        const started = [];
-        const branch = (t) => slice(src, new RegExp(`if \\(sprite\\.scenarioData\\.type === '${t}'\\) \\{`), /\n    \}\n/) + '\n    }\n';
-        const fn = new Function('sprite', 'window', `${branch(type)} return 'fell through';`);
-        const win = { MinigameFramework: { mainGameScene: {}, startMinigame: (...a) => started.push(a) } };
-        const r = fn({ scenarioData: { type, ...scenarioData } }, win);
-        return { started, r };
-    };
-    const sprite = { objectId: 'temp_1', scenarioData: { type: 'ops_log_terminal', id: 'r', name: 'Security office PC' } };
-    const ops = run('ops_log_terminal', { id: 'r', name: 'Security office PC' });
-    assert.equal(ops.started.length, 1);
-    assert.equal(ops.started[0][0], 'ops-log');
-    assert.equal(ops.started[0][2].title, 'Security office PC');
-    assert.equal('showCancel' in ops.started[0][2], false);
-    assert.ok(sprite);
-    const lf = run('log_filter_terminal', { title: 'Access Log Analyser' });
-    assert.equal(lf.started[0][0], 'log-filter');
-    assert.deepEqual({ ...lf.started[0][2], sprite: undefined }, { title: 'Access Log Analyser', showCancel: true, cancelText: 'Close', sprite: undefined });
-    const lf2 = run('log_filter_terminal', { minigameData: { minigameId: 'custom-log' } });
-    assert.equal(lf2.started[0][0], 'custom-log');
+const interactionsSrc = read('systems/interactions.js');
+const containerSrc = read('minigames/container/container-minigame.js');
+
+// Runs the real `if (sprite.scenarioData.type === '<type>') { ... }` branch of interactions.js
+function runBranch(type, sprite) {
+    const started = [];
+    const branch = slice(interactionsSrc, new RegExp(`if \\(sprite\\.scenarioData\\.type === '${type}'\\) \\{`), /\n    \}\n/) + '\n    }\n';
+    const fn = new Function('sprite', 'window', `${branch} return 'fell through';`);
+    const win = { MinigameFramework: { mainGameScene: {}, startMinigame: (...a) => started.push(a) } };
+    const r = fn(sprite, win);
+    return { started, r };
+}
+
+// A method of the real ContainerMinigame, bound to a fake screen
+function realMethod(name, scope = {}) {
+    const text = slice(containerSrc, new RegExp(`\\n    ${name}\\(`), /\n    \}\n/).replace(/^\n/, '') + '\n    }\n';
+    return new Function(...Object.keys(scope), `return function ${text.trim().replace(new RegExp(`^${name}`), 'f')}`)(...Object.values(scope));
+}
+const folderRouteQuery = new Function(`${slice(containerSrc, /export function folderRouteQuery/, /\n\}\n/).replace('export ', '')}\n}\nreturn folderRouteQuery;`)();
+
+function screen(self) {
+    const o = { mode: 'x', pcMonitor: null, ...self };
+    for (const n of ['routeExtra', 'sourceExtras', 'childExtras', 'pcScreenExtras']) o[n] = realMethod(n, { isNetworkScreenContainer: () => false, folderRouteQuery }).bind(o);
+    o.complete = () => {};
+    return o;
+}
+
+// Opens `item` from `self` through the real handleInteractiveItem; returns the stand-in sprite it hands on
+function openFrom(self, item) {
+    const handed = [];
+    const win = { handleObjectInteraction: (sp) => handed.push(sp), gameAlert() {}, keyring: null };
+    const handle = realMethod('handleInteractiveItem', {
+        window: win, notepadCount: () => 0, scrollingAncestor: () => null, iconFocusMark: () => null,
+        isNetworkScreenContainer: () => false, armNetworkReturn() {}, scheduleNetworkReturnCheck() {}
+    });
+    handle.call(screen(self), item, null);
+    assert.equal(handed.length, 1, 'one stand-in handed to handleObjectInteraction');
+    return handed[0];
+}
+
+const READER = { type: 'ops_log_terminal', id: 'security_log_pc', name: 'Security office PC', minigameData: { logSource: 'door_controller' } };
+const ANALYSER = { type: 'log_filter_terminal', id: 'analyser', name: 'Analyser', minigameData: { minigameId: 'log-filter' } };
+
+const SCREENS = {
+    'foothold desktop': [{ loginPcId: 'pc1', sourcePcId: 'pc1', remote: { footholdId: 'jack_wall' } }, { foothold: 'jack_wall' }],
+    'from desktop': [{ loginPcId: 'pc1', sourcePcId: 'pc1', fromRoute: { fromPcId: 'ops_pc' } }, { from: 'ops_pc' }],
+    'relay desktop': [{ loginPcId: 'pc1', sourcePcId: 'pc1', relay: { relay: true } }, { relay: true }],
+    'walk-up desktop': [{ loginPcId: 'pc1', sourcePcId: 'pc1' }, undefined]
+};
+
+test('F5: handleInteractiveItem hands a reader on to interactions.js with its item, a temp_ id and the route; the branch passes the sprite on', async () => {
+    for (const [name, [self, route]] of Object.entries(SCREENS)) {
+        const standIn = openFrom(self, READER);
+        assert.equal(standIn.scenarioData, READER, name);
+        assert.match(standIn.objectId, /^temp_\d+$/, name);
+        assert.deepEqual(standIn.sourceRoute, route, name);
+        // the branch opens ops-log with the very same stand-in, so the viewer can read id and route
+        const { started } = runBranch('ops_log_terminal', standIn);
+        assert.equal(started.length, 1, name);
+        assert.equal(started[0][0], 'ops-log');
+        assert.equal(started[0][2].sprite, standIn, `${name}: sprite is passed on`);
+        assert.equal(started[0][2].title, 'Security office PC');
+        assert.equal('showCancel' in started[0][2], false);
+        // and the viewer, given what the branch passed, asks for the reader's own id with that route
+        clearOpsLogCache();
+        queue = [answer([])];
+        calls.length = 0;
+        new OpsLogMinigame(new FakeEl('div'), started[0][2]).start();
+        await settle();
+        assert.equal(calls[0].id, 'security_log_pc', name);
+        assert.equal(calls[0].opts.foothold, route?.foothold);
+        assert.equal(calls[0].opts.from, route?.from);
+        assert.equal(calls[0].opts.relay, route?.relay);
+    }
 });
 
-test('container-minigame.js: both types are interactive items; sourceExtras carries sourceRoute and its old keys', () => {
-    const src = read('minigames/container/container-minigame.js');
-    assert.match(src, /item\.type === 'log_filter_terminal' \|\|\s+item\.type === 'ops_log_terminal' \|\|/);
-    const body = (name) => slice(src, new RegExp(`\\n    ${name}\\(\\) \\{`), /\n    \}\n/).replace(/^\n/, '') + '\n    }\n';
-    const mk = (self) => {
-        const o = { ...self };
-        o.routeExtra = new Function(`return function ${body('routeExtra').trim().replace(/^routeExtra/, 'f')}`)().bind(o);
-        o.sourceExtras = new Function(`return function ${body('sourceExtras').trim().replace(/^sourceExtras/, 'f')}`)().bind(o);
-        return o;
-    };
-    assert.deepEqual(mk({ mode: 'npc' }).sourceExtras(), {});
-    assert.deepEqual(mk({ mode: 'x', sourcePcId: 'pc1' }).sourceExtras(), { sourcePcId: 'pc1' });
-    assert.deepEqual(mk({ mode: 'x', sourceResourceId: 'sh1' }).sourceExtras(), { sourceResourceId: 'sh1' });
-    assert.deepEqual(mk({ mode: 'x' }).sourceExtras(), {});
-    assert.deepEqual(mk({ mode: 'x', sourcePcId: 'pc1', remote: { footholdId: 'jack_a' } }).sourceExtras(), { sourcePcId: 'pc1', sourceRoute: { foothold: 'jack_a' } });
-    assert.deepEqual(mk({ mode: 'x', sourcePcId: 'pc1', fromRoute: { fromPcId: 'ops_pc' } }).sourceExtras(), { sourcePcId: 'pc1', sourceRoute: { from: 'ops_pc' } });
-    assert.deepEqual(mk({ mode: 'npc', remote: { footholdId: 'jack_a' } }).sourceExtras(), {});
+test('F5: a log_filter_terminal opened from a desktop opens log-filter with the arguments a room gives it', () => {
+    const inRoom = runBranch('log_filter_terminal', { scenarioData: ANALYSER, objectId: 'analyser' }).started[0];
+    const standIn = openFrom(SCREENS['foothold desktop'][0], ANALYSER);
+    assert.equal(standIn.scenarioData, ANALYSER);
+    assert.match(standIn.objectId, /^temp_/);
+    const fromDesktop = runBranch('log_filter_terminal', standIn).started[0];
+    assert.equal(fromDesktop[0], 'log-filter');
+    assert.equal(fromDesktop[2].sprite, standIn, 'sprite is passed on');
+    assert.equal(inRoom[0], fromDesktop[0]);
+    assert.deepEqual({ ...fromDesktop[2], sprite: 0 }, { ...inRoom[2], sprite: 0 });
+    assert.deepEqual({ ...inRoom[2], sprite: 0 }, { title: 'Access Log Analyser', showCancel: true, cancelText: 'Close', sprite: 0 });
+    const custom = runBranch('log_filter_terminal', { scenarioData: { type: 'log_filter_terminal', minigameData: { minigameId: 'custom-log' } } }).started[0];
+    assert.equal(custom[0], 'custom-log');
+});
+
+test('F2: a folder under a sign-in PC names its PC session route; a reader there sends it', () => {
+    const prev = globalThis.window.pcSessions;
+    try {
+        for (const [session, route] of [
+            [{ relay: true }, { relay: true }],
+            [{ remote: true, footholdId: 'jack_a' }, { foothold: 'jack_a' }],
+            [{ remote: true, fromPcId: 'ops_pc' }, { from: 'ops_pc' }],
+            [{}, undefined]
+        ]) {
+            globalThis.window.pcSessions = new Map([['pc1', session]]);
+            const standIn = openFrom({ sourcePcId: 'pc1' }, READER);
+            assert.deepEqual(standIn.sourceRoute, route, JSON.stringify(session));
+        }
+        // a share's folder window has no PC session of its own
+        globalThis.window.pcSessions = new Map([['pc1', { relay: true }]]);
+        assert.equal(openFrom({ sourceResourceId: 'sh1' }, READER).sourceRoute, undefined);
+    } finally { globalThis.window.pcSessions = prev; }
+});
+
+test('container-minigame.js: both types are interactive items; sourceExtras keeps its old keys and gains sourceRoute', () => {
+    assert.match(containerSrc, /item\.type === 'log_filter_terminal' \|\|\s+item\.type === 'ops_log_terminal' \|\|/);
+    assert.deepEqual(screen({ mode: 'npc' }).sourceExtras(), {});
+    assert.deepEqual(screen({ sourcePcId: 'pc1' }).sourceExtras(), { sourcePcId: 'pc1' });
+    assert.deepEqual(screen({ sourceResourceId: 'sh1' }).sourceExtras(), { sourceResourceId: 'sh1' });
+    assert.deepEqual(screen({}).sourceExtras(), {});
+    assert.deepEqual(screen({ sourcePcId: 'pc1', remote: { footholdId: 'jack_a' } }).sourceExtras(), { sourcePcId: 'pc1', sourceRoute: { foothold: 'jack_a' } });
+    assert.deepEqual(screen({ sourcePcId: 'pc1', fromRoute: { fromPcId: 'ops_pc' } }).sourceExtras(), { sourcePcId: 'pc1', sourceRoute: { from: 'ops_pc' } });
+    assert.deepEqual(screen({ sourcePcId: 'pc1', loginPcId: 'pc1', relay: { relay: true } }).sourceExtras(), { sourcePcId: 'pc1', sourceRoute: { relay: true } });
+    assert.deepEqual(screen({ mode: 'npc', remote: { footholdId: 'jack_a' } }).sourceExtras(), {});
+});
+
+test('F2: a reader on a relay desktop sends relay, never foothold or from, and the answer is cached apart', async () => {
+    clearOpsLogCache();
+    await open({ answers: [answer([play('a1', H)])], sprite: { sourceRoute: { relay: true } } });
+    await settle();
+    assert.equal(calls[0].opts.relay, true);
+    assert.equal(calls[0].opts.foothold, undefined);
+    assert.equal(calls[0].opts.from, undefined);
+    // the same reader with no route does not take the relay's cached rows or rev
+    const walk = await open({ answers: [answer([])] });
+    assert.equal(calls[0].opts.rev, undefined);
+    assert.equal(bodyRows(walk).length, 0, 'no rows drawn from the relay cache');
 });
 
 test('wiring: scene registered, texture and screen glow set, API call shape, schema entry', async () => {
@@ -340,8 +633,12 @@ test('wiring: scene registered, texture and screen glow set, API call shape, sch
     assert.match(read('systems/lighting.js'), /\|log_filter_terminal\|ops_log_terminal\|/);
     const schemas = JSON.parse(readFileSync(join(here, '../../scripts/minigame-data-schemas.json'), 'utf8'));
     assert.deepEqual(schemas.ops_log_terminal.required, ['logSource']);
-    assert.deepEqual(schemas.ops_log_terminal.optional, ['title', 'anomaly', 'flagActionLabel', 'flagActions', 'completionActions']);
-    assert.ok(schemas.log_filter_terminal, 'the log-filter entry is unchanged');
+    assert.deepEqual(schemas.ops_log_terminal.optional, ['anomaly', 'flagActionLabel', 'flagActions', 'completionActions']);
+    assert.equal(schemas.ops_log_terminal.optional.includes('title'), false, 'the title is the source\'s, from the server (m12)');
+    assert.deepEqual(schemas.log_filter_terminal, {
+        required: ['logEntries'],
+        optional: ['minigameId', 'title', 'logType', 'anomaly', 'threatIntel', 'accountHistory', 'flagActionLabel', 'flagConfirmTitle', 'flagConfirmBody', 'flagConfirmBodyClosed', 'additionalTabs', 'requireAllTabs', 'stateOverrides', 'flagActions', 'completionActions', 'progressActions', 'nextTabPrompt', 'nextTabButton', 'completeBanner']
+    }, 'the log-filter entry is unchanged');
 
     // ApiClient.logRows builds the URL (api-client.js run against a fake fetch)
     const urls = [];
@@ -354,5 +651,8 @@ test('wiring: scene registered, texture and screen glow set, API call shape, sch
     await C.logRows('security log', { rev: 'ab', foothold: 'jack_a' });
     await C.logRows('r1', { from: 'ops_pc' });
     await C.logRows('r2');
-    assert.deepEqual(urls, ['/g/log_rows?object_id=security%20log&rev=ab&foothold=jack_a', '/g/log_rows?object_id=r1&from=ops_pc', '/g/log_rows?object_id=r2']);
+    await C.logRows('r3', { relay: true });
+    await C.logRows('r4', { relay: false });
+    await C.logRows('r5', { relay: true, from: 'ops_pc' });
+    assert.deepEqual(urls, ['/g/log_rows?object_id=security%20log&rev=ab&foothold=jack_a', '/g/log_rows?object_id=r1&from=ops_pc', '/g/log_rows?object_id=r2', '/g/log_rows?object_id=r3&relay=1', '/g/log_rows?object_id=r4', '/g/log_rows?object_id=r5&from=ops_pc']);
 });
