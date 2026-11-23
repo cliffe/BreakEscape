@@ -4521,6 +4521,7 @@
           "properties": {
             "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
             "password": { "type": "string", "minLength": 1, "x-servedBy": [ { "route": "GET /login_accounts", "key": "postitNote" }, "GET /capture_secrets" ], "description": "The only place this account's password is authored. Server-only; served as the constructed sticky-note in a GET /login_accounts tile's postitNote when the owner writes it down (written_down?, game.rb), and by GET /capture_secrets once a capture proof for this account holds (captureProof, game.rb)." },
+            "admin": { "type": "boolean", "description": "Privilege plan S5a: true makes this an administrator account at every sign-in PC whose access list admits it. Absent is false. Only the literal true counts. Server-only (the whole creds block is)." },
             "card": {"x-id-map": false,  "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
             "_comment": { "type": "string" }
           },
