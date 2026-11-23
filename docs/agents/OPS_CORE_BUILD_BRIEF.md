@@ -211,3 +211,10 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   proof; fix m6 if the cause is plain (Sign out on a world-click remote view returns to the
   world, not to the network view). The static bolt import needs the helper on two copy lists
   only (`network-view.test.mjs`, `network-view-ops.test.mjs`).
+- 2026-11-23, S3 server fix pass: a card item's own `technique_card` registry key riding in
+  room data before pickup is the plan's design (section 4.3: the id reaches the browser on
+  the card item and should say nothing the card's face does not; the validator warns on a
+  telling id). It stays; the registry's content stays withheld. M1 residue from the client
+  fix pass (a fingerprint-view red on an unhighlighted sprite still counts as an authored
+  tint, so that sprite gets only the bolt) is accepted for now and goes on the screenshot
+  review list.
