@@ -151,3 +151,15 @@ Each is a behaviour with no test that would fail if it broke:
 **Verdict: pass with fixes.** The call sites follow 5.1 and 13.8, no secret path was found, and a scenario without
 `logSources` is untouched apart from the planned `alreadyOpen` answer. Fix M1 before the scripted playtest runs; the
 minors can go in the same pass. All nine checks were completed, by reading only (no test was run).
+
+## R1 outcomes
+
+| Finding | Outcome | Commit |
+|---|---|---|
+| M1 | Fixed per ruling: code stands; PLAYTEST beat 6 and final table expect `signin_ok x2`; test asserts `n == 2`; HANDOVER_L1b_3 corrected | a84ab7d02, 40d47ac12 |
+| m1 | Fixed: guest rows keep `as` nil; test pins a guest claim signed out; A24 says so | a84ab7d02, 40d47ac12 |
+| m2 | Fixed: A24 wording (card id named for a holderless card; unvalidated requests write no row, refusals do) | 40d47ac12 |
+| m3 | Fixed: PLAYTEST no longer names the card id as a registered secret | 40d47ac12 |
+| m4 | a, b, c, d, e, g, h, i: tests added (mutation-proved: a, d via route code, m5). f: not mine, belongs to `ops_log_test.rb` (other fixer); open | a84ab7d02 |
+| m5 | Confirmed reachable (method rfid with attempt naming a gate.openFor NPC takes the route-room branch). Fixed: the ok row now sits in the real-unlock branches; test shows no row and room in npcRouteRooms | 49211abbb, a84ab7d02 |
+| m6 | Fixed as ruled: code stays; controller test for card-less alreadyOpen (open object, and a game with no logSources); A24 line | a84ab7d02, 40d47ac12 |
