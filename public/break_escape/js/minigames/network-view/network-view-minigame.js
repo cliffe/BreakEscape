@@ -74,7 +74,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import {
     pendingKey, refusalText, applyOpsAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine,
-    offersCheck, offersConfirm, rowFindings, classWord, severityWord, statusWord, findingSummary, falseReason,
+    offersCheck, offersConfirm, rowFindings, classWord, severityWord, statusWord, findingSummary, falseReason, severityClass,
     findingNeeds, needLine, isFixed, FIXED_TEXT, checkTarget, parseCheckTarget, findFinding
 } from './ops-model.js';
 
@@ -669,6 +669,7 @@ export class NetworkViewMinigame extends MinigameScene {
         const btn = el.closest?.('[data-action]');
         const li = btn?.closest?.('[data-host-id], [data-resource-id], [data-network-id]');
         const id = li?.dataset?.hostId || li?.dataset?.resourceId || li?.dataset?.networkId;
+        if (!btn) return null;
         const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
         return id ? { id, action: btn.dataset.action, sub } : null;
     }
@@ -847,7 +848,7 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         const reason = falseReason(f);
         if (reason) body += `<p class="network-finding-reason">${escapeHtml(reason)}</p>`;
-        return `<li class="network-finding network-finding-${status}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}"><span class="network-finding-head"><span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span> <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity network-severity-${escapeHtml(String(f.severity ?? ''))}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
+        return `<li class="network-finding network-finding-${status}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}"><span class="network-finding-head"><span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span> <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity ${severityClass(f.severity)}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
     }
 
     /** The icon of a device row: its sprite when it names a plain object file, else a plain device icon. */
@@ -1049,10 +1050,10 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.pending.has(key) || !this.gameState?.isActive || !this._canPerform(action, target)) return { sent: false };
         this.clearResult(action, target, key);
         this.pending.add(key);
-        this._pendingFocus = this.focusedControl();
-        this._opsEpoch++;
         let answer = null;
         try {
+            this._pendingFocus = this.focusedControl();
+            this._opsEpoch++;
             this._runHook('onSent', offer, echo);
             this._safely('redraw', () => this.redraw());
             try {
@@ -1171,7 +1172,7 @@ export class NetworkViewMinigame extends MinigameScene {
             if (this.gameContainer) this.gameContainer.scrollTop = top;
             if (hadFocus) this.focusAfterOps(offer, answer, hostId);
             // A check that held nothing says so; the view records no "checked" mark of its own
-            if (action === 'check' && Array.isArray(answer.findings) && !answer.findings.length) this.showNotice(NO_FINDINGS_TEXT, hostId);
+            if (action === 'check' && Array.isArray(answer.findings) && !answer.findings.length) this.showNotice(NO_FINDINGS_TEXT, hostId, key);
             return;
         }
         this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : (hostId || null), key);
@@ -1338,7 +1339,7 @@ export class NetworkViewMinigame extends MinigameScene {
     /**
      * The findings facts of a host row for getTestState: `checks` (service name to the Check
      * selector, only while offered) and `findings` (only when the player holds any), each with
-     * its alias, id, service, class, severity, summary (the class line when the server sent none),
+     * its alias, id, service, class, severity, summary (the server's),
      * status, `fixed`, `needs` ({ kind, label, met }), `reason` (a false finding's) and the
      * selector of its Confirm, only while offered.
      */

@@ -608,7 +608,7 @@ const HOSTILE2 = '<img src=x onerror=alert(2)>"&';
 const F1 = { id: 'print01.web.factory_login', alias: 'f1', hostId: 'print01', service: 'web', class: 'default_creds',
     severity: 'high', summary: 'The admin page still accepts the factory account.', status: 'unconfirmed' };
 const F2 = { id: 'print01.web.old_banner', alias: 'f2', hostId: 'print01', service: 'web', class: 'unpatched',
-    severity: 'medium', summary: '', status: 'unconfirmed' };
+    severity: 'medium', summary: 'A setting may have been left in an unsafe state.', status: 'unconfirmed' };
 const withFindings = (findings) => ({ ...SWEPT_PRINTER, findings });
 const checkBtn = (host = 'print01', svc = 'web') => q(`[data-host-id="${host}"] [data-service="${svc}"] [data-action="check"]`);
 const confirmBtn = (alias) => q(`[data-finding="${alias}"] [data-action="confirm"]`);
@@ -628,7 +628,7 @@ test('S2: a scanned tile offers Check; a press sends one request and the answer 
     const f1 = q('[data-finding="f1"]');
     assert.match(f1.textContent, /f1/); assert.match(f1.textContent, /Default login/); assert.match(f1.textContent, /High/);
     assert.match(f1.textContent, /Unconfirmed/); assert.match(f1.textContent, /factory account/);
-    assert.match(q('[data-finding="f2"]').textContent, new RegExp(M.CLASS_DEFAULT_LINE.unpatched.slice(0, 20)), 'the class line stands in for a missing summary');
+    assert.match(q('[data-finding="f2"]').textContent, /A setting may have been left in an unsafe state\./, 'the server\'s line is drawn as sent');
     assert.ok(confirmBtn('f1') && confirmBtn('f2'), 'one Confirm per unconfirmed finding');
     assert.equal(document.querySelectorAll('[data-action="confirm"]').length, 2);
     assert.deepEqual(named('network_service_checked'), [{ hostId: 'print01', service: 'web' }]);
@@ -811,4 +811,236 @@ test('R3-2: _refetchDropped is set in the constructor', async () => {
     await open();
     assert.equal(view()._refetchDropped, false);
     assert.match(readFileSync(join(js, 'minigames/network-view/network-view-minigame.js'), 'utf8'), /this\._refetchDropped = false;\n\s+\/\/ Counts/);
+});
+
+// ---------------------------------------------------------------------------------------------
+// S2 client R1 fixes (M1, m1, m3, m4, m5, m6, m7, m9)
+// ---------------------------------------------------------------------------------------------
+
+test('R1 M1: focus on the list itself (no control) cannot strand a pending key, break a refetch redraw or a result', async () => {
+    setup(SWEPT([SWEPT_PRINTER]));
+    await open();
+    const area = view().gameContainer;
+    area.setAttribute('tabindex', '-1');
+    area.focus();
+    assert.equal(document.activeElement, area, 'focus is in the list but on no control');
+    assert.equal(view().focusedControl(), null);
+    // a refetch with a changed answer redraws without throwing
+    answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([{ ...SWEPT_PRINTER, name: 'Renamed printer' }]) };
+    await view().refetch({ sync: false });
+    assert.match(area.textContent, /Renamed printer/, 'the changed refetch redrew');
+    // perform with focus there: the request goes, the key clears, the findings draw
+    area.focus();
+    checkImpl = async () => { put2(withFindings([F1])); return { success: true, hostId: 'print01', service: 'web', findings: [F1] }; };
+    const r = await view().perform({ action: 'check', target: 'print01:web' });
+    assert.equal(r.sent, true);
+    assert.equal(calls.filter(c => c[0] === 'check').length, 1);
+    assert.equal(view().pending.size, 0, 'the key cleared');
+    assert.ok(q('[data-finding="f1"]'), 'the result was drawn');
+    assert.equal(checkBtn().disabled, false);
+    // and a second press works (nothing stuck)
+    area.focus();
+    assert.equal((await view().perform({ action: 'check', target: 'print01:web' })).sent, true);
+});
+
+test('R1 M1: a focus lookup that throws inside perform still clears the key', async () => {
+    setup(SWEPT([SWEPT_PRINTER]));
+    await open();
+    const m = view();
+    const real = m.focusedControl;
+    let boom = true;
+    m.focusedControl = function () { if (boom) { boom = false; throw new Error('focus'); } return real.call(this); };
+    checkImpl = async () => ({ success: true, hostId: 'print01', service: 'web', findings: [] });
+    await m.perform({ action: 'check', target: 'print01:web' }).catch(() => {});
+    assert.equal(m.pending.size, 0, 'no key stranded by a throw between add and finally');
+});
+
+test('R1 m1: only falseBecause is a decoy\'s reason; because and reason keys draw nothing', async () => {
+    const a = { ...F1, status: 'false', because: 'BECAUSE-KEY', reason: 'REASON-KEY' };
+    const b = { ...F2, status: 'false', falseBecause: 'The real key.' };
+    setup(SWEPT([withFindings([a, b])]));
+    await open();
+    assert.equal(q('[data-finding="f1"] .network-finding-reason'), null);
+    assert.doesNotMatch(document.body.textContent, /BECAUSE-KEY|REASON-KEY/);
+    assert.equal(q('[data-finding="f2"] .network-finding-reason').textContent, 'The real key.');
+    assert.equal(view().getTestState().rows[0].findings[0].reason, null);
+});
+
+test('R1 m3: a check answer without fixed over a held fixed finding leaves no Fixed in the view', async () => {
+    const fixed = { ...F1, status: 'confirmed', needs: [], fixed: true, cli: { title: 'X' } };
+    setup(SWEPT([withFindings([fixed])]));
+    await open();
+    assert.match(q('[data-finding="f1"]').textContent, /Fixed/);
+    const again = { ...F1, status: 'confirmed', needs: [] };
+    checkImpl = async () => ({ success: true, already: true, hostId: 'print01', service: 'web', findings: [again] });
+    // the refetch (answer) is slow to change: the answer alone must clear Fixed
+    const hold = deferred();
+    window.ApiClient.network = async () => { await hold.p; throw new Error('refetch fails'); };
+    const run = view().perform({ action: 'check', target: 'print01:web' });
+    await settle(20);
+    assert.doesNotMatch(q('[data-finding="f1"]').textContent, /Fixed/, 'the answer alone cleared Fixed');
+    hold.resolve();
+    await run.catch(() => {});
+    assert.equal(document.querySelectorAll('[data-finding]').length, 1, 'no second row for a repeat');
+});
+
+test('R1 m4: the empty-check line is keyed and goes at the next press', async () => {
+    setup(SWEPT([SWEPT_PRINTER]));
+    await open();
+    checkImpl = async () => ({ success: true, hostId: 'print01', service: 'web', findings: [] });
+    checkBtn().click();
+    await settle();
+    assert.equal(q('.network-view-notice').textContent, V.NO_FINDINGS_TEXT);
+    checkImpl = async () => { put2(withFindings([F1])); return { success: true, hostId: 'print01', service: 'web', findings: [F1] }; };
+    checkBtn().click();
+    await settle();
+    assert.ok(q('[data-finding="f1"]'));
+    assert.doesNotMatch(document.body.textContent, /Nothing was found on that service/, 'the stale line is gone');
+});
+
+test('R1 m5: a changed refetch redraws while a confirm is out, and the control stays disabled and reads Confirming', async () => {
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    const gate = deferred();
+    confirmImpl = async () => { await gate.p; return { success: true, finding: { ...F1, status: 'confirmed', needs: [] } }; };
+    confirmBtn('f1').click();
+    await settle();
+    answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([{ ...withFindings([F1]), name: 'Renamed printer' }]) };
+    await view().refetch({ sync: false });
+    await settle();
+    assert.match(q('[data-host-id="print01"]').textContent, /Renamed printer/, 'a redraw happened');
+    assert.equal(confirmBtn('f1').disabled, true);
+    assert.match(confirmBtn('f1').textContent, /Confirming/);
+    gate.resolve();
+    await settle();
+});
+
+test('R1 m5: the same for a pending Check', async () => {
+    setup(SWEPT([SWEPT_PRINTER]));
+    await open();
+    const gate = deferred();
+    checkImpl = async () => { await gate.p; return { success: true, hostId: 'print01', service: 'web', findings: [] }; };
+    checkBtn().click();
+    await settle();
+    answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([{ ...SWEPT_PRINTER, name: 'Renamed printer' }]) };
+    await view().refetch({ sync: false });
+    await settle();
+    assert.match(q('[data-host-id="print01"]').textContent, /Renamed printer/);
+    assert.equal(checkBtn().disabled, true);
+    assert.match(checkBtn().textContent, /Checking/);
+    gate.resolve();
+    await settle();
+});
+
+test('R1 m6a: a slow refetch answering without findings after the check answer does not wipe them', async () => {
+    setup(SWEPT([SWEPT_PRINTER]));
+    await open();
+    const slow = deferred();
+    let first = true;
+    window.ApiClient.network = async (id) => {
+        if (!first) throw new Error('the follow-up refetch fails: only the stale answer can wipe the findings');
+        first = false;
+        calls.push(['network', id]);
+        const snapshot = JSON.parse(JSON.stringify(answer));
+        await slow.p;
+        return snapshot;
+    };
+    const stale = view().refetch({ sync: false });
+    await settle(10);
+    checkImpl = async () => { put2(withFindings([F1])); return { success: true, hostId: 'print01', service: 'web', findings: [F1] }; };
+    const run = view().perform({ action: 'check', target: 'print01:web' });
+    await settle(20);
+    assert.ok(q('[data-finding="f1"]'), 'the findings are drawn');
+    slow.resolve();
+    await stale; await run; await settle();
+    assert.ok(q('[data-finding="f1"]'), 'the stale answer did not wipe them');
+});
+
+test('R1 m6b: hooks for check and confirm fire on a refusal and a throw too, and a throwing hook strands nothing', async () => {
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    const m = view();
+    const log = [];
+    m.onSent = (o) => log.push(['sent', o.action]);
+    m.onEnded = (o, a) => log.push(['ended', o.action, a === null ? 'null' : a.reason]);
+    checkImpl = async () => { throw Object.assign(new Error('x'), { status: 403, body: { success: false, reason: 'not_responding' } }); };
+    confirmImpl = async () => { throw new Error('down'); };
+    await m.perform({ action: 'check', target: 'print01:web' });
+    await m.perform({ action: 'confirm', target: F1.id });
+    assert.deepEqual(log, [['sent', 'check'], ['ended', 'check', 'not_responding'], ['sent', 'confirm'], ['ended', 'confirm', 'null']]);
+    m.onEnded = () => { throw new Error('hook'); };
+    await m.perform({ action: 'check', target: 'print01:web' }).catch(() => {});
+    assert.equal(m.pending.size, 0);
+});
+
+test('R1 m6c: an unconfirmed finding carrying needs and falseBecause draws the same as one without, in the DOM and getTestState', async () => {
+    const leaky = { ...F1, needs: [{ kind: 'item', label: 'LEAKNEED', met: true }], falseBecause: 'LEAKREASON', fixed: true };
+    setup(SWEPT([withFindings([leaky])]));
+    await open();
+    const withLeak = q('[data-finding="f1"]').outerHTML;
+    assert.doesNotMatch(document.body.textContent, /LEAKNEED|LEAKREASON|Fixed/);
+    assert.equal(q('[data-finding="f1"] .network-need'), null);
+    const st = view().getTestState().rows[0].findings[0];
+    assert.deepEqual([st.needs, st.reason, st.fixed], [[], null, false]);
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    assert.equal(q('[data-finding="f1"]').outerHTML, withLeak);
+});
+
+test('R1 m6d and m7: an unknown class is drawn as sent; an unknown or spaced severity adds no class and is still text', async () => {
+    const odd = { ...F1, class: 'odd_class', severity: 'high network-finding-confirmed' };
+    setup(SWEPT([withFindings([odd])]));
+    await open();
+    assert.match(q('[data-finding="f1"] .network-finding-class').textContent, /odd_class/);
+    const chip = q('[data-finding="f1"] .network-finding-severity');
+    assert.deepEqual([...chip.classList], ['network-finding-severity'], 'no class from the sender');
+    assert.equal(chip.textContent, 'high network-finding-confirmed');
+    assert.equal(q('[data-finding="f1"]').classList.contains('network-finding-unconfirmed'), true);
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    assert.ok(q('[data-finding="f1"] .network-severity-high'));
+});
+
+test('R1 m6e: focus stays in the tile after a confirm, and scroll is kept after a check and a confirm', async () => {
+    setup(SWEPT([withFindings([F1, F2])]));
+    await open();
+    const area = view().gameContainer;
+    confirmImpl = async (fid, p) => ({ success: true, finding: { ...(p.findingId.endsWith('login') ? F1 : F2), status: 'confirmed', needs: [] } });
+    area.scrollTop = 37;
+    confirmBtn('f1').focus();
+    confirmBtn('f1').click();
+    await settle();
+    assert.ok(q('[data-service="web"]').contains(document.activeElement), 'focus is inside the tile');
+    assert.equal(area.scrollTop, 37);
+    checkImpl = async () => ({ success: true, already: true, hostId: 'print01', service: 'web', findings: [] });
+    area.scrollTop = 21;
+    checkBtn().focus();
+    checkBtn().click();
+    await settle();
+    assert.equal(area.scrollTop, 21);
+});
+
+test('R1 m6f: a repeat check and a repeat confirm (already) keep the alias and add no row', async () => {
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    checkImpl = async () => ({ success: true, already: true, hostId: 'print01', service: 'web', findings: [F1] });
+    await view().perform({ action: 'check', target: 'print01:web' });
+    assert.equal(document.querySelectorAll('[data-finding]').length, 1);
+    assert.ok(q('[data-finding="f1"]'));
+    const conf = { ...F1, status: 'confirmed', needs: [] };
+    confirmImpl = async () => { put2(withFindings([conf])); return { success: true, already: true, finding: conf }; };
+    await view().perform({ action: 'confirm', target: F1.id });
+    await view().perform({ action: 'confirm', target: F1.id });
+    assert.equal(document.querySelectorAll('[data-finding]').length, 1);
+    assert.equal(q('[data-finding="f1"]').dataset.status, 'confirmed');
+});
+
+test('R1 m6g: the guard turns away check and confirm when the API function is missing', async () => {
+    setup(SWEPT([withFindings([F1])]));
+    await open();
+    delete window.ApiClient.networkCheck;
+    assert.deepEqual(await view().perform({ action: 'check', target: 'print01:web' }), { sent: false });
+    delete window.ApiClient.networkConfirm;
+    assert.deepEqual(await view().perform({ action: 'confirm', target: F1.id }), { sent: false });
+    assert.equal(view().pending.size, 0);
 });

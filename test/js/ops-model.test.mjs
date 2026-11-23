@@ -109,16 +109,18 @@ const FF = (n, over = {}) => ({ id: `h.s.w${n}`, alias: `f${n}`, hostId: 'h', se
 const FVIEW = () => ({ hosts: [{ id: 'h', kind: 'device', scanned: true, services: [{ name: 's' }] }],
     networks: [{ id: 'n', route: 'up', ops: true, hosts: [{ id: 'h', kind: 'device', scanned: true, services: [{ name: 's' }] }] }] });
 
-test('findings: sort by alias number, words, class default line', () => {
+test('findings: sort by alias number, words, the summary as sent', () => {
     assert.deepEqual(M.sortFindings([FF(10), FF(2), FF(1)]).map(f => f.alias), ['f1', 'f2', 'f10']);
     assert.deepEqual(M.sortFindings([{ id: 'z', alias: 'x' }, FF(3)]).map(f => f.alias), ['f3', 'x']);
     assert.equal(M.classWord('default_creds'), 'Default login');
     assert.equal(M.classWord('odd'), 'odd');
     assert.equal(M.severityWord('high'), 'High');
     for (const c of ['default_creds', 'unpatched', 'misconfig', 'weak_auth', 'cleartext']) {
-        assert.ok(M.CLASS_WORDS[c] && M.CLASS_DEFAULT_LINE[c], c);
-        assert.equal(M.findingSummary({ class: c, summary: '' }), M.CLASS_DEFAULT_LINE[c]);
+        assert.ok(M.CLASS_WORDS[c], c);
+        assert.equal(M.findingSummary({ class: c, summary: 'A setting may have been left in an unsafe state.' }), 'A setting may have been left in an unsafe state.');
     }
+    assert.equal('CLASS_DEFAULT_LINE' in M, false, 'one table: the server\'s');
+    assert.equal(M.findingSummary({ class: 'unpatched', summary: '' }), '');
     assert.equal(M.findingSummary({ class: 'unpatched', summary: 'Mine.' }), 'Mine.');
     assert.equal(M.findingSummary({ class: 'odd' }), '');
 });
@@ -133,6 +135,10 @@ test('findings: needs, Fixed, false reason and the offers', () => {
     assert.equal(M.isFixed({ status: 'false', fixed: true }), false);
     assert.equal(M.falseReason({ status: 'false', falseBecause: 'Because.' }), 'Because.');
     assert.equal(M.falseReason({ status: 'confirmed', falseBecause: 'Because.' }), '');
+    assert.equal(M.falseReason({ status: 'false', because: 'x', reason: 'y' }), '');
+    assert.equal(M.severityClass('high'), 'network-severity-high');
+    assert.equal(M.severityClass('high x'), '');
+    assert.equal(M.severityClass('constructor'), '');
     const row = { id: 'h', kind: 'device', scanned: true };
     assert.equal(M.offersCheck(row), true);
     assert.equal(M.offersCheck({ ...row, scanned: false }), false);
@@ -173,4 +179,14 @@ test('findings: a check answer merges by id into every list holding the host, ne
     assert.equal(M.applyConfirmAnswer(v, { success: true, finding: { id: 'a', hostId: 'nobody' } }).hosts[0].findings, undefined);
     // scan and sweep still route through
     assert.equal(M.applyOpsAnswer(v, { action: 'scan' }, null), v);
+});
+
+test('findings: a check answer replaces a held finding whole, in place (a dropped fixed or cli goes)', () => {
+    const v = FVIEW();
+    v.hosts[0].findings = [FF(1, { status: 'confirmed', fixed: true, cli: { title: 'x' } }), FF(2)];
+    const out = M.applyCheckAnswer(v, { success: true, hostId: 'h', service: 's', findings: [FF(1, { status: 'confirmed' })] });
+    assert.equal('fixed' in out.hosts[0].findings[0], false);
+    assert.equal('cli' in out.hosts[0].findings[0], false);
+    assert.deepEqual(out.hosts[0].findings.map(f => f.alias), ['f1', 'f2']);
+    assert.equal(v.hosts[0].findings[0].fixed, true, 'input untouched');
 });

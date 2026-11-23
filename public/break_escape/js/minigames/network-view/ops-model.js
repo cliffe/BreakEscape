@@ -181,15 +181,6 @@ export const CLASS_WORDS = Object.freeze({
 /** The severity words. */
 export const SEVERITY_WORDS = Object.freeze({ low: 'Low', medium: 'Medium', high: 'High' });
 
-/** The line a finding shows when it has no `summary`: one per class, written as what is wrong. */
-export const CLASS_DEFAULT_LINE = Object.freeze({
-    default_creds: 'The service still accepts a login it shipped with.',
-    unpatched: 'The service reports a build with a known problem.',
-    misconfig: 'The service is set up in a way it should not be.',
-    weak_auth: 'The service guards its sign-in too weakly.',
-    cleartext: 'The service sends what it should keep private in the open.'
-});
-
 /** The words of a finding's status. */
 export const STATUS_WORDS = Object.freeze({ unconfirmed: 'Unconfirmed', confirmed: 'Confirmed', false: 'False positive' });
 
@@ -201,17 +192,20 @@ export function classWord(cls) { return typeof cls === 'string' && own(CLASS_WOR
 export function severityWord(sev) { return typeof sev === 'string' && own(SEVERITY_WORDS, sev) ? SEVERITY_WORDS[sev] : String(sev ?? ''); }
 export function statusWord(status) { return typeof status === 'string' && own(STATUS_WORDS, status) ? STATUS_WORDS[status] : String(status ?? ''); }
 
-/** The finding's `summary`, or the class's default line when it has none. */
+/** The finding's `summary` as the server sent it (it always fills one: the authored text, else its class line). */
 export function findingSummary(f) {
-    if (typeof f?.summary === 'string' && f.summary !== '') return f.summary;
-    return typeof f?.class === 'string' && own(CLASS_DEFAULT_LINE, f.class) ? CLASS_DEFAULT_LINE[f.class] : '';
+    return typeof f?.summary === 'string' ? f.summary : '';
 }
 
-/** The reason a false finding shows: the authored `falseBecause` (the server's key), else '' . */
+/** The reason a false finding shows: the server's `falseBecause` and no other key, else ''. */
 export function falseReason(f) {
     if (f?.status !== 'false') return '';
-    for (const k of ['falseBecause', 'because', 'reason']) if (typeof f[k] === 'string' && f[k] !== '') return f[k];
-    return '';
+    return typeof f.falseBecause === 'string' ? f.falseBecause : '';
+}
+
+/** A severity's class suffix: only a known severity word's key reaches a class attribute, else ''. */
+export function severityClass(sev) {
+    return typeof sev === 'string' && own(SEVERITY_WORDS, sev) ? `network-severity-${sev}` : '';
 }
 
 /** The alias's number ("f12" is 12), or Infinity for an alias in no such form. */
@@ -285,13 +279,13 @@ export function findFinding(view, aliasOrId) {
 /** Alias to finding id, or null. */
 export function findingIdByAlias(view, alias) { return findFinding(view, alias)?.finding.id ?? null; }
 
-/** Findings merged by id (new fields win; a finding not held yet is appended). */
+/** Findings merged by id: the answer carries the whole finding, so it replaces the held one in place (a dropped `fixed` or `cli` goes); a finding not held yet is appended. */
 function mergeFindings(list, incoming) {
     let out = Array.isArray(list) ? list.slice() : [];
     for (const f of incoming) {
         if (!f || typeof f.id !== 'string') continue;
         const i = out.findIndex(g => g?.id === f.id);
-        if (i >= 0) out[i] = { ...out[i], ...f }; else out.push({ ...f });
+        if (i >= 0) out[i] = { ...f }; else out.push({ ...f });
     }
     return out;
 }
@@ -306,8 +300,8 @@ function mapHostRow(view, hostId, fn) {
 
 /**
  * The view with a check answer folded in: `{ hostId, service, findings }` merges each finding
- * into the host's `findings` by id (so a repeat check never loses a settled finding's fields,
- * which the answer carries as stored). Returns a new object; an answer it cannot place returns
+ * into the host's `findings` by id (a held finding is replaced whole, in place: the answer carries every
+ * field the server holds). Returns a new object; an answer it cannot place returns
  * the view as it was.
  */
 export function applyCheckAnswer(view, answer) {
