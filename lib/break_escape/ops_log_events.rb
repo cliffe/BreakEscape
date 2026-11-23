@@ -1,0 +1,218 @@
+# frozen_string_literal: true
+
+module BreakEscape
+  # The registry of ops log events and of the kinds of thing a row can name
+  # (docs/achitechture/OPS_LOG_ROWS_PLAN.md, section 13.5). Plain Ruby with no Rails dependency, so
+  # the validator reads the same list the helper (BreakEscape::OpsLog) checks against.
+  #
+  # Each plan adds its events to EVENTS, one line per event, in the build stage that adds the
+  # action. The shape of an entry:
+  #
+  #   'signin_refused' => { label: 'SIGN_IN', places: %w[pc], results: %w[denied blocked],
+  #                         detail: { 'route' => %w[keyboard foothold] },
+  #                         save_limit: { 'denied' => 10, 'blocked' => 10 } }
+  #
+  # places     the where.kind values allowed; [] or absent means the event has no place
+  # results    the closed list: lowercase words of 2 to 16 letters
+  # save_limit optional map of result to an Integer from 1 to 99
+  # detail     at most 4 keys, each with one of four rule types (RULE_TYPES below)
+  # label      the upper-case word shown in the EVENT column
+  module OpsLogEvents
+    # L1a registers no event: L1b, L3 and each sibling add their own lines here.
+    EVENTS = {}.freeze
+
+    # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
+    SHARED_RESULTS = %w[ok fail denied granted refused blocked expired].freeze
+
+    DETAIL_RULE_TYPES = %i[count id alias].freeze # a rule is also an Array of codes
+    MAX_DETAIL_KEYS = 4
+    MAX_COUNT = 9
+    ID_PATTERN = /\A[A-Za-z0-9_.:-]{1,40}\z/.freeze
+    ALIAS_PATTERN = /\A[a-z][0-9]{1,3}\z/.freeze
+    CODE_PATTERN = /\A[a-z][a-z0-9_]{0,15}\z/.freeze
+    RESULT_PATTERN = /\A[a-z]{2,16}\z/.freeze
+    EVENT_PATTERN = /\A[a-z][a-z0-9_]{0,39}\z/.freeze
+    LABEL_PATTERN = /\A[A-Z][A-Z0-9_]{0,15}\z/.freeze
+
+    # Each kind of thing maps to two lookups over (game, id): :name answers the display name, or
+    # nil when the id does not resolve to a thing of that kind; :room answers the room that holds
+    # it, or nil (a door's id is its room). The lambdas call only methods Game already has, so
+    # this file loads without Rails.
+    KINDS = {
+      'door' => {
+        name: ->(game, id) { OpsLogEvents.room_hash(game, id) && (OpsLogEvents.room_hash(game, id)['name'] || id) },
+        room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
+      },
+      'object' => {
+        name: ->(game, id) { OpsLogEvents.object_name(game.login_scope_of(id), id) },
+        room: ->(game, id) { game.login_scope_of(id)&.[](:room_id) }
+      },
+      'pc' => {
+        name: ->(game, id) { OpsLogEvents.object_name(game.find_login_pc(id), id) },
+        room: ->(game, id) { game.find_login_pc(id)&.[](:room_id) }
+      },
+      'jack' => {
+        name: ->(game, id) { OpsLogEvents.object_name(OpsLogEvents.jack_entry(game, id), id) },
+        room: ->(game, id) { OpsLogEvents.jack_entry(game, id)&.[](:room_id) }
+      },
+      'ap' => {
+        name: ->(game, id) { OpsLogEvents.object_name(OpsLogEvents.ap_entry(game, id), id) },
+        room: ->(game, id) { OpsLogEvents.ap_entry(game, id)&.[](:room_id) }
+      },
+      'account' => {
+        name: ->(game, id) { OpsLogEvents.account_npc(game, id)&.dig('creds', 'username') },
+        room: ->(_game, _id) { nil }
+      },
+      'npc' => {
+        name: ->(game, id) { OpsLogEvents.npc_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      'card' => {
+        name: ->(game, id) { OpsLogEvents.card_item(game, id) && (OpsLogEvents.card_item(game, id)['name'] || id) },
+        room: ->(_game, _id) { nil }
+      },
+      # A foothold id: a network jack ("jack_<id>" or the jack's id), an access point, or a PC
+      # (an implanted one); shown by that thing's display name.
+      'foothold' => {
+        name: ->(game, id) { OpsLogEvents.foothold_name(game, id) },
+        room: ->(_game, _id) { nil }
+      }
+    }.freeze
+
+    module_function
+
+    def room_hash(game, id)
+      rooms = game.scenario_data.is_a?(Hash) ? game.scenario_data['rooms'] : nil
+      room = rooms.is_a?(Hash) ? rooms[id.to_s] : nil
+      room.is_a?(Hash) ? room : nil
+    end
+
+    def object_name(info, id)
+      return nil unless info.is_a?(Hash) && info[:object].is_a?(Hash)
+
+      name = info[:object]['name']
+      name.is_a?(String) && !name.empty? ? name : id.to_s
+    end
+
+    def jack_entry(game, id)
+      entry = NetworkModel.jacks(game.scenario_data).find { |e| e[:object]['id'].to_s == id.to_s }
+      entry && { object: entry[:object], room_id: entry[:room_id] }
+    end
+
+    def ap_entry(game, id)
+      NetworkModel.room_objects(game.scenario_data).find do |e|
+        e[:object]['wifiAp'] == true && e[:object]['id'].to_s == id.to_s
+      end
+    end
+
+    def account_npc(game, id)
+      wanted = game.class.normalise_username(id)
+      return nil if wanted.empty?
+
+      game.account_npcs.find do |npc|
+        game.class.normalise_username(npc['creds']['username']) == wanted
+      end
+    end
+
+    def npc_named(game, id)
+      npc = game.class.scenario_room_npcs(game.scenario_data).find { |n| n['id'].to_s == id.to_s }
+      return nil unless npc
+
+      [npc['displayName'], npc['name'], npc['id']].find { |v| v.is_a?(String) && !v.empty? }
+    end
+
+    # An rfid card or clone item the scenario declares: a keycard (by id or card_id) or a card
+    # an NPC carries (creds.card).
+    def card_item(game, id)
+      found = nil
+      walk = lambda do |node|
+        next if found
+
+        case node
+        when Hash
+          if node['type'] == 'keycard' && [node['id'], node['card_id']].map(&:to_s).include?(id.to_s)
+            found = node
+          end
+          node.each_value { |v| walk.call(v) }
+        when Array
+          node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(game.scenario_data)
+      found
+    end
+
+    def foothold_name(game, id)
+      raw = id.to_s.sub(/\Ajack_/, '')
+      thing = jack_entry(game, raw) || ap_entry(game, raw) || game.find_login_pc(raw)
+      thing ? object_name(thing, raw) : nil
+    end
+
+    # Checks every entry of an event table against 13.5; answers a list of problems (empty when
+    # well formed). Shared by the EVENTS spec and, later, the validator.
+    def problems(events = EVENTS, kinds = KINDS)
+      events.flat_map { |name, entry| entry_problems(name, entry, kinds) }
+    end
+
+    def entry_problems(name, entry, kinds)
+      return ["#{name}: not a registered event shape"] unless name.is_a?(String) && name.match?(EVENT_PATTERN) && entry.is_a?(Hash)
+
+      out = []
+      out << "#{name}: label" unless entry[:label].is_a?(String) && entry[:label].match?(LABEL_PATTERN)
+      places = entry[:places] || []
+      out << "#{name}: places" unless places.is_a?(Array) && places.all? { |kind| kinds.key?(kind) }
+      results = entry[:results]
+      out << "#{name}: results" unless results.is_a?(Array) && !results.empty? && results.all? { |r| r.is_a?(String) && r.match?(RESULT_PATTERN) }
+      out.concat(detail_problems(name, entry[:detail] || {}, kinds))
+      out.concat(limit_problems(name, entry[:save_limit], results))
+      out
+    end
+
+    def detail_problems(name, detail, kinds)
+      return ["#{name}: detail not a map"] unless detail.is_a?(Hash)
+
+      out = []
+      out << "#{name}: more than #{MAX_DETAIL_KEYS} detail keys" if detail.size > MAX_DETAIL_KEYS
+      detail.each do |key, rule|
+        out << "#{name}: detail key #{key}" unless key.is_a?(String) && key.match?(CODE_PATTERN)
+        out.concat(rule_problems(name, key, rule, kinds))
+      end
+      out
+    end
+
+    def rule_problems(name, key, rule, kinds)
+      where = "#{name}.#{key}"
+      if rule.is_a?(Array)
+        ok = !rule.empty? && rule.all? { |c| c.is_a?(String) && c.match?(CODE_PATTERN) }
+        return ok ? [] : ["#{where}: codes"]
+      end
+      return ["#{where}: rule is not an Array or a Hash"] unless rule.is_a?(Hash)
+
+      types = rule.keys & DETAIL_RULE_TYPES
+      return ["#{where}: exactly one rule type"] unless types.size == 1 && (rule.keys - types - [:show]).empty?
+      return ["#{where}: show must be false"] if rule.key?(:show) && rule[:show] != false
+
+      case types.first
+      when :count
+        max = rule[:count]
+        max.is_a?(Integer) && max.between?(1, MAX_COUNT) ? [] : ["#{where}: count max must be an Integer from 1 to #{MAX_COUNT}"]
+      when :id
+        kinds.key?(rule[:id]) ? [] : ["#{where}: id kind #{rule[:id].inspect} has no KINDS entry"]
+      when :alias
+        rule[:alias].is_a?(String) && !rule[:alias].empty? ? [] : ["#{where}: alias"]
+      end
+    end
+
+    def limit_problems(name, limits, results)
+      return [] if limits.nil?
+      return ["#{name}: save_limit not a map"] unless limits.is_a?(Hash)
+
+      limits.flat_map do |result, limit|
+        problems = []
+        problems << "#{name}: save_limit result #{result} not in results" unless Array(results).include?(result)
+        problems << "#{name}: save_limit #{limit.inspect} outside 1..99" unless limit.is_a?(Integer) && limit.between?(1, 99)
+        problems
+      end
+    end
+  end
+end
