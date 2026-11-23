@@ -176,3 +176,7 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   is folded into `host_row` itself and 10b's `host_row` wrapper removed; the `network_view`
   wrapper for the `techniques` map may stay in `network_ops.rb`. All three by the step 11
   builder, who owns `network_access.rb`. The `session` need's label is the PC's host label.
+- 2026-11-23, S3 validator: a `worksOn.versions` entry that equals no version of that
+  product in the scenario stays an ERROR (plan 9.2; it catches a typo that would make a card
+  silently useless). The plan's section 4.3 example now lists only the version its example
+  service has.

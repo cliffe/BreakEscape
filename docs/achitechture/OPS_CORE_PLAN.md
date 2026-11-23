@@ -377,7 +377,7 @@ realism skin plan, section 4.2, and served as section 5.2 says.
     "summary": "Devices often ship with a published account that nobody changes.",
     "worksOn": { "class": "default_creds" } },
   "shareserve_3x": { "name": "ShareServe 3.x service flaw",
-    "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["3.0", "3.1"] } }
+    "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["3.1"] } }
 }
 ```
 
