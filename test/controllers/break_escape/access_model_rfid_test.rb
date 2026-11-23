@@ -672,7 +672,7 @@ module BreakEscape
 
     # A game with a badge source. Lobby is the start room; its east wall has the rfid doors,
     # pin_door (another lock type) and none leads to far_door (an rfid door nobody can reach).
-    def logged_build(inventory: [], state: {}, source: BADGE_SOURCE)
+    def logged_build(inventory: [], state: {}, source: BADGE_SOURCE, edit: nil)
       data = AccessModelScenario.routes_scenario
       data['logSources'] = source.deep_dup
       rooms = data['rooms']
@@ -684,6 +684,10 @@ module BreakEscape
                             'requires' => '1234' }
       rooms['far_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'rfid',
                             'access' => { 'roles' => ['finance'] } }
+      rooms['jake_only'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'rfid',
+                             'requires' => [JAKE_CARD_ID] }
+      rooms['lobby']['connections']['east'] << 'jake_only'
+      edit&.call(data)
       len = rooms['lobby']['npcs'].find { |n| n['id'] == 'len' }
       len['eventMappings'] = [{ 'eventPattern' => 'x', 'unlockDoor' => %w[records] }]
       len['unlockable'] = ['finance_cabinet']
@@ -802,6 +806,99 @@ module BreakEscape
       assert_refused(door('records', card_ids: [JAKE_CARD_ID]))
       assert_empty badge_rows
       assert_nil Game.find(@game.id).player_state['opsLog']
+    end
+
+    test 'badge: a refused swipe at an unreached door writes no denied row (m4 a)' do
+      logged_build(inventory: [keycard_item('visitor_badge')])
+      assert_refused(door('far_door', card_ids: ['VISITOR-07']))
+      assert_empty badge_rows
+      assert_nil Game.find(@game.id).player_state['opsLog']
+    end
+
+    test 'badge: an rfid lock not in force (locked false) writes no row, door or object (m4 b)' do
+      edit = lambda do |data|
+        data['rooms']['badge_door']['locked'] = false
+        data['rooms']['finance']['objects'].find { |o| o['id'] == 'finance_cabinet' }['locked'] = false
+      end
+      logged_build(inventory: [keycard_item('visitor_badge'), keycard_item('jake_spare')], edit: edit)
+      door('badge_door', card_ids: ['VISITOR-07'])
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_empty badge_rows
+      # a refusal at a lock that is not in force writes no denied row either
+      door('power_room', card_ids: ['VISITOR-07'])
+      assert_equal %w[denied], badge_rows.map { |r| r['result'] }
+    end
+
+    test 'badge: a requires-only lock opened by an NPC keycard names its holder, a copy of it too (m4 c)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      door('jake_only', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+
+      logged_build(inventory: [CLONER.dup])
+      assert_equal true, clone_card(JAKE_CARD_ID, npc_id: 'jake')['recorded']
+      door('jake_only', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+    end
+
+    test 'badge: a malformed badge row call rolls the unlock back (m4 g)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      Game.class_eval do
+        alias_method :ops_badge_as_original, :ops_badge_as
+        define_method(:ops_badge_as) { |*_args| { npc: 'nobody_here' } }
+      end
+      begin
+        door('records', card_ids: [JAKE_CARD_ID])
+        assert_response :internal_server_error
+      ensure
+        Game.class_eval do
+          alias_method :ops_badge_as, :ops_badge_as_original
+          remove_method :ops_badge_as_original
+        end
+      end
+      assert_not Game.find(@game.id).room_unlocked?('records'), 'no grant without its row'
+      assert_empty badge_rows
+    end
+
+    test 'badge: a card-less rfid post at an open object answers alreadyOpen, logged or not (m4 h, m6)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      body = object('finance_cabinet')
+      assert_equal true, body['alreadyOpen']
+      assert_equal 1, badge_rows.size
+
+      build('unlockedRooms' => %w[lobby finance records])
+      body = door('records')
+      assert_response :success
+      assert_equal true, body['alreadyOpen'], 'a scenario with no logSources answers it too'
+    end
+
+    test 'badge: rfid_requires_card answers the matched card id or nil (m4 i)' do
+      logged_build(inventory: [keycard_item('visitor_badge')])
+      lock = { 'requires' => ['VISITOR-07'] }
+      assert_equal 'VISITOR-07', @game.send(:rfid_requires_card, lock)
+      assert_nil @game.send(:rfid_requires_card, { 'requires' => ['OTHER-99'] })
+      assert_nil @game.send(:rfid_requires_card, { 'requires' => [] })
+      assert_nil @game.send(:rfid_requires_card, {})
+
+      logged_build
+      assert_nil @game.send(:rfid_requires_card, lock), 'no card held'
+    end
+
+    test 'badge: a forged rfid post naming an NPC of a split gate writes no ok row (m5)' do
+      edit = lambda do |data|
+        (data['rooms']['lobby']['doors'] ||= []) << { 'connectedRoom' => 'badge_door', 'direction' => 'east',
+                                                       'gate' => { 'openFor' => ['len'] } }
+        data['rooms']['lobby']['objects'] << CLONER.merge('id' => 'floor_cloner') # a cloner makes the gate split
+      end
+      logged_build(inventory: [keycard_item('visitor_badge')], edit: edit)
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'badge_door', method: 'rfid',
+                                             attempt: 'len', card_ids: ['VISITOR-07'] }, as: :json
+      state = Game.find(@game.id)
+      assert_includes state.player_state['npcRouteRooms'].to_a, 'badge_door', 'the route-room branch was taken'
+      assert_not state.room_unlocked?('badge_door')
+      assert_empty badge_rows
     end
 
     test 'badge: a requires-only lock logs ok with the matched card, and a refusal logs denied' do

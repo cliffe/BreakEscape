@@ -104,13 +104,14 @@ module BreakEscape
       assert_response :success
       post lock_session_game_url(@game), params: { pc_id: 'office_pc' }, as: :json
       assert_response :success, response.body
-      login(DANA_PASSWORD) # the right password on a locked session unlocks it: no sign-in row
+      login(DANA_PASSWORD) # the right password on a locked session unlocks it: a second signin_ok, merged into the first row (n 2)
       post logout_game_url(@game), params: { pc_id: 'office_pc' }, as: :json
       assert_response :success
       rows = signin_rows
       assert_equal %w[signin_fail signin_ok session_lock session_end], rows.map { |r| r['event'] }
       assert_equal rows.map { |r| r['seq'] }.sort, rows.map { |r| r['seq'] }
       ok = rows[1]
+      assert_equal 2, ok['n'], 'the unlock is a second sign-in, merged into the earlier signin_ok row'
       assert_equal({ 'account' => 'dreyes' }, ok['as'])
       assert_equal({ 'method' => 'password', 'route' => 'keyboard' }, ok['detail'])
       assert_equal({ 'kind' => 'pc', 'id' => 'office_pc' }, ok['where'])

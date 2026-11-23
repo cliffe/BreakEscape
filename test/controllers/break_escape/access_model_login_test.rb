@@ -632,6 +632,36 @@ module BreakEscape
       assert_equal({ 'account' => 'jbrooks' }, signin_rows.first['as'])
     end
 
+    test 'ops log: a claimed guest session signed out writes session_end with no identity (m1)' do
+      build_logged
+      @game.player_state['sessions'] = { 'jake_pc' => { 'id' => 'len', 'via' => 'claim' } }
+      @game.player_state['guestSessions'] = { 'jake_pc' => 'len' }
+      @game.save!
+      assert_nil @game.send(:ops_account_as, 'len'), 'len holds no account'
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_response :success, response.body
+      assert_equal ['session_end'], events_of(signin_rows)
+      assert_nil signin_rows.first['as']
+      assert_equal({ 'kind' => 'pc', 'id' => 'jake_pc' }, signin_rows.first['where'])
+    end
+
+    test 'ops log: signin_ok names method credential and each route code (m4 d)' do
+      build_logged
+      jake = @game.account_npcs.find { |n| n['id'] == 'jake' }
+      {
+        'keyboard' => {},
+        'foothold' => { foothold: 'fh1' },
+        'from' => { from: 'office_pc' },
+        'relay' => { relay: true }
+      }.each do |route, opts|
+        @game.send(:start_login_session!, 'jake_pc', jake, 'password', **opts)
+        assert_equal({ 'method' => 'password', 'route' => route }, @game.log_rows_for('signins').last['detail'])
+      end
+      @game.send(:start_login_session!, 'jake_pc', jake, 'credential', credential: 'tok')
+      assert_equal({ 'method' => 'credential', 'route' => 'keyboard' }, @game.log_rows_for('signins').last['detail'])
+      assert_equal 5, @game.log_rows_for('signins').size
+    end
+
     test 'ops log: start_login_session! with via claim or technique writes no signin_ok and does not raise' do
       build_logged
       jake = @game.account_npcs.find { |n| n['id'] == 'jake' }
@@ -695,6 +725,18 @@ module BreakEscape
       assert_equal 10, blocked.size
       assert(blocked.all? { |r| r['result'] == 'blocked' && r['as']['typed'].start_with?('ghost') })
       assert_equal [stamps[9]], stamps.last(2).uniq, 'the rest cause no save'
+    end
+
+    test 'ops log: denied attempts at a PC do not spend its blocked stored rows (m4 e)' do
+      build_logged
+      5.times { login('ghost', 'nope', pc_id: 'it_pc') } # the lockout of "ghost" at it_pc
+      12.times { login('jbrooks', JAKE_PASSWORD, pc_id: 'it_pc') } # denied, past its ten stored saves
+      before = Game.find(@game.id).updated_at
+      login('ghost', 'nope', pc_id: 'it_pc')
+      assert_equal true, response.parsed_body['lockedOut']
+      blocked = signin_rows.select { |r| r['result'] == 'blocked' }
+      assert_equal 1, blocked.size, 'the blocked row is stored although denied is spent'
+      assert_not_equal before, Game.find(@game.id).updated_at, 'and it cost a save'
     end
 
     test 'ops log: sign-out at a PC with no session writes nothing, a held one writes session_end' do
