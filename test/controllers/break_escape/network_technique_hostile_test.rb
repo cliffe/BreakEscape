@@ -201,7 +201,8 @@ module BreakEscape
       ]
       minted.each do |item|
         post game_path('inventory'), params: { action_type: 'add', item: item }, as: :json
-        assert_operator response.status, :<, 500, response.body
+        assert_response :unprocessable_entity, response.body
+        assert_equal({ 'success' => false, 'message' => 'Item not found in scenario: technique_card' }, response.parsed_body)
       end
       assert_equal %w[footholds], network_view.keys, 'no card is listed'
       (minted.map { |item| item[:id] } + %w[card_factory card_build]).each do |item|
@@ -309,15 +310,33 @@ module BreakEscape
     test 'another player cannot use a game they do not own, and a foothold held only in their own game is no foothold here' do
       hostile_game
       state = Game.find(@game.id).player_state.deep_dup
+      mine_before = log_free(Game.find(@game.id).player_state)
+      # A copy of this game owned by another player: the same footholds, card and findings, but not the caller's.
       other = create_access_game(mission: @game.mission, player: break_escape_demo_users(:other_user), scenario: hostile_scenario, player_state: state)
+      get "/break_escape/games/#{other.id}/objectives", as: :json
+      expected = [response.status, response.body]
+      refute_equal 200, expected.first
       before = other.reload.player_state.deep_dup
-      post "/break_escape/games/#{other.id}/network/technique", params: { foothold: OFFICE, finding_id: fid('factory_login'), item_id: 'card_factory' }, as: :json
-      refute response.successful?, 'a game the player does not own answers no technique'
-      refute_includes response.body, 'session'
-      assert_equal before, other.reload.player_state
-      post "/break_escape/games/#{other.id}/network/technique", params: { foothold: OFFICE, finding_id: 'sam_pc.web.invented', item_id: 'x' }, as: :json
-      refute response.successful?
-      assert_equal before, other.reload.player_state
+      [[OFFICE, fid('factory_login'), 'card_factory'], [OFFICE, 'sam_pc.web.invented', 'x']].each do |foothold, finding, item|
+        post "/break_escape/games/#{other.id}/network/technique", params: { foothold: foothold, finding_id: finding, item_id: item }, as: :json
+        assert_equal expected, [response.status, response.body], 'the one answer of any route on a game that is not theirs'
+        refute_includes response.body, 'session'
+        assert_equal before, other.reload.player_state
+      end
+      assert_equal mine_before, log_free(Game.find(@game.id).player_state), 'nothing written into the caller\'s own game either'
+      assert_empty rows('technique_used')
+    end
+
+    test 'a foothold and card held in the caller\'s own game are nothing in another game of theirs that holds neither' do
+      hostile_game
+      own_before = log_free(Game.find(@game.id).player_state)
+      empty = create_access_game(mission: @game.mission, player: @game.player, scenario: hostile_scenario, player_state: {})
+      before = empty.reload.player_state.deep_dup
+      post "/break_escape/games/#{empty.id}/network/technique", params: { foothold: OFFICE, finding_id: fid('factory_login'), item_id: 'card_factory' }, as: :json
+      assert_response :not_found
+      assert_equal NOT_FOUND_JSON, response.body
+      assert_equal before, empty.reload.player_state
+      assert_equal own_before, log_free(Game.find(@game.id).player_state), 'the game that holds them is not touched'
     end
 
     test 'an unplugged foothold ends the session and the same request is the one 404, not a repeat' do
@@ -419,7 +438,8 @@ module BreakEscape
       extras = { access: 'admin', via: 'password', grant: 'credential', technique: 'build_flaw', account: 'ian', as: 'ian', npc: 'ian', username: 'ian',
                  session: { id: 'ian', via: 'password', access: 'admin' }, opsUsed: [NOS::SPOOL], opsFindings: { fid('raw_one') => 'c1' }, clientAdded: true,
                  grants: { session: { account: 'ian', access: 'admin' } }, worksOn: { class: 'any' }, status: 'confirmed', alias: 'f1', host_id: 'lab_box',
-                 network_id: 'office_lan', 'foothold[]' => 'jack_x', id: 'factory_login' }
+                 network_id: 'office_lan', 'foothold[]' => 'jack_x', id: 'factory_login',
+                 credential: 'print_admin', credential_id: 'print_admin', pc_id: 'lena_pc', level: 'admin' }
       base = { foothold: OFFICE, finding_id: fid('old_build'), item_id: 'card_factory' }
       plain = ops_technique(OFFICE, fid('old_build'), 'card_factory')
       plain_status = response.status
@@ -443,6 +463,21 @@ module BreakEscape
       assert_equal [fid('factory_login')], ops_state['opsUsed']
       assert_equal 'factory_accounts', rows('technique_used').first['detail']['technique']
       assert_equal 'user', rows('technique_used').first['detail']['access']
+    end
+
+    test 'extra parameters on a credential grant change nothing: the body is exactly success, grant and keyringChanged' do
+      hostile_game
+      extras = { credential: 'lab_admin', credential_id: 'lab_admin', pc_id: 'lena_pc', level: 'admin', access: 'admin', account: 'lena', grant: 'session',
+                 session: { id: 'lena', access: 'admin' }, username: 'lfox', id: 'lab_admin', opsUsed: ['lab_box.web.lab_open'] }
+      post game_path('network/technique'), params: { foothold: OFFICE, finding_id: NOS::SPOOL, item_id: 'card_factory' }.merge(extras), as: :json
+      assert_response :success, response.body
+      assert_equal({ 'success' => true, 'grant' => 'credential', 'keyringChanged' => true }, response.parsed_body)
+      assert_equal [NOS::SPOOL], ops_state['opsUsed'], 'only the finding named in the request is recorded'
+      assert_empty ops_state['sessions'].to_h
+      assert_includes keyring_ids, 'print_admin'
+      refute_includes keyring_ids, 'lab_admin'
+      assert_equal 'credential', rows('technique_used').first['detail']['grant']
+      assert_nil rows('technique_used').first['detail']['access']
     end
 
     # ---- state the client must not be able to set ------------------------------------------------
@@ -530,10 +565,17 @@ module BreakEscape
       hostile_game
       before = server_values.deep_dup
       forged = forged_body
+      expected = { 'sync_state' => [200, { 'success' => true }],
+                   'update_room' => [400, { 'success' => false, 'message' => 'Missing roomId or actionType' }],
+                   'inventory' => [400, { 'success' => false, 'message' => 'Invalid action' }],
+                   'login' => [400, { 'success' => false, 'message' => 'Missing pc_id' }],
+                   'logout' => [400, { 'success' => false, 'message' => 'Missing pc_id' }],
+                   'unlock' => [422, { 'success' => false, 'message' => 'Invalid attempt' }],
+                   'network/scan' => [400, BAD_REQUEST], 'network/check' => [400, BAD_REQUEST], 'network/confirm' => [400, BAD_REQUEST] }
       [[:put, 'sync_state'], [:post, 'update_room'], [:post, 'inventory'], [:post, 'login'], [:post, 'logout'], [:post, 'unlock'],
        [:post, 'network/scan'], [:post, 'network/check'], [:post, 'network/confirm']].each do |verb, path|
         send(verb, game_path(path), params: forged, as: :json)
-        assert_operator response.status, :<, 500, "#{path}: #{response.body[0, 200]}"
+        assert_equal expected[path], [response.status, response.parsed_body], "#{path}: a forged body is refused as ever"
         assert_equal before, server_values, "#{path} changed a server-owned key"
       end
     end
@@ -564,7 +606,9 @@ module BreakEscape
     test 'the same granted credential request sent many times is one opsUsed entry with keyringChanged false after the first' do
       hostile_game
       OpsLog.with_clock(1_763_550_000_000) do
-        bodies = Array.new(25) { ops_technique(OFFICE, NOS::SPOOL, 'card_factory') }
+        bodies = []
+        counts = Array.new(25) { saves_during { bodies << ops_technique(OFFICE, NOS::SPOOL, 'card_factory') } }
+        assert_equal [1] + [1] * 10 + [0] * 14, counts, 'the grant saves once, a stored repeat saves, a dropped repeat saves nothing'
         assert_equal true, bodies.first['keyringChanged']
         assert(bodies.drop(1).all? { |body| body == { 'success' => true, 'already' => true, 'grant' => 'credential', 'keyringChanged' => false } })
       end
