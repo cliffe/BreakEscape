@@ -3097,7 +3097,10 @@ module BreakEscape
       # Network ops S2 (OPS_CORE_PLAN.md 8): { findingId => "<u|c|f><n>" }, the findings the player
       # holds (status letter and alias number). Server-written only, never in a sync body, the
       # bootstrap or any answer whole; findings ride on host rows.
-      'opsFindings' => {}
+      'opsFindings' => {},
+      # Network ops S3 (OPS_CORE_PLAN.md 8): [findingId], the findings a technique card was used on
+      # (a credential grant, once each). Server-written only, never in a sync body or any answer.
+      'opsUsed' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -4563,7 +4566,7 @@ module BreakEscape
     # Keyring K2: credential: (a registry id) with via 'credential', and the route: foothold:
     # or relay: true (K4 adds from:). A relay sign-in is not recorded in signedInPcs, so it
     # never proves a `session` credential or completes a sign-in task.
-    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false, from: nil)
+    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false, from: nil, access: nil, technique: nil)
       # A password (or remote) sign-in at a PC ends a guest session there (review R1 M1): one
       # screen holds one session. A claim is the guest's own session, or an owner's at an owned PC.
       # A relay sign-in keeps that rule (one screen, one session; plan 7.2).
@@ -4582,6 +4585,9 @@ module BreakEscape
       # Keyring K4: a sign-in from a desktop records its source PC (plan 3.8)
       record['from'] = from.to_s if from.present?
       record['relay'] = true if relay
+      # Network ops S3 (plan 5.4): a technique session records its level and the finding that granted it
+      record['access'] = access.to_s if access.present?
+      record['technique'] = technique.to_s if technique.present?
       player_state['sessions'][pc_id.to_s] = record
       # Ops log L1b: a typed password or a credential; a claim, and S3's technique, write no
       # sign-in row here. Both callers save.
@@ -4629,6 +4635,7 @@ module BreakEscape
       answer['portrait'] = portrait if portrait
       answer['avatar'] = npc['avatar'] if npc['avatar'].is_a?(String) && !npc['avatar'].empty?
       answer.merge!(credential_session_fields(credential)) if credential.present?
+      answer['access'] = 'admin' if pc_id.present? && client_access_level(pc_id) == 'admin'
       if relay
         pc = find_login_pc(pc_id)&.dig(:object)
         return answer.merge('relay' => true, 'host' => pc ? host_label(pc) : pc_id.to_s)
@@ -4643,6 +4650,13 @@ module BreakEscape
 
       pc = find_login_pc(pc_id)&.dig(:object)
       answer.merge('remote' => true, 'footholdId' => foothold, 'host' => pc ? host_label(pc) : pc_id.to_s)
+    end
+
+    # The level the client is told for a session at a PC (OPS_CORE_PLAN.md 0): 'admin' or 'user'.
+    # Reads the stored key for now; S5a points it at session_access(pc_id).
+    def client_access_level(pc_id)
+      session = access_sessions[pc_id.to_s]
+      session.is_a?(Hash) && session['access'] == 'admin' ? 'admin' : 'user'
     end
 
     # Each sign-in PC in a filtered room carries its account tiles (5.3), read from the
