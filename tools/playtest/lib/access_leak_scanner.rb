@@ -226,6 +226,7 @@ class AccessLeakScanner
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
     @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
+    @ops_global_names = {}   # global name => [owners]: judged as a JSON KEY too (scan_ops_global_keys)
     @ops_strings = {}        # string => [{ tag:, net:, host:, owner:, token: }] (ops core S1, collect_ops_secrets)
     @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>", "check:<host>.<service>", "confirm:<finding>"
     @ops_host_ids = Set.new  # every host id of the scenario (the structural services rule)
@@ -364,6 +365,7 @@ class AccessLeakScanner
       scan_network_strings(body, ctx, add)
       note_ops_steps(body, ctx)
       scan_ops_strings(body, ctx, add)
+      scan_ops_global_keys(body, add)
       scan_ops_services(body, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -1924,20 +1926,48 @@ class AccessLeakScanner
     add_ops_string(definition['name'], :confirm, owner, usable: usable, step: fid) if definition.is_a?(Hash)
   end
 
-  # A global's name used in `needs.global` or `fixedIf` never reaches the browser as a string value. (Only
-  # string values are judged, never keys, so the bootstrap's declared `globalVariables`, which sends the
-  # name as a key as ever, is not a finding.)
+  # A global's name used in `needs.global` or `fixedIf` never reaches the browser, as a string value or as a
+  # JSON key (plan section 7: "`fixedIf` and its global: never", and "no ... global name ever"). The one
+  # place a name legitimately rides as a key is a `globalVariables` map: the bootstrap sends the declared
+  # globals the client holds as ever, and `needs.global` must name a declared global, so every such name
+  # is there. A key that is a direct child of a `globalVariables` hash is therefore not judged; a key
+  # anywhere else (a finding row, a room, a check answer) is.
   def collect_ops_globals(entry, owner, usable)
     [entry['fixedIf'], (entry['needs'].is_a?(Hash) ? entry['needs']['global'] : nil)].each do |cond|
       names = cond.is_a?(Hash) ? cond.keys : [cond]
-      names.each { |name| add_ops_string(name, :never, owner, usable: usable) }
+      names.each do |name|
+        add_ops_string(name, :never, owner, usable: usable)
+        (@ops_global_names[name.strip] ||= []) << owner if usable.call(name)
+      end
+    end
+  end
+
+  def scan_ops_global_keys(body, add)
+    return if @ops_global_names.empty?
+
+    each_key_path(body) do |key, json_path|
+      (@ops_global_names[key.to_s.strip] || []).uniq.each { |owner| add.call('ops_string', owner, safe_path(json_path)) }
+    end
+  end
+
+  # Yields every hash key with its JSON path, except a direct child key of a `globalVariables` hash.
+  def each_key_path(node, path = '$', &block)
+    case node
+    when Array then node.each_with_index { |v, i| each_key_path(v, "#{path}[#{i}]", &block) }
+    when Hash
+      declared = path.end_with?('.globalVariables')
+      node.each do |k, v|
+        yield k, "#{path}.#{k}" unless declared
+        each_key_path(v, "#{path}.#{k}", &block)
+      end
     end
   end
 
   # The `module` of every catalog entry the scenario does not link is never sent.
   def collect_ops_catalog_never(linked, usable)
     with_ops_catalog do
-      BreakEscape::RealismCatalog.send(:state)[:map].each do |id, entry|
+      BreakEscape::RealismCatalog.entry_ids.each do |id|
+        entry = BreakEscape::RealismCatalog.lookup(id)
         next if linked.include?(id) || !entry.is_a?(Hash)
 
         add_ops_string(entry['module'], :never, "ops:catalog:#{id}", usable: usable)

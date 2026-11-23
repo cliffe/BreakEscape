@@ -36,12 +36,12 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/responses-<game_id>.jsonl
 ```
 
-`verify-run.rb --access` prints the `opsDiscovered` line (networks, hosts, then checked services as `<host>.<service>`);
-`--ops-log` prints the `findings_audit` rows and exits 1 on a stored secret. If `--access` prints no `opsFindings` line (the tooling step
-adds it), read it with a read-only one-liner and compare with the beat's "Server" line:
-`env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner 'puts BreakEscape::Game.find(<game_id>).player_state["opsFindings"].inspect'`.
-The leak check must report no leaks after every beat; its check-stage entries (class, summary, reason, need strings) come with the tooling
-step, so until then also look at the raw answers for the strings listed in beats 2 and 12.
+`verify-run.rb --access` prints the `opsDiscovered` line (networks, hosts, then checked services as `<host>.<service>`) and the
+`opsFindings` line (`f1 <finding id> <status word>; ...` in alias order; compare it with the beat's "Server" line);
+`--ops-log` prints the `findings_audit` rows and exits 1 on a stored secret.
+The leak check must report no leaks after every beat. Its check-stage tags cover the class, severity and summary of a finding
+(`check:<host>.<service>`), a decoy's reason and a real finding's need labels (`confirm:<finding id>`); a string tagged `never`
+(a link id, a global name, an unlinked entry's module) is a leak at any stage.
 
 ## Layout
 

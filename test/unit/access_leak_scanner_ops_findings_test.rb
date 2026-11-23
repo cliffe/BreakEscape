@@ -153,6 +153,19 @@ class AccessLeakScannerOpsFindingsTest < ActiveSupport::TestCase
     assert_includes owners(scan([row({ 'text' => S::DOOR_GLOBAL }, path: ROOM)])), "ops:finding:#{S::SIDE_ENTRY}"
   end
 
+  test 'a global name as a JSON key outside globalVariables is a leak, at any depth, and is not printed' do
+    side = { 'id' => S::SIDE_ENTRY, 'extra' => { S::DOOR_GLOBAL => true } }
+    found = scan([row({ 'footholds' => [{ 'hosts' => [side] }] })])
+    assert_equal ["ops:finding:#{S::SIDE_ENTRY}"], owners(found)
+    refute(found.any? { |f| f.json_path.to_s.include?(S::DOOR_GLOBAL) }, 'the report shows the redacted path')
+    fixed_key = scan([row({ 'a' => [{ S::PATCHED_GLOBAL => false }] }, path: ROOM)])
+    assert_includes owners(fixed_key), "ops:finding:#{S::FACTORY}"
+    mapped = scan([row({ 'note' => { 'globalVariables' => { S::DOOR_GLOBAL => false } } }, path: ROOM)])
+    assert_empty mapped, 'a globalVariables map is the declared-globals place, wherever it is'
+    nested = scan([row({ 'globalVariables' => { 'deeper' => { S::DOOR_GLOBAL => true } } }, path: BOOT)])
+    assert_includes owners(nested), "ops:finding:#{S::SIDE_ENTRY}", 'only the direct children of globalVariables are exempt'
+  end
+
   test 'the structural rule: a services key or scanned true on a known host row is a leak before its scan, whatever the strings' do
     bare = { 'id' => 'sam_pc', 'kind' => 'pc', 'services' => [{ 'name' => 'x1', 'port' => 22 }] }
     view = row({ 'footholds' => [{ 'hosts' => [bare] }] })
