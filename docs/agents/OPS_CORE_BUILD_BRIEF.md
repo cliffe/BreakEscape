@@ -160,3 +160,13 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   saved global, in the globals namespace; the server state key `player_state['opsUsed']` is
   separate and untouched. Accepted: existing behaviour for any global name. A test should pin
   that the keyring proof and `use_technique!` read only the state key.
+- 2026-11-23, S2 R2 rulings: M1 and M2 (leak scanner) are fixed by STRUCTURAL rules, not
+  strings: before `confirm:<id>` a finding row may carry only the unconfirmed key set
+  (`needs`, `fixed`, `falseBecause` or a settled status there is a leak); the key names
+  `fixedIf`, `grants`, `realism` (and any other key section 7 lists as never sent) are a leak
+  wherever they appear in an answer; a gating global's name inside a finding row is a leak
+  whatever is public elsewhere. N6, the `globalVariables` exemption applies only to the
+  bootstrap's top-level map. N4 stays (sound, loose). N5 and N1 are S3's: noted for the S3
+  scanner and needs work (a credential need met by an expired token or ended invite; labels
+  tagged confirm). N10, beat 1's count is whatever the server lists: the script states the
+  real number and what it counts.
