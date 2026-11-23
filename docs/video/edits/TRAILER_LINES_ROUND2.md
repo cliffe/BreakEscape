@@ -95,3 +95,12 @@ Opus 5.5 review of the T345 lines, the m10 pick and the casualty options: `docs/
 | m09 hook | unchanged | With the owner (`m09hookfix` on the page). |
 
 The m04 casualty options (`fifty`, `signed`) are dropped: the owner picked the schedule line. The as-inked review is "As-inked review, round 2" in `docs/video/logs/T345_LINES_DIALOGUE_REVIEW.md`.
+
+## Placeholders in the game (2026-11-23, AC0's direction)
+
+AC0 relayed the owner's direction: where an answer is still owed, put the recommended option in as a placeholder and keep going. Both m09 lines are now in the ink and voiced, pending the owner's `m09cage` and `m09hookfix` answers:
+
+- **m09 cage** (`m09_sorensen_cage.ink` `start`, replacing "It's only paper..."): "Everyone ENTROPY ever placed was filed in this building, dear. By morning, I'll be the only index you can ask." Clip a88b67a8.
+- **m09 hook** (`m09_briefing.ink`): "Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it." Clip 01cdb48f.
+
+All 49 m09 routes pass. The validator's warnings and the six dialogue-lint findings are on other lines, not these two. The replaced lines' clips stay in `tts_cache/` until the owner answers, so either wording can go back without re-voicing.
