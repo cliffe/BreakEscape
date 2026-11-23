@@ -520,13 +520,32 @@
     flex-wrap: wrap;
 }
 
+/* A device card holds its icon fully inside, with room above and below it (R2 P2), and a
+   row's cards share the row's height: the grid stretches them, the content stays centred */
+.network-row[data-kind="device"] {
+    align-content: center;
+    box-sizing: border-box;
+    min-height: 60px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.network-row[data-kind="device"] .network-row-icon {
+    align-self: center;
+}
+
+/* The tiles sit on their own line under the icon and name, inside the card. The 80px indent
+   is padding in a border-box, not a margin, so it cannot push the line past the right edge
+   (R2 P1); a long tile wraps */
 .network-service-tiles {
     flex: 1 0 100%;
+    min-width: 0;
+    box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin: 2px 0 2px 80px;
-    padding: 0;
+    margin: 2px 0;
+    padding: 0 0 0 80px;
     list-style: none;
 }
 
@@ -536,4 +555,8 @@
     background: #131b22;
     color: #cfe9f5;
     font-size: 16px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
 }
