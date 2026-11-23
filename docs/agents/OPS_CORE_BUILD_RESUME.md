@@ -33,12 +33,16 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
 - L1a items 5 to 8 DONE: `ecbbe549b`, `996f1cd51`, `e9be86ba4`, note `87f9e4208`
   (`HANDOVER_L1a_5-8.md`). L1a is built. Node tests need
   `PATH=/home/deploy/.local/node-v22.11.0-linux-x64/bin:$PATH`.
-- RUNNING: L1b items 1 and 2 builder (Sonnet; note `HANDOVER_L1b_1-2.md`); L1a review R1
-  (fable52L, of `31c406dcb..87f9e4208`, findings `ops_core_build/reviews/L1a_R1.md`, does not
-  commit: commit the file by path when it reports).
-- Next: L1b item 3 builder (`test_ops_logs`, PLAYTEST.md, docs A24 write side); a Sonnet
-  fixer for L1a R1 findings (after the L1b builder is out of `game.rb`); L1b review; delta
-  review; Haiku scripted playtest of `test_ops_logs`; train check; land; push.
+- L1b BUILT: items 1 and 2 `1530fec5e`, `28c6f6cad`; item 3 `1a637d36e`, docs `66101d30d`
+  (`scenarios/test_ops_logs/`, PLAYTEST.md not yet run in a browser; notes
+  `HANDOVER_L1b_1-2.md`, `HANDOVER_L1b_3.md`).
+- L1a R1 review: 0B 1M 17m, `ef5f8fff6` (`reviews/L1a_R1.md`); rulings in the brief.
+- RUNNING: L1a R1 fixer (Sonnet; appends "R1 outcomes" to the findings file); L1b R1 review
+  (fable52L, findings `reviews/L1b_R1.md`, does not commit).
+- Next: commit L1b findings; Sonnet fixer for L1b; then ONE delta review R2 over both fix
+  sets (fable52L: it touches secret handling); Haiku scripted playtest of `test_ops_logs`
+  from its PLAYTEST.md on a keyless server from this worktree (a Sonnet check of any "stuck");
+  train check; merge to main; push; merge main back. Then core step 1.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
