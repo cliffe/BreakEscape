@@ -271,6 +271,7 @@ module BreakEscape
     end
 
     def with_catalog(&block)
+      RealismCatalog.reset_warned!
       RealismCatalog.with_folder(CATALOG, &block)
     end
 
@@ -318,6 +319,10 @@ module BreakEscape
         assert_equal %w[title module script advisories output], finding_in(body, NOS::FACTORY)['cli'].keys
         assert_equal({ 'title' => 'FX-TITLE-PANEL placeholder panel setting', 'module' => 'example/fx/panel' },
                      finding_in(body, NOS::OPEN_LISTING)['cli'], 'only the keys the entry has')
+        confirmed = ops_confirm(OFFICE, NOS::FACTORY)['finding']['cli']
+        assert_equal %w[title module script advisories output], confirmed.keys, 'the confirm answer'
+        listed = view_hosts.find { |h| h['id'] == 'sam_pc' }['findings'].find { |f| f['id'] == NOS::FACTORY }['cli']
+        assert_equal %w[title module script advisories output], listed.keys, 'GET /network'
       end
     end
 
@@ -398,11 +403,19 @@ module BreakEscape
           get game_path("room/#{room_id}"), as: :json
           texts << response.body
         end
+        ops_scan(OFFICE, host_id: 'print_srv')
         ops_check(OFFICE, host_id: 'print_srv', service: 'queue')
+        assert_equal 200, response.status
         texts << response.body
         ops_confirm(OFFICE, NOS::SPOOL)
         texts << response.body
         ops_check(OFFICE, host_id: 'sam_pc')
+        texts << response.body
+        ops_check(OFFICE, host_id: 'no_such_host', service: 'web')
+        assert_equal 404, response.status
+        texts << response.body
+        ops_confirm(OFFICE, 'sam_pc.web.never_held')
+        assert_equal 404, response.status
         texts << response.body
         sync_globals('x' => true)
         texts << response.body
@@ -410,8 +423,10 @@ module BreakEscape
         texts << response.body
         texts.each do |text|
           everything.each { |t| refute_includes text, t, t }
-          refute_includes text, '"cli"' unless text.include?('"findings"')
+          refute_includes text, '"cli"'
         end
+        # the list holds an unlinked findings answer and refusal bodies, and none of them has a cli key
+        assert(texts.any? { |t| t.include?('"findings"') && !t.include?('"cli"') }, 'an unlinked findings answer is in the list')
       end
     end
 
@@ -441,6 +456,69 @@ module BreakEscape
         base = RealismCatalog.with_folder(CATALOG) { run.call({}) }
         changed = RealismCatalog.with_folder(dir) { run.call({}) }
         assert_equal base, changed
+      end
+    end
+
+    # m1: GET /network rebuilds every held finding every five seconds; the one unresolved link must not
+    # write a warning each time.
+    test 'S2 cli: an unresolved link warns once for the process however often the finding is built' do
+      with_catalog do
+        hold_linked
+        ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        log = warnings_during do
+          3.times { network_view(OFFICE) }
+          ops_confirm(OFFICE, NOS::SIDE_ENTRY)
+          ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        end
+        assert_equal 0, log.scan('fx_missing').length, 'the first build already warned; nothing repeats it'
+        fresh = RealismCatalog.with_folder(CATALOG) do
+          RealismCatalog.reset_warned!
+          warnings_during { 3.times { network_view(OFFICE) } }
+        end
+        assert_equal 1, fresh.scan('fx_missing').length, 'three refetches, one warning'
+      end
+    end
+
+    # m2: the shape of a catalog entry is not trusted: only strings and arrays of strings are copied.
+    test 'S2 cli: a catalog entry with nested objects, a nested note key, a number or an empty string sends only strings and arrays of strings' do
+      Dir.mktmpdir do |dir|
+        entry = { 'title' => 12_345, 'module' => 'example/odd/module', 'script' => '',
+                  'advisories' => { '_' => 'NESTED-NOTE', 'a' => 'NESTED-ADV' },
+                  'output' => ['ODD-LINE-1', { '_' => 'NESTED-NOTE-2', 'x' => 'ODD-OBJ' }, 7, '', 'ODD-LINE-2'], '_' => 'TOP-NOTE' }
+        File.write(File.join(dir, 'odd.json'), JSON.generate('entries' => { 'fx_login' => entry }))
+        RealismCatalog.with_folder(dir) do
+          hold_linked('old_banner' => nil, 'open_listing' => nil, 'side_entry' => nil)
+          ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+          cli = finding_in(response.parsed_body, NOS::FACTORY)['cli']
+          assert_equal({ 'module' => 'example/odd/module', 'output' => %w[ODD-LINE-1 ODD-LINE-2] }, cli)
+          %w[NESTED-NOTE NESTED-ADV TOP-NOTE ODD-OBJ 12345].each { |t| refute_includes response.body, t }
+        end
+      end
+    end
+
+    # m10: a catalog folder that failed to load answers as if no finding were linked.
+    %w[fault_parse fault_dup_id fault_dup_module].each do |fault|
+      test "S2 cli: a linked finding with the #{fault} catalog folder answers as normal with no cli key" do
+        folder = File.expand_path("../../fixtures/realism_catalog/#{fault}", __dir__)
+        unlinked = { 'factory_login' => nil, 'old_banner' => nil, 'open_listing' => nil, 'side_entry' => nil }
+        run = lambda do |links|
+          hold_linked(links)
+          out = [ops_check(OFFICE, host_id: 'sam_pc', service: 'web')['findings'].map { |f| [f['id'], f['alias'], f['status']] }, response.status]
+          texts = [response.body]
+          out << [ops_confirm(OFFICE, NOS::FACTORY)['finding'], response.status]
+          texts << response.body
+          out << view_hosts.find { |h| h['id'] == 'sam_pc' }['findings']
+          texts << response.body
+          out << ops_rows.map { |r| r.slice('event', 'where', 'detail', 'result') }
+          out << ops_state['opsFindings']
+          [out, texts]
+        end
+        base, = RealismCatalog.with_folder(CATALOG) { run.call(unlinked) }
+        faulty = nil
+        log = warnings_during { faulty = RealismCatalog.with_folder(folder) { run.call({}) } }
+        assert_equal base, faulty[0], 'the same statuses, aliases, rows and state as with no links'
+        faulty[1].each { |text| refute_includes text, '"cli"' }
+        assert_includes log, 'catalog not loaded', 'the loader warned once'
       end
     end
   end

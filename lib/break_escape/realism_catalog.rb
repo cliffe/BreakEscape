@@ -2,6 +2,7 @@
 
 require 'json'
 require 'monitor'
+require 'set'
 
 module BreakEscape
   # The realism catalog loader (docs/achitechture/OPS_CORE_PLAN.md section 5.3, "The catalog loader").
@@ -28,6 +29,31 @@ module BreakEscape
         nil
       end
 
+      # The catalog ids, sorted (a new array each call); empty when the catalog failed closed.
+      def entry_ids
+        state[:map].keys.sort
+      rescue StandardError
+        []
+      end
+
+      # Warns once per link id per process that a finding's link resolves to nothing, and not at
+      # all while the loader's own fault warning stands (it has already said why).
+      def warn_unresolved(link)
+        return nil unless faults.empty?
+
+        key = link.to_s[0, 64]
+        fresh = LOCK.synchronize { warned_links.add?(key) }
+        log_message("ops finding: realism link '#{key}' resolves to no catalog entry") if fresh
+        nil
+      rescue StandardError
+        nil
+      end
+
+      # Forget which links were warned (tests).
+      def reset_warned!
+        LOCK.synchronize { warned_links.clear }
+      end
+
       # Load faults, each { 'file' => basename, 'fault' => kind }; never catalog text.
       def faults
         state[:faults]
@@ -52,6 +78,10 @@ module BreakEscape
       private
 
       EMPTY_FAULTS = [].freeze
+
+      def warned_links
+        @warned_links ||= Set.new
+      end
 
       def state
         LOCK.synchronize { @state ||= load_folder(@folder || DEFAULT_FOLDER) }
@@ -108,7 +138,10 @@ module BreakEscape
 
       def log_warning(faults)
         text = faults.map { |f| "#{f['file']}: #{f['fault']}" }.join('; ')
-        message = "RealismCatalog: catalog not loaded (empty map): #{text}"
+        log_message("RealismCatalog: catalog not loaded (empty map): #{text}")
+      end
+
+      def log_message(message)
         if defined?(Rails) && Rails.respond_to?(:logger) && Rails.logger
           Rails.logger.warn(message)
         else

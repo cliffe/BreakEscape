@@ -33,6 +33,7 @@ module BreakEscape
     # The catalog entry keys a finding's `cli` may copy (5.3), in this order, by name only: never a
     # `_` note, never the link id, never the entry as a whole.
     CLI_FINDING_KEYS = %w[title module script advisories output].freeze
+    CLI_LIST_KEYS = %w[advisories output].freeze
     # What the view shows for a finding with no authored summary: one plain line per class.
     CLASS_SUMMARIES = {
       'default_creds' => 'A factory or default account may still be accepted.',
@@ -307,16 +308,28 @@ module BreakEscape
 
       linked = BreakEscape::RealismCatalog.lookup(link)
       unless linked.is_a?(Hash)
-        Rails.logger.warn("ops finding: realism link '#{link[0, 64]}' resolves to no catalog entry")
+        BreakEscape::RealismCatalog.warn_unresolved(link)
         return nil
       end
 
       out = {}
       CLI_FINDING_KEYS.each do |key|
-        value = linked[key]
-        out[key] = value.deep_dup unless value.nil? || (value.respond_to?(:empty?) && value.empty?)
+        value = ops_cli_value(key, linked[key])
+        out[key] = value if value
       end
       out.empty? ? nil : out
+    end
+
+    # One `cli` value by type: a non-empty String for title, module and script; the Strings of an
+    # Array for advisories and output (nil when none is left). Nothing nested is ever copied, so a `_`
+    # note key cannot ride along.
+    def ops_cli_value(key, value)
+      if CLI_LIST_KEYS.include?(key)
+        list = value.is_a?(Array) ? value.select { |item| item.is_a?(String) && !item.empty? }.map(&:dup) : []
+        list.empty? ? nil : list
+      else
+        value.is_a?(String) && !value.empty? ? value.dup : nil
+      end
     end
 
     def ops_finding_summary(entry)
@@ -335,8 +348,10 @@ module BreakEscape
       rows = []
       rows << ops_need_credential(needs['credential']) if needs['credential'].is_a?(String)
       rows << ops_need_item(needs['item']) if needs['item'].is_a?(String)
-      if needs['itemType'].is_a?(String) && needs['itemType'] != 'technique_card'
-        rows << { 'kind' => 'itemType', 'label' => needs['label'].to_s, 'met' => ops_item_type_held?(needs['itemType']) }
+      if needs['itemType'].is_a?(String)
+        # A technique card is refused as an itemType need (plan 348): the row stays and is never met.
+        met = needs['itemType'] != 'technique_card' && ops_item_type_held?(needs['itemType'])
+        rows << { 'kind' => 'itemType', 'label' => needs['label'].to_s, 'met' => met }
       end
       if BreakEscape::AccessWork.off_when_present?(needs['global'])
         rows << { 'kind' => 'global', 'label' => needs['label'].to_s,
@@ -348,7 +363,13 @@ module BreakEscape
     def ops_need_credential(cred_id)
       entry = CredentialModel.registry(scenario_data)[cred_id]
       label = entry.is_a?(Hash) ? ops_credential_label(entry) : ''
-      { 'kind' => 'credential', 'label' => label, 'met' => entry.is_a?(Hash) && credential_proof_holds?(cred_id, entry) }
+      { 'kind' => 'credential', 'label' => label, 'met' => entry.is_a?(Hash) && ops_keyring_serves?(cred_id) }
+    end
+
+    # Met by the keyring's own rule (plan 4.2): the registry entry is one the keyring would list now
+    # (its kind is built, its proof holds and its account names an NPC).
+    def ops_keyring_serves?(cred_id)
+      registry_keyring_entries.any? { |item| item['id'] == cred_id }
     end
 
     # A credential's label: its own, else (a password) the name of the item it is found in.

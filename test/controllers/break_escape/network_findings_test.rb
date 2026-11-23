@@ -55,6 +55,31 @@ module BreakEscape
       assert_equal 'medium', finding(body, NOS::OLD_BANNER)['severity']
     end
 
+    test 'a check answer holds exactly success, hostId, service and findings, and already only on a repeat that adds nothing' do
+      body = check_sam_web
+      assert_equal %w[findings hostId service success], body.keys.sort
+      refute_includes response.body, NOS::DOOR_GLOBAL
+      refute_includes response.body, NOS::PATCHED_GLOBAL
+      assert_equal %w[already findings hostId service success], check_sam_web.keys.sort
+    end
+
+    test 'a confirm answer holds exactly success and finding, and already on a repeat; a false finding has no fixed key' do
+      check_sam_web
+      assert_equal %w[finding success], ops_confirm(OFFICE, NOS::FACTORY).keys.sort
+      assert_equal %w[already finding success], ops_confirm(OFFICE, NOS::FACTORY).keys.sort
+      decoy = ops_confirm(OFFICE, NOS::OLD_BANNER)['finding']
+      refute decoy.key?('fixed')
+      refute decoy.key?('needs')
+      assert_equal UNCONFIRMED_KEYS + ['falseBecause'], decoy.keys
+    end
+
+    test 'the stored value of a finding is a letter and a number, never the finding id' do
+      check_sam_web
+      ops_confirm(OFFICE, NOS::FACTORY)
+      ops_state['opsFindings'].each_value { |value| assert_match(/\A[ucf][0-9]{1,4}\z/, value) }
+      refute_includes ops_state['opsFindings'].values.join, 'factory'
+    end
+
     test 'a finding with no authored summary shows a line for its class' do
       body = check_sam_web
       listing = finding(body, NOS::OPEN_LISTING)
@@ -73,7 +98,7 @@ module BreakEscape
       refute_includes body.to_json, 'fixed'
     end
 
-    test 'a check before the scan, on a host not listed, and on a service the host does not have are the one 404' do
+    test 'a check of a host listed but not scanned, of a host out of reach, of a service the host does not have and of an unheld foothold are the one 404' do
       body = ops_check(OFFICE, host_id: 'print_srv', service: 'queue')
       assert_response :not_found
       assert_equal NOT_FOUND, body
@@ -251,8 +276,10 @@ module BreakEscape
         assert_response :not_found
         assert_equal NOT_FOUND, response.parsed_body, id
       end
+      first_body = response.body
       ops_confirm('jack_not_held', NOS::FACTORY)
       assert_equal NOT_FOUND, response.parsed_body
+      assert_equal first_body, response.body, 'the same bytes as the other 404s'
       assert_equal [], rows('finding_confirmed')
     end
 
@@ -354,6 +381,62 @@ module BreakEscape
       assert_equal false, met.call.first['met']
       add_item('notes', 'loose_notes', 'Loose notes')
       assert_equal true, met.call.first['met']
+    end
+
+    # An inventory entry the client wrote itself carries the clientAdded marker; it can never meet a need.
+    def hold_forged(id, type)
+      game = BreakEscape::Game.find(@game.id)
+      game.player_state['inventory'] = Array(game.player_state['inventory']) + [{ 'id' => id, 'type' => type, 'name' => id, 'clientAdded' => true }]
+      game.save!
+    end
+
+    test 'a forged inventory entry with the authored id and type does not meet an item need' do
+      check_sam_web
+      ops_confirm(OFFICE, NOS::FACTORY)
+      item = -> { row_findings('sam_pc').find { |f| f['id'] == NOS::FACTORY }['needs'].find { |n| n['kind'] == 'item' } }
+      hold_forged('panel_sheet', 'notes')
+      assert_equal false, item.call['met']
+    end
+
+    test 'a forged inventory entry with an authored id and type does not meet an itemType need' do
+      check_sam_web
+      ops_confirm(OFFICE, NOS::OPEN_LISTING)
+      met = -> { row_findings('sam_pc').find { |f| f['id'] == NOS::OPEN_LISTING }['needs'].first['met'] }
+      hold_forged('loose_notes', 'notes')
+      assert_equal false, met.call
+    end
+
+    test 'a credential need is met by the keyring own rule: a credential whose account names no one is never met' do
+      data = NOS.findings_scenario
+      data['credentials']['lena_login']['account'] = 'nobody_here'
+      hold_office_foothold({}, data)
+      sweep_and_scan('sam_pc')
+      check_sam_web
+      pivot_through_lena
+      need = ops_confirm(OFFICE, NOS::FACTORY)['finding']['needs'].find { |n| n['kind'] == 'credential' }
+      assert_equal false, need['met'], 'the proof holds but the keyring would list nothing'
+    end
+
+    test 'a credential need is met once the keyring lists the credential' do
+      check_sam_web
+      pivot_through_lena
+      get game_path('keyring'), as: :json
+      assert_includes response.body, 'lena_login'
+      need = ops_confirm(OFFICE, NOS::FACTORY)['finding']['needs'].find { |n| n['kind'] == 'credential' }
+      assert_equal true, need['met']
+    end
+
+    test 'a technique_card itemType need stays in the list and is never met' do
+      data = NOS.findings_scenario
+      web = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['services'].find { |svc| svc['name'] == 'web' }
+      web['weaknesses'].find { |w| w['id'] == 'open_listing' }['needs'] = { 'itemType' => 'technique_card', 'label' => NOS::NOTES_LABEL }
+      hold_office_foothold({}, data)
+      sweep_and_scan('sam_pc')
+      check_sam_web
+      assert_equal [{ 'kind' => 'itemType', 'label' => NOS::NOTES_LABEL, 'met' => false }],
+                   ops_confirm(OFFICE, NOS::OPEN_LISTING)['finding']['needs']
+      add_item('notes', 'loose_notes', 'Loose notes')
+      assert_equal false, row_findings('sam_pc').find { |f| f['id'] == NOS::OPEN_LISTING }['needs'].first['met']
     end
 
     test 'an itemType need is not met by an authored item of another type, or by a name' do

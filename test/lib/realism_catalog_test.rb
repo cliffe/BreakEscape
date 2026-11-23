@@ -108,6 +108,47 @@ module BreakEscape
       end
     end
 
+    test 'entry_ids lists the catalog ids sorted, and is empty for a missing folder and a failed load' do
+      Catalog.with_folder(folder('ok')) do
+        assert_equal %w[test_share_build test_share_guest test_web_panel], Catalog.entry_ids
+        Catalog.entry_ids.clear
+        assert_equal 3, Catalog.entry_ids.length, 'a new array each call'
+      end
+      Dir.mktmpdir { |dir| Catalog.with_folder(dir) { assert_equal [], Catalog.entry_ids } }
+      capture_log { Catalog.with_folder(folder('fault_parse')) { assert_equal [], Catalog.entry_ids } }
+    end
+
+    test 'an entry that is not an object is a bad_shape fault and the map is empty' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'bad.json'), JSON.generate('entries' => { 'good_one' => { 'title' => 'T' }, 'bad_one' => 'text' }))
+        log = capture_log do
+          Catalog.with_folder(dir) do
+            assert_nil Catalog.lookup('good_one')
+            assert_equal [{ 'file' => 'bad.json', 'fault' => 'bad_shape' }], Catalog.faults
+          end
+        end
+        assert_equal 1, warning_lines(log).size
+      end
+    end
+
+    test 'warn_unresolved warns once per link id, and not at all while the loader fault warning stands' do
+      Catalog.reset_warned!
+      log = capture_log do
+        Catalog.with_folder(folder('ok')) do
+          3.times { Catalog.warn_unresolved('nothing_here') }
+          Catalog.warn_unresolved('nothing_else')
+        end
+      end
+      assert_equal 2, warning_lines(log).size
+      assert_equal 1, log.scan('nothing_here').length
+      Catalog.reset_warned!
+      log = capture_log do
+        Catalog.with_folder(folder('fault_dup_id')) { 3.times { Catalog.warn_unresolved('nothing_here') } }
+      end
+      assert_equal 1, warning_lines(log).size, 'only the loader warning'
+      refute_includes log, 'nothing_here'
+    end
+
     test 'the warning is logged once however often the map is read' do
       log = capture_log do
         Catalog.with_folder(folder('fault_dup_id')) do
