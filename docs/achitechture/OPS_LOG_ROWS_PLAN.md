@@ -169,7 +169,7 @@ or PC desktop like other minigame objects:
 ```
 
 Its `minigameData` gets its own entry in `scripts/minigame-data-schemas.json` (required
-`logSource`; optional `title`, `anomaly`, `flagActionLabel`, `flagActions`, `completionActions`),
+`logSource`; optional `anomaly`, `flagActionLabel`, `flagActions`, `completionActions`),
 loaded by the validator's minigame check (`scripts/validate_scenario.rb:902-950`); the
 `log_filter_terminal` entry (`:63-87`) is unchanged, and the example above validates clean.
 `anomaly.rowId` is optional and names a seed row, never a play row (whose id is not stable across
@@ -297,7 +297,7 @@ The viewer, `public/break_escape/js/minigames/ops-log/ops-log-minigame.js` (abou
 return to the screen (`:2456-2468`) and hands `window.handleObjectInteraction` a stand-in sprite
 whose `objectId` is a throwaway `temp_<time>` (`:2471-2477`). So the `ops_log_terminal` branch
 takes the reader's id from `sprite.scenarioData.id`, never `sprite.objectId`. `sourceExtras()`
-also carries the `foothold` or `from` the container passed to `ApiClient.container`
+also carries the `foothold`, `from` or `relay` the container passed to `ApiClient.container`
 (`api-client.js:240-250`) as `sourceRoute`, and the branch passes it to `ApiClient.logRows`, since
 `GET /log_rows` judges the route as `/container` does (section 6). A JS test covers this path.
 
@@ -386,7 +386,7 @@ Rules that keep a row from telling the player something new:
   `textContent`.
 
 **The reader's own fields reach the browser with its room or container**, as log-filter's do:
-`minigameData.logSource` (a raw source id), `title`, `anomaly.rowId`, `flagActionLabel`,
+`minigameData.logSource` (a raw source id), `anomaly.rowId`, `flagActionLabel`,
 `flagActions` and `completionActions`. The flag is checked on the client, best effort, the same
 standing as log-filter's anomaly today; a server check belongs to the investigator work (4.2).
 
