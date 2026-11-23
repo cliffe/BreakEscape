@@ -28,7 +28,8 @@ export const NARROW_SORT_CSS = (px = 560) => `
 export const INBOX_HIDE_CSS = `
 .triage-client .aw-team-tally, .triage-client .tri-brief-text, .triage-client .tri-flags, .triage-client .tri-false-flags, .triage-client .tri-live { display: none !important; }
 span.tri-verdict-hint { visibility: hidden !important; }
-.mail-row.selected { outline: none !important; box-shadow: none !important; }
+.mail-row.selected { border-color: transparent !important; outline: none !important; box-shadow: none !important; }
+.triage-client .tri-verdicts { visibility: hidden !important; }
 `;
 /** Narrow inbox for 9:16 and 1:1 (760 px: the list plus reader need more than 560). */
 export const NARROW_INBOX_CSS = (px = 760) => `
