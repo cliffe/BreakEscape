@@ -16,10 +16,10 @@ No route, no server behaviour, no client. Branch `ops-core`.
 
 ## Schema (`scripts/scenario-schema.json`)
 `networks.<id>.discovery` enum open/scan; top-level `hosts` (after `resources`: `x-id-map`, `x-serverOnly`, `x-servedBy`
-GET /network + POST /network/scan, no patternProperties on the map, closed entry with the `^_` pattern, `name` and `network` required);
+GET /network + POST /network/scan, no `propertyNames` and no `patternProperties` on the map (the validator holds the key pattern and the 40 limit), closed entry with the `^_` pattern, `name` and `network` required);
 `definitions.service` (closed; name/port/product/version required, caps as plan); `definitions.item.properties.services`
-(`x-serverOnly`, `x-servedBy`, maxItems 8, `$ref` service). The `hosts` key pattern is the standard id pattern (64) in the
-schema; the validator holds the 40 limit.
+(`x-serverOnly`, `x-servedBy`, maxItems 8, `$ref` service). The schema does not constrain the `hosts` keys; the validator holds the key pattern
+(`NETWORK_OPS_ID`) and the 40 limit.
 
 ## Validator (`scripts/validate_network_ops.rb`, hooked after `check_log_rows` in `validate_scenario.rb`)
 `check_network_ops(json, built: NETWORK_OPS_BUILT, objects_dir:, products:)`; messages start `network ops:`. Errors:

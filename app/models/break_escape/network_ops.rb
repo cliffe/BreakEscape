@@ -32,10 +32,6 @@ module BreakEscape
       { status: status, body: { success: false, reason: reason } }
     end
 
-    def ops_bad_request
-      { status: :bad_request, body: { success: false, reason: 'bad_request' } }
-    end
-
     # Is the target listed for this player through this foothold? target is { network: id } or
     # { host: id }. A network: the foothold is held and the network is in its reach. A host of
     # either kind: it exists on such a network and that network is open or swept.

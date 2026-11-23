@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/network_ops_scenario'
+require_relative '../../support/payload_scan'
 
 module BreakEscape
   # Ops core S1 (OPS_CORE_PLAN.md section 7, "No-exposure tests"): what the browser is not told,
@@ -106,12 +107,29 @@ module BreakEscape
       assert_equal({ 'success' => false, 'reason' => 'not_needed' }, response.parsed_body)
     end
 
-    test 'the payload scan finds no service string in the bootstrap or a room' do
+    test 'the bootstrap holds no service string after a sweep and a host scan' do
       hold_office_foothold
       ops_scan(OFFICE, network_id: 'office_lan')
       ops_scan(OFFICE, host_id: 'sam_pc')
       bootstrap_scenario
       assert_equal [], SERVICE_STRINGS.select { |t| response.body.include?(t) }
+    end
+
+    test 'the payload scan finds nothing in the bootstrap or a room after a sweep and a host scan' do
+      hold_office_foothold
+      ops_scan(OFFICE, network_id: 'office_lan')
+      ops_scan(OFFICE, host_id: 'sam_pc')
+      data = @game.reload.scenario_data
+      answers = SecretLeaks.collect_answers(data)
+      clues = SecretLeaks.acknowledged_clues(data)
+      ss = BreakEscape::ScenarioSchema
+      findings = BreakEscape::PayloadScan.scan_body(ss.root, bootstrap_scenario, 'GET scenario', '', 'test_ops', answers, clues)
+      data['rooms'].each_key do |room_id|
+        get game_path("room/#{room_id}"), as: :json
+        findings.concat(BreakEscape::PayloadScan.scan_body(ss.at('#/definitions/room'), response.parsed_body['room'], 'GET room/:id',
+                                                           "rooms/#{room_id}", 'test_ops', answers, clues))
+      end
+      assert_equal [], findings.map { |f| f.slice(:route, :path, :klass) }
     end
   end
 end

@@ -70,6 +70,16 @@ test('a scenario with none of these fields raises nothing, built or not', { skip
     assert.deepEqual(issues({}, NOT_BUILT), []);
 });
 
+test('a scenario with none of the feature fields gives no output; with logSources only the id-length rule runs (m3)', { skip }, () => {
+    const long = 'n'.repeat(41);
+    const s = { startRoom: 'lobby', networks: { [long]: { name: 'Long' } }, rooms: { lobby: { type: 'room_office', objects: [] } } };
+    assert.deepEqual(issues(s), []);
+    s.logSources = {};
+    const out = issues(s);
+    assert.equal(out.length, 1, out.join('\n'));
+    assertHas(errors(out), 'is longer than 40 characters');
+});
+
 // ---- the not-built-yet table ----
 test('not built: hosts, services on an object and discovery scan each name N13', { skip }, () => {
     const out = errors(issues(clean(), NOT_BUILT));

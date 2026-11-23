@@ -387,10 +387,22 @@ module BreakEscape
     test 'no ops route answer carries a refusal code outside the list' do
       hold_office_foothold
       list = JSON.parse(File.read(file_fixture('ops_refusal_codes.json')))
-      ops_scan(OFFICE, network_id: 'nowhere')
-      assert_includes list, response.parsed_body['reason']
-      ops_scan(OFFICE)
-      assert_includes list, response.parsed_body['reason']
+      seen = []
+      answer = lambda do |status, **ids|
+        ops_scan(ids.delete(:foothold) || OFFICE, **ids)
+        assert_response status, response.body
+        reason = response.parsed_body['reason']
+        assert_includes list, reason
+        seen << reason
+      end
+      answer.call(:not_found, network_id: 'nowhere')                       # 404
+      answer.call(:bad_request)                                            # 400
+      ops_scan(OFFICE, network_id: 'office_lan')
+      answer.call(:unprocessable_entity, host_id: 'lena_pc')               # not_needed (a host with no services)
+      @game.reload.player_state['globalVariables'] = (@game.player_state['globalVariables'] || {}).merge('lab_off' => true)
+      @game.save!
+      answer.call(:forbidden, host_id: 'lab_box')                          # not_responding
+      assert_equal %w[bad_request not_found not_needed not_responding], seen.uniq.sort
     end
   end
 end

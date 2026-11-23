@@ -102,6 +102,24 @@ module BreakEscape
       assert_equal true, down['swept']
     end
 
+    test 'a down block carries no ops key, though the same block carries one while the route is up (departure b)' do
+      data = ops_scenario
+      data['networks']['server_net']['offWhen'] = 'servers_offline'
+      hold_office_foothold({ 'globalVariables' => { 'servers_offline' => false } }, data)
+      pivot_through_lena
+      ops_scan(OFFICE, network_id: 'server_net')
+      up = view_blocks.find { |b| b['id'] == 'server_net' }
+      assert_equal 'up', up['route']
+      assert_equal true, up['ops'], 'an up, swept block with services says so'
+      sign_in('sv_fs02', 'ishaw', NetworkModelScenario::IAN_PASSWORD, foothold: OFFICE)
+      assert_response :success
+      @game.reload.player_state['globalVariables']['servers_offline'] = true
+      @game.save!
+      down = view_blocks.find { |b| b['id'] == 'server_net' }
+      assert_equal 'down', down['route']
+      refute down.key?('ops')
+    end
+
     test 'on an open network an address is on its row in the first GET /network that lists it, with and without discovery open' do
       [nil, 'open'].each do |discovery|
         hold(discovery: discovery)

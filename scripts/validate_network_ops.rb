@@ -49,6 +49,14 @@ def check_network_ops(json_data, built: NETWORK_OPS_BUILT, objects_dir: NETWORK_
   all_objects = ai.room_objects(json_data)
   not_built = ->(feature) { !built[feature] }
 
+  # A scenario with none of the feature's fields has nothing to check (OPS_CORE_PLAN.md section 10),
+  # except the foothold-id length rule, which reads `logSources` scenarios whatever else they hold.
+  has_fields = json_data.key?('hosts') || json_data.key?('techniques') || json_data.key?('logSources') ||
+               networks.each_value.any? { |net| net['discovery'] == 'scan' } ||
+               all_objects.any? { |e| e[:object].key?('services') || e[:object].key?('technique_card') } ||
+               network_ops_walk_items(json_data).any? { |item, _| item.key?('technique_card') }
+  return issues unless has_fields
+
   # ---- The not-built-yet table (section 3) ----
   NETWORK_OPS_TOP_LEVEL.each do |key, feature|
     err.call("`#{key}` is not built yet: #{feature}") if json_data.key?(key) && not_built.call(feature)
