@@ -15,10 +15,10 @@ module BreakEscape
     extend ActiveSupport::Concern
 
     # Top-level scenario keys the bootstrap never ships (section 6).
-    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources logSources].freeze
+    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources logSources hosts].freeze
     # Fields deleted from every object the server sends: membership, and the jack's
     # link name and holder, which arrive on the link item (section 6).
-    WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn].freeze
+    WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn services].freeze
 
     def withhold_network_keys!(filtered)
       WITHHELD_SCENARIO_KEYS.each { |key| filtered.delete(key) }

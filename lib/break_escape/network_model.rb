@@ -335,6 +335,58 @@ module BreakEscape
       end
     end
 
+    # Ops core S1 (docs/achitechture/OPS_CORE_PLAN.md 5.1). Hosts, discovery and services.
+    # SERVICES_PER_HOST is the schema's maxItems; services_of reads no more than that.
+    SERVICES_PER_HOST = 8
+
+    # { hostId => entry } for the top-level `hosts` map (hosts with no sign-in), only the
+    # entries that are hashes. Notes (keys starting `_`) are not hosts.
+    def hosts(data)
+      map = data.is_a?(Hash) ? data['hosts'] : nil
+      return {} unless map.is_a?(Hash)
+
+      map.select { |id, entry| entry.is_a?(Hash) && !(id.is_a?(String) && id.start_with?('_')) }
+    end
+
+    # True when the network is a discovery network (`discovery: "scan"`); false for "open",
+    # an absent key, any other value and an unknown network.
+    def discovery?(data, network_id)
+      net = networks(data)[network_id]
+      net.is_a?(Hash) && net['discovery'] == 'scan'
+    end
+
+    # One record per host on a network, of either kind, sorted by id:
+    # { id:, kind: 'pc' | 'device', object:, network:, services: }. A 'pc' is a sign-in
+    # room object (object: the room object); a 'device' is a `hosts` entry (object: the
+    # entry). A `hosts` entry whose network is not a `networks` key is left out. An id
+    # held by both kinds (the validator refuses it) lists the sign-in object.
+    def hosts_on(network_id, data)
+      return [] unless present_string?(network_id) && networks(data).key?(network_id)
+
+      out = sign_in_objects_on(network_id, data).map do |entry|
+        obj = entry[:object]
+        { id: obj['id'], kind: 'pc', object: obj, network: network_id, services: services_of(obj) }
+      end
+      taken = out.map { |rec| rec[:id] }
+      hosts(data).each do |id, entry|
+        next unless entry['network'] == network_id && !taken.include?(id)
+
+        out << { id: id, kind: 'device', object: entry, network: network_id, services: services_of(entry) }
+      end
+      sort_by_id(out) { |rec| rec[:id] }
+    end
+
+    # The services a host declares, at most SERVICES_PER_HOST, malformed entries (not a hash)
+    # skipped, never raised on. Takes a host record from hosts_on, a room object or a
+    # `hosts` entry.
+    def services_of(host)
+      host = host[:object] if host.is_a?(Hash) && host.key?(:object)
+      list = host.is_a?(Hash) ? host['services'] : nil
+      return [] unless list.is_a?(Array)
+
+      list.select { |svc| svc.is_a?(Hash) }.first(SERVICES_PER_HOST)
+    end
+
     def present_string?(value)
       value.is_a?(String) && !value.strip.empty?
     end
