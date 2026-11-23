@@ -60,3 +60,34 @@ and bolt cannot be judged). Items:
 | PL2 | Done. A player locks a session by Start, then `#pc-start-lock`, offered only for a password session or a credential session over a foothold (`pc-sessions.js:176` `sessionLockable`, `pc-taskbar.js:187`). A technique session is not lockable by design (plan 5.4, readers table and "How a technique session differs"), so beat 13 now opens the `vault01` remote view's Start panel and shows Sign out with no Lock and no Switch user; the lock request itself stays in `network_technique_session_test.rb`. | `PLAYTEST.md` beat 13 |
 | PL3 | Done, each checked: plant_lan's pivot is whichever held session the server ranks first (`via_for`, lowest seq then host id), all four hosts being on `office_lan`; Start-menu ids are `#pc-start-lock`, `#pc-start-switch`, `#pc-start-signout` (`pc-taskbar.js:284`); the saved connection connects through the "Connect with ..." button (`.signin-cred`), the plain Sign in asks for a typed password; Unplug has no prompt (the script's text was already right; now says so and names the toast); a replant opens no view (`interact` `office_port`); the keyring has no screen in this scenario (no capture log item), so the step is the find toast plus the sign-in control's list; a container take raises no toast, only `.container-message` "Added <name> to inventory" for 3 s (`container-minigame.js` `takeItem`, `showMessage`), which the beat now reads; beat 3's session need label is the host label "VAULT01". | `PLAYTEST.md` |
 | PL4, PL5 | Not touched (a later tester's). | |
+
+## Second live-proof run (orchestrator, 2026-11-23)
+
+Game 35, port 3011; results `/tmp/claude-1002/-home-deploy-Hacktivity/bddb8e5b-5baf-4f12-89a2-9673325353c9/scratchpad/s3-playtest-2/`
+(`RESULTS.md`; captures in `test_ops_access/`: `responses-35.jsonl`, `-2`, `-3`). The tester
+stopped at its context budget after item 5. Seen: the planted jack (ok); the held PC tinted
+red; blue while the player stands near and red again after stepping away; no tint or mark
+after the unplug; the host row's bolt (14 x 22 px) and "admin" tag; the technique session's
+Start panel offering Sign out only; the saved connection in the sign-in list; the container
+message on a card pickup; Sign out from a world-opened remote view landing in the world; a
+double click after a reload opening one desktop with one `GET /network` and one container
+request. `verify-run` OK. Items:
+
+- **PL6 (major, client).** The bolt mark on the held PC in the world is NOT visible: the
+  sprite is tinted but the scene's bolt object reports `visible: false` (tester's note O2).
+  The plan's marker is the tint AND the bolt (section 5.4, "The compromised marker in the
+  world"). The node tests pass, so they do not model whatever hides it.
+- **PL7 (leak check, 776 findings; investigate).** Over the three capture files the leak check
+  reported 776 `ops_string` findings, all on `GET /network` (399 with finding owners, 57 each
+  for service, host and technique owners). The first run's game was clean after the scanner
+  fixes. Either the files were judged in the wrong order or not together, or a session
+  resumed after a reload loses its earned steps in a way the documented use does not cover,
+  or the per-thing change regressed something. Not judged by the tester.
+- **PL8 (investigate: ours or older).** After a page reload and resume, interacting with the
+  office port where the drop box was ALREADY planted asked "Plug the drop box into the office
+  port?" with "Plug it in" / "Leave it"; choosing "Leave it" sent `POST /network/unplug` and
+  returned the box to the tray (tester's note O1). A "Leave it" that unplugs is wrong
+  whoever's it is; find whether stage S3's client changes cause it or it pre-dates this build
+  (compare with `main`).
+- **PL5 still not run:** beat 19 (the older network playtests' first beats) and the
+  phone-width Techniques panel.
