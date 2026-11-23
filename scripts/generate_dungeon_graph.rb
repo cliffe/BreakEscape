@@ -2012,9 +2012,19 @@ critical_set = Set.new(critical_path)
 # prints a Wi-Fi key; the skeleton (skeleton_mermaid) is drawn with hide: false.
 def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, hide: true)
   # An `@` in a Mermaid id is read as shape syntax by newer Mermaid (`id@{...}`): `admin@<pc>` is drawn `admin_at_<pc>`.
+  # A mapped id that another node already holds (a room really called `admin_at_<pc>`) gets `_` added until it is free.
+  taken = Set.new((nodes.keys + [start_node]).compact.map { |k| (hide ? hide_id(k) : k).to_s }.reject { |k| k.include?('@') })
+  mapped = {}
   hid = lambda do |id|
     out = hide ? hide_id(id) : id
-    out.to_s.include?('@') ? out.to_s.gsub('@', '_at_') : out
+    next out unless out.to_s.include?('@')
+
+    mapped[out.to_s] ||= begin
+      cand = out.to_s.gsub('@', '_at_')
+      cand += '_' while taken.include?(cand)
+      taken << cand
+      cand
+    end
   end
   # Ensure the start room is present as a node even if it has no puzzle elements
   if start_node && !nodes.key?(start_node)

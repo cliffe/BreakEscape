@@ -108,3 +108,17 @@ test('the Mermaid text (md and html) uses a safe id for admin@<pcId>: only [A-Za
     assert.ok(defs.length > 5);
     defs.forEach(id => assert.match(id, /^[A-Za-z0-9_]+$/, `node id ${id}`));
 });
+
+test('a room called admin_at_<pc> does not merge with the admin node in the Mermaid text', { skip }, () => {
+    const sc = scenario();
+    sc.rooms.office.connections = { north: 'admin_at_desk_pc' };
+    sc.rooms.admin_at_desk_pc = { type: 'room_office', network: 'office_lan', connections: { south: 'office' }, locked: true, lockType: 'key', requires: 'k1', objects: [] };
+    sc.rooms.office.objects.push({ id: 'k1', type: 'key', name: 'Key', takeable: true, key_id: 'k1' });
+    const g = graph(sc);
+    assert.ok(adminIds(g).length > 0);
+    for (const [name, text] of [['md', g.md], ['html', g.html]]) {
+        const diagrams = text.split('flowchart TD').slice(1).map(d => [...d.matchAll(/^ {2}([A-Za-z0-9_]+)(?:\(|\[|\{|>")/gm)].map(m => m[1]));
+        assert.ok(diagrams.some(ids => ids.includes('admin_at_desk_pc') && ids.includes('admin_at_desk_pc_')), `${name}: the room keeps its id and the admin node moves to a free one`);
+        diagrams.forEach(ids => assert.equal(new Set(ids).size, ids.length, `${name}: every node id is defined once per diagram`));
+    }
+});

@@ -186,7 +186,7 @@ def privilege_object_warnings(json_data, warn)
       end
     end
 
-    pcs = privilege_session_grants(obj['triggerOnInteract']).map { |a| a['pc'].to_s }.reject(&:empty?).uniq
+    pcs = privilege_session_grants(obj['triggerOnInteract']).map { |a| a['pc'].to_s.strip }.reject(&:empty?).uniq
     next unless pcs.length > 1
 
     warn.call("#{where}: its needsSession grants name more than one PC (#{pcs.join(', ')}). " \
