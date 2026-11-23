@@ -86,3 +86,11 @@ and at most 5 per stage; later rounds are delta reviews.
   mechanism and neither was on main.
 - 2026-11-23: model routing: build steps on Sonnet; reviews and design-judgement work on
   `fable52L` (the user's substitute for Opus); scripted playtests and live proofs on Haiku.
+- 2026-11-23, L1a R1 rulings: m4, the `credentials` secret source reads the fields the real
+  schema and `CredentialModel` hold, tested with a real key; m12, the stored-id length check
+  is narrowed to the plan's list; NPC passwords are registered wherever the schema lets an
+  NPC carry `creds` (top-level `npcs` and `phoneNPCs` included); scenario `flags` values are
+  registered as a secret source too (beyond the plan, the safe side).
+- 2026-11-23, L1b: `alreadyOpen: true` on every rfid request at an open target is the plan's
+  (section 12, L1b item 2), accepted. For L2a: `showCardHolder` is per source but a stored row
+  is shared, so the reader must hide the holder for a source without the flag.
