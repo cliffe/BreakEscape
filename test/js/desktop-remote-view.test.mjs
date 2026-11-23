@@ -318,3 +318,38 @@ test('the running text-file reader offers no Switch user over a technique copy o
     hostRows = [{ id: 'ops_pc', remoteSignIn: true }];
     assert.equal(reader(TECH).canSwitch, true);
 });
+
+// S3 R2 N-C1: the landings of a share close and a sign-in close, by where the remote view was opened
+test('N-C1: a world-opened trip goes back to its desktop on a share close and to the world on a sign-in close; a network-view-opened trip keeps its landings', async () => {
+    setup();
+    const { NetworkLinks } = await imp('systems/network-links.js');
+    const nl = new NetworkLinks();
+    const opened = [], views = [];
+    window.startNetworkViewMinigame = (...a) => views.push(a);
+    window.openRemoteDesktop = (...a) => opened.push(a);
+    let held = true;
+    window.pcSessions = { has: () => held, get: () => (held ? { footholdId: 'jack_a' } : null) };
+    // world-opened: the share closes back to the same PC's desktop through the same foothold
+    nl.openSession('ops_pc', { returnTo: () => {}, toWorld: true });
+    opened.length = 0;
+    assert.equal(nl.landed('share', 'close', {}).landing, 'desktop');
+    await settle();
+    assert.deepEqual(opened, [['ops_pc', 'jack_a']]);
+    assert.deepEqual(views, [], 'the network view was not resumed');
+    // world-opened: the sign-in closed with no session leaves to the world
+    nl.openSession('ops_pc', { returnTo: () => {}, toWorld: true });
+    held = false;
+    assert.deepEqual(nl.landed('signin', 'close', { pcId: 'ops_pc' }), { landing: 'world', reason: 'closed' });
+    assert.equal(nl.trip, null);
+    assert.deepEqual(views, []);
+    // opened from the network view's own path (no toWorld): both landings are as before, the view
+    for (const screen of ['share', 'signin']) {
+        held = true;
+        nl.openSession('ops_pc', { returnTo: () => {} });
+        held = screen === 'share';
+        opened.length = 0;
+        assert.equal(nl.landed(screen, 'close', { pcId: 'ops_pc' }).landing, 'view', screen);
+        assert.deepEqual(opened, [], screen);
+    }
+    delete window.startNetworkViewMinigame; delete window.openRemoteDesktop;
+});

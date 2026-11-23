@@ -124,7 +124,7 @@ const LANDINGS = {
         // Note (K4 R2 m2): for a `from` target this reopens through the foothold, and that is only
         // safe because openRemoteDesktop redirects a held `from` session (unlock-system.js); keep
         // that redirect.
-        close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : { resume: true }),
+        close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : (self.trip?.toWorld ? { leave: 'closed' } : { resume: true })),
         handover: () => null
     },
     desktop: {
@@ -146,7 +146,8 @@ const LANDINGS = {
         expired: () => ({ resume: true })
     },
     share: {
-        close: () => ({ resume: true }),
+        // A share is a step inside the desktop it was opened from: a world-click trip goes back to that desktop (S3 R2 N-C1)
+        close: (self) => (self.trip?.toWorld && self.trip.pcId ? { desktop: self.trip.pcId } : { resume: true }),
         handover: () => null,
         item: () => null
     }
