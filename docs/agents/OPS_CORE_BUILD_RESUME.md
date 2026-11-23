@@ -120,19 +120,36 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   skipped warning now in the validator pass); 9b `45388615c` (placeholder PNG, tray test,
   keyring proof reads `player_state['opsUsed']`, an Array of finding ids); 10a `5f18daed2`
   (+ `dd31d52a1`): session record keywords, `client_access_level`, `opsUsed` registered.
-- RUNNING in the build tree: S2 delta review R2 (fable52L; `reviews/S2_R2.md`; fixes + step
-  8); S2 Haiku playtest + live proof on port 3011 (scratchpad `s2-playtest/RESULTS.md`, incl.
-  phone-width screenshots for client m8); validator pass (S2 m12, m14, m15 + the S3
-  fixedIf-only-gate warning + a report on the `versions` rule); S3 step 10b
-  (`use_technique!`, the route, events, grants, `techniques` on `GET /network`;
-  `HANDOVER_core_10b.md`).
-- Next: S2: commit R2 findings (check length), look at the playtest screenshots, one fix pass,
-  then `git merge --ff-only ops-build` in the train tree and train (the hash includes inert
-  S3 code: N15 "not built" in the validator; BUT once 10b lands the technique ROUTE exists on
-  the branch, so decide then: either train S2 at a hash before 10b's first commit, or land S2
-  with the route present and say so). S3: 10c hostile + free tests (after 10b), step 11
-  (access checks, own commit, security review), step 12 client in two, graph cards and
-  grants, step 13 in two.
+- S2 R2 delta `f27ccf347` (21 of 27 R1 fixes confirmed, rest deferred; game code clean; 2
+  majors in the leak scanner, 11 minors); FIXED `12aea0679`, `e77acb6fd`, `e87e53a4a`,
+  `bb9f4f235`, `0f8b96517` (structural scanner rules, proved on the real scenario). BUT that
+  fixer also LOOSENED the scanner (a string inside longer room text is not registered): being
+  undone. S2 playtest: beats 1 to 11 + 8a passed (games 22, 24); beat 8b (a forged sync sent
+  from the browser) was refused by the permission classifier twice: NOT retried, removed from
+  the script, covered by Rails tests; told the user. Leak check had two findings: an authored
+  clue naming a host (ruled: reword the clue, scanner stays strict) and a product string
+  flagged after a resumed session (cause being proved). Items in `reviews/S2_PLAYTEST.md`
+  (`e4d5b5926`). PT4 (card content floats in the middle of a stretched card) is CSS for a
+  later client pass (12a owns the file now).
+- S3: 10b `73c9cd798`, `d6b9e4168` (`POST /network/technique`, `use_technique!`, grants,
+  events, `techniques` on `GET /network`; `HANDOVER_core_10b.md`; rulings in the brief: the
+  step 11 builder folds 10b's two wrappers into `network_access.rb`).
+- RUNNING in the build tree (8 with the log stream's one): S2 playtest follow-up fixer (PT1
+  to PT3, PT5); validator pass (S2 m12, m14, m15, an S3 warning, a report on the `versions`
+  rule); S3 step 11 (access checks; ONE commit; `HANDOVER_core_11.md`); S3 10c (hostile and
+  free tests; reports engine faults, fixes none; `HANDOVER_core_10c.md`); S3 12a (Techniques
+  panel, Use, bolt helper `utils/compromise-bolt.js`; `HANDOVER_core_12a.md`); S3 12b (remote
+  view, compromise marks; `HANDOVER_core_12b.md`).
+- Next: S2: when the follow-up fixer and the validator pass report, a short fable52L delta
+  (R3) of the scanner changes only; then train S2. The branch now carries live S3 code (the
+  technique route), so S2 cannot be trained alone at head: either land S2 and S3 together
+  after S3's reviews, or cut a train branch at the last pre-10b commit plus cherry-picked S2
+  fixes (messy). DECISION: land S2 with S3 as one train, once S3's server and security
+  reviews are done; tell the user. S3 next: fable52L reviews (server; a separate security
+  review of step 11 and the hostile tests; client), graph cards and grants (9.3), step 13 in
+  two (scenario `test_ops_access` + tests / tooling + docs + flip N15), fixes, delta,
+  Haiku playtest + live proof (11.5 S3), the reruns of section 10 part 4, the screenshot
+  review page for the user, the card art question.
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -148,10 +165,14 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   (`b75add8da`). Client R1 FIXED `e262b6848`, `5f07c654b`, `140aef76e`, `17f9b9054` (16 fixed; F1 measured
   before/after; m10 left: needs one line in `childExtras()`); server R2 + scenario first read
   `e36dec28c` (R1 fixes confirmed; 3M 12m, rulings in the stream brief); scenario/docs/tooling
-  fixes `3ed1f9667`, `549dcd14f`, `c587d49c4`, `9ad9caee6`. RUNNING there: server + validator
-  fixer for R2 (N1, N2, N3, N6, N7, door_sign fallback, reader validator errors). NEXT there:
-  delta review R3 (fable52L) over the client fixes and the R2 fixes; Haiku playtest of
-  `test_ops_logs` beats 1 to 13 on port 3014; then merge main into `ops-logs`, train, land. Old line: L2a client builder
+  fixes `3ed1f9667`, `549dcd14f`, `c587d49c4`, `9ad9caee6`. R2 server and validator fixes `896e832d1`, `83b549392`, `c956f2f73`. R3 delta `0a7845fbc`:
+  ready to land after the playtest, 8 minors; ruling: a door shows `door_sign` first.
+  Playtest 13 of 13 (game 23; items P1 to P4 in `reviews/L2a_R3.md`, `09d1ad64b`: phone-width
+  layout broken, lock and session-end rows read the same). RUNNING there: tidy fixer (R3
+  minors + P1 to P4). NEXT there: check its screenshots; a short fable52L delta of the
+  leak-check edits; merge main into `ops-logs` (fast-forward base today); train in the train
+  tree (`git checkout --detach ops-logs` there); merge to main; push; merge main into
+  `ops-build` (four keep-both hunks listed in `reviews/L2a_R3.md` section 9); then L2b. Old line: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
