@@ -452,12 +452,28 @@ on the game; compare it with the server's record from
 
 **Driving the network screens.** While the network view is the active minigame, act on a
 row's control by its stable attributes: `data-host-id` on a host row, `data-resource-id` on
-a resource row, and `data-action` (`sign-in`, `open`, `observe`) on the control, for
-example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A jack's
+a resource row, `data-network-id` on a network block, and `data-action` (`sign-in`, `open`,
+`observe`, and on a discovery or services network `sweep` and `scan`) on the control, for
+example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A block's
+Sweep control is `[data-network-id="<id>"] [data-action="sweep"]`; a host or device row's Scan
+control is `[data-host-id="<id>"] [data-action="scan"]`. A jack's
 prompt ("Unplug it", "Leave it", or the plant confirm) is a `gameConfirm`, not a minigame,
 and `mg clickSelector` looks only inside a minigame, so answer it with the session's
 `dismiss` command on the button text: `{"cmd":"dismiss","label":"Unplug it"}`
 (`dismissBlockingUi`, which clicks the overlay button whose text contains the label).
+
+**Network view state (ops, S1).** `mg state` (the view's `getTestState`,
+`minigames/network-view/network-view-minigame.js`) sends the ops keys only when there is
+something to say, so a view with no discovery and no services answers the keys it always did:
+
+- `pending`: the keys of the sweep or scan requests still out (absent when none).
+- `ownNetwork`: `{ id, swept?, ops?, sweep? }` for the own network's block, when it carries an ops key.
+- `rows[]` (the own network's rows) and `networks[].rows[]`: a `pc` or `device` row in an ops block, or one that is scanned, adds `scanned` (boolean), `services` (the listed services) and `scan` (the Scan control's selector, present only while Scan is offered). A device row's `action` is `none`, or `not_responding` when it is powered down.
+- `networks[]`: `{ id, name, route, via, rows }` plus, on an ops block that is not `route: "down"`, `swept` (a discovery network only), `ops: true` (the server has a host to scan there) and `sweep` (the Sweep control's selector, present only while Sweep is offered).
+
+`window.__test.throttleFps(fps = 20, opts)` caps the headless game's frame rate (`systems/test-bridge/throttle.js`,
+which sets Phaser's `_limitRate` and checks the real step rate over `opts.windowMs`, default 600) and
+`window.__test.unthrottleFps(opts)` undoes it. The `test_ops_scan` playtest calls it with 20 before driving. It refuses when physics fixed steps are off.
 
 ---
 

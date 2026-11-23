@@ -200,9 +200,9 @@ Unplug, plant the box in `guest_port`.
 
 ### 11. End of run
 
-`{"cmd":"sync"}`, the full leak check over the whole responses file, `verify-run.rb <game_id> --access --ops-log`, then `{"cmd":"quit"}`.
+`{"cmd":"sync"}`, the full leak check over the whole responses file, then `verify-run.rb <game_id> --access` and `verify-run.rb <game_id> --ops-log` as two commands (each prints its own part and exits), then `{"cmd":"quit"}`.
 - The leak check: no host, product, version or service text before the beat that earned it, over every answer.
-- `verify-run.rb --ops-log` ends with `ops log OK`.
+- `verify-run.rb --access` prints the `opsDiscovered` line; `verify-run.rb --ops-log` ends with `ops log OK`.
 
 ## Earned secrets
 
