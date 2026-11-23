@@ -45,9 +45,9 @@ VAR hub_quiet = false
     - else:
     { episode_e15_shadow_it_defend_complete:
         Nilesh Solanki: That's the lot. If the official way's slow, tell us rather than building your own way round.
-        Nilesh Solanki: Nobody's in trouble for a workaround.
+        Nilesh Solanki: And nobody gets told off for asking.
     - else:
-        Nilesh Solanki: Nilesh, service desk. That slow share? Ask us first, we'd rather help than clean up.
+        Nilesh Solanki: Nilesh, service desk. Something slowing you down? Ask us first. We'd rather help than clean up.
         Nilesh Solanki: Start at the kiosk. Play out the Friday, then sort what's actually waiting.
     }
     }
