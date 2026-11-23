@@ -170,6 +170,27 @@ module NetworkOpsScenario
     data
   end
 
+  # The S3 fixture with an NPC borrow a controller test can drive (security review R1 F1, R2 N-T1): sam_pc has no owner
+  # (the route's `performable?` refuses a borrow of an owned PC), and Ian, an account holder who leaves the screen open,
+  # borrows it as his first workaround. A hand-over is seeded by the test (borrow_handed_state).
+  def borrow_techniques_scenario(**options)
+    data = techniques_scenario(**options)
+    sam_pc = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }
+    sam_pc.delete('owner')
+    ian = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'ian' }
+    ian['workarounds'] = [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'sam_pc' }]
+    ian['habits'] = { 'screen' => { 'lockChance' => 0 } }
+    data
+  end
+
+  # The player_state keys that make Ian's first workaround handed over long enough ago for the route to accept its "done".
+  def borrow_handed_state
+    { 'encounteredNPCs' => %w[ian],
+      'npcFrustration' => { 'ian' => { 'level' => 0, 'hands' => 1, 'turn' => 0, 'done' => [], 'lockedOut' => [], 'failAt' => {}, 'failWhy' => {},
+                                       'easeAt' => {}, 'lastSpent' => {},
+                                       'handed' => { '0' => { 'hand' => 1, 'time' => Time.current.to_f - 600, 'need' => 'work' } } } } }
+  end
+
   CLI_FIXTURE = File.expand_path('../fixtures/files/network_ops_cli.json', __dir__)
   CLI_STRINGS = %w[10.20.0.0/24 10.20.0.15 10.20.0.21 10.20.0.1 10.20.0.77 10.20.0.40 10.30.0.0/28 10.30.0.2 10.30.0.9 192.168.7.5
                    SVC-BANNER-TEXT BANNER-ONLY-TEXT BENCH-BANNER-TEXT].freeze

@@ -278,6 +278,47 @@ module BreakEscape
       game.save!
     end
 
+    # The borrow through the real route (R2 N-T1): POST /npc_workaround with the hand-over seeded in player_state, on a game whose sam_pc
+    # has no owner so `performable?` accepts the borrow.
+    def borrow_game
+      hold_state = { 'inventory' => [card_entry('card_factory')], 'currentRoom' => 'desk_room',
+                     'unlockedRooms' => NetworkRequests::OPEN_ROOMS + %w[server_room] }.merge(NOS.borrow_handed_state)
+      techniques_game(data: NOS.borrow_techniques_scenario, state: hold_state)
+    end
+
+    def borrow_route!
+      post npc_workaround_game_path(@game), params: { npc_id: 'ian', index: 0, hand: 1 }, as: :json
+      assert_response :success, response.body
+      response.parsed_body
+    end
+
+    test 'the borrow route keeps a technique session and the session sourced from it, and names no ended PC (F1, N-T1)' do
+      borrow_game
+      grant!
+      seed_sessions('lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' })
+      record = state['sessions']['sam_pc'].dup
+      body = borrow_route!
+      assert_equal true, body['guest'], 'the borrower left the screen open: a guest record is written'
+      assert_nil body['endedPcIds'], 'nothing was ended, so the answer names no PC'
+      assert_equal record, state['sessions']['sam_pc']
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
+      assert_equal 'ian', state['guestSessions']['sam_pc']
+      repeat = borrow_route!
+      assert_equal true, repeat['guest'], 'a resent done answers the same without ending anything'
+      assert_nil repeat['endedPcIds']
+      assert_equal record, state['sessions']['sam_pc']
+    end
+
+    test 'the borrow route still ends a keyboard session at the PC and names the session sourced from it (the control for F1)' do
+      borrow_game
+      seed_sessions('sam_pc' => { 'id' => 'sam', 'via' => 'password' }, 'lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' })
+      body = borrow_route!
+      assert_equal ['lena_pc'], body['endedPcIds']
+      assert_nil state['sessions']['sam_pc']
+      assert_nil state['sessions']['lena_pc']
+      assert_equal 'ian', state['guestSessions']['sam_pc']
+    end
+
     test 'a finished borrow keeps a technique session, writes the guest beside it and ends nothing' do
       session_game
       grant!
