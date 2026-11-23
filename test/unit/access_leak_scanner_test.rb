@@ -487,6 +487,14 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_includes AccessLeakScanner.file_order_problem([first, ['gap.jsonl', [{ 'dom' => 'x' }]], inside]), 'two.jsonl starts at'
   end
 
+  test 'T-4: unsorted rows inside a file are judged by the file\'s min and max' do
+    first = ['one.jsonl', [{ 't' => '2026-11-23T21:10:00.000Z' }, { 't' => '2026-11-23T21:00:00.000Z' }]]
+    overlap = ['two.jsonl', [{ 't' => '2026-11-23T21:12:00.000Z' }, { 't' => '2026-11-23T21:05:00.000Z' }]]
+    follow = ['three.jsonl', [{ 't' => '2026-11-23T21:20:00.000Z' }, { 't' => '2026-11-23T21:11:00.000Z' }]]
+    assert_includes AccessLeakScanner.file_order_problem([first, overlap]), 'two.jsonl starts at 2026-11-23T21:05:00.000Z, inside the span of one.jsonl'
+    assert_nil AccessLeakScanner.file_order_problem([first, follow])
+  end
+
   test 'R4-6: rows naming another game are refused, the right game and rows without a game path are not' do
     mine = timed('mine.jsonl', '2026-11-23T21:00:00.000Z', path: '/break_escape/games/7/network?x=1')
     other = timed('other.jsonl', '2026-11-23T21:01:00.000Z', path: '/break_escape/games/8/keyring')

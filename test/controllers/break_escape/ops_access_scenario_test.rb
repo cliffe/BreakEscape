@@ -504,7 +504,7 @@ module BreakEscape
       assert_nil session_at('desk01')
       assert_nil session_at('files01')
       get game_path('network'), params: { foothold: OFFICE }, as: :json
-      assert_includes [403, 404], response.status, 'the dropped foothold has no view, so no plant network'
+      assert_response :not_found, 'the dropped foothold has no view, so no plant network'
       desktop('vault01', foothold: OFFICE)
       assert_response :forbidden
       assert_equal 'no_session', response.parsed_body['reason']

@@ -219,12 +219,12 @@ class AccessLeakScanner
 
   # The capture files of one game are one log, read in the order given, so they must be given oldest
   # first. Every recorded row carries its time `t` (ISO 8601, so it sorts as text). `files` is
-  # [[label, rows]]; the answer is nil when each file's first timed row is no earlier than the last timed row of the
-  # previous timed file, otherwise a sentence naming the first pair out of order. A shell glob puts
+  # [[label, rows]]; the answer is nil when each file's earliest time is no earlier than the latest time of the
+  # previous timed file (rows inside a file need not be sorted: min and max are used), otherwise a sentence naming the first pair out of order. A shell glob puts
   # responses-N-2.jsonl before responses-N.jsonl, and a log read that way reports every earlier
   # sweep, scan and check as a leak (ops core S3 PL7: 776 false findings).
   #
-  # Each file's first time is compared with the LAST time of the previous TIMED file, so an untimed
+  # Each file's earliest time is compared with the LATEST time of the previous TIMED file, so an untimed
   # file between two timed ones hides nothing, and two captures that overlap in time (two tabs
   # recording at once, which one pass over each file in turn cannot read in time order) are refused too:
   # merge them into one file sorted by `n` and `t` first.
@@ -234,12 +234,14 @@ class AccessLeakScanner
       times = Array(rows).filter_map { |r| r['t'] if r.is_a?(Hash) && r['t'].is_a?(String) }
       next if times.empty?
 
-      if prev && times.first < prev[1]
-        kind = times.first < prev[2] ? 'before' : 'inside the span of'
-        return "#{label} starts at #{times.first}, #{kind} #{prev[0]} (#{prev[2]} to #{prev[1]}): give the capture files " \
+      lo = times.min
+      hi = times.max
+      if prev && lo < prev[1]
+        kind = lo < prev[2] ? 'before' : 'inside the span of'
+        return "#{label} starts at #{lo}, #{kind} #{prev[0]} (#{prev[2]} to #{prev[1]}): give the capture files " \
                'oldest first, one after another (captures that overlap in time must be merged into one file first)'
       end
-      prev = [label, times.last, times.first]
+      prev = [label, hi, lo]
     end
     nil
   end
@@ -247,6 +249,9 @@ class AccessLeakScanner
   # The scanner judges every row against ONE game's scenario. A row whose path names /games/<n>/ for a
   # different n comes from another game (a capture file from another run): the sentence names the first
   # such file, or nil. Rows carry the game id in their path (the recorder stores the request path).
+  # Rows with no /games/<n>/ path (bootstrap pages, other paths) cannot be attributed to a game, so a
+  # foreign capture is caught only when it holds at least one game-path row (every real capture does);
+  # one foreign row refuses the whole run.
   def self.game_mismatch_problem(game_id, files)
     files.each do |label, rows|
       Array(rows).each do |row|

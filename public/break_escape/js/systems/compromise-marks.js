@@ -127,12 +127,13 @@ export class CompromiseMarks {
         const own = Object.getOwnPropertyDescriptor(sprite, 'visible');
         if (own && (own.get || own.set || own.configurable === false)) return () => {};
         let held = own ? own.value : undefined; // a plain data property stands in for the accessor
+        let wasSet = !!own;
         const get = desc?.get ? () => desc.get.call(sprite) : () => held;
-        const set = (v) => { if (desc?.set) desc.set.call(sprite, v); else held = v; image.visible = !!get(); };
+        const set = (v) => { if (desc?.set) desc.set.call(sprite, v); else { held = v; wasSet = true; } image.visible = !!get(); };
         Object.defineProperty(sprite, 'visible', { configurable: true, enumerable: true, get, set });
         return () => {
             delete sprite.visible;
-            if (!desc && own) sprite.visible = held;
+            if (!desc && wasSet) sprite.visible = held;
         };
     }
 

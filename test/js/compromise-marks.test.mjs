@@ -321,6 +321,19 @@ test('PL6: a plain data `visible` on a stub sprite keeps its value through mark 
     assert.equal(pc.visible, true);
 });
 
+test('R4-4: a value set on a sprite with no visible while the mark is held is written back at unmark', async () => {
+    const pc = sprite('pc1');
+    assert.equal('visible' in pc, false);
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    marks.refresh();
+    pc.visible = false;
+    assert.equal(images[0].visible, false);
+    await sessions.signOut('pc1');
+    assert.equal(Object.getOwnPropertyDescriptor(pc, 'visible').value, false, 'the value set while wrapped survives the unmark');
+});
+
 // S3 client R1 T5: a reload before the server's answer catches up
 test('a reload whose loaded copy has no foothold held yet leaves the PC unmarked until the foothold loads', () => {
     const pc = sprite('pc1');
