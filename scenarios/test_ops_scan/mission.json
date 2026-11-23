@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops scan",
+  "description": "Test of the ops core's first stage (core plan S1, N13): a discovery network that opens empty, a sweep that lists its hosts, a host scan that lists services, and a pivot to a second discovery network. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "ops_scan",
+  "test_objective": "Prove a discovery network lists nothing until swept, a sweep lists its hosts without services, a host scan lists services, a pivot opens a second discovery network that is swept the same way, and no host, product or version reaches the browser before the step that earns it"
+}

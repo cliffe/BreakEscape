@@ -41,16 +41,57 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   `965e9a595`. L1b R1 review 0B 1M 6m `79e6ad133`; FIXED 6 of 7 (m5 was real: the granted
   badge row moved after the route-room gate): `49211abbb`, `a84ab7d02`, `40d47ac12`, outcomes
   `d950ed316`. Open: L1b m4 f (`save_limit: false` helper test, unowned).
-- RUNNING: delta review R2 over both fix sets (fable52L; findings `reviews/L1ab_R2.md`, does
-  not commit); Haiku scripted playtest of `test_ops_logs` on port 3011 (results in the session
-  scratchpad `l1b-playtest/RESULTS.md`; a Sonnet run checks any "stuck" before it counts).
-- Next: commit R2 findings; one small Sonnet fix pass if needed (include m4 f); look at the
-  playtest screenshots myself; then
-  `tools/playtest/train-check.sh /data/be-ops-core <outdir> <port>` (GREEN needed, clean
-  tree); merge `ops-core` into main in `/home/deploy/BreakEscape` (merge, not rebase; check
-  main has not moved under other sessions first, merge main into the branch and re-check if
-  it has); push; then core step 1 (Sonnet): `OPS_CORE_PLAN.md` section 10 parts 1, 2 and 5
-  fixtures with the golden mechanism.
+- R2 delta review: ready to land (24 of 25 confirmed, 4 minors) `ed7f7d18f`; tidy pass
+  `21fcce0fe`, `9f4cbaeed`. Playtest of `test_ops_logs` passed 7 of 7 (second run; game made
+  with `swap-scenario-game.rb`). Schema convention fix `791609f2e`.
+- **L1a and L1b LANDED on main and pushed: merge `13afcdf89`** (train check 2 at `791609f2e`
+  in `/data/tmp/ops-core-train-2`: Rails 3724 runs 0 failures, smoke 3 games 0 failed, corpus
+  0 of 201, rubocop clean, tree clean; RED only on JS, 3 of 993 files).
+- **JS baseline on this machine** (fail or flake on main itself, branch touches no `public/`
+  file): `capture-log.test.mjs`, `lockpick-mode-switch-roundtrip.test.mjs` (fail on main),
+  `lab-ux-ui.test.mjs` (flaky on main). Landing rule here: no failure main does not have.
+  Any OTHER failing JS file is ours. Reported to the user as a machine issue.
+- **Train check on this machine** needs: `.bundle/config` copied from main into the worktree
+  (done), node 22 first on PATH, and
+  `PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell`.
+  Single JS files run as `bin/test-js test/js/<name>.test.mjs` (a bare name "fails" falsely).
+- Core step 1 DONE: `0bf5c6744` (8 golden fixtures `core_<scenario>.json`; node fixtures in
+  `test/js/fixtures/ops_unchanged/`; note `HANDOVER_core_1.md`; all three checks mutation
+  proved). Ruling: part 2 covers the 8 network scenarios, the 6 pretext scenarios and m01, m02
+  as controls (not every folder; the train's validator corpus covers the rest). Known: the
+  checked-in graph of `test_access_networks` is stale against regeneration (not ours).
+- S1 step 2 DONE: `046dff1ec` (schema rows, `NetworkModel` helpers, `check_network_ops`,
+  `scripts/real_product_names.txt`, withheld names; note `HANDOVER_core_2.md`). The validator
+  table `NETWORK_OPS_BUILT` has N13 false until step 5 flips it (the plan: a stage flips its
+  entries when it lands). OWED BY STEP 5: the two `validate_network.rb` edits of plan 9.2
+  (the same-label rule via `hosts_on` near VN:587; `carries` near VN:361-364).
+- S1 step 3 DONE: `fb22fcedb`, `147f94bcd` (scan route, `network_ops.rb`, `opsDiscovered`,
+  events, rows; 63 new tests; note `HANDOVER_core_3.md`; departures (a) to (h) sent to the
+  reviewer, notably the foothold argument of `network_rows`/`host_row` left out until S3).
+- S1 step 4 DONE: `559f36023` (`ops-model.js`, `perform` with guard and hooks, Sweep and Scan;
+  32 new node tests; whole JS batch 996 of 999, only the 3 machine-baseline files failing;
+  note `HANDOVER_core_4.md`). No browser proof yet.
+- S1 reviews R1: server 0B 2M 7m `00f4b0beb` (`reviews/S1_server_R1.md`); client 0B 1M 7m
+  `33a0b31d9` (`reviews/S1_client_R1.md`; the two halves agree, no mismatches). Rulings in the
+  brief. Client FIXED 9 of 9 (unconfirmed): `7c3189229`, outcomes `ce3475104`.
+- S1 step 5 DONE: `897d3e1bd` (`scenarios/test_ops_scan/` with PLAYTEST.md, N13 flipped to
+  built, the two `validate_network.rb` edits, `collect_ops_secrets`, verify-run line, graph
+  nodes for devices, docs N13; note `HANDOVER_core_5.md`). That builder ran to 257k tokens:
+  split a step like this in two next time (scenario + tests / tooling + docs).
+- S1 server R1 FIXED (unconfirmed): `50a325b76`, `1d58cf407`, `d735fefee` (M1, M2, m1, m5),
+  `6cc0efa9a` (m3, m4, m6, m7). The reviewer had written only a header to its findings file;
+  rebuilt from its report in `d55562487`. LESSON: check a findings file's length before
+  committing it; the brief now says findings go in the file in full.
+- RUNNING: delta review R2 (fable52L; fixes of both halves plus a first read of step 5;
+  `reviews/S1_R2.md`, does not commit); Haiku scripted playtest + live proof of
+  `test_ops_scan` on port 3011 (real clicks on Sweep and Scan; results and screenshots in the
+  session scratchpad `s1-playtest/RESULTS.md`).
+- Next: commit R2 findings (check the file is complete); look at the playtest screenshots
+  myself; a Sonnet check of any "stuck"; one fix pass if needed; train check (machine
+  settings above; needs the worktree untouched while it runs); land; push. Then S2: step 6
+  split in two builders (6a model helpers, schema, validator, check/confirm routes,
+  `opsFindings`, events; 6b catalog loader, `cli` from `realism`, tests), step 7 client and
+  graph, step 8 split (scenario + tests / tooling + docs).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;

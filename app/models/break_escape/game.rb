@@ -6,6 +6,7 @@ module BreakEscape
     include CarryOver
     include ScoreBreakdown
     include NetworkAccess
+    include NetworkOps
     include CaptureProofs
     include CredentialKeyring
     include CredentialLogin
@@ -3089,7 +3090,10 @@ module BreakEscape
       'keyringGained' => {},
       # Fingerprint-kit dusting of PIN pads (PinDust): { lockKey => the PIN's distinct digits }.
       # Server-written only, one short string per PIN lock, never in a sync body or the bootstrap.
-      'pinDusted' => {}
+      'pinDusted' => {},
+      # Network ops S1 (OPS_CORE_PLAN.md 8): { networks: [id], hosts: [id] } the player has swept or
+      # scanned. Server-written only, never in a sync body, the bootstrap or any answer whole.
+      'opsDiscovered' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures

@@ -265,4 +265,80 @@ class NetworkModelTest < ActiveSupport::TestCase
     assert_equal({}, game.network_footholds)
     assert_equal [], game.gained_footholds
   end
+
+  # Ops core S1 (OPS_CORE_PLAN.md 5.1, 11.1): hosts, discovery?, hosts_on, services_of.
+  def ops_data
+    {
+      'networks' => { 'office_lan' => { 'name' => 'Office LAN', 'discovery' => 'scan' },
+                      'open_lan' => { 'name' => 'Open LAN' }, 'odd_lan' => { 'name' => 'Odd', 'discovery' => 'maybe' } },
+      'hosts' => {
+        'print01' => { 'name' => 'Printer', 'network' => 'office_lan',
+                       'services' => [{ 'name' => 'print', 'port' => 9100, 'product' => 'P', 'version' => '1' }] },
+        'cam01' => { 'name' => 'Camera', 'network' => 'office_lan' },
+        'lost01' => { 'name' => 'Lost', 'network' => 'no_such_lan' },
+        'junk' => 'not a hash',
+        '_note' => { 'name' => 'a note', 'network' => 'office_lan' }
+      },
+      'rooms' => { 'lobby' => { 'objects' => [
+        { 'id' => 'files01', 'type' => 'pc', 'name' => 'Files', 'lockType' => 'login', 'network' => 'office_lan',
+          'services' => [{ 'name' => 'files', 'port' => 445, 'product' => 'F', 'version' => '3' }] },
+        { 'id' => 'plain_pc', 'type' => 'pc', 'name' => 'Plain', 'network' => 'office_lan' }
+      ] } }
+    }
+  end
+
+  test 'hosts reads the top-level map, hashes only, notes skipped; absent or malformed is empty' do
+    assert_equal %w[cam01 lost01 print01], NM.hosts(ops_data).keys.sort
+    assert_equal({}, NM.hosts({}))
+    assert_equal({}, NM.hosts({ 'hosts' => [] }))
+    assert_equal({}, NM.hosts(nil))
+  end
+
+  test 'discovery? is true only for scan; open, absent, odd values and unknown networks are false' do
+    d = ops_data
+    assert NM.discovery?(d, 'office_lan')
+    refute NM.discovery?(d, 'open_lan')
+    refute NM.discovery?(d, 'odd_lan')
+    refute NM.discovery?(d, 'nowhere')
+    refute NM.discovery?(d, nil)
+  end
+
+  test 'hosts_on lists both kinds sorted by id, leaves out a hosts entry with an unknown network' do
+    list = NM.hosts_on('office_lan', ops_data)
+    assert_equal %w[cam01 files01 print01], list.map { |h| h[:id] }
+    assert_equal %w[device pc device], list.map { |h| h[:kind] }
+    assert_equal 'Files', list[1][:object]['name']
+    assert_equal({ 'name' => 'Camera', 'network' => 'office_lan' }, list[0][:object])
+    assert_equal ['office_lan'], list.map { |h| h[:network] }.uniq
+    assert_equal [0, 1, 1], list.map { |h| h[:services].length }
+    assert_empty NM.hosts_on('no_such_lan', ops_data)
+    assert_empty NM.hosts_on(nil, ops_data)
+    assert_empty NM.hosts_on('open_lan', ops_data)
+  end
+
+  test 'hosts_on lists the sign-in object when a hosts entry shares its id' do
+    d = ops_data
+    d['hosts']['files01'] = { 'name' => 'Clash', 'network' => 'office_lan' }
+    list = NM.hosts_on('office_lan', d).select { |h| h[:id] == 'files01' }
+    assert_equal ['pc'], list.map { |h| h[:kind] }
+  end
+
+  test 'services_of takes a record, an object or an entry, reads at most 8, skips malformed entries' do
+    many = (1..12).map { |i| { 'name' => "s#{i}", 'port' => i, 'product' => 'P', 'version' => '1' } }
+    assert_equal 8, NM.services_of({ 'services' => many }).length
+    assert_equal %w[s1 s2], NM.services_of({ 'services' => [many[0], 'junk', nil, many[1]] }).map { |s| s['name'] }
+    assert_equal [], NM.services_of({ 'services' => 'junk' })
+    assert_equal [], NM.services_of({})
+    assert_equal [], NM.services_of(nil)
+    rec = NM.hosts_on('office_lan', ops_data).find { |h| h[:id] == 'print01' }
+    assert_equal %w[print], NM.services_of(rec).map { |s| s['name'] }
+  end
+
+  test 'the S1 helpers change nothing for an existing scenario' do
+    assert_equal({}, NM.hosts(data))
+    NM.networks(data).each_key do |id|
+      refute NM.discovery?(data, id)
+      assert_equal NM.sign_in_objects_on(id, data).map { |e| e[:object]['id'] }, NM.hosts_on(id, data).map { |h| h[:id] }
+    end
+  end
 end

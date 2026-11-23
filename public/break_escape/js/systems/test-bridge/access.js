@@ -212,7 +212,10 @@ export const accessBridge = {
 
     /**
      * The last GET /network answer network-links.js fetched for a foothold: its entry
-     * `{ id, via, name, network, hosts }`, or null when none was fetched. Read from
+     * `{ id, via, name, network, hosts, networks, techniques }`, or null when none was fetched.
+     * `networks` is the blocks (each with its rows, and `swept` and `ops` on an ops network);
+     * `techniques` is the held cards' map, sent from S3 on (absent before). The whole entry is
+     * returned as it stands, so a playtest can read `swept` and the rows with the view closed. Read from
      * `window.networkLinks`: its `lastView(footholdId)` when it has one, else its `views`
      * (a Map or an object keyed by foothold id).
      */

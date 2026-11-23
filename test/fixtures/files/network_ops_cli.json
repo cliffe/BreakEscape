@@ -1,0 +1,36 @@
+{
+  "_note": "Test-only: every cli object of OPS_CORE_PLAN 5.2, each with a _note and a key the plan does not copy. Merged into the ops scenario by NetworkOpsScenario.with_cli. Not a scenario folder.",
+  "networks": {
+    "office_lan": {
+      "cli": {
+        "range": "10.20.0.0/24",
+        "_note": "RANGE-NOTE-TEXT",
+        "other": "RANGE-OTHER-TEXT",
+        "hosts": {
+          "sam_pc": { "address": "10.20.0.15", "_note": "ADDR-NOTE-TEXT", "other": "ADDR-OTHER-TEXT" },
+          "lena_pc": { "address": "10.20.0.21" },
+          "print_srv": { "address": "10.20.0.1" },
+          "plain_cam": { "address": "10.20.0.77" },
+          "scanned_inbox": { "address": "10.20.0.40" }
+        }
+      }
+    },
+    "server_net": {
+      "cli": {
+        "range": "10.30.0.0/28",
+        "hosts": { "sv_fs02": { "address": "10.30.0.2" }, "sv_dev": { "address": "10.30.0.9" } }
+      }
+    },
+    "workshop_lan": {
+      "cli": { "hosts": { "bench_pc": { "address": "192.168.7.5" } } }
+    }
+  },
+  "serviceCli": {
+    "sam_pc": {
+      "web": { "protocol": "tcp", "service": "http", "banner": "SVC-BANNER-TEXT ready", "_note": "SVC-NOTE-TEXT", "other": "SVC-OTHER-TEXT" },
+      "files": { "banner": "BANNER-ONLY-TEXT" }
+    },
+    "print_srv": { "queue": { "protocol": "tcp" } },
+    "bench_pc": { "web": { "service": "http", "banner": "BENCH-BANNER-TEXT" } }
+  }
+}

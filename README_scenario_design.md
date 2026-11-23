@@ -1039,6 +1039,7 @@ Every access-control and network feature that is built, with its ID. The detail 
 | N10 | Implants | A `grant_foothold` action gives a foothold on a sign-in PC's own network: from a device the player plugs into a PC they hold a session on (held-device and needs-a-session variant, also the BadUSB), or from a device the player dropped that an NPC then uses (dropped-device variant). | `grant_foothold` action: `pc`, `needsSession`, `needsHeld`, `needsDropped`, `name`; item `usbClass`; policy `usb`. |
 | N11 | Patch panel | An object with `panelPorts` opens a 24-port patch panel; a port with a jack plants the player's box through the usual jack flow. | `panelPorts` (object), `panelOf` (jack). |
 | N12 | Resource and host rows in the network view (additional) | `GET /network` lists, per held foothold, host rows (sign-in objects) and resource rows on each reachable network, with greyed blocks for networks the player held a session on that are now down. | `host` (object), `sprite` (object), resource `name`, `host`, `observations`. |
+| N13 | Discovery, hosts and services | A network with `discovery: "scan"` opens its view empty until swept; a top-level `hosts` map adds devices with no sign-in; `services` on a host or sign-in object list once the host is scanned. `POST /network/scan` is the sweep and the scan. | `networks.<id>.discovery`, `hosts.<id>` (`name`, `network`, `sprite`, `offWhen`, `services`), `services` (`name`, `port`, `product`, `version`, `label`). |
 
 #### Networks: jacks, footholds, hosts and shares
 

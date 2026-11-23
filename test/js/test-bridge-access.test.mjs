@@ -177,6 +177,24 @@ test('networkView() returns the last view fetched for a foothold, or null', () =
   delete window.networkLinks;
 });
 
+test('networkView() carries the blocks (networks) and techniques through, with swept, ops and scanned rows', () => {
+  const view = { id: 'jack_a', via: 'jack', name: 'Drop box', network: { id: 'lab', name: 'Lab' },
+                 hosts: [{ id: 'print01', kind: 'device', name: 'Printer', scanned: true, services: [{ name: 'web', port: 80 }] }],
+                 networks: [{ id: 'lab', name: 'Lab', route: 'up', swept: true, ops: true, hosts: [{ id: 'print01', kind: 'device', scanned: true }] },
+                            { id: 'far', name: 'Far', route: 'up', swept: false, hosts: [] }],
+                 techniques: { card1: { name: 'Card' } } };
+  window.networkLinks = { lastView: id => (id === 'jack_a' ? view : undefined) };
+  const out = accessBridge.networkView('jack_a');
+  assert.deepEqual(out.networks, view.networks);
+  assert.equal(out.networks[0].swept, true);
+  assert.equal(out.networks[1].swept, false);
+  assert.deepEqual(out.techniques, view.techniques);
+  assert.deepEqual(out.hosts[0].services, [{ name: 'web', port: 80 }]);
+  out.networks[0].swept = false;
+  assert.equal(view.networks[0].swept, true, 'the returned blocks are a copy');
+  delete window.networkLinks;
+});
+
 test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
   writeFileSync(join(dir, 'systems/test-bridge/wait.js'), 'export function safeJson(v) { return JSON.parse(JSON.stringify(v ?? null)); }\n');
   writeFileSync(join(dir, 'systems/test-bridge/log.js'), readFileSync(join(js, 'systems/test-bridge/log.js'), 'utf8'));

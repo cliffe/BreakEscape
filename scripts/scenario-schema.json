@@ -364,6 +364,7 @@
             "additionalProperties": false,
             "patternProperties": { "^_": {} }
           },
+          "discovery": { "type": "string", "enum": ["open", "scan"], "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): open (default, and the meaning of an absent key) lists every row as today; scan lists rows only once a sweep has discovered them. Governs the network view only: no sign-in, desktop or share route reads it. Read through NetworkModel.discovery?." },
           "_comment": { "type": "string" }
         },
         "required": ["name"]
@@ -395,6 +396,25 @@
           "object": { "type": "string", "description": "Slice 9.2: a room object the resource is tied to (a check visit walks there)." },
           "_comment": { "type": "string" }
         }
+      }
+    },
+    "hosts": {
+      "x-id-map": true, "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan"],
+      "type": "object",
+      "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): hosts with no sign-in, key to { name, network, sprite?, offWhen?, services[] }. A host here is never clicked in the world and has no desktop; it is listed in a foothold's view (a sweep, on a discovery network) and its services after a scan. One id space with room objects and resources (the validator, scripts/validate_network_ops.rb, checks that, the 40-character limit and the key pattern). Never sent in the bootstrap (NetworkAccess::WITHHELD_SCENARIO_KEYS); read through NetworkModel.hosts.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "patternProperties": { "^_": {} },
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "description": "What the player sees on the host's row." },
+          "network": { "type": "string", "x-ref": "network", "description": "A networks key: the network this host is on." },
+          "sprite": { "type": "string", "minLength": 1, "description": "Optional: a PNG name in public/break_escape/assets/objects/ (as an item's type), drawn as the row icon. The validator checks the file exists." },
+          "offWhen": { "oneOf": [ { "type": "string", "minLength": 1 }, {"x-id-map": true,  "type": "object", "minProperties": 1 } ], "description": "The outage condition in the requireGlobal form, as on an object: while it holds the host is powered down. Read server-side." },
+          "services": { "type": "array", "maxItems": 8, "items": { "$ref": "#/definitions/service" }, "description": "The services this host runs, shown after a host scan. At most 8; names unique on the host (the validator checks that)." },
+          "_comment": { "type": "string" }
+        },
+        "required": ["name", "network"]
       }
     },
     "roles": {
@@ -5194,6 +5214,21 @@
         "emitEventData": {"type": "object", "x-id-map": false, "description": "The payload sent with emitEvent."}
       }
     },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): one service on a host, on a sign-in object or a hosts entry. Its id is <hostId>.<name>. The fields are display only; nothing reads a port.",
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$", "maxLength": 40, "description": "The service's id on its host: unique on the host, at most 40 characters." },
+        "label": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Optional display words; the name is shown when absent." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Display only." },
+        "product": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text, an invented product name." },
+        "version": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text." },
+        "_comment": { "type": "string" }
+      },
+      "required": ["name", "port", "product", "version"]
+    },
     "item": {
       "type": "object",
       "required": ["type", "name"],
@@ -5591,6 +5626,7 @@
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "x-ref": "policy", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser (NetworkAccess::WITHHELD_OBJECT_FIELDS)." },
+        "services": { "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan"], "type": "array", "maxItems": 8, "items": { "$ref": "#/definitions/service" }, "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): the services this sign-in host runs, shown after a host scan. Only on a sign-in object (lockType login); the validator (scripts/validate_network_ops.rb) refuses it elsewhere and while N13 is not built. Never sent in room data (NetworkAccess::WITHHELD_OBJECT_FIELDS); read through NetworkModel.services_of." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",

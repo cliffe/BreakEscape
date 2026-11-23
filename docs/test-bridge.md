@@ -440,7 +440,7 @@ on the game; compare it with the server's record from
 | `workstation(pcId)` | `{ ok, id, workstation, owner, present, away, screenLocked, lockAt }` from `workstation-state.js`. `present` is the owner's presence (the env's `ownerPresent` once step 9 adds it, else "not away"); `away` is the owner's away record or null; `workstation` is false for an object the module does not treat as a workstation. `{ ok: false, reason }` when the module or object is missing. |
 | `savedCards()` | The card copier's `saved_cards` as card ids. This list is client-written and never decides identity: the server's copies are `serverClones` in `verify-run.rb --access`. |
 | `footholds()` | Networks (`docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md`): the footholds the client holds, `[{ id, via, name, itemId, sourceId, network }]`, read from `window.networkLinks` (`systems/network-links.js`, its `list()`, else its `footholds`). Empty while the module does not exist. The server's record is `footholds` and `gainedFootholds` in `verify-run.rb --access`. |
-| `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts }`, or null (from `networkLinks.lastView(id)`, else its `views`). |
+| `networkView(footholdId)` | The last `GET /network` entry the client fetched for that foothold, `{ id, via, name, network, hosts, networks, techniques }`, or null (from `networkLinks.lastView(id)`, else its `views`). `networks` is the blocks, each with its `hosts` rows and, on a network with discovery or services, `swept` and `ops`; a host row carries `scanned` and `services` once scanned. `techniques` is the held cards' map and is sent from the technique stage on. The entry comes back whole, so a playtest can read `swept` and the rows with the view closed. |
 | `work(npcId)` | Access slice 9.2 (`docs/achitechture/ACCESS_MODEL_SLICE_9_2_PLAN.md`): `{ plan, frustration, tell, settled, failed, parked, lockedOut, lockCheck }`. `lockedOut` lists the stations the server's check found the NPC locked out at, `lockCheck` the checks in flight (sub-slice L). `plan` is the server's read-only `work` plan on the NPC record (`{ breakDrain, needs: [{ id, kind, admitted, offWhen?, object?, routes? }] }`, null with none); the rest is from the needs system's `getState`. The server's record is `npcFrustration` in `verify-run.rb --access`. |
 | `guest(pcId)` | Slice 9.2 H (plan 6.4): `{ ok, pcId, guest, userId, session }`. `guest` is the workstation layer's guest record at that PC (`{ npcId, lockAt }`, `lockAt` in needs-clock ms or null), set when a borrower left the hot desk signed in and the server agreed; `userId` is the NPC using the PC now (a borrower at the hot desk); `session` is the player's session there (`{ npcId, via, guest }`, `guest: true` for a guest claim) or null. The server's record is `guestSessions` in `verify-run.rb --access`. |
 | `feed()` | Slice 9.2 C (plan 8.3): `{ revealed, done, requests }` from `systems/social-feed.js`: the revealed feed post ids by NPC (oldest first), the NPCs whose feed the server said is done, and how many `POST /feed_post` requests were sent. Ids only, never a post's text. The server's record is `feedRevealed` in `verify-run.rb --access`. |
@@ -452,12 +452,28 @@ on the game; compare it with the server's record from
 
 **Driving the network screens.** While the network view is the active minigame, act on a
 row's control by its stable attributes: `data-host-id` on a host row, `data-resource-id` on
-a resource row, and `data-action` (`sign-in`, `open`, `observe`) on the control, for
-example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A jack's
+a resource row, `data-network-id` on a network block, and `data-action` (`sign-in`, `open`,
+`observe`, and on a discovery or services network `sweep` and `scan`) on the control, for
+example `mg clickSelector '[data-host-id="lena_pc"] [data-action="sign-in"]'`. A block's
+Sweep control is `[data-network-id="<id>"] [data-action="sweep"]`; a host or device row's Scan
+control is `[data-host-id="<id>"] [data-action="scan"]`. A jack's
 prompt ("Unplug it", "Leave it", or the plant confirm) is a `gameConfirm`, not a minigame,
 and `mg clickSelector` looks only inside a minigame, so answer it with the session's
 `dismiss` command on the button text: `{"cmd":"dismiss","label":"Unplug it"}`
 (`dismissBlockingUi`, which clicks the overlay button whose text contains the label).
+
+**Network view state (ops, S1).** `mg state` (the view's `getTestState`,
+`minigames/network-view/network-view-minigame.js`) sends the ops keys only when there is
+something to say, so a view with no discovery and no services answers the keys it always did:
+
+- `pending`: the keys of the sweep or scan requests still out (absent when none).
+- `ownNetwork`: `{ id, swept?, ops?, sweep? }` for the own network's block, when it carries an ops key.
+- `rows[]` (the own network's rows) and `networks[].rows[]`: a `pc` or `device` row in an ops block, or one that is scanned, adds `scanned` (boolean), `services` (the listed services) and `scan` (the Scan control's selector, present only while Scan is offered). A device row's `action` is `none`, or `not_responding` when it is powered down.
+- `networks[]`: `{ id, name, route, via, rows }` plus, on an ops block that is not `route: "down"`, `swept` (a discovery network only), `ops: true` (the server has a host to scan there) and `sweep` (the Sweep control's selector, present only while Sweep is offered).
+
+`window.__test.throttleFps(fps = 20, opts)` caps the headless game's frame rate (`systems/test-bridge/throttle.js`,
+which sets Phaser's `_limitRate` and checks the real step rate over `opts.windowMs`, default 600) and
+`window.__test.unthrottleFps(opts)` undoes it. The `test_ops_scan` playtest calls it with 20 before driving. It refuses when physics fixed steps are off.
 
 ---
 

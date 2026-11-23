@@ -1,0 +1,1870 @@
+{
+ "description": "Merged pretext call specs and the pretext-judge.js verdict rows over them, recorded before any ops-core edit. Re-record only as test/js/pretext-verdicts-unchanged.test.mjs says.",
+ "scenarios": {
+  "ca03_helpdesk_reset": {
+   "quayholt_helpdesk_reset": {
+    "spec": {
+     "character": "leila",
+     "callId": "quayholt_helpdesk_reset",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -15,
+      "deflect": -10
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "who": {
+       "value": "gordon_full",
+       "grade": "identity"
+      },
+      "team": {
+       "value": "claims",
+       "grade": "identity"
+      },
+      "manager": {
+       "value": "okonkwo_full",
+       "grade": "identity"
+      },
+      "staffId": {
+       "value": "gordon_staffid",
+       "grade": "lesser"
+      }
+     },
+     "labels": {
+      "gordon_full": "Gordon McLeish",
+      "claims": "Claims",
+      "okonkwo_full": "Ngozi Okonkwo",
+      "gordon_staffid": "QH-20719"
+     },
+     "lines": {
+      "open_locked_out": {
+       "requires": [
+        "quayholt_claims_manager"
+       ],
+       "blanks": {
+        "who": "who",
+        "team": "team"
+       },
+       "claims": [
+        {
+         "fact": "who",
+         "from": "blank:who"
+        },
+        {
+         "fact": "team",
+         "from": "blank:team"
+        }
+       ],
+       "text": "Morning, it's {who} in {team}, I'm locked out of my account."
+      },
+      "give_manager": {
+       "requires": [
+        "quayholt_claims_head"
+       ],
+       "blanks": {
+        "manager": "manager"
+       },
+       "claims": [
+        {
+         "fact": "manager",
+         "from": "blank:manager"
+        }
+       ],
+       "text": "My manager's {manager}, she'll vouch for me."
+      },
+      "give_staffid": {
+       "requires": [
+        "quayholt_staff_number"
+       ],
+       "blanks": {
+        "staffId": "staffId"
+       },
+       "claims": [
+        {
+         "fact": "staffId",
+         "from": "blank:staffId"
+        }
+       ],
+       "text": "My staff reference is {staffId}."
+      },
+      "name_drop_director": {
+       "technique": "authority_borrowed",
+       "also": [
+        "urgency"
+       ],
+       "claims": [],
+       "requires": [
+        "quayholt_claims_head"
+       ],
+       "text": "The Head of Claims needs me back online for a hearing this morning."
+      },
+      "cant_callback": {
+       "technique": "deflect",
+       "claims": [],
+       "requires": [
+        "quayholt_gordon_away"
+       ],
+       "text": "I'm at a conference, I won't be at my desk phone, so a callback's no good. Can you just do it now?"
+      },
+      "skip_verification": {
+       "technique": "urgency",
+       "also": [
+        "deflect"
+       ],
+       "claims": [],
+       "text": "Honestly, skip the security questions, I really don't have time for this."
+      }
+     },
+     "asks": {
+      "reset_password": {
+       "pressure": -10,
+       "floor": 0,
+       "verification": [
+        "manager",
+        "staffId"
+       ],
+       "grants": {
+        "setGlobal": {
+         "leila_reset_granted": true
+        }
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I'm going to stop there. I'll call you back on the number we hold for your account, and if this is really you, you'll hear from us."
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "who": {
+       "pass": "Name. Gordon McLeish is on the staff list.",
+       "fail": "Name. You said \"{said}\". The list has {actual}.",
+       "failCategory": "Name. That did not match the staff list.",
+       "unknown": "Name. She cannot check this."
+      },
+      "team": {
+       "pass": "Team. Claims matches the directory.",
+       "fail": "Team. You said \"{said}\". The directory has {actual}.",
+       "failCategory": "Team. That did not match the directory.",
+       "unknown": "Team. She cannot check this."
+      },
+      "manager": {
+       "pass": "Manager. Ngozi Okonkwo is the Head of Claims on file, so she accepts it.",
+       "fail": "Manager. You said \"{said}\". Her record shows {actual}.",
+       "failCategory": "Manager. That did not match the reporting line on file.",
+       "unknown": "Manager. She cannot check this."
+      },
+      "staffId": {
+       "pass": "Staff reference. QH-20719 matches, so she treats it as a passed check.",
+       "fail": "Staff reference. You said \"{said}\". The record shows {actual}.",
+       "failCategory": "Staff reference. That did not match the record.",
+       "unknown": "Staff reference. She cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed reset is the oldest pressure line on a service desk.",
+       "authority_borrowed": "Borrowed authority. Naming someone senior does not replace the check.",
+       "deflect": "Dodging the checks. A callback on the number on file, or the security questions, is exactly what would catch this, so steering you past it is the tell."
+      },
+      "ask": {
+       "accepted": "She reset it on the manager's name and the staff reference, both of which are on the public site.",
+       "pending": "She wants both of her checks before she does it.",
+       "refused": "She will not reset it on this call."
+      },
+      "bands": {
+       "calm": "Leila is happy to help.",
+       "wary": "Leila has slowed down.",
+       "refusing": "Leila has stopped and wants to verify you."
+      }
+     },
+     "hints": [
+      "Find out who the locked-out manager reports to before you call.",
+      "The company site names the Head of Claims and lists a staff reference.",
+      "Ngozi Okonkwo heads Claims, and Gordon's staff reference is QH-20719 on the events page."
+     ],
+     "defenderNotes": {
+      "manager": "A helpdesk that calls back on the number already on file does not need to guess whether a manager's name is proof.",
+      "reset_password": "The manager's name and the staff reference the caller leant on were both on the public site, so neither could prove who was calling. A callback to the number already on file is the one check that separates the real Gordon from an impostor."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "leila_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "leila_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "leila_alerted",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_locked_out | fresh | who=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | who:10 team:0 | opens  | repairs  | cleared ",
+     "line open_locked_out | fresh | who=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | fresh | who=right,team=empty | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | fresh | who=wrong,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | fresh | who=wrong,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | fresh | who=wrong,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | fresh | who=empty,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | fresh | who=empty,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | fresh | who=empty,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | who:10 team:0 | opens  | repairs  | cleared ",
+     "line open_locked_out | open_all | who=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=right,team=empty | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=wrong,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | open_all | who=wrong,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=wrong,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=empty,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | open_all | who=empty,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | open_all | who=empty,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | who:10 team:0 | opens  | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=right,team=empty | at 0": "band 0 | reported false null | locked false | after -20 | who:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=wrong,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=wrong,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=wrong,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=empty,team=right | at 0": "band 0 | reported false null | locked false | after -20 | who:-30 team:10 | opens who | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=empty,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line open_locked_out | pending_all | who=empty,team=empty | at 0": "band 2 | reported false null | locked false | after -60 | who:-30 team:-30 | opens who,team | repairs  | cleared ",
+     "line give_manager | fresh | manager=right | at 0": "band 0 | reported false null | locked false | after 10 | manager:10 | opens  | repairs  | cleared ",
+     "line give_manager | fresh | manager=wrong | at 0": "band 1 | reported false null | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_manager | fresh | manager=empty | at 0": "band 1 | reported false null | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_manager | open_all | manager=right | at 0": "band 0 | reported false null | locked false | after 10 | manager:10 | opens  | repairs  | cleared ",
+     "line give_manager | open_all | manager=wrong | at 0": "band 1 | reported false null | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_manager | open_all | manager=empty | at 0": "band 1 | reported false null | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_manager | pending_all | manager=right | at 0": "band 0 | reported false null | locked false | after 10 | manager:10 | opens  | repairs  | cleared manager",
+     "line give_manager | pending_all | manager=wrong | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_manager | pending_all | manager=empty | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | manager:-30 | opens manager | repairs  | cleared ",
+     "line give_staffid | fresh | staffId=right | at 0": "band 0 | reported false null | locked false | after 10 | staffId:10 | opens  | repairs  | cleared ",
+     "line give_staffid | fresh | staffId=wrong | at 0": "band 0 | reported false null | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line give_staffid | fresh | staffId=empty | at 0": "band 0 | reported false null | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line give_staffid | open_all | staffId=right | at 0": "band 0 | reported false null | locked false | after 10 | staffId:10 | opens  | repairs  | cleared ",
+     "line give_staffid | open_all | staffId=wrong | at 0": "band 0 | reported false null | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line give_staffid | open_all | staffId=empty | at 0": "band 0 | reported false null | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line give_staffid | pending_all | staffId=right | at 0": "band 0 | reported false null | locked false | after 10 | staffId:10 | opens  | repairs  | cleared staffId",
+     "line give_staffid | pending_all | staffId=wrong | at 0": "band 0 | reported true verificationFailed | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line give_staffid | pending_all | staffId=empty | at 0": "band 0 | reported true verificationFailed | locked false | after -20 | staffId:-20 | opens staffId | repairs  | cleared ",
+     "line name_drop_director | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -25 | authority_borrowed:-15 urgency:-10 | opens  | repairs  | cleared ",
+     "line name_drop_director | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -25 | authority_borrowed:-15 urgency:-10 | opens  | repairs  | cleared ",
+     "line name_drop_director | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -25 | authority_borrowed:-15 urgency:-10 | opens  | repairs  | cleared ",
+     "line cant_callback | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line cant_callback | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line cant_callback | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line skip_verification | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "line skip_verification | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "line skip_verification | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "ask reset_password | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | fresh | at 0": "refused 0 | band 0 | reported false null | after -10 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | verified | at 0": "refused 0 | band 0 | reported false null | after -10 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | facts_proven | at 0": "refused 0 | band 0 | reported false null | after -10 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | one_refusal_short | at 0": "refused 0 | band 0 | reported true maxRefusals | after -10 | floor 0 | verification manager,staffId | reset_password:-10",
+     "ask reset_password | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor 0 | verification manager,staffId | reset_password:-10"
+    }
+   }
+  },
+  "ca12_visitor_tailgater": {
+   "merrin_front_desk": {
+    "spec": {
+     "character": "delphine",
+     "callId": "merrin_front_desk",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "authority_borrowed": -5,
+      "urgency": -10,
+      "deflect": -10
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "recipient": {
+       "value": "merrin_partner",
+       "grade": "identity"
+      }
+     },
+     "labels": {
+      "merrin_partner": "Catherine Merrin"
+     },
+     "prepLabels": {
+      "approachTitle": "Your aim: talk the front desk into buzzing you through the badge door without a badge",
+      "heldTitle": "What you found",
+      "heldEmpty": "You haven't found anything to use yet."
+     },
+     "requireFact": true,
+     "requireFactLine": "Close this, then choose Back to research and open the browser. Click a line that names someone at the studio to add it to your notes: you need a name to ask for.",
+     "outcomeLabels": {
+      "got_it": "You got buzzed through the door.",
+      "reported": "The desk reported you.",
+      "walked_away": "You walked away from the desk."
+     },
+     "lines": {
+      "open_parcel": {
+       "requires": [
+        "merrin_courier_routine"
+       ],
+       "claims": [],
+       "text": "Parcel for the studio, needs a signature from someone up there."
+      },
+      "name_drop_partner": {
+       "technique": "authority_borrowed",
+       "requires": [
+        "merrin_partner_travel"
+       ],
+       "blanks": {
+        "recipient": "recipient"
+       },
+       "claims": [
+        {
+         "fact": "recipient",
+         "from": "blank:recipient"
+        }
+       ],
+       "text": "It's the sample box for {recipient}, she's expecting it today."
+      },
+      "hands_full": {
+       "technique": "deflect",
+       "requires": [
+        "merrin_badge_door"
+       ],
+       "claims": [],
+       "text": "My hands are full and the badge's back in the van."
+      },
+      "double_parked": {
+       "technique": "urgency",
+       "also": [
+        "deflect"
+       ],
+       "claims": [],
+       "text": "I'm double-parked with a full run on, any chance you can be quick?"
+      },
+      "no_need_to_sign": {
+       "technique": "deflect",
+       "also": [
+        "urgency"
+       ],
+       "claims": [],
+       "text": "No need to sign me in, I'll be thirty seconds and straight back out."
+      }
+     },
+     "asks": {
+      "buzz_door": {
+       "pressure": -10,
+       "floor": -10,
+       "verification": [
+        "recipient"
+       ],
+       "grants": {
+        "setGlobal": {
+         "delphine_buzzed_through": true
+        }
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I'm going to stop you there. I'll take the parcel at the desk and ring facilities, and if it's really expected they'll come down for it."
+      },
+      "walked_away": {
+       "line": "Right you are. Mind how you go."
+      }
+     },
+     "tells": {
+      "recipient": {
+       "pass": "Recipient. Catherine Merrin is a partner here, so the name sounds right.",
+       "fail": "Recipient. You said \"{said}\". The desk has no {actual} expecting a parcel.",
+       "failCategory": "Recipient. That is not a name she can place.",
+       "unknown": "Recipient. With no name to check the parcel against, there is nothing for her to confirm, so she is right not to open the door."
+      },
+      "techniques": {
+       "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
+       "urgency": "Urgency. Being in a hurry is the oldest line for skipping a check.",
+       "deflect": "Dodging the check. A genuine courier is happy to sign in and be walked up; trying to skip that is the tell."
+      },
+      "ask": {
+       "accepted": "She buzzed the door on the partner's name and the hurry, and neither of those proved the delivery was expected.",
+       "pending": "She wants to know who it is for before she opens the door.",
+       "refused": "She will not open the door on this."
+      },
+      "bands": {
+       "calm": "Delphine is happy to help.",
+       "wary": "Delphine has slowed down.",
+       "refusing": "Delphine has stopped and wants to check the delivery."
+      }
+     },
+     "hints": [
+      "Find out who at the studio takes deliveries before you walk up.",
+      "The site says the desk buzzes couriers through, and a partner posts that her parcels pile up at reception.",
+      "Catherine Merrin is the partner whose sample boxes wait at reception; drop her name as the one expecting the parcel."
+     ],
+     "defenderNotes": {
+      "buzz_door": "A parcel, a hurry and a borrowed name are all easy to supply, and none of them proves the delivery was expected. A quick look at the day's expected-deliveries list, and walking the courier to the desk rather than buzzing the door blind, is what a genuine courier never minds and this one could not survive."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "delphine_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "delphine_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "delphine_alerted",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_parcel | fresh | fixed | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line open_parcel | open_all | fixed | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line open_parcel | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line name_drop_partner | fresh | recipient=right | at 0": "band 0 | reported false null | locked false | after 5 | recipient:10 authority_borrowed:-5 | opens  | repairs  | cleared ",
+     "line name_drop_partner | fresh | recipient=wrong | at 0": "band 1 | reported false null | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line name_drop_partner | fresh | recipient=empty | at 0": "band 1 | reported false null | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line name_drop_partner | open_all | recipient=right | at 0": "band 0 | reported false null | locked false | after 5 | recipient:10 authority_borrowed:-5 | opens  | repairs  | cleared ",
+     "line name_drop_partner | open_all | recipient=wrong | at 0": "band 1 | reported false null | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line name_drop_partner | open_all | recipient=empty | at 0": "band 1 | reported false null | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line name_drop_partner | pending_all | recipient=right | at 0": "band 0 | reported false null | locked false | after 5 | recipient:10 authority_borrowed:-5 | opens  | repairs  | cleared recipient",
+     "line name_drop_partner | pending_all | recipient=wrong | at 0": "band 1 | reported true verificationFailed | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line name_drop_partner | pending_all | recipient=empty | at 0": "band 1 | reported true verificationFailed | locked false | after -35 | recipient:-30 authority_borrowed:-5 | opens recipient | repairs  | cleared ",
+     "line hands_full | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line hands_full | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line hands_full | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | deflect:-10 | opens  | repairs  | cleared ",
+     "line double_parked | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "line double_parked | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "line double_parked | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | urgency:-10 deflect:-10 | opens  | repairs  | cleared ",
+     "line no_need_to_sign | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | deflect:-10 urgency:-10 | opens  | repairs  | cleared ",
+     "line no_need_to_sign | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | deflect:-10 urgency:-10 | opens  | repairs  | cleared ",
+     "line no_need_to_sign | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | deflect:-10 urgency:-10 | opens  | repairs  | cleared ",
+     "ask buzz_door | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -10 | verification recipient | buzz_door:-10",
+     "ask buzz_door | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -10 | verification recipient | buzz_door:-10"
+    }
+   }
+  },
+  "lab_social_engineering": {
+   "service_desk_call": {
+    "spec": {
+     "character": "dev",
+     "callId": "service_desk_call",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -20,
+      "candour": 10
+     },
+     "unverifiableCost": -10,
+     "labels": {
+      "finance": "Finance",
+      "accounts": "Accounts",
+      "lord_full": "Sofia Lord",
+      "lord_first": "Sofia"
+     },
+     "knows": {
+      "intern": {
+       "value": "lord_full",
+       "accept": [
+        "lord_first",
+        "lord_full"
+       ],
+       "grade": "identity"
+      },
+      "team": {
+       "value": "finance",
+       "grade": "identity"
+      }
+     },
+     "lines": {
+      "open_buddy": {
+       "blanks": {
+        "intern": "intern",
+        "team": "team"
+       },
+       "optionalBlanks": true,
+       "claims": [
+        {
+         "fact": "intern",
+         "from": "blank:intern"
+        },
+        {
+         "fact": "team",
+         "from": "blank:team"
+        }
+       ]
+      },
+      "repair_team": {
+       "technique": "candour",
+       "repairs": "team",
+       "claims": [
+        {
+         "fact": "team",
+         "from": "finance"
+        }
+       ]
+      },
+      "urgent_payslip": {
+       "technique": "urgency",
+       "claims": []
+      },
+      "name_drop_manager": {
+       "technique": "authority_borrowed",
+       "claims": []
+      }
+     },
+     "asks": {
+      "portal_name": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [
+        "intern"
+       ],
+       "grants": {
+        "setGlobal": {
+         "pretext_call_done": true
+        },
+        "intel": [
+         "lord_portal_name",
+         "lord_trusts_portal_sender"
+        ]
+       }
+      },
+      "payslip_date": {
+       "pressure": -10,
+       "floor": -20,
+       "verification": [
+        "intern"
+       ],
+       "grants": {
+        "setGlobal": {
+         "pretext_call_done": true
+        },
+        "intel": [
+         "lord_payslip_date"
+        ]
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "Sorry, I'm going to stop you there. I'll run this past my manager first.",
+       "setGlobal": {
+        "pretext_call_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "intern": {
+       "pass": "Intern. Sofia is on the new-starter list.",
+       "fail": "Intern. You said \"{said}\". The list has {actual}.",
+       "failCategory": "Intern. That did not match the new-starter list.",
+       "unknown": "Intern. He cannot check this."
+      },
+      "team": {
+       "pass": "Team. Finance matches the new-starter record.",
+       "fail": "Team. You said \"{said}\". The record has {actual}.",
+       "failCategory": "Team. That did not match the record.",
+       "unknown": "Team. He cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed request is the oldest pressure line on a service desk.",
+       "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+       "candour": "Candour. Owning a correction early costs less than defending it."
+      },
+      "repair": "Corrected. Dev now has Finance, the team on his record.",
+      "ask": {
+       "accepted": "He read it out.",
+       "pending": "He wants to check one more thing.",
+       "refused": "He will not do that on this call."
+      },
+      "bands": {
+       "calm": "Dev is happy to help.",
+       "wary": "Dev has slowed down.",
+       "refusing": "Dev has stopped helping."
+      }
+     },
+     "hints": [
+      "Know who you are asking after before you approach.",
+      "The team page names the Finance intern.",
+      "Sofia Lord is the new starter the desk already knows."
+     ],
+     "defenderNotes": {
+      "portal_name": "The desk checked a name anyone can read on the team page. A call-back to the number on file would not have been fooled.",
+      "payslip_date": "Calling back on the number already on file defeats every line here."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -40,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dev_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dev_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dev_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        },
+        {
+         "type": "lockout",
+         "scope": "channel",
+         "until": {
+          "afterMinutes": 2
+         }
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_buddy | fresh | intern=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared ",
+     "line open_buddy | fresh | intern=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | fresh | intern=right,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared ",
+     "line open_buddy | fresh | intern=accept,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared ",
+     "line open_buddy | fresh | intern=accept,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | fresh | intern=accept,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared ",
+     "line open_buddy | fresh | intern=wrong,team=right | at 0": "band 0 | reported false null | locked false | after -20 | intern:-30 team:10 | opens intern | repairs  | cleared ",
+     "line open_buddy | fresh | intern=wrong,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | intern:-30 team:-30 | opens intern,team | repairs  | cleared ",
+     "line open_buddy | fresh | intern=wrong,team=empty | at 0": "band 0 | reported false null | locked false | after -30 | intern:-30 | opens intern | repairs  | cleared ",
+     "line open_buddy | fresh | intern=empty,team=right | at 0": "band 0 | reported false null | locked false | after 10 | team:10 | opens  | repairs  | cleared ",
+     "line open_buddy | fresh | intern=empty,team=wrong | at 0": "band 0 | reported false null | locked false | after -30 | team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | fresh | intern=empty,team=empty | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | open_all | intern=right,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=accept,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=accept,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | open_all | intern=accept,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=wrong,team=right | at 0": "band 0 | reported false null | locked false | after -20 | intern:-30 team:10 | opens intern | repairs  | cleared ",
+     "line open_buddy | open_all | intern=wrong,team=wrong | at 0": "band 2 | reported false null | locked false | after -60 | intern:-30 team:-30 | opens intern,team | repairs  | cleared ",
+     "line open_buddy | open_all | intern=wrong,team=empty | at 0": "band 0 | reported false null | locked false | after -30 | intern:-30 | opens intern | repairs  | cleared ",
+     "line open_buddy | open_all | intern=empty,team=right | at 0": "band 0 | reported false null | locked false | after 10 | team:10 | opens  | repairs  | cleared ",
+     "line open_buddy | open_all | intern=empty,team=wrong | at 0": "band 0 | reported false null | locked false | after -30 | team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | open_all | intern=empty,team=empty | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=right,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=right,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=right,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=accept,team=right | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 team:0 | opens  | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=accept,team=wrong | at 0": "band 0 | reported false null | locked false | after -20 | intern:10 team:-30 | opens team | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=accept,team=empty | at 0": "band 0 | reported false null | locked false | after 10 | intern:10 | opens  | repairs  | cleared intern",
+     "line open_buddy | pending_all | intern=wrong,team=right | at 0": "band 0 | reported true verificationFailed | locked false | after -20 | intern:-30 team:10 | opens intern | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=wrong,team=wrong | at 0": "band 2 | reported true verificationFailed | locked false | after -60 | intern:-30 team:-30 | opens intern,team | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=wrong,team=empty | at 0": "band 0 | reported true verificationFailed | locked false | after -30 | intern:-30 | opens intern | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=empty,team=right | at 0": "band 0 | reported false null | locked false | after 10 | team:10 | opens  | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=empty,team=wrong | at 0": "band 0 | reported false null | locked false | after -30 | team:-30 | opens team | repairs  | cleared ",
+     "line open_buddy | pending_all | intern=empty,team=empty | at 0": "band 0 | reported false null | locked false | after 0 |  | opens  | repairs  | cleared ",
+     "line repair_team | fresh | fixed | at 0": "band 0 | reported false null | locked false | after 10 | team:10 | opens  | repairs  | cleared ",
+     "line repair_team | open_all | fixed | at 0": "band 0 | reported false null | locked false | after 20 | team:10 candour:10 | opens  | repairs team | cleared ",
+     "line repair_team | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after 10 | team:10 | opens  | repairs  | cleared ",
+     "line urgent_payslip | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_payslip | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_payslip | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line name_drop_manager | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop_manager | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop_manager | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "ask portal_name | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification intern | ",
+     "ask portal_name | fresh | at 0": "pending 2 | band 0 | reported false null | after 0 | floor -30 | verification intern | ",
+     "ask portal_name | fresh | at 100": "pending 2 | band 0 | reported false null | after 100 | floor -30 | verification intern | ",
+     "ask portal_name | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification intern | ",
+     "ask portal_name | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification intern | ",
+     "ask portal_name | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification intern | ",
+     "ask portal_name | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification intern | ",
+     "ask portal_name | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification intern | ",
+     "ask portal_name | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification intern | ",
+     "ask portal_name | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification intern | ",
+     "ask portal_name | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after 0 | floor -30 | verification intern | ",
+     "ask portal_name | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 100 | floor -30 | verification intern | ",
+     "ask payslip_date | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification intern | payslip_date:-10",
+     "ask payslip_date | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification intern | payslip_date:-10"
+    }
+   }
+  },
+  "test_dm_social": {
+   "guest_list_chat": {
+    "spec": {
+     "character": "dom",
+     "callId": "guest_list_chat",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "candour": 10,
+      "authority_borrowed": -15,
+      "urgency": -10
+     },
+     "lines": {
+      "open_polite": {
+       "technique": "candour",
+       "claims": []
+      },
+      "member_ref": {
+       "technique": "authority_borrowed",
+       "claims": []
+      },
+      "press_time": {
+       "technique": "urgency",
+       "claims": []
+      }
+     },
+     "asks": {
+      "guest_list": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [],
+       "grants": {
+        "setGlobal": {
+         "guest_list_added": true
+        }
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I think I'd better run this past the committee first.",
+       "setGlobal": {
+        "dom_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "techniques": {
+       "candour": "Candour. An honest, unhurried opener puts a volunteer at ease.",
+       "authority_borrowed": "Borrowed authority. Naming a member you can't name back is thin.",
+       "urgency": "Urgency. Rushing a favour is the oldest pressure line there is."
+      },
+      "ask": {
+       "accepted": "He added the name.",
+       "pending": "He wants one more thing first.",
+       "refused": "He won't do that over a message."
+      },
+      "bands": {
+       "calm": "Dom is relaxed.",
+       "wary": "Dom has gone careful.",
+       "refusing": "Dom has stopped helping."
+      }
+     },
+     "hints": [
+      "A friendly, honest opener lands better than a rushed one.",
+      "Dom's own post says to drop him a member's name beforehand."
+     ],
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dom_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dom_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "dom_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_polite | fresh | fixed | at 0": "band 0 | reported false null | locked false | after 10 | candour:10 | opens  | repairs  | cleared ",
+     "line open_polite | open_all | fixed | at 0": "band 0 | reported false null | locked false | after 10 | candour:10 | opens  | repairs  | cleared ",
+     "line open_polite | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after 10 | candour:10 | opens  | repairs  | cleared ",
+     "line member_ref | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -15 | authority_borrowed:-15 | opens  | repairs  | cleared ",
+     "line member_ref | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -15 | authority_borrowed:-15 | opens  | repairs  | cleared ",
+     "line member_ref | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -15 | authority_borrowed:-15 | opens  | repairs  | cleared ",
+     "line press_time | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_time | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_time | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "ask guest_list | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask guest_list | fresh | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask guest_list | fresh | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask guest_list | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask guest_list | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask guest_list | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask guest_list | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask guest_list | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask guest_list | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask guest_list | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification  | ",
+     "ask guest_list | one_refusal_short | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask guest_list | one_refusal_short | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | "
+    }
+   }
+  },
+  "test_social_m5_channels": {
+   "pat_floor_call": {
+    "spec": {
+     "character": "pat",
+     "callId": "pat_floor_call",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -20
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "person": {
+       "value": "teague_full",
+       "accept": [
+        "teague_first",
+        "teague_formal",
+        "teague_full"
+       ],
+       "grade": "identity"
+      }
+     },
+     "lines": {
+      "open_floor": {
+       "blanks": {
+        "person": "person"
+       },
+       "claims": [
+        {
+         "fact": "person",
+         "from": "blank:person"
+        }
+       ]
+      },
+      "press_floor": {
+       "technique": "urgency",
+       "claims": []
+      },
+      "name_floor": {
+       "technique": "authority_borrowed",
+       "claims": []
+      }
+     },
+     "asks": {
+      "desk_location": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [],
+       "grants": {
+        "setGlobal": {
+         "pat_call_done": true
+        },
+        "intel": [
+         "desk_location"
+        ]
+       }
+      },
+      "shift_pattern": {
+       "pressure": -10,
+       "floor": -20,
+       "verification": [
+        "person"
+       ],
+       "grants": {
+        "setGlobal": {
+         "pat_call_done": true
+        },
+        "intel": [
+         "shift_pattern"
+        ]
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I think I'd better check with the office manager first.",
+       "setGlobal": {
+        "pat_call_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "person": {
+       "pass": "Person. Morgan is on the floor plan.",
+       "fail": "Person. You said \"{said}\". The plan has {actual}.",
+       "failCategory": "Person. That did not match the floor plan.",
+       "unknown": "Person. She cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+       "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+      },
+      "ask": {
+       "accepted": "She pointed it out.",
+       "pending": "She wants to know who you are first.",
+       "refused": "She will not say."
+      },
+      "bands": {
+       "calm": "Pat is happy to help.",
+       "wary": "Pat has gone quiet.",
+       "refusing": "Pat has stopped helping."
+      }
+     },
+     "hints": [
+      "Know who you are asking after before you approach.",
+      "The company team page names the Finance staff.",
+      "Morgan Teague is the person the floor plan names."
+     ],
+     "defenderNotes": {
+      "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "pat_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "pat_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        },
+        {
+         "type": "lockout",
+         "scope": "channel",
+         "until": {
+          "afterMinutes": 1
+         },
+         "recoverTo": -10
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_floor | fresh | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | fresh | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=wrong | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=empty | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line press_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line name_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "ask desk_location | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask shift_pattern | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10"
+    }
+   },
+   "sam_floor_call": {
+    "spec": {
+     "character": "sam",
+     "callId": "sam_floor_call",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -20
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "person": {
+       "value": "teague_full",
+       "accept": [
+        "teague_first",
+        "teague_formal",
+        "teague_full"
+       ],
+       "grade": "identity"
+      }
+     },
+     "lines": {
+      "open_floor": {
+       "blanks": {
+        "person": "person"
+       },
+       "claims": [
+        {
+         "fact": "person",
+         "from": "blank:person"
+        }
+       ]
+      },
+      "press_floor": {
+       "technique": "urgency",
+       "claims": []
+      },
+      "name_floor": {
+       "technique": "authority_borrowed",
+       "claims": []
+      }
+     },
+     "asks": {
+      "desk_location": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [],
+       "grants": {
+        "setGlobal": {
+         "sam_call_done": true
+        },
+        "intel": [
+         "desk_location"
+        ]
+       }
+      },
+      "shift_pattern": {
+       "pressure": -10,
+       "floor": -20,
+       "verification": [
+        "person"
+       ],
+       "grants": {
+        "setGlobal": {
+         "sam_call_done": true
+        },
+        "intel": [
+         "shift_pattern"
+        ]
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I think I'd better check with the office manager first.",
+       "setGlobal": {
+        "sam_call_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "person": {
+       "pass": "Person. Morgan is on the floor plan.",
+       "fail": "Person. You said \"{said}\". The plan has {actual}.",
+       "failCategory": "Person. That did not match the floor plan.",
+       "unknown": "Person. She cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+       "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+      },
+      "ask": {
+       "accepted": "She pointed it out.",
+       "pending": "She wants to know who you are first.",
+       "refused": "She will not say."
+      },
+      "bands": {
+       "calm": "Sam is happy to help.",
+       "wary": "Sam has gone quiet.",
+       "refusing": "Sam has stopped helping."
+      }
+     },
+     "hints": [
+      "Know who you are asking after before you approach.",
+      "The company team page names the Finance staff.",
+      "Morgan Teague is the person the floor plan names."
+     ],
+     "defenderNotes": {
+      "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "sam_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "sam_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_floor | fresh | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | fresh | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=wrong | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=empty | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line press_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line name_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "ask desk_location | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask shift_pattern | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10"
+    }
+   }
+  },
+  "test_social_slice": {
+   "brandt_desk_call": {
+    "spec": {
+     "character": "brandt",
+     "callId": "brandt_desk_call",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -20,
+      "candour": 10
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "contact": {
+       "value": "shah_full",
+       "grade": "identity"
+      }
+     },
+     "lines": {
+      "open_ref": {
+       "blanks": {
+        "contact": "contact"
+       },
+       "claims": [
+        {
+         "fact": "contact",
+         "from": "blank:contact"
+        }
+       ]
+      },
+      "repair_ref": {
+       "technique": "candour",
+       "repairs": "contact",
+       "blanks": {
+        "contact": "contact"
+       },
+       "claims": [
+        {
+         "fact": "contact",
+         "from": "blank:contact"
+        }
+       ]
+      },
+      "urgent_now": {
+       "technique": "urgency",
+       "claims": []
+      },
+      "name_drop": {
+       "technique": "authority_borrowed",
+       "claims": []
+      }
+     },
+     "asks": {
+      "portal_name": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [],
+       "grants": {
+        "setGlobal": {
+         "brandt_call_done": true
+        },
+        "intel": [
+         "portal_name"
+        ]
+       }
+      },
+      "release_date": {
+       "pressure": -10,
+       "floor": -20,
+       "verification": [
+        "contact"
+       ],
+       "grants": {
+        "setGlobal": {
+         "brandt_call_done": true
+        },
+        "intel": [
+         "payslip_date"
+        ]
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I'll need to check this with my manager. Goodbye.",
+       "setGlobal": {
+        "brandt_call_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "contact": {
+       "pass": "Contact. Ravi is on the colleague list.",
+       "fail": "Contact. You said \"{said}\". The list has {actual}.",
+       "failCategory": "Contact. That did not match the colleague list.",
+       "unknown": "Contact. He cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed request is the oldest pressure line on a service desk.",
+       "authority_borrowed": "Borrowed authority. Naming a manager does not replace the check.",
+       "candour": "Candour. Owning a correction early costs less than defending it."
+      },
+      "repair": "Corrected. Owning the slip early costs less than defending it.",
+      "ask": {
+       "accepted": "He read it out.",
+       "pending": "He wants to check one more thing.",
+       "refused": "He will not do that on this call."
+      },
+      "bands": {
+       "calm": "Brandt is relaxed.",
+       "wary": "Brandt has slowed down.",
+       "refusing": "Brandt has stopped helping."
+      }
+     },
+     "hints": [
+      "Work out whose name the desk would already recognise.",
+      "The company site shows who Morgan trusts in Finance.",
+      "Ravi Shah is the colleague the desk already knows."
+     ],
+     "defenderNotes": {
+      "release_date": "Calling back on the number already on file defeats every line here."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -40,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "brandt_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "brandt_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "brandt_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        },
+        {
+         "type": "lockout",
+         "scope": "channel",
+         "until": {
+          "afterMinutes": 1
+         },
+         "recoverTo": -30
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": -10
+     }
+    },
+    "rows": {
+     "line open_ref | fresh | contact=right | at -10": "band 0 | reported false null | locked false | after 0 | contact:10 | opens  | repairs  | cleared ",
+     "line open_ref | fresh | contact=right | at 0": "band 0 | reported false null | locked false | after 10 | contact:10 | opens  | repairs  | cleared ",
+     "line open_ref | fresh | contact=wrong | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | fresh | contact=wrong | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | fresh | contact=empty | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | fresh | contact=empty | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | open_all | contact=right | at -10": "band 0 | reported false null | locked false | after 0 | contact:10 | opens  | repairs  | cleared ",
+     "line open_ref | open_all | contact=right | at 0": "band 0 | reported false null | locked false | after 10 | contact:10 | opens  | repairs  | cleared ",
+     "line open_ref | open_all | contact=wrong | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | open_all | contact=wrong | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | open_all | contact=empty | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | open_all | contact=empty | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | pending_all | contact=right | at -10": "band 0 | reported false null | locked false | after 0 | contact:10 | opens  | repairs  | cleared contact",
+     "line open_ref | pending_all | contact=right | at 0": "band 0 | reported false null | locked false | after 10 | contact:10 | opens  | repairs  | cleared contact",
+     "line open_ref | pending_all | contact=wrong | at -10": "band 1 | reported true verificationFailed | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | pending_all | contact=wrong | at 0": "band 0 | reported true verificationFailed | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | pending_all | contact=empty | at -10": "band 1 | reported true verificationFailed | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line open_ref | pending_all | contact=empty | at 0": "band 0 | reported true verificationFailed | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | fresh | contact=right | at -10": "band 0 | reported false null | locked false | after 0 | contact:10 | opens  | repairs  | cleared ",
+     "line repair_ref | fresh | contact=right | at 0": "band 0 | reported false null | locked false | after 10 | contact:10 | opens  | repairs  | cleared ",
+     "line repair_ref | fresh | contact=wrong | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | fresh | contact=wrong | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | fresh | contact=empty | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | fresh | contact=empty | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | open_all | contact=right | at -10": "band 0 | reported false null | locked false | after 10 | contact:10 candour:10 | opens  | repairs contact | cleared ",
+     "line repair_ref | open_all | contact=right | at 0": "band 0 | reported false null | locked false | after 20 | contact:10 candour:10 | opens  | repairs contact | cleared ",
+     "line repair_ref | open_all | contact=wrong | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | open_all | contact=wrong | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | open_all | contact=empty | at -10": "band 1 | reported false null | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | open_all | contact=empty | at 0": "band 0 | reported false null | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | pending_all | contact=right | at -10": "band 0 | reported false null | locked false | after 0 | contact:10 | opens  | repairs  | cleared contact",
+     "line repair_ref | pending_all | contact=right | at 0": "band 0 | reported false null | locked false | after 10 | contact:10 | opens  | repairs  | cleared contact",
+     "line repair_ref | pending_all | contact=wrong | at -10": "band 1 | reported true verificationFailed | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | pending_all | contact=wrong | at 0": "band 0 | reported true verificationFailed | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | pending_all | contact=empty | at -10": "band 1 | reported true verificationFailed | locked false | after -40 | contact:-30 | opens contact | repairs  | cleared ",
+     "line repair_ref | pending_all | contact=empty | at 0": "band 0 | reported true verificationFailed | locked false | after -30 | contact:-30 | opens contact | repairs  | cleared ",
+     "line urgent_now | fresh | fixed | at -10": "band 0 | reported false null | locked false | after -20 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_now | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_now | open_all | fixed | at -10": "band 0 | reported false null | locked false | after -20 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_now | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_now | pending_all | fixed | at -10": "band 0 | reported false null | locked false | after -20 | urgency:-10 | opens  | repairs  | cleared ",
+     "line urgent_now | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line name_drop | fresh | fixed | at -10": "band 0 | reported false null | locked false | after -30 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop | open_all | fixed | at -10": "band 0 | reported false null | locked false | after -30 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop | pending_all | fixed | at -10": "band 0 | reported false null | locked false | after -30 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_drop | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "ask portal_name | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask portal_name | fresh | at -10": "granted 1 | band 0 | reported false null | after -10 | floor -30 | verification  | ",
+     "ask portal_name | fresh | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask portal_name | fresh | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask portal_name | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask portal_name | verified | at -10": "granted 1 | band 0 | reported false null | after -10 | floor -30 | verification  | ",
+     "ask portal_name | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask portal_name | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask portal_name | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask portal_name | facts_proven | at -10": "granted 1 | band 0 | reported false null | after -10 | floor -30 | verification  | ",
+     "ask portal_name | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask portal_name | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask portal_name | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification  | ",
+     "ask portal_name | one_refusal_short | at -10": "granted 1 | band 0 | reported false null | after -10 | floor -30 | verification  | ",
+     "ask portal_name | one_refusal_short | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask portal_name | one_refusal_short | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask release_date | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | fresh | at -10": "pending 2 | band 0 | reported false null | after -20 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | verified | at -10": "granted 1 | band 0 | reported false null | after -20 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | facts_proven | at -10": "granted 1 | band 0 | reported false null | after -20 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | one_refusal_short | at -10": "pending 2 | band 0 | reported false null | after -20 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification contact | release_date:-10",
+     "ask release_date | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification contact | release_date:-10"
+    }
+   },
+   "quinn_floor_call": {
+    "spec": {
+     "character": "quinn",
+     "callId": "quinn_floor_call",
+     "tuning": {
+      "matchCreditCapPerLine": 10,
+      "maxRefusals": 2,
+      "feedbackMode": "live",
+      "tellDetail": "full",
+      "showTechniqueNames": "live"
+     },
+     "susceptibility": {
+      "urgency": -10,
+      "authority_borrowed": -20
+     },
+     "unverifiableCost": -10,
+     "knows": {
+      "person": {
+       "value": "teague_full",
+       "accept": [
+        "teague_first",
+        "teague_formal",
+        "teague_full"
+       ],
+       "grade": "identity"
+      }
+     },
+     "lines": {
+      "open_floor": {
+       "blanks": {
+        "person": "person"
+       },
+       "claims": [
+        {
+         "fact": "person",
+         "from": "blank:person"
+        }
+       ]
+      },
+      "press_floor": {
+       "technique": "urgency",
+       "claims": []
+      },
+      "name_floor": {
+       "technique": "authority_borrowed",
+       "claims": []
+      }
+     },
+     "asks": {
+      "desk_location": {
+       "pressure": 0,
+       "floor": -30,
+       "verification": [],
+       "grants": {
+        "setGlobal": {
+         "quinn_call_done": true
+        },
+        "intel": [
+         "desk_location"
+        ]
+       }
+      },
+      "shift_pattern": {
+       "pressure": -10,
+       "floor": -20,
+       "verification": [
+        "person"
+       ],
+       "grants": {
+        "setGlobal": {
+         "quinn_call_done": true
+        },
+        "intel": [
+         "shift_pattern"
+        ]
+       }
+      }
+     },
+     "outcomes": {
+      "got_it": {},
+      "reported": {
+       "line": "I think I'd better check with the office manager first.",
+       "setGlobal": {
+        "quinn_call_reported": true
+       }
+      },
+      "walked_away": {}
+     },
+     "tells": {
+      "person": {
+       "pass": "Person. Morgan is on the floor plan.",
+       "fail": "Person. You said \"{said}\". The plan has {actual}.",
+       "failCategory": "Person. That did not match the floor plan.",
+       "unknown": "Person. She cannot check this."
+      },
+      "techniques": {
+       "urgency": "Urgency. A rushed ask on the floor is a classic pressure line.",
+       "authority_borrowed": "Borrowed authority. Naming a manager does not replace knowing who you are."
+      },
+      "ask": {
+       "accepted": "She pointed it out.",
+       "pending": "She wants to know who you are first.",
+       "refused": "She will not say."
+      },
+      "bands": {
+       "calm": "Quinn is happy to help.",
+       "wary": "Quinn has gone quiet.",
+       "refusing": "Quinn has stopped helping."
+      }
+     },
+     "hints": [
+      "Know who you are asking after before you approach.",
+      "The company team page names the Finance staff.",
+      "Morgan Teague is the person the floor plan names."
+     ],
+     "defenderNotes": {
+      "shift_pattern": "Checking a stranger's identity before helping defeats a floor approach."
+     },
+     "thresholds": [
+      {
+       "id": "wary",
+       "at": -30,
+       "icon": "wary",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "quinn_wary",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "refuses",
+       "at": -50,
+       "icon": "refuses",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "quinn_refusing",
+         "value": true,
+         "clearOnRearm": true
+        }
+       ]
+      },
+      {
+       "id": "reports",
+       "at": -70,
+       "icon": "reports",
+       "effects": [
+        {
+         "type": "setGlobal",
+         "global": "quinn_reported",
+         "value": true
+        },
+        {
+         "type": "endConversation"
+        }
+       ]
+      }
+     ],
+     "influence": {
+      "min": -100,
+      "max": 100,
+      "start": 0
+     }
+    },
+    "rows": {
+     "line open_floor | fresh | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | fresh | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | fresh | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared ",
+     "line open_floor | open_all | person=wrong | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | open_all | person=empty | at 0": "band 1 | reported false null | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=right | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=accept | at 0": "band 0 | reported false null | locked false | after 10 | person:10 | opens  | repairs  | cleared person",
+     "line open_floor | pending_all | person=wrong | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line open_floor | pending_all | person=empty | at 0": "band 1 | reported true verificationFailed | locked false | after -30 | person:-30 | opens person | repairs  | cleared ",
+     "line press_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line press_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -10 | urgency:-10 | opens  | repairs  | cleared ",
+     "line name_floor | fresh | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | open_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "line name_floor | pending_all | fixed | at 0": "band 0 | reported false null | locked false | after -20 | authority_borrowed:-20 | opens  | repairs  | cleared ",
+     "ask desk_location | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | fresh | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | verified | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 0": "granted 1 | band 0 | reported false null | after 0 | floor -30 | verification  | ",
+     "ask desk_location | one_refusal_short | at 100": "granted 1 | band 0 | reported false null | after 100 | floor -30 | verification  | ",
+     "ask shift_pattern | fresh | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | fresh | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | verified | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at -100": "refused 0 | band 3 | reported false null | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 0": "granted 1 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | facts_proven | at 100": "granted 1 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at -100": "refused 0 | band 3 | reported true maxRefusals | after -100 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 0": "pending 2 | band 0 | reported false null | after -10 | floor -20 | verification person | shift_pattern:-10",
+     "ask shift_pattern | one_refusal_short | at 100": "pending 2 | band 0 | reported false null | after 90 | floor -20 | verification person | shift_pattern:-10"
+    }
+   }
+  }
+ }
+}
