@@ -70,7 +70,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const ty = stacked ? gy + gw + Math.round(mS * 0.5) : gy + Math.round((gw - wmH) / 2);
   // episode name: fitted to the frame (ca14 "Social media and oversharing" overflowed 9:16 at the fixed size)
   const nameFit = cfg.name ? fitSize([cfg.name], GNF_FONT, [nameSize, ...[0.85, 0.7, 0.6, 0.5].map((k) => Math.max(24, Math.round((nameSize * k) / 8) * 8))], w * 0.9) : nameSize;
-  const belowY = stacked ? ty + wmH + 6 * u * 2 : gy + gw + Math.round(mS * 0.45);
+  const belowY = stacked ? ty + wmH + (logo ? Math.round(mS * 0.4) : 6 * u * 2) : gy + gw + Math.round(mS * 0.45);
   void groupW;
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: CA.surface }}>
