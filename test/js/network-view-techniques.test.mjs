@@ -646,3 +646,57 @@ test('T6: onSent then onEnded for a use that is refused, one that throws and one
     assert.deepEqual(order, [['sent', 0], ['ended', 'not_found'], ['sent', 1], ['ended', 'null'], ['sent', 2], ['ended', 'null']]);
     assert.equal(v.pending.size, 0, 'no key left pending');
 });
+
+// Ops core tidy (client), phone width: the Use control and the message after an ops action are
+// brought into view with scrollIntoView({ block: 'nearest' }), an instant jump (nothing to animate,
+// so prefers-reduced-motion is respected by construction).
+function stubScroll() {
+    const log = [];
+    window.Element.prototype.scrollIntoView = function (o) { log.push([this, o]); };
+    return log;
+}
+test('phone width: picking a finding or a card scrolls the Use control into view; letting a pick go does not', async () => {
+    setup(ENTRY());
+    await open();
+    const log = stubScroll();
+    q('[data-finding="f1"] [data-action="select-finding"]').click();
+    assert.equal(log.length, 1);
+    assert.equal(log[0][0], useBtn(), 'requested on the Use control');
+    assert.equal(log[0][1].block, 'nearest');
+    assert.deepEqual(log[0][1], { block: 'nearest' }, 'an instant jump, no smooth');
+    q('[data-technique="factory_defaults"] [data-action="select-technique"]').click();
+    assert.equal(log.length, 2);
+    assert.equal(log[1][0], useBtn());
+    q('[data-technique="factory_defaults"] [data-action="select-technique"]').click(); // lets go
+    q('[data-finding="f1"] [data-action="select-finding"]').click();                   // lets go
+    assert.equal(log.length, 2, 'no scroll when a pick is let go');
+});
+test('phone width: the message after Use (a grant and a refusal) and after a scan is scrolled into view; an empty notice is not', async () => {
+    setup(ENTRY({}, { scanned: false, services: undefined, findings: undefined }));
+    await open();
+    let log = stubScroll();
+    scanImpl = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, reason: 'not_responding' } }); };
+    scanBtn('print01').click();
+    await settle();
+    const notice = () => q('.network-view-notice');
+    assert.ok(notice().textContent, 'the scan refusal is worded');
+    assert.ok(log.some(([el]) => el === notice()), 'scan message');
+    // Use
+    setup(ENTRY());
+    await open();
+    await pick('f1', 'factory_defaults');
+    log = stubScroll();
+    techImpl = async () => ({ success: true, grant: 'credential', keyringChanged: true });
+    useBtn().click();
+    await settle();
+    assert.ok(notice().textContent, 'the grant is worded');
+    assert.ok(log.some(([el, o]) => el === notice() && o.block === 'nearest'), 'grant message');
+    log.length = 0;
+    techImpl = async () => { throw Object.assign(new Error('x'), { status: 422, body: { success: false, reason: 'not_found' } }); };
+    useBtn().click();
+    await settle();
+    assert.ok(log.some(([el]) => el === notice()), 'refusal message');
+    log.length = 0;
+    view().showNotice(null);
+    assert.equal(log.length, 0, 'clearing a notice scrolls nothing');
+});

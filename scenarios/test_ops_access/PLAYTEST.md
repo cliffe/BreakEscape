@@ -262,10 +262,11 @@ Click `desk01` again and sign in with the password from `desk_note` (`iokafor` /
 - No `grants`, `fixedIf`, `technique_card` or `realism` key in any answer; the `techniques` map only after a card is held; the answer under 16 KB. `--ops-log` ends with `ops log OK`, and shows one `technique_refused` row per distinct refusal of beats 2 to 5a and 15.
 - Server `--access`: the `opsUsed` line lists `printer01.admin_page.factory_login`, `vault01.archive.old_release`, `vault01.archive.old_release_admin` and `desk01.remote_desk.shipped_login`.
 
-### 19. The three older network playtests, first beats
+### 19. Older network scenarios still work
 
-In the same browser (a fresh game each, made with `new-game.rb` or `swap-scenario-game.rb`): run the first beats of `scenarios/test_ops_scan/PLAYTEST.md`, `scenarios/test_ops_findings/PLAYTEST.md` and
-`scenarios/test_access_networks/PLAYTEST.md`. The unchanged view must still load, plant and act on an old scenario (no Techniques panel, no `techniques` key, no bolt anywhere).
+In the same browser (a fresh game each, made with `new-game.rb` or `swap-scenario-game.rb`): rerun the first beats of two scenarios that PRE-DATE the ops core, `scenarios/test_access_networks/PLAYTEST.md` and
+`scenarios/test_access_keyring/PLAYTEST.md`, and the network beats H5.15, H5.16 and H5.20 of `scenarios/lab_physical_pentest/PLAYTEST.md`. The unchanged view must still load, plant and act on an old scenario (no Techniques panel, no `techniques` key, no bolt anywhere, no Sweep or Check control). (`test_ops_scan` and `test_ops_findings` are ops scenarios themselves and are not this beat's evidence.)
+In the container window the Copy menu is on a file's icon, and its feedback is an in-window line, not a toast.
 
 ## Earned secrets
 

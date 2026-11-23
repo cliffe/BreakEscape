@@ -1326,12 +1326,30 @@ export class NetworkViewMinigame extends MinigameScene {
         };
     }
 
+    /**
+     * Bring an element into view with the least movement (a phone-width view puts the Use control
+     * and the message below the fold). Nothing moves when it is already visible. The jump is
+     * instant, never animated: a smooth scroll would be cut short by the next redraw (which puts
+     * the scroll position back) and would ignore prefers-reduced-motion.
+     */
+    scrollIntoViewSoft(el) {
+        if (!el || typeof el.scrollIntoView !== 'function') return false;
+        el.scrollIntoView({ block: 'nearest' });
+        return true;
+    }
+
+    /** After a pick: the Use control into view. */
+    scrollUseIntoView() {
+        return this.scrollIntoViewSoft(this.gameContainer?.querySelector?.('[data-action="use"]'));
+    }
+
     /** Pick a finding by alias (or id) for Use; picking it again lets it go. */
     selectFinding(aliasOrId) {
         const hit = findFinding(this.view, aliasOrId);
         if (!hit) return false;
         this.selectedFinding = this.selectedFinding === hit.finding.id ? null : hit.finding.id;
         this.redraw();
+        if (this.selectedFinding) this.scrollUseIntoView();
         return true;
     }
 
@@ -1340,6 +1358,7 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!techniqueList(this.view).some(t => t.id === id)) return false;
         this.selectedTechnique = this.selectedTechnique === id ? null : id;
         this.redraw();
+        if (this.selectedTechnique) this.scrollUseIntoView();
         return true;
     }
 
@@ -1485,6 +1504,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this.noticeKey = text ? key : null;
         const el = this.gameContainer?.querySelector('.network-view-notice');
         if (el) el.textContent = text;
+        if (el && text) this.scrollIntoViewSoft(el);
     }
 
     /** A row's control: sign in, open a held session or a share, or look at a resource. */

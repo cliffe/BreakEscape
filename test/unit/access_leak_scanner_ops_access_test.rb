@@ -382,4 +382,110 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
     rows = [view, inv_add('card_factory'), refusal('wrong_class'), grant_answer, grant_answer(access: 'admin'), credential_answer, shown]
     assert_empty scan(rows)
   end
+
+  # ---- post-landing tidy: R3-1, R3-6, R3-7 ---------------------------------------------------------
+
+  def twin_scenario(on_network: true)
+    d = data
+    if on_network
+      lena = d['rooms'].values.flat_map { |r| r['objects'] }.find { |o| o['id'] == 'lena_pc' }
+      lena['host'] = 'HB-DESK-01'
+      lena['services'] = [S.service('web', 80)]
+      lena['services'].first['weaknesses'] = [S.weak('twin', 'default_creds', 'low', 'grants' => S.sam_grant)]
+    end
+    d
+  end
+
+  test 'R3-1: a session re-granted untagged after a sign-out earns nothing when two PCs share its host label' do
+    d = twin_scenario
+    steps = ["confirm:#{S::FACTORY}", 'confirm:lena_pc.web.twin']
+    shown = ->(id) { view(hosts: [pc_row(session: host_session).merge('id' => id, 'host' => 'HB-DESK-01')]) }
+    # the first grant is tagged by the recorder (session:sam_pc earned); the second has no tag, as after a sign-out
+    found = scan([grant_answer, grant_answer(tag: false), shown.call('lena_pc')], ops_steps: steps, scenario: d)
+    assert_includes owners(found), 'ops:key:via', 'the untagged repeat must not credit lena_pc'
+    assert(found.any? { |f| f.line == 3 })
+    # a label only one PC carries is exact: the same run on the plain fixture credits sam_pc
+    assert_empty scan([grant_answer, grant_answer(tag: false), shown.call('sam_pc')], ops_steps: ["confirm:#{S::FACTORY}"])
+    # tagged by the recorder, each grant is exact even with the shared label
+    twin_grant = grant_answer(finding: 'lena_pc.web.twin')
+    assert_empty scan([twin_grant, shown.call('lena_pc')], ops_steps: steps, scenario: d).select { |f| f.line == 2 }
+  end
+
+  test 'R3-1: a sign-in PC on no network that shares a label with a networked PC makes the label ambiguous' do
+    d = data
+    room = d['rooms'].values.first
+    room.delete('network')
+    room['objects'] << { 'id' => 'offgrid_pc', 'type' => 'pc', 'name' => 'Offgrid', 'lockType' => 'login', 'host' => 'HB-DESK-01', 'takeable' => false }
+    assert_nil BreakEscape::NetworkModel.network_of(room['objects'].last, room), 'the PC is on no network'
+    labels = AccessLeakScanner.new(d).instance_variable_get(:@ops_host_by_label)
+    refute labels.key?('HB-DESK-01'), 'the networked PC and the off-network PC share the label'
+    assert_equal 'sam_pc', AccessLeakScanner.new(data).instance_variable_get(:@ops_host_by_label)['HB-DESK-01']
+  end
+
+  test 'R3-6 a: a grant answer whose session carries a key outside the session set is an answer-shape finding' do
+    %w[foothold fromHost findingId].each do |key|
+      bad = grant_answer
+      bad['body']['session'][key] = 'x'
+      assert_includes owners(scan([bad])), 'ops:technique:answer', key
+    end
+    assert_empty scan([grant_answer])
+  end
+
+  test 'R3-6 b: keyringChanged on a session grant, and endedPcIds or a session on a credential grant, are answer-shape findings' do
+    session = grant_answer
+    session['body']['keyringChanged'] = true
+    assert_includes owners(scan([session])), 'ops:technique:answer'
+    credential = credential_answer
+    credential['body']['endedPcIds'] = ['sam_pc']
+    assert_includes owners(scan([credential])), 'ops:technique:answer'
+    with_session = credential_answer
+    with_session['body']['session'] = session_hash
+    assert_includes owners(scan([with_session])), 'ops:technique:answer'
+    assert_empty scan([credential_answer])
+  end
+
+  test 'R3-6 d: a later user-level session at a PC takes its admin step back' do
+    admin_view = view(hosts: [pc_row(session: host_session('access' => 'admin'))])
+    assert_empty scan([grant_answer(access: 'admin'), admin_view])
+    user_after = scan([grant_answer(access: 'admin'), grant_answer, admin_view])
+    assert_includes owners(user_after), 'ops:key:access'
+    assert(user_after.all? { |f| f.line == 3 })
+  end
+
+  test 'R3-7 a: a services key in a room or bootstrap answer, and a top-level hosts key, are findings by name' do
+    assert_empty scan([row({ 'rooms' => {} }, path: BOOT), row({ 'objects' => [{ 'id' => 'sam_pc' }] }, path: ROOM)])
+    in_room = row({ 'objects' => [{ 'id' => 'plain_obj', 'services' => [] }] }, path: ROOM)
+    assert_equal ['ops:key:services'], owners(scan([in_room]))
+    in_boot = row({ 'startRoom' => 'lobby', 'rooms' => { 'lobby' => { 'objects' => [{ 'id' => 'x', 'services' => [{ 'name' => 'web' }] }] } } }, path: BOOT)
+    assert_equal ['ops:key:services'], owners(scan([in_boot]))
+    assert_equal ['ops:key:hosts'], owners(scan([row({ 'startRoom' => 'lobby', 'hosts' => {} }, path: BOOT)]))
+    assert_equal ['ops:key:hosts'], owners(scan([row({ 'hosts' => [] }, path: ROOM)]))
+  end
+
+  def block(id, rows: [], extra: {})
+    { 'id' => id, 'name' => 'Net', 'via' => nil, 'hosts' => rows, 'route' => 'up', 'swept' => false }.merge(extra)
+  end
+
+  def block_view(net_block, foothold: S::OFFICE)
+    row({ 'footholds' => [{ 'id' => foothold, 'hosts' => [], 'networks' => [net_block] }] })
+  end
+
+  test 'R3-7 b: an unswept discovery block may list only held PCs, carry no ops key, and no services or hosts key in a row' do
+    net = data['networks'].keys.find { |id| BreakEscape::NetworkModel.discovery?(data, id) }
+    assert net, 'the fixture has a discovery network'
+    recs = BreakEscape::NetworkModel.hosts_on(net, data)
+    other = recs.find { |r| r[:kind] == 'device' }[:id]
+    pc = recs.find { |r| r[:kind] != 'device' }[:id]
+    clean = block_view(block(net))
+    assert_empty scan([clean])
+    assert_equal ["ops:network:#{net}"], owners(scan([block_view(block(net, extra: { 'ops' => true }))]))
+    device_row = { 'id' => other, 'kind' => 'device', 'sprite' => 'x' }
+    assert_equal ["ops:network:#{net}"], owners(scan([block_view(block(net, rows: [device_row]))]))
+    held = { 'id' => pc, 'kind' => 'pc', 'name' => 'Held PC', 'session' => { 'username' => 'sam', 'displayName' => 'Sam' } }
+    assert_empty scan([block_view(block(net, rows: [held]))])
+    assert_includes owners(scan([block_view(block(net, rows: [held.merge('services' => [])]))])), "ops:network:#{net}"
+    assert_equal ["ops:network:#{net}"], owners(scan([block_view(block(net, rows: [held.merge('hosts' => [])]))]))
+    swept = { 'success' => true, 'network' => block(net, rows: [device_row], extra: { 'swept' => true, 'ops' => true }) }
+    assert_empty scan([row(swept, path: "#{BASE}/network/scan", method: 'POST')]), 'once swept, rows and ops are the sweep answer'
+  end
 end

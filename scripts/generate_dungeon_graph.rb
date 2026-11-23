@@ -1765,8 +1765,20 @@ end
   tech_nm = BreakEscape::NetworkModel
   techs = tech_nm.techniques(scenario)
   carriers = tech_nm.technique_items(scenario).group_by { |rec| rec[:item]['technique_card'].to_s }
+  tech_owner = {} # technique node id => registry id (a collision check, as the weakness nodes have)
   techs.each do |tech_id, tech|
-    tech_node = add_node("tech_#{nid(tech_id)}", scrub_label((tech['name'].is_a?(String) && !tech['name'].strip.empty? ? tech['name'] : tech_id).to_s), 'key')
+    # nid folds case and punctuation, so two registry ids can give one node id (release-notes and
+    # release_notes): the second claimant gets a counter and a warning, never the first one's node.
+    base_id = "tech_#{nid(tech_id)}"
+    tech_node_id = base_id
+    count = 1
+    while tech_owner.key?(tech_node_id) && tech_owner[tech_node_id] != tech_id
+      count += 1
+      tech_node_id = "#{base_id}_#{count}"
+    end
+    warn "graph: technique ids collide on #{base_id}; #{tech_id} is drawn as #{tech_node_id}" if tech_node_id != base_id
+    tech_owner[tech_node_id] = tech_id
+    tech_node = add_node(tech_node_id, scrub_label((tech['name'].is_a?(String) && !tech['name'].strip.empty? ? tech['name'] : tech_id).to_s), 'key')
     (carriers[tech_id] || []).each do |rec|
       item = rec[:item]
       next unless item['id'].is_a?(String) && !item['id'].empty?

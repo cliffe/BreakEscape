@@ -3,7 +3,7 @@
 //
 // It runs scripts/validate_scenario.rb (--no-graph) and scripts/generate_dungeon_graph.rb over a
 // COPY of each scenario folder (the graph generator writes beside the scenario, so the real folders
-// are never touched) and compares the validator's lines and the graph JSON with
+// are never touched) and compares the validator's lines, the graph JSON and a hash of each rendered graph file (.md, .html) with
 // test/js/fixtures/ops_unchanged/validator_and_graph.json, recorded on main before any ops-core edit.
 //
 // Scenarios: the eight that declare networks, the six that write a pretext block (core plan 4.3,
@@ -12,7 +12,8 @@
 // unrelated scenario edit (AGENTS.md: test against fixtures, not live content), so this is the
 // narrowest set that still sees what ops-core code can change: the validator rules and the graph
 // block over scenarios with and without the new fields. The checked-in dungeon_graph.* files are NOT
-// compared (several are already stale against regeneration); the regenerated output is.
+// compared (several are already stale against regeneration); the regenerated output is, and a hash of its
+// rendered .md and .html is recorded beside the JSON (graphMdHash, graphHtmlHash).
 //
 // RE-RECORDING. If a named scenario is edited on purpose, this test fails and says so (the scenario
 // folder's hash differs from the recorded one). Re-record only then, and only from a tree with no
@@ -78,6 +79,12 @@ const normalise = (text, tmpScenarioDir, name) => text
     .split(root).join('<root>')
     .replace(/^Loaded \d+ valid item types/m, 'Loaded N valid item types');
 
+// sha256 of a rendered graph file written by the generator, or null when the generator failed.
+function renderedHash(dir, file, graphStatus) {
+    if (graphStatus !== 0) return null;
+    return createHash('sha256').update(readFileSync(join(dir, file))).digest('hex');
+}
+
 async function observe(name) {
     const src = join(root, 'scenarios', name);
     const work = mkdtempSync(join(tmpdir(), 'ops-unchanged-'));
@@ -92,7 +99,10 @@ async function observe(name) {
             validatorExit: validator.status,
             validator: normalise(validator.out, copy, name).split('\n'),
             graphExit: graph.status,
-            graph: graph.status === 0 ? JSON.parse(readFileSync(join(copy, 'dungeon_graph.json'), 'utf8')) : null
+            graph: graph.status === 0 ? JSON.parse(readFileSync(join(copy, 'dungeon_graph.json'), 'utf8')) : null,
+            // The rendered diagram files too: a style line written into every diagram once changed these and not the JSON.
+            graphMdHash: renderedHash(copy, 'dungeon_graph.md', graph.status),
+            graphHtmlHash: renderedHash(copy, 'dungeon_graph.html', graph.status)
         };
     } finally {
         rmSync(work, { recursive: true, force: true });
@@ -133,5 +143,7 @@ for (const name of SCENARIOS) {
         assert.deepEqual(got.validator, want.validator, `${name}: validator lines differ. ${hint}`);
         assert.equal(got.graphExit, want.graphExit, `${name}: graph generator exit status. ${hint}`);
         assert.deepEqual(got.graph, want.graph, `${name}: graph JSON differs. ${hint}`);
+        assert.equal(got.graphMdHash, want.graphMdHash, `${name}: the rendered dungeon_graph.md differs. ${hint}`);
+        assert.equal(got.graphHtmlHash, want.graphHtmlHash, `${name}: the rendered dungeon_graph.html differs. ${hint}`);
     });
 }
