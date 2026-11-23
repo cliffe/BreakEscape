@@ -37,12 +37,20 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   (`scenarios/test_ops_logs/`, PLAYTEST.md not yet run in a browser; notes
   `HANDOVER_L1b_1-2.md`, `HANDOVER_L1b_3.md`).
 - L1a R1 review: 0B 1M 17m, `ef5f8fff6` (`reviews/L1a_R1.md`); rulings in the brief.
-- RUNNING: L1a R1 fixer (Sonnet; appends "R1 outcomes" to the findings file); L1b R1 review
-  (fable52L, findings `reviews/L1b_R1.md`, does not commit).
-- Next: commit L1b findings; Sonnet fixer for L1b; then ONE delta review R2 over both fix
-  sets (fable52L: it touches secret handling); Haiku scripted playtest of `test_ops_logs`
-  from its PLAYTEST.md on a keyless server from this worktree (a Sonnet check of any "stuck");
-  train check; merge to main; push; merge main back. Then core step 1.
+- L1a R1 FIXED (18 of 18, unconfirmed): `d727f8fc2`, `fdc2b42a2`, `a278ac2e5`, outcomes
+  `965e9a595`. L1b R1 review 0B 1M 6m `79e6ad133`; FIXED 6 of 7 (m5 was real: the granted
+  badge row moved after the route-room gate): `49211abbb`, `a84ab7d02`, `40d47ac12`, outcomes
+  `d950ed316`. Open: L1b m4 f (`save_limit: false` helper test, unowned).
+- RUNNING: delta review R2 over both fix sets (fable52L; findings `reviews/L1ab_R2.md`, does
+  not commit); Haiku scripted playtest of `test_ops_logs` on port 3011 (results in the session
+  scratchpad `l1b-playtest/RESULTS.md`; a Sonnet run checks any "stuck" before it counts).
+- Next: commit R2 findings; one small Sonnet fix pass if needed (include m4 f); look at the
+  playtest screenshots myself; then
+  `tools/playtest/train-check.sh /data/be-ops-core <outdir> <port>` (GREEN needed, clean
+  tree); merge `ops-core` into main in `/home/deploy/BreakEscape` (merge, not rebase; check
+  main has not moved under other sessions first, merge main into the branch and re-check if
+  it has); push; then core step 1 (Sonnet): `OPS_CORE_PLAN.md` section 10 parts 1, 2 and 5
+  fixtures with the golden mechanism.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
