@@ -768,6 +768,7 @@ if NETWORKS.any?
   end
   weak_owner = {} # weakness node id => finding id (a collision check)
   weak_needs = [] # [weakness node, its authored needs]: drawn after the credential block
+  weak_drawn = [] # [weakness node, its nm.weaknesses record]: cards and grants are drawn after the credential block
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
@@ -848,6 +849,7 @@ if NETWORKS.any?
       weak_owner[node_id] = w[:finding_id]
       node = add_node(node_id, label, 'lock')
       weak_needs << [node, entry['needs']] if entry['needs'].is_a?(Hash)
+      weak_drawn << [node, w]
       if w[:host][:kind] == 'device'
         add_edge("host_#{nid(w[:host_id])}", node)
       else
@@ -1692,8 +1694,8 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
   when 'session'
     cred_sess = "lock_#{cred_proof['session']}"
     add_edge(cred_sess, cred_node) if $nodes.key?(cred_sess)
-  when 'planted', 'dropped'
-    # A capture proof; the capture and social sections already show how the secret is earned.
+  when 'planted', 'dropped', 'technique_card'
+    # A capture proof, or (technique_card) the weakness that grants it: its edge is the grant edge below; the capture and social sections already show how the secret is earned.
   end
 
   BreakEscape::CredentialModel.pcs_accepting(scenario, cid).each do |cred_pc|
@@ -1705,14 +1707,63 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
   end
 end
 
+# N15 (S3, plan 9.3): technique cards. `tech_<techniqueId>` is a key node (the registry entry's name) with an edge
+# to every weakness it matches (NetworkModel.technique_matches?); each carrying item is a source node drawn as a
+# held-credential source is (`cred_src_<itemId>`, shared with a `held` proof or an `item` need on the same item).
+# Drawn only when the scenario has weaknesses and a `techniques` registry.
+(weak_drawn || []).tap do |drawn|
+  next if drawn.empty?
+
+  tech_nm = BreakEscape::NetworkModel
+  techs = tech_nm.techniques(scenario)
+  carriers = tech_nm.technique_items(scenario).group_by { |rec| rec[:item]['technique_card'].to_s }
+  techs.each do |tech_id, tech|
+    tech_node = add_node("tech_#{nid(tech_id)}", scrub_label((tech['name'].is_a?(String) && !tech['name'].strip.empty? ? tech['name'] : tech_id).to_s), 'key')
+    (carriers[tech_id] || []).each do |rec|
+      item = rec[:item]
+      next unless item['id'].is_a?(String) && !item['id'].empty?
+
+      src = add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item')
+      add_edge(src, tech_node) unless $edges.any? { |e| e[:from] == src && e[:to] == tech_node }
+    end
+    drawn.each do |weak_node, w|
+      next unless tech_nm.technique_matches?(tech, w[:service], w[:entry])
+
+      add_edge(tech_node, weak_node) unless $edges.any? { |e| e[:from] == tech_node && e[:to] == weak_node }
+    end
+  end
+
+  # Grants: a session grant ends at the host's sign-in lock (the lock already takes a second way in from a
+  # credential), a credential grant at `cred_<id>`. An `access: admin` session grant also ends at the lock until S5a.
+  drawn.each do |weak_node, w|
+    grants = w[:entry]['grants']
+    next unless grants.is_a?(Hash)
+
+    if grants['session'].is_a?(Hash) && w[:host][:kind] != 'device'
+      lock = "lock_#{w[:host_id]}"
+      if $nodes.key?(lock) && $edges.none? { |e| e[:from] == weak_node && e[:to] == lock }
+        add_edge(weak_node, lock, label: 'grants session')
+      end
+    end
+    cred = grants['credential']
+    cred_node = cred.is_a?(String) ? "cred_#{nid(cred)}" : nil
+    add_edge(weak_node, cred_node) if cred_node && $nodes.key?(cred_node) && $edges.none? { |e| e[:from] == weak_node && e[:to] == cred_node }
+  end
+end
+
 # N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
 # because the credential nodes exist only now. `needs.credential` from `cred_<id>`; `needs.item` from the
 # item's existing node (a granted item or a held-credential source), nothing when the item has none: a
 # need adds no node of its own. `itemType`, `global` and `session` have no node and draw nothing.
+weak_host_lock = (weak_drawn || []).to_h { |node, w| [node, w[:host][:kind] == 'device' ? nil : "lock_#{w[:host_id]}"] }
 (weak_needs || []).each do |weak_node, needs|
   cred = needs['credential']
   edge_from = cred.is_a?(String) && $nodes.key?("cred_#{nid(cred)}") ? "cred_#{nid(cred)}" : nil
   add_edge(edge_from, weak_node) if edge_from && $edges.none? { |e| e[:from] == edge_from && e[:to] == weak_node }
+  # N15: a session need (a step up) is an edge from this host's sign-in lock, when the host has one.
+  if needs['session'].is_a?(String) && (host_lock = weak_host_lock[weak_node]) && $nodes.key?(host_lock)
+    add_edge(host_lock, weak_node) if $edges.none? { |e| e[:from] == host_lock && e[:to] == weak_node }
+  end
   item = needs['item']
   next unless item.is_a?(String)
 
@@ -2096,6 +2147,7 @@ if (net_labels & Set['held', 'dropped', 'session at PC']).any?
   net_notes << '<code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs'
 end
 net_notes << '<b>weak_</b> node: a weakness a check can find on a host or device, hung from it or from its network' if $nodes.keys.any? { |id| id.start_with?('weak_') }
+net_notes << '<b>tech_</b> node: a technique card, drawn to each weakness it matches; a weakness may grant a session (to the host sign-in) or a credential' if $nodes.keys.any? { |id| id.start_with?('tech_') }
 net_legend_html = net_notes.map { |n| %(\n          <div class="edge-row">#{n}</div>) }.join
 net_legend_md = net_notes.map { |n| "\n  Network edges: #{n.gsub(%r{</?code>}, '`').gsub(%r{</?b>}, '')}." }.join
 # Scrubbed before the subtitle cuts it, so the cut never leaves part of a key.

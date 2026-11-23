@@ -175,3 +175,63 @@ test('two finding ids that fold to one node id each get a node, and the second i
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+// N15 (S3, plan 9.3): technique cards, session needs, grants.
+function withCards() {
+    const sc = withFindings();
+    sc.techniques = {
+        factory_accounts: { name: 'Factory accounts', worksOn: { class: 'default_creds' } },
+        smb_flaw: { name: 'Share flaw', worksOn: { class: 'weak_auth', product: 'Sharepoint', versions: ['1'] } },
+        wrong_ver: { name: 'Wrong version', worksOn: { class: 'weak_auth', product: 'Sharepoint', versions: ['9'] } }
+    };
+    sc.rooms.lobby.objects.push({ id: 'card_factory', type: 'technique_card', name: 'Field note: factory accounts', technique_card: 'factory_accounts', takeable: true });
+    sc.startItemsInInventory = [{ id: 'card_smb', type: 'technique_card', name: 'Share note', technique_card: 'smb_flaw' }];
+    sc.rooms.comms_room.npcs = [{ id: 'lena', displayName: 'Lena', npcType: 'person', creds: { username: 'lfox', password: 'x1y2z3' } }];
+    sc.credentials = { print_admin: { kind: 'saved_connection', account: 'lena', connectsTo: 'files01', proof: { technique_card: 'printer01.admin_page.open_share' } } };
+    sc.hosts.printer01.services[0].weaknesses[1].grants = { credential: 'print_admin' };
+    sc.rooms.comms_room.objects.find(o => o.id === 'files01').services[0].weaknesses[0].grants = { session: { account: 'lena', access: 'user' } };
+    return sc;
+}
+
+test('a technique card is a key node with a source node per carrying item and an edge to each weakness it matches', { skip }, () => {
+    const g = graph(withCards());
+    assert.equal(g.nodes.tech_factory_accounts.kind, 'key');
+    assert.match(g.nodes.tech_factory_accounts.label, /Factory accounts/);
+    assert.equal(g.nodes.cred_src_card_factory.kind, 'item');
+    assert.ok(g.edges.some(e => e.from === 'cred_src_card_factory' && e.to === 'tech_factory_accounts'));
+    assert.ok(g.edges.some(e => e.from === 'cred_src_card_smb' && e.to === 'tech_smb_flaw'), 'a start item carries a card too');
+    const out = id => g.edges.filter(e => e.from === id).map(e => e.to).sort();
+    assert.deepEqual(out('tech_factory_accounts'), ['weak_printer01_admin_page_factory_login']);
+    assert.deepEqual(out('tech_smb_flaw'), ['weak_files01_smb_weak_pw']);
+    assert.deepEqual(out('tech_wrong_ver'), [], 'a version the service lacks matches nothing');
+});
+
+test('a session grant ends at the host lock and a credential grant at cred_<id>, each once', { skip }, () => {
+    const g = graph(withCards());
+    const sess = g.edges.filter(e => e.from === 'weak_files01_smb_weak_pw');
+    assert.deepEqual(sess.map(e => [e.to, e.label]), [['lock_files01', 'grants session']]);
+    const cred = g.edges.filter(e => e.from === 'weak_printer01_admin_page_open_share');
+    assert.deepEqual(cred.map(e => e.to), ['cred_print_admin']);
+    assert.equal(g.nodes.cred_print_admin.kind, 'key');
+    assert.equal(Object.keys(g.nodes).some(id => id.startsWith('cred_src_') && id.includes('print')), false, 'a technique_card proof draws no source of its own');
+    assert.equal(g.nodes.weak_printer01_admin_page_open_share.label.includes('report only'), false);
+});
+
+test('a session need is an edge from the same host sign-in lock; a device has none', { skip }, () => {
+    const sc = withCards();
+    sc.rooms.comms_room.objects.find(o => o.id === 'files01').services[0].weaknesses.push(
+        { id: 'step_up', class: 'misconfig', severity: 'low', needs: { session: 'user' } });
+    sc.hosts.printer01.services[0].weaknesses[0].needs = { session: 'user' };
+    const g = graph(sc);
+    assert.deepEqual(g.edges.filter(e => e.to === 'weak_files01_smb_step_up').map(e => e.from).sort(), ['lock_files01', 'net_office_lan']);
+    assert.deepEqual(g.edges.filter(e => e.to === 'weak_printer01_admin_page_factory_login').map(e => e.from).sort(), ['host_printer01', 'tech_factory_accounts']);
+});
+
+test('an item need on a card item draws from its source node; the legend names the card, and plain graphs have no tech node', { skip }, () => {
+    const sc = withCards();
+    sc.hosts.printer01.services[0].weaknesses[0].needs = { item: 'card_factory' };
+    const g = graph(sc);
+    assert.ok(g.edges.some(e => e.from === 'cred_src_card_factory' && e.to === 'weak_printer01_admin_page_factory_login'));
+    assert.equal(Object.keys(graph(withFindings()).nodes).some(id => id.startsWith('tech_')), false);
+    assert.equal(Object.keys(graph(withNeeds({ item: 'panel_sheet' })).nodes).some(id => id.startsWith('tech_')), false);
+});
