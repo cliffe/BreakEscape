@@ -17,11 +17,8 @@ export default async (page, bridge, mark) => {
   const s = await bridge.getState(); const fs = s.nearby.find(n => n.id === 'flag_station_financial');
   if (!fs) throw new Error('station not in nearby: ' + JSON.stringify(s.nearby.map(n => [n.id, Math.round(n.x), Math.round(n.y)])));
   mark('walk-start', { station: [fs.x, fs.y], player: [s.player.x, s.player.y] });
-  const dx = fs.x - s.player.x, dy = fs.y - s.player.y;
-  // one long leg on the longer axis, then a short one; stop about 30 px short of the station
-  const legs = Math.abs(dx) >= Math.abs(dy)
-    ? [['down', fs.y + 20], ['right', fs.x - Math.sign(dx) * 30]]
-    : [['right', fs.x], ['down', fs.y - Math.sign(dy) * 30]];
+  // the entry point is already beside the station (32 px): walk out along the desk front and back to it, so the shot shows a straight walk in the server room ending at the station
+  const legs = [['right', s.player.x + 90], ['left', fs.x + 4]];
   await keyLegs(bridge, legs, 145, mark);
   mark('walk-end', { player: (await bridge.getState()).player }); await sleep(1200);
   if ((await bridge.getState()).activeMinigame) throw new Error('a minigame opened on the walk');
