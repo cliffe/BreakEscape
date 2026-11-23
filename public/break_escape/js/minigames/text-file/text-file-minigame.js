@@ -217,7 +217,7 @@ export class TextFileMinigame extends MinigameScene {
         const remote = desktop?.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote
             : (session?.remote === true ? { footholdId: session.footholdId } : null);
         const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
-        this.taskbarModel = m.pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places: kept?.places || [], lockSupported: m.lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        this.taskbarModel = m.pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places: kept?.places || [], lockSupported: m.lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop && window.pcSessions?.canSwitchUser?.(pcId) !== false });
         const leaveFor = (open) => {
             // Not the player's own Close: the reader does not reopen what it came from
             if (window.MinigameFramework?.currentMinigame === this) this.complete(false);

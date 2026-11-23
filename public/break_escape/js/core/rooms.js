@@ -1035,6 +1035,8 @@ async function loadRoomOnce(roomId) {
 
     // A PC whose owner is already away with the screen locked gets its locked look, silently
     window.screenStates?.syncRoom(roomId);
+    // The red tint and bolt on a PC, device or jack the player holds by compromise (compromise-marks.js)
+    window.compromiseMarks?.syncRoom?.(roomId);
     // A jack with a device in it shows its plantedSprite (slice 9.3a, network-links.js)
     window.networkLinks?.syncRoom?.(roomId);
     // Plants that can take a held device, and the overlay of a hidden one (plant-hiding.js)

@@ -2141,7 +2141,9 @@ export async function create() {
                         const state = ws.installWorkstationState();
                         // The locked-screen look and its sounds follow the workstation events
                         return import('../systems/screen-states.js').then(m => { m.installScreenStates(); return state; })
-                            .catch(e => { console.warn('screen states failed', e); return state; });
+                            .catch(e => { console.warn('screen states failed', e); return state; })
+                            .then(() => import('../systems/compromise-marks.js')).then(m => { m.installCompromiseMarks(); return state; })
+                            .catch(e => { console.warn('compromise marks failed', e); return state; });
                     });
                 });
             })
@@ -2265,6 +2267,7 @@ export async function create() {
         // (UX slice 2a R5 M1: a sign-in PC in the start room had no post-it mark, since
         // installPostitMarks ran before any room existed).
         window.screenStates?.syncRoom?.(startRoomId);
+        window.compromiseMarks?.syncRoom?.(startRoomId);
         window.networkLinks?.syncRoom?.(startRoomId);
         window.plantHiding?.syncRoom?.(startRoomId);
         window.postitMarks?.syncRoom?.(startRoomId);

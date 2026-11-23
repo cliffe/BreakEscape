@@ -29,6 +29,7 @@
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
  *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device | port_security
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
+ *   network_foothold_dropped  { footholdId, sourceId }  a foothold the server no longer holds (404 or left out of GET /network)
  *   network_view_closed       (foothold id) { footholdId, reason }   reason: closed |
  *                                           link_dropped | foothold_gone
  *
@@ -302,6 +303,8 @@ export class NetworkLinks {
             this._publishPlanted(f.sourceId, false);
             this._applyJackLookById(f.sourceId);
         }
+        // A foothold can go without an unplug; the world's compromise marks re-read their sources
+        this._emit('network_foothold_dropped', { footholdId, sourceId: f.sourceId ?? null });
     }
 
     _trayItem(id) {

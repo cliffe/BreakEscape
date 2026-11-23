@@ -82,6 +82,13 @@ export function setGameInstance(gameInstance) {
     }
 }
 
+// The tint an object rests at once a highlight ends: its compromise mark's (set by
+// systems/compromise-marks.js as sprite.compromiseTint) or none
+function restTint(obj) {
+    if (obj.compromiseTint !== undefined && typeof obj.setTint === 'function') obj.setTint(obj.compromiseTint);
+    else obj.clearTint();
+}
+
 // Helper function to calculate interaction distance with direction-based offset
 // Extends reach from the edge of the player sprite in the direction the player is facing
 function getInteractionDistance(playerSprite, targetX, targetY) {
@@ -220,7 +227,7 @@ export function checkObjectInteractions() {
                 // Clear highlight if object was previously highlighted
                 if (obj.isHighlighted) {
                     obj.isHighlighted = false;
-                    obj.clearTint();
+                    restTint(obj);
                     removeProximityGhost(obj);
                     // Clean up interaction sprite if exists
                     if (obj.interactionIndicator) {
@@ -245,7 +252,7 @@ export function checkObjectInteractions() {
                 // Clear highlight if object is outside viewport
                 if (obj.isHighlighted) {
                     obj.isHighlighted = false;
-                    obj.clearTint();
+                    restTint(obj);
                     removeProximityGhost(obj);
                     // Clean up interaction sprite if exists
                     if (obj.interactionIndicator) {
@@ -278,7 +285,7 @@ export function checkObjectInteractions() {
                 obj.isHighlighted = false;
                 // Only clear tint if this is a sprite
                 if (obj.clearTint && typeof obj.clearTint === 'function') {
-                    obj.clearTint();
+                    restTint(obj);
                 }
                 removeProximityGhost(obj);
                 // Clean up interaction sprite if exists
