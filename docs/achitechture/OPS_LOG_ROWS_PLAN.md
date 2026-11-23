@@ -471,7 +471,8 @@ gets the same edges any other object with those actions gets, from the reader to
 No scenario in the repo has `logSources`, so:
 
 - `write_log_row!` returns at its first line; no row, no `opsLog`, no `opsLogSeq`.
-- No answer from an existing route gains a field.
+- No answer from an existing route gains a field, except that a card-less rfid request at an
+  already open door or object now answers `alreadyOpen: true` (section 12, L1b item 2).
 - sis01's and sis02's log-filter terminals (`vpn` and `ics_rdp`) run code this plan does not edit:
   `log-filter-minigame.js`, its CSS and its schema entry are untouched.
 - Every save this plan adds (the `/unlock` refusal path, the two `attempt_login!` refusals, the

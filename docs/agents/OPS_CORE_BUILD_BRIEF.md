@@ -107,3 +107,6 @@ and at most 5 per stage; later rounds are delta reviews.
   it cannot, a test shows the refusal and the finding is withdrawn. m6, `alreadyOpen` on a
   card-less rfid post stays (the plan's build item; the client only words a toast by it), with
   a controller test and a line in the A24 doc saying so.
+- 2026-11-23, R2 rulings: N3, literal flag answers on a flag station's own `flags` list are
+  registered as secrets too. N1 (a redundant branch) stays. The log plan's section 10 now
+  names the `alreadyOpen` exception.
