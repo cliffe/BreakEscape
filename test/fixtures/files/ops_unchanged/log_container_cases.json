@@ -1,0 +1,1088 @@
+{
+  "name": "log_container_cases",
+  "description": "Answers of GET /container over the access model suite cases, captured before the ops log edits.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "Access model fixture",
+    "startRoom": "lobby",
+    "social": {
+      "captures": {
+        "revealSecret": true
+      }
+    },
+    "policies": {
+      "corp_default": {
+        "autoLockMin": 5,
+        "maxAttempts": 5
+      }
+    },
+    "defaultPolicy": "corp_default",
+    "accountProfiles": {
+      "jake_files": {
+        "for": {
+          "people": [
+            "jake"
+          ]
+        },
+        "contents": [
+          {
+            "type": "text_file",
+            "name": "Q3 budget.xlsx",
+            "takeable": true,
+            "text": "JAKE-PROFILE-FILE-TEXT",
+            "id": "jake_budget"
+          },
+          {
+            "type": "safe",
+            "name": "Archive",
+            "locked": true,
+            "lockType": "password",
+            "requires": "zip-pass",
+            "contents": [
+              {
+                "id": "jake_inner",
+                "type": "text_file",
+                "name": "Inner.txt",
+                "takeable": true,
+                "text": "ARCHIVE-INNER-TEXT"
+              }
+            ],
+            "id": "jake_archive"
+          },
+          {
+            "id": "jake_payroll",
+            "type": "text_file",
+            "name": "Payroll.csv",
+            "takeable": true,
+            "transfer": "copy",
+            "text": "payroll"
+          }
+        ]
+      },
+      "staff_desktop": {
+        "for": {
+          "roles": [
+            "staff"
+          ]
+        },
+        "contents": [
+          {
+            "id": "staff_handbook",
+            "type": "text_file",
+            "name": "Staff handbook.pdf",
+            "takeable": false,
+            "text": "STAFF-HANDBOOK-TEXT"
+          }
+        ]
+      }
+    },
+    "rooms": {
+      "lobby": {
+        "type": "room_office",
+        "connections": {
+          "north": "finance"
+        },
+        "npcs": [
+          {
+            "id": "len",
+            "displayName": "Len Okafor",
+            "npcType": "person",
+            "position": {
+              "x": 2,
+              "y": 2
+            },
+            "rfidCard": {
+              "name": "Records access badge",
+              "card_id": "cm_records_badge",
+              "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+              "sector_keys": [
+                "A0A1A2A3A4A5"
+              ]
+            }
+          },
+          {
+            "id": "exec",
+            "displayName": "Morgan Hale",
+            "npcType": "person",
+            "position": {
+              "x": 4,
+              "y": 2
+            },
+            "role": "exec",
+            "creds": {
+              "card": {
+                "name": "Executive card",
+                "card_id": "EXEC-DF-01",
+                "rfid_protocol": "MIFARE_DESFire"
+              }
+            }
+          },
+          {
+            "id": "imran",
+            "displayName": "Imran Siddiqui",
+            "npcType": "person",
+            "position": {
+              "x": 6,
+              "y": 2
+            },
+            "role": "facilities",
+            "creds": {
+              "card": {
+                "name": "Power room card",
+                "card_id": "tg_power_room_card",
+                "rfid_protocol": "EM4100"
+              }
+            }
+          },
+          {
+            "id": "gary",
+            "displayName": "Gary Whitlock",
+            "npcType": "person",
+            "position": {
+              "x": 7,
+              "y": 2
+            },
+            "role": "security",
+            "rfidCard": {
+              "name": "Power room card",
+              "card_id": "tg_power_room_card",
+              "rfid_protocol": "EM4100"
+            }
+          }
+        ],
+        "objects": [
+          {
+            "id": "visitor_badge",
+            "type": "keycard",
+            "name": "Visitor badge",
+            "card_id": "VISITOR-07",
+            "rfid_protocol": "EM4100",
+            "takeable": true
+          },
+          {
+            "id": "jake_spare",
+            "type": "keycard",
+            "name": "Jake's spare badge",
+            "card_id": "4F00A1C2",
+            "rfid_protocol": "EM4100",
+            "takeable": true
+          },
+          {
+            "id": "lobby_safe",
+            "type": "safe",
+            "name": "Lobby safe",
+            "locked": true,
+            "lockType": "pin",
+            "requires": "1111",
+            "contents": [
+              {
+                "id": "safe_badge",
+                "type": "keycard",
+                "name": "Safe badge",
+                "card_id": "SAFE-01",
+                "rfid_protocol": "EM4100",
+                "takeable": true
+              }
+            ]
+          }
+        ]
+      },
+      "finance": {
+        "type": "room_office",
+        "connections": {
+          "south": "lobby"
+        },
+        "locked": true,
+        "lockType": "pin",
+        "requires": "4321",
+        "objects": [
+          {
+            "id": "jake_pc",
+            "type": "pc",
+            "name": "Jake's PC",
+            "owner": "jake",
+            "locked": true,
+            "lockType": "login",
+            "access": {
+              "roles": [
+                "staff"
+              ]
+            },
+            "policy": "corp_default",
+            "loginPicker": "accounts",
+            "contents": [
+              {
+                "type": "text_file",
+                "name": "Local.txt",
+                "takeable": false,
+                "text": "PC-LOCAL-FILE-TEXT",
+                "id": "jake_local"
+              },
+              {
+                "id": "jake_notes",
+                "type": "text_file",
+                "name": "Notes.txt",
+                "takeable": true,
+                "text": "notes"
+              }
+            ],
+            "lockChance": 0.5
+          },
+          {
+            "id": "finance_cabinet",
+            "type": "safe",
+            "name": "Cabinet",
+            "locked": true,
+            "lockType": "rfid",
+            "access": {
+              "roles": [
+                "finance"
+              ]
+            },
+            "acceptsUIDOnly": true,
+            "contents": [
+              {
+                "type": "notes",
+                "name": "Ledger",
+                "text": "ledger"
+              }
+            ]
+          },
+          {
+            "id": "profile_pc",
+            "type": "pc",
+            "name": "Hot desk",
+            "locked": true,
+            "lockType": "login",
+            "access": {
+              "roles": [
+                "staff"
+              ]
+            }
+          },
+          {
+            "id": "it_pc",
+            "type": "pc",
+            "name": "IT PC",
+            "owner": "jake",
+            "lockChance": 0.5,
+            "locked": true,
+            "lockType": "login",
+            "access": {
+              "roles": [
+                "it"
+              ]
+            }
+          }
+        ],
+        "npcs": [
+          {
+            "id": "jake",
+            "displayName": "Jake Brooks",
+            "npcType": "person",
+            "position": {
+              "x": 3,
+              "y": 3
+            },
+            "role": "finance",
+            "creds": {
+              "username": "jbrooks",
+              "password": "Biscuit2019",
+              "card": {
+                "name": "Jake's badge",
+                "card_id": "4F00A1C2",
+                "rfid_protocol": "EM4100"
+              }
+            },
+            "awareness": "high",
+            "habits": {
+              "writesDown": false
+            },
+            "workarounds": [
+              "shared_drive"
+            ],
+            "needsHome": "jake_pc",
+            "usePayload": {
+              "host": "LW-FIN-01"
+            },
+            "eventMappings": [
+              {
+                "eventPattern": "workstation_accessed:jake_pc",
+                "onceOnly": true,
+                "addCapture": {
+                  "targetId": "jake",
+                  "kind": "credential",
+                  "note": "Lifted from his session."
+                }
+              }
+            ]
+          },
+          {
+            "id": "dana",
+            "displayName": "Dana White",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "role": [
+              "finance",
+              "it"
+            ],
+            "creds": {
+              "username": "DWhite",
+              "password": "Daisy-Chain-77"
+            }
+          }
+        ]
+      },
+      "records": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "access": {
+          "roles": [
+            "finance"
+          ]
+        }
+      },
+      "mixed": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "requires": [
+          "VISITOR-07"
+        ],
+        "access": {
+          "roles": [
+            "it"
+          ]
+        }
+      },
+      "exec_suite": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "access": {
+          "people": [
+            "exec"
+          ]
+        }
+      },
+      "exec_lounge": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "access": {
+          "roles": [
+            "exec"
+          ]
+        },
+        "acceptsUIDOnly": true
+      },
+      "power_room": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "access": {
+          "roles": [
+            "security"
+          ]
+        }
+      },
+      "plant_room": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "rfid",
+        "access": {
+          "roles": [
+            "facilities"
+          ]
+        }
+      },
+      "vault": {
+        "type": "room_office",
+        "connections": {},
+        "locked": true,
+        "lockType": "pin",
+        "requires": "9999",
+        "objects": [
+          {
+            "id": "vault_pc",
+            "type": "pc",
+            "name": "Vault PC",
+            "locked": true,
+            "lockType": "login"
+          }
+        ]
+      }
+    },
+    "objectives": [
+      {
+        "aimId": "access",
+        "title": "Get in",
+        "status": "active",
+        "tasks": [
+          {
+            "taskId": "sign_in_jake",
+            "title": "Sign in to Jake's PC",
+            "type": "unlock_object",
+            "targetObject": "jake_pc",
+            "status": "active"
+          }
+        ]
+      }
+    ]
+  },
+  "playerState": {
+    "currentRoom": "finance",
+    "unlockedRooms": [
+      "lobby",
+      "finance"
+    ],
+    "encounteredNPCs": [
+      "len",
+      "jake",
+      "dana",
+      "exec",
+      "imran",
+      "gary"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "pc_before_login",
+      "method": "GET",
+      "path": "container/jake_pc"
+    },
+    {
+      "id": "cabinet_locked",
+      "method": "GET",
+      "path": "container/finance_cabinet"
+    },
+    {
+      "id": "lobby_safe_locked",
+      "method": "GET",
+      "path": "container/lobby_safe"
+    },
+    {
+      "id": "invented_id",
+      "method": "GET",
+      "path": "container/no_such_container"
+    },
+    {
+      "id": "missing_object_share",
+      "method": "GET",
+      "path": "container/jake_archive"
+    },
+    {
+      "id": "login_jake",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "jake_pc",
+        "username": "jbrooks",
+        "password": "Biscuit2019"
+      }
+    },
+    {
+      "id": "pc_after_login",
+      "method": "GET",
+      "path": "container/jake_pc"
+    },
+    {
+      "id": "profile_folder_locked",
+      "method": "GET",
+      "path": "container/jake_archive"
+    },
+    {
+      "id": "profile_file",
+      "method": "GET",
+      "path": "container/jake_budget"
+    },
+    {
+      "id": "profile_pc_no_session",
+      "method": "GET",
+      "path": "container/profile_pc"
+    },
+    {
+      "id": "vault_pc_unreachable",
+      "method": "GET",
+      "path": "container/vault_pc"
+    },
+    {
+      "id": "lobby_safe_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "lobby_safe",
+        "method": "pin",
+        "attempt": "1111"
+      }
+    },
+    {
+      "id": "lobby_safe_open",
+      "method": "GET",
+      "path": "container/lobby_safe"
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "finance"
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "mixed": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "requires": [
+                "VISITOR-07"
+              ],
+              "access": {
+                "roles": [
+                  "it"
+                ]
+              }
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "finance": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "locked": false,
+              "lockType": "pin",
+              "pinLength": 4,
+              "hasPresentNpc": true
+            },
+            "records": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "finance"
+                ]
+              }
+            },
+            "exec_suite": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "people": [
+                  "exec"
+                ]
+              }
+            },
+            "plant_room": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "facilities"
+                ]
+              }
+            },
+            "power_room": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "security"
+                ]
+              }
+            },
+            "exec_lounge": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "exec"
+                ]
+              },
+              "acceptsUIDOnly": true
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "policies": {
+            "corp_default": {
+              "autoLockMin": 5,
+              "maxAttempts": 5
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "access",
+              "tasks": [
+                {
+                  "type": "unlock_object",
+                  "title": "Sign in to Jake's PC",
+                  "status": "active",
+                  "taskId": "sign_in_jake",
+                  "targetObject": "jake_pc"
+                }
+              ],
+              "title": "Get in",
+              "status": "active"
+            }
+          ],
+          "defaultPolicy": "corp_default",
+          "formatVersion": 3,
+          "scenario_brief": "Access model fixture",
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "finance",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      },
+      {
+        "id": "pc_before_login",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: jake_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "cabinet_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: finance_cabinet"
+        }
+      },
+      {
+        "id": "lobby_safe_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: lobby_safe"
+        }
+      },
+      {
+        "id": "invented_id",
+        "status": 404,
+        "body": {
+          "error": "Container not found: no_such_container"
+        }
+      },
+      {
+        "id": "missing_object_share",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: jake_archive"
+        }
+      },
+      {
+        "id": "login_jake",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "jake",
+          "username": "jbrooks",
+          "displayName": "Jake Brooks",
+          "via": "password"
+        }
+      },
+      {
+        "id": "pc_after_login",
+        "status": 200,
+        "body": {
+          "container_id": "jake_pc",
+          "contents": [
+            {
+              "id": "jake_local",
+              "name": "Local.txt",
+              "text": "PC-LOCAL-FILE-TEXT",
+              "type": "text_file",
+              "takeable": false
+            },
+            {
+              "id": "jake_notes",
+              "name": "Notes.txt",
+              "text": "notes",
+              "type": "text_file",
+              "takeable": true
+            },
+            {
+              "id": "staff_handbook",
+              "name": "Staff handbook.pdf",
+              "text": "STAFF-HANDBOOK-TEXT",
+              "type": "text_file",
+              "takeable": false
+            },
+            {
+              "id": "jake_budget",
+              "name": "Q3 budget.xlsx",
+              "text": "JAKE-PROFILE-FILE-TEXT",
+              "type": "text_file",
+              "takeable": true
+            },
+            {
+              "id": "jake_archive",
+              "name": "Archive",
+              "type": "safe",
+              "locked": true,
+              "lockType": "password",
+              "hasContents": true
+            },
+            {
+              "id": "jake_payroll",
+              "name": "Payroll.csv",
+              "text": "payroll",
+              "type": "text_file",
+              "takeable": true,
+              "transfer": "copy"
+            }
+          ],
+          "session": {
+            "npcId": "jake",
+            "username": "jbrooks",
+            "displayName": "Jake Brooks",
+            "via": "password"
+          }
+        }
+      },
+      {
+        "id": "profile_folder_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: jake_archive"
+        }
+      },
+      {
+        "id": "profile_file",
+        "status": 200,
+        "body": {
+          "container_id": "jake_budget",
+          "contents": []
+        }
+      },
+      {
+        "id": "profile_pc_no_session",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: profile_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "vault_pc_unreachable",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: vault_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "lobby_safe_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "safe_badge",
+              "name": "Safe badge",
+              "type": "keycard",
+              "card_id": "SAFE-01",
+              "takeable": true,
+              "rfid_protocol": "EM4100"
+            }
+          ]
+        }
+      },
+      {
+        "id": "lobby_safe_open",
+        "status": 200,
+        "body": {
+          "container_id": "lobby_safe",
+          "contents": [
+            {
+              "id": "safe_badge",
+              "name": "Safe badge",
+              "type": "keycard",
+              "card_id": "SAFE-01",
+              "takeable": true,
+              "rfid_protocol": "EM4100"
+            }
+          ]
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "finance"
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "mixed": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "requires": [
+                "VISITOR-07"
+              ],
+              "access": {
+                "roles": [
+                  "it"
+                ]
+              }
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "pin",
+              "pinLength": 4
+            },
+            "finance": {
+              "type": "room_office",
+              "connections": {
+                "south": "lobby"
+              },
+              "locked": false,
+              "lockType": "pin",
+              "pinLength": 4,
+              "hasPresentNpc": true
+            },
+            "records": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "finance"
+                ]
+              }
+            },
+            "exec_suite": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "people": [
+                  "exec"
+                ]
+              }
+            },
+            "plant_room": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "facilities"
+                ]
+              }
+            },
+            "power_room": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "security"
+                ]
+              }
+            },
+            "exec_lounge": {
+              "type": "room_office",
+              "connections": {},
+              "locked": true,
+              "lockType": "rfid",
+              "access": {
+                "roles": [
+                  "exec"
+                ]
+              },
+              "acceptsUIDOnly": true
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "policies": {
+            "corp_default": {
+              "autoLockMin": 5,
+              "maxAttempts": 5
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "access",
+              "tasks": [
+                {
+                  "type": "unlock_object",
+                  "title": "Sign in to Jake's PC",
+                  "status": "active",
+                  "taskId": "sign_in_jake",
+                  "targetObject": "jake_pc"
+                }
+              ],
+              "title": "Get in",
+              "status": "active"
+            }
+          ],
+          "defaultPolicy": "corp_default",
+          "formatVersion": 3,
+          "scenario_brief": "Access model fixture",
+          "characterSprites": [
+            "hacker"
+          ],
+          "savedCurrentRoom": "finance",
+          "sessions": {
+            "jake_pc": {
+              "npcId": "jake",
+              "username": "jbrooks",
+              "displayName": "Jake Brooks",
+              "via": "password"
+            }
+          },
+          "signedInPcs": [
+            "jake_pc"
+          ],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "sessions": {
+        "jake_pc": {
+          "id": "jake",
+          "via": "password"
+        }
+      },
+      "footholds": {},
+      "inventory": [],
+      "pinDusted": {},
+      "copiedItems": [],
+      "currentRoom": "finance",
+      "room_states": {},
+      "signedInPcs": [
+        "jake_pc"
+      ],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "unlockedRooms": [
+        "lobby",
+        "finance"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "len",
+        "jake",
+        "dana",
+        "exec",
+        "imran",
+        "gary"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [
+        "lobby_safe"
+      ],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

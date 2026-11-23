@@ -40,6 +40,11 @@
 # needed first. --access prints only that
 # section, for the check after each beat of a scripted run, and always exits 0.
 #
+# --ops-log prints only the ops log (OPS_LOG_ROWS_PLAN.md 5.1, stage L1a): the clock key, the counters,
+# and per source the stored rows (seq, event, as, where, result, n, detail, elapsedMs). It runs the
+# secret matcher the helper uses over every stored row, checks the 400-byte row, 300-row and 128 KB
+# ceilings and that seq ascends, and exits 1 on any failure. A hit is reported by key path, never value.
+#
 # With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
 # read from the game's saved scenario: one line per NPC with a habits object (its habits and
 # its habits.screen as saved) and one per owned workstation (its owner, its own lockChance or
@@ -56,12 +61,13 @@ require_relative 'lib/flag_redaction'
 count_tasks_flag = !ARGV.delete('--tasks').nil?
 show_flags = !ARGV.delete('--show-flags').nil?
 access_only = !ARGV.delete('--access').nil?
+ops_log_only = !ARGV.delete('--ops-log').nil?
 log_path = nil
 if (i = ARGV.index('--log'))
   ARGV.delete_at(i)
   log_path = ARGV.delete_at(i) or abort 'usage: --log needs a session log path'
 end
-game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] [--access] <game_id>'
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] [--access] [--ops-log] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
@@ -242,6 +248,54 @@ def workaround_log_section(log_path)
   per_npc.each { |npc, evs| lines << "  #{npc.ljust(14)} #{evs.join(', ')}" }
   lines << "  door_propped   #{propped.join('; ')}" unless propped.empty?
   lines
+end
+
+# The ops log (stage L1a). Rows carry no secret by design; this proves it for a real run.
+def ops_log_section(game, show_flags = false)
+  ps = game.player_state || {}
+  log = ps['opsLog'].is_a?(Hash) ? ps['opsLog'] : {}
+  op = BreakEscape::OpsLog
+  secrets = op.compared_secrets(game)
+  problems = []
+  lines = ["ops log  clockAt #{ps['opsLogClockAt'].inspect}  seq #{ps['opsLogSeq'].inspect}  " \
+           "once #{Array(ps['opsLogOnce']).size}  saves #{ps['opsLogSaves'].is_a?(Hash) ? ps['opsLogSaves'].size : 0}  " \
+           "bytes #{log.to_json.bytesize}"]
+  total = 0
+  sources = game.scenario_data.is_a?(Hash) ? op.sources_for(game.scenario_data).to_h { |id, _s, cap| [id, cap] } : {}
+  log.each do |source, rows|
+    rows = rows.is_a?(Array) ? rows : []
+    total += rows.size
+    cap = sources[source]
+    lines << "  #{source} (#{rows.size} rows#{cap ? ", cap #{cap}" : ''})"
+    problems << "#{source}: not a declared source" if cap.nil?
+    problems << "#{source}: #{rows.size} rows over its cap #{cap}" if cap && rows.size > cap
+    problems << "#{source}: seq does not ascend" unless rows.map { |r| r['seq'].to_i }.each_cons(2).all? { |a, b| a < b }
+    rows.each do |row|
+      hit = op.find_secret_hit(secrets, row)
+      shown = hit ? { 'as' => '[withheld]', 'where' => '[withheld]', 'detail' => nil } : row
+      # as.typed is what the player typed into a username box: it may be a password. Length only,
+      # unless --show-flags.
+      if !show_flags && shown['as'].is_a?(Hash) && shown['as'].key?('typed')
+        shown = shown.merge('as' => { 'typed' => "[#{shown['as']['typed'].to_s.length} chars]", 'cut' => shown['as']['cut'] }.compact)
+      end
+      lines << "    ##{row['seq']} #{row['event']} as #{shown['as'].to_json} where #{shown['where'].to_json} " \
+               "#{row['result']}#{row['n'].to_i > 1 ? " x#{row['n']}" : ''}#{shown['detail'] ? " #{shown['detail'].to_json}" : ''} " \
+               "at #{row['elapsedMs']}ms"
+      problems << "#{source} ##{row['seq']}: over #{op::MAX_ROW_BYTES} bytes" if row.to_json.bytesize > op::MAX_ROW_BYTES
+      problems << "#{source} ##{row['seq']}: a secret appears at #{hit}" if hit
+    end
+  end
+  problems << "#{total} rows over #{op::MAX_TOTAL_ROWS}" if total > op::MAX_TOTAL_ROWS
+  problems << "opsLog is over #{op::MAX_OPS_LOG_BYTES} bytes" if log.to_json.bytesize > op::MAX_OPS_LOG_BYTES
+  lines << (problems.empty? ? '  ops log OK: no secret, caps and ordering hold' : problems.map { |m| "  FAIL #{m}" })
+  [lines.flatten, problems.empty?]
+end
+
+if ops_log_only
+  puts "game            #{g.id}  (mission #{g.mission_id})"
+  out, ok = ops_log_section(g, show_flags)
+  puts out
+  exit(ok ? 0 : 1)
 end
 
 if access_only

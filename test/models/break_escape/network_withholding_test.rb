@@ -36,6 +36,12 @@ module BreakEscape
       every_hash(filtered['rooms']) { |hash| refute hash.key?('network'), 'a bootstrap room carries network' }
     end
 
+    test 'the bootstrap deletes logSources (ops log L1a)' do
+      scenario = NetworkModelScenario.scenario
+      scenario['logSources'] = { 'notes' => { 'title' => 'Notes', 'events' => ['tst_note'] } }
+      refute build({}, scenario).filtered_scenario_for_bootstrap.key?('logSources')
+    end
+
     test 'room data carries no network, linkName or linkStoreIn on the room or any object' do
       game = build
       ALL_ROOMS.each do |room_id|

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops log rows",
+  "description": "Test of the ops log's write side (log plan stage L1b): a card door, a sign-in PC and a game clock, with log sources declared and no reader yet. Copy a badge, swipe in, fail the sign-in, sign in, lock the screen. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 10,
+  "test_type": "ops_log",
+  "test_objective": "Prove the server writes a log row for each badge swipe, sign-in outcome and session end or lock as the plan's table gives it, into the declared sources only, with the game clock's time and no secret in any row"
+}

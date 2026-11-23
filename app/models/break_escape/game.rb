@@ -2,6 +2,7 @@ module BreakEscape
   class Game < ApplicationRecord
     self.table_name = 'break_escape_games'
 
+    include OpsLog # first, so a sibling concern's own constants (NpcFrustration::EVENTS) keep their lookup
     include CarryOver
     include ScoreBreakdown
     include NetworkAccess
@@ -1813,7 +1814,22 @@ module BreakEscape
     def bootstrap_state_needs_write?
       cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
         unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries? ||
-        credential_end_globals_stale?
+        credential_end_globals_stale? || ops_log_clock_stale?
+    end
+
+    # True when the ops log clock key exists and was set ten seconds ago or more, so a reload loop is
+    # not a save loop (13.4). A game without the key (no logSources) never answers true.
+    def ops_log_clock_stale?
+      at = player_state['opsLogClockAt']
+      at.is_a?(Numeric) && OpsLog.clock - at.to_i >= OPS_LOG_CLOCK_REFRESH_MS
+    end
+
+    # Page load: the client resumes from the saved elapsedMs, so it is true now.
+    def refresh_ops_log_clock!
+      return false unless ops_log_clock_stale?
+
+      player_state['opsLogClockAt'] = OpsLog.clock
+      true
     end
 
     # True when a carry is still stored at load time. A reload lands on the bootstrap
@@ -1851,6 +1867,7 @@ module BreakEscape
       # Keyring K2 (plan 7.1): cache the end-global map for the sync merge and end any invite whose
       # global is already true.
       changed = record_credential_end_globals!(scenario: scenario) || changed
+      changed = refresh_ops_log_clock! || changed
       changed
     end
 
@@ -3498,12 +3515,23 @@ module BreakEscape
       pc = info[:object]
       normalised = self.class.normalise_username(username)
       key = "#{pc['id']}|#{normalised}"
-      return login_locked_out_answer if login_lockouts.include?(key)
+      if login_lockouts.include?(key)
+        # Ops log L1b: a refusal that saves nothing else, so it saves only when the row stored
+        r = write_log_row!('signin_refused', as: { typed: username.to_s }, where: { kind: 'pc', id: pc['id'].to_s },
+                                              result: 'blocked', save_limit: true)
+        save! if r&.stored?
+        return login_locked_out_answer
+      end
 
       npc = account_for_username(normalised)
       secret = npc && npc['creds']['password']
       if secret.is_a?(String) && !secret.empty? && password.to_s == secret
         unless pc_admits_account?(pc, npc)
+          # Ops log L1b: a right password the PC does not admit; saves only when the row stored
+          r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
+                                                where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
+                                                save_limit: true)
+          save! if r&.stored?
           return { status: :unprocessable_entity,
                    body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
         end
@@ -3679,6 +3707,10 @@ module BreakEscape
       key = info ? info[:object]['id'].to_s : pc_id.to_s
       player_state['sessions'] = access_sessions
       ended = player_state['sessions'].delete(key)
+      # Ops log L1b: an explicit sign-out of a session that was held; a forged one writes nothing
+      if info && ended.is_a?(Hash)
+        write_log_row!('session_end', as: ops_account_as(ended['id']), where: { kind: 'pc', id: key })
+      end
       # Signing out of a claimed guest session ends it (review R1 M1), so the next click is the
       # sign-in screen. Only the guest's own claim: a displaced session's /logout can land after
       # the borrow's "done" has recorded a new guest, and that record must stay. That case is
@@ -3870,6 +3902,10 @@ module BreakEscape
 
       player_state['sessions'] = access_sessions
       set_session_locked!(player_state['sessions'][key], true)
+      # Ops log L1b: past every refusal; the save below stores it
+      if info
+        write_log_row!('session_lock', as: ops_account_as(session['id']), where: { kind: 'pc', id: key })
+      end
       save!
       { status: :ok, body: { success: true, pcId: key, locked: true } }
     end
@@ -4030,23 +4066,32 @@ module BreakEscape
     # or a recorded clone of it; a card the server cannot see would be refused, but no scenario
     # reaches a requires-only lock that way (phantom ids are opened by an NPC unlockDoor mapping).
     def rfid_requires_held?(lock)
+      !rfid_requires_card(lock).nil?
+    end
+
+    # The card id rfid_requires_held? matched at a requires-only lock (the first live keycard
+    # named in `requires`, else the first usable clone), or nil. Ops log L1b reads it to name
+    # the card a badge row records.
+    def rfid_requires_card(lock)
       req = Array(lock['requires']).map(&:to_s).reject(&:empty?)
-      return false if req.empty?
+      return nil if req.empty?
 
       revoked = revoked_card_ids
       # A physical keycard is never UID-only, so a live one in requires always passes.
-      return true if ((req & held_keycard_ref_ids) - revoked).any?
+      live = (req & held_keycard_ref_ids) - revoked
+      return live.first if live.any?
 
-      return false unless rfid_cloner_held?
+      return nil unless rfid_cloner_held?
 
       accepts_uid = lock['acceptsUIDOnly'] == true
-      server_clones.any? do |card_id, record|
+      match = server_clones.find do |card_id, record|
         cid = card_id.to_s
         next false unless req.include?(cid) && !revoked.include?(cid)
 
         uid_only = record.is_a?(Hash) && record['uidOnly'] == true
         !uid_only || accepts_uid
       end
+      match&.first&.to_s
     end
 
     # Inventory keycard ids resolved as the client resolves a card's id (card_id, else
@@ -4095,6 +4140,100 @@ module BreakEscape
       return nil if card_id.nil?
 
       held_keycard_ids.include?(card_id) ? { cardId: card_id } : { viaCopy: true }
+    end
+
+    # --- Ops log L1b: badge rows (OPS_LOG_ROWS_PLAN.md 5.1, 13.8) ---
+
+    # The rfid lock a /unlock request would be judged by, or nil: a door or object whose lock is
+    # an rfid lock in force and not already open. Server data only, never the request's method.
+    def ops_rfid_lock_in_force(target_type, target_id)
+      return nil if OpsLog.sources_for(scenario_data).empty? # no logSources: nothing to judge
+
+      if target_type == 'door'
+        lock = room_data(target_id)
+        return nil unless lock.is_a?(Hash) && lock['locked'] && lock['lockType'] == 'rfid'
+        return nil if room_unlocked?(target_id)
+      else
+        lock = find_scenario_object(target_id)
+        return nil unless lock.is_a?(Hash) && lock['locked'] && lock['lockType'] == 'rfid'
+        return nil if object_unlocked?(target_id)
+      end
+      lock
+    end
+
+    # The id the badge row names as its place: a door is its room id, an object its own id.
+    def ops_badge_where(target_type, lock, target_id)
+      return { kind: 'door', id: target_id.to_s } if target_type == 'door'
+
+      id = lock['id'].to_s
+      id.empty? ? nil : { kind: 'object', id: id }
+    end
+
+    # True when the player could be standing at this lock: a door into a room next to an
+    # unlocked room; an object in an unlocked room outside an unpromoted route room, under no
+    # sign-in scope that refuses it.
+    def ops_rfid_in_reach?(target_type, target_id)
+      if target_type == 'door'
+        rooms = scenario_data['rooms']
+        return false unless rooms.is_a?(Hash)
+
+        return rooms.keys.any? { |room_id| room_unlocked?(room_id) && rooms_connected?(room_id, target_id) }
+      end
+
+      room_id = login_scope_of(target_id)&.[](:room_id)
+      return false if room_id.blank? || !room_unlocked?(room_id)
+      return false if unlock_scope_refused?(target_id) || object_in_unpromoted_route_room?(target_id)
+
+      true
+    end
+
+    # badge_swipe ok, written inside the unlock's transaction before the unlock saves (the
+    # caller proved: rfid lock in force, not open, validate_unlock passed with method rfid).
+    def write_badge_swipe_ok!(target_type, target_id, card_ids)
+      lock = ops_rfid_lock_in_force(target_type, target_id)
+      # A forged swipe at a place the player has not reached writes nothing (13.8)
+      return nil unless lock && ops_rfid_in_reach?(target_type, target_id)
+
+      where = ops_badge_where(target_type, lock, target_id)
+      return nil unless where
+
+      ids = self.class.normalise_card_ids(card_ids)
+      card_id = self.class.acl_lock?(lock) && !ids.nil? ? rfid_passing_card_id(lock, ids) : rfid_requires_card(lock)
+      write_log_row!('badge_swipe', as: ops_badge_as(card_id, ids), where: where, result: 'ok')
+    end
+
+    # badge_swipe denied: a refused method rfid request at an rfid lock in force, in reach, by a
+    # player holding an rfid card or clone. Saves nothing itself; the caller saves when stored.
+    def write_badge_swipe_denied!(target_type, target_id)
+      lock = ops_rfid_lock_in_force(target_type, target_id)
+      return nil unless lock && ops_rfid_in_reach?(target_type, target_id) && held_rfid_cards.any?
+
+      where = ops_badge_where(target_type, lock, target_id)
+      return nil unless where
+
+      write_log_row!('badge_swipe', as: nil, where: where, result: 'denied', save_limit: true)
+    end
+
+    # Who a granted swipe is recorded as (13.8). The holder's own keycard names its holder; a
+    # copy names the holder only when the request carried one card or a source sets
+    # showCardHolder; a card with no single holder is named by the card.
+    def ops_badge_as(card_id, ids)
+      return nil if card_id.blank?
+
+      card_id = card_id.to_s
+      own = held_keycard_ref_ids.include?(card_id)
+      show_holder = own || ids.nil? || ids.size <= 1 ||
+                    OpsLog.sources_for(scenario_data).any? { |_id, source, _cap| source['showCardHolder'] == true }
+      return nil unless show_holder
+
+      holders = self.class.scenario_room_npcs(scenario_data).select do |npc|
+        self.class.npc_card(npc)&.[]('card_id').to_s == card_id
+      end
+      if holders.size == 1 && OpsLog.kinds['npc'][:name].call(self, holders.first['id'].to_s)
+        return { npc: holders.first['id'].to_s }
+      end
+
+      OpsLog.kinds['card'][:name].call(self, card_id) ? { card: card_id } : nil
     end
 
     # True when a refused rfid unlock with card_ids would have passed but for a UID-only
@@ -4360,6 +4499,9 @@ module BreakEscape
 
       count = failures[key]['n']
       max = login_max_attempts(pc)
+      # Ops log L1b: the typed username as the key holds it (normalised); this method saves
+      write_log_row!('signin_fail', as: { typed: key.to_s.split('|', 2).last.to_s },
+                                    where: { kind: 'pc', id: pc['id'].to_s }, result: 'fail')
       if max && count >= max
         add_login_lockout!(key, account: account)
         save!
@@ -4369,6 +4511,13 @@ module BreakEscape
       save!
       { status: :unprocessable_entity,
         body: { success: false, message: LOGIN_INCORRECT, attemptsLeft: max ? max - count : nil } }
+    end
+
+    # Ops log L1b: { account: } for the account NPC with this id, or nil (a guest or any
+    # session that is not an account).
+    def ops_account_as(npc_id)
+      npc = account_npcs.find { |n| n['id'].to_s == npc_id.to_s }
+      npc ? { account: npc['creds']['username'] } : nil
     end
 
     def trim_non_account_failures!(failures)
@@ -4383,6 +4532,10 @@ module BreakEscape
     def add_login_lockout!(key, account:)
       lockouts = login_lockouts
       return if lockouts.include?(key)
+
+      # Ops log L1b: one per lockout; record_login_failure! saves
+      pc_part, typed_part = key.to_s.split('|', 2)
+      write_log_row!('signin_lockout', as: { typed: typed_part.to_s }, where: { kind: 'pc', id: pc_part.to_s })
 
       unless account
         usernames = account_usernames
@@ -4422,6 +4575,13 @@ module BreakEscape
       record['from'] = from.to_s if from.present?
       record['relay'] = true if relay
       player_state['sessions'][pc_id.to_s] = record
+      # Ops log L1b: a typed password or a credential; a claim, and S3's technique, write no
+      # sign-in row here. Both callers save.
+      if %w[password credential].include?(via)
+        route = if relay then 'relay' elsif from.present? then 'from' elsif foothold.present? then 'foothold' else 'keyboard' end
+        write_log_row!('signin_ok', as: ops_account_as(npc['id']), where: { kind: 'pc', id: pc_id.to_s },
+                                    detail: { 'method' => via, 'route' => route })
+      end
       # Neither a relay nor a token sign-in is a lasting sign-in (K2, K5 plan 10): signedInPcs is
       # grow-only and proves `session` credentials and sign-in tasks for good
       unless relay || (credential.present? && token_entry(credential))
@@ -5850,6 +6010,7 @@ module BreakEscape
     end
 
     MAX_SCENARIO_CLOCK_ELAPSED_MS = 7.days.in_milliseconds
+    OPS_LOG_CLOCK_REFRESH_MS = 10_000
     MAX_SCENARIO_TIMERS = 200
     MAX_CLOCK_KEY_LENGTH = 200
     MAX_CLOCK_ANCHORS = 50
@@ -5868,6 +6029,9 @@ module BreakEscape
       elapsed = incoming['elapsedMs']
       if elapsed.is_a?(Numeric) && elapsed >= 0
         saved['elapsedMs'] = [saved['elapsedMs'].to_i, elapsed.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
+        # Ops log clock stamp (OPS_LOG_ROWS_PLAN 13.4): the server time at which the saved elapsedMs was
+        # true. Gated on the key, never on scenario_data (a sync loads none): only a log game has it.
+        player_state['opsLogClockAt'] = OpsLog.clock if player_state.key?('opsLogClockAt')
       end
 
       timers = incoming['timers']
@@ -7597,6 +7761,12 @@ module BreakEscape
       # Access model (5.3): sessions, sign-in failures and lockouts, copied files and
       # recorded card copies. Not preserved by a reset.
       ACCESS_STATE_DEFAULTS.each { |key, empty| self.player_state[key] ||= empty.dup }
+
+      # Ops log clock stamp (OPS_LOG_ROWS_PLAN 13.4): seeded only for a scenario with logSources, and the
+      # key is the opt-in marker for the sync and bootstrap refreshes from then on.
+      if scenario_data.is_a?(Hash) && scenario_data['logSources'].is_a?(Hash)
+        self.player_state['opsLogClockAt'] ||= OpsLog.clock
+      end
 
       # Imported globals (CarryOver): their values and the read-only list.
       apply_imported_globals_to_state
