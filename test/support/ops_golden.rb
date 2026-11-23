@@ -65,6 +65,8 @@ module OpsGolden
     case (step['method'] || 'GET').upcase
     when 'GET' then test.get(url, params: params, as: :json)
     when 'POST' then test.post(url, params: params || {}, as: :json)
+    when 'PUT' then test.put(url, params: params || {}, as: :json)
+    when 'PATCH' then test.patch(url, params: params || {}, as: :json)
     else raise ArgumentError, "unsupported method #{step['method']}"
     end
     response = test.response

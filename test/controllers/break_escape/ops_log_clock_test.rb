@@ -101,14 +101,35 @@ module BreakEscape
 
     test 'GET /scenario refreshes a key ten seconds old or more, and writes nothing under ten seconds' do
       build
+      before = Game.find(@game.id).updated_at
       bootstrap(at: T0 + 9_999)
       assert_equal T0, state['opsLogClockAt']
-      stamp = Game.find(@game.id).updated_at
+      assert_equal before, Game.find(@game.id).updated_at, 'a load under ten seconds old wrote the game'
       bootstrap(at: T0 + 10_000)
       assert_equal T0 + 10_000, state['opsLogClockAt']
+      refreshed = Game.find(@game.id).updated_at
+      assert_operator refreshed, :>, before
       bootstrap(at: T0 + 15_000)
       assert_equal T0 + 10_000, state['opsLogClockAt']
-      assert_operator Game.find(@game.id).updated_at, :>=, stamp
+      assert_equal refreshed, Game.find(@game.id).updated_at, 'a load five seconds after a refresh wrote the game'
+    end
+
+    # R1 m17 (section 7: server-owned, never read from a sync body).
+    test 'a sync body carrying the ops log keys leaves them unchanged' do
+      build
+      game = Game.find(@game.id)
+      row = { 'seq' => 1, 'event' => 'tst_note', 'result' => 'ok', 'elapsedMs' => 0, 'serverMs' => T0 }
+      game.player_state.merge!('opsLog' => { 'notes' => [row] }, 'opsLogSeq' => 1, 'opsLogOnce' => ['abcdef012345'],
+                               'opsLogSaves' => { 'abcdef012345' => [2, T0] })
+      game.save!
+      kept = state.slice('opsLog', 'opsLogSeq', 'opsLogOnce', 'opsLogSaves')
+      OpsLog.with_clock(T0 + 20_000) do
+        put game_path('sync_state'), params: { scenarioClock: { elapsedMs: 90_000 }, opsLog: { 'notes' => [] }, opsLogSeq: 99,
+                                               opsLogOnce: [], opsLogSaves: {}, opsLogClockAt: 5 }, as: :json
+      end
+      assert_response :success, response.body
+      assert_equal kept, state.slice('opsLog', 'opsLogSeq', 'opsLogOnce', 'opsLogSaves')
+      assert_equal T0 + 20_000, state['opsLogClockAt'], 'the stamp is the server clock, not the body'
     end
 
     test 'GET /scenario writes no key in a game without one' do

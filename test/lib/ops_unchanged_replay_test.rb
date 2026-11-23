@@ -14,6 +14,12 @@ module BreakEscape
       assert_not_empty OpsGolden.fixture_paths
     end
 
+    # A misspelt OPS_GOLDEN_ONLY name must fail, not pass with nothing replayed.
+    test 'every fixture named in OPS_GOLDEN_ONLY exists' do
+      known = OpsGolden.fixture_paths.map { |path| File.basename(path, '.json') }
+      assert_empty only - known, "no such fixture; known: #{known.join(', ')}"
+    end
+
     OpsGolden.fixture_paths.each do |path|
       name = File.basename(path, '.json')
       next if only.any? && !only.include?(name)
