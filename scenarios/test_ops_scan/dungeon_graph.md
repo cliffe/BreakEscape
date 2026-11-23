@@ -315,7 +315,7 @@ flowchart TD
   rc_guest_port_2{"Guest wall port"}
   rc_office_port_3{"Office wall port"}
   rc_guest_kiosk_4{"Guest kiosk"}
-  rc_camrec_switch_5{"Camera recorder power switch"}
+  rc_camrec_switch_5{"Wall power switch"}
   rc_it_note_6{"Note: file server sign-in"}
   rc_sign_lobby_7{"Sign: Start here"}
   rc_npc_ian_okafor_8("Ian Okafor")
