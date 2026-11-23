@@ -143,3 +143,16 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   (`CLASS_SUMMARIES`); the client's `CLASS_DEFAULT_LINE` and the tests and doc lines that pin
   it are removed. m7, a `severity` or `class` value reaches a class attribute only through a
   fixed allow-list map. m8 is settled in the live proof, not in this fix pass.
+- 2026-11-23, S2 server R1 rulings: m9, the graph's need edges (a credential or item node
+  into its weakness, plan 9.3) are built now, not left to S3. m3, a `credential` need is met
+  by the keyring's own rule (the entry is one the keyring would serve), as plan 4.2 says, not
+  by a bare proof check. m11, a `technique_card` itemType need fails closed (never met).
+  m2, a finding's `cli` values are copied by type: strings and arrays of strings only, no
+  nested objects, so no `_` key can ride along. m12, the server resolves a weakness before a
+  decoy of the same id deterministically and the validator refuses the clash. The validator
+  minors (m14, m15, and m12's validator half) wait until builder 9a is out of
+  `scripts/validate_network_ops.rb`. From step 8b: the loader gains a small public method to
+  list entry ids (the scanner stops using a private one); the scanner also judges JSON KEYS
+  for a global's name; `scenarios/test_ops_findings/PLAYTEST.md` uses the `opsFindings`
+  verify-run line and the scanner's check-stage tags now that they exist; the N13 doc
+  paragraph that says N14 is "not built" is corrected.
