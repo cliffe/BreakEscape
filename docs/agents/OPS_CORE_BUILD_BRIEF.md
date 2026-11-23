@@ -32,7 +32,7 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the worktree root. Do not set
   `BUNDLE_PATH` (the gems are system gems). The lock is shared with other sessions' trains, so
   a run can queue for many minutes: that is normal, wait for it. After any edit to an engine
-  file, also run `bin/ops-golden-compare` (under the lock) to prove old scenarios answer as
+  file, also run `bin/ops-golden-compare` with NO outer `flock` (it takes the lock itself; wrapping it deadlocks the queue for every session) to prove old scenarios answer as
   before; see `docs/agents/ops_core_build/HANDOVER_L1a_1.md`. Never
   `ruby -Itest`. Run only the files your step touches plus those the plan's "proof before
   moving on" names; the orchestrator runs the full train check.
