@@ -195,6 +195,18 @@ test('networkView() carries the blocks (networks) and techniques through, with s
   delete window.networkLinks;
 });
 
+test('networkView() carries a host row\'s findings (with needs and fixed) through as a copy', () => {
+  const finding = { id: 'p.web.a', alias: 'f1', hostId: 'p', service: 'web', class: 'default_creds', severity: 'high', summary: 's', status: 'confirmed',
+                    needs: [{ kind: 'item', label: 'Manual', met: false }], fixed: true };
+  const view = { id: 'jack_a', via: 'jack', name: 'Drop box', network: { id: 'lab', name: 'Lab' }, hosts: [{ id: 'p', kind: 'device', scanned: true, findings: [finding] }], networks: [] };
+  window.networkLinks = { lastView: id => (id === 'jack_a' ? view : undefined) };
+  const out = accessBridge.networkView('jack_a');
+  assert.deepEqual(out.hosts[0].findings, [finding]);
+  out.hosts[0].findings[0].needs[0].met = true;
+  assert.equal(finding.needs[0].met, false);
+  delete window.networkLinks;
+});
+
 test('the event log keeps network_* events (slice 9.3a step 8)', async () => {
   writeFileSync(join(dir, 'systems/test-bridge/wait.js'), 'export function safeJson(v) { return JSON.parse(JSON.stringify(v ?? null)); }\n');
   writeFileSync(join(dir, 'systems/test-bridge/log.js'), readFileSync(join(js, 'systems/test-bridge/log.js'), 'utf8'));

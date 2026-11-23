@@ -103,3 +103,74 @@ test('applyScanAnswer: a refusal, a null answer and an answer it cannot place re
     }
     assert.equal(M.applyScanAnswer(VIEW, { action: 'check', target: 'x' }, { success: true, host: { id: 'h1' } }), VIEW);
 });
+
+// S2: findings helpers
+const FF = (n, over = {}) => ({ id: `h.s.w${n}`, alias: `f${n}`, hostId: 'h', service: 's', class: 'unpatched', severity: 'low', summary: '', status: 'unconfirmed', ...over });
+const FVIEW = () => ({ hosts: [{ id: 'h', kind: 'device', scanned: true, services: [{ name: 's' }] }],
+    networks: [{ id: 'n', route: 'up', ops: true, hosts: [{ id: 'h', kind: 'device', scanned: true, services: [{ name: 's' }] }] }] });
+
+test('findings: sort by alias number, words, class default line', () => {
+    assert.deepEqual(M.sortFindings([FF(10), FF(2), FF(1)]).map(f => f.alias), ['f1', 'f2', 'f10']);
+    assert.deepEqual(M.sortFindings([{ id: 'z', alias: 'x' }, FF(3)]).map(f => f.alias), ['f3', 'x']);
+    assert.equal(M.classWord('default_creds'), 'Default login');
+    assert.equal(M.classWord('odd'), 'odd');
+    assert.equal(M.severityWord('high'), 'High');
+    for (const c of ['default_creds', 'unpatched', 'misconfig', 'weak_auth', 'cleartext']) {
+        assert.ok(M.CLASS_WORDS[c] && M.CLASS_DEFAULT_LINE[c], c);
+        assert.equal(M.findingSummary({ class: c, summary: '' }), M.CLASS_DEFAULT_LINE[c]);
+    }
+    assert.equal(M.findingSummary({ class: 'unpatched', summary: 'Mine.' }), 'Mine.');
+    assert.equal(M.findingSummary({ class: 'odd' }), '');
+});
+
+test('findings: needs, Fixed, false reason and the offers', () => {
+    assert.equal(M.needLine({ label: 'A manual', met: false }), 'A manual: no');
+    assert.equal(M.needLine({ label: 'A manual', met: true }), 'A manual: yes');
+    assert.deepEqual(M.findingNeeds({ status: 'unconfirmed', needs: [{ label: 'x', met: true }] }), []);
+    assert.deepEqual(M.findingNeeds({ status: 'confirmed', needs: [{ kind: 'item', label: 'x', met: true }] }), [{ kind: 'item', label: 'x', met: true }]);
+    assert.equal(M.isFixed({ status: 'confirmed', fixed: true }), true);
+    assert.equal(M.isFixed({ status: 'unconfirmed', fixed: true }), false);
+    assert.equal(M.isFixed({ status: 'false', fixed: true }), false);
+    assert.equal(M.falseReason({ status: 'false', falseBecause: 'Because.' }), 'Because.');
+    assert.equal(M.falseReason({ status: 'confirmed', falseBecause: 'Because.' }), '');
+    const row = { id: 'h', kind: 'device', scanned: true };
+    assert.equal(M.offersCheck(row), true);
+    assert.equal(M.offersCheck({ ...row, scanned: false }), false);
+    assert.equal(M.offersCheck({ ...row, responding: false }), false);
+    assert.equal(M.offersConfirm(row, FF(1)), true);
+    assert.equal(M.offersConfirm(row, FF(1, { status: 'confirmed' })), false);
+    assert.equal(M.offersConfirm({ ...row, responding: false }, FF(1)), false);
+});
+
+test('findings: check target, alias lookup', () => {
+    assert.equal(M.checkTarget('h', 's'), 'h:s');
+    assert.deepEqual(M.parseCheckTarget('h:s'), { hostId: 'h', service: 's' });
+    assert.equal(M.parseCheckTarget('hs'), null);
+    assert.equal(M.pendingKey('check', 'h:s'), 'check:h:s');
+    const v = FVIEW();
+    v.hosts[0].findings = [FF(1)];
+    assert.equal(M.findingIdByAlias(v, 'f1'), 'h.s.w1');
+    assert.equal(M.findingIdByAlias(v, 'f9'), null);
+    assert.equal(M.findFinding(v, 'h.s.w1').row.id, 'h');
+});
+
+test('findings: a check answer merges by id into every list holding the host, never changes its input, keeps settled fields', () => {
+    const v = FVIEW();
+    const frozen = JSON.stringify(v);
+    const out = M.applyOpsAnswer(v, { action: 'check', target: 'h:s' }, { success: true, hostId: 'h', service: 's', findings: [FF(1), FF(2)] });
+    assert.equal(JSON.stringify(v), frozen);
+    assert.equal(out.hosts[0].findings.length, 2);
+    assert.equal(out.networks[0].hosts[0].findings.length, 2);
+    const conf = FF(1, { status: 'confirmed', needs: [{ kind: 'item', label: 'x', met: false }] });
+    const out2 = M.applyOpsAnswer(out, { action: 'confirm', target: 'h.s.w1' }, { success: true, finding: conf });
+    assert.equal(out2.hosts[0].findings[0].status, 'confirmed');
+    assert.equal(out2.hosts[0].findings[0].needs.length, 1);
+    assert.equal(out2.hosts[0].findings[1].alias, 'f2');
+    assert.equal(out2.networks[0].hosts[0].findings[0].status, 'confirmed');
+    // an empty answer, a refusal and a stranger change nothing
+    assert.equal(M.applyCheckAnswer(v, { success: true, hostId: 'h', findings: [] }), v);
+    assert.equal(M.applyCheckAnswer(v, { success: false, reason: 'x' }), v);
+    assert.equal(M.applyConfirmAnswer(v, { success: true, finding: { id: 'a', hostId: 'nobody' } }).hosts[0].findings, undefined);
+    // scan and sweep still route through
+    assert.equal(M.applyOpsAnswer(v, { action: 'scan' }, null), v);
+});

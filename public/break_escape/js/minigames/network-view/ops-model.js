@@ -6,7 +6,7 @@
  * (network-view-minigame.js) and, later, the command-line skin both import it. It imports
  * nothing, touches no DOM and no `window`, and reads only the answers the server sends.
  *
- * S1 holds: the refusal table (`REFUSAL_TEXT`, the only place a refusal `reason` code
+ * S1 and S2 hold: the refusal table (`REFUSAL_TEXT`, the only place a refusal `reason` code
  * becomes words), the pending key, row and answer merging for a sweep and a host scan, and
  * the plain facts about a block or a host row (does it offer Sweep, does it offer Scan, the
  * service line). S2 and S3 add the works-on line, need labels and alias lookups here.
@@ -163,4 +163,173 @@ export function applyScanAnswer(view, offer, answer) {
         return out;
     }
     return view;
+}
+
+// ---------------------------------------------------------------------------------------------
+// S2: findings (check, confirm). Pure helpers; the view draws what these return.
+// ---------------------------------------------------------------------------------------------
+
+/** The class words, one per class of section 0. A class not in the table is shown as sent. */
+export const CLASS_WORDS = Object.freeze({
+    default_creds: 'Default login',
+    unpatched: 'Out of date',
+    misconfig: 'Misconfigured',
+    weak_auth: 'Weak sign-in',
+    cleartext: 'Open traffic'
+});
+
+/** The severity words. */
+export const SEVERITY_WORDS = Object.freeze({ low: 'Low', medium: 'Medium', high: 'High' });
+
+/** The line a finding shows when it has no `summary`: one per class, written as what is wrong. */
+export const CLASS_DEFAULT_LINE = Object.freeze({
+    default_creds: 'The service still accepts a login it shipped with.',
+    unpatched: 'The service reports a build with a known problem.',
+    misconfig: 'The service is set up in a way it should not be.',
+    weak_auth: 'The service guards its sign-in too weakly.',
+    cleartext: 'The service sends what it should keep private in the open.'
+});
+
+/** The words of a finding's status. */
+export const STATUS_WORDS = Object.freeze({ unconfirmed: 'Unconfirmed', confirmed: 'Confirmed', false: 'False positive' });
+
+export const FIXED_TEXT = 'Fixed';
+
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
+export function classWord(cls) { return typeof cls === 'string' && own(CLASS_WORDS, cls) ? CLASS_WORDS[cls] : String(cls ?? ''); }
+export function severityWord(sev) { return typeof sev === 'string' && own(SEVERITY_WORDS, sev) ? SEVERITY_WORDS[sev] : String(sev ?? ''); }
+export function statusWord(status) { return typeof status === 'string' && own(STATUS_WORDS, status) ? STATUS_WORDS[status] : String(status ?? ''); }
+
+/** The finding's `summary`, or the class's default line when it has none. */
+export function findingSummary(f) {
+    if (typeof f?.summary === 'string' && f.summary !== '') return f.summary;
+    return typeof f?.class === 'string' && own(CLASS_DEFAULT_LINE, f.class) ? CLASS_DEFAULT_LINE[f.class] : '';
+}
+
+/** The reason a false finding shows: the authored `falseBecause` (the server's key), else '' . */
+export function falseReason(f) {
+    if (f?.status !== 'false') return '';
+    for (const k of ['falseBecause', 'because', 'reason']) if (typeof f[k] === 'string' && f[k] !== '') return f[k];
+    return '';
+}
+
+/** The alias's number ("f12" is 12), or Infinity for an alias in no such form. */
+function aliasNumber(f) {
+    const m = /^f(\d+)$/.exec(f?.alias ?? '');
+    return m ? Number(m[1]) : Infinity;
+}
+
+/** Findings in the order the player found them (alias number), then alias text, then id. A new array. */
+export function sortFindings(list) {
+    return (Array.isArray(list) ? list : []).filter(f => f && typeof f === 'object' && typeof f.id === 'string')
+        .slice().sort((a, b) => (aliasNumber(a) - aliasNumber(b))
+            || String(a.alias ?? '').localeCompare(String(b.alias ?? '')) || a.id.localeCompare(b.id));
+}
+
+/** A row's findings for one service (or all when `service` is null), sorted. */
+export function rowFindings(row, service = null) {
+    const list = Array.isArray(row?.findings) ? row.findings : [];
+    return sortFindings(service === null ? list : list.filter(f => f.service === service));
+}
+
+/** Check is offered on a tile of a scanned, responding host row. */
+export function offersCheck(row) {
+    return isHostRow(row) && row.scanned === true && row.responding !== false;
+}
+
+/** Confirm is offered on an unconfirmed finding of a responding host. */
+export function offersConfirm(row, finding) {
+    return isHostRow(row) && row.responding !== false && finding?.status === 'unconfirmed';
+}
+
+/** A need's line text: "<label>: yes" or "<label>: no". */
+export function needLine(need) {
+    return `${String(need?.label ?? '')}: ${need?.met === true ? 'yes' : 'no'}`;
+}
+
+/** The needs of a confirmed finding, each `{ kind, label, met }`; none for any other status. */
+export function findingNeeds(f) {
+    if (f?.status !== 'confirmed' || !Array.isArray(f.needs)) return [];
+    return f.needs.filter(n => n && typeof n === 'object')
+        .map(n => ({ kind: String(n.kind ?? ''), label: String(n.label ?? ''), met: n.met === true }));
+}
+
+/** Fixed is drawn from `fixed: true` on a confirmed finding alone. */
+export function isFixed(f) { return f?.status === 'confirmed' && f.fixed === true; }
+
+/** The `check` target string for a tile, and its parts back again (host ids and service names hold no colon). */
+export const checkTarget = (hostId, service) => `${hostId}:${service}`;
+export function parseCheckTarget(target) {
+    const i = typeof target === 'string' ? target.indexOf(':') : -1;
+    return i > 0 ? { hostId: target.slice(0, i), service: target.slice(i + 1) } : null;
+}
+
+/** Every row of a view, flat `hosts` and every block's. */
+function viewRows(view) {
+    const out = [...(Array.isArray(view?.hosts) ? view.hosts : [])];
+    for (const b of (Array.isArray(view?.networks) ? view.networks : [])) if (Array.isArray(b?.hosts)) out.push(...b.hosts);
+    return out;
+}
+
+/** The finding with this alias (or id) anywhere in the view: `{ finding, row }`, or null. */
+export function findFinding(view, aliasOrId) {
+    for (const row of viewRows(view)) {
+        for (const f of (Array.isArray(row?.findings) ? row.findings : [])) {
+            if (f && (f.alias === aliasOrId || f.id === aliasOrId)) return { finding: f, row };
+        }
+    }
+    return null;
+}
+
+/** Alias to finding id, or null. */
+export function findingIdByAlias(view, alias) { return findFinding(view, alias)?.finding.id ?? null; }
+
+/** Findings merged by id (new fields win; a finding not held yet is appended). */
+function mergeFindings(list, incoming) {
+    let out = Array.isArray(list) ? list.slice() : [];
+    for (const f of incoming) {
+        if (!f || typeof f.id !== 'string') continue;
+        const i = out.findIndex(g => g?.id === f.id);
+        if (i >= 0) out[i] = { ...out[i], ...f }; else out.push({ ...f });
+    }
+    return out;
+}
+
+/** The view with `fn` applied to every row (in flat `hosts` and in blocks) whose id is `hostId`. */
+function mapHostRow(view, hostId, fn) {
+    const touch = (rows) => (Array.isArray(rows) && rows.some(r => r?.id === hostId) ? rows.map(r => (r?.id === hostId ? fn(r) : r)) : rows);
+    const out = { ...view, hosts: touch(view.hosts) };
+    if (Array.isArray(view.networks)) out.networks = view.networks.map(b => (b && b.route !== 'down' ? { ...b, hosts: touch(b.hosts) } : b));
+    return out;
+}
+
+/**
+ * The view with a check answer folded in: `{ hostId, service, findings }` merges each finding
+ * into the host's `findings` by id (so a repeat check never loses a settled finding's fields,
+ * which the answer carries as stored). Returns a new object; an answer it cannot place returns
+ * the view as it was.
+ */
+export function applyCheckAnswer(view, answer) {
+    if (!view || typeof view !== 'object' || !answer || answer.success === false) return view;
+    if (typeof answer.hostId !== 'string' || !Array.isArray(answer.findings)) return view;
+    if (!answer.findings.length) return view;
+    return mapHostRow(view, answer.hostId, r => ({ ...r, findings: mergeFindings(r.findings, answer.findings) }));
+}
+
+/** The view with a confirm answer folded in: `{ finding }` merges into its host's findings by id. */
+export function applyConfirmAnswer(view, answer) {
+    if (!view || typeof view !== 'object' || !answer || answer.success === false) return view;
+    const f = answer.finding;
+    if (!f || typeof f.id !== 'string' || typeof f.hostId !== 'string') return view;
+    return mapHostRow(view, f.hostId, r => ({ ...r, findings: mergeFindings(r.findings, [f]) }));
+}
+
+/** One entry point for every ops answer the view folds in (sweep, scan, check, confirm). */
+export function applyOpsAnswer(view, offer, answer) {
+    switch (offer?.action) {
+        case 'check': return applyCheckAnswer(view, answer);
+        case 'confirm': return applyConfirmAnswer(view, answer);
+        default: return applyScanAnswer(view, offer, answer);
+    }
 }

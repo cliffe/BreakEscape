@@ -49,6 +49,14 @@
  *               `perform` (below): one pending guard keyed by action and target, two no-op
  *               hooks (onSent, onEnded), and the words of a refusal from ops-model.js only.
  *
+ * ops (S2)     a tile of a scanned, responding host offers Check (data-action "check", inside the
+ *               tile's data-service); the findings the host row carries sit under their tile, each
+ *               a data-finding (the alias) with class, severity, status and its line (the
+ *               summary, else one line per class from ops-model.js), Confirm (data-action
+ *               "confirm") while unconfirmed, a confirmed finding's needs with a tick or cross
+ *               per line, "Fixed" only on a confirmed finding that carries `fixed`, and a false
+ *               finding's reason. Check and Confirm go through `perform` like Scan.
+ *
  * Rows keep the server's order (sign-in hosts, then resources, each by id) and carry
  * data-host-id / data-resource-id, with data-action (sign-in, open, observe) on the control
  * that acts. Events: network_viewed (and :<networkId>) { footholdId, networkId, hostIds,
@@ -65,7 +73,9 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import {
-    pendingKey, refusalText, applyScanAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine
+    pendingKey, refusalText, applyOpsAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine,
+    offersCheck, offersConfirm, rowFindings, classWord, severityWord, statusWord, findingSummary, falseReason,
+    findingNeeds, needLine, isFixed, FIXED_TEXT, checkTarget, parseCheckTarget, findFinding
 } from './ops-model.js';
 
 export { pendingKey };
@@ -140,6 +150,13 @@ export const SWEEP_TEXT = 'Sweep';
 export const SWEEPING_TEXT = 'Sweeping...';
 export const SCAN_TEXT = 'Scan';
 export const SCANNING_TEXT = 'Scanning...';
+export const OPS_ACTIONS = Object.freeze(['sweep', 'scan', 'check', 'confirm']);
+export const CHECK_TEXT = 'Check';
+export const CHECKING_TEXT = 'Checking...';
+export const CONFIRM_TEXT = 'Confirm';
+export const CONFIRMING_TEXT = 'Confirming...';
+export const NO_FINDINGS_TEXT = 'Nothing was found on that service.';
+export const NEEDS_HEADING = 'Needs';
 export const SWEEP_HINT_TEXT = 'Nothing is listed here yet. Sweep to see what answers.';
 const DEVICE_ICON = '/break_escape/assets/objects/network_rack1.png';
 const SPRITE_NAME = /^[A-Za-z0-9_-]{1,60}$/;
@@ -303,6 +320,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this.refetchIdleMs = Number.isFinite(params?.refetchIdleMs) ? params.refetchIdleMs : REFETCH_IDLE_MS;
         this._refetchTimer = null;
         this._refetching = false;
+        this._refetchDropped = false;
         // Counts the moves of the ops loop (a request going out, an answer folded in); a refetch
         // that started before the count changed is stale and is dropped (S1 client R1 M1)
         this._opsEpoch = 0;
@@ -364,6 +382,21 @@ export class NetworkViewMinigame extends MinigameScene {
             if (btn.dataset.action === 'scan') {
                 this.noteActivity();
                 this.perform({ action: 'scan', target: row.id });
+                return;
+            }
+            if (btn.dataset.action === 'confirm') {
+                const alias = btn.closest('[data-finding]')?.dataset.finding;
+                const hit = alias ? findFinding(this.view, alias) : null;
+                if (!hit) return;
+                this.noteActivity();
+                this.perform({ action: 'confirm', target: hit.finding.id });
+                return;
+            }
+            if (btn.dataset.action === 'check') {
+                const service = btn.closest('[data-service]')?.dataset.service;
+                if (!service) return;
+                this.noteActivity();
+                this.perform({ action: 'check', target: checkTarget(row.id, service) });
                 return;
             }
             this.act(row, btn.dataset.action);
@@ -615,7 +648,10 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** Whether the host or network a keyed refusal was for is still in the view. */
     noticeTargetListed() {
-        const target = String(this.noticeKey || '').split(':').slice(1).join(':');
+        const key = String(this.noticeKey || '');
+        const target = key.split(':').slice(1).join(':');
+        if (key.startsWith('check:')) return this.allRows().some(r => r.id === parseCheckTarget(target)?.hostId);
+        if (key.startsWith('confirm:')) return !!findFinding(this.view, target);
         return this.allRows().some(r => r.id === target)
             || this.view?.network?.id === target
             || (this.view?.networks || []).some(b => b?.id === target);
@@ -633,14 +669,17 @@ export class NetworkViewMinigame extends MinigameScene {
         const btn = el.closest?.('[data-action]');
         const li = btn?.closest?.('[data-host-id], [data-resource-id], [data-network-id]');
         const id = li?.dataset?.hostId || li?.dataset?.resourceId || li?.dataset?.networkId;
-        return id ? { id, action: btn.dataset.action } : null;
+        const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
+        return id ? { id, action: btn.dataset.action, sub } : null;
     }
 
     restoreFocus(target) {
         if (!target) return;
         const match = [...(this.gameContainer?.querySelectorAll?.('[data-action]') || [])].find(btn => {
             const li = btn.closest('[data-host-id], [data-resource-id], [data-network-id]');
-            return (li?.dataset.hostId || li?.dataset.resourceId || li?.dataset.networkId) === target.id && btn.dataset.action === target.action;
+            const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
+            return (li?.dataset.hostId || li?.dataset.resourceId || li?.dataset.networkId) === target.id && btn.dataset.action === target.action
+                && (target.sub ?? null) === sub;
         });
         match?.focus?.();
     }
@@ -774,11 +813,41 @@ export class NetworkViewMinigame extends MinigameScene {
         return `<button type="button" class="minigame-button network-row-action network-scan" data-action="scan"${busy ? ' disabled' : ''}>${busy ? SCANNING_TEXT : SCAN_TEXT}</button>`;
     }
 
-    /** A scanned host's service tiles (name, port, product and version), as text. */
+    /**
+     * A scanned host's service tiles (name, port, product and version), as text. A tile of a
+     * responding host offers Check, and lists the findings the player holds for that service.
+     */
     servicesHtml(row) {
         const services = rowServices(row);
         if (!services.length) return '';
-        return `<ul class="network-service-tiles">${services.map(s => `<li class="network-service" data-service="${escapeHtml(s.name)}">${escapeHtml(serviceLine(s))}</li>`).join('')}</ul>`;
+        return `<ul class="network-service-tiles">${services.map(s => this.tileHtml(row, s)).join('')}</ul>`;
+    }
+
+    tileHtml(row, s) {
+        const findings = rowFindings(row, s.name);
+        let check = '';
+        if (offersCheck(row)) {
+            const busy = this.pending.has(pendingKey('check', checkTarget(row.id, s.name)));
+            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${busy ? CHECKING_TEXT : CHECK_TEXT}</button>`;
+        }
+        return `<li class="network-service${findings.length ? ' network-service-with-findings' : ''}" data-service="${escapeHtml(s.name)}"><span class="network-service-line">${escapeHtml(serviceLine(s))}</span>${check}${findings.length ? `<ul class="network-findings">${findings.map(f => this.findingHtml(row, f)).join('')}</ul>` : ''}</li>`;
+    }
+
+    /** One finding: alias, class, severity, status (Fixed on a confirmed one), the line, then Confirm, needs or the reason. */
+    findingHtml(row, f) {
+        const status = f.status === 'confirmed' || f.status === 'false' ? f.status : 'unconfirmed';
+        let body = '';
+        if (offersConfirm(row, f)) {
+            const busy = this.pending.has(pendingKey('confirm', f.id));
+            body += `<button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm"${busy ? ' disabled' : ''}>${busy ? CONFIRMING_TEXT : CONFIRM_TEXT}</button>`;
+        }
+        const needs = findingNeeds(f);
+        if (needs.length) {
+            body += `<ul class="network-finding-needs" aria-label="${NEEDS_HEADING}">${needs.map(n => `<li class="network-need network-need-${n.met ? 'met' : 'unmet'}" data-met="${n.met ? 'true' : 'false'}"><span class="network-need-mark" aria-hidden="true">${n.met ? '\u2713' : '\u2717'}</span> <span class="network-need-text">${escapeHtml(needLine(n))}</span></li>`).join('')}</ul>`;
+        }
+        const reason = falseReason(f);
+        if (reason) body += `<p class="network-finding-reason">${escapeHtml(reason)}</p>`;
+        return `<li class="network-finding network-finding-${status}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}"><span class="network-finding-head"><span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span> <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity network-severity-${escapeHtml(String(f.severity ?? ''))}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
     }
 
     /** The icon of a device row: its sprite when it names a plain object file, else a plain device icon. */
@@ -1022,6 +1091,17 @@ export class NetworkViewMinigame extends MinigameScene {
         if (action === 'sweep' || action === 'scan') {
             return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkScan === 'function';
         }
+        if (action === 'check') {
+            const t = parseCheckTarget(target);
+            const row = t ? this.allRows().find(r => r.id === t.hostId) : null;
+            return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkCheck === 'function'
+                && !!row && offersCheck(row) && rowServices(row).some(s => s.name === t.service);
+        }
+        if (action === 'confirm') {
+            const hit = findFinding(this.view, target);
+            return this.status === 'ready' && !!this.footholdId && typeof this._api()?.networkConfirm === 'function'
+                && !!hit && hit.finding.id === target && offersConfirm(hit.row, hit.finding);
+        }
         return false;
     }
 
@@ -1031,6 +1111,11 @@ export class NetworkViewMinigame extends MinigameScene {
     async _request(action, target) {
         if (action === 'unplug') return this.links().unplugFromView(target);
         try {
+            if (action === 'check') {
+                const t = parseCheckTarget(target);
+                return await this._api().networkCheck(this.footholdId, { hostId: t.hostId, service: t.service });
+            }
+            if (action === 'confirm') return await this._api().networkConfirm(this.footholdId, { findingId: target });
             return await this._api().networkScan(this.footholdId, { [action === 'sweep' ? 'networkId' : 'hostId']: target });
         } catch (err) {
             const body = err?.body;
@@ -1071,11 +1156,12 @@ export class NetworkViewMinigame extends MinigameScene {
             this.setUnplugNotice(answer?.message || 'The port did not respond. Try again.');
             return;
         }
-        if (action !== 'sweep' && action !== 'scan') return;
+        if (!OPS_ACTIONS.includes(action)) return;
         const key = pendingKey(action, target);
+        const hostId = this.hostOfOffer(offer);
         if (answer && answer.success !== false) {
             this._opsEpoch++;
-            this.view = applyScanAnswer(this.view, offer, answer);
+            this.view = applyOpsAnswer(this.view, offer, answer);
             // A view that has closed is not drawn again (R1 m3)
             if (this._reported || this._ending) return;
             // Scroll stays, and focus stays with the control's row or the next control (R1 m4)
@@ -1083,10 +1169,36 @@ export class NetworkViewMinigame extends MinigameScene {
             const hadFocus = !!this.focusedControl();
             this.render();
             if (this.gameContainer) this.gameContainer.scrollTop = top;
-            if (hadFocus) this.focusAfterMove(target);
+            if (hadFocus) this.focusAfterOps(offer, answer, hostId);
+            // A check that held nothing says so; the view records no "checked" mark of its own
+            if (action === 'check' && Array.isArray(answer.findings) && !answer.findings.length) this.showNotice(NO_FINDINGS_TEXT, hostId);
             return;
         }
-        this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : null, key);
+        this.showNotice(refusalText(answer ? answer.reason : 'no_answer'), action === 'scan' ? target : (hostId || null), key);
+    }
+
+    /** The host row an ops offer is about: a scan's target, a check's host, a confirm's finding's host. */
+    hostOfOffer(offer) {
+        if (offer?.action === 'scan') return offer.target;
+        if (offer?.action === 'check') return parseCheckTarget(offer.target)?.hostId ?? null;
+        if (offer?.action === 'confirm') return findFinding(this.view, offer.target)?.row.id ?? null;
+        return null;
+    }
+
+    /** Focus after a move: a check or confirm keeps focus inside its tile; the rest as before. */
+    focusAfterOps(offer, answer, hostId) {
+        const root = this.gameContainer;
+        if (offer?.action === 'check' || offer?.action === 'confirm') {
+            const service = offer.action === 'check' ? parseCheckTarget(offer.target)?.service
+                : (answer?.finding?.service ?? findFinding(this.view, offer.target)?.finding.service);
+            const tile = [...(root?.querySelectorAll?.('[data-host-id] [data-service]') || [])]
+                .find(el => el.closest('[data-host-id]')?.dataset.hostId === hostId && el.dataset.service === service);
+            const next = tile ? [...tile.querySelectorAll('[data-action]')].find(b => !b.disabled) : null;
+            if (next) { next.focus?.(); return; }
+            this.focusAfterMove(hostId);
+            return;
+        }
+        this.focusAfterMove(offer?.target);
     }
 
     /** After a move redrew the list: focus the first control in the target's row or block, else the next one after it. */
@@ -1114,11 +1226,17 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!answer || answer.success === false) {
             // A refusal ends the move with no refetch of its own: if it made an earlier move's
             // refetch drop (or is about to drop) its answer, ask again now, not at the next tick (R2 N1)
-            if ((action === 'sweep' || action === 'scan') && (this._refetching || this._refetchDropped)) await this.refetchAfterOps();
+            if (OPS_ACTIONS.includes(action) && (this._refetching || this._refetchDropped)) await this.refetchAfterOps();
             return;
         }
         if (action === 'sweep') this._emit('network_swept', { networkId: target }, target);
         else if (action === 'scan') this._emit('network_host_scanned', { hostId: target }, target);
+        else if (action === 'check') {
+            const t = parseCheckTarget(target);
+            if (t) this._emit('network_service_checked', { hostId: t.hostId, service: t.service }, `${t.hostId}.${t.service}`);
+        } else if (action === 'confirm') {
+            this._emit('network_finding_confirmed', { findingId: target, status: answer.finding?.status ?? null }, target);
+        }
         // The answer holds what the click needs; the rest of what the move changed arrives by the
         // same GET /network refetch a sign-in or an unplug leads to
         await this.refetchAfterOps();
@@ -1217,6 +1335,32 @@ export class NetworkViewMinigame extends MinigameScene {
         return b ? { ownNetwork: { id: b.id, ...this.blockOpsState(b) } } : {};
     }
 
+    /**
+     * The findings facts of a host row for getTestState: `checks` (service name to the Check
+     * selector, only while offered) and `findings` (only when the player holds any), each with
+     * its alias, id, service, class, severity, summary (the class line when the server sent none),
+     * status, `fixed`, `needs` ({ kind, label, met }), `reason` (a false finding's) and the
+     * selector of its Confirm, only while offered.
+     */
+    findingsState(r) {
+        const out = {};
+        if (offersCheck(r)) {
+            const checks = {};
+            for (const s of rowServices(r)) checks[s.name] = `[data-host-id="${r.id}"] [data-service="${s.name}"] [data-action="check"]`;
+            if (Object.keys(checks).length) out.checks = checks;
+        }
+        const findings = rowFindings(r);
+        if (findings.length) {
+            out.findings = findings.map(f => ({
+                alias: f.alias ?? null, id: f.id, service: f.service ?? null, class: f.class ?? null,
+                severity: f.severity ?? null, summary: findingSummary(f), status: f.status ?? null,
+                fixed: isFixed(f), needs: findingNeeds(f), reason: falseReason(f) || null,
+                ...(offersConfirm(r, f) ? { confirm: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="confirm"]` } : {})
+            }));
+        }
+        return out;
+    }
+
     /** One row of getTestState; a host or device row in an ops block adds `scanned`, `services` and `scan`. */
     rowState(r, block, action) {
         const ops = isOpsBlock(block);
@@ -1228,7 +1372,8 @@ export class NetworkViewMinigame extends MinigameScene {
                 ...(ops || r.scanned ? {
                     scanned: r.scanned === true,
                     services: rowServices(r),
-                    ...(offersScan(r, block) ? { scan: `[data-host-id="${r.id}"] [data-action="scan"]` } : {})
+                    ...(offersScan(r, block) ? { scan: `[data-host-id="${r.id}"] [data-action="scan"]` } : {}),
+                    ...this.findingsState(r)
                 } : {}) };
         }
         return { id: r.id, kind: r.kind || null, name: r.name || null, host: r.host || null,

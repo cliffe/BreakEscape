@@ -560,3 +560,86 @@
     box-sizing: border-box;
     overflow-wrap: anywhere;
 }
+
+/* Ops (S2): Check on a service tile and the findings under it. Same pixel-art rule: 2px solid
+   square borders, flat fills, no radius or shadow. Long text wraps inside its card. */
+.network-service-with-findings {
+    flex: 1 0 100%;
+}
+
+.network-service .network-check {
+    margin-left: 6px;
+}
+
+.network-findings {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+}
+
+.network-finding {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 2px solid #2d3a44;
+    background: #0e151b;
+    color: #cfe9f5;
+    overflow-wrap: anywhere;
+}
+
+.network-finding-confirmed { border-color: #3f7d4e; }
+.network-finding-false { border-color: #6b5a3a; color: #a9b4bb; }
+
+.network-finding-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+.network-finding-alias,
+.network-finding-class,
+.network-finding-severity,
+.network-finding-status,
+.network-finding-fixed {
+    padding: 0 4px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+.network-severity-high { border-color: #a24b4b; }
+.network-severity-medium { border-color: #a58a3c; }
+.network-finding-fixed { border-color: #3f7d4e; }
+
+.network-finding-summary,
+.network-finding-reason {
+    display: block;
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.network-finding .network-confirm {
+    margin-top: 4px;
+}
+
+.network-finding-needs {
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.network-need {
+    overflow-wrap: anywhere;
+}
+
+.network-need-met .network-need-mark { color: #6fcf86; }
+.network-need-unmet .network-need-mark { color: #e07a7a; }

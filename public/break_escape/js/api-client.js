@@ -224,6 +224,20 @@ export class ApiClient {
     });
   }
 
+  // Check a service (ops core plan 6): `hostId` and `service` name the tile. Answers
+  // { success, already?, hostId, service, findings: [...] }; a refusal throws with err.status
+  // (400, 403, 404) and err.body { success: false, reason }. No retry: one press is one request.
+  static async networkCheck(footholdId, { hostId, service } = {}) {
+    return this.post('/network/check', { foothold: footholdId, host_id: hostId, service });
+  }
+
+  // Confirm a finding (ops core plan 6): `findingId` is the built id, never the alias. Answers
+  // { success, already?, finding } (a confirmed finding carries needs[]); a refusal throws with
+  // err.status (400, 403, 404) and err.body { success: false, reason }. No retry.
+  static async networkConfirm(footholdId, { findingId } = {}) {
+    return this.post('/network/confirm', { foothold: footholdId, finding_id: findingId });
+  }
+
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
   // held foothold, or only `footholdId` when given (404 when it is not held).
   static async network(footholdId = null) {
