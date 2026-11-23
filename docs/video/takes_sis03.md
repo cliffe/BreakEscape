@@ -23,6 +23,9 @@ Every take starts the toast watcher (`watchToasts`, 12 s, TOAST_CSS injected). E
 
 ## Script changes
 
+- **Orchestrator decision (23 Nov): no FDP timeline or log text in the cut.** Timeline steps 1 to 4 tell sis02's attack story: the USB stick on the printers, the GREYMANTLE hand-off, "real values about 36C" (which points at sis02's twist) and the c.ellison session. The Access log has the same problem. So the edit crops the FDP shot to the laptop frame, the tab bar and the panel heading, with the 10 px drift, and never shows row text. In the 9:16 cut, the same crop is scaled down. At capture, the take also blanks the timeline and log rows (font-size 0, rows keep their height), so a wider crop can't leak them.
+- **Checklist exterior:** crop out the verdict buttons. The edit frames the four `.wcc-row` labels only.
+
 - **Claim Record: a drift instead of a scroll.** The Claim Record panel does not overflow, so there is nothing to scroll. `.cms-summary-strip` drifts 8 px over 6.5 s with CSS. The script's "scroll inside a fixed crop" becomes "drift inside a fixed crop"; the crop is x602 y264 w640 h132.
 - **FDP tab hides.** The script lists the callouts and the `soc_coverage` tab. The take also hides the `sis_log`, `historian` and `dc_implant` tabs (the SIS ENGINEERING LOG tab names the SIS), and `.fdp-footer` (its hint reads "Review the SIS Engineering Log before confirming."). A text scan then hides timeline steps 5 to 8 and the jump-log c.ellison row. What is left of the timeline does not scroll (10 px drift again).
 - **Notification note kept, with the DOM trim.** The note is DOM text, so the NESO parenthetical is cut and everything outside "ESTIMATED TOTAL LOSS" plus three cost lines is removed in the take; the script's "drop the note" fallback is not needed.
