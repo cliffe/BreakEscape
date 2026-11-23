@@ -42,7 +42,7 @@ module BreakEscape
     ALIAS_PATTERN = /\A[a-z][0-9]{1,3}\z/.freeze
     CODE_PATTERN = /\A[a-z][a-z0-9_]{0,15}\z/.freeze
     RESULT_PATTERN = /\A[a-z]{2,16}\z/.freeze
-    EVENT_PATTERN = /\A[a-z][a-z0-9_]{0,39}\z/.freeze
+    EVENT_PATTERN = /\A[a-z][a-z0-9_]{1,39}\z/.freeze
     LABEL_PATTERN = /\A[A-Z][A-Z0-9_]{0,15}\z/.freeze
 
     # Each kind of thing maps to two lookups over (game, id): :name answers the display name, or

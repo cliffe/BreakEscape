@@ -8,9 +8,10 @@ module OpsLogAssertions
     log = game.player_state['opsLog']
     return pass unless log.is_a?(Hash)
 
+    secrets = BreakEscape::OpsLog.compared_secrets(game)
     log.each do |source_id, rows|
       Array(rows).each do |row|
-        path = BreakEscape::OpsLog.row_secret_hit(game, row)
+        path = BreakEscape::OpsLog.find_secret_hit(secrets, row)
         assert_nil path, message || "ops log source #{source_id} row #{row['seq']} holds a secret at #{path}"
       end
     end

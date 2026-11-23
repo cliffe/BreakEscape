@@ -108,7 +108,8 @@ module BreakEscape
         override = Thread.current[:ops_log_clock]
         return override.respond_to?(:call) ? override.call : override if override
 
-        (Process.clock_gettime(Process::CLOCK_REALTIME) * 1000).to_i
+        # Time.now, not Process.clock_gettime, so travel_to / freeze_time move it (golden runs).
+        (Time.now.to_f * 1000).to_i
       end
 
       # Tests set the clock with this: OpsLog.with_clock(ms) { ... } (a number, or a callable).
@@ -120,12 +121,12 @@ module BreakEscape
         Thread.current[:ops_log_clock] = saved
       end
 
-      # The guard switch. On (test and development): a failed check or a secret hit raises. Off
-      # (production, or with_guard(false)): the guard does not run and a failed check writes
-      # nothing and logs one warning line.
+      # The guard switch. On (test and development only, 13.2): a failed check or a secret hit
+      # raises. Off (every other environment, or with_guard(false)): the guard does not run, a
+      # failed check writes nothing and logs one warning line, and the call never raises.
       def guard_enabled?
         override = Thread.current[:ops_log_guard]
-        override.nil? ? !Rails.env.production? : override
+        override.nil? ? (Rails.env.test? || Rails.env.development?) : override
       end
 
       def with_guard(enabled)
@@ -190,6 +191,17 @@ module BreakEscape
       # Authored values the matcher leaves out: registered values equal to a declared username, a
       # scenario id or a code in EVENTS. A weak password therefore never makes a valid scenario raise.
       def authored_collisions(game)
+        # Computed once per scenario and registry (13.2): kept on the game, keyed on their content.
+        key = [game.scenario_data.hash, events.hash, kinds.keys.hash]
+        cached = game.instance_variable_get(:@ops_log_collisions)
+        return cached[1] if cached && cached[0] == key
+
+        names = collect_authored_collisions(game)
+        game.instance_variable_set(:@ops_log_collisions, [key, names])
+        names
+      end
+
+      def collect_authored_collisions(game)
         names = Set.new
         collect_scenario_ids(game.scenario_data, names)
         game.account_npcs.each do |npc|
@@ -240,7 +252,7 @@ module BreakEscape
         block = data.is_a?(Hash) ? data['logSources'] : nil
         return [] unless block.is_a?(Hash)
 
-        list = block.select { |id, source| id.is_a?(String) && source.is_a?(Hash) }.first(MAX_SOURCES)
+        list = block.select { |id, source| id.is_a?(String) && !id.start_with?('_') && source.is_a?(Hash) }.first(MAX_SOURCES)
         spent = 0
         list.each_with_index.map do |(id, source), index|
           cap = source['maxRows'].is_a?(Integer) ? source['maxRows'] : DEFAULT_SOURCE_ROWS
@@ -303,6 +315,19 @@ module BreakEscape
     # Records one event in every declared log source that takes it. Never saves. See the header.
     # Answers an OpsLog::Result, or nil when nothing could change.
     def write_log_row!(event, as:, where:, result: 'ok', detail: nil, once: false, save_limit: false)
+      return ops_log_write(event, as, where, result, detail, once, save_limit) if OpsLog.guard_enabled?
+
+      # Off the guard (production) the helper never raises: any error is one warning line (the
+      # event name only, never a value) and the call answers nil (13.1).
+      begin
+        ops_log_write(event, as, where, result, detail, once, save_limit)
+      rescue StandardError => e
+        Rails.logger.warn("ops log: #{event.is_a?(String) ? event : event.class} failed (#{e.class})")
+        nil
+      end
+    end
+
+    def ops_log_write(event, as, where, result, detail, once, save_limit)
       # Step 1: opt-in. No logSources, or a game loaded without its scenario: nothing to do.
       return nil unless has_attribute?(:scenario_data) && has_attribute?(:player_state)
 
@@ -323,6 +348,7 @@ module BreakEscape
 
       ops_log_store(call, sources)
     end
+    private :ops_log_write
 
     # The play rows stored for a source, for server-side readers: each row as stored, in seq order.
     # With compare: true, each row as [event, as, where, result, detail, n] with every time removed
@@ -384,7 +410,10 @@ module BreakEscape
     end
 
     def ops_log_check_where(event, definition, where)
-      return nil if where.nil?
+      if where.nil?
+        ops_log_refuse(event, 'where', 'is missing (the event has places)') if Array(definition[:places]).any?
+        return nil
+      end
 
       ops_log_refuse(event, 'where', 'is not a { kind:, id: } hash') unless where.is_a?(Hash)
       kind = where[:kind] || where['kind']
@@ -551,9 +580,12 @@ module BreakEscape
       end
     end
 
+    # A room or an object id admits only a kind with a room lookup (door, object, pc, jack, ap); a
+    # host, network or share matches only `where.places` (4.1).
     def ops_log_place_admitted?(filter, place, room)
-      return true if Array(filter['rooms']).include?(room) && !room.nil?
-      return true if Array(filter['objects']).include?(place['id'])
+      roomed = !room.nil?
+      return true if roomed && Array(filter['rooms']).include?(room)
+      return true if roomed && Array(filter['objects']).include?(place['id'])
 
       Array(filter['places']).include?("#{place['kind']}:#{place['id']}")
     end
@@ -691,8 +723,6 @@ module BreakEscape
   # the `requires` of a key, biometric, bluetooth or rfid lock (they name an item or a person).
   # ===========================================================================================
   module OpsLog
-    SECRET_LOCK_TYPES = %w[pin password].freeze
-
     class << self
       def scalar_secret(value)
         case value
@@ -700,6 +730,13 @@ module BreakEscape
         when Integer then [value.to_s]
         else []
         end
+      end
+
+      # A lock answer as written, plus the joined forms of an Array (a combination "12-30-5" and "12305").
+      def answer_forms(value)
+        return value.map(&:to_s).then { |parts| [parts.join('-'), parts.join] } if value.is_a?(Array) && value.any?
+
+        scalar_secret(value)
       end
 
       # Every hash in the scenario, depth first.
@@ -714,35 +751,50 @@ module BreakEscape
       end
     end
 
-    # Account and NPC passwords (creds.password) and the credential registry's values.
+    # Account and NPC passwords: the creds.password of every NPC record wherever the schema lets
+    # one carry creds (room NPCs, top-level npcs and phoneNPCs), and the password of the account
+    # each credential registry entry names. A registry entry holds no value of its own (its fields
+    # are kind, account, proof, connectsTo, foundIn, endsOnGlobal, label, expiresMin).
     register_secret_source(:account_passwords) do |game|
-      out = Game.scenario_room_npcs(game.scenario_data).flat_map do |npc|
-        npc['creds'].is_a?(Hash) ? OpsLog.scalar_secret(npc['creds']['password']) : []
+      data = game.scenario_data
+      out = []
+      OpsLog.each_scenario_hash(data) do |node|
+        out.concat(OpsLog.scalar_secret(node['creds']['password'])) if node['creds'].is_a?(Hash)
       end
-      credentials = game.scenario_data.is_a?(Hash) ? game.scenario_data['credentials'] : nil
+      credentials = data.is_a?(Hash) ? data['credentials'] : nil
       if credentials.is_a?(Hash)
+        holders = {}
+        OpsLog.each_scenario_hash(data) { |node| holders[node['id']] = node if node['id'].is_a?(String) && node['creds'].is_a?(Hash) }
         credentials.each_value do |entry|
-          next unless entry.is_a?(Hash)
-
-          %w[password hash value secret token].each { |key| out.concat(OpsLog.scalar_secret(entry[key])) }
+          holder = entry.is_a?(Hash) ? holders[entry['account']] : nil
+          out.concat(OpsLog.scalar_secret(holder['creds']['password'])) if holder
         end
       end
       out
     end
 
-    # Lock answers: the `requires` of a pin or password lock, a combination lock's `combination`
-    # and a cryptex's cryptexConfig.answer (the fields the bootstrap filters strip).
+    # Lock answers: the answer of every pin, password, combination and cryptex lock, as the
+    # server reads it (`requires`, from CaptureModel.each_lock_answer, which also resolves a door
+    # entry's inherited lock), plus the authored copies the bootstrap filters strip (a
+    # combination lock's `combination`, a cryptex's cryptexConfig.answer).
     register_secret_source(:lock_answers) do |game|
       out = []
+      CaptureModel.each_lock_answer(game.scenario_data) do |lock_type, requires, _path|
+        next unless CaptureModel::LOCK_ANSWER_TYPES.include?(lock_type)
+
+        out.concat(OpsLog.answer_forms(requires))
+      end
       OpsLog.each_scenario_hash(game.scenario_data) do |node|
-        out.concat(OpsLog.scalar_secret(node['requires'])) if OpsLog::SECRET_LOCK_TYPES.include?(node['lockType'])
-        if node['lockType'] == 'combination'
-          combination = node['combination']
-          out.concat(combination.is_a?(Array) ? [combination.join('-'), combination.join] : OpsLog.scalar_secret(combination))
-        end
+        out.concat(OpsLog.answer_forms(node['combination'])) if node['lockType'] == 'combination'
         out.concat(OpsLog.scalar_secret(node['cryptexConfig']['answer'])) if node['cryptexConfig'].is_a?(Hash)
       end
       out
+    end
+
+    # The scenario `flags` values (VM flag strings): beyond the plan, the safe side.
+    register_secret_source(:scenario_flags) do |game|
+      flags = game.scenario_data.is_a?(Hash) ? game.scenario_data['flags'] : nil
+      flags.is_a?(Hash) ? flags.values.flat_map { |group| group.is_a?(Hash) ? group.values.flat_map { |v| OpsLog.scalar_secret(v) } : [] } : []
     end
 
     # A wifi network's psk.

@@ -251,7 +251,7 @@ def workaround_log_section(log_path)
 end
 
 # The ops log (stage L1a). Rows carry no secret by design; this proves it for a real run.
-def ops_log_section(game)
+def ops_log_section(game, show_flags = false)
   ps = game.player_state || {}
   log = ps['opsLog'].is_a?(Hash) ? ps['opsLog'] : {}
   op = BreakEscape::OpsLog
@@ -273,6 +273,11 @@ def ops_log_section(game)
     rows.each do |row|
       hit = op.find_secret_hit(secrets, row)
       shown = hit ? { 'as' => '[withheld]', 'where' => '[withheld]', 'detail' => nil } : row
+      # as.typed is what the player typed into a username box: it may be a password. Length only,
+      # unless --show-flags.
+      if !show_flags && shown['as'].is_a?(Hash) && shown['as'].key?('typed')
+        shown = shown.merge('as' => { 'typed' => "[#{shown['as']['typed'].to_s.length} chars]", 'cut' => shown['as']['cut'] }.compact)
+      end
       lines << "    ##{row['seq']} #{row['event']} as #{shown['as'].to_json} where #{shown['where'].to_json} " \
                "#{row['result']}#{row['n'].to_i > 1 ? " x#{row['n']}" : ''}#{shown['detail'] ? " #{shown['detail'].to_json}" : ''} " \
                "at #{row['elapsedMs']}ms"
@@ -288,7 +293,7 @@ end
 
 if ops_log_only
   puts "game            #{g.id}  (mission #{g.mission_id})"
-  out, ok = ops_log_section(g)
+  out, ok = ops_log_section(g, show_flags)
   puts out
   exit(ok ? 0 : 1)
 end

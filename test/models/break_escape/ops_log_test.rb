@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'minitest/mock'
 require_relative '../../support/ops_log_assertions'
 
 module BreakEscape
@@ -57,22 +58,36 @@ module BreakEscape
     ACCOUNT_PASSWORD = 'Plum-Orchard-41'.freeze
     NPC_PASSWORD = 'Gate-Pass-77'.freeze
     CODE_ANSWER = 'ZEBRA'.freeze
-    CREDENTIAL_VALUE = 'Cred-Value-3318'.freeze
+    TOP_NPC_PASSWORD = 'Top-Npc-Pass-18'.freeze
+    PHONE_NPC_PASSWORD = 'Phone-Npc-Pass-29'.freeze
+    FLAG_VALUE = 'flag{ops-log-flag-77}'.freeze
+    COMBO_ANSWER = '12-30-05'.freeze
+    CRYPTEX_ANSWER = 'LANTERN'.freeze
+    DOOR_CODE = '7390'.freeze
+    TWO_DIGIT = '47'.freeze
     WIFI_KEY = 'Lantern-Key-5509'.freeze
     CAPTURE_SECRET = 'Capture-Word-92'.freeze
 
     TEST_EVENTS = {
       'tst_signin' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok denied blocked],
                         detail: { 'method' => %w[password credential],
-                                  'count' => { count: 9 } },
+                                  'count' => { count: BreakEscape::OpsLogEvents::MAX_COUNT } },
                         save_limit: { 'denied' => 10, 'blocked' => 10 } },
       'tst_door' => { label: 'DOOR', places: %w[door object pc], results: %w[ok denied], save_limit: { 'denied' => 10 } },
       'tst_ref' => { label: 'REF', places: %w[pc], results: %w[ok], detail: { 'who' => { id: 'npc' }, 'a' => { alias: 'finding' } } },
       'tst_note' => { label: 'NOTE', places: [], results: %w[ok denied] },
-      'tst_harvest' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: 9 } } },
-      'tst_any' => { label: 'ANY', places: [], results: %w[ok], detail: { 'v' => { id: 'test_any' } } }
+      'tst_harvest' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: BreakEscape::OpsLogEvents::MAX_COUNT } } },
+      'tst_any' => { label: 'ANY', places: [], results: %w[ok], detail: { 'v' => { id: 'test_any' } } },
+      'tst_net' => { label: 'NET', places: %w[test_host], results: %w[ok] }
     }.freeze
-    TEST_KINDS = { 'test_any' => { name: ->(_game, id) { id }, room: ->(_game, _id) { nil } } }.freeze
+    # Step 7 only: four 40-character ids, which no registered event may ship (the ceiling test).
+    BIG_EVENT = { 'tst_big' => { label: 'BIG', places: %w[pc], results: %w[ok],
+                                 detail: %w[k1 k2 k3 k4].to_h { |k| [k, { id: 'test_any' }] } } }.freeze
+    TEST_KINDS = {
+      'test_any' => { name: ->(_game, id) { id }, room: ->(_game, _id) { nil } },
+      # A kind with no room lookup (a host, network or share): only recep_pc resolves.
+      'test_host' => { name: ->(_game, id) { id == 'recep_pc' ? id : nil }, room: ->(_game, _id) { nil } }
+    }.freeze
 
     SOURCES = {
       'by_event' => { 'title' => 'By event', 'events' => ['tst_door'] },
@@ -80,7 +95,8 @@ module BreakEscape
       'by_rooms' => { 'title' => 'By rooms', 'events' => %w[tst_door tst_signin], 'where' => { 'rooms' => ['lobby'] } },
       'by_objects' => { 'title' => 'By objects', 'events' => ['tst_signin'], 'where' => { 'objects' => ['srv_pc'] } },
       'by_places' => { 'title' => 'By places', 'events' => ['tst_door'], 'where' => { 'places' => ['door:vault'] } },
-      'notes' => { 'title' => 'Notes', 'events' => ['tst_note'] }
+      'notes' => { 'title' => 'Notes', 'events' => ['tst_note'] },
+      'by_net' => { 'title' => 'By net', 'events' => ['tst_net'], 'where' => { 'objects' => ['recep_pc'], 'rooms' => ['lobby'] } }
     }.freeze
 
     setup do
@@ -106,12 +122,17 @@ module BreakEscape
         'startRoom' => 'lobby',
         'rooms' => {
           'lobby' => { 'type' => 'room_office', 'connections' => { 'north' => 'vault' }, 'npcs' => npcs,
+                       'doors' => [{ 'direction' => 'north', 'connectedRoom' => 'vault', 'requires' => DOOR_CODE }],
                        'objects' => [{ 'id' => 'recep_pc', 'type' => 'pc', 'lockType' => 'login', 'name' => 'Reception PC' }] },
-          'vault' => { 'type' => 'room_office', 'connections' => { 'south' => 'lobby', 'north' => 'serv' },
+          'vault' => { 'type' => 'room_office', 'connections' => { 'south' => 'lobby', 'north' => 'serv' }, 'lockType' => 'pin',
                        'objects' => [
                          { 'id' => 'vault_safe', 'type' => 'safe', 'name' => 'Vault safe', 'locked' => true, 'lockType' => 'pin', 'requires' => PIN,
                            'contents' => [{ 'id' => 'ledger', 'type' => 'text_file', 'name' => 'Ledger', 'text' => 'x' }] },
                          { 'id' => 'code_box', 'type' => 'safe', 'name' => 'Code box', 'locked' => true, 'lockType' => 'password', 'requires' => CODE_ANSWER },
+                         { 'id' => 'combo_box', 'type' => 'safe', 'name' => 'Combo box', 'locked' => true, 'lockType' => 'combination', 'requires' => COMBO_ANSWER },
+                         { 'id' => 'combo_list', 'type' => 'safe', 'name' => 'Combo list', 'locked' => true, 'lockType' => 'combination', 'requires' => [41, 7, 9] },
+                         { 'id' => 'cryptex_box', 'type' => 'safe', 'name' => 'Cryptex', 'locked' => true, 'lockType' => 'cryptex', 'requires' => CRYPTEX_ANSWER },
+                         { 'id' => 'cap_box', 'type' => 'safe', 'name' => 'Cap box', 'capture' => { 'secret' => CAPTURE_SECRET } },
                          { 'id' => 'key_box', 'type' => 'safe', 'name' => 'Key box', 'locked' => true, 'lockType' => 'key', 'requires' => 'brass_key' },
                          { 'id' => 'card_door_box', 'type' => 'safe', 'name' => 'Card box', 'locked' => true, 'lockType' => 'rfid', 'requires' => ['master_card'] },
                          { 'id' => 'bio_box', 'type' => 'safe', 'name' => 'Bio box', 'locked' => true, 'lockType' => 'biometric', 'requires' => 'Mrs Moo' },
@@ -121,8 +142,10 @@ module BreakEscape
                       'objects' => [{ 'id' => 'srv_pc', 'type' => 'pc', 'lockType' => 'login', 'name' => 'Server PC' }] }
         },
         'networks' => { 'office_lan' => { 'name' => 'Office LAN', 'wifi' => { 'ssid' => 'hb', 'psk' => WIFI_KEY } } },
-        'credentials' => { 'jp_note' => { 'kind' => 'password', 'account' => 'j_price_npc', 'password' => CREDENTIAL_VALUE } },
-        'capture_holder' => { 'capture' => { 'secret' => CAPTURE_SECRET } }
+        'credentials' => { 'jp_note' => { 'kind' => 'password', 'account' => 'j_price_npc', 'foundIn' => 'ledger' } },
+        'npcs' => [{ 'id' => 'top_npc', 'displayName' => 'Top', 'creds' => { 'username' => 'top1', 'password' => TOP_NPC_PASSWORD } }],
+        'phoneNPCs' => [{ 'id' => 'phone_npc', 'displayName' => 'Phone', 'creds' => { 'username' => 'ph1', 'password' => PHONE_NPC_PASSWORD } }],
+        'flags' => { 'vm_one' => { 'flag_a' => FLAG_VALUE } }
       }
     end
 
@@ -211,6 +234,22 @@ module BreakEscape
       assert_nil game.player_state['opsLog']
     end
 
+    # R1 m14: a host, network or share (no room lookup) matches only where.places.
+    test 'a kind with no room lookup is not taken by where.objects or where.rooms, only by where.places' do
+      game = make_game(sources: { 'by_net' => SOURCES['by_net'] })
+      assert_nil write(game, 'tst_net', where: { kind: 'test_host', id: 'recep_pc' })
+      assert_nil game.player_state['opsLog']
+      places = { 'by_net' => { 'title' => 'x', 'events' => ['tst_net'], 'where' => { 'places' => ['test_host:recep_pc'] } } }
+      game = make_game(sources: places)
+      assert write(game, 'tst_net', where: { kind: 'test_host', id: 'recep_pc' }).stored?
+    end
+
+    # R1 m11: an author-note key is not a source.
+    test 'a "_" key in logSources is not a source and does not count toward the 30' do
+      data = { 'logSources' => { '_note' => { 'title' => 'a note' }, 'real' => { 'maxRows' => 10, 'events' => [] } } }
+      assert_equal %w[real], BreakEscape::OpsLog.sources_for(data).map(&:first)
+    end
+
     # ---- merging ----
 
     test 'an identical repeat raises n and last and appends nothing; any difference appends' do
@@ -283,6 +322,20 @@ module BreakEscape
       end
       at(T0 + 400_000) { write(game, 'tst_signin', as: typed('later'), where: pc('recep_pc'), result: 'denied', save_limit: true) }
       assert_equal 1, rows(game).find { |r| r.dig('as', 'typed') == 'u9' }['p']
+    end
+
+    test 'the tenth save that merges into an existing row marks that row p' do
+      game = make_game
+      at(T0) do
+        9.times { |i| write(game, 'tst_signin', as: typed("u#{i}"), where: pc('recep_pc'), result: 'denied', save_limit: true) }
+        result = write(game, 'tst_signin', as: typed('u8'), where: pc('recep_pc'), result: 'denied', save_limit: true)
+        assert result.merged?
+        assert_not result.appended?
+      end
+      row = rows(game).find { |r| r.dig('as', 'typed') == 'u8' }
+      assert_equal 2, row['n']
+      assert_equal 1, row['p']
+      assert_equal 9, rows(game).size
     end
 
     test 'an entry whose window starts after the clock is treated as passed' do
@@ -397,6 +450,24 @@ module BreakEscape
       assert_equal 10, log.size
       assert_not_includes log, 'merged'
       assert_includes log, 'single'
+      assert_includes log, 'okrow'
+    end
+
+    test 'ok rows go after refusals, oldest ok row first, and a first row of an event is kept' do
+      game = make_game(sources: one_source(10))
+      write(game, 'tst_note', as: typed('first_note'))
+      write(game, 'tst_signin', as: typed('first_signin'), where: pc('recep_pc'), result: 'denied')
+      write(game, 'tst_door', as: typed('first_door'), where: { kind: 'door', id: 'vault' })
+      7.times { |i| write(game, 'tst_note', as: typed("ok#{i}")) }
+      assert_equal 10, rows(game, 'log').size
+      # A new refusal is the only unprotected refusal, so it goes before any ok row (class 2).
+      write(game, 'tst_signin', as: typed('refusal'), where: pc('recep_pc'), result: 'denied')
+      names = rows(game, 'log').map { |r| r.dig('as', 'typed') }
+      assert_equal %w[first_note first_signin first_door ok0 ok1 ok2 ok3 ok4 ok5 ok6], names
+      # With no unprotected refusal, the oldest unprotected ok row goes (class 3); the first rows stay.
+      write(game, 'tst_note', as: typed('ok7'))
+      names = rows(game, 'log').map { |r| r.dig('as', 'typed') }
+      assert_equal %w[first_note first_signin first_door ok1 ok2 ok3 ok4 ok5 ok6 ok7], names
     end
 
     test 'a p row inside its window survives a flood; at five minutes old it can go' do
@@ -418,7 +489,7 @@ module BreakEscape
     test 'a source with more events than maxRows never exceeds maxRows, and never touches another source' do
       events = (1..12).to_h { |i| ["tst_e#{i}", { label: 'E', places: [], results: %w[ok] }] }
       Thread.current[:ops_log_overlay] = { events: TEST_EVENTS.merge(events), kinds: TEST_KINDS }
-      sources = { 'small' => { 'title' => 's', 'events' => ['tst_e*'].map { |e| e.sub('*', '_*') }.first(0) + (1..12).map { |i| "tst_e#{i}" }, 'maxRows' => 10 },
+      sources = { 'small' => { 'title' => 's', 'events' => (1..12).map { |i| "tst_e#{i}" }, 'maxRows' => 10 },
                   'other' => { 'title' => 'o', 'events' => ['tst_note'], 'maxRows' => 10 } }
       game = make_game(sources: sources)
       write(game, 'tst_note')
@@ -436,7 +507,6 @@ module BreakEscape
       sources = BreakEscape::OpsLog.sources_for(data)
       assert_equal 30, sources.size
       assert_equal [10] * 30, sources.map(&:last)
-      assert_equal 300, [150, 150, 150].each_with_index.sum { |_c, _i| 100 }
     end
 
     test 'a typed username of 64 four-byte characters or of control characters is cut to fit 96 bytes' do
@@ -450,6 +520,26 @@ module BreakEscape
       assert rows(game).last['as']['cut']
       write(game, 'tst_signin', as: typed('  J.Price '), where: pc('recep_pc'), result: 'denied')
       assert_equal({ 'typed' => 'j.price' }, rows(game).last['as'])
+    end
+
+    # R1 m17: step 7 at run time (a built row over 400 bytes is not written).
+    test 'a built row over 400 bytes is refused when the guard is on and dropped with a warning when it is off' do
+      data = scenario
+      data['rooms']['lobby']['objects'] << { 'id' => 'p' * 40, 'type' => 'pc', 'lockType' => 'login', 'name' => 'Long PC' }
+      game = make_game(data: data)
+      detail = { k1: 'a' * 40, k2: 'b' * 40, k3: 'c' * 40, k4: 'd' * 40 }
+      big = lambda do
+        write(game, 'tst_big', as: typed('x' * 40), where: pc('p' * 40), detail: detail)
+      end
+      BreakEscape::OpsLog.with_events(BIG_EVENT) do
+        error = assert_raises(BreakEscape::OpsLog::Malformed) { big.call }
+        assert_includes error.message, '400 bytes'
+        assert_nil game.player_state['opsLog']
+        BreakEscape::OpsLog.with_guard(false) { assert_nil big.call }
+        assert_nil game.player_state['opsLog']
+        assert_nil game.player_state['opsLogSeq']
+        assert write(game, 'tst_big', as: typed('x'), where: pc('recep_pc'), detail: { k1: 'a' }).stored?
+      end
     end
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
@@ -476,6 +566,8 @@ module BreakEscape
     def malformed_calls(game)
       [
         -> { write(game, 'tst_unknown') },
+        -> { write(game, 'tst_signin') },
+        -> { write(game, 'tst_ref', where: pc('recep_pc'), detail: { who: ACCOUNT_PASSWORD }) },
         -> { write(game, 'tst_signin', where: { kind: 'door', id: 'vault' }) },
         -> { write(game, 'tst_note', where: pc('recep_pc')) },
         -> { write(game, 'tst_signin', where: pc('recep_pc'), result: 'fail') },
@@ -515,7 +607,61 @@ module BreakEscape
         Rails.logger = old
       end
       assert_nil game.player_state['opsLog']
-      assert_equal malformed_calls(game).size, io.string.lines.count { |l| l.include?('ops log:') }
+      lines = io.string.lines.select { |l| l.include?('ops log:') }
+      assert_equal malformed_calls(game).size, lines.size
+      # R1 m17: each line names the event and the key path, and holds no secret of the fixture.
+      assert(lines.all? { |l| l.match?(/ops log: ops log tst_\w+: [a-z_.]+ /) }, lines.join)
+      assert(lines.any? { |l| l.include?('tst_ref: detail.who') })
+      BreakEscape::OpsLog.secret_values(game).each { |secret| assert_not_includes io.string, secret }
+    end
+
+    # R1 m2: the guard raises only in test and development.
+    test 'the guard is on in test and development and off in any other environment' do
+      %w[test development].each do |name|
+        Rails.stub(:env, ActiveSupport::StringInquirer.new(name)) { assert BreakEscape::OpsLog.guard_enabled?, name }
+      end
+      %w[production staging demo].each do |name|
+        Rails.stub(:env, ActiveSupport::StringInquirer.new(name)) { assert_not BreakEscape::OpsLog.guard_enabled?, name }
+      end
+    end
+
+    # R1 m3: off the guard the helper never raises.
+    test 'with the guard off a failure inside the store answers nil and logs one line naming only the event' do
+      game = make_game
+      game.define_singleton_method(:ops_log_store) { |*_args| raise 'boom ' + 'Plum-Orchard-41' }
+      io = StringIO.new
+      old = Rails.logger
+      Rails.logger = Logger.new(io)
+      begin
+        BreakEscape::OpsLog.with_guard(false) { assert_nil write(game, 'tst_note') }
+        assert_raises(RuntimeError) { write(game, 'tst_note') }
+      ensure
+        Rails.logger = old
+      end
+      lines = io.string.lines.select { |l| l.include?('ops log:') }
+      assert_equal 1, lines.size
+      assert_includes lines.first, 'tst_note'
+      assert_not_includes io.string, ACCOUNT_PASSWORD
+    end
+
+    # R1 m5, m6, m13: collisions computed once; the clock follows travel_to; the event pattern.
+    test 'authored collisions are computed once per scenario and again when it changes' do
+      game = make_game
+      first = BreakEscape::OpsLog.authored_collisions(game)
+      assert_same first, BreakEscape::OpsLog.authored_collisions(game)
+      game.scenario_data['rooms']['lobby']['objects'] << { 'id' => 'new_thing', 'type' => 'pc', 'name' => 'New' }
+      again = BreakEscape::OpsLog.authored_collisions(game)
+      assert_includes again, 'new_thing'
+      assert_not_same first, again
+    end
+
+    test 'the clock follows travel_to' do
+      travel_to(Time.at(1_800_000_000)) { assert_equal 1_800_000_000_000, BreakEscape::OpsLog.clock }
+    end
+
+    test 'an event name of one character is refused by the spec' do
+      events = { 'a' => { label: 'A', places: [], results: %w[ok] } }
+      assert_not_empty OpsLogEvents.problems(events, OpsLogEvents::KINDS)
     end
 
     test 'a count of 1234 is stored as 9, in production too; an alias, an id and a valid account are kept' do
@@ -534,7 +680,12 @@ module BreakEscape
     test 'secret_values holds the L1a secrets and no names, ids, usernames or card-reference answers' do
       game = make_game
       values = BreakEscape::OpsLog.secret_values(game)
-      [ACCOUNT_PASSWORD, NPC_PASSWORD, PIN, CODE_ANSWER, CREDENTIAL_VALUE, WIFI_KEY, CAPTURE_SECRET].each do |secret|
+      [ACCOUNT_PASSWORD, NPC_PASSWORD, PIN, CODE_ANSWER, WIFI_KEY, CAPTURE_SECRET].each do |secret|
+        assert_includes values, secret
+      end
+      # R1 M1: a combination and a cryptex lock's `requires`, and a door entry's own `requires` on an
+      # inherited lock; R1 m4/rulings: NPC passwords in top-level npcs and phoneNPCs, and flag values.
+      [COMBO_ANSWER, '41-7-9', '4179', CRYPTEX_ANSWER, DOOR_CODE, TOP_NPC_PASSWORD, PHONE_NPC_PASSWORD, FLAG_VALUE].each do |secret|
         assert_includes values, secret
       end
       %w[j_price guard1 lobby vault recep_pc brass_key master_card Mrs\ Moo 00:11:22:33:44:55 j_price_npc].each do |plain|
@@ -592,6 +743,18 @@ module BreakEscape
       end
     end
 
+    test 'assert_ops_log_holds_no_secret fails on a stored row that holds a secret' do
+      game = make_game
+      write(game, 'tst_any', detail: { v: 'harmless' })
+      assert_ops_log_holds_no_secret(game)
+      game.player_state['opsLog'] = { 'notes' => [{ 'seq' => 9, 'event' => 'tst_any', 'detail' => { 'v' => PIN } }] }
+      failure = assert_raises(Minitest::Assertion) { assert_ops_log_holds_no_secret(game) }
+      assert_includes failure.message, 'detail.v'
+      assert_not_includes failure.message, PIN
+      game.player_state['opsLog'] = { 'notes' => [{ 'seq' => 9, 'event' => 'tst_any', 'where' => { 'kind' => 'pc', 'id' => CRYPTEX_ANSWER } }] }
+      assert_raises(Minitest::Assertion) { assert_ops_log_holds_no_secret(game) }
+    end
+
     test 'typed text equal to a secret is stored normalised with no raise, guard on or off' do
       game = make_game
       [ACCOUNT_PASSWORD, PIN, 'not-a-secret'].each do |text|
@@ -609,7 +772,8 @@ module BreakEscape
 
     test 'the secret walk: every registered event, every detail key and as form set to each secret' do
       game = make_game
-      secrets = BreakEscape::OpsLog.secret_values(game) + [PIN.to_i, 'Hunter2!', '5f4dcc3b5aa765d6']
+      BreakEscape::OpsLog.note_issued_secret(TWO_DIGIT)
+      secrets = BreakEscape::OpsLog.secret_values(game) + [PIN.to_i, TWO_DIGIT.to_i, 'Hunter2!', '5f4dcc3b5aa765d6']
       walked = BreakEscape::OpsLog.events.reject { |name, _| name == 'tst_any' }
       [false, true].each do |guard|
         BreakEscape::OpsLog.with_guard(guard) do
