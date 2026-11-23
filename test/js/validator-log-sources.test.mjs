@@ -431,7 +431,7 @@ const withAnomaly = (rowId, rows = two, extra = {}) => {
 };
 
 test('an anomaly naming one of two seed rows raises no error or warning', { skip }, () => {
-    const out = issues(withAnomaly('s1'), SEED_EVENTS);
+    const out = issues(withAnomaly('s1', two, { flagActions: [{ type: 'set_global', key: 'k', value: true }] }), SEED_EVENTS);
     assert.deepEqual(errors(out).concat(warnings(out)), []);
 });
 
@@ -444,6 +444,18 @@ test('error: an anomaly on a source with no seed rows, and one that is not { row
     const s = withSeeds([]); s.rooms.lobby.objects.push({ id: 'r', type: 'ops_log_terminal', name: 'x', minigameData: { logSource: 'door_log', anomaly: { rowId: 's1' } } });
     assertHas(errors(issues(s, SEED_EVENTS)), 'is not one of source');
     assertHas(errors(issues(withAnomaly('s1', two, { anomaly: 's1' }), SEED_EVENTS)), 'anomaly must be');
+});
+
+test('warning (N-1): an anomaly whose actions set no global to true', { skip }, () => {
+    const out = issues(withAnomaly('s1', two, { flagActions: [{ type: 'set_global', key: 'k', value: 'x' }], completionActions: [{ type: 'complete_task', taskId: 't' }] }), SEED_EVENTS);
+    assert.deepEqual(errors(out), []);
+    assertHas(warnings(out), 'do not last past a reload');
+});
+
+test('warning (N-1): an anomaly with no actions at all', { skip }, () => {
+    const out = issues(withAnomaly('s1'), SEED_EVENTS);
+    assert.deepEqual(errors(out), []);
+    assertHas(warnings(out), 'flagging does nothing');
 });
 
 test('warning: an anomaly on a source with a single seed row', { skip }, () => {

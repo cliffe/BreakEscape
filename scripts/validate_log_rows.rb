@@ -146,6 +146,13 @@ def log_check_anomaly(node, name, source, data, err, warn)
     err.call("ops_log_terminal #{name}: anomaly must be { \"rowId\": \"<a seed row id>\" }")
     return
   end
+  actions = %w[flagActions completionActions].flat_map { |k| mg[k].is_a?(Array) ? mg[k] : [] }
+  if actions.empty?
+    warn.call("ops_log_terminal #{name}: the anomaly has no flagActions or completionActions, so flagging does nothing")
+  elsif actions.none? { |a| a.is_a?(Hash) && a['type'] == 'set_global' && a['value'] == true }
+    warn.call("ops_log_terminal #{name}: no flagActions or completionActions set a global to true, so the flagged " \
+              'mark and the once-only guard do not last past a reload')
+  end
   return unless source.is_a?(String)
 
   block = data['logSources'].is_a?(Hash) ? data['logSources'][source] : nil
