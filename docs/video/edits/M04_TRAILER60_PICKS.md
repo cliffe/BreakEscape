@@ -69,3 +69,11 @@ Placeholder: SpyAgro "Shadow Protocol (Remastered)", the only candidate analysed
 - Cached audio for the HaX stakes fallback (not tested).
 - The Network Monitoring Station desktop: no login or post-it on screen.
 - Voltage's delivery on "maintenance schedule" (dry, not flat) once heard in the take.
+
+## Takes findings so far (2026-11-23, see `docs/video/takes_m04.md`)
+
+- Briefing gate: none needed for the hook (opens on a fresh game); `briefing_played` is the real global (set by the cutscene) and is required for the guard's sight challenge.
+- Netherton portrait x about 0.72, Nightshade about 0.45 to 0.50.
+- The subtitle bar shows the whole ink line, so the cut sentences ("Agent 0x00.", "The physics doesn't lie...") stay visible on 16:9 unless the bar is framed out.
+- The guard challenges on sight from spawn (opens "Morning. Bit early for visitors. Desk first, if you don't mind."), so `security_guard_entry` does not play first; "Regulator, is it." (1.85 s) follows the [Grid-safety regulator] choice either way. Approach take `t03b_guard_walk` starts in the operations office.
+- Security office lights strike on entry (`t02_drop`): clean dark to lit in about 1 s.
