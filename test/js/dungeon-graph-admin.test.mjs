@@ -24,7 +24,9 @@ function graph(scenario) {
         assert.equal(r.status, 0, r.stderr);
         const text = readFileSync(join(dir, 'dungeon_graph.json'), 'utf8');
         const g = JSON.parse(text);
-        return { nodes: Object.fromEntries(g.nodes.map(n => [n.id, n])), edges: g.edges, text };
+        const md = readFileSync(join(dir, 'dungeon_graph.md'), 'utf8');
+        const html = readFileSync(join(dir, 'dungeon_graph.html'), 'utf8');
+        return { nodes: Object.fromEntries(g.nodes.map(n => [n.id, n])), edges: g.edges, text, md, html };
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -92,4 +94,17 @@ test('no label or output holds a password', { skip }, () => {
     assert.ok(adminIds(g).length > 0);
     assert.ok(!g.text.includes(PASS), 'the admin password is not in the graph');
     assert.ok(!g.text.includes('Omar-Pass-1'));
+});
+
+test('the Mermaid text (md and html) uses a safe id for admin@<pcId>: only [A-Za-z0-9_]', { skip }, () => {
+    const g = graph(withGrant(scenario(), 'admin'));
+    assert.ok(adminIds(g).length > 0, 'the JSON id keeps the @');
+    for (const [name, text] of [['md', g.md], ['html', g.html]]) {
+        assert.ok(text.includes('admin_at_desk_pc'), `${name} draws the safe id`);
+        assert.ok(!text.includes('admin@'), `${name} has no admin@ id`);
+    }
+    const defs = [...g.md.matchAll(/^ {2}([^\s]+?)(?:\(|\[|\{|>")/gm)].map(m => m[1])
+        .filter(id => !['classDef', 'class'].includes(id));
+    assert.ok(defs.length > 5);
+    defs.forEach(id => assert.match(id, /^[A-Za-z0-9_]+$/, `node id ${id}`));
 });

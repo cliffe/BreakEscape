@@ -2011,7 +2011,11 @@ critical_set = Set.new(critical_path)
 # Every label passes through scrub_label and every id through hide_id here, so no diagram
 # prints a Wi-Fi key; the skeleton (skeleton_mermaid) is drawn with hide: false.
 def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, hide: true)
-  hid = hide ? method(:hide_id) : ->(id) { id }
+  # An `@` in a Mermaid id is read as shape syntax by newer Mermaid (`id@{...}`): `admin@<pc>` is drawn `admin_at_<pc>`.
+  hid = lambda do |id|
+    out = hide ? hide_id(id) : id
+    out.to_s.include?('@') ? out.to_s.gsub('@', '_at_') : out
+  end
   # Ensure the start room is present as a node even if it has no puzzle elements
   if start_node && !nodes.key?(start_node)
     label = start_node.tr('_', ' ').split.map(&:capitalize).join(' ')
