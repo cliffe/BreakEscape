@@ -130,18 +130,6 @@
                  "y":27
                 }, 
                 {
-                 "gid":867,
-                 "height":55,
-                 "id":2,
-                 "name":"",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":30,
-                 "x":36,
-                 "y":86
-                }, 
-                {
                  "gid":903,
                  "height":59,
                  "id":4,
@@ -342,17 +330,6 @@
          "id":13,
          "name":"Object Layer 1",
          "objects":[
-                {
-                 "height":10,
-                 "id":3,
-                 "name":"collision",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":26,
-                 "x":38,
-                 "y":76
-                }, 
                 {
                  "height":10,
                  "id":5,
