@@ -50,7 +50,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 15, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C; opsDiscovered: N13
+  assert.equal(lines.length, 16, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C; opsDiscovered: N13; opsFindings: N14
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -229,6 +229,24 @@ test('--access feedRevealed (C3): ids in reveal order with seq and thread post, 
   const r = verify(['1', '--access'], { ...ACCESS_STATE, feedRevealed });
   assert.equal(r.status, 0, r.out);
   const lines = r.out.trim().split('\n');
-  assert.equal(lines.length, 15, r.out);
+  assert.equal(lines.length, 16, r.out);
   assert.match(r.out, /feedRevealed\s+4: ivy 2 \[ivy_vent:3 ivy_answer:7>ivy_vent\]; jake 1 \[jake_post_1\]; old 2; tomasz 1 \[tom_re:5>ivy_vent\]\n?/);
+});
+
+test('--access opsFindings (N14): alias, id and status word in alias order, malformed values left out, the line count unchanged', () => {
+  const opsFindings = {
+    'sam_pc.web.factory_login': 'c2', 'sam_pc.web.old_banner': 'f1', 'print_srv.queue.spool': 'u10', 'bad.one.x': 'zz', 'bad.two.y': 7
+  };
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, opsFindings });
+  assert.equal(r.status, 0, r.out);
+  assert.equal(r.out.trim().split('\n').length, 16, r.out);
+  assert.match(r.out, /opsFindings\s+3: f1 sam_pc\.web\.old_banner false; f2 sam_pc\.web\.factory_login confirmed; f10 print_srv\.queue\.spool unconfirmed\n/);
+  assert.doesNotMatch(r.out, /bad\./);
+});
+
+test('--access opsFindings with nothing held prints a zero line, and a non-hash value does not raise', () => {
+  assert.match(verify(['1', '--access'], ACCESS_STATE).out, /opsFindings\s+0\n/);
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, opsFindings: 'nope' });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /opsFindings\s+0\n/);
 });

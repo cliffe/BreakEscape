@@ -72,7 +72,7 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings].freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -112,12 +112,20 @@ def access_section(ps)
     ['footholds', footholds],
     ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
     # Ops core S1 (OPS_CORE_PLAN.md 11.4): what the player has swept and scanned, each list in id order
-    # (networks, then hosts, then, once S2 builds it, checked services); ids only. opsFindings and
-    # opsUsed join this list when S2 and S3 build them.
+    # (networks, then hosts, then checked services as `<host>.<service>`); ids only.
     ['opsDiscovered', %w[networks hosts services].filter_map do |key|
       ids = list.call(hash.call(ps['opsDiscovered'])[key]).select { |id| id.is_a?(String) }.sort
       "#{key} #{ids.join(' ')}" unless ids.empty?
     end],
+    # Ops core S2 (OPS_CORE_PLAN.md 11.4): the findings the player holds, in alias order, each as
+    # `<alias> <finding id> <status word>`; a stored value that is not `<u|c|f><n>` is left out. Ids and
+    # words only. opsUsed joins this list when S3 builds it.
+    ['opsFindings', hash.call(ps['opsFindings']).filter_map do |id, value|
+      match = /\A([ucf])([0-9]{1,4})\z/.match(value.to_s)
+      next unless match
+
+      [match[2].to_i, "f#{match[2].to_i} #{id} #{{ 'u' => 'unconfirmed', 'c' => 'confirmed', 'f' => 'false' }[match[1]]}"]
+    end.sort.map(&:last)],
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
     # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
