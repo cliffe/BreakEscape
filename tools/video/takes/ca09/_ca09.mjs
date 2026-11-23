@@ -47,9 +47,15 @@ export const GUESSER_HIDE_CSS = `
 .epr-gs-panel[data-panel="passphrase"] { display: none !important; }
 .epr-gs-live { display: none !important; }
 `;
+/** Narrowed panels for 9:16 and 1:1. Real classes (checked on :3454): the frame width is set by .minigame-game-container (720 px for the guesser,
+ *  1100 for the OSINT browser), the guesser card is .epr-gs-root (640), the defend inbox is .mail-client.triage-client (960). */
 export const NARROW_CSS = (px = 560) => `
-.epr-gs-root, .epr-gs-card, .tri-root, .tri-card, .tri-panel, .ob-root { max-width: ${px}px !important; margin-left: auto !important; margin-right: auto !important; }
+.minigame-game-container:has(.epr-gs-root), .minigame-game-container.osint-browser { max-width: ${px + 40}px !important; }
+.epr-gs-root { max-width: ${px}px !important; }
+.mail-client.triage-client { max-width: ${px}px !important; }
 `;
+/** The team tally badge on the defend list ("Risks reported or checked for the team: N") is a score-like line: hidden in every defend take. */
+export const DEFEND_HIDE_CSS = `.triage-client .aw-team-tally { display: none !important; }`;
 export const addCss = (page, css) => page.addStyleTag({ content: css });
 
 /** Page-level read of whether anything matching `re` is rendered visible (not display:none / visibility:hidden) on the page. */
