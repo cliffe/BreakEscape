@@ -13,7 +13,11 @@
 //   landed, reply-in (soft), mail-closed, flip-up, continue, strip-defend, end; rect:* (bounding boxes for the crop); tts-response none expected (no voiced line).
 import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, addCss, textShowing, NARROW_CSS, spriteCheck } from './_ca14.mjs';
 
-export const HIDE_CSS = `.mail-redflag-list, .mail-redflag-reasons, .mail-redflags li { visibility: hidden !important; }`;
+// Real classes (mail-composer.js _renderMeter): the reason lines are .mail-redflag-list (li.mail-redflag-item), the clean line .mail-redflag-clean, the advice .mail-redflag-advice.
+// The title, the counter (.mail-redflag-count) and the hint .mail-redflag-sub stay.
+export const HIDE_CSS = `.mail-redflag-list, .mail-redflag-clean, .mail-redflag-advice { display: none !important; }
+/* flip page: heading and Continue only (everything between is the sent message with its tells) */
+.aw-flip > *:not(.aw-heading):not(.aw-continue) { visibility: hidden !important; }`;
 const flagCount = (page) => page.evaluate(() => { const e = [...document.querySelectorAll('.mail-redflag-count')].find(x => x.offsetParent); return e ? e.innerText.trim() : null; });
 const rect = (page, sel, re) => page.evaluate(([s, src]) => { const r = src ? new RegExp(src, 'i') : null; const e = [...document.querySelectorAll(s)].find(x => x.offsetParent && (!r || r.test(x.innerText || ''))); if (!e) return null; const b = e.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) }; }, [sel, re && re.source]);
 
@@ -64,6 +68,7 @@ export const makeRun = (narrow) => async (page, bridge, mark) => {
   if (!/Yasmin/.test(to)) throw new Error('To is not Yasmin: ' + to);
   mark('to-set', { to }); mark('frame:compose');
   await logRect('mail-client', '.mail-client'); await logRect('redflags', '.mail-redflag-count');
+  await logRect('pretext-select', 'select.mail-compose-template[data-part="pretext"]');   // the select shows the template's first words: crop/cover by this rect
   await watchFlags(); await sleep(1000);
 
   // pretext (drop-down closed: selectOption sets it without opening the native list)
@@ -85,15 +90,16 @@ export const makeRun = (narrow) => async (page, bridge, mark) => {
   }
   mark('redflags-final', { count: await flagCount(page) });
   await logRect('redflags', '.mail-redflag-count'); await logRect('composer', '.mail-composer');
-  if (await textShowing(page, /No plausible reason|Not a plausible/i)) mark('warn-redflag-reason-showing');
+  if (await textShowing(page, /No plausible reason|No red flags right now/i)) mark('warn-redflag-reason-showing');
   await sleep(1800);
 
   // send (first Send is final)
   await waitVisible(page, 'button.mail-compose-send:not([disabled])', null, 8000);
   await mouseClick(page, 'button.mail-compose-send', null, { steps: 14, dwell: 500 });
   mark('send');
-  await waitVisible(page, 'body *', /She would open it|It landed/i, 15000).catch(() => { throw new Error('landed panel never showed'); });
+  await waitVisible(page, '.mail-checklist-banner.landed', null, 15000).catch(() => { throw new Error('landed panel never showed'); });
   mark('landed'); mark('frame:landed');
+  mark('landed-rows', { rows: await page.$$eval('.mail-check-text', els => els.filter(e => e.offsetParent).map(e => e.innerText.trim())) });
   const landedAt = Date.now();
   await sleep(1500); mark('frame:landed+1.5');
   let reply = false;
@@ -103,7 +109,7 @@ export const makeRun = (narrow) => async (page, bridge, mark) => {
 
   // close the mail client: the kiosk flip screen opens at once
   await bridge.minigame.close(); mark('mail-closed');
-  await waitVisible(page, 'body *', /Now you.re Yasmin/i, 10000); mark('flip-up'); mark('frame:flip-up'); await sleep(3200);
+  await waitVisible(page, '.aw-flip .aw-heading', /Now you.re Yasmin/i, 10000); mark('flip-up'); mark('frame:flip-up'); await sleep(3200);
   await pressButton(page, /^Continue$/); mark('continue');
   if (!(await waitButton(page, /Open the cards/, 10000))) throw new Error('Defend panel never showed after Continue; buttons: ' + JSON.stringify(await buttons(page)));
   mark('strip-defend'); mark('frame:strip-defend'); await sleep(1200); mark('end');
