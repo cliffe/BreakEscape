@@ -433,3 +433,30 @@ lands: (1) F1, change `record_borrow_done!` as the plan requires and add T8; (2)
 at least, then the rest of the list as fixtures allow; (3) a ruling on F4.
 
 Checks not completed: none. Not done: no test was run (the pass counts are the builder's).
+
+## R1 outcomes (fixer, 2026-11-23)
+
+Tests are in `network_technique_blocked_host_test.rb` (BH) and `network_technique_session_test.rb` (ST); the new fixture method is `NetworkOpsScenario.pivot_techniques_scenario`. Commits: F1 with T8 `8639775d1`; the rest `c37b04c3a`.
+
+| Id | Outcome |
+|---|---|
+| F1 | Fixed. `record_borrow_done!` (`npc_frustration.rb:394-395`) deletes the player's record only when it has neither `foothold` nor `from`; prune and guest lines unchanged. Existing borrow tests pass unmodified (270 runs); `bin/ops-golden-compare` passes. |
+| F2 | The test list below, all written. |
+| F3 | Retitled (BH: "a password session made at the keyboard is refused through a foothold"); the card half is the T3 reverse test. |
+| F4, F5, F6, F8 | Left by ruling; nothing changed. F4 goes to the user. |
+| F7 | The "lost route" test now covers a network outage (session kept, desktop and folder refused, served again after); the down-block row is a second test. |
+| T1 | BH "T1 ..." (host off, other foothold: `unreachable`, no `heldAs`/`session`/`openHere`; own foothold `not_responding`). |
+| T2 | BH "T2 ..." (unheld foothold record, invented ids for a real session). |
+| T3 | BH two tests: typed sign-in replaces the technique record; reverse order opens through the foothold. |
+| T4 | BH "T4 ..." (relay route, desktop and folder, with and without a foothold). |
+| T5 | BH outage test (replaces F7's body) and the down-block row test. |
+| T6 | ST two tests over a pivot to `sv_fs02`: pruned when the pivot session logs out, ended when the foothold is unplugged. |
+| T7 | ST "T7 ..." (pivot block to server_net from a technique session; desktop share served as Sam; finance and IT shares answer as a missing one). |
+| T8 | ST four tests (technique, password-through-foothold and `from` kept; keyboard password and claim still ended; `from` sourced from a kept record stays; repeat use after the borrow answers `already: true`). Drives `record_borrow_done!` directly: sam_pc has an owner, so the borrow route's `performable?` refuses it. |
+| T9 | BH "T9 ..." (no, nil, empty and blank foothold; wrong `via` case). |
+| T10 | BH two tests: odd route parameters away from the PC (a bare `from` answers 400 "malformed", all others 403, none with contents); `foothold[]` beside a blocked PC. |
+| T11 | ST "T11 ..." (`fixed` through a second foothold; record stays on the first). |
+| T12 | BH "T12 ..." (scan answer has `openHere` only through the session's foothold). |
+
+Mutation proofs (weakened locally, failure seen, exact text restored; `git diff --stat app/` showed only another stream's `network_ops.rb`): F1 condition removed (3 failures, T8); `desktop_refusal` foothold term (NA:1043) (T1, plus one older); foothold-reach term at NA:1526 skipped (T2 and 6 older); predicate `via` check dropped (T9 and two older); `host_row` `open_here` fed the record's own foothold (T12, T1, T2 and two older); `start_login_session!` merging the previous record (T3).
+No engine fault found.
