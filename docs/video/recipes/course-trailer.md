@@ -41,7 +41,7 @@ The times are a 0.5 s grid; move each card onto a lift of the CA track once it i
 | 8 | 30.0 | 5.0 | Living office | defender, full frame | the step-away Look up; the room beat (ca12: the open screen, Camila walks to the door) | cut |
 | 9 | 35.0 | 2.5 | What you'll spot | card | one pattern-level line, never the tell list (ca12: "A good story isn't a check"). Round 2 replaces this with the blue chapter card (see the chapter-card rule below) | seam |
 | 10 | 37.5 | 4.5 | End line | full frame | the best cached line, portrait view with the game's own bar (ca12: Camila C1) | cut |
-| 11 | 42.0 | 3.0 | End card | closes | preset `ca-close`: halves close into the Cyber Aware mark, course name, "15 minutes, in your browser", Hacktivity small | seam |
+| 11 | 42.0 | 3.0 | End card | closes | preset `ca-close`: halves close into the Cyber Aware mark, course name, the tagline "Play the attack · Learn to stop it", Hacktivity small | seam |
 
 **Chapter-card rule (from ca12 round 1, 22 Nov).** The owner asked for clearer title pages that say what the offence covers, then gameplay of the defence. So an episode runs: a **red chapter card** (what the attack covers, up to three short bullets at pattern level, no tells), short attack footage, the flip, a **blue chapter card** (what the defend half covers), then mostly defend gameplay. One red and one blue card per episode, red first. The cards use the `ca` card style with `"chapter": "attack"` or `"defend"` (`CaChapter.tsx`). In the beat table the blue card replaces beat 9 and the red card sits between beats 2 and 3; attack beats shrink to about 3 s each and beat 7 grows. ca12 round 2 is the worked example (`docs/video/edits/CA12_TRAILER_R2_SELECTS.md`).
 
@@ -88,7 +88,7 @@ The **programme trailer** (90 s) follows section 5 of the outline. Its narrator,
 
 ## End card
 
-The Cyber Aware mark, the course or episode name, "15 minutes, in your browser", "No installs", then Hacktivity small under a rule. No "Play now" (that is SAFETYNET's call to action). No URL until the course page link is confirmed.
+The Cyber Aware mark, the course or episode name, the tagline "Play the attack · Learn to stop it" (the owner dropped "15 minutes, in your browser · No installs", 2026-11-22), then Hacktivity small under a rule. No "Play now" (that is SAFETYNET's call to action). No URL until the course page link is confirmed.
 
 ## Spoilers for CA
 
@@ -99,8 +99,13 @@ Off screen: tells (the details that give an item away), the tells checklist, che
 1. `video-scout` (adapted to CA): `docs/video/scout/<ep>_scout.md`.
 2. Shot list or picks: `docs/video/edits/<EP>_TRAILER45_SHOTLIST.md`.
 3. `video-takes`: takes under `tools/video/takes/<ep>/`, from a worktree of local main, avatar window agreed with VID1 and AC0 if BE_SPRITE is set. Always `FOOTAGE_ROOT=$HOME/video-takes-local`, never `~/safetynet-footage` (a one-way Drive mirror whose timer moves unsynced folders to `~/safetynet-footage-deleted/`); a display other than VID1's 113, with its own `VIDEO_STATE_DIR`. Pass `--set` JSON to `run-take.sh` without single quotes. Runbook pattern: `docs/video/edits/CA12_CAPTURE_RUNBOOK.md`.
-4. `video-edit`: `tools/video/edits/<ep>_trailer45.json`, first shot `{"preset": "ca-open"}`, last `{"preset": "ca-close"}` (to be built: see the theme doc).
-5. `video-review`: one page per round with the questions below, scored against the rubric's F1, F4, O1, O2, O4 and A2.
+4. **Script rounds (before any voicing or final render; owner, 2026-11-22).** Write `docs/video/scripts/<ep>_trailer_script.md`: one row per shot with time, footage, on-screen text, narrator line and game line, plus the owner's brief. It can be generated from a draft edit list (`tools/video/scripts/make_script_doc.js` pattern). Then review it in rounds, as for plans (`AGENTS.md`):
+   - each round has two reviewers in parallel: **sell and truth** (Opus: does it sell the course on its own, is the attacker-first USP clear, is every narrator claim true of the episode's ink and scenario) and **silent read and timing** (Sonnet: captions alone tell the story and match the picture, words per second at most 3.0, no narrator over a character line, caption length, rhythm, writing rules);
+   - the orchestrator merges the findings into a rewritten script (no references to the reviews in it), at most five rounds, and from round 4 on uses delta reviews on Sonnet; stop when a round finds no B or M;
+   - a captions-only render is allowed as a timing preview during the rounds; it is not the review cut;
+   - then the owner signs off the script (line text and voice) through AC0. Only then generate narrator TTS (new spend: needs its yes) and render the review cut.
+5. `video-edit`: `tools/video/edits/<ep>_trailer45.json`, first shot `{"preset": "ca-open"}`, last `{"preset": "ca-close"}`. Narrator cues go in the edit-level `vo` list; small game UI gets an `insets` magnifier (see the theme doc).
+6. `video-review`: one page per round with the questions below, scored against the rubric's F1, F4, O1, O2, O4 and A2.
 
 ## Review questions
 

@@ -1,0 +1,769 @@
+{
+ "mission": "ca15",
+ "id": "ca15_trailer_r1",
+ "theme": "ca",
+ "title": "Cyber Aware ca15 trailer, round 1, script R1 (captions only; narrator not voiced; takes pending)",
+ "script": {
+  "heading": "ca15 trailer script (Shadow IT)",
+  "owner_card": "none yet (script R1)",
+  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Fatima's bark); open card with v1; name the topic in VO over footage that shows it; red chapter card, each step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. ca15 is consequence-first: there is no attacker to play, so the red card reads \"You take the shortcuts\" (open question for the owner)."
+ },
+ "fps": 30,
+ "length": 69.9,
+ "music": {
+  "none": true,
+  "note": "silent bed until D331; game room sound and voiced lines only"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_stick_beat.trimmed.mkv",
+    "in": 1.2,
+    "out": 5.8
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Fatima's bark: a memory stick on the depot floor; cold open, no tells | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 0.5,
+     "end": 3.72,
+     "speaker": "Fatima",
+     "text": "Hang on, someone's dropped a memory stick over here."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t07_stick_beat: --set step-away list (takes_ca15.md t07); open the kiosk, press Look up at mark look_up; bark at look_up+1.7 s (3.22 s); in/out are look_up-relative, retime to the logged bark_start"
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Shadow IT",
+    "company": "Tarrowby Logistics",
+    "stripe": "#3b5b8c"
+   },
+   "duration": 5.1
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 4.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 3.0,
+    "out": 7.9
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Choice 1 of 4 before any pick: Colin's 'email the pack to your personal address' and the two options | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "full"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 1 (personal_email) on screen at mark c1_shown, nothing picked until c1_pick"
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.3,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You take the shortcuts"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Shortcut chapter card: the choices half, pattern level; makes no attacker claim (consequence-first episode) | CA: spoilers fine (owner), no masks"
+   }
+  },
+  {
+   "id": "pick_email",
+   "type": "gameplay",
+   "duration": 3.4,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 6.8,
+    "out": 10.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 1: 'Send the pack to your personal email' picked; no marks before Next | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "FRIDAY DEADLINE",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; pick 'Send the pack to your personal email' at mark c1_pick (about 8.0 s), hold 2 s, Next choice"
+  },
+  {
+   "id": "pick_stick",
+   "type": "gameplay",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 14.0,
+    "out": 17.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Card 3: 'Plug the visitor's stick into your laptop' picked; no marks | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "FRIDAY DEADLINE",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 2 pick 'Ask IT for an approved team channel'; card 3 pick 'Plug the visitor's stick' at mark c3_pick (about 15.0 s), hold 2.5 s"
+  },
+  {
+   "id": "led_page",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 20.5,
+    "out": 24.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Six months later page, all four cards, 'Your call' labels hidden and borders neutral | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "SIX MONTHS LATER",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 4 pick 'Hold off, and ask IT'; See where they led at mark reveal; CSS: hide every 'Your call...' label, one neutral left border"
+  },
+  {
+   "id": "led_email",
+   "type": "gameplay",
+   "duration": 5.3,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 24.5,
+    "out": 29.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Punch-in on card 1's consequence: personal inbox broken into, client sent a fake invoice; labels hidden | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "SIX MONTHS LATER",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.31,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.31,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.31,
+     "zoom": 1.4
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; hold the reveal page still to mark continue_click (about 31.0 s); same CSS hides"
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.6,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t03_choices_reveal.trimmed.mkv",
+    "in": 30.2,
+    "out": 32.8
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Continue: the strip ticks to 4 Defend, Swap Shop launch panel; no verdicts | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; press Continue at mark continue_click; hold the Swap Shop launch panel 3 s (strip on Defend)"
+  },
+  {
+   "id": "nilesh_ask",
+   "type": "gameplay",
+   "duration": 7.4,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_nilesh_ask.trimmed.mkv",
+    "in": 1.8,
+    "out": 9.2
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Nilesh N1 at the start of a fresh game (cached voice); cut before N2 'Start at the kiosk' | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE SERVICE DESK",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.64,
+     "cy": 0.42,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.42,
+     "zoom": 1.2
+    }
+   },
+   "lines": [
+    {
+     "start": 0.2,
+     "end": 7.21,
+     "speaker": "Nilesh",
+     "text": "Nilesh, service desk. That slow share? Ask us first, we'd rather help than clean up."
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t08_nilesh_ask: fresh game, Skip tutorial, close the Brief, do NOT open the kiosk; __test.interact('nilesh_solanki'); N1 at mark n1_start (7.01 s); cut before n2_start; cut in after frame:npc-portrait-up"
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.5,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You sort the shortcuts"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card: the sort half; no tell, verdict or answer | CA: spoilers fine (owner), no masks"
+   }
+  },
+  {
+   "id": "swap",
+   "type": "gameplay",
+   "duration": 3.4,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t05_swap_shop.trimmed.mkv",
+    "in": 3.0,
+    "out": 6.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Swap Shop card 1 (partner's computer) and the four approved ways; no pick, no reason panel | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SWAP SHOP",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t05_swap_shop: --set state done brief/mistake/flip (takes_ca15.md t05); open the kiosk, Open the Swap Shop, Start; card 1 at mark card1, hover the bins, never pick; hide the score line"
+  },
+  {
+   "id": "inbox",
+   "type": "gameplay",
+   "duration": 8.1,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_inbox_list.trimmed.mkv",
+    "in": 2.0,
+    "out": 10.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Inbox list of six sticks and shortcut messages, then row 1 (padded envelope) open with the four verbs; nothing pressed | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SHORTCUTS INBOX",
+    "stripe": "#3b5b8c"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t06_inbox_list: same --set as t05; Swap Shop 4 picks and Done before the take body; Open the inbox, Start; list at mark list (hold 3.5 s), click row 1 .mail-row at mark row1; hold 4 s; never press a verb; CSS hide the 'Risky shortcuts stopped' badge"
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 6.9,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_stick_beat.trimmed.mkv",
+    "in": 5.0,
+    "out": 11.9
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Fatima at the stick asks the player; cut before the menu and long before Chidi/Nilesh (53 s) | CA: spoilers fine (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE DEPOT"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.3,
+     "cy": 0.6,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 2.4,
+     "end": 6.38,
+     "speaker": "Fatima",
+     "text": "No name on it, nothing. What do you reckon I do with it?"
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "placeholder": true,
+   "placeholder_note": "PENDING TAKE t07_stick_beat: --set step-away list (takes_ca15.md t07); open the kiosk, press Look up at mark look_up; ask line at look_up+7.4 s (3.98 s); hold to look_up+13 s; stop well before 53 s"
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Shadow IT",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.4
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.7,
+   "end": 9.4,
+   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
+   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play."
+  },
+  {
+   "id": "v1b",
+   "start": 9.9,
+   "end": 12.5,
+   "text": "Slow file share. Pack due Monday."
+  },
+  {
+   "id": "v1c",
+   "start": 12.75,
+   "end": 14.5,
+   "text": "This episode: Shadow IT."
+  },
+  {
+   "id": "v2",
+   "start": 14.85,
+   "end": 17.5,
+   "text": "First, take the shortcuts anyone would.",
+   "onCard": "hide"
+  },
+  {
+   "id": "v3",
+   "start": 18.1,
+   "end": 21.1,
+   "text": "Email the pack to your own inbox."
+  },
+  {
+   "id": "v4",
+   "start": 21.5,
+   "end": 23.75,
+   "text": "Plug in a visitor's stick."
+  },
+  {
+   "id": "v5",
+   "start": 24.5,
+   "end": 28.0,
+   "text": "Six months on, see where each one led."
+  },
+  {
+   "id": "v5b",
+   "start": 28.5,
+   "end": 33.3,
+   "text": "The inbox was broken into. The client got a fake invoice.",
+   "caption": "The inbox was broken into.\nThe client got a fake invoice."
+  },
+  {
+   "id": "v6",
+   "start": 33.8,
+   "end": 36.0,
+   "text": "So what's the approved way?"
+  },
+  {
+   "id": "v7",
+   "start": 46.3,
+   "end": 49.3,
+   "text": "Match each shortcut to the approved way."
+  },
+  {
+   "id": "v8",
+   "start": 49.7,
+   "end": 52.75,
+   "text": "Then sort the sticks and shortcut messages."
+  },
+  {
+   "id": "v9",
+   "start": 53.0,
+   "end": 57.35,
+   "text": "Check it's an approved tool. Sticks go to IT, unplugged."
+  },
+  {
+   "id": "v10",
+   "start": 57.7,
+   "end": 59.9,
+   "text": "Then a colleague asks you."
+  },
+  {
+   "id": "v11",
+   "start": 64.7,
+   "end": 69.6,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
+  }
+ ]
+}

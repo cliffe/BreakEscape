@@ -139,6 +139,8 @@ An `.srt` is always written (`make-srt.mjs`, from `lines[]` or the take's `line-
 
 Narration is Agent HaX's TTS voice. A voiced line is only playable if its text exists in the mission's ink for that NPC and is cached. **New lines cost money:** ask the user each time, with the number of new lines (cached lines are free); `tts-audio` is the skill for generating, and nothing is generated without the user's yes.
 
+**Script rounds come before narration (owner, 2026-11-22).** Any trailer with a narrator or new on-screen copy gets a script document (`docs/video/scripts/<id>_script.md`, one row per shot: time, footage, on-screen text, narrator line, game line; `tools/video/scripts/make_script_doc.js` builds it from a draft edit list) and review rounds before anything is voiced or the review cut is rendered: two reviewers per round (sell and truth on Opus, silent read and timing on Sonnet), the orchestrator rewrites, at most five rounds, delta reviews on Sonnet from round 4, stop at a round with no B or M; then the owner signs off the lines and the voice. A captions-only render is fine as a timing preview. Cyber Aware trailers put narrator cues in the edit's `vo` list (burned captions in every aspect, audio ducks the game) and their recipe is `docs/video/recipes/course-trailer.md`.
+
 ## Related
 
 `video-scout`, `video-takes` (before); `video-review` (after); `video-stills`; `docs/video/recipes/*`; `tts-audio`; `AGENTS.md` ("Choosing a model").

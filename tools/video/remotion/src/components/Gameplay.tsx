@@ -4,6 +4,7 @@ import { Placeholder } from './Placeholder';
 import { framingAt, visibleRect, sourceRef } from '../timeline.js';
 import { Caption } from './Caption';
 import { CaCaption } from './CaSeats';
+import { CaInsets } from './CaInset';
 
 /**
  * A gameplay shot: the 1920x1080 take or clip (or a placeholder pattern) scaled with nearest-neighbour (image-rendering: pixelated),
@@ -32,6 +33,7 @@ export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: strin
         )}
         <Masks masks={shot.masks} localSec={frame / fps} />
       </div>
+      <CaInsets shot={shot} w={w} h={h} aspect={aspect} frame={frame} fps={fps} has={!!has} src={ref ? `${ref.dir}/${ref.file}` : null} startFrom={startFrom} source={source} sourceSec={sourceSec} />
       {shot.caption?.[aspect] ? (shot.seat ? <CaCaption shot={shot} w={w} h={h} localSec={frame / fps} /> : <Caption shot={shot} w={w} h={h} localSec={frame / fps} />) : null}
     </div>
   );

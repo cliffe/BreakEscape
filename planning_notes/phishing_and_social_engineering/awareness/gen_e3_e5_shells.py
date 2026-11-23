@@ -460,6 +460,7 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
     # aw4: the deployment-wide rule of thumb, identical in every awareness shell.
     sc['social']['awareness'] = awareness_deploy.awareness_block()
     company = social['awarenessEpisode']['company']
+    sc['music'] = awareness_deploy.music_block()
     sc['lighting'] = training_room.scenario_lighting(company)
     rf = training_room.room_fields(company)
     tr = {'type': rf['type'], 'door_sign': 'Training Room'}

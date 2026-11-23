@@ -41,5 +41,8 @@ for (const s of tl.shots) {
     if (t1 > t0) cues.push({ t0, t1, text: (l.speaker ? `${l.speaker}: ` : '') + l.text });
   }
 }
+// voice-over cues: plain text, no speaker prefix; merged with the dialogue cues in time order (stable for equal starts)
+for (const c of edit.vo || []) if (c.text && c.end > c.start) cues.push({ t0: c.start, t1: c.end, text: c.text });
+cues.sort((a, b) => a.t0 - b.t0 || a.t1 - b.t1);
 fs.writeFileSync(out, cues.map((c, i) => `${i + 1}\n${ts(c.t0)} --> ${ts(c.t1)}\n${c.text}\n`).join('\n'));
 console.error(`srt: ${cues.length} cue(s) -> ${out}`);
