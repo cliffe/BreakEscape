@@ -4,7 +4,7 @@
 
 TEST: Ops log rows
 
-A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a and L2b). One lobby, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is judged by the server. Nothing to solve.
+A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a, L2b and L3). One lobby, a comms room, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is checked in the browser. Nothing to solve.
 
 ## Scenario Statistics
 
@@ -13,10 +13,10 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a and L2b). On
 | Story aims | 1 |
 | Total tasks | 3 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 3 |
+| Physical locks | 5 |
 | AND-gate convergences | 0 |
-| Rooms | 3 |
-| Puzzle graph nodes / edges | 14 / 14 |
+| Rooms | 6 |
+| Puzzle graph nodes / edges | 25 / 27 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -81,9 +81,20 @@ flowchart TD
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+  device_kit_dropbox{"Network drop box<br/>(rogue device)"}
+  jack_comms_port["Spare wall port<br/>Network jack"]
+  comms_room("Comms room")
+  net_office_lan("Harbour office LAN<br/>Network")
+  resource_scanned_inbox[["Scanned-Inbox<br/>(file share)"]]
+  wifiap_guest_ap["Guest access point<br/>Wi-Fi access point"]
+  net_guest_wifi("Guest Wi-Fi<br/>Network")
+  wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
+  clue_wifi_note{"Reception Wi-Fi card"}
   log_door_controller[("Door controller<br/>badge_swipe")]
   log_signin_audit[("Sign-in audit<br/>signin_*, session_*")]
+  log_network_log[("Network log<br/>net_*, share_*")]
   log_night_log[("Night door log<br/>badge_swipe")]
+  reader_net_log_pc{"Network log PC<br/>(log reader)"}
   reader_night_log_pc{"Night log PC<br/>(log reader)"}
   reader_door_log_pc{"Door log PC<br/>(log reader)"}
   reader_signin_log_pc{"Sign-in log PC<br/>(log reader)"}
@@ -96,6 +107,19 @@ flowchart TD
   card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
+  lobby --> device_kit_dropbox
+  comms_room --> jack_comms_port
+  device_kit_dropbox --> jack_comms_port
+  jack_comms_port --> net_office_lan
+  net_office_lan -->|exposes| resource_scanned_inbox
+  lobby --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest_wifi
+  lobby --> clue_wifi_note
+  clue_wifi_note --> wifikey_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap
+  lobby --> comms_room
+  comms_room --> reader_net_log_pc
+  log_network_log -.- reader_net_log_pc
   office --> reader_night_log_pc
   log_night_log -.- reader_night_log_pc
   security --> reader_door_log_pc
@@ -103,11 +127,12 @@ flowchart TD
   security --> reader_signin_log_pc
   log_signin_audit -.- reader_signin_log_pc
 
-  class door_office,door_security,lock_office_pc lock
-  class office,security,lobby room
-  class card_fin_dana_01,signin_dana key
-  class log_door_controller,log_signin_audit,log_night_log note
-  class reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
+  class door_office,door_security,lock_office_pc,jack_comms_port,wifiap_guest_ap lock
+  class office,security,lobby,comms_room,net_office_lan,net_guest_wifi room
+  class card_fin_dana_01,signin_dana,device_kit_dropbox,wifikey_guest_wifi key
+  class resource_scanned_inbox container
+  class clue_wifi_note,reader_net_log_pc,reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
+  class log_door_controller,log_signin_audit,log_network_log,log_night_log note
   class node_start start
 ```
 
@@ -173,9 +198,20 @@ flowchart TD
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+  device_kit_dropbox{"Network drop box<br/>(rogue device)"}
+  jack_comms_port["Spare wall port<br/>Network jack"]
+  comms_room("Comms room")
+  net_office_lan("Harbour office LAN<br/>Network")
+  resource_scanned_inbox[["Scanned-Inbox<br/>(file share)"]]
+  wifiap_guest_ap["Guest access point<br/>Wi-Fi access point"]
+  net_guest_wifi("Guest Wi-Fi<br/>Network")
+  wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
+  clue_wifi_note{"Reception Wi-Fi card"}
   log_door_controller[("Door controller<br/>badge_swipe")]
   log_signin_audit[("Sign-in audit<br/>signin_*, session_*")]
+  log_network_log[("Network log<br/>net_*, share_*")]
   log_night_log[("Night door log<br/>badge_swipe")]
+  reader_net_log_pc{"Network log PC<br/>(log reader)"}
   reader_night_log_pc{"Night log PC<br/>(log reader)"}
   reader_door_log_pc{"Door log PC<br/>(log reader)"}
   reader_signin_log_pc{"Sign-in log PC<br/>(log reader)"}
@@ -189,6 +225,19 @@ flowchart TD
   card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
+  lobby --> device_kit_dropbox
+  comms_room --> jack_comms_port
+  device_kit_dropbox --> jack_comms_port
+  jack_comms_port --> net_office_lan
+  net_office_lan -->|exposes| resource_scanned_inbox
+  lobby --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest_wifi
+  lobby --> clue_wifi_note
+  clue_wifi_note --> wifikey_guest_wifi
+  wifikey_guest_wifi --> wifiap_guest_ap
+  lobby --> comms_room
+  comms_room --> reader_net_log_pc
+  log_network_log -.- reader_net_log_pc
   office --> reader_night_log_pc
   log_night_log -.- reader_night_log_pc
   security --> reader_door_log_pc
@@ -196,11 +245,12 @@ flowchart TD
   security --> reader_signin_log_pc
   log_signin_audit -.- reader_signin_log_pc
 
-  class door_office,door_security,lock_office_pc lock
-  class office,security,lobby room
-  class card_fin_dana_01,signin_dana key
-  class log_door_controller,log_signin_audit,log_night_log note
-  class reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
+  class door_office,door_security,lock_office_pc,jack_comms_port,wifiap_guest_ap lock
+  class office,security,lobby,comms_room,net_office_lan,net_guest_wifi room
+  class card_fin_dana_01,signin_dana,device_kit_dropbox,wifikey_guest_wifi key
+  class resource_scanned_inbox container
+  class clue_wifi_note,reader_net_log_pc,reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
+  class log_door_controller,log_signin_audit,log_network_log,log_night_log note
   class aim_log_beats aim
   class node_start start
 ```
@@ -231,13 +281,15 @@ flowchart TD
   node_start --> lobby
 
   lobby("Lobby")
+  comms_room("Comms room")
   office["Finance office<br/>(locked)"]
   security["Security office<br/>(locked)"]
 
   lobby --> office
+  lobby --> comms_room
   office --> security
 
-  class lobby room
+  class lobby,comms_room room
   class office,security lock
   class node_start start
 ```
@@ -268,29 +320,41 @@ flowchart TD
   node_start --> lobby
 
   lobby("Lobby")
+  comms_room("Comms room")
   office["Finance office<br/>(locked)"]
   security["Security office<br/>(locked)"]
   rc_card_copier_1{"Card copier"}
   rc_sign_lobby_2{"Sign: Start here"}
-  rc_npc_dana_reyes_3("Dana Reyes")
-  rc_office_pc_4{"Office PC"}
-  rc_night_log_pc_5{"Night log PC"}
-  rc_door_log_pc_6{"Door log PC"}
-  rc_signin_log_pc_7{"Sign-in log PC"}
+  rc_kit_dropbox_3{"Network drop box"}
+  rc_guest_ap_4{"Guest access point"}
+  rc_wifi_note_5{"Reception Wi-Fi card"}
+  rc_npc_dana_reyes_6("Dana Reyes")
+  rc_comms_port_7{"Spare wall port"}
+  rc_net_log_pc_8{"Network log PC"}
+  rc_office_pc_9{"Office PC"}
+  rc_night_log_pc_10{"Night log PC"}
+  rc_door_log_pc_11{"Door log PC"}
+  rc_signin_log_pc_12{"Sign-in log PC"}
 
   lobby --> office
+  lobby --> comms_room
   office --> security
   lobby --> rc_card_copier_1
   lobby --> rc_sign_lobby_2
-  lobby --> rc_npc_dana_reyes_3
-  office --> rc_office_pc_4
-  office --> rc_night_log_pc_5
-  security --> rc_door_log_pc_6
-  security --> rc_signin_log_pc_7
+  lobby --> rc_kit_dropbox_3
+  lobby --> rc_guest_ap_4
+  lobby --> rc_wifi_note_5
+  lobby --> rc_npc_dana_reyes_6
+  comms_room --> rc_comms_port_7
+  comms_room --> rc_net_log_pc_8
+  office --> rc_office_pc_9
+  office --> rc_night_log_pc_10
+  security --> rc_door_log_pc_11
+  security --> rc_signin_log_pc_12
 
-  class lobby room
+  class lobby,comms_room room
   class office,security lock
-  class rc_card_copier_1,rc_sign_lobby_2,rc_office_pc_4,rc_night_log_pc_5,rc_door_log_pc_6,rc_signin_log_pc_7 item
-  class rc_npc_dana_reyes_3 npc
+  class rc_card_copier_1,rc_sign_lobby_2,rc_kit_dropbox_3,rc_guest_ap_4,rc_wifi_note_5,rc_comms_port_7,rc_net_log_pc_8,rc_office_pc_9,rc_night_log_pc_10,rc_door_log_pc_11,rc_signin_log_pc_12 item
+  class rc_npc_dana_reyes_6 npc
   class node_start start
 ```
