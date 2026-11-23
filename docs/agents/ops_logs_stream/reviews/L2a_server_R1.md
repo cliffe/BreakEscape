@@ -286,3 +286,26 @@ builder's file list, so the orchestrator has to assign it). m3 and m5 need a rul
 and can go in the same round.
 
 Checks not completed: none. Not done: no test was run by this review.
+
+## R1 outcomes
+
+Fix round commits: 1bf1527c5 (model, event line, badge writer, model tests) and 7874c1d2a (controller, controller tests). Handover updated in HANDOVER_L2a_server.md.
+
+| Finding | Outcome |
+|---|---|
+| M1 | Fixed in 1bf1527c5 and 7874c1d2a: stored hidden marker `flagged`, reader shows `-` for a flagged row (npc or card), heuristic and its tests removed. Tests drive /unlock: own card, single copy, several cards with a copy (npc form) and a holder-less card (card form), a source with the flag and one without in the same game, and a game with no flag. Marker never in a response. |
+| m1 | Fixed in 7874c1d2a: declaration checked, then reach, rows built last. |
+| m2 | Fixed in 7874c1d2a: no-store set before the id check; test asserts it on 400, 404 and 200. |
+| m3 | Accepted per ruling; no code change (handover notes it). |
+| m4 | Fixed in 7874c1d2a: `log_reader_reached?` refuses a sign-in object; test with a locked sign-in reader under a held session. |
+| m5 | Fixed in 1bf1527c5: kind word instead of raw id for where, as (npc, card) and id details; model test. |
+| m6 | Fixed in 7874c1d2a in log_rows_test.rb (not in network_shares_test / keyring_folder_route_test, which are outside this fixer's file list): /container asserts `PC not reachable: lena_pc` (refused folder route) and `PC not reachable: share_kiosk_log` (sign-in object in a share). |
+| T1 | Fixed in 7874c1d2a: LogRowsShareTest (404 without a session, answer with foothold, 404 after unplug, sign-in reader refused). A wrong route name on a resource is not refused by design (no route check on a resource scope). |
+| T2 | Fixed in 7874c1d2a: every `read` scans the body for every compared secret. |
+| T3 | Fixed in 7874c1d2a: wrong from=, from= plus foothold conflict, relay, route-down after unplug. |
+| T4 | Fixed in 1bf1527c5: one event in two sources has two ids. |
+| T5 | Fixed (see M1). |
+| T6 | Fixed in 7874c1d2a: loop over reader ids with no-store and no state or updated_at change (r_open, r_desktop, r_profile, r_vault, r_cabinet, invented id). |
+| T7 | Accepted skip; owed to the stage that adds admin_profile_read (in handover). |
+
+Mutation proofs: marker never written (2 failures), reader ignores the marker (3), login-reader guard removed (1), no-store removed (2), reach check for scoped readers removed (5, covers T1 and T3).

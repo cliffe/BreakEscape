@@ -30,12 +30,21 @@ simplest reading, the client should treat `""` as empty). Rows are in `seq` orde
   (the exact old 404/403/403-with-reason bodies), `log_reader_reached?`, `log_rows`. `#container` now calls the first two;
   `bin/ops-golden-compare` passes (12 runs), and the access_model_* suites pass unmodified.
 
-## showCardHolder
-A stored badge row is shared by sources and holds `{npc:}` when ANY source sets `showCardHolder` (or for an own card or one
-card). The stored row cannot say which. So: a source without the flag shows `-` as `as` on a `badge_swipe` row with an NPC
-when ANOTHER source in the game sets the flag; if no source sets it, holders show (plan option d). This also hides an own-card
-or single-card holder in that mixed case (safe side). A precise fix needs a stored marker from `ops_badge_as` in `game.rb`
-(not my file): report if wanted.
+## showCardHolder (changed by R1 M1)
+`badge_swipe` carries a hidden detail `flagged` (`{ count: 1, show: false }`, `ops_log_events.rb`). `write_badge_swipe_ok!`
+sets `{ 'flagged' => 1 }` only when the identity is kept by a source's `showCardHolder` alone (not the holder's own keycard,
+not one card sent; `ops_badge_flag_only?` in `game.rb`). The reader (`ops_log_client_as`) shows `-` for a flagged row, npc or
+card form, in a source without the flag; every other row shows. The marker is never sent (`show: false`). The old "another
+source sets it" heuristic is gone. Rows stored before the marker have none, so they show everywhere. L2b: render seed rows
+through a path that does not read `flagged` (seed rows are authored, never flagged).
+
+## Other R1 contract changes
+- A thing with no authored name shows its kind word (`door`, `object`, `pc`, `npc`, `card`...), never its raw id (m5):
+  `ops_log_client_thing` in `ops_log.rb`. `-` stays for an unresolved id or unknown kind.
+- `log_rows` sets `no-store` before the id check (400 too), checks the declaration, then reach, then builds rows (m1, m2).
+- A reader that is itself a sign-in object is refused (`log_reader_reached?`, m4).
+- No-route read under a foothold session answers (m3, ruled accepted). `admin_profile_read` test still owed to the stage that
+  adds the event (T7).
 
 ## Tests (all run under the lock, pass)
 - `test/controllers/break_escape/log_rows_test.rb`: 16 runs, 101 assertions (refusals, same 404, reach by room/cabinet/own lock/
