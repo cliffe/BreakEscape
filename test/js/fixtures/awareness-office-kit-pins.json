@@ -35,7 +35,7 @@
  ],
  "files": {
   "scenarios/ca_annual_2027_defend/scenario.json.erb": "dd8e80d44f0116ff725f2b850f637ff0d02586c69a00709eb250a013928bb214",
-  "scenarios/ca_annual_2027_defend/mission.json": "a14959f311a28a96fa2062ecad5baee92a5a819444adf48b80f6b7baa9c553e5",
+  "scenarios/ca_annual_2027_defend/mission.json": "576085c88452ef9b2666f21885afa40c5957d58f24cdd7b644658682f91fca63",
   "scenarios/ca_annual_2027_defend/ink/graham_whitfield.ink": "9f6764c819de547e921f95c292fddd28863764e8c81eed33ce04e3cb8b901e43",
   "scenarios/ca_annual_2027_defend/ink/graham_whitfield.json": "ed1f345fb3840107ca7812a0ce5ec1a16eb542d7f54b2d0aa3db1449b7ebd2c7",
   "scenarios/ca_post_data_conduct_ab/scenario.json.erb": "388ba6c2d0c09ceb923214449119f658aac898d0ca1a778c22143376cf1643ea",
