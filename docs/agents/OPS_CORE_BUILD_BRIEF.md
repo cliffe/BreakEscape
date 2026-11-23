@@ -170,3 +170,9 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   scanner and needs work (a credential need met by an expired token or ended invite; labels
   tagged confirm). N10, beat 1's count is whatever the server lists: the script states the
   real number and what it counts.
+- 2026-11-23, step 10b rulings: `techniques` goes into `WITHHELD_SCENARIO_KEYS` in
+  `network_access.rb` (step 9 missed it; 10b's `withhold_network_keys!` override in
+  `network_ops.rb` is then removed); the `access: "admin"` line on a held session's host row
+  is folded into `host_row` itself and 10b's `host_row` wrapper removed; the `network_view`
+  wrapper for the `techniques` map may stay in `network_ops.rb`. All three by the step 11
+  builder, who owns `network_access.rb`. The `session` need's label is the PC's host label.
