@@ -92,3 +92,12 @@ with these differences, which win:**
   plan's section 7 gives. The user was told and may still choose a server-judged flag, which
   would be planned as its own piece (the server applying the actions and owning the globals
   and tasks).
+- 2026-11-23, L2b R2 rulings: all five minors are done in one tidy pass. N-2, when a
+  reader opens with its done global true, the viewer re-runs the `complete_task` entries (a
+  no-op when already done), so a task whose request once failed still completes. N-1, the
+  validator WARNS (not an error) for an anomaly whose actions set no global to true, and for
+  an anomaly with no actions at all. N-3, one docs sentence (a done global set by anything
+  else marks the row). N-4, the playtest beat is reworded to what is asserted. N-5, the
+  flagged row's look stays: the plan's "no row is ever tinted" is about telling rows apart
+  BEFORE the player acts; a row the player has rightly flagged may be marked. The A24 text
+  says so.
