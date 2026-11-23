@@ -341,4 +341,51 @@ class NetworkModelTest < ActiveSupport::TestCase
       assert_equal NM.sign_in_objects_on(id, data).map { |e| e[:object]['id'] }, NM.hosts_on(id, data).map { |h| h[:id] }
     end
   end
+
+  # Ops core S2 (OPS_CORE_PLAN.md 5.1, 11.1): finding ids, weaknesses, decoys.
+  def findings_data
+    svc = lambda do |name, weak, decoy|
+      { 'name' => name, 'port' => 80, 'product' => 'P', 'version' => '1', 'weaknesses' => weak, 'decoys' => decoy }
+    end
+    w = ->(id) { { 'id' => id, 'class' => 'misconfig', 'severity' => 'low' } }
+    d = ->(id) { { 'id' => id, 'class' => 'unpatched', 'severity' => 'low', 'falseBecause' => 'x' } }
+    {
+      'networks' => { 'lan' => { 'name' => 'LAN' } },
+      'hosts' => { 'print01' => { 'name' => 'Printer', 'network' => 'lan',
+                                  'services' => [svc.call('web', [w.call('b_weak'), w.call('a_weak')], [d.call('old_banner')]),
+                                                 svc.call('ftp', 'junk', nil)] } },
+      'rooms' => { 'lobby' => { 'objects' => [
+        { 'id' => 'files01', 'type' => 'pc', 'name' => 'Files', 'lockType' => 'login', 'network' => 'lan',
+          'services' => [svc.call('smb', (1..6).map { |i| w.call("w#{i}") } + ['junk', {}], (1..5).map { |i| d.call("d#{i}") })] }
+      ] } }
+    }
+  end
+
+  test 'finding_id joins host, service and weakness ids with dots' do
+    assert_equal 'print01.web.a_weak', NM.finding_id('print01', 'web', 'a_weak')
+  end
+
+  test 'weaknesses and decoys yield each with host, service and finding id, sorted, at most 4 each, malformed skipped' do
+    ws = NM.weaknesses(findings_data)
+    assert_equal %w[files01.smb.w1 files01.smb.w2 files01.smb.w3 files01.smb.w4 print01.web.a_weak print01.web.b_weak],
+                 ws.map { |r| r[:finding_id] }
+    first = ws.last
+    assert_equal 'print01', first[:host_id]
+    assert_equal 'device', first[:host][:kind]
+    assert_equal 'web', first[:service_name]
+    assert_equal 'web', first[:service]['name']
+    assert_equal 'weakness', first[:kind]
+    assert_equal 'b_weak', first[:id]
+    assert_equal 'b_weak', first[:entry]['id']
+    ds = NM.decoys(findings_data)
+    assert_equal %w[files01.smb.d1 files01.smb.d2 files01.smb.d3 files01.smb.d4 print01.web.old_banner], ds.map { |r| r[:finding_id] }
+    assert_equal ['decoy'], ds.map { |r| r[:kind] }.uniq
+  end
+
+  test 'weaknesses and decoys of a scenario with none, or malformed data, are empty and never raise' do
+    assert_equal [], NM.weaknesses(data)
+    assert_equal [], NM.decoys(data)
+    assert_equal [], NM.weaknesses(nil)
+    assert_equal [], NM.decoys({ 'hosts' => 'junk' })
+  end
 end

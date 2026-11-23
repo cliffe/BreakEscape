@@ -138,7 +138,7 @@ test('hosts is declared as a server-only id map', () => {
   assert.ok(hosts, "top-level key 'hosts' is not declared");
   assert.equal(hosts['x-serverOnly'], true);
   assert.equal(hosts['x-id-map'], true);
-  assert.deepEqual(hosts['x-servedBy'], ['GET /network', 'POST /network/scan']);
+  assert.deepEqual(hosts['x-servedBy'], ['GET /network', 'POST /network/scan', 'POST /network/check', 'POST /network/confirm']);
   assert.equal(hosts.patternProperties, undefined);
   assert.equal(hosts.additionalProperties.additionalProperties, false);
 });

@@ -50,8 +50,11 @@ function clean() {
                       host: 'FILES01', access: { people: ['it_admin'] }, services: [svc('files', { port: 445, product: 'Brackley ShareServe', version: '3.1' })] }
                 ],
                 npcs: [{ id: 'it_admin', displayName: 'Admin', npcType: 'person', creds: { username: 'admin1', password: 'Gate-Pass-77' } }]
-            }
+            },
+            annex: { type: 'room_office', connections: {}, objects: [{ id: 'jack_office', type: 'pc', name: 'Wall port', networkJack: true, network: 'office_lan' }] }
         },
+        // a foothold: a wall jack on the office network, in its own room so object indexes of the lobby stay put
+        // (rooms.annex is declared after lobby)
         resources: { public_share: { kind: 'file_share', name: 'Public', network: 'office_lan' } }
     };
 }
@@ -285,4 +288,118 @@ test('products: the injected list is used', { skip }, () => {
     const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(clean()), encoding: 'utf8', env });
     assert.equal(r.status, 0, r.stderr);
     assertHas(warnings(JSON.parse(r.stdout.trim().split('\n').pop())), "real product name 'inkwell'");
+});
+
+// ---- S2: weaknesses, decoys, needs, fixedIf ----
+const weak = (id, extra = {}) => ({ id, class: 'misconfig', severity: 'low', ...extra });
+const decoy = (id, extra = {}) => ({ id, class: 'unpatched', severity: 'low', falseBecause: 'Cosmetic only.', ...extra });
+// clean() with the first service of print01 holding the given weaknesses and decoys
+function withFindings(weaknesses = [], decoys = [], patch = (s) => s) {
+    const s = clean();
+    s.hosts.print01.services[0].weaknesses = weaknesses;
+    s.hosts.print01.services[0].decoys = decoys;
+    s.globalVariables = { printer_reset_done: false, door_open: false };
+    s.credentials = { guest_login: { kind: 'password', label: 'Guest login', account: 'it_admin' } };
+    s.startItemsInInventory = [{ id: 'printer_manual', type: 'notes', name: 'Printer manual' }];
+    s.rooms.lobby.objects.push({ id: 'lever1', type: 'lamp', name: 'Lever', onInteract: { setGlobal: { printer_reset_done: true, door_open: true } } });
+    return patch(s);
+}
+
+test('S2: a clean fixture with weaknesses, decoys, needs and fixedIf raises no error', { skip }, () => {
+    const s = withFindings([
+        weak('factory_login', { summary: 'The admin page still accepts the factory account.', needs: { item: 'printer_manual' }, fixedIf: 'printer_reset_done' }),
+        weak('open_share', { needs: { credential: 'guest_login' } }),
+        weak('lab_book', { needs: { itemType: 'notes', label: 'Any notes' } }),
+        weak('door', { needs: { global: 'door_open', label: 'The door is open' } })
+    ], [decoy('old_banner', { summary: 'Reports an old build.' })]);
+    assert.deepEqual(errors(issues(s)), []);
+});
+
+test('S2 error: a weakness or decoy id used twice in one service, across both lists', { skip }, () => {
+    assertHas(errors(issues(withFindings([weak('w1'), weak('w1')]))), "the id 'w1' is used twice");
+    assertHas(errors(issues(withFindings([weak('w1')], [decoy('w1')]))), "the id 'w1' is used twice");
+    assert.deepEqual(errors(issues(withFindings([weak('w1')], [decoy('d1')]))), []);
+});
+
+test('S2 error: more than 128 weaknesses plus decoys; more than 4 of a kind on a service', { skip }, () => {
+    const s = clean();
+    s.hosts = {};
+    for (let h = 0; h < 17; h++) {
+        s.hosts[`h${h}`] = { name: 'H', network: 'office_lan', services: [svc('a', { weaknesses: [weak('a1'), weak('a2'), weak('a3'), weak('a4')] }), svc('b', { weaknesses: [weak('b1'), weak('b2'), weak('b3'), weak('b4')] })] };
+    }
+    assertHas(errors(issues(s)), '136 weaknesses and decoys in the scenario; at most 128');
+    assertHas(errors(issues(withFindings([weak('a'), weak('b'), weak('c'), weak('d'), weak('e')]))), '5 weaknesses; at most 4');
+});
+
+test('S2 error: needs label rules and itemType with global', { skip }, () => {
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { itemType: 'notes' } })]))), 'needs a `label`');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { global: 'door_open' } })]))), 'needs a `label`');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { item: 'printer_manual', label: 'Manual' } })]))), 'allowed only beside');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { itemType: 'notes', global: 'door_open', label: 'x' } })]))), 'both `itemType` and `global`');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { item: 'printer_manual', itemType: 'notes', label: 'x' } })]))), 'both `item` and `itemType`');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { itemType: 'technique_card', label: 'x' } })]))), 'a card is never a need');
+});
+
+test('S2 error: a needs entry that names nothing', { skip }, () => {
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { credential: 'nope' } })]))), "needs.credential 'nope' names no entry");
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { item: 'nope' } })]))), "needs.item 'nope' names no item id");
+    const byName = errors(issues(withFindings([weak('w1', { needs: { item: 'Printer manual' } })])));
+    assertHas(byName, 'never by its display name');
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { itemType: 'nothing_type', label: 'x' } })]))), "the type of no item");
+    assertHas(errors(issues(withFindings([weak('w1', { needs: { global: 'undeclared_one', label: 'x' } })]))), 'not a declared global');
+});
+
+test('S2 error: fixedIf naming an undeclared global, or already holding with nothing that can change it', { skip }, () => {
+    assertHas(errors(issues(withFindings([weak('w1', { fixedIf: 'undeclared_one' })]))), 'not a declared global');
+    const stuck = withFindings([weak('w1', { fixedIf: 'stuck_true' })], [], s => { s.globalVariables.stuck_true = true; return s; });
+    assertHas(errors(issues(stuck)), 'already holds at the start');
+    const changeable = withFindings([weak('w1', { fixedIf: 'stuck_true' })], [], s => {
+        s.globalVariables.stuck_true = true;
+        s.rooms.lobby.objects.push({ id: 'lever2', type: 'lamp', name: 'L', onInteract: { setGlobal: { stuck_true: false } } });
+        return s;
+    });
+    assert.deepEqual(errors(issues(changeable)).filter(m => m.includes('already holds')), []);
+    const mapForm = withFindings([weak('w1', { fixedIf: { stuck_true: true } })], [], s => { s.globalVariables.stuck_true = true; return s; });
+    assertHas(errors(issues(mapForm)), 'already holds at the start');
+});
+
+test('S2 error: a weakness on a network no foothold can reach; a link makes it reachable', { skip }, () => {
+    const s = withFindings();
+    s.hosts.guest01 = { name: 'G', network: 'guest_lan', services: [svc('web', { weaknesses: [weak('w1')] })] };
+    assertHas(errors(issues(s)), "network 'guest_lan', which no foothold can reach");
+    s.networkLinks = [['office_lan', 'guest_lan']];
+    const linked = errors(issues(s)).filter(m => m.includes('no foothold can reach'));
+    assert.deepEqual(linked, [], 'a link from a footholded network reaches it');
+});
+
+test('S2 warning: a telltale word in an id', { skip }, () => {
+    for (const id of ['decoy_one', 'fake_login', 'real_one', 'not_true', 'bait']) {
+        assertHas(warnings(issues(withFindings([weak(id)]))), 'telltale word');
+    }
+    assert.deepEqual(warnings(issues(withFindings([weak('factory_login'), weak('realm_check')]))).filter(m => m.includes('telltale')), []);
+});
+
+test('S2 warning: needs.global a client can write is a soft gate', { skip }, () => {
+    const s = withFindings([weak('w1', { needs: { global: 'door_open', label: 'The door' } })]);
+    assertHas(warnings(issues(s)), 'soft gate');
+});
+
+test('S2 warning: a summary or falseBecause that reads as a procedure', { skip }, () => {
+    assertHas(warnings(issues(withFindings([weak('w1', { summary: 'Run cat /etc/passwd | sort' })]))), 'reads as a procedure');
+    assertHas(warnings(issues(withFindings([weak('w1')], [decoy('d1', { falseBecause: 'Use --force on it' })]))), 'reads as a procedure');
+    assert.deepEqual(warnings(issues(withFindings([weak('w1', { summary: 'The page still accepts the factory account.' })]))).filter(m => m.includes('procedure')), []);
+});
+
+test('S2 warning: a decoy and weakness of one class and severity with no summary on either', { skip }, () => {
+    const same = withFindings([weak('w1', { class: 'unpatched' })], [decoy('d1')]);
+    assertHas(warnings(issues(same)), 'nothing to tell them apart by');
+    const withSummary = withFindings([weak('w1', { class: 'unpatched', summary: 'A real one.' })], [decoy('d1')]);
+    assert.deepEqual(warnings(issues(withSummary)).filter(m => m.includes('tell them apart')), []);
+});
+
+test('S2: the rules stay off while N14 is not built (the table reports the fields)', { skip }, () => {
+    const s = withFindings([weak('w1'), weak('w1')]);
+    const out = errors(issues(s, { ...BUILT, N14: false }));
+    assert.equal(out.filter(m => m.includes('used twice')).length, 0);
+    assertHas(out, 'not built yet: N14');
 });

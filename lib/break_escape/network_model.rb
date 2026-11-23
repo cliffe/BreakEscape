@@ -387,6 +387,47 @@ module BreakEscape
       list.select { |svc| svc.is_a?(Hash) }.first(SERVICES_PER_HOST)
     end
 
+    # Ops core S2 (OPS_CORE_PLAN.md 5.1). Weaknesses and decoys of services, at most
+    # FINDINGS_PER_LIST of each kind per service (the schema's maxItems); a malformed entry
+    # (not a hash, or with no usable id) is skipped, never raised on.
+    FINDINGS_PER_LIST = 4
+
+    # A finding id is built, never authored: three ids joined by dots.
+    def finding_id(host_id, service_name, id)
+      "#{host_id}.#{service_name}.#{id}"
+    end
+
+    # Every weakness of every service of every host, sorted by finding id, each
+    # { finding_id:, host_id:, host: <hosts_on record>, service_name:, service:, kind: 'weakness', id:, entry: }.
+    def weaknesses(data)
+      service_findings(data, 'weaknesses', 'weakness')
+    end
+
+    # The same for decoys (kind: 'decoy').
+    def decoys(data)
+      service_findings(data, 'decoys', 'decoy')
+    end
+
+    def service_findings(data, key, kind)
+      out = []
+      networks(data).each_key do |net_id|
+        hosts_on(net_id, data).each do |rec|
+          rec[:services].each do |svc|
+            next unless present_string?(svc['name'])
+
+            list = svc[key]
+            next unless list.is_a?(Array)
+
+            list.select { |entry| entry.is_a?(Hash) && present_string?(entry['id']) }.first(FINDINGS_PER_LIST).each do |entry|
+              out << { finding_id: finding_id(rec[:id], svc['name'], entry['id']), host_id: rec[:id], host: rec,
+                       service_name: svc['name'], service: svc, kind: kind, id: entry['id'], entry: entry }
+            end
+          end
+        end
+      end
+      out.sort_by { |rec| rec[:finding_id] }
+    end
+
     def present_string?(value)
       value.is_a?(String) && !value.strip.empty?
     end

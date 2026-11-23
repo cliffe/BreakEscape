@@ -399,7 +399,7 @@
       }
     },
     "hosts": {
-      "x-id-map": true, "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan"],
+      "x-id-map": true, "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan", "POST /network/check", "POST /network/confirm"],
       "type": "object",
       "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): hosts with no sign-in, key to { name, network, sprite?, offWhen?, services[] }. A host here is never clicked in the world and has no desktop; it is listed in a foothold's view (a sweep, on a discovery network) and its services after a scan. One id space with room objects and resources (the validator, scripts/validate_network_ops.rb, checks that, the 40-character limit and the key pattern). Never sent in the bootstrap (NetworkAccess::WITHHELD_SCENARIO_KEYS); read through NetworkModel.hosts.",
       "additionalProperties": {
@@ -5225,9 +5225,75 @@
         "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Display only." },
         "product": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text, an invented product name." },
         "version": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text." },
+        "weaknesses": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/weakness" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): what is really wrong with this service, found by a check and settled by a confirm. At most 4. Ids are unique across weaknesses and decoys of the service (the validator checks that). Read through NetworkModel.weaknesses; never sent before a check." },
+        "decoys": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/decoy" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): a finding that looks real until the player confirms it, then shows its falseBecause. At most 4. Read through NetworkModel.decoys; never sent before a check." },
         "_comment": { "type": "string" }
       },
       "required": ["name", "port", "product", "version"]
+    },
+    "weakness": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): a real weakness of a service. Its finding id is <hostId>.<serviceName>.<id>. `grants` is declared so the shape is fixed once; the validator refuses it (and needs.session) until N15 is built. Never sent in the bootstrap or a room answer.",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$", "maxLength": 40, "description": "Unique across the weaknesses and decoys of its service; at most 40 characters. It rides inside the finding id, so avoid words such as decoy, fake or real (the validator warns)." },
+        "class": { "type": "string", "enum": ["default_creds", "unpatched", "misconfig", "weak_auth", "cleartext"], "description": "What kind of weakness it is. Shown after a check." },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"], "description": "Shown after a check." },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Plain text, game design terms: what is wrong, never how to exploit it. With none the view shows a line per class from an engine table." },
+        "needs": { "$ref": "#/definitions/opsNeeds" },
+        "grants": { "$ref": "#/definitions/opsGrants" },
+        "fixedIf": { "oneOf": [ { "type": "string", "minLength": 1 }, { "x-id-map": true, "type": "object", "minProperties": 1 } ], "description": "A global name or the requireGlobal map, read server-side as offWhen is." },
+        "_comment": { "type": "string" }
+      },
+      "required": ["id", "class", "severity"]
+    },
+    "decoy": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): a finding that is not real. It is sent exactly as a weakness is until the player confirms it; then it shows `falseBecause`. Never sent in the bootstrap or a room answer.",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$", "maxLength": 40, "description": "As a weakness id." },
+        "class": { "type": "string", "enum": ["default_creds", "unpatched", "misconfig", "weak_auth", "cleartext"], "description": "As a weakness." },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"], "description": "As a weakness." },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "As a weakness." },
+        "falseBecause": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Why it is not real; plain text, shown only after the player confirms the finding." },
+        "_comment": { "type": "string" }
+      },
+      "required": ["id", "class", "severity", "falseBecause"]
+    },
+    "opsNeeds": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "minProperties": 1,
+      "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): what a weakness needs, all of it (reach to the host is always needed and is not written). Shown, with a tick or cross, only after the player confirms the finding. At least one of the keys; `item` and `itemType` not both; `label` is required with `itemType` or `global` and refused otherwise (the validator checks that, and that itemType and global are not in one map).",
+      "properties": {
+        "credential": { "type": "string", "description": "A credentials registry id: needed in the keyring. Shown by the credential's label." },
+        "item": { "type": "string", "x-ref": "item", "description": "A scenario item id, held and not forged. Shown by the item's name." },
+        "itemType": { "type": "string", "minLength": 1, "description": "An item type: some held, unforged item of an authored id of that type. Needs a `label`." },
+        "session": { "type": "string", "enum": ["user", "admin"], "description": "A session already held on this host (a step up). Not built until N15; the validator refuses it." },
+        "global": { "oneOf": [ { "type": "string", "minLength": 1 }, { "x-id-map": true, "type": "object", "minProperties": 1 } ], "description": "A global name or the requireGlobal map, read server-side as offWhen is." },
+        "label": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text shown for an itemType or global need; the global's name is never shown." }
+      },
+      "not": { "required": ["item", "itemType"] }
+    },
+    "opsGrants": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "minProperties": 1,
+      "description": "Ops core S2 declares the shape (OPS_CORE_PLAN.md section 0); S3 builds it. One kind: a session on a sign-in host, or a credential. The validator refuses `grants` until N15 is built.",
+      "properties": {
+        "session": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "account": { "type": "string", "x-ref": "npc" }, "access": { "type": "string", "enum": ["user", "admin"] } },
+          "required": ["account", "access"]
+        },
+        "credential": { "type": "string", "description": "A credentials registry id of kind saved_connection." }
+      },
+      "maxProperties": 1
     },
     "item": {
       "type": "object",
@@ -5626,7 +5692,7 @@
         "loginPicker": { "oneOf": [ { "type": "string", "enum": ["accounts", "known"] }, { "type": "boolean", "enum": [false] } ], "description": "Access model 5.3: a sign-in PC's account tiles. accounts (default): every account its access admits; known: those the player has met; false: type the username." },
         "policy": { "type": "string", "x-ref": "policy", "description": "Access model 5.5: the named policy (top-level policies) this PC follows." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the network (a networks key) this object is on; overrides its room's network. Never sent to the browser (NetworkAccess::WITHHELD_OBJECT_FIELDS)." },
-        "services": { "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan"], "type": "array", "maxItems": 8, "items": { "$ref": "#/definitions/service" }, "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): the services this sign-in host runs, shown after a host scan. Only on a sign-in object (lockType login); the validator (scripts/validate_network_ops.rb) refuses it elsewhere and while N13 is not built. Never sent in room data (NetworkAccess::WITHHELD_OBJECT_FIELDS); read through NetworkModel.services_of." },
+        "services": { "x-serverOnly": true, "x-servedBy": ["GET /network", "POST /network/scan", "POST /network/check", "POST /network/confirm"], "type": "array", "maxItems": 8, "items": { "$ref": "#/definitions/service" }, "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): the services this sign-in host runs, shown after a host scan. Only on a sign-in object (lockType login); the validator (scripts/validate_network_ops.rb) refuses it elsewhere and while N13 is not built. Never sent in room data (NetworkAccess::WITHHELD_OBJECT_FIELDS); read through NetworkModel.services_of." },
         "host": { "type": "string", "description": "Networks 3.2: a PC's computer name (HB-FIN-02), on any PC or laptop. A sign-in PC's label on the network; on any PC the computer name in the desktop taskbar (q94). Default: its name. Not secret." },
         "desktopUser": {
           "type": "object",

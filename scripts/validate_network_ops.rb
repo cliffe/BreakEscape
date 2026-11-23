@@ -31,6 +31,10 @@ NETWORK_OPS_OBJECT_FIELDS = { 'services' => 'N13', 'technique_card' => 'N15' }.f
 NETWORK_OPS_SERVICE_FIELDS = { 'weaknesses' => 'N14', 'decoys' => 'N14' }.freeze
 NETWORK_OPS_DISCOVERY = 'N13'
 NETWORK_OPS_WEAKNESS_GRANTS = 'N15'
+NETWORK_OPS_MAX_FINDINGS = 128
+NETWORK_OPS_TELLTALE = /(?:\A|_)(?:decoy|fake|false|real|true|bait)s?(?:_|\z)/.freeze
+# A summary that reads as a procedure: a path, a flag, a pipe, a backtick or a command substitution.
+NETWORK_OPS_PROCEDURE = %r{(?:\A|\s)-{1,2}[A-Za-z]|[|`]|\$\(|(?:\A|\s)(?:\.{0,2}/|~/)[\w.-]+|\b[A-Za-z]:\\}.freeze
 
 # built: the feature ids that are built (the shipped table unless a test passes its own).
 # objects_dir: where a host's sprite PNG is looked for. products: the real-product-name list.
@@ -165,6 +169,9 @@ def check_network_ops(json_data, built: NETWORK_OPS_BUILT, objects_dir: NETWORK_
              'a sweep would find nothing')
   end
 
+  # ---- Findings: weaknesses and decoys (S2) ----
+  network_ops_check_findings(json_data, carriers, err, warn) if built['N14']
+
   # ---- Passwords in the strings a foothold's view shows ----
   passwords = ai.room_npcs(json_data).filter_map do |e|
     creds = e[:npc]['creds']
@@ -238,6 +245,214 @@ def check_network_ops(json_data, built: NETWORK_OPS_BUILT, objects_dir: NETWORK_
   end
 
   issues
+end
+
+# S2 (OPS_CORE_PLAN.md 9.2): weaknesses, decoys and their needs and fixedIf. carriers are
+# [label, path, host, network, device?] as built by check_network_ops. Runs only when N14 is built;
+# while it is not, the not-built table has already refused the fields.
+def network_ops_check_findings(json_data, carriers, err, warn)
+  nm = BreakEscape::NetworkModel
+  credentials = json_data['credentials'].is_a?(Hash) ? json_data['credentials'] : {}
+  items = network_ops_item_definitions(json_data)
+  declared = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
+  known_globals = build_reference_index(json_data)['global']
+  other_names = nil # strings elsewhere in the scenario, read once when a fixedIf needs them
+  foothold_networks = network_ops_foothold_networks(json_data)
+  client_writable = lambda do |name|
+    server_owned = BreakEscape::WearableModel.worn_globals(json_data).include?(name) ||
+                   Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) }.include?(name)
+    !server_owned
+  end
+
+  total = 0
+  carriers.each do |label, path, host, network, _device|
+    Array(host['services']).each do |svc|
+      next unless svc.is_a?(Hash)
+
+      sname = svc['name'].to_s[0, 40]
+      weaknesses = Array(svc['weaknesses'])
+      decoys = Array(svc['decoys'])
+      err.call("#{label} service '#{sname}': #{weaknesses.length} weaknesses; at most #{nm::FINDINGS_PER_LIST}") if weaknesses.length > nm::FINDINGS_PER_LIST
+      err.call("#{label} service '#{sname}': #{decoys.length} decoys; at most #{nm::FINDINGS_PER_LIST}") if decoys.length > nm::FINDINGS_PER_LIST
+      total += weaknesses.length + decoys.length
+      seen = Set.new
+      (weaknesses + decoys).each do |entry|
+        next unless entry.is_a?(Hash)
+
+        id = entry['id']
+        if id.is_a?(String) && !seen.add?(id)
+          err.call("#{label} service '#{sname}': the id '#{id[0, 40]}' is used twice among its weaknesses and decoys; the id is part of the finding id")
+        end
+        if id.is_a?(String) && id.length > NETWORK_OPS_MAX_ID
+          err.call("#{label} service '#{sname}': finding id '#{id[0, 40]}' is longer than #{NETWORK_OPS_MAX_ID} characters")
+        end
+        warn.call("#{label} service '#{sname}': the id '#{id[0, 40]}' holds a telltale word (decoy, fake, false, real, true, bait); it reaches the browser inside the finding id") if id.is_a?(String) && id.match?(NETWORK_OPS_TELLTALE)
+        %w[summary falseBecause].each do |field|
+          text = entry[field]
+          next unless text.is_a?(String)
+
+          if text.length > 200 || text.match?(NETWORK_OPS_PROCEDURE)
+            warn.call("#{label} service '#{sname}': `#{field}` of '#{id.to_s[0, 40]}' reads as a procedure (a path, flag, pipe or over 200 characters); write what is wrong, never how to exploit it")
+          end
+        end
+      end
+      weaknesses.each do |weakness|
+        next unless weakness.is_a?(Hash)
+
+        network_ops_check_needs(weakness, label, sname, credentials, items, known_globals, client_writable, err, warn)
+        network_ops_check_fixed_if(json_data, weakness, label, sname, declared, known_globals, path, err) do
+          other_names ||= network_ops_other_strings(json_data)
+        end
+        if network.is_a?(String) && nm.networks(json_data).key?(network) && !foothold_networks.include?(network)
+          err.call("#{label} service '#{sname}': weakness '#{weakness['id'].to_s[0, 40]}' sits on network '#{network}', which no foothold can reach (no jack, Wi-Fi block, implantable PC or link leads there)")
+        end
+      end
+      weaknesses.each do |w|
+        decoys.each do |d|
+          next unless w.is_a?(Hash) && d.is_a?(Hash) && w['class'] == d['class'] && w['severity'] == d['severity']
+          next if w['summary'].is_a?(String) || d['summary'].is_a?(String)
+
+          warn.call("#{label} service '#{sname}': weakness '#{w['id'].to_s[0, 40]}' and decoy '#{d['id'].to_s[0, 40]}' have the same class and severity and no summary on either; after confirming, the player has nothing to tell them apart by")
+        end
+      end
+    end
+  end
+  err.call("#{total} weaknesses and decoys in the scenario; at most #{NETWORK_OPS_MAX_FINDINGS}") if total > NETWORK_OPS_MAX_FINDINGS
+end
+
+# One weakness's `needs` map (section 4.2): every entry names something that exists, labels are
+# where they belong. needs.session is the N15 table's.
+def network_ops_check_needs(weakness, label, sname, credentials, items, known_globals, client_writable, err, warn)
+  needs = weakness['needs']
+  return if needs.nil?
+
+  where = "#{label} service '#{sname}' weakness '#{weakness['id'].to_s[0, 40]}'"
+  unless needs.is_a?(Hash)
+    err.call("#{where}: `needs` must be an object")
+    return
+  end
+  if needs.key?('credential') && !(needs['credential'].is_a?(String) && credentials.key?(needs['credential']))
+    err.call("#{where}: needs.credential '#{needs['credential'].to_s[0, 40]}' names no entry in 'credentials'")
+  end
+  if needs.key?('item')
+    item = needs['item']
+    if !item.is_a?(String) || !items.key?(item)
+      by_name = item.is_a?(String) && items.values.any? { |d| d[:name] == item }
+      err.call("#{where}: needs.item '#{item.to_s[0, 40]}' names no item id" + (by_name ? ' (an item is named by its id, never by its display name)' : ''))
+    end
+  end
+  if needs.key?('itemType')
+    type = needs['itemType']
+    if type == 'technique_card'
+      err.call("#{where}: needs.itemType may not be \"technique_card\"; a card is never a need")
+    elsif !type.is_a?(String) || items.values.none? { |d| d[:type] == type }
+      err.call("#{where}: needs.itemType '#{type.to_s[0, 40]}' is the type of no item in the scenario")
+    end
+  end
+  err.call("#{where}: needs holds both `item` and `itemType`; use one") if needs.key?('item') && needs.key?('itemType')
+  if needs.key?('global')
+    names = offwhen_names(needs['global'])
+    if names.nil?
+      err.call("#{where}: needs.global must be a global name or { name: value }")
+    else
+      names.each do |name|
+        err.call("#{where}: needs.global names '#{name.to_s[0, 40]}', which is not a declared global") unless known_globals.include?(name.to_s)
+        next unless client_writable.call(name.to_s)
+
+        warn.call("#{where}: needs.global '#{name.to_s[0, 40]}' is a global the client can write, so it is a soft gate; add an item or credential need beside it where the step matters")
+      end
+    end
+  end
+  err.call("#{where}: needs holds both `itemType` and `global`; a needs map has one label, so split them") if needs.key?('itemType') && needs.key?('global')
+  wants_label = needs.key?('itemType') || needs.key?('global')
+  if wants_label && !(needs['label'].is_a?(String) && !needs['label'].strip.empty?)
+    err.call("#{where}: needs with `itemType` or `global` needs a `label`, the words the player is shown")
+  elsif !wants_label && needs.key?('label')
+    err.call("#{where}: needs.label is allowed only beside `itemType` or `global`")
+  end
+  err.call("#{where}: needs.label must be 1 to 40 characters") if needs['label'].is_a?(String) && needs['label'].length > 40
+end
+
+# fixedIf names declared globals, and its starting value does not already hold with nothing in the
+# scenario that can change it (the weakness would never be found). "Nothing can change it" is read
+# from the scenario file only: an ink file that sets the global is not seen, so a global set only
+# from ink looks unchangeable here; set it from a mapping or declare it so that it starts false.
+def network_ops_check_fixed_if(json_data, weakness, label, sname, declared, known_globals, _path, err)
+  return unless weakness.key?('fixedIf')
+
+  cond = weakness['fixedIf']
+  where = "#{label} service '#{sname}' weakness '#{weakness['id'].to_s[0, 40]}'"
+  names = offwhen_names(cond)
+  if names.nil?
+    err.call("#{where}: fixedIf must be a global name or { name: value } (the requireGlobal form)")
+    return
+  end
+  names.each do |name|
+    err.call("#{where}: fixedIf names '#{name.to_s[0, 40]}', which is not a declared global") unless known_globals.include?(name.to_s)
+  end
+  return unless offwhen_holds_on?(cond, declared, BreakEscape::NetworkModel)
+
+  others = yield
+  return if names.any? { |name| others.include?(name.to_s) }
+
+  err.call("#{where}: fixedIf already holds at the start and nothing in the scenario changes it; the weakness could never be found")
+end
+
+# { itemId => { type:, name: } } for every hash in the scenario with a string id and a string type,
+# author notes skipped. Over-inclusive on purpose: it answers "is there an item of this id or type".
+def network_ops_item_definitions(data)
+  out = {}
+  walk = lambda do |node|
+    case node
+    when Hash
+      out[node['id']] = { type: node['type'], name: node['name'] } if node['id'].is_a?(String) && node['type'].is_a?(String)
+      node.each { |k, v| walk.call(v) unless k.to_s.start_with?('_') }
+    when Array then node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(data)
+  out
+end
+
+# Every string in the scenario outside `globalVariables` and outside the ops fields that merely read a
+# global (a weakness's fixedIf and needs, any offWhen), as a Set. Used to ask
+# whether anything else mentions a global.
+def network_ops_other_strings(data)
+  out = Set.new
+  walk = lambda do |node, key|
+    case node
+    when Hash
+      node.each do |k, v|
+        next if k.to_s.start_with?('_') || k == 'globalVariables'
+        next if k.to_s == 'offWhen' || (%w[fixedIf needs].include?(k.to_s) && node.key?('class'))
+
+        out << k.to_s
+        walk.call(v, k)
+      end
+    when Array then node.each { |v| walk.call(v, key) }
+    when String then out << node
+    end
+  end
+  walk.call(data, nil)
+  out
+end
+
+# The networks some foothold's reach can include: a jack's network, a Wi-Fi network, an implantable
+# PC's network, and every network a link path reaches from one of those.
+def network_ops_foothold_networks(json_data)
+  nm = BreakEscape::NetworkModel
+  start = Set.new
+  nm.jacks(json_data).each { |j| start << j[:network] if j[:network] }
+  nm.networks(json_data).each { |id, net| start << id if net.is_a?(Hash) && net['wifi'].is_a?(Hash) }
+  pcs = nm.grant_foothold_actions(json_data).map { |a| a[:pc] }.uniq
+  nm.networks(json_data).each_key do |net|
+    nm.sign_in_objects_on(net, json_data).each { |e| start << net if pcs.include?(e[:object]['id']) }
+  end
+  reach = start.dup
+  nm.networks(json_data).each_key do |other|
+    reach << other if start.any? { |from| from != other && nm.all_reach_paths(json_data, from, other).any? }
+  end
+  reach
 end
 
 # One built foothold id (prefix plus the object's id) must be at most NETWORK_OPS_MAX_ID characters.
