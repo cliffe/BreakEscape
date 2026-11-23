@@ -134,22 +134,39 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
 - S3: 10b `73c9cd798`, `d6b9e4168` (`POST /network/technique`, `use_technique!`, grants,
   events, `techniques` on `GET /network`; `HANDOVER_core_10b.md`; rulings in the brief: the
   step 11 builder folds 10b's two wrappers into `network_access.rb`).
-- RUNNING in the build tree (8 with the log stream's one): S2 playtest follow-up fixer (PT1
-  to PT3, PT5); validator pass (S2 m12, m14, m15, an S3 warning, a report on the `versions`
-  rule); S3 step 11 (access checks; ONE commit; `HANDOVER_core_11.md`); S3 10c (hostile and
-  free tests; reports engine faults, fixes none; `HANDOVER_core_10c.md`); S3 12a (Techniques
-  panel, Use, bolt helper `utils/compromise-bolt.js`; `HANDOVER_core_12a.md`); S3 12b (remote
-  view, compromise marks; `HANDOVER_core_12b.md`).
-- Next: S2: when the follow-up fixer and the validator pass report, a short fable52L delta
-  (R3) of the scanner changes only; then train S2. The branch now carries live S3 code (the
-  technique route), so S2 cannot be trained alone at head: either land S2 and S3 together
-  after S3's reviews, or cut a train branch at the last pre-10b commit plus cherry-picked S2
-  fixes (messy). DECISION: land S2 with S3 as one train, once S3's server and security
-  reviews are done; tell the user. S3 next: fable52L reviews (server; a separate security
-  review of step 11 and the hostile tests; client), graph cards and grants (9.3), step 13 in
-  two (scenario `test_ops_access` + tests / tooling + docs + flip N15), fixes, delta,
-  Haiku playtest + live proof (11.5 S3), the reruns of section 10 part 4, the screenshot
-  review page for the user, the card art question.
+- S2 follow-ups DONE: playtest items `f2677efc4`, `dac206901` (scanner strict again, clue
+  reworded, resumed-session finding proved a judging mistake, beat 8b removed); validator
+  pass `ee10c3860`. S2 left: PT4 CSS (card content floats in a stretched card) for the S3
+  client fix pass; a short delta of the scanner at S3's delta round. A transient failure
+  (confirm of an unchecked id answering `already`) was seen once during a mid-edit and did
+  not reproduce in three quiet reruns.
+- S3 BUILT so far: 9a `a6f04bf8b` (+ `ee10c3860`), 9b `45388615c`, 10a `5f18daed2`, 10b
+  `73c9cd798`, 10c `13b8d9c76` (hostile and free tests, no engine fault), 11 `a756be26e`
+  (ONE commit, access checks), 12a `9ed42428c`, `68529abee` (Techniques panel; bolt helper),
+  12b `1b3e0da1c` (remote view, marks). Step 11 security review R1 `07198617b`: SAFE TO KEEP,
+  0B 1M 7m; F1 = `record_borrow_done!` must keep a remote record (unassigned in the plan).
+- TWO existing node tests fail after 12b and were left unedited: `pc-sessions.test.mjs` H-4
+  (a remote password copy is no longer displaced when an NPC sits or borrows: plan 5.4) and
+  `test-bridge-access.test.mjs` (key list gains `compromiseMarks`). 12b tried to edit them and
+  the permission classifier DENIED it (its brief said no assertion edited). Told the user. The
+  client reviewer is judging both independently; the edit goes in the client fix pass with an
+  explicit instruction only if the review confirms the plan requires it.
+- Rulings queued for the S3 client fix pass: static import of the bolt helper + copy lists;
+  PT4 CSS; the two test updates above if confirmed. Open questions for the user: F4 (outage:
+  keyboard desktop served, no-route folders refused); the validator rule proposed for room
+  text naming a discovery host (not built).
+- RUNNING in the build tree: S3 server review R1 (fable52L; `reviews/S3_server_R1.md`); S3
+  client review R1 (fable52L; `reviews/S3_client_R1.md`); step 11 security fixer (F1 + tests
+  T1 to T12); graph builder (cards, needs, grants); 13a (`scenarios/test_ops_access/`,
+  PLAYTEST, end-to-end test, flip N15; `HANDOVER_core_13a.md`); 13b (scanner S3, verify-run
+  `opsUsed` and session line, docs N15; `HANDOVER_core_13b.md`).
+- Next: commit each findings file (check LENGTH); rulings; fixers split server / client;
+  delta review R2 (fable52L) over S3 fixes + step 13 + the S2 scanner changes; Haiku playtest
+  + live proof of `test_ops_access` (11.5 S3; no forged-sync beat) with screenshots of the
+  view states, the marked sprite and the remote-view frame; the reruns of section 10 part 4
+  (the existing network playtests' first beats); then ff the train tree to `ops-build` head
+  and train S2+S3 together; land; push; screenshot review page for the user (plan 11.5 last
+  paragraph); raise the card art question.
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -168,11 +185,17 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   fixes `3ed1f9667`, `549dcd14f`, `c587d49c4`, `9ad9caee6`. R2 server and validator fixes `896e832d1`, `83b549392`, `c956f2f73`. R3 delta `0a7845fbc`:
   ready to land after the playtest, 8 minors; ruling: a door shows `door_sign` first.
   Playtest 13 of 13 (game 23; items P1 to P4 in `reviews/L2a_R3.md`, `09d1ad64b`: phone-width
-  layout broken, lock and session-end rows read the same). RUNNING there: tidy fixer (R3
-  minors + P1 to P4). NEXT there: check its screenshots; a short fable52L delta of the
-  leak-check edits; merge main into `ops-logs` (fast-forward base today); train in the train
-  tree (`git checkout --detach ops-logs` there); merge to main; push; merge main into
-  `ops-build` (four keep-both hunks listed in `reviews/L2a_R3.md` section 9); then L2b. Old line: L2a client builder
+  layout broken, lock and session-end rows read the same). Tidy pass DONE (head `904056402`; phone layout fixed, door sign first, leak check lines).
+  R4 delta: READY TO LAND, 2 optional minors for L2b (findings in the scratchpad
+  `l2a-r4/L2a_R4.md`, to copy into `ops_logs_stream/reviews/` AFTER landing). Question for the
+  user (not blocking): lock and session-end rows read the same (`SESSION` / `OK`); least
+  invasive fix is a `LOCK` label on `session_lock`'s registry line. RUNNING: train check of
+  `904056402` in the train tree, detached (`/data/tmp/ops-logs-train-1`). NEXT there: if only
+  the 3 baseline JS files fail, in main `git merge --no-ff ops-logs`, push; then in the train
+  tree `git checkout ops-core`; merge main into `ops-build` (four keep-both hunks listed in
+  `reviews/L2a_R3.md` section 9: the controller's `set_game` list and three places in
+  `access_leak_scanner.rb`; do it when no builder is mid-edit in those files, or hand the
+  merge to a Sonnet agent with that list); then L2b. Old line: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
