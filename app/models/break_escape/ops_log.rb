@@ -455,7 +455,7 @@ module BreakEscape
       return '-' unless name.is_a?(String)
       return name if kind == 'account'
 
-      [id, id.sub(/\Ajack_/, '')].include?(name) ? kind : name
+      [id, id.sub(/\A(?:jack|wifi|implant)_/, '')].include?(name) ? kind : name
     end
 
     def ops_log_client_result(row)

@@ -81,7 +81,8 @@ module BreakEscape
       'tst_note' => { label: 'NOTE', places: [], results: %w[ok denied] },
       'tst_harvest' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: BreakEscape::OpsLogEvents::MAX_COUNT } } },
       'tst_any' => { label: 'ANY', places: [], results: %w[ok], detail: { 'v' => { id: 'test_any' } } },
-      'tst_net' => { label: 'NET', places: %w[test_host], results: %w[ok] }
+      'tst_net' => { label: 'NET', places: %w[test_host], results: %w[ok] },
+      'tst_from' => { label: 'FROM', places: [], results: %w[ok], detail: { 'from' => { id: 'foothold' } } }
     }.freeze
     # Step 7 only: four 40-character ids, which no registered event may ship (the ceiling test).
     BIG_EVENT = { 'tst_big' => { label: 'BIG', places: %w[pc], results: %w[ok],
@@ -980,11 +981,40 @@ module BreakEscape
       assert_no_match(/flagged/, game.log_rows_for_client('plain').to_json)
     end
 
-    test 'a place with no authored name shows its kind word, never the raw id' do
+    test 'a thing with no authored name shows its kind word in where, as and an id detail, never the raw id' do
+      game = make_game(sources: SOURCES.merge('by_from' => { 'title' => 'From', 'events' => ['tst_from'] }))
+      lobby = game.scenario_data['rooms']['lobby']
+      lobby['objects'] << { 'id' => 'gate_badge', 'type' => 'keycard', 'card_id' => 'GATE-1' }
+      lobby['objects'].find { |o| o['id'] == 'recep_pc' }.delete('name')
+      lobby['npcs'].find { |n| n['id'] == 'guard' }.delete('displayName')
+      game.scenario_data['networks']['bare_lan'] = { 'wifi' => { 'ssid' => 'bare', 'psk' => 'Bare-Key-1' } }
+      at(T0) do
+        write(game, 'tst_door', as: { npc: 'guard' }, where: pc('recep_pc'))
+        write(game, 'tst_door', as: { card: 'GATE-1' }, where: pc('recep_pc'))
+        write(game, 'tst_from', detail: { 'from' => 'wifi_bare_lan' })
+        write(game, 'tst_from', detail: { 'from' => 'implant_recep_pc' })
+        write(game, 'tst_from', detail: { 'from' => 'jack_recep_pc' })
+      end
+      shown = game.log_rows_for_client('by_prefix')[:rows]
+      from = game.log_rows_for_client('by_from')[:rows]
+      assert_equal %w[npc card], shown.map { |r| r[:as] }
+      assert_equal %w[pc pc], shown.map { |r| r[:where] }
+      assert_equal ['from: foothold'] * 3, from.map { |r| r[:detail] }
+      assert_no_match(/bare_lan|recep_pc|GATE-1|guard/, (shown + from).to_json)
+    end
+
+    test 'a door shows its room name, then its door sign, then the kind word, never the raw id' do
       game = make_game
-      at(T0) { write(game, 'tst_signin', as: nil, where: pc('recep_pc')) }
-      game.scenario_data['rooms']['lobby']['objects'].find { |o| o['id'] == 'recep_pc' }.delete('name')
-      assert_equal ['pc'], game.log_rows_for_client('by_prefix')[:rows].map { |r| r[:where] }
+      vault = game.scenario_data['rooms']['vault']
+      at(T0) { write(game, 'tst_door', where: { kind: 'door', id: 'vault' }) }
+      name = -> { game.log_rows_for_client('by_prefix')[:rows].last[:where] }
+      assert_equal 'door', name.call
+      vault['door_sign'] = 'Vault Annex'
+      assert_equal 'Vault Annex', name.call
+      vault['name'] = 'Vault'
+      assert_equal 'Vault', name.call
+      vault['name'] = ''
+      assert_equal 'Vault Annex', name.call, 'an empty name falls through to the door sign'
     end
 
     test 'KINDS resolve objects in containers, files in containers, and show an unresolved id as nil' do

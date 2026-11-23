@@ -54,7 +54,10 @@ module BreakEscape
     # this file loads without Rails.
     KINDS = {
       'door' => {
-        name: ->(game, id) { OpsLogEvents.room_hash(game, id) && (OpsLogEvents.room_hash(game, id)['name'] || id) },
+        name: lambda { |game, id|
+          room = OpsLogEvents.room_hash(game, id)
+          room && ([room['name'], room['door_sign']].find { |t| t.is_a?(String) && !t.empty? } || id)
+        },
         room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
       },
       'object' => {
