@@ -110,93 +110,38 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
     assert_empty scan(answer(good_row('where' => 'office', 'seq' => 3)), path: '/break_escape/games/1/room/office').select { |f| f.rule == 'log_row' }
   end
 
-  # ---- L2b: seed rows, the anomaly and the flag; R4-1 and R4-2 ----
-
-  FLAG_PATH = '/break_escape/games/1/log_rows/flag'.freeze
-
-  def seeded_scenario
-    scenario.merge(
-      'logSources' => { 'night' => { 'title' => 'Night log', 'events' => ['badge_swipe'],
-                                     'seedRows' => %w[s1 s2 s3].map { |id| { 'id' => id } } } },
-      'startRoom' => 'office'
-    ).tap do |data|
-      data['rooms']['office']['objects'] << { 'id' => 'night_pc', 'type' => 'ops_log_terminal', 'name' => 'Night log PC',
-                                              'minigameData' => { 'logSource' => 'night', 'anomaly' => { 'rowId' => 's2' },
-                                                                  'flagActions' => [{ 'type' => 'set_global', 'key' => 'k', 'value' => true }] } }
-    end
-  end
+  # ---- L2b: seed rows; R4-1 and R4-2. The scanner holds no rule about the anomaly: by the plan (7) the
+  # browser holds anomaly.rowId and the flag is checked on the client, so an answer that names no row is the
+  # only thing /log_rows owes.
 
   def seed_row(id, extra = {})
     { 'id' => id, 'at' => 'Mon 23:58', 'event' => 'BADGE', 'as' => 'Dana Reyes', 'where' => 'Finance office', 'result' => 'OK', 'detail' => '' }.merge(extra)
   end
 
-  def scan_run(*entries, data: seeded_scenario, secrets: [LOCK_PIN])
+  def scan_run(*entries, secrets: [LOCK_PIN])
     lines = entries.each_with_index.map do |(method, path, body), i|
       ['r.jsonl', i + 1, { 'method' => method, 'path' => path, 'status' => 200, 'body' => body }]
     end
-    AccessLeakScanner.new(data, log_secrets: secrets).scan(lines)
+    AccessLeakScanner.new(scenario, log_secrets: secrets).scan(lines)
   end
 
   def rows_answer(*rows, extra: {})
     ['GET', PATH, answer(*rows, extra: extra)]
   end
 
-  def seeds_in_order
-    %w[s1 s2 s3].map { |id| seed_row(id) }
+  test 'L2b: seed rows (their own seven keys, with at) ahead of the play rows are clean' do
+    assert_empty scan_run(rows_answer(*%w[s1 s2 s3].map { |id| seed_row(id) }, good_row))
   end
 
-  test 'L2b: three seed rows in authored order, ahead of the play rows, are clean' do
-    assert_empty scan_run(rows_answer(*seeds_in_order, good_row))
+  test 'L2b: the browser holds the anomaly row and the flag actions in a reader object, which is no finding' do
+    reader = { 'objects' => [{ 'id' => 'night_pc', 'type' => 'ops_log_terminal',
+                               'minigameData' => { 'logSource' => 'night', 'anomaly' => { 'rowId' => 's2' },
+                                                   'flagActions' => [{ 'type' => 'set_global', 'key' => 'k', 'value' => true }] } }] }
+    assert_empty scan_run(['GET', '/break_escape/games/1/room/office', reader]).select { |f| f.rule == 'log_row' }
   end
 
-  test 'L2b: no row is marked before a right flag: an extra key, a class or an answer key that names the anomaly' do
-    marked = seeds_in_order.tap { |rows| rows[1] = rows[1].merge('anomaly' => true) }
-    assert_includes owners(scan_run(rows_answer(*marked))), %w[log_row log:anomaly_key:anomaly]
-    assert_includes owners(scan_run(rows_answer(*seeds_in_order, extra: { 'flaggedClass' => 'hot' }))), %w[log_row log:anomaly_key:flaggedClass]
-    assert_includes owners(scan_run(rows_answer(*seeds_in_order.map { |r| r.merge('class' => 'row') }))), %w[log_row log:anomaly_key:class]
-  end
-
-  test 'L2b: the answer names the flagged row only after a right flag answer in the run' do
-    named = rows_answer(*seeds_in_order, extra: { 'flaggedRow' => 's2' })
-    assert_equal [%w[log_row log:anomaly_named:flaggedRow]], owners(scan_run(named))
-    right = ['POST', FLAG_PATH, { 'correct' => true, 'rowId' => 's2', 'flagActions' => [], 'completionActions' => [] }]
-    assert_empty scan_run(right, named)
-    assert_equal [%w[log_row log:anomaly_named:flaggedRow]], owners(scan_run(named, right)), 'a flag after the answer does not excuse it'
-  end
-
-  test 'L2b: the anomaly cannot be told by its id, its place or by being alone' do
-    odd = seeds_in_order.tap { |rows| rows[1] = rows[1].merge('id' => 'odd_swipe') }
-    assert_includes owners(scan_run(rows_answer(*odd))), %w[log_row log:anomaly_id_pattern:seed]
-    assert_includes owners(scan_run(rows_answer(*seeds_in_order, good_row('id' => 'play-id')))), %w[log_row log:anomaly_id_pattern:play]
-    assert_includes owners(scan_run(rows_answer(good_row, *seeds_in_order))), %w[log_row log:anomaly_order:seed_after_play]
-    assert_includes owners(scan_run(rows_answer(*seeds_in_order.rotate))), %w[log_row log:anomaly_order:not_authored]
-    data = seeded_scenario
-    data['logSources']['night']['seedRows'] = [{ 'id' => 's2' }]
-    assert_includes owners(scan_run(rows_answer(seed_row('s2')), data: data)), %w[log_row log:anomaly_candidate:single]
-  end
-
-  test 'L2b: a wrong flag answers exactly { correct: false }, the same body every time' do
-    wrong = ['POST', FLAG_PATH, { 'correct' => false }]
-    assert_empty scan_run(wrong, wrong)
-    assert_equal [%w[log_row log:flag_answer_key:rowId]], owners(scan_run(['POST', FLAG_PATH, { 'correct' => false, 'rowId' => 's1' }]))
-    assert_includes owners(scan_run(['POST', FLAG_PATH, { 'correct' => false, 'near' => true }])), %w[log_row log:flag_answer_key:near]
-    assert_includes owners(scan_run(wrong, ['POST', FLAG_PATH, { 'correct' => false }].dup.tap { |e| e[2] = { 'correct' => false, 'x' => 1 } })), %w[log_row log:flag_answers_differ]
-  end
-
-  test 'L2b: a right flag carries only its keys and a refusal only the closed reasons' do
-    assert_equal [%w[log_row log:flag_answer_key:hint]], owners(scan_run(['POST', FLAG_PATH, { 'correct' => true, 'rowId' => 's2', 'hint' => 'x' }]))
-    assert_empty scan_run(['POST', FLAG_PATH, { 'correct' => true, 'already' => true, 'rowId' => 's2' }])
-    assert_empty scan_run(['POST', FLAG_PATH, { 'success' => false, 'reason' => 'not_found' }])
-    assert_equal [%w[log_row log:flag_answer_key:reason]], owners(scan_run(['POST', FLAG_PATH, { 'success' => false, 'reason' => 'row_is_s2' }]))
-  end
-
-  test 'L2b: a reader in any other answer holds no anomaly row and no flag actions' do
-    leaky = { 'objects' => [{ 'id' => 'night_pc', 'type' => 'ops_log_terminal', 'minigameData' => { 'logSource' => 'night', 'anomaly' => { 'rowId' => 's2' }, 'flagActions' => [] } }] }
-    got = owners(scan_run(['GET', '/break_escape/games/1/room/office', leaky]))
-    assert_includes got, %w[log_row log:anomaly_in_object:night_pc:rowId]
-    assert_includes got, %w[log_row log:anomaly_in_object:night_pc:flagActions]
-    stripped = { 'objects' => [{ 'id' => 'night_pc', 'type' => 'ops_log_terminal', 'minigameData' => { 'logSource' => 'night', 'anomaly' => {} } }] }
-    assert_empty scan_run(['GET', '/break_escape/games/1/room/office', stripped]).select { |f| f.rule == 'log_row' }
+  test 'L2b: a seed row with a key beyond its seven is still a finding' do
+    assert_includes owners(scan_run(rows_answer(seed_row('s1', 'anomaly' => true)))), %w[log_row log:row_keys]
   end
 
   test 'R4-1: a stored-only key is found by its word in a detail string whatever separates the pairs' do

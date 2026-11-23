@@ -144,11 +144,6 @@ require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakE
 # secret (`BreakEscape::OpsLog.compared_secrets(game)`, or `log_secrets:`) in a text cell, and a raw
 # scenario id (room, object, NPC or card id) as a cell or a detail value where no authored name equals it.
 #
-# L2b: the same rule also fails an answer that makes the anomaly identifiable before a right flag
-# (`log:anomaly_*`: a key or class that names it, `flaggedRow` before a right flag answer in the run, a seed
-# id of another shape, seed rows out of authored order or after the play rows, a single seed row), a
-# /log_rows/flag answer that holds more than `{ correct: false }` for a wrong row (or differs between wrong
-# rows), and a reader object in any other answer that still holds `anomaly.rowId` or the flag actions.
 # R4-1 and R4-2: a stored-only key is found as a word before `:` or `=` in a detail string, and the
 # hidden detail keys of the registry join the hand list.
 #
@@ -333,8 +328,6 @@ class AccessLeakScanner
     findings = []
     seen = Set.new
     @ops_earned = Set.new(Array(ops_steps).map(&:to_s))
-    @log_flag_right = false # a POST /log_rows/flag answered correct: false until one has (L2b)
-    @log_wrong_flag = nil   # the first `correct: false` body, which every later one must equal
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
@@ -375,8 +368,6 @@ class AccessLeakScanner
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
       scan_log_rows(body, ctx, add)
-      scan_log_flag(body, ctx, add)
-      scan_log_anomaly_objects(body, ctx, add)
     end
     findings
   end
@@ -419,7 +410,7 @@ class AccessLeakScanner
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record',
-    'log_row' => 'a /log_rows answer with a key it may not carry, a registered log secret, a raw scenario id in a cell, or anything that tells the anomaly before a right flag (L2b)',
+    'log_row' => 'a /log_rows answer with a key it may not carry, a registered log secret, or a raw scenario id in a cell',
     'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
     'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
@@ -814,8 +805,7 @@ class AccessLeakScanner
       keyring: method == 'GET' && path.end_with?('/keyring'),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       network_view: method == 'GET' && path.end_with?('/network'),
-      log_rows: method == 'GET' && path.end_with?('/log_rows'),
-      log_flag: method == 'POST' && path.end_with?('/log_rows/flag')
+      log_rows: method == 'GET' && path.end_with?('/log_rows')
     }
   end
 
@@ -1969,15 +1959,9 @@ class AccessLeakScanner
 
   # ---- ops log reader L2a: GET /log_rows (OPS_LOG_ROWS_PLAN.md section 7) --------------------
 
-  LOG_ANSWER_KEYS = %w[rev title rows unchanged success reason flaggedRow].freeze
+  LOG_ANSWER_KEYS = %w[rev title rows unchanged success reason].freeze
   LOG_ROW_KEYS = [%w[as detail elapsedMs event id result where], %w[as at detail event id result where]].freeze
-  LOG_STORED_ONLY_KEYS = %w[seq serverMs flagged p last by opsLog opsLogSeq opsLogClockAt opsLogOnce opsLogSaves opsLogFlagged logSources].freeze
-  # L2b: what a /log_rows/flag answer may carry (a wrong flag exactly { correct: false }), and the words
-  # of a key that would mark a row before a right flag.
-  LOG_FLAG_KEYS = %w[correct rowId flagActions completionActions already].freeze
-  LOG_FLAG_REFUSALS = %w[invalid_object invalid_row not_found].freeze
-  LOG_ANOMALY_WORDS = /anomal|flag|alert|suspic|odd|tint|highlight|mark|hot|class|style|colou?r|badge_?class/i.freeze
-  LOG_SEED_ID = /\As[0-9]{1,3}\z/.freeze
+  LOG_STORED_ONLY_KEYS = %w[seq serverMs flagged p last by opsLog opsLogSeq opsLogClockAt opsLogOnce opsLogSaves logSources].freeze
 
   # The answer with the IDENTITY cell of each typed SIGN_IN row blanked: it may hold what the player typed,
   # which may be a password, and the player is shown their own text (plan section 11). A successful
@@ -2044,10 +2028,6 @@ class AccessLeakScanner
     return unless ctx[:log_rows] && body.is_a?(Hash)
 
     (body.keys - LOG_ANSWER_KEYS).each { |k| add.call('log_row', "log:answer_key:#{k}", safe_path("$.#{k}")) }
-    # L2b: the answer names the flagged row only after a right flag has been answered in this run
-    add.call('log_row', 'log:anomaly_named:flaggedRow', '$.flaggedRow') if body.key?('flaggedRow') && !@log_flag_right
-    (body.keys - ['flaggedRow']).grep(LOG_ANOMALY_WORDS).each { |k| add.call('log_row', "log:anomaly_key:#{k}", safe_path("$.#{k}")) }
-    scan_log_seed_rows(body, add)
     walk_hashes(body, '$') do |hash, path|
       (hash.keys & log_stored_only_keys).each { |k| add.call('log_row', "log:stored_key:#{k}", safe_path("#{path}.#{k}")) }
     end
@@ -2056,7 +2036,6 @@ class AccessLeakScanner
       next add.call('log_row', 'log:row_shape', "$.rows[#{i}]") unless row.is_a?(Hash)
 
       add.call('log_row', 'log:row_keys', "$.rows[#{i}]") unless LOG_ROW_KEYS.include?(row.keys.map(&:to_s).sort)
-      row.keys.map(&:to_s).grep(LOG_ANOMALY_WORDS).each { |k| add.call('log_row', "log:anomaly_key:#{k}", "$.rows[#{i}]") }
       cells = %w[event result].map { |k| row[k] } + log_cell_texts(row)
       texts.concat(cells)
       texts << row['detail'] # whole, so a secret holding ", " is not cut in two before the compare
@@ -2064,93 +2043,6 @@ class AccessLeakScanner
       log_cell_texts(row).each { |t| add.call('log_row', "log:raw_id:#{t}", "$.rows[#{i}]") if log_raw_ids.include?(t) }
     end
     texts.each { |t| add.call('log_row', 'log:secret', '$.rows') if t.is_a?(String) && log_secret_in?(t.strip) }
-  end
-
-  # ---- ops log reader L2b: seed rows and the flag (OPS_LOG_ROWS_PLAN.md 4.2, 7) ---------------
-
-  # The reader's anomaly row of each source, from the scenario: { source id => seed row id }.
-  def log_anomalies
-    @log_anomalies ||= begin
-      map = {}
-      walk_hashes(@data, '$') do |h, _path|
-        next unless h['type'] == 'ops_log_terminal' && h['minigameData'].is_a?(Hash)
-
-        row = h['minigameData'].dig('anomaly', 'rowId') if h['minigameData']['anomaly'].is_a?(Hash)
-        map[h['minigameData']['logSource'].to_s] = row.to_s if row.is_a?(String)
-      end
-      map
-    end
-  end
-
-  # The authored seed row ids of each source, in authored order.
-  def log_seed_order
-    @log_seed_order ||= begin
-      sources = @data['logSources'].is_a?(Hash) ? @data['logSources'] : {}
-      sources.each_with_object({}) do |(id, source), out|
-        rows = source.is_a?(Hash) && source['seedRows'].is_a?(Array) ? source['seedRows'] : []
-        out[id.to_s] = rows.filter_map { |r| r['id'].to_s if r.is_a?(Hash) && r['id'].is_a?(String) }
-      end
-    end
-  end
-
-  # Nothing in an answer may tell which seed row is the anomaly before a right flag: not its id's shape,
-  # not its place in the list (the seed rows stay in authored order, before the play rows), and not by
-  # being the only seed row (one candidate).
-  def scan_log_seed_rows(body, add)
-    rows = Array(body['rows'])
-    seed_at = []
-    play_at = []
-    rows.each_with_index do |row, i|
-      next unless row.is_a?(Hash)
-
-      seed = row['at'].is_a?(String)
-      (seed ? seed_at : play_at) << i
-      shape = seed ? LOG_SEED_ID : /\A\h{10}\z/
-      add.call('log_row', "log:anomaly_id_pattern:#{seed ? 'seed' : 'play'}", "$.rows[#{i}].id") unless row['id'].to_s.match?(shape)
-    end
-    add.call('log_row', 'log:anomaly_order:seed_after_play', '$.rows') if play_at.any? && seed_at.any? && play_at.first < seed_at.last
-    seeds = seed_at.map { |i| rows[i] }
-    ids = seeds.map { |r| r['id'].to_s }
-    source = log_seed_order.find { |_id, authored| !ids.empty? && authored.sort == ids.sort }&.first
-    return unless source
-
-    add.call('log_row', 'log:anomaly_order:not_authored', '$.rows') unless log_seed_order[source] == ids
-    add.call('log_row', 'log:anomaly_candidate:single', '$.rows') if log_anomalies.key?(source) && ids.size < 2
-  end
-
-  # A POST /log_rows/flag answer: a wrong flag is exactly { correct: false } and every wrong answer is the
-  # same body; a right one carries only the flag keys; a refusal only success and reason, the closed list.
-  def scan_log_flag(body, ctx, add)
-    return unless ctx[:log_flag] && body.is_a?(Hash)
-
-    if body['correct'] == false
-      (body.keys - ['correct']).each { |k| add.call('log_row', "log:flag_answer_key:#{k}", safe_path("$.#{k}")) }
-      @log_wrong_flag ||= body
-      add.call('log_row', 'log:flag_answers_differ', '$') unless body == @log_wrong_flag
-    elsif body['correct'] == true
-      (body.keys - LOG_FLAG_KEYS).each { |k| add.call('log_row', "log:flag_answer_key:#{k}", safe_path("$.#{k}")) }
-      @log_flag_right = true
-    else
-      (body.keys - %w[success reason]).each { |k| add.call('log_row', "log:flag_answer_key:#{k}", safe_path("$.#{k}")) }
-      add.call('log_row', 'log:flag_answer_key:reason', '$.reason') unless LOG_FLAG_REFUSALS.include?(body['reason'])
-    end
-  end
-
-  # A reader object in any other response (the bootstrap, a room, a container) never holds the anomaly's
-  # row id or the flag's actions: the server judges the flag, so they are never sent.
-  def scan_log_anomaly_objects(body, ctx, add)
-    return if ctx[:log_flag] || !(body.is_a?(Hash) || body.is_a?(Array))
-
-    walk_hashes(body, '$') do |h, path|
-      next unless h['type'] == 'ops_log_terminal' && h['minigameData'].is_a?(Hash)
-
-      data = h['minigameData']
-      owner = h['id'].to_s
-      add.call('log_row', "log:anomaly_in_object:#{owner}:rowId", safe_path("#{path}.minigameData.anomaly")) if data['anomaly'].is_a?(Hash) && data['anomaly'].key?('rowId')
-      %w[flagActions completionActions].each do |k|
-        add.call('log_row', "log:anomaly_in_object:#{owner}:#{k}", safe_path("#{path}.minigameData.#{k}")) if data.key?(k)
-      end
-    end
   end
 
   # A Wi-Fi SSID or key in any response is a leak, with no route exemption: unlike a network
