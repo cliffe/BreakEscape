@@ -48,8 +48,8 @@
    },
    "source": {
     "file": "t01_niamh_hook.trimmed.mkv",
-    "in": 3.74,
-    "out": 8.0
+    "in": 2.99,
+    "out": 7.25
    },
    "audio": {
     "gain_db": 0,
@@ -62,7 +62,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t01 H1: speech onset 4.04, sentence 1 ends 7.872 (silencedetect -35 dB d 0.08; brief about 7.83; pause 7.872 to 8.055), in 3.74 = onset - 0.3, out 8.0 is 0.13 after the last word and 0.055 before the next sound; mid-sentence pause 5.614-5.741 not used for a split (8 words); Niamh portrait up from 3.38, bar with the text cropped out in every aspect (16:9 zoom 1.25, cy 0.4); Niamh sits right of centre (about x 0.64-0.82), check the 9:16 and 1:1 crop on the render; chat closes 10.04, never in | CA: spoilers not an issue (owner), no masks"
+    "note": "RE-RECORDED 23 Nov (Niamh visemes, new bust framing). t01 H1: speech onset 3.286 (silencedetect -35 dB d 0.08), sentence 1 ends 7.123 (pause 7.123 to 7.303; mid-sentence pause 4.863-4.988 not used), in 2.99 = onset - 0.3, out 7.25 = 0.127 after the last word and 0.053 before the next sound; Niamh portrait up from about 3.0 (old art and timings: takes/old_niamh_v1); mouth opens (teeth visible); bar with the text cropped out in every aspect (16:9 zoom 1.5, cy 0.355; 9:16 and 1:1 zoom 1.4, cy 0.377, face in the centre third); no cue or debrief panel | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "full",
@@ -71,25 +71,25 @@
    },
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.62,
+     "cy": 0.355,
+     "zoom": 1.5
     },
     "9:16": {
-     "cx": 0.72,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.67,
+     "cy": 0.377,
+     "zoom": 1.4
     },
     "1:1": {
-     "cx": 0.7,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.667,
+     "cy": 0.377,
+     "zoom": 1.4
     }
    },
    "lines": [
     {
      "start": 0.3,
-     "end": 4.132,
+     "end": 4.133,
      "speaker": "Niamh",
      "text": "Helpdesk's had a run of odd reset calls lately."
     }
