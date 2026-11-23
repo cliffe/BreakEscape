@@ -17,11 +17,16 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
   KEYRING = "#{BASE}/keyring".freeze
   ROOM = "#{BASE}/room/lobby".freeze
   BOOT = "#{BASE}/scenario".freeze
+  STEP_UP = 'sam_pc.files.step_up'.freeze
   FACTORY_NAME = 'Factory accounts'.freeze
   FACTORY_SUMMARY = 'Devices often ship with a published account.'.freeze
 
   def data
     S.techniques_scenario
+  end
+
+  def pivot_scenario
+    S.pivot_techniques_scenario
   end
 
   def row(body, path: VIEW, method: 'GET', status: 200, extra: {})
@@ -58,16 +63,23 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
 
   def session_hash(extra = {})
     { 'npcId' => 'sam', 'username' => 'sam', 'displayName' => 'Sam', 'via' => 'technique', 'remote' => true,
-      'footholdId' => S::OFFICE, 'host' => 'Sam desk' }.merge(extra)
+      'footholdId' => S::OFFICE, 'host' => 'HB-DESK-01' }.merge(extra)
   end
 
-  def grant_answer(access: nil, foothold: S::OFFICE)
+  # The recorder's `tech` tag (the request's finding_id) is what names the finding while the capture holds
+  # the request; `tag: false` is a capture without it, where the scanner reads the answer instead.
+  def tech_tag(finding, tag)
+    tag ? { 'tech' => { 'findingId' => finding } } : {}
+  end
+
+  def grant_answer(access: nil, foothold: S::OFFICE, finding: access == 'admin' ? STEP_UP : S::FACTORY, tag: true)
     extra = access ? { 'access' => access } : {}
-    row({ 'success' => true, 'grant' => 'session', 'session' => session_hash(extra.merge('footholdId' => foothold)) }, path: TECH, method: 'POST')
+    row({ 'success' => true, 'grant' => 'session', 'session' => session_hash(extra.merge('footholdId' => foothold)) },
+        path: TECH, method: 'POST', extra: tech_tag(finding, tag))
   end
 
-  def credential_answer
-    row({ 'success' => true, 'grant' => 'credential', 'keyringChanged' => true }, path: TECH, method: 'POST')
+  def credential_answer(finding: S::SPOOL, tag: true)
+    row({ 'success' => true, 'grant' => 'credential', 'keyringChanged' => true }, path: TECH, method: 'POST', extra: tech_tag(finding, tag))
   end
 
   def refusal(reason, need: nil)
@@ -268,6 +280,101 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
     early = row({ 'success' => true, 'hostId' => 'sam_pc', 'service' => 'web', 'findings' => [unconfirmed.merge('needs' => [{ 'kind' => 'credential', 'label' => label, 'met' => true }])] },
                 path: CHECK, method: 'POST')
     assert_includes owners(scan([early], ops_steps: ['check:sam_pc.web'], scenario: scenario)), "ops:finding:#{S::FACTORY}", 'the needs key before the confirm is the structural leak'
+  end
+
+  # ---- S3 R2 N-13-1, N-13-2: each step is earned for the one thing granted ----------------------------
+
+  LAB_OPEN = S::LAB_OPEN
+  SV_FINDING = S::PIVOT_FINDING
+
+  def keyring_with(*entries)
+    row({ 'rev' => 'r1', 'entries' => entries.map { |id, label| { 'id' => id, 'kind' => 'saved_connection', 'label' => label } }, 'captures' => {} }, path: KEYRING)
+  end
+
+  def two_credentials
+    scan_data = data
+    assert scan_data['credentials'].key?('print_admin') && scan_data['credentials'].key?('lab_admin')
+    scan_data
+  end
+
+  test 'N-13-1: a grant of one credential releases that finding only, the other credential id and label stay a leak' do
+    spool = keyring_with(%w[print_admin Print\ admin])
+    lab = keyring_with(['lab_admin', 'Lab admin'])
+    first = scan([credential_answer(finding: S::SPOOL), spool, lab], scenario: two_credentials)
+    assert_equal ["ops:grant:#{LAB_OPEN}"], owners(first), 'the first grant clears its own id and label, not the second credential'
+    assert_equal [3], first.map(&:line).uniq, 'and only on the later line'
+    assert_empty scan([credential_answer(finding: S::SPOOL), credential_answer(finding: LAB_OPEN), spool, lab], scenario: two_credentials)
+    assert_equal ["ops:grant:#{S::SPOOL}"], owners(scan([credential_answer(finding: LAB_OPEN), spool, lab], scenario: two_credentials))
+    assert_equal ["ops:grant:#{S::SPOOL}", "ops:grant:#{LAB_OPEN}"].sort, owners(scan([spool, lab]))
+  end
+
+  test 'N-13-1: a repeat answer, a refusal and an unknown finding tag release nothing' do
+    spool = keyring_with(%w[print_admin Print\ admin])
+    repeat = row({ 'success' => true, 'already' => true, 'grant' => 'credential', 'keyringChanged' => false }, path: TECH, method: 'POST',
+                 extra: tech_tag(S::SPOOL, false))
+    assert_includes owners(scan([repeat, spool])), "ops:grant:#{S::SPOOL}", 'an untagged repeat names no finding'
+    assert_includes owners(scan([credential_answer(finding: 'print_srv.queue.invented'), spool])), "ops:grant:#{S::SPOOL}"
+    assert_includes owners(scan([credential_answer(finding: S::FACTORY), spool])), "ops:grant:#{S::SPOOL}", 'a session finding is no credential grant'
+    assert_includes owners(scan([refusal('need_unmet'), spool])), "ops:grant:#{S::SPOOL}"
+  end
+
+  test 'N-13-1: with no request tag the answer is read: both unconfirmed fails closed, one confirmed earns that finding only' do
+    spool = keyring_with(%w[print_admin Print\ admin])
+    lab = keyring_with(['lab_admin', 'Lab admin'])
+    untagged = credential_answer(tag: false)
+    both = scan([untagged, spool, lab])
+    assert_equal ["ops:grant:#{LAB_OPEN}", "ops:grant:#{S::SPOOL}"].sort, owners(both), 'two granting findings and no way to tell which: nothing earned'
+    one = scan([untagged, spool, lab], ops_steps: ["confirm:#{S::SPOOL}"])
+    assert_equal ["ops:grant:#{LAB_OPEN}"], owners(one)
+    named = scan([spool, lab], ops_steps: ["granted:credential:#{S::SPOOL}", "granted:credential:#{LAB_OPEN}"])
+    assert_empty named, 'the caller can name each step'
+    assert_equal ["ops:grant:#{LAB_OPEN}"], owners(scan([spool, lab], ops_steps: ["granted:credential:#{S::SPOOL}"]))
+  end
+
+  test 'N-13-2: a session at one host does not clear another host row, its admin level or its openHere' do
+    scenario = pivot_scenario
+    sv_row = { 'id' => 'sv_fs02', 'kind' => 'pc', 'name' => 'FS02', 'host' => 'FS02', 'remoteSignIn' => false,
+               'session' => host_session('access' => 'admin', 'openHere' => true) }
+    sam_row = pc_row(session: host_session('access' => 'admin', 'openHere' => true), blocked: true)
+    admin_grant = grant_answer(access: 'admin')
+    both = view(hosts: [sam_row, sv_row])
+    found = scan([admin_grant, both], scenario: scenario)
+    assert_equal %w[ops:host_row ops:key:access ops:key:openHere ops:key:via], owners(found)
+    assert(found.all? { |f| f.line == 2 })
+    sv_grant = row({ 'success' => true, 'grant' => 'session', 'session' => session_hash('footholdId' => S::OFFICE, 'npcId' => 'ian', 'host' => 'FS02',
+                                                                                           'access' => 'admin') },
+                   path: TECH, method: 'POST', extra: tech_tag(SV_FINDING, true))
+    assert_empty scan([admin_grant, sv_grant, both], scenario: scenario), 'each host is clear after its own grant'
+    only_user_sv = row({ 'success' => true, 'grant' => 'session', 'session' => session_hash('footholdId' => S::OFFICE, 'npcId' => 'ian', 'host' => 'FS02') },
+                       path: TECH, method: 'POST', extra: tech_tag(SV_FINDING, true))
+    assert_includes owners(scan([admin_grant, only_user_sv, both], scenario: scenario)), 'ops:key:access', 'a user grant at FS02 gives no admin there'
+  end
+
+  test 'N-13-2: openHere and a blocked row are cleared by the foothold the session came through, for that host only' do
+    scenario = pivot_scenario
+    sam_open = pc_row(session: host_session('openHere' => true), blocked: true)
+    through_second = view(hosts: [sam_open], foothold: S::SECOND_JACK)
+    assert_includes owners(scan([grant_answer, through_second], scenario: scenario)), 'ops:key:openHere', 'granted through the office foothold'
+    second_grant = grant_answer(foothold: S::SECOND_JACK)
+    assert_empty scan([grant_answer, second_grant, through_second], scenario: scenario)
+    replaced = scan([grant_answer, second_grant, view(hosts: [sam_open])], scenario: scenario)
+    assert_includes owners(replaced), 'ops:key:openHere', 'a PC holds one session: the new grant takes the earlier foothold back'
+  end
+
+  test 'N-13-2: a session read without a request tag is earned only for the one finding the answer fits' do
+    admin = view(hosts: [pc_row(session: host_session('access' => 'admin'))])
+    untagged = grant_answer(access: 'admin', tag: false)
+    assert_includes owners(scan([untagged, admin])), 'ops:key:access', 'several admin findings fit, none confirmed'
+    assert_empty scan([untagged, admin], ops_steps: ["confirm:#{STEP_UP}"])
+  end
+
+  test 'N-13-2: a held card entry must name an item the player holds, not another item of the same technique' do
+    steps = ['card:factory_accounts']
+    other = view(techniques: { 'factory_accounts' => held_entry('card_factory_b') })
+    assert_empty scan([other], ops_steps: steps), 'the caller names the technique'
+    assert_includes owners(scan([inv_add('card_factory'), other])), 'ops:technique:factory_accounts'
+    assert_empty scan([inv_add('card_factory_b'), other])
+    assert_empty scan([inv_add('card_factory'), view(techniques: { 'factory_accounts' => held_entry })])
   end
 
   test 'a whole clean run in the shapes the server sends reports nothing' do
