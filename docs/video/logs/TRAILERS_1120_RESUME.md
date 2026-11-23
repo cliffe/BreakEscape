@@ -86,3 +86,15 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - Letterbox (9:16, zoom 0.5625 to 1) is in the renderer: 33fe481fa, tests `tools/video/remotion/tests/letterbox.test.mjs`. m01 panels 4, 20, 23 use it. The scratch crops.py is letterbox-aware.
 - Framing agents (Sonnet) on m02 and m03; notes `tmp/handover/vid1_framing_m02.md` and `_m03.md` if they stop early. After them: check sheets, render six (CA0's gap), publish, send AC0 the link and hash.
 - /home has 226 GB free.
+
+## State (2026-11-23, 01:30) — read this first after compaction
+- **Agents running:** none.
+- **Lines:** `video/trailer-lines-m04-m10` tip 7f8b4354a sent to AC0 with the review findings (routes, validator, lint, JS tests all pass). m04, m07, m10 picks voiced. m09 cage line is inked but NOT voiced: waiting on the owner's `m09cage` and `m09hookfix` (page, round 2 tab, doc `feedback/trailer_lines_round2`; or via AC0). D356 asks whether the unpicked m05 and m06 lines stay: leave them until answered.
+  - When m09 is answered: edit `m09_sorensen_cage.ink` / `m09_briefing.ink`, compile (`scripts/compile-ink.sh m09_digital_archaeology`), all 49 routes, voice with scratchpad `gen11.rb` (edit `want`), commit clips, hash to AC0.
+- **Page:** version 13, https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea.
+- **Renders:** six (m01, m02, m03 at 9:16 and 1:1) wait for CA0's ping (expected 01:30-01:40). Scratchpad `render6.sh m01:9:16 m01:1:1 m02:9:16 m02:1:1 m03:9:16 m03:1:1`. Then tell CA0, check contact sheets and loudness, encode review copies (-crf 26, -maxrate 2500k, under 14 MB), new page tabs, link and hash to AC0.
+  - Compromises to list: m02 shot 23 recovery console (right column cut), m02 shot 33 Ghost reveal (loses the unvoiced on-screen subtitle), m02 shot 5 (room small in 9:16), m03 shot 14 console (end of command and version column cut), m01 shot 23 (few px of window title), m03 shot 3 (thin black band in 9:16).
+- **D354 done:** superseded renders in main checkout `tmp/delete/superseded-renders-2026-11-23/`. Don't empty it.
+- **D318 (owner, verbatim):** "It's a different category, but also create trailers for them". sis01-sis03 = Critical Cases; plan with CA0 after its ca01 and ca15.
+- **After that:** update m04-m10 outlines to the picks and the relaxed casualty rule; add the social-crop rule to the guidelines once renders prove it; owner ship verdicts for m01 v10, m02 v4, m03 v3.
+- Gotcha: don't issue Bash calls that cd into two different worktrees in one response (the auto-mode check rejects the later ones); use `git -C`.
