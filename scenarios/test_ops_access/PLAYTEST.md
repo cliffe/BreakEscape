@@ -11,10 +11,15 @@ reach the browser only from `GET /network`, `POST /network/scan`, `/network/chec
 once a card is held (`techniques` on `GET /network`). The world documents (`maint_log` on the lobby desk) say in plain words what is wrong with
 which machine; the engine does not link them to the findings.
 
-**Not played in the browser.** No beat here sends a forged or hand-built state sync from the page. The Rails tests make those checks
-(`test/controllers/break_escape/network_technique_hostile_test.rb` and `network_ops_state_delta_test.rb`); the three hostile requests of the plan's
-beat 10 that use real routes (a foothold that holds no session, a folder with no route, a card that is not held) are sent here by `fetch` because they are
-ordinary requests.
+**Not played in the browser.** No beat here sends a forged, hand-built or replayed request or state sync from the page (S3 R2 ruling N-13-3): every beat uses the
+real controls and reads what the client shows. The hostile and refusal checks (a foothold that holds no session, a folder with no route, a card not held, a sign-in
+request to a blocked host, the same desktop request after the unplug, a forged state sync) are made by the Rails tests `test/controllers/break_escape/network_technique_hostile_test.rb`,
+`network_technique_blocked_host_test.rb`, `network_technique_session_test.rb` and `network_ops_state_delta_test.rb`.
+
+**Plan 11.5 (S3) clauses.** Each is shown by a real control in a beat below, except one: "the same desktop request then refused (`no_session`)" is shown here only as
+the view (the host row has no Open and no bolt after the unplug, beats 16 and 17) and the world click (it asks for the keyboard sign-in), and the request itself is
+`network_technique_session_test.rb` ("the unplug ends the session and the same desktop request answers no_session"). Two clauses have no beat: the screenshot review of the view's
+states (a later step, for the user) and the plan's `:3002` note.
 
 ## Setup
 
@@ -46,7 +51,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 `--access` prints the `opsDiscovered`, `opsFindings` and `opsUsed` lines and each session with its level and `granted by` finding; `--ops-log`
 prints the `access_audit` rows and exits 1 on a stored secret. The leak check must report no leaks after every beat. A card's registry key,
 name and summary are not secret once the card is held; before that the `techniques` map must not appear (beat 1 asserts it).
-Until 13b's collector entries land the leak check does not judge the new strings (techniques, grants); read the raw answers for the words
+The leak check judges the new strings (techniques, grants, session keys) per thing: the capture does not hold the technique request, so each grant is read from its answer, which here is enough (the one credential, and one session finding per host and level). Read the raw answers for the words
 `grants`, `fixedIf`, `technique_card` and `realism` too (they must appear in no `GET /network`, scan, check, confirm or technique answer).
 
 ## Layout
@@ -80,26 +85,23 @@ Until 13b's collector entries land the leak check does not judge the new strings
   Unplug button (`[data-unplug]`). **Taking the box.** `{"cmd":"moveToNear","id":"kit_dropbox"}` then `{"cmd":"interact","id":"kit_dropbox"}`. A second device the same way
   from `kit_dropbox_2`, planted in `annex_port` (beat 10).
 - **The view** is the minigame `network-view`. Read it with `{"cmd":"mg","action":"getState"}` (its `getTestState()`): `footholdId`, `status`, `rows` (each row's `id`,
-  `scanned`, `services`, `scan`, `checks`, `findings` with each finding's `select`/`confirm` selector, and, once a session is held, `bolt: true` and `access: "admin"`),
+  `scanned`, `services`, `scan`, `checks`, `findings` with each finding's `select`/`confirm` selector (the state names a `select` selector even while no card is held, but the control is drawn, as a button, only while a card is held: with none the alias is a plain chip), and, once a session is held, `bolt: true` and `access: "admin"`),
   `pending`, and from this stage `techniques [{ id, name, summary, worksOn, itemId, selected, select }]`, `selectedFinding`, `selectedTechnique`, `use`, `canUse`,
   `grant { hostId, who, access? }` (all in `docs/test-bridge.md`, "Network view state"). Controls: Sweep `[data-network-id="office_lan"] [data-action="sweep"]`; Scan
   `[data-host-id="<id>"] [data-action="scan"]`; Check `[data-host-id="<id>"] [data-service="<name>"] [data-action="check"]`; Confirm `[data-finding="<alias>"] [data-action="confirm"]`;
-  select a finding `[data-finding="<alias>"] [data-action="select-finding"]`; select a card `[data-technique="<card id>"] [data-action="select-technique"]`; Use `[data-techniques] [data-action="use"]`;
+  select a finding `[data-finding="<alias>"] [data-action="select-finding"]` (present only while a card is held); select a card `[data-technique="<card id>"] [data-action="select-technique"]`; Use `[data-techniques] [data-action="use"]`;
   a host row's Open `[data-host-id="<id>"] [data-action="open"]`. Use the selector the state names when it is there. A refusal shows on the view as a notice line
   with the words from `REFUSAL_TEXT` (`ops-model.js`): `not_confirmed` "That finding has not been confirmed yet.", `false_positive` "That finding turned out to be false.",
   `wrong_class` "That technique does not work on this kind of weakness.", `wrong_version` "That technique does not work on this version.", `need_unmet` "Something this needs is
   still missing." plus " Missing: Printer manual", `no_grant` "That finding gives nothing to use.", `fixed` "That weakness has been fixed.". Read the notice text with `eval` on the page
-  (the view's `.network-notice`-style line near the Techniques panel) and compare it with these strings; if the class name differs, search the view for the string.
+  (`document.querySelector('.network-view-notice').textContent`) and compare it with these strings.
 - **With the view closed** read the last answer the client fetched: `{"cmd":"eval","fn":"() => window.__test.access.networkView('jack_office_port')"}`.
-- **The marks.** `{"cmd":"eval","fn":"() => window.__test.access.compromiseMarks()"}` lists `[{ objectId, sources: [{ kind, footholdId }], tint }]`. (This call is in
-  `public/break_escape/js/systems/test-bridge/access.js`, `compromiseMarks()`; `docs/test-bridge.md` has no row for it yet: the docs step adds it.) Sessions:
+- **The marks.** `{"cmd":"eval","fn":"() => window.__test.access.compromiseMarks()"}` lists `[{ objectId, sources: [{ kind, footholdId }], tint }]`. (The call is in
+  `public/break_escape/js/systems/test-bridge/access.js`, `compromiseMarks()`, and has its row in `docs/test-bridge.md`.) Sessions:
   `__test.access.sessions()`; footholds: `__test.access.footholds()`.
 - **The tray and the toasts.** `{"cmd":"eval","fn":"() => window.__test.getState().inventory"}` lists `{ id, name, type }`; the pickup toast is read with `{"cmd":"toasts"}`.
-- **The keyring** is read by `fetch` of `GET /break_escape/games/<id>/keyring` from the page (CSRF token as below, so the capture records it): `entries[].id`. Before beat 6 it holds no
-  `print_admin`.
-- **Hostile requests** are sent from the page with `eval` and `fetch`, carrying the CSRF token (`document.querySelector('meta[name=csrf-token]').content`) in an `X-CSRF-Token`
-  header, as JSON, so the capture records them. Routes: `POST /break_escape/games/<id>/network/technique` with `{ foothold, finding_id, item_id }` (the built finding id, never the alias;
-  the card item id), `GET /break_escape/games/<id>/container/<pc id>?foothold=<id>`.
+- **The keyring** is read through the real control: the sign-in control on `files01`'s row (beat 7) lists the saved connections the keyring holds. Before beat 6 it lists no `print_admin`.
+  The client's own `GET /keyring` fetches are in the capture file, so the leak check judges them.
 - **Picking up.** Cabinet or cupboard: `{"cmd":"moveToNear","id":"lobby_cabinet"}`, `{"cmd":"interact","id":"lobby_cabinet"}`, then `{"cmd":"mg","action":"take","args":["Field note: factory accounts"]}`
   and `{"cmd":"mg","action":"close"}`. The supply room is west of the lobby (`enterRoom`, or `moveToNear` on `supply_cupboard`). The manual goes into the notes, not the tray.
 - **Ian's card.** `{"cmd":"moveToNear","id":"ian"}`, `{"cmd":"interact","id":"ian"}`, then choose "Do you have any notes on the storage machines?" (`{"cmd":"mg","action":"chooseMatching","args":["notes on the storage"]}`).
@@ -162,21 +164,20 @@ Select `f4` ("The list of backups can be read without signing in.", grants nothi
 ### 6. The credential grant, and a repeat
 
 Take `printer_manual` from `supply_cupboard`, reopen the view (the need ticks, no reload). Select `f1` and the factory card, Use; then Use again.
-- Browser: the notice or toast names the credential grant (a saved connection); `fetch GET /keyring` now lists `print_admin`, which the answer in beat 5 did not. The repeat answers `already: true` and `keyringChanged: false` (no new keyring ask). Task `a6_used` ticks and Ian's global `technique_used_seen` is set.
+- Browser: the notice or toast names the credential grant (a saved connection); `files01`'s sign-in control now lists `print_admin` (read it before beat 7's connect; it did not before beat 5). The repeat answers `already: true` and `keyringChanged: false` (no new keyring ask). Task `a6_used` ticks and Ian's global `technique_used_seen` is set.
 - Server: `opsUsed` holds `printer01.admin_page.factory_login` once; one `technique_used` row for the grant, the repeat merged (`n` 2); `--access` lists the line `opsUsed: f1 printer01.admin_page.factory_login`.
 
 ### 7. Open the saved connection
 
-In the view, open `files01` (its row's sign-in control, `[data-host-id="files01"] [data-action="sign-in"]`, which lists the saved connection `print_admin`) and connect; if the control is not there, the same request
-`POST /login` with `{ pc_id: "files01", credential: "print_admin", foothold: "jack_office_port" }`.
+In the view, open `files01` (its row's sign-in control, `[data-host-id="files01"] [data-action="sign-in"]`, which lists the saved connection `print_admin`) and connect. If the control is not there, that is a finding: report it.
 - Browser: the `files01` desktop opens (headless server, so through the foothold), as the account `iokafor`; close it with its own Close.
 - Server: `sessions.files01` is `via credential` with the foothold.
 
 ### 8. Remote sign-in to `vault01`
 
-In the view, `vault01`'s row offers no sign-in or Open (its host allows no remote sign-in, no session yet). Request it from the page:
-`POST /login` `{ pc_id: "vault01", username: "iokafor", password: "Dockyard-Ian-41", foothold: "jack_office_port" }`.
-- Browser: the row shows "Remote sign-in off" (state `action: "off"`); the request answers 422 with `remoteBlocked: true`.
+In the view, read `vault01`'s row: it offers no sign-in or Open (its host allows no remote sign-in, no session yet). Nothing is sent by hand; the refused sign-in request
+(`remoteBlocked: true`) is `network_technique_blocked_host_test.rb`.
+- Browser: the row shows "Remote sign-in off" (state `action: "off"`) and no sign-in control.
 - Server: no `vault01` session, no new log row.
 
 ### 9. Ian's card, and the blocked host's desktop
@@ -186,18 +187,16 @@ Talk to Ian and take the storage notes (harness notes). Select `f5` and "Release
   no sign-in screen. The row for `vault01` shows the bolt (`bolt: true`) and, being user level, no `access`. Use again: `already: true`, no second session. Close the desktop with its own Close.
 - Server: `sessions.vault01`: `via technique`, foothold `jack_office_port`, `access user`, `granted by` `vault01.archive.old_release`; `signedInPcs` holds `vault01`; one `technique_used` row as the account `iokafor` (the repeat merged).
 
-### 10. A second foothold, and the hostile requests
+### 10. A second foothold
 
-Take `kit_dropbox_2`, plant it in `annex_port`, open that view. Then by `fetch`: `GET /container/vault01?foothold=jack_annex_port`, `GET /container/vault01_folder` (a name with no route), and `POST /network/technique`
-with `item_id: "card_not_held"`.
-- Browser: the annex view's `vault01` row has no session and no Open control; the two desktop requests answer 403 `unreachable` and the folder one 404 (or 403); the technique request answers `{"success":false,"reason":"not_found"}` (404).
+Take `kit_dropbox_2`, plant it in `annex_port`, open that view. Nothing is sent by hand (the hostile requests are the Rails tests named at the top).
+- Browser: the annex view's `vault01` row has no session, no bolt and no Open control (it is seen in this view, not by a request), while the office view still shows the session and Open.
 - Server: nothing changed (compare `--access` before and after).
 
 ### 10a. `desk01`
 
-From the office view select `f7` and the factory card, Use. The grant succeeds; close the desktop it opens. Walk to `desk01` (`moveToNear`), look at the sprite, `interact` `desk01`, close that desktop. Then, standing beside `desk01`, request its desktop with no route:
-`GET /container/desk01`.
-- Browser: `compromiseMarks()` lists `desk01` (kind `technique`, foothold `jack_office_port`) and `desk01` is drawn tinted with the bolt at its top right while its screen keeps the locked look (screenshot); the click opens the remote view through the office foothold with the red frame, the line "Remote view: Ian Okafor through <the box's name>" and the wipe, and no sign-in screen; closing returns the player to the room. The no-route request answers the desktop as the account.
+From the office view select `f7` and the factory card, Use. The grant succeeds; close the desktop it opens. Walk to `desk01` (`moveToNear`), look at the sprite, `interact` `desk01`, close that desktop.
+- Browser: `compromiseMarks()` lists `desk01` (kind `technique`, foothold `jack_office_port`) and `desk01` is drawn tinted with the bolt at its top right while its screen keeps the locked look (screenshot); the click opens the remote view through the office foothold with the red frame, the line "Remote view: Ian Okafor through <the box's name>" and the wipe, and no sign-in screen; closing returns the player to the room.
 - Server: `sessions.desk01` a technique session through `jack_office_port`, its foothold kept after both opens.
 
 ### 11. The step up
@@ -214,8 +213,8 @@ Open the view.
 
 ### 13. Locking the session
 
-In the world or through the taskbar try to lock the `vault01` session (the lock control, if offered; otherwise `fetch POST /lock_session` with `{ pc_id: "vault01" }`).
-- Browser: refused (422). Server: unchanged.
+In the world or through the taskbar try to lock the `vault01` session with the lock control, if one is offered (if none is offered, that is the answer; the refusal is in `network_technique_session_test.rb`).
+- Browser: refused, or no control. Server: unchanged.
 
 ### 14. Reload
 
@@ -230,26 +229,26 @@ Reload (harness notes), reopen the view.
 
 ### 16. Unplug
 
-Close any open desktop with its own Close (the unplug control cannot be reached while one is open). Open the office view and click Unplug (`[data-unplug]`, answer the prompt `Unplug it`).
-- Browser: the `vault01`, `files01` and `desk01` sessions end, `plant_lan` is gone, the marks on the jack and on `desk01` are gone (`compromiseMarks()` empty; the sprite tint cleared, screenshot) and the `vault01` row bolt too. A desktop request `GET /container/vault01?foothold=jack_office_port` answers 403 `no_session`.
+Close any open desktop with its own Close (the unplug control cannot be reached while one is open). Open the office view and click Unplug (`[data-unplug]`, the button's label is `Unplug`; there is no confirm prompt).
+- Browser: the `vault01`, `files01` and `desk01` sessions end, `plant_lan` is gone, the marks on the jack and on `desk01` are gone (`compromiseMarks()` empty; the sprite tint cleared, screenshot) and the `vault01` row bolt too. A click on `desk01` in the world no longer opens a remote view: it asks for the keyboard sign-in (the `no_session` request itself is a Rails test).
 - Server: sessions gone; `opsUsed` and the keyring entry kept.
 
 ### 17. Plant again
 
 Plant the box again and open the view (it shows the findings as before). Select `f5` and the release card, Use.
-- Browser: the session again, the desktop opens. Server: a new `vault01` record.
+- Browser: before the Use, `vault01`'s row has no bolt, no session and no Open (the unplug ended it: the view form of the refused desktop request); after it the session is back and the desktop opens. Server: a new `vault01` record.
 
 ### 17a. Taskbar, sign out, the typed sign-in, the implant
 
-Use the factory card on `f7` again and click `desk01`; read the taskbar. Open the `vault01` remote view from the view and read its taskbar. Back at `desk01`, click it to open the remote view, then choose Sign out (`#desktop-sign-out`).
+Use the factory card on `f7` again and click `desk01`; read the taskbar. Open the `vault01` remote view from the view and read its taskbar. Back at `desk01`, click it to open the remote view, then choose Sign out (`#desktop-sign-out`). That remote view was opened by a world click, so Sign out returns to the world (the room), not to the network view.
 Click `desk01` again and sign in with the password from `desk_note` (`iokafor` / the note's text). Take `desk_implant`, `interact` `desk_dock`, answer `Plug it in`.
-- Browser: `desk01`'s taskbar offers Sign out and Switch user (`#desktop-switch-user`); `vault01`'s offers Sign out only (blocked host). After Sign out the mark comes off (`compromiseMarks()` no longer lists `desk01`) and the next click shows the sign-in screen; the typed sign-in opens the keyboard desktop with no red frame; the implant is accepted and `desk01` is marked again, `compromiseMarks()` naming the implant foothold (`implant_desk01`) in `sources`.
+- Browser: `desk01`'s taskbar offers Sign out and Switch user (`#desktop-switch-user`); `vault01`'s offers Sign out only (blocked host). After Sign out of the `desk01` remote view the player is back in the world (no network view opens), the mark comes off (`compromiseMarks()` no longer lists `desk01`) and the next click shows the sign-in screen; the typed sign-in opens the keyboard desktop with no red frame; the implant is accepted and `desk01` is marked again, `compromiseMarks()` naming the implant foothold (`implant_desk01`) in `sources`.
 - Server: `sessions.desk01` a technique session, then gone, then a `password` session with no foothold; an implant foothold `implant_desk01`.
 
 ### 18. End of run
 
-`{"cmd":"sync"}`, the leak check over every capture file of the game, then `verify-run.rb <game_id> --access` and `--ops-log` as two commands, then measure the answer at full discovery:
-`fetch GET /network?foothold=jack_office_port` and read its byte length (`new Blob([text]).size`).
+`{"cmd":"sync"}`, the leak check over every capture file of the game, then `verify-run.rb <game_id> --access` and `--ops-log` as two commands, then measure the answer at full discovery: with the office view open,
+`{"cmd":"eval","fn":"() => JSON.stringify(window.__test.access.networkView('jack_office_port')).length"}` (the length of the stored answer, no new request).
 - No `grants`, `fixedIf`, `technique_card` or `realism` key in any answer; the `techniques` map only after a card is held; the answer under 16 KB. `--ops-log` ends with `ops log OK`, and shows one `technique_refused` row per distinct refusal of beats 2 to 5a and 15.
 - Server `--access`: the `opsUsed` line lists `printer01.admin_page.factory_login`, `vault01.archive.old_release`, `vault01.archive.old_release_admin` and `desk01.remote_desk.shipped_login`.
 
@@ -260,7 +259,7 @@ In the same browser (a fresh game each, made with `new-game.rb` or `swap-scenari
 
 ## Earned secrets
 
-`iokafor`'s password `Dockyard-Ian-41` is typed in beat 17a, from `desk_note`, after the sign-out. It is also sent in beat 8 to prove the refusal; the leak check treats it as the account's secret.
+`iokafor`'s password `Dockyard-Ian-41` is typed in beat 17a, from `desk_note`, after the sign-out. The leak check treats it as the account's secret; no beat sends it by hand.
 
 ## Expected validator output
 
