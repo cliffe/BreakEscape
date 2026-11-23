@@ -46,3 +46,11 @@ with these differences, which win:**
 - 2026-11-23, carried from the L1b review: `showCardHolder` is set per log source but a
   stored row is shared between sources, so the reader must hide the card holder's name for a
   source without the flag.
+- 2026-11-23, L2a server R1 rulings: M1, the holder rule becomes a stored marker, as the
+  reviewer proposes: `badge_swipe` gains the detail `'flagged' => { count: 1, show: false }`
+  written only when the identity is kept by the flag alone (`ops_badge_as` /
+  `write_badge_swipe_ok!` in `game.rb`; the event line in `ops_log_events.rb`), and the
+  reader shows `-` for a flagged row in a source without `showCardHolder`; the heuristic and
+  its tests go, the new tests drive `/unlock`. m3, a no-route read under a foothold session
+  answers as `/container` does (accepted; plan section 11 reworded). m5, a thing with no
+  authored name is shown by its kind word, never by its raw id (plan lines 352 and 382).

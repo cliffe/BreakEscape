@@ -645,7 +645,8 @@ with its status; the same 404 for missing, wrong type, undeclared source, unreac
 in a locked cabinet, a reader with its own lock not yet unlocked (no scope), a reader on a
 desktop without a session, and a reader on a share without one; a reader under a sign-in PC
 answers while its session is held and 404 after the session is locked or ended; a reader through
-a foothold route answers with the route and 404 without it; a room-gated reader answers from any
+a foothold route answers with the route, and without one answers as `/container` does for a
+folder (`folder_route_allowed?`, section 6); a room-gated reader answers from any
 position, including rows written later; `rev` unchanged; `no-store`;
 `assert_ops_log_holds_no_secret` over every response body. A reader inside a profile opened by an
 admin account: `GET /log_rows` answers and the log has no `admin_profile_read` row, while
