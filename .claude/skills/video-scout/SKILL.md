@@ -142,6 +142,8 @@ Things that bit m01:
 
 Do not play the mission through. Entry states come from the scenario and ink and may be listed as "expected, not played"; the take stage proves them.
 
+**Tagged lines.** A line with a `#delivery:` note in the ink has its own clip, keyed on the note, and the game sends the note with the request. Test it the same way: `"delivery"` in the `--lines` JSON (`dump-lines.rb` writes it) or `--text "<line>" --delivery "<note>"`. Without the note a cached tagged line reads 503 (the m04, m05 and m06 scouts of 23 Nov reported three such false misses).
+
 ## Gates
 
 | Gate | Pass when |
