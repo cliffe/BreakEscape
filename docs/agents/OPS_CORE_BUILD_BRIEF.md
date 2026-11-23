@@ -138,3 +138,8 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
 - For S2: R3-1 (the leak scanner checks a service's `name` and `port` too, by a structural
   rule) goes into step 8's scanner work; R3-2 (`_refetchDropped` initialised in the view's
   constructor) into step 7.
+- 2026-11-23, S2 client R1 rulings: m1, a decoy's reason is the key `falseBecause` and only
+  that; the client's fallbacks go. m2, the per-class default summary is the server's table
+  (`CLASS_SUMMARIES`); the client's `CLASS_DEFAULT_LINE` and the tests and doc lines that pin
+  it are removed. m7, a `severity` or `class` value reaches a class attribute only through a
+  fixed allow-list map. m8 is settled in the live proof, not in this fix pass.
