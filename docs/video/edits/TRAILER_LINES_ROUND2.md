@@ -74,3 +74,13 @@ On the page:
 | m09 | lies | Every lie they ever lived went through my hands, dear. I'm the last one who can tell you which were lies. | cage `start`, after "So the paper goes." | quiet, slightly wistful |
 | m09 | index | Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask. | cage `start`, replacing "It's only paper..." (:33) | gentle, almost kind, without looking up |
 | m09 | saved | Yours is in tonight's run, dear. I saved it for last. | voiced in round 1 | as voiced |
+
+## After the independent review (2026-11-23)
+
+Opus 5.5 review of the T345 lines, the m10 pick and the casualty options: `docs/video/logs/T345_LINES_DIALOGUE_REVIEW.md` (on video/trailers-m01-m02-spies). Changes here:
+
+- **m04:** the casualty rule is relaxed (owner). Two options added to the page, both replacing the "sums" line in `voltage_owns_it`: `fifty` "Fifty people. I checked the sum twice. Find me wrong." and `signed` "Fifty people die if my sums are right. Check them. The last man did, and he signed." Delivery: flat and unhurried, a checked figure read aloud, then a dare. "Fifty" because 11 on site and forty-odd on the feed make fifty. Voltage is South African in the voice bible ("Ja" is Afrikaans), NOT German: the context note above is wrong. Don't direct takes as German.
+- **m09 ending:** `saved` is withdrawn and taken out of the game. The player's file is in Sorensen's safe, not in tonight's run (`scenario.json.erb:2285`).
+- **m09 hook (owner's pick, in the game):** the reviewer calls it a major, because the briefing doesn't know what is in the archive. Reworded option on the page: "Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it." Nothing changes until the owner says.
+- **m10 ending:** the owner's pick is in `m10_tesseract.ink` and voiced; the blast-door line is out; the next line is trimmed ("City by city. Or you press this...") and re-voiced.
+- **m05:** the new line moved above the Torres line. Same words, same clip.
