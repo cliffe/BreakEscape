@@ -5,11 +5,37 @@ require_relative '../../support/ops_log_assertions'
 require_relative '../../support/network_model_scenario'
 
 module BreakEscape
+  # R2 N3: every /log_rows answer of the three classes below is scanned for the game's secrets. The scan
+  # reads the text cells of the parsed answer (title and each row's event, as, where, result, detail),
+  # never a row id, `rev` or `elapsedMs` (hex digits that a short PIN could match by chance); a refusal
+  # has no cells, so its whole body is scanned.
+  module LogRowsBodyScan
+    def read_log_rows(object_id, params = {})
+      get game_path('log_rows'), params: { object_id: object_id }.merge(params), as: :json
+      assert_body_holds_no_secret(Game.find(@game.id), response.body)
+      response.parsed_body
+    end
+
+    def assert_body_holds_no_secret(game, body)
+      parsed = JSON.parse(body) rescue nil
+      texts = if parsed.is_a?(Hash) && parsed['rows'].is_a?(Array)
+        parsed['rows'].flat_map { |row| row.values_at('event', 'as', 'where', 'result', 'detail') } << parsed['title']
+      else
+        [body]
+      end
+      secrets = OpsLog.compared_secrets(game).map(&:to_s).reject(&:empty?)
+      secrets.each do |secret|
+        assert texts.none? { |text| text.to_s.include?(secret) }, 'a response body of /log_rows holds a secret'
+      end
+    end
+  end
+
   # Ops log reader, plan stage L2a, server half (OPS_LOG_ROWS_PLAN.md sections 6 and 7, 11
   # "Controller (log_rows_test.rb, L2a)"): GET /games/:id/log_rows through the real route.
   class LogRowsTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include OpsLogAssertions
+    include LogRowsBodyScan
 
     JAKE_PASSWORD = AccessModelScenario::JAKE_PASSWORD
     SEVEN_KEYS = %w[as detail elapsedMs event id result where].freeze
@@ -59,18 +85,16 @@ module BreakEscape
       response.parsed_body
     end
 
-    # Every response body of the route, answered or refused, holds none of the game's secrets.
-    def assert_body_holds_no_secret(game, body)
-      OpsLog.compared_secrets(game).each do |secret|
-        assert_not_includes body, secret.to_s, 'a response body of /log_rows holds a secret' unless secret.to_s.empty?
-      end
-    end
-
     def login(username = 'jbrooks', password = JAKE_PASSWORD)
       post login_game_url(@game), params: { pc_id: 'jake_pc', username: username, password: password }, as: :json
     end
 
     NOT_FOUND = { 'success' => false, 'reason' => 'not_found' }.freeze
+
+    test 'the secret scan has secrets to scan for' do
+      build
+      assert_includes OpsLog.compared_secrets(@game), JAKE_PASSWORD
+    end
 
     # ---- refusals ----
 
@@ -325,6 +349,13 @@ module BreakEscape
       assert_equal ['Jake Brooks'], as_shown('doors')
       assert_nil @game.reload.log_rows_for('audit').first['detail'], 'no flagged marker for a natural identity'
 
+      # the holder's own keycard among several cards sent is still natural (the held-card term of the rule)
+      build_swipes([keycard_item('jake_spare'), keycard_item('visitor_badge')])
+      swipe('records', ['VISITOR-07', JAKE_CARD_ID])
+      assert_equal ['Jake Brooks'], as_shown('audit')
+      assert_equal ['Jake Brooks'], as_shown('doors')
+      assert_nil @game.reload.log_rows_for('audit').first['detail'], 'no flagged marker when the holder keycard is held'
+
       build_swipes([HOLDER_CLONER.dup])
       clone_card(JAKE_CARD_ID, 'jake')
       swipe('records', [JAKE_CARD_ID])
@@ -371,6 +402,7 @@ module BreakEscape
   class LogRowsFootholdTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkRequests
+    include LogRowsBodyScan
 
     KS = KeyringLoginScenario
     OFFICE = KS::OFFICE
@@ -387,8 +419,7 @@ module BreakEscape
     end
 
     def read(params = {})
-      get game_path('log_rows'), params: { object_id: 'lena_log' }.merge(params), as: :json
-      response.parsed_body
+      read_log_rows('lena_log', params)
     end
 
     test 'a reader through a foothold route answers with the route, and 404 for a wrong route or no session' do
@@ -409,7 +440,9 @@ module BreakEscape
       # as for /container, a no-route read under a foothold session keeps the session_admits? rule
       read
       assert_response :success, response.body
-      # two routes conflict, and a wrong `from` is refused
+      # a lone wrong `from`, and two routes that conflict, are refused
+      assert_equal NOT_FOUND, read(from: 'no_such_pc')
+      assert_response :not_found
       assert_equal NOT_FOUND, read(foothold: OFFICE, from: 'no_such_pc')
       assert_response :not_found
       assert_equal NOT_FOUND, read(foothold: OFFICE, relay: 1)
@@ -441,6 +474,7 @@ module BreakEscape
   class LogRowsShareTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkRequests
+    include LogRowsBodyScan
 
     NS = NetworkModelScenario
     OFFICE = 'jack_comms_port'.freeze
@@ -460,8 +494,7 @@ module BreakEscape
     end
 
     def read(id, params = {})
-      get game_path('log_rows'), params: { object_id: id }.merge(params), as: :json
-      response.parsed_body
+      read_log_rows(id, params)
     end
 
     test 'a reader on a share is 404 without a session, answers with a foothold route, and is 404 after the unplug' do
