@@ -30,9 +30,15 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   six small departures listed there for the reviewer to judge).
 - Gotcha: never wrap `bin/ops-golden-compare` in `flock` (it self-locks; this deadlocked the
   shared lock for 50 minutes). Builders go over 150k if a wait is long: keep steps small.
-- L1a items 5 to 8 builder running (Sonnet); note will be `HANDOVER_L1a_5-8.md`. Next: L1b
-  (two builders: events and call sites; then `test_ops_logs`, playtest, docs), then review R1
-  of L1a+L1b (fable52L, "review" in the description), train check, land.
+- L1a items 5 to 8 DONE: `ecbbe549b`, `996f1cd51`, `e9be86ba4`, note `87f9e4208`
+  (`HANDOVER_L1a_5-8.md`). L1a is built. Node tests need
+  `PATH=/home/deploy/.local/node-v22.11.0-linux-x64/bin:$PATH`.
+- RUNNING: L1b items 1 and 2 builder (Sonnet; note `HANDOVER_L1b_1-2.md`); L1a review R1
+  (fable52L, of `31c406dcb..87f9e4208`, findings `ops_core_build/reviews/L1a_R1.md`, does not
+  commit: commit the file by path when it reports).
+- Next: L1b item 3 builder (`test_ops_logs`, PLAYTEST.md, docs A24 write side); a Sonnet
+  fixer for L1a R1 findings (after the L1b builder is out of `game.rb`); L1b review; delta
+  review; Haiku scripted playtest of `test_ops_logs`; train check; land; push.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
