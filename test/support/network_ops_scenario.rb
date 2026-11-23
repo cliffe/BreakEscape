@@ -40,6 +40,24 @@ module NetworkOpsScenario
     }
     data
   end
+
+  CLI_FIXTURE = File.expand_path('../fixtures/files/network_ops_cli.json', __dir__)
+  CLI_STRINGS = %w[10.20.0.0/24 10.20.0.15 10.20.0.21 10.20.0.1 10.20.0.77 10.20.0.40 10.30.0.0/28 10.30.0.2 10.30.0.9 192.168.7.5
+                   SVC-BANNER-TEXT BANNER-ONLY-TEXT BENCH-BANNER-TEXT].freeze
+  CLI_NOTES = %w[RANGE-NOTE-TEXT RANGE-OTHER-TEXT ADDR-NOTE-TEXT ADDR-OTHER-TEXT SVC-NOTE-TEXT SVC-OTHER-TEXT].freeze
+
+  # The scenario with the test-only `cli` objects of the fixture file merged in (the schema does
+  # not declare `cli` until the skin plan), by path: network cli objects, and service cli objects
+  # of a sign-in object or a `hosts` entry by host id and service name.
+  def with_cli(data, overlay = JSON.parse(File.read(CLI_FIXTURE)))
+    overlay['networks'].each { |id, net| data['networks'][id]['cli'] = net['cli'] }
+    objects = data['rooms'].values.flat_map { |room| room['objects'] || [] }
+    overlay['serviceCli'].each do |host_id, services|
+      host = objects.find { |o| o['id'] == host_id } || data['hosts'][host_id]
+      services.each { |name, cli| host['services'].find { |svc| svc['name'] == name }['cli'] = cli }
+    end
+    data
+  end
 end
 
 # Requests the ops controller tests share (beside NetworkRequests and Engine.routes.url_helpers).
@@ -48,6 +66,10 @@ module NetworkOpsRequests
 
   def ops_scenario(**options)
     NetworkOpsScenario.scenario(**options)
+  end
+
+  def ops_cli_scenario(**options)
+    NetworkOpsScenario.with_cli(NetworkOpsScenario.scenario(**options))
   end
 
   def build_ops_game(player_state = {}, data = ops_scenario)
