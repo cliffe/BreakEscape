@@ -118,6 +118,38 @@ module BreakEscape
       assert_equal 3, ops_rows.last['n']
     end
 
+    # Counts Game#save! calls made while it is switched on (the requests load their own Game).
+    module SaveCounter
+      class << self
+        attr_accessor :on, :count
+      end
+
+      def save!(*args, **opts)
+        SaveCounter.count += 1 if SaveCounter.on
+        super
+      end
+    end
+    Game.prepend(SaveCounter)
+
+    def saves_during
+      SaveCounter.count = 0
+      SaveCounter.on = true
+      yield
+      SaveCounter.count
+    ensure
+      SaveCounter.on = false
+    end
+
+    test 'repeated sweeps save only while the log helper keeps the row: the tenth repeat saves, the eleventh does not' do
+      hold_office_foothold
+      ops_scan(OFFICE, network_id: 'office_lan')
+      counts = Array.new(12) { saves_during { ops_scan(OFFICE, network_id: 'office_lan') } }
+      assert_equal [1] * 10, counts.first(10), 'a stored repeat saves once'
+      assert_equal [0, 0], counts.last(2), 'a repeat the helper refuses saves nothing'
+      assert_equal 11, ops_rows.last['n'], 'the row stopped merging at the limit'
+      assert_response :success
+    end
+
     test 'a sweep through a foothold that does not reach the network is a 404 and a pivot session opens it' do
       hold_office_foothold
       assert_state_unchanged_after { ops_scan(OFFICE, network_id: 'server_net') }
@@ -309,6 +341,37 @@ module BreakEscape
       ops_scan('implant_sam_pc', network_id: 'office_lan')
       assert_response :success, response.body
       assert_equal 'office_lan', ops_rows.last['where']['id']
+    end
+
+    # A built foothold id (jack_ + id) can pass 40 characters; a row cannot store it. The validator
+    # refuses it in a scenario with logSources; if one reaches the route anyway, the scan succeeds
+    # and no row is written (in every environment, the test guard included).
+    LONG_JACK = ('c' * 36).freeze
+
+    def long_jack_game
+      data = JSON.parse(ops_scenario.to_json.gsub('comms_port', LONG_JACK))
+      build_ops_game({}, data)
+      take_drop_box
+      plant(LONG_JACK)
+      assert_response :success, response.body
+      "jack_#{LONG_JACK}"
+    end
+
+    test 'a foothold id too long for a row still sweeps and scans: the route answers 200 and writes no row' do
+      foothold = long_jack_game
+      assert_equal 41, foothold.length
+      body = ops_scan(foothold, network_id: 'office_lan')
+      assert_response :success, response.body
+      assert_equal true, body['network']['swept']
+      assert_includes ops_state['opsDiscovered']['networks'], 'office_lan'
+      ops_scan(foothold, network_id: 'office_lan')
+      assert_response :success, response.body
+      assert_equal true, response.parsed_body['already']
+      body = ops_scan(foothold, host_id: 'sam_pc')
+      assert_response :success, response.body
+      assert_equal true, body['host']['scanned']
+      assert_includes ops_state['opsDiscovered']['hosts'], 'sam_pc'
+      assert_equal [], ops_rows, 'no row names a foothold id a row cannot store'
     end
 
     test 'no row holds a secret' do

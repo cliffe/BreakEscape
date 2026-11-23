@@ -767,7 +767,7 @@ module BreakEscape
         # A foothold whose own network is down (an outage, 5.2) lists none of its rows: they
         # would only be refused, and the hosts leave every view while the network is down
         own = network_footholds[id]['network']
-        foothold_for_client(id).merge(place).merge('hosts' => network_up?(own) ? network_rows(own) : [],
+        foothold_for_client(id).merge(place).merge('hosts' => network_up?(own) ? network_rows(own, id) : [],
                                       'networks' => network_blocks(id))
       end
       { status: :ok, body: { footholds: footholds } }
@@ -801,7 +801,7 @@ module BreakEscape
       live_hosts = session_hosts.reject { |h| host_service_off?(h[:pc]) }
       blocks = reach.to_a.sort.map do |net|
         { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, live_hosts, reach)),
-          'hosts' => network_rows(net), 'route' => 'up' }.merge(ops_block_fields(net))
+          'hosts' => network_rows(net, foothold_id), 'route' => 'up' }.merge(ops_block_fields(net))
       end
       blocks + down_blocks(foothold_id, reach, session_hosts)
     end
@@ -817,7 +817,7 @@ module BreakEscape
         # A down block advertises no action the server would refuse: no sign-in, no session
         # It names the account a session is kept for, as a powered-down row does (heldAs).
         rows = session_hosts.select { |h| h[:net] == net }.map do |h|
-          full = host_row(h[:pc])
+          full = host_row(h[:pc], foothold_id)
           held_as = full.dig('session', 'displayName') || full['heldAs']
           row = full.except('remoteSignIn', 'session', 'responding', 'heldAs')
           held_as.present? ? row.merge('heldAs' => held_as) : row
@@ -870,12 +870,13 @@ module BreakEscape
     end
 
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
-    def network_rows(network_id)
+    # foothold_id: the foothold the view is built for. Optional, unused for now (S3 reads it).
+    def network_rows(network_id, foothold_id = nil)
       # An unswept discovery network lists only the PCs the player holds a session on (5.2): the
       # rest is told by the sweep. Sign-in itself is not gated by this.
-      return ops_held_session_rows(network_id) unless ops_network_listing?(network_id)
+      return ops_held_session_rows(network_id, foothold_id) unless ops_network_listing?(network_id)
 
-      hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
+      hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object], foothold_id) }
       hosts += ops_device_rows(network_id)
       # A resource whose own offWhen holds is withheld while down (5.2), as a resource on a
       # down network is: its row leaves the view until the global clears.
@@ -1045,7 +1046,8 @@ module BreakEscape
       'unreachable'
     end
 
-    def host_row(pc)
+    # foothold_id: optional, unused for now (S3 reads it).
+    def host_row(pc, _foothold_id = nil)
       row = { 'id' => pc['id'], 'kind' => 'pc', 'name' => pc['name'], 'host' => host_label(pc),
               'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc) }
       # Discovery's fields (address by the host's own network; scanned and services once scanned)

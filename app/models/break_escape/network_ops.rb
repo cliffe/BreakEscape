@@ -88,13 +88,12 @@ module BreakEscape
       ops_discover!('networks', network_id) unless already
       # Every sweep writes a row. The first one changed state and saves anyway; a repeat saves
       # only when the helper kept the row.
-      result = write_log_row!('network_swept', as: nil, where: { kind: 'network', id: network_id },
-                              detail: { 'from' => foothold_id }, save_limit: already)
+      result = ops_write_scan_row!('network_swept', foothold_id, { kind: 'network', id: network_id }, save_limit: already)
       save! if !already || result&.stored?
 
       body = { success: true }
       body[:already] = true if already
-      body[:network] = { id: network_id, swept: true, hosts: network_rows(network_id) }
+      body[:network] = { id: network_id, swept: true, hosts: network_rows(network_id, foothold_id) }
       { status: :ok, body: body }
     end
 
@@ -108,15 +107,24 @@ module BreakEscape
       already = ops_discovered_list('hosts').include?(host_id)
       unless already
         ops_discover!('hosts', host_id)
-        write_log_row!('host_scanned', as: nil, where: { kind: record[:kind] == 'pc' ? 'pc' : 'host', id: host_id },
-                                       detail: { 'from' => foothold_id })
+        ops_write_scan_row!('host_scanned', foothold_id, { kind: record[:kind] == 'pc' ? 'pc' : 'host', id: host_id })
         save!
       end
 
       body = { success: true }
       body[:already] = true if already
-      body[:host] = ops_host_row(record)
+      body[:host] = ops_host_row(record, foothold_id)
       { status: :ok, body: body }
+    end
+
+    # The row of a scan. A row stores a foothold id of at most 40 characters; a built foothold id
+    # (jack_, wifi_ or implant_ plus an authored id) can be longer, and the validator refuses that
+    # in a scenario with logSources. Should one get here anyway, the row is not written (the guard
+    # would raise in test and development, a 500) and the scan itself still succeeds.
+    def ops_write_scan_row!(event, foothold_id, where, save_limit: false)
+      return nil unless foothold_id.match?(OpsLogEvents::ID_PATTERN)
+
+      write_log_row!(event, as: nil, where: where, detail: { 'from' => foothold_id }, save_limit: save_limit)
     end
 
     # --- state --------------------------------------------------------------------------------
@@ -142,8 +150,8 @@ module BreakEscape
     # --- rows ---------------------------------------------------------------------------------
 
     # A host row for a host the player can see, of either kind, as GET /network lists it.
-    def ops_host_row(record)
-      record[:kind] == 'pc' ? host_row(record[:object]) : ops_device_row(record)
+    def ops_host_row(record, foothold_id = nil)
+      record[:kind] == 'pc' ? host_row(record[:object], foothold_id) : ops_device_row(record)
     end
 
     # The row of a host with no sign-in: { id, kind: 'device', name, sprite?, responding? },
@@ -201,10 +209,10 @@ module BreakEscape
     end
 
     # The rows of the PCs the player holds a session on, on a network that lists no host yet.
-    def ops_held_session_rows(network_id)
+    def ops_held_session_rows(network_id, foothold_id = nil)
       held = view_session_hosts.select { |h| h[:net] == network_id }.map { |h| h[:pc_id] }
       NetworkModel.sign_in_objects_on(network_id, scenario_data).select { |entry| held.include?(entry[:object]['id'].to_s) }
-                  .map { |entry| host_row(entry[:object]) }
+                  .map { |entry| host_row(entry[:object], foothold_id) }
     end
 
     # The device rows of a network's view: none until the network lists its hosts.
