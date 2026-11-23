@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
-                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm,
+                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -101,7 +101,7 @@ module BreakEscape
     # se_landing_pages.built to false (observed on the branch; main has no such route). It
     # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm,
+                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
                                           :npc_frustration, :npc_workaround, :feed_post, :wear, :pin_dust, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
@@ -1858,6 +1858,19 @@ module BreakEscape
       return render json: { success: false, reason: 'bad_request' }, status: :bad_request unless ops_ids_well_formed?(ids)
 
       result = @game.confirm_finding!(*ids)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/technique (foothold, finding_id, item_id): uses a technique card on a
+    # finding (OPS_CORE_PLAN.md sections 5.4 and 6). One 400 for any parameter that is missing, not a
+    # string, empty or over 200 characters; it depends on no id.
+    def network_technique
+      authorize @game if defined?(Pundit)
+
+      ids = %i[foothold finding_id item_id].map { |key| params[key] }
+      return render json: { success: false, reason: 'bad_request' }, status: :bad_request unless ops_ids_well_formed?(ids)
+
+      result = @game.use_technique!(*ids)
       render json: result[:body], status: result[:status]
     end
 

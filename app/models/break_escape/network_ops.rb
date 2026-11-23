@@ -13,6 +13,8 @@ module BreakEscape
   #                  letter its status (unconfirmed, confirmed, false) and n its alias number
   #                  (alias "f<n>", given in the order found, kept in the value because the JSON
   #                  column does not keep key order). Findings ride on host rows.
+  #   opsUsed        [findingId] (S3): the findings a technique grant has been given for, once each.
+  #                  The keyring's technique_card proof reads it. Server-owned, never synced.
   #
   # Discovery changes the view and nothing else (5.2): sign-in, the desktop, shares and the
   # keyring never read opsDiscovered.
@@ -175,11 +177,8 @@ module BreakEscape
     # POST /network/confirm: settles a held finding (free). A weakness becomes confirmed and a decoy
     # false. Returns { status:, body: }.
     def confirm_finding!(foothold_id, finding_id)
-      found = ops_held_finding(finding_id)
+      found, record = ops_finding_reach(foothold_id, finding_id)
       return ops_not_found unless found
-
-      record = ops_listed_host(foothold_id, found[:host_id])
-      return ops_not_found unless record
       return ops_refusal(:forbidden, 'not_responding') if ops_host_off?(record)
 
       letter, number = ops_finding_value(finding_id)
@@ -196,6 +195,16 @@ module BreakEscape
       body[:already] = true if settled
       body[:finding] = ops_finding_row(found, letter, number)
       { status: :ok, body: body }
+    end
+
+    # The one preamble of confirm and use_technique! (the first 404): the held finding and its host
+    # record, only when the finding is held and its host is listed through the foothold; else nil.
+    def ops_finding_reach(foothold_id, finding_id)
+      found = ops_held_finding(finding_id)
+      return nil unless found
+
+      record = ops_listed_host(foothold_id, found[:host_id])
+      record ? [found, record] : nil
     end
 
     # The log place of a host record: a sign-in host is a pc, anything else a host.
@@ -289,7 +298,7 @@ module BreakEscape
       cli = ops_finding_cli(entry)
       row['cli'] = cli if cli
       if letter == 'c'
-        row['needs'] = ops_needs_rows(entry['needs'])
+        row['needs'] = ops_needs_rows(entry['needs'], found[:host_id])
         row['fixed'] = true if ops_fixed?(entry)
       elsif letter == 'f'
         row['falseBecause'] = entry['falseBecause']
@@ -339,10 +348,12 @@ module BreakEscape
 
     # --- S2: needs ----------------------------------------------------------------------------
 
-    # `needs` as rows { kind, label, met }, in the order credential, item, itemType, global. The
-    # label is a name the scenario already shows (a credential's label, an item's name) or the
-    # authored label of an itemType or global; never a global's name. `session` is S3.
-    def ops_needs_rows(needs)
+    # `needs` as rows { kind, label, met }, in the order credential, item, itemType, session, global. The
+    # label is a name the scenario already shows (a credential's label, an item's name, a session's
+    # host name) or the authored label of an itemType or global; never a global's name. This is the
+    # one needs predicate: the confirmed finding's rows show `met`, and use_technique! refuses on the
+    # first row not met (ops_unmet_need), so the tick and the refusal cannot disagree.
+    def ops_needs_rows(needs, host_id = nil)
       return [] unless needs.is_a?(Hash)
 
       rows = []
@@ -353,11 +364,28 @@ module BreakEscape
         met = needs['itemType'] != 'technique_card' && ops_item_type_held?(needs['itemType'])
         rows << { 'kind' => 'itemType', 'label' => needs['label'].to_s, 'met' => met }
       end
+      rows << ops_need_session(host_id, needs['session']) if needs['session'].is_a?(String)
       if BreakEscape::AccessWork.off_when_present?(needs['global'])
         rows << { 'kind' => 'global', 'label' => needs['label'].to_s,
                   'met' => BreakEscape::AccessWork.globals_hold?(needs['global'], frustration_globals) }
       end
       rows
+    end
+
+    # The first need row not met, as { 'kind', 'label' }, or nil when every need holds.
+    def ops_unmet_need(needs, host_id)
+      row = ops_needs_rows(needs, host_id).find { |r| !r['met'] }
+      row && { 'kind' => row['kind'], 'label' => row['label'] }
+    end
+
+    # A session held at the host's PC, not locked, at the level named or above (plan 5.4). The level
+    # is the record's own `access` (client_access_level) until S5a points it at session_access.
+    def ops_need_session(host_id, level)
+      pc = host_id.is_a?(String) ? find_login_pc(host_id)&.dig(:object) : nil
+      session = pc ? access_sessions[host_id] : nil
+      met = session.is_a?(Hash) && !session_locked?(session) &&
+            (level == 'user' || (level == 'admin' && client_access_level(host_id) == 'admin'))
+      { 'kind' => 'session', 'label' => pc ? host_label(pc).to_s : '', 'met' => met }
     end
 
     def ops_need_credential(cred_id)
@@ -414,6 +442,201 @@ module BreakEscape
         data = inv['scenarioData'] || inv
         data.is_a?(Hash) && data['id'].is_a?(String) ? data : nil
       end
+    end
+
+    # --- S3: use a technique card (plan 5.4) ---------------------------------------------------
+
+    # The technique card registry is server-only (plan section 7): deleted by name with `networks`
+    # and `hosts`. NetworkOps is included after NetworkAccess, so this extends its list of withheld
+    # keys (the plan's one-word addition to WITHHELD_SCENARIO_KEYS belongs in network_access.rb).
+    def withhold_network_keys!(filtered)
+      super
+      filtered.delete('techniques')
+      filtered
+    end
+
+    # GET /network gains a top-level `techniques` map for the cards the player holds, and nothing
+    # else changes (a game holding no card answers exactly as before). NetworkOps is included after
+    # NetworkAccess, so this wraps its builder.
+    def network_view(foothold_id = nil)
+      result = super
+      if result[:status] == :ok && result[:body].is_a?(Hash)
+        held = ops_held_techniques
+        result[:body][:techniques] = held if held.any?
+      end
+      result
+    end
+
+    # { techniqueId => { name, summary?, worksOn, itemId } } for each registry entry whose card the
+    # player holds; where several held items carry one technique, the first in id order is the itemId.
+    def ops_held_techniques
+      registry = NetworkModel.techniques(scenario_data)
+      out = {}
+      ops_held_items.map { |data| data['id'] }.sort.each do |item_id|
+        technique_id = ops_card_technique(item_id)
+        next if technique_id.nil? || out.key?(technique_id)
+
+        entry = registry[technique_id]
+        row = { 'name' => entry['name'] }
+        row['summary'] = entry['summary'] if entry['summary'].is_a?(String) && !entry['summary'].empty?
+        row['worksOn'] = entry['worksOn'].deep_dup
+        row['itemId'] = item_id
+        out[technique_id] = row
+      end
+      out.sort.to_h
+    end
+
+    # A held session on a host row carries `access: "admin"` when its level is admin and no key
+    # otherwise (plan section 0), through the same reader as the session answer. Wraps NetworkAccess's
+    # builder (NetworkOps is included after it); step 11's `openHere` work edits that builder itself.
+    def host_row(pc, foothold_id = nil)
+      row = super
+      held = row['session']
+      row['session'] = held.merge('access' => 'admin') if held.is_a?(Hash) && client_access_level(pc['id']) == 'admin'
+      row
+    end
+
+    # The registry key a held card names, or nil. The item must be held, unforged, with its id and
+    # type equal to the authored definition (ops_item_held?); the key is read from the authored
+    # definition, never from the inventory copy, and must be a registry key.
+    def ops_card_technique(item_id)
+      definition = CredentialModel.item_definition(scenario_data, item_id)
+      return nil unless definition.is_a?(Hash) && definition['type'] == 'technique_card' && ops_item_held?(item_id)
+
+      key = definition['technique_card']
+      key.is_a?(String) && NetworkModel.techniques(scenario_data).key?(key) ? key : nil
+    end
+
+    # POST /network/technique: a held technique card used on a held finding. Returns { status:, body: }.
+    # Checks in order (5.4): the finding held and its host listed (404); the card (404); the host
+    # responding (403); the repeat; confirmed; has a grant; not fixed; the match; the needs.
+    def use_technique!(foothold_id, finding_id, item_id)
+      found, record = ops_finding_reach(foothold_id, finding_id)
+      return ops_not_found unless found
+
+      technique_id = ops_card_technique(item_id)
+      return ops_not_found unless technique_id
+
+      letter, number = ops_finding_value(finding_id)
+      refuse = lambda do |status, reason, need = nil|
+        ops_technique_refusal(record, number, technique_id, status, reason, need)
+      end
+      return refuse.call(:forbidden, 'not_responding') if ops_host_off?(record)
+
+      entry = found[:entry]
+      grant = ops_grant_of(entry, record)
+      repeat = ops_technique_repeat(grant, foothold_id, finding_id, record[:id])
+      return ops_technique_repeat_answer(grant, repeat, foothold_id, record, number, technique_id) if repeat
+
+      return refuse.call(:unprocessable_entity, 'not_confirmed') if letter == 'u'
+      return refuse.call(:unprocessable_entity, 'false_positive') if letter == 'f'
+      return refuse.call(:unprocessable_entity, 'no_grant') unless grant
+      return refuse.call(:unprocessable_entity, 'fixed') if ops_fixed?(entry)
+
+      service = record[:services].find { |svc| svc['name'] == found[:service_name] }
+      mismatch = ops_technique_mismatch(NetworkModel.techniques(scenario_data)[technique_id], service, entry)
+      return refuse.call(:unprocessable_entity, mismatch) if mismatch
+
+      unmet = ops_unmet_need(entry['needs'], record[:id])
+      return refuse.call(:unprocessable_entity, 'need_unmet', unmet) if unmet
+
+      ops_technique_grant!(grant, foothold_id, finding_id, record, number, technique_id)
+    end
+
+    # The grant a weakness carries, or nil when it has none that can be given: a session on a host
+    # with a sign-in for an account the scenario holds, or a credential the registry names.
+    def ops_grant_of(entry, record)
+      grants = entry['grants']
+      return nil unless grants.is_a?(Hash)
+
+      session = grants['session']
+      if session.is_a?(Hash)
+        npc = account_npcs.find { |n| n['id'].to_s == session['account'].to_s }
+        level = session['access']
+        return nil unless record[:kind] == 'pc' && npc && %w[user admin].include?(level)
+
+        return { kind: 'session', npc: npc, access: level }
+      end
+      cred = grants['credential']
+      return nil unless cred.is_a?(String) && CredentialModel.registry(scenario_data)[cred].is_a?(Hash)
+
+      { kind: 'credential', id: cred }
+    end
+
+    # Why a card does not fit a finding's service: wrong_class, wrong_product, wrong_version, or nil.
+    # technique_matches? decides; the code names the first part that differs.
+    def ops_technique_mismatch(technique, service, entry)
+      return nil if NetworkModel.technique_matches?(technique, service, entry)
+
+      works = technique.is_a?(Hash) ? technique['worksOn'] : nil
+      return 'wrong_class' unless works.is_a?(Hash) && service.is_a?(Hash) && works['class'] == entry['class']
+      return 'wrong_product' if works.key?('product') && works['product'] != service['product']
+
+      'wrong_version'
+    end
+
+    # The existing technique session an exact repeat reports: for a session grant, the held record when
+    # it is a technique session for this finding through this foothold (and its account is known);
+    # for a credential grant, true when opsUsed holds the finding. Otherwise nil.
+    def ops_technique_repeat(grant, foothold_id, finding_id, host_id)
+      return nil unless grant
+
+      if grant[:kind] == 'credential'
+        return technique_finding_used?(finding_id) ? true : nil
+      end
+      session = access_sessions[host_id]
+      return nil unless session.is_a?(Hash) && session['via'] == 'technique' && session['technique'] == finding_id &&
+                        session['foothold'] == foothold_id
+
+      account_npcs.find { |n| n['id'].to_s == session['id'].to_s }
+    end
+
+    def ops_technique_repeat_answer(grant, repeat, foothold_id, record, number, technique_id)
+      detail = { 'finding' => "f#{number}", 'technique' => technique_id, 'grant' => grant[:kind] }
+      if grant[:kind] == 'session'
+        detail['access'] = client_access_level(record[:id])
+        row = write_log_row!('technique_used', as: ops_account_as(repeat['id']), where: ops_where(record), detail: detail, save_limit: true)
+        body = { success: true, already: true, grant: 'session',
+                 session: login_session_answer(repeat, 'technique', pc_id: record[:id], foothold: foothold_id) }
+      else
+        row = write_log_row!('technique_used', as: nil, where: ops_where(record), detail: detail, save_limit: true)
+        body = { success: true, already: true, grant: 'credential', keyringChanged: false }
+      end
+      save! if row&.stored?
+      { status: :ok, body: body }
+    end
+
+    # A new use: the grant, the finding id in opsUsed (once), the row, the save.
+    def ops_technique_grant!(grant, foothold_id, finding_id, record, number, technique_id)
+      detail = { 'finding' => "f#{number}", 'technique' => technique_id, 'grant' => grant[:kind] }
+      if grant[:kind] == 'session'
+        npc = grant[:npc]
+        ended = start_login_session!(record[:id], npc, 'technique', foothold: foothold_id, access: grant[:access], technique: finding_id)
+        detail['access'] = grant[:access]
+        as = ops_account_as(npc['id'])
+        body = { success: true, grant: 'session',
+                 session: login_session_answer(npc, 'technique', pc_id: record[:id], foothold: foothold_id) }
+        body = with_ended_pc_ids(body, ended)
+      else
+        as = nil
+        body = { success: true, grant: 'credential', keyringChanged: true }
+      end
+      used = player_state['opsUsed'].is_a?(Array) ? player_state['opsUsed'] : []
+      player_state['opsUsed'] = used + [finding_id] unless used.include?(finding_id)
+      write_log_row!('technique_used', as: as, where: ops_where(record), detail: detail)
+      save!
+      { status: :ok, body: body }
+    end
+
+    # A refusal past the two 404s: a `technique_refused` row (limited, so it saves only when it was
+    # stored) and the refusal answer. Nothing else in the state changes.
+    def ops_technique_refusal(record, number, technique_id, status, reason, need = nil)
+      row = write_log_row!('technique_refused', as: nil, where: ops_where(record), result: 'refused', save_limit: true,
+                                                detail: { 'finding' => "f#{number}", 'technique' => technique_id, 'reason' => reason })
+      save! if row&.stored?
+      body = { success: false, reason: reason }
+      body[:need] = need if need
+      { status: status, body: body }
     end
 
     # --- state --------------------------------------------------------------------------------

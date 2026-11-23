@@ -564,7 +564,7 @@ module BreakEscape
     end
 
     # Hand-kept: the event registry (lib/break_escape/ops_log_events.rb) records no per-event `as` rule, so there is nothing to derive this from.
-    OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed].freeze
+    OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
       BreakEscape::OpsLog.events.each do |name, entry|

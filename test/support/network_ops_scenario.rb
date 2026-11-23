@@ -90,6 +90,72 @@ module NetworkOpsScenario
     data
   end
 
+  # The S3 fixture (OPS_CORE_PLAN.md 4.3 and 5.4): the S2 fixture's world plus a card registry, cards
+  # in the lobby, grants and a second jack on office_lan. sam_pc's web, files and mail services (product "Quillfeather
+  # web" on web, version 7.7.3-q; at most four weaknesses a service) hold one weakness per refusal and grant; print_srv's queue grants a
+  # credential; lab_box (off by lab_off) has a credential grant of its own.
+  TECH_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused technique_used].freeze
+  WEB_PRODUCT = "#{PRODUCT_SECRET} web".freeze
+  SECOND_JACK = 'jack_server_port'.freeze
+  TECH_CARDS = {
+    'card_factory' => 'factory_accounts', 'card_factory_b' => 'factory_accounts', 'card_build' => 'build_flaw',
+    'card_wrongprod' => 'other_product', 'card_wrongver' => 'other_version', 'card_listing' => 'listing_flaw',
+    'card_ghost' => 'no_such_technique'
+  }.freeze
+
+  def sam_grant(access = 'user')
+    { 'session' => { 'account' => 'sam', 'access' => access } }
+  end
+
+  def techniques_scenario(**options)
+    data = findings_scenario(**options)
+    data['logSources'] = { 'ops' => { 'title' => 'Ops', 'events' => TECH_EVENTS } } unless options[:logged] == false
+    data['globalVariables'] = data['globalVariables'].merge('lab_off' => false)
+    data['techniques'] = {
+      'factory_accounts' => { 'name' => 'Factory accounts', 'summary' => 'Devices often ship with a published account.',
+                              'worksOn' => { 'class' => 'default_creds' } },
+      'build_flaw' => { 'name' => 'Build flaw', 'worksOn' => { 'class' => 'unpatched', 'product' => WEB_PRODUCT, 'versions' => [VERSION_SECRET] } },
+      'other_product' => { 'name' => 'Other product', 'worksOn' => { 'class' => 'unpatched', 'product' => 'Elsewhere web' } },
+      'other_version' => { 'name' => 'Other version', 'worksOn' => { 'class' => 'unpatched', 'product' => WEB_PRODUCT, 'versions' => ['1.0'] } },
+      'listing_flaw' => { 'name' => 'Listing flaw', 'worksOn' => { 'class' => 'misconfig' } },
+      'unheld_flaw' => { 'name' => 'Unheld flaw', 'worksOn' => { 'class' => 'weak_auth' } }
+    }
+    cards = TECH_CARDS.map do |id, technique|
+      { 'id' => id, 'type' => 'technique_card', 'name' => "Field note #{id}", 'technique_card' => technique, 'takeable' => true }
+    end
+    lobby = data['rooms']['lobby']['objects']
+    lobby.push(*cards)
+    lobby << NetworkModelScenario::DROP_BOX.merge('id' => 'kit_dropbox_2', 'name' => 'Spare drop box')
+    data['credentials']['print_admin'] = { 'kind' => 'saved_connection', 'account' => 'ian', 'connectsTo' => 'sv_fs02', 'label' => 'Print admin',
+                                           'proof' => { 'technique_card' => SPOOL } }
+    data['credentials']['lab_admin'] = { 'kind' => 'saved_connection', 'account' => 'ian', 'connectsTo' => 'sv_fs02', 'label' => 'Lab admin',
+                                         'proof' => { 'technique_card' => LAB_OPEN } }
+    sam = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['services']
+    sam << service('mail', 25)
+    web, files, mail = %w[web files mail].map { |name| sam.find { |svc| svc['name'] == name } }
+    web['weaknesses'] = [
+      weak('factory_login', 'default_creds', 'high', 'grants' => sam_grant),
+      weak('old_build', 'unpatched', 'medium', 'grants' => sam_grant),
+      weak('quiet_leak', 'misconfig', 'low'),
+      weak('patched_one', 'default_creds', 'low', 'grants' => sam_grant, 'fixedIf' => PATCHED_GLOBAL)
+    ]
+    files['weaknesses'] = [
+      weak('gated', 'default_creds', 'low', 'grants' => sam_grant, 'needs' => { 'global' => DOOR_GLOBAL, 'label' => DOOR_LABEL }),
+      weak('step_up', 'default_creds', 'high', 'grants' => sam_grant('admin'), 'needs' => { 'session' => 'user' }),
+      weak('step_admin', 'default_creds', 'high', 'grants' => sam_grant('admin'), 'needs' => { 'session' => 'admin' }),
+      weak('needy', 'default_creds', 'low', 'grants' => sam_grant,
+                                            'needs' => { 'credential' => 'lena_login', 'item' => 'panel_sheet' })
+    ]
+    mail['weaknesses'] = [
+      weak('sheet_gated', 'default_creds', 'low', 'grants' => sam_grant, 'needs' => { 'item' => 'panel_sheet' }),
+      weak('raw_one', 'default_creds', 'low', 'grants' => sam_grant)
+    ]
+    web['decoys'] = [{ 'id' => 'old_banner', 'class' => 'default_creds', 'severity' => 'low', 'falseBecause' => BANNER_FALSE }]
+    data['hosts']['print_srv']['services'].first['weaknesses'] = [weak('spool_default', 'default_creds', 'low', 'grants' => { 'credential' => 'print_admin' })]
+    data['hosts']['lab_box']['services'].first['weaknesses'] = [weak('lab_open', 'default_creds', 'low', 'grants' => { 'credential' => 'lab_admin' })]
+    data
+  end
+
   CLI_FIXTURE = File.expand_path('../fixtures/files/network_ops_cli.json', __dir__)
   CLI_STRINGS = %w[10.20.0.0/24 10.20.0.15 10.20.0.21 10.20.0.1 10.20.0.77 10.20.0.40 10.30.0.0/28 10.30.0.2 10.30.0.9 192.168.7.5
                    SVC-BANNER-TEXT BANNER-ONLY-TEXT BENCH-BANNER-TEXT].freeze
@@ -191,6 +257,39 @@ module NetworkOpsRequests
     game = BreakEscape::Game.find(@game.id)
     game.player_state['globalVariables'] = (game.player_state['globalVariables'] || {}).merge(name => value)
     game.save!
+  end
+
+  def ops_technique(foothold, finding_id, item_id)
+    params = {}
+    params[:foothold] = foothold unless foothold.nil?
+    params[:finding_id] = finding_id unless finding_id.nil?
+    params[:item_id] = item_id unless item_id.nil?
+    post game_path('network/technique'), params: params, as: :json
+    response.parsed_body
+  end
+
+  def card_entry(id, **extra)
+    { 'id' => id, 'type' => 'technique_card', 'name' => "Field note #{id}", 'takeable' => true }.merge(extra.transform_keys(&:to_s))
+  end
+
+  # A game on the S3 fixture: the office foothold (and the second jack when `second`), the cards
+  # given held, every finding on sam_pc, print_srv and lab_box checked, all confirmed but `raw_one`.
+  def techniques_game(cards: %w[card_factory], state: {}, second: false, data: NetworkOpsScenario.techniques_scenario)
+    inventory = cards.map { |id| card_entry(id) }
+    state = { 'inventory' => inventory, 'unlockedRooms' => NetworkRequests::OPEN_ROOMS + %w[server_room] }.merge(state)
+    hold_office_foothold(state, data)
+    if second
+      add_item('pc', 'kit_dropbox_2', 'Spare drop box')
+      plant('server_port')
+      assert_response :success, response.body
+    end
+    sweep_and_scan('sam_pc', 'print_srv', 'lab_box')
+    %w[web files mail].each { |name| ops_check(NetworkOpsScenario::OFFICE, host_id: 'sam_pc', service: name) }
+    ops_check(NetworkOpsScenario::OFFICE, host_id: 'print_srv', service: 'queue')
+    ops_check(NetworkOpsScenario::OFFICE, host_id: 'lab_box', service: 'web')
+    ops_state['opsFindings'].each_key do |id|
+      ops_confirm(NetworkOpsScenario::OFFICE, id) unless id.end_with?('.raw_one')
+    end
   end
 
   # The findings listed on a host's row of the office view, or nil when the row has no `findings` key.

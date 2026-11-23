@@ -56,6 +56,7 @@ BreakEscape::Engine.routes.draw do
       post 'network/scan',    to: 'games#network_scan',    as: 'network_scan'     # Sweep a network or scan a host (ops core S1)
       post 'network/check',   to: 'games#network_check',   as: 'network_check'    # Check a scanned service for findings (ops core S2)
       post 'network/confirm', to: 'games#network_confirm', as: 'network_confirm'  # Confirm a finding (ops core S2)
+      post 'network/technique', to: 'games#network_technique', as: 'network_technique' # Use a technique card on a finding (ops core S3)
 
       # Objectives system
       get 'objectives'                                      # Get current objective state

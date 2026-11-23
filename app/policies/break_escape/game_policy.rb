@@ -177,6 +177,10 @@ module BreakEscape
       show?
     end
 
+    def network_technique?
+      show?
+    end
+
     def submit_flag?
       show?
     end
