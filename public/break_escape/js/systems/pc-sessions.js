@@ -195,7 +195,8 @@ function publicSession(pcId, s) {
     // A guest claim says so, so its desktop can say how it ends (UX access R1 finding 5)
     if (s.guest === true) out.guest = true;
     // The level a technique session was granted at (core plan 5.4): only 'admin' is carried
-    if (s.access === 'admin') out.access = 'admin';
+    // Never out of a locked entry: a lock or an expired session leaves no admin on the client
+    if (s.access === 'admin' && s.locked !== true) out.access = 'admin';
     // A locked session (UI slice 6) stays held but needs the password again; the open flow
     // reads this to show the sign-in screen with the account pre-chosen.
     if (s.locked === true) out.locked = true;
@@ -383,7 +384,8 @@ export class PcSessions {
                 ...(s.via === 'credential' ? credentialFields(s) : {}),
                 ...tokenFields(s),
                 ...pictureFields(s),
-                ...accessFields(s),
+                // A locked session carries no level (the mirror drops it at the lock, as here)
+                ...(s.locked === true ? {} : accessFields(s)),
                 restored: true,
                 // A locked session survives a reload like any other session state (UI slice 6)
                 ...(s.locked === true ? { locked: true } : {}),
@@ -442,6 +444,53 @@ export class PcSessions {
 
     /** True when the held session at pcId is locked (UI slice 6): the open flow shows the sign-in screen. */
     isLocked(pcId) { return this.sessions.get(pcId)?.locked === true; }
+
+    /**
+     * Admin level at pcId (privilege plan S5a): the server's `access` on the held entry, and the
+     * entry is not locked. No entry, a locked one or no `access` is false. Never decided here.
+     */
+    sessionAdmin(pcId) {
+        const s = this.sessions.get(pcId);
+        return !!s && s.access === 'admin' && s.locked !== true;
+    }
+
+    /**
+     * Admin at the keyboard (S5a): sessionAdmin, and the entry is none of remote, through a
+     * foothold, a relay or from another desktop (a technique copy carries remote and a foothold).
+     */
+    keyboardAdmin(pcId) {
+        if (!this.sessionAdmin(pcId)) return false;
+        const s = this.sessions.get(pcId);
+        if (s.remote === true || s.relay === true) return false;
+        if (typeof s.footholdId === 'string' && s.footholdId !== '') return false;
+        if (typeof s.fromPcId === 'string' && s.fromPcId !== '') return false;
+        return true;
+    }
+
+    /**
+     * Whether a plant at this object is made as an admin (S5a): for an object that needs a
+     * session, keyboardAdmin of the PC its grant names; else sessionAdmin of the object's own id.
+     * Reads window.pcPolicy.sessionGrantPc (set by pc-policy.js) so this module imports nothing new.
+     */
+    plantAdmin(objectData) {
+        if (!objectData || typeof objectData !== 'object') return false;
+        const pcId = (typeof window !== 'undefined' && window.pcPolicy?.sessionGrantPc?.(objectData)) || null;
+        if (pcId) return this.keyboardAdmin(pcId);
+        return typeof objectData.id === 'string' && this.sessionAdmin(objectData.id);
+    }
+
+    /**
+     * A desktop 403 whose serverReason is 'off' or 'not_responding' (S5a): power or the host's
+     * service is gone, so the entry keeps nothing of its level. The session itself stays.
+     * Returns true when an access was dropped.
+     */
+    noteDesktopRefused(pcId, serverReason) {
+        if (serverReason !== 'off' && serverReason !== 'not_responding') return false;
+        const s = this.sessions.get(pcId);
+        if (!s || !('access' in s)) return false;
+        delete s.access;
+        return true;
+    }
 
     /**
      * Whether the start panel may offer Lock for pcId (UI slice 6, K-lock): the server
@@ -918,6 +967,7 @@ export class PcSessions {
             return { ok: false, reason: err?.status === 422 ? 'refused' : 'error', status: err?.status ?? null, message: b.message || b.error || 'Could not lock the session' };
         }
         s.locked = true;
+        delete s.access;
         this._emit('pc_session_locked', { pcId, npcId: s.npcId ?? null });
         this._closeDesktop(pcId, message, 'locked');
         return { ok: true };
@@ -1098,6 +1148,11 @@ export class PcSessions {
 }
 
 export const pcSessions = new PcSessions();
+
+// Plain-function forms of the level readers, bound to the shared mirror
+export const sessionAdmin = (pcId) => pcSessions.sessionAdmin(pcId);
+export const keyboardAdmin = (pcId) => pcSessions.keyboardAdmin(pcId);
+export const plantAdmin = (objectData) => pcSessions.plantAdmin(objectData);
 if (typeof window !== 'undefined') window.pcSessions = pcSessions;
 
 export default pcSessions;
