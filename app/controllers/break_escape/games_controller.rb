@@ -1220,12 +1220,20 @@ module BreakEscape
       # Open before this request: validate_unlock grants it whatever is sent, so the answer
       # must not say which of the sent cards the list admits, or a request per copy would
       # sort the player's copies after the first yes (UX slice 3b R1 m1)
-      already_open = method == 'rfid' && card_ids &&
+      # Ops log L1b: every rfid request answers it, a card list or not
+      already_open = method == 'rfid' &&
                      (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
+      # Ops log L1b: an rfid lock in force and not open, judged before the unlock changes it
+      rfid_in_force = method == 'rfid' && !already_open && !@game.ops_rfid_lock_in_force(target_type, target_id).nil?
 
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # Ops log L1b: a refused rfid post at an rfid lock in force; saves only when the row stored
+        if rfid_in_force
+          badge = @game.write_badge_swipe_denied!(target_type, target_id)
+          @game.save! if badge&.stored?
+        end
         # Under a session the player holds at a PC that is off, or over a route that is down
         # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
         # player something new; those answer as any wrong code.
@@ -1278,6 +1286,8 @@ module BreakEscape
       # Use transaction to ensure atomic update
       flag_not_recorded = false
       ActiveRecord::Base.transaction(requires_new: true) do
+        # Ops log L1b: the granted swipe, before unlock_room! or unlock_object! saves it
+        @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
         if target_type == 'door'
           if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
             # Gated route-room split (§3.5): the NPC route opened the door for the player's
