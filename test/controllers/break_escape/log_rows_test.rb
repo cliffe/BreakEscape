@@ -2,6 +2,7 @@ require 'test_helper'
 require_relative '../../support/access_model_scenario'
 require_relative '../../support/keyring_login_scenario'
 require_relative '../../support/ops_log_assertions'
+require_relative '../../support/network_model_scenario'
 
 module BreakEscape
   # Ops log reader, plan stage L2a, server half (OPS_LOG_ROWS_PLAN.md sections 6 and 7, 11
@@ -23,17 +24,19 @@ module BreakEscape
 
     def scenario
       data = AccessModelScenario.routes_scenario
-      data['logSources'] = SOURCES.deep_dup
+      data['logSources'] = (@sources || SOURCES).deep_dup
       lobby = data['rooms']['lobby']
+      lobby['connections'] = lobby['connections'].merge('east' => %w[records mixed]) # the rfid doors, in reach of the lobby
       finance = data['rooms']['finance']
       lobby['objects'] += [
-        reader('r_open'), reader('r_own_lock', 'audit', 'locked' => true, 'lockType' => 'pin', 'requires' => '5555'),
+        reader('r_open'), reader('r_doors', 'doors'), reader('r_own_lock', 'audit', 'locked' => true, 'lockType' => 'pin', 'requires' => '5555'),
         reader('r_undeclared', 'nope'),
         { 'id' => 'plain_note', 'type' => 'text_file', 'name' => 'Note', 'text' => 'hi', 'minigameData' => { 'logSource' => 'audit' } }
       ]
       lobby['objects'].find { |o| o['id'] == 'lobby_safe' }['contents'] << reader('r_cabinet')
       finance['objects'] << reader('r_vault')
       finance['objects'].find { |o| o['id'] == 'jake_pc' }['contents'] << reader('r_desktop')
+      finance['objects'].find { |o| o['id'] == 'jake_pc' }['contents'] << reader('r_signin_reader', 'audit', 'locked' => true, 'lockType' => 'login')
       data['accountProfiles']['jake_files']['contents'] << reader('r_profile')
       data
     end
@@ -52,7 +55,15 @@ module BreakEscape
 
     def read(object_id, params = {})
       get "/break_escape/games/#{@game.id}/log_rows", params: { object_id: object_id }.merge(params), as: :json
+      assert_body_holds_no_secret(@game.reload, response.body)
       response.parsed_body
+    end
+
+    # Every response body of the route, answered or refused, holds none of the game's secrets.
+    def assert_body_holds_no_secret(game, body)
+      OpsLog.compared_secrets(game).each do |secret|
+        assert_not_includes body, secret.to_s, 'a response body of /log_rows holds a secret' unless secret.to_s.empty?
+      end
     end
 
     def login(username = 'jbrooks', password = JAKE_PASSWORD)
@@ -243,15 +254,116 @@ module BreakEscape
       assert_equal [], %w[opsLog opsLogSeq opsLogClockAt].select { |k| Game.find(@game.id).player_state.key?(k) }
     end
 
-    test 'card holder: a source without showCardHolder hides it when another source shows it' do
-      data = scenario
-      data['logSources']['doors']['showCardHolder'] = true
-      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
-                                 scenario: data, player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby] })
-      @game.write_log_row!('badge_swipe', as: { npc: 'len' }, where: { kind: 'door', id: 'finance' }, result: 'ok')
-      @game.save!
-      assert_equal ['Len Okafor'], @game.log_rows_for_client('doors')[:rows].map { |r| r[:as] }
-      assert_equal ['-'], @game.log_rows_for_client('audit')[:rows].map { |r| r[:as] }
+    test 'a reader that is itself a sign-in object is refused even while a session is held' do
+      build
+      open_finance
+      login
+      assert_equal NOT_FOUND, read('r_signin_reader')
+      assert_response :not_found
+    end
+
+    test 'every reader leaves the game untouched, and every answer is no-store' do
+      build
+      open_finance
+      login
+      state = @game.reload.player_state
+      stamp = Game.find(@game.id).updated_at
+      %w[r_open r_desktop r_profile r_vault r_cabinet no_such_object].each do |id|
+        read(id)
+        assert_equal 'no-store', response.headers['Cache-Control'], id
+      end
+      read('x' * 65)
+      assert_response :bad_request
+      assert_equal 'no-store', response.headers['Cache-Control']
+      assert_equal state, Game.find(@game.id).player_state
+      assert_equal stamp, Game.find(@game.id).updated_at
+    end
+
+    # ---- showCardHolder, through POST /unlock (two sources: audit has no flag, doors has it) ----
+
+    HOLDER_CLONER = AccessModelScenario::CLONER
+    JAKE_CARD_ID = AccessModelScenario::JAKE_CARD['card_id']
+    POWER_CARD_ID = AccessModelScenario::POWER_CARD['card_id']
+
+    def build_swipes(inventory)
+      build('unlockedRooms' => %w[lobby finance], 'encounteredNPCs' => %w[len jake dana exec imran gary],
+            'inventory' => inventory)
+    end
+
+    def keycard_item(id)
+      card = AccessModelScenario.routes_scenario['rooms']['lobby']['objects'].find { |o| o['id'] == id }
+      card.slice('id', 'type', 'name', 'card_id', 'rfid_protocol', 'takeable')
+    end
+
+    def clone_card(card_id, npc_id = nil, object_id: nil)
+      post clone_card_game_url(@game), params: { card_id: card_id, npc_id: npc_id, object_id: object_id }.compact, as: :json
+      assert_equal true, response.parsed_body['recorded'], response.body
+    end
+
+    def swipe(door, card_ids)
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: door, method: 'rfid', card_ids: card_ids }, as: :json
+      assert_response :success, response.body
+    end
+
+    def as_shown(source)
+      body = read(source == 'doors' ? 'r_doors' : 'r_open')
+      assert_response :success, response.body
+      assert_not_includes response.body, 'flagged', 'the marker never leaves the server'
+      body['rows'].map { |r| r['as'] }
+    end
+
+    def holder_scenario_sources
+      { 'audit' => { 'title' => 'Audit log', 'events' => ['badge_swipe'] },
+        'doors' => { 'title' => 'Doors', 'events' => ['badge_swipe'], 'showCardHolder' => true } }
+    end
+
+    test 'the holder rule: own card and a single copy show the holder in both sources, with no marker' do
+      @sources = holder_scenario_sources
+      build_swipes([keycard_item('jake_spare')])
+      swipe('records', [JAKE_CARD_ID])
+      assert_equal ['Jake Brooks'], as_shown('audit')
+      assert_equal ['Jake Brooks'], as_shown('doors')
+      assert_nil @game.reload.log_rows_for('audit').first['detail'], 'no flagged marker for a natural identity'
+
+      build_swipes([HOLDER_CLONER.dup])
+      clone_card(JAKE_CARD_ID, 'jake')
+      swipe('records', [JAKE_CARD_ID])
+      assert_equal ['Jake Brooks'], as_shown('audit')
+      assert_equal ['Jake Brooks'], as_shown('doors')
+    end
+
+    test 'the holder rule: several cards sent with a copy passing hide the holder in a source without the flag only' do
+      @sources = holder_scenario_sources
+      build_swipes([HOLDER_CLONER.dup, keycard_item('visitor_badge')])
+      clone_card(JAKE_CARD_ID, 'jake')
+      swipe('records', ['VISITOR-07', JAKE_CARD_ID])
+      assert_equal ['-'], as_shown('audit')
+      assert_equal ['Jake Brooks'], as_shown('doors')
+      assert_equal({ 'flagged' => 1 }, @game.reload.log_rows_for('audit').first['detail'])
+    end
+
+    test 'the holder rule: a card with no holder is named only where the flag is set, and with one card sent in both' do
+      @sources = holder_scenario_sources
+      build_swipes([HOLDER_CLONER.dup])
+      clone_card('VISITOR-07', object_id: 'visitor_badge')
+      clone_card(JAKE_CARD_ID, 'jake')
+      swipe('mixed', [JAKE_CARD_ID, 'VISITOR-07'])
+      assert_equal ['-'], as_shown('audit'), 'the plain source never says which of several cards the lock took'
+      assert_equal ['Visitor badge'], as_shown('doors')
+
+      build_swipes([HOLDER_CLONER.dup])
+      clone_card('VISITOR-07', object_id: 'visitor_badge')
+      swipe('mixed', ['VISITOR-07'])
+      assert_equal ['Visitor badge'], as_shown('audit')
+      assert_equal ['Visitor badge'], as_shown('doors')
+    end
+
+    test 'the holder rule: with no source setting the flag, several cards name nobody and nothing is marked' do
+      build_swipes([HOLDER_CLONER.dup, keycard_item('visitor_badge')])
+      clone_card(JAKE_CARD_ID, 'jake')
+      swipe('records', ['VISITOR-07', JAKE_CARD_ID])
+      assert_equal ['-'], as_shown('audit')
+      assert_nil @game.reload.log_rows_for('audit').first['as']
     end
   end
 
@@ -297,6 +409,84 @@ module BreakEscape
       # as for /container, a no-route read under a foothold session keeps the session_admits? rule
       read
       assert_response :success, response.body
+      # two routes conflict, and a wrong `from` is refused
+      assert_equal NOT_FOUND, read(foothold: OFFICE, from: 'no_such_pc')
+      assert_response :not_found
+      assert_equal NOT_FOUND, read(foothold: OFFICE, relay: 1)
+      # the route goes down: after the drop box is unplugged the same request is refused
+      unplug('comms_port')
+      assert_equal NOT_FOUND, read(foothold: OFFICE)
+      assert_response :not_found
+      assert_equal NOT_FOUND, read
+    end
+
+    # R1 m6: the two `unreachable` refusals of the shared extraction name different ids (the PC for
+    # a refused route; the container for a sign-in object in a share).
+    test '/container names the desktop for a refused folder route' do
+      build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake] }, scenario)
+      @game.reload.player_state['inventory'] = Array(@game.player_state['inventory']) + [KS.held('lena_rdp_file')]
+      @game.save!
+      take_drop_box
+      plant('comms_port')
+      post game_path('login'), params: { pc_id: 'lena_pc', credential: 'lena_rdp', foothold: OFFICE }, as: :json
+      assert_equal true, response.parsed_body['success'], response.body
+      get game_path('container/lena_log'), params: { foothold: 'no_such_port' }, as: :json
+      assert_response :forbidden
+      assert_equal 'unreachable', response.parsed_body['reason']
+      assert_equal 'PC not reachable: lena_pc', response.parsed_body['error']
+    end
+  end
+
+  # A reader inside a file share (the resource branch of container_reach_refusal).
+  class LogRowsShareTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include NetworkRequests
+
+    NS = NetworkModelScenario
+    OFFICE = 'jack_comms_port'.freeze
+    NOT_FOUND = { 'success' => false, 'reason' => 'not_found' }.freeze
+
+    def scenario
+      data = NS.scenario
+      data['logSources'] = { 'audit' => { 'title' => 'Audit log', 'events' => ['signin_*'] } }
+      data['resources']['scanned_inbox']['contents'] << {
+        'id' => 'share_log', 'type' => 'ops_log_terminal', 'name' => 'Share log', 'minigameData' => { 'logSource' => 'audit' }
+      }
+      data['resources']['scanned_inbox']['contents'] << {
+        'id' => 'share_kiosk_log', 'type' => 'ops_log_terminal', 'name' => 'Kiosk log', 'locked' => true, 'lockType' => 'login',
+        'access' => { 'roles' => ['staff'] }, 'minigameData' => { 'logSource' => 'audit' }
+      }
+      data
+    end
+
+    def read(id, params = {})
+      get game_path('log_rows'), params: { object_id: id }.merge(params), as: :json
+      response.parsed_body
+    end
+
+    test 'a reader on a share is 404 without a session, answers with a foothold route, and is 404 after the unplug' do
+      build_network_game({}, scenario)
+      assert_equal NOT_FOUND, read('share_log')
+      assert_response :not_found
+      take_drop_box
+      plant('comms_port')
+      assert_response :success, response.body
+      read('share_log', foothold: OFFICE)
+      assert_response :success, response.body
+      assert_equal 'Audit log', response.parsed_body['title']
+      unplug('comms_port')
+      assert_equal NOT_FOUND, read('share_log', foothold: OFFICE)
+    end
+
+    test 'a sign-in reader in a share is 404 even with a foothold, as an unreachable object' do
+      build_network_game({}, scenario)
+      take_drop_box
+      plant('comms_port')
+      assert_equal NOT_FOUND, read('share_kiosk_log', foothold: OFFICE)
+      assert_response :not_found
+      get game_path('container/share_kiosk_log'), params: { foothold: OFFICE }, as: :json
+      assert_response :forbidden
+      assert_equal 'PC not reachable: share_kiosk_log', response.parsed_body['error']
     end
   end
 end

@@ -1904,17 +1904,18 @@ module BreakEscape
     def log_rows
       authorize @game if defined?(Pundit)
 
+      response.headers['Cache-Control'] = 'no-store'
       object_id = params[:object_id]
       unless object_id.is_a?(String) && !object_id.empty? && object_id.length <= 64
         return render json: { success: false, reason: 'invalid_object' }, status: :bad_request
       end
 
-      response.headers['Cache-Control'] = 'no-store'
       located = @game.login_scope_of(object_id)
       reader = located && located[:object]
       source_id = reader.is_a?(Hash) && reader.dig('minigameData', 'logSource')
       unless reader.is_a?(Hash) && reader['type'] == 'ops_log_terminal' && reader['id'].to_s == object_id &&
-             source_id.is_a?(String) && (answer = @game.log_rows_for_client(source_id)) && log_reader_reached?(located)
+             source_id.is_a?(String) && BreakEscape::OpsLog.sources_for(@game.scenario_data).any? { |id, _s, _cap| id == source_id } &&
+             log_reader_reached?(located) && (answer = @game.log_rows_for_client(source_id))
         return render json: { success: false, reason: 'not_found' }, status: :not_found
       end
 
@@ -3202,6 +3203,8 @@ module BreakEscape
     # Whether the player has reached a log reader (section 6): a scoped reader by the shared
     # container check, an unscoped one by its room and its own and its containers' locks.
     def log_reader_reached?(located)
+      return false if BreakEscape::Game.login_pc?(located[:object]) # a reader is never a desktop
+
       return container_reach_refusal(located).nil? if located[:scope]
 
       @game.room_unlocked?(located[:room_id]) && @game.path_unlocked?(located[:path] + [located[:object]])
