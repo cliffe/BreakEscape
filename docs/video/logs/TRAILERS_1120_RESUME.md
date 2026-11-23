@@ -89,7 +89,7 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 
 ## State (2026-11-23, 01:30) — read this first after compaction
 - **Agents running:** none.
-- **Lines:** `video/trailer-lines-m04-m10` tip 7f8b4354a sent to AC0 with the review findings (routes, validator, lint, JS tests all pass). m04, m07, m10 picks voiced. m09 cage line is inked but NOT voiced: waiting on the owner's `m09cage` and `m09hookfix` (page, round 2 tab, doc `feedback/trailer_lines_round2`; or via AC0). D356 asks whether the unpicked m05 and m06 lines stay: leave them until answered.
+- **Lines:** `video/trailer-lines-m04-m10` tip 8d2c9dc0f sent to AC0 (m09 cage line out; cage identical to main) with the review findings (routes, validator, lint, JS tests all pass). m04, m07, m10 picks voiced. m09 cage line is inked but NOT voiced: waiting on the owner's `m09cage` and `m09hookfix` (page, round 2 tab, doc `feedback/trailer_lines_round2`; or via AC0). D356 asks whether the unpicked m05 and m06 lines stay: leave them until answered.
   - When m09 is answered: edit `m09_sorensen_cage.ink` / `m09_briefing.ink`, compile (`scripts/compile-ink.sh m09_digital_archaeology`), all 49 routes, voice with scratchpad `gen11.rb` (edit `want`), commit clips, hash to AC0.
 - **Page:** version 13, https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea.
 - **Renders:** six (m01, m02, m03 at 9:16 and 1:1) wait for CA0's ping (expected 01:30-01:40). Scratchpad `render6.sh m01:9:16 m01:1:1 m02:9:16 m02:1:1 m03:9:16 m03:1:1`. Then tell CA0, check contact sheets and loudness, encode review copies (-crf 26, -maxrate 2500k, under 14 MB), new page tabs, link and hash to AC0.
