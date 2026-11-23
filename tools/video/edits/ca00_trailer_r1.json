@@ -737,9 +737,15 @@
    "lines": [
     {
      "start": 0.21,
+     "end": 3.63,
+     "speaker": "Anjali",
+     "text": "That's you set. Start your first episode whenever you're ready,"
+    },
+    {
+     "start": 4.0,
      "end": 6.21,
      "speaker": "Anjali",
-     "text": "That's you set. Start your first episode whenever you're ready, and report anything that doesn't sit right."
+     "text": "and report anything that doesn't sit right."
     }
    ],
    "caption": {

@@ -459,9 +459,21 @@
    "lines": [
     {
      "start": 0.1,
+     "end": 3.65,
+     "speaker": "Anjali",
+     "text": "Good. The email's gone, and your colleague signed in,"
+    },
+    {
+     "start": 4.24,
+     "end": 5.77,
+     "speaker": "Anjali",
+     "text": "the way most people eventually do."
+    },
+    {
+     "start": 6.62,
      "end": 9.81,
      "speaker": "Anjali",
-     "text": "Good. The email's gone, and your colleague signed in, the way most people eventually do. Now take their seat and see what someone else is doing with their account."
+     "text": "Now take their seat and see what someone else is doing with their account."
     }
    ],
    "caption": {
