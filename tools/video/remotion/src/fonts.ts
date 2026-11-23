@@ -9,12 +9,14 @@ const FACES: [string, string][] = [
   ['GNF', 'fonts/gnf.woff2'],
   ['VT323', 'fonts/VT323-latin.woff2'],
   ['Source Sans 3', 'fonts/SourceSans3-latin.woff2'],
+  ['IBM Plex Sans Condensed', 'fonts/IBMPlexSansCondensed-Bold.ttf'], // Critical Cases theme (cc), OFL, from tools/video/assets/fonts-cc
+  ['IBM Plex Mono', 'fonts/IBMPlexMono-SemiBold.ttf'],
 ];
 export function loadFonts() {
   if (started) return; started = true;
   for (const [family, file] of FACES) {
     const h = delayRender(`font ${family}`);
-    const ff = new FontFace(family, `url(${staticFile(file)})`);
+    const ff = new FontFace(family, `url(${staticFile(file)})`, family.startsWith('IBM Plex') ? { weight: family.endsWith('Mono') ? '600' : '700' } : undefined);
     ff.load().then((f) => { (document as any).fonts.add(f); continueRender(h); }).catch((e) => { console.error('font load failed', family, e); continueRender(h); });
   }
 }

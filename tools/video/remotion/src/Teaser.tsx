@@ -18,6 +18,9 @@ import { CaChapter } from './components/CaChapter';
 import { CaSeats, seatOf } from './components/CaSeats';
 import { SeamWipe } from './components/SeamWipe';
 import { FlipTransition } from './components/FlipTransition';
+import { CcOpen } from './components/CcOpen';
+import { CcClose } from './components/CcClose';
+import { CcCard } from './components/CcCard';
 import { CaVo } from './components/CaVo';
 
 export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<string, boolean> }> = ({ edit, aspect, available }) => {
@@ -26,7 +29,9 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
   const { width: w, height: h, fps } = useVideoConfig();
   const tl0 = buildTimeline(edit);
   // edit-level seat_labels {attack, defend} override the ATTACKER / DEFENDER tab text on every Cyber Aware component (absent: unchanged)
-  const tl = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: edit.seat_labels })) } : tl0;
+  const tlCa = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: edit.seat_labels })) } : tl0;
+  // Critical Cases edits: the edit-level cc ({case, accent, panel, case1, case2, ...}) sits under each shot's own cc
+  const tl = edit.theme === 'cc' && edit.cc ? { ...tlCa, shots: tlCa.shots.map((s: any) => ({ ...s, cc: { ...edit.cc, ...(s.cc || {}) } })) } : tlCa;
   const source: [number, number] = edit.source_size || [1920, 1080];
 
   const shots = tl.shots.map((s: any) => (
@@ -78,6 +83,9 @@ const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source })
   if (shot.type === 'cta') return <CtaShot shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} aspect={aspect} />;
   if (shot.type === 'ca_open') return <CaOpen shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
   if (shot.type === 'ca_close') return <CaClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'cc_open') return <CcOpen shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'cc_close') return <CcClose shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'card' && shot.style === 'cc') return <CcCard shot={shot} w={w} h={h} frame={frame} />;
   if (shot.type === 'card' && shot.style === 'ca' && shot.chapter) return <CaChapter shot={shot} w={w} h={h} frame={frame} />;
   if (shot.type === 'card' && shot.style === 'ca') return <CaCard shot={shot} w={w} h={h} frame={frame} />;
   if (shot.type === 'card') {

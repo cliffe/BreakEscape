@@ -16,6 +16,7 @@ if (!file) { console.error('usage: lint-edit.mjs <edit.json> [--final] [--takes-
 const edit = loadEdit(file);
 const rawShots = JSON.parse(fs.readFileSync(file, 'utf8')).shots || []; // loadEdit drops the preset names; the CA rules need them
 const ca = edit.theme === 'ca';
+const cc = edit.theme === 'cc'; // Critical Cases (Incident Simulations): cc_open, cc_close, cards with style "cc"
 let takesDir = tdi >= 0 ? args[tdi + 1] : null;   // default video_out/<edit.mission>/takes
 if (!takesDir && edit.mission) takesDir = takesDirFor(repo, edit, file);
 const errors = [], warns = [];
@@ -25,6 +26,8 @@ const fps = edit.fps;
 if (!Number.isInteger(fps) || fps < 24) E('edit', 'fps must be an integer >= 24');
 if (!edit.shots?.length) { E('edit', 'no shots'); }
 const tl = buildTimeline(edit);
+/** a cc shot's own cc block over the edit-level one (the same merge the composition does) */
+const ccOf = (s) => ({ ...(edit.cc || {}), ...(s.cc || {}) });
 const beat = edit.beat?.period, boff = edit.beat?.offset ?? 0;
 const halfFrame = 0.5 / fps;
 if (!beat) E('edit', 'beat.period missing');
@@ -52,7 +55,7 @@ const ids = new Set();
 tl.shots.forEach((s, i) => {
   const id = s.id || `shot#${i}`;
   if (!s.id) E(id, 'missing id'); else if (ids.has(s.id)) E(id, 'duplicate id'); ids.add(s.id);
-  if (!['card', 'gameplay', 'title', 'cta', 'ca_open', 'ca_close'].includes(s.type)) E(id, `type must be card|gameplay|title|cta|ca_open|ca_close, got ${s.type}`);
+  if (!['card', 'gameplay', 'title', 'cta', 'ca_open', 'ca_close', 'cc_open', 'cc_close'].includes(s.type)) E(id, `type must be card|gameplay|title|cta|ca_open|ca_close|cc_open|cc_close, got ${s.type}`);
   if (s.type === 'title' && i !== 0) E(id, 'a title shot is only allowed as the first shot');
   if (!(s.duration > 0)) E(id, 'duration must be > 0');
   const raw = s.join?.type || 'cut';
@@ -102,6 +105,12 @@ tl.shots.forEach((s, i) => {
     if (!s.clip?.file || !clipFiles.has(s.clip.file)) E(id, `cta needs clip.file in tools/video/assets/clips (${s.clip?.file})`);
     if (!s.phases?.length) E(id, 'cta needs phases[]');
     else { const sum = s.phases.reduce((a, p) => a + p.duration, 0); if (Math.abs(sum - s.duration) > 1 / fps) E(id, `cta phases total ${sum} s, shot is ${s.duration} s`); }
+  } else if (s.type === 'cc_open' || s.type === 'cc_close') {
+    if (!cc) E(id, `${s.type} is for Critical Cases edits only (set "theme": "cc")`);
+    if (!ccOf(s).case1) E(id, `${s.type} needs the case name: cc.case1 (and cc.case2) on the shot or the edit`);
+    if (s.source) W(id, `${s.type} has a source (ignored)`);
+    if (s.type === 'cc_open' && s.duration < 2) W(id, 'cc_open under 2 s: the logo and the case title have no time to read');
+    if (s.type === 'cc_close' && s.duration < 3) W(id, 'cc_close under 3 s: the case name, series name and call to action will not all land');
   } else if (s.type === 'ca_open' || s.type === 'ca_close') {
     if (!ca) E(id, `${s.type} is for Cyber Aware edits only (set "theme": "ca")`);
     if (s.type === 'ca_open' && !s.ca?.title) E(id, 'ca_open needs ca.title');
@@ -128,7 +137,13 @@ tl.shots.forEach((s, i) => {
       if ((s.text || []).length > 2) W(id, 'ca card: more than two GNF lines');
       if ((s.body || []).length > 3) W(id, 'ca card: more than three VT323 lines');
       }
+    } else if (s.style === 'cc') {
+      if (!cc) E(id, 'card style "cc" is for Critical Cases edits only (set "theme": "cc")');
+      if (!(s.text?.length)) E(id, 'cc card needs text[]');
+      if ((s.text || []).length > 2) W(id, 'cc card: more than two lines');
+      if ((s.text || []).some((l) => String(typeof l === 'string' ? l : l.text).length > 14)) W(id, 'cc card: a line over 14 characters (recipe: about 12) will shrink on 9:16');
     } else if (ca) E(id, 'card in a Cyber Aware edit needs "style": "ca"');
+    else if (cc) E(id, 'card in a Critical Cases edit needs "style": "cc"');
     else if (s.style) W(id, `unknown card style ${s.style}`);
     if (s.style !== 'ca' && s.kind !== 'logo' && s.kind !== 'logo_end' && !(s.text?.length)) E(id, 'card needs text[]');
     if (s.source) W(id, 'card has a source (ignored)');
@@ -200,7 +215,38 @@ tl.shots.forEach((s, i) => {
 });
 
 // Cyber Aware edit rules (theme "ca"): opens with ca-open, closes with ca-close, nothing from SAFETYNET, at most one flip.
-if (edit.theme != null && edit.theme !== 'ca') E('edit', `unknown theme ${edit.theme} (only "ca")`);
+if (edit.theme != null && edit.theme !== 'ca' && edit.theme !== 'cc') E('edit', `unknown theme ${edit.theme} (only "ca" or "cc")`);
+// Critical Cases edit rules (theme "cc"): exactly one cc_open and one cc_close (the last shot), nothing from SAFETYNET or Cyber Aware, no seam or flip, no brand names on cards.
+if (cc) {
+  const shots = tl.shots;
+  const opens = shots.filter((s) => s.type === 'cc_open'), closes = shots.filter((s) => s.type === 'cc_close');
+  if (opens.length !== 1) E('edit', `a cc edit needs exactly one cc_open shot (the title card), found ${opens.length}`);
+  if (closes.length !== 1) E('edit', `a cc edit needs exactly one cc_close shot (the end card), found ${closes.length}`);
+  else if (closes[0].index !== shots.length - 1) E(closes[0].id, 'cc_close must be the last shot');
+  if (!edit.cc && !shots.every((s) => s.type === 'gameplay' || s.cc)) W('edit', 'no edit-level cc block: every cc shot needs its own cc ({case, accent, panel, case1, case2})');
+  rawShots.forEach((r, i) => {
+    const id = shots[i]?.id || `shot#${i}`;
+    if (r.preset && !/^cc-/.test(r.preset)) E(id, `preset "${r.preset}" is not a Critical Cases preset (cc- presets only)`);
+  });
+  const banned = /safetynet|hax\b|entropy|cyber aware|break escape|licence to hack/i;
+  shots.forEach((s) => {
+    const id = s.id;
+    if (s.type === 'title' || s.type === 'cta' || s.type === 'ca_open' || s.type === 'ca_close') E(id, `${s.type} is a SAFETYNET or Cyber Aware shot type: not allowed in a cc edit`);
+    if (s.type === 'card' && (s.kind === 'logo' || s.kind === 'logo_end')) E(id, 'SAFETYNET logo card: not allowed in a cc edit (use cc_close)');
+    if (s.type === 'card' && s.style === 'ca') E(id, 'Cyber Aware card: not allowed in a cc edit');
+    const raw = s.join?.type || 'cut';
+    if (['seam', 'flip', 'blur', 'card'].includes(raw)) E(id, `join '${raw}' is not allowed in a cc edit: use cut, dissolve, or glitch for the hook-to-title join only`);
+    if (raw === 'glitch' && s.type !== 'cc_open') E(id, 'glitch join in a cc edit is for the hook-to-title join only (the shot that leads into cc_open)');
+    if (s.hit) E(id, 'hit (glitch FX) is not allowed in a cc edit');
+    const c = ccOf(s);
+    for (const t of [...(s.text || []).map((l) => (typeof l === 'string' ? l : l.text)), ...(s.body || []), s.tab, c.case1, c.case2, ...(c.series || []), c.cta].filter((t) => typeof t === 'string')) {
+      if (banned.test(t)) E(id, `brand name not allowed on a Critical Cases card: "${t}"`);
+      if (/\b(color|organization|recogniz\w*|behavior|center|favorite|analyz\w*)\b/i.test(t)) W(id, `US spelling in card text (UK English): "${t}"`);
+    }
+  });
+  const ccAccents = new Set(shots.map((s) => ccOf(s).accent).filter(Boolean));
+  if (ccAccents.size > 1) W('edit', `more than one cc accent in one trailer: ${[...ccAccents].join(', ')}`);
+}
 if (ca) {
   const shots = tl.shots;
   const opens = shots.filter((s) => s.type === 'ca_open'), closes = shots.filter((s) => s.type === 'ca_close');
@@ -290,7 +336,7 @@ if (edit.vo != null) {
     }
   }
 }
-if (tl.shots.length && !isCardLike(tl.shots[0]) && !ca) W('edit', 'first shot is not a card or title');
+if (tl.shots.length && !isCardLike(tl.shots[0]) && !ca && !cc) W('edit', 'first shot is not a card or title');
 if (placeholders.length) { console.log(`PLACEHOLDERS (${placeholders.length}):`); for (const p of placeholders) console.log('  -', p); }
 for (const w of warns) console.log('WARN ', w);
 for (const e of errors) console.log('ERROR', e);
