@@ -317,6 +317,35 @@
         "required": ["kind", "account", "proof"]
       }
     },
+    "logSources": {
+      "x-serverOnly": true,
+      "type": "object",
+      "description": "Ops log sources (OPS_LOG_ROWS_PLAN.md 4.1): source id to a source that says which events it records and, optionally, where. Withheld from the bootstrap. Needs a gameClock. The validator (scripts/validate_log_rows.rb) checks each event against lib/break_escape/ops_log_events.rb.",
+      "maxProperties": 30,
+      "patternProperties": {"^_": {}},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["title", "events"],
+        "additionalProperties": false,
+        "patternProperties": {"^_": {}},
+        "properties": {
+          "title": {"type": "string", "minLength": 1, "maxLength": 40, "description": "Shown as the log's caption. Plain text."},
+          "events": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]{1,39}(_\\*)?$"}, "description": "Event names, or a prefix ending _*. Each must be registered (ops_log_events.rb); the validator checks that, not this pattern."},
+          "where": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {"^_": {}},
+            "properties": {
+              "rooms": {"type": "array", "items": {"type": "string"}, "description": "Room ids: the row's place must be in one of these rooms."},
+              "objects": {"type": "array", "items": {"type": "string"}, "description": "Object ids: the row's place must be one of these."},
+              "places": {"type": "array", "items": {"type": "string"}, "description": "\"kind:id\" places with no room (a host, network or share)."}
+            }
+          },
+          "showCardHolder": {"type": "boolean", "default": false, "description": "Whether a badge row opened by a copied card names the card's holder."},
+          "maxRows": {"type": "integer", "minimum": 10, "maximum": 150, "default": 50, "description": "This source's cap on stored play rows. The sum over all sources is at most 300 (the validator checks it)."}
+        }
+      }
+    },
     "networks": {
       "x-serverOnly": true, "x-servedBy": ["GET /network", "GET /container"],
       "type": "object",
