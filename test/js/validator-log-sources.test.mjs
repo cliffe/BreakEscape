@@ -314,3 +314,140 @@ test('error: an ops_log_terminal nested in a PC desktop is reached by the same c
     s.rooms.lobby.objects[s.rooms.lobby.objects.length - 1].contents[0].minigameData.logSource = 'door_log';
     assert.deepEqual(errors(issues(s)), []);
 });
+
+// Seed rows and an anomaly's row (L2b, plan sections 4.2 and 9): one fixture per error and warning.
+const SEED_EVENTS = `{
+  'badge_swipe'  => { label: 'BADGE', places: %w[door object], results: %w[ok denied], detail: { 'flagged' => { count: 1, show: false } } },
+  'signin_fail'  => { label: 'SIGN_IN', places: %w[pc], results: %w[fail] },
+  'signin_ok'    => { label: 'SIGN_IN', places: %w[pc], results: %w[ok], detail: { 'method' => %w[password credential], 'tries' => { count: 5 }, 'host' => { id: 'pc' }, 'tag' => { alias: 'x' } } },
+  'tst_note'     => { label: 'NOTE', places: [], results: %w[ok] }
+}`;
+const seedRow = (patch = {}) => ({ id: 's1', at: 'Mon 23:58', event: 'badge_swipe', as: 'guard', where: { kind: 'door', id: 'vault' }, result: 'ok', ...patch });
+function withSeeds(rows, { start = 'Tue 09:00', events = ['badge_swipe', 'signin_fail', 'signin_ok', 'tst_note'] } = {}) {
+    const s = clean();
+    s.gameClock = { start };
+    s.logSources = { door_log: { title: 'Door controller', events, seedRows: rows } };
+    return s;
+}
+const seedIssues = (rows, opts) => issues(withSeeds(rows, opts), SEED_EVENTS);
+const two = [seedRow(), seedRow({ id: 's2', at: '07:12', event: 'signin_fail', as: 'j.price', where: { kind: 'pc', id: 'recep_pc' }, result: 'fail' })];
+
+test('seed rows: the plan example shape raises no error or warning', { skip }, () => {
+    const out = seedIssues(two);
+    assert.deepEqual(errors(out).concat(warnings(out)), []);
+});
+
+test('seed rows: no seedRows key is not checked, an empty list is fine', { skip }, () => {
+    assert.deepEqual(errors(seedIssues([])), []);
+});
+
+test('error: seedRows that is not an array, a row that is not an object, more than 100 rows', { skip }, () => {
+    const s = withSeeds([]); s.logSources.door_log.seedRows = 'nope';
+    assertHas(errors(issues(s, SEED_EVENTS)), 'seedRows must be an array');
+    assertHas(errors(seedIssues(['x'])), 'must be an object');
+    const many = Array.from({ length: 101 }, (_, i) => seedRow({ id: `s${i}`, at: 'Mon 10:00' }));
+    assertHas(errors(seedIssues(many)), 'more than 100 seed rows');
+});
+
+test('error: seed rows with no gameClock.start', { skip }, () => {
+    const s = withSeeds(two); s.gameClock = { startTime: '09:00' };
+    assertHas(errors(issues(s, SEED_EVENTS)), 'seedRows need gameClock.start');
+});
+
+test('error: a seed row id that does not match, or repeats', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ id: 'row1' })])), 'id must match');
+    assertHas(errors(seedIssues([seedRow(), seedRow({ at: 'Mon 23:59' })])), 'id is used twice');
+});
+
+test('error: a seed row with an unknown key', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ seq: 4 })])), 'unknown keys');
+});
+
+test('error: a bad at, a day with no start day, a row after the start', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ at: '25:00' })])), 'at must be HH:MM');
+    assertHas(errors(seedIssues([seedRow({ at: '7:12' })])), 'at must be HH:MM');
+    assertHas(errors(seedIssues([seedRow()], { start: '09:00' })), 'names a day but gameClock.start has none');
+    assertHas(errors(seedIssues([seedRow({ at: 'Tue 09:01' })])), 'after the mission\'s start time');
+    assertHas(errors(seedIssues([seedRow({ at: '09:01' })])), 'after the mission\'s start time');
+    assert.deepEqual(errors(seedIssues([seedRow({ at: 'Tue 09:00' })])), []);
+});
+
+test('error: seed rows that do not ascend, including across a day', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ at: '07:12' }), seedRow({ id: 's2', at: 'Mon 23:58' })])), 'must ascend');
+    assertHas(errors(seedIssues([seedRow({ at: 'Mon 23:58' }), seedRow({ id: 's2', at: 'Mon 23:10' })])), 'must ascend');
+    assert.deepEqual(errors(seedIssues([seedRow({ at: 'Mon 23:58' }), seedRow({ id: 's2', at: 'Mon 23:58' })])), []);
+});
+
+test('error: an unknown event, and a result the event does not allow', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ event: 'no_such_event' })])), 'is not registered');
+    assertHas(errors(seedIssues([seedRow({ result: 'fail' })])), 'is not one of ok, denied');
+});
+
+test('warning: a seed row of an event the source does not record', { skip }, () => {
+    assertHas(warnings(seedIssues([seedRow()], { events: ['signin_fail'] })), 'is not one the source records');
+});
+
+test('error: where missing, wrong kind, a room or PC that does not exist', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ where: undefined })])), 'where is missing');
+    assertHas(errors(seedIssues([seedRow({ where: { kind: 'pc', id: 'recep_pc' } })])), 'is not one badge_swipe allows');
+    assertHas(errors(seedIssues([seedRow({ where: { kind: 'door', id: 'nowhere' } })])), 'names a room that does not exist');
+    assertHas(errors(seedIssues([seedRow({ id: 's1', event: 'signin_fail', result: 'fail', where: { kind: 'pc', id: 'ghost_pc' } })])), 'names a pc that does not exist');
+    assertHas(errors(seedIssues([seedRow({ where: { kind: 'door' } })])), 'where must be');
+});
+
+test('error: as that is not an NPC id, a typed name on a non-signin row, a long or odd username', { skip }, () => {
+    assertHas(errors(seedIssues([seedRow({ as: 'stranger' })])), 'only a signin_* row can name a typed username');
+    const signin = patch => seedRow({ event: 'signin_fail', result: 'fail', where: { kind: 'pc', id: 'recep_pc' }, ...patch });
+    assert.deepEqual(errors(seedIssues([signin({ as: 'j.price' })])), []);
+    assertHas(errors(seedIssues([signin({ as: 'x'.repeat(33) })])), 'neither an NPC id nor a plain username');
+    assertHas(errors(seedIssues([signin({ as: 'a b<c>' })])), 'neither an NPC id nor a plain username');
+    assertHas(errors(seedIssues([signin({ as: 7 })])), 'as must be an NPC id');
+});
+
+test('error: detail the event does not allow, a hidden key, a value out of range, a missing thing', { skip }, () => {
+    const ok = patch => seedRow({ event: 'signin_ok', result: 'ok', where: { kind: 'pc', id: 'recep_pc' }, ...patch });
+    assert.deepEqual(errors(seedIssues([ok({ detail: { method: 'password', tries: 3, host: 'recep_pc', tag: 'a1' } })])), []);
+    assertHas(errors(seedIssues([ok({ detail: { colour: 'red' } })])), 'is not registered for the event');
+    assertHas(errors(seedIssues([ok({ detail: { method: 'magic' } })])), 'detail.method is not one of');
+    assertHas(errors(seedIssues([ok({ detail: { tries: 6 } })])), 'must be a count from 0 to 5');
+    assertHas(errors(seedIssues([ok({ detail: { host: 'ghost_pc' } })])), 'names a pc that does not exist');
+    assertHas(errors(seedIssues([ok({ detail: { tag: 'zzz' } })])), 'is not a server-made alias');
+    assertHas(errors(seedIssues([seedRow({ detail: { flagged: 1 } })])), 'is stored-only');
+    assertHas(errors(seedIssues([ok({ detail: { a: 1, b: 2, c: 3, d: 4, e: 5 } })])), 'at most 4 keys');
+});
+
+test('error: a seed row whose text equals a declared password, without quoting it', { skip }, () => {
+    const s = withSeeds([seedRow({ as: 'Gate-Pass-77', event: 'signin_fail', result: 'fail', where: { kind: 'pc', id: 'recep_pc' } })]);
+    const out = errors(issues(s, SEED_EVENTS));
+    assertHas(out, 'holds text equal to a declared password');
+    assert.ok(!out.join('\n').includes('Gate-Pass-77'));
+});
+
+// An anomaly's row (a reader's minigameData.anomaly.rowId).
+const withAnomaly = (rowId, rows = two, extra = {}) => {
+    const s = withSeeds(rows);
+    s.rooms.lobby.objects.push({ id: 'door_reader', type: 'ops_log_terminal', name: 'Door log', minigameData: { logSource: 'door_log', anomaly: { rowId }, ...extra } });
+    return s;
+};
+
+test('an anomaly naming one of two seed rows raises no error or warning', { skip }, () => {
+    const out = issues(withAnomaly('s1'), SEED_EVENTS);
+    assert.deepEqual(errors(out).concat(warnings(out)), []);
+});
+
+test('error: an anomaly row id that is not a seed row of the source (a play row id, an unknown id)', { skip }, () => {
+    assertHas(errors(issues(withAnomaly('a3f9c01b22'), SEED_EVENTS)), 'is not one of source "door_log"\'s seed rows');
+    assertHas(errors(issues(withAnomaly('s9'), SEED_EVENTS)), 'a play row cannot be an anomaly');
+});
+
+test('error: an anomaly on a source with no seed rows, and one that is not { rowId }', { skip }, () => {
+    const s = withSeeds([]); s.rooms.lobby.objects.push({ id: 'r', type: 'ops_log_terminal', name: 'x', minigameData: { logSource: 'door_log', anomaly: { rowId: 's1' } } });
+    assertHas(errors(issues(s, SEED_EVENTS)), 'is not one of source');
+    assertHas(errors(issues(withAnomaly('s1', two, { anomaly: 's1' }), SEED_EVENTS)), 'anomaly must be');
+});
+
+test('warning: an anomaly on a source with a single seed row', { skip }, () => {
+    const out = issues(withAnomaly('s1', [seedRow()]), SEED_EVENTS);
+    assert.deepEqual(errors(out), []);
+    assertHas(warnings(out), 'has one seed row');
+});
