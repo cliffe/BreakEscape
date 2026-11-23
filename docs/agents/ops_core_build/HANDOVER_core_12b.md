@@ -26,3 +26,13 @@ New: `pc-remote-view-click.test.mjs` (7), `desktop-remote-view.test.mjs` (7), `c
 
 ## Live proof should look at
 A held PC in a room: red tint and bolt at top right out of range, blue in range then red again; click opens the red-rimmed desktop with the "Remote view: ... through ..." line and a short stepped wipe, no sign-in; Sign out clears the mark; unplug clears it; `__test.access.compromiseMarks()` lists it with `tint`. The bolt position and size on real sprites (scale 1) and the wipe look are unseen.
+
+## S3 client R1 (world half): contract changes
+
+- `networkLinks.view()` (the stored `lastView`) now carries the `GET /network` body's top-level `techniques` map beside the foothold entry's fields (B1). A body with no map gives the plain entry.
+- `pcSessions.noteTechniqueSession(pcId, session, endedPcIds, tokenExpiredPcIds)` takes a fourth argument; a repeat grant of the same copy (same npcId, footholdId, access) changes nothing and fires nothing. The view should pass `answer.tokenExpiredPcIds` (m1, view side).
+- `signInWithCredential` and `claim` copy `access` (m3). `canSwitchUser` reads `hosts` and every `networks[].hosts`.
+- `openRemoteViewIfHeld` fetches `networkLinks.view(footholdId)` first when no view is held (a 'gone' answer takes the keyboard path), then `openSession(pcId, { returnTo, toWorld: true })`. A `toWorld` trip leaves to the world on sign_out, no_session, unreachable and not_responding (m6; other `session` trips, e.g. the capture log, still resume the view).
+- `compromiseMarks.syncRoom` runs after `networkLinks.syncRoom` and `plantHiding.syncRoom` (rooms.js, game.js); `_place` re-places the bolt and copies `visible` on every later pass (m8).
+- `keepsAuthoredLook` ignores a highlighted sprite's blue (M1). A fingerprint-view red on a non-highlighted sprite still counts as authored (bolt only).
+- The three assertions of the plan's section 10 part 3 are updated (M3); `displaced()` leaves any remote copy.
