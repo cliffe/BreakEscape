@@ -27,6 +27,7 @@ module BreakEscape
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan,
                                         :log_rows,
+                                        :log_flag,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -103,6 +104,7 @@ module BreakEscape
     # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan,
+                                          :log_flag,
                                           :npc_frustration, :npc_workaround, :feed_post, :wear, :pin_dust, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
@@ -1910,19 +1912,50 @@ module BreakEscape
         return render json: { success: false, reason: 'invalid_object' }, status: :bad_request
       end
 
-      located = @game.login_scope_of(object_id)
-      reader = located && located[:object]
-      source_id = reader.is_a?(Hash) && reader.dig('minigameData', 'logSource')
-      unless reader.is_a?(Hash) && reader['type'] == 'ops_log_terminal' && reader['id'].to_s == object_id &&
-             source_id.is_a?(String) && BreakEscape::OpsLog.sources_for(@game.scenario_data).any? { |id, _s, _cap| id == source_id } &&
-             log_reader_reached?(located) && (answer = @game.log_rows_for_client(source_id))
-        return render json: { success: false, reason: 'not_found' }, status: :not_found
-      end
+      reader, source_id = reached_log_reader(object_id)
+      answer = reader && @game.log_rows_for_client(source_id)
+      return render json: { success: false, reason: 'not_found' }, status: :not_found unless answer
 
       if params[:rev].present? && params[:rev].to_s == answer[:rev]
         render json: { rev: answer[:rev], unchanged: true }
       else
-        render json: answer
+        # Once the anomaly is flagged right, the answer says which row it was (L2b); never before.
+        flagged = @game.ops_log_flagged?(object_id) && @game.ops_log_anomaly_id(reader, source_id)
+        render json: flagged ? answer.merge(flaggedRow: flagged) : answer
+      end
+    end
+
+    # POST /games/:id/log_rows/flag { object_id, row_id [, foothold | from | relay] } (L2b, server-judged)
+    # The player flags a row of a reader's log as the anomaly. The browser never holds the anomaly's row:
+    # the answer is `{ correct: false }` for any wrong row (an invented id, a play row, a row of another
+    # source, a reader with no anomaly: all alike, nothing written), and on the right row `{ correct: true,
+    # rowId, flagActions, completionActions }` once, then `{ correct: true, already: true, rowId }`. A
+    # reader the player has not reached is the same 404 as /log_rows.
+    def log_flag
+      authorize @game if defined?(Pundit)
+
+      response.headers['Cache-Control'] = 'no-store'
+      object_id = params[:object_id]
+      row_id = params[:row_id]
+      unless object_id.is_a?(String) && !object_id.empty? && object_id.length <= 64
+        return render json: { success: false, reason: 'invalid_object' }, status: :bad_request
+      end
+      unless row_id.is_a?(String) && !row_id.empty? && row_id.length <= 64
+        return render json: { success: false, reason: 'invalid_row' }, status: :bad_request
+      end
+
+      reader, source_id = reached_log_reader(object_id)
+      return render json: { success: false, reason: 'not_found' }, status: :not_found unless reader
+
+      case @game.ops_log_flag!(reader, source_id, row_id)
+      when :correct
+        @game.save!
+        data = reader['minigameData']
+        render json: { correct: true, rowId: row_id,
+                       flagActions: Array(data['flagActions']).grep(Hash),
+                       completionActions: Array(data['completionActions']).grep(Hash) }
+      when :already then render json: { correct: true, already: true, rowId: row_id }
+      else render json: { correct: false }
       end
     end
 
@@ -2949,6 +2982,7 @@ module BreakEscape
         BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
         BreakEscape::Game.strip_lock_answers!(obj) # combination and cryptex answers
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
+        BreakEscape::OpsLog.strip_reader_judgement!(obj) # a log reader's anomaly and flag actions are judged on the server
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         if lock_type && !BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
@@ -3198,6 +3232,20 @@ module BreakEscape
       else
         render_error("Container not unlocked: #{container_id}", :forbidden)
       end
+    end
+
+    # [reader, source id] for an ops_log_terminal the player has reached (declared source, same checks as
+    # GET /log_rows), else nil: an invented id, a display name, another type, an undeclared source and an
+    # unreached reader all come back alike.
+    def reached_log_reader(object_id)
+      located = @game.login_scope_of(object_id)
+      reader = located && located[:object]
+      source_id = reader.is_a?(Hash) && reader.dig('minigameData', 'logSource')
+      return nil unless reader.is_a?(Hash) && reader['type'] == 'ops_log_terminal' && reader['id'].to_s == object_id &&
+                        source_id.is_a?(String) && BreakEscape::OpsLog.sources_for(@game.scenario_data).any? { |id, _s, _cap| id == source_id } &&
+                        log_reader_reached?(located)
+
+      [reader, source_id]
     end
 
     # Whether the player has reached a log reader (section 6): a scoped reader by the shared

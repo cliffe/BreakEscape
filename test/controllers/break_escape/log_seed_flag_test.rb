@@ -126,6 +126,169 @@ module BreakEscape
       assert_not_equal body['rev'], read('r_audit')['rev']
     end
 
+    # ---- the flag (L2b step 3) ----
+
+    def flag(object_id, row_id, params = {})
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { object_id: object_id, row_id: row_id }.merge(params), as: :json
+      response.parsed_body
+    end
+
+    def stored_flags
+      Game.find(@game.id).player_state['opsLogFlagged']
+    end
+
+    def find_object(node, id)
+      case node
+      when Hash then node['id'] == id && node['type'] ? node : node.each_value.lazy.filter_map { |v| find_object(v, id) }.first
+      when Array then node.lazy.filter_map { |v| find_object(v, id) }.first
+      end
+    end
+
+    test 'the browser copy of a reader holds no anomaly row and no flag actions' do
+      build
+      served = {}
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      served['bootstrap'] = response.body
+      get room_game_url(@game, room_id: 'lobby'), as: :json
+      assert_response :success
+      served['room'] = response.body
+      served.each do |name, body|
+        assert_no_match(/"rowId"|found_night_swipe|log_done|flagActions|completionActions/, body, name)
+      end
+      reader = find_object(JSON.parse(served['room']), 'r_doors')
+      assert_equal({ 'logSource' => 'doors', 'anomaly' => {} }, reader['minigameData'])
+      assert_equal({ 'logSource' => 'doors' }, find_object(JSON.parse(served['room']), 'r_plain')['minigameData'])
+    end
+
+    test 'a right flag answers the actions once, a repeat answers already and no actions' do
+      build
+      body = flag('r_doors', 's2')
+      assert_response :success, response.body
+      assert_equal true, body['correct']
+      assert_equal 's2', body['rowId']
+      assert_equal [{ 'type' => 'set_global', 'key' => 'found_night_swipe', 'value' => true }], body['flagActions']
+      assert_equal [{ 'type' => 'set_global', 'key' => 'log_done', 'value' => true }], body['completionActions']
+      assert_equal %w[r_doors], stored_flags
+      again = flag('r_doors', 's2')
+      assert_equal({ 'correct' => true, 'already' => true, 'rowId' => 's2' }, again)
+      assert_equal %w[r_doors], stored_flags
+    end
+
+    test 'a wrong flag of any kind answers the same body and writes nothing' do
+      build
+      write_play_row
+      play_id = read('r_doors')['rows'].last['id']
+      game = Game.find(@game.id)
+      game.write_log_row!('badge_swipe', as: { npc: 'len' }, where: { kind: 'door', id: 'lobby' }, result: 'ok')
+      game.save!
+      audit_play_id = read('r_audit')['rows'].last['id']
+      before = Game.find(@game.id)
+      state = before.player_state.deep_dup
+      stamp = before.updated_at
+      wrong = ['s1', 's3', 's9', 'S2', 's2 ', play_id, audit_play_id, 'x' * 64, '0000000000', "s2\u0000"]
+      wrong.each do |row_id|
+        body = flag('r_doors', row_id)
+        assert_response :success, row_id.inspect
+        assert_equal({ 'correct' => false }, body, row_id.inspect)
+      end
+      assert_equal({ 'correct' => false }, flag('r_plain', 's2'), 'a reader with no anomaly answers like a wrong row')
+      assert_equal({ 'correct' => false }, flag('r_bare', 's1'))
+      assert_equal({ 'correct' => false }, flag('r_audit', 's2'), "another reader's anomaly id is just a wrong row here")
+      after = Game.find(@game.id)
+      assert_equal state, after.player_state
+      assert_equal stamp, after.updated_at
+    end
+
+    test 'an id of another reader reads as wrong, and the right id of each reader is judged per reader' do
+      build
+      assert_equal({ 'correct' => false }, flag('r_audit', 's2'))
+      assert_equal true, flag('r_audit', 's1')['correct']
+      assert_equal true, flag('r_doors', 's2')['correct']
+      assert_equal %w[r_audit r_doors], stored_flags.sort
+    end
+
+    test 'a malformed object or row is a 400, an invented, unreached or non-reader object the same 404' do
+      build
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { row_id: 's2' }, as: :json
+      assert_response :bad_request
+      assert_equal({ 'success' => false, 'reason' => 'invalid_object' }, response.parsed_body)
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { object_id: 'r_doors' }, as: :json
+      assert_response :bad_request
+      assert_equal({ 'success' => false, 'reason' => 'invalid_row' }, response.parsed_body)
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { object_id: 'r_doors', row_id: ['s2'] }, as: :json
+      assert_response :bad_request
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { object_id: 'r_doors', row_id: 'x' * 65 }, as: :json
+      assert_response :bad_request
+      ['no_such_reader', 'Reader r_doors', 'r_vault', 'jake_pc', 'lobby_safe'].each do |id|
+        assert_equal NOT_FOUND, flag(id, 's2'), id
+        assert_response :not_found, id
+      end
+      assert_nil stored_flags
+    end
+
+    test 'a reader the player has not reached cannot be flagged, even with the right row, until it is reached' do
+      build
+      assert_equal NOT_FOUND, flag('r_vault', 's2')
+      assert_nil stored_flags
+      open_finance
+      assert_equal true, flag('r_vault', 's2')['correct']
+    end
+
+    test 'a flag through a reader that needs a session is refused after the session is gone' do
+      data = scenario
+      jake_pc = data['rooms']['finance']['objects'].find { |o| o['id'] == 'jake_pc' }
+      jake_pc['contents'] << reader('r_desktop', 'doors', 'minigameData' => { 'anomaly' => { 'rowId' => 's2' } })
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user), scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance] })
+      assert_equal NOT_FOUND, flag('r_desktop', 's2')
+      post login_game_url(@game), params: { pc_id: 'jake_pc', username: 'jbrooks', password: AccessModelScenario::JAKE_PASSWORD }, as: :json
+      assert_response :success, response.body
+      assert_equal true, flag('r_desktop', 's2')['correct']
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_equal NOT_FOUND, flag('r_desktop', 's2')
+    end
+
+    test 'the reader answer names the flagged row only after a right flag' do
+      build
+      before = read('r_doors')
+      assert_not before.key?('flaggedRow')
+      flag('r_doors', 's3')
+      assert_not read('r_doors').key?('flaggedRow'), 'a wrong flag changes nothing'
+      flag('r_doors', 's2')
+      after = read('r_doors')
+      assert_equal 's2', after['flaggedRow']
+      assert_equal before['rows'], after['rows']
+      assert_equal before['rev'], after['rev']
+      assert_not read('r_audit').key?('flaggedRow')
+      assert_no_match(/flaggedRow/, read('r_doors', rev: after['rev']).to_json)
+    end
+
+    test 'nothing but the reader names the anomaly: no key, class or order marks the row before a right flag' do
+      build
+      rows = read('r_doors')['rows']
+      assert_equal [SEVEN_SEED_KEYS], rows.map { |r| r.keys.sort }.uniq
+      assert_equal rows.map { |r| r['id'] }.sort, rows.map { |r| r['id'] }, 'ids are in authored order, the anomaly is not first'
+      assert_not_equal 's2', rows.first['id']
+      assert_no_match(/anomal|flag|tint|highlight/i, response.body)
+    end
+
+    test 'the flag state is server-owned: never in the bootstrap, not changed by a sync body' do
+      build
+      flag('r_doors', 's2')
+      get "/break_escape/games/#{@game.id}/scenario", as: :json
+      assert_no_match(/opsLogFlagged/, response.body)
+      put "/break_escape/games/#{@game.id}/sync_state", params: { opsLogFlagged: ['r_audit'], globalVariables: {} }, as: :json
+      assert_equal %w[r_doors], stored_flags
+    end
+
+    test 'a flag answer holds no secret, and no row of the game' do
+      build
+      body = flag('r_doors', 's2')
+      assert_body_holds_no_secret(Game.find(@game.id), body.to_json)
+      assert_not_includes body.to_json, AccessModelScenario::JAKE_PASSWORD
+    end
+
     def write_play_row
       game = Game.find(@game.id)
       game.write_log_row!('badge_swipe', as: { npc: 'jake' }, where: { kind: 'door', id: 'lobby' }, result: 'ok')

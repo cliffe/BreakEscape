@@ -62,6 +62,10 @@ module BreakEscape
       show?
     end
 
+    def log_flag?
+      show?
+    end
+
     def complete_task?
       show?
     end

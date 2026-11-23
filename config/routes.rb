@@ -59,6 +59,7 @@ BreakEscape::Engine.routes.draw do
       get 'objectives'                                      # Get current objective state
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
       get 'log_rows'          # Ops log reader (OPS_LOG_ROWS_PLAN.md section 6): the rows of an ops_log_terminal's source
+      post 'log_rows/flag', to: 'games#log_flag', as: 'log_flag' # Ops log reader (L2b): flag a row as the reader's anomaly, judged on the server
       get 'keyring'           # Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1): the player's earned credentials, computed server-side
       post 'se/landing_page', to: 'games#se_landing_page', as: 'se_landing_page' # SE: record a landing-page build server-side (phish evidence plan, Route 1)
       post 'se/phish_send',   to: 'games#se_phish_send',   as: 'se_phish_send'   # SE: record a phish send server-side (phish evidence plan, Route 2)
