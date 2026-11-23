@@ -171,8 +171,8 @@ module BreakEscape
       assert_nil write(columns, 'tst_note')
     end
 
-    test 'EVENTS is empty at L1a, so an unregistered event is malformed' do
-      assert_empty BreakEscape::OpsLog::EVENTS
+    test 'an event that is not registered is malformed' do
+      assert_not BreakEscape::OpsLog::EVENTS.key?('tst_note')
       Thread.current[:ops_log_overlay] = nil
       game = make_game
       assert_raises(BreakEscape::OpsLog::Malformed) { write(game, 'tst_note') }

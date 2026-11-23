@@ -18,8 +18,19 @@ module BreakEscape
   # detail     at most 4 keys, each with one of four rule types (RULE_TYPES below)
   # label      the upper-case word shown in the EVENT column
   module OpsLogEvents
-    # L1a registers no event: L1b, L3 and each sibling add their own lines here.
-    EVENTS = {}.freeze
+    # L1a registers no event: each stage and sibling plan adds its own lines here.
+    # L1b: badge, sign-in and session rows (OPS_LOG_ROWS_PLAN.md 13.8).
+    EVENTS = {
+      'badge_swipe' => { label: 'BADGE', places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 } },
+      'signin_ok' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok],
+                       detail: { 'method' => %w[password credential], 'route' => %w[keyboard foothold from relay] } },
+      'signin_fail' => { label: 'SIGN_IN', places: %w[pc], results: %w[fail] },
+      'signin_lockout' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok] },
+      'signin_refused' => { label: 'SIGN_IN', places: %w[pc], results: %w[denied blocked],
+                            save_limit: { 'denied' => 10, 'blocked' => 10 } },
+      'session_end' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
+      'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] }
+    }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
     SHARED_RESULTS = %w[ok fail denied granted refused blocked expired].freeze
