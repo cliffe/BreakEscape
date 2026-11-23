@@ -305,7 +305,7 @@
               "dropped": { "type": "string", "description": "A capture proof: an item accepted as a player drop." },
               "held": { "type": "string", "description": "A scenario item id: holds while an inventory entry carrying the server's own `credential` field for this id is held (identity-strict)." },
               "foothold": { "type": "string", "description": "A foothold id: holds while the foothold is held now." },
-              "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}$", "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a finding id (<hostId>.<serviceName>.<weaknessId>): holds once a technique card has been used on that finding, which must be a weakness whose `grants.credential` names this entry (the validator checks that both name each other). The entry's kind must be saved_connection. Not built until N15." }
+              "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}\\.[a-z][a-z0-9_]{0,39}\\.[a-z][a-z0-9_]{0,39}$", "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a finding id (<hostId>.<serviceName>.<weaknessId>), where the host part may be as long as a sign-in PC id (up to 64 characters): holds once a technique card has been used on that finding, which must be a weakness whose `grants.credential` names this entry (the validator checks that both name each other). The entry's kind must be saved_connection. Not built until N15." }
             }
           },
           "connectsTo": { "type": "string", "description": "The sign-in PC a connecting kind opens. Required for connecting kinds; not allowed on password." },
