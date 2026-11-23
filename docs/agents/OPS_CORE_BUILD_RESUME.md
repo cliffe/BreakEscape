@@ -95,9 +95,13 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   ops-build`) and run train checks there, so a train never blocks building. Land by merging
   `ops-core` into main at the trained hash, then `git merge main` in the build worktree.
   Disk: a worktree costs about 4.5 GB and /data has about 9 GB free: at most ONE more.
-- RUNNING: train 4 in the train tree at `13893a73d` (output `/data/tmp/ops-core-train-4`):
-  if only the 3 baseline JS files fail, merge `ops-core` into main, push, merge main into
-  `ops-build`. S2 builders side by side in the build tree, split by file: 6a server
+- **S1 LANDED on main and pushed: merge `11a274307`** (train 4 at `13893a73d`: Rails 3860
+  runs 0 failures, shell-x 180 checked 0 failed, smoke 0 failed, corpus 0 of 202, JS 997 of
+  1000 with only the 3 baseline files failing). Main merged back into `ops-build`
+  (`d12357b8a`). S2 step 6b DONE: `1bb0a2207` (catalog loader; entries keep their `_` key, so
+  the finding builder must copy named keys only). Not seeded: `test_ops_logs` and
+  `test_ops_scan` have no Mission row (seeding republishes every mission: user's call).
+- RUNNING: S2 builders side by side in the build tree, split by file: 6a server
   (`HANDOVER_core_6a.md`; parts A1 schema/model/validator, A2 routes and findings, A3 `cli`
   from the loader), 6b catalog loader (interface `RealismCatalog.lookup`, `.with_folder`,
   `.faults`), 7 client (`HANDOVER_core_7.md`). A Haiku reader is writing a dependency digest
