@@ -34,6 +34,8 @@ NETWORK_OPS_DISCOVERY = 'N13'
 NETWORK_OPS_WEAKNESS_GRANTS = 'N15'
 NETWORK_OPS_MAX_FINDINGS = 128
 NETWORK_OPS_MAX_TECHNIQUES = 32
+# Game::SERVER_OWNED_GLOBAL_NAMES (game.rb), the fixed list of globals only the server writes.
+NETWORK_OPS_SERVER_OWNED_GLOBALS = %w[se_captures].freeze
 NETWORK_OPS_TELLTALE = /(?:\A|_)(?:decoy|fake|false|real|true|bait)s?(?:_|\z)/.freeze
 # A summary that reads as a procedure: a path, a flag, a pipe, a backtick or a command substitution.
 NETWORK_OPS_PROCEDURE = %r{(?:\A|\s)-{1,2}[A-Za-z]|[|`]|\$\(|(?:\A|\s)(?:\.{0,2}/|~/)[\w.-]+|\b[A-Za-z]:\\}.freeze
@@ -252,6 +254,22 @@ def check_network_ops(json_data, built: NETWORK_OPS_BUILT, objects_dir: NETWORK_
   issues
 end
 
+# The names any door gate's creditOnPass sets (Game.credit_global_names_in): server-written only.
+def network_ops_credit_globals(json_data)
+  rooms = json_data['rooms']
+  return [] unless rooms.is_a?(Hash)
+
+  rooms.each_value.flat_map do |room|
+    doors = room.is_a?(Hash) && room['doors'].is_a?(Array) ? room['doors'] : []
+    doors.flat_map do |door|
+      credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+      next [] unless credit.is_a?(Hash)
+
+      credit.each_value.flat_map { |block| block.is_a?(Hash) && block['setGlobal'].is_a?(Hash) ? block['setGlobal'].keys.map(&:to_s) : [] }
+    end
+  end.uniq
+end
+
 # S2 (OPS_CORE_PLAN.md 9.2): weaknesses, decoys and their needs and fixedIf. carriers are
 # [label, path, host, network, device?] as built by check_network_ops. Runs only when N14 is built;
 # while it is not, the not-built table has already refused the fields.
@@ -263,11 +281,13 @@ def network_ops_check_findings(json_data, carriers, err, warn)
   known_globals = build_reference_index(json_data)['global']
   other_names = nil # strings elsewhere in the scenario, read once when a fixedIf needs them
   foothold_networks = network_ops_foothold_networks(json_data)
-  client_writable = lambda do |name|
-    server_owned = BreakEscape::WearableModel.worn_globals(json_data).include?(name) ||
-                   Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) }.include?(name)
-    !server_owned
-  end
+  # The client-writable test mirrors Game#server_owned_global_name? (app/models/break_escape/game.rb),
+  # without Rails: worn globals, imported globals, every creditOnPass setGlobal name on any door gate,
+  # and the fixed list (Game::SERVER_OWNED_GLOBAL_NAMES). A global on none of them is client-writable.
+  server_owned_names = (BreakEscape::WearableModel.worn_globals(json_data).to_a +
+                        Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) } +
+                        network_ops_credit_globals(json_data) + NETWORK_OPS_SERVER_OWNED_GLOBALS).map(&:to_s).to_set
+  client_writable = ->(name) { !server_owned_names.include?(name.to_s) }
 
   total = 0
   carriers.each do |label, path, host, network, _device|
@@ -291,7 +311,7 @@ def network_ops_check_findings(json_data, carriers, err, warn)
         if id.is_a?(String) && id.length > NETWORK_OPS_MAX_ID
           err.call("#{label} service '#{sname}': finding id '#{id[0, 40]}' is longer than #{NETWORK_OPS_MAX_ID} characters")
         end
-        warn.call("#{label} service '#{sname}': the id '#{id[0, 40]}' holds a telltale word (decoy, fake, false, real, true, bait); it reaches the browser inside the finding id") if id.is_a?(String) && id.match?(NETWORK_OPS_TELLTALE)
+        warn.call("#{label} service '#{sname}': the id '#{id[0, 40]}' holds a telltale word (decoy, fake, false, real, true, bait, as a whole word between underscores or at an end); it reaches the browser inside the finding id") if id.is_a?(String) && id.match?(NETWORK_OPS_TELLTALE)
         %w[summary falseBecause].each do |field|
           text = entry[field]
           next unless text.is_a?(String)
@@ -475,6 +495,9 @@ def network_ops_check_weakness_grants(json_data, rec, registry, credentials, gra
         err.call("#{where}: credential '#{cid[0, 40]}' is of kind '#{entry['kind'].to_s[0, 40]}'; a granted credential must be of kind saved_connection") unless entry['kind'] == 'saved_connection'
         network_ops_check_granted_use(json_data, where, cid, entry, err)
       end
+    end
+    if weakness.key?('fixedIf') && needs.empty?
+      warn.call("#{where}: `fixedIf` is the only thing before the grant, and globals are client-synced, so it is a soft gate; add an item or credential need beside it where the grant matters")
     end
     unless registry.values.any? { |tech| BreakEscape::NetworkModel.technique_matches?(tech, rec[:service], weakness) }
       err.call("#{where}: has `grants` but no technique card registry entry matches it (class, product and version), so it could never be used")

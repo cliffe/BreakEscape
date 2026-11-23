@@ -319,6 +319,13 @@ test('S2 error: a weakness or decoy id used twice in one service, across both li
     assertHas(errors(issues(withFindings([weak('w1'), weak('w1')]))), "the id 'w1' is used twice");
     assertHas(errors(issues(withFindings([weak('w1')], [decoy('w1')]))), "the id 'w1' is used twice");
     assert.deepEqual(errors(issues(withFindings([weak('w1')], [decoy('d1')]))), []);
+    // a decoy listed before nothing else, and the same id on another service, are the two edges of the rule
+    const twice = errors(issues(withFindings([weak('w1')], [decoy('w1'), decoy('d2')]))).filter(m => m.includes('used twice'));
+    assert.equal(twice.length, 1, 'one error for the one clash');
+    assertHas(twice, "service 'print'");
+    const other = withFindings([weak('w1')]);
+    other.hosts.print01.services[1].decoys = [decoy('w1')];
+    assert.deepEqual(errors(issues(other)).filter(m => m.includes('used twice')), [], 'the same id in another service is a different finding id');
 });
 
 test('S2 error: more than 128 weaknesses plus decoys; more than 4 of a kind on a service', { skip }, () => {
@@ -329,6 +336,9 @@ test('S2 error: more than 128 weaknesses plus decoys; more than 4 of a kind on a
     }
     assertHas(errors(issues(s)), '136 weaknesses and decoys in the scenario; at most 128');
     assertHas(errors(issues(withFindings([weak('a'), weak('b'), weak('c'), weak('d'), weak('e')]))), '5 weaknesses; at most 4');
+    const five = ['a', 'b', 'c', 'd', 'e'].map(i => decoy(i));
+    assertHas(errors(issues(withFindings([], five))), '5 decoys; at most 4');
+    assert.deepEqual(errors(issues(withFindings([], five.slice(0, 4)))).filter(m => m.includes('at most 4')), []);
 });
 
 test('S2 error: needs label rules and itemType with global', { skip }, () => {
@@ -373,15 +383,34 @@ test('S2 error: a weakness on a network no foothold can reach; a link makes it r
 });
 
 test('S2 warning: a telltale word in an id', { skip }, () => {
-    for (const id of ['decoy_one', 'fake_login', 'real_one', 'not_true', 'bait']) {
+    for (const id of ['decoy_one', 'fake_login', 'real_one', 'not_true', 'bait', 'false', 'not_false_alarm', 'is_false']) {
         assertHas(warnings(issues(withFindings([weak(id)]))), 'telltale word');
     }
+    // a whole word between underscores or at an end: a word inside a longer word is no hit
+    assert.deepEqual(warnings(issues(withFindings([weak('fakelogin'), weak('falsetto')]))).filter(m => m.includes('telltale')), []);
+    assertHas(warnings(issues(withFindings([weak('bait_one')]))), 'as a whole word');
     assert.deepEqual(warnings(issues(withFindings([weak('factory_login'), weak('realm_check')]))).filter(m => m.includes('telltale')), []);
 });
 
 test('S2 warning: needs.global a client can write is a soft gate', { skip }, () => {
     const s = withFindings([weak('w1', { needs: { global: 'door_open', label: 'The door' } })]);
     assertHas(warnings(issues(s)), 'soft gate');
+});
+
+test('S2 warning: needs.global is a soft gate for a client-writable global only (the server\'s rule: worn, imported, creditOnPass and se_captures are server-owned)', { skip }, () => {
+    const gate = (name) => withFindings([weak('w1', { needs: { global: name, label: 'The gate' } })], [], s => {
+        s.globalVariables[name] = false;
+        return s;
+    });
+    const soft = (s) => warnings(issues(s)).filter(m => m.includes('soft gate'));
+    assert.equal(soft(gate('plain_flag')).length, 1, 'a plain global is client-writable');
+    assert.deepEqual(soft(gate('se_captures')), [], 'the fixed server list');
+    const credit = gate('kp_badge_tailgated');
+    credit.rooms.lobby.doors = [{ connectedRoom: 'annex', gate: { openFor: ['it_admin'], creditOnPass: { it_admin: { setGlobal: { kp_badge_tailgated: true } } } } }];
+    assert.deepEqual(soft(credit), [], 'a creditOnPass global');
+    const imported = gate('carried_in');
+    imported.importGlobals = [{ from: 'm01_first_contact', var: 'x', as: 'carried_in' }];
+    assert.deepEqual(soft(imported), [], 'an imported global');
 });
 
 test('S2 warning: a summary or falseBecause that reads as a procedure', { skip }, () => {
@@ -549,6 +578,23 @@ test('S3 warning: a weakness with no grants, and needs on one, in a scenario tha
     assertHas(out, "weakness 'read_only': has `needs` but grants nothing");
     const noCards = withFindings([weak('read_only', { needs: { item: 'printer_manual' } })]);
     assert.deepEqual(warnings(issues(noCards)).filter(m => m.includes('grants nothing')), []);
+});
+
+test('S3 warning: fixedIf as the only gate before a grant is a soft gate', { skip }, () => {
+    const only = s3(s => {
+        s.globalVariables = { reset_done: false };
+        s.hosts.print01.services[1].weaknesses[0].fixedIf = 'reset_done';
+        return s;
+    });
+    assertHas(warnings(issues(only)), "weakness 'factory_login': `fixedIf` is the only thing before the grant");
+    const beside = s3(s => {
+        s.globalVariables = { reset_done: false };
+        s.startItemsInInventory.push({ id: 'manual', type: 'notes', name: 'Manual' });
+        Object.assign(s.hosts.print01.services[1].weaknesses[0], { fixedIf: 'reset_done', needs: { item: 'manual' } });
+        return s;
+    });
+    assert.deepEqual(warnings(issues(beside)).filter(m => m.includes('only thing before the grant')), []);
+    assert.deepEqual(warnings(issues(only, { ...BUILT, N15: false })).filter(m => m.includes('only thing before the grant')), [], 'off while N15 is not built');
 });
 
 test('S3 warning: a registry key holding a word of a product name', { skip }, () => {
