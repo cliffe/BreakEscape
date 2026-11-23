@@ -417,12 +417,12 @@ unseen); the dungeon-graph half of step 12 (cards, needs, grants) was not in the
 
 | Finding | Outcome | Commit |
 |---|---|---|
-| B1 (view's part) | The view and `ops-model.js` read `view.techniques` from the stored view, which `networkLinks.refresh` (world-side fixer) now builds as `{ ...entry, techniques: body.techniques }`; no change needed in `ops-model.js`. `network-view-techniques.test.mjs`'s `setup` builds the server's real body (`techniques` top level beside `footholds`, none on the entry; asserted) and runs it through the real `NetworkLinks.refresh`; new test "B1: ...". Before/after: against `network-links.js` at HEAD (no carry) 19 of 24 tests fail including B1's; with the carry all pass. | see log |
-| m1 (view's part) | Use handler passes `answer.tokenExpiredPcIds ?? null` as a 4th argument to `noteTechniqueSession` (the world-side fixer owns the receiving signature). Test pins the call; mutation (argument removed) fails it. | see log |
-| m2 (view's part) | A repeat grant on a copy `pcSessions.remoteViewFoothold` holds is not recorded again, so no sign-in or sign-out event; a copy the client lacks is still recorded; the desktop still opens. Test asserts no call, no `pc_signed_*` event, desktop opened; mutation (guard off) fails it. | see log |
-| m4 | `dropCard` redraws when `perform` answers `sent: false`. Test; mutation fails it. | see log |
-| m5 | Finding alias is the plain `<span>` chip while no card is held. Test; mutation fails it. | see log |
-| m9 | `button.network-finding-alias` gets its own border (`#4aa3d8`) and colour, hover fill. CSS only, not seen in a browser. | see log |
-| M4 T4, T6 | T4 is the B1 test (real body shape). T6 new: refusal, throw and null answer order for `use`. T3, T1, T2, T5, T7 to T10 are world-side. | see log |
-| Static bolt import | Static `import { createBoltCanvas }` in the view; `_loadBolt` removed; helper added to the copy lists of `network-view.test.mjs` and `network-view-ops.test.mjs`. | see log |
-| PT4 | `.network-view-rows { align-items: start }`: a short card keeps its own height with content at the top. CSS only, not seen in a browser. | see log |
+| B1 (view's part) | The view and `ops-model.js` read `view.techniques` from the stored view, which `networkLinks.refresh` (world-side fixer) now builds as `{ ...entry, techniques: body.techniques }`; no change needed in `ops-model.js`. `network-view-techniques.test.mjs`'s `setup` builds the server's real body (`techniques` top level beside `footholds`, none on the entry; asserted) and runs it through the real `NetworkLinks.refresh`; new test "B1: ...". Before/after: against `network-links.js` at HEAD (no carry) 19 of 24 tests fail including B1's; with the carry all pass. | db006e737 |
+| m1 (view's part) | Use handler passes `answer.tokenExpiredPcIds ?? null` as a 4th argument to `noteTechniqueSession` (the world-side fixer owns the receiving signature). Test pins the call; mutation (argument removed) fails it. | db006e737 |
+| m2 (view's part) | A repeat grant on a copy `pcSessions.remoteViewFoothold` holds is not recorded again, so no sign-in or sign-out event; a copy the client lacks is still recorded; the desktop still opens. Test asserts no call, no `pc_signed_*` event, desktop opened; mutation (guard off) fails it. | db006e737 |
+| m4 | `dropCard` redraws when `perform` answers `sent: false`. Test; mutation fails it. | db006e737 |
+| m5 | Finding alias is the plain `<span>` chip while no card is held. Test; mutation fails it. | db006e737 |
+| m9 | `button.network-finding-alias` gets its own border (`#4aa3d8`) and colour, hover fill. CSS only, not seen in a browser. | db006e737 |
+| M4 T4, T6 | T4 is the B1 test (real body shape). T6 new: refusal, throw and null answer order for `use`. T3, T1, T2, T5, T7 to T10 are world-side. | db006e737 |
+| Static bolt import | Static `import { createBoltCanvas }` in the view; `_loadBolt` removed; helper added to the copy lists of `network-view.test.mjs` and `network-view-ops.test.mjs`. | db006e737 |
+| PT4 | `.network-view-rows { align-items: start }`: a short card keeps its own height with content at the top. CSS only, not seen in a browser. | db006e737 |
