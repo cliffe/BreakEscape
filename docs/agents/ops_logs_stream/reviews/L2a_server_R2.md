@@ -306,3 +306,11 @@ D2, D3, and assign S6.
 | S6 | Built: rule `log_row` in `access_leak_scanner.rb` (answer and row keys, stored-only keys, registered log secrets from `OpsLog.compared_secrets`, raw scenario ids; SIGN_IN identity cell skipped); 8 unit tests and a real-answer test | c587d49c4 |
 | D1, D2, D3 | Fixed in `docs/ACCESS_AND_NETWORKS.md` and `README_scenario_design.md` | 9ad9caee6 |
 | A24 validator line | True (server fixer's validator errors are committed, c956f2f73); kept and extended with the `lockType: login` error | 9ad9caee6 |
+| N1 | Fixed: kind-word rule strips `jack_`, `wifi_` and `implant_`; model test covers wifi, implant and jack foothold ids (fails with the old regex) | 896e832d1 |
+| N2 | Fixed: the test covers an unnamed PC, NPC holder, card and the foothold `from` detail | 896e832d1 |
+| N3 | Fixed: one scan module for all three classes, on text cells (title, event, as, where, result, detail), not ids; asserts the secret list holds the password | 83b549392 |
+| N4 | No action (ruled) | - |
+| N5, S2 | Built in `scripts/validate_log_rows.rb`: reader with no `id`, undeclared `logSource`, `lockType: login`, each with a node test (runs with or without `logSources`) | c956f2f73 |
+| N6 | Fixed: a lone wrong `from` reads 404 (the good-`from` case waits for a pivot fixture) | 83b549392 |
+| N7 | Fixed: own keycard among several cards, in a game with the flag, names the holder in both sources, no marker | 83b549392 |
+| S1 (server half) | Fixed: door name is room `name`, then `door_sign`, then the kind word; test for each step | 896e832d1 |
