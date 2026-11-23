@@ -4,10 +4,13 @@
  *
  * Reads GET /log_rows through ApiClient.logRows(objectId, { rev, signal, foothold|from }) and
  * shows the rows the server built. Every cell goes in through textContent; no row is ever
- * tinted or marked before the server has said a flag was right. A reader with an anomaly
- * (minigameData.anomaly, an empty object here: the row is never sent) offers a flag control on
- * the selected row's detail: FLAG, then CONFIRM or CANCEL; the server judges through
- * ApiClient.logFlag and the viewer only shows the answer (L2b).
+ * tinted or marked before a right flag. A reader with an anomaly (minigameData.anomaly.rowId)
+ * offers a flag control on the selected row's detail: FLAG, then CONFIRM or CANCEL. The flag is
+ * checked here, best effort, as log-filter checks its own: the picked row's id against
+ * anomaly.rowId, then flagActions and completionActions run once through the same
+ * global-setting path (its _executeActions). "Already flagged" is read from the action's global
+ * (the first set_global true of flagActions, else of completionActions), which the normal sync
+ * saves, so a reopened terminal after a reload shows it with no state of its own (L2b).
  *
  * The reader's id is sprite.scenarioData.id (never sprite.objectId, which is a throwaway when
  * the terminal is opened from a desktop). The route the screen was reached by arrives as
@@ -53,10 +56,20 @@ export class OpsLogMinigame extends MinigameScene {
         this._route = route && typeof route === 'object' ? route : null;
         const data = sd.minigameData && typeof sd.minigameData === 'object' ? sd.minigameData : {};
         this._flaggable = !!data.anomaly && typeof data.anomaly === 'object';
+        this._anomalyId = this._flaggable && typeof data.anomaly.rowId === 'string' ? data.anomaly.rowId : null;
+        this._flagActions = Array.isArray(data.flagActions) ? data.flagActions : [];
+        this._completionActions = Array.isArray(data.completionActions) ? data.completionActions : [];
+        const doneAction = [...this._flagActions, ...this._completionActions]
+            .find(a => a && a.type === 'set_global' && typeof a.key === 'string' && a.value === true);
+        this._doneGlobal = doneAction ? doneAction.key : null;
         this._flagLabel = typeof data.flagActionLabel === 'string' && data.flagActionLabel.trim() && data.flagActionLabel.length <= 40
             ? data.flagActionLabel.trim() : FLAG_LABEL;
-        this._flagState = 'idle';         // 'idle' | 'confirm' | 'sending' | 'wrong' | 'error'
-        this._flaggedId = null;           // the row the server said was the anomaly (never before)
+        this._flagState = 'idle';         // 'idle' | 'confirm' | 'wrong'
+        this._flaggedId = null;           // the anomaly's row, set only by a right flag or a set done-global
+        // A reopen after a reload: the action's global is already true, so the flag is done
+        if (this._flaggable && this._anomalyId && this._doneGlobal && window.gameState?.globalVariables?.[this._doneGlobal] === true) {
+            this._flaggedId = this._anomalyId;
+        }
         this._closed = false;
         this._cacheKey = `${this._objectId}|${this._route?.foothold || ''}|${this._route?.from || ''}|${this._route?.relay === true ? 'relay' : ''}`;
 
@@ -86,7 +99,7 @@ export class OpsLogMinigame extends MinigameScene {
             this._rows = cached.rows;
             this._title = cached.title;
             this._rev = cached.rev;
-            this._flaggedId = cached.flaggedId || null;
+            if (cached.flaggedId) this._flaggedId = cached.flaggedId;
             this._state = 'ready';
         }
         this._render();
@@ -136,7 +149,6 @@ export class OpsLogMinigame extends MinigameScene {
             this._rows = cleanRows(answer.rows);
             this._title = typeof answer.title === 'string' ? answer.title : '';
             this._rev = typeof answer.rev === 'string' ? answer.rev : null;
-            if (typeof answer.flaggedRow === 'string' && answer.flaggedRow) this._flaggedId = answer.flaggedRow;
             this._state = 'ready';
             this._note = '';
             this._cacheAnswer();
@@ -161,7 +173,6 @@ export class OpsLogMinigame extends MinigameScene {
         this._title = '';
         this._rev = null;
         this._selectedId = null;
-        this._flaggedId = null;
         this._flagState = 'idle';
         this._state = 'denied';
         this._render();
@@ -387,7 +398,7 @@ export class OpsLogMinigame extends MinigameScene {
     // A click or Enter moves the mark between the two existing rows; the table is not rebuilt
     _select(id) {
         this._mark(this._rowEls.get(this._selectedId), false);
-        if (id !== this._selectedId && this._flagState !== 'sending') this._flagState = 'idle';
+        if (id !== this._selectedId) this._flagState = 'idle';
         this._selectedId = id;
         const el = this._rowEls.get(id);
         this._mark(el, true);
@@ -418,8 +429,7 @@ export class OpsLogMinigame extends MinigameScene {
         this._renderFlag(host, row);
     }
 
-    // The flag control (L2b). Nothing here knows which row is the anomaly: it is offered on whatever row
-    // is selected, and only the server's answer marks one.
+    // The flag control (L2b). It is offered on whatever row is selected and marks nothing until a right pick.
     _renderFlag(host, row) {
         if (!this._flaggable) return;
         const box = this._el('div', 'ol-flag', { 'data-ops-log': 'flag' });
@@ -428,26 +438,23 @@ export class OpsLogMinigame extends MinigameScene {
             n.textContent = word;
             box.appendChild(n);
         };
-        const button = (action, word, onClick, disabled = false) => {
+        const button = (action, word, onClick) => {
             const b = this._el('button', 'ol-btn', { type: 'button', 'data-action': action });
             b.textContent = word;
-            if (disabled) b.setAttribute('disabled', 'disabled');
-            else b.addEventListener('click', onClick);
+            b.addEventListener('click', onClick);
             box.appendChild(b);
             return b;
         };
         if (this._flaggedId) {
-            // Once the server has accepted a flag there is nothing more to offer
+            // Once flagged there is nothing more to offer
             if (row.id === this._flaggedId) note('FLAGGED', 'done');
             else return;
-        } else if (this._flagState === 'confirm' || this._flagState === 'sending') {
-            const busy = this._flagState === 'sending';
-            note(busy ? 'CHECKING...' : 'FLAG THIS ROW AS THE ANOMALY?', 'confirm');
-            button('flag-confirm', 'CONFIRM', () => this._sendFlag(row.id), busy);
-            button('flag-cancel', 'CANCEL', () => { this._flagState = 'idle'; this._renderDetail(); }, busy);
+        } else if (this._flagState === 'confirm') {
+            note('FLAG THIS ROW AS THE ANOMALY?', 'confirm');
+            button('flag-confirm', 'CONFIRM', () => this._confirmFlag(row.id));
+            button('flag-cancel', 'CANCEL', () => { this._flagState = 'idle'; this._renderDetail(); this._focusFlag('flag'); });
         } else {
             if (this._flagState === 'wrong') note('NOT THIS ONE', 'wrong');
-            else if (this._flagState === 'error') note('NO SIGNAL - TRY AGAIN', 'error');
             button('flag', this._flagLabel, () => { this._flagState = 'confirm'; this._renderDetail(); this._focusFlag('flag-confirm'); });
         }
         host.appendChild(box);
@@ -458,36 +465,26 @@ export class OpsLogMinigame extends MinigameScene {
         if (b && typeof b.focus === 'function') b.focus();
     }
 
-    async _sendFlag(rowId) {
-        if (this._flagState === 'sending') return;
-        this._flagState = 'sending';
-        this._renderDetail();
-        let answer;
-        try {
-            answer = await ApiClient.logFlag(this._objectId, rowId, this._route || {});
-        } catch (err) {
-            if (this._closed) return;
-            if ([400, 403, 404].includes(err && err.status)) { this._deny(); return; }
-            this._flagState = 'error';
+    // The check is local: the picked row's id against anomaly.rowId. A wrong pick marks nothing and runs
+    // nothing; a right one runs flagActions then completionActions once and marks the row.
+    _confirmFlag(rowId) {
+        if (this._flaggedId || this._closed) return;
+        if (!this._anomalyId || rowId !== this._anomalyId) {
+            this._flagState = 'wrong';
             this._renderDetail();
+            this._focusFlag('flag');
             return;
         }
-        if (answer && answer.correct === true) {
-            const first = answer.already !== true;
-            this._flaggedId = typeof answer.rowId === 'string' && answer.rowId ? answer.rowId : rowId;
-            this._flagState = 'idle';
-            this._cacheAnswer();
-            // The actions run once, on the first right flag, even if the viewer was closed meanwhile
-            if (first) { this._runActions(answer.flagActions); this._runActions(answer.completionActions); }
-            if (this._closed) return;
-            this._renderTable();
-            this._renderDetail();
-            return;
-        }
-        if (this._closed) return;
-        this._flagState = answer && answer.correct === false ? 'wrong' : 'error';
+        this._flaggedId = rowId;
+        this._flagState = 'idle';
+        this._cacheAnswer();
+        this._runActions(this._flagActions);
+        this._runActions(this._completionActions);
+        this._renderTable();
         this._renderDetail();
-        this._focusFlag('flag');
+        // Focus stays on the flagged row (the confirm button it replaced is gone)
+        const tr = this._rowEls.get(rowId);
+        if (tr && typeof tr.focus === 'function') tr.focus();
     }
 
     // The same global-setting path log-filter uses (its _executeActions): set_global and complete_task

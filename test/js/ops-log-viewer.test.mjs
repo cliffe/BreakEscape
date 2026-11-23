@@ -58,12 +58,7 @@ const clockWith = (day) => ({
 // Scripted ApiClient: each call takes the next queued answer (or throws it when it is an Error)
 const calls = [];
 let queue = [];
-const flagCalls = [];
-let flagQueue = [];
-globalThis.__api = {
-    logRows: async (id, opts) => { calls.push({ id, opts }); const a = queue.shift(); if (a instanceof Error) throw a; return a; },
-    logFlag: async (id, rowId, route) => { flagCalls.push({ id, rowId, route }); const a = flagQueue.shift(); if (a instanceof Error) throw a; return a; }
-};
+globalThis.__api = { logRows: async (id, opts) => { calls.push({ id, opts }); const a = queue.shift(); if (a instanceof Error) throw a; return a; } };
 
 const dir = mkdtempSync(join(tmpdir(), 'ops-log-viewer-'));
 writeFileSync(join(dir, 'ops-log-rows.js'), read('minigames/ops-log/ops-log-rows.js'));
@@ -396,7 +391,7 @@ test('m5: a row id with a quote or a bracket is selectable (no selector is built
 
 test('no row is tinted or marked, with or without an anomaly, before a right flag', async () => {
     clearOpsLogCache();
-    const m = await open({ answers: [answer([seed('s1', '07:12'), play('a1', H)])], data: { anomaly: {}, flagActionLabel: 'FLAG' } });
+    const m = await open({ answers: [answer([seed('s1', '07:12'), play('a1', H)])], data: { anomaly: { rowId: 's1' }, flagActionLabel: 'FLAG', flagActions: [{ type: 'set_global', key: 'k', value: true }] } });
     await settle();
     const classesOf = (tr) => [...tr.classes].sort().join(' ');
     assert.equal(classesOf(bodyRows(m)[0]), classesOf(bodyRows(m)[1]));
@@ -663,25 +658,41 @@ test('wiring: scene registered, texture and screen glow set, API call shape, sch
     assert.deepEqual(urls, ['/g/log_rows?object_id=security%20log&rev=ab&foothold=jack_a', '/g/log_rows?object_id=r1&from=ops_pc', '/g/log_rows?object_id=r2', '/g/log_rows?object_id=r3&relay=1', '/g/log_rows?object_id=r4', '/g/log_rows?object_id=r5&from=ops_pc']);
 });
 
-// ---- the flag flow (L2b): the server judges; the viewer shows its answer ----
+// ---- the flag flow (L2b): checked in the browser, as log-filter checks its own anomaly ----
 
 const flagBtn = (m, action) => root(m).all('button').find(b => b.attrs['data-action'] === action);
 const flagNote = (m) => root(m).querySelector('[data-ops-log="flag-note"]');
 const rowsWithAnomaly = () => [seed('s1', 'Mon 23:58'), seed('s2', 'Tue 02:14'), play('a1', H)];
+const FLAG_DATA = {
+    anomaly: { rowId: 's2' },
+    flagActions: [{ type: 'set_global', key: 'found_night_swipe', value: true }],
+    completionActions: [{ type: 'complete_task', taskId: 't_log' }, { type: 'bogus' }, null]
+};
+const set = [];
+const done = [];
+function hooks(globals = {}) {
+    set.length = 0; done.length = 0;
+    window.gameState = { globalVariables: { ...globals } };
+    window.npcManager = { setGlobalVariable: (k, v) => { set.push([k, v]); window.gameState.globalVariables[k] = v; } };
+    window.objectivesManager = { completeTask: (t) => done.push(t) };
+}
+function unhook() { delete window.npcManager; delete window.objectivesManager; delete window.gameState; }
 async function openFlaggable(extra = {}) {
     clearOpsLogCache();
-    flagCalls.length = 0;
-    const m = await open({ answers: [answer(rowsWithAnomaly(), extra.answer || {})], data: { anomaly: {}, ...(extra.data || {}) }, sprite: extra.sprite || {} });
+    const m = await open({ answers: [answer(rowsWithAnomaly())], data: { ...FLAG_DATA, ...(extra.data || {}) }, sprite: extra.sprite || {} });
     await settle();
     return m;
 }
+const flaggedIds = (m) => bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true').map(r => r.attrs['data-row-id']);
+const pick = (m, i) => { bodyRows(m)[i].click(); flagBtn(m, 'flag').click(); flagBtn(m, 'flag-confirm').click(); };
 
 test('flag: the control appears only with an anomaly, and only on a selected row', async () => {
+    hooks();
     clearOpsLogCache();
     const plain = await open({ answers: [answer(rowsWithAnomaly())] });
     await settle();
     bodyRows(plain)[0].click();
-    assert.equal(flagBtn(plain, 'flag'), undefined);
+    assert.equal(flagBtn(plain, 'flag'), undefined, 'a reader without an anomaly shows no flag control');
     const m = await openFlaggable();
     assert.equal(flagBtn(m, 'flag'), undefined, 'no row selected, no control');
     bodyRows(m)[0].click();
@@ -689,9 +700,11 @@ test('flag: the control appears only with an anomaly, and only on a selected row
     const custom = await openFlaggable({ data: { flagActionLabel: 'Report this entry' } });
     bodyRows(custom)[1].click();
     assert.equal(flagBtn(custom, 'flag').textContent, 'Report this entry');
+    unhook();
 });
 
-test('flag: FLAG opens a confirm with CONFIRM and CANCEL; CANCEL returns and sends nothing', async () => {
+test('flag: FLAG opens a confirm with CONFIRM and CANCEL; CANCEL returns, runs nothing, and focuses FLAG', async () => {
+    hooks();
     const m = await openFlaggable();
     bodyRows(m)[1].click();
     flagBtn(m, 'flag').click();
@@ -700,111 +713,132 @@ test('flag: FLAG opens a confirm with CONFIRM and CANCEL; CANCEL returns and sen
     assert.equal(flagBtn(m, 'flag'), undefined);
     flagBtn(m, 'flag-cancel').click();
     assert.ok(flagBtn(m, 'flag'));
-    assert.equal(flagCalls.length, 0);
+    assert.equal(globalThis.__focused, flagBtn(m, 'flag'));
+    assert.deepEqual([set, done], [[], []]);
+    unhook();
 });
 
-test('flag: CONFIRM sends the reader id, the row id and the screen route; a wrong answer says so and marks nothing', async () => {
-    const m = await openFlaggable({ sprite: { sourceRoute: { foothold: 'jack_1' } } });
-    bodyRows(m)[0].click();
-    flagBtn(m, 'flag').click();
-    flagQueue = [{ correct: false }];
-    flagBtn(m, 'flag-confirm').click();
-    assert.equal(flagNote(m).attrs['data-state'], 'confirm', 'CHECKING while the answer is out');
-    assert.equal(flagBtn(m, 'flag-confirm').attrs.disabled, 'disabled');
-    await settle();
-    assert.deepEqual(flagCalls, [{ id: 'security_log_pc', rowId: 's1', route: { foothold: 'jack_1' } }]);
+test('flag: a wrong pick says NOT THIS ONE, marks nothing, runs nothing, and clears when another row is selected', async () => {
+    hooks();
+    const m = await openFlaggable();
+    pick(m, 0); // s1, not the anomaly
     assert.equal(flagNote(m).textContent, 'NOT THIS ONE');
     assert.ok(flagBtn(m, 'flag'), 'it can be tried again');
-    assert.ok(bodyRows(m).every(r => r.attrs['data-flagged'] === undefined && !r.classes.has('ol-row-flagged')));
+    assert.deepEqual(flaggedIds(m), []);
+    assert.ok(bodyRows(m).every(r => !r.classes.has('ol-row-flagged')));
+    assert.deepEqual([set, done], [[], []]);
+    assert.equal(window.gameState.globalVariables.found_night_swipe, undefined);
     bodyRows(m)[1].click();
-    assert.equal(flagNote(m), null, 'selecting another row clears the note');
+    assert.equal(flagNote(m), null, 'selecting another row clears the note, so it never sits under a different row');
+    // a play row is never the anomaly
+    pick(m, 2);
+    assert.equal(flagNote(m).textContent, 'NOT THIS ONE');
+    assert.deepEqual([set, done, flaggedIds(m)], [[], [], []]);
+    unhook();
 });
 
-test('flag: a right answer marks that row, runs both action lists once, and offers nothing more', async () => {
+test('flag: a right pick marks that row, runs flagActions then completionActions once, and offers nothing more', async () => {
+    hooks();
     const m = await openFlaggable();
-    const set = [];
-    window.npcManager = { setGlobalVariable: (k, v) => set.push([k, v]) };
-    const done = [];
-    window.objectivesManager = { completeTask: (t) => done.push(t) };
-    bodyRows(m)[1].click();
-    flagBtn(m, 'flag').click();
-    flagQueue = [{ correct: true, rowId: 's2', flagActions: [{ type: 'set_global', key: 'found_night_swipe', value: true }], completionActions: [{ type: 'complete_task', taskId: 't_log' }, { type: 'bogus' }] }];
-    flagBtn(m, 'flag-confirm').click();
-    await settle();
+    pick(m, 1); // s2
     assert.deepEqual(set, [['found_night_swipe', true]]);
     assert.deepEqual(done, ['t_log']);
-    const flagged = bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true');
-    assert.deepEqual(flagged.map(r => r.attrs['data-row-id']), ['s2']);
-    assert.ok(flagged[0].classes.has('ol-row-flagged'));
+    assert.deepEqual(flaggedIds(m), ['s2']);
+    assert.ok(bodyRows(m)[1].classes.has('ol-row-flagged'));
     assert.equal(flagNote(m).textContent, 'FLAGGED');
     assert.equal(flagBtn(m, 'flag'), undefined);
+    assert.equal(globalThis.__focused, bodyRows(m)[1], 'focus stays on the flagged row');
     bodyRows(m)[0].click();
     assert.equal(flagBtn(m, 'flag'), undefined, 'no second flag after a right one');
     assert.equal(flagNote(m), null);
-    delete window.npcManager; delete window.objectivesManager;
-});
-
-test('flag: an already-flagged answer marks the row and runs no action', async () => {
-    const m = await openFlaggable();
-    const set = [];
-    window.npcManager = { setGlobalVariable: (k, v) => set.push([k, v]) };
     bodyRows(m)[1].click();
-    flagBtn(m, 'flag').click();
-    flagQueue = [{ correct: true, already: true, rowId: 's2', flagActions: [{ type: 'set_global', key: 'k', value: 1 }] }];
-    flagBtn(m, 'flag-confirm').click();
-    await settle();
-    assert.deepEqual(set, []);
-    assert.equal(bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true').length, 1);
-    delete window.npcManager;
+    assert.equal(flagNote(m).textContent, 'FLAGGED');
+    assert.deepEqual([set.length, done.length], [1, 1], 'nothing runs twice');
+    unhook();
 });
 
-test('flag: the server may name the flagged row when the reader opens (a reload or a reopen)', async () => {
-    const m = await openFlaggable({ answer: { flaggedRow: 's1' } });
-    assert.deepEqual(bodyRows(m).filter(r => r.attrs['data-flagged'] === 'true').map(r => r.attrs['data-row-id']), ['s1']);
-    // a reopen from the cache keeps it, and an unchanged answer does not clear it
-    queue = [{ rev: 'abc123', unchanged: true }];
-    const again = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc', type: 'ops_log_terminal', name: 'x', minigameData: { logSource: 'door_controller', anomaly: {} } } } });
-    again.start();
-    assert.deepEqual(bodyRows(again).filter(r => r.attrs['data-flagged'] === 'true').map(r => r.attrs['data-row-id']), ['s1']);
-    await settle();
-    assert.equal(bodyRows(again).filter(r => r.attrs['data-flagged'] === 'true').length, 1);
-});
-
-test('flag: a flaggedRow on a reader with no anomaly object does not add a control', async () => {
-    clearOpsLogCache();
-    const m = await open({ answers: [answer(rowsWithAnomaly(), { flaggedRow: 's1' })] });
-    await settle();
+test('flag: reopened with the done global set (a reload), the row shows flagged and no control is offered', async () => {
+    hooks({ found_night_swipe: true });
+    clearOpsLogCache(); // a reload has no cache either
+    const m = await openFlaggable();
+    assert.deepEqual(flaggedIds(m), ['s2']);
     bodyRows(m)[0].click();
     assert.equal(flagBtn(m, 'flag'), undefined);
+    bodyRows(m)[1].click();
+    assert.equal(flagNote(m).textContent, 'FLAGGED');
+    assert.equal(flagBtn(m, 'flag'), undefined);
+    assert.deepEqual([set, done], [[], []], 'reading the state runs nothing');
+    unhook();
 });
 
-test('flag: a dropped connection says so and keeps the control; a refusal reads NO ACCESS', async () => {
+test('flag: the done global is the first set_global true of flagActions, else of completionActions; none means no memory', async () => {
+    hooks({ cg: true });
+    const viaCompletion = await openFlaggable({ data: { flagActions: [], completionActions: [{ type: 'set_global', key: 'cg', value: true }] } });
+    assert.deepEqual(flaggedIds(viaCompletion), ['s2']);
+    hooks({ other: true });
+    const none = await openFlaggable({ data: { flagActions: [{ type: 'set_global', key: 'x', value: false }], completionActions: [] } });
+    assert.deepEqual(flaggedIds(none), []);
+    // a global that is set but not to true does not count
+    hooks({ found_night_swipe: 'yes' });
+    assert.deepEqual(flaggedIds(await openFlaggable()), []);
+    // a reader without the global's reader (no anomaly object) never marks
+    hooks({ found_night_swipe: true });
+    clearOpsLogCache();
+    const plain = await open({ answers: [answer(rowsWithAnomaly())], data: { flagActions: FLAG_DATA.flagActions } });
+    await settle();
+    assert.deepEqual(flaggedIds(plain), []);
+    unhook();
+});
+
+test('flag: a right flag survives a reopen in the same page, and a lost request cannot lose it (nothing is sent)', async () => {
+    hooks();
     const m = await openFlaggable();
+    const callsBefore = calls.length;
+    pick(m, 1);
+    assert.equal(calls.length, callsBefore, 'the flag sends no request');
+    queue = [{ rev: 'abc123', unchanged: true }];
+    const again = new OpsLogMinigame(new FakeEl('div'), { sprite: { scenarioData: { id: 'security_log_pc', type: 'ops_log_terminal', name: 'x', minigameData: { logSource: 'door_controller', ...FLAG_DATA } } } });
+    again.start();
+    assert.deepEqual(flaggedIds(again), ['s2']);
+    await settle();
+    assert.deepEqual(flaggedIds(again), ['s2']);
+    unhook();
+});
+
+test('flag: an anomaly with no row id marks nothing and every pick is wrong; hostile action entries are ignored', async () => {
+    hooks();
+    const m = await openFlaggable({ data: { anomaly: {}, flagActions: 'rm -rf', completionActions: [1, 'x', { type: 'set_global', key: 5, value: true }] } });
+    pick(m, 1);
+    assert.equal(flagNote(m).textContent, 'NOT THIS ONE');
+    assert.deepEqual([set, done, flaggedIds(m)], [[], [], []]);
+    const odd = await openFlaggable({ data: { anomaly: { rowId: { toString: () => 's2' } }, flagActions: [{ type: 'set_global', key: 'k', value: true }] } });
+    pick(odd, 1);
+    assert.deepEqual([set, flaggedIds(odd)], [[], []], 'a non-string rowId never equals a row id');
+    unhook();
+});
+
+test('flag: hostile strings in the label and rows only ever reach textContent', async () => {
+    hooks();
+    const evil = '<img src=x onerror=alert(1)>';
+    clearOpsLogCache();
+    const m = await open({ answers: [answer([seed('s1', 'Mon 23:58', { as: evil, where: evil }), seed('s2', 'Tue 02:14')])], data: { ...FLAG_DATA, flagActionLabel: evil } });
+    await settle();
     bodyRows(m)[0].click();
-    flagBtn(m, 'flag').click();
-    flagQueue = [Object.assign(new Error('API Error: 500'), { status: 500 })];
-    flagBtn(m, 'flag-confirm').click();
-    await settle();
-    assert.equal(flagNote(m).textContent, 'NO SIGNAL - TRY AGAIN');
-    assert.ok(flagBtn(m, 'flag'));
-    flagBtn(m, 'flag').click();
-    flagQueue = [Object.assign(new Error('API Error: 404'), { status: 404 })];
-    flagBtn(m, 'flag-confirm').click();
-    await settle();
-    assert.equal(root(m).querySelector('.ol-message').textContent, 'NO ACCESS');
-    assert.equal(bodyRows(m).length, 0);
+    assert.equal(flagBtn(m, 'flag').textContent, evil);
+    assert.ok(root(m).all('*').every(e => e.innerHTMLSets.length === 0 || e.innerHTMLSets.every(v => v === '')), 'no innerHTML with text');
+    unhook();
 });
 
-test('flag: the viewer never holds the anomaly: the object it was given has no row id, and answers name none', async () => {
-    const m = await openFlaggable();
-    const text = JSON.stringify(m.params.sprite.scenarioData.minigameData);
-    assert.doesNotMatch(text, /rowId|flagActions|completionActions/);
+test('flag: the viewer sends no request of its own and ApiClient has no flag call', () => {
     const src = read('minigames/ops-log/ops-log-minigame.js');
-    assert.doesNotMatch(src, /anomaly\??\.rowId/);
+    assert.doesNotMatch(src, /logFlag|log_rows\/flag|fetch\(/);
+    assert.doesNotMatch(read('api-client.js'), /logFlag|log_rows\/flag/);
 });
 
-test('flag: ApiClient.logFlag posts the route the screen was reached by, one at a time', () => {
-    const src = read('api-client.js');
-    assert.match(src, /static async logFlag\(objectId, rowId, \{ foothold, from, relay \} = \{\}\)/);
-    assert.match(src, /this\.post\('\/log_rows\/flag', \{ object_id: objectId, row_id: rowId, \.\.\.route \}\)/);
+test('flag: the flagged row has its own look, none before a right flag, in square pixel style', () => {
+    const css = read('../css/ops-log-minigame.css');
+    const rule = /\.ol-row\.ol-row-flagged \.ol-cell[^{]*\{([^}]*)\}/.exec(css);
+    assert.ok(rule, 'a flagged-row rule exists');
+    assert.match(rule[1], /repeating-linear-gradient/, 'it is not just a tint like a selected row');
+    assert.doesNotMatch(css, /border-radius:\s*[1-9]|blur|box-shadow/);
 });

@@ -97,13 +97,19 @@
 .ol-detail-label { color: #7777aa; }
 .ol-detail-value { color: #ccccee; overflow-wrap: anywhere; word-break: break-word; }
 
-/* The flag control (L2b). A row is marked only after the server has said a flag was right. */
+/* The flag control (L2b). A row is marked only after a right flag (checked in the browser). */
 .ol-flag { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; padding-top: 6px; border-top: 2px solid #333355; }
 .ol-flag-note { color: #ccccee; letter-spacing: 0.04em; }
-.ol-flag-wrong, .ol-flag-error { color: #ddaa88; }
+.ol-flag-wrong { color: #ddaa88; }
 .ol-flag-done { color: #88ccaa; }
 .ol-btn[disabled] { opacity: 0.5; cursor: default; }
-.ol-row-flagged .ol-cell { background: #1c2a2a; border-bottom-color: #44886a; }
+.ol-row.ol-row-flagged .ol-cell, .ol-row.ol-row-flagged:hover .ol-cell {
+    background: repeating-linear-gradient(135deg, #1a3a2e 0, #1a3a2e 4px, #12281f 4px, #12281f 8px);
+    color: #aaeecc;
+    border-bottom: 2px solid #44bb88;
+}
+.ol-row-flagged .ol-cell:first-child { border-left: 6px solid #44bb88; }
+.ol-row-flagged.ol-row-selected .ol-cell { border-top: 2px solid #88ffcc; }
 
 .ol-status {
     flex-shrink: 0;
