@@ -64,3 +64,10 @@ with these differences, which win:**
   schema entry: the title is the source's, from the server. The validator's sprite check
   exempts `ops_log_terminal` the way it exempts `capture_log` (the type reuses the log
   terminal's sprite), with a test.
+- 2026-11-23, L2a R2 rulings: S1, a door's shown name is the room's `name`, then its
+  `door_sign` (what the player reads on the door; campaign missions author that), then the
+  kind word; never the raw id. S2 and N5, the plan's section 9 validator errors for a reader
+  are built now in `scripts/validate_log_rows.rb` (no `id`; an undeclared `logSource`; a
+  reader authored with `lockType: login`, which can never be read), each with a node test.
+  S6, the leak check's `/log_rows` extension is built now with the rest of the scenario
+  tooling. N4, no action.
