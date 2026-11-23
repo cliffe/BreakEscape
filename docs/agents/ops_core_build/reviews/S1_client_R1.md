@@ -177,3 +177,19 @@ Nothing in this commit adds to synced `player_state`; the refetch after a move i
 Verdict: not ready to pass R1. The two halves agree and the `perform` contract is as planned; fix M1 with its
 test, and m1 and m2 (both small and both touch what the skin relies on), then a delta review. m3 to m6 and T1 can
 go in the same fix round or be ruled on.
+
+## R1 outcomes (fix round)
+
+| Finding | Outcome |
+|---|---|
+| M1 | fixed: epoch counter (`_opsEpoch`), a refetch that started before a move drops its answer; `refetchAfterOps` awaits the in-flight one (`_refetchDone`) then asks again. Test "M1: a slow refetch..." fails on the old code (proved) |
+| m1 | fixed: key cleared in `finally`; redraw and showResult guarded by `_safely`. Test fails on the old shape (proved) |
+| m2 | fixed: `(await this._request(...)) ?? null`; test with a null answer |
+| m3 | fixed: `showResult` folds the answer into the view but does not render when `_reported` or `_ending`; test |
+| m4 | fixed: scroll kept, focus to the row's or next control (`focusAfterMove`); test |
+| m5 | fixed: "Devices" group after Computers, before File shares; test |
+| m6 | fixed: `showNotice` clears `noticeKey` unless given one (sweep and scan refusals pass it); a refetch drops a keyed notice whose target is gone; test |
+| T1 | fixed: null-answer hook case (m2 test), 400 `bad_request` case; M1, m1, m3 tests added |
+| m7 (server R1) | the old code already withheld Sweep on `route: "down"` (OM `offersSweep`, render's down branch); added a view test and kept the model test. No code change needed |
+
+Commit: 7c3189229 (code, tests, handover note).
