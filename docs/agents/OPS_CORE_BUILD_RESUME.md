@@ -200,19 +200,35 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   minors. Old-scenario check (`test_access_networks` P1 to P4 on this branch, Sonnet): no
   regression, 0 console errors (scratchpad `s3-old-scenario-check/`). Phone width: the Use
   button is cut off at the bottom and the message after Use lands below the fold (minor).
-- **L2b LANDED on main and pushed: merge `a44825e41`** (train at `6e3199588`: Rails 3929
-  runs 0 failures; JS 1000 of 1003, the 3 baseline files; tree clean; a first train had caught
-  a schema mark fault and a graph class line written into existing missions' files, fixed in
-  `6e3199588`). Main merged into `ops-build` cleanly; the three ops scenarios' graph files
-  regenerated (their log sources now draw the note node): `f31eec919`.
-- **S2 + S3 TRAIN RUNNING** in the train tree at `f31eec919` (`/data/tmp/ops-core-train-5`;
-  the hash includes L2b via the merge). If only the 3 baseline JS files fail and the tree is
-  clean: in main `git merge --no-ff ops-core` with a message naming N14 and N15, push, merge
-  main into `ops-build` and `ops-logs`. ALSO RUNNING: a Sonnet rerun of two more pre-existing
-  network scenarios on the build tree, port 3012 (scratchpad `s3-old-scenarios-2/`): the
-  plan's section 10 part 4 asks for three; one is done clean.
-- After landing: start L3 on `ops-logs` (after merging main into it) in two builders; the
-  post-landing tidy below; the screenshot review page for the user; then S5a on this stream.
+- **L2b LANDED: merge `a44825e41`. S2 + S3 LANDED on main and pushed: merge `6afbe1496`**
+  (train 5 at `f31eec919`: Rails 4279 runs 0 failures, shell-x 184 checked 0 failed, smoke 0
+  failed, corpus 0 of 204, JS 1008 of 1011 with only the 3 baseline files, tree clean). THE
+  CORE PLAN'S THREE STAGES (N13, N14, N15) ARE ON MAIN. `ops-build` and `ops-logs` both equal
+  main. Old-scenario reruns: `test_access_networks`, `test_access_keyring`,
+  `lab_physical_pentest` (network beats): no regression, 0 console errors.
+- RUNNING (2026-11-23, after the landing), five agents:
+  1. Review page builder (Sonnet): writes `index.html` + `img/` + `build.py` in the session
+     scratchpad `ops-review-page/` (gallery of the view states, 18 decisions with stable keys,
+     Copy answers box, localStorage key `be-ops-build-review-v1`). WHEN IT REPORTS: read
+     `index.html`, then publish with the Artifact tool (`file_path` the html, `files` mapping
+     each `img/<name>.png`, `icon: "checklist"`, a one-sentence description); give the user
+     the link. Republish the SAME path to update. The owner's answers come back pasted as
+     `KEY (title): choice — note` lines: record them in the brief and act.
+  2. Tidy, client (Sonnet, build tree): bolt fade, marks tests, three rarer landings, phone
+     scroll-into-view; browser check on port 3012.
+  3. Tidy, scanner/tests/docs (Sonnet, build tree): six groups incl. widening
+     `ops-unchanged-validator` to hash rendered graph files (a deliberate re-record).
+  4. L3 part A (Sonnet, `ops-logs`): network and share rows: events, call sites,
+     `session_admitting`, tests; note `ops_logs_stream/HANDOVER_L3a.md`.
+  5. Haiku reader: S5a build digest to the scratchpad `deps/S5A_BUILD_DIGEST.md` (steps,
+     line ranges, shared files, MISMATCHES between the privilege plan and what S3 built, a
+     split into builders).
+- Next: tidy → a Sonnet delta review of both tidy passes (nothing in them touches access
+  checks; if the reviewer finds otherwise, fable52L) → train → land. L3 part B (reader rows in
+  `test_ops_logs`: a jack, an access point, a share; PLAYTEST; docs) → fable52L review →
+  playtest → train → land. S5a: rule on the digest's mismatches, write builder prompts split
+  as it suggests, then the usual loop. Gem bump for Hacktivity after the tidy lands
+  (`bump-version` skill; Hacktivity repo; the user's standing "push as you go").
 - POST-LANDING TIDY (one Sonnet pass per group, then a Sonnet delta; none blocks landing):
   client: the bolt does not fade with its sprite behind a wall (R4-1), `v !== false` vs
   truthiness (R4-2), three rarer landings of a world-opened remote view (R3-2), phone width
