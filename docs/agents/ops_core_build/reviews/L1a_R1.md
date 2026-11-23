@@ -189,3 +189,30 @@ supports only GET and POST; a later plan's fixture through `PUT /sync_state` nee
 Verdict: **fix-and-delta-review**. Fix M1 and m1, m2, m3, m6, m7, m9, m10, m11, m17 before siblings build on the
 helper; m4 and m12 need a one-line ruling; the rest can ride with the delta. All eight checks completed; no test
 was run by this review.
+
+## R1 outcomes
+
+Fixer pass. Commits: A `d727f8fc2` (validator), B `fdc2b42a2` (engine, helper, verify-run, model tests), C `a278ac2e5` (golden helper, clock tests). Line numbers moved; places re-found by name.
+
+| Id | Outcome | Commit | Note |
+|---|---|---|---|
+| M1 | fixed | B | `lock_answers` source built from `CaptureModel.each_lock_answer` filtered by `LOCK_ANSWER_TYPES` (raw value, joined forms of an Array), plus the authored `combination` / `cryptexConfig.answer` copies. Tests: combination (string and array), cryptex, door-entry `requires` on an inherited lock. Proved by narrowing the types back to pin/password: `secret_values` test failed. |
+| m1 | fixed | B | nil `where` refused when the event has places; `write(game, 'tst_signin')` added to `malformed_calls`. |
+| m2 | fixed | B | guard on only in test and development; test stubs `Rails.env` (test, development on; production, staging, demo off). |
+| m3 | fixed | B | with the guard off, `write_log_row!` rescues `StandardError` around the whole call, one warning line (event and error class only), nil. Test injects a raise in the store. |
+| m4 | fixed (ruling) | B | invented `password/hash/value/secret/token` branch removed; the credentials source now reads the real field `account` and registers that holder's `creds.password`. Fixture credential uses real keys (`kind account foundIn`); invented `capture_holder` replaced by a real `capture.secret` on an object. NPC passwords registered from every `creds` hash (room npcs, top-level `npcs`, `phoneNPCs`); scenario `flags` values registered (new source `scenario_flags`). |
+| m5 | fixed | B | `authored_collisions` kept on the game, keyed on scenario, events and kinds content; assertion helper computes the secret set once per game. Registered secrets are still read per call (not part of the finding). Proved by removing the cache: the same-object test failed. |
+| m6 | fixed | B | `OpsLog.clock` uses `Time.now`; test with `travel_to`. The golden replay already uses `travel_to`, so it now freezes the clock. |
+| m7 | fixed | A | no `maxRows` uses the default 50 (JS test). |
+| m8 | fixed | A | `pc` is a login-lock object; `where.rooms` applies by holding room to object and pc; rooms, objects and places are a union. Proved by reverting the filter and the pc rule: the m8 test failed. |
+| m9 | fixed | A | warning uses pin, password, combination and cryptex answers, psk, capture secrets, NPC passwords and flags. An rfid card id no longer warns. Proved by dropping the type filter: the m9 test failed. |
+| m10 | fixed | A | `LOG_PLACE_LISTERS` table (door, object, pc, npc); a kind with no entry is not existence-checked (comment says each stage adds its lister). |
+| m11 | fixed | A, B | `_` keys skipped in `OpsLog.sources_for` and the validator (not counted toward 30). |
+| m12 | fixed (ruling) | A | stored-id check narrowed to map keys under rooms, networks, resources and every `id` inside rooms and resources; objective, task and message ids no longer refused. |
+| m13 | fixed | B | `EVENT_PATTERN` `{1,39}`; spec test for a one-character name. |
+| m14 | fixed | B | rooms and objects admit only when the place has a room lookup; test with a room-less kind. |
+| m15 | fixed | B | `verify-run --ops-log` prints typed text as `[N chars]` unless `--show-flags`; test. |
+| m16 | fixed | C | a named `OPS_GOLDEN_ONLY` fixture that does not exist fails (proved with a misspelt name); `OpsGolden.answer_for` plays PUT and PATCH. |
+| m17 | fixed | B, C | two-digit secret in the walk (proved by setting `MAX_COUNT` to 99: walk failed); `assert_ops_log_holds_no_secret` negative test; production warning lines checked for event and path and no secret; `p` on a merged row (proved by marking appended rows only); run-time step 7 test (proved by removing the size check); class 2 and 3 eviction order asserted (classes 4 and 5 not reachable, unchanged); bootstrap asserts `updated_at` equal under ten seconds and after a fresh refresh (proved with a zero refresh interval); sync-body test (proved by a temporary line that reads `opsLogSeq` from the body); tautology and `.first(0)` removed. |
+
+Withdrawn: none. Open: none.
