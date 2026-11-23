@@ -72,7 +72,11 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed].freeze
+
+# A finding id as printed on the opsFindings and opsUsed lines and a session's `granted by`: author-chosen
+# words, dots and underscores, nothing longer than the log's foothold ids allow; anything else is left out.
+OPS_ID = /\A[A-Za-z0-9_.\-]{1,120}\z/.freeze
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
@@ -82,7 +86,10 @@ def access_section(ps)
   sessions = hash.call(ps['sessions']).map do |pc, s|
     s = {} unless s.is_a?(Hash)
     remote = s['foothold'].is_a?(String) && !s['foothold'].empty? ? ", remote, foothold #{s['foothold']}" : ''
-    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote})"
+    # Ops core S3 (plan 11.4): a technique session's level and the finding that granted it (ids and words only)
+    level = %w[user admin].include?(s['access']) ? ", access #{s['access']}" : ''
+    granted = s['technique'].is_a?(String) && s['technique'].match?(OPS_ID) ? ", granted by #{s['technique']}" : ''
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote}#{level}#{granted})"
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
@@ -119,13 +126,20 @@ def access_section(ps)
     end],
     # Ops core S2 (OPS_CORE_PLAN.md 11.4): the findings the player holds, in alias order, each as
     # `<alias> <finding id> <status word>`; a stored value that is not `<u|c|f><n>` is left out. Ids and
-    # words only. opsUsed joins this list when S3 builds it.
+    # words only.
     ['opsFindings', hash.call(ps['opsFindings']).filter_map do |id, value|
       match = /\A([ucf])([0-9]{1,4})\z/.match(value.to_s)
       next unless match
 
       [match[2].to_i, "f#{match[2].to_i} #{id} #{{ 'u' => 'unconfirmed', 'c' => 'confirmed', 'f' => 'false' }[match[1]]}"]
     end.sort.map(&:last)],
+    # Ops core S3 (plan 11.4): the findings a technique card was used on, each as `<alias> <finding id>` (the
+    # alias from opsFindings, or the bare id when none is held), in alias order; ids only, bad values left out.
+    ['opsUsed', list.call(ps['opsUsed']).select { |id| id.is_a?(String) && id.match?(OPS_ID) }.uniq.map do |id|
+      held = hash.call(ps['opsFindings'])[id].to_s
+      number = /\A[ucf]([0-9]{1,4})\z/.match(held)&.[](1)
+      [number ? number.to_i : Float::INFINITY, id, number ? "f#{number.to_i} #{id}" : id]
+    end.sort_by { |number, id, _| [number.to_f, id] }.map(&:last)],
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
     # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|

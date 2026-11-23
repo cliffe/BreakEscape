@@ -50,7 +50,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   const lines = r.out.trim().split('\n');
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
-  assert.equal(lines.length, 16, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C; opsDiscovered: N13; opsFindings: N14
+  assert.equal(lines.length, 17, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C; opsDiscovered: N13; opsFindings: N14; opsUsed: N15
   assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
@@ -229,7 +229,7 @@ test('--access feedRevealed (C3): ids in reveal order with seq and thread post, 
   const r = verify(['1', '--access'], { ...ACCESS_STATE, feedRevealed });
   assert.equal(r.status, 0, r.out);
   const lines = r.out.trim().split('\n');
-  assert.equal(lines.length, 16, r.out);
+  assert.equal(lines.length, 17, r.out);
   assert.match(r.out, /feedRevealed\s+4: ivy 2 \[ivy_vent:3 ivy_answer:7>ivy_vent\]; jake 1 \[jake_post_1\]; old 2; tomasz 1 \[tom_re:5>ivy_vent\]\n?/);
 });
 
@@ -239,9 +239,33 @@ test('--access opsFindings (N14): alias, id and status word in alias order, malf
   };
   const r = verify(['1', '--access'], { ...ACCESS_STATE, opsFindings });
   assert.equal(r.status, 0, r.out);
-  assert.equal(r.out.trim().split('\n').length, 16, r.out);
+  assert.equal(r.out.trim().split('\n').length, 17, r.out);
   assert.match(r.out, /opsFindings\s+3: f1 sam_pc\.web\.old_banner false; f2 sam_pc\.web\.factory_login confirmed; f10 print_srv\.queue\.spool unconfirmed\n/);
   assert.doesNotMatch(r.out, /bad\./);
+});
+
+test('--access opsUsed and a technique session (N15): finding ids with their alias, level and granting finding on the session line, bad values left out, the line count unchanged', () => {
+  const opsFindings = { 'sam_pc.web.factory_login': 'c2', 'vault01.admin.step_up': 'c5' };
+  const sessions = {
+    ...ACCESS_STATE.sessions,
+    vault01: { id: 'ian', via: 'technique', foothold: 'jack_comms_port', access: 'admin', technique: 'vault01.admin.step_up' },
+    desk01: { id: 'sam', via: 'technique', foothold: 'jack_comms_port', access: 'user', technique: 'bad id with spaces', extra: 'x' }
+  };
+  const opsUsed = ['vault01.admin.step_up', 'sam_pc.web.factory_login', 'unheld.web.one', 7, 'two words', 'sam_pc.web.factory_login'];
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, sessions, opsFindings, opsUsed });
+  assert.equal(r.status, 0, r.out);
+  assert.equal(r.out.trim().split('\n').length, 17, r.out);
+  assert.match(r.out, /opsUsed\s+3: f2 sam_pc\.web\.factory_login; f5 vault01\.admin\.step_up; unheld\.web\.one\n/);
+  assert.match(r.out, /vault01 = ian \(technique, remote, foothold jack_comms_port, access admin, granted by vault01\.admin\.step_up\)/);
+  assert.match(r.out, /desk01 = sam \(technique, remote, foothold jack_comms_port, access user\)/);
+  assert.doesNotMatch(r.out, /two words|bad id|extra/);
+});
+
+test('--access opsUsed with nothing used prints a zero line, and a non-list value does not raise', () => {
+  assert.match(verify(['1', '--access'], ACCESS_STATE).out, /opsUsed\s+0\n/);
+  const r = verify(['1', '--access'], { ...ACCESS_STATE, opsUsed: 'nope' });
+  assert.equal(r.status, 0, r.out);
+  assert.match(r.out, /opsUsed\s+0\n/);
 });
 
 test('--access opsFindings with nothing held prints a zero line, and a non-hash value does not raise', () => {
