@@ -62,7 +62,7 @@ module BreakEscape
     test 'the scenario declares two sources, a clock, and a reader per source, and a new game holds no rows' do
       build
       data = fresh.scenario_data
-      assert_equal %w[door_controller signin_audit], data['logSources'].keys.sort
+      assert_equal %w[door_controller night_log signin_audit], data['logSources'].keys.sort # night_log: L2b
       assert data['gameClock']
       readers = data['rooms']['security']['objects'].select { |o| o['type'] == 'ops_log_terminal' }
       assert_equal({ 'door_log_pc' => 'door_controller', 'signin_log_pc' => 'signin_audit' },
@@ -297,6 +297,91 @@ module BreakEscape
       assert_response :success
       assert_not_includes response.body, 'logSources'
       assert_not_includes response.body, 'door_controller'
+    end
+
+    # ---- L2b: seed rows, the anomaly and the flag in the real scenario ----
+
+    def find_object(node, id)
+      case node
+      when Hash then node['id'] == id && node['type'] ? node : node.each_value.lazy.filter_map { |v| find_object(v, id) }.first
+      when Array then node.lazy.filter_map { |v| find_object(v, id) }.first
+      end
+    end
+
+    def flag(row_id, object_id: 'night_log_pc')
+      post "/break_escape/games/#{@game.id}/log_rows/flag", params: { object_id: object_id, row_id: row_id }, as: :json
+      response.parsed_body
+    end
+
+    test 'L2b: the night log reader is in the office, answers four authored rows, and the swipes add none' do
+      build
+      assert_equal({ 'success' => false, 'reason' => 'not_found' }, read('night_log_pc'), 'the office is still locked')
+      build(office_open: true)
+      body = read('night_log_pc')
+      assert_response :success, body.inspect
+      assert_equal 'Night door log', body['title']
+      assert_equal %w[s1 s2 s3 s4], body['rows'].map { |r| r['id'] }
+      assert_equal ['Mon 08:12', 'Mon 08:14', 'Mon 23:58', 'Tue 07:55'], body['rows'].map { |r| r['at'] }
+      assert_equal ['Finance office', 'Security office', 'Security office', 'Finance office'], body['rows'].map { |r| r['where'] }
+      assert_equal ['Dana Reyes'], body['rows'].map { |r| r['as'] }.uniq
+      assert_equal %w[BADGE], body['rows'].map { |r| r['event'] }.uniq
+      assert(body['rows'].all? { |r| r.keys.sort == %w[as at detail event id result where] })
+      clone_dana
+      swipe_security
+      assert_equal 4, read('night_log_pc')['rows'].size, 'the night log takes no play row (its where is the lobby)'
+      assert_equal 1, read('door_log_pc')['rows'].size, 'the door log keeps its own row (the security swipe)'
+    end
+
+    test 'L2b: the browser copy of the office holds no anomaly row and no flag actions, but still a flag control' do
+      build(office_open: true)
+      get room_game_url(@game, room_id: 'office'), as: :json
+      assert_response :success
+      assert_not_includes response.body, 'rowId'
+      assert_not_includes response.body, 'found_night_swipe'
+      assert_not_includes response.body, 'l3_flagged_night_swipe'
+      reader = find_object(JSON.parse(response.body), 'night_log_pc')
+      assert_equal({ 'logSource' => 'night_log', 'anomaly' => {}, 'flagActionLabel' => 'Flag the odd swipe' }, reader['minigameData'])
+    end
+
+    test 'L2b: the night swipe is the anomaly: three wrong rows answer alike, the right one answers its actions once' do
+      build(office_open: true)
+      before = fresh.player_state.deep_dup
+      %w[s1 s2 s4 s9].each { |id| assert_equal({ 'correct' => false }, flag(id), id) }
+      assert_equal before, fresh.player_state, 'a wrong flag writes nothing'
+      right = flag('s3')
+      assert_equal true, right['correct']
+      assert_equal [{ 'type' => 'set_global', 'key' => 'found_night_swipe', 'value' => true }], right['flagActions']
+      assert_equal [{ 'type' => 'complete_task', 'taskId' => 'l3_flagged_night_swipe' }], right['completionActions']
+      assert_equal %w[night_log_pc], fresh.player_state['opsLogFlagged']
+      assert_equal({ 'correct' => true, 'already' => true, 'rowId' => 's3' }, flag('s3'))
+      assert_equal 's3', read('night_log_pc')['flaggedRow']
+      assert_nil read('door_log_pc')['flaggedRow']
+    end
+
+    test 'L2b: a flag through the office reader is refused until the office is open' do
+      build
+      assert_equal({ 'success' => false, 'reason' => 'not_found' }, flag('s3'))
+      assert_nil fresh.player_state['opsLogFlagged']
+    end
+
+    test 'L2b: the leak scanner judges a whole night-log run clean, and finds the row named before the flag' do
+      build(office_open: true)
+      lines = []
+      note = lambda do |method, path, body|
+        lines << ['run.jsonl', lines.size + 1, { 'method' => method, 'path' => path, 'status' => 200, 'body' => body }]
+      end
+      base = "/break_escape/games/#{@game.id}"
+      get room_game_url(@game, room_id: 'office'), as: :json
+      note.call('GET', "#{base}/room/office", response.parsed_body)
+      note.call('GET', "#{base}/log_rows?object_id=night_log_pc", read('night_log_pc'))
+      %w[s1 s4].each { |id| note.call('POST', "#{base}/log_rows/flag", flag(id)) }
+      note.call('POST', "#{base}/log_rows/flag", flag('s3'))
+      note.call('GET', "#{base}/log_rows?object_id=night_log_pc", read('night_log_pc'))
+      scanner = -> { AccessLeakScanner.new(fresh.scenario_data, game: fresh) }
+      assert_equal [], scanner.call.scan(lines).select { |f| f.rule == 'log_row' }.map(&:owner)
+      early = lines.dup
+      early.insert(2, early.last)
+      assert_equal ['log:anomaly_named:flaggedRow'], scanner.call.scan(early).select { |f| f.rule == 'log_row' }.map(&:owner)
     end
   end
 end

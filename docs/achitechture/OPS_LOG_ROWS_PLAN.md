@@ -390,6 +390,8 @@ Rules that keep a row from telling the player something new:
 `flagActions` and `completionActions`. The flag is checked on the client, best effort, the same
 standing as log-filter's anomaly today; a server check belongs to the investigator work (4.2).
 
+**L2b ruling (2026-11-23, orchestrator): the flag is judged on the server.** The reader's `anomaly.rowId`, `flagActions` and `completionActions` do not reach the browser (the bootstrap, room and container copies carry `anomaly: {}`); `POST /games/:id/log_rows/flag { object_id, row_id }` answers `{ correct: false }` for any wrong row and the actions for the right one (docs/ACCESS_AND_NETWORKS.md, A24 seed rows and anomalies). This replaces the sentence above.
+
 ## 8. State and saved games
 
 | Key | Shape | Size | Written by | Sent |

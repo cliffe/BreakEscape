@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lobby, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. Nothing to solve.",
+  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a and L2b). One lobby, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is judged by the server. Nothing to solve.",
   "endGoal": "Test only: make the log write its rows.",
   "startRoom": "lobby",
   "startPosition": { "x": 7, "y": 7 },
@@ -18,6 +18,17 @@
       "title": "Sign-in audit",
       "events": ["signin_*", "session_*"],
       "where": { "objects": ["office_pc"] }
+    },
+    "night_log": {
+      "title": "Night door log",
+      "events": ["badge_swipe"],
+      "where": { "rooms": ["lobby"] },
+      "seedRows": [
+        { "id": "s1", "at": "Mon 08:12", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "office" }, "result": "ok" },
+        { "id": "s2", "at": "Mon 08:14", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "security" }, "result": "ok" },
+        { "id": "s3", "at": "Mon 23:58", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "security" }, "result": "ok" },
+        { "id": "s4", "at": "Tue 07:55", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "office" }, "result": "ok" }
+      ]
     }
   },
 
@@ -34,7 +45,8 @@
       "order": 0,
       "tasks": [
         { "taskId": "l1_into_office", "title": "Copy Dana's badge and open the office door", "type": "custom", "status": "active" },
-        { "taskId": "l2_signed_in", "title": "Sign in at the office PC", "type": "custom", "status": "active" }
+        { "taskId": "l2_signed_in", "title": "Sign in at the office PC", "type": "custom", "status": "active" },
+        { "taskId": "l3_flagged_night_swipe", "title": "Flag the night-time swipe in the night door log", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -62,7 +74,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen. The security office (east of the office) opens for finance staff too: its two terminals show the door and sign-in logs.\nThe office PC's sticky note holds the password.",
+          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen. The security office (east of the office) opens for finance staff too: its two terminals show the door and sign-in logs. The office wall terminal holds the night door log: flag the swipe that does not belong.\nThe office PC's sticky note holds the password.",
           "observations": "A sign on a stand by the front desk."
         }
       ],
@@ -113,6 +125,21 @@
           "postitNote": "Dana: dreyes / Ledger-Dana-7",
           "showPostit": true,
           "observations": "The finance office PC. It asks for a username."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "night_log_pc",
+          "name": "Night log PC",
+          "position": { "x": 8, "y": 4 },
+          "takeable": false,
+          "observations": "A wall terminal with last week's door history. One swipe does not belong.",
+          "minigameData": {
+            "logSource": "night_log",
+            "anomaly": { "rowId": "s3" },
+            "flagActionLabel": "Flag the odd swipe",
+            "flagActions": [{ "type": "set_global", "key": "found_night_swipe", "value": true }],
+            "completionActions": [{ "type": "complete_task", "taskId": "l3_flagged_night_swipe" }]
+          }
         }
       ]
     },

@@ -49,6 +49,42 @@
       "label": "Dana Reyes sign-in<br/>(dreyes)",
       "kind": "key",
       "optional": false
+    },
+    {
+      "id": "log_door_controller",
+      "label": "Door controller<br/>badge_swipe",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "log_signin_audit",
+      "label": "Sign-in audit<br/>signin_*, session_*",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "log_night_log",
+      "label": "Night door log<br/>badge_swipe",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_night_log_pc",
+      "label": "Night log PC<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "reader_door_log_pc",
+      "label": "Door log PC<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "reader_signin_log_pc",
+      "label": "Sign-in log PC<br/>(log reader)",
+      "kind": "item",
+      "optional": false
     }
   ],
   "edges": [
@@ -91,6 +127,39 @@
       "from": "signin_dana",
       "to": "lock_office_pc",
       "soft": false
+    },
+    {
+      "from": "office",
+      "to": "reader_night_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_night_log",
+      "to": "reader_night_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "security",
+      "to": "reader_door_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_door_controller",
+      "to": "reader_door_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "security",
+      "to": "reader_signin_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_signin_audit",
+      "to": "reader_signin_log_pc",
+      "soft": true,
+      "undirected": true
     }
   ]
 }
