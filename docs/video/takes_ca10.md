@@ -1,0 +1,51 @@
+# ca10 takes (Fake downloads and checks): scripts and dry runs, 23 Nov 2026
+
+Scripts in `tools/video/takes/ca10/` (`_ca10.mjs` shared helpers). Dry-run only (headless, throttled 20 fps, keyless server :3455, `--hide-hud --zoom-step 1`, no BE_SPRITE, so the player shows the hooded hacker in dry frames); nothing recorded. Game id comes from `tools/playtest/new-game.sh`; run each take on a fresh game. Recorded-results table at the foot is empty.
+
+Step-away flags (t01, t07, t07b, t07c):
+`--set episode_e10_downloads_and_fake_checks_state={"done":["brief","osint","build","write","flip","defend"]} --set episode_e10_downloads_and_fake_checks_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e10_downloads_and_fake_checks_defend_percent=100`
+
+Defend flags (t04, t05, t05b): `--set episode_e10_downloads_and_fake_checks_state={"done":["brief","osint","build","write","flip"]} --set phish_order_colleague_attempts=1`
+
+## Hook decision (script file not edited)
+
+PLACEHOLDER (owner question): hook. The cooler chatter `kit_quayholt` never fires (`npc-needs.js _maybePair` needs two NPCs at the cooler; a lone drinker is silent) and NPC needs are not changed for a trailer. Replacement: **Anjali Rao** (`kit_anjali_rao`), person-chat opener, first sentence only: **"Had a device pulled for a dodgy download today."** (cached clip a7b76e87..., 6.17 s, speech 0.26 to 3.27 s by silencedetect, pause to 3.65 s; hook = audio start - 0.3 s, 3.4 s, so it ends at the sentence end plus 0.13 s, inside the 5.0 s limit). Sentence two ("The fake check looked genuine enough.") is a tell: never in the cut. Mild, true, no answer, no permission, not D1. Plays: POST /tts 200 audio/mpeg 47853 B, line voiced about 0.15 s after the portrait opens, chat opens via `__test.interact` (about 2 s after the take starts, no walk-up needed). Needs `kit_defend_done` (step-away flags) so the ink's ca10 knot runs. Take: `t01_anjali_hook` (old `t01_chatter_hook` moved to tmp/delete, removal staged).
+Runner-up: Darren (`kit_darren_price`) "Had a laptop out of action this week." (first sentence of the same ink knot, cached a0f64bc..., speech 0.26 to 2.52 s of 5.33 s). Darren is also the end speaker, hence second. Weak alternatives: Niamh "Welcome back to the Quayholt exercise." (0.1 to 2.45 s).
+Script changes: hook row text and speaker (Anjali), in = audio start - 0.3 s, 3.4 s (was 3.0 s); `t07c_room_chatter` becomes `t01_anjali_hook`; note that the hook is in the person-chat view (portrait and the game's text), not the room wide.
+
+## Takes
+
+| take | entry state | actions | marks to log | used by | hides and hazards |
+|---|---|---|---|---|---|
+| t01_anjali_hook | step-away flags; kiosk never opened | `interact kit_anjali_rao`, portrait up, line voiced; close the chat after the first sentence (closeBeforeMenu) | player-sprite, start-hold, npc_portrait_up, hook_start (audio start), hook_end (full line, 6.12 s), tts, chat-closed | hook | never click in the chat (choice "See you later."); cut at hook_start - 0.3, 3.4 s |
+| t02_attack_run | none (fresh) | kiosk Start; `Open the browser`; Fernside tab (`.ob-site[data-site=fernside_site]`, block `blk_fernside_site`) noted first; back to the Quayholt tab (landing page is "Suppliers and ordering"), `blk_fernside_portal` noted last; close; `Open the page builder`; chips real-Fernside host, "Confirm you are human to continue to the order portal", "One quick step to continue", "A smooth, routine-looking accessibility check"; Score (read from the DOM, then hidden); `button.lpb-attach-btn` ("Attach to email"); `Open the mail client` (button label confirmed by the dry run), Compose; To "Leo Brennan (Operations colleague)"; From slots "Quayholt Operations" and operations@quayholt.example; pretext `e10_pretext_order_calm`; subject `s_order`; Send; "It landed" panel; Done; Re: row; close onto "Now it lands on a colleague" | start, browser-open, note-fernside, note-portal, research-portal frame, builder-open, host/pretext/urgency/step-chosen, scored (score 100, 4 passes), attached, mail-open, compose, to-line, slot1, slot2, pretext-set, subject-set, send, landed, reply-in, done, reply-open, mail-closed, flip-up, flip-held, end | research, build (as a second capture), lands, flip | HIDE: giveaway counter, Score rows, red-flag meter/advice/clean, checklist advisory, tallies, flip body (strip kept). Never Continue. First Send is final. No ask select exists (the composer's Ask is a fixed line) and no attachment or link |
+| t02b_attack_run_narrow | none | t02 with the builder at 560 px (as t03b) and the mail client at 560 px | as t02 | 9:16 and 1:1 | same |
+| t03_fake_check_builder | none | setup: both Fernside facts noted, close. Body: hold 1.5 s, `Open the page builder`, hold 2.2 s, the four chips as t02, hold 3 s. Never Score or Attach | start-hold, builder-open, host/pretext/urgency/step-chosen, hold-end, end | build | counter and Credibility rows hidden by CSS and checked at the end |
+| t03b_fake_check_builder_narrow | none | t03 at 560 px, panes stacked | as t03 | 9:16, 1:1 | same |
+| t04_niamh_flip | defend flags | `interact niamh_doherty` (the first interact reported no-effect, retry fine), N1 voiced, close before the menu | n1_start (audio), n1_end (7.93 s), tts, chat-closed | niamh_flip | throws if the first line is not N1; never click in the chat |
+| t05_pages_list | defend flags | `Open the pages`, `Start`; 7 rows; hold the list 2.5 s; open the **09:20** row (genuine "I am not a robot" page at /login); hold 5 s. env CA10_LIST_ONLY=1 for a list-only run | kiosk-open, defend-panel, intro, list (7 rows), row_open, card, card-held, end | pages | HIDE .tri-verdicts and .tri-verdict-hint (CSS, so the buttons are not in shot), team tally. **Two rows read "From a bookmark: Fernside Catering order portal": 09:12 is the fake (keystroke steps), 09:20 is the genuine page; the take picks by time and throws if the card shows Press Windows/Ctrl+V.** The card's own Continue button is page content, not a verdict |
+| t05b_pages_list_narrow | defend flags | t05 with `.mail-client` at 760 px, panes stacked | as t05 | 9:16, 1:1 | same |
+| t07b_lookup_panel | step-away flags | open the kiosk (step-away panel, buttons "Look up", "Carry on"), hold 3.2 s; no click | kiosk-open, panel (buttons, text), hold-end | step_away | never click; tally hidden |
+| t07c_lookup_panel_narrow | step-away flags | t07b at 560 px | as t07b | 9:16, 1:1 | same |
+| t07_darren_prompt | step-away flags | open the kiosk, hold 1 s, `Look up`, wait for D1's bubble, end on a timer at D1 start + 4.5 s | look_up, d1_start (sSinceLookUp), d1_end (timer), tts, frame:t+N, globals | darren_end | D1's bubble stays up until D2 starts, so the take stops on a timer before D2; never click in the room |
+
+## Dry-run results
+
+- Kiosk button labels (DOM): Start; `Open the browser`; `Open the page builder`; `Attach to email` (`button.lpb-attach-btn`); `Open the mail client`; Done; defend panel `Open the pages`; step-away panel `Look up` and `Carry on`. Builder chips by label as in the scenario.
+- Research: Quayholt landing page already is "Suppliers and ordering" with only `blk_fernside_portal`; the Fernside tab shows `blk_fernside_site`; no page links. Order used: Fernside first, portal last.
+- Build score: all four picks give **Credibility 100 / 100**, four Pass rows, against linkThreshold 70 (read before Send; t02 throws below 70). The host pick is the genuine orders.fernside.example (preview address bar shows it); the genuine tick page opened in t05 sits on orders.fernside.example, so v8b "Same site as the page you built." holds.
+- Mail: To "Leo Brennan (Operations colleague)" visible on the compose frame; Ask is fixed text "Place the order through the Fernside portal you've got bookmarked, as you always do."; "It landed" shows within 25 ms of Send.
+- Leo's reply: `emailReplyDelay` 6 (CA0: the reply is an inbox mail behind the result panel, 1 s scheduler tick). Measured row in DOM at 6.5 s and 6.97 s after Send; after Done the "Re: This week's Fernside order" row opens and reads "Thanks, I'll put the order in now." **Lands variant off**: over the 6 s limit. Default lands = Send then the green panel with v5 only.
+- t04: N1 voiced 7.93 s, POST /tts 200 (63573 B). t07: D1 starts 1.54 to 1.57 s after Look up (POST /tts 200, 32637 B), D2 audio request 5.4 s after D1 start; globals kit_quiet true, kit_ca10_out true after Look up. t01: hook plays 200 (47853 B).
+- Frames looked at: composer (To line, no meter), flip heading, build picks (no counter or score), genuine card wide and narrow, hook portrait up. Not looked at: t07b and t07c frames, t02b composer, the hook frame closely (portrait text), the t03b narrow frame.
+
+## Unverified
+
+- Narrow takes (t02b, t03b, t07c) ran clean but only the 760 px t05b frame was inspected.
+- No real-recording sprite check (BE_SPRITE) or A/V sync; the dry runs are throttled.
+- t07b panel text beyond the first 200 characters; the "Carry on" button must stay out of any click.
+
+## Recorded results
+
+| take | length | drop % | key marks (trimmed s) | checked against frames / notes |
+|---|---|---|---|---|

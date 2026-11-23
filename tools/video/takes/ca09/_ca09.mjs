@@ -53,6 +53,9 @@ export const NARROW_CSS = (px = 560) => `
 .minigame-game-container:has(.epr-gs-root), .minigame-game-container.osint-browser { max-width: ${px + 40}px !important; }
 .epr-gs-root { max-width: ${px}px !important; }
 .mail-client.triage-client { max-width: ${px}px !important; }
+/* at 560 px the three verdict buttons side by side clip their words ("Approve", "password"): stack them like the game's own phone layout */
+.triage-client .tri-verdicts, .triage-client .tri-actions-open .tri-verdicts { flex-direction: column !important; flex-wrap: wrap !important; }
+.triage-client .tri-verdict { width: 100% !important; flex: 0 0 auto !important; }
 `;
 /** The team tally badge on the defend list ("Risks reported or checked for the team: N") is a score-like line: hidden in every defend take. */
 export const DEFEND_HIDE_CSS = `.triage-client .aw-team-tally { display: none !important; }`;
