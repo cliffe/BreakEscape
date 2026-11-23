@@ -84,3 +84,14 @@ Opus 5.5 review of the T345 lines, the m10 pick and the casualty options: `docs/
 - **m09 hook (owner's pick, in the game):** the reviewer calls it a major, because the briefing doesn't know what is in the archive. Reworded option on the page: "Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it." Nothing changes until the owner says.
 - **m10 ending:** the owner's pick is in `m10_tesseract.ink` and voiced; the blast-door line is out; the next line is trimmed ("City by city. Or you press this...") and re-voiced.
 - **m05:** the new line moved above the Torres line. Same words, same clip.
+
+## Owner's round-2 picks (2026-11-23)
+
+| Mission | Line | State |
+|---|---|---|
+| m04 ending | "I didn't bring a bomb, agent. I brought a maintenance schedule." | In `m04_npc_voltage.ink`, before "Budget cuts, ageing cells..." (the as-inked review moved it up one line). The rejected "sums" line is out and the original "There's no version of this where I blink..." is back. |
+| m07 hook | "We are faced with an impossible decision, Agent." (the owner's shortened wording) | In `m07_opening_briefing.ink`, before the choice. |
+| m09 ending | "Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask." | In `m09_sorensen_cage.ink`, NOT voiced. The as-inked review calls "is filed in this room" a major: most of the file is elsewhere or already shredded by then. Suggested: "was filed in this building". With the owner. |
+| m09 hook | unchanged | With the owner (`m09hookfix` on the page). |
+
+The m04 casualty options (`fifty`, `signed`) are dropped: the owner picked the schedule line. The as-inked review is "As-inked review, round 2" in `docs/video/logs/T345_LINES_DIALOGUE_REVIEW.md`.

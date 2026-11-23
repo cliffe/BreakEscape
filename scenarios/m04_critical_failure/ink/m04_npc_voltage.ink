@@ -217,9 +217,9 @@ Voltage: You want the reasoning. They always want the reasoning.
 
 Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
 
-Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
-
 Voltage: I didn't bring a bomb, agent. I brought a maintenance schedule. #delivery: dry, almost proud of the craft
+
+Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
 
 Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
 
