@@ -28,9 +28,12 @@ LOG_ID_MAPS = %w[rooms networks resources accountProfiles credentials logSources
 # kinds: the place kinds an event can name.
 def check_log_rows(json_data, events: BreakEscape::OpsLogEvents::EVENTS, kinds: BreakEscape::OpsLogEvents::KINDS)
   issues = []
-  return issues unless json_data.is_a?(Hash) && json_data.key?('logSources')
+  return issues unless json_data.is_a?(Hash)
 
   err = ->(msg) { issues << "❌ ERROR: log sources: #{msg}" }
+  log_check_readers(json_data, err)
+  return issues unless json_data.key?('logSources')
+
   warn = ->(msg) { issues << "⚠️ WARNING: log sources: #{msg}" }
   sources = json_data['logSources']
   unless sources.is_a?(Hash)
@@ -92,6 +95,33 @@ def check_log_rows(json_data, events: BreakEscape::OpsLogEvents::EVENTS, kinds: 
   log_warn_save_counters(sources, taken, events, index, warn)
   log_warn_secret_collisions(json_data, names, events, kinds, warn)
   issues
+end
+
+# Plan section 9: an ops_log_terminal needs an `id` (the route checks reach by id) and a `logSource`
+# naming a declared source, and cannot be a sign-in object (the route refuses it, so it could never be
+# read). Walks every object, container content, profile and share in the scenario.
+def log_check_readers(data, err)
+  sources = data['logSources'].is_a?(Hash) ? data['logSources'].keys.reject { |k| k.to_s.start_with?('_') } : []
+  walk = lambda do |node|
+    case node
+    when Hash
+      if node['type'] == 'ops_log_terminal'
+        name = node['id'].is_a?(String) && !node['id'].empty? ? "\"#{node['id'][0, 40]}\"" : '(no id)'
+        err.call("ops_log_terminal #{name} needs an id") unless node['id'].is_a?(String) && !node['id'].empty?
+        source = node.dig('minigameData', 'logSource')
+        if source.is_a?(String) && !sources.include?(source)
+          err.call("ops_log_terminal #{name}: logSource \"#{source[0, 40]}\" is not a declared source in logSources")
+        end
+        if node['lockType'] == 'login'
+          err.call("ops_log_terminal #{name} cannot have lockType login (it can never be read): put it in a " \
+                   "sign-in PC's contents or a profile")
+        end
+      end
+      node.each_value { |value| walk.call(value) }
+    when Array then node.each { |value| walk.call(value) }
+    end
+  end
+  walk.call(data)
 end
 
 # Expand a source's `events` list to the registered event names it takes; report each bad entry.
