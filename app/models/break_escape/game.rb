@@ -2,6 +2,7 @@ module BreakEscape
   class Game < ApplicationRecord
     self.table_name = 'break_escape_games'
 
+    include OpsLog # first, so a sibling concern's own constants (NpcFrustration::EVENTS) keep their lookup
     include CarryOver
     include ScoreBreakdown
     include NetworkAccess
