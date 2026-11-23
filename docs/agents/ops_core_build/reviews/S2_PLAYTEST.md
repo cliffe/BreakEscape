@@ -40,3 +40,16 @@ the tick and cross glyphs draw). Items:
 - **PT5 (script).** Beat 1 says five rows; the view lists four (the scenario's real count).
   Beat 7's switch hint text was not captured. Already in the R2 findings as N10; check the
   corrected script against these.
+
+## Outcomes (fixer, 2026-11-23)
+
+| Item | Outcome | Commit |
+|---|---|---|
+| PT1 a, c | The `add_ops_string` public-substring loosening is removed (the rest of `12aea0679` kept). New test `PT1: the old maint_log wording ...` runs the scanner on the real scenario with the OLD clue and reports `camrec01` on the room answer; the reworded clue reports nothing (the real-run test is clean). Mutation: loosening restored locally, the test fails; restored. | f2677efc4 |
+| PT1 b | Lobby `maint_log` line now reads "The ceiling cameras: the date their recorder shows is left over from the factory image." No host, product or version string of `office_lan` is in room text. The ink, `mission.json` and `PLAYTEST.md` never held the old line; the graph files do not carry log text (regenerated in the PT2 commit only because they were stale from the need-edges fix). | f2677efc4 |
+| PT1 d | `test_ops_scan` has no such clue: no host name, product or version of its discovery network appears in room text (its only match, "File server", is the sign-in PC object's own public name). | none needed |
+| PT1 e | No validator rule exists today (`scripts/validate_network_ops.rb` has no check of room text against host names). Proposed: warn when a `hosts` entry's `name`, a service `product` or a `version` of 6 or more characters occurs as a substring of any room object `text`, `observations`, hint or NPC line, unless it equals a room object's own name. Warning only: the author rewords the clue. | not built |
+| PT2 | Cause: each later capture was leak-checked ALONE (`access-leak-check.rb 22 responses-22-<x>.jsonl`), so the sweep and scan earned in `responses-22.jsonl` were unknown (12 findings on `GET /network` alone, including `files01`'s product). The tool already reads several files as one log in order; nothing else is wrong. Given `responses-22.jsonl` first, each of the four later files reports only the PT1 finding of the first file (the old clue wording), none on `GET /network`. Two tests added (resumed file alone reports, together clear; a real unscanned leak in the resumed file is still reported). Mutation: earned steps reset at each new file, the first test fails; restored. Docs: script header and `PLAYTEST.md`. | dac206901 |
+| PT3 | Beat 8b replaced by one line naming `network_ops_state_delta_test.rb` and `network_technique_hostile_test.rb`; the sync route line removed from the hostile list. Not run. | dac206901 |
+| PT4 | Left (client CSS, another builder). | none |
+| PT5 | Beat 1 count states the real four and what they are (DESK01, FILES01 by id, camera recorder, printer); beat 5 no longer expects `printer_manual` in `inventory` (it goes to the notes); beat 7 now names the switch hint ("File server switch": "The file server's open share is switched off."). | dac206901 |
