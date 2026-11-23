@@ -6,6 +6,7 @@ require 'cgi'
 require 'uri'
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
+require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -132,7 +133,21 @@ require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakE
 # first GET /network answer that shows the network's block or lists the row). The earned steps are read
 # from the log itself, in order (a POST /network/scan answer with `network.id` or `host.id`), and
 # `scan(lines, ops_steps: [...])` takes more ("sweep:<network>", "scan:<host>", "listed:<network>",
-# "listed:<host>", "held:<host>"). Not yet tagged: `check`, `confirm`, `card held` and `never` (S2, S3).
+# "listed:<host>", "held:<host>").
+#
+# Ops core S2 (N14) adds three tags. `check` (a finding's summary, class and severity, its id and the id
+# part an author chose, and the strings of the catalog entry its `realism` link names, read through
+# BreakEscape::RealismCatalog): earned by a successful POST /network/check answer for that host and
+# service ("check:<host>.<service>"). `confirm` (a decoy's `falseBecause`; a real finding's need labels,
+# `needs.label`, a credential's label and an item's name): earned by a successful POST /network/confirm
+# answer for that finding ("confirm:<finding id>"). `never` (a `realism` link id; the `module` of every
+# catalog entry the scenario does not link, and every linked entry's `_` note; the name of a global used
+# in `needs.global` or `fixedIf`, as a string value; keys are never judged): a leak in any answer at
+# any stage. Steps are earned only from the real routes' successful answers or the caller's `ops_steps`,
+# never from the answer being judged. A class or severity word counts only as the value of a `class` or
+# `severity` key. `catalog_folder:` names another catalog folder (tests). A structural rule (R3-1) also
+# reports a `services` key, or `scanned: true`, on a hash whose id is a known host before that host's
+# scan, so a service's `name` and `port` are covered without a distinctive string.
 # Addresses and ranges match as whole tokens (not inside a longer number); a `service` word counts
 # only when it equals no other service's `service` word or `name`.
 #
@@ -185,7 +200,8 @@ class AccessLeakScanner
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
   # GET /capture_secrets now (its capture proofs applied); nil keeps the scenario-only rule.
-  def initialize(scenario_data, served_npcs: nil, game: nil)
+  def initialize(scenario_data, served_npcs: nil, game: nil, catalog_folder: nil)
+    @catalog_folder = catalog_folder
     @data = scenario_data.is_a?(Hash) ? scenario_data : {}
     @served_npcs = served_npcs&.map(&:to_s)&.to_set
     @game = game
@@ -211,7 +227,8 @@ class AccessLeakScanner
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
     @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
     @ops_strings = {}        # string => [{ tag:, net:, host:, owner:, token: }] (ops core S1, collect_ops_secrets)
-    @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>" so far
+    @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>", "check:<host>.<service>", "confirm:<finding>"
+    @ops_host_ids = Set.new  # every host id of the scenario (the structural services rule)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
@@ -347,6 +364,7 @@ class AccessLeakScanner
       scan_network_strings(body, ctx, add)
       note_ops_steps(body, ctx)
       scan_ops_strings(body, ctx, add)
+      scan_ops_services(body, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
@@ -382,7 +400,7 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
-    'ops_string' => 'a host, share, address, range, product, version or service text before the sweep, scan or first listing that earns it (a range or listed address also in a non-network answer)',
+    'ops_string' => 'a host, share, address, range, product, version or service text before the sweep, scan, check, confirm or first listing that earns it (a range or listed address also in a non-network answer; a link id, a global name or an unlinked catalog module at any stage; a services key on an unscanned host)',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
     'withheld_key' => 'a withheld key (creds, role, awareness, workarounds, workNeeds, frustration, feed, or a habits key other than screen and print such as locksScreen, writesDown, password, holdsDoors or usb) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
@@ -789,6 +807,8 @@ class AccessLeakScanner
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
+      ops_check: method == 'POST' && path.end_with?('/network/check'),
+      ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
       network_view: method == 'GET' && path.end_with?('/network')
     }
   end
@@ -1803,11 +1823,11 @@ class AccessLeakScanner
   # ---- ops core S1: discovery and services (OPS_CORE_PLAN.md 11.4) ----------------------------
 
   # Registers one ops string. `token` strings (addresses, ranges) match as whole tokens.
-  def add_ops_string(value, tag, owner, net: nil, host: nil, token: false, usable: nil)
+  def add_ops_string(value, tag, owner, net: nil, host: nil, token: false, usable: nil, step: nil, key: nil)
     return unless usable.call(value)
 
     list = (@ops_strings[value.strip] ||= [])
-    entry = { tag: tag, net: net, host: host, owner: owner, token: token }
+    entry = { tag: tag, net: net, host: host, owner: owner, token: token, step: step, key: key }
     list << entry unless list.include?(entry)
   end
 
@@ -1816,6 +1836,8 @@ class AccessLeakScanner
     public_strings = room_data_strings
     usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
     service_words = ops_service_words(nm)
+    @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set
+    collect_ops_findings(nm, usable)
     nm.networks(@data).each do |net_id, net|
       discovery = nm.discovery?(@data, net_id)
       cli = net['cli'].is_a?(Hash) ? net['cli'] : {}
@@ -1840,6 +1862,97 @@ class AccessLeakScanner
         add_ops_address(addresses[res_id.to_s], true, net_id, res_id.to_s, usable)
       end
     end
+  end
+
+  # ---- ops core S2: findings (OPS_CORE_PLAN.md 7, 11.4) ---------------------------------------
+
+  def collect_ops_findings(nm, usable)
+    linked = Set.new
+    (nm.weaknesses(@data) + nm.decoys(@data)).each do |found|
+      entry = found[:entry]
+      link = entry['realism'].is_a?(String) ? entry['realism'] : nil
+      linked << link if link
+      collect_ops_finding(found, entry, link, usable)
+    end
+    collect_ops_catalog_never(linked, usable)
+  end
+
+  def collect_ops_finding(found, entry, link, usable)
+    fid = found[:finding_id]
+    service_key = "#{found[:host_id]}.#{found[:service_name]}"
+    owner = "ops:finding:#{fid}"
+    check = ->(value, key: nil) { add_ops_string(value, :check, owner, usable: usable, step: service_key, key: key) }
+    check.call(entry['summary'])
+    check.call(entry['class'], key: 'class')
+    check.call(entry['severity'], key: 'severity')
+    check.call(fid)
+    check.call(found[:id])
+    collect_ops_cli(link, service_key, owner, usable)
+    if found[:kind] == 'decoy'
+      add_ops_string(entry['falseBecause'], :confirm, owner, usable: usable, step: fid)
+    else
+      collect_ops_needs(entry['needs'], fid, owner, usable)
+    end
+    collect_ops_globals(entry, owner, usable)
+  end
+
+  # The linked entry's strings (check) and its `_` note and the link id (never).
+  def collect_ops_cli(link, service_key, owner, usable)
+    return unless link
+
+    add_ops_string(link, :never, owner, usable: usable)
+    catalog = ops_catalog_entry(link)
+    return unless catalog.is_a?(Hash)
+
+    add_ops_string(catalog['_'], :never, owner, usable: usable)
+    %w[title module script].each { |field| add_ops_string(catalog[field], :check, owner, usable: usable, step: service_key) }
+    %w[advisories output].each do |field|
+      Array(catalog[field]).each { |line| add_ops_string(line, :check, owner, usable: usable, step: service_key) }
+    end
+  end
+
+  # A confirmed finding's need labels: the authored label, a credential's label, an item's name.
+  def collect_ops_needs(needs, fid, owner, usable)
+    return unless needs.is_a?(Hash)
+
+    add_ops_string(needs['label'], :confirm, owner, usable: usable, step: fid)
+    cred = BreakEscape::CredentialModel.registry(@data)[needs['credential']] if needs['credential'].is_a?(String)
+    add_ops_string(cred['label'], :confirm, owner, usable: usable, step: fid) if cred.is_a?(Hash)
+    return unless needs['item'].is_a?(String)
+
+    definition = BreakEscape::CredentialModel.item_definition(@data, needs['item'])
+    add_ops_string(definition['name'], :confirm, owner, usable: usable, step: fid) if definition.is_a?(Hash)
+  end
+
+  # A global's name used in `needs.global` or `fixedIf` never reaches the browser as a string value. (Only
+  # string values are judged, never keys, so the bootstrap's declared `globalVariables`, which sends the
+  # name as a key as ever, is not a finding.)
+  def collect_ops_globals(entry, owner, usable)
+    [entry['fixedIf'], (entry['needs'].is_a?(Hash) ? entry['needs']['global'] : nil)].each do |cond|
+      names = cond.is_a?(Hash) ? cond.keys : [cond]
+      names.each { |name| add_ops_string(name, :never, owner, usable: usable) }
+    end
+  end
+
+  # The `module` of every catalog entry the scenario does not link is never sent.
+  def collect_ops_catalog_never(linked, usable)
+    with_ops_catalog do
+      BreakEscape::RealismCatalog.send(:state)[:map].each do |id, entry|
+        next if linked.include?(id) || !entry.is_a?(Hash)
+
+        add_ops_string(entry['module'], :never, "ops:catalog:#{id}", usable: usable)
+      end
+    end
+  end
+
+  def ops_catalog_entry(link)
+    with_ops_catalog { BreakEscape::RealismCatalog.lookup(link) }
+  end
+
+  def with_ops_catalog(&block)
+    return yield unless @catalog_folder
+
+    BreakEscape::RealismCatalog.with_folder(@catalog_folder, &block)
   end
 
   def add_ops_address(entry, discovery, net_id, host_id, usable)
@@ -1887,6 +2000,10 @@ class AccessLeakScanner
       # Only the scan request earns `scan:<host>`: a `scanned: true` on a listed row arrives together with
       # its services, so earning from it would let the leak itself pay for the step.
       @ops_earned << "scan:#{body['host']['id']}" if body['host'].is_a?(Hash) && body['host']['id'].is_a?(String)
+    elsif ctx[:ops_check] && body['success'] == true
+      @ops_earned << "check:#{body['hostId']}.#{body['service']}" if body['hostId'].is_a?(String) && body['service'].is_a?(String)
+    elsif ctx[:ops_confirm] && body['success'] == true
+      @ops_earned << "confirm:#{body['finding']['id']}" if body['finding'].is_a?(Hash) && body['finding']['id'].is_a?(String)
     elsif ctx[:network_view]
       ops_each_hash(body) do |hash|
         next unless hash['id'].is_a?(String)
@@ -1910,16 +2027,24 @@ class AccessLeakScanner
     case entry[:tag]
     when :sweep then @ops_earned.include?("sweep:#{entry[:net]}") || @ops_earned.include?("held:#{entry[:host]}")
     when :scan then @ops_earned.include?("scan:#{entry[:host]}")
+    when :check then @ops_earned.include?("check:#{entry[:step]}")
+    when :confirm then @ops_earned.include?("confirm:#{entry[:step]}")
     when :listed then @ops_earned.include?("listed:#{entry[:host] || entry[:net]}")
     else false
     end
   end
 
-  def ops_match?(str, secret, token)
+  def ops_match?(str, secret, entry)
     s = str.strip
-    return s.match?(/(?<![0-9])#{Regexp.escape(secret)}(?![0-9]|\.[0-9])/) if token
+    return s == secret if entry[:key]
+    return s.match?(/(?<![0-9])#{Regexp.escape(secret)}(?![0-9]|\.[0-9])/) if entry[:token]
 
     network_match?(s, secret)
+  end
+
+  # An entry with a `key` judges only the value of that key.
+  def ops_entry_applies?(entry, json_path)
+    entry[:key].nil? || json_path.end_with?(".#{entry[:key]}")
   end
 
   # A string is a leak when none of its entries is earned yet, or (a `listed` string) when the
@@ -1930,14 +2055,31 @@ class AccessLeakScanner
     each_string(body) do |str, json_path, holder|
       next if holder.to_s.start_with?('netlink_')
 
-      @ops_strings.each do |secret, entries|
-        next unless ops_match?(str, secret, entries.any? { |e| e[:token] })
+      @ops_strings.each do |secret, all_entries|
+        entries = all_entries.select { |e| ops_entry_applies?(e, json_path) && ops_match?(str, secret, e) }
+        next if entries.empty?
 
         early = entries.reject { |e| ops_earned?(e) }
         listed_outside = entries.select { |e| e[:tag] == :listed && ops_earned?(e) && !ctx[:network] }
         leaking = early.size == entries.size ? early : listed_outside
         leaking.each { |e| add.call('ops_string', e[:owner], safe_path(json_path)) }
       end
+    end
+  end
+
+  # Structural rule (R3-1): a hash whose id is a known host and that carries a `services` key, or
+  # `scanned: true`, is a leak before that host's scan, whatever its strings are (a port number or a
+  # short name is not a distinctive string). Earned only by a successful scan answer.
+  def scan_ops_services(body, add)
+    return if @ops_host_ids.empty?
+
+    ops_each_hash(body) do |hash|
+      id = hash['id']
+      next unless id.is_a?(String) && @ops_host_ids.include?(id)
+      next unless hash.key?('services') || hash['scanned'] == true
+      next if @ops_earned.include?("scan:#{id}")
+
+      add.call('ops_string', "ops:service:#{id}", '$.services')
     end
   end
 
