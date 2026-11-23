@@ -200,11 +200,19 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   minors. Old-scenario check (`test_access_networks` P1 to P4 on this branch, Sonnet): no
   regression, 0 console errors (scratchpad `s3-old-scenario-check/`). Phone width: the Use
   button is cut off at the bottom and the message after Use lands below the fold (minor).
-- **S2 + S3 ARE READY TO TRAIN.** Waiting only for the train tree (L2b's train is running in
-  it). Then: in the train tree `git checkout ops-core && git merge --ff-only ops-build`; run
-  the check (node 22 on PATH, the PLAYWRIGHT path); if only the 3 baseline JS files fail and
-  the tree is clean, merge `ops-core` into main with a message naming N14 and N15, push,
-  merge main into `ops-build` and `ops-logs`.
+- **L2b LANDED on main and pushed: merge `a44825e41`** (train at `6e3199588`: Rails 3929
+  runs 0 failures; JS 1000 of 1003, the 3 baseline files; tree clean; a first train had caught
+  a schema mark fault and a graph class line written into existing missions' files, fixed in
+  `6e3199588`). Main merged into `ops-build` cleanly; the three ops scenarios' graph files
+  regenerated (their log sources now draw the note node): `f31eec919`.
+- **S2 + S3 TRAIN RUNNING** in the train tree at `f31eec919` (`/data/tmp/ops-core-train-5`;
+  the hash includes L2b via the merge). If only the 3 baseline JS files fail and the tree is
+  clean: in main `git merge --no-ff ops-core` with a message naming N14 and N15, push, merge
+  main into `ops-build` and `ops-logs`. ALSO RUNNING: a Sonnet rerun of two more pre-existing
+  network scenarios on the build tree, port 3012 (scratchpad `s3-old-scenarios-2/`): the
+  plan's section 10 part 4 asks for three; one is done clean.
+- After landing: start L3 on `ops-logs` (after merging main into it) in two builders; the
+  post-landing tidy below; the screenshot review page for the user; then S5a on this stream.
 - POST-LANDING TIDY (one Sonnet pass per group, then a Sonnet delta; none blocks landing):
   client: the bolt does not fade with its sprite behind a wall (R4-1), `v !== false` vs
   truthiness (R4-2), three rarer landings of a world-opened remote view (R3-2), phone width
