@@ -6,7 +6,7 @@
 // Entry state: fresh game, no flags.
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca05_signin_pages t02_attack_run "" "--hide-hud --zoom-step 1"
 // The first Send is final (maxMessages 1). HIDES (CSS, always on): the builder's giveaway counter (p.lpb-tell-counter) and score rows (.lpb-score),
-// the mail composer's red-flag block (.mail-redflag*) and, on the flip screen, everything under the "Now it lands on you" heading.
+// the mail composer's red-flag panel (.mail-redflag-meter, display none) and, on the flip screen, everything under the "Now it lands on you" heading.
 // Marks: start, browser-open, note-staff, note-sso, note-itdesk, news-open, note-news, browser-closed, builder-open, svc, address-chosen, padlock-chosen,
 //   scored, attached, mail-open, compose, slot1, slot2, pretext-set, portal, link-attached, send, landed, landed-held, done, reply-row (the Hana row
 //   shows, with seconds since send in the data), reply-open, mail-closed, flip-up, flip-held, end.
@@ -16,7 +16,8 @@ export async function setup(page, bridge) { await prepare(page, bridge); await s
 
 const HIDE = `
 p.lpb-tell-counter, .lpb-score, .lpb-live { visibility: hidden !important; }
-.mail-redflag-count, [class*="mail-redflag"], .mail-compose-redflags { visibility: hidden !important; }`;
+.mail-redflag-meter { display: none !important; }
+.aw-flip > :not(h2.aw-heading) { display: none !important; }`;
 
 export default async (page, bridge, mark) => {
   await css(page, HIDE);
@@ -37,7 +38,7 @@ export default async (page, bridge, mark) => {
   await note('blk_sso', 'note-sso');
   await note('blk_itdesk', 'note-itdesk');
   await mouseClick(page, 'a.ob-link', /Company news/i, { steps: 12, dwell: 350 });
-  await waitVisible(page, '.ob-block[data-id="blk_news"]'); mark('news-open'); await sleep(1500);
+  await waitVisible(page, '.ob-block[data-id="blk_news"]'); mark('news-open'); await sleep(1500); mark('frame:news');
   await note('blk_news', 'note-news'); await sleep(1400);
   await bridge.minigame.close();
   if (!(await waitButton(page, /page builder/i, 10000))) throw new Error('builder button never showed; buttons: ' + JSON.stringify(await buttons(page)));
@@ -51,7 +52,7 @@ export default async (page, bridge, mark) => {
   await chip(/quayholt-sso\.example/); await sleep(1400); mark('address-chosen');
   await chip(/Show a secure padlock/); await sleep(1800); mark('padlock-chosen');
   await mouseClick(page, 'button.lpb-score-btn', null, { steps: 12, dwell: 400 });
-  await waitVisible(page, 'button', /Attach to email/); mark('scored'); await sleep(900);
+  await waitVisible(page, 'button', /Attach to email/); mark('scored'); mark('frame:builder-scored'); await sleep(900);
   await mouseClick(page, 'button', /Attach to email/, { steps: 12, dwell: 400 });
   if (!(await waitButton(page, /mail client/i, 10000))) throw new Error('mail client button never showed after Attach; buttons: ' + JSON.stringify(await buttons(page)));
   mark('attached'); await sleep(1000);
@@ -76,7 +77,7 @@ export default async (page, bridge, mark) => {
   await page.selectOption('select.mail-compose-template[data-part="pretext"]', 'e5_pretext_reauth_calm'); await sleep(600); mark('pretext-set');
   await slot('portal', /Quayholt SSO/i, 'portal');
   await mouseClick(page, 'button.mail-compose-link', null, { steps: 10, dwell: 400 });
-  await waitVisible(page, 'body *', /attached \(tap to remove\)/i, 5000); mark('link-attached'); await sleep(1100);
+  await waitVisible(page, 'body *', /attached \(tap to remove\)/i, 5000); mark('link-attached'); mark('frame:composer'); await sleep(1100);
   await waitVisible(page, 'button.mail-compose-send:not([disabled])', null, 8000);
 
   // send (first Send is final)
@@ -84,7 +85,7 @@ export default async (page, bridge, mark) => {
   const tSend = Date.now(); mark('send');
   await waitVisible(page, 'body *', /It landed/i, 15000).catch(() => { throw new Error('"It landed" never showed'); });
   mark('landed', { msAfterSend: Date.now() - tSend });
-  await sleep(3000); mark('landed-held');
+  await sleep(1500); mark('frame:landed'); await sleep(1500); mark('landed-held');
   await mouseClick(page, 'button', /^Done$/, { steps: 10, dwell: 400 }); mark('done');
   // Hana's reply: the inbox row "Re: Action needed: sign in again" arrives about emailReplyDelay (6 s) after Send
   let row = false;
@@ -92,11 +93,11 @@ export default async (page, bridge, mark) => {
   if (row) mark('reply-row', { sSinceSend: +((Date.now() - tSend) / 1000).toFixed(2) }); else mark('reply-missing');
   if (row) {
     await sleep(900);
-    await mouseClick(page, 'body *', /Re: Action needed/i, { steps: 12, dwell: 450 }).catch(() => {});
-    await waitVisible(page, 'body *', /sign in through that link/i, 6000).then(() => mark('reply-open')).catch(() => mark('reply-body-missing'));
+    await mouseClick(page, '.mail-row', /Re: Action needed/i, { steps: 12, dwell: 450 }).catch((e) => mark('reply-click-failed', { e: String(e).slice(0, 120) }));
+    await waitVisible(page, 'body *', /I.ll sign in through that link/i, 6000).then(() => { mark('reply-open'); mark('frame:reply'); }).catch(async () => mark('reply-body-missing', { text: (await page.evaluate(() => document.body.innerText)).slice(0, 600) }));
     await sleep(3200);
   }
   await bridge.minigame.close(); mark('mail-closed');
-  await waitVisible(page, 'body *', /Now it lands on you/i, 10000); mark('flip-up'); await sleep(2800); mark('flip-held');
+  await waitVisible(page, 'body *', /Now it lands on you/i, 10000); mark('flip-up'); await sleep(1500); mark('frame:flip'); await sleep(1300); mark('flip-held');
   mark('end');
 };
