@@ -247,5 +247,39 @@ module BreakEscape
       found = AccessLeakScanner.new(old_scenario).scan(lines([old_room]))
       assert_includes found.map(&:owner).join(' '), 'camrec01', 'the host name inside room text is reported before any sweep'
     end
+
+    # PT2: a resumed session's capture file starts after the sweep, scans and checks, which an earlier file
+    # of the same game holds. access-leak-check.rb reads every file given as one log in order, so the
+    # earlier file is given first; a file judged alone does not know the steps and its GET /network answer
+    # looks like a leak.
+    def resumed_files
+      cut = @log.index { |r| r['method'] == 'GET' && r['path'].end_with?('/network') }
+      [@log.first(cut), [@log[cut]]]
+    end
+
+    def file_lines(name, rows)
+      rows.each_with_index.map { |r, i| [name, i + 1, r] }
+    end
+
+    test 'PT2: a resumed capture file judged alone reports the earned strings, and clear when the earlier file is given first' do
+      run_game
+      first, second = resumed_files
+      alone = scanner.scan(file_lines('resumed.jsonl', second))
+      assert_includes owners(alone), 'ops:service:files01', 'the scan was earned in the earlier file, so alone the answer looks like a leak'
+      together = scanner.scan(file_lines('first.jsonl', first) + file_lines('resumed.jsonl', second))
+      assert_equal [], together.map { |f| [f.source, f.line, f.rule, f.owner] }
+    end
+
+    test 'PT2: a real leak in the resumed file is still reported when the earlier file is given' do
+      run_game
+      first, second = resumed_files
+      leaky = deep(second.first)
+      camera = leaky['body']['footholds'].first['hosts'].find { |h| h['id'] == 'camrec01' }
+      assert camera, 'the view lists the camera recorder'
+      camera['services'] = [{ 'name' => 'stream', 'port' => 554, 'product' => 'Lookwell RecordView', 'version' => '5.0' }]
+      found = scanner.scan(file_lines('first.jsonl', first) + file_lines('resumed.jsonl', [leaky]))
+      assert_includes owners(found), 'ops:service:camrec01', 'camrec01 was never scanned in either file'
+      assert(found.all? { |f| f.source.to_s.include?('resumed.jsonl') })
+    end
   end
 end

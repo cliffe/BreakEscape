@@ -7,7 +7,10 @@
 # (a run split across sessions) are read in the order given. The secrets are read from the
 # game's own scenario data on the server, so the tester never sees them, and no output line
 # holds a secret's value: each finding names the rule, the route, the response line and the
-# secret's owner (an NPC or item id). See tools/playtest/lib/access_leak_scanner.rb for the rules.
+# secret's owner (an NPC or item id). A session resumed in a new browser starts a new capture file:
+# give EVERY capture file of that game, oldest first, because the sweep, scans and checks the later
+# file's answers rely on were earned in the earlier ones (ops core S2 PT2). A resumed file judged
+# alone reports its own network answers as leaks. See tools/playtest/lib/access_leak_scanner.rb for the rules.
 #
 # A line {"dom": "<page text>", "label": "<what>"} in a file is the text of a page the tester read
 # (the capture log device: eval `() => document.querySelector('.capture-log')?.innerText`), checked

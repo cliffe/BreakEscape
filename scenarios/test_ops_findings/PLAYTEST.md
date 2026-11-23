@@ -28,7 +28,7 @@ tools/playtest/cmd.sh <game_id> '{"cmd":"eval","fn":"() => window.__test.throttl
 ```
 
 The checks after every beat (the first two read the server's record, the third the responses file; run the leak check over the whole file
-each time; `--access` and `--ops-log` are two runs, the script takes one at a time):
+each time (a session resumed in a new browser writes a new capture file: give the check EVERY capture file of the game, oldest first, in one run, because the scans and checks a later file's answers rely on were earned in an earlier one); `--access` and `--ops-log` are two runs, the script takes one at a time):
 
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
@@ -93,10 +93,10 @@ need no distinctive string: a finding row before its confirm that carries `needs
 - **Hostile requests** are sent from the page with `eval` and `fetch`, carrying the CSRF token
   (`document.querySelector('meta[name=csrf-token]').content`) in an `X-CSRF-Token` header, as JSON, so the session's response capture
   records them for the leak scan. Routes: `POST /break_escape/games/<id>/network/check` with `{ foothold, host_id, service }` and
-  `POST .../network/confirm` with `{ foothold, finding_id }` (the built id, never the alias); `PUT .../sync_state` for the sync body.
+  `POST .../network/confirm` with `{ foothold, finding_id }` (the built id, never the alias).
 - **Picking up the manual.** `{"cmd":"moveToNear","id":"supply_cupboard"}` (it walks through the lobby's west door; if the walk stops,
   `interact` the door first), `{"cmd":"interact","id":"supply_cupboard"}`, then `{"cmd":"mg","action":"take","args":["Printer manual"]}`
-  and close the container. Check `inventory` in `getState` shows `printer_manual` before reopening the view. Do not take the installer's sheet:
+  and close the container. The manual goes into the notes ("Added 'Printer manual' to your notes"), not into `inventory`, so do not look for it there; the tick in the reopened view is the check. Do not take the installer's sheet:
   only `printer_manual` is a need.
 - **The switch.** `interact` `share_switch`: a hint "The file server's open share is switched off" and `share_locked` is true. The global is
   written by the client and synced, so `{"cmd":"sync"}` before the next read.
@@ -115,7 +115,7 @@ Plant the box in `office_port` (`Plug it in`), click Sweep on `office_lan`. Then
 `jack_office_port`: `POST /network/check` with `host_id: "printer01", service: "admin_page"` (the printer is listed but not scanned), and again with
 `service: "invented_service"`.
 - Browser: both requests answer one identical body, `{"success":false,"reason":"not_found"}`, status 404 (compare byte for byte). The view
-  lists four host rows (Desk PC, File server, Camera recorder, Second floor printer; the sweep lists no share) with no tile and no
+  lists four host rows (the real count: DESK01 and FILES01, the two sign-in machines, shown by their ids, then Camera recorder and Second floor printer; the sweep lists no share) with no tile and no
   Check control anywhere.
 - Server: `opsDiscovered.networks` has `office_lan`; no `opsFindings`; one `network_swept` row and no `service_checked` row.
 
@@ -173,7 +173,7 @@ Then click Check on the `files` tile.
 
 ### 7. Flip the switch before the confirm, then confirm
 
-`interact` `share_switch`, `sync`, reopen the view (the finding is still unconfirmed).
+`interact` `share_switch` (a hint titled "File server switch" reads "The file server's open share is switched off."; capture it from the hint or toast), `sync`, reopen the view (the finding is still unconfirmed).
 - Browser: the finding is still `unconfirmed`: no `.network-finding-fixed`, no `fixed` in the state, the same keys as before the switch.
   Now click Confirm: it becomes `confirmed` with no needs and shows Fixed at once (`.network-finding-fixed`, `fixed: true` in the state).
   This is the plan's "Fixed only after its confirm" (11.5, S2). (Beat 11 is the other rule: a switch flipped before any check lists nothing.)
@@ -194,11 +194,7 @@ Check the `backup` tile; Confirm both findings; then Confirm the first one again
   The repeat Confirm answers `{"success":true,"already":true,...}` with the same finding.
 - Server: two more `finding_confirmed` rows and none for the repeat.
 
-### 8b. (hostile) a sync body writing the server's records
-
-`PUT /sync_state` by `fetch` with a body naming `opsFindings` (a finding set to `c9`) and `opsDiscovered` (`services: ["files01.backup"]`...).
-- Browser: the sync answers as any sync does; reopen the view: nothing differs.
-- Server: `opsFindings` and `opsDiscovered` unchanged.
+Beat 8b (a forged sync body writing the server's records) is not played in the browser: the Rails tests make that check, `test/controllers/break_escape/network_ops_state_delta_test.rb` and the hostile tests in `test/controllers/break_escape/network_technique_hostile_test.rb`.
 
 ### 9. (hostile) an invented finding id
 

@@ -249,6 +249,11 @@
       "from": "cred_archivist_login",
       "to": "lock_desk01",
       "soft": false
+    },
+    {
+      "from": "cred_archivist_login",
+      "to": "weak_files01_backup_archive_login",
+      "soft": false
     }
   ]
 }

@@ -16,7 +16,7 @@ A test floor for the ops core's second stage (OPS_CORE_PLAN.md, S2). One lobby w
 | Physical locks | 9 |
 | AND-gate convergences | 0 |
 | Rooms | 5 |
-| Puzzle graph nodes / edges | 19 / 25 |
+| Puzzle graph nodes / edges | 19 / 26 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -117,6 +117,7 @@ flowchart TD
   lock_desk01 --> cred_archivist_login
   cred_archivist_login --> lock_files01
   cred_archivist_login --> lock_desk01
+  cred_archivist_login --> weak_files01_backup_archive_login
 
   class door_back_office,lock_files01,lock_desk01,jack_office_port,jack_annex_port,weak_files01_backup_archive_login,weak_files01_backup_backup_list,weak_files01_files_open_share,weak_printer01_admin_page_factory_login lock
   class back_office,lobby,net_office_lan,comms_room,supply_room room
@@ -224,6 +225,7 @@ flowchart TD
   lock_desk01 --> cred_archivist_login
   cred_archivist_login --> lock_files01
   cred_archivist_login --> lock_desk01
+  cred_archivist_login --> weak_files01_backup_archive_login
 
   class door_back_office,lock_files01,lock_desk01,jack_office_port,jack_annex_port,weak_files01_backup_archive_login,weak_files01_backup_backup_list,weak_files01_files_open_share,weak_printer01_admin_page_factory_login lock
   class back_office,lobby,net_office_lan,comms_room,supply_room room
