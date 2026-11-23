@@ -71,3 +71,10 @@ with these differences, which win:**
   reader authored with `lockType: login`, which can never be read), each with a node test.
   S6, the leak check's `/log_rows` extension is built now with the rest of the scenario
   tooling. N4, no action.
+- 2026-11-23, L2a R3 rulings: R3-5, the order for a door's shown name changes: the room's
+  `door_sign` FIRST (it is what the game shows on an unopened door, so a denied swipe never
+  shows a name the door does not), then the room's `name`, then the kind word. This replaces
+  the order in the R2 ruling above. m10 is left (the reviewer's advice). R3-1 and R3-2 (the
+  leak check judges IDENTITY on a successful or known-account sign-in row, and sees a
+  stored-only key inside a detail string) are done now, with the other R3 minors, in one
+  tidy pass after the playtest.
