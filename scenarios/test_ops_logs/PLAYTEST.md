@@ -4,8 +4,9 @@ Beats 1 to 7 are the write side (L1b). Beats 8 to 13 (below, "L2a: the readers")
 
 The scripted run for ops log stage L1b (`docs/achitechture/OPS_LOG_ROWS_PLAN.md`, section 11
 "Scripted playtests" and 13.8). One run, one new game, about 10 minutes. The scenario declares two
-log sources (`door_controller`, `signin_audit`) and has **no reader**: nothing in the game shows a
-row, so every check of a row is the server script `verify-run.rb --ops-log`. The one thing read in
+log sources (`door_controller`, `signin_audit`) and, for beats 1 to 7, has **no reader** (the security
+room of beats 8 to 13 adds two): nothing in the game shows a row in those beats, so every check of a
+row is the server script `verify-run.rb --ops-log`. The one thing read in
 the browser is the game clock, to compare with a row's time.
 
 The scenario is for testing, not play. The password the run types is read from the PC's sticky
@@ -132,7 +133,7 @@ clock comparison in beat 5, and the exit status. Expected final rows, in order:
 | `door_controller` | `badge_swipe` ok (dana) |
 | `signin_audit` | `signin_fail` x2, `signin_ok` x2, `session_lock`, `session_end` |
 
-Nothing in the browser shows these rows. Do not add anything from the console that writes them.
+In beats 1 to 7 nothing in the browser shows these rows. Do not add anything from the console that writes them.
 
 ## Earned secrets
 
@@ -142,7 +143,7 @@ Nothing in the browser shows these rows. Do not add anything from the console th
 | Dana's badge | Copied from her in conversation with the card copier | 3 |
 
 Wrong passwords are made up by the tester. The leak check (`access-leak-check.rb`) is not part of
-this run: its `/log_rows` coverage lands with the reader in L2a.
+beats 1 to 7: it judges the `/log_rows` answers of beats 9 and 10 (beat 13).
 
 ## Expected validator output
 
@@ -159,7 +160,7 @@ suggestions every small test scenario gets.
 Stage L2a (`OPS_LOG_ROWS_PLAN.md` section 11, "Scripted playtests", the L2a bullet). The `security`
 room is east of `office` behind a second rfid door (finance staff, so Dana's copied badge opens it).
 It holds two `ops_log_terminal` objects, one per source: `door_log_pc` (reads `door_controller`)
-and `signin_log_pc` (reads `signin_audit`, title "Sign-in audit"). Every bridge call below is in
+and `signin_log_pc` (reads `signin_audit`, source title "Sign-in audit"). Every bridge call below is in
 `docs/test-bridge.md` (`moveToNear`, `interact`, `enter`, `waitForMinigame`, `waitForMinigameClosed`,
 `mg clickSelector`, `eval`). The viewer has no `getTestState`, so it is read from its DOM, with `eval`
 returning one value per call.
@@ -167,14 +168,14 @@ returning one value per call.
 Ports 3014 to 3016 only. Make the game for the whole run (beats 1 to 13) with
 `env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin test_ops_logs`.
 The viewer's hooks (from `HANDOVER_L2a_client.md`): the root `.ol-wrapper[data-ops-log="viewer"]`;
-rows `table[data-ops-log="table"] tr.ol-row` with `data-row-id` and `aria-selected`, cells
-`td[data-col]`; messages `.ol-message[data-state="loading|denied|empty"]`; filters `[data-filter="time|event|where|result|as"]`;
+rows `table[data-ops-log="table"] tr.ol-row[data-row-id]` (a row of data; `tr.ol-row.ol-message` is the loading, no-access, no-signal or empty row) with `data-row-id` and `aria-selected`, cells
+`td[data-col]`; messages `.ol-message[data-state="loading|denied|empty|nosignal"]`; filters `[data-filter="time|event|where|result|as"]`;
 the detail pane `[data-ops-log="detail-grid"] [data-field="TIME|EVENT|IDENTITY|LOCATION|RESULT|DETAIL"]`;
 the count `[data-ops-log="count"]`; the refresh button `button[data-action="refresh"]`.
 
 Handy reads (each an `eval`, shown here as the function body):
 
-- rows as text: `() => Array.from(document.querySelectorAll('tr.ol-row')).map(r => Array.from(r.querySelectorAll('td[data-col]')).map(c => c.innerText.trim()).join(' | '))`
+- rows as text: `() => Array.from(document.querySelectorAll('tr.ol-row[data-row-id]')).map(r => Array.from(r.querySelectorAll('td[data-col]')).map(c => c.innerText.trim()).join(' | '))`
 - count text: `() => document.querySelector('[data-ops-log="count"]')?.innerText`
 - message state: `() => document.querySelector('.ol-message')?.dataset.state || null`
 
@@ -191,14 +192,14 @@ security), both `ok`. Then `enter` `security`.
 ### 9. Opening the door log by a real interaction
 
 `moveToNear` then `interact` `door_log_pc`; `waitForMinigame` `ops-log`. The first frame may be
-`.ol-message[data-state="loading"]`; wait until `tr.ol-row` exists. Expect the frame title "Door log PC"
+`.ol-message[data-state="loading"]`; wait until `tr.ol-row[data-row-id]` exists. Expect the frame title "Door log PC"
 (the object's name), the caption (the source title "Door controller"), exactly **2** rows, both
 `BADGE`, both `OK`, IDENTITY `Dana Reyes` (no source sets `showCardHolder`, so the holder shows),
-LOCATION naming the office door and then the security door, TIME ascending, no `SIGN_IN` row. The
-count text reads 2 of 2 (or the viewer's equivalent wording; note the exact text). No flag button
+LOCATION `Finance office` and then `Security office` (the rooms' door signs), TIME ascending, no `SIGN_IN` row. The
+count text reads `2 rows`. No flag button
 exists (`button[data-action=flag]` is absent: L2b adds it).
 
-Select the first row by click (`mg clickSelector 'tr.ol-row'`): `aria-selected="true"`, and the detail
+Select the first row by click (`mg clickSelector 'tr.ol-row[data-row-id]'`): `aria-selected="true"`, and the detail
 grid shows `EVENT` BADGE, `IDENTITY` Dana Reyes, `RESULT` OK. Close the viewer.
 
 ### 10. Opening the sign-in log, and a filter
@@ -213,6 +214,7 @@ must return `false`.
 
 Filter: set the EVENT select to `SESSION` (`eval`:
 `() => { const s = document.querySelector('[data-filter="event"]'); s.value = Array.from(s.options).find(o => o.value.includes('SESSION') || o.textContent.includes('SESSION')).value; s.dispatchEvent(new Event('change', { bubbles: true })); return s.value; }`).
+Expect the two `SESSION` rows and the count text `2 of 4 rows`.
 Expect two rows, both `SESSION` (the count text shows the filtered and total numbers; note the wording). Type `dre` into the IDENTITY
 box (`mg type` on `[data-filter=as]`, or an `eval` setting `.value` and dispatching `input`): the
 `SESSION` rows have an `as` of `dreyes` so they stay; type `zzz` and the table shows
@@ -240,8 +242,8 @@ readers never show each other's rows.
 ### 13. The leak check and the server check
 
 `{"cmd":"sync"}`; `verify-run.rb <game_id> --ops-log` must still exit 0 with `ops log OK`. Then run
-`tools/playtest/access-leak-check.rb` over the capture file if its `/log_rows` coverage has been
-extended (the plan lists it for L2a; it is not part of this build item): it must report no secret.
+`tools/playtest/access-leak-check.rb` over the capture file (it judges the `/log_rows` answers: no
+secret, exactly the seven row keys, no raw id, no stored-only key): it must report no finding.
 In the report: each beat's rows as the page showed them, the exact count wording, the filter results,
 and the captured `/log_rows` answers (a first answer, a second `unchanged`).
 
