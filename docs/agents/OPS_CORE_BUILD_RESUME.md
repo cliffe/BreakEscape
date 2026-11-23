@@ -305,6 +305,22 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   S10 to S12. Cracking (S7) drafting was stopped by safeguards during planning: if a builder
   is stopped, follow AGENTS.md (report to the user, offer one retry, never rerun unasked).
 
+### 2026-11-23: after S2+S3 landed (main `6afbe1496`)
+
+- Landed and pushed on main: L1a+L1b, S1, L2a, L2b, S2+S3 (core plan N13, N14, N15).
+- Post-landing tidy on `ops-build`: client half done (`b70dc59bf` to `5a8522300`); scanner, tests and
+  docs half in progress (`9b2ddd017` to `e284d81b0` so far, docs group still open). Next: Sonnet delta
+  review of both halves, fast-forward the train tree, train, land, push, merge main into `ops-build`
+  and `ops-logs`.
+- S5a: brief committed (`532d55db4`, `docs/agents/ops_core_build/S5A_BUILD_BRIEF.md`). Unit 01
+  (fixtures) runs alone before any engine edit, after the tidy hash is trained. Owner question O1
+  (relay session and step-up to admin) is open; builders build "no".
+- Log stream (`ops-logs`): L3 part A built (`400e7fd35`, `fee3415b0`, `4f311c7ad`), review R1 running;
+  L3 part B (scenario, tests, beats, docs) being built.
+- Review page for the user: built in the session scratchpad (`ops-review-page/`), screenshots being
+  retaken, not yet published.
+
+
 ## Waiting on the user
 
 - Nothing yet. Later: card art for `technique_card.png`; the final screenshot review.
