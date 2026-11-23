@@ -34,6 +34,19 @@ module BreakEscape
     end
   end
 
+  class OpsLogUnchangedScenariosTest < ActiveSupport::TestCase
+    # OPS_LOG_ROWS_PLAN.md section 10, check 2: no scenario outside test_ops_* declares logSources, so
+    # no existing scenario gains a row, a state key or an answer field.
+    test 'no scenario outside test_ops_* declares logSources' do
+      root = File.expand_path('../../../scenarios', __dir__)
+      files = Dir.glob(File.join(root, '*', '**', '*.json{,.erb}')).reject { |f| File.basename(File.dirname(f)).start_with?('test_ops_') }
+      files = files.reject { |f| f.sub("#{root}/", '').start_with?('test_ops_') }
+      assert_operator files.size, :>, 50, 'the scan finds the scenarios'
+      declared = files.select { |f| File.read(f).include?('"logSources"') }
+      assert_empty declared.map { |f| f.sub("#{root}/", '') }
+    end
+  end
+
   # The helper itself. Test-only events are installed for each test through the overlay
   # (OpsLog.with_events's thread-local, set in setup and cleared in teardown), so EVENTS stays empty.
   class OpsLogTest < ActiveSupport::TestCase
