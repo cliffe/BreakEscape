@@ -15,7 +15,7 @@ export default async (page, bridge, mark) => {
   if (!d) throw new Error('briefing never opened');
   mark('briefing-open', { speaker: d.speaker, text: (d.text || '').slice(0, 80) });
   await runDialogue(page, bridge, mark, vw, {
-    steps: [/Bought with what/i, /Who's this going to/i],
+    steps: [/Bought with what/i, /damage so far/i, /Who's this going to/i],
     targets: [
       { name: 'hook', re: /handing ENTROPY the crown jewels/i },
       { name: 'stakes', re: /six to eleven minutes slower/i },
