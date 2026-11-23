@@ -156,3 +156,7 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   for a global's name; `scenarios/test_ops_findings/PLAYTEST.md` uses the `opsFindings`
   verify-run line and the scanner's check-stage tags now that they exist; the N13 doc
   paragraph that says N14 is "not built" is corrected.
+- 2026-11-23, step 10a: a sync body's `globalVariables.opsUsed` is stored as an ordinary
+  saved global, in the globals namespace; the server state key `player_state['opsUsed']` is
+  separate and untouched. Accepted: existing behaviour for any global name. A test should pin
+  that the keyring proof and `use_technique!` read only the state key.
