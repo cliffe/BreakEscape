@@ -23,7 +23,9 @@ a `hosts` key, a service `name`, a weakness or decoy `id` and a technique id are
 most 40 characters, so each fits a log row (section 13). Ids that existed before this plan and
 also appear in a row (a network id, a sign-in host's object id, a foothold's object id) keep
 their pattern, and the validator refuses one longer than 40 characters in a scenario that
-declares `logSources`. A finding id is built, not authored: three
+declares `logSources`. A foothold id in a row is built from its object's id with a prefix
+(`jack_`, `wifi_` or `implant_`), so in such a scenario the validator also refuses a jack, a
+Wi-Fi network or an implantable PC whose built foothold id is longer than 40 characters. A finding id is built, not authored: three
 authored ids joined by dots, so it has its own pattern and can be long. It is never typed and
 never put in a log row; the alias stands in for it in both places.
 

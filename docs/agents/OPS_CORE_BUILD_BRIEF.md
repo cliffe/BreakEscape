@@ -110,3 +110,9 @@ and at most 5 per stage; later rounds are delta reviews.
 - 2026-11-23, R2 rulings: N3, literal flag answers on a flag station's own `flags` list are
   registered as secrets too. N1 (a redundant branch) stays. The log plan's section 10 now
   names the `alreadyOpen` exception.
+- 2026-11-23, S1 server R1 rulings: M1, the limit is on the built foothold id (`jack_<id>`,
+  `wifi_<network>`, `implant_<pc>`): in a scenario with `logSources` the validator refuses one
+  over 40 characters (core plan section 0 now says so), with a node test per prefix; the
+  route must not 500 on it either way. m1, the foothold id goes in now as an optional
+  argument of `network_rows` and `host_row` at every call site, unused until S3. m7, the
+  client never offers Sweep on a block with `route: "down"`.
