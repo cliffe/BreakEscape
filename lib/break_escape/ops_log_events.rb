@@ -44,7 +44,10 @@ module BreakEscape
       'technique_used' => { label: 'TECHNIQUE', places: %w[host pc], results: %w[ok],
                             detail: { 'finding' => { alias: 'finding' }, 'technique' => { id: 'technique' },
                                       'grant' => %w[session credential], 'access' => %w[user admin] },
-                            save_limit: { 'ok' => 10 } }
+                            save_limit: { 'ok' => 10 } },
+      # Privilege (S5a): an admin session reads an owner's profile; an admin session overrides the USB policy.
+      'admin_profile_read' => { label: 'ADMIN_READ', places: %w[pc], results: %w[ok], detail: { 'profile' => { id: 'profile' } } },
+      'usb_install_overridden' => { label: 'USB_OVERRIDE', places: %w[pc], results: %w[ok], detail: { 'device' => %w[storage hid] } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -118,6 +121,11 @@ module BreakEscape
       # A technique card registry entry by its id, shown by its name (ops core S3).
       'technique' => {
         name: ->(game, id) { OpsLogEvents.technique_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      # An account profile id (S5a), shown as the id when the scenario holds that profile.
+      'profile' => {
+        name: ->(game, id) { OpsLogEvents.profile_named(game, id) },
         room: ->(_game, _id) { nil }
       },
       # A foothold id: a network jack ("jack_<id>" or the jack's id), an access point, or a PC
@@ -215,6 +223,11 @@ module BreakEscape
     def technique_named(game, id)
       entry = NetworkModel.techniques(game.scenario_data)[id.to_s]
       entry && (entry['name'].is_a?(String) && !entry['name'].empty? ? entry['name'] : id.to_s)
+    end
+
+    def profile_named(game, id)
+      profiles = game.scenario_data.is_a?(Hash) ? game.scenario_data['accountProfiles'] : nil
+      profiles.is_a?(Hash) && profiles[id.to_s].is_a?(Hash) ? id.to_s : nil
     end
 
     def foothold_name(game, id)
