@@ -41,16 +41,25 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   `965e9a595`. L1b R1 review 0B 1M 6m `79e6ad133`; FIXED 6 of 7 (m5 was real: the granted
   badge row moved after the route-room gate): `49211abbb`, `a84ab7d02`, `40d47ac12`, outcomes
   `d950ed316`. Open: L1b m4 f (`save_limit: false` helper test, unowned).
-- RUNNING: delta review R2 over both fix sets (fable52L; findings `reviews/L1ab_R2.md`, does
-  not commit); Haiku scripted playtest of `test_ops_logs` on port 3011 (results in the session
-  scratchpad `l1b-playtest/RESULTS.md`; a Sonnet run checks any "stuck" before it counts).
-- Next: commit R2 findings; one small Sonnet fix pass if needed (include m4 f); look at the
-  playtest screenshots myself; then
-  `tools/playtest/train-check.sh /data/be-ops-core <outdir> <port>` (GREEN needed, clean
-  tree); merge `ops-core` into main in `/home/deploy/BreakEscape` (merge, not rebase; check
-  main has not moved under other sessions first, merge main into the branch and re-check if
-  it has); push; then core step 1 (Sonnet): `OPS_CORE_PLAN.md` section 10 parts 1, 2 and 5
-  fixtures with the golden mechanism.
+- R2 delta review: ready to land (24 of 25 confirmed, 4 minors) `ed7f7d18f`; tidy pass
+  `21fcce0fe`, `9f4cbaeed`. Playtest of `test_ops_logs` passed 7 of 7 (second run; game made
+  with `swap-scenario-game.rb`). Schema convention fix `791609f2e`.
+- **L1a and L1b LANDED on main and pushed: merge `13afcdf89`** (train check 2 at `791609f2e`
+  in `/data/tmp/ops-core-train-2`: Rails 3724 runs 0 failures, smoke 3 games 0 failed, corpus
+  0 of 201, rubocop clean, tree clean; RED only on JS, 3 of 993 files).
+- **JS baseline on this machine** (fail or flake on main itself, branch touches no `public/`
+  file): `capture-log.test.mjs`, `lockpick-mode-switch-roundtrip.test.mjs` (fail on main),
+  `lab-ux-ui.test.mjs` (flaky on main). Landing rule here: no failure main does not have.
+  Any OTHER failing JS file is ours. Reported to the user as a machine issue.
+- **Train check on this machine** needs: `.bundle/config` copied from main into the worktree
+  (done), node 22 first on PATH, and
+  `PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell`.
+  Single JS files run as `bin/test-js test/js/<name>.test.mjs` (a bare name "fails" falsely).
+- RUNNING: core step 1 builder (Sonnet; note `HANDOVER_core_1.md`).
+- Next: S1 steps 2, 3, 4, 5, one Sonnet builder and one commit each (core plan 12.1); S1
+  review on fable52L after step 3 (server) and again over the whole stage; Haiku scripted
+  playtest and live proof of `test_ops_scan`; train check; land. Owed later: the BreakEscape
+  gem bump for Hacktivity (`bump-version` skill) once a playable ops stage has landed.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
