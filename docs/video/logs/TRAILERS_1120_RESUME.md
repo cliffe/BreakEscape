@@ -54,3 +54,28 @@ Request: AC0 (LIVE AC0, uds:/run/user/1000/cc-socks/3710521.sock) relayed the us
 - CA trailers belong to CA0 (brief docs/video/CA_TRAILER_BRIEF.md). CA0 is writing CA_TRAILER_OUTLINE.md on video/ca-trailer-outline. Agreed: renders and captures never overlap across sessions; tell each other before starting one.
 - Next after answers: m03 pick an ending, then 9:16 and 1:1; lines picks -> npc-dialog-review -> TTS count to AC0 -> ink edits (own branch) -> scouts per mission. m01/m02 on "ship": social cuts, export.
 - Gotchas: dialogue bus compresses gain raises (about a third gets through); measure cue peaks with ebur128 momentary max over .srt windows; player portrait "playtest" shows before NPC portraits in t21-style takes; render agents may stop while waiting on their own loops: check the renders dir yourself.
+
+## State (2026-11-23, early)
+
+**Owner's direction (via AC0):** keep the trailers moving, and take the suggested answers as decisions. m03 ends on "I sleep perfectly"; m01 v10, m02 v4 and m03 v3 otherwise stay as cut. TTS has a standing yes; send only uncertain voicing to the owner. The owner still makes the ship call per trailer (export to hacktivity-videos waits for it). Send AC0 each render link and hash.
+
+**Review page:** https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (file `docs/video/review/trailers_spies_review.html`). Tabs and their feedback documents:
+- Lines · round 2 (opens first): `feedback/trailer_lines_round2`
+- New lines · audio (optional listening): `feedback/trailer_lines_voiced`
+- m03 v3, Lines m04–m10, m02 v4, m01 v10
+
+None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last listed. Note that mp3 is refused as an asset, so wrap audio in mp4 (AAC).
+
+**Lines branch:** `video/trailer-lines-m04-m10`, worktree `.claude/worktrees/v-trailer-lines`, tip b98ee67a3 (on AC0's train T345).
+- 8 lines inked and voiced. Owner kept m05, m06, m07 ending and m08 as voiced.
+- Round 2 asks for new m04 (Voltage ending), m07 hook (Netherton briefing) and m09 (Sorensen ending): drafts, review and placements in `docs/video/edits/TRAILER_LINES_ROUND2.md` there. When the owner picks: ink them, compile (`scripts/compile-ink.sh <mission>`), run EVERY route in `scripts/ink_runtime_check/<mXX>_routes/` (maxRun 9; this failed T342), voice only the picks (scratchpad `gen8.rb` shows the method; run rails with `BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle`), commit, send the hash to AC0.
+- m08: "Ask me what you need..." was cut to keep the run at 9.
+
+**Portrait and square renders:**
+- m01 v10 and m02 v4 at 9:16 and 1:1 exist in `~/video-takes-local/m0X/renders/` but FAILED my framing check, so they are not published: 1:1 speakers cut at the right edge, caption over the game's subtitle bar on two m02 1:1 shots, panels and Ghost's line cut in 9:16, no caption on Bernie in 9:16. m03's crops (16242997d) copy the same convention.
+- A Sonnet agent is fixing framing in all three edits (commits on this branch; its crop sheets go to the scratchpad `framing2/`, handover `tmp/handover/vid1_framing.md` if it runs long).
+- Next: check its sheets, book the machine with CA0, re-render (about 5 min per render) with scratchpad `render4.sh` as the model (m03 needs its clips as before), check contacts again, publish review copies as new tabs, send AC0 the link and hash.
+
+**Machine:** CA0 (LIVE CA0: Access work slice 9.2 scenario design) has it for ca15 and ca12 renders, then a ca01 capture; it has offered a gap between its ca12 renders and the ca01 capture. Never render and capture at once. AC0's name is "LIVE AC0: Break Escape access model work".
+
+**Disk:** /home was full on 22 Nov; 13 GB free after AC0's cleanup. AC0 is asking the owner about my ~220 MB of superseded renders. Moving to tmp/delete frees nothing on the same disk.
