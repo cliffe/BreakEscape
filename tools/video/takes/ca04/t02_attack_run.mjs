@@ -55,6 +55,7 @@ export async function run(page, bridge, mark, { narrow = false } = {}) {
   await mouseClick(page, 'button.mail-compose-btn', null, { steps: 12, dwell: 400 });
   await waitVisible(page, 'select.mail-compose-template');
   if (narrow) await page.evaluate(() => { for (const b of document.querySelectorAll('button')) if (/^\s*(Close|×)\s*$/i.test(b.innerText) && !b.closest('.epr-root')) b.style.visibility = 'hidden'; });
+  if (narrow) await addCss(page, '.mail-compose-btn{display:none !important;}');   // the "ose" stub at 560 px is the Compose button's clipped tail (not Close): hidden once the composer is open
   mark('compose'); await sleep(1800); mark('frame:compose-empty');
   await watchFlags();
 

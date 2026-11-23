@@ -48,10 +48,9 @@ export const HIDE_TELLS = '.mail-redflag-list,.mail-redflag-advice,.mail-redflag
 export const DEFEND_HIDE_CSS = '.triage-client .aw-team-tally { display: none !important; }';
 /** Flip screen: only the heading (and the strip) stays; the body, the sent email and Continue are hidden. */
 export const FLIP_HIDE_CSS = '.aw-flip > :not(h2.aw-heading){display:none !important;}';
-/** Narrowed panels for 9:16 and 1:1 (560 px): mail client (builder), triage client (list). The Close X beside a capped panel is hidden. */
+/** Narrowed panels for 9:16 and 1:1 (560 px): mail client (builder), triage client (list). Target is the real 960 px frame .mail-client, never .minigame-game-container (the 1920 px stage). */
 export const NARROW_CSS = (px = 560) => `
 .mail-client, .mail-client.triage-client { max-width: ${px}px !important; margin-left:auto !important; margin-right:auto !important; }
-.minigame-game-container:has(.mail-client) { max-width: ${px + 40}px !important; }
 `;
 
 /** True if anything matching `re` is rendered visible (not display:none / visibility:hidden) on the page. */
