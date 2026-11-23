@@ -333,3 +333,140 @@ test('a reload whose loaded copy has no foothold held yet leaves the PC unmarked
     marks.refresh();
     assert.deepEqual(ids(), ['pc1'], 'the technique copy marks once its foothold is held');
 });
+
+// Ops core tidy (client), R4-1: the bolt joins its sprite's _fadeCompanions, so the behind-wall
+// fade (behind-wall-fade.js addWithCompanions: scene, active !== false, visible) dims it too.
+function fadePass(sprite, k) {
+    for (const c of sprite._fadeCompanions || []) {
+        if (c && c.scene && c.active !== false && c.visible) c.setAlpha(c.alpha * k);
+    }
+    sprite.alpha *= k;
+}
+test('R4-1: the bolt is a fade companion of its sprite, takes the fade\'s alpha, and leaves the set at unmark', () => {
+    const pc = sprite('pc1');
+    pc.alpha = 1;
+    setup([pc]);
+    const origAdd = pc.scene.add.image;
+    pc.scene.add.image = (...a) => {
+        const im = origAdd(...a);
+        im.scene = pc.scene; im.active = true; im.alpha = 1; im.visible = true;
+        im.setAlpha = function (v) { this.alpha = v; return this; };
+        return im;
+    };
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    assert.equal(images.length, 1);
+    assert.ok(pc._fadeCompanions instanceof Set && pc._fadeCompanions.has(images[0]));
+    fadePass(pc, 0.4);
+    assert.equal(pc.alpha, 0.4);
+    assert.equal(images[0].alpha, 0.4, 'the bolt dims with the sprite');
+    marks.refresh();
+    assert.equal(pc._fadeCompanions.size, 1, 'a second pass adds no second companion');
+    links.footholds.delete('fh1');
+    marks.refresh();
+    assert.equal(pc._fadeCompanions.size, 0, 'removed before destroy');
+    assert.equal(images[0].destroyed, true);
+});
+
+test('R4-1: an existing companion set is kept and only the bolt is added and removed', () => {
+    const pc = sprite('pc1');
+    const other = { id: 'x' };
+    pc._fadeCompanions = new Set([other]);
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    assert.equal(pc._fadeCompanions.size, 2);
+    links.footholds.delete('fh1');
+    marks.refresh();
+    assert.deepEqual([...pc._fadeCompanions], [other]);
+});
+
+// R4-2: Phaser's setter is truthiness
+test('R4-2: a falsy visible (0, null, undefined) hides the bolt; a truthy non-boolean shows it', () => {
+    class P {
+        constructor(base) { Object.assign(this, base); this._v = true; }
+        get visible() { return !!this._v; }
+        set visible(v) { this._v = v ? true : false; }
+    }
+    const pc = new P(sprite('pc1'));
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    marks.refresh();
+    for (const v of [0, null, undefined, '']) {
+        pc.visible = v;
+        assert.equal(images[0].visible, false, `visible = ${String(v)}`);
+        pc.visible = 1;
+        assert.equal(images[0].visible, true);
+    }
+    const d = sprite('d1'); d.visible = 0;
+    setup([d]);
+    links.footholds.set('fh2', FH('fh2', 'jack', 'd1'));
+    marks.refresh();
+    assert.equal(images[0].visible, false, '_place: a falsy data value hides the bolt');
+});
+
+// R4-3: the four missing asserts
+class AccSprite {
+    constructor(base) { Object.assign(this, base); this._visible = true; }
+    get visible() { return this._visible; }
+    set visible(v) { this._visible = v; }
+    setVisible(v) { this.visible = v; return this; }
+}
+const markIt = () => { links.footholds.set('fh1', FH('fh1', 'jack', 'jack1')); sessions._replace('pc1', { ...TECH }); marks.refresh(); };
+const unmarkIt = () => { links.footholds.delete('fh1'); marks.refresh(); };
+test('R4-3: a second mark after an unmark wraps again, the new bolt follows, one own property', () => {
+    const pc = new AccSprite(sprite('pc1'));
+    setup([pc]);
+    markIt();
+    unmarkIt();
+    assert.equal(Object.prototype.hasOwnProperty.call(pc, 'visible'), false);
+    markIt();
+    assert.equal(images.length, 2);
+    assert.equal(Object.getOwnPropertyNames(pc).filter(n => n === 'visible').length, 1);
+    pc.setVisible(false);
+    assert.equal(images[1].visible, false);
+    pc.setVisible(true);
+    assert.equal(images[1].visible, true);
+    assert.equal(images[0].destroyed, true);
+});
+test('R4-3: two passes while held leave one wrapper and one bolt that moves once', () => {
+    const pc = new AccSprite(sprite('pc1'));
+    setup([pc]);
+    markIt();
+    marks.refresh(); marks.refresh();
+    assert.equal(images.length, 1);
+    const own = Object.getOwnPropertyDescriptor(pc, 'visible');
+    marks.refresh();
+    assert.equal(Object.getOwnPropertyDescriptor(pc, 'visible').set, own.set, 'the same wrapper, not wrapped again');
+    pc.setVisible(false);
+    assert.equal(images[0].visible, false);
+    unmarkIt();
+    assert.equal(Object.prototype.hasOwnProperty.call(pc, 'visible'), false, 'one delete takes it all off');
+    assert.equal(pc.visible, false, 'the value written through survives');
+});
+test('R4-3: a plain data visible is written back after unmark', () => {
+    const pc = sprite('pc1');
+    pc.visible = true;
+    setup([pc]);
+    markIt();
+    pc.visible = false;
+    unmarkIt();
+    const d = Object.getOwnPropertyDescriptor(pc, 'visible');
+    assert.equal(d.value, false);
+    assert.equal(d.get, undefined);
+});
+test('R4-3: a sprite that already owns an accessor is not wrapped; unmark leaves it untouched', () => {
+    const pc = sprite('pc1');
+    let v = true;
+    const acc = { configurable: true, enumerable: true, get: () => v, set: (x) => { v = x; } };
+    Object.defineProperty(pc, 'visible', acc);
+    setup([pc]);
+    markIt();
+    assert.equal(images.length, 1);
+    assert.equal(Object.getOwnPropertyDescriptor(pc, 'visible').get, acc.get, 'declined to wrap');
+    unmarkIt();
+    const d = Object.getOwnPropertyDescriptor(pc, 'visible');
+    assert.equal(d.get, acc.get);
+    assert.equal(d.set, acc.set);
+});

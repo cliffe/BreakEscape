@@ -21,7 +21,9 @@
  * property is set. The property is set or deleted at once, but setTint/clearTint are called only
  * while the sprite is not highlighted (isHighlighted false), so a change during a hover shows
  * when the hover ends. The bolt (utils/compromise-bolt.js, drawn in code) is its own image at the
- * sprite's top right, one depth above it.
+ * sprite's top right, one depth above it. While a sprite is marked its `visible` property is wrapped
+ * on the instance (the bolt follows it) and the bolt joins its `_fadeCompanions`, so the behind-wall
+ * fade dims the bolt with the sprite; both come off at unmark.
  *
  * list() is `[{ objectId, sources: [{ kind, footholdId }], tint }]`, `tint` the sprite's live
  * tintTopLeft read at call time (null for a sprite that keeps an authored look); the test
@@ -92,7 +94,10 @@ export class CompromiseMarks {
             if (!sprite.isHighlighted && typeof sprite.setTint === 'function') sprite.setTint(MARK_TINT);
         }
         entry.bolt = this._makeBolt(sprite);
-        if (entry.bolt) entry.unfollow = this._followVisibility(sprite, entry.bolt);
+        if (entry.bolt) {
+            entry.unfollow = this._followVisibility(sprite, entry.bolt);
+            (sprite._fadeCompanions ||= new Set()).add(entry.bolt); // the behind-wall fade dims the bolt with its sprite
+        }
         this.marks.set(sprite, entry);
     }
 
@@ -105,6 +110,7 @@ export class CompromiseMarks {
             if (!sprite.isHighlighted && typeof sprite.clearTint === 'function') sprite.clearTint();
         }
         entry.unfollow?.();
+        if (entry.bolt) sprite._fadeCompanions?.delete(entry.bolt);
         entry.bolt?.destroy?.();
     }
 
@@ -122,7 +128,7 @@ export class CompromiseMarks {
         if (own && (own.get || own.set || own.configurable === false)) return () => {};
         let held = own ? own.value : undefined; // a plain data property stands in for the accessor
         const get = desc?.get ? () => desc.get.call(sprite) : () => held;
-        const set = (v) => { if (desc?.set) desc.set.call(sprite, v); else held = v; image.visible = v !== false; };
+        const set = (v) => { if (desc?.set) desc.set.call(sprite, v); else held = v; image.visible = !!get(); };
         Object.defineProperty(sprite, 'visible', { configurable: true, enumerable: true, get, set });
         return () => {
             delete sprite.visible;
@@ -155,7 +161,7 @@ export class CompromiseMarks {
         image.x = sprite.x + w * (1 - ox);
         image.y = sprite.y - h * oy;
         image.setDepth?.((sprite.depth ?? 0) + 1);
-        if (sprite.visible !== undefined) image.visible = sprite.visible !== false;
+        if (sprite.visible !== undefined) image.visible = !!sprite.visible;
     }
 
     /** Re-read every sprite's sources: marks whose source is gone come off, new ones go on. */
