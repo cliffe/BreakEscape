@@ -60,13 +60,21 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   proved). Ruling: part 2 covers the 8 network scenarios, the 6 pretext scenarios and m01, m02
   as controls (not every folder; the train's validator corpus covers the rest). Known: the
   checked-in graph of `test_access_networks` is stale against regeneration (not ours).
-- RUNNING: S1 step 2 builder (Sonnet; schema, NetworkModel helpers, `check_network_ops`,
-  withheld names; note `HANDOVER_core_2.md`).
-- Next: step 3 (server: `network_ops.rb`, scan route, `opsDiscovered`, events, rows, `cli`
-  copies; split in two builders if large), then a fable52L review of steps 2 and 3 while step
-  4 (client) builds; step 5 (`test_ops_scan`, leak collector, verify-run lines, docs); whole
-  S1 delta review; Haiku playtest and live proof; train check; land. Owed later: the
-  BreakEscape gem bump for Hacktivity once a playable ops stage has landed.
+- S1 step 2 DONE: `046dff1ec` (schema rows, `NetworkModel` helpers, `check_network_ops`,
+  `scripts/real_product_names.txt`, withheld names; note `HANDOVER_core_2.md`). The validator
+  table `NETWORK_OPS_BUILT` has N13 false until step 5 flips it (the plan: a stage flips its
+  entries when it lands). OWED BY STEP 5: the two `validate_network.rb` edits of plan 9.2
+  (the same-label rule via `hosts_on` near VN:587; `carries` near VN:361-364).
+- RUNNING in parallel, disjoint files: S1 step 3 server builder (Sonnet; Part A scan action,
+  Part B rows and `cli` copies; note `HANDOVER_core_3.md`; may hand over after Part A) and S1
+  step 4 client builder (Sonnet; `public/`, `test/js/` only; note `HANDOVER_core_4.md`; it
+  lists the answer shapes it assumed, to check against step 3).
+- Next: check the two halves agree on answer shapes; fable52L review R1 of steps 2 to 4
+  ("review" in the description; a second fable52L reviewer for the client if the diff is
+  large); step 5 (Sonnet: flip N13, the two `validate_network.rb` edits, `test_ops_scan` with
+  PLAYTEST.md and graph, `collect_ops_secrets` in the leak scanner, verify-run ops lines,
+  docs N13 and test-bridge); fixes; delta review; Haiku scripted playtest and live proof (game
+  via `swap-scenario-game.rb`); train check with the machine settings above; land; push.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
