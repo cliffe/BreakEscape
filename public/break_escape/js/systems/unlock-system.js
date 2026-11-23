@@ -279,6 +279,9 @@ export function isLoginPc(lockable, type = 'item') {
     return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
 }
 
+/** PCs whose desktop open is waiting on the foothold's view fetch (N-C2). */
+const pendingRemoteOpens = new Set();
+
 /**
  * A click on a world PC the player holds a technique session on opens its desktop through the
  * session's foothold (core plan 5.4): the trip the network view uses, no sign-in screen, no
@@ -297,7 +300,11 @@ function openRemoteViewIfHeld(lockable) {
     // After a reload no view of this foothold is held yet: the taskbar's Switch user reads the host's row in it
     // (pcSessions.canSwitchUser), so fetch it first. A foothold the server no longer holds takes today's path.
     if (typeof links.lastView === 'function' && typeof links.view === 'function' && !links.lastView(footholdId)) {
-        Promise.resolve(links.view(footholdId)).catch(() => null).then((out) => {
+        // A second click while this PC's fetch is pending starts nothing (N-C2)
+        if (pendingRemoteOpens.has(data.id)) return true;
+        pendingRemoteOpens.add(data.id);
+        Promise.resolve().then(() => links.view(footholdId)).catch(() => null).then((out) => {
+            pendingRemoteOpens.delete(data.id);
             if (out?.ok === false && out.reason === 'gone') openLoginPc(lockable);
             else open();
         });

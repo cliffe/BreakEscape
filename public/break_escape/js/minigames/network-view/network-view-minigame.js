@@ -1574,7 +1574,8 @@ export class NetworkViewMinigame extends MinigameScene {
                 alias: f.alias ?? null, id: f.id, service: f.service ?? null, class: f.class ?? null,
                 severity: f.severity ?? null, summary: findingSummary(f), status: f.status ?? null,
                 fixed: isFixed(f), needs: findingNeeds(f), reason: falseReason(f) || null,
-                select: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="select-finding"]`,
+                // The alias is a select control only while a card is held (drawn above); with none it is a plain chip
+                ...(techniqueList(this.view).length ? { select: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="select-finding"]` } : {}),
                 selected: this.selectedFinding === f.id,
                 ...(offersConfirm(r, f) ? { confirm: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="confirm"]` } : {})
             }));

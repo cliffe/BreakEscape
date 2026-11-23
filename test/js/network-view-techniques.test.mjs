@@ -620,9 +620,13 @@ test('m5: with no card held a finding carries no select control; with a card hel
     assert.equal(document.querySelectorAll('[data-action="select-finding"]').length, 0);
     assert.equal(q('[data-finding="f1"] .network-finding-alias').tagName, 'SPAN');
     assert.equal(q('[data-finding="f1"] .network-finding-alias').textContent, 'f1');
+    // the state says what is drawn: no select selector while no control is
+    const bare = view().getTestState().rows.find(r => r.findings?.length).findings;
+    for (const f of bare) assert.equal('select' in f, false);
     setup(ENTRY());
     await open();
     assert.equal(document.querySelectorAll('[data-action="select-finding"]').length, 2);
+    for (const f of view().getTestState().rows.find(r => r.findings?.length).findings) assert.ok(q(f.select), 'the named selector matches a control');
 });
 
 test('T6: onSent then onEnded for a use that is refused, one that throws and one with no reply; the key goes each time', async () => {

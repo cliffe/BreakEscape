@@ -185,3 +185,37 @@ test('a click with no view held fetches the foothold view first, then opens the 
     assert.equal(starts.length, 1, 'the keyboard desktop');
     delete window.startContainerMinigame;
 });
+
+// N-C2: a second click while the first click's view fetch is pending starts no second fetch or trip
+test('two clicks before the view fetch resolves send one view request and open one trip; a failed fetch clears the guard', async () => {
+    setup();
+    const order = [];
+    let viewHeld = null;
+    let release;
+    let fail = false;
+    window.networkLinks = {
+        get: (id) => (held.has(id) ? { id, name: 'Jack A' } : null),
+        lastView: () => viewHeld,
+        view: (id) => { order.push(['view', id]); return new Promise((res, rej) => { release = () => { if (fail) rej(new Error('net')); else { viewHeld = {}; res({ ok: true }); } }; }); },
+        openSession: (pcId, opts) => { order.push(['open', pcId, opts.toWorld]); return {}; }
+    };
+    sessions._replace('ops_pc', { ...TECH });
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    await new Promise(r => setTimeout(r, 0));
+    release();
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(order, [['view', 'jack_a'], ['open', 'ops_pc', true]]);
+    // a fetch that fails still opens once and frees the PC for the next click
+    viewHeld = null; fail = true; order.length = 0;
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    await new Promise(r => setTimeout(r, 0));
+    release();
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(order, [['view', 'jack_a'], ['open', 'ops_pc', true]]);
+    fail = false; order.length = 0;
+    assert.equal(await interactLoginPc(lockable()), 'remote_view');
+    await new Promise(r => setTimeout(r, 0));
+    assert.deepEqual(order, [['view', 'jack_a']], 'the guard was cleared: a new click fetches again');
+});
