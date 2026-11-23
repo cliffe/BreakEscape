@@ -3303,29 +3303,53 @@ module BreakEscape
     # section 5.1: a sign-in PC scope needs a current session there; a profile scope a
     # current session (at any PC) whose identity the profile's `for` admits. No scope: true.
     def session_admits?(scope)
-      return true if scope.nil?
+      !session_admitting(scope).nil?
+    end
+
+    # Ops log L3: what admits a scope, from the one rule session_admits? is built on. Answers nil
+    # when nothing admits it, else a truthy value: the PC id (a String) of the session that does
+    # (a sign-in PC scope: that PC; a profile or a share: the oldest held session that admits it),
+    # :foothold for a share only a held foothold admits, :unscoped for no scope. A caller that
+    # names an account takes it only from a String.
+    def session_admitting(scope)
+      return :unscoped if scope.nil?
 
       case scope[:type]
       when 'login_pc'
         # Slice 9.3b O (5.2): a scoped request under a remote session whose route is no longer
         # reached is refused, read from the server's own session record (session_route_up?).
         # UI slice 6: a locked session admits nothing until re-auth.
-        access_sessions[scope[:id].to_s].is_a?(Hash) && !session_locked_at?(scope[:id]) &&
-          session_route_up?(scope[:id])
+        pc_id = scope[:id].to_s
+        pc_id if access_sessions[pc_id].is_a?(Hash) && !session_locked_at?(scope[:id]) && session_route_up?(scope[:id])
       when 'profile'
         profile = account_profiles[scope[:id]]
-        return false unless profile
+        return nil unless profile
 
-        access_sessions.keys.any? do |pc_id|
+        sessions_oldest_first.map(&:first).find do |pc_id|
           npc = session_identity(pc_id)
           npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)
         end
       when 'resource'
         # Slice 9.3a, 4.5: a held foothold or session reaches it and is allowed
-        resource_admits_player?(NetworkModel.resources(scenario_data)[scope[:id].to_s])
-      else
-        false
+        resource_admitting(NetworkModel.resources(scenario_data)[scope[:id].to_s])
       end
+    end
+
+    # The held sessions as [pc_id, session] pairs, the one signed in first first. The stored state
+    # keeps no key order, so the order is that of signedInPcs (a grow-only list, in the order a PC
+    # was first signed in at); a session at a PC it does not list (a relay or token sign-in) follows
+    # in key order. Adds no state: a share row must not change what a sign-in writes.
+    def sessions_oldest_first
+      order = signed_in_pcs
+      access_sessions.to_a.each_with_index.sort_by { |(pc, _s), i| [order.index(pc) || order.size, i] }.map(&:first)
+    end
+
+    # Ops log L3: the `as` of a share row: { account: } of the session session_admitting names (the
+    # oldest that admits the share), nil when only a foothold admits it or the session is a guest.
+    def ops_share_as(scope)
+      pc_id = session_admitting(scope)
+      session = pc_id.is_a?(String) ? access_sessions[pc_id] : nil
+      session.is_a?(Hash) ? ops_account_as(session['id']) : nil
     end
 
     # The same, but only through the session at one PC (an inventory add from a sign-in

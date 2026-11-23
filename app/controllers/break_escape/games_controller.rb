@@ -641,6 +641,7 @@ module BreakEscape
       return render_container_refusal(refusal, container_id, located) if refusal
 
       if located && located[:scope] && located[:scope][:type] == 'resource'
+        log_share_folder_opened(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       elsif located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
@@ -3194,6 +3195,24 @@ module BreakEscape
         return nested if nested
       end
       nil
+    end
+
+    # Ops log L3: one `share_folder_opened` row per folder and account for an admitted share open
+    # (never a file: the reader opens files in the browser with no request of its own). The row
+    # names the account of the oldest session that admits the share, none when only a foothold
+    # does. This route saves nothing else, so it saves only when the row was stored.
+    def log_share_folder_opened(located)
+      return if BreakEscape::OpsLog.sources_for(@game.scenario_data).empty?
+
+      scope = located[:scope]
+      as = @game.ops_share_as(scope)
+      # The share itself opened: no folder key. A folder or item in it: its own id.
+      share = BreakEscape::NetworkModel.resources(@game.scenario_data)[scope[:id].to_s]
+      folder_id = located[:object]['id'].to_s
+      detail = located[:object].equal?(share) || folder_id.empty? ? nil : { 'folder' => folder_id }
+      row = @game.write_log_row!('share_folder_opened', as: as, where: { kind: 'share', id: scope[:id].to_s },
+                                                        detail: detail, once: true)
+      @game.save! if row&.stored?
     end
 
     # The scoped branches of GET /container (access model section 6), as a pure check shared with
