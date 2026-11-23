@@ -159,3 +159,22 @@ None skipped. Limits: no browser was started, so C6-1 (phone width) and the Merm
 ## Verdict
 
 Not ready to land as it stands: fix C1-1 (the desktop answer must feed `access` to the mirror) and C2-1 (an in-flight `remove_item` must stop its list) with their tests (T-1), then a delta review. Neither lets a client gain anything from the server, which re-checks every plant; C2-1 lets client-side actions run for a plant the server refused, and C1-1 makes the admin override vanish after a power-off or a reload with the route down. The validator, the schema, `needs_console`, the policy helpers and the graph do what the brief says. The minors can go in the same fix pass or be ruled out by the orchestrator.
+
+## Fix outcomes (client fixer)
+
+| Finding | Outcome |
+|---|---|
+| C1-1 major | Fixed. `PcSessions.settle` takes `access` from the desktop answer only: `admin` and not locked sets it, anything else deletes it. Tests: off then on, reload while off then on, locked never gains it, technique after `not_responding` (`pc-sessions-admin`). |
+| C2-1 major | Fixed. The in-flight guard in `apply-actions.js` sets `stopped = true`; `interactions.js` checks `plantsInFlight` on the no-`requiresItem` branch. Tests: the repro as a committed test (one POST, nothing after the remove before the answer; a refusal runs none, a success runs the rest once), and an interactions test for the plain branch. |
+| C1-2 | Fixed: test retitled, the no-`access` relay case added. |
+| C1-3 | Fixed: a repeat technique grant differing only in `access` sets it in place, no events. `pc-sessions-access` m2 updated to expect that. |
+| C2-2, C2-4 | Declined: no code asked; docs lines belong to unit 17. |
+| C2-3 | Fixed: `.catch` on both `sendGatedRemove` callers; test with a throwing `gameAlert`. |
+| C3-1 | Declined: not needed to land; load order guarantees both globals. |
+| C5-1 | Declined: a wrong sentence in the handover, no code; the review records it. |
+| C6-1 | Partly: the account `title` names the level (test). No narrow-width CSS: the review gives no rule it could verify, and no browser was used; left for the live proof. |
+| V-1 | Partly. Client (`pc-policy.js`) and validator (`validate_privilege.rb`, now stripped) agree: a grant with no usable `pc` is skipped; test added. The server copy `CaptureModel.session_grant_pc` is in `lib/` (the server fixer's files) and still returns a blank `pc`; it needs the same skip. No shared fixture. |
+| G-1 | Fixed: the Mermaid id of `admin@<pc>` gets `_` appended until free; test with a room called `admin_at_desk_pc`. |
+| G-2 | `test_access_networks` graph regenerated and committed: its diff holds no `admin` line and is the generator drift the review describes (four `lock_*` sign-in/PIN nodes, `pivot_*` nodes, `exposes` edges, implant labels). `m01_first_contact` regenerated too (two task labels) but NOT committed: the brief forbids editing campaign missions; the files are left as committed. |
+| T-1 | Done with the tests above. |
+| T-2 | The `needs_console` fallback line is tested. Declined: the schema-closed, top-level `npcs`/`phoneNPCs` and same-account validator cases (not a one-place change), the move of the container test. |
