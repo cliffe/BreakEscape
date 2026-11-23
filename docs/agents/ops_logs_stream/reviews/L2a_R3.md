@@ -291,3 +291,36 @@ pin that nested readers are reached (plan section 9 exists for exactly the deskt
   and the door test are confirmed by reading. `bin/ops-golden-compare` was not run.
 - Merge readiness was read from diffs against the base; no trial merge was made (it would write objects).
 - No game was played.
+
+## Added by the orchestrator from the playtest and live proof (2026-11-23)
+
+The Haiku run of `scenarios/test_ops_logs/PLAYTEST.md` passed 13 of 13 beats (game 23, port
+3014; terminals opened by real interaction; viewer controls by real clicks; 9 `/log_rows`
+GETs, all 200, three `unchanged`; `verify-run --ops-log` OK; leak check clean). Results and
+screenshots:
+`/tmp/claude-1002/-home-deploy-Hacktivity/bddb8e5b-5baf-4f12-89a2-9673325353c9/scratchpad/l2a-playtest/`
+(`RESULTS.md`). The orchestrator looked at `beat09-door-log-open.png`,
+`beat11c-after-refresh-new-row.png` and `beat-phone-390x844-signin-log.png`. At 1400 x 1000
+the viewer is clean: named doors, counts (`FAIL x2`, `OK x2`), the new row after REFRESH, no
+row marked. Items:
+
+- **P1 (minor, client, CSS).** At phone width (390 x 844, screenshot
+  `beat-phone-390x844-signin-log.png`) the DETAIL column is gone (0 px), headers are clipped
+  ("IDENTIT", "LOCATIOI", "RESUL"), and words break mid-word ("SIGN_ IN", "SESSI ON"). No
+  column may vanish and no word may break mid-word: at narrow widths give the columns
+  sensible minimum widths and let the table scroll sideways inside its frame, or stack each
+  row as a small card; pick the one closest to how other minigames in this project handle
+  narrow screens.
+- **P2 (minor, check against the plan).** In the sign-in log the lock and the session end
+  both read `SESSION` / `OK` with DETAIL `-` (screenshot `beat11c-after-refresh-new-row.png`,
+  rows 3 and 4), so a reader cannot tell a lock from an end. Read plan 13.8 (lines 1171-1208)
+  for the labels and detail of `session_lock` and `session_end`: if the plan gives them
+  distinct labels or a detail and the code lost it, fix the code; if the plan itself gives
+  both the same label and no detail, change nothing and report it as a question for the user.
+- **P3 (investigate, small).** Beat 10: choosing a value in the EVENT select by keyboard did
+  nothing in the headless run and the script's fallback was used. Check the filter selects
+  are ordinary keyboard-operable selects with a change handler (a node test that dispatches
+  `change`); if they are, record it as a harness limit.
+- **P4 (script).** PLAYTEST: the grant toast wording and the "Signed out" toast differ from
+  what the game shows; the harness has no `waitForMinigame` (the `waitFor` kind `minigame`
+  works). Correct the script's wording.
