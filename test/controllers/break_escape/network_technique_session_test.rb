@@ -107,7 +107,7 @@ module BreakEscape
       grant!
       body = implant('sam_pc')
       assert_response :unprocessable_entity
-      assert_equal 'not_ready', body['reason']
+      assert_equal 'needs_console', body['reason']
       assert_includes state['inventory'].map { |i| i['id'] }, 'kit_badusb', 'the device is still held'
       assert_nil state['footholds']['implant_sam_pc']
       assert_equal 'technique', state['sessions']['sam_pc']['via']
