@@ -278,6 +278,49 @@ test('m8: a later pass re-places the bolt on a sprite whose size changed (a jack
     assert.equal(images.length, 1, 'no second bolt');
 });
 
+// S3 playtest PL6: a room's sprites are made hidden and shown later (revealRoom), and Phaser's
+// `visible` is an accessor on the prototype that setVisible goes through. The bolt made while the
+// sprite was hidden must show when the sprite does, and hide again with it.
+test('PL6: a bolt made while its sprite is hidden shows when the room reveals it (Phaser-like visible accessor)', () => {
+    class PhaserLikeSprite {
+        constructor(base) { Object.assign(this, base); this._visible = true; }
+        get visible() { return this._visible; }
+        set visible(v) { this._visible = v; }
+        setVisible(v) { this.visible = v; return this; }
+    }
+    const pc = new PhaserLikeSprite(sprite('pc1'));
+    pc.setVisible(false);                       // rooms.js makes every sprite hidden
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    marks.syncRoom('lab');                      // the room's sprites are made: the mark goes on, hidden
+    assert.equal(images.length, 1);
+    assert.equal(images[0].visible, false, 'hidden with its sprite while the room is hidden');
+    pc.setVisible(true);                        // revealRoom
+    assert.equal(images[0].visible, true, 'shown when the room reveals the sprite');
+    pc.visible = false;                         // any other path that sets the property
+    assert.equal(images[0].visible, false);
+    pc.setVisible(true);
+    links.footholds.delete('fh1');              // the foothold goes
+    marks.refresh();
+    assert.equal(images[0].destroyed, true);
+    assert.equal(Object.prototype.hasOwnProperty.call(pc, 'visible'), false, 'the wrapper comes off with the mark');
+    assert.equal(pc.visible, true);
+});
+
+test('PL6: a plain data `visible` on a stub sprite keeps its value through mark and unmark', () => {
+    const pc = sprite('pc1');
+    pc.visible = false;
+    setup([pc]);
+    links.footholds.set('fh1', FH('fh1', 'jack', 'jack1'));
+    sessions._replace('pc1', { ...TECH });
+    marks.refresh();
+    assert.equal(images[0].visible, false);
+    pc.visible = true;
+    assert.equal(images[0].visible, true);
+    assert.equal(pc.visible, true);
+});
+
 // S3 client R1 T5: a reload before the server's answer catches up
 test('a reload whose loaded copy has no foothold held yet leaves the PC unmarked until the foothold loads', () => {
     const pc = sprite('pc1');

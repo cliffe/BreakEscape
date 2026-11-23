@@ -92,6 +92,7 @@ export class CompromiseMarks {
             if (!sprite.isHighlighted && typeof sprite.setTint === 'function') sprite.setTint(MARK_TINT);
         }
         entry.bolt = this._makeBolt(sprite);
+        if (entry.bolt) entry.unfollow = this._followVisibility(sprite, entry.bolt);
         this.marks.set(sprite, entry);
     }
 
@@ -103,7 +104,30 @@ export class CompromiseMarks {
             delete sprite.compromiseTint;
             if (!sprite.isHighlighted && typeof sprite.clearTint === 'function') sprite.clearTint();
         }
+        entry.unfollow?.();
         entry.bolt?.destroy?.();
+    }
+
+    /**
+     * Make the bolt show and hide with its sprite. A room's sprites are made hidden and shown later
+     * (revealRoom), a reveal-on-global object is shown by a listener, and so on: all of them go
+     * through the sprite's `visible`, so the property itself is wrapped on the instance (no timer,
+     * no per-frame work). Returns the function that takes the wrapper off again.
+     */
+    _followVisibility(sprite, image) {
+        let proto = Object.getPrototypeOf(sprite);
+        let desc = null;
+        while (proto && !desc) { desc = Object.getOwnPropertyDescriptor(proto, 'visible'); proto = Object.getPrototypeOf(proto); }
+        const own = Object.getOwnPropertyDescriptor(sprite, 'visible');
+        if (own && (own.get || own.set || own.configurable === false)) return () => {};
+        let held = own ? own.value : undefined; // a plain data property stands in for the accessor
+        const get = desc?.get ? () => desc.get.call(sprite) : () => held;
+        const set = (v) => { if (desc?.set) desc.set.call(sprite, v); else held = v; image.visible = v !== false; };
+        Object.defineProperty(sprite, 'visible', { configurable: true, enumerable: true, get, set });
+        return () => {
+            delete sprite.visible;
+            if (!desc && own) sprite.visible = held;
+        };
     }
 
     /** The bolt image at the sprite's top right, one depth above it; null when it cannot be drawn. */
