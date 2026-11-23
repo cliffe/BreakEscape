@@ -189,15 +189,34 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   decided by the plan: scanner rule or server). Items PL1 to PL5 in
   `reviews/S3_PLAYTEST.md` (`d81314cfc`). I looked at the panel and remote-view frame
   screenshots (good); the world mark could not be judged at that zoom.
-- RUNNING in the build tree: playtest follow-up fixer (PL1 leak findings, PL2, PL3 script);
-  small client fixer (the `select` test-state entry, N-C2 double click, N-C1 landing).
-- Next: Haiku mini-run on port 3011: beat 13 as rewritten, beat 19, the phone-width
-  Techniques panel, a CLOSE clip of the marked sprite (higher device scale) and of the bolt on
-  a planted jack, the keyring screen, the pickup toast, then the leak check over all captures;
-  final short delta (fable52L) over: the R2 fix commits, the two follow-up fixers, and the
-  parts R2 did not read; then ff the train tree to `ops-build` and train S2+S3; land; push;
-  merge main into `ops-build` and `ops-logs`; screenshot review page for the user with the
-  open questions; card art; gem bump.
+- S3 since then: PL1 the 14 leak findings were scanner false positives (`1acac5791`); small
+  client items `5d48eb768`, `ba079dcd3` (a world-opened remote view: share close reopens its
+  desktop, sign-in close leaves to the world: my ruling); final delta R3 `eb3e6a772`: READY TO
+  LAND, no blocker or major open or unconfirmed, 8 minors. Second live-proof run found the
+  bolt mark invisible on a held PC (PL6): FIXED `88c926e43` (the bolt follows its sprite's
+  visibility), seen by me in close clips (scratchpad `s3-bolt-fix/`); 776 leak findings were
+  capture files judged out of time order: the tool now refuses that (`220100e9c`); a "Leave
+  it that unplugs" was a tester mistake (PL8). Small delta R4 `0f81dd1c6`: READY TO LAND, 6
+  minors. Old-scenario check (`test_access_networks` P1 to P4 on this branch, Sonnet): no
+  regression, 0 console errors (scratchpad `s3-old-scenario-check/`). Phone width: the Use
+  button is cut off at the bottom and the message after Use lands below the fold (minor).
+- **S2 + S3 ARE READY TO TRAIN.** Waiting only for the train tree (L2b's train is running in
+  it). Then: in the train tree `git checkout ops-core && git merge --ff-only ops-build`; run
+  the check (node 22 on PATH, the PLAYWRIGHT path); if only the 3 baseline JS files fail and
+  the tree is clean, merge `ops-core` into main with a message naming N14 and N15, push,
+  merge main into `ops-build` and `ops-logs`.
+- POST-LANDING TIDY (one Sonnet pass per group, then a Sonnet delta; none blocks landing):
+  client: the bolt does not fade with its sprite behind a wall (R4-1), `v !== false` vs
+  truthiness (R4-2), three rarer landings of a world-opened remote view (R3-2), phone width
+  (scroll Use and the message into view); scanner: shared host label must fail closed
+  (R3-1), untested rules (R3-6), an unswept-block structural guard (R3-7), the file-order
+  guard's two gaps (R4-5), other-game files (R4-6); tests: weak lines in
+  `ops_access_scenario_test.rb` (R3-5), an S3 real-run scanner test (R3-4), the plan-named
+  graph test and node-id fold (R3-8), marks tests (R4-3), widen `ops-unchanged-validator` to
+  hash the rendered `.md`/`.html` graph files (needs a deliberate re-record); docs: stale
+  paragraphs (R3-9), `HANDOVER_core_13b.md`; N-M1 (the log reader shows an ops row's detail as
+  `service: service`) to the log stream; the test_ops_access script's beat 19 should name
+  PRE-EXISTING network scenarios, not this build's own.
 - Open questions for the user (collect on the review page): F4 outage (keyboard desktop
   served, no-route folders refused); a validator warning for room text naming a discovery
   host (proposed, not built); the recorder tag in `.claude/skills/playtest-scenario` (needs
