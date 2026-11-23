@@ -2,7 +2,7 @@
 // Edit-list lint. Usage: lint-edit.mjs <edit.json> [--final] [--takes-dir DIR]
 // Errors stop the render. --final turns placeholder shots, missing sources and unreviewed spoiler fields into errors.
 // Shot types: card, gameplay, title (first shot only), cta, ca_open, ca_close (theme "ca" only). Joins: cut | glitch | blur | dissolve (glitch/blur/dissolve only next to a card or the title; 'card' follows effects.cardJoin).
-import fs from 'node:fs'; import path from 'node:path';
+import fs from 'node:fs'; import path from 'node:path'; import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { takesDirFor } from './mission.mjs';
 import { loadEdit } from './load-edit.mjs';
@@ -118,6 +118,12 @@ tl.shots.forEach((s, i) => {
         if ((s.body || []).some((b) => typeof b !== 'string' || b.length > 60)) W(id, 'chapter card: bullet lines of more than 60 characters will wrap on 9:16');
         if (s.text?.[0] && String(typeof s.text[0] === 'string' ? s.text[0] : s.text[0].text).length > 28) W(id, 'chapter card: heading over 28 characters');
         if (s.tool || s.tab || s.seat) E(id, 'chapter card sets its own tab: no tool, tab or seat');
+        if (s.reveal != null) {
+          const st = s.reveal.start ?? 1.2, ea = s.reveal.each ?? 2, n = (s.body || []).length;
+          if (!(st >= 0) || !(ea > 0)) E(id, 'chapter card: reveal.start must be >= 0 and reveal.each > 0 (seconds)');
+          else if (n && s.duration != null && st + (n - 1) * ea + 1.5 > s.duration) E(id, `chapter card: the last bullet shows at ${(st + (n - 1) * ea).toFixed(1)} s and needs 1.5 s on screen; duration is ${s.duration} s`);
+          if (ea > 0 && ea < 1.5) W(id, 'chapter card: reveal.each under 1.5 s is too quick to read a sentence');
+        }
       } else {
       if ((s.text || []).length > 2) W(id, 'ca card: more than two GNF lines');
       if ((s.body || []).length > 3) W(id, 'ca card: more than three VT323 lines');
@@ -150,6 +156,31 @@ tl.shots.forEach((s, i) => {
       if (m.from != null && m.to != null && !(m.to > m.from)) E(id, `masks[${mi}]: to must be > from`);
       if (m.rows != null && !(Number.isInteger(m.rows) && m.rows >= 1 && m.rows <= 12)) E(id, `masks[${mi}].rows must be an integer 1-12`);
     }
+    // insets: a magnified copy of a source rectangle (small game UI such as the influence meter), drawn at a fixed output position per aspect
+    if (s.insets != null) {
+      if (!Array.isArray(s.insets)) E(id, 'insets must be an array');
+      else s.insets.forEach((ins, ii) => {
+        const tag = `insets[${ii}]`; const [sw, sh] = edit.source_size || [1920, 1080];
+        const sr = ins?.src; const num = (v) => typeof v === 'number' && Number.isFinite(v);
+        if (!sr || ![sr.x, sr.y, sr.w, sr.h].every(num) || !(sr.w > 0 && sr.h > 0)) { E(id, `${tag}.src needs numeric x, y and w, h > 0 (source pixels)`); return; }
+        if (sr.x < 0 || sr.y < 0 || sr.x + sr.w > sw || sr.y + sr.h > sh) E(id, `${tag}.src (${sr.x},${sr.y} ${sr.w}x${sr.h}) is not inside the ${sw}x${sh} take frame`);
+        if (ins.from != null && !num(ins.from)) E(id, `${tag}.from must be a number (shot seconds)`);
+        if (ins.to != null && !num(ins.to)) E(id, `${tag}.to must be a number (shot seconds)`);
+        if (num(ins.from) && num(ins.to) && !(ins.to > ins.from)) E(id, `${tag}: to must be > from`);
+        if (num(ins.from) && (ins.from < 0 || ins.from >= s.duration)) E(id, `${tag}.from ${ins.from} s is outside the shot (0-${s.duration} s)`);
+        if (num(ins.to) && ins.to > s.duration + 1e-6) W(id, `${tag}.to ${ins.to} s is past the end of the shot (${s.duration} s)`);
+        if (ins.label != null && (typeof ins.label !== 'string' || !ins.label || ins.label.length > 20 || ins.label !== ins.label.toUpperCase())) E(id, `${tag}.label must be an upper-case string of at most 20 characters`);
+        if (!ins.at || typeof ins.at !== 'object' || !Object.keys(ins.at).length) { E(id, `${tag}.at needs an entry per aspect ("16:9", "9:16", "1:1")`); return; }
+        for (const [a, p] of Object.entries(ins.at)) {
+          if (!ASPECTS[a]) { E(id, `${tag}.at: unknown aspect ${a}`); continue; }
+          if (!p || ![p.x, p.y, p.scale].every(num)) { E(id, `${tag}.at["${a}"] needs numeric x, y, scale`); continue; }
+          if (p.scale < 1.5 || p.scale > 4) E(id, `${tag}.at["${a}"].scale must be 1.5-4, got ${p.scale}`);
+          const [ow, oh] = (edit.aspects || ASPECTS)[a]; const bw = Math.round(sr.w * p.scale), bh = Math.round(sr.h * p.scale);
+          if (p.x < 0 || p.y < 0 || p.x + bw > ow || p.y + bh > oh) E(id, `${tag}.at["${a}"]: the inset (${p.x},${p.y} ${bw}x${bh}) is not inside the ${ow}x${oh} output frame`);
+          else if (ins.label) { const u = Math.max(1, Math.round(Math.min(ow, oh) / 540)), tf = Math.max(16, Math.round((Math.min(ow, oh) * 0.022) / 8) * 8), ts = Math.max(8, Math.round((tf * 0.67) / 8) * 8); const th = ts + 2 * Math.round(ts * 0.5) + 4 * u; if (p.y < th) W(id, `${tag}.at["${a}"]: y ${p.y} leaves no room for the label tab above (needs ${th} px)`); }
+        }
+      });
+    }
     if (s.dialogue) {
       if (!s.audio?.dialogue || !s.audio.duck_music) E(id, 'dialogue shot needs audio.dialogue and audio.duck_music true');
       if (!s.lines?.length) E(id, 'dialogue shot needs lines[] (for the .srt)');
@@ -174,7 +205,7 @@ if (ca) {
   const shots = tl.shots;
   const opens = shots.filter((s) => s.type === 'ca_open'), closes = shots.filter((s) => s.type === 'ca_close');
   if (opens.length !== 1) E('edit', `a CA edit needs exactly one ca_open shot (the ca-open preset), found ${opens.length}`);
-  else if (opens[0].index > 1 || (opens[0].index === 1 && !(shots[0].type === 'gameplay' && shots[0].duration <= 4))) E(opens[0].id, 'ca_open must be the first shot, or the second after one cold-open gameplay shot of at most 4 s');
+  else if (opens[0].index > 1 || (opens[0].index === 1 && !(shots[0].type === 'gameplay' && shots[0].duration <= 5))) E(opens[0].id, 'ca_open must be the first shot, or the second after one cold-open gameplay shot of at most 5 s (one voiced line)');
   if (closes.length !== 1) E('edit', `a CA edit needs exactly one ca_close shot (the ca-close preset), found ${closes.length}`);
   else if (closes[0].index !== shots.length - 1) E(closes[0].id, 'ca_close must be the last shot');
   rawShots.forEach((r, i) => {
@@ -216,6 +247,48 @@ if (ca) {
     const texts = [...(s.text || []).map((l) => (typeof l === 'string' ? l : l.text)), ...(s.body || []), s.tool, s.tab, s.seat?.chip, ...(s.ca ? [s.ca.title, s.ca.company, s.ca.name, s.ca.tagline] : [])].filter((t) => typeof t === 'string');
     for (const t of texts) { if (bannedWords.test(t)) E(s.id, `banned word in card text: "${t}"`); if (us.test(t)) W(s.id, `US spelling in card text (UK English): "${t}"`); }
   });
+}
+// Voice-over lane: edit.vo = [{ id, start, end, text, file?, onCard?, gain_db? }] in global seconds; every cue is burned as a caption and, with a file, mixed in.
+if (edit.vo != null) {
+  if (!Array.isArray(edit.vo)) E('vo', 'vo must be an array of cues');
+  else {
+    const vids = new Set(); const okCues = []; const num = (v) => typeof v === 'number' && Number.isFinite(v);
+    edit.vo.forEach((c, i) => {
+      const id = `vo ${c?.id ?? `#${i}`}`;
+      if (!c?.id) E(id, 'missing id'); else if (vids.has(c.id)) E(id, 'duplicate id'); vids.add(c?.id);
+      if (!num(c?.start) || !num(c?.end)) { E(id, 'start and end must be numbers (global seconds)'); return; }
+      if (typeof c.text !== 'string' || !c.text.trim()) { E(id, 'text missing'); return; }
+      if (c.start < 0 || c.end > total + 1e-6) E(id, `cue ${c.start}-${c.end} s is outside the trailer (0-${total.toFixed(2)} s)`);
+      if (!(c.start < c.end)) { E(id, 'start must be < end'); return; }
+      if (c.onCard != null && c.onCard !== 'hide') E(id, `onCard must be "hide" (or left out), got ${JSON.stringify(c.onCard)}`);
+      if (c.gain_db != null && !num(c.gain_db)) E(id, 'gain_db must be a number');
+      if (c.text.length > 90) W(id, `text is ${c.text.length} characters (over 90): too long for a plate on 9:16`);
+      const words = c.text.trim().split(/\s+/).length, wps = words / (c.end - c.start);
+      if (wps > 3.0) W(id, `${words} words in ${(c.end - c.start).toFixed(2)} s is ${wps.toFixed(1)} words/s (over 3.0): too fast to say`);
+      let fileOk = false;
+      if (c.file != null) {
+        const f = typeof c.file === 'string' ? (path.isAbsolute(c.file) ? c.file : path.join(takesDir || '', c.file)) : null;
+        if (!f || !fs.existsSync(f)) (final ? E : W)(id, `file not found (${c.file}): not voiced yet (caption only)`);
+        else {
+          fileOk = true;
+          const d = Number(spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f], { encoding: 'utf8' }).stdout.trim());
+          if (d > 0 && d > c.end - c.start + 0.3) W(id, `audio runs ${d.toFixed(2)} s but the cue is ${(c.end - c.start).toFixed(2)} s: the caption goes before the voice stops`);
+        }
+      } else W(id, 'not voiced yet (caption only)');
+      okCues.push(c);
+    });
+    const sorted = [...okCues].sort((a, b) => a.start - b.start);
+    for (let i = 1; i < sorted.length; i++) if (sorted[i].start < sorted[i - 1].end - 1e-6) E(`vo ${sorted[i].id}`, `overlaps vo ${sorted[i - 1].id} (${sorted[i - 1].start}-${sorted[i - 1].end} s): one narrator, one plate at a time`);
+    // narrator talking over a character: any dialogue line overlapped by more than 0.3 s
+    for (const c of okCues) for (const s of tl.shots) {
+      if (!s.dialogue || s.type !== 'gameplay') continue;
+      for (const l of s.lines || []) {
+        const t0 = s.startSec + Math.max(-(s.audio?.pre ?? 0), l.start), t1 = s.startSec + Math.min(s.duration + (s.audio?.post ?? 0), l.end);
+        const ov = Math.min(c.end, t1) - Math.max(c.start, t0);
+        if (ov > 0.3) W(`vo ${c.id}`, `overlaps ${s.id}'s dialogue line by ${ov.toFixed(2)} s (narrator talking over a character)`);
+      }
+    }
+  }
 }
 if (tl.shots.length && !isCardLike(tl.shots[0]) && !ca) W('edit', 'first shot is not a card or title');
 if (placeholders.length) { console.log(`PLACEHOLDERS (${placeholders.length}):`); for (const p of placeholders) console.log('  -', p); }

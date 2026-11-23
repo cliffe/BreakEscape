@@ -59,8 +59,8 @@ export const CaOpen: React.FC<{ shot: any; w: number; h: number; aspect: string;
       <div style={{ position: 'absolute', ...atk, background: CA.attack, backgroundImage: grid('rgba(0,0,0,0.12)') }} />
       <div style={{ position: 'absolute', ...def, background: CA.defend, backgroundImage: grid('rgba(0,0,0,0.12)') }} />
       <div style={{ position: 'absolute', ...seam, background: CA.line }} />
-      {fill >= block ? <CaTab label="ATTACKER" bg={CA.attack} size={tf} u={u} style={tabPos('a')} /> : null}
-      {fill >= block ? <CaTab label="DEFENDER" bg={CA.defend} size={tf} u={u} style={tabPos('d')} /> : null}
+      {fill >= block ? <CaTab label={shot.seat_labels?.attack ?? 'ATTACKER'} bg={CA.attack} size={tf} u={u} style={tabPos('a')} /> : null}
+      {fill >= block ? <CaTab label={shot.seat_labels?.defend ?? 'DEFENDER'} bg={CA.defend} size={tf} u={u} style={tabPos('d')} /> : null}
       {cp > 0 ? (
         <div style={{ position: 'absolute', left: cardX, top: cardY, width: cardW, height: cardH, boxSizing: 'border-box', background: CA.surface, border: `${2 * u}px solid ${CA.ink}`, clipPath: cardClip, WebkitClipPath: cardClip }}>
           <div style={{ position: 'absolute', inset: 3 * u, border: `${2 * u}px solid ${CA.line}`, boxSizing: 'border-box' }} />

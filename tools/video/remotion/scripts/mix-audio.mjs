@@ -28,6 +28,14 @@ const duckWins = [];
 // s.audio.pre (seconds): J-cut, the shot's audio (and its duck window) begins that long before its picture.
 // s.audio.post (seconds): L-cut, the shot's audio (and its duck window) runs that long past its last frame. Overlapping duck windows merge (one dip, never two multiplied).
 for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; const w0 = s.startSec - (s.audio.pre ?? 0), w1 = s.endSec + (s.audio.post ?? 0); if (l && w0 <= l[1] + 1e-6) l[1] = Math.max(l[1], w1); else duckWins.push([w0, w1]); }
+// voice-over: a voiced cue (edit.vo[].file) plays at its start and ducks the music AND every take's own audio by edit.duck.db for its length
+const voCues = (edit.vo || []).filter((c) => c.file && c.end > c.start).map((c) => ({ ...c, path: path.isAbsolute(c.file) ? c.file : path.join(takesDir, c.file) })).filter((c) => { const ok = fs.existsSync(c.path); if (!ok) console.error(`mix: vo ${c.id}: file not found (${c.path}), caption only`); return ok; });
+const dipOf = ([t0, t1]) => `(1-${(1 - duckK).toFixed(5)}*min(clip((t-${(t0 - att).toFixed(4)})/${att},0,1),clip((${(t1 + rel).toFixed(4)}-t)/${rel},0,1)))`;
+const voWins = []; for (const c of [...voCues].sort((x, y) => x.start - y.start)) { const l = voWins[voWins.length - 1]; if (l && c.start <= l[1] + 1e-6) l[1] = Math.max(l[1], c.end); else voWins.push([c.start, c.end]); }
+const voDuck = voWins.length ? voWins.map(dipOf).join('*') : null;
+for (const w of voWins) duckWins.push(w);
+duckWins.sort((x, y) => x[0] - y[0]); // overlapping windows multiply; merge them so the music dips once
+for (let i = 1; i < duckWins.length;) { if (duckWins[i][0] <= duckWins[i - 1][1] + 1e-6) { duckWins[i - 1][1] = Math.max(duckWins[i - 1][1], duckWins[i][1]); duckWins.splice(i, 1); } else i++; }
 const dips = duckWins.map(([t0, t1]) => {
   return `(1-${(1 - duckK).toFixed(5)}*min(clip((t-${(t0 - att).toFixed(4)})/${att},0,1),clip((${(t1 + rel).toFixed(4)}-t)/${rel},0,1)))`;
 });
@@ -52,8 +60,13 @@ for (const s of tl.shots) {
   const post = isClipAudio ? 0 : (s.audio?.post ?? 0); // L-cut tail (seconds of audio after the picture)
   inputs.push('-ss', String(Math.max(0, src0.in - pre)), '-t', String(s.duration + pre + post), '-i', f);
   const d = s.duration + pre + post, ms = Math.round((s.startSec - pre) * 1000);
-  parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${gdb}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}[t${n}]`);
+  parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${gdb}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}${voDuck ? `,volume='${voDuck}':eval=frame` : ''}[t${n}]`);
   mixIn.push(`[t${n}]`); used.push(s.id); n++;
+}
+for (const c of voCues) {
+  inputs.push('-i', c.path); const ms = Math.round(c.start * 1000);
+  parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,volume=${c.gain_db ?? 0}dB,adelay=${ms}|${ms}[t${n}]`);
+  mixIn.push(`[t${n}]`); used.push(`vo:${c.id}`); n++;
 }
 parts.push(`${mixIn.join('')}amix=inputs=${mixIn.length}:normalize=0:duration=longest,atrim=0:${total},alimiter=limit=0.95[out]`);
 const script = parts.join(';\n');

@@ -18,12 +18,15 @@ import { CaChapter } from './components/CaChapter';
 import { CaSeats, seatOf } from './components/CaSeats';
 import { SeamWipe } from './components/SeamWipe';
 import { FlipTransition } from './components/FlipTransition';
+import { CaVo } from './components/CaVo';
 
 export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<string, boolean> }> = ({ edit, aspect, available }) => {
   loadFonts();
   const frame = useCurrentFrame();
   const { width: w, height: h, fps } = useVideoConfig();
-  const tl = buildTimeline(edit);
+  const tl0 = buildTimeline(edit);
+  // edit-level seat_labels {attack, defend} override the ATTACKER / DEFENDER tab text on every Cyber Aware component (absent: unchanged)
+  const tl = edit.seat_labels ? { ...tl0, shots: tl0.shots.map((s: any) => ({ ...s, seat_labels: edit.seat_labels })) } : tl0;
   const source: [number, number] = edit.source_size || [1920, 1080];
 
   const shots = tl.shots.map((s: any) => (
@@ -66,7 +69,7 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
       </>
     );
   } else if (fx?.type === 'blur') out = <BlurStreak intensity={fx.intensity} frame={frame} w={w} h={h} side={fx.side as any}>{shots}</BlurStreak>;
-  return <AbsoluteFill style={{ background: '#000' }}>{out}</AbsoluteFill>;
+  return <AbsoluteFill style={{ background: '#000' }}>{out}{edit.vo?.length ? <CaVo edit={edit} tl={tl} frame={frame} w={w} h={h} aspect={aspect} fps={fps} /> : null}</AbsoluteFill>;
 };
 
 const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source }) => {
