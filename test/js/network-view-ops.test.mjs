@@ -555,3 +555,37 @@ test('m7: a block whose route is down never offers Sweep, even with swept false'
     assert.equal('sweep' in (view().getTestState().networks[0] || {}), false);
     assert.equal(await view().perform({ action: 'sweep', target: 'far_net' }).then(r => r.sent), true, 'perform itself is the server\'s to refuse');
 });
+
+test('R2 N1: a scan\'s own refetch dropped by a later refused press is asked for again at once', async () => {
+    const OTHER = { id: 'print02', kind: 'device', name: 'Hall printer', sprite: 'pnw_portable_printer1' };
+    setup(SWEPT([PRINTER, OTHER]));
+    await open();
+    const hold = deferred();
+    const realNetwork = window.ApiClient.network;
+    let first = true;
+    window.ApiClient.network = async (id) => {
+        if (!first) return realNetwork(id);
+        first = false;
+        calls.push(['network', id]);
+        const snapshot = JSON.parse(JSON.stringify(answer));
+        await hold.p;
+        return snapshot;
+    };
+    const before = calls.filter(c => c[0] === 'network').length;
+    scanImpl = async (fid, params) => {
+        if (params.hostId === 'print01') {
+            answer.footholds[0] = { ...answer.footholds[0], ...SWEPT([SWEPT_PRINTER, OTHER]) };
+            return { success: true, host: SWEPT_PRINTER };
+        }
+        throw Object.assign(new Error('x'), { status: 422, body: { success: false, reason: 'not_needed' } });
+    };
+    const a = view().perform({ action: 'scan', target: 'print01' });
+    await settle(30);
+    assert.equal(calls.filter(c => c[0] === 'network').length - before, 1, 'the scan\'s refetch is out');
+    const b = view().perform({ action: 'scan', target: 'print02' });
+    await settle(30);
+    hold.resolve();
+    await a; await b;
+    await settle();
+    assert.equal(calls.filter(c => c[0] === 'network').length - before, 2, 'a fresh refetch followed the dropped one');
+});

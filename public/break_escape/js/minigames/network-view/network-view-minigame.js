@@ -573,7 +573,8 @@ export class NetworkViewMinigame extends MinigameScene {
             }
             // A move was sent or answered while this was on its way: it may predate the move, so
             // it must not overwrite what the move drew. The next refetch brings the true view
-            if (epoch !== this._opsEpoch) return null;
+            if (epoch !== this._opsEpoch) { this._refetchDropped = true; return null; }
+            this._refetchDropped = false;
             if (!answer.ok) {
                 // A failed answer counts as an idle one, so the gap widens while the link is
                 // down or erroring (R2 m2)
@@ -1110,7 +1111,12 @@ export class NetworkViewMinigame extends MinigameScene {
             }
             return;
         }
-        if (!answer || answer.success === false) return;
+        if (!answer || answer.success === false) {
+            // A refusal ends the move with no refetch of its own: if it made an earlier move's
+            // refetch drop (or is about to drop) its answer, ask again now, not at the next tick (R2 N1)
+            if ((action === 'sweep' || action === 'scan') && (this._refetching || this._refetchDropped)) await this.refetchAfterOps();
+            return;
+        }
         if (action === 'sweep') this._emit('network_swept', { networkId: target }, target);
         else if (action === 'scan') this._emit('network_host_scanned', { hostId: target }, target);
         // The answer holds what the click needs; the rest of what the move changed arrives by the
