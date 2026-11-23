@@ -3293,6 +3293,50 @@ module BreakEscape
       scenario_room_npc(session['id'])
     end
 
+    # The level of the session held at a PC, 'user' or 'admin', or nil when it holds nothing
+    # right now (OPS_PRIVILEGE_ACCOUNTS_PLAN S5a). Worked out on every read and never stored,
+    # except that a technique record carries the `access` the core's step up wrote. The steps
+    # run in this order: a relay record is `via: "credential"`, so step 5 comes before step 7.
+    def session_access(pc_id)
+      session = access_sessions[pc_id.to_s]
+      return nil unless session.is_a?(Hash)
+      return nil if credential_session_expired?(session)
+
+      npc = session_identity(pc_id)
+      return nil unless npc
+      return nil unless session_route_up?(pc_id)
+      return 'user' if relay_session?(session) || session['via'] == 'claim'
+
+      case session['via']
+      when 'technique'
+        session['access'] == 'admin' ? 'admin' : 'user'
+      when 'password', 'credential'
+        pc = find_login_pc(pc_id)&.dig(:object)
+        pc && account_admin_at?(npc, pc) ? 'admin' : 'user'
+      else
+        'user'
+      end
+    end
+
+    # The account is marked `creds.admin: true` (the literal true, nothing truthy) and the PC's
+    # access list admits it.
+    def account_admin_at?(npc, pc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      creds.is_a?(Hash) && creds['admin'] == true && pc_admits_account?(pc, npc)
+    end
+
+    def session_admin?(pc_id)
+      session_access(pc_id) == 'admin'
+    end
+
+    # An admin session at this PC's own keyboard: no foothold, not a relay or `from` session.
+    def keyboard_admin?(pc_id)
+      return false unless session_admin?(pc_id)
+
+      session = access_sessions[pc_id.to_s]
+      session['foothold'].blank? && !remote_route_session?(session)
+    end
+
     # Whether the held session at a PC is locked (UI slice 6), read from the server's own
     # record. Used by the admit predicates that test for a held session Hash directly rather
     # than through session_identity (the login_pc scope, a mapped share).
@@ -4666,11 +4710,10 @@ module BreakEscape
       answer.merge('remote' => true, 'footholdId' => foothold, 'host' => pc ? host_label(pc) : pc_id.to_s)
     end
 
-    # The level the client is told for a session at a PC (OPS_CORE_PLAN.md 0): 'admin' or 'user'.
-    # Reads the stored key for now; S5a points it at session_access(pc_id).
+    # The level the client is told for a session at a PC (OPS_CORE_PLAN.md 0): 'admin', 'user',
+    # or nil when the session holds nothing now. Callers only ever test for 'admin'.
     def client_access_level(pc_id)
-      session = access_sessions[pc_id.to_s]
-      session.is_a?(Hash) && session['access'] == 'admin' ? 'admin' : 'user'
+      session_access(pc_id)
     end
 
     # Each sign-in PC in a filtered room carries its account tiles (5.3), read from the
