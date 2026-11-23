@@ -219,16 +219,44 @@ class AccessLeakScanner
 
   # The capture files of one game are one log, read in the order given, so they must be given oldest
   # first. Every recorded row carries its time `t` (ISO 8601, so it sorts as text). `files` is
-  # [[label, rows]]; the answer is nil when each file's first timed row is no earlier than the
-  # previous file's, otherwise a sentence naming the first pair out of order. A shell glob puts
+  # [[label, rows]]; the answer is nil when each file's first timed row is no earlier than the last timed row of the
+  # previous timed file, otherwise a sentence naming the first pair out of order. A shell glob puts
   # responses-N-2.jsonl before responses-N.jsonl, and a log read that way reports every earlier
   # sweep, scan and check as a leak (ops core S3 PL7: 776 false findings).
+  #
+  # Each file's first time is compared with the LAST time of the previous TIMED file, so an untimed
+  # file between two timed ones hides nothing, and two captures that overlap in time (two tabs
+  # recording at once, which one pass over each file in turn cannot read in time order) are refused too:
+  # merge them into one file sorted by `n` and `t` first.
   def self.file_order_problem(files)
-    starts = files.map { |label, rows| [label, Array(rows).filter_map { |r| r['t'] if r.is_a?(Hash) && r['t'].is_a?(String) }.first] }
-    starts.each_cons(2) do |(prev_label, prev_t), (label, t)|
-      next if prev_t.nil? || t.nil? || t >= prev_t
+    prev = nil # [label, last time] of the last timed file
+    files.each do |label, rows|
+      times = Array(rows).filter_map { |r| r['t'] if r.is_a?(Hash) && r['t'].is_a?(String) }
+      next if times.empty?
 
-      return "#{label} starts at #{t}, before #{prev_label} (#{prev_t}): give the capture files oldest first"
+      if prev && times.first < prev[1]
+        kind = times.first < prev[2] ? 'before' : 'inside the span of'
+        return "#{label} starts at #{times.first}, #{kind} #{prev[0]} (#{prev[2]} to #{prev[1]}): give the capture files " \
+               'oldest first, one after another (captures that overlap in time must be merged into one file first)'
+      end
+      prev = [label, times.last, times.first]
+    end
+    nil
+  end
+
+  # The scanner judges every row against ONE game's scenario. A row whose path names /games/<n>/ for a
+  # different n comes from another game (a capture file from another run): the sentence names the first
+  # such file, or nil. Rows carry the game id in their path (the recorder stores the request path).
+  def self.game_mismatch_problem(game_id, files)
+    files.each do |label, rows|
+      Array(rows).each do |row|
+        next unless row.is_a?(Hash) && row['path'].is_a?(String)
+
+        found = row['path'][%r{/games/(\d+)(?:/|\?|\z)}, 1]
+        next if found.nil? || found == game_id.to_s
+
+        return "#{label} holds rows for game #{found}, not game #{game_id}: one run judges one game's capture files"
+      end
     end
     nil
   end
@@ -268,6 +296,7 @@ class AccessLeakScanner
     @ops_strings = {}        # string => [{ tag:, net:, host:, owner:, token: }] (ops core S1, collect_ops_secrets)
     @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>", "check:<host>.<service>", "confirm:<finding>"
     @ops_host_ids = Set.new  # every host id of the scenario (the structural services rule)
+    @ops_discovery_ids = Set.new # ids of the discovery networks (the unswept-block rule)
     @ops_finding_ids = Set.new # every finding id (host.service.id) of the scenario (the structural finding rules)
     @ops_gating_globals = Set.new # every global named in a `fixedIf` or `needs.global`, public or not
     @ops_techniques = {}     # technique id => registry entry (S3, the card registry)
@@ -420,6 +449,8 @@ class AccessLeakScanner
       scan_ops_strings(body, ctx, add)
       scan_ops_global_keys(body, add)
       scan_ops_services(body, add)
+      scan_ops_room_keys(body, ctx, add)
+      scan_ops_unswept_blocks(body, add)
       scan_ops_finding_rows(body, add)
       scan_ops_never_keys(body, add)
       scan_ops_techniques(body, ctx, add)
@@ -863,6 +894,7 @@ class AccessLeakScanner
       network: path.end_with?('/network') || path.include?('/network/'),
       any_container: path.include?('/container/'),
       scenario: method == 'GET' && path.end_with?('/scenario'),
+      room: method == 'GET' && path.match?(%r{/room/[^/]+\z}),
       login_accounts: method == 'GET' && path.end_with?('/login_accounts'),
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
@@ -1904,6 +1936,7 @@ class AccessLeakScanner
     service_words = ops_service_words(nm)
     @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set
     @ops_host_by_label = ops_host_labels(nm)
+    @ops_discovery_ids = nm.networks(@data).keys.select { |net_id| nm.discovery?(@data, net_id) }.map(&:to_s).to_set
     collect_ops_findings(nm, usable)
     collect_ops_techniques(nm, usable)
     nm.networks(@data).each do |net_id, net|
@@ -2195,6 +2228,42 @@ class AccessLeakScanner
     end
   end
 
+  # R3-7 (a): section 7, `hosts` and `services` are never in the bootstrap or room data. A top-level `hosts` key
+  # and a `services` key anywhere in a GET /scenario or GET /room answer are a leak by name (the server deletes
+  # them: WITHHELD_SCENARIO_KEYS and WITHHELD_OBJECT_FIELDS).
+  def scan_ops_room_keys(body, ctx, add)
+    return unless (ctx[:scenario] || ctx[:room]) && body.is_a?(Hash)
+
+    add.call('ops_string', 'ops:key:hosts', '$.hosts') if body.key?('hosts')
+    each_key_path(body) do |key, json_path|
+      add.call('ops_string', 'ops:key:services', safe_path(json_path)) if key.to_s == 'services'
+    end
+  end
+
+  # R3-7 (b): a discovery network lists no host and carries no `ops` key until it is swept (section 5.2; the
+  # server's network_blocks gives it `hosts: []`, `swept: false`, and only the PCs the player holds a session on).
+  # In any answer, a block (a hash with the id of a discovery network and a `hosts` list) with no `sweep:<id>`
+  # earned may carry: no `ops` key, no `services` or nested `hosts` key in a row, and only rows of PCs held
+  # (`held:<id>`), whatever their strings are.
+  def scan_ops_unswept_blocks(body, add)
+    return if @ops_discovery_ids.empty?
+
+    ops_each_hash(body) do |block|
+      net = block['id']
+      next unless net.is_a?(String) && @ops_discovery_ids.include?(net) && block['hosts'].is_a?(Array)
+      next if @ops_earned.include?("sweep:#{net}")
+
+      owner = "ops:network:#{net}"
+      add.call('ops_string', owner, '$.ops') if block.key?('ops')
+      block['hosts'].each do |row|
+        next unless row.is_a?(Hash)
+
+        add.call('ops_string', owner, '$.hosts') unless @ops_earned.include?("held:#{row['id']}")
+        add.call('ops_string', owner, '$.hosts.services') if row.key?('services') || row.key?('hosts')
+      end
+    end
+  end
+
   # Keys the plan's section 7 says no answer ever carries, wherever they nest (M2 a). No string test.
   OPS_NEVER_KEYS = %w[fixedIf grants realism weaknesses decoys].freeze
 
@@ -2404,6 +2473,9 @@ class AccessLeakScanner
 
       level = session['access'] == 'admin' ? 'admin' : 'user'
       pool = pool.select { |f| f[:account] == session['npcId'].to_s && f[:host_label] == session['host'] && f[:access] == level }
+      # Fail closed (R3-1): findings on more than one PC fit this answer (two PCs share a host label), and a session
+      # can be granted afresh after a sign-out, so "not granted yet" cannot tell them apart. Credit nothing.
+      return nil if pool.map { |f| f[:host_id] }.uniq.size > 1
     end
     pool = pool.select { |f| ops_unused_confirmed?(f, kind) } if pool.size > 1
     pool.size == 1 ? pool.first : nil
@@ -2522,12 +2594,15 @@ class AccessLeakScanner
     ctx[:ops_technique] ? @ops_answer_pc : nil
   end
 
+  # Host label => the one PC id that carries it. Built over every sign-in object, networked or not, and every
+  # host device, so a label two PCs share (or an off-network PC sharing one with a networked PC) names no PC.
   def ops_host_labels(nm)
     labels = Hash.new { |h, k| h[k] = [] }
-    nm.hosts_on_all(@data).each do |rec|
-      pc = rec[:object]
+    objects = nm.hosts_on_all(@data).map { |rec| [rec[:id], rec[:object]] }
+    objects += nm.room_objects(@data).select { |entry| nm.sign_in_object?(entry[:object]) }.map { |entry| [entry[:object]['id'], entry[:object]] }
+    objects.each do |id, pc|
       label = pc.is_a?(Hash) ? (pc['host'].presence || pc['name']) : nil
-      labels[label] << rec[:id].to_s if label.is_a?(String)
+      labels[label] << id.to_s if label.is_a?(String)
     end
     labels.select { |_, ids| ids.uniq.size == 1 }.transform_values(&:first)
   end
