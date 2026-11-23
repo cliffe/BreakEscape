@@ -149,7 +149,7 @@ test('warning: maxRows below the events a source takes plus its limited places',
 test('warning: more possible save-counter keys than 256', { skip }, () => {
     const s = clean();
     s.logSources = { signins: { title: 'Sign-ins', events: ['tst_signin'], maxRows: 150 } };
-    for (let i = 0; i < 300; i++) s.rooms.lobby.objects.push({ id: `pc_${i}`, type: 'pc', name: `PC ${i}` });
+    for (let i = 0; i < 300; i++) s.rooms.lobby.objects.push({ id: `pc_${i}`, type: 'pc', name: `PC ${i}`, locked: true, lockType: 'login' });
     assertHas(warnings(issues(s)), 'save-counter keys');
 });
 
@@ -160,6 +160,84 @@ test('warning: a declared secret equal to a username, an id or an event code', {
     const code = clean();
     code.rooms.vault.objects.push({ id: 'vault_safe', type: 'safe', locked: true, lockType: 'pin', requires: 'denied' });
     assertHas(warnings(issues(code)), 'equals a username');
+});
+
+// R1 m7: a source with no maxRows has the default 50.
+test('warning: a source with no maxRows is checked against the default 50 (R1 m7)', { skip }, () => {
+    const events = `{
+      ${Array.from({ length: 51 }, (_, i) => `'tst_e_${i}' => { label: 'E', places: [], results: %w[ok] }`).join(',\n')}
+    }`;
+    const s = clean();
+    s.logSources = { many: { title: 'Many', events: ['tst_e_*'] } };
+    assertHas(warnings(issues(s, events)), 'a protected row may be evicted');
+});
+
+// R1 m8: only sign-in PCs count as pc places, a room filter narrows objects and pcs by the holding room,
+// and rooms, objects and places are a union.
+test('warning: limited places are counted by the sign-in PCs and the source\'s own filter (R1 m8)', { skip }, () => {
+    const s = clean();
+    s.logSources = { signins: { title: 'Sign-ins', events: ['tst_signin'], maxRows: 10, where: { rooms: ['vault'] } } };
+    s.rooms.lobby.objects.push(...Array.from({ length: 300 }, (_, i) => ({ id: `lobby_pc_${i}`, type: 'pc', name: 'PC', locked: true, lockType: 'login' })));
+    s.rooms.lobby.objects.push(...Array.from({ length: 300 }, (_, i) => ({ id: `lobby_desk_${i}`, type: 'desk', name: 'Desk' })));
+    s.rooms.vault.objects.push({ id: 'vault_pc', type: 'pc', name: 'Vault PC', locked: true, lockType: 'login' });
+    assert.deepEqual(warnings(issues(s)).filter(w => w.includes('save-counter') || w.includes('protected')), []);
+    s.logSources.signins.where = { rooms: ['vault'], places: ['pc:recep_pc'] };
+    s.logSources.signins.maxRows = 10;
+    assert.deepEqual(warnings(issues(s)).filter(w => w.includes('save-counter')), []);
+    const out = warnings(issues(s)).filter(w => w.includes('protected'));
+    assert.equal(out.length, 0, out.join('\n')); // 1 event + 2 pcs (vault_pc, recep_pc) = 3, under 10
+    s.logSources.signins.maxRows = 10;
+    s.rooms.vault.objects.push(...Array.from({ length: 10 }, (_, i) => ({ id: `vault_pc_${i}`, type: 'pc', name: 'PC', locked: true, lockType: 'login' })));
+    assertHas(warnings(issues(s)), 'protected row'); // 1 + 12 pcs over 10
+});
+
+// R1 m9: the secret-collision warning uses the guard's own secret set.
+test('warning: a card id equal to an rfid lock requires is not a secret collision (R1 m9)', { skip }, () => {
+    const card = clean();
+    card.rooms.vault.objects.push({ id: 'vault_door_lock', type: 'safe', locked: true, lockType: 'rfid', requires: 'lobby' });
+    assert.deepEqual(warnings(issues(card)).filter(w => w.includes('equals a username')), []);
+    for (const [lock, extra] of [['combination', { requires: [12, 'lobby', 5] }], ['cryptex', { requires: 'lobby' }]]) {
+        const s = clean();
+        s.rooms.vault.objects.push({ id: 'vault_safe', type: 'safe', locked: true, lockType: lock, ...(lock === 'combination' ? { requires: 'lobby' } : extra) });
+        assertHas(warnings(issues(s)), 'equals a username');
+    }
+    const npc = clean();
+    npc.npcs = [{ id: 'phone_friend', creds: { username: 'pf', password: 'lobby' } }];
+    assertHas(warnings(issues(npc)), 'equals a username');
+});
+
+// R1 m10: a kind with no lister is not existence-checked.
+test('error: where.places of a kind the validator cannot list is not refused (R1 m10)', { skip }, () => {
+    const kinds = "{ 'door' => {}, 'object' => {}, 'pc' => {}, 'host' => {}, 'network' => {} }";
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      events = ${EVENTS}
+      puts JSON.generate(check_log_rows(JSON.parse(STDIN.read), events: events, kinds: ${kinds}))`;
+    const s = withSource({ where: { places: ['host:db_server', 'network:corp', 'door:nowhere'] } });
+    const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(s), encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr);
+    const out = errors(JSON.parse(r.stdout.trim().split('\n').pop()));
+    assert.equal(out.length, 1, out.join('\n'));
+    assertHas(out, 'door:nowhere');
+});
+
+// R1 m11: author-note keys.
+test('a "_" note key inside logSources is not a source (R1 m11)', { skip }, () => {
+    const s = clean();
+    s.logSources._note = { author: 'a note that looks like a source' };
+    s.logSources._todo = 'text';
+    assert.deepEqual(errors(issues(s)).concat(warnings(issues(s))), []);
+});
+
+// R1 m12: the stored-id check covers the ids a row can hold, not every id in the scenario.
+test('an objective id over 40 characters is not a stored id (R1 m12)', { skip }, () => {
+    const s = clean();
+    s.objectives = [{ aimId: 'a'.repeat(60), title: 'x', tasks: [{ taskId: 't'.repeat(60), title: 'y' }] }];
+    s.startItemsInventory = [{ id: 'weird id'.repeat(8) }];
+    assert.deepEqual(errors(issues(s)), []);
+    const room = clean(); room.rooms.lobby.objects.push({ id: 'k'.repeat(41), type: 'pc', name: 'Long' });
+    assertHas(errors(issues(room)), 'is over 40 characters');
+    const net = clean(); net.networks = { ['n'.repeat(41)]: { name: 'Net' } };
+    assertHas(errors(issues(net)), 'is over 40 characters');
 });
 
 test('the check is hooked into the validator', { skip }, () => {
