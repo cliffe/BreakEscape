@@ -74,7 +74,7 @@ module BreakEscape
       assert_equal 'ok', row['result']
       assert_nil row['as']
       assert_equal({ 'kind' => 'jack', 'id' => 'comms_port' }, row['where'])
-      assert_equal({ 'step' => 1 }, row['detail'], 'a stored-only step, never shown')
+      assert_nil row['detail'], 'the link rows carry no detail'
       assert_equal 1, (row['n'] || 1)
       assert_ops_log_holds_no_secret(Game.find(@game.id))
     end
@@ -141,8 +141,40 @@ module BreakEscape
       plant('comms_port')
       assert_equal %w[net_link_up net_link_down net_link_up], rows.map { |r| r['event'] }
       assert_equal [1, 1, 1], rows.map { |r| r['n'] || 1 }
-      assert_equal 3, rows.map { |r| r.dig('detail', 'step') }.uniq.size, 'the stored-only step keeps the plants apart'
-      assert_equal ['', '', ''], Game.find(@game.id).log_rows_for_client('net')[:rows].map { |r| r[:detail] }, 'the step never reaches the reader'
+      assert_equal ['', '', ''], Game.find(@game.id).log_rows_for_client('net')[:rows].map { |r| r[:detail] }
+      assert_not Game.find(@game.id).player_state.key?('netLinkSteps'), 'no hidden step counter in player state'
+    end
+
+    test 'twelve plant and unplug steps on one jack read up, down, up in order with no merged row (merge: false)' do
+      build
+      take_drop_box
+      6.times do
+        plant('comms_port')
+        assert_response :success
+        unplug('comms_port')
+        assert_response :success
+      end
+      assert_equal %w[net_link_up net_link_down] * 6, rows.map { |r| r['event'] }
+      assert(rows.none? { |r| r.key?('n') }, 'no link row merged')
+      assert_equal rows.map { |r| r['seq'] }.sort, rows.map { |r| r['seq'] }
+      assert_not Game.find(@game.id).player_state.key?('netLinkSteps')
+    end
+
+    test 'the source cap still bounds the link rows, newest last, and the stored log stays bounded' do
+      data = scenario
+      data['logSources']['net']['maxRows'] = 10
+      build({}, data)
+      take_drop_box
+      9.times do
+        plant('comms_port')
+        unplug('comms_port')
+      end
+      stored = rows
+      assert_operator stored.size, :<=, 10
+      assert_equal 10, stored.size
+      assert(stored.each_cons(2).all? { |a, b| a['seq'] < b['seq'] }, 'in order, newest last')
+      assert(stored.each_cons(2).all? { |a, b| a['event'] != b['event'] }, 'up and down alternate')
+      assert_operator Game.find(@game.id).player_state['opsLog'].to_json.bytesize, :<, 10_000
     end
 
     # ---- join -------------------------------------------------------------------------

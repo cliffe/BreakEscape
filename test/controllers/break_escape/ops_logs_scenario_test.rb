@@ -448,6 +448,7 @@ module BreakEscape
       assert_equal 'wrong_key', join('not-the-key')['reason']
       assert_equal %w[net_link_up net_link_down net_link_up], net_rows.map { |r| r['event'] }, 'a wrong key writes nothing, and the second plant is its own row (13.8: one per plant or unplug)'
       assert_equal [nil, nil, nil], net_rows.map { |r| r['n'] }
+      assert_not Game.find(@game.id).player_state.key?('netLinkSteps')
       assert_equal true, join(WIFI_KEY)['success']
       open_share('scanned_inbox')
       open_share('inbox_letters')

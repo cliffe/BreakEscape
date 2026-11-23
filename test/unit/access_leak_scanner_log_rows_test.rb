@@ -229,4 +229,20 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
              ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
     assert_equal [%w[network_string resource:archive]], owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines))
   end
+
+  test 'L3 R2-4: only a file share counts as opened; a printer opened by id earns no name' do
+    data = share_data
+    data['resources']['printer'] = { 'kind' => 'print_queue', 'name' => 'Scanned-Inbox', 'host' => 'OL-PR01', 'network' => 'lan' }
+    lines = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/container/printer', 'status' => 200, 'body' => { 'success' => true } }],
+             ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
+    assert_includes owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines)), %w[network_string resource:printer]
+  end
+
+  test 'L3 R2-4: an item id held by two shares opens neither; held by one, it opens that one' do
+    data = share_data
+    data['resources']['archive']['contents'] = [{ 'type' => 'folder', 'id' => 'letters', 'name' => 'Letters', 'contents' => [] }]
+    lines = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/container/letters', 'status' => 200, 'body' => { 'success' => true } }],
+             ['r.jsonl', 2, { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => answer(share_row('Scanned-Inbox')) }]]
+    assert_equal INBOX, owners(AccessLeakScanner.new(data, log_secrets: []).scan(lines))
+  end
 end

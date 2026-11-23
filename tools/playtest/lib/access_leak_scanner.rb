@@ -279,6 +279,7 @@ class AccessLeakScanner
     @ops_host_by_label = {}  # a sign-in PC's label (`host` on a session answer) => its host id, when the label is unique
     @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
+    @share_item_pairs = Set.new # [resource_id, item_id] for every item of every share, whether or not it holds a string
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
     @share_clues = Hash.new { |h, k| h[k] = [] }
@@ -654,6 +655,7 @@ class AccessLeakScanner
       # does (the feature scenario's letter and handover note, slice 9.3a step 8), but only
       # where the share's content may be: kept apart from the room notes (review R1 M2)
       share_clues(item, label, resource_id, ancestors)
+      @share_item_pairs << [resource_id, item['id'].to_s] if item['id']
       @share_items[label] = { strings: strings, resource: resource_id, ancestors: ancestors.dup } if strings.any?
       walk_share(item['contents'], resource_id, item['id'] ? ancestors + [item['id'].to_s] : ancestors, usable)
     end
@@ -1918,9 +1920,15 @@ class AccessLeakScanner
     return unless id && row['status'].to_i == 200 && body.is_a?(Hash) && body['success'] != false && !body.key?('error')
 
     resources = @data['resources'].is_a?(Hash) ? @data['resources'] : {}
-    @shares_opened << id if resources.key?(id)
-    item = @share_items[id]
-    @shares_opened << item[:resource] if item && item[:resource]
+    # Only a share counts as opened (R2-4): a printer or other resource id earns nothing
+    if resources[id].is_a?(Hash) && resources[id]['kind'] == 'file_share'
+      @shares_opened << id
+      return
+    end
+    # An item id is read with its share, as a pair; an id held by more than one share cannot be told
+    # apart by the request, so it opens none of them
+    holders = @share_item_pairs.select { |_resource, item_id| item_id == id }.map(&:first).uniq
+    @shares_opened << holders.first if holders.length == 1
   end
 
   # ---- ops core S1: discovery and services (OPS_CORE_PLAN.md 11.4) ----------------------------

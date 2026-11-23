@@ -15,6 +15,7 @@ module BreakEscape
   # places     the where.kind values allowed; [] or absent means the event has no place
   # results    the closed list: lowercase words of 2 to 16 letters
   # save_limit optional map of result to an Integer from 1 to 99
+  # merge      optional, only false: the event's rows never merge into an earlier row (always append)
   # detail     at most 4 keys, each with one of four rule types (RULE_TYPES below)
   # label      the upper-case word shown in the EVENT column
   module OpsLogEvents
@@ -47,10 +48,10 @@ module BreakEscape
                             save_limit: { 'ok' => 10 } },
       # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
       # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
-      # `step` is a stored-only counter (L3b R1 T2): it keeps a plant after an unplug from merging into the
-      # earlier plant, so the log reads up, down, up in order.
-      'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok], detail: { 'step' => { count: 9, show: false } } },
-      'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok], detail: { 'step' => { count: 9, show: false } } },
+      # `merge: false` (L3 R2-1): the link rows never merge into an earlier row, so a plant after an unplug
+      # is its own row and the log reads up, down, up in order; the source cap bounds them.
+      'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok], merge: false },
+      'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok], merge: false },
       'net_wifi_join' => { label: 'NET_WIFI_JOIN', places: %w[ap], results: %w[ok] },
       'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } }
     }.freeze
@@ -267,6 +268,7 @@ module BreakEscape
       out << "#{name}: results" unless results.is_a?(Array) && !results.empty? && results.all? { |r| r.is_a?(String) && r.match?(RESULT_PATTERN) }
       out.concat(detail_problems(name, entry[:detail] || {}, kinds))
       out.concat(limit_problems(name, entry[:save_limit], results))
+      out << "#{name}: merge must be false" if entry.key?(:merge) && entry[:merge] != false
       out
     end
 

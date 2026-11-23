@@ -3199,8 +3199,8 @@ module BreakEscape
 
     # Ops log L3: one `share_folder_opened` row per folder and account for an admitted share open
     # (never a file: the reader opens files in the browser with no request of its own). The row
-    # names the account of the oldest session that admits the share, none when only a foothold
-    # does. This route saves nothing else, so it saves only when the row was stored.
+    # names the account of the first admitting session in sign-in-list order, none when only a
+    # foothold does. This route saves nothing else, so it saves only when the row was stored.
     def log_share_folder_opened(located)
       return if BreakEscape::OpsLog.sources_for(@game.scenario_data).empty?
 

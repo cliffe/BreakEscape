@@ -3308,7 +3308,7 @@ module BreakEscape
 
     # Ops log L3: what admits a scope, from the one rule session_admits? is built on. Answers nil
     # when nothing admits it, else a truthy value: the PC id (a String) of the session that does
-    # (a sign-in PC scope: that PC; a profile or a share: the oldest held session that admits it),
+    # (a sign-in PC scope: that PC; a profile or a share: the first admitting session in sign-in-list order),
     # :foothold for a share only a held foothold admits, :unscoped for no scope. A caller that
     # names an account takes it only from a String.
     def session_admitting(scope)
@@ -3345,7 +3345,7 @@ module BreakEscape
     end
 
     # Ops log L3: the `as` of a share row: { account: } of the session session_admitting names (the
-    # oldest that admits the share), nil when only a foothold admits it or the session is a guest.
+    # first admitting session in sign-in-list order), nil when only a foothold admits it or the session is a guest.
     def ops_share_as(scope)
       pc_id = session_admitting(scope)
       session = pc_id.is_a?(String) ? access_sessions[pc_id] : nil
