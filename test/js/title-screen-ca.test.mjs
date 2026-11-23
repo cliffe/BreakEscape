@@ -129,17 +129,14 @@ test('title-screen-ca.css follows the pixel-art UI rules', () => {
     for (const [, sz] of css.matchAll(/font-size:\s*(\d+)px/g)) assert.ok(Number(sz) >= 8);
 });
 
-test('every unpinned ca* mission.json asks for the CA screen; no other mission does', () => {
+test('every ca* mission.json (including the pinned check and annual shells, D353) asks for the CA screen; no other mission does', () => {
     const sc = join(root, 'scenarios');
     let ca = 0;
     for (const name of readdirSync(sc)) {
         let meta;
         try { meta = JSON.parse(readFileSync(join(sc, name, 'mission.json'), 'utf8')); } catch { continue; }
-        // The check shells (ca_pre_, ca_post_) and the annual shell are pinned by
-        // social-awareness-office-kit.test.mjs; adding the field there needs the owner's yes, so they keep the default screen for now.
-        if (/^(ca_pre_|ca_post_|ca_annual_)/.test(name)) assert.equal(meta.title_style, undefined, name);
-        else if (/^ca/.test(name)) { ca++; assert.equal(meta.title_style, 'ca', name); }
+        if (/^ca/.test(name)) { ca++; assert.equal(meta.title_style, 'ca', name); }
         else assert.equal(meta.title_style, undefined, name);
     }
-    assert.ok(ca >= 35);
+    assert.ok(ca >= 64);
 });
