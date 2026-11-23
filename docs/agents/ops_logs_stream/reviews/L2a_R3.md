@@ -324,3 +324,21 @@ row marked. Items:
 - **P4 (script).** PLAYTEST: the grant toast wording and the "Signed out" toast differ from
   what the game shows; the harness has no `waitForMinigame` (the `waitFor` kind `minigame`
   works). Correct the script's wording.
+
+## R3 outcomes (tidy pass, 2026-11-23)
+
+| Finding | Outcome |
+|---|---|
+| R3-1 | fixed, d026849aa. Judged: a SIGN_IN row whose detail has `method:` (only `signin_ok` has it). Still exempt: fail, lockout and both refused forms, which carry no detail; a refusal for a known account cannot be told from typed text in the answer (comment in the scanner). Mutation: removing the detail test fails the new sign-in test. |
+| R3-2 | fixed, d026849aa. Detail pairs are split and a stored-only key is reported as `log:stored_key:<key>`; the whole detail string joins the secret texts. Mutation: removing both lines fails the new detail test. |
+| R3-3 | fixed, 05621a739. `LogRowsBodyScan` moved to `test/support/log_rows_body_scan.rb`; `ops_logs_scenario_test` `read` calls it. |
+| R3-4 | fixed, 05621a739. |
+| R3-5 | fixed, 8f0d22ef0. Order is `door_sign`, `name`, kind word; model test covers name only, both, empty sign, sign only, neither; A24 doc line and the scenario test message updated. PLAYTEST.md already said "door signs" and needed no change. |
+| R3-6 | fixed, ed6c3cebc (plan lines 172, 300, 389). `gc.rb:1900` comment left (shared file). |
+| R3-7 | withdrawn, no change: the ruling is met by the select reading ALL; the reviewer calls the unused return no fault. |
+| R3-8 | fixed, a87ddd8b8. |
+| P1 | fixed, c9b94ab5a. The hide-detail media rule is gone; the table has `min-width: 760px`, headers do not wrap, and the frame scrolls sideways (as log-filter's tables do). Checked in a headless browser at 390 x 844 (every column present when scrolled; no cut word) and 1400 x 1000 (same as `beat11c-after-refresh-new-row.png`). Screenshots in /tmp/claude-1002/-home-deploy-Hacktivity/bddb8e5b-5baf-4f12-89a2-9673325353c9/scratchpad/l2a-tidy: after-phone-390x844.png, after-phone-390x844-scrolled-right.png, after-desktop-1400x1000.png. The sign-in rows in the proof game were written with the game's own `write_log_row!` (same shapes), not played. |
+| P2 | question for the user, no change. Plan 13.8 (lines 1186-1187) gives `session_end` and `session_lock` the same result (ok) and no detail; labels come from the event table (both SESSION). Nothing was lost in the code. The reader cannot tell a lock from an end except by order. Options: a distinct label (LOCK / SIGNOUT) or a detail. |
+| P3 | withdrawn (harness limit). The EVENT, RESULT and LOCATION filters are ordinary `<select>` elements with a `change` listener (`ops-log-minigame.js:220-221`); `ops-log-viewer.test.mjs` already drives them by dispatching `change` (`choose`). A headless native select popup swallows arrow keys. |
+| P4 | fixed, cd95f98e6. |
+| m10 | left by ruling. |
