@@ -10,7 +10,13 @@ export default async (page, bridge, mark) => {
   const r = await bridge.interact('pizza', { timeoutMs: 20000, approach: false }); await sleep(900);
   const inv = (await bridge.getState()).inventory.map(x => x.name);
   mark('pizza-picked', { ok: r && r.ok, inv }); if (!inv.some(n => /pizza/i.test(n))) throw new Error('pizza not in inventory ' + JSON.stringify(inv));
-  await goRoom(page, bridge, ['blockchain_lab', 'trading_floor']); mark('floor-entered'); await sleep(1200);
+  const DOOR = 'door:blockchain_lab->trading_floor';
+  const mv = await bridge.moveToNear(DOOR, { timeoutMs: 25000 }); mark('door-near', { r: JSON.stringify(mv).slice(0, 200), p: (await bridge.getState()).player });
+  const it = await bridge.interact(DOOR, { timeoutMs: 20000, approach: false }); mark('door-interact', { r: JSON.stringify(it).slice(0, 200) });
+  await sleep(4000);
+  if ((await bridge.getState()).player.room !== 'trading_floor') { const e = await bridge.enterRoom('trading_floor', { timeoutMs: 30000 }); mark('enterRoom', { r: JSON.stringify(e).slice(0, 200) }); }
+  if ((await bridge.getState()).player.room !== 'trading_floor') throw new Error('did not reach trading_floor');
+  mark('floor-entered'); await sleep(1200);
   const d = await bridge.inventoryAct('pizza', 'Drop here'); mark('pizza-dropped', { ok: d && d.ok, r: JSON.stringify(d).slice(0, 160) });
   await sleep(12000);
   mark('watch-end', { npcs: await page.evaluate(() => ['lerato_dlamini', 'tomasz_wisniewski', 'trader_npc'].map(id => { const n = window.npcManager.getNPC(id); return n && n._sprite && [id, Math.round(n._sprite.x), Math.round(n._sprite.y)]; })) });
