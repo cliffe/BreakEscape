@@ -1,0 +1,120 @@
+{
+  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log's write side (OPS_LOG_ROWS_PLAN.md, stage L1b). One lobby, one card door and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen. The scenario declares log sources and has no reader: the rows are checked from the server (verify-run.rb --ops-log). Nothing to solve.",
+  "endGoal": "Test only: make the log write its rows.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_logs",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "logSources": {
+    "door_controller": {
+      "title": "Door controller",
+      "events": ["badge_swipe"]
+    },
+    "signin_audit": {
+      "title": "Sign-in audit",
+      "events": ["signin_*", "session_*"],
+      "where": { "objects": ["office_pc"] }
+    }
+  },
+
+  "policies": {
+    "corp_default": { "autoLockMin": null, "maxAttempts": 5, "usb": "allowed", "social": "allowed" }
+  },
+
+  "objectives": [
+    {
+      "aimId": "log_beats",
+      "title": "Make the log write its rows",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "l1_into_office", "title": "Copy Dana's badge and open the office door", "type": "custom", "status": "active" },
+        { "taskId": "l2_signed_in", "title": "Sign in at the office PC", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "rfid_cloner",
+          "id": "card_copier",
+          "name": "Card copier",
+          "position": { "x": 2, "y": 4 },
+          "takeable": true,
+          "observations": "A handheld card copier. It reads a card and saves a copy it can play back at a reader."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen.\nThe office PC's sticky note holds the password.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_ops_logs/ink/dana.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": {
+            "username": "dreyes",
+            "password": "Ledger-Dana-7",
+            "card": { "name": "Dana Reyes's badge", "card_id": "FIN-DANA-01", "rfid_protocol": "EM4100" }
+          },
+          "eventMappings": [
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'office'", "onceOnly": true, "completeTask": "l1_into_office" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'office_pc' && data.npcId === 'dana'", "onceOnly": true, "completeTask": "l2_signed_in" }
+          ]
+        }
+      ]
+    },
+
+    "office": {
+      "type": "room_office",
+      "door_sign": "Finance office",
+      "connections": { "west": "lobby" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["finance"] },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "office_pc",
+          "name": "Office PC",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "policy": "corp_default",
+          "postitNote": "Dana: dreyes / Ledger-Dana-7",
+          "showPostit": true,
+          "observations": "The finance office PC. It asks for a username."
+        }
+      ]
+    }
+  }
+}

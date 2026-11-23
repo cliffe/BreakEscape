@@ -1,0 +1,74 @@
+{
+  "scenario": "test_ops_logs",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_office",
+      "label": "Finance office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Finance office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_office_pc",
+      "label": "Office PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "card_fin_dana_01",
+      "label": "Dana Reyes's badge<br/>(Dana Reyes)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_dana",
+      "label": "Dana Reyes sign-in<br/>(dreyes)",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_office",
+      "to": "office",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_office_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "card_fin_dana_01",
+      "soft": false
+    },
+    {
+      "from": "card_fin_dana_01",
+      "to": "door_office",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_dana",
+      "soft": false
+    },
+    {
+      "from": "signin_dana",
+      "to": "lock_office_pc",
+      "soft": false
+    }
+  ]
+}
