@@ -553,6 +553,26 @@ test('m2: a repeat session grant (already: true) on a copy the client holds reco
     assert.equal(noted.length, 1);
 });
 
+test('m7: a session grant on a host with no row in the stored view when the answer arrives is still recorded, and opens through the foothold', async () => {
+    setup(ENTRY({}, { id: 'desk_pc', kind: 'pc', host: 'LAB-01', name: 'Desk PC', sprite: undefined }));
+    answer.footholds[0].hosts = [{ ...PC, scanned: true, services: [SVC], findings: [mkFinding({ hostId: 'desk_pc', id: 'desk_pc.web.factory_login' })] }];
+    answer.footholds[0].networks[0].hosts = answer.footholds[0].hosts;
+    await open();
+    const session = { npcId: 'sam', username: 'sam', displayName: 'Sam', via: 'technique', remote: true, footholdId: 'jack_a', host: 'desk_pc' };
+    techImpl = async () => {
+        // the row leaves the stored view between the press and the answer
+        const drop = (o) => { if (Array.isArray(o)) o.forEach(drop); else if (o && typeof o === 'object') { for (const k of Object.keys(o)) { if (k === 'hosts') o[k] = []; else drop(o[k]); } } };
+        drop(view().view);
+        return { success: true, grant: 'session', session, endedPcIds: ['other_pc'], tokenExpiredPcIds: ['t_pc'] };
+    };
+    window.openRemoteDesktop = (pcId, fid) => { opened.push([pcId, fid]); window.MinigameFramework.endMinigame(false, null); };
+    await pick('f1', 'factory_defaults');
+    useBtn().click();
+    await settle();
+    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], ['t_pc']]]);
+    assert.deepEqual(opened, [['desk_pc', 'jack_a']], 'the desktop opens through the session\'s own foothold');
+});
+
 test('m1: a grant that ended token sessions passes tokenExpiredPcIds on to the session record', async () => {
     setup(ENTRY({}, { id: 'desk_pc', kind: 'pc', host: 'LAB-01', name: 'Desk PC', sprite: undefined }));
     answer.footholds[0].hosts = [{ ...PC, scanned: true, services: [SVC], findings: [mkFinding({ hostId: 'desk_pc', id: 'desk_pc.web.factory_login' })] }];

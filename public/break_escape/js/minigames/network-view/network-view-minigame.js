@@ -1168,6 +1168,8 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.pending.has(key) || !this.gameState?.isActive || !this._canPerform(action, target)) return { sent: false };
         this.clearResult(action, target, key);
         this.pending.add(key);
+        // The host of the offer, read now: the view may no longer list its row when the answer arrives (R1 m7)
+        const offerHostId = this.hostOfOffer(offer);
         let answer = null;
         try {
             this._pendingFocus = this.focusedControl();
@@ -1187,7 +1189,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this._safely('redraw', () => this.redraw());
         this._pendingFocus = null;
         this._safely('showResult', () => this.showResult(offer, answer));
-        await this.afterAnswer(offer, answer);
+        await this.afterAnswer(offer, answer, offerHostId);
         return { sent: true, answer };
     }
 
@@ -1397,7 +1399,7 @@ export class NetworkViewMinigame extends MinigameScene {
     }
 
     /** What follows a finished move: the unplug that ends the trip, or the events and the refetch of an ops success. */
-    async afterAnswer(offer, answer) {
+    async afterAnswer(offer, answer, offerHostId = null) {
         const { action, target } = offer || {};
         if (action === 'unplug') {
             if (answer?.action === 'unplugged' || answer?.action === 'not_planted') {
@@ -1428,7 +1430,7 @@ export class NetworkViewMinigame extends MinigameScene {
             if (t) this._emit('network_technique_used', { findingId: t.finding, techniqueId: t.card, grant: answer.grant ?? null }, t.finding);
             // A session grant hands over to the desktop (the screen it opens replaces this view); a
             // credential grant asks the keyring to refetch, as any change to what it holds does
-            if (answer.grant === 'session' && this.handOverSession(t, answer)) return;
+            if (answer.grant === 'session' && this.handOverSession(t, answer, offerHostId)) return;
             if (answer.grant === 'credential' && answer.keyringChanged === true) {
                 try { Promise.resolve(window.keyring?.refresh?.()).catch(() => {}); } catch (e) { console.warn('[network-view] keyring refresh threw', e); }
             }
@@ -1443,8 +1445,8 @@ export class NetworkViewMinigame extends MinigameScene {
      * desktop through this view's foothold, as the Open control does. True when a screen replaced
      * this view; false (the view stays, with its notice) when nothing could be opened.
      */
-    handOverSession(t, answer) {
-        const hostId = this.lastGrant?.hostId || findFinding(this.view, t?.finding)?.row.id;
+    handOverSession(t, answer, offerHostId = null) {
+        const hostId = offerHostId || this.lastGrant?.hostId || findFinding(this.view, t?.finding)?.row.id;
         if (!hostId) return false;
         // A repeat (`already: true`) changes nothing (plan 5.4): a copy already held is not re-recorded,
         // so no sign-out and sign-in fire again; a copy the client lacks (a reload) is still recorded
