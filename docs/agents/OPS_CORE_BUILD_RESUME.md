@@ -101,12 +101,21 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   (`d12357b8a`). S2 step 6b DONE: `1bb0a2207` (catalog loader; entries keep their `_` key, so
   the finding builder must copy named keys only). Not seeded: `test_ops_logs` and
   `test_ops_scan` have no Mission row (seeding republishes every mission: user's call).
-- RUNNING: S2 builders side by side in the build tree, split by file: 6a server
-  (`HANDOVER_core_6a.md`; parts A1 schema/model/validator, A2 routes and findings, A3 `cli`
-  from the loader), 6b catalog loader (interface `RealismCatalog.lookup`, `.with_folder`,
-  `.faults`), 7 client (`HANDOVER_core_7.md`). A Haiku reader is writing a dependency digest
-  of the later plans to the scratchpad `deps/OPS_PARALLEL_DIGEST.md` (which stages can start
-  now in a second stream).
+- S2 ENGINE BUILT (build tree): 6a `eb8d443ba` (A1), `aa2d142a6` (A2), `71e8cf194` (A3;
+  note `HANDOVER_core_6a.md`; that builder reached 252k tokens: split server steps in three
+  for S3); 6b loader `1bb0a2207`; 7 client `35545f827` (`HANDOVER_core_7.md`; reads a decoy's
+  reason through a fallback chain until the key is settled); graph `e8cde9ce0`.
+- RUNNING for S2, four agents split by file: server review R1 (fable52L;
+  `reviews/S2_server_R1.md`), client review R1 (fable52L; `reviews/S2_client_R1.md`, with
+  the cross-check of the two halves), 8a (`test_ops_findings` scenario, PLAYTEST, end-to-end
+  test, flip N14; `HANDOVER_core_8a.md`), 8b (leak collector check stage + R3-1, verify-run
+  `opsFindings` line, docs N14, a flaky `ops_log_test` pid collision, the S1_R2 row
+  correction; `HANDOVER_core_8b.md`). Reviewers do not commit: check each findings file's
+  LENGTH, then commit it by path.
+- Next for S2: rulings; fixers split server / client; delta review R2 over fixes and step 8;
+  Haiku playtest + live proof of `test_ops_findings` (11.5 S2 beats; I look at the
+  screenshots); then `git merge --ff-only ops-build` in the train tree and the train check
+  there (S3 building continues meanwhile); land; push; merge main into `ops-build`.
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -116,19 +125,15 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   early per the digest: S5a, M1a, C1, K1 (need core S1 to S3), S5b (needs S5a and S7). The
   digest flagged plan conflicts to check when those stages start (who adds the `access:`
   parameter, S5a or core; H1 ordered after M3 though it needs none of S8a; K1 gated on S3).
-  RUNNING there: L2a server builder (`HANDOVER_L2a_server.md`) and L2a client builder
+  L2a server DONE there `b0d5e98a8` (`HANDOVER_L2a_server.md`), its review R1 running
+  (fable52L; `ops_logs_stream/reviews/L2a_server_R1.md`; asked for a `showCardHolder` design).
+  RUNNING there: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
   into `ops-logs`, then in the train tree `git checkout --detach ops-logs` (or a temp branch),
   run the check, merge to main at that hash, push, and merge main into `ops-build`. Only one
   train runs at a time. No disk for a fourth worktree (/data about 7 GB free).
-- Next for S2: step 7's graph part (weakness nodes, 9.3) and step 8 split in two (8a
-  `test_ops_findings` scenario + PLAYTEST + controller tests + flip N14; 8b graph + leak
-  collector check-stage entries + R3-1 + verify-run + docs N14), launched when 6a reports;
-  two fable52L reviews (server, client) as each half lands; fixes; delta; Haiku playtest;
-  train in the train tree; land. If the digest shows an independent stage, open ONE second
-  stream in a third worktree (own branch, own brief section, same loop).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
