@@ -99,8 +99,11 @@ The leak check judges the new strings (techniques, grants, session keys) per thi
 - **The marks.** `{"cmd":"eval","fn":"() => window.__test.access.compromiseMarks()"}` lists `[{ objectId, sources: [{ kind, footholdId }], tint }]`. (The call is in
   `public/break_escape/js/systems/test-bridge/access.js`, `compromiseMarks()`, and has its row in `docs/test-bridge.md`.) Sessions:
   `__test.access.sessions()`; footholds: `__test.access.footholds()`.
-- **The tray and the toasts.** `{"cmd":"eval","fn":"() => window.__test.getState().inventory"}` lists `{ id, name, type }`; the pickup toast is read with `{"cmd":"toasts"}`.
-- **The keyring** is read through the real control: the sign-in control on `files01`'s row (beat 7) lists the saved connections the keyring holds. Before beat 6 it lists no `print_admin`.
+- **The tray, the take message and the toasts.** `{"cmd":"eval","fn":"() => window.__test.getState().inventory"}` lists `{ id, name, type }`. Taking an item out of a container (the cabinet, the drawer, the cupboard)
+  raises no toast: the open container window says "Added <item name> to inventory" for three seconds in `.container-message` (`container-minigame.js` `takeItem` and `showMessage`), so screenshot and read it
+  straight after the Take click (`{"cmd":"eval","fn":"() => document.querySelector('.container-message')?.textContent"}`). `{"cmd":"toasts"}` reads the game's toasts (the keyring's find toast in beat 6, a refusal toast); an empty list after a container take is right.
+- **The keyring** has no screen of its own in this scenario (no capture log or keyring item is authored). The player sees it in two places: the toast the keyring raises when an entry is new (beat 6, read with `toasts`; the
+  text names what was found), and the sign-in control of a PC, which lists each saved connection as a "Connect with ..." button (`.signin-cred`; beat 7). Before beat 6 that list has no `print_admin` entry.
   The client's own `GET /keyring` fetches are in the capture file, so the leak check judges them.
 - **Picking up.** Cabinet or cupboard: `{"cmd":"moveToNear","id":"lobby_cabinet"}`, `{"cmd":"interact","id":"lobby_cabinet"}`, then `{"cmd":"mg","action":"take","args":["Field note: factory accounts"]}`
   and `{"cmd":"mg","action":"close"}`. The supply room is west of the lobby (`enterRoom`, or `moveToNear` on `supply_cupboard`). The manual goes into the notes, not the tray.
@@ -117,7 +120,7 @@ The leak check judges the new strings (techniques, grants, session keys) per thi
 
 Read `sign_lobby` and `maint_log`. Open `lobby_cabinet` and take `card_factory` (harness notes). Then take the box, plant it in `office_port` (`Plug it in`), click Sweep on `office_lan`, then Scan on
 `printer01`, `files01`, `vault01` and `desk01`, then Check on `printer01`'s `admin_page`, `files01`'s `files` then `backup`, `vault01`'s `archive` and `desk01`'s `remote_desk` (this order).
-- Browser: the pickup shows a toast naming the card, and `getState().inventory` lists `{ id: "card_factory", type: "technique_card" }` (the tray slot). The Techniques panel lists only the card
+- Browser: the Take click shows "Added Field note: factory accounts to inventory" in the container window for three seconds (screenshot at once; no toast is raised for a container take), and `getState().inventory` lists `{ id: "card_factory", type: "technique_card" }` (the tray slot). The Techniques panel lists only the card
   held so far: "Factory accounts", its summary ("Devices often ship with a published account that nobody changes.") and a works-on line naming the class only; `techniques` in the state has one entry,
   `factory_accounts`, `itemId: "card_factory"`. Before the pickup `access.networkView(...)` has no `techniques` key. Seven findings in all, every one `unconfirmed`, with the same keys
   (no `needs`, `reason` or `fixed`). `compromiseMarks()` lists the jack: `office_port`, sources `[{ kind: "jack", footholdId: "jack_office_port" }]`, a `tint` value; the sprite is tinted with the
@@ -133,7 +136,7 @@ Select `f1` (select-finding) and the factory card, click Use.
 ### 3. Confirm all seven, then the decoy
 
 Click Confirm on `f1` to `f7`, then use the factory card on `f2`.
-- Browser: statuses: `f2` `false` (with its reason), the other six `confirmed`; `f1` lists the need "Printer manual" unmet, `f6` the need for a session (label "Vault server" is the host label) unmet. Use on `f2`: "That finding turned out to be false." (422 `false_positive`). Task `a4_confirmed`, `a5_refused` tick.
+- Browser: statuses: `f2` `false` (with its reason), the other six `confirmed`; `f1` lists the need "Printer manual" unmet, `f6` the need for a session (its label is the PC's host label, "VAULT01"; the object's name "Vault server" is not shown) unmet. Use on `f2`: "That finding turned out to be false." (422 `false_positive`). Task `a4_confirmed`, `a5_refused` tick.
 - Server: seven `finding_confirmed` rows; a second `technique_refused` row (`false_positive`).
 
 ### 3a. Select then Use by keyboard alone (needs the browser's own keyboard)
@@ -164,12 +167,12 @@ Select `f4` ("The list of backups can be read without signing in.", grants nothi
 ### 6. The credential grant, and a repeat
 
 Take `printer_manual` from `supply_cupboard`, reopen the view (the need ticks, no reload). Select `f1` and the factory card, Use; then Use again.
-- Browser: the notice or toast names the credential grant (a saved connection); `files01`'s sign-in control now lists `print_admin` (read it before beat 7's connect; it did not before beat 5). The repeat answers `already: true` and `keyringChanged: false` (no new keyring ask). Task `a6_used` ticks and Ian's global `technique_used_seen` is set.
+- Browser: the notice reads "That gave you a saved sign-in. It is in your keyring." and the keyring's find toast follows (read it with `toasts`, screenshot it); the keyring itself is shown by `files01`'s sign-in control, which now lists `print_admin` as a "Connect with ..." button: open that control from `files01`'s row and take a screenshot of the list (this is the keyring step; close the control with its back or close button without connecting, beat 7 connects). The repeat answers `already: true` and `keyringChanged: false` (no new keyring ask). Task `a6_used` ticks and Ian's global `technique_used_seen` is set.
 - Server: `opsUsed` holds `printer01.admin_page.factory_login` once; one `technique_used` row for the grant, the repeat merged (`n` 2); `--access` lists the line `opsUsed: f1 printer01.admin_page.factory_login`.
 
 ### 7. Open the saved connection
 
-In the view, open `files01` (its row's sign-in control, `[data-host-id="files01"] [data-action="sign-in"]`, which lists the saved connection `print_admin`) and connect. If the control is not there, that is a finding: report it.
+In the view, open `files01` (its row's sign-in control, `[data-host-id="files01"] [data-action="sign-in"]`, which lists the saved connection `print_admin`) and connect with the "Connect with ..." button (`.signin-cred`, `mg clickText "Connect with"`). Do not use the sign-in form's plain Sign in button: with the saved account picked it asks for a typed password ("Enter the password."), because the connection is a separate control and nothing was typed. If the control is not there, that is a finding: report it.
 - Browser: the `files01` desktop opens (headless server, so through the foothold), as the account `iokafor`; close it with its own Close.
 - Server: `sessions.files01` is `via credential` with the foothold.
 
@@ -208,13 +211,18 @@ Select `f6` and "Release notes: current build", Use.
 ### 12. The plant network
 
 Open the view.
-- Browser: a `plant_lan` block appears, reached through `vault01` (its `via` names the host); sweep it (Sweep on `plant_lan`): `pumpctl01` is listed.
+- Browser: a `plant_lan` block appears, reached through one of the PCs the player holds a session on in `office_lan` (the block's header names it: "Plant network, through <host>"; the server picks the held session with the lowest sequence number, then the lowest host id, so with sessions on `desk01`, `files01` and `vault01` the proof run read DESK01; any of the three is right, `vault01` is not special, since all four hosts are on `office_lan`); sweep it (Sweep on `plant_lan`): `pumpctl01` is listed.
 - Server: `opsDiscovered.networks` holds `plant_lan`; one more `network_swept` row.
 
 ### 13. Locking the session
 
-In the world or through the taskbar try to lock the `vault01` session with the lock control, if one is offered (if none is offered, that is the answer; the refusal is in `network_technique_session_test.rb`).
-- Browser: refused, or no control. Server: unchanged.
+A player locks a session through the desktop's Start menu: `Start` (`.pc-start-btn`) opens a panel whose actions are `Lock` (`#pc-start-lock`), `Switch user` (`#pc-start-switch`) and `Sign out` (`#pc-start-signout`). Lock is offered only
+for a session the player could unlock again: a password sign-in, or a credential session over a foothold (`sessionLockable`, `pc-sessions.js:176`; the server's `session_lockable?` is the authority). A technique session is neither, by design
+(plan 5.4, "How a technique session differs from a password session": "Lock the session: refused with no code change"; the table of readers: "not lockable, on both sides"), so its desktop has no Lock control at all.
+Open the `vault01` remote view (the Open control on its row), click Start and read the actions.
+- Browser: the panel offers `Sign out` (`#pc-start-signout`) and nothing else: no `#pc-start-lock`, and no `#pc-start-switch` either (`vault01` blocks remote sign-in, so Switch user is withheld too; `desk01`'s Start, beat 17a, offers Switch user and Sign out). Screenshot the open panel. Close the panel and the desktop with their own controls. Nothing is sent.
+- Contrast, for the same beat if time allows or at beat 17a: after the typed sign-in at `desk01` the Start panel of that password session does list `#pc-start-lock`. A refused lock request itself is `network_technique_session_test.rb`.
+- Server: unchanged.
 
 ### 14. Reload
 
@@ -229,20 +237,20 @@ Reload (harness notes), reopen the view.
 
 ### 16. Unplug
 
-Close any open desktop with its own Close (the unplug control cannot be reached while one is open). Open the office view and click Unplug (`[data-unplug]`, the button's label is `Unplug`; there is no confirm prompt).
+Close any open desktop with its own Close (the unplug control cannot be reached while one is open). Open the office view and click Unplug (`[data-unplug]`, the button's label is `Unplug`). There is no prompt to answer, unlike the plant (`gameConfirm`): the jack goes at once and a toast says "Unplugged. Your sessions on ... ended." (read it with `toasts`); do not wait for or dismiss a dialog.
 - Browser: the `vault01`, `files01` and `desk01` sessions end, `plant_lan` is gone, the marks on the jack and on `desk01` are gone (`compromiseMarks()` empty; the sprite tint cleared, screenshot) and the `vault01` row bolt too. A click on `desk01` in the world no longer opens a remote view: it asks for the keyboard sign-in (the `no_session` request itself is a Rails test).
 - Server: sessions gone; `opsUsed` and the keyring entry kept.
 
 ### 17. Plant again
 
-Plant the box again and open the view (it shows the findings as before). Select `f5` and the release card, Use.
+Plant the box again (`Plug it in`); the plant does not open the view by itself, so `interact` `office_port` to open it (it shows the findings as before). Select `f5` and the release card, Use.
 - Browser: before the Use, `vault01`'s row has no bolt, no session and no Open (the unplug ended it: the view form of the refused desktop request); after it the session is back and the desktop opens. Server: a new `vault01` record.
 
 ### 17a. Taskbar, sign out, the typed sign-in, the implant
 
-Use the factory card on `f7` again and click `desk01`; read the taskbar. Open the `vault01` remote view from the view and read its taskbar. Back at `desk01`, click it to open the remote view, then choose Sign out (`#desktop-sign-out`). That remote view was opened by a world click, so Sign out returns to the world (the room), not to the network view.
+Use the factory card on `f7` again and click `desk01`; read the taskbar. Open the `vault01` remote view from the view and read its taskbar. Back at `desk01`, click it to open the remote view, then open Start (`.pc-start-btn`) and choose Sign out (`#pc-start-signout`, inside the Start panel). That remote view was opened by a world click, so Sign out returns to the world (the room), not to the network view.
 Click `desk01` again and sign in with the password from `desk_note` (`iokafor` / the note's text). Take `desk_implant`, `interact` `desk_dock`, answer `Plug it in`.
-- Browser: `desk01`'s taskbar offers Sign out and Switch user (`#desktop-switch-user`); `vault01`'s offers Sign out only (blocked host). After Sign out of the `desk01` remote view the player is back in the world (no network view opens), the mark comes off (`compromiseMarks()` no longer lists `desk01`) and the next click shows the sign-in screen; the typed sign-in opens the keyboard desktop with no red frame; the implant is accepted and `desk01` is marked again, `compromiseMarks()` naming the implant foothold (`implant_desk01`) in `sources`.
+- Browser: `desk01`'s taskbar offers Sign out and Switch user (`#pc-start-switch`, in the Start panel; also `#pc-start-lock` after the typed sign-in, which is a password session); `vault01`'s offers Sign out only (blocked host). After Sign out of the `desk01` remote view the player is back in the world (no network view opens), the mark comes off (`compromiseMarks()` no longer lists `desk01`) and the next click shows the sign-in screen; the typed sign-in opens the keyboard desktop with no red frame; the implant is accepted and `desk01` is marked again, `compromiseMarks()` naming the implant foothold (`implant_desk01`) in `sources`.
 - Server: `sessions.desk01` a technique session, then gone, then a `password` session with no foothold; an implant foothold `implant_desk01`.
 
 ### 18. End of run
