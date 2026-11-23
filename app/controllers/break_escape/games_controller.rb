@@ -1286,8 +1286,6 @@ module BreakEscape
       # Use transaction to ensure atomic update
       flag_not_recorded = false
       ActiveRecord::Base.transaction(requires_new: true) do
-        # Ops log L1b: the granted swipe, before unlock_room! or unlock_object! saves it
-        @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
         if target_type == 'door'
           if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
             # Gated route-room split (§3.5): the NPC route opened the door for the player's
@@ -1300,6 +1298,9 @@ module BreakEscape
             annotate_station_submission_status!(room_data, target_id) if room_data
             track_npc_encounters(target_id, room_data)
           else
+            # Ops log L1b: the granted swipe, only for a real unlock (not the route-room record
+            # above, which opens nothing), before serve_opened_room's unlock_room! saves it
+            @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
             # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
             # unlock_room! adds the room, then credit viaCredential on the server possession result
             # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
@@ -1322,6 +1323,8 @@ module BreakEscape
           render json: door_answer
         else
           # Object/container unlock
+          # Ops log L1b: the granted swipe, before unlock_object! saves it
+          @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
           @game.unlock_object!(target_id)
 
           # Find the unlocked object and return its contents if it's a container
