@@ -49,7 +49,7 @@
 
 .ol-table-wrap { flex: 1; min-height: 0; overflow: auto; background: #0e0e1c; }
 
-.ol-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 16px; min-width: 0; }
+.ol-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 16px; min-width: 760px; }
 .ol-th {
     position: sticky;
     top: 0;
@@ -60,6 +60,7 @@
     padding: 4px 6px;
     border-bottom: 2px solid #333355;
     letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 .ol-th[data-col="time"] { width: 15%; }
 .ol-th[data-col="event"] { width: 12%; }
@@ -119,6 +120,4 @@
 }
 .ol-btn:hover { background: #1e2240; border-color: #6688aa; color: #ccddee; }
 
-@media (max-width: 600px) {
-    .ol-th[data-col="detail"], .ol-cell[data-col="detail"] { display: none; }
-}
+/* Narrow screens: the table keeps a minimum width and scrolls sideways inside its frame (as log-filter's tables do), so no column vanishes and no word is cut. */
