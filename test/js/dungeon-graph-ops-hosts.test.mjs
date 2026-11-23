@@ -121,3 +121,57 @@ test('decoys are not drawn, and a scenario without findings has no weakness node
     assert.equal(Object.keys(g.nodes).some(id => id.includes('old_banner')), false);
     assert.equal(Object.keys(graph(scenario({ discovery: 'scan', hosts: DEVICES })).nodes).some(id => id.startsWith('weak_')), false);
 });
+
+// Review R1 m9: a weakness's `needs` are edges into it (plan 9.3, Need row); m16: node ids never collide.
+function withNeeds(needs, credProof = { held: 'panel_sheet' }) {
+    const sc = withFindings();
+    sc.rooms.comms_room.npcs = [{ id: 'lena', displayName: 'Lena', npcType: 'person', creds: { username: 'lfox', password: 'x1y2z3' } }];
+    sc.rooms.comms_room.objects.push({ id: 'panel_sheet', type: 'notes', name: 'Panel sheet', takeable: true, text: 'Sheet.' });
+    sc.credentials = { lena_login: { kind: 'password', account: 'lena', label: 'Lena login', foundIn: 'panel_sheet', proof: credProof } };
+    sc.hosts.printer01.services[0].weaknesses[1].needs = needs;
+    return sc;
+}
+
+test('needs.credential and needs.item draw an edge into the weakness from cred_<id> and the item node', { skip }, () => {
+    const g = graph(withNeeds({ credential: 'lena_login', item: 'panel_sheet' }));
+    const into = g.edges.filter(e => e.to === 'weak_printer01_admin_page_open_share').map(e => e.from).sort();
+    assert.deepEqual(into, ['cred_src_panel_sheet', 'cred_lena_login', 'host_printer01'].sort());
+    assert.equal(g.edges.filter(e => e.from === 'cred_lena_login' && e.to === 'weak_printer01_admin_page_open_share').length, 1);
+});
+
+test('needs of other kinds, an item with no node and an unknown credential draw no edge and no node', { skip }, () => {
+    const plain = graph(withFindings());
+    const g = graph(withNeeds({ itemType: 'notes', label: 'Some notes', global: 'door_open', credential: 'no_such_cred', item: 'lonely_item' }));
+    const into = g.edges.filter(e => e.to === 'weak_printer01_admin_page_open_share').map(e => e.from);
+    assert.deepEqual(into, ['host_printer01']);
+    assert.equal(Object.keys(g.nodes).some(id => id.includes('lonely') || id.includes('door_open')), false);
+    assert.ok(Object.keys(plain.nodes).length > 0);
+});
+
+test('a scenario without needs draws the weakness edges as before', { skip }, () => {
+    const g = graph(withFindings());
+    assert.deepEqual(g.edges.filter(e => e.to === 'weak_printer01_admin_page_factory_login').map(e => e.from), ['host_printer01']);
+});
+
+test('two finding ids that fold to one node id each get a node, and the second is warned about', { skip }, () => {
+    const sc = scenario({ discovery: 'scan', hosts: {
+        a_b: { name: 'Host one', network: 'office_lan', services: [{ name: 'c', port: 1, product: 'P', version: '1',
+            weaknesses: [{ id: 'w', class: 'misconfig', severity: 'low' }] }] },
+        a: { name: 'Host two', network: 'office_lan', services: [{ name: 'b_c', port: 2, product: 'P', version: '1',
+            weaknesses: [{ id: 'w', class: 'misconfig', severity: 'high' }] }] }
+    } });
+    const dir = mkdtempSync(join(tmpdir(), 'graph-ops-'));
+    try {
+        writeFileSync(join(dir, 'scenario.json.erb'), JSON.stringify(sc));
+        const r = spawnSync('ruby', [join(root, 'scripts/generate_dungeon_graph.rb'), join(dir, 'scenario.json.erb')],
+            { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+        assert.equal(r.status, 0, r.stderr);
+        const g = JSON.parse(readFileSync(join(dir, 'dungeon_graph.json'), 'utf8'));
+        const weak = g.nodes.filter(n => n.id.startsWith('weak_'));
+        assert.equal(weak.length, 2, 'two nodes, none merged');
+        assert.deepEqual(weak.map(n => /low|high/.exec(n.label)[0]).sort(), ['high', 'low']);
+        assert.match(r.stderr, /finding ids collide/);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});

@@ -766,6 +766,8 @@ if NETWORKS.any?
   share_host = lambda do |h|
     !nm.headless?(h[:object]) || (foothold_reach.include?(h[:network]) && !remote_blocked.call(h[:object]))
   end
+  weak_owner = {} # weakness node id => finding id (a collision check)
+  weak_needs = [] # [weakness node, its authored needs]: drawn after the credential block
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
@@ -832,7 +834,20 @@ if NETWORKS.any?
       fixed_text = fixed.is_a?(String) ? fixed.strip : (fixed.is_a?(Hash) ? fixed.map { |k, v| "#{k}=#{v}" }.join(' &amp; ') : '')
       label += "<br/>fixed if #{safe_text.call(fixed_text, '')}" unless fixed_text.empty?
       label += '<br/>(report only)' unless entry.key?('grants')
-      node = add_node("weak_#{nid(w[:finding_id])}", label, 'lock')
+      # nid folds dots, underscores and case together, so two finding ids can give one node id
+      # (sam.web_a.b and sam_web.a.b). A second claimant gets a counter and a warning, never the
+      # first one's node.
+      base_id = "weak_#{nid(w[:finding_id])}"
+      node_id = base_id
+      count = 1
+      while weak_owner.key?(node_id) && weak_owner[node_id] != w[:finding_id]
+        count += 1
+        node_id = "#{base_id}_#{count}"
+      end
+      warn "graph: finding ids collide on #{base_id}; #{w[:finding_id]} is drawn as #{node_id}" if node_id != base_id
+      weak_owner[node_id] = w[:finding_id]
+      node = add_node(node_id, label, 'lock')
+      weak_needs << [node, entry['needs']] if entry['needs'].is_a?(Hash)
       if w[:host][:kind] == 'device'
         add_edge("host_#{nid(w[:host_id])}", node)
       else
@@ -1688,6 +1703,21 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
     end
     add_edge(cred_node, cred_pc_lock)
   end
+end
+
+# N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
+# because the credential nodes exist only now. `needs.credential` from `cred_<id>`; `needs.item` from the
+# item's existing node (a granted item or a held-credential source), nothing when the item has none: a
+# need adds no node of its own. `itemType`, `global` and `session` have no node and draw nothing.
+(weak_needs || []).each do |weak_node, needs|
+  cred = needs['credential']
+  edge_from = cred.is_a?(String) && $nodes.key?("cred_#{nid(cred)}") ? "cred_#{nid(cred)}" : nil
+  add_edge(edge_from, weak_node) if edge_from && $edges.none? { |e| e[:from] == edge_from && e[:to] == weak_node }
+  item = needs['item']
+  next unless item.is_a?(String)
+
+  item_from = %W[grant_#{nid(item)} cred_src_#{nid(item)}].find { |id| $nodes.key?(id) }
+  add_edge(item_from, weak_node) if item_from && $edges.none? { |e| e[:from] == item_from && e[:to] == weak_node }
 end
 
 # ---------------------------------------------------------------------------
