@@ -79,3 +79,13 @@ export async function closeKiosk(page) {
   await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(e => e.offsetParent && /^×$/.test(e.innerText.trim())); if (b) b.click(); });
   await sleep(900);
 }
+
+/** The world bubble is a Phaser container (not DOM), so CSS cannot reach it: every bubble box (existing and future, via _make) has setVisible forced to false and alpha 0. The says/pages
+ *  state the take's marks read is untouched. Same patch as ca13 (HIDE_BUBBLES): the edit burns the captions. Run it with page.evaluate(HIDE_BUBBLES). */
+export const HIDE_BUBBLES = () => {
+  const nb = window.npcWorldBubbles; if (!nb || nb.__ca13hidden) return !!nb;
+  const patch = (bb) => { const b = bb && bb.box; if (!b || b.__ca13) return bb; b.__ca13 = true; b.setVisible = function () { this.visible = false; return this; }; b.setAlpha = function () { this.alpha = 0; return this; }; b.visible = false; b.alpha = 0; return bb; };
+  const make = nb._make; nb._make = function (...a) { return patch(make.apply(this, a)); };
+  for (const bb of nb.bubbles.values()) patch(bb);
+  nb.__ca13hidden = true; return true;
+};
