@@ -156,7 +156,7 @@ module BreakEscape
       12.times { refused(fid('old_build'), 'card_factory', 'wrong_class') }
       kept = rows('technique_refused')
       assert_equal 1, kept.size
-      assert_operator kept.first['n'], :>=, 10
+      assert_equal 10, kept.first['n'], 'the row stops growing at ten'
     end
 
     test 'a need not met is need_unmet with its kind and label, the first unmet in order' do
@@ -270,6 +270,7 @@ module BreakEscape
     test 'the keyring proof holds only through the server-owned opsUsed, not a sync body' do
       techniques_game
       put game_path('sync_state'), params: { globalVariables: { opsUsed: [NOS::SPOOL] }, opsUsed: [NOS::SPOOL] }, as: :json
+      assert_response :success, response.body
       assert_equal [], ops_state['opsUsed']
       get game_path('keyring'), as: :json
       refute_includes response.parsed_body['entries'].map { |e| e['id'] }, 'print_admin'
@@ -280,7 +281,8 @@ module BreakEscape
     test 'the step up replaces a technique session in place and keeps its foothold, with access admin shown everywhere' do
       techniques_game
       ops_technique(OFFICE, fid('factory_login'), 'card_factory')
-      refused(fid('step_admin'), 'card_factory', 'need_unmet')
+      body = refused(fid('step_admin'), 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'session', 'label' => 'HB-DESK-01' }, body['need'])
       body = ops_technique(OFFICE, fid('step_up'), 'card_factory')
       assert_response :success, response.body
       assert_equal 'admin', body['session']['access']
@@ -315,7 +317,8 @@ module BreakEscape
     test 'only a technique session can feed a step up that needs admin' do
       techniques_game
       sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD, foothold: OFFICE)
-      refused(fid('step_admin'), 'card_factory', 'need_unmet')
+      body = refused(fid('step_admin'), 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'session', 'label' => 'HB-DESK-01' }, body['need'])
     end
 
     test 'a locked session does not meet a session need' do
@@ -324,7 +327,8 @@ module BreakEscape
       game = Game.find(@game.id)
       game.player_state['sessions']['sam_pc']['locked'] = true
       game.save!
-      refused(fid('step_up'), 'card_factory', 'need_unmet')
+      body = refused(fid('step_up'), 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'session', 'label' => 'HB-DESK-01' }, body['need'])
     end
 
     test 'a use through a second foothold is a new use that moves the session' do
@@ -344,7 +348,8 @@ module BreakEscape
 
     test 'the second foothold runs every check: a refusal there is the refusal as ever' do
       techniques_game(second: true)
-      refused(fid('step_up'), 'card_factory', 'need_unmet', foothold: SECOND)
+      body = refused(fid('step_up'), 'card_factory', 'need_unmet', foothold: SECOND)
+      assert_equal({ 'kind' => 'session', 'label' => 'HB-DESK-01' }, body['need'])
     end
 
     test 'a grant again after the session ended is a new grant with its own use' do
@@ -373,6 +378,99 @@ module BreakEscape
       assert_equal ['lena_pc'], body['endedPcIds']
       assert_nil session_at('lena_pc')
       assert_equal 'ishaw', body['session']['username']
+    end
+
+    # ---- the need order, itemType, no_grant before fixed, the alias on the rows (S3 server R1 m5 to m7) ----
+
+    ORDER_ITEM = { 'id' => 'panel_sheet', 'type' => 'notes', 'name' => NOS::MANUAL_NAME, 'takeable' => true, 'text' => 'Panel sheet.' }.freeze
+
+    # sam_pc gains a `chat` service: `ordered` needs a credential, an item, a session and a global (all unmet);
+    # `typed` needs an itemType; `typed_card` needs the technique_card itemType; `quiet_fixed` grants nothing and
+    # has a fixedIf.
+    def ordered_scenario
+      data = NOS.techniques_scenario
+      sam = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['services']
+      sam << NOS.service('chat', 8000)
+      sam.last['weaknesses'] = [
+        NOS.weak('ordered', 'default_creds', 'low', 'grants' => NOS.sam_grant,
+                                                    'needs' => { 'credential' => 'lena_login', 'item' => 'panel_sheet', 'session' => 'user',
+                                                                 'global' => NOS::DOOR_GLOBAL, 'label' => NOS::DOOR_LABEL }),
+        NOS.weak('typed', 'default_creds', 'low', 'grants' => NOS.sam_grant, 'needs' => { 'itemType' => 'notes', 'label' => NOS::NOTES_LABEL }),
+        NOS.weak('typed_card', 'default_creds', 'low', 'grants' => NOS.sam_grant, 'needs' => { 'itemType' => 'technique_card', 'label' => 'A field note' }),
+        NOS.weak('quiet_fixed', 'misconfig', 'low', 'fixedIf' => NOS::PATCHED_GLOBAL)
+      ]
+      data
+    end
+
+    def ordered_game(state: {})
+      techniques_game(data: ordered_scenario, state: state)
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'chat')
+      %w[ordered typed typed_card quiet_fixed].each { |id| ops_confirm(OFFICE, "sam_pc.chat.#{id}") }
+    end
+
+    def hold_item(item)
+      game = Game.find(@game.id)
+      game.player_state['inventory'] << item.dup
+      game.save!
+    end
+
+    test 'the needs are met and refused in the order credential, item, session, global' do
+      ordered_game
+      id = 'sam_pc.chat.ordered'
+      assert_equal 'credential', refused(id, 'card_factory', 'need_unmet')['need']['kind']
+      pivot_through_lena
+      assert_equal 'item', refused(id, 'card_factory', 'need_unmet')['need']['kind']
+      hold_item(ORDER_ITEM)
+      body = refused(id, 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'session', 'label' => 'HB-DESK-01' }, body['need'])
+      sign_in('sam_pc', 'sokafor', NetworkModelScenario::SAM_PASSWORD, foothold: OFFICE)
+      body = refused(id, 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'global', 'label' => NOS::DOOR_LABEL }, body['need'])
+      assert_empty rows('technique_used')
+      set_global(NOS::DOOR_GLOBAL, true)
+      ops_technique(OFFICE, id, 'card_factory')
+      assert_response :success, response.body
+      assert_equal [id], ops_state['opsUsed']
+    end
+
+    test 'an itemType need is refused, then met by a held item of that type; a card never meets it' do
+      ordered_game
+      id = 'sam_pc.chat.typed'
+      body = refused(id, 'card_factory', 'need_unmet')
+      assert_equal({ 'kind' => 'itemType', 'label' => NOS::NOTES_LABEL }, body['need'])
+      assert_equal false, need_met(id, 'itemType')
+      hold_item(ORDER_ITEM)
+      assert_equal true, need_met(id, 'itemType')
+      ops_technique(OFFICE, id, 'card_factory')
+      assert_response :success, response.body
+      assert_equal 'session', response.parsed_body['grant']
+      body = refused('sam_pc.chat.typed_card', 'card_factory', 'need_unmet')
+      assert_equal 'itemType', body['need']['kind']
+      assert_equal false, need_met('sam_pc.chat.typed_card', 'itemType'), 'a card held does not meet a technique_card itemType need'
+    end
+
+    test 'a finding with no grants and a fixedIf is no_grant, before fixed, once the fixedIf is true' do
+      ordered_game
+      set_global(NOS::PATCHED_GLOBAL, true)
+      before = state_without_log
+      body = refused('sam_pc.chat.quiet_fixed', 'card_factory', 'no_grant')
+      assert_equal %w[reason success], body.keys.sort
+      assert_equal before, state_without_log
+      assert_equal 'no_grant', rows('technique_refused').last['detail']['reason']
+    end
+
+    test 'rows carry the f<n> alias and never the long finding id, on a refusal, a grant and a repeat' do
+      techniques_game
+      refused(fid('old_build'), 'card_factory', 'wrong_class')
+      ops_technique(OFFICE, fid('factory_login'), 'card_factory')
+      ops_technique(OFFICE, fid('factory_login'), 'card_factory')
+      refusal = rows('technique_refused').first
+      grant = rows('technique_used').first
+      assert_equal 2, grant['n']
+      [refusal, grant].each { |row| assert_match(/\Af\d+\z/, row['detail']['finding']) }
+      refute_equal refusal['detail']['finding'], grant['detail']['finding']
+      log = ops_state.slice(*LOG_KEYS).to_json
+      [fid('old_build'), fid('factory_login'), 'factory_login', 'old_build'].each { |text| refute_includes log, text }
     end
 
     # ---- a need is met only by a LIVE session or a still-usable credential (S3 server R1 M1) -----
@@ -529,8 +627,8 @@ module BreakEscape
 
     test 'neither the bootstrap nor a refusal carries a grant, an account or the registry before it is earned' do
       techniques_game
-      refused(fid('old_build'), 'card_factory', 'wrong_class')
-      text = bootstrap_scenario.to_json
+      body = refused(fid('old_build'), 'card_factory', 'wrong_class')
+      text = bootstrap_scenario.to_json + body.to_json + response.body
       %w[techniques factory_accounts Factory\ accounts sokafor opsUsed grants].each { |word| refute_includes text, word }
     end
 
