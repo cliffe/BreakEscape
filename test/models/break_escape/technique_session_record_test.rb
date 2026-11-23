@@ -32,6 +32,8 @@ module BreakEscape
     end
 
     def technique_session(pc_id: 'lena_pc', npc_id: 'lena', **keys)
+      # Reload first: a plant made through the route is not in a stale @game, and saving that would wipe the foothold.
+      @game.reload
       ended = @game.send(:start_login_session!, pc_id, npc(npc_id), 'technique', foothold: OFFICE, technique: 'lena_pc.door.a', **keys)
       @game.save!
       ended
