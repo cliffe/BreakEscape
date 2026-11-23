@@ -55,11 +55,18 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   (done), node 22 first on PATH, and
   `PLAYWRIGHT_CHROMIUM_EXECUTABLE=$HOME/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell`.
   Single JS files run as `bin/test-js test/js/<name>.test.mjs` (a bare name "fails" falsely).
-- RUNNING: core step 1 builder (Sonnet; note `HANDOVER_core_1.md`).
-- Next: S1 steps 2, 3, 4, 5, one Sonnet builder and one commit each (core plan 12.1); S1
-  review on fable52L after step 3 (server) and again over the whole stage; Haiku scripted
-  playtest and live proof of `test_ops_scan`; train check; land. Owed later: the BreakEscape
-  gem bump for Hacktivity (`bump-version` skill) once a playable ops stage has landed.
+- Core step 1 DONE: `0bf5c6744` (8 golden fixtures `core_<scenario>.json`; node fixtures in
+  `test/js/fixtures/ops_unchanged/`; note `HANDOVER_core_1.md`; all three checks mutation
+  proved). Ruling: part 2 covers the 8 network scenarios, the 6 pretext scenarios and m01, m02
+  as controls (not every folder; the train's validator corpus covers the rest). Known: the
+  checked-in graph of `test_access_networks` is stale against regeneration (not ours).
+- RUNNING: S1 step 2 builder (Sonnet; schema, NetworkModel helpers, `check_network_ops`,
+  withheld names; note `HANDOVER_core_2.md`).
+- Next: step 3 (server: `network_ops.rb`, scan route, `opsDiscovered`, events, rows, `cli`
+  copies; split in two builders if large), then a fable52L review of steps 2 and 3 while step
+  4 (client) builds; step 5 (`test_ops_scan`, leak collector, verify-run lines, docs); whole
+  S1 delta review; Haiku playtest and live proof; train check; land. Owed later: the
+  BreakEscape gem bump for Hacktivity once a playable ops stage has landed.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
