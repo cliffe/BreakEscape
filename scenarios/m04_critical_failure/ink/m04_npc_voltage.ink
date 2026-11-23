@@ -217,6 +217,8 @@ Voltage: You want the reasoning. They always want the reasoning.
 
 Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
 
+Voltage: I didn't bring a bomb, agent. I brought a maintenance schedule. #delivery: dry, almost proud of the craft
+
 Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
 
 Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
@@ -255,7 +257,7 @@ Voltage: You think I don't know it. I know it to one decimal place.
 === voltage_owns_it ===
 #speaker:voltage
 
-Voltage: I've done the sums. The city goes dark at eight, and I'll sleep fine. #delivery: quiet and level, a man reading out a sum he has already checked
+Voltage: There's no version of this where I blink. You should have worked that out on the way in.
 
 -> confrontation_choice
 

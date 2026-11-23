@@ -1,0 +1,13 @@
+{
+  "key": "1f0516116a66d3d81980a9cfb09e5fda",
+  "npc": "tesseract",
+  "text": "City by city. Or you press this, and they go everywhere in the same minute. Eleven hundred to twenty-six hundred, the first month.",
+  "voice": "Sadaltager",
+  "style": "ENTROPY's planner, a man in his sixties, in person at his own console. Deliberately unplaceable -- an educated, faintly mid-Atlantic English with every regional marker sanded off, which could be Western European or North American; keep it consistent throughout. Low pitch that never lifts; quiet, slow, deliberate pace with a lecturer's precision. Faintly amused and courteous to the end. Nothing that happens tonight surprises him, including losing.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-23",
+  "recorded_at": "2026-11-23T01:10:17Z"
+}

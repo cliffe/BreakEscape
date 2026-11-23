@@ -107,9 +107,9 @@ I run TalentStack. You've spent tonight putting a name to one of my placements. 
 // lint: call-knot
 #speaker:recruiter
 
-Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
-
 I find people the week before they break, agent. Then I make them an offer. #delivery: warm and confiding, a headhunter's smile in the voice
+
+Torres took debt relief and a standing consultancy retainer. Cheaper than most, if you're keeping score.
 
 -> recruiter_introduction_choices
 
