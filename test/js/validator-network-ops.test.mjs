@@ -154,6 +154,28 @@ test('error: in a scenario with logSources, a network id or a host or foothold d
     assert.deepEqual(errors(issues(w)), []);
 });
 
+// The built foothold id (prefix plus the object's id) is what a row stores: at most 40 characters.
+const FOOTHOLD_PREFIXES = [
+    ['jack_', 'jack', (s, id) => s.rooms.lobby.objects.push({ id, type: 'jack', name: 'Wall jack', networkJack: true, network: 'guest_lan' })],
+    ['wifi_', 'Wi-Fi network', (s, id) => { s.networks[id] = { name: 'Guest Wi-Fi', wifi: { ssid: 'guest' } }; }],
+    ['implant_', 'implantable PC', (s, id) => {
+        s.rooms.lobby.objects.push({ id, type: 'pc', name: 'Hot desk', lockType: 'login', locked: true, network: 'office_lan',
+            triggerOnInteract: [{ type: 'grant_foothold', pc: id, needsDropped: 'stick', name: 'Stick' }] });
+    }]
+];
+for (const [prefix, kind, add] of FOOTHOLD_PREFIXES) {
+    test(`error: in a scenario with logSources, a ${kind} whose built foothold id (${prefix}...) is over 40 characters`, { skip }, () => {
+        const limit = 40 - prefix.length;
+        const over = clean(); over.logSources = {}; add(over, 'x'.repeat(limit + 1));
+        assertHas(errors(issues(over)), `of this ${kind} would be 41 characters`);
+        const edge = clean(); edge.logSources = {}; add(edge, 'x'.repeat(limit));
+        assert.ok(!errors(issues(edge)).some(e => e.includes('foothold id')), errors(issues(edge)).join('\n'));
+        // no logSources: no such rule
+        const none = clean(); add(none, 'x'.repeat(limit + 1));
+        assert.ok(!errors(issues(none)).some(e => e.includes('foothold id')), errors(issues(none)).join('\n'));
+    });
+}
+
 test('error: a hosts entry whose network is not a networks key', { skip }, () => {
     assertHas(errors(issues(withHost({ network: 'nowhere_lan' }))), "network 'nowhere_lan' names no entry in 'networks'");
     const s = clean(); s.hosts.extra01 = { name: 'No net' };

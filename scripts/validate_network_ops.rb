@@ -216,9 +216,28 @@ def check_network_ops(json_data, built: NETWORK_OPS_BUILT, objects_dir: NETWORK_
 
       err.call("'#{d[:path]}' id is longer than #{NETWORK_OPS_MAX_ID} characters; a foothold device id must fit a log row")
     end
+    # A foothold's id in a row is built from its object's id with a prefix (core plan section 0): the
+    # built id must fit too.
+    nm.jacks(json_data).each do |e|
+      network_ops_built_foothold_id(err, "'#{e[:path]}'", 'jack', 'jack_', e[:object]['id'])
+    end
+    networks.each do |net_id, net|
+      network_ops_built_foothold_id(err, "network '#{net_id.to_s[0, 40]}'", 'Wi-Fi network', 'wifi_', net_id) if net.is_a?(Hash) && net['wifi'].is_a?(Hash)
+    end
+    nm.grant_foothold_actions(json_data).map { |a| a[:pc] }.uniq.each do |pc_id|
+      network_ops_built_foothold_id(err, "PC '#{pc_id[0, 40]}'", 'implantable PC', 'implant_', pc_id)
+    end
   end
 
   issues
+end
+
+# One built foothold id (prefix plus the object's id) must be at most NETWORK_OPS_MAX_ID characters.
+def network_ops_built_foothold_id(err, where, kind, prefix, id)
+  return unless id.is_a?(String) && (prefix.length + id.length) > NETWORK_OPS_MAX_ID
+
+  err.call("#{where}: the foothold id '#{prefix}...' of this #{kind} would be #{prefix.length + id.length} characters, over " \
+           "#{NETWORK_OPS_MAX_ID}; its id must be at most #{NETWORK_OPS_MAX_ID - prefix.length} characters to fit a log row")
 end
 
 # S2 and S3 fields on a service and its weaknesses: not built until their stage lands.
