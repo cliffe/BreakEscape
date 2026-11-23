@@ -30,6 +30,9 @@ module BreakEscape
     # S2: the player's own finding state. A stored value is a status letter and an alias number.
     FINDING_VALUE = /\A([ucf])([0-9]{1,4})\z/.freeze
     FINDING_STATUS = { 'u' => 'unconfirmed', 'c' => 'confirmed', 'f' => 'false' }.freeze
+    # The catalog entry keys a finding's `cli` may copy (5.3), in this order, by name only: never a
+    # `_` note, never the link id, never the entry as a whole.
+    CLI_FINDING_KEYS = %w[title module script advisories output].freeze
     # What the view shows for a finding with no authored summary: one plain line per class.
     CLASS_SUMMARIES = {
       'default_creds' => 'A factory or default account may still be accepted.',
@@ -282,6 +285,8 @@ module BreakEscape
       row = { 'id' => found[:finding_id], 'alias' => "f#{number}", 'hostId' => found[:host_id],
               'service' => found[:service_name], 'class' => entry['class'], 'severity' => entry['severity'],
               'summary' => ops_finding_summary(entry), 'status' => FINDING_STATUS[letter] }
+      cli = ops_finding_cli(entry)
+      row['cli'] = cli if cli
       if letter == 'c'
         row['needs'] = ops_needs_rows(entry['needs'])
         row['fixed'] = true if ops_fixed?(entry)
@@ -289,6 +294,29 @@ module BreakEscape
         row['falseBecause'] = entry['falseBecause']
       end
       row
+    end
+
+    # A finding's `cli`, from the realism catalog entry its `realism` link names (5.3). Only a finding
+    # with a link reads the loader. Copies the named keys the entry has, unchanged (a copy, so the frozen
+    # entry is never shared), and nothing else; nil when there is no link, the link resolves to nothing
+    # (one server warning naming the link id, never an answer) or the entry holds none of the keys, so
+    # an answer never carries `cli: {}` or `null`. Nothing reads the result to decide anything.
+    def ops_finding_cli(entry)
+      link = entry['realism']
+      return nil unless link.is_a?(String) && !link.empty?
+
+      linked = BreakEscape::RealismCatalog.lookup(link)
+      unless linked.is_a?(Hash)
+        Rails.logger.warn("ops finding: realism link '#{link[0, 64]}' resolves to no catalog entry")
+        return nil
+      end
+
+      out = {}
+      CLI_FINDING_KEYS.each do |key|
+        value = linked[key]
+        out[key] = value.deep_dup unless value.nil? || (value.respond_to?(:empty?) && value.empty?)
+      end
+      out.empty? ? nil : out
     end
 
     def ops_finding_summary(entry)

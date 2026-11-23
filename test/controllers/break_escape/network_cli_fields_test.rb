@@ -1,4 +1,6 @@
 require 'test_helper'
+require 'stringio'
+require 'tmpdir'
 require_relative '../../support/network_ops_scenario'
 
 module BreakEscape
@@ -239,6 +241,207 @@ module BreakEscape
 
     def response_body_of(answer)
       JSON.generate(answer)
+    end
+
+    # ---- S2: a finding's cli, from the realism catalog (OPS_CORE_PLAN.md 5.3, 11.2) ---------------
+
+    NOS = NetworkOpsScenario
+    CATALOG = File.expand_path('../../fixtures/ops_findings_catalog', __dir__)
+    LOGIN_STRINGS = ['FX-TITLE-LOGIN placeholder login weakness', 'example/fx/login', 'fx-login-check', 'FX-ADV-0001', 'FX-ADV-0002',
+                     'FX-OUT-LOGIN-1 invented line', 'FX-OUT-LOGIN-2 invented line'].freeze
+    BANNER_STRINGS = ['FX-TITLE-BANNER placeholder build report', 'example/fx/banner', 'fx-banner-check', 'FX-ADV-0003',
+                      'FX-OUT-BANNER-1 invented line'].freeze
+    PANEL_STRINGS = ['FX-TITLE-PANEL placeholder panel setting', 'example/fx/panel'].freeze
+    OTHER_STRINGS = %w[FX-TITLE-OTHER example/fx/other fx-other-check FX-ADV-0009].freeze
+    FX_NOTES = %w[FX-NOTE-LOGIN FX-NOTE-BANNER].freeze
+    LINKS = %w[fx_login fx_banner fx_panel fx_other fx_missing].freeze
+
+    # The findings fixture with links authored by the test (the schema declares `realism` at the skin
+    # plan's K3, so the scenario is built in Ruby): factory_login -> fx_login, old_banner -> fx_banner,
+    # open_listing -> fx_panel (a partial entry), side_entry -> a link that resolves to nothing.
+    def linked_scenario(links = {})
+      data = NOS.findings_scenario
+      web = data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['services'].find { |svc| svc['name'] == 'web' }
+      defaults = { 'factory_login' => 'fx_login', 'old_banner' => 'fx_banner', 'open_listing' => 'fx_panel', 'side_entry' => 'fx_missing' }
+      (web['weaknesses'] + web['decoys']).each do |entry|
+        link = links.fetch(entry['id'], defaults[entry['id']])
+        link ? entry['realism'] = link : entry.delete('realism')
+      end
+      data
+    end
+
+    def with_catalog(&block)
+      RealismCatalog.with_folder(CATALOG, &block)
+    end
+
+    def hold_linked(links = {})
+      hold_office_foothold({}, linked_scenario(links))
+      sweep_and_scan('sam_pc')
+    end
+
+    def finding_in(body, id)
+      (body['findings'] || [body['finding']]).find { |f| f['id'] == id }
+    end
+
+    def warnings_during
+      io = StringIO.new
+      saved = Rails.logger
+      Rails.logger = ActiveSupport::Logger.new(io)
+      yield
+      io.string
+    ensure
+      Rails.logger = saved
+    end
+
+    test 'S2 cli: a finding carries no cli before the check, and the strings are in the check answer, the confirm answer and GET /network' do
+      with_catalog do
+        hold_linked
+        before = network_view(OFFICE).to_json
+        (LOGIN_STRINGS + BANNER_STRINGS + PANEL_STRINGS).each { |t| refute_includes before, t, "before the check: #{t}" }
+        checked = ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        LOGIN_STRINGS.each { |t| assert_includes response.body, t }
+        confirm = ops_confirm(OFFICE, NOS::FACTORY)
+        LOGIN_STRINGS.each { |t| assert_includes response.body, t }
+        listed = view_hosts.find { |h| h['id'] == 'sam_pc' }['findings'].to_h { |f| [f['id'], f] }
+        assert_equal finding_in(checked, NOS::OLD_BANNER)['cli'], listed[NOS::OLD_BANNER]['cli']
+        assert_equal confirm['finding']['cli'], listed[NOS::FACTORY]['cli']
+      end
+    end
+
+    test 'S2 cli: a finding holds exactly the linked entry title, module, script, advisories and output, those it has, unchanged' do
+      with_catalog do
+        hold_linked
+        body = ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        assert_equal({ 'title' => 'FX-TITLE-LOGIN placeholder login weakness', 'module' => 'example/fx/login', 'script' => 'fx-login-check',
+                       'advisories' => %w[FX-ADV-0001 FX-ADV-0002],
+                       'output' => ['FX-OUT-LOGIN-1 invented line', 'FX-OUT-LOGIN-2 invented line'] }, finding_in(body, NOS::FACTORY)['cli'])
+        assert_equal %w[title module script advisories output], finding_in(body, NOS::FACTORY)['cli'].keys
+        assert_equal({ 'title' => 'FX-TITLE-PANEL placeholder panel setting', 'module' => 'example/fx/panel' },
+                     finding_in(body, NOS::OPEN_LISTING)['cli'], 'only the keys the entry has')
+      end
+    end
+
+    test 'S2 cli: a note key, the link id and an entry nothing links are in no answer' do
+      with_catalog do
+        hold_linked
+        answers = [ops_check(OFFICE, host_id: 'sam_pc', service: 'web').to_json]
+        answers << ops_confirm(OFFICE, NOS::FACTORY).to_json
+        answers << ops_confirm(OFFICE, NOS::OLD_BANNER).to_json
+        answers << network_view(OFFICE).to_json
+        answers << ops_check(OFFICE, host_id: 'sam_pc', service: 'web').to_json
+        answers.each do |text|
+          (FX_NOTES + OTHER_STRINGS + LINKS).each { |t| refute_includes text, t, t }
+          refute_includes text, '"_"'
+          refute_includes text, 'realism'
+        end
+      end
+    end
+
+    test 'S2 cli: a finding with no link has no cli key, and an answer holds no {} or null for it' do
+      with_catalog do
+        hold_linked('factory_login' => nil, 'old_banner' => nil, 'open_listing' => nil, 'side_entry' => nil)
+        body = ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        assert(body['findings'].none? { |f| f.key?('cli') })
+        listed = view_hosts.find { |h| h['id'] == 'sam_pc' }['findings']
+        text = [body['findings'], ops_confirm(OFFICE, NOS::FACTORY)['finding'], listed].to_json
+        refute_includes text, '"cli"'
+        refute_includes text, '{}'
+        refute_includes text, 'null'
+      end
+    end
+
+    test 'S2 cli: a link that resolves to nothing gives no cli, one warning naming the link id, and the same status, alias and rows' do
+      with_catalog do
+        hold_linked
+        log = warnings_during { ops_check(OFFICE, host_id: 'sam_pc', service: 'web') }
+        body = response.parsed_body
+        side = finding_in(body, NOS::SIDE_ENTRY)
+        refute side.key?('cli')
+        assert_equal 1, log.scan('fx_missing').length, 'one warning, naming the link id'
+        linked_state = ops_state['opsFindings']
+        linked_rows = ops_rows.map { |r| r.slice('event', 'where', 'detail', 'result') }
+        hold_linked('side_entry' => nil)
+        unlinked_log = warnings_during { ops_check(OFFICE, host_id: 'sam_pc', service: 'web') }
+        refute_includes unlinked_log, 'fx_missing'
+        assert_equal linked_state, ops_state['opsFindings']
+        assert_equal linked_rows, ops_rows.map { |r| r.slice('event', 'where', 'detail', 'result') }
+      end
+    end
+
+    test 'S2 cli: a weakness and a decoy carry the same key set and value types, linked to entries of one form and linked to neither, before and after the confirm' do
+      with_catalog do
+        [{ 'factory_login' => 'fx_login', 'old_banner' => 'fx_banner' }, { 'factory_login' => nil, 'old_banner' => nil }].each do |links|
+          hold_linked(links)
+          body = ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+          weak = finding_in(body, NOS::FACTORY)
+          decoy = finding_in(body, NOS::OLD_BANNER)
+          assert_equal weak.keys, decoy.keys, "before the confirm #{links}"
+          assert_equal weak.transform_values(&:class), decoy.transform_values(&:class)
+          assert_equal (weak['cli'] || {}).keys, (decoy['cli'] || {}).keys
+          assert_equal (weak['cli'] || {}).transform_values(&:class), (decoy['cli'] || {}).transform_values(&:class)
+          weak = ops_confirm(OFFICE, NOS::FACTORY)['finding']
+          decoy = ops_confirm(OFFICE, NOS::OLD_BANNER)['finding']
+          assert_equal (weak['cli'] || {}).keys, (decoy['cli'] || {}).keys, "after the confirm #{links}"
+        end
+      end
+    end
+
+    test 'S2 cli: no cli string, key or link id is in the bootstrap, a room, a refusal body, a sync answer or the keyring' do
+      with_catalog do
+        hold_linked
+        ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+        ops_confirm(OFFICE, NOS::FACTORY)
+        everything = LOGIN_STRINGS + BANNER_STRINGS + PANEL_STRINGS + OTHER_STRINGS + FX_NOTES + LINKS
+        bootstrap_scenario
+        texts = [response.body]
+        @game.reload.scenario_data['rooms'].each_key do |room_id|
+          get game_path("room/#{room_id}"), as: :json
+          texts << response.body
+        end
+        ops_check(OFFICE, host_id: 'print_srv', service: 'queue')
+        texts << response.body
+        ops_confirm(OFFICE, NOS::SPOOL)
+        texts << response.body
+        ops_check(OFFICE, host_id: 'sam_pc')
+        texts << response.body
+        sync_globals('x' => true)
+        texts << response.body
+        get game_path('keyring'), as: :json
+        texts << response.body
+        texts.each do |text|
+          everything.each { |t| refute_includes text, t, t }
+          refute_includes text, '"cli"' unless text.include?('"findings"')
+        end
+      end
+    end
+
+    test 'S2 cli: the same requests with every cli string changed, or every link pointed at another entry, give the same statuses, reasons, finding statuses and rows' do
+      run = lambda do |links|
+        hold_linked(links)
+        out = []
+        out << [ops_check(OFFICE, host_id: 'sam_pc', service: 'web')['findings'].map { |f| [f['id'], f['alias'], f['status']] }, response.status]
+        out << [ops_confirm(OFFICE, NOS::FACTORY)['finding']['status'], response.status]
+        out << [ops_confirm(OFFICE, NOS::OLD_BANNER)['finding']['status'], response.status]
+        ops_confirm(OFFICE, NOS::SPOOL)
+        out << [response.parsed_body, response.status]
+        out << ops_rows.map { |r| r.slice('event', 'where', 'detail', 'result') }
+        out << ops_state['opsFindings']
+        out
+      end
+      with_catalog do
+        base = run.call({})
+        other = run.call('factory_login' => 'fx_other', 'old_banner' => 'fx_other', 'open_listing' => 'fx_other', 'side_entry' => 'fx_other')
+        none = run.call('factory_login' => nil, 'old_banner' => nil, 'open_listing' => nil, 'side_entry' => nil)
+        assert_equal base, other
+        assert_equal base, none
+      end
+      # a catalog folder with every string changed: the same answers apart from the strings themselves
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'c.json'), File.read(File.join(CATALOG, 'findings.json')).gsub('FX-', 'ZZ-').gsub('example/fx/', 'example/zz/'))
+        base = RealismCatalog.with_folder(CATALOG) { run.call({}) }
+        changed = RealismCatalog.with_folder(dir) { run.call({}) }
+        assert_equal base, changed
+      end
     end
   end
 end

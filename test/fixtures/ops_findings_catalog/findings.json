@@ -1,0 +1,32 @@
+{
+  "_about": "Test-only catalog for the ops core S2 finding cli tests. Invented entries only; none of this is real.",
+  "entries": {
+    "fx_login": {
+      "_": "FX-NOTE-LOGIN author note, never served.",
+      "title": "FX-TITLE-LOGIN placeholder login weakness",
+      "module": "example/fx/login",
+      "script": "fx-login-check",
+      "advisories": ["FX-ADV-0001", "FX-ADV-0002"],
+      "output": ["FX-OUT-LOGIN-1 invented line", "FX-OUT-LOGIN-2 invented line"]
+    },
+    "fx_banner": {
+      "_": "FX-NOTE-BANNER author note, never served.",
+      "title": "FX-TITLE-BANNER placeholder build report",
+      "module": "example/fx/banner",
+      "script": "fx-banner-check",
+      "advisories": ["FX-ADV-0003"],
+      "output": ["FX-OUT-BANNER-1 invented line"]
+    },
+    "fx_panel": {
+      "title": "FX-TITLE-PANEL placeholder panel setting",
+      "module": "example/fx/panel"
+    },
+    "fx_other": {
+      "title": "FX-TITLE-OTHER entry nothing links",
+      "module": "example/fx/other",
+      "script": "fx-other-check",
+      "advisories": ["FX-ADV-0009"],
+      "output": ["FX-OUT-OTHER-1 invented line"]
+    }
+  }
+}
