@@ -15,9 +15,13 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
 
 ## Where to work
 
-- Worktree `/data/be-ops-core` (also `/home/deploy/be-ops-core`), branch `ops-core`. Use
-  absolute paths under it. Never edit or commit in `/home/deploy/BreakEscape` (main) or any
-  other repo. Never edit `.claude/skills/*` or campaign missions (m01 to m10, sis*).
+- **Build worktree: `/data/be-ops-build`** (also `/home/deploy/be-ops-build`), branch
+  `ops-build`. All building, fixing and reviewing happens here; use absolute paths under it.
+  `/data/be-ops-core` (branch `ops-core`) is now the TRAIN tree: the orchestrator fast-forwards
+  it and runs train checks there. Never edit, commit or run anything in it. Older notes and
+  prompts that say `/data/be-ops-core` mean the build worktree. Never edit or commit in
+  `/home/deploy/BreakEscape` (main) or any other repo. Never edit `.claude/skills/*` or
+  campaign missions (m01 to m10, sis*).
 - Scratch files: the scratch folder your prompt names, never the repo.
 - Read narrowly: the plan sections and line ranges your prompt names, and the code you edit.
   The plans are long (core 2120 lines, log rows 1296); do not read them whole. Digests of the
@@ -29,7 +33,7 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop`, `db:setup` or `db:seed`.
   If a step seems to need a migration, stop and report.
 - **Tests.** Rails tests share one test database: run them under the shared lock,
-  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the worktree root. Do not set
+  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the build worktree's root. Do not set
   `BUNDLE_PATH` (the gems are system gems). The lock is shared with other sessions' trains, so
   a run can queue for many minutes: that is normal, wait for it. After any edit to an engine
   file, also run `bin/ops-golden-compare` with NO outer `flock` (it takes the lock itself; wrapping it deadlocks the queue for every session) to prove old scenarios answer as
@@ -124,3 +128,13 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   group, "Devices", listed after the PCs and before shares and other kinds. m4, focus stays on
   the control's row (or the next control) after a sweep or scan, and scroll is kept. A stale
   refetch answer must never overwrite a newer one (M1): drop it by an epoch counter.
+- 2026-11-23 (user: "parallelise further"): builders of one stage run side by side, split by
+  file, each told which files are its own. A builder NEVER edits a file outside its list; if
+  it needs a change there it reports it. Each commits only its own paths. Shared single-line
+  files (`ops_log_events.rb`, `config/routes.rb`, the controller lists, `game_policy.rb`,
+  the schema) are edited by exactly one builder per stage, named in the prompts. Rails tests
+  queue on the shared lock, so run few files at a time and expect waits. A test that fails
+  only because a neighbour's half is not in yet is reported, not "fixed".
+- For S2: R3-1 (the leak scanner checks a service's `name` and `port` too, by a structural
+  rule) goes into step 8's scanner work; R3-2 (`_refetchDropped` initialised in the view's
+  constructor) into step 7.
