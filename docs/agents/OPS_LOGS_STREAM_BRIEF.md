@@ -54,3 +54,13 @@ with these differences, which win:**
   its tests go, the new tests drive `/unlock`. m3, a no-route read under a foothold session
   answers as `/container` does (accepted; plan section 11 reworded). m5, a thing with no
   authored name is shown by its kind word, never by its raw id (plan lines 352 and 382).
+- 2026-11-23, L2a client R1 rulings: F2, the client sends `relay` for a reader on a relay
+  desktop (the server already reads it; the plan's route line gains the param). F4 and m9,
+  the RESULT filter works on the result's base word, so `FAIL` matches `FAIL x3` and a filter
+  never goes stale when a count grows; a filter whose value is gone is cleared and shown as
+  cleared. m1, the stylesheet is linked from the page (`show.html.erb`) with the `?v=` stamp
+  like its neighbours, not injected by the module. m11, `ops_log_terminal` joins
+  `DESK_COMPUTER_TYPES` in `interaction-reach.js`. m12, `minigameData.title` leaves the
+  schema entry: the title is the source's, from the server. The validator's sprite check
+  exempts `ops_log_terminal` the way it exempts `capture_log` (the type reuses the log
+  terminal's sprite), with a test.
