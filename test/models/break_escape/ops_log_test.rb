@@ -1003,18 +1003,21 @@ module BreakEscape
       assert_no_match(/bare_lan|recep_pc|GATE-1|guard/, (shown + from).to_json)
     end
 
-    test 'a door shows its room name, then its door sign, then the kind word, never the raw id' do
+    test 'a door shows its door sign, then its room name, then the kind word, never the raw id' do
       game = make_game
       vault = game.scenario_data['rooms']['vault']
       at(T0) { write(game, 'tst_door', where: { kind: 'door', id: 'vault' }) }
       name = -> { game.log_rows_for_client('by_prefix')[:rows].last[:where] }
       assert_equal 'door', name.call
-      vault['door_sign'] = 'Vault Annex'
-      assert_equal 'Vault Annex', name.call
       vault['name'] = 'Vault'
-      assert_equal 'Vault', name.call
-      vault['name'] = ''
-      assert_equal 'Vault Annex', name.call, 'an empty name falls through to the door sign'
+      assert_equal 'Vault', name.call, 'a room with only a name shows the name'
+      vault['door_sign'] = 'Vault Annex'
+      assert_equal 'Vault Annex', name.call, 'a room with both shows the door sign first'
+      vault['door_sign'] = ''
+      assert_equal 'Vault', name.call, 'an empty sign falls through to the name'
+      vault.delete('name')
+      vault['door_sign'] = 'Vault Annex'
+      assert_equal 'Vault Annex', name.call, 'a room with only a sign shows the sign'
     end
 
     test 'KINDS resolve objects in containers, files in containers, and show an unresolved id as nil' do

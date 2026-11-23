@@ -56,7 +56,7 @@ module BreakEscape
       'door' => {
         name: lambda { |game, id|
           room = OpsLogEvents.room_hash(game, id)
-          room && ([room['name'], room['door_sign']].find { |t| t.is_a?(String) && !t.empty? } || id)
+          room && ([room['door_sign'], room['name']].find { |t| t.is_a?(String) && !t.empty? } || id)
         },
         room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
       },

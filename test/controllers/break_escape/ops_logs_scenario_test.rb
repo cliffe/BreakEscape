@@ -202,7 +202,7 @@ module BreakEscape
       assert_equal 'OK', row['result']
       assert_equal 'Dana Reyes', row['as'], 'no source sets showCardHolder, so the holder shows (plan option d)'
       assert_equal ['Finance office', 'Security office'], body['rows'].map { |r| r['where'] },
-                   'a door shows the room name, or the sign on its door (what the player reads), never the kind word or an id'
+                   'a door shows the sign on its door (what the player reads), else the room name, never the kind word or an id'
       assert_equal '', row['detail']
       assert_answer_holds_no_secret(body)
       assert_kind_of Integer, row['elapsedMs']
