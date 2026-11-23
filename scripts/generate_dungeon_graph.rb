@@ -1794,7 +1794,7 @@ end
   end
 
   # Grants: a session grant ends at the host's sign-in lock (the lock already takes a second way in from a
-  # credential), a credential grant at `cred_<id>`. An `access: admin` session grant also ends at the lock until S5a.
+  # credential), a credential grant at `cred_<id>`. An `access: admin` session grant also gains an edge to `admin@<pcId>` (S5a, below).
   drawn.each do |weak_node, w|
     grants = w[:entry]['grants']
     next unless grants.is_a?(Hash)
@@ -1809,6 +1809,52 @@ end
     cred_node = cred.is_a?(String) ? "cred_#{nid(cred)}" : nil
     add_edge(weak_node, cred_node) if cred_node && $nodes.key?(cred_node) && $edges.none? { |e| e[:from] == weak_node && e[:to] == cred_node }
   end
+end
+
+# S5a (privilege plan 9, dungeon graph): `admin@<pcId>` is "an administrator session at this sign-in PC". It has
+# an edge from each `creds.admin` account the PC admits (from that account's sign-in node, as the habit edges
+# are drawn) and from each weakness on the PC's host whose session grant has `access: "admin"` (that weakness
+# keeps its `grants session` edge to the lock). A scenario with neither draws no such node. Labels name the PC,
+# never a password. No hash-record or "collect" edges (S5b).
+admin_pcs = {} # pc id => { pc:, from: [node ids] }
+admin_rec_for = lambda do |lock_entry|
+  pc = lock_entry[:lock]
+  next nil unless lock_entry[:kind] == 'login' && pc.is_a?(Hash) && pc['id'].is_a?(String) && !pc['id'].empty?
+
+  admin_pcs[pc['id']] ||= { pc: pc, from: [] }
+end
+BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+  npc = account[:npc]
+  next unless npc['creds'].is_a?(Hash) && npc['creds']['admin'] == true
+
+  account[:opens].each do |lock_entry|
+    next unless (rec = admin_rec_for.call(lock_entry))
+
+    signin_node = "signin_#{nid(npc['id'])}"
+    unless $nodes.key?(signin_node)
+      add_node(signin_node, "#{npc['displayName'] || npc['id']} sign-in<br/>(#{npc['creds']['username']})", 'key')
+      add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
+      add_edge(account[:room], signin_node)
+    end
+    rec[:from] << signin_node
+  end
+end
+(weak_drawn || []).each do |weak_node, w|
+  grant = w[:entry]['grants'].is_a?(Hash) ? w[:entry]['grants']['session'] : nil
+  next unless grant.is_a?(Hash) && grant['access'] == 'admin' && w[:host][:kind] != 'device'
+
+  lock_entry = BreakEscape::AccessIdentities.locks(scenario).find { |l| l[:kind] == 'login' && l[:lock]['id'] == w[:host_id] }
+  next unless lock_entry && (rec = admin_rec_for.call(lock_entry))
+
+  rec[:from] << weak_node
+end
+admin_pcs.each do |pc_id, rec|
+  next if rec[:from].empty?
+
+  admin_id = "admin@#{pc_id}"
+  pc_label = rec[:pc]['name'].is_a?(String) && !rec[:pc]['name'].strip.empty? ? rec[:pc]['name'] : pc_id
+  add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
+  rec[:from].uniq.each { |from| add_edge(from, admin_id, label: 'administrator') }
 end
 
 # N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
