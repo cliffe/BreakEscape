@@ -42,19 +42,20 @@
   {
    "id": "hook",
    "type": "gameplay",
-   "duration": 5.3,
+   "duration": 5.0,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t01_nilesh_hook.trimmed.mkv",
     "in": 12.1,
-    "out": 17.4
+    "out": 17.1
    },
    "audio": {
     "gain_db": 0,
     "dialogue": true,
-    "duck_music": true
+    "duck_music": true,
+    "post": 0.3
    },
    "spoiler": {
     "reviewed": false,
@@ -62,7 +63,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t01: portrait up 9.61; welcome speech 9.92 to 17.25 (silencedetect) with a 0.42 s gap 11.78 to 12.20 after 'exercise.'; in 12.10 is 0.10 s before 'Most' and 0.32 s after the gap opens, out 17.40 is 0.15 s after 'over.'; the unknown sound at 0 to 2.35 is not in; game bar framed out, the two sentences burned as captions; split between the two caption entries (2.3 s) is an estimate, check by ear on the render; hook is 5.30 s, over the cold-open lint limit of 5.0 s (speech alone is 5.05 s): needs the owner's lint allowance | CA: spoilers not an issue (owner), no masks"
+    "note": "t01: portrait up 9.61; welcome speech 9.92 to 17.25 (silencedetect) with a 0.42 s gap 11.78 to 12.20 after 'exercise.'; in 12.10 is 0.10 s before 'Most' and 0.32 s after the gap opens, out 17.40 is 0.15 s after 'over.'; the unknown sound at 0 to 2.35 is not in; game bar framed out, the two sentences burned as captions; split between the two caption entries (2.3 s) is an estimate, check by ear on the render; hook picture 5.0 s (12.10 to 17.10, inside the cold-open limit) and audio.post 0.3 carries 'over.' (ends 17.25) to 17.40 under the open card (L-cut, as ca08 t05); open card 5.4 s so the timeline after it is unchanged; v1 at 5.5 is 0.4 s clear of the cast line ending 5.15"
    },
    "seat": {
     "seat": "full"
@@ -93,7 +94,7 @@
     },
     {
      "start": 2.5,
-     "end": 5.15,
+     "end": 4.95,
      "speaker": "Nilesh",
      "text": "They're guessed, reused or handed over."
     }
@@ -116,7 +117,7 @@
     "company": "Tarrowby Logistics",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
