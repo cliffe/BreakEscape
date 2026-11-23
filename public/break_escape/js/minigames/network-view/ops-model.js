@@ -327,3 +327,86 @@ export function applyOpsAnswer(view, offer, answer) {
         default: return applyScanAnswer(view, offer, answer);
     }
 }
+
+// ---------------------------------------------------------------------------------------------
+// S3: technique cards (select a finding, select a card, Use). Pure helpers; the view draws them.
+// ---------------------------------------------------------------------------------------------
+
+export const ACCESS_TAG_TEXT = 'admin';
+
+/** The access tag a session carries: 'admin' when `access` says so, else '' (a missing key means user). */
+export function accessTag(session) {
+    return session && typeof session === 'object' && session.access === 'admin' ? ACCESS_TAG_TEXT : '';
+}
+
+/** A session a technique granted (the host row draws the bolt for it). */
+export function isTechniqueSession(session) {
+    return !!session && typeof session === 'object' && session.via === 'technique';
+}
+
+/** "Out of date · Brackley ShareServe · versions 3.0, 3.1": what a card works on, from its `worksOn`. */
+export function worksOnLine(worksOn) {
+    const w = worksOn && typeof worksOn === 'object' ? worksOn : {};
+    const versions = Array.isArray(w.versions) ? w.versions.filter(v => typeof v === 'string' && v) : [];
+    return [
+        w.class ? classWord(w.class) : '',
+        typeof w.product === 'string' ? w.product : '',
+        versions.length ? `${versions.length === 1 ? 'version' : 'versions'} ${versions.join(', ')}` : ''
+    ].filter(Boolean).join(' · ');
+}
+
+/**
+ * The held cards of a view (the foothold entry's `techniques` map), by id, each reduced to what
+ * a card face shows: `{ id, name, summary, worksOn (the line), itemId }`. Only what the server
+ * sends for a held card; nothing here knows which finding a card fits.
+ */
+export function techniqueList(view) {
+    const map = view?.techniques;
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return [];
+    return Object.keys(map).sort().filter(id => map[id] && typeof map[id] === 'object').map(id => {
+        const t = map[id];
+        return {
+            id,
+            name: typeof t.name === 'string' && t.name ? t.name : id,
+            summary: typeof t.summary === 'string' ? t.summary : '',
+            worksOn: worksOnLine(t.worksOn),
+            itemId: typeof t.itemId === 'string' ? t.itemId : ''
+        };
+    });
+}
+
+/** One held card by technique id, or null. */
+export function findTechnique(view, techniqueId) {
+    return techniqueList(view).find(t => t.id === techniqueId) || null;
+}
+
+/** The held card's item id for a technique id (the id `POST /network/technique` takes), or null. */
+export function techniqueItemId(view, techniqueId) {
+    const t = findTechnique(view, techniqueId);
+    return t && t.itemId ? t.itemId : null;
+}
+
+/** The `use` offer's target: the card (technique id) and the finding (built id) together. */
+export const useTarget = (card, finding) => ({ card, finding });
+
+/** A `use` target from an object, an array or a "card|finding" string back to `{ card, finding }`, or null. */
+export function parseUseTarget(target) {
+    let card; let finding;
+    if (Array.isArray(target)) [card, finding] = target;
+    else if (target && typeof target === 'object') ({ card, finding } = target);
+    else if (typeof target === 'string' && target.includes('|')) {
+        const i = target.indexOf('|');
+        card = target.slice(0, i); finding = target.slice(i + 1);
+    }
+    return typeof card === 'string' && card && typeof finding === 'string' && finding ? { card, finding } : null;
+}
+
+/**
+ * The words for a refusal body: `REFUSAL_TEXT` for its code, and for `need_unmet` the unmet
+ * need by name when the server sent `need.label`. No other part of a body is drawn.
+ */
+export function refusalLine(body) {
+    const base = refusalText(body ? body.reason : 'no_answer');
+    const label = body && body.reason === 'need_unmet' && typeof body.need?.label === 'string' ? body.need.label : '';
+    return label ? `${base} Missing: ${label}` : base;
+}

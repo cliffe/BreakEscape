@@ -77,3 +77,24 @@ test('networkCheck and networkConfirm: a refusal throws with status and body, on
         assert.equal(calls.length, 1, `${fn} dropped`);
     }
 });
+
+test('networkTechnique: posts foothold, finding id and item id to /network/technique, nothing else', async () => {
+    calls = []; answer(200, { success: true, grant: 'credential', keyringChanged: true });
+    const out = await ApiClient.networkTechnique('jack_a', { findingId: 'a.b.c', itemId: 'card_1' });
+    assert.deepEqual(calls, [{ url: '/api/network/technique', method: 'POST', body: { foothold: 'jack_a', finding_id: 'a.b.c', item_id: 'card_1' } }]);
+    assert.equal(out.grant, 'credential');
+});
+
+test('networkTechnique: every refusal status throws with status and body (need kept), one request, no retry', async () => {
+    for (const [status, body] of [[400, { success: false, reason: 'bad_request' }], [403, { success: false, reason: 'not_responding' }],
+        [404, { success: false, reason: 'not_found' }], [422, { success: false, reason: 'need_unmet', need: { kind: 'credential', label: 'x' } }]]) {
+        calls = []; answer(status, body);
+        await assert.rejects(ApiClient.networkTechnique('jack_a', { findingId: 'a.b.c', itemId: 'c' }),
+            (e) => e.status === status && e.body.reason === body.reason && (status !== 422 || e.body.need.kind === 'credential'));
+        assert.equal(calls.length, 1, `status ${status}`);
+    }
+    calls = [];
+    globalThis.fetch = async (url) => { calls.push(url); throw new TypeError('network down'); };
+    await assert.rejects(ApiClient.networkTechnique('jack_a', { findingId: 'a.b.c', itemId: 'c' }), /network down/);
+    assert.equal(calls.length, 1);
+});

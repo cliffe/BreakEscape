@@ -643,3 +643,104 @@
 
 .network-need-met .network-need-mark { color: #6fcf86; }
 .network-need-unmet .network-need-mark { color: #e07a7a; }
+
+/* Ops (S3): the Techniques panel, select-then-Use, the access tag and the compromise bolt on a
+   host row. Same pixel-art rule: 2px solid square borders, flat fills, no radius or shadow, and
+   long text wraps inside its card. */
+button.network-finding-alias {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.network-finding-selected { border-color: #4aa3d8; }
+.network-finding-selected .network-finding-alias { border-color: #4aa3d8; background: #1b3a4d; }
+
+.network-techniques {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.network-technique-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.network-technique {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    flex: 1 1 180px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 6px;
+    border: 2px solid #2d3a44;
+    background: #0e151b;
+    color: #cfe9f5;
+    overflow-wrap: anywhere;
+    cursor: grab;
+}
+
+.network-technique-selected { border-color: #4aa3d8; background: #12232d; }
+
+.network-technique .network-technique-select {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: normal;
+}
+
+.network-technique-summary,
+.network-technique-works {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.network-technique-works { color: #a9b4bb; }
+
+.network-technique-use {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.network-technique-pick {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.network-technique-grant {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.network-access-tag {
+    display: inline-block;
+    padding: 0 4px;
+    border: 2px solid #a24b4b;
+    background: #2a1313;
+    color: #ffd0d0;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.network-row-bolt {
+    display: inline-block;
+    flex: none;
+    align-self: center;
+    margin: 0 4px;
+    line-height: 0;
+}
+
+.network-bolt-canvas {
+    display: block;
+    image-rendering: pixelated;
+}

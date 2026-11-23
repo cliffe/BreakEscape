@@ -190,3 +190,53 @@ test('findings: a check answer replaces a held finding whole, in place (a droppe
     assert.deepEqual(out.hosts[0].findings.map(f => f.alias), ['f1', 'f2']);
     assert.equal(v.hosts[0].findings[0].fixed, true, 'input untouched');
 });
+
+// ---- S3: technique cards ----
+test('accessTag: admin only from access "admin"; isTechniqueSession only from via "technique"', () => {
+    assert.equal(M.accessTag({ access: 'admin' }), 'admin');
+    for (const s of [{}, { access: 'user' }, { access: 'ADMIN' }, null, undefined, 'admin']) assert.equal(M.accessTag(s), '');
+    assert.equal(M.isTechniqueSession({ via: 'technique' }), true);
+    assert.equal(M.isTechniqueSession({ via: 'password' }), false);
+    assert.equal(M.isTechniqueSession(null), false);
+});
+
+test('worksOnLine: class word, product, versions; a bare class is the class word alone; hostile text is passed through as text', () => {
+    assert.equal(M.worksOnLine({ class: 'default_creds' }), 'Default login');
+    assert.equal(M.worksOnLine({ class: 'unpatched', product: 'Brackley ShareServe', versions: ['3.0', '3.1'] }), 'Out of date · Brackley ShareServe · versions 3.0, 3.1');
+    assert.equal(M.worksOnLine({ class: 'misconfig', product: 'P', versions: ['1'] }), 'Misconfigured · P · version 1');
+    assert.equal(M.worksOnLine({ class: 'odd_class' }), 'odd_class');
+    assert.equal(M.worksOnLine(null), '');
+    assert.equal(M.worksOnLine({ class: 'unpatched', product: 7, versions: 'x' }), 'Out of date');
+});
+
+test('techniqueList and lookups: id order, the face fields, the item id; a missing map is no cards', () => {
+    const view = { techniques: { b: { name: 'B', worksOn: { class: 'unpatched' }, itemId: 'ib' }, a: { name: 'A', summary: 's', worksOn: { class: 'weak_auth' }, itemId: 'ia' }, bad: null } };
+    assert.deepEqual(M.techniqueList(view).map(t => [t.id, t.name, t.summary, t.worksOn, t.itemId]),
+        [['a', 'A', 's', 'Weak sign-in', 'ia'], ['b', 'B', '', 'Out of date', 'ib']]);
+    assert.equal(M.techniqueItemId(view, 'a'), 'ia');
+    assert.equal(M.techniqueItemId(view, 'nope'), null);
+    assert.equal(M.techniqueItemId({ techniques: { x: { name: 'X', worksOn: {} } } }, 'x'), null, 'no item id to send');
+    for (const v of [null, {}, { techniques: [] }, { techniques: 'x' }]) assert.deepEqual(M.techniqueList(v), []);
+    assert.equal(M.findTechnique(view, 'b').name, 'B');
+});
+
+test('use targets: an object, an array and a card|finding string parse alike, and key the pending guard alike', () => {
+    const t = M.useTarget('c', 'h.s.w');
+    assert.deepEqual(M.parseUseTarget(t), { card: 'c', finding: 'h.s.w' });
+    assert.deepEqual(M.parseUseTarget(['c', 'h.s.w']), { card: 'c', finding: 'h.s.w' });
+    assert.deepEqual(M.parseUseTarget('c|h.s.w'), { card: 'c', finding: 'h.s.w' });
+    for (const bad of [null, '', 'c', { card: 'c' }, { finding: 'f' }, [], 7]) assert.equal(M.parseUseTarget(bad), null);
+    assert.equal(M.pendingKey('use', t), 'use:c|h.s.w');
+    assert.equal(M.pendingKey('use', t), M.pendingKey('use', 'c|h.s.w'));
+    assert.notEqual(M.pendingKey('use', M.useTarget('d', 'h.s.w')), M.pendingKey('use', t), 'another card, another key');
+    assert.notEqual(M.pendingKey('use', M.useTarget('c', 'h.s.v')), M.pendingKey('use', t), 'another finding, another key');
+});
+
+test('refusalLine: words from REFUSAL_TEXT; need_unmet adds the need label only when sent; no body is no_answer', () => {
+    assert.equal(M.refusalLine({ reason: 'wrong_class' }), M.REFUSAL_TEXT.wrong_class);
+    assert.equal(M.refusalLine({ reason: 'need_unmet', need: { kind: 'item', label: 'A key' } }), `${M.REFUSAL_TEXT.need_unmet} Missing: A key`);
+    assert.equal(M.refusalLine({ reason: 'need_unmet' }), M.REFUSAL_TEXT.need_unmet);
+    assert.equal(M.refusalLine({ reason: 'wrong_class', need: { label: 'x' } }), M.REFUSAL_TEXT.wrong_class);
+    assert.equal(M.refusalLine({ reason: 'brand_new' }), M.UNKNOWN_REFUSAL_TEXT);
+    assert.equal(M.refusalLine(null), M.REFUSAL_TEXT.no_answer);
+});
