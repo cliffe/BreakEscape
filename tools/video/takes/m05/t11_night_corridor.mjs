@@ -3,6 +3,7 @@
 // Record: MISSION=m05 run.sh <avatar> t11_night_corridor "<flags above>" "--hide-hud --zoom-step 1"
 // Marks: corridor-start, leave-door, lobby-wait-start, lobby-wait-end, return-door, corridor-reentered, linger-end. NO bark audio may be used from this take (night barks say "David"); picture only.
 import { sleep, clearScreen } from '../lib/lib.mjs';
+import { keyLegs } from '../lib/walklib.mjs';
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});
   await sleep(1500);
@@ -14,12 +15,14 @@ export default async (page, bridge, mark) => {
   mark('corridor-start', (await bridge.getState()).player);
   const r = await bridge.interact('door:main_corridor->reception_lobby', { timeoutMs: 20000 });
   mark('leave-door', { r: JSON.stringify(r).slice(0, 160) });
-  await sleep(1500);
-  mark('lobby-wait-start', { room: (await bridge.getState()).room });
-  await sleep(82000);
+  for (let i = 0; i < 5 && (await bridge.getState()).player.room !== 'reception_lobby'; i++) await keyLegs(bridge, [['down', (await bridge.getState()).player.y + 40]], 105, mark);
+  await keyLegs(bridge, [['down', (await bridge.getState()).player.y + 40]], 105, mark);
+  await sleep(800);
+  mark('lobby-wait-start', { room: (await bridge.getState()).player.room });
+  await sleep(Number(process.env.M05_WAIT || 82000));
   mark('lobby-wait-end');
-  const r2 = await bridge.interact('door:reception_lobby->main_corridor', { timeoutMs: 20000 });
-  mark('return-door', { r: JSON.stringify(r2).slice(0, 160) });
+  for (let i = 0; i < 6 && (await bridge.getState()).player.room !== 'main_corridor'; i++) await keyLegs(bridge, [['up', (await bridge.getState()).player.y - 40]], 105, mark);
+  mark('return-door', { room: (await bridge.getState()).player.room });
   await sleep(2500);
   mark('corridor-reentered', (await bridge.getState()).player);
   await sleep(2500);
