@@ -11,7 +11,7 @@ export { sleep, buttons, clickText, pressButton, waitButton, prepare, openKiosk,
  *  everything under the "Now it lands on you" heading. Measured live 23 Nov: rows are `.mail-compose-part[data-part=ask] .mail-compose-fixed`,
  *  the lines `.mail-redflag-list` and `.mail-redflag-sub`, the flip `.aw-flip > :not(h2.aw-heading)`. */
 export const ATTACK_HIDE = `
-.mail-redflag-list, .mail-redflag-sub { display: none !important; }
+.mail-redflag-list, .mail-redflag-sub, .mail-redflag-advice, .mail-redflag-clean, .mail-checklist-advisory { display: none !important; }
 .mail-compose-part[data-part="ask"] .mail-compose-fixed { visibility: hidden !important; }
 .aw-flip > :not(h2.aw-heading) { display: none !important; }`;
 
@@ -24,9 +24,16 @@ export const NARROW_MAIL = `
 .mail-reader { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto minmax(0, 1fr) !important; }
 .mail-list-pane { overflow-y: visible !important; max-height: none !important; }
 .mail-read-pane { overflow-y: visible !important; }
+.mail-toolbar { flex-wrap: wrap !important; }
+.mail-client .se-overlay-close, body:has(.mail-client) #minigame-close { display: none !important; }
 .tri-verdicts { gap: 6px !important; }
 .tri-verdict-hint { display: none !important; }
 .tri-verdict { min-width: 0 !important; flex: 1 1 0 !important; }`;
+
+/** The OSINT browser frame (`.osint-browser-game-container`, 1100 px; `.ob-root` sits inside it) narrowed to 560 px for the 9:16 and 1:1 cuts. */
+export const NARROW_BROWSER = `
+.osint-browser-game-container { width: 560px !important; max-width: 560px !important; }
+.osint-browser-game-container * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }`;
 
 /** Marks audio of every NPC bark voice (`audio-start:<npc>`, `audio-end:<npc>`) at the page's clock, from barkSystem.ttsManagers (one detached <audio> per NPC;
  *  two NPCs' barks can overlap). Same as ca08's watchBarkAudio. Returns { drain, stop() }. */

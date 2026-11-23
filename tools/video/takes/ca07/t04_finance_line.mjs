@@ -32,7 +32,7 @@ export async function body(page, bridge, mark, narrow) {
   mark('list', { rows }); mark('frame:list');
   if (process.env.CA07_LIST_ONLY) { await sleep(8000); mark('list-held'); mark('end'); return; }
   await sleep(3500);
-  await mouseClick(page, '.mail-row', /Ravinder \(mobile\)|Ravinder Sandhu|train/i, { steps: 12, dwell: 450 });
+  await mouseClick(page, '.mail-row', /Ravinder Sandhu.*13:05.*Voicemail/i, { steps: 12, dwell: 450 });
   const card = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
   mark('row_open', { cloned: /900771/.test(card) && /Hi, it's Ravinder\. I'm on a borrowed phone/.test(card) });
   await sleep(1500); mark('frame:card');

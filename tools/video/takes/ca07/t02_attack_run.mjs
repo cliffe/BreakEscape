@@ -10,7 +10,7 @@
 // that "keep it between us" is not visible. The pretext drop-down is closed (selectOption sets the value without opening the native list).
 // Marks: start, browser-open, note-ceo, ff-open, ff-profile, note-post, note-tom, note-payment, browser-closed, mail-open, compose, slot1, slot2, pretext-set, slot3, redflags:<n>,
 //   build-held, send, landed (msAfterSend), landed-held, mail-closed, flip-up, flip-held, reply-seen (only if Tom's reply showed before the close), end; frame:* for the dry run.
-import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, css, checkSprite, ATTACK_HIDE, NARROW_MAIL } from './_ca07.mjs';
+import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, css, checkSprite, ATTACK_HIDE, NARROW_MAIL, NARROW_BROWSER } from './_ca07.mjs';
 
 export async function setup(page, bridge) { await prepare(page, bridge); await sleep(400); }
 
@@ -18,7 +18,7 @@ const flagCount = (page) => page.evaluate(() => { const e = [...document.querySe
 
 export async function body(page, bridge, mark, narrow) {
   await css(page, ATTACK_HIDE);
-  if (narrow) await css(page, NARROW_MAIL + (process.env.CA07_NARROW_BROWSER_CSS || ''));
+  if (narrow) await css(page, NARROW_MAIL + NARROW_BROWSER + (process.env.CA07_NARROW_BROWSER_CSS || ''));
   await checkSprite(page, mark);
   let last = null; const watchFlags = async () => { const c = await flagCount(page); if (c !== null && c !== last) { last = c; mark('redflags:' + c); } };
   const noQuiet = async () => { if (await visible(page, 'body *', /keep it between us/i)) throw new Error('"keep it between us" is on screen'); };
