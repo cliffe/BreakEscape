@@ -94,3 +94,11 @@ and at most 5 per stage; later rounds are delta reviews.
 - 2026-11-23, L1b: `alreadyOpen: true` on every rfid request at an open target is the plan's
   (section 12, L1b item 2), accepted. For L2a: `showCardHolder` is per source but a stored row
   is shared, so the reader must hide the holder for a source without the flag.
+- 2026-11-23, L1b R1 rulings: M1, the code stands (a right password at a locked session
+  merges into the earlier `signin_ok` row, as the plan's call sites give); the test, the
+  playtest script and the notes are corrected to expect it and the test asserts the count.
+  m1, a guest session's rows are written with `as` nil, and a test pins that. m5, if a forged
+  rfid post can reach the gated route-room branch, the granted row moves after that gate; if
+  it cannot, a test shows the refusal and the finding is withdrawn. m6, `alreadyOpen` on a
+  card-less rfid post stays (the plan's build item; the client only words a toast by it), with
+  a controller test and a line in the A24 doc saying so.
