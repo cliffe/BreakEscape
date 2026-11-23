@@ -111,23 +111,28 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   N14, flaky test fixed; `HANDOVER_core_8b.md`).
 - S2 reviews R1: client 0B 1M 9m `0234fb86c` (halves agree; decoy reason key is
   `falseBecause`); server 0B 0M 17m `248ec9e75`. Rulings in the brief.
-- RUNNING in the build tree (split by file): S2 client fixer; S2 server fixer (m1 to m13,
-  m16, four step-8 tidy items; NOT the validator minors m14, m15, m12's validator half, which
-  wait for 9a); S3 step 9a (schema S3 rows, techniques helpers, validator S3 rules;
-  `HANDOVER_core_9a.md`); S3 step 9b (`technique_card.png` placeholder, `load.image` line,
-  `technique-card-item.test.mjs`, keyring proof kind; `HANDOVER_core_9b.md`).
-- Next for S2: when 9a reports, a tiny Sonnet pass for the deferred validator minors; delta
-  review R2 (fable52L) over both fix sets and step 8; Haiku playtest + live proof of
-  `test_ops_findings` (11.5 S2 beats incl. client m8: phone-width layout and tick/cross
-  glyphs; I look at the screenshots); then train S2 in the train tree. NOTE: S3 step 9
-  commits are on the same branch, so the S2 train hash will include step 9 code (inert: N15
-  stays "not built" in the validator and no route exists); say so when landing.
-- Next for S3: step 10 split in three (10a `start_login_session!` keywords, `access` through
-  the session answers, `opsUsed` in `ACCESS_STATE_DEFAULTS`; 10b `use_technique!`, the route,
-  policy, events, credential grant, `techniques` on `GET /network`; 10c the hostile and free
-  tests), step 11 alone (access-check changes, own commit, fable52L security review), step
-  12 client split in two (techniques panel and Use; remote-view frame, compromise marks,
-  click path), graph cards and grants, step 13 split (scenario + tests / tooling + docs).
+- S2 R1 FIXED (unconfirmed): client `74ad06f69` (9 fixed, m8 deferred to the live proof);
+  server `9b2a8b1aa`, `17ea002c4`, `ce69609e7`, `612cd5509` (14 fixed + 4 tidy items; its m12
+  and m13 hunks were swept into 9a's commit `a6f04bf8b`). Rulings: an item with no graph node
+  draws no need edge (plan: no new node).
+- S3 so far: 9a `a6f04bf8b` (schema, helpers, validator S3 rules; `HANDOVER_core_9a.md`;
+  departures: one extra error, a literal `versions` rule the plan's own example may fail, a
+  skipped warning now in the validator pass); 9b `45388615c` (placeholder PNG, tray test,
+  keyring proof reads `player_state['opsUsed']`, an Array of finding ids); 10a `5f18daed2`
+  (+ `dd31d52a1`): session record keywords, `client_access_level`, `opsUsed` registered.
+- RUNNING in the build tree: S2 delta review R2 (fable52L; `reviews/S2_R2.md`; fixes + step
+  8); S2 Haiku playtest + live proof on port 3011 (scratchpad `s2-playtest/RESULTS.md`, incl.
+  phone-width screenshots for client m8); validator pass (S2 m12, m14, m15 + the S3
+  fixedIf-only-gate warning + a report on the `versions` rule); S3 step 10b
+  (`use_technique!`, the route, events, grants, `techniques` on `GET /network`;
+  `HANDOVER_core_10b.md`).
+- Next: S2: commit R2 findings (check length), look at the playtest screenshots, one fix pass,
+  then `git merge --ff-only ops-build` in the train tree and train (the hash includes inert
+  S3 code: N15 "not built" in the validator; BUT once 10b lands the technique ROUTE exists on
+  the branch, so decide then: either train S2 at a hash before 10b's first commit, or land S2
+  with the route present and say so). S3: 10c hostile + free tests (after 10b), step 11
+  (access checks, own commit, security review), step 12 client in two, graph cards and
+  grants, step 13 in two.
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -140,8 +145,13 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   L2a BUILT there: server `b0d5e98a8`, client `c6f27c685`, scenario step `56bcadf16` (2
   validator sprite errors, in the client fixer's list). Reviews R1: server 0B 1M 12m
   (`01ecc36e2`), FIXED `1bf1527c5`, `7874c1d2a` (stored `flagged` marker); client 0B 5M 12m
-  (`b75add8da`). RUNNING there: client fixer; server delta review R2 + scenario first read
-  (`reviews/L2a_server_R2.md`). Old line: L2a client builder
+  (`b75add8da`). Client R1 FIXED `e262b6848`, `5f07c654b`, `140aef76e`, `17f9b9054` (16 fixed; F1 measured
+  before/after; m10 left: needs one line in `childExtras()`); server R2 + scenario first read
+  `e36dec28c` (R1 fixes confirmed; 3M 12m, rulings in the stream brief); scenario/docs/tooling
+  fixes `3ed1f9667`, `549dcd14f`, `c587d49c4`, `9ad9caee6`. RUNNING there: server + validator
+  fixer for R2 (N1, N2, N3, N6, N7, door_sign fallback, reader validator errors). NEXT there:
+  delta review R3 (fable52L) over the client fixes and the R2 fixes; Haiku playtest of
+  `test_ops_logs` beats 1 to 13 on port 3014; then merge main into `ops-logs`, train, land. Old line: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
