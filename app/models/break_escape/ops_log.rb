@@ -514,6 +514,8 @@ module BreakEscape
       touched = ops_log_write_rows(targets, row, call, elapsed, now)
       return nil if touched.empty?
 
+      # A game started before L1a has no clock key: the first stored row seeds it (13.4).
+      player_state['opsLogClockAt'] ||= now
       ops_log_record(call, once_key, save_key, save_count, reclaim, touched, now)
       OpsLog::Result.new(appended: touched.any? { |t| t[:kind] == :appended }, merged: touched.any? { |t| t[:kind] == :merged })
     end

@@ -1814,7 +1814,22 @@ module BreakEscape
     def bootstrap_state_needs_write?
       cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
         unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries? ||
-        credential_end_globals_stale?
+        credential_end_globals_stale? || ops_log_clock_stale?
+    end
+
+    # True when the ops log clock key exists and was set ten seconds ago or more, so a reload loop is
+    # not a save loop (13.4). A game without the key (no logSources) never answers true.
+    def ops_log_clock_stale?
+      at = player_state['opsLogClockAt']
+      at.is_a?(Numeric) && OpsLog.clock - at.to_i >= OPS_LOG_CLOCK_REFRESH_MS
+    end
+
+    # Page load: the client resumes from the saved elapsedMs, so it is true now.
+    def refresh_ops_log_clock!
+      return false unless ops_log_clock_stale?
+
+      player_state['opsLogClockAt'] = OpsLog.clock
+      true
     end
 
     # True when a carry is still stored at load time. A reload lands on the bootstrap
@@ -1852,6 +1867,7 @@ module BreakEscape
       # Keyring K2 (plan 7.1): cache the end-global map for the sync merge and end any invite whose
       # global is already true.
       changed = record_credential_end_globals!(scenario: scenario) || changed
+      changed = refresh_ops_log_clock! || changed
       changed
     end
 
@@ -5851,6 +5867,7 @@ module BreakEscape
     end
 
     MAX_SCENARIO_CLOCK_ELAPSED_MS = 7.days.in_milliseconds
+    OPS_LOG_CLOCK_REFRESH_MS = 10_000
     MAX_SCENARIO_TIMERS = 200
     MAX_CLOCK_KEY_LENGTH = 200
     MAX_CLOCK_ANCHORS = 50
@@ -5869,6 +5886,9 @@ module BreakEscape
       elapsed = incoming['elapsedMs']
       if elapsed.is_a?(Numeric) && elapsed >= 0
         saved['elapsedMs'] = [saved['elapsedMs'].to_i, elapsed.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
+        # Ops log clock stamp (OPS_LOG_ROWS_PLAN 13.4): the server time at which the saved elapsedMs was
+        # true. Gated on the key, never on scenario_data (a sync loads none): only a log game has it.
+        player_state['opsLogClockAt'] = OpsLog.clock if player_state.key?('opsLogClockAt')
       end
 
       timers = incoming['timers']
@@ -7598,6 +7618,12 @@ module BreakEscape
       # Access model (5.3): sessions, sign-in failures and lockouts, copied files and
       # recorded card copies. Not preserved by a reset.
       ACCESS_STATE_DEFAULTS.each { |key, empty| self.player_state[key] ||= empty.dup }
+
+      # Ops log clock stamp (OPS_LOG_ROWS_PLAN 13.4): seeded only for a scenario with logSources, and the
+      # key is the opt-in marker for the sync and bootstrap refreshes from then on.
+      if scenario_data.is_a?(Hash) && scenario_data['logSources'].is_a?(Hash)
+        self.player_state['opsLogClockAt'] ||= OpsLog.clock
+      end
 
       # Imported globals (CarryOver): their values and the read-only list.
       apply_imported_globals_to_state
