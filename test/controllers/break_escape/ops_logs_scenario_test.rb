@@ -20,10 +20,10 @@ module BreakEscape
     end
 
     # office_open: start with the office door already open, as a player is once through it.
-    def build(inventory: [CLONER.dup], scenario: self.scenario, office_open: false)
+    def build(inventory: [CLONER.dup], scenario: self.scenario, office_open: false, security_open: false)
       @game = create_access_game(
         mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user), scenario: scenario,
-        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => office_open ? %w[lobby office] : %w[lobby],
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => (%w[lobby] + (office_open || security_open ? %w[office] : []) + (security_open ? %w[security] : [])),
                         'encounteredNPCs' => %w[dana],
                         'inventory' => inventory }
       )
@@ -56,11 +56,14 @@ module BreakEscape
       response.parsed_body
     end
 
-    test 'the scenario declares two sources, a clock, and no reader, and a new game holds no rows' do
+    test 'the scenario declares two sources, a clock, and a reader per source, and a new game holds no rows' do
       build
       data = fresh.scenario_data
       assert_equal %w[door_controller signin_audit], data['logSources'].keys.sort
       assert data['gameClock']
+      readers = data['rooms']['security']['objects'].select { |o| o['type'] == 'ops_log_terminal' }
+      assert_equal({ 'door_log_pc' => 'door_controller', 'signin_log_pc' => 'signin_audit' },
+                   readers.to_h { |o| [o['id'], o.dig('minigameData', 'logSource')] })
       assert_empty door_rows
       assert_empty signin_rows
       assert_not_nil fresh.player_state['opsLogClockAt'], 'the clock key is seeded for a game with logSources'
@@ -139,6 +142,115 @@ module BreakEscape
       assert_includes secrets.to_s, DANA_PASSWORD, 'the account password is among the registered secrets'
       rows.each { |r| assert_nil OpsLog.find_secret_hit(secrets, r), "a secret appears in #{r.inspect}" }
       assert_not_includes fresh.player_state['opsLog'].to_json, DANA_PASSWORD
+    end
+
+    # ---- L2a: the readers, through GET /log_rows on a re-read game ----
+
+    SEVEN_KEYS = %w[as detail elapsedMs event id result where].freeze
+
+    def read(id, params = {})
+      get log_rows_game_url(@game), params: { object_id: id }.merge(params), as: :json
+      response.parsed_body
+    end
+
+    # The earlier beats, from a fresh game: copy, swipe into the office, two failures, sign in.
+    def play_the_beats
+      clone_dana
+      swipe
+      assert_response :success
+      2.times { login('wrong-guess') }
+      login(DANA_PASSWORD)
+    end
+
+    def swipe_security
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'security', method: 'rfid', card_ids: [DANA_CARD] }, as: :json
+      assert_response :success, response.body
+    end
+
+    test 'a reader in a room not yet reached answers the one 404, whichever reader and whatever the id' do
+      build
+      play_the_beats
+      %w[door_log_pc signin_log_pc nope Door\ log\ PC].each do |id|
+        body = read(id)
+        assert_response :not_found, id
+        assert_equal({ 'success' => false, 'reason' => 'not_found' }, body, id)
+      end
+    end
+
+    test 'the door reader shows the badge row with the seven keys, and never the sign-in rows' do
+      build
+      play_the_beats
+      swipe_security
+      body = read('door_log_pc')
+      assert_response :success, body.inspect
+      assert_equal 'Door controller', body['title']
+      assert_equal 2, body['rows'].size, 'the office swipe and the security swipe'
+      row = body['rows'].first
+      assert_equal SEVEN_KEYS, row.keys.sort
+      assert_match(/\A\h{10}\z/, row['id'])
+      assert_equal 'BADGE', row['event']
+      assert_equal 'OK', row['result']
+      assert_equal 'Dana Reyes', row['as'], 'no source sets showCardHolder, so the holder shows (plan option d)'
+      assert_not_equal '-', row['where']
+      assert_equal '', row['detail']
+      assert_kind_of Integer, row['elapsedMs']
+      assert_not_includes response.body, 'SIGN_IN'
+    end
+
+    test 'the sign-in reader shows the merged failure, the sign-in and the lock, and never the badge row' do
+      build
+      play_the_beats
+      swipe_security
+      post lock_session_game_url(@game), params: { pc_id: 'office_pc' }, as: :json
+      body = read('signin_log_pc')
+      assert_response :success, body.inspect
+      assert_equal 'Sign-in audit', body['title']
+      rows = body['rows']
+      assert_equal %w[SIGN_IN SIGN_IN SESSION], rows.map { |r| r['event'] }
+      assert_equal ['FAIL x2', 'OK', 'OK'], rows.map { |r| r['result'] }
+      assert_equal %w[dreyes dreyes], rows.first(2).map { |r| r['as'] }
+      assert_equal 'route: keyboard, method: password', rows[1]['detail']
+      assert(rows.all? { |r| r.keys.sort == SEVEN_KEYS })
+      assert_equal rows.map { |r| r['elapsedMs'] }.sort, rows.map { |r| r['elapsedMs'] }
+      assert_not_includes response.body, 'BADGE'
+      assert_not_includes response.body, DANA_PASSWORD
+      assert_not_includes response.body, DANA_CARD
+    end
+
+    test 'a second read with the rev answers unchanged, and a new row changes the rev' do
+      build(security_open: true)
+      first = read('signin_log_pc')
+      assert_equal [], first['rows']
+      assert_nil first['unchanged']
+      assert_equal({ 'rev' => first['rev'], 'unchanged' => true }, read('signin_log_pc', rev: first['rev']))
+      login('wrong-guess')
+      second = read('signin_log_pc', rev: first['rev'])
+      assert_nil second['unchanged']
+      assert_not_equal first['rev'], second['rev']
+      assert_equal 1, second['rows'].size
+      assert_equal({ 'rev' => second['rev'], 'unchanged' => true }, read('signin_log_pc', rev: second['rev']))
+    end
+
+    test 'swiping into the security office writes a badge row, shown in the door reader only' do
+      build(office_open: true)
+      clone_dana
+      swipe_security
+      assert_includes fresh.player_state['unlockedRooms'], 'security'
+      body = read('door_log_pc')
+      assert_response :success
+      assert_equal 1, body['rows'].size
+      assert_equal 'BADGE', body['rows'].first['event']
+      assert_empty read('signin_log_pc')['rows']
+    end
+
+    test 'the readers answer nothing on a forged route and leave no row of their own' do
+      build
+      play_the_beats
+      swipe_security
+      before = door_rows.size + signin_rows.size
+      read('door_log_pc')
+      read('signin_log_pc', foothold: 'x')
+      assert_equal before, door_rows.size + signin_rows.size
     end
 
     test 'the log sources are not shipped in the scenario answer' do

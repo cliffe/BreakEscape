@@ -1,4 +1,6 @@
-# test_ops_logs: scripted playtest (L1b, the write side)
+# test_ops_logs: scripted playtest (L1b the write side, L2a the reader)
+
+Beats 1 to 7 are the write side (L1b). Beats 8 to 13 (below, "L2a: the readers") add the reading side: the security office and its two log terminals. Run them in the same game, straight after beat 7.
 
 The scripted run for ops log stage L1b (`docs/achitechture/OPS_LOG_ROWS_PLAN.md`, section 11
 "Scripted playtests" and 13.8). One run, one new game, about 10 minutes. The scenario declares two
@@ -148,3 +150,108 @@ this run: its `/log_rows` coverage lands with the reader in L2a.
 `LANG=C.UTF-8`) reports 0 errors and one expected warning: the `maxAttempts` lockout warning on
 `office_pc` (under `corp_default`). It also prints the identity reach lines and the generic
 suggestions every small test scenario gets.
+
+
+---
+
+# L2a: the readers (beats 8 to 13)
+
+Stage L2a (`OPS_LOG_ROWS_PLAN.md` section 11, "Scripted playtests", the L2a bullet). The `security`
+room is east of `office` behind a second rfid door (finance staff, so Dana's copied badge opens it).
+It holds two `ops_log_terminal` objects, one per source: `door_log_pc` (reads `door_controller`)
+and `signin_log_pc` (reads `signin_audit`, title "Sign-in audit"). Every bridge call below is in
+`docs/test-bridge.md` (`moveToNear`, `interact`, `enter`, `waitForMinigame`, `waitForMinigameClosed`,
+`mg clickSelector`, `eval`). The viewer has no `getTestState`, so it is read from its DOM, with `eval`
+returning one value per call.
+
+Ports 3014 to 3016 only. Make the game for the whole run (beats 1 to 13) with
+`env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin test_ops_logs`.
+The viewer's hooks (from `HANDOVER_L2a_client.md`): the root `.ol-wrapper[data-ops-log="viewer"]`;
+rows `table[data-ops-log="table"] tr.ol-row` with `data-row-id` and `aria-selected`, cells
+`td[data-col]`; messages `.ol-message[data-state="loading|denied|empty"]`; filters `[data-filter="time|event|where|result|as"]`;
+the detail pane `[data-ops-log="detail-grid"] [data-field="TIME|EVENT|IDENTITY|LOCATION|RESULT|DETAIL"]`;
+the count `[data-ops-log="count"]`; the refresh button `button[data-action="refresh"]`.
+
+Handy reads (each an `eval`, shown here as the function body):
+
+- rows as text: `() => Array.from(document.querySelectorAll('tr.ol-row')).map(r => Array.from(r.querySelectorAll('td[data-col]')).map(c => c.innerText.trim()).join(' | '))`
+- count text: `() => document.querySelector('[data-ops-log="count"]')?.innerText`
+- message state: `() => document.querySelector('.ol-message')?.dataset.state || null`
+
+Capture the page's `/log_rows` answers with the session's `--capture-responses` file (the setup
+above). Close the viewer with `{"cmd":"mg","action":"close"}` or Escape.
+
+### 8. Entering the security office
+
+After beat 7 (signed out). `moveToNear` then `interact` `door:office->security`, using the saved card
+(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, "Access Granted". Check with
+`verify-run.rb --ops-log`: `door_controller` now has **two** `badge_swipe` rows (office, then
+security), both `ok`. Then `enter` `security`.
+
+### 9. Opening the door log by a real interaction
+
+`moveToNear` then `interact` `door_log_pc`; `waitForMinigame` `ops-log`. The first frame may be
+`.ol-message[data-state="loading"]`; wait until `tr.ol-row` exists. Expect the frame title "Door log PC"
+(the object's name), the caption (the source title "Door controller"), exactly **2** rows, both
+`BADGE`, both `OK`, IDENTITY `Dana Reyes` (no source sets `showCardHolder`, so the holder shows),
+LOCATION naming the office door and then the security door, TIME ascending, no `SIGN_IN` row. The
+count text reads 2 of 2 (or the viewer's equivalent wording; note the exact text). No flag button
+exists (`button[data-action=flag]` is absent: L2b adds it).
+
+Select the first row by click (`mg clickSelector 'tr.ol-row'`): `aria-selected="true"`, and the detail
+grid shows `EVENT` BADGE, `IDENTITY` Dana Reyes, `RESULT` OK. Close the viewer.
+
+### 10. Opening the sign-in log, and a filter
+
+`moveToNear` then `interact` `signin_log_pc`; `waitForMinigame` `ops-log`. Expect the caption
+"Sign-in audit" and exactly **four** rows in order (the table above, merged): `SIGN_IN` `FAIL x2`
+(IDENTITY the typed username `dreyes`, LOCATION "Office PC"), `SIGN_IN` `OK x2` (detail
+`route: keyboard, method: password`), `SESSION` `OK` (the lock), `SESSION` `OK` (the sign-out).
+No `BADGE` row. No row contains the password or `FIN-DANA-01`: `eval`
+`() => document.querySelector('.ol-wrapper').innerText.includes('Ledger-Dana-7') || document.querySelector('.ol-wrapper').innerText.includes('FIN-DANA')`
+must return `false`.
+
+Filter: set the EVENT select to `SESSION` (`eval`:
+`() => { const s = document.querySelector('[data-filter="event"]'); s.value = Array.from(s.options).find(o => o.value.includes('SESSION') || o.textContent.includes('SESSION')).value; s.dispatchEvent(new Event('change', { bubbles: true })); return s.value; }`).
+Expect two rows, both `SESSION` (the count text shows the filtered and total numbers; note the wording). Type `dre` into the IDENTITY
+box (`mg type` on `[data-filter=as]`, or an `eval` setting `.value` and dispatching `input`): the
+`SESSION` rows have an `as` of `dreyes` so they stay; type `zzz` and the table shows
+`.ol-message[data-state="empty"]`. Clear the box and reset EVENT to the empty option: four rows again.
+Set TIME to `morning` (the game clock starts at 08:30): four rows; set it to `evening`: none. Reset.
+
+Close the viewer.
+
+### 11. A new row appears after another action (the refresh)
+
+With the viewer closed, `enter` `office`, `moveToNear` and `interact` `office_pc`, and fail the sign-in
+once with a made-up username `intruder` and any password (a different typed name does not merge into
+the earlier failure row, so it is a new `signin_fail` row, count 1).
+Close the screen. Back in the security office, open `signin_log_pc` again: the
+reopen sends its `rev`, the answer is new rows, and the table now has **five** rows: a new `SIGN_IN` `FAIL` row last, IDENTITY `intruder`, no count suffix. Click `button[data-action="refresh"]`: the rows stay the same (the answer is
+`unchanged`, check in the captured `/log_rows` responses that the refresh request carried `rev=` and the answer was
+`{rev, unchanged:true}`). Close the viewer, open it a second time with no action between: the answer is `unchanged`
+again and the same rows show at once with no loading flicker beyond a frame.
+
+### 12. The other reader and the second source
+
+Open `door_log_pc` once more: still two `BADGE` rows only, none of the sign-in rows. The two
+readers never show each other's rows.
+
+### 13. The leak check and the server check
+
+`{"cmd":"sync"}`; `verify-run.rb <game_id> --ops-log` must still exit 0 with `ops log OK`. Then run
+`tools/playtest/access-leak-check.rb` over the capture file if its `/log_rows` coverage has been
+extended (the plan lists it for L2a; it is not part of this build item): it must report no secret.
+In the report: each beat's rows as the page showed them, the exact count wording, the filter results,
+and the captured `/log_rows` answers (a first answer, a second `unchanged`).
+
+Every `/log_rows` answer must hold exactly the seven row keys `id`, `elapsedMs`, `event`, `as`,
+`where`, `result`, `detail` and no `seq`, `serverMs`, `opsLog` or `logSources` key.
+
+## L2a gotchas
+
+- The security door is a second rfid door: the card copy must be saved before beat 3 (it serves both).
+- The viewer is a modal overlay: nothing in the game can be done while it is open, which is why the
+  refresh beat acts in the office first and the Refresh button check is a re-read of the same state.
+- Not built in L2a: seed rows, an anomaly and the flag button (L2b), a jack, access point or share (L3), and a reader reached
+  through a PC desktop or a foothold (no scenario in this stage uses one; the controller tests cover those routes).
