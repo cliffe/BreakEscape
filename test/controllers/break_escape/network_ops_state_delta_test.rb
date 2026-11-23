@@ -43,7 +43,7 @@ module BreakEscape
       assert_equal({ 'networks' => ['office_lan'] }, ops_state['opsDiscovered'])
       OPS_KEYS.each { |k| refute_includes hash_keys(response.parsed_body), k }
       assert_equal({}, ops_state['opsFindings'], 'S2: the empty default, and the forged body did not land')
-      assert_nil ops_state['opsUsed']
+      assert_equal [], ops_state['opsUsed']
     end
 
     test 'the bootstrap and the sync answer never carry opsDiscovered whole' do
