@@ -127,3 +127,14 @@ L1b item 2); the client only words a toast by it."
 **Verdict: ready to land.** N1 to N4 and m4 f are small test and comment items that can ride with the
 next edit to `ops_log_test.rb`; N3 needs a one-line ruling. Not done by this review: the controller,
 clock, golden and JS validator tests were read, not run.
+
+## R2 outcomes
+
+| Item | Outcome |
+|---|---|
+| L1b m4 f | Done: `ops_log_test.rb` 'save_limit false neither spends the counter nor is stopped by a spent one' |
+| N2 | Done: fixture combination and cryptex copies differing from `requires`, asserted in the `secret_values` test; added to `validate_log_rows.rb`; node case added. Proven: removing the two lines in `ops_log.rb` fails the Ruby test (`33-44-55` missing); removing the validator lines fails the node test |
+| N3 | Done: flag-station and launch-device literal `flags` entries (no colon) registered in `ops_log.rb` and the validator; fixture station with a literal and a reference. Proven by disabling the walk: the Ruby test fails on the literal |
+| N4 | Done: comment in `access_model_rfid_test.rb` reworded |
+| PLAYTEST.md, HANDOVER_L1b_3.md | Done: `swap-scenario-game.rb` setup with the reason; beat 3 words the RFID reader emulate step and the "Access Granted" toast |
+| N1 | Left as is (ruled) |

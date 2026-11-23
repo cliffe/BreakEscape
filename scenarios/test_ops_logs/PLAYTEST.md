@@ -11,14 +11,14 @@ note in the game first; none is written here or on a sign.
 
 ## Setup
 
-Keyless server on a free port (never :3000, :3085 or :3086). From a worktree use `new-game.sh`.
+Keyless server on a free port (never :3000, :3085 or :3086). Make the game with `swap-scenario-game.rb` (host `test_access_signin`), not `new-game.sh`: the scenario has no Mission row until it is seeded after landing, so `new-game.sh` cannot find it.
 In a container, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` and pass
 `--headless`.
 
 ```bash
 export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
 tools/playtest/start-keyless-server.sh
-PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true tools/playtest/new-game.sh test_ops_logs
+env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin test_ops_logs   # prints GAME_ID=
 S=<scratchpad>/test_ops_logs
 tools/playtest/session-start.sh --url <URL> --headless \
   --log $S/session-<game_id>.jsonl --capture-responses $S/test_ops_logs-responses.jsonl
@@ -86,7 +86,7 @@ card copy is never logged; the gap is the lesson).
 
 ### 3. Swiping the copy at the door
 
-`moveToNear` then `interact` `door:lobby->office`. Expect `door_unlocked`, the toast "Card accepted", task `l1_into_office`
+`moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast "Access Granted", task `l1_into_office`
 complete. Check: `door_controller` has exactly one row `badge_swipe`, result `ok`, `as {"npc":"dana"}`,
 `where {"kind":"door","id":"office"}`. The other source has none.
 

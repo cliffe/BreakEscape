@@ -10,7 +10,7 @@
   file and drives routes (clone_card, unlock, login, lock_session, logout), reading `Game.find`.
 - Docs: README feature index row A24 and `docs/ACCESS_AND_NETWORKS.md` index row plus an "A24 Ops log: write side" section
   (after A17).
-- No registration needed: scenarios are found by folder; no fixture, seed or list names `test_access_signin`. No `db:` task.
+- Scenarios are found by folder and no `db:` task is needed, but `test_ops_logs` has no Mission row until it is seeded after landing, so make its game with `tools/playtest/swap-scenario-game.rb test_access_signin test_ops_logs` (brief, "Games").
 
 ## Proof (all run)
 - Validator: 0 errors, 1 warning (maxAttempts lockout warning on `office_pc`, expected, same as test_access_signin).
@@ -31,5 +31,5 @@
 - PLAYTEST: Lock and Sign out are in the desktop taskbar start panel (`.pc-start-btn`, `#pc-start-lock`,
   `#pc-start-signout`); `mg clickSelector` is documented as scoped to the overlay, so the script gives an `eval` fallback
   for the tester to try if it cannot reach it. The clock check reads `window.gameClock.elapsedMs()` through `eval` (no named
-  bridge call exists for it). Not run in a browser by me. Use `tools/playtest/new-game.sh` from the worktree.
+  bridge call exists for it). Not run in a browser by me. Make the game with `swap-scenario-game.rb`, not `new-game.sh` (no Mission row yet).
 - Door id for `interact` is `door:lobby->office`; the dialogue choice text to match is "scan your badge".
