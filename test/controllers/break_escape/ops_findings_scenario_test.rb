@@ -283,7 +283,7 @@ module BreakEscape
       assert_equal invented.first(2), unchecked.first(2)
       assert_equal invented.last.gsub('nothing_here', '<id>'), unchecked.last.gsub('open_share', '<id>')
       assert_equal({ FACTORY => 'u1', BANNER => 'u2' }, stored)
-      refute_equal 'unconfirmed', stored[SHARE]
+      assert_nil stored[SHARE]
     end
 
     test 'beat 10: a reload and a replant at the other port show every finding as it was' do
@@ -332,6 +332,7 @@ module BreakEscape
       network_view(OFFICE)
       take.call
       REASONS.each { |text| refute_includes response.body, text, 'a view before a confirm shows a reason' }
+      %w[needs falseBecause fixed].each { |key| refute_includes response.body, "\"#{key}\"", "a view before a confirm carries #{key}" }
       confirm(BANNER)
       take.call
       confirm(FACTORY)

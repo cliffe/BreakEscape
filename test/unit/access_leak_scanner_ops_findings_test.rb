@@ -106,8 +106,8 @@ class AccessLeakScannerOpsFindingsTest < ActiveSupport::TestCase
     assert_includes owners(scan([refused, leak])), "ops:finding:#{S::FACTORY}"
   end
 
-  test 'a check answer that carries the finding does not pay for a check of another service' do
-    # The answer being judged earns only its own route's step: a /network answer never earns a check.
+  test 'two GET /network answers that list a finding never earn its check: the finding is a leak in both' do
+    # A /network answer earns no check, whatever it carries; only a successful POST /network/check does.
     assert_includes owners(scan([view_with([factory_row]), view_with([factory_row])])), "ops:finding:#{S::FACTORY}"
   end
 
