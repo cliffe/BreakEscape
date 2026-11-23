@@ -39,8 +39,8 @@
 # have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
-# Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error or files whose first timed rows are not oldest first
-# (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
+# Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error, files whose first timed rows are not oldest first,
+# overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
 game_id, *files = ARGV
@@ -83,6 +83,12 @@ end
 order_problem = AccessLeakScanner.file_order_problem(per_file)
 if order_problem
   warn "capture files out of order (a shell glob puts -2 before the first file): #{order_problem}"
+  exit 2
+end
+
+game_problem = AccessLeakScanner.game_mismatch_problem(game.id, per_file)
+if game_problem
+  warn "capture files from different games: #{game_problem}"
   exit 2
 end
 

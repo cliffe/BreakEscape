@@ -200,11 +200,35 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   minors. Old-scenario check (`test_access_networks` P1 to P4 on this branch, Sonnet): no
   regression, 0 console errors (scratchpad `s3-old-scenario-check/`). Phone width: the Use
   button is cut off at the bottom and the message after Use lands below the fold (minor).
-- **S2 + S3 ARE READY TO TRAIN.** Waiting only for the train tree (L2b's train is running in
-  it). Then: in the train tree `git checkout ops-core && git merge --ff-only ops-build`; run
-  the check (node 22 on PATH, the PLAYWRIGHT path); if only the 3 baseline JS files fail and
-  the tree is clean, merge `ops-core` into main with a message naming N14 and N15, push,
-  merge main into `ops-build` and `ops-logs`.
+- **L2b LANDED: merge `a44825e41`. S2 + S3 LANDED on main and pushed: merge `6afbe1496`**
+  (train 5 at `f31eec919`: Rails 4279 runs 0 failures, shell-x 184 checked 0 failed, smoke 0
+  failed, corpus 0 of 204, JS 1008 of 1011 with only the 3 baseline files, tree clean). THE
+  CORE PLAN'S THREE STAGES (N13, N14, N15) ARE ON MAIN. `ops-build` and `ops-logs` both equal
+  main. Old-scenario reruns: `test_access_networks`, `test_access_keyring`,
+  `lab_physical_pentest` (network beats): no regression, 0 console errors.
+- RUNNING (2026-11-23, after the landing), five agents:
+  1. Review page builder (Sonnet): writes `index.html` + `img/` + `build.py` in the session
+     scratchpad `ops-review-page/` (gallery of the view states, 18 decisions with stable keys,
+     Copy answers box, localStorage key `be-ops-build-review-v1`). WHEN IT REPORTS: read
+     `index.html`, then publish with the Artifact tool (`file_path` the html, `files` mapping
+     each `img/<name>.png`, `icon: "checklist"`, a one-sentence description); give the user
+     the link. Republish the SAME path to update. The owner's answers come back pasted as
+     `KEY (title): choice — note` lines: record them in the brief and act.
+  2. Tidy, client (Sonnet, build tree): bolt fade, marks tests, three rarer landings, phone
+     scroll-into-view; browser check on port 3012.
+  3. Tidy, scanner/tests/docs (Sonnet, build tree): six groups incl. widening
+     `ops-unchanged-validator` to hash rendered graph files (a deliberate re-record).
+  4. L3 part A (Sonnet, `ops-logs`): network and share rows: events, call sites,
+     `session_admitting`, tests; note `ops_logs_stream/HANDOVER_L3a.md`.
+  5. Haiku reader: S5a build digest to the scratchpad `deps/S5A_BUILD_DIGEST.md` (steps,
+     line ranges, shared files, MISMATCHES between the privilege plan and what S3 built, a
+     split into builders).
+- Next: tidy → a Sonnet delta review of both tidy passes (nothing in them touches access
+  checks; if the reviewer finds otherwise, fable52L) → train → land. L3 part B (reader rows in
+  `test_ops_logs`: a jack, an access point, a share; PLAYTEST; docs) → fable52L review →
+  playtest → train → land. S5a: rule on the digest's mismatches, write builder prompts split
+  as it suggests, then the usual loop. Gem bump for Hacktivity after the tidy lands
+  (`bump-version` skill; Hacktivity repo; the user's standing "push as you go").
 - POST-LANDING TIDY (one Sonnet pass per group, then a Sonnet delta; none blocks landing):
   client: the bolt does not fade with its sprite behind a wall (R4-1), `v !== false` vs
   truthiness (R4-2), three rarer landings of a world-opened remote view (R3-2), phone width
@@ -280,6 +304,22 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   Before each plan: read its sections 3, 12, 14 and 15 only. Parked and out of scope: S0, S4,
   S10 to S12. Cracking (S7) drafting was stopped by safeguards during planning: if a builder
   is stopped, follow AGENTS.md (report to the user, offer one retry, never rerun unasked).
+
+### 2026-11-23: after S2+S3 landed (main `6afbe1496`)
+
+- Landed and pushed on main: L1a+L1b, S1, L2a, L2b, S2+S3 (core plan N13, N14, N15).
+- Post-landing tidy on `ops-build`: client half done (`b70dc59bf` to `5a8522300`); scanner, tests and
+  docs half in progress (`9b2ddd017` to `e284d81b0` so far, docs group still open). Next: Sonnet delta
+  review of both halves, fast-forward the train tree, train, land, push, merge main into `ops-build`
+  and `ops-logs`.
+- S5a: brief committed (`532d55db4`, `docs/agents/ops_core_build/S5A_BUILD_BRIEF.md`). Unit 01
+  (fixtures) runs alone before any engine edit, after the tidy hash is trained. Owner question O1
+  (relay session and step-up to admin) is open; builders build "no".
+- Log stream (`ops-logs`): L3 part A built (`400e7fd35`, `fee3415b0`, `4f311c7ad`), review R1 running;
+  L3 part B (scenario, tests, beats, docs) being built.
+- Review page for the user: built in the session scratchpad (`ops-review-page/`), screenshots being
+  retaken, not yet published.
+
 
 ## Waiting on the user
 

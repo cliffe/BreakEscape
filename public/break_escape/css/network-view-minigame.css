@@ -407,6 +407,12 @@
     color: #ffe680;
 }
 
+/* scrollIntoView({ block: 'nearest' }) of the Use control and the message stops short of the "More below" bar */
+.network-use,
+.network-view-notice {
+    scroll-margin-bottom: 44px;
+}
+
 .network-view-notice:empty {
     display: none;
 }
