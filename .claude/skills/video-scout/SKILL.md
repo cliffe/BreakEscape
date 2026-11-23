@@ -41,6 +41,8 @@ Never copy a code, PIN, password or flag value into the report. Say "yes, a post
 
 ## Step 1: bring the environment up
 
+**On the owner's workstation (not a cloud container)** skip the exports and the database setup below: Postgres is already up, the default `deploy` role works, `BE_DB_USER=root` fails (no such role) and `BUNDLE_FORCE_RUBY_PLATFORM` breaks Bundler (it hides the installed platform gems). In a worktree set `BUNDLE_PATH=<main checkout>/vendor/bundle` and `RBENV_VERSION=$(cat .ruby-version)` (m04-m10 scouts, 23 Nov).
+
 A fresh cloud container has no usable database and no server. Every Rails command needs these exports:
 
 ```bash
