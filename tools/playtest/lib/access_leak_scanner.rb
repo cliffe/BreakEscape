@@ -1960,13 +1960,15 @@ class AccessLeakScanner
   LOG_ROW_KEYS = [%w[as detail elapsedMs event id result where], %w[as at detail event id result where]].freeze
   LOG_STORED_ONLY_KEYS = %w[seq serverMs flagged p last by opsLog opsLogSeq opsLogClockAt opsLogOnce opsLogSaves logSources].freeze
 
-  # The answer with the IDENTITY cell of each SIGN_IN row blanked: it may hold what the player typed,
-  # which may be a password, and the player is shown their own text (plan section 11).
+  # The answer with the IDENTITY cell of each typed SIGN_IN row blanked: it may hold what the player typed,
+  # which may be a password, and the player is shown their own text (plan section 11). A successful
+  # sign-in (`signin_ok`, the only SIGN_IN row whose detail has `method:`) shows an account, so it is judged.
+  # A refusal for a known account looks the same as one for typed text in the answer (no detail), so it is exempt.
   def log_rows_without_typed(body)
     return body unless body.is_a?(Hash) && body['rows'].is_a?(Array)
 
-    rows = body['rows'].map { |r| r.is_a?(Hash) && r['event'] == 'SIGN_IN' && r.key?('as') ? r.merge('as' => '-') : r }
-    body.merge('rows' => rows)
+    typed = ->(r) { r.is_a?(Hash) && r['event'] == 'SIGN_IN' && r.key?('as') && !r['detail'].to_s.match?(/(\A|, )method: /) }
+    body.merge('rows' => body['rows'].map { |r| typed.call(r) ? r.merge('as' => '-') : r })
   end
 
   def log_secrets
@@ -1993,6 +1995,11 @@ class AccessLeakScanner
     [row['as'], row['where'], *detail_values].map { |v| v.to_s.strip }
   end
 
+  # The keys of a detail string ("key: value, key: value").
+  def log_detail_keys(row)
+    row['detail'].to_s.split(/,\s*/).map { |pair| pair.split(': ', 2).first.to_s.strip }
+  end
+
   def log_secret_in?(text)
     log_secrets.any? { |secret| text == secret || (secret.length >= MIN_SUBSTRING_PASSWORD && text.include?(secret)) }
   end
@@ -2011,6 +2018,8 @@ class AccessLeakScanner
       add.call('log_row', 'log:row_keys', "$.rows[#{i}]") unless LOG_ROW_KEYS.include?(row.keys.map(&:to_s).sort)
       cells = %w[event result].map { |k| row[k] } + log_cell_texts(row)
       texts.concat(cells)
+      texts << row['detail'] # whole, so a secret holding ", " is not cut in two before the compare
+      log_detail_keys(row).each { |k| add.call('log_row', "log:stored_key:#{k}", "$.rows[#{i}].detail") if LOG_STORED_ONLY_KEYS.include?(k) }
       log_cell_texts(row).each { |t| add.call('log_row', "log:raw_id:#{t}", "$.rows[#{i}]") if log_raw_ids.include?(t) }
     end
     texts.each { |t| add.call('log_row', 'log:secret', '$.rows') if t.is_a?(String) && log_secret_in?(t.strip) }

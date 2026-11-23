@@ -65,6 +65,23 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
     assert_equal [%w[log_row log:secret]], owners(scan(answer(typed.merge('detail' => "pin: #{LOCK_PIN}")), secrets: [LOCK_PIN]))
   end
 
+  test 'a successful sign-in identity is judged, a typed one is not (the server rows: signin_ok has method and route)' do
+    ok = good_row('event' => 'SIGN_IN', 'where' => 'Office PC', 'detail' => 'method: password, route: keyboard')
+    assert_empty scan(answer(ok.merge('as' => 'dreyes')), secrets: [PASSWORD])
+    assert_equal [%w[log_row log:secret]], owners(scan(answer(ok.merge('as' => PASSWORD)), secrets: [PASSWORD]).select { |f| f.rule == 'log_row' })
+    assert_equal [%w[log_row log:raw_id:dana]], owners(scan(answer(ok.merge('as' => 'dana'))))
+    lockout = good_row('event' => 'SIGN_IN', 'as' => PASSWORD, 'where' => 'Office PC', 'result' => 'OK')
+    assert_empty scan(answer(lockout), secrets: [PASSWORD]), 'a lockout row (OK, no detail) holds typed text and stays exempt'
+  end
+
+  test 'a stored-only key inside a detail string is a finding, and a secret holding a comma is seen whole' do
+    findings = scan(answer(good_row('detail' => 'route: keyboard, flagged: 1')))
+    assert_equal [%w[log_row log:stored_key:flagged]], owners(findings)
+    assert_empty scan(answer(good_row('detail' => 'route: keyboard, method: password')))
+    spaced = 'Ledger, Dana-7'
+    assert_equal [%w[log_row log:secret]], owners(scan(answer(good_row('detail' => "code: #{spaced}")), secrets: [spaced]))
+  end
+
   test 'a row with a stored-only key or a missing key is a finding, whatever the key' do
     %w[seq serverMs flagged p by].each do |key|
       findings = scan(answer(good_row(key => 1)))
