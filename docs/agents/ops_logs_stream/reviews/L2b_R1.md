@@ -181,3 +181,25 @@ Going back to the client check removes the `policy_test.rb`, `game_policy.rb`, `
 ## Verdict
 
 Not ready to land as built. Everything outside the flag's judging (seed rows in the reader, the validator, the schema, the graph node, the scenario, the viewer's look and "no row marked early" rule) follows the plan and is sound. The flag's judging departs from the plan in a half-way form that enforces nothing and can soft-lock a puzzle (F-1, D-2). The user should rule on the departure first. Recommended: return to the plan's client check, which removes both majors and most of the shared-file hunks, then a short delta review. If the server-judged flag is kept, it must be completed (the server applies the actions and owns their outcome) and planned as its own piece.
+
+## R1 outcomes (fix pass, 2026-11-23)
+
+Decision: the flag returns to the plan's client check. Commits: removal and server side `62105c898`; viewer `6c868d7f9`; leak check `06aee2c62`; PLAYTEST, docs, handover `0bf994549`.
+
+| Finding | Outcome |
+|---|---|
+| F-1 (major) lost right-flag answer soft-locks | Moot by design. No answer carries the actions: they sit in the browser and run on a right pick; "done" is the action's global, saved by the normal sync. A right flag after a reload or a lost request still completes (nothing is sent). `62105c898`, `6c868d7f9` |
+| D-2 (major) server judging protected nothing | Moot by design: no server judging; the plan's best-effort client check. `62105c898` |
+| D-1 plan contradicts itself | Moot: the plan file is exactly its text on main (`git diff main` empty); the stream brief already holds the ruling. |
+| F-3 `opsLogFlagged` undocumented | Moot: the key is gone. |
+| F-4 focus lost after right flag | Fixed: focus goes to the flagged row; CANCEL refocuses FLAG (node test). `6c868d7f9` |
+| F-5 wrong note on another row | Moot: the check is synchronous, so no answer can arrive late; a selection change also clears the note (node test). `6c868d7f9` |
+| F-6 `unchanged`/`rev` ignore flag state | Moot: `flaggedRow` is gone. |
+| S-1 seed rows unbounded in a snapshot | Fixed: `ops_log_seed_rows` needs `^s[0-9]{1,3}$`, the `at` form and a result the event allows (controller test). `62105c898` |
+| V-1 schema `as` maxLength 32 | Fixed: 40, description says a username is at most 32. `62105c898` |
+| T-1 weak rev test | Fixed: same reader, one seed row's `at` changed, revs differ. `62105c898` |
+| T-2 strip tested in two places | Moot: no strip. A test asserts the reader reaches the browser with `anomaly.rowId` and both action lists. `62105c898` |
+| L-1 leak rule run-wide | Moot: the rule is removed (the browser holds `anomaly.rowId` by the plan). `06aee2c62` |
+| P-1 beat 17 overclaims | Fixed: beats 14 to 19 rewritten; no assertion that the task id or row id is absent. `0bf994549` |
+| Merge-readiness list | `routes.rb`, controller lists, `game.rb`, `game_policy.rb`, `policy_test.rb` and the plan are identical to main. Schema (`maxRows` comma), the graph line and the scanner's small edits remain as the stage's own. |
+| Playtest oddities | Flagged row now hatched green with a left bar (not like a selected row); the "Task Complete" toast is held by `notifications.js` while any minigame is open and shows on close, the same path as log-filter (`completeTask`). |
