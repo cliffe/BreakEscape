@@ -9,6 +9,7 @@
   "collection": "training",
   "ui_theme": "general",
   "title_art": "title_art/ca18_credential_attacks_at_scale.jpg",
+  "title_style": "ca",
   "estimated_duration_minutes": 15,
   "cybok": [
     {

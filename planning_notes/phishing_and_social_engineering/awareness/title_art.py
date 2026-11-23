@@ -32,16 +32,18 @@ def title_art_for(mission):
 
 
 def with_title_art(meta, mission):
-    """meta with "title_art" added right after "ui_theme" (or at the end); unchanged if no art."""
+    """meta with "title_art" and "title_style" added right after "ui_theme" (or at the end); unchanged if no art."""
     key = title_art_for(mission)
     if not key:
         return meta
     out = {}
     for k, v in meta.items():
-        if k == 'title_art':
+        if k in ('title_art', 'title_style'):
             continue
         out[k] = v
         if k == 'ui_theme':
             out['title_art'] = f'title_art/{key}.jpg'
+            out['title_style'] = 'ca'  # the Cyber Aware loading screen (D350)
     out.setdefault('title_art', f'title_art/{key}.jpg')
+    out.setdefault('title_style', 'ca')
     return out

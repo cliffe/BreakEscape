@@ -110,6 +110,7 @@ Narrator: She stamps a box DESTROYED and slides it back toward the noise.
 - else:
     Margaret Sorensen: You're not from the lease-holder. You're the one the Architect writes about.
 }
+Margaret Sorensen: Yours is in tonight's run, dear. I saved it for last. #delivery: mild and pleasant, like a librarian mentioning an overdue book
 agent_0x99: ...She's got a file on you.
 #set_global:hatch_talked:true
 agent_0x99: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwriting on it. It's the only place anyone wrote down why he did what he did.

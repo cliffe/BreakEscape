@@ -93,6 +93,8 @@ Don't look for the trace. It isn't there.
 
 I've read your file. Files are written by people who need you to be a particular shape. I prefer to watch.
 
+Four fires tonight, and only one of you. I set them so you'd have to choose. #delivery: soft and measured, faintly pleased, in no hurry at all
+
 -> taunt_t30_choices
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
