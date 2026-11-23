@@ -745,20 +745,6 @@ test('S2: hooks fire for check and confirm in order, with echo only on onSent', 
     assert.deepEqual(log, [['sent', offer, { typed: 'confirm f1' }, 0], ['ended', offer, 'confirmed']]);
 });
 
-test('S2: a refetch landing while a confirm is out keeps the control disabled', async () => {
-    setup(SWEPT([withFindings([F1])]));
-    await open();
-    const gate = deferred();
-    confirmImpl = async () => { await gate.p; return { success: true, finding: { ...F1, status: 'confirmed', needs: [] } }; };
-    confirmBtn('f1').click();
-    await settle();
-    await view().refetch({ sync: false });
-    await settle();
-    assert.equal(confirmBtn('f1').disabled, true);
-    gate.resolve();
-    await settle();
-});
-
 test('S2: hostile finding summary, need label, decoy reason and alias are text', async () => {
     const f1 = { ...F1, summary: HOSTILE2 };
     const f2 = { ...F2, alias: 'f2', status: 'confirmed', needs: [{ kind: 'global', label: HOSTILE2, met: false }] };

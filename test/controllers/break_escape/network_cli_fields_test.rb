@@ -417,6 +417,12 @@ module BreakEscape
         ops_confirm(OFFICE, 'sam_pc.web.never_held')
         assert_equal 404, response.status
         texts << response.body
+        ops_scan(OFFICE, host_id: 'lab_box')
+        set_global('lab_off', true)
+        ops_check(OFFICE, host_id: 'lab_box', service: 'web')
+        assert_response :forbidden
+        assert_equal({ 'success' => false, 'reason' => 'not_responding' }, response.parsed_body)
+        texts << response.body
         sync_globals('x' => true)
         texts << response.body
         get game_path('keyring'), as: :json
