@@ -29,8 +29,11 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop`, `db:setup` or `db:seed`.
   If a step seems to need a migration, stop and report.
 - **Tests.** Rails tests share one test database: run them under the shared lock,
-  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, with the environment
-  `tools/playtest/train-check.sh` uses (read its header: `BUNDLE_PATH`, `RUBY`). Never
+  `flock /home/deploy/BreakEscape/tmp/tests.lock bin/rails test <files>`, from the worktree root. Do not set
+  `BUNDLE_PATH` (the gems are system gems). The lock is shared with other sessions' trains, so
+  a run can queue for many minutes: that is normal, wait for it. After any edit to an engine
+  file, also run `bin/ops-golden-compare` (under the lock) to prove old scenarios answer as
+  before; see `docs/agents/ops_core_build/HANDOVER_L1a_1.md`. Never
   `ruby -Itest`. Run only the files your step touches plus those the plan's "proof before
   moving on" names; the orchestrator runs the full train check.
 - **Servers.** Never touch ports 3000, 3085 or 3086. Live checks use a keyless server started
