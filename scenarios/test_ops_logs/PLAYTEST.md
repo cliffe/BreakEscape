@@ -89,7 +89,7 @@ card copy is never logged; the gap is the lesson).
 
 ### 3. Swiping the copy at the door
 
-`moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast "Access Granted", task `l1_into_office`
+`moveToNear` then `interact` `door:lobby->office`; the door opens by playing the saved card in the RFID reader (the "Emulate ... badge" option). Expect `door_unlocked`, the toast titled "Access Granted" with the text "Opened with your copy of Dana Reyes's badge." (the name is the card's), task `l1_into_office`
 complete. Check: `door_controller` has exactly one row `badge_swipe`, result `ok`, `as {"npc":"dana"}`,
 `where {"kind":"door","id":"office"}`. The other source has none.
 
@@ -103,7 +103,7 @@ row, `as {"typed":"<the username>"}`, shown `x2` (the merged failure count).
 ### 5. Signing in
 
 Type the username and the password from the sticky note and submit. Expect the desktop; task
-`l2_signed_in` complete. Check: a `signin_ok` row after the failure row, `as {"account":"<the
+`l2_signed_in` complete (read it from `completedTasks` in the state; its toast is not reliably in the DOM). Check: a `signin_ok` row after the failure row, `as {"account":"<the
 username>"}`, `where {"kind":"pc","id":"office_pc"}`, detail `{"method":"password","route":"keyboard"}`.
 
 Read `window.gameClock.elapsedMs()` straight after the desktop opens and note it. Compare it with
@@ -120,7 +120,7 @@ the desktop.
 
 ### 7. Signing out
 
-Open the desktop, press Start and Sign out. Expect "Signed out". Check: a `session_end` row.
+Open the desktop, press Start and Sign out. Expect an info toast titled with the PC's name ("Office PC") and the text "Signed out" (`SIGNED_OUT_MESSAGE`); it lasts 3 seconds, so read it at once. Check: a `session_end` row.
 
 ## End of run
 
@@ -161,7 +161,7 @@ Stage L2a (`OPS_LOG_ROWS_PLAN.md` section 11, "Scripted playtests", the L2a bull
 room is east of `office` behind a second rfid door (finance staff, so Dana's copied badge opens it).
 It holds two `ops_log_terminal` objects, one per source: `door_log_pc` (reads `door_controller`)
 and `signin_log_pc` (reads `signin_audit`, source title "Sign-in audit"). Every bridge call below is in
-`docs/test-bridge.md` (`moveToNear`, `interact`, `enter`, `waitForMinigame`, `waitForMinigameClosed`,
+`docs/test-bridge.md` (`moveToNear`, `interact`, `enter`, `waitFor` with `kind: "minigame"`,
 `mg clickSelector`, `eval`). The viewer has no `getTestState`, so it is read from its DOM, with `eval`
 returning one value per call.
 
@@ -185,13 +185,13 @@ above). Close the viewer with `{"cmd":"mg","action":"close"}` or Escape.
 ### 8. Entering the security office
 
 After beat 7 (signed out). `moveToNear` then `interact` `door:office->security`, using the saved card
-(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, "Access Granted". Check with
+(the "Emulate ... badge" option, as in beat 3). Expect `door_unlocked`, the toast titled "Access Granted" (text "Opened with your copy of Dana Reyes's badge."). Check with
 `verify-run.rb --ops-log`: `door_controller` now has **two** `badge_swipe` rows (office, then
 security), both `ok`. Then `enter` `security`.
 
 ### 9. Opening the door log by a real interaction
 
-`moveToNear` then `interact` `door_log_pc`; `waitForMinigame` `ops-log`. The first frame may be
+`moveToNear` then `interact` `door_log_pc`; `waitFor` `{"kind":"minigame"}`. The first frame may be
 `.ol-message[data-state="loading"]`; wait until `tr.ol-row[data-row-id]` exists. Expect the frame title "Door log PC"
 (the object's name), the caption (the source title "Door controller"), exactly **2** rows, both
 `BADGE`, both `OK`, IDENTITY `Dana Reyes` (no source sets `showCardHolder`, so the holder shows),
@@ -204,7 +204,7 @@ grid shows `EVENT` BADGE, `IDENTITY` Dana Reyes, `RESULT` OK. Close the viewer.
 
 ### 10. Opening the sign-in log, and a filter
 
-`moveToNear` then `interact` `signin_log_pc`; `waitForMinigame` `ops-log`. Expect the caption
+`moveToNear` then `interact` `signin_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect the caption
 "Sign-in audit" and exactly **four** rows in order (the table above, merged): `SIGN_IN` `FAIL x2`
 (IDENTITY the typed username `dreyes`, LOCATION "Office PC"), `SIGN_IN` `OK x2` (detail
 `route: keyboard, method: password`), `SESSION` `OK` (the lock), `SESSION` `OK` (the sign-out).
