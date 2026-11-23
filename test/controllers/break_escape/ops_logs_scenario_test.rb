@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/access_model_scenario'
+require_relative '../../support/log_rows_body_scan'
 require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 module BreakEscape
@@ -8,6 +9,7 @@ module BreakEscape
   # assertion reads a re-read game (Game.find), so a missing save fails.
   class OpsLogsScenarioTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
+    include LogRowsBodyScan
 
     CLONER = AccessModelScenario::CLONER
     DANA_CARD = 'FIN-DANA-01'.freeze
@@ -151,6 +153,7 @@ module BreakEscape
 
     def read(id, params = {})
       get log_rows_game_url(@game), params: { object_id: id }.merge(params), as: :json
+      assert_body_holds_no_secret(fresh, response.body)
       response.parsed_body
     end
 
