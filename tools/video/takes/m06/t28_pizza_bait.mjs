@@ -7,8 +7,14 @@ import { goRoom } from '../m05/_live.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await bridge.moveToNear('pizza', { timeoutMs: 25000 }); await sleep(800); }
 export default async (page, bridge, mark) => {
   await sleep(900);
-  const r = await bridge.interact('pizza', { timeoutMs: 20000, approach: false }); await sleep(900);
-  const inv = (await bridge.getState()).inventory.map(x => x.name);
+  let r, inv = [];
+  for (let k = 0; k < 4 && !inv.some(n => /pizza/i.test(n)); k++) {
+    const st = await bridge.getState(); const pz = st.nearby.find(n => n.id === 'pizza');
+    mark('pizza-try', { k, player: [Math.round(st.player.x), Math.round(st.player.y)], pizza: pz && [Math.round(pz.x), Math.round(pz.y)] });
+    if (k > 0) { await bridge.moveToNear('pizza', { timeoutMs: 25000 }); await sleep(600); }
+    r = await bridge.interact('pizza', { timeoutMs: 20000, approach: k > 1 }); await sleep(900);
+    inv = (await bridge.getState()).inventory.map(x => x.name);
+  }
   mark('pizza-picked', { ok: r && r.ok, inv }); if (!inv.some(n => /pizza/i.test(n))) throw new Error('pizza not in inventory ' + JSON.stringify(inv));
   const DOOR = 'door:blockchain_lab->trading_floor';
   const mv = await bridge.moveToNear(DOOR, { timeoutMs: 25000 }); mark('door-near', { r: JSON.stringify(mv).slice(0, 200), p: (await bridge.getState()).player });
