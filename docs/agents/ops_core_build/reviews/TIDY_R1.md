@@ -74,3 +74,15 @@ Land. Every fix does what its finding asked, no scanner rule is loosened, no tes
 ## Not completed
 
 No mutation re-run of the builder's claimed mutations; the Rails suite beyond the four files named above; HANDOVER test counts not re-counted; no browser.
+
+## Outcomes (tidy fix pass)
+
+| Item | Result |
+|---|---|
+| T-1 (R4-4) | Fixed in `compromise-marks.js` (`_followVisibility`): a `wasSet` flag is set by the wrapper's setter and the value is written back at unfollow when the sprite had no `visible` anywhere. Node test "R4-4" fails without the change (mutation: back to `own`) and passes with it. R4-4 (b), the own-property-versus-prototype-accessor case, needs no fix (unreachable on a Phaser sprite). |
+| T-2 (R3-9 d) | `docs/ACCESS_AND_NETWORKS.md` section 6: rows N12 to N15 added (N12 from its "Shown in" line and the three `test_ops_*` scenarios that carry rows; N13 to N15 in the `test_ops_*` scenarios that hold `discovery`, `weaknesses` and `technique_card`, found by text search). |
+| T-3 | Declined: no reachable case in a built scenario (the review itself says it is not reachable in `test_ops_access`). |
+| T-4 | Fixed: `file_order_problem` uses each file's min and max time. Test "T-4" has unsorted rows inside a file that overlaps the next file (refused) and one that follows (accepted). |
+| T-5 | Comment only, above `game_mismatch_problem`. |
+| T-6 | `ops_access_scenario_test.rb` now asserts `:not_found` (404, the status the engine gives) for the dropped foothold's view. |
+| T-7 | Intended; no change. |

@@ -2155,6 +2155,10 @@ Each block below is a complete scenario that `ruby scripts/validate_scenario.rb 
 | N9 | x | x | x |  |  |  | x |  |  |  |  |  |
 | N10 | x |  |  |  |  |  | x |  |  |  |  |  |
 | N11 | x | x | x |  |  |  |  |  |  |  |  |  |
+| N12 | x | x | x |  |  |  | x |  |  |  |  | test_ops_scan, test_ops_findings, test_ops_access |
+| N13 |  |  |  |  |  |  |  |  |  |  |  | test_ops_scan, test_ops_findings, test_ops_access |
+| N14 |  |  |  |  |  |  |  |  |  |  |  | test_ops_findings, test_ops_access |
+| N15 |  |  |  |  |  |  |  |  |  |  |  | test_ops_access |
 
 
 ## 7. Not built
