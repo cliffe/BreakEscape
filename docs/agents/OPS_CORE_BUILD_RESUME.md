@@ -71,14 +71,19 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
 - S1 step 4 DONE: `559f36023` (`ops-model.js`, `perform` with guard and hooks, Sweep and Scan;
   32 new node tests; whole JS batch 996 of 999, only the 3 machine-baseline files failing;
   note `HANDOVER_core_4.md`). No browser proof yet.
-- RUNNING, three agents: server review R1 (fable52L; `reviews/S1_server_R1.md`), client
-  review R1 (fable52L; `reviews/S1_client_R1.md`, includes a cross-check of the two halves'
-  answer shapes), step 5 builder (Sonnet; note `HANDOVER_core_5.md`; no engine edits).
-  Reviewers do not commit: commit each findings file by path when it reports.
-- Next: rulings; one Sonnet fixer per half (split by file: Ruby vs `public/` + `test/js/`);
-  delta review R2 (fable52L, the server half touches what the browser is told); Haiku
-  scripted playtest + live proof of `test_ops_scan` (11.5 S1 beats, screenshots; I look at
-  them); train check with the machine settings above; land; push. Then S2 steps 6 to 8.
+- S1 reviews R1: server 0B 2M 7m `00f4b0beb` (`reviews/S1_server_R1.md`); client 0B 1M 7m
+  `33a0b31d9` (`reviews/S1_client_R1.md`; the two halves agree, no mismatches). Rulings in the
+  brief. Client FIXED 9 of 9 (unconfirmed): `7c3189229`, outcomes `ce3475104`.
+- S1 step 5 DONE: `897d3e1bd` (`scenarios/test_ops_scan/` with PLAYTEST.md, N13 flipped to
+  built, the two `validate_network.rb` edits, `collect_ops_secrets`, verify-run line, graph
+  nodes for devices, docs N13; note `HANDOVER_core_5.md`). That builder ran to 257k tokens:
+  split a step like this in two next time (scenario + tests / tooling + docs).
+- RUNNING: S1 server R1 fixer (Sonnet).
+- Next: delta review R2 over both fix sets AND step 5 (fable52L; `reviews/S1_R2.md`); Haiku
+  scripted playtest + live proof of `test_ops_scan` (PLAYTEST.md; game via
+  `swap-scenario-game.rb test_access_signin test_ops_scan`; 11.5 S1 beats; screenshots, which
+  I look at); fix pass if needed; train check with the machine settings above; land; push.
+  Then S2 steps 6 to 8 (step 6 is large: split server model+routes / catalog loader+cli).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
