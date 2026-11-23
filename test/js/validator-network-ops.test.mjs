@@ -122,12 +122,12 @@ test('not built: grants and needs.session on a weakness, techniques and techniqu
     assertHas(out, "'rooms/lobby/objects[1]' has `technique_card`, which is not built yet: N15");
 });
 
-test('the shipped table has N13 built (step 5) and N14, N15 not built', { skip }, () => {
+test('the shipped table has N13 and N14 built (steps 5 and 8) and N15 not built', { skip }, () => {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
       puts JSON.generate(NETWORK_OPS_BUILT)`;
     const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
     assert.equal(r.status, 0, r.stderr);
-    assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()), { N13: true, N14: false, N15: false });
+    assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()), { N13: true, N14: true, N15: false });
 });
 
 test('check_network_ops is hooked into validate_scenario.rb', { skip }, () => {

@@ -22,7 +22,7 @@ NETWORK_OPS_OBJECTS_DIR = File.expand_path('../public/break_escape/assets/object
 NETWORK_OPS_PRODUCTS_FILE = File.expand_path('real_product_names.txt', __dir__)
 
 # Which feature ids are built. N13 = S1, N14 = S2, N15 = S3.
-NETWORK_OPS_BUILT = { 'N13' => true, 'N14' => false, 'N15' => false }.freeze
+NETWORK_OPS_BUILT = { 'N13' => true, 'N14' => true, 'N15' => false }.freeze
 
 # Field => feature id, by where the field sits. `discovery` is checked by value (only "scan" does
 # anything; "open" is the default).
