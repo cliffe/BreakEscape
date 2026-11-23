@@ -218,3 +218,11 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   fix pass (a fingerprint-view red on an unhighlighted sprite still counts as an authored
   tint, so that sprite gets only the bolt) is accepted for now and goes on the screenshot
   review list.
+- 2026-11-23, S3 R2 rulings: N-13-1 and N-13-2, the leak scanner earns steps PER THING
+  (a grant by its finding id, a session by its PC and foothold, a card by its item id), never
+  one whole-game step. N-13-3, no playtest script sends a hand-built or forged request from
+  the browser: those beats and the "Hostile requests" paragraph leave
+  `scenarios/test_ops_access/PLAYTEST.md`, replaced by one line naming the Rails tests that
+  make the checks; the only by-hand request a script may keep is the plain "an unearned id
+  answers the same 404 as an invented one" read. N-C1 is judged in the live proof. N-M1 (the
+  log reader shows an ops row's detail as `service: service`) goes to the log stream.
