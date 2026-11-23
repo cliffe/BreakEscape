@@ -562,7 +562,7 @@ test('S3 error: a weakness with grants that no card registry entry matches', { s
 });
 
 test('S3 error: needs.session on a weakness that grants no session on the host; "admin" with a "user" grant', { skip }, () => {
-    const a = s3(s => { s.hosts.print01.services[1].weaknesses[0].needs = { session: 'user' }; return s; });
+    const a = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses = [weak('read_only', { class: 'unpatched', needs: { session: 'user' } })]; return s; });
     assertHas(s3errors(a), 'needs.session is allowed only on a weakness that grants a session on this host');
     const b = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].needs = { session: 'admin' }; return s; });
     assertHas(s3errors(b), 'needs.session is "admin" but grants.session.access is "user"');
