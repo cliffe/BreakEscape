@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops access",
+  "description": "Test of the ops core's third stage (core plan S3, N15): a technique card used on a confirmed finding is refused with its reason or grants a saved connection or a session, the PC then shows the compromise marker and opens in the remote view, and unplugging the device ends the session and clears the marker. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 45,
+  "test_type": "ops_access",
+  "test_objective": "Prove a wrong card is refused with its reason, a finding that grants nothing answers no_grant, the right card with its needs met adds a keyring entry or opens a desktop (on a host that blocks remote sign-in too, only through the foothold it came through), the world marks the compromised PC and clicking it opens the remote view, and unplugging ends the session and clears the marks"
+}

@@ -23,7 +23,7 @@ NETWORK_OPS_OBJECTS_DIR = File.expand_path('../public/break_escape/assets/object
 NETWORK_OPS_PRODUCTS_FILE = File.expand_path('real_product_names.txt', __dir__)
 
 # Which feature ids are built. N13 = S1, N14 = S2, N15 = S3.
-NETWORK_OPS_BUILT = { 'N13' => true, 'N14' => true, 'N15' => false }.freeze
+NETWORK_OPS_BUILT = { 'N13' => true, 'N14' => true, 'N15' => true }.freeze
 
 # Field => feature id, by where the field sits. `discovery` is checked by value (only "scan" does
 # anything; "open" is the default).
@@ -508,6 +508,10 @@ def network_ops_check_weakness_grants(json_data, rec, registry, credentials, gra
       warn.call("#{where}: has `needs` but grants nothing; the player is sent to fetch something that then opens nothing") unless needs.empty?
     end
   end
+  if needs.key?('session') && rec[:host][:kind] != 'pc'
+    err.call("#{where}: needs.session on a `hosts` entry; a device has no sessions, so the need could never be met")
+    return
+  end
   return unless needs.key?('session') && !(grants.is_a?(Hash) && grants['session'].is_a?(Hash))
 
   err.call("#{where}: needs.session is allowed only on a weakness that grants a session on this host (grants.session)")
@@ -533,7 +537,7 @@ def network_ops_check_session_grant(json_data, rec, where, session, needs, err, 
   end
   cred_loop = needs['credential'].is_a?(String) && json_data.dig('credentials', needs['credential']).is_a?(Hash) &&
               json_data.dig('credentials', needs['credential'], 'connectsTo') == rec[:host_id]
-  warn.call("#{where}: grants a session on host '#{rec[:host_id].to_s[0, 40]}' but needs a credential that connects to that same host; the way in needs the way in (a loop)") if cred_loop
+  warn.call("#{where}: grants a session on host '#{rec[:host_id].to_s[0, 40]}' but needs a credential that connects to that same host (only that is tested, not whether the host has another way in); the way in needs the way in (a loop)") if cred_loop
   if network_ops_signin_named?(json_data, rec[:host_id])
     warn.call("#{where}: grants a session on host '#{rec[:host_id].to_s[0, 40]}', which a sign-in task, a capture proof or a keyring session proof also names; a card can complete that step without the password. Gate a password-only step on the password item or credential")
   end

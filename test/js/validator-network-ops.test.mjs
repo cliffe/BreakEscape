@@ -122,12 +122,12 @@ test('not built: grants and needs.session on a weakness, techniques and techniqu
     assertHas(out, "'rooms/lobby/objects[1]' has `technique_card`, which is not built yet: N15");
 });
 
-test('the shipped table has N13 and N14 built (steps 5 and 8) and N15 not built', { skip }, () => {
+test('the shipped table has N13, N14 and N15 built (steps 5, 8 and 13)', { skip }, () => {
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
       puts JSON.generate(NETWORK_OPS_BUILT)`;
     const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
     assert.equal(r.status, 0, r.stderr);
-    assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()), { N13: true, N14: true, N15: false });
+    assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()), { N13: true, N14: true, N15: true });
 });
 
 test('check_network_ops is hooked into validate_scenario.rb', { skip }, () => {
@@ -570,6 +570,15 @@ test('S3 error: needs.session on a weakness that grants no session on the host; 
     assert.deepEqual(s3errors(ok), []);
 });
 
+test('S3 error: needs.session on a hosts entry (a device has no sessions)', { skip }, () => {
+    const a = s3(s => { s.hosts.print01.services[1].weaknesses[0].needs = { session: 'user' }; return s; });
+    assertHas(s3errors(a), 'needs.session on a `hosts` entry; a device has no sessions');
+    const b = s3(s => { const w = s.hosts.print01.services[1].weaknesses[0]; w.needs = { session: 'user' }; w.grants = { credential: 'print_admin' }; return s; });
+    assertHas(s3errors(b), 'needs.session on a `hosts` entry; a device has no sessions');
+    const sign_in = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].needs = { session: 'user' }; return s; });
+    assert.ok(!s3errors(sign_in).some(m => m.includes('on a `hosts` entry; a device has no sessions')));
+});
+
 test('S3 warning: a weakness with no grants, and needs on one, in a scenario that has cards; none without cards', { skip }, () => {
     const a = s3(s => { s.hosts.print01.services[0].weaknesses = [weak('read_only', { needs: { item: 'card_factory' } })]; return s; });
     // needs.item may name a card item by id (only itemType "technique_card" is refused)
@@ -627,6 +636,7 @@ test('S3 warning: a session grant on a PC a sign-in task, a capture proof or a k
 
 test('S3 warning: a session grant that needs a credential connecting to the same host (a loop)', { skip }, () => {
     const s = s3(s => { s.rooms.lobby.objects[0].services[0].weaknesses[0].needs = { credential: 'print_admin' }; return s; });
+    assertHas(warnings(issues(s)), 'needs a credential that connects to that same host (only that is tested, not whether the host has another way in)');
     assertHas(warnings(issues(s)), 'the way in needs the way in (a loop)');
 });
 
