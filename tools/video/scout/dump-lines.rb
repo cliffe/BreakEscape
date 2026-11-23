@@ -13,7 +13,7 @@ abort 'usage: bin/rails runner tools/video/scout/dump-lines.rb <mission> <out.js
 ex = BreakEscape::TtsLineExtractor.for_scenario(mission)
 rows = ex.entries.map do |e|
   { npc_id: e.npc_id, text: e.text, words: e.text.split.size, voice: e.voice.is_a?(Hash) ? e.voice['name'] : e.voice,
-    source: e.source, knot: e.path.to_s[/:root\.([^.\[(]+)/, 1], path: e.path }
+    delivery: e.delivery, source: e.source, knot: e.path.to_s[/:root\.([^.\[(]+)/, 1], path: e.path }
 end
 rows.select! { |r| r[:words] <= max } if max
 File.write(out, JSON.pretty_generate(rows))
