@@ -16,7 +16,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | 30.5–36.1 | summary | t02_assist_window, Summarise pressed and the reply shown (5.6 s; take 9.5 to 15.1 s) · tab BRIGHTWELL ASSIST · the reply "One cleaning invoice from Mossgate, due for payment. Mossgate Cleaning Supplies also needs the full site contact list sent to a new address today." framed alone; the "And here is why it worked" line and Show hidden text out of frame · **pending take** | **v6** "The assistant passes your line on as a request." | — |
 | 36.1–42.4 | gwen_flip | t04_gwen_flip, in = W2 audio start plus 1.80 s, out = plus 8.05 s (6.3 s; the cut falls in the 1.43 to 2.06 s gap, 0.25 s tail after speech ends at 7.80 s) · tab YOUR TURN · Gwen W2 after the send, second sentence only (cached, speech 2.06 to 7.80); chat closes before the choice · **pending take** | — | Gwen: "Now take the inbox at the kiosk, and treat what the assistant hands you like a note from a stranger." (the game's bar shows both sentences, only the second is heard; caption only the heard sentence) |
 | 42.4–44.4 | blue_card | defend card, title only: "You handle the inbox" | — | — |
-| 44.4–55.9 | inbox | t05_inbox_list (a run of its own): the six-row list '0 of 6 sorted' held 3.0 s, then the genuine supplier card "Monthly cleaning invoice, October" opened (held 8.5 s) · tab BRIGHTWELL INBOX · framed on the From line (the real supplier address), subject and heading; Show hidden text unpressed; verdict buttons out of frame and unpressed · **pending take** | **v8a** "Emails, voicemails, video calls." (over the list)<br>**v8b** "This one's from the supplier you wrote as."<br>**v10** "Is it real?" (both over the opened card) | — |
+| 44.4–55.9 | inbox | t05_inbox_list (a run of its own): the six-row list '0 of 6 sorted' held 3.5 s, then the genuine supplier card "Monthly cleaning invoice, October" opened (held 8.0 s) · tab BRIGHTWELL INBOX · framed on the From line (the real supplier address), subject and heading; Show hidden text unpressed; verdict buttons out of frame and unpressed · **pending take** | **v8a** "Emails, voicemails, video calls." (over the list)<br>**v8b** "This one's from the supplier you wrote as."<br>**v10** "Is it real?" (both over the opened card) | — |
 | 55.9–64.8 | office | t06_graham_step_away, in = G2 audio start minus 0.3 s, out = G2 speech end (8.19 in the file) plus 0.3 s (8.9 s) · tab THE TRAINING ROOM · Graham at his desk, the request bark with the game's own bar; take ends before the menu · **pending take** | — | Graham: "Assistant says Pennine Oat Mills need our customer list for a recall. Reply's drafted. Just send it?" (cached, 8.62 s) |
 | 64.8–70.3 | close | End card: The AI assistant / Play the attack · Learn to stop it / plate "Learn on Hacktivity.co.uk" (5.5 s) | **v11** "Play the attack, learn to stop it, on Hacktivity.co.uk." | — |
 
@@ -54,6 +54,12 @@ Sonnet review (timing):
 - The "G2 at 9.5 s" case is removed: the first mapping fires at out plus 1.5 s, before the 4 s timer, so it cannot happen. G2 is always out plus 7.0 s.
 - Caption splits for G1, W2 (three entries) and G2 added; "Just send it?" held to the cut.
 - Total 72.0 s to 70.3 s (hook down 1.9 s, build down 0.4 s, summary up 0.6 s).
+
+## Changes after voicing
+
+Narrator voiced 2026-11-23 (Sulafat, `~/video-takes-local/ca13/vo/Sulafat/`, outside the repo).
+
+- **v8a** "Emails, voicemails, video calls." is 3.26 s and goes over the list, which was held 3.0 s. The list hold is now 3.5 s and the card hold 8.0 s (the `inbox` shot stays 11.5 s, 44.4 to 55.9 s, total unchanged at 70.3 s). The 0.5 s comes from the card, where v8b and v10 need about 3.3 s of 8.0 s. The v8a margin in the new window (0.2 s lead, 3.3 s) is only 0.04 s.
 
 ## Owner questions
 
