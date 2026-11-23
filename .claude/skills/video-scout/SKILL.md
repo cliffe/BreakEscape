@@ -41,6 +41,8 @@ Never copy a code, PIN, password or flag value into the report. Say "yes, a post
 
 ## Step 1: bring the environment up
 
+**On the owner's workstation (not a cloud container)** skip the exports and the database setup below: Postgres is already up, the default `deploy` role works, `BE_DB_USER=root` fails (no such role) and `BUNDLE_FORCE_RUBY_PLATFORM` breaks Bundler (it hides the installed platform gems). In a worktree set `BUNDLE_PATH=<main checkout>/vendor/bundle` and `RBENV_VERSION=$(cat .ruby-version)` (m04-m10 scouts, 23 Nov).
+
 A fresh cloud container has no usable database and no server. Every Rails command needs these exports:
 
 ```bash
@@ -141,6 +143,8 @@ Things that bit m01:
 **New mechanics.** List each mission's new mechanics by diffing its scenario against the earlier missions' (m01 up to the one before this): `lockType` values, `minigame` and object types, and special systems (RFID cloning, fingerprints, guard sight cones, lighting, needs, VM or flag stations, anything in `scenario.json.erb` or the engine that no earlier scenario uses). For each give where it is played and its entry state, and **propose the mechanic's card text naming it** (`RFID / Cloning`, not a story phrase) with a shot of at least 3 s of it working from start to finish (`mission-trailer.md`). Also list action candidates (a chase, a guard turning hostile, a strike in the dark) as set-up, action and payoff beats.
 
 Do not play the mission through. Entry states come from the scenario and ink and may be listed as "expected, not played"; the take stage proves them.
+
+**Tagged lines.** A line with a `#delivery:` note in the ink has its own clip, keyed on the note, and the game sends the note with the request. Test it the same way: `"delivery"` in the `--lines` JSON (`dump-lines.rb` writes it) or `--text "<line>" --delivery "<note>"`. Without the note a cached tagged line reads 503 (the m04, m05 and m06 scouts of 23 Nov reported three such false misses).
 
 ## Gates
 
