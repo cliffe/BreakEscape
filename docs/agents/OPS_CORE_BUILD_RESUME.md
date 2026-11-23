@@ -107,6 +107,22 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   `.faults`), 7 client (`HANDOVER_core_7.md`). A Haiku reader is writing a dependency digest
   of the later plans to the scratchpad `deps/OPS_PARALLEL_DIGEST.md` (which stages can start
   now in a second stream).
+- **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
+  worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
+  `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
+  `docs/agents/ops_logs_stream/` there, ports 3014 to 3016. Chosen from the dependency digest
+  (scratchpad `deps/OPS_PARALLEL_DIGEST.md`): L2a, L3, S5c and H1 have their code
+  prerequisites on main; the log chain shares the fewest files with S2 and S3. NOT startable
+  early per the digest: S5a, M1a, C1, K1 (need core S1 to S3), S5b (needs S5a and S7). The
+  digest flagged plan conflicts to check when those stages start (who adds the `access:`
+  parameter, S5a or core; H1 ordered after M3 though it needs none of S8a; K1 gated on S3).
+  RUNNING there: L2a server builder (`HANDOVER_L2a_server.md`) and L2a client builder
+  (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
+  `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
+  then train: fast-forward is not possible from a side branch, so to train it, merge main
+  into `ops-logs`, then in the train tree `git checkout --detach ops-logs` (or a temp branch),
+  run the check, merge to main at that hash, push, and merge main into `ops-build`. Only one
+  train runs at a time. No disk for a fourth worktree (/data about 7 GB free).
 - Next for S2: step 7's graph part (weakness nodes, 9.3) and step 8 split in two (8a
   `test_ops_findings` scenario + PLAYTEST + controller tests + flip N14; 8b graph + leak
   collector check-stage entries + R3-1 + verify-run + docs N14), launched when 6a reports;
