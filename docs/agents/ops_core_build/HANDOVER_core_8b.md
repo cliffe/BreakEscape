@@ -28,3 +28,10 @@ S1_R2.md P3 row corrected. Not done: `grants` strings (S3). No engine bug found.
 
 - The scanner lists catalog ids through `RealismCatalog.entry_ids` (no private call).
 - A global name used in `needs.global` or `fixedIf` is now judged as a JSON KEY as well as a string value (`scan_ops_global_keys`). Rule: a key that is a direct child of a `globalVariables` hash is exempt (the bootstrap's declared-globals map, which carries every such name as ever, plan section 7); a key anywhere else, at any depth, is a leak (owner `ops:finding:<id>`, path redacted). The earlier note above that keys are never judged is superseded.
+
+## S2 R2 fix (scanner rules changed; see also HANDOVER_S2_R2_fix.md)
+- The `globalVariables` exemption (above) now applies ONLY to the top-level map (`$.globalVariables`, path equality in `each_key_path`); a nested one, or one under a finding row, is judged.
+- New structural rules, no string test (`scan_ops_finding_rows`, `scan_ops_never_keys`): (1) a hash whose `id` is a known finding id, before `confirm:<id>`, may carry only `OPS_UNCONFIRMED_KEYS` and status `unconfirmed` (`needs`, `fixed`, `falseBecause`, any other key, or a settled status is a leak, owner `ops:finding:<id>`); (2) the keys `fixedIf`, `grants`, `realism`, `weaknesses`, `decoys` anywhere are a leak (owner `ops:key:<name>`); (3) a gating global's name (`@ops_gating_globals`, from `fixedIf` and `needs.global`, public or not) as a value or key anywhere under a finding row is a leak at any stage.
+- `usable` still drops a public global from the string and key registries; `ops_notes` records one line per dropped name and `access-leak-check.rb` prints it.
+- A non-`never` string that sits inside a longer room-text string (length 6 or more) is no longer registered (a host named in a maintenance log note was a false positive on the room answer of the real scenario).
+- Real-scenario proof: `test/controllers/break_escape/access_leak_scanner_ops_real_test.rb`. N1 (expired token or ended invite meets a credential need) and N5 (credential label and item name tagged confirm though shown earlier) are noted for S3.

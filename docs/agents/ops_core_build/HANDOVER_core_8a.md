@@ -34,3 +34,6 @@ Node `validator-network-ops`, `validator-declared-top-level`, `ops-unchanged-val
 - No scripted-leak-scan check-stage entries exist until 8b; PLAYTEST.md says to eyeball raw answers until then.
 - The no-findings notice text and the exact `ownNetwork`/`rows` field paths are as `HANDOVER_core_7.md` says; no browser run was made here.
 - No engine bug found.
+
+## S2 R2 note
+PLAYTEST.md was reordered after review R2 (N8, N9, N10): beat 6 scans the file server, 6a sends the never-checked confirm, then Check; beat 7 flips the switch BEFORE the confirm and shows Fixed only after it; beat 1 lists four host rows. Beat numbers 6, 7 and 9 changed meaning; see HANDOVER_S2_R2_fix.md.
