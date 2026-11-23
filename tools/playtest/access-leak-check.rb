@@ -39,7 +39,8 @@
 # have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
-# Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error.
+# Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error or files whose first timed rows are not oldest first
+# (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
 game_id, *files = ARGV
@@ -63,17 +64,26 @@ scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, g
 
 lines = []
 unreadable = 0
+per_file = []
 files.each do |file|
   label = File.basename(file)
+  per_file << [label, []]
   File.foreach(file).with_index(1) do |text, line_no|
     next if text.strip.empty?
 
     begin
       lines << [label, line_no, JSON.parse(text)]
+      per_file.last[1] << lines.last[2]
     rescue JSON::ParserError
       unreadable += 1
     end
   end
+end
+
+order_problem = AccessLeakScanner.file_order_problem(per_file)
+if order_problem
+  warn "capture files out of order (a shell glob puts -2 before the first file): #{order_problem}"
+  exit 2
 end
 
 findings = scanner.scan(lines)

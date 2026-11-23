@@ -214,6 +214,22 @@ class AccessLeakScanner
   # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
   MIN_FEED_TEXT = 12
 
+  # The capture files of one game are one log, read in the order given, so they must be given oldest
+  # first. Every recorded row carries its time `t` (ISO 8601, so it sorts as text). `files` is
+  # [[label, rows]]; the answer is nil when each file's first timed row is no earlier than the
+  # previous file's, otherwise a sentence naming the first pair out of order. A shell glob puts
+  # responses-N-2.jsonl before responses-N.jsonl, and a log read that way reports every earlier
+  # sweep, scan and check as a leak (ops core S3 PL7: 776 false findings).
+  def self.file_order_problem(files)
+    starts = files.map { |label, rows| [label, Array(rows).filter_map { |r| r['t'] if r.is_a?(Hash) && r['t'].is_a?(String) }.first] }
+    starts.each_cons(2) do |(prev_label, prev_t), (label, t)|
+      next if prev_t.nil? || t.nil? || t >= prev_t
+
+      return "#{label} starts at #{t}, before #{prev_label} (#{prev_t}): give the capture files oldest first"
+    end
+    nil
+  end
+
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from

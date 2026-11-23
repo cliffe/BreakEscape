@@ -91,3 +91,9 @@ request. `verify-run` OK. Items:
   (compare with `main`).
 - **PL5 still not run:** beat 19 (the older network playtests' first beats) and the
   phone-width Techniques panel.
+
+## Outcomes (second run)
+
+| Item | Outcome |
+| --- | --- |
+| PL7 | Explained by how the check was run (cause 1): the three files were given in glob order (-2, -3, then the first), so the later answers were judged before the earlier sweeps, scans and checks. Rerun in time order (35, 35-2, 35-3): no leaks; in the glob order: exactly 776 (399 finding, 228 service, 92 technique, 57 host owners). Scanner not changed, per-thing earning and the resume rules hold; no server fault. Fix: `access-leak-check.rb` exits 2 when the files are not oldest first by their first row time (`AccessLeakScanner.file_order_problem`, two tests, mutation-proved on both sides of the comparison); PLAYTEST.md names the files one by one. Game 35 in order and game 29 in time order (29, 29-kbd, 29-2): no leaks found. |

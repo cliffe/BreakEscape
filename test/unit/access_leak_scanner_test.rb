@@ -415,6 +415,38 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     end
   end
 
+  # Ops core S3 PL7: three capture files given in glob order (-2, -3, then the first) made 776 false
+  # findings; the check now refuses files whose first timed rows are not oldest first. The fixtures are the
+  # first three rows of the real game-35 files.
+  def order_fixture(name)
+    path = file_fixture("access_leak/order/responses-#{name}.jsonl")
+    [path.basename.to_s, path.read.lines.map { |l| JSON.parse(l) }]
+  end
+
+  test 'PL7: capture files oldest first pass the order check, glob order and a swapped pair are named' do
+    first, second, third = %w[35 35-2 35-3].map { |n| order_fixture(n) }
+    assert_nil AccessLeakScanner.file_order_problem([first, second, third])
+    assert_nil AccessLeakScanner.file_order_problem([first])
+    assert_nil AccessLeakScanner.file_order_problem([])
+    glob = AccessLeakScanner.file_order_problem([second, third, first])
+    assert_includes glob, 'responses-35.jsonl starts at 2026-11-23T21:09:49.088Z, before responses-35-3.jsonl'
+    assert_includes AccessLeakScanner.file_order_problem([first, third, second]), 'responses-35-2.jsonl starts at'
+    # rows without a time (a DOM row, an old log) are not judged
+    assert_nil AccessLeakScanner.file_order_problem([['a', [{ 'dom' => 'x' }]], ['b', [{ 'n' => 1 }]], second])
+  end
+
+  test 'PL7: access-leak-check.rb exits 2 on files out of order, before judging anything' do
+    game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                              scenario: scenario)
+    dir = file_fixture('access_leak/order')
+    ordered = %w[35 35-2 35-3].map { |n| dir.join("responses-#{n}.jsonl").to_s }
+    _out, status = run_check(game.id, *ordered)
+    assert_equal 0, status
+    out, status = run_check(game.id, *ordered.rotate(1))
+    assert_equal 2, status
+    refute_includes out, 'VERDICT'
+  end
+
   # ---- Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6): the note, the saved copy and
   # the withheld keys.
 

@@ -48,6 +48,8 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
 ```
 
+Name the files one by one, oldest first (the first file has no suffix): a glob such as `responses-<game_id>*.jsonl` sorts `-2` before the first file and reports every earlier sweep and scan as a leak (S3 PL7); the script now refuses files out of order (exit 2).
+
 `--access` prints the `opsDiscovered`, `opsFindings` and `opsUsed` lines and each session with its level and `granted by` finding; `--ops-log`
 prints the `access_audit` rows and exits 1 on a stored secret. The leak check must report no leaks after every beat. A card's registry key,
 name and summary are not secret once the card is held; before that the `techniques` map must not appear (beat 1 asserts it).
