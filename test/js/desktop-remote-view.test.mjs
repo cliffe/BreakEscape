@@ -48,7 +48,7 @@ for (const rel of ['utils/locked-hint.js', 'utils/conditional-text.js', 'systems
     'utils/remote-host-text.js', 'utils/compromise-bolt.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'utils/sync-before-fetch.js', 'systems/keyring.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
-    'minigames/container/container-minigame.js']) copy(rel);
+    'minigames/container/container-minigame.js', 'minigames/text-file/text-file-minigame.js']) copy(rel);
 
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
@@ -59,6 +59,7 @@ const { openRemoteDesktop, openLoginDesktop, remoteLockable } = await imp('syste
 const { PcSessions } = await imp('systems/pc-sessions.js');
 const { ContainerMinigame, folderRouteQuery, transferChoices } = await imp('minigames/container/container-minigame.js');
 const { remoteViewLine } = await imp('utils/remote-host-text.js');
+const { TextFileMinigame } = await imp('minigames/text-file/text-file-minigame.js');
 
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
@@ -254,10 +255,66 @@ test('the text-file reader builds its taskbar with the same canSwitch rule, and 
     hostRows = [{ id: 'ops_pc', remoteSignIn: false }];
     sessions2._replace('ops_pc', { ...TECH });
     assert.equal(sessions2.canSwitchUser('ops_pc'), false);
+    // a folder under the desktop names the technique copy's foothold
+    assert.equal(folderRouteQuery('ops_pc', sessions2), '?foothold=jack_a');
     hostRows = [{ id: 'ops_pc', remoteSignIn: true }];
     assert.equal(sessions2.canSwitchUser('ops_pc'), true);
     sessions2._replace('ops_pc', { ...PW });
     hostRows = [{ id: 'ops_pc', remoteSignIn: false }];
     assert.equal(sessions2.canSwitchUser('ops_pc'), true);
     assert.equal(sessions2.canSwitchUser('nobody'), true);
+});
+
+// S3 client R1 M2: the host's row is found in a further network's hosts, and before any view is held
+test('canSwitchUser finds the host row in networks[].hosts, and a host row blocked there hides Switch user', () => {
+    setup();
+    const s = new PcSessions();
+    s._replace('ops_pc', { ...TECH });
+    let view = { hosts: [{ id: 'other', remoteSignIn: true }], networks: [{ id: 'far', hosts: [{ id: 'ops_pc', remoteSignIn: false }] }] };
+    window.networkLinks = { get: () => ({ id: 'jack_a' }), lastView: () => view };
+    assert.equal(s.canSwitchUser('ops_pc'), false);
+    view = { hosts: [], networks: [{ id: 'far', hosts: [{ id: 'ops_pc', remoteSignIn: true }] }] };
+    assert.equal(s.canSwitchUser('ops_pc'), true);
+});
+
+test('with no view fetched, a click-opened remote view fetches it first, so Switch user is hidden on a blocked host', async () => {
+    setup();
+    let viewHeld = null;
+    const order = [];
+    window.networkLinks = {
+        get: (id) => heldLinks[id] || null,
+        lastView: () => viewHeld,
+        view: async (id) => { order.push(['view', id]); viewHeld = { hosts: [], networks: [{ id: 'far', hosts: [{ id: 'ops_pc', remoteSignIn: false }] }] }; return { ok: true, view: viewHeld }; },
+        openSession: (pcId) => { order.push(['open', pcId]); return {}; },
+        landed: () => {}
+    };
+    sessions._replace('ops_pc', { ...TECH });
+    const { openLoginPc } = await imp('systems/unlock-system.js');
+    openLoginPc({ scenarioData: { ...OPS_PC } });
+    await settle();
+    assert.deepEqual(order, [['view', 'jack_a'], ['open', 'ops_pc']]);
+    assert.equal(sessions.canSwitchUser('ops_pc'), false);
+});
+
+// S3 client R1 T7: the text-file reader, run over a technique copy, builds its taskbar with the same rule
+test('the running text-file reader offers no Switch user over a technique copy on a blocked host, and offers it otherwise', () => {
+    setup();
+    const reader = (session) => {
+        const m = {
+            rememberedDesktop: () => ({ containerItem: { scenarioData: { ...OPS_PC } }, places: [] }),
+            findPcData: () => OPS_PC, lockSupported: () => false, pcTaskbarModel: (a) => a, mountPcTaskbar: () => ({})
+        };
+        sessions._replace('ops_pc', { ...session });
+        const r = Object.create(TextFileMinigame.prototype);
+        r.gameContainer = { querySelector: () => ({ isConnected: true }) };
+        r.pcScreen = { pcId: 'ops_pc' };
+        r.textFileData = { fileName: 'a.txt' };
+        r.mountTaskbar(m);
+        return r.taskbarModel;
+    };
+    hostRows = [{ id: 'ops_pc', remoteSignIn: false }];
+    assert.equal(reader(TECH).canSwitch, false);
+    assert.equal(reader(PW).canSwitch, true, 'a password copy keeps it');
+    hostRows = [{ id: 'ops_pc', remoteSignIn: true }];
+    assert.equal(reader(TECH).canSwitch, true);
 });
