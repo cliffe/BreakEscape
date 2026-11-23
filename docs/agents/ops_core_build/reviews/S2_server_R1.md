@@ -384,10 +384,10 @@ Fixer pass. Hashes: A = `9b2a8b1aa`, B = `17ea002c4`, C = `ce69609e7`, D = `612c
 | m9 | fixed, C: need edges from `cred_<id>` and from an existing item node (`grant_<id>` or `cred_src_<id>`); an item with no node draws none (plan: no new node) |
 | m10 | fixed, A and the realism test: one controller test per fault folder; non-object entry loader case |
 | m11 | fixed, A: row kept with `met: false`, test |
-| m12 | server half fixed, E: `findings_of` keeps one record per finding id, weakness first; unit test. Validator half deferred: validator file busy |
+| m12 | server half fixed, E: `findings_of` keeps one record per finding id, weakness first; unit test. Validator half: already covered by the cross-list "id used twice" rule (`validate_network_ops.rb`, one `seen` set over weaknesses plus decoys; its test existed); added edge tests (one error per clash, same id in another service allowed), ee10c3860 |
 | m13 | fixed, E: `findings_of` and `hosts_on_all` unit tests |
-| m14 | deferred: validator file busy |
-| m15 | deferred: validator file busy |
+| m14 | fixed, ee10c3860: node tests for 5 decoys and for the ids `false`, `is_false`, `not_false_alarm`; `fakelogin` and `falsetto` pass (stated choice: a whole word between underscores or at an end, now said in the warning text) |
+| m15 | fixed, ee10c3860: client-writable now mirrors `server_owned_global_name?` (worn, imported, every `creditOnPass` setGlobal name, `se_captures`); node test each way |
 | m16 | fixed, C: counter suffix and a stderr warning on a collision; node test |
 | m17 | noted for S3 |
 
