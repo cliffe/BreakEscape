@@ -40,8 +40,9 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const sqA = { x: snapTo(gx, q), y: snapTo(gy, q), s: mS }, sqD = { x: snapTo(gx + off, q), y: snapTo(gy + off, q), s: mS };
 
   // phases
-  const tIn = easeOut(stepped(f / T(24), 8));                 // halves slide in
-  const tShrink = stepped((f - T(30)) / T(22), 10);           // halves shrink into the squares
+  // one step per frame (n = the phase's frame count): the phases are stretched by `scale`, so a fixed step count (8, 10) gave 4-6 frames per step, 5-7 fps
+  const tIn = easeOut(stepped(f / T(24), T(24)));             // halves slide in
+  const tShrink = stepped((f - T(30)) / T(22), T(22));        // halves shrink into the squares
   const half = stacked ? h / 2 : w / 2;
   const slide = Math.round((1 - tIn) * half);
   const A = stacked ? { x: 0, y: -slide, w, h: h / 2 } : { x: -slide, y: 0, w: w / 2, h };
