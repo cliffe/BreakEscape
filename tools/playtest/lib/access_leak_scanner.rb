@@ -257,6 +257,7 @@ class AccessLeakScanner
     @ops_grant_findings = [] # every weakness that grants (S3): { finding_id:, host_id:, host_label:, kind:, account:, access:, credential: }
     @ops_supplied = Set.new  # the steps the caller named in `ops_steps` (a held card by technique id)
     @ops_answer_pc = nil     # the host the technique answer being judged granted a session at
+    @ops_host_by_label = {}  # a sign-in PC's label (`host` on a session answer) => its host id, when the label is unique
     @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
@@ -1883,6 +1884,7 @@ class AccessLeakScanner
     usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
     service_words = ops_service_words(nm)
     @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set
+    @ops_host_by_label = ops_host_labels(nm)
     collect_ops_findings(nm, usable)
     collect_ops_techniques(nm, usable)
     nm.networks(@data).each do |net_id, net|
@@ -2476,7 +2478,7 @@ class AccessLeakScanner
   # (`admin:<pc id>`). `openHere` is judged by foothold (scan_ops_foothold_views).
   def scan_ops_session_keys(body, ctx, add)
     ops_each_hash_owned(body) do |hash, owner|
-      owner ||= @ops_answer_pc if ctx[:ops_technique]
+      owner ||= ops_session_owner(hash, ctx)
       add.call('ops_string', 'ops:key:technique', '$') if hash.key?('technique')
       if hash['via'] == 'technique' && (owner.nil? || !@ops_earned.include?("session:#{owner}") || OPS_SESSION_FREE_ROUTES.any? { |r| ctx[r] })
         add.call('ops_string', 'ops:key:via', '$')
@@ -2487,6 +2489,28 @@ class AccessLeakScanner
       scalar = !level.is_a?(Hash) && !level.is_a?(Array)
       add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
     end
+  end
+
+  # The host a session answer (`login_session_answer`: no `id`, a `host` label) belongs to: the PC whose label it
+  # names (a technique answer, `already` or not, and a container answer both carry it; a label two PCs share
+  # names none), else the host the grant answer just judged. nil when none resolves, which the rules below
+  # treat as unearned (fail closed).
+  def ops_session_owner(hash, ctx)
+    label = hash['host']
+    by_label = label.is_a?(String) && (hash.key?('via') || hash.key?('access')) ? @ops_host_by_label[label] : nil
+    return by_label if by_label
+
+    ctx[:ops_technique] ? @ops_answer_pc : nil
+  end
+
+  def ops_host_labels(nm)
+    labels = Hash.new { |h, k| h[k] = [] }
+    nm.hosts_on_all(@data).each do |rec|
+      pc = rec[:object]
+      label = pc.is_a?(Hash) ? (pc['host'].presence || pc['name']) : nil
+      labels[label] << rec[:id].to_s if label.is_a?(String)
+    end
+    labels.select { |_, ids| ids.uniq.size == 1 }.transform_values(&:first)
   end
 
   # `openHere` on a session is sent only in the view of the foothold a technique session came through, for
