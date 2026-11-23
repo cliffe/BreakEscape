@@ -53,6 +53,18 @@ module BreakEscape
       assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').title_art_path
     end
 
+    test "title_style is ca only for the exact string, and every ca mission.json asks for it" do
+      mission = Mission.new(name: 'no_such_mission', display_name: 'X')
+      assert_nil mission.title_style # no mission.json
+      { {} => nil, { 'title_style' => '' } => nil, { 'title_style' => 'CA' } => nil, { 'title_style' => 5 } => nil,
+        { 'title_style' => 'safetynet' } => nil, { 'title_style' => 'ca' } => 'ca' }.each do |meta, expected|
+        mission.define_singleton_method(:load_mission_metadata) { meta }
+        assert_equal expected, mission.title_style, "title_style #{meta.inspect}"
+      end
+      assert_equal 'ca', Mission.new(name: 'ca12_visitor_tailgater_defend', display_name: 'A').title_style
+      assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').title_style
+    end
+
     test "organiser_note returns the note or nil, stubbed" do
       mission = Mission.new(name: 'no_such_mission', display_name: 'X')
       assert_nil mission.organiser_note # no mission.json

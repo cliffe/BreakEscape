@@ -159,6 +159,16 @@ module BreakEscape
       TITLE_ART_PATTERN.match?(path) ? path : nil
     end
 
+    # Loading-screen style, from mission.json "title_style". Only "ca" (the Cyber Aware
+    # bands-and-seam-bar screen) is known; anything else, or unset, gives nil and the
+    # SAFETYNET screen. Read at runtime, so no migration is needed.
+    TITLE_STYLES = %w[ca].freeze
+
+    def title_style
+      style = load_mission_metadata&.dig('title_style').to_s
+      TITLE_STYLES.include?(style) ? style : nil
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the
