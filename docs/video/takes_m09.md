@@ -37,3 +37,6 @@ Record flags `--hide-hud --zoom-step 1` for every take except t10 and t11 (`""`)
 - Walks: to Noor's desk, into the server closet, into the open stacks, to `field_laptop` (out before the launcher).
 - Sorensen 3x UI-free overworld shot at the shredder; the "Drop" shot (motion lights in `staff_passage`, `--unlock staff_passage`).
 - No digit check (no keypad take written yet; when written, copy `m07/check_digits.rb` and read PAD from `_c9.mjs`).
+
+## Orchestrator decision (23 Nov)
+- The Shelf Marks chart prints the Vigenère key word (a puzzle answer). Drop the chart from every window; the `Vigenère / Cipher` card uses t16 (CyberChef on a neutral textbook example) and the salvage password screen with its hint only. t15 may still be run for the password screen; cut before or after any chart frame.
