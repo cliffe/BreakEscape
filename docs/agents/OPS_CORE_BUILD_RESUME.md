@@ -30,6 +30,15 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   started and need the user's word. Start point for those: `docs/agents/OPS_LAYER_HANDOVER.md`
   section 0. That file's "Fable is no longer used" is overridden by the user's routing above.
 
+- 2026-11-23: USER: "carry on into the later stages after S3, work through the whole build".
+  Scope is now the whole ops layer, in the order of `OPS_LAYER_PLAN_OUTLINE.md` section 5:
+  S5a; S6 (K1 to K4); S8a (M1a, M1b, M2, M3); S7 (C1, C2); S5b; S5c; L2a, L2b, L3; S8b (H1,
+  H2); S8c (G1 to G4). Each from its own plan's stage table and section 12, same loop as the
+  core stages (Sonnet builds, fable52L reviews, Haiku proofs, green train check, land, push).
+  Before each plan: read its sections 3, 12, 14 and 15 only. Parked and out of scope: S0, S4,
+  S10 to S12. Cracking (S7) drafting was stopped by safeguards during planning: if a builder
+  is stopped, follow AGENTS.md (report to the user, offer one retry, never rerun unasked).
+
 ## Waiting on the user
 
 - Nothing yet. Later: card art for `technique_card.png`; the final screenshot review.
