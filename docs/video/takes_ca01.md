@@ -12,4 +12,4 @@ Not recorded yet (2026-11-22). The list is for `tools/video/edits/ca01_trailer_r
 
 t01 and t05 share one entry state and could be one take (Gwen first, then Adaeze) if the room positions allow a straight walk; kept apart here so each has its own clean in point.
 
-Spoilers are fine for CA (owner), so no masks. The build framing stays above the Red flags box (about y 670 at zoom step 1) so the forge explanation lines are not the subject of the shot.
+Spoilers are fine for CA (owner), so no masks. The build framing keeps the Red flags box and its counter in shot (down to about y 725; script R2/R3), since v4b talks about the counter dropping; the forge explanation lines may show but are not the subject.
