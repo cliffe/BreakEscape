@@ -60,6 +60,18 @@
       "progressActions"
     ]
   },
+  "ops_log_terminal": {
+    "required": [
+      "logSource"
+    ],
+    "optional": [
+      "title",
+      "anomaly",
+      "flagActionLabel",
+      "flagActions",
+      "completionActions"
+    ]
+  },
   "log_filter_terminal": {
     "required": [
       "logEntries"
