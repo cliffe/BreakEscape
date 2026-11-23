@@ -271,3 +271,18 @@ merging, lookup and words (MT:112-176).
 | m7 | minor | NV:850 | raw `severity` in a class attribute |
 | m8 | minor | CSS, NV:846 | layout at phone width and the tick and cross glyphs unproven in a browser |
 | m9 | minor | VT:625, MT:119-121 | tests pin `summary: ''`, which the server never sends |
+
+## R1 outcomes
+
+| Finding | Outcome |
+|---|---|
+| M1 | fixed, 74ad06f69 (`focusedControl` returns null with no control; `perform` takes focus and epoch inside the try; tests with focus on the list, a changed refetch, a result, and a throwing focus lookup; mutation: removing the guard fails the M1 test) |
+| m1 | fixed, 74ad06f69 (`falseBecause` only; test that `because` and `reason` draw nothing; bridge doc names the key) |
+| m2 | fixed, 74ad06f69 (`CLASS_DEFAULT_LINE` and the fallback removed; the server's `CLASS_SUMMARIES` is the one table; tests and bridge doc updated) |
+| m3 | fixed, 74ad06f69 (merge replaces by id in place; model and view tests) |
+| m4 | fixed, 74ad06f69 (empty-check line keyed; test) |
+| m5 | fixed, 74ad06f69 (answer changed so a redraw happens; Confirm and Check tests) |
+| m6 | fixed, 74ad06f69 (a to g all added; a proven by mutation: dropping the epoch check fails it) |
+| m7 | fixed, 74ad06f69 (`severityClass` allow-list; test) |
+| m8 | deferred to the live proof |
+| m9 | fixed, 74ad06f69 (tests send the server's class line as `summary`) |
