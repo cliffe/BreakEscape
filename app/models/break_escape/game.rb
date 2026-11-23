@@ -3093,7 +3093,11 @@ module BreakEscape
       'pinDusted' => {},
       # Network ops S1 (OPS_CORE_PLAN.md 8): { networks: [id], hosts: [id] } the player has swept or
       # scanned. Server-written only, never in a sync body, the bootstrap or any answer whole.
-      'opsDiscovered' => {}
+      'opsDiscovered' => {},
+      # Network ops S2 (OPS_CORE_PLAN.md 8): { findingId => "<u|c|f><n>" }, the findings the player
+      # holds (status letter and alias number). Server-written only, never in a sync body, the
+      # bootstrap or any answer whole; findings ride on host rows.
+      'opsFindings' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures

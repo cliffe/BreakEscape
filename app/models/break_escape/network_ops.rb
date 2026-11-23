@@ -8,6 +8,11 @@ module BreakEscape
   # body, never sent whole):
   #   opsDiscovered  { 'networks' => [networkId], 'hosts' => [hostId] }, grow-only, bounded by the
   #                  scenario's networks and 64 hosts. It decides which rows GET /network builds.
+  #                  S2 adds `services`: ["<hostId>.<serviceName>"], the services checked.
+  #   opsFindings    { "<findingId>" => "<u|c|f><n>" } (S2): the findings the player holds, the
+  #                  letter its status (unconfirmed, confirmed, false) and n its alias number
+  #                  (alias "f<n>", given in the order found, kept in the value because the JSON
+  #                  column does not keep key order). Findings ride on host rows.
   #
   # Discovery changes the view and nothing else (5.2): sign-in, the desktop, shares and the
   # keyring never read opsDiscovered.
@@ -21,6 +26,18 @@ module BreakEscape
     CLI_ADDRESS_KEYS = %w[address].freeze
     CLI_SERVICE_KEYS = %w[protocol service banner].freeze
     SERVICE_KEYS = %w[name label port product version].freeze
+
+    # S2: the player's own finding state. A stored value is a status letter and an alias number.
+    FINDING_VALUE = /\A([ucf])([0-9]{1,4})\z/.freeze
+    FINDING_STATUS = { 'u' => 'unconfirmed', 'c' => 'confirmed', 'f' => 'false' }.freeze
+    # What the view shows for a finding with no authored summary: one plain line per class.
+    CLASS_SUMMARIES = {
+      'default_creds' => 'A factory or default account may still be accepted.',
+      'unpatched' => 'The service may be running an out-of-date build.',
+      'misconfig' => 'A setting may have been left in an unsafe state.',
+      'weak_auth' => 'The sign-in protection may be weak.',
+      'cleartext' => 'Information may be sent without protection.'
+    }.freeze
 
     # --- the checks ---------------------------------------------------------------------------
 
@@ -123,6 +140,233 @@ module BreakEscape
       write_log_row!(event, as: nil, where: where, detail: { 'from' => foothold_id }, save_limit: save_limit)
     end
 
+    # --- S2: check and confirm ----------------------------------------------------------------
+
+    # POST /network/check: records the service as checked and adds a finding, with the next alias, for
+    # each weakness not fixed and each decoy the player does not hold yet (section 5.3). Returns
+    # { status:, body: }.
+    def check_service!(foothold_id, host_id, service_name)
+      record = ops_listed_host(foothold_id, host_id)
+      return ops_not_found unless record && ops_discovered_list('hosts').include?(host_id)
+
+      service = record[:services].find { |svc| svc['name'] == service_name }
+      return ops_not_found unless service
+      return ops_refusal(:forbidden, 'not_responding') if ops_host_off?(record)
+
+      key = "#{host_id}.#{service_name}"
+      first = !ops_discovered_list('services').include?(key)
+      ops_discover!('services', key) if first
+      added = ops_add_findings!(host_id, service)
+      if first
+        write_log_row!('service_checked', as: nil, where: ops_where(record), detail: { 'service' => service_name })
+      end
+      save! if first || added.any?
+
+      body = { success: true, hostId: host_id, service: service_name }
+      body[:already] = true if !first && added.empty?
+      body[:findings] = ops_service_findings(host_id, service)
+      { status: :ok, body: body }
+    end
+
+    # POST /network/confirm: settles a held finding (free). A weakness becomes confirmed and a decoy
+    # false. Returns { status:, body: }.
+    def confirm_finding!(foothold_id, finding_id)
+      found = ops_held_finding(finding_id)
+      return ops_not_found unless found
+
+      record = ops_listed_host(foothold_id, found[:host_id])
+      return ops_not_found unless record
+      return ops_refusal(:forbidden, 'not_responding') if ops_host_off?(record)
+
+      letter, number = ops_finding_value(finding_id)
+      settled = letter != 'u'
+      unless settled
+        letter = found[:kind] == 'weakness' ? 'c' : 'f'
+        ops_set_finding!(finding_id, letter, number)
+        write_log_row!('finding_confirmed', as: nil, where: ops_where(record),
+                                            detail: { 'finding' => "f#{number}", 'status' => FINDING_STATUS[letter] })
+        save!
+      end
+
+      body = { success: true }
+      body[:already] = true if settled
+      body[:finding] = ops_finding_row(found, letter, number)
+      { status: :ok, body: body }
+    end
+
+    # The log place of a host record: a sign-in host is a pc, anything else a host.
+    def ops_where(record)
+      { kind: record[:kind] == 'pc' ? 'pc' : 'host', id: record[:id] }
+    end
+
+    # --- S2: findings state -------------------------------------------------------------------
+
+    def ops_findings
+      held = player_state.is_a?(Hash) ? player_state['opsFindings'] : nil
+      held.is_a?(Hash) ? held : {}
+    end
+
+    # [letter, alias number] of a held finding, or nil (a missing or malformed value is not held).
+    def ops_finding_value(finding_id)
+      match = FINDING_VALUE.match(ops_findings[finding_id].to_s)
+      match && [match[1], match[2].to_i]
+    end
+
+    def ops_set_finding!(finding_id, letter, number)
+      player_state['opsFindings'] = ops_findings.merge(finding_id => "#{letter}#{number}")
+    end
+
+    # One more than the highest alias number held.
+    def ops_next_alias_number
+      ops_findings.each_value.filter_map { |value| FINDING_VALUE.match(value.to_s)&.[](2)&.to_i }.max.to_i + 1
+    end
+
+    # The authored record of a held finding id (NetworkModel.findings_of shape, with host_id), or nil
+    # when the id is not held or names nothing in the scenario.
+    def ops_held_finding(finding_id)
+      return nil unless finding_id.is_a?(String) && ops_finding_value(finding_id)
+
+      NetworkModel.hosts_on_all(scenario_data).each do |rec|
+        rec[:services].each do |svc|
+          found = NetworkModel.findings_of(rec[:id], svc).find { |f| f[:finding_id] == finding_id }
+          return found if found
+        end
+      end
+      nil
+    end
+
+    # Adds an unconfirmed entry, with the next alias, for each weakness not fixed and each decoy of
+    # the service that has no entry yet. Answers the finding ids added.
+    def ops_add_findings!(host_id, service)
+      globals = frustration_globals
+      added = []
+      NetworkModel.findings_of(host_id, service).each do |found|
+        next if ops_finding_value(found[:finding_id])
+        next if found[:kind] == 'weakness' && ops_fixed?(found[:entry], globals)
+
+        ops_set_finding!(found[:finding_id], 'u', ops_next_alias_number)
+        added << found[:finding_id]
+      end
+      added
+    end
+
+    # fixedIf holds now (the requireGlobal form, read as offWhen is).
+    def ops_fixed?(entry, globals = nil)
+      cond = entry['fixedIf']
+      return false unless BreakEscape::AccessWork.off_when_present?(cond)
+
+      BreakEscape::AccessWork.globals_hold?(cond, globals || frustration_globals)
+    end
+
+    # --- S2: the finding builder --------------------------------------------------------------
+
+    # The findings the player holds on one service, built by the one builder, in finding id order.
+    def ops_service_findings(host_id, service)
+      NetworkModel.findings_of(host_id, service).filter_map do |found|
+        letter, number = ops_finding_value(found[:finding_id])
+        ops_finding_row(found, letter, number) if letter
+      end
+    end
+
+    # The findings the player holds on a host, across its services, in finding id order.
+    def ops_host_findings(host_id, services)
+      services.flat_map { |svc| ops_service_findings(host_id, svc) }.sort_by { |row| row['id'] }
+    end
+
+    # The one builder of a finding, for a weakness and a decoy alike: the same keys in the same order,
+    # so nothing tells them apart before the confirm (section 5.3). A confirmed weakness gains `needs`
+    # (and `fixed: true` while its fixedIf holds); a decoy that was confirmed false gains
+    # `falseBecause`.
+    def ops_finding_row(found, letter, number)
+      entry = found[:entry]
+      row = { 'id' => found[:finding_id], 'alias' => "f#{number}", 'hostId' => found[:host_id],
+              'service' => found[:service_name], 'class' => entry['class'], 'severity' => entry['severity'],
+              'summary' => ops_finding_summary(entry), 'status' => FINDING_STATUS[letter] }
+      if letter == 'c'
+        row['needs'] = ops_needs_rows(entry['needs'])
+        row['fixed'] = true if ops_fixed?(entry)
+      elsif letter == 'f'
+        row['falseBecause'] = entry['falseBecause']
+      end
+      row
+    end
+
+    def ops_finding_summary(entry)
+      text = entry['summary']
+      text.is_a?(String) && !text.strip.empty? ? text : CLASS_SUMMARIES[entry['class']].to_s
+    end
+
+    # --- S2: needs ----------------------------------------------------------------------------
+
+    # `needs` as rows { kind, label, met }, in the order credential, item, itemType, global. The
+    # label is a name the scenario already shows (a credential's label, an item's name) or the
+    # authored label of an itemType or global; never a global's name. `session` is S3.
+    def ops_needs_rows(needs)
+      return [] unless needs.is_a?(Hash)
+
+      rows = []
+      rows << ops_need_credential(needs['credential']) if needs['credential'].is_a?(String)
+      rows << ops_need_item(needs['item']) if needs['item'].is_a?(String)
+      if needs['itemType'].is_a?(String) && needs['itemType'] != 'technique_card'
+        rows << { 'kind' => 'itemType', 'label' => needs['label'].to_s, 'met' => ops_item_type_held?(needs['itemType']) }
+      end
+      if BreakEscape::AccessWork.off_when_present?(needs['global'])
+        rows << { 'kind' => 'global', 'label' => needs['label'].to_s,
+                  'met' => BreakEscape::AccessWork.globals_hold?(needs['global'], frustration_globals) }
+      end
+      rows
+    end
+
+    def ops_need_credential(cred_id)
+      entry = CredentialModel.registry(scenario_data)[cred_id]
+      label = entry.is_a?(Hash) ? ops_credential_label(entry) : ''
+      { 'kind' => 'credential', 'label' => label, 'met' => entry.is_a?(Hash) && credential_proof_holds?(cred_id, entry) }
+    end
+
+    # A credential's label: its own, else (a password) the name of the item it is found in.
+    def ops_credential_label(entry)
+      label = credential_label(entry)
+      return label unless label.empty?
+
+      definition = CredentialModel.item_definition(scenario_data, entry['foundIn'])
+      definition.is_a?(Hash) && definition['name'].is_a?(String) ? definition['name'] : ''
+    end
+
+    def ops_need_item(item_id)
+      definition = CredentialModel.item_definition(scenario_data, item_id)
+      name = definition.is_a?(Hash) && definition['name'].is_a?(String) ? definition['name'] : ''
+      { 'kind' => 'item', 'label' => name, 'met' => ops_item_held?(item_id) }
+    end
+
+    # Identity-strict, as credential_held_proof_holds? is: an unforged inventory entry whose id and
+    # type equal the authored definition's. Never by name.
+    def ops_item_held?(item_id)
+      definition = CredentialModel.item_definition(scenario_data, item_id)
+      return false unless definition.is_a?(Hash) && definition['type'].is_a?(String) && definition['id'].to_s == item_id.to_s
+
+      ops_held_items.any? { |data| data['id'].to_s == item_id.to_s && data['type'].to_s == definition['type'] }
+    end
+
+    # Some held, unforged entry whose id is an authored item of that type and whose own type equals it.
+    def ops_item_type_held?(type)
+      return false if type.to_s.empty?
+
+      ops_held_items.any? do |data|
+        definition = CredentialModel.item_definition(scenario_data, data['id'])
+        definition.is_a?(Hash) && definition['type'] == type && data['type'].to_s == type
+      end
+    end
+
+    # The inventory entries the player really holds (not client-forged), unwrapped.
+    def ops_held_items
+      Array(player_state['inventory']).filter_map do |inv|
+        next if !inv.is_a?(Hash) || BreakEscape::ItemIdentity.client_forged?(inv)
+
+        data = inv['scenarioData'] || inv
+        data.is_a?(Hash) && data['id'].is_a?(String) ? data : nil
+      end
+    end
+
     # --- state --------------------------------------------------------------------------------
 
     def ops_discovered
@@ -168,6 +412,8 @@ module BreakEscape
       if ops_discovered_list('hosts').include?(host_id) && services.any?
         row['scanned'] = true
         row['services'] = services.map { |svc| ops_service_row(svc) }
+        findings = ops_host_findings(host_id, services)
+        row['findings'] = findings if findings.any?
       end
       row
     end

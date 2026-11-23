@@ -408,24 +408,38 @@ module BreakEscape
       service_findings(data, 'decoys', 'decoy')
     end
 
+    # Every host record of every network, in network then id order.
+    def hosts_on_all(data)
+      networks(data).keys.flat_map { |net_id| hosts_on(net_id, data) }
+    end
+
     def service_findings(data, key, kind)
       out = []
       networks(data).each_key do |net_id|
         hosts_on(net_id, data).each do |rec|
           rec[:services].each do |svc|
-            next unless present_string?(svc['name'])
-
-            list = svc[key]
-            next unless list.is_a?(Array)
-
-            list.select { |entry| entry.is_a?(Hash) && present_string?(entry['id']) }.first(FINDINGS_PER_LIST).each do |entry|
-              out << { finding_id: finding_id(rec[:id], svc['name'], entry['id']), host_id: rec[:id], host: rec,
-                       service_name: svc['name'], service: svc, kind: kind, id: entry['id'], entry: entry }
-            end
+            findings_in(rec[:id], svc, key, kind).each { |found| out << found.merge(host: rec) }
           end
         end
       end
       out.sort_by { |rec| rec[:finding_id] }
+    end
+
+    # The weaknesses and decoys of one service of a host (by host id), together, sorted by finding id:
+    # { finding_id:, host_id:, service_name:, service:, kind:, id:, entry: }. The one reader the
+    # server's finding builder uses, so a decoy and a weakness are read the same way.
+    def findings_of(host_id, service)
+      (findings_in(host_id, service, 'weaknesses', 'weakness') + findings_in(host_id, service, 'decoys', 'decoy'))
+        .sort_by { |rec| rec[:finding_id] }
+    end
+
+    def findings_in(host_id, svc, key, kind)
+      return [] unless svc.is_a?(Hash) && present_string?(svc['name']) && svc[key].is_a?(Array)
+
+      svc[key].select { |entry| entry.is_a?(Hash) && present_string?(entry['id']) }.first(FINDINGS_PER_LIST).map do |entry|
+        { finding_id: finding_id(host_id, svc['name'], entry['id']), host_id: host_id,
+          service_name: svc['name'], service: svc, kind: kind, id: entry['id'], entry: entry }
+      end
     end
 
     def present_string?(value)

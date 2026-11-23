@@ -32,7 +32,10 @@ module BreakEscape
       'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
       # Ops core S1: a sweep and a host scan (OPS_CORE_PLAN.md section 13).
       'network_swept' => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } }, save_limit: { 'ok' => 10 } },
-      'host_scanned' => { label: 'HOST_SCAN', places: %w[host pc], results: %w[ok], detail: { 'from' => { id: 'foothold' } } }
+      'host_scanned' => { label: 'HOST_SCAN', places: %w[host pc], results: %w[ok], detail: { 'from' => { id: 'foothold' } } },
+      # Ops core S2: a service check and a confirm (section 13).
+      'service_checked' => { label: 'SVC_CHECK', places: %w[host pc], results: %w[ok], detail: { 'service' => { id: 'service' } } },
+      'finding_confirmed' => { label: 'CONFIRM', places: %w[host pc], results: %w[ok], detail: { 'finding' => { alias: 'finding' }, 'status' => %w[confirmed false] } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -92,6 +95,12 @@ module BreakEscape
       # A `hosts` entry (a host with no sign-in); a sign-in host is a 'pc'.
       'host' => {
         name: ->(game, id) { OpsLogEvents.device_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      # A service by its name, which is its id on its host (ops core S2). Never its label: a name is
+      # unique only on its host, a lookup is given no place, and the row's `where` names the host.
+      'service' => {
+        name: ->(game, id) { OpsLogEvents.service_named(game, id) },
         room: ->(_game, _id) { nil }
       },
       # A foothold id: a network jack ("jack_<id>" or the jack's id), an access point, or a PC
@@ -173,6 +182,17 @@ module BreakEscape
     def device_named(game, id)
       entry = NetworkModel.hosts(game.scenario_data)[id.to_s]
       entry && (entry['name'] || id.to_s)
+    end
+
+    # The service's name when some host of the scenario declares a service of that name, else nil.
+    def service_named(game, id)
+      data = game.scenario_data
+      NetworkModel.networks(data).each_key do |net|
+        NetworkModel.hosts_on(net, data).each do |rec|
+          return id.to_s if rec[:services].any? { |svc| svc['name'] == id.to_s }
+        end
+      end
+      nil
     end
 
     def foothold_name(game, id)

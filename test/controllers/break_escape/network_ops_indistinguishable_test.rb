@@ -100,5 +100,86 @@ module BreakEscape
       ops_scan(OFFICE, network_id: 'office_lan')
       refute_equal reference(:host_id), answer(OFFICE, :host_id, 'sam_pc')
     end
+
+    # ---- S2: check and confirm -----------------------------------------------------------------
+
+    NOS = NetworkOpsScenario
+
+    def check_answer(foothold, host_id, service)
+      post game_path('network/check'), params: { foothold: foothold, host_id: host_id, service: service }, as: :json
+      [response.status, response.body]
+    end
+
+    def confirm_answer(foothold, finding_id)
+      post game_path('network/confirm'), params: { foothold: foothold, finding_id: finding_id }, as: :json
+      [response.status, response.body]
+    end
+
+    def findings_ready
+      hold_office_foothold({}, NOS.findings_scenario)
+      ops_scan(OFFICE, network_id: 'office_lan')
+      ops_scan(OFFICE, host_id: 'sam_pc')
+    end
+
+    test 'check: an unearned real host or service answers as an invented one' do
+      findings_ready
+      want = check_answer(OFFICE, 'invented_target', 'web')
+      assert_equal [404, { success: false, reason: 'not_found' }.to_json], want
+      assert_equal want, check_answer(OFFICE, 'print_srv', 'queue'), 'a host listed but not scanned'
+      assert_equal want, check_answer(OFFICE, 'sv_fs02', 'backup'), 'a host out of reach'
+      assert_equal want, check_answer(OFFICE, 'sam_pc', 'no_such_service')
+      assert_equal want, check_answer(OFFICE, 'sam_pc', 'queue'), 'a real service of another host'
+      assert_equal want, check_answer(OFFICE, 'sam_pc', 'sam_pc.web'), 'a finding-style id'
+      assert_equal want, check_answer('jack_not_held', 'sam_pc', 'web')
+      assert_equal want, check_answer('not a foothold!', 'sam_pc', 'web')
+      INVENTED.reject(&:empty?).each do |id|
+        assert_equal want, check_answer(OFFICE, id, 'web'), id
+        assert_equal want, check_answer(OFFICE, 'sam_pc', id), id
+      end
+      assert_equal %w[network_swept host_scanned], ops_rows.map { |row| row['event'] }, 'no row for a 404'
+      refute_equal want, check_answer(OFFICE, 'sam_pc', 'web'), 'an earned service answers differently'
+    end
+
+    test 'confirm: a real finding never checked, or of a host not listed, answers as an invented one' do
+      findings_ready
+      want = confirm_answer(OFFICE, 'invented.finding.id')
+      assert_equal [404, { success: false, reason: 'not_found' }.to_json], want
+      [NOS::FACTORY, NOS::OLD_BANNER, NOS::SPOOL, NOS::LAB_OPEN, 'sam_pc.web', 'sam_pc'].each do |id|
+        assert_equal want, confirm_answer(OFFICE, id), "#{id} never checked"
+      end
+      assert_equal want, confirm_answer('jack_not_held', NOS::FACTORY)
+      INVENTED.reject(&:empty?).each { |id| assert_equal want, confirm_answer(OFFICE, id), id }
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+      assert_equal want, confirm_answer(OFFICE, NOS::SPOOL), 'a real finding of another host, not held'
+      refute_equal want, confirm_answer(OFFICE, NOS::FACTORY), 'a held finding answers differently'
+    end
+
+    test 'a stale id after an unplug answers a check and a confirm as an invented one, and the findings are kept' do
+      findings_ready
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+      unplug('comms_port')
+      assert_response :success
+      assert_equal check_answer(OFFICE, 'invented_target', 'web'), check_answer(OFFICE, 'sam_pc', 'web')
+      assert_equal confirm_answer(OFFICE, 'invented.finding.id'), confirm_answer(OFFICE, NOS::FACTORY)
+      assert_equal 'u1', ops_state['opsFindings'][NOS::FACTORY]
+      assert_equal %w[sam_pc.web], ops_state['opsDiscovered']['services']
+    end
+
+    test 'a stale id after a lost pivot answers a finding of the pivoted host as an invented one' do
+      hold_office_foothold({}, NOS.findings_scenario)
+      data = @game.reload.scenario_data
+      data['hosts']['sv_dev']['services'].first['weaknesses'] = [NOS.weak('mgmt_open', 'misconfig', 'low')]
+      @game.update!(scenario_data: data)
+      pivot_through_lena
+      ops_scan(OFFICE, network_id: 'server_net')
+      ops_scan(OFFICE, host_id: 'sv_dev')
+      assert_response :success
+      ops_check(OFFICE, host_id: 'sv_dev', service: 'mgmt')
+      assert_response :success, response.body
+      post game_path('logout'), params: { pc_id: 'lena_pc' }, as: :json
+      assert_response :success
+      assert_equal check_answer(OFFICE, 'invented_target', 'mgmt'), check_answer(OFFICE, 'sv_dev', 'mgmt')
+      assert_equal confirm_answer(OFFICE, 'invented.finding.id'), confirm_answer(OFFICE, 'sv_dev.mgmt.mgmt_open')
+    end
   end
 end
