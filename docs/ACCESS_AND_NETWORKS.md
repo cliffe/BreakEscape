@@ -64,8 +64,9 @@ In words. An NPC with `creds` is an identity (A1). Doors and objects carry an ac
 | N10 | [Implants](#n10-implants) | A `grant_foothold` action gives a foothold on a sign-in PC's own network: from a device the player plugs into a PC they hold a session on (held-device and needs-a-session variant, also the BadUSB), or from a device the player dropped that an NPC then uses (dropped-device variant). | `grant_foothold` action: `pc`, `needsSession`, `needsHeld`, `needsDropped`, `name`; item `usbClass`; policy `usb`. |
 | N11 | [Patch panel](#n11-patch-panel) | An object with `panelPorts` opens a 24-port patch panel; a port with a jack plants the player's box through the usual jack flow. | `panelPorts` (object), `panelOf` (jack). |
 | N12 | [Resource and host rows in the network view (additional)](#n12-resource-and-host-rows-in-the-network-view-additional) | `GET /network` lists, per held foothold, host rows (sign-in objects) and resource rows on each reachable network, with greyed blocks for networks the player held a session on that are now down. | `host` (object), `sprite` (object), resource `name`, `host`, `observations`. |
+| N13 | [Discovery, hosts and services](#n13-discovery-hosts-and-services) | A network with `discovery: "scan"` opens its view with no rows until the player sweeps it; a top-level `hosts` map adds devices with no sign-in; a host (device or sign-in PC) lists `services` once it is scanned. `POST /network/scan` is the sweep and the host scan. | `networks.<id>.discovery` (`"open"` or `"scan"`), top-level `hosts.<id>` (`name`, `network`, `sprite`, `offWhen`, `services`), `services` on a sign-in object. |
 
-A10b is the USB policy, split out of A10. N12 is the network view's own rows and blocks. The BadUSB beat in the 9.3b plan is the `needsSession` shape of N10, not a separate feature.
+A10b is the USB policy, split out of A10. N12 is the network view's own rows and blocks. N13 is the first ops core stage (discovery, hosts and services); N14 and N15 are not built. The BadUSB beat in the 9.3b plan is the `needsSession` shape of N10, not a separate feature.
 
 ## 3. Access features
 
@@ -726,6 +727,8 @@ Client-emitted through `eventDispatcher`; each is also emitted as `<name>:<id>` 
 | `network_view_closed` | footholdId, reason (`closed`, `link_dropped`, `foothold_gone`) | NL:796 |
 | `network_viewed` | footholdId, networkId, hostIds, hostList, plus extras | network-view-minigame.js:454 |
 | `network_host_opened` | footholdId, hostId, kind | network-view-minigame.js:874 |
+| `network_swept` | networkId | network-view-minigame.js (`afterAnswer`, after any sweep answer, a repeat included) |
+| `network_host_scanned` | hostId | network-view-minigame.js (`afterAnswer`, after any host scan answer, a repeat included) |
 
 Also: the global `<jackId>_planted` (NL:80, 198, 314) is true while a device is planted at a jack or while the player holds a foothold from that access point or PC; the dungeon graph and `observationVariants` use it.
 
@@ -1172,6 +1175,28 @@ Validated In the worked example for this group (section 5).
 **Known limits.** No five-second refetch (`docs/IDEAS_BACKLOG.md:239`).
 **Plan vs code.** none found.
 **Unverified.** Client drawing details.
+
+### N13 Discovery, hosts and services
+**One line.** A network with `discovery: "scan"` shows no host or share rows in the network view until the player sweeps it; a top-level `hosts` map adds devices that have no sign-in (a printer, a camera recorder); a host's `services` list shows once the player scans that host. `POST /network/scan` does both.
+**Key fields.** `networks.<id>.discovery`: `"open"` (default, and the meaning of an absent key) or `"scan"`. Top-level `hosts.<id>` (server-only): `name` and `network` (a `networks` key) required, optional `sprite` (a PNG in `assets/objects/`), `offWhen` (a global that powers the device down) and `services`. `services` (at most 8 per host, at most 64 hosts with services) on a `hosts` entry or on a sign-in object only: `name` (an id of at most 40 characters, unique on the host), `port` (1 to 65535, display only), `product` and `version` (plain text, up to 40 characters), optional `label`. `weaknesses`, `decoys`, `techniques` and a `cli` block are not built or not declared yet and are refused or ignored.
+**What the player sees.** On a discovery network the view lists the block with a Sweep control and no rows. A sign-in the player already holds a session on is listed anyway, alone, until the sweep. After the sweep every host, device and share of that network is listed, with no services. Each host or device row offers Scan; a scan adds one tile per service (name or label, port, product, version) and the Scan control goes. A powered-down device shows "not responding" and cannot be scanned. A network that is not a discovery network lists its rows at once and offers Scan on them, and no Sweep.
+**Fields.** `hosts` is withheld from the bootstrap and `services` from room data, so a scenario that names them leaks nothing to a browser that has not earned them. `hosts` ids share one id space with room object ids and `resources` keys.
+**Example.** A fragment, validated in `scenarios/test_ops_scan`:
+```json
+"networks": { "office_lan": { "name": "Office network", "discovery": "scan" } },
+"hosts": {
+  "printer01": { "name": "Second floor printer", "network": "office_lan", "sprite": "pnw_portable_printer1",
+    "services": [ { "name": "print", "port": 9100, "product": "Inkvale JetServe", "version": "1.4" } ] }
+}
+```
+**Server enforces / client only.** The server answers every request from its own record (`app/models/break_escape/network_ops.rb`, `network_access.rb`, `games_controller.rb` `network_scan`): a sweep needs a held foothold whose reach holds the network and that network to be `discovery: "scan"`; a host scan needs the host on a reached network that is open or swept. A real id the player has not earned is answered as an invented one: one 404, `{ "success": false, "reason": "not_found" }`. The other refusals: 400 `bad_request` (malformed), 422 `not_needed` (an open network, or a host with no services), 403 `not_responding` (a powered-down device). A repeat answers `already: true` with the same rows. What was swept and scanned is `opsDiscovered` in the server's game state (`networks` and `hosts` lists): server-owned, never in a sync body, never sent whole. Discovery governs only what the view lists: sign-in, desktops and `GET /container` answer for a host or share by their own rules whether or not it has been swept. The client (`network-view-minigame.js`, `ops-model.js`) only draws the answers.
+**Events.** `network_swept` (`networkId`) and `network_host_scanned` (`hostId`), each also as `<name>:<id>`. Server log events `network_swept` and `host_scanned` (a source with no `where` can list them; a repeat of a sweep merges into one row with a count).
+**Validator.** `scripts/validate_network_ops.rb` (`check_network_ops`, called from `validate_scenario.rb`): a `hosts` key too long, not an id, or also a room object or resource id; a host with an unknown network or a sprite with no PNG; `services` on an object that is not a sign-in object; a service name used twice, more than 8 services, more than 64 hosts with services; `discovery: "scan"` on a network with a Wi-Fi block or a jack and no host; a password inside a host name, product, version or label; with `logSources`, an id longer than 40 characters. Warnings: services on an open network where nothing has a weakness (scenery is allowed); a product that holds a name from `scripts/real_product_names.txt`. `NETWORK_OPS_BUILT` has N13 built and N14 and N15 not built, so a field of those stages is an error. `validate_network.rb` also counts a `hosts` device as something a network carries and warns when a device and a sign-in object share one label.
+**Dungeon graph.** A discovery network's node gains the line "(sweep to list)"; a `hosts` device is a `host_<id>` container with an `exposes` edge from its network. Discovery adds no lock in front of a host.
+**Check from the server.** `verify-run.rb <game_id> --access` prints the `opsDiscovered` line (networks, hosts, ids in id order). `access-leak-check.rb` reads host, share, product, version, label, address and range strings (`collect_ops_secrets`) and reports one seen before the sweep, scan or listing that earns it.
+**Shown in.** `test_ops_scan` (an open guest network, a discovery office network with a share, two devices and two sign-in hosts, a linked discovery plant network reached by signing in at the file server). Its `PLAYTEST.md` is the scripted run.
+**Known limits.** No weakness, check or finding (N14) and no technique or card (N15). The optional `cli` display block is not declared in the schema yet, so no scenario can author one. A sweep needs no tool.
+**Plan vs code.** `docs/achitechture/OPS_CORE_PLAN.md` sections 4.1, 5 to 6, 9 and 11.4.
 
 ---
 

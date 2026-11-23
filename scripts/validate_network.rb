@@ -360,7 +360,8 @@ def check_network_model(json_data, scenario_dir = nil)
 
   jacked_nets = jacks.map { |j| j[:network] }.compact.to_set
   host_on = ->(net) { nm.sign_in_objects_on(net, json_data).any? }
-  carries = ->(net) { host_on.call(net) || nm.resources_on(net, json_data).any? }
+  # `carries` also counts a `hosts` device (N13); `host_on` does not: a device has no session to pivot through.
+  carries = ->(net) { host_on.call(net) || nm.resources_on(net, json_data).any? || nm.hosts_on(net, json_data).any? }
   # A network reachable only through a pivot but with no host to open the pivot session.
   networks.each_key do |net_id|
     next if jacked_nets.include?(net_id) || !carries.call(net_id)
@@ -584,12 +585,19 @@ def check_network_model(json_data, scenario_dir = nil)
     end
   end
 
-  # Two hosts with one label.
+  # Two hosts with one label. A `hosts` device (N13) has its name for a label, read through hosts_on.
   host_label = ->(pc) { nm.present_string?(pc['host']) ? pc['host'] : pc['name'].to_s }
-  hosts.group_by { |h| host_label.call(h[:object]) }.each do |host, list|
+  labelled = hosts.map { |h| [host_label.call(h[:object]), label.call(h[:object], h[:path]), true] }
+  networks.each_key do |net_id|
+    nm.hosts_on(net_id, json_data).select { |rec| rec[:kind] == 'device' }.each do |rec|
+      labelled << [rec[:object]['name'].to_s, rec[:id], false]
+    end
+  end
+  labelled.group_by(&:first).each do |host, list|
     next if host.empty? || list.size < 2
 
-    warn.call("sign-in objects #{quote_list.call(list.map { |h| label.call(h[:object], h[:path]) })} share the host " \
+    kind = list.all? { |entry| entry[2] } ? 'sign-in objects' : 'hosts'
+    warn.call("#{kind} #{quote_list.call(list.map { |entry| entry[1] })} share the host " \
               "label '#{host}'; a network view would list two hosts the player cannot tell apart.")
   end
 

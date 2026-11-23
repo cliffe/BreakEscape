@@ -671,6 +671,7 @@ if NETWORKS.any?
       down_at_start = cond.is_a?(String) ? nm.truthy?(globals_g[cond]) : cond.all? { |k, v| globals_g[k.to_s] == v }
       label += ' (down at start)' if down_at_start
     end
+    label += '<br/>(sweep to list)' if nm.discovery?(scenario, net_id)
     add_node("net_#{nid(net_id)}", label, 'room')
   end
   room_node = lambda do |room_id|
@@ -768,9 +769,15 @@ if NETWORKS.any?
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
-    next if hosts.empty? && shares.empty?
+    # N13: a `hosts` device is a container hanging from its network; it has no lock and nothing opens from it.
+    devices = nm.hosts_on(net_id, scenario).select { |rec| rec[:kind] == 'device' }
+    next if hosts.empty? && shares.empty? && devices.empty?
 
     network = net_node.call(net_id)
+    devices.each do |rec|
+      node = add_node("host_#{nid(rec[:id])}", "#{safe_text.call(rec[:object]['name'], rec[:id])}<br/>(device)", 'container')
+      add_edge(network, node, label: 'exposes')
+    end
     hosts.each do |entry|
       lock = access_lock_node({ kind: 'login', lock: entry[:object], room: entry[:room_id] }, rooms)
       # A headless host is reached only over the network: drop its room's edge.

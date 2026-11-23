@@ -122,6 +122,20 @@ require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakE
 # exception /capture_secrets and a capture page already carry (the account-password rule). Account
 # capture secrets are an NPC's creds.password and stay with the password rule.
 #
+# Ops core S1 (OPS_CORE_PLAN.md 11.4, `collect_ops_secrets`): what a discovery network and a host's
+# services keep from the browser until the step that earns them. Rule `ops_string`. Each string is
+# tagged with its step: `sweep` (a host's name, a share's name and host label on a discovery network,
+# an address on a discovery network: earned by that network's sweep, or for a sign-in host by a held
+# session shown on its row), `scan` (a service's product, version and label, and a service's authored
+# `cli` service word and banner: earned by that host's scan) and `listed` (a network's `cli.range` and
+# an address on an open network: a leak only in an answer that is not a /network answer, or before the
+# first GET /network answer that shows the network's block or lists the row). The earned steps are read
+# from the log itself, in order (a POST /network/scan answer with `network.id` or `host.id`), and
+# `scan(lines, ops_steps: [...])` takes more ("sweep:<network>", "scan:<host>", "listed:<network>",
+# "listed:<host>", "held:<host>"). Not yet tagged: `check`, `confirm`, `card held` and `never` (S2, S3).
+# Addresses and ranges match as whole tokens (not inside a longer number); a `service` word counts
+# only when it equals no other service's `service` word or `name`.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -146,7 +160,7 @@ class AccessLeakScanner
   # Network strings shorter than this are not checked at all.
   MIN_NETWORK_STRING = 3
   # Room data keys the server withholds: their strings are not public.
-  WITHHELD_ROOM_KEYS = %w[network linkName linkStoreIn creds].freeze
+  WITHHELD_ROOM_KEYS = %w[network linkName linkStoreIn creds services].freeze
   # A hash under one of these keys is a capture descriptor: its `secret` never ships (E0.3)
   CAPTURE_DESCRIPTOR_KEYS = %w[capture addCapture usePayload].freeze
   # A page the tester read counts as a capture page only when its label says so (E0.3)
@@ -196,6 +210,8 @@ class AccessLeakScanner
     @login_pcs = Set.new
     @network_strings = {}    # string => [owner, ...] (network:<id>, resource:<id>)
     @wifi_secrets = {}       # a Wi-Fi SSID or psk => [network:<id>, ...] (never in any response)
+    @ops_strings = {}        # string => [{ tag:, net:, host:, owner:, token: }] (ops core S1, collect_ops_secrets)
+    @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>" so far
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
@@ -244,6 +260,7 @@ class AccessLeakScanner
     end
     collect_items
     collect_network_secrets
+    collect_ops_secrets
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
@@ -260,6 +277,7 @@ class AccessLeakScanner
       stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
       network_strings: @network_strings.length,
+      ops_strings: @ops_strings.length,
       wifi_secrets: @wifi_secrets.length,
       share_items: @share_items.length,
       workarounds: @workarounds.length,
@@ -294,9 +312,10 @@ class AccessLeakScanner
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
-  def scan(lines)
+  def scan(lines, ops_steps: nil)
     findings = []
     seen = Set.new
+    @ops_earned = Set.new(Array(ops_steps).map(&:to_s))
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
@@ -326,6 +345,8 @@ class AccessLeakScanner
       scan_locked_content(body, add)
       scan_share_content(body, ctx, legit, add)
       scan_network_strings(body, ctx, add)
+      note_ops_steps(body, ctx)
+      scan_ops_strings(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
@@ -361,6 +382,7 @@ class AccessLeakScanner
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
+    'ops_string' => 'a host, share, address, range, product, version or service text before the sweep, scan or first listing that earns it (a range or listed address also in a non-network answer)',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
     'withheld_key' => 'a withheld key (creds, role, awareness, workarounds, workNeeds, frustration, feed, or a habits key other than screen and print such as locksScreen, writesDown, password, holdsDoors or usb) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
@@ -385,7 +407,7 @@ class AccessLeakScanner
   private
 
   def secret_values
-    @secret_values ||= (@passwords.keys + @capture_secrets.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
+    @secret_values ||= (@passwords.keys + @capture_secrets.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys + @ops_strings.keys +
                         @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
@@ -765,7 +787,9 @@ class AccessLeakScanner
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
-      keyring: method == 'GET' && path.end_with?('/keyring')
+      keyring: method == 'GET' && path.end_with?('/keyring'),
+      ops_scan: method == 'POST' && path.end_with?('/network/scan'),
+      network_view: method == 'GET' && path.end_with?('/network')
     }
   end
 
@@ -1772,6 +1796,154 @@ class AccessLeakScanner
         next unless network_match?(str, secret)
 
         owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
+      end
+    end
+  end
+
+  # ---- ops core S1: discovery and services (OPS_CORE_PLAN.md 11.4) ----------------------------
+
+  # Registers one ops string. `token` strings (addresses, ranges) match as whole tokens.
+  def add_ops_string(value, tag, owner, net: nil, host: nil, token: false, usable: nil)
+    return unless usable.call(value)
+
+    list = (@ops_strings[value.strip] ||= [])
+    entry = { tag: tag, net: net, host: host, owner: owner, token: token }
+    list << entry unless list.include?(entry)
+  end
+
+  def collect_ops_secrets
+    nm = BreakEscape::NetworkModel
+    public_strings = room_data_strings
+    usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
+    service_words = ops_service_words(nm)
+    nm.networks(@data).each do |net_id, net|
+      discovery = nm.discovery?(@data, net_id)
+      cli = net['cli'].is_a?(Hash) ? net['cli'] : {}
+      add_ops_string(cli['range'], :listed, "ops:network:#{net_id}", net: net_id, token: true, usable: usable)
+      addresses = cli['hosts'].is_a?(Hash) ? cli['hosts'] : {}
+      records = nm.hosts_on(net_id, @data)
+      records.each do |rec|
+        host_id = rec[:id].to_s
+        obj = rec[:object]
+        if discovery
+          %w[name host].each { |field| add_ops_string(obj[field], :sweep, "ops:host:#{host_id}", net: net_id, host: host_id, usable: usable) }
+        end
+        add_ops_address(addresses[host_id], discovery, net_id, host_id, usable)
+        collect_ops_services(rec, service_words, usable)
+      end
+      next unless discovery
+
+      nm.resources_on(net_id, @data).each do |res_id, res|
+        %w[name host].each { |field| add_ops_string(res[field], :sweep, "ops:share:#{res_id}", net: net_id, usable: usable) }
+        add_ops_address(addresses[res_id.to_s], true, net_id, res_id.to_s, usable)
+      end
+    end
+  end
+
+  def add_ops_address(entry, discovery, net_id, host_id, usable)
+    return unless entry.is_a?(Hash)
+
+    add_ops_string(entry['address'], discovery ? :sweep : :listed, "ops:address:#{host_id}", net: net_id, host: host_id,
+                                                                                         token: true, usable: usable)
+  end
+
+  def collect_ops_services(rec, service_words, usable)
+    host_id = rec[:id].to_s
+    owner = "ops:service:#{host_id}"
+    rec[:services].each do |svc|
+      %w[product version label].each { |field| add_ops_string(svc[field], :scan, owner, host: host_id, usable: usable) }
+      cli = svc['cli'].is_a?(Hash) ? svc['cli'] : {}
+      add_ops_string(cli['banner'], :scan, owner, host: host_id, usable: usable)
+      word = cli['service']
+      add_ops_string(word, :scan, owner, host: host_id, usable: usable) if word.is_a?(String) && service_words[word.strip] == 1
+    end
+  end
+
+  # How many times each service `name` or `service` word is authored across the scenario: a word
+  # that more than one service carries is left out (it appears legitimately once any host is scanned).
+  def ops_service_words(nm)
+    counts = Hash.new(0)
+    hosts = nm.networks(@data).keys.flat_map { |net_id| nm.hosts_on(net_id, @data) }
+    hosts.each do |rec|
+      rec[:services].each do |svc|
+        counts[svc['name'].to_s.strip] += 1
+        word = svc['cli'].is_a?(Hash) ? svc['cli']['service'] : nil
+        counts[word.strip] += 1 if word.is_a?(String)
+      end
+    end
+    counts
+  end
+
+  # Reads the steps a response earns, before the response is judged: a sweep answer earns its
+  # network, a host answer earns that host, a GET /network answer earns `listed` for each network
+  # block (`id` and `name` together) and each row it shows, and `held` for a row with a session.
+  def note_ops_steps(body, ctx)
+    return unless body.is_a?(Hash)
+
+    if ctx[:ops_scan] && body['success'] == true
+      @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
+      @ops_earned << "scan:#{body['host']['id']}" if body['host'].is_a?(Hash) && body['host']['scanned'] == true
+      rows_of(body).each { |row| note_ops_row(row) }
+    elsif ctx[:network_view]
+      ops_each_hash(body) do |hash|
+        next unless hash['id'].is_a?(String)
+
+        @ops_earned << "listed:#{hash['id']}" if hash.key?('name') || hash.key?('kind')
+        @ops_earned << "held:#{hash['id']}" if hash['kind'] == 'pc' && hash['session']
+        note_ops_row(hash)
+      end
+    end
+  end
+
+  def note_ops_row(row)
+    @ops_earned << "scan:#{row['id']}" if row['scanned'] == true && row['id'].is_a?(String) && row['kind']
+  end
+
+  def rows_of(body)
+    net = body['network']
+    net.is_a?(Hash) && net['hosts'].is_a?(Array) ? net['hosts'].grep(Hash) : []
+  end
+
+  def ops_each_hash(node, &block)
+    case node
+    when Array then node.each { |v| ops_each_hash(v, &block) }
+    when Hash
+      yield node
+      node.each_value { |v| ops_each_hash(v, &block) }
+    end
+  end
+
+  def ops_earned?(entry)
+    case entry[:tag]
+    when :sweep then @ops_earned.include?("sweep:#{entry[:net]}") || @ops_earned.include?("held:#{entry[:host]}")
+    when :scan then @ops_earned.include?("scan:#{entry[:host]}")
+    when :listed then @ops_earned.include?("listed:#{entry[:host] || entry[:net]}")
+    else false
+    end
+  end
+
+  def ops_match?(str, secret, token)
+    s = str.strip
+    return s.match?(/(?<![0-9])#{Regexp.escape(secret)}(?![0-9]|\.[0-9])/) if token
+
+    network_match?(s, secret)
+  end
+
+  # A string is a leak when none of its entries is earned yet, or (a `listed` string) when the
+  # answer is not a /network answer at all. A string several hosts share is clear once any is earned.
+  def scan_ops_strings(body, ctx, add)
+    return if @ops_strings.empty?
+
+    each_string(body) do |str, json_path, holder|
+      next if holder.to_s.start_with?('netlink_')
+
+      @ops_strings.each do |secret, entries|
+        next unless ops_match?(str, secret, entries.any? { |e| e[:token] })
+
+        early = entries.reject { |e| ops_earned?(e) }
+        listed_outside = entries.select { |e| e[:tag] == :listed && ops_earned?(e) && !ctx[:network] }
+        leaking = early.size == entries.size ? early : listed_outside
+        leaking.each { |e| add.call('ops_string', e[:owner], safe_path(json_path)) }
       end
     end
   end
