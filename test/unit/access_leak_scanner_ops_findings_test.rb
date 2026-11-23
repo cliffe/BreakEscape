@@ -81,7 +81,8 @@ class AccessLeakScannerOpsFindingsTest < ActiveSupport::TestCase
     assert_equal :check, strings['FX-OUT-BANNER-1 invented line'].first[:tag]
     assert_equal [:confirm, S::OLD_BANNER], strings[S::BANNER_FALSE].first.values_at(:tag, :step)
     assert_equal :confirm, strings[S::DOOR_LABEL].first[:tag]
-    assert_equal :confirm, strings[S::LENA_LABEL].first[:tag]
+    refute strings.key?(S::LENA_LABEL), 'a credential label is shown in the keyring first, so it is not a confirm string (S2 R2 N5)'
+    refute strings.key?(S::MANUAL_NAME), 'an item name is shown on the item first, so it is not a confirm string (S2 R2 N5)'
     %w[fx_login fx_banner example/fx/panel example/fx/other FX-NOTE-LOGIN\ author\ note,\ never\ served.].each do |text|
       assert_equal [:never], strings[text].map { |e| e[:tag] }.uniq, "#{text} is never"
     end

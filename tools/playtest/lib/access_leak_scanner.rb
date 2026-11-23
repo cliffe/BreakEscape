@@ -232,6 +232,9 @@ class AccessLeakScanner
     @ops_host_ids = Set.new  # every host id of the scenario (the structural services rule)
     @ops_finding_ids = Set.new # every finding id (host.service.id) of the scenario (the structural finding rules)
     @ops_gating_globals = Set.new # every global named in a `fixedIf` or `needs.global`, public or not
+    @ops_techniques = {}     # technique id => registry entry (S3, the card registry)
+    @ops_card_items = {}     # item id => technique id, for every item carrying a registry key in `technique_card`
+    @ops_start_steps = Set.new # steps earned before the log starts: a card in the starting inventory
     @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
@@ -339,7 +342,7 @@ class AccessLeakScanner
   def scan(lines, ops_steps: nil)
     findings = []
     seen = Set.new
-    @ops_earned = Set.new(Array(ops_steps).map(&:to_s))
+    @ops_earned = Set.new(Array(ops_steps).map(&:to_s)) | @ops_start_steps
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
@@ -375,6 +378,10 @@ class AccessLeakScanner
       scan_ops_services(body, add)
       scan_ops_finding_rows(body, add)
       scan_ops_never_keys(body, add)
+      scan_ops_techniques(body, ctx, add)
+      scan_ops_technique_answer(body, ctx, add)
+      scan_ops_session_keys(body, ctx, add)
+      scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
@@ -819,6 +826,8 @@ class AccessLeakScanner
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
+      ops_technique: method == 'POST' && path.end_with?('/network/technique'),
+      inventory_add: ops_inventory_add_id(row, method, path),
       network_view: method == 'GET' && path.end_with?('/network')
     }
   end
@@ -1848,6 +1857,7 @@ class AccessLeakScanner
     service_words = ops_service_words(nm)
     @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set
     collect_ops_findings(nm, usable)
+    collect_ops_techniques(nm, usable)
     nm.networks(@data).each do |net_id, net|
       discovery = nm.discovery?(@data, net_id)
       cli = net['cli'].is_a?(Hash) ? net['cli'] : {}
@@ -1922,17 +1932,14 @@ class AccessLeakScanner
     end
   end
 
-  # A confirmed finding's need labels: the authored label, a credential's label, an item's name.
+  # A confirmed finding's authored need label (`needs.label`, on an itemType or global need). A
+  # credential's label (in the keyring) and an item's name (on the item) are shown elsewhere before the
+  # confirm, so they are not registered (R2 N5); the finding row's own `needs` key is judged structurally
+  # (scan_ops_finding_rows), whatever its strings are.
   def collect_ops_needs(needs, fid, owner, usable)
     return unless needs.is_a?(Hash)
 
     add_ops_string(needs['label'], :confirm, owner, usable: usable, step: fid)
-    cred = BreakEscape::CredentialModel.registry(@data)[needs['credential']] if needs['credential'].is_a?(String)
-    add_ops_string(cred['label'], :confirm, owner, usable: usable, step: fid) if cred.is_a?(Hash)
-    return unless needs['item'].is_a?(String)
-
-    definition = BreakEscape::CredentialModel.item_definition(@data, needs['item'])
-    add_ops_string(definition['name'], :confirm, owner, usable: usable, step: fid) if definition.is_a?(Hash)
   end
 
   # A global's name used in `needs.global` or `fixedIf` never reaches the browser, as a string value or as a
@@ -2044,6 +2051,7 @@ class AccessLeakScanner
   def note_ops_steps(body, ctx)
     return unless body.is_a?(Hash)
 
+    note_ops_technique_steps(body, ctx)
     if ctx[:ops_scan] && body['success'] == true
       @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
       # Only the scan request earns `scan:<host>`: a `scanned: true` on a listed row arrives together with
@@ -2079,6 +2087,8 @@ class AccessLeakScanner
     when :check then @ops_earned.include?("check:#{entry[:step]}")
     when :confirm then @ops_earned.include?("confirm:#{entry[:step]}")
     when :listed then @ops_earned.include?("listed:#{entry[:host] || entry[:net]}")
+    when :card then @ops_earned.include?("card:#{entry[:step]}")
+    when :grant then @ops_earned.include?('granted:credential')
     else false
     end
   end
@@ -2092,7 +2102,11 @@ class AccessLeakScanner
   end
 
   # An entry with a `key` judges only the value of that key.
+  # A held card's `worksOn.class` (in GET /network's `techniques` map) is a class word the card shows from the
+  # moment it is held; that map is judged structurally (scan_ops_techniques), not by this string rule.
   def ops_entry_applies?(entry, json_path)
+    return false if entry[:key] == 'class' && json_path.start_with?('$.techniques.')
+
     entry[:key].nil? || json_path.end_with?(".#{entry[:key]}")
   end
 
@@ -2161,7 +2175,31 @@ class AccessLeakScanner
       early = !@ops_earned.include?("confirm:#{id}")
       add.call('ops_string', owner, '$.finding') if early && ops_row_settled?(hash)
       add.call('ops_string', owner, '$.finding') if ops_row_names_global?(hash)
+      add.call('ops_string', owner, '$.finding') if ops_row_technique?(hash) || ops_row_shape_bad?(hash)
     end
+  end
+
+  # S3: a finding row never names a technique (an id, or a `technique`, `itemId` or `worksOn` key), and its
+  # keys and `needs` rows are the known sets (a need row is `kind`, `label` and `met`; a `session` need is a
+  # row of kind `session`, never a `session` key).
+  def ops_row_technique?(node)
+    case node
+    when String then @ops_techniques.key?(node.strip)
+    when Array then node.any? { |v| ops_row_technique?(v) }
+    when Hash
+      node.any? { |k, v| %w[technique techniques itemId worksOn].include?(k.to_s) || @ops_techniques.key?(k.to_s.strip) || ops_row_technique?(v) }
+    else false
+    end
+  end
+
+  def ops_row_shape_bad?(hash)
+    return true unless (hash.keys.map(&:to_s) - OPS_FINDING_ROW_KEYS).empty?
+
+    needs = hash['needs']
+    return false unless hash.key?('needs')
+    return true unless needs.is_a?(Array)
+
+    needs.any? { |n| !n.is_a?(Hash) || !(n.keys.map(&:to_s) - OPS_NEED_ROW_KEYS).empty? || !OPS_NEED_KINDS.include?(n['kind']) }
   end
 
   def ops_row_settled?(hash)
@@ -2176,6 +2214,187 @@ class AccessLeakScanner
     when Array then node.any? { |v| ops_row_names_global?(v) }
     when Hash then node.any? { |k, v| @ops_gating_globals.include?(k.to_s.strip) || ops_row_names_global?(v) }
     else false
+    end
+  end
+
+  # ---- ops core S3: technique cards and sessions (OPS_CORE_PLAN.md 7, 11.4) --------------------
+
+  # The keys a technique answer may carry (section 5.4): a grant of a session, of a credential, or a refusal.
+  OPS_TECHNIQUE_SUCCESS_KEYS = %w[success grant session keyringChanged already endedPcIds].freeze
+  OPS_TECHNIQUE_REFUSAL_KEYS = %w[success reason need].freeze
+  OPS_NEED_ROW_KEYS = %w[kind label met].freeze
+  OPS_NEED_KINDS = %w[credential item itemType session global].freeze
+  OPS_FINDING_ROW_KEYS = (OPS_UNCONFIRMED_KEYS + %w[needs fixed falseBecause]).freeze
+  # A session answer (login_session_answer): no `technique` (the finding id) and no foothold's name.
+  OPS_SESSION_KEYS = %w[npcId username displayName via portrait avatar access remote footholdId host].freeze
+  # The entry of the held-card map in GET /network (ops_held_techniques).
+  OPS_HELD_TECHNIQUE_KEYS = %w[name summary worksOn itemId].freeze
+  OPS_SESSION_FREE_ROUTES = %i[ops_scan ops_check ops_confirm].freeze
+
+  # The item id a successful, tagged POST /inventory `add` row names (the recorder's `inv` tag), or nil.
+  def ops_inventory_add_id(row, method, path)
+    return nil unless method == 'POST' && path.end_with?('/inventory') && row['status'].to_i == 200
+
+    inv = row['inv']
+    inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String) ? inv['itemId'] : nil
+  end
+
+  # The registry, the cards that carry its keys (tag `card`: earned when the card item is held, by an
+  # inventory add answer, the starting inventory or `ops_steps: ["card:<technique id>"]`), the granted
+  # credentials' ids and labels (tag `grant`: earned by a successful credential grant answer), and the
+  # registry ids no item carries (never). A product or version a technique works on is a card string too: the
+  # card shows it before any scan, so a `scan` entry for the same string is cleared once the card is held
+  # (a string is clear once any owner is earned), and the services structural rule still covers a row.
+  def collect_ops_techniques(nm, usable)
+    @ops_techniques = nm.techniques(@data)
+    carried = Set.new
+    nm.technique_items(@data).each do |found|
+      item = found[:item]
+      key = item['technique_card']
+      next unless key.is_a?(String) && @ops_techniques.key?(key)
+
+      carried << key
+      @ops_card_items[item['id'].to_s] = key if item['id'].is_a?(String)
+      @ops_start_steps << "card:#{key}" if found[:home] == 'start'
+    end
+    @ops_techniques.each do |tid, entry|
+      owner = "ops:technique:#{tid}"
+      %w[name summary].each { |field| add_ops_string(entry[field], :card, owner, usable: usable, step: tid) }
+      works = entry['worksOn'].is_a?(Hash) ? entry['worksOn'] : {}
+      add_ops_string(works['product'], :card, owner, usable: usable, step: tid)
+      Array(works['versions']).each { |version| add_ops_string(version, :card, owner, usable: usable, step: tid) }
+      add_ops_string(tid, :never, owner, usable: usable) unless carried.include?(tid)
+    end
+    collect_ops_grants(nm, usable)
+  end
+
+  # `grants.credential` names a registry credential: its id and label reach the browser only in the keyring,
+  # once the grant has happened. (A session grant's account is an NPC id, public in room data.)
+  def collect_ops_grants(nm, usable)
+    registry = BreakEscape::CredentialModel.registry(@data)
+    nm.weaknesses(@data).each do |found|
+      grants = found[:entry]['grants']
+      id = grants.is_a?(Hash) ? grants['credential'] : nil
+      next unless id.is_a?(String)
+
+      owner = "ops:grant:#{found[:finding_id]}"
+      add_ops_string(id, :grant, owner, usable: usable)
+      add_ops_string(registry[id]['label'], :grant, owner, usable: usable) if registry[id].is_a?(Hash)
+    end
+  end
+
+  # Steps earned from the real routes' successful answers: an inventory add of a card item
+  # (`card:<technique id>`), and a technique answer's grant (`granted:credential`, `granted:session`),
+  # the foothold its session came through (`through:<foothold id>`) and an admin level (`admin`).
+  def note_ops_technique_steps(body, ctx)
+    key = ctx[:inventory_add]
+    @ops_earned << "card:#{@ops_card_items[key]}" if key && body['success'] == true && @ops_card_items.key?(key)
+    return unless ctx[:ops_technique] && body['success'] == true
+
+    grant = body['grant']
+    @ops_earned << "granted:#{grant}" if %w[session credential].include?(grant)
+    session = body['session']
+    return unless session.is_a?(Hash)
+
+    @ops_earned << "through:#{session['footholdId']}" if session['footholdId'].is_a?(String)
+    @ops_earned << 'admin' if session['access'] == 'admin'
+  end
+
+  # The `techniques` key: only GET /network's top-level map, only for a held card, only the held-card keys;
+  # anywhere else the registry is leaking (it is deleted from the bootstrap and room data by name, section 7).
+  # `worksOn` outside that map is a registry key too.
+  def scan_ops_techniques(body, ctx, add)
+    each_key_path(body) do |key, json_path|
+      if key.to_s == 'techniques' && !(ctx[:network_view] && json_path == '$.techniques')
+        add.call('ops_string', 'ops:key:techniques', safe_path(json_path))
+      elsif key.to_s == 'worksOn' && !(ctx[:network_view] && json_path.match?(/\A\$\.techniques\.[^.\[]+\.worksOn\z/))
+        add.call('ops_string', 'ops:key:worksOn', safe_path(json_path))
+      end
+    end
+    return unless ctx[:network_view] && body.is_a?(Hash) && body['techniques'].is_a?(Hash)
+
+    body['techniques'].each do |tid, entry|
+      add.call('ops_string', "ops:technique:#{tid}", safe_path("$.techniques.#{tid}")) unless ops_held_technique_entry?(tid, entry)
+    end
+  end
+
+  # A held-card entry is one the player holds a card for, with only its keys, and an `itemId` that is an item
+  # carrying that very registry key.
+  def ops_held_technique_entry?(tid, entry)
+    return false unless @ops_techniques.key?(tid.to_s) && @ops_earned.include?("card:#{tid}") && entry.is_a?(Hash)
+    return false unless (entry.keys.map(&:to_s) - OPS_HELD_TECHNIQUE_KEYS).empty?
+
+    @ops_card_items[entry['itemId'].to_s] == tid.to_s
+  end
+
+  # The shape of a POST /network/technique answer: a grant carries `grant` and the session (or
+  # `keyringChanged`) and nothing else; a refusal carries `success`, `reason` and at most a `need` of
+  # `kind` and `label`; a `no_grant` refusal carries `reason` and nothing else.
+  def scan_ops_technique_answer(body, ctx, add)
+    return unless ctx[:ops_technique] && body.is_a?(Hash)
+
+    ok = body['success'] == true ? ops_technique_success_ok?(body) : ops_technique_refusal_ok?(body)
+    add.call('ops_string', 'ops:technique:answer', '$') unless ok
+  end
+
+  def ops_technique_success_ok?(body)
+    return false unless (body.keys - OPS_TECHNIQUE_SUCCESS_KEYS).empty?
+
+    session = body['session']
+    case body['grant']
+    when 'session'
+      session.is_a?(Hash) && (session.keys - OPS_SESSION_KEYS).empty? && !body.key?('keyringChanged')
+    when 'credential'
+      !body.key?('session') && !body.key?('endedPcIds')
+    else false
+    end
+  end
+
+  def ops_technique_refusal_ok?(body)
+    return false unless (body.keys - OPS_TECHNIQUE_REFUSAL_KEYS).empty?
+    return false if body['reason'] == 'no_grant' && body.key?('need')
+
+    need = body['need']
+    need.nil? || (need.is_a?(Hash) && (need.keys - %w[kind label]).empty?)
+  end
+
+  # Session-record keys outside the answers that carry them (section 7). `technique` (the finding id that
+  # granted a session) is never sent. `via: "technique"` is sent on a host row, in the session answer and in
+  # the reloaded sessions once a technique session was granted, never in a scan, check or confirm answer.
+  # `access` is sent only as "admin", and only once an admin technique session was granted. `openHere` is
+  # judged by foothold (scan_ops_foothold_views).
+  def scan_ops_session_keys(body, ctx, add)
+    ops_each_hash(body) do |hash|
+      add.call('ops_string', 'ops:key:technique', '$') if hash.key?('technique')
+      if hash['via'] == 'technique' && (!@ops_earned.include?('granted:session') || OPS_SESSION_FREE_ROUTES.any? { |r| ctx[r] })
+        add.call('ops_string', 'ops:key:via', '$')
+      end
+      next unless hash.key?('access')
+
+      level = hash['access']
+      scalar = !level.is_a?(Hash) && !level.is_a?(Array)
+      add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || !@ops_earned.include?('admin'))
+    end
+  end
+
+  # `openHere` on a session is sent only in the view of the foothold a technique session came through
+  # (earned from a grant answer's `footholdId`), and so is a session listed on a host that blocks remote
+  # sign-in (`remoteSignIn: false`).
+  def scan_ops_foothold_views(body, ctx, add)
+    return unless body.is_a?(Hash)
+
+    outside = ctx[:network_view] && body['footholds'].is_a?(Array) ? body.reject { |k, _| k == 'footholds' } : body
+    ops_each_hash(outside) { |hash| add.call('ops_string', 'ops:key:openHere', '$') if hash.key?('openHere') }
+    return unless outside != body
+
+    body['footholds'].each do |entry|
+      next unless entry.is_a?(Hash)
+
+      own = entry['id'].is_a?(String) && @ops_earned.include?("through:#{entry['id']}")
+      ops_each_hash(entry) do |hash|
+        add.call('ops_string', 'ops:key:openHere', '$.footholds') if hash.key?('openHere') && !own
+        add.call('ops_string', 'ops:host_row', '$.footholds') if !own && hash['session'].is_a?(Hash) && hash['remoteSignIn'] == false
+      end
     end
   end
 
