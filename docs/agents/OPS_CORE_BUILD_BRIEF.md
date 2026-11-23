@@ -116,3 +116,8 @@ and at most 5 per stage; later rounds are delta reviews.
   route must not 500 on it either way. m1, the foothold id goes in now as an optional
   argument of `network_rows` and `host_row` at every call site, unused until S3. m7, the
   client never offers Sweep on a block with `route: "down"`.
+- 2026-11-23, S1 client R1 rulings: server strings through `escapeHtml` template strings
+  stay (plan 5.5 allows it; the hostile-string test covers it). m5, device rows get their own
+  group, "Devices", listed after the PCs and before shares and other kinds. m4, focus stays on
+  the control's row (or the next control) after a sweep or scan, and scroll is kept. A stale
+  refetch answer must never overwrite a newer one (M1): drop it by an epoch counter.
