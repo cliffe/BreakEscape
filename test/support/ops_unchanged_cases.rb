@@ -13,6 +13,7 @@ module OpsUnchangedCases
 
   def all
     { 'log_unlock_refusals' => log_unlock_refusals, 'log_container_cases' => log_container_cases }
+      .merge(core_network_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -95,5 +96,151 @@ module OpsUnchangedCases
           step('lobby_safe_open', 'GET', 'container/lobby_safe'),
           step('bootstrap_after', 'GET', 'scenario')],
          'currentRoom' => 'finance')
+  end
+
+  # ---- Ops core plan, section 10 part 1: golden answers for the scenarios that declare networks ----
+  #
+  # One fixture per scenario, "core_<scenario>". The script is derived from the scenario at capture
+  # time and written into the fixture as plain steps (so replay needs no scenario file and a later
+  # edit to the scenario changes nothing recorded): the bootstrap, every room answer, GET /network
+  # and GET /keyring with no foothold, then for each foothold the scenario offers (a jack planted,
+  # a Wi-Fi access point joined, a declared implant) the foothold's own /network and /keyring
+  # views, a remote sign-in at each sign-in PC with a known account and that desktop's GET
+  # /container, and an unplug for a jack. The scenario is inlined as rendered at capture.
+  CORE_SCENARIOS_DIR = File.expand_path('../../scenarios', __dir__)
+  # ca20_* hold a social page list called "networks", not a top-level networks block, but the plan
+  # (section 10 part 1) names them, so they are always included (script: bootstrap, rooms, views).
+  CORE_NAMED_EXTRA = %w[ca20_remote_and_mobile_working ca20_remote_and_mobile_working_defend].freeze
+
+  def core_scenario_path(name)
+    Dir[File.join(CORE_SCENARIOS_DIR, name, 'scenario.json{.erb,}')].min_by { |path| path.end_with?('.erb') ? 0 : 1 }
+  end
+
+  def core_render(name)
+    path = core_scenario_path(name)
+    JSON.parse(BreakEscape::ScenarioBinding.render(File.read(path, encoding: 'UTF-8')))
+  end
+
+  # Scenario folders whose top-level "networks" is a map (a `test_ops_*` scenario is built by a later
+  # step, so it is never part of the unchanged set).
+  def core_network_scenario_names
+    found = Dir[File.join(CORE_SCENARIOS_DIR, '*')].filter_map do |dir|
+      name = File.basename(dir)
+      next if name.start_with?('test_ops_') || !core_scenario_path(name)
+
+      name if core_render(name)['networks'].is_a?(Hash)
+    end
+    (found | CORE_NAMED_EXTRA).sort
+  end
+
+  def core_network_cases
+    core_network_scenario_names.to_h { |name| ["core_#{name}", core_network_case(name)] }
+  end
+
+  def core_people(scenario)
+    people = scenario['rooms'].values.flat_map { |room| room['npcs'] || [] }
+    people += Array(scenario['npcs']) + Array(scenario['phoneNPCs'])
+    people.select { |npc| npc.is_a?(Hash) && npc['id'] }
+  end
+
+  # [username, password] for a sign-in PC: the first person its access lists (people, then role)
+  # that has creds. A PC with lockChance is skipped (a random lock would make the answer vary).
+  def core_account_for(pc, people)
+    return nil if pc['lockChance']
+
+    access = pc['access'].is_a?(Hash) ? pc['access'] : {}
+    named = Array(access['people']).filter_map { |id| people.find { |npc| npc['id'] == id } }
+    roled = people.select { |npc| Array(access['roles']).include?(npc['role']) }
+    owner = (named + roled).find { |npc| npc['creds'].is_a?(Hash) && npc['creds']['password'] }
+    owner && owner['creds'].values_at('username', 'password')
+  end
+
+  def core_login_pcs(scenario)
+    scenario['rooms'].values.flat_map { |room| room['objects'] || [] }
+                     .select { |obj| obj['type'] == 'pc' && obj['lockType'] == 'login' && !obj['networkJack'] }
+  end
+
+  def core_network_case(name)
+    scenario = core_render(name)
+    rooms = scenario['rooms'].keys
+    people = core_people(scenario)
+    devices = BreakEscape::NetworkModel.rogue_device_definitions(scenario).map { |found| found[:item].deep_dup }
+    pcs = core_login_pcs(scenario)
+    jacks = scenario['rooms'].values.flat_map { |room| room['objects'] || [] }.select { |obj| BreakEscape::NetworkModel.jack?(obj) }
+    aps = scenario['rooms'].values.flat_map do |room|
+      (room['objects'] || []).select { |obj| obj['wifiAp'] == true }.map { |obj| [obj, BreakEscape::NetworkModel.network_of(obj, room)] }
+    end
+    grants = scenario['networks'].is_a?(Hash) ? BreakEscape::NetworkModel.grant_foothold_actions(scenario) : []
+
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    rooms.each { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    steps << step('network_plain', 'GET', 'network')
+    steps << step('keyring_plain', 'GET', 'keyring')
+    jacks.each do |jack|
+      id = jack['id']
+      steps << step("plant_#{id}", 'POST', 'network/plant', { 'jack_id' => id })
+      core_foothold_steps(steps, "jack_#{id}", pcs, people)
+      steps << step("unplug_#{id}", 'POST', 'network/unplug', { 'jack_id' => id })
+    end
+    aps.each do |ap, network|
+      psk = BreakEscape::NetworkModel.wifi_of(scenario, network)&.dig('psk')
+      params = { 'ap_id' => ap['id'] }
+      params['key'] = psk if psk.is_a?(String) && !psk.empty?
+      steps << step("join_#{ap['id']}", 'POST', 'network/join', params)
+      core_foothold_steps(steps, "wifi_#{network}", pcs, people)
+    end
+    grants.each do |action|
+      pc = pcs.find { |obj| obj['id'] == action[:pc] }
+      account = pc && core_account_for(pc, people)
+      steps << login("keyboard_signin_#{action[:pc]}", account[0], account[1], action[:pc]) if action[:shape] == 'session' && account
+      steps << step("implant_#{action[:pc]}_#{action[:shape]}", 'POST', 'network/implant', { 'pc_id' => action[:pc], 'shape' => action[:shape] })
+      core_foothold_steps(steps, "implant_#{action[:pc]}", pcs, people)
+    end
+    steps << step('bootstrap_after', 'GET', 'scenario')
+
+    held = devices.first(1)
+    held += core_needed_items(scenario, grants)
+    {
+      'name' => "core_#{name}", 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'description' => "Ops core plan section 10 part 1: #{name} through the network routes, captured before any ops-core edit.",
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => rooms,
+                         'encounteredNPCs' => people.map { |npc| npc['id'] }, 'inventory' => held,
+                         'droppedItems' => grants.filter_map { |a| a[:needs_dropped] }.uniq }.compact,
+      'steps' => steps
+    }
+  end
+
+  # The foothold's own views, then a remote sign-in and desktop at each sign-in PC with an account.
+  def core_foothold_steps(steps, foothold, pcs, people)
+    steps << step("network_#{foothold}", 'GET', 'network', { 'foothold' => foothold })
+    steps << step("keyring_#{foothold}", 'GET', 'keyring', { 'foothold' => foothold })
+    pcs.each do |pc|
+      account = core_account_for(pc, people)
+      next unless account
+
+      steps << step("signin_#{foothold}_#{pc['id']}", 'POST', 'login',
+                    { 'pc_id' => pc['id'], 'username' => account[0], 'password' => account[1], 'foothold' => foothold })
+      steps << step("desktop_#{foothold}_#{pc['id']}", 'GET', "container/#{pc['id']}", { 'foothold' => foothold })
+    end
+  end
+
+  # Held items a declared implant asks for (needsHeld names an id, type or name), as the scenario defines them.
+  def core_needed_items(scenario, grants)
+    wanted = grants.filter_map { |action| action[:needs_held].presence }
+    return [] if wanted.empty?
+
+    found = []
+    walk = lambda do |node|
+      case node
+      when Hash
+        found << node.deep_dup if node['id'] && node['type'] && node['type'] != 'pc' && (wanted & [node['id'], node['type'], node['name']].compact.map(&:to_s)).any?
+        node.each_value { |v| walk.call(v) }
+      when Array then node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(scenario['rooms'])
+    walk.call(scenario['startItemsInInventory'])
+    found.uniq { |item| item['id'] }
   end
 end
