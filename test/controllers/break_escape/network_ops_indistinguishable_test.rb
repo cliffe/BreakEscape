@@ -207,5 +207,36 @@ module BreakEscape
       assert_equal check_answer(OFFICE, 'invented_target', 'mgmt'), check_answer(OFFICE, 'sv_dev', 'mgmt')
       assert_equal confirm_answer(OFFICE, 'invented.finding.id'), confirm_answer(OFFICE, 'sv_dev.mgmt.mgmt_open')
     end
+
+    # ---- S3: the technique route (OPS_CORE_PLAN.md 5.4 and 6; S3 server R1 m9) ---------------------
+
+    def technique_answer(foothold, finding, item)
+      post game_path('network/technique'), params: { foothold: foothold, finding_id: finding, item_id: item }, as: :json
+      [response.status, response.body]
+    end
+
+    test 'technique: a real finding not held, a card not held, a stale foothold and an invented id are one answer, byte for byte' do
+      data = NetworkOpsScenario.techniques_scenario
+      inventory = [card_entry('card_factory')]
+      hold_office_foothold({ 'inventory' => inventory, 'unlockedRooms' => NetworkRequests::OPEN_ROOMS + %w[server_room] }, data)
+      sweep_and_scan('sam_pc')
+      want = [404, { success: false, reason: 'not_found' }.to_json]
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.invented', 'card_factory'), 'the reference'
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.factory_login', 'card_factory'), 'a real finding never checked'
+      assert_equal want, technique_answer('jack_not_held', 'sam_pc.web.factory_login', 'card_factory'), 'a foothold not held'
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'web')
+      ops_confirm(OFFICE, 'sam_pc.web.factory_login')
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.factory_login', 'card_listing'), 'a held finding, a card not held'
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.factory_login', 'invented_card'), 'a held finding, an invented card'
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.factory_login', 'panel_sheet'), 'a held finding, an item that is no card'
+      assert_empty ops_state['opsUsed'].to_a
+      ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      assert_response :success, response.body
+      unplug('comms_port')
+      assert_response :success
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.factory_login', 'card_factory'), 'a stale finding after an unplug'
+      assert_equal want, technique_answer(OFFICE, 'sam_pc.web.invented', 'card_factory')
+      assert_equal 1, ops_state['opsUsed'].size, 'only the one real use'
+    end
   end
 end

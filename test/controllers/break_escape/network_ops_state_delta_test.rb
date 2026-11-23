@@ -85,5 +85,41 @@ module BreakEscape
       get game_path('network'), as: :json
       assert_operator response.body.bytesize, :<, 16_384
     end
+
+    # ---- S3 (S3 server R1 m9) ------------------------------------------------------------------
+
+    test 'S3: a technique answer holds only what it changed: no finding row, no opsUsed, and the write is the session, opsUsed and the log' do
+      techniques_game
+      before = ops_state
+      body = ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      assert_response :success, response.body
+      assert_equal %w[grant session success], body.keys.sort
+      OPS_KEYS.each { |k| refute_includes hash_keys(body), k }
+      %w[finding findings needs fixed falseBecause worksOn techniques].each { |k| refute_includes hash_keys(body), k }
+      after = ops_state
+      changed = (before.keys | after.keys).reject { |k| before[k] == after[k] }
+      assert_equal %w[opsLog opsLogSeq opsUsed sessions signedInPcs].sort, (changed - %w[opsLogClockAt opsLogOnce]).sort
+      assert_equal before['opsFindings'], after['opsFindings'], 'the findings are untouched by a use'
+      again = ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      assert_equal %w[already grant session success], again.keys.sort
+    end
+
+    test 'S3: a credential technique answer is success, grant and keyringChanged only, and writes only opsUsed and the log' do
+      techniques_game
+      before = ops_state
+      body = ops_technique(OFFICE, NetworkOpsScenario::SPOOL, 'card_factory')
+      assert_equal %w[grant keyringChanged success], body.keys.sort
+      after = ops_state
+      changed = (before.keys | after.keys).reject { |k| before[k] == after[k] }
+      assert_equal %w[opsLog opsLogSeq opsUsed].sort, (changed - %w[opsLogClockAt opsLogOnce credentialGained]).sort
+    end
+
+    test 'S3: GET /network after a use sends no opsUsed, no registry and no finding rows' do
+      techniques_game
+      ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      text = network_view(OFFICE).to_json
+      %w[opsUsed opsFindings grants].each { |k| refute_includes text, k }
+      assert_equal %w[factory_accounts], network_view(OFFICE)['techniques'].keys, 'only the held card is listed'
+    end
   end
 end

@@ -243,5 +243,39 @@ module BreakEscape
       end
       assert_equal [], findings.map { |f| f.slice(:route, :path, :klass) }
     end
+
+    test 'S3: after a session grant and a credential grant the bootstrap and every room name no technique, grant, product or finding string' do
+      techniques_game
+      ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      ops_technique(OFFICE, NetworkOpsScenario::SPOOL, 'card_factory')
+      # The registry's content (names, summaries, worksOn) and the findings are never in a world answer. A card
+      # object's own `technique_card` key (the registry key) rides its room object as authored.
+      forbidden = SERVICE_STRINGS + HOST_STRINGS + ['Factory accounts', 'Devices often ship', 'worksOn', 'factory_login', 'spool_default', 'sam_pc.web']
+      bootstrap_scenario
+      check_world_answer('S3 bootstrap', forbidden)
+      @game.reload.scenario_data['rooms'].each_key do |room_id|
+        get game_path("room/#{room_id}"), as: :json
+        check_world_answer("S3 room #{room_id}", forbidden)
+      end
+      %w[techniques grants].each { |word| refute_includes bootstrap_scenario.to_json, word }
+    end
+
+    test 'S3: a technique not held is never named: GET /network lists only held cards and a refusal names no other technique' do
+      techniques_game(cards: %w[card_factory])
+      text = network_view(OFFICE).to_json
+      %w[Build\ flaw Other\ product Other\ version Listing\ flaw Unheld\ flaw build_flaw other_product listing_flaw unheld_flaw].each { |t| refute_includes text, t }
+      post game_path('network/technique'), params: { foothold: OFFICE, finding_id: 'sam_pc.web.old_build', item_id: 'card_factory' }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal %w[reason success], response.parsed_body.keys.sort
+      %w[build_flaw Build\ flaw unpatched].each { |t| refute_includes response.body, t }
+    end
+
+    test 'S3: a no_grant refusal carries reason and nothing else' do
+      techniques_game
+      post game_path('network/technique'), params: { foothold: OFFICE, finding_id: 'sam_pc.web.quiet_leak', item_id: 'card_factory' }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal({ 'success' => false, 'reason' => 'no_grant' }, response.parsed_body)
+      assert_equal({ success: false, reason: 'no_grant' }.to_json, response.body)
+    end
   end
 end
