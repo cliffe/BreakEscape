@@ -65,16 +65,20 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   table `NETWORK_OPS_BUILT` has N13 false until step 5 flips it (the plan: a stage flips its
   entries when it lands). OWED BY STEP 5: the two `validate_network.rb` edits of plan 9.2
   (the same-label rule via `hosts_on` near VN:587; `carries` near VN:361-364).
-- RUNNING in parallel, disjoint files: S1 step 3 server builder (Sonnet; Part A scan action,
-  Part B rows and `cli` copies; note `HANDOVER_core_3.md`; may hand over after Part A) and S1
-  step 4 client builder (Sonnet; `public/`, `test/js/` only; note `HANDOVER_core_4.md`; it
-  lists the answer shapes it assumed, to check against step 3).
-- Next: check the two halves agree on answer shapes; fable52L review R1 of steps 2 to 4
-  ("review" in the description; a second fable52L reviewer for the client if the diff is
-  large); step 5 (Sonnet: flip N13, the two `validate_network.rb` edits, `test_ops_scan` with
-  PLAYTEST.md and graph, `collect_ops_secrets` in the leak scanner, verify-run ops lines,
-  docs N13 and test-bridge); fixes; delta review; Haiku scripted playtest and live proof (game
-  via `swap-scenario-game.rb`); train check with the machine settings above; land; push.
+- S1 step 3 DONE: `fb22fcedb`, `147f94bcd` (scan route, `network_ops.rb`, `opsDiscovered`,
+  events, rows; 63 new tests; note `HANDOVER_core_3.md`; departures (a) to (h) sent to the
+  reviewer, notably the foothold argument of `network_rows`/`host_row` left out until S3).
+- S1 step 4 DONE: `559f36023` (`ops-model.js`, `perform` with guard and hooks, Sweep and Scan;
+  32 new node tests; whole JS batch 996 of 999, only the 3 machine-baseline files failing;
+  note `HANDOVER_core_4.md`). No browser proof yet.
+- RUNNING, three agents: server review R1 (fable52L; `reviews/S1_server_R1.md`), client
+  review R1 (fable52L; `reviews/S1_client_R1.md`, includes a cross-check of the two halves'
+  answer shapes), step 5 builder (Sonnet; note `HANDOVER_core_5.md`; no engine edits).
+  Reviewers do not commit: commit each findings file by path when it reports.
+- Next: rulings; one Sonnet fixer per half (split by file: Ruby vs `public/` + `test/js/`);
+  delta review R2 (fable52L, the server half touches what the browser is told); Haiku
+  scripted playtest + live proof of `test_ops_scan` (11.5 S1 beats, screenshots; I look at
+  them); train check with the machine settings above; land; push. Then S2 steps 6 to 8.
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
