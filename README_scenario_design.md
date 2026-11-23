@@ -1040,6 +1040,7 @@ Every access-control and network feature that is built, with its ID. The detail 
 | N11 | Patch panel | An object with `panelPorts` opens a 24-port patch panel; a port with a jack plants the player's box through the usual jack flow. | `panelPorts` (object), `panelOf` (jack). |
 | N12 | Resource and host rows in the network view (additional) | `GET /network` lists, per held foothold, host rows (sign-in objects) and resource rows on each reachable network, with greyed blocks for networks the player held a session on that are now down. | `host` (object), `sprite` (object), resource `name`, `host`, `observations`. |
 | N13 | Discovery, hosts and services | A network with `discovery: "scan"` opens its view empty until swept; a top-level `hosts` map adds devices with no sign-in; `services` on a host or sign-in object list once the host is scanned. `POST /network/scan` is the sweep and the scan. | `networks.<id>.discovery`, `hosts.<id>` (`name`, `network`, `sprite`, `offWhen`, `services`), `services` (`name`, `port`, `product`, `version`, `label`). |
+| N14 | Findings: check and confirm | A scanned service can have `weaknesses` and `decoys`. Check lists them as unconfirmed findings that look alike; Confirm shows a real one's needs or a false one's reason. `POST /network/check` and `/network/confirm`. | `weaknesses` and `decoys` on a service (`id`, `class`, `severity`, `summary`, `needs`, `fixedIf`; a decoy's `falseBecause`), optional `realism` link. See `docs/ACCESS_AND_NETWORKS.md` N14. |
 
 #### Networks: jacks, footholds, hosts and shares
 
