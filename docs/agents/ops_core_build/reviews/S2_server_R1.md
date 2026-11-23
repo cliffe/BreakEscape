@@ -366,3 +366,31 @@ to S2.
 
 Not reviewed here: the client (step 7's other half), the scenario, tooling and docs being built
 now, and `access_leak_scanner_test`'s S2 cases (a later commit).
+
+## R1 outcomes
+
+Fixer pass. Hashes: A = `9b2a8b1aa`, B = `17ea002c4`, C = `ce69609e7`, D = `612cd5509`, E = `a6f04bf8b` (builder 9a's step 9 commit, which swept in this pass's `network_model.rb` and `test/unit/network_model_test.rb` hunks). The test file the finding names as `test/models/break_escape/network_model_test.rb` is `test/unit/network_model_test.rb`.
+
+| Finding | Outcome |
+|---|---|
+| m1 | fixed, A: `RealismCatalog.warn_unresolved` (once per link id per process, silent while the loader's fault warning stands); controller test counts warnings over three refetches |
+| m2 | fixed, A: `cli` copied by type (Strings; arrays of Strings); test with nested object, nested `_`, number, empty string |
+| m3 | fixed, A: `ops_keyring_serves?` over `registry_keyring_entries`; tests for an account naming no NPC (unmet) and a listed credential (met). Keyring files not edited |
+| m4 | fixed, A: forged `item` and `itemType` entries leave the need unmet |
+| m5 | fixed, B (no-exposure dead `forbidden` removed) and A (cli test: no `unless`; 404 bodies and a findings answer added) |
+| m6 | fixed, B: the free test asserts the checked list, the one added finding and that held findings are untouched |
+| m7 | fixed, A and B: unswept-network check, fixed-before-check confirm, non-id-form foothold on confirm, retitled and byte-compared 404 test. (The empty foothold is a 400 by design, so it is not a 404 case) |
+| m8 | fixed, A: key sets of check and confirm answers, no `fixed` on a false finding, no global name in a check answer, exact `cli` keys in confirm and GET, stored value never the finding id (placed in `network_findings_test.rb`, since `network_ops_state_delta_test.rb` was not in this pass's file list) |
+| m9 | fixed, C: need edges from `cred_<id>` and from an existing item node (`grant_<id>` or `cred_src_<id>`); an item with no node draws none (plan: no new node) |
+| m10 | fixed, A and the realism test: one controller test per fault folder; non-object entry loader case |
+| m11 | fixed, A: row kept with `met: false`, test |
+| m12 | server half fixed, E: `findings_of` keeps one record per finding id, weakness first; unit test. Validator half deferred: validator file busy |
+| m13 | fixed, E: `findings_of` and `hosts_on_all` unit tests |
+| m14 | deferred: validator file busy |
+| m15 | deferred: validator file busy |
+| m16 | fixed, C: counter suffix and a stderr warning on a collision; node test |
+| m17 | noted for S3 |
+
+Tidy items from the step 8 rulings: D (entry ids method used by the scanner; JSON keys judged for a global's name, with a direct child of a `globalVariables` hash exempt; PLAYTEST stopgaps replaced; N13 validator paragraph says N14 built, N15 not).
+
+Mutation proofs (broken, seen failing, restored): the 404 body given a `cli` key (cli no-exposure test and two no-exposure tests fail); `ops_discover!('services')` removed (free test and four findings tests fail); the `client_forged?` skip removed (both forged-entry tests fail); the keyring rule replaced by `true` (the m3 account test fails); the graph need-edge loop emptied (the need edge test fails); the node-collision loop disabled (the collision test fails); the `globalVariables` exemption removed (the bootstrap test fails) and made never to apply (the key test fails).
