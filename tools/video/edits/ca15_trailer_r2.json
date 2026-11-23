@@ -2,7 +2,7 @@
  "mission": "ca15",
  "id": "ca15_trailer_r2",
  "theme": "ca",
- "title": "Cyber Aware ca15 trailer, round 3, script R3 (captions only; narrator not voiced; takes pending)",
+ "title": "Cyber Aware ca15 trailer (Shadow IT), script R4, voiced: Sulafat",
  "script": {
   "heading": "ca15 trailer script (Shadow IT)",
   "owner_card": "none yet (script R3; close line D351 pending)",
@@ -67,14 +67,14 @@
    },
    "framing": {
     "16:9": {
-     "cx": 0.3,
-     "cy": 0.6,
+     "cx": 0.37,
+     "cy": 0.56,
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.3,
-     "cy": 0.6,
-     "zoom": 1.2
+     "cx": 0.268,
+     "cy": 0.52,
+     "zoom": 1.1
     },
     "1:1": {
      "cx": 0.3,
@@ -143,9 +143,9 @@
      "zoom": 1.4
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.54,
-     "zoom": 1.4
+     "cx": 0.478,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -204,7 +204,7 @@
    },
    "seat": {
     "seat": "attack",
-    "chip": "FRIDAY DEADLINE",
+    "chip": "EVERYDAY CHOICES",
     "stripe": "#3b5b8c"
    },
    "framing": {
@@ -214,9 +214,9 @@
      "zoom": 1.4
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.54,
-     "zoom": 1.4
+     "cx": 0.497,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -251,7 +251,7 @@
    },
    "seat": {
     "seat": "attack",
-    "chip": "FRIDAY DEADLINE",
+    "chip": "EVERYDAY CHOICES",
     "stripe": "#3b5b8c"
    },
    "framing": {
@@ -261,9 +261,9 @@
      "zoom": 1.4
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.54,
-     "zoom": 1.4
+     "cx": 0.497,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -304,18 +304,18 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.4
-    },
-    "9:16": {
-     "cx": 0.5,
      "cy": 0.4,
      "zoom": 1.4
     },
+    "9:16": {
+     "cx": 0.472,
+     "cy": 0.5,
+     "zoom": 1
+    },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.2
+     "cy": 0.45,
+     "zoom": 1.15
     }
    },
    "placeholder_note": "PENDING TAKE t03_choices_reveal: fresh game of ca15_shadow_it, Skip tutorial, close the Brief; interact training_kiosk, Start, Make the choices; card 4 pick 'Hold off, and ask IT'; See where they led at mark reveal (assumed 21.9 s: r1 20.5 + 1.4); in = reveal mark - 0.2 s (21.7), retime to the logged mark; hold the page still about 13.5 s; CSS: hide every 'Your call...' label, one neutral left border; 9:16 zoom 1.4 cy 0.40 from the scout stills (FRAME CHECK)"
@@ -355,9 +355,9 @@
      "zoom": 1.8
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
+     "cx": 0.458,
+     "cy": 0.4,
+     "zoom": 1.1
     },
     "1:1": {
      "cx": 0.5,
@@ -402,9 +402,9 @@
      "zoom": 1.8
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.64,
-     "zoom": 1.4
+     "cx": 0.458,
+     "cy": 0.6,
+     "zoom": 1.1
     },
     "1:1": {
      "cx": 0.5,
@@ -449,9 +449,9 @@
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.472,
      "cy": 0.5,
-     "zoom": 1.4
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -578,9 +578,9 @@
      "zoom": 1.4
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.52,
-     "zoom": 1.4
+     "cx": 0.478,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -621,21 +621,34 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.4
+     "cy": 0.44,
+     "zoom": 1.2
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.421,
      "cy": 0.5,
-     "zoom": 1.4
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.2
+     "cy": 0.46,
+     "zoom": 1.08
     }
    },
-   "placeholder_note": "PENDING TAKE t06_inbox_list: same --set as t05; Swap Shop 4 picks and Done before the take body; Open the inbox, Start; list at mark list (hold 4 s), click the Benmoor Packaging row ('Great to meet you at the Expo, here's our catalogue on a USB', .mail-row, NOT row 1, the padded envelope) at mark row_usb; hold 5.1 s (R3: out 11.1); never press a verb; CSS hide the 'Risky shortcuts stopped' badge; 9:16 zoom 1.4 cy 0.50 (FRAME CHECK: the list and the open message differ in height)"
+   "placeholder_note": "PENDING TAKE t06_inbox_list: same --set as t05; Swap Shop 4 picks and Done before the take body; Open the inbox, Start; list at mark list (hold 4 s), click the Benmoor Packaging row ('Great to meet you at the Expo, here's our catalogue on a USB', .mail-row, NOT row 1, the padded envelope) at mark row_usb; hold 5.1 s (R3: out 11.1); never press a verb; CSS hide the 'Risky shortcuts stopped' badge; 9:16 zoom 1.4 cy 0.50 (FRAME CHECK: the list and the open message differ in height)",
+   "pushin": {
+    "start": 0.47,
+    "end": 0.52,
+    "ease": "inOut",
+    "from_zoom": 1,
+    "to_zoom": 1,
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.585,
+      "y": 0.5
+     }
+    }
+   }
   },
   {
    "id": "office",
@@ -668,14 +681,14 @@
    },
    "framing": {
     "16:9": {
-     "cx": 0.3,
-     "cy": 0.6,
+     "cx": 0.37,
+     "cy": 0.56,
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.3,
-     "cy": 0.6,
-     "zoom": 1.2
+     "cx": 0.268,
+     "cy": 0.52,
+     "zoom": 1.1
     },
     "1:1": {
      "cx": 0.3,
@@ -833,7 +846,8 @@
    "start": 24.45,
    "end": 27.57,
    "text": "Six months on, see where each one led.",
-   "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat/trim/v5.mp3"
+   "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat/trim/v5.mp3",
+   "caption": "Six months on,\nsee where each one led."
   },
   {
    "id": "v5b",
@@ -863,7 +877,8 @@
    "end": 48.68,
    "text": "Match each shortcut to the approved way.",
    "onCard": "hide",
-   "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat/trim/v7.mp3"
+   "file": "/home/cliffe/video-takes-local/ca15/vo/Sulafat/trim/v7.mp3",
+   "caption": "Match each shortcut\nto the approved way."
   },
   {
    "id": "v8",
