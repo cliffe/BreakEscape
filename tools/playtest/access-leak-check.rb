@@ -82,6 +82,7 @@ AccessLeakScanner::RULE_TEXT.each do |rule, text|
   puts "#{rule.ljust(20)} #{(by_rule[rule] || []).length}  (#{text})"
 end
 scanner.report_lines(findings).each { |line| puts line }
+scanner.ops_notes.each { |line| puts "note             #{line}" }
 unless scanner.feed_fallback.empty?
   puts "note             feed posts for #{scanner.feed_fallback.join(', ')} judged partly by the game's saved feedRevealed: " \
        'fewer /feed_post answers in the log than the game revealed (a resumed game or a lost response body)'

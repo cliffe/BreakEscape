@@ -230,6 +230,9 @@ class AccessLeakScanner
     @ops_strings = {}        # string => [{ tag:, net:, host:, owner:, token: }] (ops core S1, collect_ops_secrets)
     @ops_earned = Set.new    # "sweep:<net>", "scan:<host>", "listed:<net or host>", "held:<host>", "check:<host>.<service>", "confirm:<finding>"
     @ops_host_ids = Set.new  # every host id of the scenario (the structural services rule)
+    @ops_finding_ids = Set.new # every finding id (host.service.id) of the scenario (the structural finding rules)
+    @ops_gating_globals = Set.new # every global named in a `fixedIf` or `needs.global`, public or not
+    @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     # password => [{ label:, holder:, texts:, resource:, ancestors: }]: share items holding a
     # password on purpose, exempt only where that item's content may be (scan_passwords)
@@ -286,6 +289,9 @@ class AccessLeakScanner
     drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
   end
+
+  # Lines for the leak check's output: what an empty or narrowed rule means (M2 c).
+  attr_reader :ops_notes
 
   def counts
     {
@@ -367,6 +373,8 @@ class AccessLeakScanner
       scan_ops_strings(body, ctx, add)
       scan_ops_global_keys(body, add)
       scan_ops_services(body, add)
+      scan_ops_finding_rows(body, add)
+      scan_ops_never_keys(body, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
@@ -1827,6 +1835,9 @@ class AccessLeakScanner
   # Registers one ops string. `token` strings (addresses, ranges) match as whole tokens.
   def add_ops_string(value, tag, owner, net: nil, host: nil, token: false, usable: nil, step: nil, key: nil)
     return unless usable.call(value)
+    # A string the room text already contains (a host named in a log note) is public; a `never` string is
+    # judged even so, and the gating globals have their own rule inside finding rows.
+    return if tag != :never && value.strip.length >= MIN_SUBSTRING_NETWORK && @ops_public.any? { |text| text.include?(value.strip) }
 
     list = (@ops_strings[value.strip] ||= [])
     entry = { tag: tag, net: net, host: host, owner: owner, token: token, step: step, key: key }
@@ -1836,6 +1847,7 @@ class AccessLeakScanner
   def collect_ops_secrets
     nm = BreakEscape::NetworkModel
     public_strings = room_data_strings
+    @ops_public = public_strings.to_a
     usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
     service_words = ops_service_words(nm)
     @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set
@@ -1883,6 +1895,7 @@ class AccessLeakScanner
     fid = found[:finding_id]
     service_key = "#{found[:host_id]}.#{found[:service_name]}"
     owner = "ops:finding:#{fid}"
+    @ops_finding_ids << fid.to_s
     check = ->(value, key: nil) { add_ops_string(value, :check, owner, usable: usable, step: service_key, key: key) }
     check.call(entry['summary'])
     check.call(entry['class'], key: 'class')
@@ -1928,16 +1941,26 @@ class AccessLeakScanner
 
   # A global's name used in `needs.global` or `fixedIf` never reaches the browser, as a string value or as a
   # JSON key (plan section 7: "`fixedIf` and its global: never", and "no ... global name ever"). The one
-  # place a name legitimately rides as a key is a `globalVariables` map: the bootstrap sends the declared
-  # globals the client holds as ever, and `needs.global` must name a declared global, so every such name
-  # is there. A key that is a direct child of a `globalVariables` hash is therefore not judged; a key
-  # anywhere else (a finding row, a room, a check answer) is.
+  # place a name legitimately rides as a key is the top-level `globalVariables` map: the bootstrap sends
+  # the declared globals the client holds as ever, and `needs.global` must name a declared global, so
+  # every such name is there. A key that is a direct child of the top-level `globalVariables` hash is
+  # therefore not judged; a key anywhere else (a finding row, a room, a check answer, a nested
+  # `globalVariables`) is. A name that is also room text (a switch that sets it) is not registered as a
+  # string, but it is still judged inside any finding row (scan_ops_finding_rows).
   def collect_ops_globals(entry, owner, usable)
     [entry['fixedIf'], (entry['needs'].is_a?(Hash) ? entry['needs']['global'] : nil)].each do |cond|
       names = cond.is_a?(Hash) ? cond.keys : [cond]
       names.each do |name|
+        next unless name.is_a?(String) && !name.strip.empty?
+
+        @ops_gating_globals << name.strip
         add_ops_string(name, :never, owner, usable: usable)
-        (@ops_global_names[name.strip] ||= []) << owner if usable.call(name)
+        if usable.call(name)
+          (@ops_global_names[name.strip] ||= []) << owner
+        else
+          note = "global #{name.strip} is in room text; judged only inside finding rows"
+          @ops_notes << note unless @ops_notes.include?(note)
+        end
       end
     end
   end
@@ -1950,12 +1973,12 @@ class AccessLeakScanner
     end
   end
 
-  # Yields every hash key with its JSON path, except a direct child key of a `globalVariables` hash.
+  # Yields every hash key with its JSON path, except a direct child key of the top-level `globalVariables` hash.
   def each_key_path(node, path = '$', &block)
     case node
     when Array then node.each_with_index { |v, i| each_key_path(v, "#{path}[#{i}]", &block) }
     when Hash
-      declared = path.end_with?('.globalVariables')
+      declared = path == '$.globalVariables' # only the bootstrap's (or a sync answer's) top-level map
       node.each do |k, v|
         yield k, "#{path}.#{k}" unless declared
         each_key_path(v, "#{path}.#{k}", &block)
@@ -2110,6 +2133,53 @@ class AccessLeakScanner
       next if @ops_earned.include?("scan:#{id}")
 
       add.call('ops_string', "ops:service:#{id}", '$.services')
+    end
+  end
+
+  # Keys the plan's section 7 says no answer ever carries, wherever they nest (M2 a). No string test.
+  OPS_NEVER_KEYS = %w[fixedIf grants realism weaknesses decoys].freeze
+
+  # The keys a finding row may carry before its confirm (ops_finding_row: the unconfirmed set, plus `cli`
+  # from the check).
+  OPS_UNCONFIRMED_KEYS = %w[id alias hostId service class severity summary status cli].freeze
+
+  def scan_ops_never_keys(body, add)
+    each_key_path(body) do |key, json_path|
+      add.call('ops_string', "ops:key:#{key}", safe_path(json_path)) if OPS_NEVER_KEYS.include?(key.to_s)
+    end
+  end
+
+  # Structural rules on a hash whose `id` is a known finding id (M1, M2 b), whatever its strings are.
+  # Before `confirm:<id>` the row may carry only the unconfirmed key set and the status `unconfirmed`
+  # (`needs`, `fixed`, `falseBecause` or a settled status is the "which one is real" leak). A gating
+  # global's name, as a value or a key anywhere under the row, is a leak at any stage, even when the
+  # name is public in room text.
+  def scan_ops_finding_rows(body, add)
+    return if @ops_finding_ids.empty?
+
+    ops_each_hash(body) do |hash|
+      id = hash['id']
+      next unless id.is_a?(String) && @ops_finding_ids.include?(id)
+
+      owner = "ops:finding:#{id}"
+      early = !@ops_earned.include?("confirm:#{id}")
+      add.call('ops_string', owner, '$.finding') if early && ops_row_settled?(hash)
+      add.call('ops_string', owner, '$.finding') if ops_row_names_global?(hash)
+    end
+  end
+
+  def ops_row_settled?(hash)
+    (hash.keys.map(&:to_s) - OPS_UNCONFIRMED_KEYS).any? || (hash.key?('status') && hash['status'] != 'unconfirmed')
+  end
+
+  def ops_row_names_global?(node)
+    return false if @ops_gating_globals.empty?
+
+    case node
+    when String then @ops_gating_globals.include?(node.strip)
+    when Array then node.any? { |v| ops_row_names_global?(v) }
+    when Hash then node.any? { |k, v| @ops_gating_globals.include?(k.to_s.strip) || ops_row_names_global?(v) }
+    else false
     end
   end
 

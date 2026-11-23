@@ -153,7 +153,7 @@ class AccessLeakScannerOpsFindingsTest < ActiveSupport::TestCase
     assert_includes owners(scan([row({ 'text' => S::DOOR_GLOBAL }, path: ROOM)])), "ops:finding:#{S::SIDE_ENTRY}"
   end
 
-  test 'a global name as a JSON key outside globalVariables is a leak, at any depth, and is not printed' do
+  test 'a global name as a JSON key outside the top-level globalVariables is a leak, at any depth, and is not printed' do
     side = { 'id' => S::SIDE_ENTRY, 'extra' => { S::DOOR_GLOBAL => true } }
     found = scan([row({ 'footholds' => [{ 'hosts' => [side] }] })])
     assert_equal ["ops:finding:#{S::SIDE_ENTRY}"], owners(found)
@@ -161,7 +161,7 @@ class AccessLeakScannerOpsFindingsTest < ActiveSupport::TestCase
     fixed_key = scan([row({ 'a' => [{ S::PATCHED_GLOBAL => false }] }, path: ROOM)])
     assert_includes owners(fixed_key), "ops:finding:#{S::FACTORY}"
     mapped = scan([row({ 'note' => { 'globalVariables' => { S::DOOR_GLOBAL => false } } }, path: ROOM)])
-    assert_empty mapped, 'a globalVariables map is the declared-globals place, wherever it is'
+    assert_includes owners(mapped), "ops:finding:#{S::SIDE_ENTRY}", 'only the top-level globalVariables map is the declared-globals place (N6)'
     nested = scan([row({ 'globalVariables' => { 'deeper' => { S::DOOR_GLOBAL => true } } }, path: BOOT)])
     assert_includes owners(nested), "ops:finding:#{S::SIDE_ENTRY}", 'only the direct children of globalVariables are exempt'
   end
