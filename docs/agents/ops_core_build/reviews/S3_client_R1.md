@@ -435,6 +435,6 @@ unseen); the dungeon-graph half of step 12 (cards, needs, grants) was not in the
 | m2 (world part) | A repeat grant of the same technique copy (npcId, footholdId, access) returns it and fires nothing. | 05af6be2e |
 | m3 | `accessFields(body)` added to `signInWithCredential` and `claim`; tested. | 05af6be2e |
 | m6 | Cause plain: `LANDINGS.desktop` resumed the trip's network view for sign_out, no_session, unreachable and not_responding. `openSession` takes `toWorld`, the world click sets it, and those four reasons leave to the world for such a trip (the capture log's trips still resume). Test. | 05af6be2e |
-| m7 | NOT DONE: the fix is in `network-view-minigame.js` (`handOverSession`, take the host id from the offer captured before the request); a view file, the other fixer's. | open |
+| m7 | NOT DONE: the fix is in `network-view-minigame.js` (`handOverSession`, take the host id from the offer captured before the request); a view file, the other fixer's. | fixed in e023973c0 |
 | m8 | `compromiseMarks.syncRoom` runs after `networkLinks.syncRoom` and `plantHiding.syncRoom` in `rooms.js` and `game.js`; `_place` re-places the bolt and copies `visible` on every later pass. Test. Look judged later in a browser. | 05af6be2e, d29627282 |
 | m10 | `compromiseMarks()` and `interactLoginPc`'s `'remote_view'` listed in `docs/test-bridge.md`. | d29627282 |
