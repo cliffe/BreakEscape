@@ -1930,7 +1930,6 @@ module BreakEscape
         self.class.set_pin_length!(obj)
         self.class.strip_lock_answers!(obj)
         self.class.strip_puzzle_graph_keys!(obj)
-        OpsLog.strip_reader_judgement!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
         # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
@@ -7376,7 +7375,6 @@ module BreakEscape
       case obj
       when Hash
         self.class.strip_puzzle_graph_keys!(obj)
-        OpsLog.strip_reader_judgement!(obj)
         # A declared grant's contents are served from the held item, never shipped.
         # Deep, because this filter descends only into objects, npcs, contents and the
         # like, not into an object's triggerOnInteract or onInteract actions.

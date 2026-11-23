@@ -36,7 +36,8 @@ module BreakEscape
     MIN_SOURCE_ROWS = 10
     MAX_SOURCE_ROWS = 150
     MAX_SEED_ROWS = 100
-    MAX_FLAGGED = 100
+    SEED_ID = /\As[0-9]{1,3}\z/.freeze
+    SEED_AT = /\A(?:(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat) )?(?:[01][0-9]|2[0-3]):[0-5][0-9]\z/.freeze
     DEFAULT_SOURCE_ROWS = 50
     MAX_N = 99_999
     MERGE_WINDOW = 10
@@ -273,19 +274,6 @@ module BreakEscape
         end
       end
 
-      # What the browser may hold of a reader (7, L2b): the anomaly's row and the flag's actions are judged
-      # on the server and answered only to a correct flag. `anomaly` stays as an empty object so the viewer
-      # knows to offer a flag button; `rowId`, `flagActions` and `completionActions` never ship.
-      def strip_reader_judgement!(obj)
-        return obj unless obj.is_a?(Hash) && obj['type'] == 'ops_log_terminal' && obj['minigameData'].is_a?(Hash)
-
-        data = obj['minigameData']
-        data.delete('flagActions')
-        data.delete('completionActions')
-        data['anomaly'] = {} if data['anomaly']
-        obj
-      end
-
       # The id of a play row for the browser (7): ten hex characters of an HMAC of the game, the
       # source and the row's seq under a purpose key, so the browser cannot recover seq.
       def row_id(game_id, source_id, seq)
@@ -411,53 +399,21 @@ module BreakEscape
     end
 
     # A source's authored seed rows (4.2): the first 100 hashes of `seedRows` with an id and an event
-    # the registry knows. A snapshot is not re-validated, so a malformed entry is skipped, not raised.
+    # the registry knows, an id and a stamp of the authored forms and a result the event allows. A snapshot
+    # is not re-validated (the validator is), so a malformed entry is skipped, not raised or shown.
     def ops_log_seed_rows(source)
       list = source.is_a?(Hash) ? source['seedRows'] : nil
       return [] unless list.is_a?(Array)
 
       seen = {}
       list.first(OpsLog::MAX_SEED_ROWS).select do |row|
-        ok = row.is_a?(Hash) && row['id'].is_a?(String) && !seen[row['id']] && OpsLog.events[row['event'].to_s] &&
-             row['at'].is_a?(String) && row['result'].is_a?(String)
+        definition = row.is_a?(Hash) ? OpsLog.events[row['event'].to_s] : nil
+        ok = definition && row['id'].is_a?(String) && OpsLog::SEED_ID.match?(row['id']) && !seen[row['id']] &&
+             row['at'].is_a?(String) && OpsLog::SEED_AT.match?(row['at']) &&
+             row['result'].is_a?(String) && Array(definition[:results]).include?(row['result'])
         seen[row['id']] = true if ok
         ok
       end
-    end
-
-    # ----- the flag (L2b) -----------------------------------------------------------------------
-
-    # The seed row a reader's anomaly names, or nil: `anomaly.rowId` counts only when it is one of the
-    # source's seed rows (a play row can never be an anomaly, 8). The browser is never told it.
-    def ops_log_anomaly_id(reader, source_id)
-      return nil unless reader.is_a?(Hash)
-
-      anomaly = reader.dig('minigameData', 'anomaly')
-      wanted = anomaly.is_a?(Hash) ? anomaly['rowId'] : nil
-      return nil unless wanted.is_a?(String)
-
-      entry = OpsLog.sources_for(scenario_data).find { |id, _source, _cap| id == source_id.to_s }
-      entry && ops_log_seed_rows(entry[1]).any? { |row| row['id'] == wanted } ? wanted : nil
-    end
-
-    # Whether the player has flagged this reader's anomaly.
-    def ops_log_flagged?(reader_id)
-      has_attribute?(:player_state) && player_state.is_a?(Hash) && Array(player_state['opsLogFlagged']).include?(reader_id.to_s)
-    end
-
-    # Judge a flag on a reader (4.2, server-judged): :wrong for anything but the anomaly row (an invented
-    # id, a play row, a row of another source, a reader with no anomaly, all alike), :correct the first
-    # time the anomaly is flagged (recorded in `opsLogFlagged`, never sent; the caller saves), :already
-    # after that. Nothing is written for :wrong or :already.
-    def ops_log_flag!(reader, source_id, row_id)
-      wanted = ops_log_anomaly_id(reader, source_id)
-      return :wrong unless wanted && row_id.is_a?(String) && row_id.bytesize == wanted.bytesize &&
-                           ActiveSupport::SecurityUtils.secure_compare(row_id, wanted)
-      return :already if ops_log_flagged?(reader['id'])
-
-      list = Array(player_state['opsLogFlagged']).select { |v| v.is_a?(String) }
-      player_state['opsLogFlagged'] = (list + [reader['id'].to_s]).last(OpsLog::MAX_FLAGGED)
-      :correct
     end
 
     # Game time at this moment (13.4): the saved elapsedMs plus the server time since
