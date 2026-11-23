@@ -29,3 +29,6 @@ Departure: the plan says nil when only a foothold admits, which would break `!ni
 - Opening a share (any admitted `GET /container/<share or folder id>`): `SHARE_OPEN`, `where` the share name, `as` the oldest admitting session's account or `-` for a foothold only; `detail: folder: <name>` for a folder. Source `events: ["share_*"]`; filter by `where.places: ["share:<id>"]`, or no `where`.
 - A repeat open as the same account is silent. Files are never named.
 - A game's rows need a clock-free read: nothing here depends on the clock.
+
+## Deferred (R1 F3)
+A `seq` on the session record (as footholds have) would make "oldest admitting session" true by time. Not built: it changes the exact session record and write set that `network_technique_test` and `network_ops_state_delta_test` pin. Whoever next edits `start_login_session!` can do it. Until then the share row names the first admitting session in `signedInPcs` order (token sessions last); a test pins the sign-out-and-in edge.

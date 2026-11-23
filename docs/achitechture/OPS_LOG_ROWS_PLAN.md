@@ -1191,9 +1191,15 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 
 Code lines and branch detail for each row are in 5.1.
 
-**`share_folder_opened` records opening a folder, never a file** (question 3). When several
-sessions admit a share, the row names the account of the session signed in first, through
-`session_admitting(scope)`, which returns the admitting PC id. `session_admits?(scope)` is
+**`share_folder_opened` records opening a folder, never a file** (question 3). A request for a
+file, or for a folder with no id, writes no row. When several sessions admit a share, the row names
+the account of the first admitting session in `signedInPcs` order (token sessions, which are not in
+that list, last), through `session_admitting(scope)`, which returns the admitting PC id (`:foothold`
+when only a foothold admits, `:unscoped` for no scope). It is always an account the player holds a
+live admitting session as; it may not be the oldest by time (sign in at A, at B, sign out at A, sign
+in at A again: A ranks first). A `seq` on the session record would fix that and is deferred. The
+once-set keeps the last 256 keys, so a scenario with over 200 shares plus share folders could pass
+the once-only limit; the validator warns. `session_admits?(scope)` is
 `!session_admitting(scope).nil?`, so the admin branch the privilege plan adds and the line the core
 plan adds apply to both from one rule in one place.
 

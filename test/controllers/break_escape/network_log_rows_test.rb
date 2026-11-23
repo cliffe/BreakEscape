@@ -191,7 +191,7 @@ module BreakEscape
         build({}, scenario(logged: logged))
         out = []
         take_drop_box
-        out << [plant('comms_port').except('first'), response.status]
+        out << [plant('comms_port'), response.status]
         out << [join('guest_ap', PSK), response.status]
         out << [container('scanned_inbox', foothold: OFFICE), response.status]
         out << [unplug('comms_port'), response.status]
@@ -348,26 +348,141 @@ module BreakEscape
 
     # ---- session_admitting ------------------------------------------------------------
 
-    test 'session_admits? and session_admitting answer alike for every scope, held session and lock state' do
-      build
+    # F4: literal expected answers, so a later change of an answer fails. Lena is signed in at
+    # lena_pc over the planted foothold, Sam's session at sam_pc is locked, a foothold reaches
+    # the office network.
+    ADMITTING_TABLE = [
+      [nil, :unscoped, true],
+      [{ type: 'login_pc', id: 'lena_pc' }, 'lena_pc', true],
+      [{ type: 'login_pc', id: 'sam_pc' }, nil, false], # locked session
+      [{ type: 'login_pc', id: 'bench_pc' }, nil, false], # no session
+      [{ type: 'profile', id: 'lena_files' }, 'lena_pc', true],
+      [{ type: 'profile', id: 'sam_files' }, nil, false], # Sam's session is locked: no identity
+      [{ type: 'profile', id: 'nope' }, nil, false],
+      [{ type: 'other', id: 'x' }, nil, false],
+      [{ type: 'resource', id: 'scanned_inbox' }, 'lena_pc', true], # a session and the foothold: the session
+      [{ type: 'resource', id: 'ledger_archive' }, 'lena_pc', true], # access-listed for Lena
+      [{ type: 'resource', id: 'print_queue' }, 'lena_pc', true], # a printer on the office network
+      [{ type: 'resource', id: 'bench_notes' }, nil, false], # on the workshop network, no pivot
+      [{ type: 'resource', id: 'invented' }, nil, false]
+    ].freeze
+
+    def profile_scenario
+      data = scenario
+      data['accountProfiles'] = { 'lena_files' => { 'for' => { 'people' => ['lena'] }, 'contents' => [] },
+                                  'sam_files' => { 'for' => { 'people' => ['sam'] }, 'contents' => [] } }
+      data
+    end
+
+    test 'session_admits? and session_admitting give the literal expected answer for every scope kind' do
+      build({}, profile_scenario)
       plant_office
       sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
       sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
       post lock_session_game_url(@game), params: { pc_id: 'sam_pc' }, as: :json
       game = Game.find(@game.id)
-      scopes = [nil, { type: 'login_pc', id: 'lena_pc' }, { type: 'login_pc', id: 'sam_pc' }, { type: 'login_pc', id: 'bench_pc' },
-                { type: 'profile', id: 'nope' }, { type: 'other', id: 'x' }] +
-               NetworkModel.resources(game.scenario_data).keys.map { |id| { type: 'resource', id: id } } +
-               [{ type: 'resource', id: 'invented' }]
-      scopes.each do |scope|
-        admitting = game.session_admitting(scope)
-        assert_equal game.session_admits?(scope), !admitting.nil?, scope.inspect
-        assert_includes [true, false], game.session_admits?(scope)
+      ADMITTING_TABLE.each do |scope, admitting, admits|
+        if admitting.nil?
+          assert_nil game.session_admitting(scope), "session_admitting #{scope.inspect}"
+        else
+          assert_equal admitting, game.session_admitting(scope), "session_admitting #{scope.inspect}"
+        end
+        assert_equal admits, game.session_admits?(scope), "session_admits? #{scope.inspect}"
       end
-      assert_equal 'lena_pc', game.session_admitting({ type: 'resource', id: 'ledger_archive' })
-      assert_equal 'lena_pc', game.session_admitting({ type: 'login_pc', id: 'lena_pc' })
-      assert_nil game.session_admitting({ type: 'login_pc', id: 'sam_pc' }), 'a locked session admits nothing'
-      assert_equal :unscoped, game.session_admitting(nil)
+    end
+
+    test 'relay, route down and expired token sessions admit nothing, and a foothold alone answers true for an open share' do
+      build
+      plant_office
+      game = Game.find(@game.id)
+      assert_equal :foothold, game.session_admitting({ type: 'resource', id: 'scanned_inbox' })
+      assert_equal true, game.session_admits?({ type: 'resource', id: 'scanned_inbox' })
+      assert_equal false, game.session_admits?({ type: 'resource', id: 'ledger_archive' }), 'a foothold does not admit an access-listed share'
+      # a relay session record at a PC the player has no sign-in at
+      state = game.player_state
+      state['sessions'] = { 'sam_pc' => { 'id' => 'sam', 'via' => 'relay', 'from' => 'nowhere' } }
+      game.update_columns(player_state: state)
+      game = Game.find(@game.id)
+      assert_nil game.session_admitting({ type: 'login_pc', id: 'sam_pc' })
+      assert_equal false, game.session_admits?({ type: 'login_pc', id: 'sam_pc' })
+      # take the foothold's route away: an unplug
+      unplug('comms_port')
+      game = Game.find(@game.id)
+      assert_nil game.session_admitting({ type: 'resource', id: 'scanned_inbox' })
+      assert_equal false, game.session_admits?({ type: 'resource', id: 'scanned_inbox' })
+    end
+
+    test 'a session and a foothold both admitting an open share answer the session, each alone answers true' do
+      build
+      plant_office
+      assert_equal :foothold, Game.find(@game.id).session_admitting({ type: 'resource', id: 'scanned_inbox' })
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_equal 'sam_pc', Game.find(@game.id).session_admitting({ type: 'resource', id: 'scanned_inbox' })
+      unplug('comms_port') # the foothold goes; Sam's session on the office network still admits it
+      assert_equal 'sam_pc', Game.find(@game.id).session_admitting({ type: 'resource', id: 'scanned_inbox' })
+      assert_equal true, Game.find(@game.id).session_admits?({ type: 'resource', id: 'scanned_inbox' })
+    end
+
+    # F3: the edge as built. "Oldest" is the order PCs were first signed in at (signedInPcs), not
+    # the order the held sessions began. Deferred: a seq on the session record.
+    test 'the account named is the first admitting session in signedInPcs order, which may not be the oldest by time' do
+      build('unlockedRooms' => NetworkRequests::OPEN_ROOMS + ['finance_office'])
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD)
+      post game_path('logout'), params: { pc_id: 'sam_pc' }, as: :json
+      assert_response :success, response.body
+      sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)
+      assert_response :success
+      container('scanned_inbox')
+      assert_response :success
+      # lena's session is older by time; sam_pc ranks first in signedInPcs
+      assert_equal %w[sam_pc lena_pc], Game.find(@game.id).player_state['signedInPcs']
+      assert_equal [{ 'account' => 'sokafor' }], share_rows.map { |r| r['as'] }
+    end
+
+    # F1: a forged request for a file, or a nameless folder, writes no row and saves nothing.
+    test 'a request for a file in an admitted share answers as before and writes no row' do
+      build
+      plant_office
+      container('scanned_inbox', foothold: OFFICE)
+      before_rows = share_rows.size
+      before = stamp
+      container('inbox_letter', foothold: OFFICE)
+      assert_response :success
+      assert_equal before_rows, share_rows.size
+      assert_equal before, stamp, 'a file open saves nothing'
+      assert_not_includes Game.find(@game.id).player_state['opsLog'].to_json, 'inbox_letter'
+    end
+
+    test 'a file open before any folder open writes no share row' do
+      build
+      plant_office
+      container('inbox_letter', foothold: OFFICE)
+      assert_response :success
+      assert_empty share_rows
+    end
+
+    # Section 11, last bullet: a malformed call fails the route and leaves the game row unchanged.
+    test 'a malformed share row call fails the route and leaves the game unchanged' do
+      build
+      plant_office
+      before = Game.find(@game.id).player_state.to_json
+      stamp_before = stamp
+      original = Game.instance_method(:ops_share_as)
+      Game.send(:define_method, :ops_share_as) { |_scope| { typed: 'amy' } } # once: true with typed is malformed
+      begin
+        failed = begin
+          container('scanned_inbox', foothold: OFFICE)
+          response.status >= 500
+        rescue BreakEscape::OpsLog::Malformed
+          true
+        end
+        assert failed, 'the route fails'
+      ensure
+        Game.send(:define_method, :ops_share_as, original)
+      end
+      assert_equal before, Game.find(@game.id).player_state.to_json
+      assert_equal stamp_before, stamp
     end
 
     test 'a foothold alone admitting an open share answers :foothold, not a PC id' do

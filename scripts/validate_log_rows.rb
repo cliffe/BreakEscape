@@ -102,7 +102,34 @@ def check_log_rows(json_data, events: BreakEscape::OpsLogEvents::EVENTS, kinds: 
   log_warn_protected_rows(sources, taken, events, index, warn)
   log_warn_save_counters(sources, taken, events, index, warn)
   log_warn_secret_collisions(json_data, names, events, kinds, warn)
+  log_warn_share_once_limit(json_data, warn)
   issues
+end
+
+# Plan 13.8: the share row is once-only per folder and account, and the log remembers the last
+# LOG_ONCE_KEYS once-keys. A scenario with more shares plus share folders than that could pass the
+# limit, and a player walking them in a ring would write a row (and a save) per request.
+LOG_ONCE_KEYS = 200
+
+def log_warn_share_once_limit(json_data, warn)
+  resources = json_data['resources']
+  return unless resources.is_a?(Hash)
+
+  count = resources.sum do |id, share|
+    next 0 if id.to_s.start_with?('_') || !share.is_a?(Hash)
+
+    1 + log_count_folders(share['contents'])
+  end
+  return unless count > LOG_ONCE_KEYS
+
+  warn.call("shares and share folders add up to #{count}, over #{LOG_ONCE_KEYS}: the once-only limit of the log " \
+            'could be passed, and a share row could then be written again for a folder already logged')
+end
+
+def log_count_folders(contents)
+  return 0 unless contents.is_a?(Array)
+
+  contents.sum { |o| o.is_a?(Hash) && o['contents'].is_a?(Array) ? 1 + log_count_folders(o['contents']) : 0 }
 end
 
 # Plan section 9: an ops_log_terminal needs an `id` (the route checks reach by id) and a `logSource`

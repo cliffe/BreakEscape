@@ -463,3 +463,18 @@ test('warning: an anomaly on a source with a single seed row', { skip }, () => {
     assert.deepEqual(errors(out), []);
     assertHas(warnings(out), 'has one seed row');
 });
+
+test('warning (L3 F2): shares plus share folders over 200 could pass the log\'s once-only limit', { skip }, () => {
+    const many = n => {
+        const s = clean();
+        s.resources = {};
+        for (let i = 0; i < n; i++) s.resources[`share${i}`] = { kind: 'file_share', name: `S${i}`, contents: [{ id: `f${i}`, type: 'folder', contents: [] }] };
+        return s;
+    };
+    const small = issues(many(100)); // 200 in all: at the limit, no warning
+    assert.deepEqual(warnings(small).filter(w => w.includes('once-only')), []);
+    const out = issues(many(101)); // 202
+    assert.deepEqual(errors(out), []);
+    assertHas(warnings(out), 'once-only limit of the log could be passed');
+    assertHas(warnings(out), '202');
+});

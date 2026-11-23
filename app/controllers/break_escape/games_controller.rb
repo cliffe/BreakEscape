@@ -3205,11 +3205,20 @@ module BreakEscape
       return if BreakEscape::OpsLog.sources_for(@game.scenario_data).empty?
 
       scope = located[:scope]
-      as = @game.ops_share_as(scope)
-      # The share itself opened: no folder key. A folder or item in it: its own id.
+      # The share itself opened: no folder key. A folder (an object with `contents`): its own id.
+      # A file, or a folder with no id, writes nothing (a file is never named, and a nameless
+      # folder must not borrow the share's once key).
       share = BreakEscape::NetworkModel.resources(@game.scenario_data)[scope[:id].to_s]
-      folder_id = located[:object]['id'].to_s
-      detail = located[:object].equal?(share) || folder_id.empty? ? nil : { 'folder' => folder_id }
+      object = located[:object]
+      folder_id = object['id'].to_s
+      if object.equal?(share)
+        detail = nil
+      elsif object['contents'].is_a?(Array) && !folder_id.empty?
+        detail = { 'folder' => folder_id }
+      else
+        return
+      end
+      as = @game.ops_share_as(scope)
       row = @game.write_log_row!('share_folder_opened', as: as, where: { kind: 'share', id: scope[:id].to_s },
                                                         detail: detail, once: true)
       @game.save! if row&.stored?
