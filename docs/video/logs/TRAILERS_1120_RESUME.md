@@ -79,3 +79,10 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 **Machine:** CA0 (LIVE CA0: Access work slice 9.2 scenario design) has it for ca15 and ca12 renders, then a ca01 capture; it has offered a gap between its ca12 renders and the ca01 capture. Never render and capture at once. AC0's name is "LIVE AC0: Break Escape access model work".
 
 **Disk:** /home was full on 22 Nov; 13 GB free after AC0's cleanup. AC0 is asking the owner about my ~220 MB of superseded renders. Moving to tmp/delete frees nothing on the same disk.
+
+## State (2026-11-23, morning)
+- T345 landed (main 631e73e32, includes the lines branch b98ee67a3). Main merged into both branches.
+- Owner's line picks are in `docs/video/edits/TRAILER_LINES_PROPOSED.md`, "Owner's picks": m05 price, m06 statues, m08 mole are EXISTING lines, not the new voiced ones. The outlines must use these.
+- Letterbox (9:16, zoom 0.5625 to 1) is in the renderer: 33fe481fa, tests `tools/video/remotion/tests/letterbox.test.mjs`. m01 panels 4, 20, 23 use it. The scratch crops.py is letterbox-aware.
+- Framing agents (Sonnet) on m02 and m03; notes `tmp/handover/vid1_framing_m02.md` and `_m03.md` if they stop early. After them: check sheets, render six (CA0's gap), publish, send AC0 the link and hash.
+- /home has 226 GB free.
