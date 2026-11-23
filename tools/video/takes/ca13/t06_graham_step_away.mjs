@@ -7,9 +7,20 @@
 //     "--set episode_e13_ai_assistant_state={\"done\":[\"brief\",\"write\",\"flip\",\"defend\"]} --set episode_e13_ai_assistant_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e13_ai_assistant_defend_percent=60 --set kit_quiet=true" \
 //     "--hide-hud --zoom-step 1"
 // Keep _defend_percent under 85 (85 and over sets kit_caught). Hook cut: in = G1 audio start - 0.15, out = in + 2.6 (first sentence ends 2.18 s in the file). Office: in = G2 start - 0.3, out = G2 speech end + 0.3.
+// The world bubble is hidden for the whole take (HIDE_BUBBLES, Phaser container patched); the edit burns captions (G1 sentence 1 only, G2 in full). Mark `bubble-hidden-check` logs visible/alpha per bubble.
 // Marks: player-sprite, kiosk-open, globals-before-look-up, look_up, bubble-start/end:kit_graham_whitfield (text), bark1_start, bark2_start, bark2_end,
 //   audio-start/end:<npc> (clip length and how far it got), tts (each POST /tts: status, bytes), person-chat-opened (only if the ask opens a chat), frame:t+N, end, globals-end.
 import { sleep, prepare, openKiosk, pressButton, waitButton, watchBubbles, checkSprite, watchTts, watchBarkAudio } from './_ca13.mjs';
+
+/** The world bubble is a Phaser container (not DOM), so CSS cannot reach it: every bubble box (existing and future, via _make) has setVisible forced to false and alpha 0. The says/pages
+ *  state the take's marks read is untouched. Decided 23 Nov: Graham's bubble is hidden for the whole take; the edit burns the captions. */
+export const HIDE_BUBBLES = () => {
+  const nb = window.npcWorldBubbles; if (!nb || nb.__ca13hidden) return !!nb;
+  const patch = (bb) => { const b = bb && bb.box; if (!b || b.__ca13) return bb; b.__ca13 = true; b.setVisible = function () { this.visible = false; return this; }; b.setAlpha = function () { this.alpha = 0; return this; }; b.visible = false; b.alpha = 0; return bb; };
+  const make = nb._make; nb._make = function (...a) { return patch(make.apply(this, a)); };
+  for (const bb of nb.bubbles.values()) patch(bb);
+  nb.__ca13hidden = true; return true;
+};
 
 export async function setup(page, bridge) {
   await prepare(page, bridge);
@@ -23,13 +34,14 @@ export default async (page, bridge, mark) => {
   const aw = await watchBarkAudio(page, mark);
   const tw = watchTts(page, mark);
   await checkSprite(page, mark);
+  if (!(await page.evaluate(HIDE_BUBBLES))) throw new Error('npcWorldBubbles not ready: cannot hide the bubble');
   await openKiosk(page, bridge, mark); mark('kiosk-open');
   if (!(await waitButton(page, /Look up/, 10000))) throw new Error('step-away panel never showed; buttons: ' + JSON.stringify(await (await import('./_ca13.mjs')).buttons(page)));
   await sleep(1000);
   const g0 = (await bridge.getState()).globals || {};
   mark('globals-before-look-up', { kit_quiet: g0.kit_quiet, kit_ca13_out: g0.kit_ca13_out, kit_ca13_there: g0.kit_ca13_there });
   mark('look_up'); await pressButton(page, /Look up/);
-  const t0 = Date.now(); let b1 = false, b2 = false, b2end = false, chat = false, next = 2;
+  const t0 = Date.now(); let hid1 = false, b1 = false, b2 = false, b2end = false, chat = false, next = 2;
   const open = () => page.evaluate(() => !!(window.npcWorldBubbles && window.npcWorldBubbles.says && [...window.npcWorldBubbles.says.values()].some(s => /Just send it\?/.test((s.pages || []).join(' ')))));
   while (Date.now() - t0 < 40000) {
     const el = (Date.now() - t0) / 1000;
@@ -39,6 +51,7 @@ export default async (page, bridge, mark) => {
     if (b2 && !b2end && !(await open())) { b2end = true; mark('bark2_end'); break; }
     const st = await bridge.getState();
     if (!chat && (st.dialogue || st.interactionMenu || st.activeMinigame)) { chat = true; mark('person-chat-opened', { dialogue: !!st.dialogue, menu: !!st.interactionMenu, minigame: !!st.activeMinigame }); }
+    if (b1 && !hid1) { hid1 = true; mark('bubble-hidden-check', await page.evaluate(() => [...window.npcWorldBubbles.bubbles.entries()].map(([id, bb]) => ({ id, visible: bb.box.visible, alpha: bb.box.alpha, patched: !!bb.box.__ca13 })))); mark('frame:bubble-hidden'); }
     if (el >= next) { mark('frame:t+' + next); next += 2; }
     await sleep(100);
   }
