@@ -65,7 +65,6 @@
       "logSource"
     ],
     "optional": [
-      "title",
       "anomaly",
       "flagActionLabel",
       "flagActions",

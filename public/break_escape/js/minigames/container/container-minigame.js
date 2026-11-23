@@ -2227,7 +2227,15 @@ export class ContainerMinigame extends MinigameScene {
     /** The route this screen was reached by, as a reader opened from it must send it (ops log 5.2). */
     routeExtra() {
         if (this.remote?.footholdId) return { sourceRoute: { foothold: this.remote.footholdId } };
+        if (this.relay) return { sourceRoute: { relay: true } };
         if (this.fromRoute?.fromPcId) return { sourceRoute: { from: this.fromRoute.fromPcId } };
+        // A folder under a sign-in PC names the route that PC's session names, as the folder fetch does
+        if (this.sourcePcId && !this.loginPcId && !this.shareFolder) {
+            const q = new URLSearchParams(folderRouteQuery(this.sourcePcId).replace(/^\?/, ''));
+            if (q.get('relay') === '1') return { sourceRoute: { relay: true } };
+            if (q.get('foothold')) return { sourceRoute: { foothold: q.get('foothold') } };
+            if (q.get('from')) return { sourceRoute: { from: q.get('from') } };
+        }
         return {};
     }
 

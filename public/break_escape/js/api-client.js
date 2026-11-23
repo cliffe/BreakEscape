@@ -278,12 +278,14 @@ export class ApiClient {
 
   // The rows of an in-game log terminal (ops log plan 5.2, 6): GET /log_rows. The answer is
   // { rev, title, rows } or { rev, unchanged: true } when rev still matches; any refusal throws
-  // (err.status). foothold or from is the route the screen was reached by, as for keyring.
-  static async logRows(objectId, { foothold, from, rev, signal } = {}) {
+  // (err.status). foothold, from or relay is the route the screen was reached by, as for keyring;
+  // relay is sent as relay=1 and only when true.
+  static async logRows(objectId, { foothold, from, relay, rev, signal } = {}) {
     const params = [`object_id=${encodeURIComponent(objectId)}`];
     if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
     if (foothold !== undefined && foothold !== null && foothold !== '') params.push(`foothold=${encodeURIComponent(foothold)}`);
     else if (typeof from === 'string' && from) params.push(`from=${encodeURIComponent(from)}`);
+    else if (relay === true) params.push('relay=1');
     return this.get(`/log_rows?${params.join('&')}`, { signal });
   }
 
