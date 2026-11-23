@@ -23,3 +23,8 @@ Cause: `Logger.new(io)`'s default formatter writes a timestamp and `#<pid>`; the
 
 ## Notes
 S1_R2.md P3 row corrected. Not done: `grants` strings (S3). No engine bug found.
+
+## S2 server R1 (scanner)
+
+- The scanner lists catalog ids through `RealismCatalog.entry_ids` (no private call).
+- A global name used in `needs.global` or `fixedIf` is now judged as a JSON KEY as well as a string value (`scan_ops_global_keys`). Rule: a key that is a direct child of a `globalVariables` hash is exempt (the bootstrap's declared-globals map, which carries every such name as ever, plan section 7); a key anywhere else, at any depth, is a leak (owner `ops:finding:<id>`, path redacted). The earlier note above that keys are never judged is superseded.

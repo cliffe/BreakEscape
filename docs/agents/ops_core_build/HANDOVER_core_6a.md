@@ -61,3 +61,12 @@ confirm. `x-ref: credential` was NOT used (the reference index has no `credentia
 - The global's name is never in an answer, but a declared global is in the bootstrap's `globalVariables` as ever.
 - `ops_log_test` "production setting" test is flaky when the process id contains the digits of a test PIN ("4179"); unrelated to this step.
 - `needs.session`, `grants`, `opsUsed`, techniques: S3, unbuilt.
+
+## S2 server R1 changes (contract updates)
+
+- A `credential` need is met when the keyring would list the credential now (`ops_keyring_serves?` over `registry_keyring_entries`), not by `credential_proof_holds?` alone (m3). S3's `need_unmet` must read the same rule.
+- A `technique_card` `itemType` need keeps its row with `met: false` (m11).
+- A finding's `cli` copies by type (m2): `title`, `module`, `script` only as non-empty Strings; `advisories`, `output` only as the non-empty Strings of an Array; a key with nothing left is left out.
+- An unresolved `realism` link warns once per link id per process (`RealismCatalog.warn_unresolved`), and not at all while the loader's own fault warning stands (m1). `RealismCatalog.entry_ids` lists ids; `reset_warned!` is for tests.
+- `NetworkModel.findings_of` keeps one record per finding id, the weakness before a decoy of the same id (m12).
+- Graph: need edges into `weak_*` from `cred_<id>` and from an existing item node (`grant_<id>` or `cred_src_<id>`) are drawn after the credential block; an item with no node draws nothing (m9). A finding-id collision on a node id gets a `_2` suffix and a stderr warning (m16).
