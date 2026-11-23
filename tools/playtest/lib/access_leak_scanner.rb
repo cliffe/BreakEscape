@@ -1877,6 +1877,10 @@ class AccessLeakScanner
       # observations name the network the player has already reached (slice 9.3b W, 5.3),
       # so a network name there is not a leak.
       next if holder.to_s.start_with?('netlink_')
+      # Ops log L3: a share row's LOCATION cell is the share's own name. The row exists only after an
+      # admitted open of that share (the browser was served the name then), so the name alone in that
+      # cell is not a leak. Any other cell, a host or observations text, or a network name still is.
+      next if ctx[:log_rows] && json_path.to_s.match?(/\.rows\[\d+\]\.where\z/) && share_name?(str)
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
@@ -1884,6 +1888,11 @@ class AccessLeakScanner
         owners.each { |owner| add.call('network_string', owner, safe_path(json_path)) }
       end
     end
+  end
+
+  def share_name?(str)
+    resources = @data['resources'].is_a?(Hash) ? @data['resources'] : {}
+    resources.values.any? { |res| res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip }
   end
 
   # ---- ops core S1: discovery and services (OPS_CORE_PLAN.md 11.4) ----------------------------

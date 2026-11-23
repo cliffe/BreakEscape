@@ -26,7 +26,7 @@ module BreakEscape
     def build(inventory: [CLONER.dup], scenario: self.scenario, office_open: false, security_open: false)
       @game = create_access_game(
         mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user), scenario: scenario,
-        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => (%w[lobby] + (office_open || security_open ? %w[office] : []) + (security_open ? %w[security] : [])),
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => (%w[lobby comms_room] + (office_open || security_open ? %w[office] : []) + (security_open ? %w[security] : [])),
                         'encounteredNPCs' => %w[dana],
                         'inventory' => inventory }
       )
@@ -62,7 +62,7 @@ module BreakEscape
     test 'the scenario declares two sources, a clock, and a reader per source, and a new game holds no rows' do
       build
       data = fresh.scenario_data
-      assert_equal %w[door_controller night_log signin_audit], data['logSources'].keys.sort # night_log: L2b
+      assert_equal %w[door_controller network_log night_log signin_audit], data['logSources'].keys.sort # night_log: L2b, network_log: L3
       assert data['gameClock']
       readers = data['rooms']['security']['objects'].select { |o| o['type'] == 'ops_log_terminal' }
       assert_equal({ 'door_log_pc' => 'door_controller', 'signin_log_pc' => 'signin_audit' },
@@ -363,6 +363,145 @@ module BreakEscape
       note.call('GET', "#{base}/log_rows?object_id=night_log_pc", read('night_log_pc'))
       note.call('GET', "#{base}/log_rows?object_id=night_log_pc", read('night_log_pc'))
       assert_equal [], AccessLeakScanner.new(fresh.scenario_data, game: fresh).scan(lines).select { |f| f.rule == 'log_row' }.map(&:owner)
+    end
+
+    # ---- L3: the network and share rows in the real scenario, read from the network log reader ----
+
+    DROP_BOX = { 'type' => 'pc', 'id' => 'kit_dropbox', 'name' => 'Network drop box' }.freeze
+    WIFI_KEY = 'seabreeze-2025'.freeze
+    LAN_JACK = 'jack_comms_port'.freeze
+
+    def game_url_for(suffix)
+      "/break_escape/games/#{@game.id}/#{suffix}"
+    end
+
+    def take_drop_box
+      post game_url_for('inventory'), params: { action_type: 'add', item: DROP_BOX }, as: :json
+      assert_response :success, response.body
+    end
+
+    def plant
+      post game_url_for('network/plant'), params: { jack_id: 'comms_port' }, as: :json
+      assert_response :success, response.body
+    end
+
+    def unplug
+      post game_url_for('network/unplug'), params: { jack_id: 'comms_port' }, as: :json
+      assert_response :success, response.body
+    end
+
+    def join(key)
+      post game_url_for('network/join'), params: { ap_id: 'guest_ap', key: key }, as: :json
+      response.parsed_body
+    end
+
+    def open_share(id)
+      get game_url_for("container/#{id}"), params: { foothold: LAN_JACK }, as: :json
+      assert_response :success, response.body
+    end
+
+    def net_rows
+      fresh.log_rows_for('network_log')
+    end
+
+    def shown(body)
+      body['rows'].map { |r| r.slice('event', 'as', 'where', 'result', 'detail') }
+    end
+
+    test 'L3: the network log reader is in the comms room, which is open, and a new game holds no network row' do
+      build
+      reader = find_object(scenario['rooms']['comms_room'], 'net_log_pc')
+      assert_equal 'network_log', reader.dig('minigameData', 'logSource')
+      body = read('net_log_pc')
+      assert_response :success, body.inspect
+      assert_equal 'Network log', body['title']
+      assert_equal [], body['rows']
+      assert_empty net_rows
+    end
+
+    test 'L3: plant, unplug, join and a share and folder open write their rows, read back from the network log with authored names' do
+      build
+      take_drop_box
+      plant
+      unplug
+      plant
+      assert_equal 'wrong_key', join('not-the-key')['reason']
+      assert_equal %w[net_link_up net_link_down], net_rows.map { |r| r['event'] }, 'a wrong key writes nothing, and the second plant merges into the first row'
+      assert_equal [2, nil], net_rows.map { |r| r['n'] }
+      assert_equal true, join(WIFI_KEY)['success']
+      open_share('scanned_inbox')
+      open_share('inbox_letters')
+      body = read('net_log_pc')
+      assert_response :success, body.inspect
+      assert_equal [
+        { 'event' => 'NET_LINK_UP', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK x2', 'detail' => '' },
+        { 'event' => 'NET_LINK_DOWN', 'as' => '-', 'where' => 'Spare wall port', 'result' => 'OK', 'detail' => '' },
+        { 'event' => 'NET_WIFI_JOIN', 'as' => '-', 'where' => 'Guest access point', 'result' => 'OK', 'detail' => '' },
+        { 'event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'result' => 'OK', 'detail' => '' },
+        { 'event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'result' => 'OK', 'detail' => 'folder: Letters' }
+      ], shown(body)
+      assert(body['rows'].all? { |r| r.keys.sort == SEVEN_KEYS })
+      assert_answer_holds_no_secret(body)
+      assert_not_includes response.body, 'inbox_letters'
+      assert_not_includes response.body, 'letter.txt'
+      assert_not_includes response.body, 'comms_port'
+      assert_not_includes response.body, WIFI_KEY
+    end
+
+    test 'L3: a repeat folder open writes no second row and saves nothing' do
+      build
+      take_drop_box
+      plant
+      open_share('scanned_inbox')
+      open_share('inbox_letters')
+      before = [net_rows.size, fresh.updated_at]
+      2.times { open_share('inbox_letters') }
+      open_share('scanned_inbox')
+      assert_equal before, [net_rows.size, fresh.updated_at]
+      assert_equal 3, net_rows.size
+    end
+
+    test 'L3: a card copy writes no network row, and the network rows stay out of the other readers and theirs out of this one' do
+      build(security_open: true)
+      clone_dana
+      assert_empty net_rows
+      play_the_beats
+      swipe_security
+      assert_empty net_rows, 'badge and sign-in rows are not taken by the network source'
+      doors_before = read('door_log_pc')['rows'].size
+      sign_ins_before = read('signin_log_pc')['rows'].size
+      take_drop_box
+      plant
+      join(WIFI_KEY)
+      open_share('scanned_inbox')
+      assert_equal 3, net_rows.size
+      assert_equal doors_before, read('door_log_pc')['rows'].size
+      assert_equal sign_ins_before, read('signin_log_pc')['rows'].size
+      assert_equal 4, read('night_log_pc')['rows'].size
+      assert_equal %w[NET_LINK_UP NET_WIFI_JOIN SHARE_OPEN], read('net_log_pc')['rows'].map { |r| r['event'] }
+      assert_not_includes read('door_log_pc').to_json, 'NET_'
+      assert_not_includes read('signin_log_pc').to_json, 'SHARE_'
+    end
+
+    test 'L3: the leak scanner judges the whole network run clean, the log answer with the names the player was shown first' do
+      build
+      lines = []
+      note = lambda do |method, path, body|
+        lines << ['run.jsonl', lines.size + 1, { 'method' => method, 'path' => path, 'status' => 200, 'body' => body }]
+      end
+      base = "/break_escape/games/#{@game.id}"
+      take_drop_box
+      post game_url_for('network/plant'), params: { jack_id: 'comms_port' }, as: :json
+      note.call('POST', "#{base}/network/plant", response.parsed_body)
+      get game_url_for('network'), params: { foothold: LAN_JACK }, as: :json
+      note.call('GET', "#{base}/network?foothold=#{LAN_JACK}", response.parsed_body)
+      %w[scanned_inbox inbox_letters].each do |id|
+        get game_url_for("container/#{id}"), params: { foothold: LAN_JACK }, as: :json
+        note.call('GET', "#{base}/container/#{id}?foothold=#{LAN_JACK}", response.parsed_body)
+      end
+      note.call('GET', "#{base}/log_rows?object_id=net_log_pc", read('net_log_pc'))
+      findings = AccessLeakScanner.new(fresh.scenario_data, game: fresh).scan(lines)
+      assert_equal [], findings.map { |f| [f.rule, f.owner] }
     end
   end
 end

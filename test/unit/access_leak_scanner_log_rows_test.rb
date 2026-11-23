@@ -157,4 +157,18 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
       assert_equal [%w[log_row log:stored_key:secretkey]], owners(scan_run(rows_answer(good_row('detail' => 'secretkey: 1'))))
     end
   end
+
+  test 'L3: a share name alone in a row LOCATION cell is no network_string finding; the host, or the name elsewhere, still is' do
+    data = scenario.merge('resources' => { 'inbox' => { 'kind' => 'file_share', 'name' => 'Scanned-Inbox', 'host' => 'OL-FS07', 'network' => 'lan' } },
+                          'networks' => { 'lan' => { 'name' => 'Harbour office LAN' } })
+    check = lambda do |body|
+      row = { 'method' => 'GET', 'path' => PATH, 'status' => 200, 'body' => body }
+      owners(AccessLeakScanner.new(data, log_secrets: []).scan([['r.jsonl', 1, row]]))
+    end
+    assert_empty check.call(answer(good_row('event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox')))
+    assert_empty check.call(answer(good_row('event' => 'SHARE_OPEN', 'as' => '-', 'where' => 'Scanned-Inbox', 'detail' => 'folder: Letters')))
+    assert_equal [%w[network_string resource:inbox]], check.call(answer(good_row('where' => 'OL-FS07')))
+    assert_equal [%w[network_string resource:inbox]], check.call(answer(good_row('detail' => 'at Scanned-Inbox')))
+    assert_equal [%w[network_string network:lan]], check.call(answer(good_row('where' => 'Harbour office LAN')))
+  end
 end
