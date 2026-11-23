@@ -11,8 +11,7 @@ export async function setup(page, bridge) { await clearScreen(page, bridge, () =
 export default async (page, bridge, mark) => {
   await page.evaluate(() => { if (window.__mxBlur) return; window.__mxBlur = setInterval(() => document.querySelectorAll('.bce-mx-slot,.bce-mx-card-link').forEach(e => { e.style.filter = 'blur(6px)'; }), 30); });
   await sleep(1000); mark('door-interact');
-  await bridge.interact(DOOR, { timeoutMs: 20000, approach: false });
-  for (let i = 0; i < 40 && (await bridge.getState()).player.room !== 'data_center'; i++) await sleep(250);
+  const e = await bridge.enterRoom('data_center', { timeoutMs: 45000 }); // door interact only opens the door; enterRoom walks through (first run: interact left the player at the door)
   mark('room-entered', { room: (await bridge.getState()).player.room });
   await sleep(2600);
   await bridge.moveToNear('transaction_server', { timeoutMs: 25000 }); await sleep(500);
