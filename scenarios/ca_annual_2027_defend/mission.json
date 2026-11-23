@@ -8,8 +8,8 @@
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",
-  "title_style": "ca",
   "title_art": "title_art/ca_annual_2027_defend.jpg",
+  "title_style": "ca",
   "estimated_duration_minutes": 10,
   "cybok": [
     {

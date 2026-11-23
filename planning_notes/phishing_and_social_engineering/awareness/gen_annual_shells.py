@@ -338,7 +338,6 @@ def meta_for(display, desc, minutes, cybok):
         'secgen_scenario': None,
         'collection': 'training',
         'ui_theme': 'general',
-        'title_style': 'ca',  # the Cyber Aware loading screen (D353)
         'estimated_duration_minutes': minutes,
         'cybok': cybok,
     }
