@@ -1835,9 +1835,6 @@ class AccessLeakScanner
   # Registers one ops string. `token` strings (addresses, ranges) match as whole tokens.
   def add_ops_string(value, tag, owner, net: nil, host: nil, token: false, usable: nil, step: nil, key: nil)
     return unless usable.call(value)
-    # A string the room text already contains (a host named in a log note) is public; a `never` string is
-    # judged even so, and the gating globals have their own rule inside finding rows.
-    return if tag != :never && value.strip.length >= MIN_SUBSTRING_NETWORK && @ops_public.any? { |text| text.include?(value.strip) }
 
     list = (@ops_strings[value.strip] ||= [])
     entry = { tag: tag, net: net, host: host, owner: owner, token: token, step: step, key: key }
@@ -1847,7 +1844,6 @@ class AccessLeakScanner
   def collect_ops_secrets
     nm = BreakEscape::NetworkModel
     public_strings = room_data_strings
-    @ops_public = public_strings.to_a
     usable = ->(v) { v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING && !public_strings.include?(v.strip) }
     service_words = ops_service_words(nm)
     @ops_host_ids = nm.hosts_on_all(@data).map { |rec| rec[:id].to_s }.to_set

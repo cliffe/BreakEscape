@@ -230,5 +230,22 @@ module BreakEscape
       row = injected(view, SHARE) { |f| f['globalVariables'] = { GATE => false } }
       assert_reported(row, "ops:finding:#{SHARE}", 'a globalVariables map under a finding row')
     end
+
+    # PT1: the scanner stays strict. A host's exact name inside longer room text is still a leak on an
+    # unswept network; the scenario's clue is worded to avoid it, and this pins the old wording as reported.
+    OLD_CLUE = 'Camera recorder: the date it shows is left over'.freeze
+    NEW_CLUE = 'The ceiling cameras: the date their recorder shows is left over'.freeze
+
+    test 'PT1: the old maint_log wording, naming camrec01 exactly, is reported on the room answer; the new wording is not' do
+      run_game
+      room = @log[1]
+      assert_includes room['body'].to_json, NEW_CLUE, 'the lobby answer carries the reworded clue'
+      assert_equal [], scan([room]).map { |f| [f.rule, f.owner] }
+      old_room = JSON.parse(room.to_json.sub(NEW_CLUE, OLD_CLUE))
+      assert_includes old_room['body'].to_json, OLD_CLUE
+      old_scenario = JSON.parse(JSON.generate(scenario).sub(NEW_CLUE, OLD_CLUE))
+      found = AccessLeakScanner.new(old_scenario).scan(lines([old_room]))
+      assert_includes found.map(&:owner).join(' '), 'camrec01', 'the host name inside room text is reported before any sweep'
+    end
   end
 end
