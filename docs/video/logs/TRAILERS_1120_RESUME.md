@@ -149,3 +149,12 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - Netherton art: m02/m05/m06 wired male_spy_v2; fixed on lines branch 47a200f32 (validator 0 errors x3, routes 404/404), merged here (3f161f2d2). Sent to AC0 for a train.
 - Netherton visemes: Sonnet agent on worktree netherton-visemes (branch art/netherton-visemes, from main), override mechanism; handover at scratchpad netherton-visemes-handover.md if it stops. Check its before/after frames myself, then hash to AC0 and merge here.
 - Next machine block (after CA0 "machine yours"; after visemes merged; Niamh 9584d3bb8 merged once on main): re-film m05 t01 hook, m05 t24 faces, m04 hook take, m06 t10; then m06 t21-t29. Then swap clip in/outs, re-render m04 v2 + m05 v3, review tabs (note: 16:9 captions removed, Netherton art fixed, Niamh new bust), hash to AC0.
+
+## (19:05) Block done: re-takes, m06 takes complete, edits; renders queued
+- Main 68f82cddd merged (Netherton art + visemes + captions + avatar test). Niamh 9584d3bb8 still not on main: m05 t24 re-take pending.
+- Re-takes: m04/m05 t01b_briefing, m06 t10b_briefing (own face, registered). m06 t21-t29 + t22b all filmed.
+- Edits: m04 v2 + m05 v3 at 86bd4b772 (hooks/stakes from t01b by silencedetect offsets; 16:9 captions off). m06 v1 at 0e1a7c765 (32 shots, Shadow Cipher from 116.606, not heard by ear; generator scratchpad edit-m06/build.py).
+- Renders: render_m04v2_m05v3.log running; m06 queued after it (render_m06v1.log). CA0 told ETA ~20:15-20:30; send "machine yours" when the queue ends.
+- After renders: contact sheets + numbers, review copies, tabs m04 v2 / m05 v3 / m06 v1 (feedback docs feedback/m04_trailer_v2, m05_trailer_v3, m06_trailer_v1), hash to AC0. m06 reviewer focus: crescendo face centres, 9:16 Satoshi headshot, music by ear.
+- Reported to AC0: m06 lab pizza unreachable (7 px gaps) and scripted door interact not crossing.
+- Then m07-m10 takes (scripts written) in my next machine block.

@@ -66,7 +66,9 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m05v2" aria-selected="true" data-cut="m05v2">m05 · v2</button>
+    <button class="tab" role="tab" id="tab-m05v3" aria-selected="true" data-cut="m05v3">m05 · v3</button>
+    <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
+    <button class="tab" role="tab" id="tab-m05v2" aria-selected="false" data-cut="m05v2">m05 · v2</button>
     <button class="tab" role="tab" id="tab-m04v1" aria-selected="false" data-cut="m04v1">m04 · v1</button>
     <button class="tab" role="tab" id="tab-m05v1" aria-selected="false" data-cut="m05v1">m05 · v1</button>
     <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
@@ -90,6 +92,64 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m05v3: {
+    doc: "feedback/m05_trailer_v3",
+    title: "m05 Insider Trading · 60 s trailer · v3 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/a71fed0fbb927f7b417d7adc97bf3dad",
+    videos: [["9:16", "/_blob/9da3e3d93c15eae2ea173a8e9a4aa338", "p916"], ["1:1", "/_blob/1066a056ae3495a40fe18f0011274f38", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What changed since the last round",
+    changed: [
+      "No burned captions in 16:9 any more (owner note). The 9:16 and 1:1 cuts keep theirs; 16:9 relies on the .srt, as m01 to m03 do.",
+      "Netherton re-filmed (t01b): his own portrait and talk art (the game had him on the generic male spy in m02, m05 and m06, now fixed in the game), and re-registered mouth shapes so only his mouth moves.",
+      "HaX's stakes line comes from the same re-take; the night-turn swap from v2 stays.",
+      "Still to come: Niamh's new closer bust in her 8-frame crescendo flash, once it is on main."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder until an m05 console take exists.",
+      "No walks: a short walk inside Patricia's office stands in for the walk to her office; no walk to the server-room VM.",
+      "No face flash for Bernadette Lyons and no espresso exchange.",
+      "The RFID reader appears only in the crescendo.",
+      "Last shot: our caption sits over the call screen's dimmed company name, which peeks out at the sides in 9:16."
+    ],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [
+      {k:"captions", t:"16:9 with no burned captions, crops with captions", o:[["ok","Right","",1],["fix","Not quite","Say which shot"]]},
+      {k:"netherton", t:"Netherton's face and mouth in the hook", o:[["ok","Fixed","",1],["fix","Still wrong","Say what you see"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m04v2: {
+    doc: "feedback/m04_trailer_v2",
+    title: "m04 Critical Failure · 60 s trailer · v2 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/6d8bcadad506a44e834b8528a371deb7",
+    videos: [["9:16", "/_blob/1281e14a8dcaf2adaa43518bc51a6d59", "p916"], ["1:1", "/_blob/d6acedbf555c13afd9e4c9d0e1a06b04", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.7 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "39 shots"],
+    changedLabel: "What changed since the last round",
+    changed: [
+      "No burned captions in 16:9 any more (owner note). The 9:16 and 1:1 cuts keep theirs; 16:9 relies on the .srt, as m01 to m03 do.",
+      "Netherton re-filmed (t01b): his own portrait and talk art (the game had him on the generic male spy in m02, m05 and m06, now fixed in the game), and re-registered mouth shapes so only his mouth moves.",
+      "Nightshade's stakes line comes from the same re-take; nothing else moved."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder (the m02 server room behind \"footage in capture\") until an m04 console take exists.",
+      "No Relay line or fight: Relay appears as a walk-in and a portrait.",
+      "No face flashes for Diallo, Pell or HaX (no takes yet).",
+      "The battery panel shows its digital readings (normal values, no answer); the rack dial's value, which is an answer, is never on screen."
+    ],
+    srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
+    questions: [
+      {k:"captions", t:"16:9 with no burned captions, crops with captions", o:[["ok","Right","",1],["fix","Not quite","Say which shot"]]},
+      {k:"netherton", t:"Netherton's face and mouth in the hook", o:[["ok","Fixed","",1],["fix","Still wrong","Say what you see"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
   m05v2: {
     doc: "feedback/m05_trailer_v2",
     title: "m05 Insider Trading · 60 s trailer · v2 (night-turn line swapped)",
@@ -396,7 +456,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m05v2";
+let current = "m05v3";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
