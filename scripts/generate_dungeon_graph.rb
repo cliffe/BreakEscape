@@ -1870,7 +1870,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
   lines << '  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44'
   lines << '  classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0'
   lines << '  classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0'
-  lines << '  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee'
+  lines << '  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee' if nodes.any? { |_id, n| n[:klass].to_s == 'note' }
   lines << '  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88'
   lines << '  classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa'
   lines << ''

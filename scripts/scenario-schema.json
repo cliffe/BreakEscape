@@ -358,7 +358,7 @@
                 "as": {"type": "string", "maxLength": 40, "description": "An NPC id (at most 40 characters) or, for a signin_* event, a plain username of at most 32 (the validator checks that)."},
                 "where": {"type": "object", "required": ["kind", "id"], "additionalProperties": false, "properties": {"kind": {"type": "string"}, "id": {"type": "string"}}},
                 "result": {"type": "string", "pattern": "^[a-z]{2,16}$"},
-                "detail": {"type": "object", "maxProperties": 4, "description": "Under the event's own detail rules."}
+                "detail": {"x-id-map": false, "type": "object", "maxProperties": 4, "description": "Under the event's own detail rules."}
               }
             }
           }

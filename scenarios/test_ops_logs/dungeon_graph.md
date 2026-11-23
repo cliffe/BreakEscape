@@ -130,7 +130,6 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
-  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -225,7 +224,6 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
-  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -263,7 +261,6 @@ flowchart TD
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
-  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 

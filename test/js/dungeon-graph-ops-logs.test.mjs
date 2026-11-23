@@ -99,3 +99,21 @@ test('the legend names the log edge; a scenario without logSources draws as befo
     assert.doesNotMatch(plain.html, /a log source/);
     assert.ok(plain.edges.every(e => !/^log_/.test(e.from)));
 });
+
+const diagrams = text => text.split('flowchart TD').slice(1);
+
+test('the note class is defined only in a diagram that draws a note node; a scenario without logSources has none', { skip }, () => {
+    const plain = graph(scenario({ withLogs: false }));
+    assert.doesNotMatch(plain.html + plain.md, /classDef note/);
+    const g = graph(scenario());
+    for (const text of [g.html, g.md]) {
+        const ds = diagrams(text);
+        assert.ok(ds.length > 0);
+        for (const d of ds) {
+            const defs = (d.match(/classDef note /g) || []).length;
+            const drawn = /log_\w+\[\(/.test(d);
+            assert.equal(defs, drawn ? 1 : 0, 'one note class per diagram that holds a note node, none elsewhere');
+        }
+        assert.ok(ds.some(d => /classDef note /.test(d)), 'at least one diagram draws the note');
+    }
+});
