@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
-                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -101,7 +101,7 @@ module BreakEscape
     # se_landing_pages.built to false (observed on the branch; main has no such route). It
     # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan,
                                           :npc_frustration, :npc_workaround, :feed_post, :wear, :pin_dust, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
@@ -1818,6 +1818,22 @@ module BreakEscape
       return render json: { success: false, error: 'Missing ap_id' }, status: :bad_request if ap_id.empty?
 
       result = @game.join_network!(ap_id, params[:key].presence&.to_s, delta: inventory_delta_opt_in?)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/scan (foothold, and one of network_id or host_id): a sweep of a
+    # discovery network, or a scan of a host's services (OPS_CORE_PLAN.md section 6). A request
+    # that is not well formed is one 400 that depends on no id.
+    def network_scan
+      authorize @game if defined?(Pundit)
+
+      scan = %i[network_id host_id].select { |key| params.key?(key) }
+      ids = ([:foothold] + scan).map { |key| params[key] }
+      unless scan.size == 1 && ids.all? { |value| value.is_a?(String) && !value.empty? && value.length <= 200 }
+        return render json: { success: false, reason: 'bad_request' }, status: :bad_request
+      end
+
+      result = scan.first == :network_id ? @game.scan_network!(params[:foothold], params[:network_id]) : @game.scan_host!(params[:foothold], params[:host_id])
       render json: result[:body], status: result[:status]
     end
 

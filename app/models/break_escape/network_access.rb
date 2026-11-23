@@ -801,7 +801,7 @@ module BreakEscape
       live_hosts = session_hosts.reject { |h| host_service_off?(h[:pc]) }
       blocks = reach.to_a.sort.map do |net|
         { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, live_hosts, reach)),
-          'hosts' => network_rows(net), 'route' => 'up' }
+          'hosts' => network_rows(net), 'route' => 'up' }.merge(ops_block_fields(net))
       end
       blocks + down_blocks(foothold_id, reach, session_hosts)
     end
@@ -823,7 +823,7 @@ module BreakEscape
           held_as.present? ? row.merge('heldAs' => held_as) : row
         end
         { 'id' => net, 'name' => network_name(net), 'via' => via_for(net, session_hosts, structural),
-          'hosts' => rows, 'route' => 'down' }
+          'hosts' => rows, 'route' => 'down' }.merge(ops_block_fields(net, with_ops: false))
       end
     end
 
@@ -871,7 +871,12 @@ module BreakEscape
 
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
     def network_rows(network_id)
+      # An unswept discovery network lists only the PCs the player holds a session on (5.2): the
+      # rest is told by the sweep. Sign-in itself is not gated by this.
+      return ops_held_session_rows(network_id) unless ops_network_listing?(network_id)
+
       hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
+      hosts += ops_device_rows(network_id)
       # A resource whose own offWhen holds is withheld while down (5.2), as a resource on a
       # down network is: its row leaves the view until the global clears.
       resources = NetworkModel.resources_on(network_id, scenario_data).reject { |_id, resource| resource_down?(resource) }
@@ -1043,6 +1048,8 @@ module BreakEscape
     def host_row(pc)
       row = { 'id' => pc['id'], 'kind' => 'pc', 'name' => pc['name'], 'host' => host_label(pc),
               'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc) }
+      # Discovery's fields (address by the host's own network; scanned and services once scanned)
+      ops_add_host_fields!(row, pc['id'], object_network(pc), NetworkModel.services_of(pc))
       remote = !remote_blocked?(pc)
       session = access_sessions[pc['id'].to_s]
       held = nil

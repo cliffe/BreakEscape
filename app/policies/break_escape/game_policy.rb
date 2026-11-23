@@ -165,6 +165,10 @@ module BreakEscape
       show?
     end
 
+    def network_scan?
+      show?
+    end
+
     def submit_flag?
       show?
     end

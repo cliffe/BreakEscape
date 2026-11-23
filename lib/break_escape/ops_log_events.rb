@@ -29,7 +29,10 @@ module BreakEscape
       'signin_refused' => { label: 'SIGN_IN', places: %w[pc], results: %w[denied blocked],
                             save_limit: { 'denied' => 10, 'blocked' => 10 } },
       'session_end' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
-      'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] }
+      'session_lock' => { label: 'SESSION', places: %w[pc], results: %w[ok] },
+      # Ops core S1: a sweep and a host scan (OPS_CORE_PLAN.md section 13).
+      'network_swept' => { label: 'NET_SWEEP', places: %w[network], results: %w[ok], detail: { 'from' => { id: 'foothold' } }, save_limit: { 'ok' => 10 } },
+      'host_scanned' => { label: 'HOST_SCAN', places: %w[host pc], results: %w[ok], detail: { 'from' => { id: 'foothold' } } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -80,6 +83,15 @@ module BreakEscape
       },
       'card' => {
         name: ->(game, id) { OpsLogEvents.card_item(game, id) && (OpsLogEvents.card_item(game, id)['name'] || id) },
+        room: ->(_game, _id) { nil }
+      },
+      'network' => {
+        name: ->(game, id) { OpsLogEvents.network_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      # A `hosts` entry (a host with no sign-in); a sign-in host is a 'pc'.
+      'host' => {
+        name: ->(game, id) { OpsLogEvents.device_named(game, id) },
         room: ->(_game, _id) { nil }
       },
       # A foothold id: a network jack ("jack_<id>" or the jack's id), an access point, or a PC
@@ -153,10 +165,27 @@ module BreakEscape
       found
     end
 
+    def network_named(game, id)
+      net = NetworkModel.networks(game.scenario_data)[id.to_s]
+      net && (net['name'] || id.to_s)
+    end
+
+    def device_named(game, id)
+      entry = NetworkModel.hosts(game.scenario_data)[id.to_s]
+      entry && (entry['name'] || id.to_s)
+    end
+
     def foothold_name(game, id)
       raw = id.to_s.sub(/\Ajack_/, '')
       thing = jack_entry(game, raw) || ap_entry(game, raw) || game.find_login_pc(raw)
-      thing ? object_name(thing, raw) : nil
+      return object_name(thing, raw) if thing
+
+      # A joined Wi-Fi foothold ("wifi_<network>") and an implant ("implant_<pc>") (ops core S1)
+      wifi = id.to_s[/\Awifi_(.+)\z/, 1]
+      return network_named(game, wifi) if wifi && NetworkModel.networks(game.scenario_data).key?(wifi)
+
+      pc = id.to_s[/\Aimplant_(.+)\z/, 1]
+      pc && game.find_login_pc(pc) ? object_name(game.find_login_pc(pc), pc) : nil
     end
 
     # Checks every entry of an event table against 13.5; answers a list of problems (empty when
