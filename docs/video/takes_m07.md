@@ -52,3 +52,6 @@ Gate: m07's briefing gate is `briefing_played`, as in m01 (timedConversation `sk
 - Run every script (serial, on the free rig): fill lengths, drop %, A/V offsets and frame notes; check marks against frames (minigame marks drift).
 - Not written: Netherton/Adaeze/Gwen/Elena/Park face flashes (they carry lines), the pc container and situation-board chart shots (optional), the debrief. Check whether t26 should film the menu or whether the edit cuts around it.
 - First-run unknowns above (clone acceptance, wall coordinates for walks, key-selection label, swing text).
+
+## Orchestrator decision (23 Nov)
+- `rack_cabling_note` (t20) says where the vault code is kept: a puzzle clue. Keep it out of every window; film t20 for the SCADA panel and the flag station only.
