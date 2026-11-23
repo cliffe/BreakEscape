@@ -1,0 +1,842 @@
+{
+ "mission": "ca03",
+ "id": "ca03_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca03 trailer, round 1 (narrow-panel takes for the research, prepare, queue; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca03 trailer script (Help desk resets)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca03_trailer_script.md and docs/video/takes_ca03.md (recorded 23 Nov, commit 71fb068b1). Model ca07 and ca04 (attack-first). Marks and frame-time windows from the recorded takes; Sulafat VO; PeaceFolk Gently Decaying window from 104.478 s. Hook is Niamh H1 sentence 1, end line is Anjali E1 sentence 1 (Darren muted in the take); no cast line is under VO. Leila is unvoiced (owner question L1)."
+ },
+ "fps": 30,
+ "length": 73.69,
+ "music": {
+  "track": "PeaceFolk/Gently Decaying.mp3",
+  "analysis": "gently_decaying_75.json",
+  "start": 104.478,
+  "length": 73.69,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Gently Decaying.mp3 @60.862 (quiet bar under the flip and blue card, lift at the queue; overlaps the ca15 window)",
+   "PeaceFolk/Quiet Reflection.mp3 @72.891"
+  ]
+ },
+ "beat": {
+  "bpm": 88.04,
+  "period": 0.6815,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 4.26,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_niamh_hook.trimmed.mkv",
+    "in": 3.74,
+    "out": 8.0
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01 H1: speech onset 4.04, sentence 1 ends 7.872 (silencedetect -35 dB d 0.08; brief about 7.83; pause 7.872 to 8.055), in 3.74 = onset - 0.3, out 8.0 is 0.13 after the last word and 0.055 before the next sound; mid-sentence pause 5.614-5.741 not used for a split (8 words); Niamh portrait up from 3.38, bar with the text cropped out in every aspect (16:9 zoom 1.25, cy 0.4); Niamh sits right of centre (about x 0.64-0.82), check the 9:16 and 1:1 crop on the render; chat closes 10.04, never in | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "QUAYHOLT INSURANCE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.4,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.4,
+     "zoom": 1.25
+    }
+   },
+   "lines": [
+    {
+     "start": 0.3,
+     "end": 4.132,
+     "speaker": "Niamh",
+     "text": "Helpdesk's had a run of odd reset calls lately."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Help desk resets",
+    "company": "Quayholt Insurance",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.1
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_queue_narrow.trimmed.mkv",
+    "in": 9.16,
+    "out": 14.76
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: list from 6.35 (rules intro before it, not in), card1 opens 11.53; in = card - 2.37 so v1b sits over the list as the card opens and v1c over the first Gordon McLeish card; out before card2 (18.64); transcript hidden by CSS, verdict hints hidden, nothing pressed; frame-check the buttons edge on the render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "SERVICE DESK QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 1.8
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.0,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "You play the attacker"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "research",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 7.04,
+    "out": 12.04
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: note:blk_claims_head 7.364 (Our people, Gordon McLeish noted), note:blk_conf_bio 11.013 (Events), staffref frame 11.914; in = head note - 0.32, out after the staff ref frame + 0.26; public facts only; Friendface and the IT-support note not in; v3 over the whole shot; narrow: browser outer shell stays about 1100 px wide around the 560 px page, check the crop | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "OPEN-SOURCE RESEARCH",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.46,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "build",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 26.85,
+    "out": 30.85
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: blank:3 27.295, blank:4 29.74, filled 30.441; out after the fill; the call-open phone and the Make the call click not in; frame-check no tell or Red-flags text on the panel (card shows the pretext only) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "PREPARE THE CALL",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.47,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "call",
+   "type": "gameplay",
+   "duration": 6.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 34.1,
+    "out": 40.1
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: call_open 34.097, pick:1 34.48, pick:2 37.77; the contact sheet shows the phone from about 31 s so call_open may be late, in-point is call_open; phone .phone-messages-container 400x700 centred, influence bar and the 'Wary at -30 / Refuses at -50 / Reports at -70' text on screen (a mechanic, fine); tell and last-change lines hidden by CSS; out before pick:3; Leila's name must show in the frame, check on the render; call debrief panel not in (appears at 50.25 / 52.7) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE CALL",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "lands",
+   "type": "gameplay",
+   "duration": 6.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 44.72,
+    "out": 51.42
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: ask_pick 44.962, landed 48.963, granted true; in = ask - 0.24, out 51.42 is 1.28 s before the call debrief panel (52.7); the call_closed mark is not used; Leila unvoiced (L1), her payoff line is text only, held 2.4 s or more; if the payoff text is on the game bar below the phone and the 1.4 zoom crops it, widen the framing on the render | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE CALL",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   }
+  },
+  {
+   "id": "prompts",
+   "type": "gameplay",
+   "duration": 4.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 66.15,
+    "out": 70.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: send_click 61.141, first_card 62.808, more_shown 69.289 ('...and 8 more prompts'), approved 70.964; in = more_shown - 3.15, out = more_shown + 1.35 so the card stack builds to the 'more' line and stops before approved; banner and outcome hidden by CSS; account address clipped by the phone, frame-check; empty dark panel under the stack, frame-check | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "SIGN-IN PROMPTS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 2.5,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 77.48,
+    "out": 79.98
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t02b: flip_continue 77.98, heading 'Now you're the one answering' to about 0.1 s after it, then 'Take the calls' with the strip on Defend; stepped frames show no flash; in = Continue - 0.5, out 0.1 before take end | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.8
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   }
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 2.5,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "You work the service desk"
+   ],
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend chapter card, title only | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "queue_a",
+   "type": "gameplay",
+   "duration": 4.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_queue_narrow.trimmed.mkv",
+    "in": 6.45,
+    "out": 10.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: list clean from 6.35 (rules intro before it); in 6.45, out 10.65 is 0.9 s before card1_open; '0 of 4 sorted', three calls and one sign-in prompt; nothing opened or pressed | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SERVICE DESK QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "queue_b",
+   "type": "gameplay",
+   "duration": 5.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_queue_narrow.trimmed.mkv",
+    "in": 17.7,
+    "out": 22.7
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: card2_open 18.64 (second Gordon McLeish call, same four facts); in = card2 - 0.95, out before buttons_view 23.99 starts the sweep; transcript hidden, nothing pressed; v11a over the card, v11b after it | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SERVICE DESK QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "queue_c",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04b_queue_narrow.trimmed.mkv",
+    "in": 24.05,
+    "out": 28.05
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t04b: 2x2 buttons from 23.99; sweep_start 24.33; hover marks 24.05-27.47 run about 0.2 s late, off by about 27.8 (sweep_off 28.02 mark); verdict hints hidden so the buttons show words only, continuous sweep with no hover held (headless cursor not drawn, the real capture's cursor overlay is the only cursor); nothing pressed; second card, same as queue_b | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "SERVICE DESK QUEUE",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.55,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.15
+    }
+   }
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 5.83,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_step_away.trimmed.mkv",
+    "in": 6.64,
+    "out": 12.47
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t05 E1: Anjali onset 6.937, pauses 8.453-8.656, 10.300-10.760, sentence 1 ends 12.322 (pause 12.322-12.698, silencedetect -35 dB d 0.08), 'Darren, is it doing this to everyone?' 12.698-14.629. NOTE the brief's 'sentence 1 ends 10.32' is the comma break after 'sign-in screen,', not the sentence end ('asking for everything again.' runs 10.911-12.322); in 6.64 = onset - 0.3 (cut on audio, the 6.37 bubble mark is early), out 12.47 = end + 0.15 inside the pause; room clean from 5.0; Darren muted and his bubble hidden (mute log: 0 visible samples, peak 0), his audio would start 11.09; world bark so the bubble shows; Anjali's bubble at about x 0.52-0.75, y 0.5 of the frame (contact sheet read, room is small, check the crop in every aspect on the render) | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.57,
+     "cy": 0.5,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.62,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.6,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "lines": [
+    {
+     "start": 0.297,
+     "end": 1.813,
+     "speaker": "Anjali",
+     "text": "I came over to use the spare"
+    },
+    {
+     "start": 2.016,
+     "end": 3.66,
+     "speaker": "Anjali",
+     "text": "and it's on the sign-in screen,"
+    },
+    {
+     "start": 4.271,
+     "end": 5.682,
+     "speaker": "Anjali",
+     "text": "asking for everything again."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Help desk resets",
+    "tagline": "Play the attack · Learn to stop it",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 4.46,
+   "end": 9.164,
+   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
+   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v1.mp3"
+  },
+  {
+   "id": "v1b",
+   "start": 9.56,
+   "end": 12.008,
+   "text": "A caller says he's locked out.",
+   "caption": "A caller says\nhe's locked out.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v1b.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 12.258,
+   "end": 14.634,
+   "text": "This episode: help desk resets.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 15.16,
+   "end": 17.56,
+   "text": "First, you play the attacker.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 18.16,
+   "end": 22.288,
+   "text": "Public pages give a name, manager and staff number.",
+   "caption": "Public pages give a name,\nmanager and staff number.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 23.16,
+   "end": 25.656,
+   "text": "Plan the call from what you found.",
+   "caption": "Plan the call from\nwhat you found.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v4.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 27.16,
+   "end": 29.704,
+   "text": "Ring the desk as the locked-out manager.",
+   "caption": "Ring the desk as the\nlocked-out manager.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v5.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 29.954,
+   "end": 32.738,
+   "text": "The meter shows how wary Leila gets.",
+   "caption": "The meter shows how\nwary Leila gets.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v6.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 33.16,
+   "end": 35.032,
+   "text": "Now ask her for the reset.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 39.86,
+   "end": 42.668,
+   "text": "The sign-in still needs his phone. Keep asking.",
+   "caption": "The sign-in still needs his phone.\nKeep asking.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v8.mp3"
+  },
+  {
+   "id": "v9",
+   "start": 44.86,
+   "end": 46.324,
+   "text": "Now take the calls.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v9.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 49.36,
+   "end": 52.36,
+   "text": "Three calls and a sign-in prompt are waiting.",
+   "caption": "Three calls and a sign-in\nprompt are waiting.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v10.mp3"
+  },
+  {
+   "id": "v11a",
+   "start": 53.56,
+   "end": 55.768,
+   "text": "Two callers claim to be Gordon.",
+   "caption": "Two callers claim\nto be Gordon.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v11a.mp3"
+  },
+  {
+   "id": "v11b",
+   "start": 56.018,
+   "end": 57.146,
+   "text": "Is either real?",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v11b.mp3"
+  },
+  {
+   "id": "v12",
+   "start": 58.56,
+   "end": 61.224,
+   "text": "Could a stranger know everything this caller knows?",
+   "caption": "Could a stranger know everything\nthis caller knows?",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v12.mp3"
+  },
+  {
+   "id": "v13",
+   "start": 68.39,
+   "end": 73.358,
+   "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
+   "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat/trim/v13.mp3"
+  }
+ ]
+}
