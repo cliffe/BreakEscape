@@ -26,6 +26,8 @@ export const NARROW_CSS = (px = 560) => `
 .osint-browser-game-container { max-width: ${px}px !important; width: ${px}px !important; }
 .mail-client { max-width: ${px}px !important; width: ${px}px !important; overflow-x: hidden !important; }
 .epr-kiosk-bezel { max-width: ${px}px !important; }
+/* the toolbar's Compose button (read as a "Close x" stub) peeks out beside the narrowed composer: hide the toolbar actions while the composer is open */
+body:has(.mail-composer) .mail-toolbar-actions { visibility: hidden !important; }
 /* the kiosk bar's "Close with X" peeks out beside the narrowed mail frame: hide the kiosk panel while the mail client or browser is open over it */
 body:has(.mail-client) .epr-kiosk-bezel, body:has(.osint-browser-game-container) .epr-kiosk-bezel { visibility: hidden !important; }
 `;

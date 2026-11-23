@@ -16,7 +16,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | 35.2–37.6 | flip | t02_attack_run 52-54.4 s · tab YOUR TURN · mail client closes onto 'Now it lands on a colleague'; framed on the heading and strip, body out of frame · **pending take** | — | — |
 | 37.6–46.0 | niamh_flip | t04_niamh_flip, in = N1 audio start minus 0.15 s, 8.4 s · tab YOUR TURN · Niamh N1 after the send (cached, 7.97 s, no tail in the file); chat closes before the choice · **pending take** | — | Niamh: "Good, the email's away to Leo. Now take the other seat and sort a morning of the web the way it really turns up." |
 | 46.0–48.4 | blue_card | defend card, title only: "You sort a morning of web pages" (2.4 s) | — | — |
-| 48.4–57.4 | pages | t05_pages_list, a second run: the list (held 2.4 s), then 'From a bookmark: Fernside Catering order portal' (the 09:20 genuine tick page) opened as a card (held 6.6 s) · framed on the address bar, padlock, heading and tick; the three verdict buttons out of frame, nothing pressed, no feedback panel · **pending take** | **v8a** "Seven pages, one morning." (over the list)<br>**v8b** "Same site as the page you built."<br>**v10** "Real, or rigged?" (both over the opened card) | — |
+| 48.4–57.4 | pages | t05_pages_list, a second run: the list (held 2.5 s), then 'From a bookmark: Fernside Catering order portal' (the 09:20 genuine tick page) opened as a card (held 6.5 s) · framed on the address bar, padlock, heading and tick; the three verdict buttons out of frame, nothing pressed, no feedback panel · **pending take** | **v8a** "Seven pages, one morning." (over the list)<br>**v8b** "Same site as the page you built."<br>**v10** "Real, or rigged?" (both over the opened card) | — |
 | 57.4–60.6 | step_away | t07b_lookup_panel 0-3.2 s · tab THE TRAINING ROOM · the Look up panel, framed on the heading, text and button; **stops before any click** · **pending take** | **v9** "Then a colleague's screen asks." | — |
 | 60.6–64.6 | darren_end | t07_darren_prompt, in = D1 audio start minus 0.15 s, 4.0 s · Darren at his workstation, world bark with the game's own bar; no menu, no click · **pending take** | — | Darren: "Supplier portal's asking me to prove I'm human now." (cached, 4.10 s, speech 0.35 to 3.59 s) |
 | 64.6–70.1 | close | End card: Fake downloads and checks / Play the attack · Learn to stop it / plate "Learn on Hacktivity.co.uk" (5.5 s) | **v11** "Play the attack, learn to stop it, on Hacktivity.co.uk." | — |
@@ -53,6 +53,12 @@ Sonnet review (timing):
 - `pages` cues redone for the new lines: list held 2.4 s so v8a ends before the card opens; the shot is 9.0 s (6.6 s card). The old 10.5 s sum did not add up (2.0 + 8 = 10.0).
 - N4 start mark is moot (N4 is out). D2 stays unused, so the no-overlap claim holds.
 - Length: the script was 73.0 s (73.2 s corrected). Dropping N4 (5.6 s) and the old `pages` cue lengths left 68.3 s, so `lands` (3.8 to 4.2 s), `pages` (to 9.0 s) and `research` (to 4.8 s) take the slack: 70.1 s.
+
+## Changes after voicing
+
+Narrator voiced 2026-11-23 (Sulafat, `~/video-takes-local/ca10/vo/Sulafat/`, outside the repo).
+
+- **v8a** "Seven pages, one morning." is 2.26 s and goes over the list, which left a 2.2 s window. The list hold is now 2.5 s and the card hold 6.5 s (the `pages` shot stays 9.0 s, 48.4 to 57.4 s, total unchanged at 70.1 s). v8b and v10 have plenty of room over the card.
 
 ## Open questions for the owner
 

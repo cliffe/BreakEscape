@@ -11,7 +11,7 @@ Owner rules (settled on ca12, 2026-11-22, as carried by the earlier scripts and 
 | 9.0–15.8 | topic | t05_work_phone run A 3-9.8 s · tab THE WORK PHONE · the six-row list, '0 of 6 sorted', kind labels Text, QR notice and Email readable, held, nothing picked · **pending take** | **v1b** "Some texts and printed codes are fakes."<br>**v1c** "This episode: texts and QR codes." | — |
 | 15.8–18.8 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 18.8–26.6 | research | t02_attack_run, two windows: 8-12.2 s (4.2 s) tab OPEN-SOURCE RESEARCH · Tarrowby "Our depot team" page, Kaylee Dunford noted; then 14-17.6 s (3.6 s) the "Depot notices" page, the permit scheme noted (public facts only) · **pending take** | **v3** "The depot's page names Kaylee, a warehouse operative." (first window)<br>**v3b** "Its notices name the new permit scheme." (second window) | — |
-| 26.6–32.4 | write | t02_attack_run 28-33.8 s · tab WRITE THE MESSAGE (placeholder name) · the phone-sized writer: From line 'Dev Acharya', the closed pickers for greeting, pretext and ask with the permit scheme filled in; assembled body, red-flag meter and factor rows hidden by CSS · **pending take** | **v4** "Write as Facilities."<br>**v4b** "Ask her to scan the parking code." | — |
+| 26.6–32.4 | write | t02_attack_run 28-33.8 s · tab WRITE THE MESSAGE (placeholder name) · the phone-sized writer: From line 'Dev Acharya', the closed pickers for greeting, pretext and ask with the permit scheme filled in; assembled body, red-flag meter and factor rows hidden by CSS · **pending take** | **v4** "Pretend to be Facilities."<br>**v4b** "Ask her to scan the parking code." | — |
 | 32.4–35.4 | lands | t02_attack_run, Send click then the green result panel (3.0 s); ticks kept, red-flag lines hidden · closes onto the panel before the mail client's close (which opens the flip body at once) · **pending take** | **v5** "Send it to Kaylee." | — |
 | 35.4–37.4 | flip | t02_attack_run 52-54 s · tab YOUR TURN · mail client closes onto 'Now it lands on you'; framed on the heading and strip, body hidden · **pending take** | — | — |
 | 37.4–45.85 | chidi_flip | t04_chidi_flip, in = C1 audio start minus 0.25 s, 8.45 s (out = 8.02 s plus 0.15 s) · tab YOUR TURN · Chidi C1 after the send (cached, 8.50 s; speech 0.27 to 8.02 s, sentence gap 1.98 to 2.71 s); chat closes before the "Thanks, Chidi." choice · **pending take** | — | Chidi: "Your message has gone over to Kaylee. Now take the other seat and go through a Tarrowby work phone, the way it would land on your break." |
@@ -60,7 +60,7 @@ Cast captions, sentence by sentence from the silences. Z1: "Is that new?" then "
 ## Changes from review (round 1)
 
 Opus review (sell and truth):
-- v4/v4b "Write it in Facilities' name." / "Mention the new permit she's expecting." replaced by "Write as Facilities." / "Ask her to scan the parking code." so the attack half says what the message asks (the episode's QR topic) and drops "she's expecting", which rested on a Friendface post the research shot leaves out.
+- v4/v4b "Write it in Facilities' name." / "Mention the new permit she's expecting." replaced by "Pretend to be Facilities." / "Ask her to scan the parking code." so the attack half says what the message asks (the episode's QR topic) and drops "she's expecting", which rested on a Friendface post the research shot leaves out.
 - The opened card is now the genuine canteen notice, framed from heading to caption with the "Seen:" line and buttons out of frame. The parking notice is the key fake, and its body carries the "clamped" sentence between heading and code, so no crop could drop it. v10 stays.
 - Lands variant: Kaylee's reply is the preferred 5.0 s variant, with v6 "She scans it." over the reply only (was "She says she's scanning it.").
 - Hook Z1 and end Z2 kept (curiosity, not a tell; Z2 asks the question without answering it). Spare hook noted, and its sidecar is confirmed in the ca06 cache.
@@ -73,12 +73,19 @@ Sonnet review (timing):
 - Caption split for C1 sentence 1 ("Your message has gone over / to Kaylee.") and sentence 2 (two timed entries at the comma pause).
 - Total 70.1 s to 70.75 s.
 
+## Changes after voicing
+
+Narrator voiced 2026-11-23 (Sulafat, `~/video-takes-local/ca06/vo/Sulafat/`, outside the repo).
+
+- **v4** was "Write as Facilities." and the transcriber heard "Right" or "Rate" (a write/right homophone). "Pose as Facilities." then failed five takes ("Posters for", "Post as", "poses"). Now "Pretend to be Facilities." (transcribes exactly on the first take). The caption follows.
+- Slot: v4+v4b are 1.87 s + 2.45 s (plus the 0.25 s gap) in 5.20 s (unchanged shot, `write` 5.8 s).
+
 ## Open questions for the owner
 
 - PLACEHOLDER (owner question): hook is Zainab's "Is that new? I've not seen a parking notice up in here before." with the notice in frame. Recommendation: keep; it opens the loop the end line (Z2) closes. Spare: Zainab's "I'm forever scanning codes out at the depots." or Fatima's "Those parking-permit texts keep doing the rounds." (2.8 s, a talk, not a bark).
 - PLACEHOLDER (owner question): film Kaylee's reply for the longer lands variant (+2.0 s, 72.75 s) with v6 "She scans it."? Recommendation: yes if the dry run shows the reply inside 6 s of Send; otherwise the 3.0 s result-panel shot stands.
 - PLACEHOLDER (owner question): the one opened card in `phone_card` is the genuine canteen notice, not the parking notice. Recommendation: yes (the parking notice is the key fake and its "clamped" sentence cannot be cropped out); the alternative is the list only, reframed on the rows.
-- PLACEHOLDER (owner question): v4/v4b "Write as Facilities." / "Ask her to scan the parking code." Recommendation: keep.
+- PLACEHOLDER (owner question): v4/v4b "Pretend to be Facilities." / "Ask her to scan the parking code." Recommendation: keep.
 - PLACEHOLDER (owner question): v10b "Then a colleague asks." now plays over the canteen card, and the office shot is silent apart from Zainab. Recommendation: keep; fall back to two runs if Z2 starts within 0.55 s of Z1's end.
 - PLACEHOLDER (owner question): the topic and defend list shots are two recordings of the same list. Recommendation: accept, it is cheap, and each is framed differently.
 - PLACEHOLDER (owner question): title card reads "Texts and QR codes" (the game's own name). No question left.

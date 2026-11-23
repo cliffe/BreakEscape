@@ -8,9 +8,9 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 |---|---|---|---|---|
 | 0.0–3.0 | hook | t07_zainab_hook · Zainab in person-chat after the defend set with the enable-content card missed (`ca02` else-branch of her ambient knot); first sentence of the cached line (5.42 s), which ends at 2.69 s (silence 2.69 to 3.04 s); in = audio start minus 0.1 s, out = 2.69 s plus 0.15 s (2.94 s, held to 3.0 s); game's bar cropped out and the sentence burned as the caption; the choice menu never shown · cold open, no tells · **pending take** | — | Zainab: "Heard HR had a scare with an application." (first sentence of "Heard HR had a scare with an application. Easy to click when the inbox is heaving.", cached, speech 0.20 to 2.69 s) |
 | 3.0–8.1 | open | Title: CV lures / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
-| 8.1–15.0 | topic | t05_inbox_list run A, 3 to 9.9 s · tab THE RECRUITMENT INBOX · the six-row list, '0 of 6 sorted', nothing opened or hovered, held · **pending take** | **v1b** "A recruiter opens CVs from strangers all day."<br>**v1c** "This episode: CV lures." | — |
-| 15.0–18.0 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
-| 18.0–23.0 | research | t02_attack_run 8 to 13 s (take time, placeholder until the dry run) · tab OPEN-SOURCE RESEARCH · Tarrowby careers page: the vacancy and its hiring manager noted (public facts only) · **pending take** | **v3** "Their careers page names the job and the manager." | — |
+| 8.1–15.2 | topic | t05_inbox_list run A, 3 to 10.1 s · tab THE RECRUITMENT INBOX · the six-row list, '0 of 6 sorted', nothing opened or hovered, held · **pending take** | **v1b** "A recruiter opens CVs from strangers all day."<br>**v1c** "This episode: CVs used as bait." | — |
+| 15.2–18.2 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
+| 18.2–23.0 | research | t02_attack_run 8 to 12.8 s (take time, placeholder until the dry run) · tab OPEN-SOURCE RESEARCH · Tarrowby careers page: the vacancy and its hiring manager noted (public facts only) · **pending take** | **v3** "Their careers page names the job and the manager." | — |
 | 23.0–30.2 | build | t02_attack_run 28 to 35.2 s · tab APPLICATION EMAIL BUILDER · the closed pickers filling: the vacancy and manager slots from the noted facts, the CV label chosen as the attachment, Fatima in the To line; red-flag lines hidden, counter kept · **pending take** | **v4** "Apply for the job you found."<br>**v4b** "Attach a CV that hides code." | — |
 | 30.2–34.4 | lands | t02_attack_run 40 to 44.2 s · Send click then the green result panel (4.2 s); pattern level, no readable body · closes onto the panel before the mail client's close (which opens the flip body at once) · **pending take** | **v5** "Email it to Fatima, the recruiter." | — |
 | 34.4–36.8 | flip | t02_attack_run 52 to 54.4 s · tab YOUR TURN · mail client closes onto 'Now it lands on you'; framed on the heading and strip · **pending take** | — | — |
@@ -51,6 +51,14 @@ Sonnet review (timing):
 - `t02_attack_run` windows given take times (research 8 to 13 s, builder 28 to 35.2 s, Send and panel 40 to 44.2 s, flip 52 to 54.4 s); placeholders until the dry run.
 - The "Do I click?" caption hold is moot (that line is gone). The new office timing replaces the old: v10b ends 0.35 s before Chidi's speech.
 - Bark queue finding applied: Chidi's two barks are the same NPC and queue; bark 2 is outside the shot. Slack taken into `topic` (6.5 to 6.9 s), `research` (4.5 to 5.0 s), `flip` (2.0 to 2.4 s), `office` and `inbox` (10.5 to 11.8 s, so the card can be read) to bring the total from 66.9 s to 70.1 s.
+
+## Changes after voicing
+
+Narrator voiced 2026-11-23 (Sulafat, `~/video-takes-local/ca02/vo/Sulafat/`, outside the repo).
+
+- **v1c** was "This episode: CV lures." The transcriber heard "Steve Laws", "CV laws" (twice) and "civil laws" over four takes, and "lures" is easy to mishear for a viewer too. Now "This episode: CVs used as bait." (transcribes exactly).
+- **Timing.** The new v1b+v1c came to 6.38 s against the 6.30 s slot. The `topic` shot is lengthened 0.2 s (8.1 to 15.2 s, take window 3 to 10.1 s), taken from `research` (4.8 s, 18.2 to 23.0 s, window 8 to 12.8 s, v3 needs 4.06 s). The red card moves to 15.2 to 18.2 s. Everything from 23.0 s on is unchanged, total 70.1 s.
+- v10b "Then, at the next desk." is 2.28 s in the 2.40 s window before Chidi's bark (bark audio starts 2.8 s into the shot, 0.2 s kept clear).
 
 ## Open questions for the owner
 
