@@ -152,6 +152,23 @@ export const MUSIC_CONFIG = {
             ]
         },
 
+        // 'peacefolk' — the Cyber Aware (CA) score (owner direction D331, 23 Nov): calm acoustic
+        // tracks for the awareness episodes, checks and annual round (scenarios/ca*). Every CA
+        // scenario opens with a game_loaded music event that names this playlist; the generators
+        // in planning_notes/phishing_and_social_engineering/awareness/ emit it
+        // (awareness_deploy.music_block).
+        peacefolk: {
+            displayName: 'PeaceFolk',
+            shuffle: 'shuffle',
+            tracks: [
+                { title: 'Gently Decaying',       file: 'PeaceFolk/Gently Decaying.mp3' },
+                { title: 'Gently Decaying Again', file: 'PeaceFolk/Gently Decaying Again.mp3' },
+                { title: 'Guitar Motif',          file: 'PeaceFolk/Guitar Motif.mp3' },
+                { title: 'Quietly Cinematic',     file: 'PeaceFolk/Quietly Cinematic.mp3' },
+                { title: 'Quiet Reflection',      file: 'PeaceFolk/Quiet Reflection.mp3' },
+            ]
+        },
+
         // 'silence' — true silence (F10): one 10-second silent track that loops, so a
         // music event can fade the score out and hold it out ("playlist": "silence")
         // until a later event switches to a real playlist.

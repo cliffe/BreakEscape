@@ -89,6 +89,19 @@ def awareness_block():
     return {'ruleOfThumb': {'heading': AWARENESS_RULE_OF_THUMB_HEADING, 'text': AWARENESS_RULE_OF_THUMB_TEXT}}
 
 
+def music_block():
+    """The scenario-level music block every CA scenario carries (owner direction D331, 23 Nov): the
+    PeaceFolk playlist (public/break_escape/js/music/music-config.js) from game load. One event, so
+    the engine never falls back to the default noir playlist. The 20 hand-authored full episodes
+    carry the same literal (test/js/social-awareness-music.test.mjs enforces that all of them match)."""
+    return {'events': [{
+        'trigger': 'game_loaded',
+        'playlist': 'peacefolk',
+        'fade': False,
+        '_comment': 'Cyber Aware score: the PeaceFolk tracks (D331)',
+    }]}
+
+
 # Scheme-A catalogue titles (CyberAware form, 2026-10-31). Check listings read
 # "Starting check: <group>" / "Final check: <group>"; AB/BA share a title.
 CHECK_GROUPS = {
