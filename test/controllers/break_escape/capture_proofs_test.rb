@@ -68,11 +68,11 @@ module BreakEscape
       response.parsed_body
     end
 
-    def remove(id, used_on = nil)
+    def remove(id, used_on = nil, status: :success)
       params = { action_type: 'remove', item: { id: id } }
       params[:used_on] = used_on if used_on
       post game_path('inventory'), params: params, as: :json
-      assert_response :success, response.body
+      assert_response status, response.body
     end
 
     def drop(id, name)
@@ -228,7 +228,9 @@ module BreakEscape
       build_game(data)
       take('kit_logger', 'usb', 'Inline keylogger')
       assert_response :success, response.body
-      remove('kit_logger', 'chris_desk')
+      # S5a: the server now refuses the remove itself (422 usb_refused), not only the record
+      remove('kit_logger', 'chris_desk', status: :unprocessable_entity)
+      assert_equal 'usb_refused', response.parsed_body['reason']
       assert_equal [], planted, 'storage on a storage_blocked workstation'
 
       # A hid device on the same PC is accepted; on a PC whose policy blocks every USB, refused
@@ -240,7 +242,7 @@ module BreakEscape
       data['rooms']['office']['objects'].find { |o| o['id'] == 'chris_desk' }['policy'] = 'locked'
       build_game(data)
       take('kit_logger', 'usb', 'Inline keylogger')
-      remove('kit_logger', 'chris_desk')
+      remove('kit_logger', 'chris_desk', status: :unprocessable_entity)
       assert_equal [], planted, 'hid on a blocked PC'
     end
 
