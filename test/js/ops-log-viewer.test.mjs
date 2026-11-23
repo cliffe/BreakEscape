@@ -767,7 +767,19 @@ test('flag: reopened with the done global set (a reload), the row shows flagged 
     bodyRows(m)[1].click();
     assert.equal(flagNote(m).textContent, 'FLAGGED');
     assert.equal(flagBtn(m, 'flag'), undefined);
-    assert.deepEqual([set, done], [[], []], 'reading the state runs nothing');
+    assert.deepEqual([set, done], [[], ['t_log']], 'opening done re-runs only the task completion, no set_global');
+    unhook();
+});
+
+test('flag (N-2): opening done calls completeTask once per entry in both lists and nothing else; not done calls nothing', async () => {
+    hooks({ found_night_swipe: true });
+    const m = await openFlaggable({ data: { completionActions: [{ type: 'complete_task', taskId: 't_log' }, { type: 'set_global', key: 'other', value: true }], flagActions: [{ type: 'set_global', key: 'found_night_swipe', value: true }, { type: 'complete_task', taskId: 't_flag' }] } });
+    assert.deepEqual(done, ['t_flag', 't_log']);
+    assert.deepEqual(set, []);
+    assert.equal(flagNote(m), null, 'no flagged-just-now message');
+    hooks();
+    await openFlaggable();
+    assert.deepEqual([set, done], [[], []]);
     unhook();
 });
 

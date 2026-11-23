@@ -69,6 +69,10 @@ export class OpsLogMinigame extends MinigameScene {
         // A reopen after a reload: the action's global is already true, so the flag is done
         if (this._flaggable && this._anomalyId && this._doneGlobal && window.gameState?.globalVariables?.[this._doneGlobal] === true) {
             this._flaggedId = this._anomalyId;
+            // Only the task entries run again (a no-op for a done task), so a task whose request once failed still completes
+            for (const action of [...this._flagActions, ...this._completionActions]) {
+                if (action && action.type === 'complete_task') window.objectivesManager?.completeTask(action.taskId);
+            }
         }
         this._closed = false;
         this._cacheKey = `${this._objectId}|${this._route?.foothold || ''}|${this._route?.from || ''}|${this._route?.relay === true ? 'relay' : ''}`;
