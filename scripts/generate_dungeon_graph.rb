@@ -817,6 +817,28 @@ if NETWORKS.any?
         add_edge(network, node, label: 'exposes')
       end
     end
+    # N14 (S2, plan 9.3): a weakness is a lock hanging from its host (a device) or from the
+    # network (a sign-in host: its own `lock_<pcId>` means "signed in there"). Decoys gate
+    # nothing and are not drawn. Cards, needs edges and grants are S3.
+    nm.weaknesses(scenario).select { |w| w[:host][:network] == net_id }.each do |w|
+      svc = w[:service]
+      entry = w[:entry]
+      host_name = safe_text.call(w[:host][:object]['name'], w[:host_id])
+      svc_name = safe_text.call(svc['label'], w[:service_name])
+      label = "#{host_name}<br/>#{svc_name}"
+      label += " :#{svc['port']}" if svc['port'].is_a?(Integer)
+      label += "<br/>#{safe_text.call(entry['class'], '')} / #{safe_text.call(entry['severity'], '')}"
+      fixed = entry['fixedIf']
+      fixed_text = fixed.is_a?(String) ? fixed.strip : (fixed.is_a?(Hash) ? fixed.map { |k, v| "#{k}=#{v}" }.join(' &amp; ') : '')
+      label += "<br/>fixed if #{safe_text.call(fixed_text, '')}" unless fixed_text.empty?
+      label += '<br/>(report only)' unless entry.key?('grants')
+      node = add_node("weak_#{nid(w[:finding_id])}", label, 'lock')
+      if w[:host][:kind] == 'device'
+        add_edge("host_#{nid(w[:host_id])}", node)
+      else
+        add_edge(network, node, label: safe_text.call(w[:service_name], w[:service_name]))
+      end
+    end
   end
 
   # Slice 9.3b (docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md, 9.3), all read through
@@ -2043,6 +2065,7 @@ net_notes << '<b>+</b> then <code>pivot</code>: the network reached and a sessio
 if (net_labels & Set['held', 'dropped', 'session at PC']).any?
   net_notes << '<code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs'
 end
+net_notes << '<b>weak_</b> node: a weakness a check can find on a host or device, hung from it or from its network' if $nodes.keys.any? { |id| id.start_with?('weak_') }
 net_legend_html = net_notes.map { |n| %(\n          <div class="edge-row">#{n}</div>) }.join
 net_legend_md = net_notes.map { |n| "\n  Network edges: #{n.gsub(%r{</?code>}, '`').gsub(%r{</?b>}, '')}." }.join
 # Scrubbed before the subtitle cuts it, so the cut never leaves part of a key.

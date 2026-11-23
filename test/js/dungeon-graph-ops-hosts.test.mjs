@@ -77,3 +77,47 @@ test('a device alone makes a network worth drawing, and the same scenario withou
     assert.ok(graph(sc).nodes.host_printer01);
     assert.equal(Object.keys(graph(scenario({ discovery: 'scan' })).nodes).some(id => id.startsWith('host_')), false);
 });
+
+// N14 (S2, plan 9.3): weakness nodes. A decoy is not drawn.
+function withFindings() {
+    const sc = scenario({ discovery: 'scan', hosts: {
+        printer01: {
+            name: 'Second floor printer', network: 'office_lan',
+            services: [{ name: 'admin_page', label: 'Admin page', port: 80, product: 'Inkwell WebPanel', version: '2.0',
+                weaknesses: [
+                    { id: 'factory_login', class: 'default_creds', severity: 'high', fixedIf: 'printer_reset_done' },
+                    { id: 'open_share', class: 'misconfig', severity: 'low', grants: { credential: 'c1' } }
+                ],
+                decoys: [{ id: 'old_banner', class: 'unpatched', severity: 'medium', falseBecause: 'Cosmetic.' }] }]
+        }
+    } });
+    const files = sc.rooms.comms_room.objects.find(o => o.id === 'files01');
+    files.services = [{ name: 'smb', port: 445, product: 'Sharepoint', version: '1',
+        weaknesses: [{ id: 'weak_pw', class: 'weak_auth', severity: 'medium', fixedIf: { a: true, b: false } }] }];
+    return sc;
+}
+
+test('a weakness on a device hangs from host_<id>; its label has host, service, port, class, severity, fixed-if', { skip }, () => {
+    const g = graph(withFindings());
+    const n = g.nodes['weak_printer01_admin_page_factory_login'];
+    assert.equal(n.kind, 'lock');
+    for (const part of ['Second floor printer', 'Admin page', '80', 'default_creds', 'high', 'fixed if printer_reset_done', '(report only)'])
+        assert.ok(n.label.includes(part), `${part} in ${n.label}`);
+    assert.deepEqual(g.edges.filter(e => e.to === 'weak_printer01_admin_page_factory_login').map(e => e.from), ['host_printer01']);
+    assert.doesNotMatch(g.nodes['weak_printer01_admin_page_open_share'].label, /report only|fixed if/);
+});
+
+test('a weakness on a sign-in host hangs from the network, labelled with the service, not from lock_<pcId>', { skip }, () => {
+    const g = graph(withFindings());
+    const id = 'weak_files01_smb_weak_pw';
+    assert.match(g.nodes[id].label, /fixed if a=true &amp; b=false/);
+    const into = g.edges.filter(e => e.to === id);
+    assert.deepEqual(into.map(e => [e.from, e.label]), [['net_office_lan', 'smb']]);
+    assert.equal(g.edges.some(e => e.from === id), false, 'no outgoing edge in S2');
+});
+
+test('decoys are not drawn, and a scenario without findings has no weakness node', { skip }, () => {
+    const g = graph(withFindings());
+    assert.equal(Object.keys(g.nodes).some(id => id.includes('old_banner')), false);
+    assert.equal(Object.keys(graph(scenario({ discovery: 'scan', hosts: DEVICES })).nodes).some(id => id.startsWith('weak_')), false);
+});
