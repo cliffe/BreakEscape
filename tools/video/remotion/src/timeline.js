@@ -77,7 +77,8 @@ export function framingAt(shot, aspect, t, sourceSize = [1920, 1080]) {
 export function visibleRect(fr, outW, outH, sourceSize = [1920, 1080]) {
   const [sw, sh] = sourceSize; const s0 = Math.max(outW / sw, outH / sh); const s = s0 * fr.zoom;
   const vw = outW / s / sw, vh = outH / s / sh; // fractions
-  const cx = Math.max(vw / 2, Math.min(1 - vw / 2, fr.cx)), cy = Math.max(vh / 2, Math.min(1 - vh / 2, fr.cy));
+  // zoom < 1 (letterbox): an axis wider than the source is centred, the other is clamped as usual; the gaps stay black.
+  const cx = vw >= 1 ? 0.5 : Math.max(vw / 2, Math.min(1 - vw / 2, fr.cx)), cy = vh >= 1 ? 0.5 : Math.max(vh / 2, Math.min(1 - vh / 2, fr.cy));
   return { x0: cx - vw / 2, x1: cx + vw / 2, y0: cy - vh / 2, y1: cy + vh / 2, scale: s, cx, cy };
 }
 

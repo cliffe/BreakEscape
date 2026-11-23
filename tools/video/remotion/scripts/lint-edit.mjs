@@ -188,7 +188,8 @@ tl.shots.forEach((s, i) => {
     } else if (s.audio && s.audio.gain_db > -3) W(id, `montage shot gain ${s.audio.gain_db} dB: plan says about -6 dB`);
     for (const a of Object.keys(ASPECTS)) {
       const fr = framingAt(s, a, 1); const [w, h] = (edit.aspects || ASPECTS)[a];
-      if (fr.zoom < 1) E(id, `${a}: zoom < 1`);
+      // zoom < 1 is a letterbox: allowed while the source is not shrunk (scale >= 1, so 9:16 down to 0.5625); never in 16:9.
+      if (fr.zoom < 1 && (a === '16:9' || Math.max(w / (edit.source_size || [1920, 1080])[0], h / (edit.source_size || [1920, 1080])[1]) * fr.zoom < 1 - 1e-6)) E(id, `${a}: zoom ${fr.zoom} shrinks the source (letterbox allowed only while scale >= 1, never in 16:9)`);
       if (s.pushin?.crops_ui) {
         const r = visibleRect(fr, w, h, edit.source_size || [1920, 1080]);
         const ui = s.pushin.ui_bottom_fraction ?? 0.22;

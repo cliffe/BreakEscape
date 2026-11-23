@@ -1,5 +1,13 @@
 # m07 The Architect's Gambit: 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Hook:** Netherton, "We are faced with an impossible decision, Agent." (`m07_opening_briefing.ink`, before the choice, voiced). Replaces the "Four ENTROPY operations" hook in the table.
+- **Ending:** the Architect, "Four fires tonight, and only one of you. I set them so you'd have to choose." (voiced).
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only (2026-11-22). Model: `M03_TRAILER60_V3_PLAN.md`. Recipe: `docs/video/recipes/mission-trailer.md`. Not yet checked: which of these lines are cached (the scout checks), the exact entry flags for each take, the Architect's speaker label on screen (see Risks), and Hollis's and Mercer's walk lines.
 
 ## 1. Story

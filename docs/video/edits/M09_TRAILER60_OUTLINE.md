@@ -1,5 +1,14 @@
 # m09 Digital Archaeology, 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** Sorensen's index line. The wording is with the owner ("is filed in this room" as picked, or "was filed in this building" after the review). Not voiced yet.
+- **Hook:** Netherton, "We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it." A reword is with the owner.
+- "Yours is in tonight's run" is out of the game.
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only. Model: `M03_TRAILER60_V3_PLAN.md`. Every line is "audio: check" until the scout tests the cache. Unfinished: entry-state globals for the cage and tape-room shots were taken from the scenario's comments and mappings, not walked; the scout should confirm them.
 
 ## Story

@@ -1,5 +1,14 @@
 # m04 Critical Failure: 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** Voltage, "I didn't bring a bomb, agent. I brought a maintenance schedule." (`m04_npc_voltage.ink`, `voltage_ideology_explanation`, voiced). Replaces the "sums" pick below, which is out of the game.
+- **Hook:** Netherton, as in the table.
+- Voltage is South African. Don't direct takes as German.
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only (2026-11-22). Form follows `M03_TRAILER60_V3_PLAN.md`. Line timings and cached audio are for the scout to check. Paths are under `scenarios/m04_critical_failure/`.
 
 ## 1. Story
