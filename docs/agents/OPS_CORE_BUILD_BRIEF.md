@@ -42,6 +42,23 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   `git commit -m "..." -- <path> <path>`. No attribution lines. UK English, plain writing.
 - **Shared files** (core plan 12.2): make the smallest edit, re-read just before editing, never
   reformat. `scripts/scenario-schema.json` has very long lines: edit only your block.
+- **Delta sync.** Synced `player_state` must never grow and be re-sent whole; changes go as
+  deltas (`SYNC_DELTAS_PLAN.md` section 11). New ops state is server-owned and is not a sync
+  section. Reviewers check this every round.
+- **No exploit content.** Abstract, fictional mechanics only. Real tool ids and module names
+  live only in the realism catalog (`config/break_escape/realism_catalog/*.json`, the skin
+  plan's), linked by a plain `realism: "<id>"`; catalog ids are append-only. This build makes
+  only the loader and a test-only catalog under `test/fixtures/realism_catalog/`.
+- **Games.** Never edit an existing game row. Live proofs make fresh games with `new-game.rb`.
+- **Event mappings.** A new `eventMappings` entry goes last (the server keys them by index);
+  `tools/check_mapping_index_drift.rb` must pass before landing.
+- **New JS imports.** A new static import in an engine JS module is added to every JS test
+  harness copy list.
+- **Docs.** A landed feature is added to the `README_scenario_design.md` feature index and
+  `docs/ACCESS_AND_NETWORKS.md` in the same stage.
+- **The plan wins over older notes.** `docs/agents/OPS_LAYER_HANDOVER.md` section 5 and
+  `OPS_LAYER_RESUME.md` hold rulings from earlier rounds, some since replaced (noise,
+  `network_only`, `network_alerted` are not in the final core plan). Build from the plan text.
 - **Claims.** Report only what you ran. Say which tests ran and their counts; a static check is
   not a browser test.
 - **Context.** When your context passes about 150k tokens (roughly 80 tool calls), finish the

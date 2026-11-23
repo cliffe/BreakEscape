@@ -24,6 +24,12 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
 
 - 2026-11-23: worktree, brief and this note created. L1a item 1 builder launched (Sonnet).
 
+- 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
+  steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
+  the later stages (S5a, S6, S8a, S7, S5b, S5c, L2a to L3, S8b, S8c, outline section 5) are not
+  started and need the user's word. Start point for those: `docs/agents/OPS_LAYER_HANDOVER.md`
+  section 0. That file's "Fable is no longer used" is overridden by the user's routing above.
+
 ## Waiting on the user
 
 - Nothing yet. Later: card art for `technique_card.png`; the final screenshot review.
