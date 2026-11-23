@@ -226,3 +226,8 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   make the checks; the only by-hand request a script may keep is the plain "an unearned id
   answers the same 404 as an invented one" read. N-C1 is judged in the live proof. N-M1 (the
   log reader shows an ops row's detail as `service: service`) goes to the log stream.
+- 2026-11-23, S3 R2 N-C1 ruling: Option B. For a remote view opened by a click on the PC in the
+  world (`trip.toWorld`), closing a share opened from that desktop reopens that desktop (the share
+  is a step inside it), and closing the sign-in screen with no session held leaves to the world; a
+  remote view opened from the network view keeps its landings. A player who clicked a PC in the
+  world never opened the network view, so nothing lands them in it.
