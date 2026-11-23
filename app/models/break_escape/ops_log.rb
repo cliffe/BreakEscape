@@ -35,6 +35,9 @@ module BreakEscape
     MAX_TOTAL_ROWS = 300
     MIN_SOURCE_ROWS = 10
     MAX_SOURCE_ROWS = 150
+    MAX_SEED_ROWS = 100
+    SEED_ID = /\As[0-9]{1,3}\z/.freeze
+    SEED_AT = /\A(?:(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat) )?(?:[01][0-9]|2[0-3]):[0-5][0-9]\z/.freeze
     DEFAULT_SOURCE_ROWS = 50
     MAX_N = 99_999
     MERGE_WINDOW = 10
@@ -378,7 +381,7 @@ module BreakEscape
     # { rev:, title:, rows: [...] }, or nil for a source the scenario does not declare. Each row is
     # built from an allow-list of exactly seven keys (id, elapsedMs, event, as, where, result,
     # detail); seq, serverMs, `last`, `p` (only the trailing `+`), raw ids and `show: false`
-    # detail keys never leave. Seed rows are L2b and are not listed yet. Writes nothing.
+    # detail keys never leave. Seed rows (L2b) come first, with `at` for `elapsedMs`. Writes nothing.
     def log_rows_for_client(source_id)
       entry = OpsLog.sources_for(scenario_data).find { |id, _source, _cap| id == source_id.to_s }
       return nil unless entry
@@ -386,10 +389,31 @@ module BreakEscape
       source = entry[1]
       title = source['title'].is_a?(String) && !source['title'].empty? ? source['title'] : 'Log'
       show_holder = source['showCardHolder'] == true
-      rows = log_rows_for(source_id).map do |row|
+      # The authored seed rows come first (4.2), then the play rows. A seed row is built by its own
+      # path and never reads `flagged`: it is authored, not stored, so no card holder rule applies.
+      rows = ops_log_seed_rows(source).map { |row| ops_log_client_seed_row(row) }
+      rows += log_rows_for(source_id).map do |row|
         ops_log_client_row(source_id.to_s, row, hide_holder: !show_holder)
       end
       { rev: OpsLog.rows_rev(title, rows), title: title, rows: rows }
+    end
+
+    # A source's authored seed rows (4.2): the first 100 hashes of `seedRows` with an id and an event
+    # the registry knows, an id and a stamp of the authored forms and a result the event allows. A snapshot
+    # is not re-validated (the validator is), so a malformed entry is skipped, not raised or shown.
+    def ops_log_seed_rows(source)
+      list = source.is_a?(Hash) ? source['seedRows'] : nil
+      return [] unless list.is_a?(Array)
+
+      seen = {}
+      list.first(OpsLog::MAX_SEED_ROWS).select do |row|
+        definition = row.is_a?(Hash) ? OpsLog.events[row['event'].to_s] : nil
+        ok = definition && row['id'].is_a?(String) && OpsLog::SEED_ID.match?(row['id']) && !seen[row['id']] &&
+             row['at'].is_a?(String) && OpsLog::SEED_AT.match?(row['at']) &&
+             row['result'].is_a?(String) && Array(definition[:results]).include?(row['result'])
+        seen[row['id']] = true if ok
+        ok
+      end
     end
 
     # Game time at this moment (13.4): the saved elapsedMs plus the server time since
@@ -417,6 +441,30 @@ module BreakEscape
         result: ops_log_client_result(row),
         detail: ops_log_client_detail(definition, row['detail'])
       }
+    end
+
+    # A seed row for the browser: the same seven keys as a play row, with `at` (the authored stamp, in
+    # the game clock's form) where a play row has `elapsedMs`. Its `id` is the authored one (`s1`).
+    def ops_log_client_seed_row(row)
+      definition = OpsLog.events[row['event'].to_s]
+      {
+        id: row['id'],
+        at: row['at'],
+        event: definition[:label],
+        as: ops_log_client_seed_as(row['as']),
+        where: ops_log_client_where(row['where']),
+        result: row['result'].upcase,
+        detail: ops_log_client_detail(definition, row['detail'])
+      }
+    end
+
+    # An NPC id shows the NPC's name; any other text is a username, in the normalised form a typed
+    # one has (7). `-` when there is none.
+    def ops_log_client_seed_as(as)
+      return '-' unless as.is_a?(String) && !as.empty?
+
+      npc = ops_log_client_thing('npc', as)
+      npc == '-' ? self.class.normalise_username(as) : npc
     end
 
     # A source without showCardHolder never names a card's holder (L1b ruling): the stored row is

@@ -78,3 +78,26 @@ with these differences, which win:**
   leak check judges IDENTITY on a successful or known-account sign-in row, and sees a
   stored-only key inside a detail string) are done now, with the other R3 minors, in one
   tidy pass after the playtest.
+- 2026-11-23, L2b: THE FLAG GOES BACK TO THE PLAN. The orchestrator's L2b prompt said the
+  flag must be judged on the server; that went beyond the plan and was a mistake. The plan as
+  landed with L2a (section 7 and 5.2) says `anomaly.rowId`, `flagActions` and
+  `completionActions` reach the browser and "the flag is checked on the client, best effort,
+  the same standing as log-filter's anomaly today; a server check belongs to the investigator
+  work". The review (`reviews/L2b_R1.md`) found the server-judged build enforced nothing (the
+  browser still ran the actions) and could lose a right flag's actions for good. So: the
+  route `POST /log_rows/flag`, its policy and role-test entries, the `opsLogFlagged` state key
+  and the three strip calls are removed; the viewer compares the selected row's id with
+  `anomaly.rowId` locally and reads "done" from the action's global, as log-filter does; the
+  plan file is restored to its text on main; the leak check's rule goes back to what the
+  plan's section 7 gives. The user was told and may still choose a server-judged flag, which
+  would be planned as its own piece (the server applying the actions and owning the globals
+  and tasks).
+- 2026-11-23, L2b R2 rulings: all five minors are done in one tidy pass. N-2, when a
+  reader opens with its done global true, the viewer re-runs the `complete_task` entries (a
+  no-op when already done), so a task whose request once failed still completes. N-1, the
+  validator WARNS (not an error) for an anomaly whose actions set no global to true, and for
+  an anomaly with no actions at all. N-3, one docs sentence (a done global set by anything
+  else marks the row). N-4, the playtest beat is reworded to what is asserted. N-5, the
+  flagged row's look stays: the plan's "no row is ever tinted" is about telling rows apart
+  BEFORE the player acts; a row the player has rightly flagged may be marked. The A24 text
+  says so.

@@ -144,6 +144,9 @@ require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakE
 # secret (`BreakEscape::OpsLog.compared_secrets(game)`, or `log_secrets:`) in a text cell, and a raw
 # scenario id (room, object, NPC or card id) as a cell or a detail value where no authored name equals it.
 #
+# R4-1 and R4-2: a stored-only key is found as a word before `:` or `=` in a detail string, and the
+# hidden detail keys of the registry join the hand list.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -1971,6 +1974,21 @@ class AccessLeakScanner
     body.merge('rows' => body['rows'].map { |r| typed.call(r) ? r.merge('as' => '-') : r })
   end
 
+  # R4-2: the stored-only keys are the hand list plus every detail key the registry marks `show: false`
+  # (the table the server runs, so a later event's hidden key is seen without an edit here).
+  def log_stored_only_keys
+    @log_stored_only_keys ||= begin
+      events = if defined?(BreakEscape::OpsLog) then BreakEscape::OpsLog.events
+      elsif defined?(BreakEscape::OpsLogEvents) then BreakEscape::OpsLogEvents::EVENTS
+      else {}
+      end
+      hidden = events.values.flat_map do |event|
+        (event[:detail] || {}).select { |_key, rule| rule.is_a?(Hash) && rule[:show] == false }.keys
+      end
+      LOG_STORED_ONLY_KEYS | hidden.map(&:to_s)
+    end
+  end
+
   def log_secrets
     @log_secrets ||= @game && defined?(BreakEscape::OpsLog) ? BreakEscape::OpsLog.compared_secrets(@game).map(&:to_s) : []
   end
@@ -1995,9 +2013,11 @@ class AccessLeakScanner
     [row['as'], row['where'], *detail_values].map { |v| v.to_s.strip }
   end
 
-  # The keys of a detail string ("key: value, key: value").
+  # The keys of a detail string ("key: value, key: value"), found by looking for a word before a colon or
+  # equals sign anywhere in it (R4-1), not by trusting one separator: a change of the server's format
+  # does not hide a key.
   def log_detail_keys(row)
-    row['detail'].to_s.split(/,\s*/).map { |pair| pair.split(': ', 2).first.to_s.strip }
+    row['detail'].to_s.scan(/\b([A-Za-z][A-Za-z0-9_]*)\s*[:=]/).flatten.uniq
   end
 
   def log_secret_in?(text)
@@ -2009,7 +2029,7 @@ class AccessLeakScanner
 
     (body.keys - LOG_ANSWER_KEYS).each { |k| add.call('log_row', "log:answer_key:#{k}", safe_path("$.#{k}")) }
     walk_hashes(body, '$') do |hash, path|
-      (hash.keys & LOG_STORED_ONLY_KEYS).each { |k| add.call('log_row', "log:stored_key:#{k}", safe_path("#{path}.#{k}")) }
+      (hash.keys & log_stored_only_keys).each { |k| add.call('log_row', "log:stored_key:#{k}", safe_path("#{path}.#{k}")) }
     end
     texts = [body['title']]
     Array(body['rows']).each_with_index do |row, i|
@@ -2019,7 +2039,7 @@ class AccessLeakScanner
       cells = %w[event result].map { |k| row[k] } + log_cell_texts(row)
       texts.concat(cells)
       texts << row['detail'] # whole, so a secret holding ", " is not cut in two before the compare
-      log_detail_keys(row).each { |k| add.call('log_row', "log:stored_key:#{k}", "$.rows[#{i}].detail") if LOG_STORED_ONLY_KEYS.include?(k) }
+      log_detail_keys(row).each { |k| add.call('log_row', "log:stored_key:#{k}", "$.rows[#{i}].detail") if log_stored_only_keys.include?(k) }
       log_cell_texts(row).each { |t| add.call('log_row', "log:raw_id:#{t}", "$.rows[#{i}]") if log_raw_ids.include?(t) }
     end
     texts.each { |t| add.call('log_row', 'log:secret', '$.rows') if t.is_a?(String) && log_secret_in?(t.strip) }
