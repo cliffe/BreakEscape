@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/access_model_scenario'
+require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 module BreakEscape
   # Ops log stage L1b (OPS_LOG_ROWS_PLAN.md section 11, "Feature scenario" and "Server, per call
@@ -253,6 +254,24 @@ module BreakEscape
       assert_equal 1, body['rows'].size
       assert_equal 'BADGE', body['rows'].first['event']
       assert_empty read('signin_log_pc')['rows']
+    end
+
+    test 'the leak scanner judges the real /log_rows answers clean, and flags the same answers with a secret or a raw id put in' do
+      build
+      play_the_beats
+      swipe_security
+      answers = %w[door_log_pc signin_log_pc].map do |id|
+        body = read(id)
+        ['GET', "/break_escape/games/#{@game.id}/log_rows?object_id=#{id}", body]
+      end
+      lines = ->(list) { list.each_with_index.map { |(m, path, body), i| ['run.jsonl', i + 1, { 'method' => m, 'path' => path, 'status' => 200, 'body' => body }] } }
+      scanner = -> { AccessLeakScanner.new(fresh.scenario_data, game: fresh) }
+      assert_equal [], scanner.call.scan(lines.call(answers)).map(&:rule), 'a real answer holds nothing the scanner refuses (the typed identity of the failed sign-in included)'
+      assert_includes answers.last[2]['rows'].map { |r| r['as'] }, 'dreyes'
+      leaked = Marshal.load(Marshal.dump(answers))
+      leaked.first[2]['rows'].first['where'] = 'office'
+      leaked.last[2]['rows'].last['detail'] = "code: #{DANA_PASSWORD}"
+      assert_equal %w[log_row password], scanner.call.scan(lines.call(leaked)).map(&:rule).uniq.sort
     end
 
     test 'a read writes no row, with or without a route param, and an unscoped reader ignores the route' do
