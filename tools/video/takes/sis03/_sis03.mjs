@@ -103,3 +103,39 @@ export const globals = async (bridge, names) => { const g = (await bridge.getSta
 /** Scan the page's visible text for words that must never be in a frame; returns the hits. */
 export const BAD_WORDS = /\b(SIS|ESD|Ofgem|NCSC|NESO|Containment logged|cable|PIN|playtest|SAFETYNET|Cyber Aware|Break Escape|Likely Breach|Remediation Outstanding)\b/i;
 export const textHits = (page) => page.evaluate((src) => { const t = document.body.innerText || ''; const hits = []; for (const m of t.matchAll(new RegExp(src, 'gi'))) hits.push(m[0]); return [...new Set(hits)]; }, BAD_WORDS.source);
+
+/** Eleanor's timed-text watcher: injects TOAST_CSS and samples (every 300 ms for `ms`) every element that TOAST_CSS would hide and that has text or is visible.
+ *  Marks 'toast-seen' once per distinct text (a toast that CSS hides still shows up here, since the sample ignores display), and 'toast-watch-end' with the count. */
+export function watchToasts(page, mark, ms = 12000) {
+  const run = async () => {
+    await page.addStyleTag({ content: TOAST_CSS }).catch(() => {});
+    const seen = new Set(); const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      const rows = await page.evaluate(() => [...document.querySelectorAll('.person-chat-notification, .notification-container .notification, .notification, [class*=toast], .phone-badge, .unread-badge')]
+        .map(e => ({ c: String(e.className).slice(0, 60), t: (e.textContent || '').trim().slice(0, 100) })).filter(r => r.t)).catch(() => []);
+      for (const r of rows) { const k = r.c + '|' + r.t; if (!seen.has(k)) { seen.add(k); mark('toast-seen', r); } }
+      await sleep(300);
+    }
+    mark('toast-watch-end', { distinct: seen.size });
+  };
+  return run();
+}
+
+/** The capture's own --hide-hud CSS (capture/launch.mjs). Takes that must run WITHOUT --hide-hud (the phone opens from the inventory tray) inject this after the panel opens. */
+export { HUD_CSS } from '../../capture/launch.mjs';
+
+/** Hide every visible element inside `root` whose own text matches BAD_WORDS (li, tr, p, div leaf rows). Returns the hidden texts. Used by the FDP take. */
+export const hideBadRows = (page, rootSel, rowSel) => page.evaluate(([root, rows, src]) => {
+  const re = new RegExp(src, 'i'); const out = []; const r = document.querySelector(root); if (!r) return out;
+  r.querySelectorAll(rows).forEach(e => { if (re.test(e.textContent || '')) { e.style.setProperty('display', 'none', 'important'); out.push((e.textContent || '').trim().slice(0, 90)); } });
+  return out; }, [rootSel, rowSel, BAD_WORDS.source]);
+
+/** Screen rect (page px) of a world object by id, from its sprite bounds and the camera (for the closed-object crops: the edit crops to it). Null if not found. */
+export const objScreenRect = (page, id) => page.evaluate((oid) => {
+  try {
+    const sc = window.game; const pg = sc.sys.game; const cam = sc.cameras.main; const cv = pg.canvas.getBoundingClientRect(); const k = cv.width / pg.config.width;
+    let o = null; for (const r of Object.values(window.rooms || {})) { for (const [k2, v] of Object.entries(r.objects || {})) { if (k2 === oid || (v.scenarioId === oid) || (v.objectId === oid) || (v.scenarioData && v.scenarioData.id === oid)) { o = v; break; } } if (o) break; }
+    if (!o) return null; const b = o.getBounds();
+    return { x: Math.round(cv.x + (b.x - cam.worldView.x) * cam.zoom * k), y: Math.round(cv.y + (b.y - cam.worldView.y) * cam.zoom * k), w: Math.round(b.width * cam.zoom * k), h: Math.round(b.height * cam.zoom * k), zoom: cam.zoom };
+  } catch (e) { return { err: String(e).slice(0, 100) }; }
+}, id);
