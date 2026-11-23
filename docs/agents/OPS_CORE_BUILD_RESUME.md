@@ -176,21 +176,35 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   failures (scanner tests, policy, log reader tests, the four technique files, `ops_log_test`),
   golden compare 12 runs 0 failures, six node files of both streams pass. This also cleared
   the one unread failure from the security fixer's run.
-- RUNNING in the build tree: delta review R2 (fable52L; `reviews/S3_R2.md`: the S3 fixes, a
-  first read of step 13 and the graph, and the merge resolution); Haiku playtest + live proof
-  of `test_ops_access` on port 3011 (scratchpad `s3-playtest/RESULTS.md`; real clicks, a real
-  keyboard for select-then-Use, no forged request, screenshots of every state).
-- Next: commit R2 findings (check LENGTH); LOOK at the screenshots (panel, each refusal text,
-  frame, marks, bolt placement, the tint edge case, phone width); one fix pass; a short
-  delta if anything above minor was fixed; then `git merge --ff-only ops-build` in the train
-  tree and train S2+S3; if only the 3 baseline JS files fail, merge `ops-core` into main,
-  push, merge main back into `ops-build` and `ops-logs`. Then: the screenshot review page for
-  the user (plan 11.5 last paragraph: view empty, swept, scanned, findings, a card selected,
-  a refusal; plus the marked sprite and remote-view frame), with the open questions on it;
-  the card art question; the BreakEscape gem bump for Hacktivity (`bump-version` skill).
-  After S3 on this stream: S5a (privilege), then S6, S8a, S7, S5b, S5c, S8b, S8c, each from
-  its own plan's sections 3, 12, 14, 15 (digest: scratchpad `deps/OPS_PARALLEL_DIGEST.md`,
-  with the plan conflicts it flagged).
+- S3 R2 delta `c0ad4b503`: every R1 finding confirmed, merge clean, nothing in the access
+  checks; 1 major (leak scanner earned whole-game steps) + 8 minors; FIXED `872670b8f`
+  (per-thing steps, fail closed when a grant cannot be attributed), `891514116` (PLAYTEST
+  sends no hand-built request), `42865e185`, `d75930715` (the borrow fix tested through the
+  real route). R2 did NOT read: the bodies of `ops_access_scenario_test.rb`, the scanner's
+  unit tests and non-grant collectors, the graph commit beyond 9.3's row, docs N15 and the
+  scenario except through a digest: the final delta must cover these.
+- S3 live proof (game 29): 20 beats passed incl. keyboard-only select-then-Use; beat 13 stuck
+  and beat 8 skipped (hand-built requests refused by the permission classifier / by policy);
+  beat 19 and the phone panel not run; leak check 14 findings on `via` / `access` keys (to be
+  decided by the plan: scanner rule or server). Items PL1 to PL5 in
+  `reviews/S3_PLAYTEST.md` (`d81314cfc`). I looked at the panel and remote-view frame
+  screenshots (good); the world mark could not be judged at that zoom.
+- RUNNING in the build tree: playtest follow-up fixer (PL1 leak findings, PL2, PL3 script);
+  small client fixer (the `select` test-state entry, N-C2 double click, N-C1 landing).
+- Next: Haiku mini-run on port 3011: beat 13 as rewritten, beat 19, the phone-width
+  Techniques panel, a CLOSE clip of the marked sprite (higher device scale) and of the bolt on
+  a planted jack, the keyring screen, the pickup toast, then the leak check over all captures;
+  final short delta (fable52L) over: the R2 fix commits, the two follow-up fixers, and the
+  parts R2 did not read; then ff the train tree to `ops-build` and train S2+S3; land; push;
+  merge main into `ops-build` and `ops-logs`; screenshot review page for the user with the
+  open questions; card art; gem bump.
+- Open questions for the user (collect on the review page): F4 outage (keyboard desktop
+  served, no-route folders refused); a validator warning for room text naming a discovery
+  host (proposed, not built); the recorder tag in `.claude/skills/playtest-scenario` (needs
+  the user's word; agents may not edit skills); `no_grant` wording against the plan's; the
+  tint edge case (fingerprint-view red); L2a lock vs session-end label; whether a replant
+  should open the view; the log plan's four section-15 questions; server-enforced log flag
+  as a later piece.
 - **SECOND STREAM opened 2026-11-23: the log reader (L2a, then L2b, then L3)** in a third
   worktree `/data/be-ops-logs`, branch `ops-logs` (cut from main `11a274307`), brief
   `docs/agents/OPS_LOGS_STREAM_BRIEF.md` on that branch, notes and reviews in
@@ -214,11 +228,18 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   with only the 3 baseline files failing). R4 findings filed on the log branch. The train
   tree is back on `ops-core`. `ops-build` has NOT merged main yet (see above). Questions for
   the user from L2a: lock and session-end rows read the same (a `LOCK` label is the least
-  invasive fix); the plan's four section-15 questions were built as recommended. RUNNING
-  there: L2b builder (seed rows, anomaly and server-judged flag flow, graph note node,
-  scenario beats, leak-check rule, R4-1 and R4-2; six work points; `HANDOVER_L2b.md`; expect
-  a handover). NEXT there: fable52L review (server and client), fixes, delta, Haiku playtest,
-  train, land; then L3 (network and share rows). Old line: L2a client builder
+  invasive fix); the plan's four section-15 questions were built as recommended. L2b BUILT (`1bed4cf2e` to `e1829f45a`; the builder
+  reached 317k tokens: split L3). MY MISTAKE: my prompt said the flag must be judged on the
+  server; the plan says the browser checks it, best effort. Review R1 `146bdc4de` (0B 2M 11m)
+  showed the server-judged build enforced nothing and could lose a right flag. RETURNED TO
+  THE PLAN: `62105c898` (route, policy, state, strips removed; shared engine files equal main
+  again), `6c868d7f9` (viewer checks in the browser; done read from the action's global),
+  `06aee2c62` (leak check), minors and docs to `0bf994549`. Playtest on the old build: 19 of
+  19. RUNNING there: delta review R2 (fable52L; `reviews/L2b_R2.md`); Haiku rerun of beats 14
+  to 19 on port 3014 (scratchpad `l2b-playtest-2/`). NEXT there: commit findings (check
+  LENGTH); look at the flagged-row and toast screenshots; fix pass if needed; merge main,
+  train in the train tree (detached), land; then L3 in two builders (events + calls and
+  tests / scenario + playtest + docs). Old line: L2a client builder
   (`HANDOVER_L2a_client.md`), split by file. Next there: L2a item 5 (reader in
   `test_ops_logs`, PLAYTEST, docs A24 read side), fable52L review, fixes, Haiku playtest,
   then train: fast-forward is not possible from a side branch, so to train it, merge main
