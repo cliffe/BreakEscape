@@ -648,11 +648,11 @@ test('T6: onSent then onEnded for a use that is refused, one that throws and one
 });
 
 // Ops core tidy (client), phone width: the Use control and the message after an ops action are
-// brought into view with scrollIntoView({ block: 'nearest' }); reduced motion turns the smooth off.
-function stubScroll(reduce = false) {
+// brought into view with scrollIntoView({ block: 'nearest' }), an instant jump (nothing to animate,
+// so prefers-reduced-motion is respected by construction).
+function stubScroll() {
     const log = [];
     window.Element.prototype.scrollIntoView = function (o) { log.push([this, o]); };
-    window.matchMedia = (q) => ({ matches: reduce && /reduced-motion/.test(q) });
     return log;
 }
 test('phone width: picking a finding or a card scrolls the Use control into view; letting a pick go does not', async () => {
@@ -663,21 +663,13 @@ test('phone width: picking a finding or a card scrolls the Use control into view
     assert.equal(log.length, 1);
     assert.equal(log[0][0], useBtn(), 'requested on the Use control');
     assert.equal(log[0][1].block, 'nearest');
-    assert.equal(log[0][1].behavior, 'smooth');
+    assert.deepEqual(log[0][1], { block: 'nearest' }, 'an instant jump, no smooth');
     q('[data-technique="factory_defaults"] [data-action="select-technique"]').click();
     assert.equal(log.length, 2);
     assert.equal(log[1][0], useBtn());
     q('[data-technique="factory_defaults"] [data-action="select-technique"]').click(); // lets go
     q('[data-finding="f1"] [data-action="select-finding"]').click();                   // lets go
     assert.equal(log.length, 2, 'no scroll when a pick is let go');
-});
-test('phone width: prefers-reduced-motion asks for no smooth scroll', async () => {
-    setup(ENTRY());
-    await open();
-    const log = stubScroll(true);
-    q('[data-finding="f1"] [data-action="select-finding"]').click();
-    assert.equal(log[0][1].behavior, 'auto');
-    assert.equal(log[0][1].block, 'nearest');
 });
 test('phone width: the message after Use (a grant and a refusal) and after a scan is scrolled into view; an empty notice is not', async () => {
     setup(ENTRY({}, { scanned: false, services: undefined, findings: undefined }));

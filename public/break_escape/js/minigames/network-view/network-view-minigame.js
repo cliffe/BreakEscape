@@ -1328,14 +1328,13 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /**
      * Bring an element into view with the least movement (a phone-width view puts the Use control
-     * and the message below the fold). Nothing moves when it is already visible; motion follows
-     * prefers-reduced-motion.
+     * and the message below the fold). Nothing moves when it is already visible. The jump is
+     * instant, never animated: a smooth scroll would be cut short by the next redraw (which puts
+     * the scroll position back) and would ignore prefers-reduced-motion.
      */
     scrollIntoViewSoft(el) {
         if (!el || typeof el.scrollIntoView !== 'function') return false;
-        let reduce = false;
-        try { reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches; } catch (e) { /* no matchMedia */ }
-        el.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+        el.scrollIntoView({ block: 'nearest' });
         return true;
     }
 
