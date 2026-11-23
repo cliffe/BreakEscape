@@ -3,8 +3,8 @@ require_relative '../../support/network_ops_scenario'
 
 module BreakEscape
   # Ops core S3 step 11 (OPS_CORE_PLAN.md 5.4 and 11.2): a technique session next to the other session
-  # kinds, row by row where this step's access changes touch it. The NPC borrow rows belong to the
-  # client step (record_borrow_done! is step 12's).
+  # kinds, row by row where this step's access changes touch it. The NPC borrow rows are at the end
+  # (security review R1, F1 and T8: a finished borrow keeps a remote record).
   class NetworkTechniqueSessionTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
     include NetworkOpsRequests
@@ -169,6 +169,77 @@ module BreakEscape
       desktop(foothold: OFFICE)
       assert_response :forbidden
       assert_equal 'no_session', response.parsed_body['reason']
+    end
+
+    # ---- a finished NPC borrow (plan 5.4, "An NPC at the PC"; security review R1 F1, T8) ----------------
+
+    # The server's own call for a borrow's "done", with the borrower and the workaround the route builds.
+    def borrow_done!(pc_id = 'sam_pc')
+      game = Game.find(@game.id)
+      # a borrower who leaves the screen open, so a guest record is written (a careful one writes none)
+      ian = game.scenario_room_npc('ian').merge('habits' => { 'screen' => { 'lockChance' => 0 } })
+      ended = game.send(:record_borrow_done!, ian, { 'pc' => pc_id })
+      game.save!
+      ended
+    end
+
+    def seed_sessions(sessions)
+      game = Game.find(@game.id)
+      game.player_state['sessions'] = (game.player_state['sessions'] || {}).merge(sessions)
+      game.save!
+    end
+
+    test 'a finished borrow keeps a technique session, writes the guest beside it and ends nothing' do
+      session_game
+      grant!
+      record = state['sessions']['sam_pc'].dup
+      assert_equal [], borrow_done!
+      assert_equal record, state['sessions']['sam_pc']
+      assert_equal 'ian', state['guestSessions']['sam_pc']
+      assert state['guestSessionsAt']['sam_pc']
+      desktop(foothold: OFFICE)
+      assert_response :success, response.body
+      assert_includes response.body, 'sam_local'
+      again = ops_technique(OFFICE, 'sam_pc.web.factory_login', 'card_factory')
+      assert_response :success, response.body
+      assert_equal true, again['already']
+      assert_equal record, state['sessions']['sam_pc']
+    end
+
+    test 'a finished borrow keeps a password session held through a foothold and a from session' do
+      session_game
+      seed_sessions('sam_pc' => { 'id' => 'sam', 'via' => 'password', 'foothold' => OFFICE })
+      assert_equal [], borrow_done!
+      assert_equal({ 'id' => 'sam', 'via' => 'password', 'foothold' => OFFICE }, state['sessions']['sam_pc'])
+      assert_equal 'ian', state['guestSessions']['sam_pc']
+      seed_sessions('sam_pc' => { 'id' => 'sam', 'via' => 'password' },
+                    'lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' })
+      assert_equal [], borrow_done!('lena_pc')
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
+      assert_equal 'password', state['sessions']['sam_pc']['via']
+      assert_equal 'ian', state['guestSessions']['lena_pc']
+    end
+
+    test 'a finished borrow still ends a keyboard password session and a claim, and the sessions sourced from it' do
+      session_game
+      seed_sessions('sam_pc' => { 'id' => 'sam', 'via' => 'password' },
+                    'lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' })
+      assert_equal ['lena_pc'], borrow_done!
+      assert_nil state['sessions']['sam_pc']
+      assert_nil state['sessions']['lena_pc']
+      assert_equal 'ian', state['guestSessions']['sam_pc']
+      seed_sessions('sam_pc' => { 'id' => 'sam', 'via' => 'claim' })
+      assert_equal [], borrow_done!
+      assert_nil state['sessions']['sam_pc']
+    end
+
+    test 'a finished borrow at a PC where a technique session is held keeps what is sourced from it' do
+      session_game
+      grant!
+      seed_sessions('lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' })
+      assert_equal [], borrow_done!
+      assert_equal 'technique', state['sessions']['sam_pc']['via']
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
     end
   end
 end
