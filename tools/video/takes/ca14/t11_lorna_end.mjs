@@ -5,7 +5,7 @@
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca14_social_media t11_lorna_end <step-away flags, see t07_lorna_photo> "--hide-hud --zoom-step 1"
 // HAZARD (dry run): the bark audio L2 starts with the bubble and is cut when the chat opens (audio-end with cur < dur), then the chat plays L2 whole. The edit's in = chat l2_start - 0.1
 //   or later than the bark's audio-end, so no bark fragment is audible.
-// Marks: player-sprite, kiosk-open, look_up, l1_start, l2_bubble_start, interact:*, frame:npc-portrait-up, l2_start/l2_end (the chat's real voice edges), menu-up (if shown),
+// Marks: player-sprite, kiosk-open, look_up, l1_start, l2_bubble_start, interact:*, frame:npc-portrait-up, frame:portrait-held (chat still open, line ended: the portrait fully drawn), l2_start/l2_end (the chat's real voice edges), menu-up (if shown),
 //   chat-closed, tts-response (per voiced line), end.
 import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, watchBubbles, spriteCheck, watchTts, watchBarkAudio, talkTo, closeBeforeMenu } from './_ca14.mjs';
 import { watchVoice } from '../lib/lib.mjs';
@@ -36,7 +36,7 @@ export default async (page, bridge, mark) => {
   await talkTo(page, bridge, mark, 'kit_lorna_easton', /Lorna/i);
   const ln = await vw.waitForLine(/all of us at our desks/i, 15000);
   if (!ln) throw new Error('the chat did not open on L2; heard: ' + JSON.stringify(vw.lines.map(l => l.text)));
-  mark('l2_start', null, ln.start); mark('l2_end', { durMs: ln.durMs }, ln.end);
+  mark('l2_start', null, ln.start); mark('l2_end', { durMs: ln.durMs }, ln.end); mark('frame:portrait-held');
   await sleep(120);
   await vw.stop();
   await closeBeforeMenu(page, bridge, mark);

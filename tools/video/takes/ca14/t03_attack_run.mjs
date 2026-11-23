@@ -14,8 +14,8 @@
 import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, visible, waitVisible, mouseClick, addCss, textShowing, NARROW_CSS, spriteCheck } from './_ca14.mjs';
 
 // Real classes (mail-composer.js _renderMeter): the reason lines are .mail-redflag-list (li.mail-redflag-item), the clean line .mail-redflag-clean, the advice .mail-redflag-advice.
-// The title, the counter (.mail-redflag-count) and the hint .mail-redflag-sub stay.
-export const HIDE_CSS = `.mail-redflag-list, .mail-redflag-clean, .mail-redflag-advice { display: none !important; }
+// The title and the counter (.mail-redflag-count) stay; the hint .mail-redflag-sub ("Fewer flags means harder to spot") is hidden too.
+export const HIDE_CSS = `.mail-redflag-list, .mail-redflag-clean, .mail-redflag-advice, .mail-redflag-sub { display: none !important; }
 /* flip page: heading and Continue only (everything between is the sent message with its tells) */
 .aw-flip > *:not(.aw-heading):not(.aw-continue) { visibility: hidden !important; }`;
 const flagCount = (page) => page.evaluate(() => { const e = [...document.querySelectorAll('.mail-redflag-count')].find(x => x.offsetParent); return e ? e.innerText.trim() : null; });
