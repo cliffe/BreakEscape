@@ -291,7 +291,19 @@ function openRemoteViewIfHeld(lockable) {
     if (!window.pcSessions?.remoteViewFoothold?.(data.id)) return false;
     if (typeof window.networkLinks?.openSession !== 'function') return false;
     // The desktop closes back to the world, where the click came from: nothing more to reopen
-    window.networkLinks.openSession(data.id, { returnTo: () => {} });
+    const open = () => window.networkLinks.openSession(data.id, { returnTo: () => {}, toWorld: true });
+    const footholdId = window.pcSessions.remoteViewFoothold(data.id);
+    const links = window.networkLinks;
+    // After a reload no view of this foothold is held yet: the taskbar's Switch user reads the host's row in it
+    // (pcSessions.canSwitchUser), so fetch it first. A foothold the server no longer holds takes today's path.
+    if (typeof links.lastView === 'function' && typeof links.view === 'function' && !links.lastView(footholdId)) {
+        Promise.resolve(links.view(footholdId)).catch(() => null).then((out) => {
+            if (out?.ok === false && out.reason === 'gone') openLoginPc(lockable);
+            else open();
+        });
+        return true;
+    }
+    open();
     return true;
 }
 
@@ -358,7 +370,8 @@ export function remoteLockable(row, footholdId) {
 /** The host row for pcId from the last view fetched for this foothold, else what the session knows. */
 function remoteRowFor(pcId, footholdId) {
     const view = window.networkLinks?.lastView?.(footholdId);
-    const row = (view?.hosts || []).find(h => h?.id === pcId);
+    const hosts = [...(view?.hosts || []), ...(view?.networks || []).flatMap(n => n?.hosts || [])];
+    const row = hosts.find(h => h?.id === pcId);
     if (row) return row;
     const s = window.pcSessions?.get?.(pcId);
     return { id: pcId, name: s?.host || pcId, host: s?.host || null };

@@ -540,8 +540,8 @@ test('H-4: a guest claim ends on a reload like any claim', async () => {
     assert.equal(s.has('hot_desk'), false);
 });
 
-test('H-4: npc_sat_at displaces a password, a claimed, a guest and a remote session: one logout, the message, reason displaced', async () => {
-    for (const kind of ['password', 'claim', 'guest', 'remote']) {
+test('H-4: npc_sat_at displaces a password, a claimed and a guest session: one logout, the message, reason displaced; a remote copy is kept', async () => {
+    for (const kind of ['password', 'claim', 'guest']) {
         const s = setup();
         const handlers = {};
         window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
@@ -563,9 +563,27 @@ test('H-4: npc_sat_at displaces a password, a claimed, a guest and a remote sess
         delete window.eventDispatcher.on;
         delete window.npcManager;
     }
+    // A remote copy is not at the keyboard (core plan 5.4): kept, no logout, no event, its desktop stays open
+    const s = setup();
+    const handlers = {};
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    window.npcManager = { getNPC: id => ({ ian: { displayName: 'Ian Shaw' } }[id]) };
+    s.listen();
+    s._replace('hot_desk', { npcId: 'temp_user', username: 'temp', displayName: 'Temp', via: 'password', remote: true, footholdId: 'f1', host: 'HD-01' });
+    const closed = [];
+    s.registerDesktop('hot_desk', (m, why) => closed.push([m, why]));
+    events.length = 0;
+    handlers['npc_sat_at:*']({ npcId: 'ian', objectId: 'hot_desk' });
+    await settle();
+    assert.deepEqual(calls, []);
+    assert.deepEqual(named('pc_signed_out'), []);
+    assert.deepEqual(closed, []);
+    assert.equal(s.has('hot_desk'), true);
+    delete window.eventDispatcher.on;
+    delete window.npcManager;
 });
 
-test('H-4: a remote session started while the NPC sat there is displaced again on npc_borrowed_session; none held, nothing sent', async () => {
+test('H-4: a remote session started while the NPC sat there is kept on npc_borrowed_session; none held, nothing sent', async () => {
     const s = setup();
     const handlers = {};
     window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
@@ -577,8 +595,24 @@ test('H-4: a remote session started while the NPC sat there is displaced again o
     events.length = 0;
     handlers['npc_borrowed_session:*']({ npcId: 'ian', objectId: 'hot_desk', met: true });
     await settle();
+    assert.deepEqual(calls, []);
+    assert.deepEqual(named('pc_signed_out'), []);
+    assert.equal(s.has('hot_desk'), true);
+    delete window.eventDispatcher.on;
+});
+
+test('H-4: a keyboard password copy is displaced on npc_borrowed_session: one logout, reason displaced', async () => {
+    const s = setup();
+    const handlers = {};
+    window.eventDispatcher.on = (pattern, cb) => { handlers[pattern] = cb; };
+    s.listen();
+    s._replace('hot_desk', { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' });
+    events.length = 0;
+    handlers['npc_borrowed_session:*']({ npcId: 'ian', objectId: 'hot_desk', met: true });
+    await settle();
     assert.deepEqual(calls, [['logout', 'hot_desk']]);
-    assert.deepEqual(named('pc_signed_out').map(d => [d.reason, d.remote]), [['displaced', true]]);
+    assert.deepEqual(named('pc_signed_out').map(d => d.reason), ['displaced']);
+    assert.equal(s.has('hot_desk'), false);
     delete window.eventDispatcher.on;
 });
 

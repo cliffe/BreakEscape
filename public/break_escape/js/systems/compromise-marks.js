@@ -84,7 +84,7 @@ export class CompromiseMarks {
         const sources = this.sourcesOf(sprite.scenarioData?.id);
         if (sources.length === 0) { this._unmark(sprite); return; }
         const held = this.marks.get(sprite);
-        if (held) { held.sources = sources; return; }
+        if (held) { held.sources = sources; this._place(sprite, held.bolt); return; }
         const entry = { objectId: sprite.scenarioData.id, sources, bolt: null, applied: false };
         if (!keepsAuthoredLook(sprite)) {
             sprite.compromiseTint = MARK_TINT;
@@ -115,14 +115,23 @@ export class CompromiseMarks {
             if (!canvas || typeof scene.textures.addCanvas !== 'function') return null;
             scene.textures.addCanvas(BOLT_TEXTURE_KEY, canvas);
         }
+        const image = scene.add.image(0, 0, BOLT_TEXTURE_KEY);
+        image.setOrigin?.(1, 0);
+        this._place(sprite, image);
+        return image;
+    }
+
+    /** Put the bolt at the sprite's top right as it is now (a later pass follows a swapped look), shown as the sprite is. */
+    _place(sprite, image) {
+        if (!image) return;
         const w = sprite.displayWidth ?? sprite.width ?? 0;
         const h = sprite.displayHeight ?? sprite.height ?? 0;
         const ox = sprite.originX ?? 0.5;
         const oy = sprite.originY ?? 0.5;
-        const image = scene.add.image(sprite.x + w * (1 - ox), sprite.y - h * oy, BOLT_TEXTURE_KEY);
-        image.setOrigin?.(1, 0);
+        image.x = sprite.x + w * (1 - ox);
+        image.y = sprite.y - h * oy;
         image.setDepth?.((sprite.depth ?? 0) + 1);
-        return image;
+        if (sprite.visible !== undefined) image.visible = sprite.visible !== false;
     }
 
     /** Re-read every sprite's sources: marks whose source is gone come off, new ones go on. */

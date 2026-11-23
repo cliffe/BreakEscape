@@ -1035,12 +1035,13 @@ async function loadRoomOnce(roomId) {
 
     // A PC whose owner is already away with the screen locked gets its locked look, silently
     window.screenStates?.syncRoom(roomId);
-    // The red tint and bolt on a PC, device or jack the player holds by compromise (compromise-marks.js)
-    window.compromiseMarks?.syncRoom?.(roomId);
     // A jack with a device in it shows its plantedSprite (slice 9.3a, network-links.js)
     window.networkLinks?.syncRoom?.(roomId);
     // Plants that can take a held device, and the overlay of a hidden one (plant-hiding.js)
     window.plantHiding?.syncRoom?.(roomId);
+    // The red tint and bolt on a PC, device or jack the player holds by compromise (compromise-marks.js);
+    // after the planted look and the hiding, so the bolt is placed on the sprite's final size
+    window.compromiseMarks?.syncRoom?.(roomId);
     // The sticky note picture on a sign-in PC whose screen shows a note (slice 9.1, 5.3)
     window.postitMarks?.syncRoom(roomId);
     // A door a frustrated NPC propped stays open after a reload (slice 9.2 B, npc-workarounds.js)

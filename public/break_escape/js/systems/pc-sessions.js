@@ -513,7 +513,10 @@ export class PcSessions {
         const s = this.sessions.get(pcId);
         if (!s || s.via !== 'technique' || !s.footholdId) return true;
         const view = typeof window !== 'undefined' ? window.networkLinks?.lastView?.(s.footholdId) : null;
-        const row = (Array.isArray(view?.hosts) ? view.hosts : []).find(h => h?.id === pcId);
+        // The host sits in the foothold's own network or in one of the further networks
+        const hosts = [...(Array.isArray(view?.hosts) ? view.hosts : []),
+            ...(Array.isArray(view?.networks) ? view.networks : []).flatMap(n => (Array.isArray(n?.hosts) ? n.hosts : []))];
+        const row = hosts.find(h => h?.id === pcId);
         return row?.remoteSignIn !== false;
     }
 
@@ -603,15 +606,20 @@ export class PcSessions {
      * answer's session (npcId, username, displayName, via 'technique', remote, footholdId, host,
      * access?). Recorded as a sign-in's answer is: pc_signed_in, the sessions it ended dropped.
      */
-    noteTechniqueSession(pcId, session, endedPcIds = null) {
+    noteTechniqueSession(pcId, session, endedPcIds = null, tokenExpiredPcIds = null) {
         this.listen();
         if (!pcId || !session?.npcId) return null;
         const held = {
             npcId: session.npcId, username: session.username ?? null, displayName: session.displayName ?? null,
             via: 'technique', ...pictureFields(session), ...accessFields(session), ...remoteFields(session)
         };
+        // A repeat grant (core plan 5.4) changes nothing: the same copy is already held, so no sign-out or sign-in fires
+        const now = this.sessions.get(pcId);
+        if (now && now.via === 'technique' && now.npcId === held.npcId && now.footholdId === held.footholdId && now.access === held.access) {
+            return publicSession(pcId, now);
+        }
         this._replace(pcId, held);
-        this._dropEnded(endedPcIds, pcId, null);
+        this._dropEnded(endedPcIds, pcId, tokenExpiredPcIds);
         return publicSession(pcId, held);
     }
 
@@ -678,6 +686,7 @@ export class PcSessions {
             ...tokenFields({ ...body, via: 'credential' }),
             ...(body.route && typeof body.route === 'object' ? { route: body.route } : {}),
             ...pictureFields(body),
+            ...accessFields(body),
             ...remoteFields(body),
             ...relayFields(body)
         };
@@ -722,7 +731,7 @@ export class PcSessions {
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
         }
-        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim', ...pictureFields(body) };
+        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim', ...pictureFields(body), ...accessFields(body) };
         if (guest) session.guest = true;
         this._replace(pcId, session);
         // The owner came back while the claim was in flight: workstation_owner_returned

@@ -2267,9 +2267,9 @@ export async function create() {
         // (UX slice 2a R5 M1: a sign-in PC in the start room had no post-it mark, since
         // installPostitMarks ran before any room existed).
         window.screenStates?.syncRoom?.(startRoomId);
-        window.compromiseMarks?.syncRoom?.(startRoomId);
         window.networkLinks?.syncRoom?.(startRoomId);
         window.plantHiding?.syncRoom?.(startRoomId);
+        window.compromiseMarks?.syncRoom?.(startRoomId);
         window.postitMarks?.syncRoom?.(startRoomId);
         // A propped door in the start room (slice 9.2 B); restore() covers it when the runner comes later
         window.npcWorkarounds?.syncRoom?.(startRoomId);

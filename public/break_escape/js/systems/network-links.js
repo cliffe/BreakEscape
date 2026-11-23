@@ -133,10 +133,11 @@ const LANDINGS = {
         switch: () => null,
         item: () => null,
         share: () => null,
-        sign_out: () => ({ resume: true }),
-        no_session: (self, d) => ({ resume: true, message: sessionEndedMessage(self._hostOf(d)) }),
-        unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
-        not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
+        // A trip a click in the world started (openSession toWorld) goes back to the world: there is no network view behind it
+        sign_out: (self) => (self.trip?.toWorld ? { leave: 'closed' } : { resume: true }),
+        no_session: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: sessionEndedMessage(self._hostOf(d)) }),
+        unreachable: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: unreachableMessage(self._hostOf(d)) }),
+        not_responding: (self, d) => ({ ...(self.trip?.toWorld ? { leave: 'closed' } : { resume: true }), message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
         link_dropped: () => ({ leave: 'link_dropped' }),
         // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
@@ -732,10 +733,10 @@ export class NetworkLinks {
      * Open a held remote session's desktop through its foothold, starting a trip (offered to
      * the capture log, 13.4). The session's foothold comes from pcSessions (step 8 adds it).
      */
-    openSession(pcId, { returnTo = null } = {}) {
+    openSession(pcId, { returnTo = null, toWorld = false } = {}) {
         const session = win().pcSessions?.get?.(pcId) || null;
         const footholdId = session?.footholdId ?? null;
-        const trip = this._startTrip({ footholdId, start: 'session', pcId,
+        const trip = this._startTrip({ footholdId, start: 'session', pcId, ...(toWorld ? { toWorld: true } : {}),
             returnTo: typeof returnTo === 'function' ? returnTo : null });
         const startDesktop = win().openRemoteDesktop;
         // A session opened from another desktop (K4) has no foothold; it reopens by its source
