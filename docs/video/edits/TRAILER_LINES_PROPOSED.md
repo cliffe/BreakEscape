@@ -49,7 +49,11 @@ From `feedback/trailer_lines_m04_m10`. These override the Pick column above. Use
 | m07 ending | fires | Four fires tonight, and only one of you. I set them so you'd have to choose. | new, voiced |
 | m07 hook | alternatives wanted | | round 2 |
 | m08 | mole | There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing. | existing line (Netherton) |
-| m09 | alternatives wanted | | round 2 |
-| m10 | none saved | | the suggested picks stand (owner via AC0: take defaults) |
+| m09 ending | alternatives wanted | | round 2 |
+| m09 hook | paper | We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it. | new, voiced, in the game |
+| m10 ending | decades | Your service spent decades hoarding the world's weak points. At six, I give them back. | picked 2026-11-23; NOT yet inked (T345 has the unpicked blast-door line, to be replaced in the same commit) |
+| m10 hook | publishes | At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone. | existing line (Netherton) |
+
+Other answers (2026-11-23, via AC0): casualty rule "Relax it"; m05 twist "Keep him hidden" (Torres stays off screen); voice new lines "after the dialogue review".
 
 So the new m05, m06 and m08 lines are in the game (T345) but not in the trailers. In m08, the new line replaced Netherton's "Ask me what you need. Then go and prove something."

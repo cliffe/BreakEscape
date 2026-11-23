@@ -79,7 +79,7 @@ Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gra
 ## Must avoid
 
 - "Break Escape" anywhere on screen. "Play Mission 1 Free". A generic card title.
-- Answers, codes, PINs, passwords, flag values, casualty figures, choice or outcome screens, the debrief, and any end twist the mission withholds. Keypads with real digits. A post-it with a login. These hold even for a 3-frame crescendo cut: a viewer can step through frames, so crop or drop (m01: the Kali launcher's login post-it and Derek's "Anniversary" post-it are cropped out; Patricia's note was dropped because its second worked example is a real PIN).
+- Answers, codes, PINs, passwords, flag values, choice or outcome screens, the debrief, and any end twist the mission withholds. Keypads with real digits. A post-it with a login. These hold even for a 3-frame crescendo cut: a viewer can step through frames, so crop or drop (m01: the Kali launcher's login post-it and Derek's "Anniversary" post-it are cropped out; Patricia's note was dropped because its second worked example is a real PIN). Casualty figures are allowed when they are the stakes, such as Voltage's "forty-odd" in m04 (owner, 2026-11-23: "Relax it"); never as an outcome, and never a debrief total.
 - Gameplay-to-gameplay effects; slow push-ins (use the quick cut to a close-up); a second subtitle layer over the game's bar; minigames cropped through their frame.
 - Placeholders in a final render without the user's say-so.
 
