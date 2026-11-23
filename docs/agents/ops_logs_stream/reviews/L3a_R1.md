@@ -283,3 +283,14 @@ input (check 2); no row is written on an unvalidated branch; no secret or unearn
 row. Fix F1 (rows for folders only) and F4/F5/F6 (tests) in one tidy pass; F2 and F3 need a
 ruling and a plan wording change rather than code now. All nine checks were completed, by reading;
 no test was run in this review.
+
+## Outcomes (fixer)
+
+| Finding | Outcome | Commit |
+|---|---|---|
+| F1 | Row only for the share itself or an object with `contents` and an id; a file or nameless folder writes nothing, `/container` answer unchanged; tests with a file id request (by-name request answers 404 in the fixture, so not tested) | 3bc64aa3f |
+| F2 | Validator warning over 200 shares plus share folders (`validate_log_rows.rb`), node test, one sentence in plan 13.8 | 3bc64aa3f |
+| F3 | Plan 13.8 wording says what is built; edge pinned by a test; `seq` deferred in HANDOVER_L3a.md | 3bc64aa3f |
+| F4 | Table of literal answers for `session_admitting` and `session_admits?` over nil, each scope type, held, locked, relay, route down, foothold only, both | 3bc64aa3f |
+| F5 | `except('first')` removed; the byte-equal comparison passes | 3bc64aa3f |
+| F6 | Tests added: F1 request, F3 edge, malformed share call leaves the game unchanged (plant, unplug, join not added) | 3bc64aa3f |
