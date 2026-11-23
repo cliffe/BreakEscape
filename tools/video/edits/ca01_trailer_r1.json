@@ -2,14 +2,14 @@
  "mission": "ca01",
  "id": "ca01_trailer_r1",
  "theme": "ca",
- "title": "Cyber Aware ca01 trailer, round 1, script R1 (captions only, takes pending; narrator Sulafat budgeted at 2.3 words/s)",
+ "title": "Cyber Aware ca01 trailer, script R2 (narrator VO, not yet voiced)",
  "script": {
   "heading": "ca01 trailer script (Invoice fraud)",
   "owner_card": "none yet (script R1)",
-  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Gwen G2); open card with v1; name the topic in VO over footage that shows it; red chapter card, each attack step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; end on Adaeze's in-episode line (D336 default (a)+(c): A6, scout-verified state, not the ca13 seeded Agnieszka line); ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. VO lengths budgeted at 2.3 words/s (Sulafat)."
+  "brief": "Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell for the training, narrator VO about the course throughout; open on a strong in-game line (Gwen G2; E2 needs a 5.85 s shot, over the 5 s cold-open lint); open card with v1; name the topic in VO over footage that shows it; red chapter card, each attack step spoken over the footage that shows it; in-game cast lines, no narrator over a character line; blue chapter card and VO naming what to check; end on Adaeze's in-episode line (D336 default (a)+(c); R2: A3, caught branch, --set kit_key_caught=true); ca-close with \"Play the attack · Learn to stop it\" and the Hacktivity.co.uk call. Spoilers fine, no masks, no debrief cost line (D317), no music until D331. VO lengths budgeted at 2.3 words/s (Sulafat)."
  },
  "fps": 30,
- "length": 69.97,
+ "length": 71.59,
  "music": {
   "none": true,
   "note": "silent bed until D331; game room sound and voiced lines only"
@@ -39,7 +39,7 @@
    },
    "source": {
     "file": "t01_gwen_hook.trimmed.mkv",
-    "in": 0.0,
+    "in": 0,
     "out": 4.5
    },
    "audio": {
@@ -102,19 +102,19 @@
     "company": "Brightwell Foods",
     "stripe": "#2f6f5e"
    },
-   "duration": 5.0
+   "duration": 5.1
   },
   {
    "id": "topic",
    "type": "gameplay",
-   "duration": 5.41,
+   "duration": 5.98,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04_payments_inbox.trimmed.mkv",
-    "in": 9.0,
-    "out": 14.41
+    "in": 9,
+    "out": 14.98
    },
    "audio": {
     "gain_db": -6
@@ -177,14 +177,14 @@
   {
    "id": "research",
    "type": "gameplay",
-   "duration": 3.2,
+   "duration": 4.2,
    "join": {
     "type": "seam"
    },
    "source": {
     "file": "t02_attack_run.trimmed.mkv",
-    "in": 8.0,
-    "out": 11.2
+    "in": 8,
+    "out": 12.2
    },
    "audio": {
     "gain_db": -6
@@ -225,14 +225,14 @@
   {
    "id": "build",
    "type": "gameplay",
-   "duration": 6.5,
+   "duration": 6.8,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t02_attack_run.trimmed.mkv",
-    "in": 30.0,
-    "out": 36.5
+    "in": 30,
+    "out": 36.8
    },
    "audio": {
     "gain_db": -6
@@ -243,17 +243,17 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Mail template: pretext picked (closed drop-down), the three From/invoice slots filling, Red flags counter 2 to 1; framed above the Red flags box | CA: spoilers not an issue (owner), no masks"
+    "note": "Mail template: pretext picked (closed drop-down), the three From/invoice slots filling, Red flags counter 2 to 1; framed to keep the Red flags box and counter in shot | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
-    "chip": "LOOK-ALIKE EMAIL BUILDER",
+    "chip": "SUPPLIER EMAIL BUILDER",
     "stripe": "#2f6f5e"
    },
    "framing": {
     "16:9": {
      "cx": 0.45,
-     "cy": 0.35,
+     "cy": 0.36,
      "zoom": 1.6
     },
     "9:16": {
@@ -268,19 +268,20 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks"
+   "placeholder_note": "PENDING TAKE t02_attack_run: fresh ca01 game, no flags, Skip tutorial, close the Brief, kiosk Start, browser notes (Adaeze, Harlow/Derek Mason, INV-2217), mail client, Compose, pretext + three slots, Send, hold on It landed, close the mail client onto the flip. in/out are estimates: set from the take's marks",
+   "framing_note": "keep the Red flags box and its counter in frame (down to about y 725 of the source)"
   },
   {
    "id": "lands",
    "type": "gameplay",
-   "duration": 3.17,
+   "duration": 3.32,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t02_attack_run.trimmed.mkv",
-    "in": 44.0,
-    "out": 47.17
+    "in": 44,
+    "out": 47.32
    },
    "audio": {
     "gain_db": -6
@@ -321,14 +322,14 @@
   {
    "id": "flip",
    "type": "gameplay",
-   "duration": 1.8,
+   "duration": 2,
    "join": {
     "type": "flip"
    },
    "source": {
     "file": "t02_attack_run.trimmed.mkv",
-    "in": 52.0,
-    "out": 53.8
+    "in": 52,
+    "out": 54
    },
    "audio": {
     "gain_db": -6
@@ -434,7 +435,7 @@
    "type": "card",
    "style": "ca",
    "chapter": "defend",
-   "duration": 2.5,
+   "duration": 2,
    "join": {
     "type": "seam"
    },
@@ -453,14 +454,14 @@
   {
    "id": "triage",
    "type": "gameplay",
-   "duration": 12.92,
+   "duration": 13.35,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04_payments_inbox.trimmed.mkv",
-    "in": 3.0,
-    "out": 15.92
+    "in": 3,
+    "out": 16.35
    },
    "audio": {
     "gain_db": -6
@@ -471,7 +472,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "List '0 of 6 sorted', click the lure row; card From 'Brightwell Foods Accounts <accounts@brightwel1foods.example>' readable; hover Trust/Report/Delete/Verify, nothing pressed | CA: spoilers not an issue (owner), no masks"
+    "note": "List '0 of 6 sorted', click the lure row; card opens, framed on the From line 'Brightwell Foods Accounts <accounts@brightwel1foods.example>' readable; hover Trust/Report/Delete/Verify, nothing pressed | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "defend",
@@ -499,19 +500,20 @@
    "placeholder_note": "PENDING TAKE t04_payments_inbox: same --set as t03 (scout S7, verified); kiosk opens on Defend, Open the inbox, Start, hold on the list, click 'Updated bank details, please action today', hold the card, hover the four verdict buttons, press nothing. in/out from marks",
    "voPos": {
     "16:9": "top"
-   }
+   },
+   "framing_note": "after click-lure, frame the From line (address) only; set cy/zoom from the t04 card-open mark"
   },
   {
    "id": "adaeze_end",
    "type": "gameplay",
-   "duration": 7.8,
+   "duration": 7.17,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t05_adaeze_end.trimmed.mkv",
-    "in": 21.0,
-    "out": 28.8
+    "in": 0,
+    "out": 7.17
    },
    "audio": {
     "gain_db": 0,
@@ -524,7 +526,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Adaeze A6 after the defend set, not-caught branch (cached, 7.46 s); in = A6 subtitle start, never earlier: A7 before it carries the cost figure (D317); chat closes before the menu | CA: spoilers not an issue (owner), no masks"
+    "note": "Adaeze A3 after the defend set, caught branch (kit_key_caught=true; cached, 6.82 s); in = A3 subtitle start, after the A4 verdict line; chat closes before the menu"
    },
    "seat": {
     "seat": "defend",
@@ -549,13 +551,13 @@
     }
    },
    "placeholder": true,
-   "placeholder_note": "PENDING TAKE t05_adaeze_end: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true (scout-verified E2 state; kit_key_caught unset), BE_SPRITE female_office_worker_v2, talk to Adaeze: A7 (19.1 s, cost line, never in frame) then A6; close the chat before the 'Thanks, Adaeze.' choice. in = mark a6-subtitle-start (A7's bar must not show)",
+   "placeholder_note": "PENDING TAKE t05_adaeze_end: fresh ca01 game with --set kit_defend_done=true --set kit_attack_done=true --set kit_key_caught=true (caught branch), BE_SPRITE female_office_worker_v2, talk to Adaeze: A4 (verdict) then A3; close the chat before the Thanks, Adaeze. choice. in = mark a3-subtitle-start (A4 must not show)",
    "lines": [
     {
      "start": 0.05,
-     "end": 7.51,
+     "end": 6.87,
      "speaker": "Adaeze",
-     "text": "Ring the person back on a number you already hold before you change who gets paid. That one call is what stops this."
+     "text": "Ring the person back on a number you already hold before you change who gets paid, and the wrong account never sees a penny."
     }
    ],
    "caption": {
@@ -598,82 +600,82 @@
   },
   {
    "id": "v1b",
-   "start": 9.75,
-   "end": 12.27,
-   "text": "Same invoice, new bank account."
+   "start": 9.85,
+   "end": 13.09,
+   "text": "A real invoice, a new bank account."
   },
   {
    "id": "v1c",
-   "start": 12.52,
-   "end": 14.61,
+   "start": 13.34,
+   "end": 15.28,
    "text": "This episode: invoice fraud."
   },
   {
    "id": "v2",
-   "start": 15.51,
-   "end": 17.91,
+   "start": 16.18,
+   "end": 18.55,
    "text": "First, you play the attacker.",
    "onCard": "hide"
   },
   {
    "id": "v3",
-   "start": 18.61,
-   "end": 21.27,
+   "start": 19.28,
+   "end": 22.09,
    "text": "Find the supplier and its invoice."
   },
   {
    "id": "v4",
-   "start": 21.81,
-   "end": 24.47,
+   "start": 23.48,
+   "end": 26.29,
    "text": "Write the email as the supplier."
   },
   {
    "id": "v4b",
-   "start": 24.72,
-   "end": 27.81,
-   "text": "Each real fact cuts a red flag."
+   "start": 26.54,
+   "end": 29.78,
+   "text": "Real details make it harder to spot."
   },
   {
    "id": "v5",
-   "start": 28.31,
-   "end": 29.66,
+   "start": 30.28,
+   "end": 31.78,
    "text": "Then send it."
   },
   {
    "id": "v6",
-   "start": 30.01,
-   "end": 30.93,
+   "start": 32.03,
+   "end": 33.1,
    "text": "It landed."
   },
   {
    "id": "v8a",
-   "start": 43.98,
-   "end": 46.64,
+   "start": 45.8,
+   "end": 48.61,
    "text": "Now you sort the payments inbox."
   },
   {
    "id": "v8b",
-   "start": 46.89,
-   "end": 49.55,
-   "text": "Read the address letter by letter."
+   "start": 48.86,
+   "end": 52.1,
+   "text": "Check the address. Names can be forged."
   },
   {
    "id": "v9",
-   "start": 49.8,
-   "end": 51.59,
+   "start": 52.35,
+   "end": 54.29,
    "text": "You've written one yourself."
   },
   {
    "id": "v10",
-   "start": 51.84,
-   "end": 56.4,
+   "start": 54.54,
+   "end": 58.65,
    "text": "New bank details, and a rush? Stop and check.",
    "caption": "New bank details, and a rush?\nStop and check."
   },
   {
    "id": "v11",
-   "start": 64.7,
-   "end": 69.67,
+   "start": 66.32,
+   "end": 70.43,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk."
   }
  ]
