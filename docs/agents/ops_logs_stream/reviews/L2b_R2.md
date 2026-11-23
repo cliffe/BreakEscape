@@ -123,3 +123,13 @@ Blockers 0. Majors 0. Minors 5 (N-1 to N-5). R1's 13 findings: 5 confirmed fixed
 **Ready to land after the playtest rerun.** The server-judged flag is gone without trace in code, the shared files and the plan equal main, and the client check is what plan 5.2 and 7 describe, with tests that fail when it is broken.
 
 Recommended in one tidy pass before or with the landing (none blocks it): N-2 (re-run `complete_task` at open when the done global is set; viewer and one node test), N-1 (two validator warnings and their tests), and the three wording items N-3, N-4, N-5 (docs and the brief only). If only one is done, do N-2: it is the one that can leave a player's task unfinishable.
+
+## R2 outcomes
+
+| Id | Outcome | Where |
+|---|---|---|
+| N-2 | fixed: a reader opened done re-runs its `complete_task` entries only; node test (mutation: re-run removed, two tests fail) | `ops-log-minigame.js` constructor; `ops-log-viewer.test.mjs` |
+| N-1 | fixed: two validator warnings, one node test each; `test_ops_logs` gains none | `validate_log_rows.rb` `log_check_anomaly`; `validator-log-sources.test.mjs` |
+| N-3 | fixed: one sentence in A24 | `docs/ACCESS_AND_NETWORKS.md` |
+| N-4 | fixed: beat 17 reworded; the optional container test not added | `PLAYTEST.md` |
+| N-5 | fixed: the flagged look stays; A24 "Plan vs code" names the reading | `docs/ACCESS_AND_NETWORKS.md` |

@@ -65,3 +65,8 @@ tests pass; `git diff --stat main -- public/break_escape/js/minigames/log-filter
 - The viewer cache survives a reopen but not a reload; after a reload the flagged mark comes from the done global (it must have been synced).
 - Merge: the shared files (routes, controller, game.rb, policy, plan) are identical to main; the schema, the validator and the docs are this stream's only edits there.
 - A source with one seed row and an anomaly warns (the flag has a single candidate).
+
+## R2 tidy pass (2026-11-23)
+- N-2: a reader that opens with its done global true re-runs the `complete_task` entries of `flagActions` and `completionActions` (constructor, `ops-log-minigame.js`); no `set_global`, no "flagged just now" note. Contract change: opening done is no longer silent for tasks.
+- N-1: `validate_log_rows.rb` `log_check_anomaly` warns for an anomaly with no actions and for one whose actions set no global to true.
+- N-3, N-5: A24 docs text; N-4: PLAYTEST beat 17 reworded.
