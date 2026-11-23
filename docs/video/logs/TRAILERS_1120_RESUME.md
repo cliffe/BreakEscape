@@ -138,3 +138,14 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - Tab "m05 · v2" on the review page (version 18), feedback doc feedback/m05_trailer_v2. Assets 16x9 3f32c64358a07e28d3798d2a27850488, 9x16 f328e586cd59dbcf0a41a0a06739575f, 1x1 14662292a077ff33212a5c43f15efe04.
 - Swap noted on the tab: "I find people..." (removed by D356) replaced by the in-game phone line "Fanaticism is somebody else's department. I just staff the operation." Night row checked on the 9:16 sheet.
 - m06 takes block 2 agent running on the rig.
+
+## (18:00) Pending re-take: m05 t24 for Niamh's new portrait
+- CA0 re-made Niamh's bust and visemes (9584d3bb8, not yet on main). The m05 cut uses her once: cr_niamh, t24 15.0-15.27.
+- When it lands on main: merge main, re-film t24 (MISSION=m05, same flags as its row), swap cr_niamh's in/out, and fold into the m05 round with the owner's v2 corrections. AC0 told.
+- Machine with CA0 (B2) since 17:50; m06 t21-t29 next on "machine yours".
+
+## (18:20) Owner notes on m04/m05 (via AC0)
+- Captions: 16:9 burned captions off (52c57cbde), crops keep theirs. Not re-rendered yet.
+- Netherton art: m02/m05/m06 wired male_spy_v2; fixed on lines branch 47a200f32 (validator 0 errors x3, routes 404/404), merged here (3f161f2d2). Sent to AC0 for a train.
+- Netherton visemes: Sonnet agent on worktree netherton-visemes (branch art/netherton-visemes, from main), override mechanism; handover at scratchpad netherton-visemes-handover.md if it stops. Check its before/after frames myself, then hash to AC0 and merge here.
+- Next machine block (after CA0 "machine yours"; after visemes merged; Niamh 9584d3bb8 merged once on main): re-film m05 t01 hook, m05 t24 faces, m04 hook take, m06 t10; then m06 t21-t29. Then swap clip in/outs, re-render m04 v2 + m05 v3, review tabs (note: 16:9 captions removed, Netherton art fixed, Niamh new bust), hash to AC0.
