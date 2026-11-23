@@ -1,6 +1,6 @@
 # Trailer lines, round 2 (2026-11-22)
 
-The owner kept m05, m06, the m07 ending and m08 as voiced. They asked for alternatives on three:
+The owner picked the existing lines for m05 ("Everyone has a price, agent..."), m06 ("...The winners get statues.") and m08 ("There is a mole in SAFETYNET..."), and the new "Four fires tonight..." for the m07 ending. The unpicked m08 line was taken back out on 2026-11-23; the new m05 and m06 lines stay in the game for now. When the round-2 picks arrive, replace or remove the rejected round-1 lines (m04, m07 hook, m09) in the same commit as the new ones. They asked for alternatives on three:
 
 - **m04 Voltage ending:** "Propose some alternatives with some more clever threat/menace."
 - **m07 hook:** "Maybe a new intro line from a briefing: 'we're faced with an impossible decision'." This is a pre-outcome line to replace HaX's "One team, three fires".
