@@ -15,6 +15,18 @@
       "optional": false
     },
     {
+      "id": "door_security",
+      "label": "Security office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "security",
+      "label": "Security office",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "lock_office_pc",
       "label": "Office PC<br/>Sign-in",
       "kind": "lock",
@@ -46,6 +58,11 @@
       "soft": false
     },
     {
+      "from": "door_security",
+      "to": "security",
+      "soft": false
+    },
+    {
       "from": "office",
       "to": "lock_office_pc",
       "soft": false
@@ -58,6 +75,11 @@
     {
       "from": "card_fin_dana_01",
       "to": "door_office",
+      "soft": false
+    },
+    {
+      "from": "card_fin_dana_01",
+      "to": "door_security",
       "soft": false
     },
     {

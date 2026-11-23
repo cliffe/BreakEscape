@@ -271,6 +271,18 @@ module BreakEscape
         end
       end
 
+      # The id of a play row for the browser (7): ten hex characters of an HMAC of the game, the
+      # source and the row's seq under a purpose key, so the browser cannot recover seq.
+      def row_id(game_id, source_id, seq)
+        key = Rails.application.key_generator.generate_key('ops_log_row_id')
+        OpenSSL::HMAC.hexdigest('SHA256', key, [game_id, source_id, seq].to_json)[0, 10]
+      end
+
+      # Six characters of MD5 over the title and the client rows, as keyring_rev does (6).
+      def rows_rev(title, rows)
+        Digest::MD5.hexdigest(JSON.generate([title, rows]))[0, 6]
+      end
+
       def digest(*parts)
         Digest::SHA256.hexdigest(canonical(parts).to_json)[0, 12]
       end
@@ -362,6 +374,24 @@ module BreakEscape
       rows.map { |row| [row['event'], row['as'], row['where'], row['result'], row['detail'], row['n'] || 1].deep_dup }
     end
 
+    # What the browser may see of one declared source (OPS_LOG_ROWS_PLAN.md sections 5.1 and 7):
+    # { rev:, title:, rows: [...] }, or nil for a source the scenario does not declare. Each row is
+    # built from an allow-list of exactly seven keys (id, elapsedMs, event, as, where, result,
+    # detail); seq, serverMs, `last`, `p` (only the trailing `+`), raw ids and `show: false`
+    # detail keys never leave. Seed rows are L2b and are not listed yet. Writes nothing.
+    def log_rows_for_client(source_id)
+      entry = OpsLog.sources_for(scenario_data).find { |id, _source, _cap| id == source_id.to_s }
+      return nil unless entry
+
+      source = entry[1]
+      title = source['title'].is_a?(String) && !source['title'].empty? ? source['title'] : 'Log'
+      show_holder = source['showCardHolder'] == true
+      rows = log_rows_for(source_id).map do |row|
+        ops_log_client_row(source_id.to_s, row, hide_holder: !show_holder)
+      end
+      { rev: OpsLog.rows_rev(title, rows), title: title, rows: rows }
+    end
+
     # Game time at this moment (13.4): the saved elapsedMs plus the server time since
     # opsLogClockAt, capped at five minutes past the saved value; 0 with no clock key.
     def ops_log_elapsed_ms
@@ -373,6 +403,81 @@ module BreakEscape
     end
 
     private
+
+    # ----- the reader (L2a) -------------------------------------------------------------------
+
+    def ops_log_client_row(source_id, row, hide_holder:)
+      definition = OpsLog.events[row['event'].to_s]
+      {
+        id: OpsLog.row_id(id, source_id, row['seq']),
+        elapsedMs: row['elapsedMs'].to_i,
+        event: definition ? definition[:label] : row['event'].to_s.upcase,
+        as: ops_log_client_as(row, hide_holder: hide_holder),
+        where: ops_log_client_where(row['where']),
+        result: ops_log_client_result(row),
+        detail: ops_log_client_detail(definition, row['detail'])
+      }
+    end
+
+    # A source without showCardHolder never names a card's holder (L1b ruling): the stored row is
+    # shared between sources, and a badge row whose identity is kept by the flag alone carries the
+    # hidden detail `flagged` (written by ops_badge_as), so a source without the flag reads `-`.
+    def ops_log_client_as(row, hide_holder:)
+      as = row['as']
+      return '-' unless as.is_a?(Hash)
+
+      if as['account'].is_a?(String)
+        self.class.normalise_username(as['account'])
+      elsif as['typed'].is_a?(String)
+        as['cut'] ? "#{as['typed']}~" : as['typed']
+      elsif hide_holder && row['event'] == 'badge_swipe' && row['detail'].is_a?(Hash) && row['detail']['flagged']
+        '-'
+      elsif as['npc'].is_a?(String)
+        ops_log_client_thing('npc', as['npc'])
+      elsif as['card'].is_a?(String)
+        ops_log_client_thing('card', as['card'])
+      else
+        '-'
+      end
+    end
+
+    def ops_log_client_where(where)
+      return '-' unless where.is_a?(Hash)
+
+      where['id'].is_a?(String) ? ops_log_client_thing(where['kind'].to_s, where['id']) : '-'
+    end
+
+    # A thing's authored name; `-` when the kind is unknown or the id no longer resolves; its kind
+    # word when it has no authored name (the KINDS lookups fall back to the id), never the raw id.
+    def ops_log_client_thing(kind, id)
+      lookup = OpsLog.kinds[kind]
+      name = lookup && lookup[:name].call(self, id)
+      return '-' unless name.is_a?(String)
+      return name if kind == 'account'
+
+      [id, id.sub(/\A(?:jack|wifi|implant)_/, '')].include?(name) ? kind : name
+    end
+
+    def ops_log_client_result(row)
+      text = row['result'].to_s.upcase
+      text += " x#{row['n']}" if row['n'].to_i > 1
+      text += '+' if row['p']
+      text
+    end
+
+    def ops_log_client_detail(definition, detail)
+      return '' unless definition && detail.is_a?(Hash)
+
+      rules = definition[:detail] || {}
+      parts = detail.filter_map do |key, value|
+        rule = rules[key.to_s]
+        next if rule.nil? || (rule.is_a?(Hash) && rule[:show] == false)
+
+        shown = rule.is_a?(Hash) && rule.key?(:id) ? ops_log_client_thing(rule[:id], value.to_s) : value.to_s
+        "#{key}: #{shown}"
+      end
+      parts.join(', ')
+    end
 
     # ----- step 2: checks ----------------------------------------------------------------------
 

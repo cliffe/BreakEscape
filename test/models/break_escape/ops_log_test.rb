@@ -81,7 +81,8 @@ module BreakEscape
       'tst_note' => { label: 'NOTE', places: [], results: %w[ok denied] },
       'tst_harvest' => { label: 'HARVEST', places: %w[pc], results: %w[ok], detail: { 'count' => { count: BreakEscape::OpsLogEvents::MAX_COUNT } } },
       'tst_any' => { label: 'ANY', places: [], results: %w[ok], detail: { 'v' => { id: 'test_any' } } },
-      'tst_net' => { label: 'NET', places: %w[test_host], results: %w[ok] }
+      'tst_net' => { label: 'NET', places: %w[test_host], results: %w[ok] },
+      'tst_from' => { label: 'FROM', places: [], results: %w[ok], detail: { 'from' => { id: 'foothold' } } }
     }.freeze
     # Step 7 only: four 40-character ids, which no registered event may ship (the ceiling test).
     BIG_EVENT = { 'tst_big' => { label: 'BIG', places: %w[pc], results: %w[ok],
@@ -863,6 +864,160 @@ module BreakEscape
       30.times { |i| write(game, 'tst_note', as: typed("u#{i}")) }
       assert_equal 30, game.player_state['opsLogSeq']
       assert_equal 10, rows(game, 'log').size
+    end
+
+    # ---- the reader (L2a) ----
+
+    HIDING_EVENT = { 'tst_hid' => { label: 'HID', places: %w[pc], results: %w[ok],
+                                    detail: { 'shown' => %w[a b], 'hid' => { id: 'npc', show: false }, 'who' => { id: 'npc' } } } }.freeze
+
+    test 'log_rows_for_client builds exactly the seven keys, in seq order, with no stored field' do
+      game = make_game
+      Thread.current[:ops_log_overlay] = { events: TEST_EVENTS.merge(HIDING_EVENT), kinds: TEST_KINDS }
+      at(T0) do
+        write(game, 'tst_signin', as: { account: 'J_Price' }, where: pc('recep_pc'), result: 'ok', detail: { 'method' => 'password' })
+        write(game, 'tst_hid', as: { npc: 'guard' }, where: pc('srv_pc'),
+                               detail: { 'shown' => 'a', 'hid' => 'guard', 'who' => 'guard' })
+        write(game, 'tst_note')
+      end
+      note = game.log_rows_for_client('notes')[:rows]
+      assert_equal ['-', '-', ''], [note[0][:as], note[0][:where], note[0][:detail]]
+      answer = game.log_rows_for_client('by_prefix')
+      assert_equal %i[rev rows title], answer.keys.sort
+      assert_equal 'By prefix', answer[:title]
+      assert_match(/\A\h{6}\z/, answer[:rev])
+      assert_equal %w[SIGN_IN HID], answer[:rows].map { |r| r[:event] }
+      answer[:rows].each { |r| assert_equal %i[as detail elapsedMs event id result where], r.keys.sort }
+      assert_equal 'j_price', answer[:rows][0][:as]
+      assert_equal 'method: password', answer[:rows][0][:detail]
+      assert_equal 'shown: a, who: Gate Guard', answer[:rows][1][:detail], 'a show: false key is absent'
+      assert_equal %w[Gate\ Guard], [answer[:rows][1][:as]]
+      stored = game.log_rows_for('by_prefix')
+      answer[:rows].zip(stored).each do |row, raw|
+        assert_match(/\A\h{10}\z/, row[:id])
+        assert_not_equal raw['seq'].to_s, row[:id]
+      end
+      assert_equal 2, answer[:rows].map { |r| r[:id] }.uniq.size
+      json = answer.to_json
+      %w[seq serverMs last opsLog].each { |key| assert_no_match(/"#{key}"/, json) }
+      assert_no_match(/\bhid\b/, json)
+    end
+
+    test 'row ids are keyed per game and source, and stable across reads' do
+      one = make_game
+      two = make_game
+      at(T0) do
+        write(one, 'tst_note')
+        write(two, 'tst_note')
+      end
+      first = one.log_rows_for_client('notes')[:rows].first[:id]
+      assert_equal first, one.log_rows_for_client('notes')[:rows].first[:id]
+      assert_not_equal first, two.log_rows_for_client('notes')[:rows].first[:id]
+    end
+
+    test 'one stored event in two sources has two different row ids' do
+      game = make_game
+      at(T0) { write(game, 'tst_door', where: { kind: 'door', id: 'vault' }) }
+      assert_equal 1, rows(game, 'by_event').size
+      assert_equal 1, rows(game, 'by_prefix').size
+      ids = %w[by_event by_prefix].map { |s| game.log_rows_for_client(s)[:rows].first[:id] }
+      assert_equal 2, ids.uniq.size
+      assert_equal rows(game, 'by_event').first['seq'], rows(game, 'by_prefix').first['seq'], 'the same seq, so the key is the source'
+    end
+
+    test 'log_rows_for_client shows an account and typed text alike, a cut one with a tilde, and counts and protection' do
+      game = make_game
+      at(T0) do
+        write(game, 'tst_signin', as: { account: 'j_price' }, where: pc('recep_pc'), result: 'denied')
+        write(game, 'tst_signin', as: typed('J_PRICE'), where: pc('recep_pc'), result: 'blocked')
+        write(game, 'tst_signin', as: typed('x' * 50), where: pc('recep_pc'), result: 'blocked')
+        3.times { write(game, 'tst_signin', as: typed('amy'), where: pc('recep_pc'), result: 'denied') }
+      end
+      shown = game.log_rows_for_client('by_prefix')[:rows]
+      assert_equal %w[j_price j_price], shown.first(2).map { |r| r[:as] }
+      assert_equal "#{'x' * 32}~", shown[2][:as]
+      assert_equal ['DENIED', 'BLOCKED', 'BLOCKED', 'DENIED x3'], shown.map { |r| r[:result] }
+      game.player_state['opsLog']['by_prefix'].last['p'] = 1
+      assert_equal 'DENIED x3+', game.log_rows_for_client('by_prefix')[:rows].last[:result]
+    end
+
+    test 'log_rows_for_client shows an unresolved place as a dash and answers nil for an undeclared source' do
+      game = make_game
+      at(T0) { write(game, 'tst_signin', as: nil, where: pc('recep_pc')) }
+      game.scenario_data['rooms']['lobby']['objects'] = []
+      assert_equal ['-'], game.log_rows_for_client('by_prefix')[:rows].map { |r| r[:where] }
+      assert_nil game.log_rows_for_client('missing')
+      assert_nil make_game(sources: nil).log_rows_for_client('by_prefix')
+    end
+
+    test 'the rev moves with a row, a title and a count, and is six characters' do
+      game = make_game
+      empty = game.log_rows_for_client('notes')[:rev]
+      at(T0) { write(game, 'tst_note') }
+      one = game.log_rows_for_client('notes')[:rev]
+      at(T0) { write(game, 'tst_note') }
+      two = game.log_rows_for_client('notes')[:rev]
+      assert_equal 3, [empty, one, two].uniq.size
+      game.scenario_data['logSources']['notes']['title'] = 'Other'
+      assert_not_equal two, game.log_rows_for_client('notes')[:rev]
+    end
+
+    # The stored marker (`flagged`) is what makes a source without showCardHolder show `-`; the
+    # rows that end up marked are proved through POST /unlock in log_rows_test.rb.
+    test 'a flagged badge row reads - in a source without showCardHolder, in both forms, and an unflagged one is shown' do
+      sources = { 'plain' => { 'title' => 'Plain', 'events' => ['badge_swipe'] },
+                  'holder' => { 'title' => 'Holder', 'events' => ['badge_swipe'], 'showCardHolder' => true } }
+      game = make_game(sources: sources)
+      game.scenario_data['rooms']['lobby']['objects'] << { 'id' => 'gate_badge', 'type' => 'keycard', 'name' => 'Gate badge', 'card_id' => 'GATE-1' }
+      at(T0) do
+        write(game, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' }, detail: { 'flagged' => 1 })
+        write(game, 'badge_swipe', as: { card: 'GATE-1' }, where: { kind: 'door', id: 'vault' }, detail: { 'flagged' => 1 })
+        write(game, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' })
+      end
+      shown = ->(source) { game.log_rows_for_client(source)[:rows] }
+      assert_equal ['Gate Guard', 'Gate badge', 'Gate Guard'], shown.call('holder').map { |r| r[:as] }
+      assert_equal ['-', '-', 'Gate Guard'], shown.call('plain').map { |r| r[:as] }
+      assert_equal [''] * 3, shown.call('plain').map { |r| r[:detail] }, 'the marker is never shown as a detail'
+      assert_no_match(/flagged/, game.log_rows_for_client('plain').to_json)
+    end
+
+    test 'a thing with no authored name shows its kind word in where, as and an id detail, never the raw id' do
+      game = make_game(sources: SOURCES.merge('by_from' => { 'title' => 'From', 'events' => ['tst_from'] }))
+      lobby = game.scenario_data['rooms']['lobby']
+      lobby['objects'] << { 'id' => 'gate_badge', 'type' => 'keycard', 'card_id' => 'GATE-1' }
+      lobby['objects'].find { |o| o['id'] == 'recep_pc' }.delete('name')
+      lobby['npcs'].find { |n| n['id'] == 'guard' }.delete('displayName')
+      game.scenario_data['networks']['bare_lan'] = { 'wifi' => { 'ssid' => 'bare', 'psk' => 'Bare-Key-1' } }
+      at(T0) do
+        write(game, 'tst_door', as: { npc: 'guard' }, where: pc('recep_pc'))
+        write(game, 'tst_door', as: { card: 'GATE-1' }, where: pc('recep_pc'))
+        write(game, 'tst_from', detail: { 'from' => 'wifi_bare_lan' })
+        write(game, 'tst_from', detail: { 'from' => 'implant_recep_pc' })
+        write(game, 'tst_from', detail: { 'from' => 'jack_recep_pc' })
+      end
+      shown = game.log_rows_for_client('by_prefix')[:rows]
+      from = game.log_rows_for_client('by_from')[:rows]
+      assert_equal %w[npc card], shown.map { |r| r[:as] }
+      assert_equal %w[pc pc], shown.map { |r| r[:where] }
+      assert_equal ['from: foothold'] * 3, from.map { |r| r[:detail] }
+      assert_no_match(/bare_lan|recep_pc|GATE-1|guard/, (shown + from).to_json)
+    end
+
+    test 'a door shows its door sign, then its room name, then the kind word, never the raw id' do
+      game = make_game
+      vault = game.scenario_data['rooms']['vault']
+      at(T0) { write(game, 'tst_door', where: { kind: 'door', id: 'vault' }) }
+      name = -> { game.log_rows_for_client('by_prefix')[:rows].last[:where] }
+      assert_equal 'door', name.call
+      vault['name'] = 'Vault'
+      assert_equal 'Vault', name.call, 'a room with only a name shows the name'
+      vault['door_sign'] = 'Vault Annex'
+      assert_equal 'Vault Annex', name.call, 'a room with both shows the door sign first'
+      vault['door_sign'] = ''
+      assert_equal 'Vault', name.call, 'an empty sign falls through to the name'
+      vault.delete('name')
+      vault['door_sign'] = 'Vault Annex'
+      assert_equal 'Vault Annex', name.call, 'a room with only a sign shows the sign'
     end
 
     test 'KINDS resolve objects in containers, files in containers, and show an unresolved id as nil' do

@@ -1,5 +1,5 @@
 {
-  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log's write side (OPS_LOG_ROWS_PLAN.md, stage L1b). One lobby, one card door and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen. The scenario declares log sources and has no reader: the rows are checked from the server (verify-run.rb --ops-log). Nothing to solve.",
+  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lobby, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. Nothing to solve.",
   "endGoal": "Test only: make the log write its rows.",
   "startRoom": "lobby",
   "startPosition": { "x": 7, "y": 7 },
@@ -62,7 +62,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen.\nThe office PC's sticky note holds the password.",
+          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen. The security office (east of the office) opens for finance staff too: its two terminals show the door and sign-in logs.\nThe office PC's sticky note holds the password.",
           "observations": "A sign on a stand by the front desk."
         }
       ],
@@ -95,7 +95,7 @@
     "office": {
       "type": "room_office",
       "door_sign": "Finance office",
-      "connections": { "west": "lobby" },
+      "connections": { "west": "lobby", "east": "security" },
       "locked": true,
       "lockType": "rfid",
       "access": { "roles": ["finance"] },
@@ -113,6 +113,35 @@
           "postitNote": "Dana: dreyes / Ledger-Dana-7",
           "showPostit": true,
           "observations": "The finance office PC. It asks for a username."
+        }
+      ]
+    },
+
+    "security": {
+      "type": "room_office",
+      "door_sign": "Security office",
+      "connections": { "west": "office" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["finance"] },
+      "objects": [
+        {
+          "type": "ops_log_terminal",
+          "id": "door_log_pc",
+          "name": "Door log PC",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the door controller's log.",
+          "minigameData": { "logSource": "door_controller" }
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "signin_log_pc",
+          "name": "Sign-in log PC",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the sign-in audit log.",
+          "minigameData": { "logSource": "signin_audit" }
         }
       ]
     }

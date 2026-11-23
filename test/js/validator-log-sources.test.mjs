@@ -279,3 +279,38 @@ test('warning: authored answer copies and station literal flags are secrets (R2 
     ref.rooms.vault.objects.push({ id: 'c4', type: 'flag-station', flags: ['lobby:flag_a'] });
     assert.deepEqual(warnings(issues(ref)).filter(w => w.includes('equals a username')), []);
 });
+
+// Plan section 9: the reader checks (L2a R2, S2 and N5).
+const withReader = (patch, source = 'door_log') => {
+    const s = clean();
+    s.rooms.lobby.objects.push({ id: 'door_reader', type: 'ops_log_terminal', name: 'Door log', minigameData: { logSource: source }, ...patch });
+    return s;
+};
+
+test('a well-formed ops_log_terminal raises no error', { skip }, () => {
+    assert.deepEqual(errors(issues(withReader({}))), []);
+});
+
+test('error: an ops_log_terminal with no id', { skip }, () => {
+    assertHas(errors(issues(withReader({ id: undefined }))), 'needs an id');
+});
+
+test('error: an ops_log_terminal naming an undeclared source, with or without logSources', { skip }, () => {
+    assertHas(errors(issues(withReader({}, 'no_such_source'))), 'is not a declared source');
+    const s = withReader({}); delete s.logSources; delete s.gameClock;
+    assertHas(errors(issues(s)), 'is not a declared source');
+});
+
+test('error: an ops_log_terminal with lockType login', { skip }, () => {
+    assertHas(errors(issues(withReader({ locked: true, lockType: 'login' }))), 'cannot have lockType login');
+});
+
+test('error: an ops_log_terminal nested in a PC desktop is reached by the same checks (R3-8)', { skip }, () => {
+    const s = clean();
+    s.rooms.lobby.objects.push({ id: 'desk_pc', type: 'pc', name: 'Desk PC', contents: [
+        { id: 'nested_reader', type: 'ops_log_terminal', name: 'Nested log', minigameData: { logSource: 'no_such_source' } }
+    ] });
+    assertHas(errors(issues(s)), 'is not a declared source');
+    s.rooms.lobby.objects[s.rooms.lobby.objects.length - 1].contents[0].minigameData.logSource = 'door_log';
+    assert.deepEqual(errors(issues(s)), []);
+});

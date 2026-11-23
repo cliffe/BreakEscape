@@ -3357,6 +3357,8 @@ def check_common_issues(json_data, valid_item_types = nil)
       # world sprite, so it needs no picture in assets/objects/. Only a folder nested in a
       # container's contents is exempt: a room-level folder is drawn in the world and needs one.
       engine_type ||= t == 'folder' && in_contents
+      # The ops log terminal reuses the existing log terminal's sprite (log_filter_terminal.png)
+      engine_type ||= t == 'ops_log_terminal'
       unless exact_match || variant_match || engine_type
         issues << "❌ ERROR: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end

@@ -2219,8 +2219,23 @@ export class ContainerMinigame extends MinigameScene {
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
     sourceExtras() {
         if (this.mode === 'npc') return {};
-        if (this.sourcePcId) return { sourcePcId: this.sourcePcId };
-        if (this.sourceResourceId) return { sourceResourceId: this.sourceResourceId };
+        if (this.sourcePcId) return { sourcePcId: this.sourcePcId, ...this.routeExtra() };
+        if (this.sourceResourceId) return { sourceResourceId: this.sourceResourceId, ...this.routeExtra() };
+        return { ...this.routeExtra() };
+    }
+
+    /** The route this screen was reached by, as a reader opened from it must send it (ops log 5.2). */
+    routeExtra() {
+        if (this.remote?.footholdId) return { sourceRoute: { foothold: this.remote.footholdId } };
+        if (this.relay) return { sourceRoute: { relay: true } };
+        if (this.fromRoute?.fromPcId) return { sourceRoute: { from: this.fromRoute.fromPcId } };
+        // A folder under a sign-in PC names the route that PC's session names, as the folder fetch does
+        if (this.sourcePcId && !this.loginPcId && !this.shareFolder) {
+            const q = new URLSearchParams(folderRouteQuery(this.sourcePcId).replace(/^\?/, ''));
+            if (q.get('relay') === '1') return { sourceRoute: { relay: true } };
+            if (q.get('foothold')) return { sourceRoute: { foothold: q.get('foothold') } };
+            if (q.get('from')) return { sourceRoute: { from: q.get('from') } };
+        }
         return {};
     }
 
@@ -2423,6 +2438,7 @@ export class ContainerMinigame extends MinigameScene {
         // Custom minigame types (VM-01, VM-02 and future minigame objects in containers)
         if (item.type === 'scada_historian' ||
             item.type === 'log_filter_terminal' ||
+            item.type === 'ops_log_terminal' ||
             item.type === 'drug_library_terminal' ||
             item.minigameId) {
             return true;
