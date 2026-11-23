@@ -367,3 +367,14 @@ the live worktree, no browser.
 | P3 | Beat 27 follows the S1 rule and says the `/container` answers must be in the capture files |
 | P4 | Beat 19 says four sources |
 | D1, D2, D3 | A24: "first session in sign-in-list order", "a request for a file writes no row", the S1 rule |
+
+## Outcomes: browser playtest items (fixer)
+
+| Item | Outcome |
+|---|---|
+| Beat 22 FAIL: "Letters" could not be opened | Scenario only: the folder was authored `type: "safe"`, unlocked, which `isInteractiveItem()` (`container-minigame.js:2437`, folder rule at `:2462`) gives no handler. Now `type: "folder"` with contents, the unlocked-folder case the client opens by click (`:2462-2465`); `locked` key dropped. The test_access_networks folder is a PIN-locked safe, which opens through a lock; this one needs no PIN. The scenario test still writes the folder row through `GET /container/inbox_letters`; validator 0 errors, graph files unchanged. Not re-run in a browser |
+| PLAYTEST: "Cancel" | Cancel button is "Leave it" (harness note and beat 21) |
+| PLAYTEST: `enter` adjacency | Beat 20 gives the route office, lobby, comms; beat 27 says one room at a time |
+| PLAYTEST: verify-run prints only sources with rows | Beats 19, 20 and 27 reworded |
+| PLAYTEST: beat 26 | Already six rows, replant its own `NET_LINK_UP` (T2); the tester saw this |
+| PLAYTEST: beat 27 sign-in log | Says its five rows exist only if beats 4 to 7 were played in the game, else the empty state |

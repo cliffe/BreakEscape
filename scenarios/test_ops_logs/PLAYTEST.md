@@ -294,7 +294,7 @@ Open `night_log_pc` again (same page): `s3` is marked at once and there is no fl
 
 ### 19. The leak check
 
-`verify-run.rb <game_id> --ops-log` still exits 0 with `ops log OK` (it prints four sources, `network_log` among them with no row yet; `night_log` has no stored row, and the play rows of the other two are as in beats 1 to 13). Run `tools/playtest/access-leak-check.rb` over the capture file. It must report no finding: it judges the `/log_rows` answers (no secret, seed rows and play rows with exactly their own seven keys, no raw id, no stored-only key); it holds no rule about the anomaly.
+`verify-run.rb <game_id> --ops-log` still exits 0 with `ops log OK` (it prints only the sources that have stored rows: `door_controller` and `signin_audit`, and `network_log` once a network row exists; `night_log` has no stored row and is not printed, and the play rows of the other two are as in beats 1 to 13). Run `tools/playtest/access-leak-check.rb` over the capture file. It must report no finding: it judges the `/log_rows` answers (no secret, seed rows and play rows with exactly their own seven keys, no raw id, no stored-only key); it holds no rule about the anomaly.
 In the report: the four rows as the page showed them, the three wrong-flag notes, the right flag's marked row, global and toast, what the reload showed, and the exit status of both checks.
 
 ## L2b gotchas
@@ -316,7 +316,7 @@ The calls are in `docs/test-bridge.md` (`moveToNear`, `interact`, `enterRoom`, `
 
 Notes from the code, not yet seen in a browser (L3 has not been run yet). Three points are marked UNVERIFIED: report what you see for each.
 
-- The plant prompt is a `gameConfirm` dialog, not a minigame: answer it with `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`). Always give `dismiss` a label: with no label and a minigame open it clicks that minigame's first control.
+- The plant prompt is a `gameConfirm` dialog, not a minigame: answer it with `{"cmd":"dismiss","label":"Plug it in"}` (or `"Leave it"`, the cancel button: there is no button labelled "Cancel"). Always give `dismiss` a label: with no label and a minigame open it clicks that minigame's first control.
 - In a container window (the share and its folder) the copy or open menu is on a file's ICON (`.desktop-icon`), not on the window; a folder is meant to open by clicking its icon (UNVERIFIED: report what you see). Find the icons first: `eval` `() => [...document.querySelectorAll('.desktop-icon')].map(i => i.getAttribute('aria-label'))`, then `mg clickSelector` `.desktop-icon[aria-label="Letters"]` (the icon carries its name in `aria-label`; a share icon also has `data-resource-id`). Feedback there is an in-window line, not a toast.
 - A planted jack has no prompt: clicking it opens the box's network view with Unplug in its header (`[data-unplug]`). The network view's share row is `[data-resource-id="scanned_inbox"] [data-action="open"]`.
 - Joining: `interact` `guest_ap` opens the join minigame (`#password-field`, "Network key"); type with `{"cmd":"mg","action":"type","args":[0,"<key>",{"submit":true}]}`. A wrong key shows "That key was not accepted" and clears the field. The key is read from `wifi_note` (interact, read the text), as with every earned secret.
@@ -326,11 +326,11 @@ Notes from the code, not yet seen in a browser (L3 has not been run yet). Three 
 
 ### 20. The network log before anything happens
 
-`enter` `comms_room` (it walks through the lobby's north door; the room is not locked). `moveToNear` then `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect the frame title "Network log PC", the caption "Network log" and an empty table: `.ol-message[data-state="empty"]`, no `tr.ol-row[data-row-id]`. Close the viewer. Check with `verify-run.rb --ops-log`: four sources; `network_log` has no row.
+`enter` `comms_room` (it walks through the lobby's north door; the room is not locked). `enter` reaches adjacent rooms only: from the security office the route is `enter` `office`, `enter` `lobby`, `enter` `comms_room`. `moveToNear` then `interact` `net_log_pc`; `waitFor` `{"kind":"minigame"}`. Expect the frame title "Network log PC", the caption "Network log" and an empty table: `.ol-message[data-state="empty"]`, no `tr.ol-row[data-row-id]`. Close the viewer. Check with `verify-run.rb --ops-log`: `verify-run` prints no `network_log` line, because a source with no rows is not printed.
 
 ### 21. Planting the drop box writes one row
 
-`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Cancel"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`, detail only the hidden `step` counter (`verify-run.rb` may show it; the page never does). The door and sign-in sources have no new row. Do not close the view yet.
+`interact` `comms_port` with nothing in hand: the port's hint toast ("Something small could be plugged in here"), no row. `enter` `lobby`, then `moveToNear` and `interact` `kit_dropbox` (it goes into the inventory). `enter` `comms_room` again and `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `{"cmd":"dismiss","label":"Leave it"}`: the box stays in the inventory, no row. `interact` again and answer `{"cmd":"dismiss","label":"Plug it in"}`. Expect the link item in the inventory, `window.__test.access.footholds()` listing `jack_comms_port`, and the network view opening by itself. Check: `network_log` has exactly **one** row, `net_link_up`, result `ok`, `where {"kind":"jack","id":"comms_port"}`, no `as`, detail only the hidden `step` counter (`verify-run.rb` may show it; the page never does). The door and sign-in sources have no new row. Do not close the view yet.
 
 ### 22. Opening the share and its folder writes a row each, and a repeat none
 
@@ -354,9 +354,9 @@ With the viewer closed, in the comms room `interact` `comms_port` and answer `Pl
 
 ### 27. The other readers, then the checks
 
-`enter` `lobby`, `office` and `security` in turn (their doors are open since beats 3 and 8) and open `night_log_pc` (office), `door_log_pc` and `signin_log_pc` (security): none shows a `NET_` or `SHARE_` row, and their rows are those of beats 9 to 14 (door log two `BADGE`, sign-in log five rows from beat 11, night log four seed rows). Open `net_log_pc` once more: no `BADGE`, `SIGN_IN`, `SESSION` row.
+From the comms room `enter` `lobby`, `office` and `security` in turn, one room at a time (their doors are open since beats 3 and 8) and open `night_log_pc` (office), `door_log_pc` and `signin_log_pc` (security; the sign-in log's five rows exist only if beats 4 to 7 were played in this game, otherwise it shows the empty state): none shows a `NET_` or `SHARE_` row, and their rows are those of beats 9 to 14 (door log two `BADGE`, sign-in log five rows from beat 11, night log four seed rows). Open `net_log_pc` once more: no `BADGE`, `SIGN_IN`, `SESSION` row.
 
-`{"cmd":"sync"}`, then `verify-run.rb <game_id> --ops-log` must exit 0 and end with `ops log OK` (four sources). Then the leak check, naming ALL capture files of the game one by one, oldest first (it refuses files out of time order; do not glob):
+`{"cmd":"sync"}`, then `verify-run.rb <game_id> --ops-log` must exit 0 and end with `ops log OK` (it prints the sources with stored rows: `door_controller`, `signin_audit`, `network_log`). Then the leak check, naming ALL capture files of the game one by one, oldest first (it refuses files out of time order; do not glob):
 
 ```bash
 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/<oldest>.jsonl $S/<next>.jsonl ... $S/<newest>.jsonl
