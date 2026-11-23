@@ -194,7 +194,17 @@ module BreakEscape
       scan(OFFICE, network_id: 'plant_lan')
       scan(OFFICE, host_id: 'doorctl01')
       before = entry(OFFICE)
-      Game.find(@game.id).save!
+      office = before['networks'].find { |n| n['id'] == 'office_lan' }
+      assert_equal true, office['swept']
+      assert_equal %w[camrec01 desk01 files01 office_drop printer01], ids(office['hosts']).sort
+      assert_equal %w[print admin_page], office['hosts'].find { |r| r['id'] == 'printer01' }['services'].map { |s| s['name'] }
+      plant = before['networks'].find { |n| n['id'] == 'plant_lan' }
+      assert_equal true, plant['swept']
+      assert_equal ['doorctl01'], ids(plant['hosts'])
+      assert_equal %w[control status_page], plant['hosts'].first['services'].map { |s| s['name'] }
+      # A reload asks for the bootstrap, then the view again, on the game as the database holds it.
+      bootstrap_scenario
+      assert_response :success, response.body
       assert_equal before, entry(OFFICE)
     end
 
@@ -289,6 +299,12 @@ module BreakEscape
       # The view that lists the swept rows, read with no sweep answer before it, is a leak.
       leaked = AccessLeakScanner.new(fresh.scenario_data).scan([['run.jsonl', 1, log[3]]])
       assert_operator leaked.count { |f| f.rule == 'ops_string' }, :>, 0
+      # Mirror (N2): the last view lists the scanned services on rows that say `scanned: true`. With only the
+      # sweeps named, and no scan answer before it, that listing is a leak: the row cannot earn its own scan.
+      assert_includes log.last['body'].to_s, 'scanned'
+      premature = AccessLeakScanner.new(fresh.scenario_data)
+                                   .scan([['run.jsonl', 1, log.last]], ops_steps: %w[sweep:office_lan sweep:plant_lan])
+      assert_operator premature.count { |f| f.rule == 'ops_string' && f.owner.start_with?('ops:service:') }, :>, 0
     end
 
     test 'the state keeps opsDiscovered server-side and a sync body cannot write it' do

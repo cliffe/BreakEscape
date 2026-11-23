@@ -1827,6 +1827,8 @@ class AccessLeakScanner
         obj = rec[:object]
         if discovery
           %w[name host].each { |field| add_ops_string(obj[field], :sweep, "ops:host:#{host_id}", net: net_id, host: host_id, usable: usable) }
+        elsif rec[:kind].to_s == 'device'
+          add_ops_string(obj['name'], :listed, "ops:host:#{host_id}", net: net_id, host: host_id, usable: usable)
         end
         add_ops_address(addresses[host_id], discovery, net_id, host_id, usable)
         collect_ops_services(rec, service_words, usable)
@@ -1882,26 +1884,17 @@ class AccessLeakScanner
 
     if ctx[:ops_scan] && body['success'] == true
       @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
-      @ops_earned << "scan:#{body['host']['id']}" if body['host'].is_a?(Hash) && body['host']['scanned'] == true
-      rows_of(body).each { |row| note_ops_row(row) }
+      # Only the scan request earns `scan:<host>`: a `scanned: true` on a listed row arrives together with
+      # its services, so earning from it would let the leak itself pay for the step.
+      @ops_earned << "scan:#{body['host']['id']}" if body['host'].is_a?(Hash) && body['host']['id'].is_a?(String)
     elsif ctx[:network_view]
       ops_each_hash(body) do |hash|
         next unless hash['id'].is_a?(String)
 
         @ops_earned << "listed:#{hash['id']}" if hash.key?('name') || hash.key?('kind')
         @ops_earned << "held:#{hash['id']}" if hash['kind'] == 'pc' && hash['session']
-        note_ops_row(hash)
       end
     end
-  end
-
-  def note_ops_row(row)
-    @ops_earned << "scan:#{row['id']}" if row['scanned'] == true && row['id'].is_a?(String) && row['kind']
-  end
-
-  def rows_of(body)
-    net = body['network']
-    net.is_a?(Hash) && net['hosts'].is_a?(Array) ? net['hosts'].grep(Hash) : []
   end
 
   def ops_each_hash(node, &block)

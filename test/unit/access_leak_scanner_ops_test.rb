@@ -92,6 +92,39 @@ class AccessLeakScannerOpsTest < ActiveSupport::TestCase
     assert_equal [[2, 'ops_string', 'ops:service:print_srv']], summary(scan([other, leak]))
   end
 
+  # The row shape the server really sends (`network_ops.rb` ops_add_host_fields!): `scanned: true`
+  # arrives together with `services`, so it cannot be what earns the scan step.
+  def scanned_device_row
+    { 'id' => 'print_srv', 'kind' => 'device', 'name' => NetworkOpsScenario::DEVICE_NAME, 'scanned' => true,
+      'services' => [{ 'name' => 'queue', 'port' => 631, 'product' => 'Quillfeather queue', 'version' => NetworkOpsScenario::VERSION_SECRET }] }
+  end
+
+  test 'a /network row that lists a service for a host never scanned is reported, even with scanned true on the row' do
+    view = row({ 'footholds' => [{ 'hosts' => [scanned_device_row] }] })
+    findings = scan([view], ops_steps: ['sweep:office_lan'])
+    assert_includes summary(findings), [1, 'ops_string', 'ops:service:print_srv']
+    assert_empty scan([scan_answer('id' => 'print_srv'), view], ops_steps: ['sweep:office_lan'])
+    assert_empty scan([view], ops_steps: ['sweep:office_lan', 'scan:print_srv']), 'the caller can name the scan'
+  end
+
+  test 'a sweep answer whose row lists a service for an unscanned host is reported' do
+    answer = sweep_answer('office_lan', [scanned_device_row])
+    assert_includes summary(scan([answer])), [1, 'ops_string', 'ops:service:print_srv']
+    assert_empty scan([scan_answer('id' => 'print_srv'), answer])
+  end
+
+  test 'a device name on an open network is listed: a leak before the first answer that lists its row' do
+    data = self.data
+    data['hosts']['bench_dev'] = { 'name' => 'Vellum label printer', 'network' => 'workshop_lan' }
+    registered = AccessLeakScanner.new(data).instance_variable_get(:@ops_strings)
+    assert_equal :listed, registered['Vellum label printer'].first[:tag]
+    bootstrap = row({ 'note' => 'Vellum label printer' }, path: '/break_escape/games/1/scenario')
+    assert_equal [[1, 'ops_string', 'ops:host:bench_dev']], summary(scan([bootstrap], scenario: data))
+    listing = row({ 'footholds' => [{ 'hosts' => [device_row('bench_dev', 'Vellum label printer')] }] })
+    assert_empty scan([listing], scenario: data)
+    assert_equal [[2, 'ops_string', 'ops:host:bench_dev']], summary(scan([listing, bootstrap], scenario: data))
+  end
+
   test 'a version several hosts share is clear once any of them is scanned' do
     leak = row({ 'note' => NetworkOpsScenario::VERSION_SECRET })
     assert_operator scan([leak]).length, :>, 1
