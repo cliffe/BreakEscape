@@ -189,3 +189,12 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   F6 and F8 stay. From 12a: the view imports `utils/compromise-bolt.js` STATICALLY, as the
   plan describes, with the module added to every harness copy list that copies the view; the
   dynamic `import()` goes (in the S3 client fix pass).
+- 2026-11-23, S3 server R1 rulings: M1, a `session` need is met only by a LIVE session:
+  the predicate applies the same expiry and relay tests every other session reader applies.
+  The same goes for a `credential` need (S2 R2's N1): an expired token or an ended invite
+  does not meet it; if the keyring's own rule already says so, call that. m1, `worksOn` is
+  sent by named keys only (`class`, `product`, `versions`). m2, the schema's proof pattern
+  allows a host part as long as a sign-in PC id may be. m3, the keyring serves a
+  `technique_card` proof only for a `saved_connection` entry at run time too. m10, a
+  `needs.session` on a device host is a validator error (a device has no sessions), so the
+  empty label cannot occur. m11 is noted for S5a. m12 is step 13a's (the N15 flip).
