@@ -3897,14 +3897,15 @@ def room_hce_servers():
     of racks under a cable tray, the long row of blue servers across the middle,
     an ops bench with the SAFETYNET drop and the rack sheet, the backend console
     desk, a precision air-con unit and the UPS.
-    Doors: S (SE corner) and N (NE corner): the east lane x 256-288 runs clear from
-    door to door. The trading floor covers the bottom two rows (feet <= 256).
+    Doors: S (SE corner) and N (NW corner, x 32-64, kept clear of racks); the east
+    lane x 256-288 runs clear from the S door. The trading floor covers the bottom two rows (feet <= 256).
     Slots: pc8 on the console desk (as-type:pc, HashChain Backend Server Terminal),
     flag-station and notes3 on the bench, 32 px+ apart.
     """
     r = _Uni()
     r.item("cable_tray1", 36.0, 27.0)
-    r.solid("server_rack1", 36.0, 86.0)
+    # (no rack at x 36: the engine puts this room's N door in the NW corner, x 32-64,
+    # and a rack there blocked the way into the data centre)
     r.solid("network_rack1", 68.0, 88.0)
     r.solid("server_rack2", 104.0, 88.0)
     r.solid("storage_array1", 136.0, 88.0)

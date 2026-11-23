@@ -66,10 +66,12 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
+    <button class="tab" role="tab" id="tab-m04v1" aria-selected="true" data-cut="m04v1">m04 · v1</button>
+    <button class="tab" role="tab" id="tab-m05v1" aria-selected="false" data-cut="m05v1">m05 · v1</button>
     <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
     <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
     <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
-    <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
+    <button class="tab" role="tab" id="tab-m03v3" aria-selected="false" data-cut="m03v3">m03 · v3</button>
     <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
     <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
     <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
@@ -87,6 +89,72 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m05v1: {
+    doc: "feedback/m05_trailer_v1",
+    title: "m05 Insider Trading · 60 s trailer · first draft (v1)",
+    videoLabel: "16:9",
+    video: "/_blob/b9f834d8d90bb121bffc03f612c95052",
+    videos: [["9:16", "/_blob/07cae806e0335f7118ed52e3f06a7f70", "p916"], ["1:1", "/_blob/ebe45b2537f0a9b2ae158f20b0f18c8b", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What's in it",
+    changed: [
+      "Hook: Netherton, cut to \"Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\" (the third sentence only, as recommended).",
+      "Stakes: HaX, \"Every ambulance, fire and police call through it runs six to eleven minutes slower.\"",
+      "Suspects: Patricia \"All vetted. All trusted. One of them shouldn't be.\", then after the \"Name the / Insider\" card Owen (Halloran's spare badge), Halloran (\"I hope to God you're wrong\") and Patricia's \"Go on, then. Who?\", cut before the menu. The evidence points at Halloran; Torres is never named or shown.",
+      "Night turn: the corridor lights go out and strike back on, under the Recruiter's \"I find people the week before they break, agent. Then I make them an offer.\"",
+      "Cards: \"Name the / Insider\", \"Real / Hacking\", \"Before the / Final Upload\". Crescendo: password panel, lockbox (wrong digits), dusting, biometric reader, RFID, phone, flag station, staff face flashes.",
+      "Ending: the Recruiter's price line, \"Everyone has a price, agent. I'm asking what yours is.\"",
+      "Every owner question (D363) uses its recommended option until you answer."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder until an m05 console take exists.",
+      "No walks: a short walk inside Patricia's office stands in for the walk to her office; no walk to the server-room VM.",
+      "No face flash for Bernadette Lyons (the take couldn't reach her) and no espresso exchange.",
+      "The RFID reader appears only in the crescendo.",
+      "Last shot: our caption sits over the call screen's dimmed company name, which peeks out at the sides in 9:16."
+    ],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,430 --> 00:00:44,140\nThe Recruiter: I find people the week before they break, agent. Then I make them an offer.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.",
+    questions: [
+      {k:"night", t:"The Recruiter's \"I find people...\" over the night turn, with the price line as the ending", o:[["keep","Keep both","",1],["drop","Drop \"I find people...\"","The night turn plays with music only"]]},
+      {k:"halloran", t:"The suspect beat points at Halloran (a red herring), without the badge-log screen", o:[["keep","Portraits only","As cut",1],["log","Add a 1 s badge-log insert","Masked to the spare-badge rows, frame by frame"]]},
+      {k:"music", t:"Music: Midnight Double Agent", o:[["keep","Keep","",1],["noir","Encrypted Shadows",""]]},
+      {k:"crops", t:"9:16 and 1:1 crops", o:[["ok","Fine","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
+  m04v1: {
+    doc: "feedback/m04_trailer_v1",
+    title: "m04 Critical Failure · 60 s trailer · first draft (v1)",
+    videoLabel: "16:9",
+    video: "/_blob/04a1443d682ab0d8a9253813ce392aa6",
+    videos: [["9:16", "/_blob/90cd720ff4e3a0645b4d1d112c5ab91f", "p916"], ["1:1", "/_blob/0f65d5ac44774eb9557bb4267cd0c49e", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.7 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "39 shots"],
+    changedLabel: "What's in it",
+    changed: [
+      "Hook: Netherton, \"ENTROPY used to steal. Now they break the things people can't live without.\" (\"Agent 0x00.\" dropped, as recommended in the owner questions.)",
+      "Stakes: Nightshade, \"If they reach the safety interlocks, this stops being a hack and starts being a body count.\"",
+      "Cards: \"Mission 4 / Critical Failure\", \"Screens / Lie\", \"Fingerprint / Dusting\", \"Real / Hacking\", \"Before / 0800\".",
+      "Ending: Voltage, \"Look at my hand. Then look at the clock.\" then your pick, \"I didn't bring a bomb, agent. I brought a maintenance schedule.\"",
+      "Every owner question (D363) uses its recommended option until you answer. Vance gets a face flash, not his line."
+    ],
+    standinLabel: "Stand-in and compromises",
+    standin: [
+      "Real Hacking is the m02 slate placeholder (the m02 server room behind \"footage in capture\") until an m04 console take exists.",
+      "No Relay line or fight: Relay appears as a walk-in and a portrait.",
+      "No face flashes for Diallo, Pell or HaX (no takes yet).",
+      "The battery panel shows its digital readings (normal values, no answer); the rack dial's value, which is an answer, is never on screen."
+    ],
+    srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
+    questions: [
+      {k:"ending", t:"Ending: Voltage's two lines back to back (\"Look at my hand...\" then \"I didn't bring a bomb...\")", o:[["both","Keep both","The hand line sets the timer, the schedule line lands it",1],["schedule","Only the maintenance schedule line","About 3 s more for the crescendo"]]},
+      {k:"music", t:"Music: Shadow Protocol (Remastered)", o:[["keep","Keep","",1],["hybrid","Hybrid Attack 1",""],["emerald","Emerald Trigger",""]]},
+      {k:"crops", t:"9:16 and 1:1 crops", o:[["ok","Fine","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null},
+      {k:"seen", t:"Anything on screen a viewer should not see?", o:null}
+    ]
+  },
   social: {
     doc: "feedback/trailers_social_v1",
     title: "Social cuts: m01 v10, m02 v4 and m03 v3 in portrait (9:16) and square (1:1)",
@@ -297,7 +365,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "social";
+let current = "m04v1";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
