@@ -476,13 +476,30 @@ module BreakEscape
         next if technique_id.nil? || out.key?(technique_id)
 
         entry = registry[technique_id]
+        works_on = ops_works_on(entry['worksOn'])
+        next if works_on.nil?
+
         row = { 'name' => entry['name'] }
         row['summary'] = entry['summary'] if entry['summary'].is_a?(String) && !entry['summary'].empty?
-        row['worksOn'] = entry['worksOn'].deep_dup
+        row['worksOn'] = works_on
         row['itemId'] = item_id
         out[technique_id] = row
       end
       out.sort.to_h
+    end
+
+    # `worksOn` as sent: the named keys only, by type (class and product strings, versions an array of
+    # strings), so a `_note` key an author left in it never reaches the browser (S3 server R1 m1).
+    # nil when it is not a Hash with a class: that technique is not listed.
+    def ops_works_on(works_on)
+      return nil unless works_on.is_a?(Hash) && works_on['class'].is_a?(String) && !works_on['class'].empty?
+
+      out = { 'class' => works_on['class'].dup }
+      out['product'] = works_on['product'].dup if works_on['product'].is_a?(String)
+      if works_on['versions'].is_a?(Array)
+        out['versions'] = works_on['versions'].select { |version| version.is_a?(String) }.map(&:dup)
+      end
+      out
     end
 
     # The registry key a held card names, or nil. The item must be held, unforged, with its id and

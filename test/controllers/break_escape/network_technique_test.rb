@@ -500,6 +500,24 @@ module BreakEscape
       assert_equal 'card_factory', network_view(OFFICE)['techniques']['factory_accounts']['itemId']
     end
 
+    test 'worksOn is sent by its named keys only: an author note at either level never reaches GET /network' do
+      data = NOS.techniques_scenario
+      data['techniques']['build_flaw']['_note'] = 'NOTE-TOP'
+      data['techniques']['build_flaw']['worksOn']['_note'] = 'NOTE-WORKS-ON'
+      data['techniques']['build_flaw']['worksOn']['extra'] = 'EXTRA-KEY'
+      techniques_game(cards: %w[card_build], data: data)
+      body = network_view
+      assert_equal({ 'class' => 'unpatched', 'product' => NOS::WEB_PRODUCT, 'versions' => [NOS::VERSION_SECRET] }, body['techniques']['build_flaw']['worksOn'])
+      %w[NOTE-TOP NOTE-WORKS-ON EXTRA-KEY _note].each { |text| refute_includes body.to_json, text }
+    end
+
+    test 'a technique whose worksOn is not a Hash with a class is not listed' do
+      data = NOS.techniques_scenario
+      data['techniques']['build_flaw']['worksOn'] = 'nonsense'
+      techniques_game(cards: %w[card_build card_factory], data: data)
+      assert_equal %w[factory_accounts], network_view['techniques'].keys
+    end
+
     test 'a forged card entry is never listed and never works' do
       techniques_game(cards: [])
       game = Game.find(@game.id)
