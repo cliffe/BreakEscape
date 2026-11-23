@@ -61,6 +61,12 @@ test('sessionGrantPc is null with no needsSession grant or odd input', () => {
     assert.equal(sessionGrantPc({ triggerOnInteract: 'x' }), null);
 });
 
+test('a needsSession grant with no usable pc is skipped, as the validator skips it', () => {
+    assert.equal(sessionGrantPc({ triggerOnInteract: [{ type: 'grant_foothold', needsSession: true }, grant('x')] }), 'x');
+    assert.equal(sessionGrantPc({ triggerOnInteract: [grant('  '), grant('y')] }), 'y');
+    assert.equal(sessionGrantPc({ triggerOnInteract: [grant(7), grant('z')] }), 'z');
+});
+
 test('gatedRemove is true only for a governed object whose policy refuses the class', () => {
     assert.equal(gatedRemove(stick, governed, scenario), true);
     assert.equal(gatedRemove(badusb, governed, scenario), true);

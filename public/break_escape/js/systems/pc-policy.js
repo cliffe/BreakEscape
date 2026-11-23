@@ -83,14 +83,14 @@ export function plantRefusal(heldItems, objectData, scenario, { admin = false } 
 /**
  * The PC a session-shaped device is judged at: the pc of the first grant_foothold with needsSession in
  * the object triggerOnInteract, walked depth-first in list order into confirm_action onConfirm lists.
- * A grant with a condition counts (the walk ignores conditions). None: null. Mirrors the server
- * session_grant_pc.
+ * A grant with a condition counts (the walk ignores conditions). None: null. A grant with no usable pc (not a non-empty string) is skipped, as the validator
+ * warning (c) does. Mirrors the server session_grant_pc.
  */
 function grantPcIn(actions) {
     if (!Array.isArray(actions)) return null;
     for (const action of actions) {
         if (!action || typeof action !== "object") continue;
-        if (action.type === "grant_foothold" && action.needsSession && typeof action.pc === "string" && action.pc) {
+        if (action.type === "grant_foothold" && action.needsSession && typeof action.pc === "string" && action.pc.trim()) {
             return action.pc;
         }
         if (action.type === "confirm_action") {

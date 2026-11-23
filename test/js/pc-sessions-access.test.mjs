@@ -86,9 +86,10 @@ test('m2: a repeat grant of the same technique copy fires no sign-out and no sec
     const out = s.noteTechniqueSession('pc1', { ...TECH });
     assert.equal(out.via, 'technique');
     assert.deepEqual(events, []);
-    // a different access level is a change and is recorded
+    // a different access level on the same copy follows in place: no new sign-in (C1-3)
     s.noteTechniqueSession('pc1', { ...TECH, access: undefined });
-    assert.equal(named('pc_signed_in').length, 1);
+    assert.equal(named('pc_signed_in').length, 0);
+    assert.equal(s.get('pc1').access, undefined);
 });
 
 test('m3: a credential sign-in and a claim copy the access level the server sent', async () => {

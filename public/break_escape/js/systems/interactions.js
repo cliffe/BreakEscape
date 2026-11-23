@@ -1165,7 +1165,13 @@ export function handleObjectInteraction(sprite) {
                     console.warn('[Interaction] Could not consume kit item:', err);
                 }
                 applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: plantId, objectData: sprite.scenarioData });
-            });
+            }).catch(err => console.warn('[Interaction] gated plant follow-up failed:', err));
+            return;
+        }
+        // No requiresItem: a list holding a gated remove_item still takes one request at a time
+        const plainId = sprite.scenarioData.id || sprite.objectId || null;
+        if (plainId && applyActionsModule.plantsInFlight?.has(plainId)) {
+            console.log('[Interaction] plant already in flight for:', plainId);
             return;
         }
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);

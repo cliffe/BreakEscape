@@ -61,3 +61,9 @@ test('the model carries admin only for admin', () => {
     assert.equal(pcTaskbarModel({ pcData: PC, session: { npcId: 'a', displayName: 'A', access: 'admin' } }).account.admin, true);
     assert.equal('admin' in pcTaskbarModel({ pcData: PC, session: { npcId: 'a', displayName: 'A' } }).account, false);
 });
+
+test('the account title names the level when the marker is shown, so a clipped marker is not lost', () => {
+    const html = pcTaskbarHtml({ account: { name: 'Sam', admin: true } });
+    assert.match(html, /class="pc-taskbar-account" title="Sam, [^"]+"/);
+    assert.match(pcTaskbarHtml({ account: { name: 'Sam' } }), /class="pc-taskbar-account" title="Sam"/);
+});

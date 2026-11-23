@@ -225,3 +225,11 @@ test('usb_refused is unchanged', async () => {
     assert.deepEqual(toasts, ['USB devices are disabled on this PC.']);
     assert.deepEqual(named('network_device_refused').map(e => e.data), [{ pcId: 'lena_pc', reason: 'usb_refused' }]);
 });
+
+test('needs_console with no error line toasts the fallback line', async () => {
+    await reset({ items: [box] });
+    refusal('needs_console');
+    const out = await links.implant('lena_pc', 'session', null);
+    assert.equal(out.reason, 'needs_console');
+    assert.deepEqual(toasts, ['Nobody is signed in at this keyboard.']);
+});

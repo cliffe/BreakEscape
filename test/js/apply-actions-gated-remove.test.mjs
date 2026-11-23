@@ -157,6 +157,40 @@ test('a second remove_item for an object in flight sends nothing', async () => {
     });
 });
 
+test('an in-flight remove_item stops the rest of its list: nothing runs before the answer; a refusal runs none', async () => {
+    for (const [status, body, expectAfter] of [[422, { success: false, reason: 'usb_refused', error: 'USB devices are disabled on this PC.' }, false], [200, { success: true }, true]]) {
+        setup([stick('s1')]);
+        window.gameState.globalVariables = {};
+        const sets = [];
+        window.gameState.globalVariables.count = 0;
+        const releases = [];
+        globalThis.fetch = (url, init) => { posts.push(JSON.parse(init.body)); return new Promise(r => { releases.push(() => r(resp(status, body))); }); };
+        const list = () => [{ type: 'remove_item', item: 'usb' }, { type: 'set_global', key: 'after', value: true }];
+        await quiet(async () => {
+            applyActions(list(), { objectId: 'sock', objectData: sock });
+            applyActions(list(), { objectId: 'sock', objectData: sock });
+            assert.equal(posts.length, 1);
+            assert.equal(window.gameState.globalVariables.after, undefined, 'nothing after the remove ran, from either pass');
+            releases.forEach(f => f()); await tick();
+        });
+        assert.equal(window.gameState.globalVariables.after === true, expectAfter, `status ${status}`);
+        assert.equal(removed.length, expectAfter ? 1 : 0);
+    }
+});
+
+test('a rejection after the answer (a throwing alert) is caught, not unhandled', async () => {
+    setup([stick('s1')]);
+    responses = [resp(422, { success: false, reason: 'usb_refused', error: 'No.' })];
+    window.gameAlert = () => { throw new Error('alert boom'); };
+    const seen = [];
+    const onRej = (e) => seen.push(e);
+    process.on('unhandledRejection', onRej);
+    await quiet(async () => { applyActions([{ type: 'remove_item', item: 'usb' }], { objectId: 'sock', objectData: sock }); await tick(); await tick(); });
+    process.off('unhandledRejection', onRej);
+    window.gameAlert = (...a) => alerts.push(a);
+    assert.deepEqual(seen, []);
+});
+
 test('an ungoverned remove keeps today order and its fire-and-forget send', async () => {
     setup([stick('s1')]); window.gameState.globalVariables.after = false;
     responses = [resp(200, { success: true })];

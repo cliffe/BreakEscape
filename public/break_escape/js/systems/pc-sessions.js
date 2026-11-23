@@ -664,7 +664,11 @@ export class PcSessions {
         };
         // A repeat grant (core plan 5.4) changes nothing: the same copy is already held, so no sign-out or sign-in fires
         const now = this.sessions.get(pcId);
-        if (now && now.via === 'technique' && now.npcId === held.npcId && now.footholdId === held.footholdId && now.access === held.access) {
+        if (now && now.via === 'technique' && now.npcId === held.npcId && now.footholdId === held.footholdId) {
+            // Only the level may differ (a dropped `access` coming back): set it in place, no events
+            if (now.access !== held.access) {
+                if (held.access === undefined) delete now.access; else now.access = held.access;
+            }
             return publicSession(pcId, now);
         }
         this._replace(pcId, held);
@@ -1080,6 +1084,9 @@ export class PcSessions {
         // A keyboard fetch drops a desktop route too (K4): no fromPcId in the answer, none here
         if (!fields.fromPcId) { delete s.fromPcId; delete s.fromHost; }
         Object.assign(s, fields);
+        // The level follows this answer and nothing remembered: `access: 'admin'` sets it, anything
+        // else (and a locked entry) has none (S5a)
+        if (session.access === 'admin' && s.locked !== true) s.access = 'admin'; else delete s.access;
         return true;
     }
 

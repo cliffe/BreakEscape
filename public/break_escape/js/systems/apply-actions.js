@@ -335,6 +335,8 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 const wanted = Array.isArray(action.item) ? action.item : [action.item];
                 if (objectId && plantsInFlight.has(objectId)) {
                     console.log('[applyActions] remove_item: a remove for this object is in flight, ignored:', objectId);
+                    // Nothing after it runs either: the answer to the first request decides the list
+                    stopped = true;
                     break;
                 }
                 const matches = heldMatches(wanted);
@@ -359,7 +361,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                         try { window.removeFromInventory?.(held); } catch (err) { console.warn('[applyActions] remove_item failed:', err); }
                         console.log('[applyActions] remove_item:', id);
                         applyActions(rest, opts);
-                    });
+                    }).catch(err => console.warn('[applyActions] gated remove follow-up failed:', err));
                     break;
                 }
                 try {

@@ -244,7 +244,7 @@ export function pcTaskbarHtml(model, { windowTitle = '', takeable = false } = {}
     const m = model || pcTaskbarModel();
     const name = m.account ? escapeHtml(displayDashes(m.account.name)) : '';
     const account = m.account ? `
-        <span class="pc-taskbar-account" title="${name}">
+        <span class="pc-taskbar-account" title="${name}${m.account.admin ? `, ${ADMIN_TAG_TEXT}` : ''}">
             <span class="pc-headshot pc-taskbar-headshot" aria-hidden="true"></span>
             <span class="pc-taskbar-name">${name}</span>${m.account.admin ? `<span class="pc-taskbar-admin">${ADMIN_TAG_TEXT}</span>` : ''}
         </span>` : '';

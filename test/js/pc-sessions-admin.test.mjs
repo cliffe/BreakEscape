@@ -55,11 +55,13 @@ test('sessionAdmin: keyboard, remote and relay-free admin entries true; locked, 
     assert.equal(s.sessionAdmin('nobody'), false);
 });
 
-test('sessionAdmin is false for a relay entry (a relay is never held on load; set directly)', () => {
+test('a relay entry is admin only if the server sent access; never keyboard admin', () => {
     const s = setup();
     s.sessions.set('rl', { npcId: 'x', relay: true, host: 'H', access: 'admin' });
     assert.equal(s.sessionAdmin('rl'), true, 'the server decides which entries carry access');
     assert.equal(s.keyboardAdmin('rl'), false);
+    s.sessions.set('rl2', { npcId: 'x', relay: true, host: 'H' });
+    assert.equal(s.sessionAdmin('rl2'), false, 'a relay entry as the server sends it has no access');
 });
 
 test('locking a session deletes access in the same step', async () => {
@@ -129,4 +131,54 @@ test('the plain-function exports read the shared mirror', () => {
     assert.equal(sessionAdmin('nobody'), false);
     assert.equal(keyboardAdmin('nobody'), false);
     assert.equal(plantAdmin({ id: 'nobody' }), false);
+});
+
+test('settle: off then on brings the level back from the answer, and only from the answer', () => {
+    const s = setup();
+    s.load({ a: { ...KB } }, ['a']);
+    s.noteDesktopRefused('a', 'off');
+    assert.equal(s.sessionAdmin('a'), false);
+    s.settle('a', { npcId: 'sam', access: 'admin' });
+    assert.equal(s.sessionAdmin('a'), true);
+    assert.equal(s.keyboardAdmin('a'), true);
+    s.settle('a', { npcId: 'sam' });
+    assert.equal(s.sessionAdmin('a'), false, 'an answer without access clears it');
+    assert.equal('access' in s.sessions.get('a'), false);
+    s.settle('a', { npcId: 'sam', access: 'user' });
+    assert.equal(s.sessionAdmin('a'), false, 'only the word admin counts');
+});
+
+test('settle: a reload while the PC is off (no access in the bootstrap), then on', () => {
+    const s = setup();
+    s.load({ a: { ...KB, access: undefined } }, ['a']);
+    assert.equal(s.sessionAdmin('a'), false);
+    s.settle('a', { npcId: 'sam', access: 'admin' });
+    assert.equal(s.sessionAdmin('a'), true);
+});
+
+test('settle: a locked entry never gains the level; a technique entry gets it back after not_responding', () => {
+    const s = setup();
+    s.load({ a: { ...KB, locked: true }, t: { ...TECH } }, ['a', 't']);
+    s.settle('a', { npcId: 'sam', access: 'admin' });
+    assert.equal(s.sessionAdmin('a'), false);
+    assert.equal('access' in s.sessions.get('a'), false);
+    s.noteDesktopRefused('t', 'not_responding');
+    assert.equal(s.sessionAdmin('t'), false);
+    s.settle('t', { npcId: 'adm', remote: true, footholdId: 'f1', host: 'PC', access: 'admin' });
+    assert.equal(s.sessionAdmin('t'), true);
+});
+
+test('a repeat technique grant after access was dropped restores it with no sign-in events', () => {
+    const s = setup();
+    s.load({ t: { ...TECH } }, ['t']);
+    s.noteDesktopRefused('t', 'not_responding');
+    events.length = 0;
+    const out = s.noteTechniqueSession('t', { ...TECH });
+    assert.equal(s.sessionAdmin('t'), true);
+    assert.deepEqual(events, [], 'no pc_signed_out or pc_signed_in for the same copy');
+    assert.equal(out.access, 'admin');
+    // and a repeat without access clears it in place, again with no events
+    s.noteTechniqueSession('t', { ...TECH, access: undefined });
+    assert.equal(s.sessionAdmin('t'), false);
+    assert.deepEqual(events, []);
 });

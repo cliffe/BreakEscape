@@ -264,3 +264,24 @@ test('an ungoverned or policy-accepted plant keeps today\'s order and fire-and-f
     assert.deepEqual(removed, ['s1'], 'removed at once');
     assert.equal(plantsInFlight.size, 0);
 });
+
+test('an object with triggerOnInteract and no requiresItem does not run a second pass while its remove is in flight', async () => {
+    setup([stickItem('s1')]);
+    mirror.load({ sock: { npcId: 'a', username: 'a', via: 'password', access: 'admin' } }, ['sock']);
+    let release;
+    globalThis.fetch = async () => { posts.push(1); return new Promise(r => { release = r; }); };
+    const data = socketData('sock', { requiresItem: undefined, consumesItem: undefined,
+        triggerOnInteract: [{ type: 'remove_item', item: 'usb' }, marker] });
+    await quiet(async () => {
+        const sprite = socketSprite(data);
+        handleObjectInteraction(sprite);
+        await tick();
+        handleObjectInteraction(sprite);
+        await tick();
+        assert.equal(posts.length, 1);
+        assert.equal(window.gameState.globalVariables.after, undefined, 'the marker has not run before the answer');
+        release(resp(200, { success: true }));
+        await tick();
+    });
+    assert.deepEqual(removed, ['s1']);
+});
