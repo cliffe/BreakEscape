@@ -386,9 +386,8 @@ module BreakEscape
       source = entry[1]
       title = source['title'].is_a?(String) && !source['title'].empty? ? source['title'] : 'Log'
       show_holder = source['showCardHolder'] == true
-      other_shows_holder = !show_holder && OpsLog.sources_for(scenario_data).any? { |_id, s, _cap| s['showCardHolder'] == true }
       rows = log_rows_for(source_id).map do |row|
-        ops_log_client_row(source_id.to_s, row, hide_holder: other_shows_holder)
+        ops_log_client_row(source_id.to_s, row, hide_holder: !show_holder)
       end
       { rev: OpsLog.rows_rev(title, rows), title: title, rows: rows }
     end
@@ -421,8 +420,8 @@ module BreakEscape
     end
 
     # A source without showCardHolder never names a card's holder (L1b ruling): the stored row is
-    # shared between sources and records the holder when ANY source sets the flag, so in a game
-    # where another source sets it, an NPC on a badge row reads `-` here.
+    # shared between sources, and a badge row whose identity is kept by the flag alone carries the
+    # hidden detail `flagged` (written by ops_badge_as), so a source without the flag reads `-`.
     def ops_log_client_as(row, hide_holder:)
       as = row['as']
       return '-' unless as.is_a?(Hash)
@@ -431,12 +430,12 @@ module BreakEscape
         self.class.normalise_username(as['account'])
       elsif as['typed'].is_a?(String)
         as['cut'] ? "#{as['typed']}~" : as['typed']
+      elsif hide_holder && row['event'] == 'badge_swipe' && row['detail'].is_a?(Hash) && row['detail']['flagged']
+        '-'
       elsif as['npc'].is_a?(String)
-        return '-' if hide_holder && row['event'] == 'badge_swipe'
-
-        OpsLog.kinds['npc'][:name].call(self, as['npc']) || '-'
+        ops_log_client_thing('npc', as['npc'])
       elsif as['card'].is_a?(String)
-        OpsLog.kinds['card'][:name].call(self, as['card']) || '-'
+        ops_log_client_thing('card', as['card'])
       else
         '-'
       end
@@ -445,8 +444,18 @@ module BreakEscape
     def ops_log_client_where(where)
       return '-' unless where.is_a?(Hash)
 
-      lookup = OpsLog.kinds[where['kind'].to_s]
-      (lookup && where['id'].is_a?(String) && lookup[:name].call(self, where['id'])) || '-'
+      where['id'].is_a?(String) ? ops_log_client_thing(where['kind'].to_s, where['id']) : '-'
+    end
+
+    # A thing's authored name; `-` when the kind is unknown or the id no longer resolves; its kind
+    # word when it has no authored name (the KINDS lookups fall back to the id), never the raw id.
+    def ops_log_client_thing(kind, id)
+      lookup = OpsLog.kinds[kind]
+      name = lookup && lookup[:name].call(self, id)
+      return '-' unless name.is_a?(String)
+      return name if kind == 'account'
+
+      [id, id.sub(/\Ajack_/, '')].include?(name) ? kind : name
     end
 
     def ops_log_client_result(row)
@@ -464,7 +473,7 @@ module BreakEscape
         rule = rules[key.to_s]
         next if rule.nil? || (rule.is_a?(Hash) && rule[:show] == false)
 
-        shown = rule.is_a?(Hash) && rule.key?(:id) ? (OpsLog.kinds[rule[:id]]&.[](:name)&.call(self, value.to_s) || '-') : value.to_s
+        shown = rule.is_a?(Hash) && rule.key?(:id) ? ops_log_client_thing(rule[:id], value.to_s) : value.to_s
         "#{key}: #{shown}"
       end
       parts.join(', ')

@@ -912,7 +912,17 @@ module BreakEscape
       first = one.log_rows_for_client('notes')[:rows].first[:id]
       assert_equal first, one.log_rows_for_client('notes')[:rows].first[:id]
       assert_not_equal first, two.log_rows_for_client('notes')[:rows].first[:id]
-          end
+    end
+
+    test 'one stored event in two sources has two different row ids' do
+      game = make_game
+      at(T0) { write(game, 'tst_door', where: { kind: 'door', id: 'vault' }) }
+      assert_equal 1, rows(game, 'by_event').size
+      assert_equal 1, rows(game, 'by_prefix').size
+      ids = %w[by_event by_prefix].map { |s| game.log_rows_for_client(s)[:rows].first[:id] }
+      assert_equal 2, ids.uniq.size
+      assert_equal rows(game, 'by_event').first['seq'], rows(game, 'by_prefix').first['seq'], 'the same seq, so the key is the source'
+    end
 
     test 'log_rows_for_client shows an account and typed text alike, a cut one with a tilde, and counts and protection' do
       game = make_game
@@ -951,16 +961,30 @@ module BreakEscape
       assert_not_equal two, game.log_rows_for_client('notes')[:rev]
     end
 
-    test 'a source without showCardHolder never names a card holder when another source sets the flag' do
+    # The stored marker (`flagged`) is what makes a source without showCardHolder show `-`; the
+    # rows that end up marked are proved through POST /unlock in log_rows_test.rb.
+    test 'a flagged badge row reads - in a source without showCardHolder, in both forms, and an unflagged one is shown' do
       sources = { 'plain' => { 'title' => 'Plain', 'events' => ['badge_swipe'] },
                   'holder' => { 'title' => 'Holder', 'events' => ['badge_swipe'], 'showCardHolder' => true } }
       game = make_game(sources: sources)
-      at(T0) { write(game, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' }) }
-      assert_equal ['Gate Guard'], game.log_rows_for_client('holder')[:rows].map { |r| r[:as] }
-      assert_equal ['-'], game.log_rows_for_client('plain')[:rows].map { |r| r[:as] }
-      solo = make_game(sources: { 'plain' => sources['plain'] })
-      at(T0) { write(solo, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' }) }
-      assert_equal ['Gate Guard'], solo.log_rows_for_client('plain')[:rows].map { |r| r[:as] }
+      game.scenario_data['rooms']['lobby']['objects'] << { 'id' => 'gate_badge', 'type' => 'keycard', 'name' => 'Gate badge', 'card_id' => 'GATE-1' }
+      at(T0) do
+        write(game, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' }, detail: { 'flagged' => 1 })
+        write(game, 'badge_swipe', as: { card: 'GATE-1' }, where: { kind: 'door', id: 'vault' }, detail: { 'flagged' => 1 })
+        write(game, 'badge_swipe', as: { npc: 'guard' }, where: { kind: 'door', id: 'vault' })
+      end
+      shown = ->(source) { game.log_rows_for_client(source)[:rows] }
+      assert_equal ['Gate Guard', 'Gate badge', 'Gate Guard'], shown.call('holder').map { |r| r[:as] }
+      assert_equal ['-', '-', 'Gate Guard'], shown.call('plain').map { |r| r[:as] }
+      assert_equal [''] * 3, shown.call('plain').map { |r| r[:detail] }, 'the marker is never shown as a detail'
+      assert_no_match(/flagged/, game.log_rows_for_client('plain').to_json)
+    end
+
+    test 'a place with no authored name shows its kind word, never the raw id' do
+      game = make_game
+      at(T0) { write(game, 'tst_signin', as: nil, where: pc('recep_pc')) }
+      game.scenario_data['rooms']['lobby']['objects'].find { |o| o['id'] == 'recep_pc' }.delete('name')
+      assert_equal ['pc'], game.log_rows_for_client('by_prefix')[:rows].map { |r| r[:where] }
     end
 
     test 'KINDS resolve objects in containers, files in containers, and show an unresolved id as nil' do
