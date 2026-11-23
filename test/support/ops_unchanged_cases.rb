@@ -14,6 +14,7 @@ module OpsUnchangedCases
   def all
     { 'log_unlock_refusals' => log_unlock_refusals, 'log_container_cases' => log_container_cases }
       .merge(core_network_cases)
+      .merge(privilege_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -242,5 +243,180 @@ module OpsUnchangedCases
     walk.call(scenario['rooms'])
     walk.call(scenario['startItemsInInventory'])
     found.uniq { |item| item['id'] }
+  end
+
+  # ---- Privilege and accounts plan (S5a), unit 01: golden answers for what a session can do ----
+  #
+  # One fixture per scenario, "privilege_<scenario>", captured from the code as it stood BEFORE any
+  # S5a engine edit (first capture, not a re-record). They pin what S5a must leave alone: sign-in,
+  # lock and unlock, Switch user, keyring (credential) sign-in, a borrow "done", a session-shaped
+  # implant at a keyboard session, a plant the USB policy allows through inventory `remove`, and
+  # GET /container and GET /keyring. Each case holds only what its scenario has.
+  # No case puts an implant under a foothold, `from`, relay or technique session (that answer changes by design).
+  PRIVILEGE_SCENARIOS = %w[test_access_signin test_access_sessions test_access_keyring test_access_social].freeze
+
+  def privilege_cases
+    PRIVILEGE_SCENARIOS.to_h { |name| ["privilege_#{name}", send("privilege_#{name}_case")] }
+  end
+
+  def privilege_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "privilege_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  def lock_session_step(id, pc_id)
+    step(id, 'POST', 'lock_session', { 'pc_id' => pc_id })
+  end
+
+  def logout_step(id, pc_id)
+    step(id, 'POST', 'logout', { 'pc_id' => pc_id })
+  end
+
+  def container_step(id, object_id)
+    step(id, 'GET', "container/#{object_id}")
+  end
+
+  # Sign-in beats of the sign-in floor: tiles, typed sign-in, lock and unlock, Switch user, a
+  # password archive in a profile, a role-limited PC, sign out.
+  def privilege_test_access_signin_case
+    sam = %w[sokafor Marmalade-82]
+    ian = %w[ishaw Patchday!2026]
+    privilege_base(
+      'test_access_signin', 'S5a unit 01: sign-in, lock, unlock, Switch user and the desktop through the real routes, before any S5a engine edit.',
+      core_render('test_access_signin'),
+      [step('bootstrap', 'GET', 'scenario'),
+       step('accounts_hot_desk', 'GET', 'login_accounts', { 'pc_id' => 'hot_desk' }),
+       login('sam_wrong_password', sam[0], 'nope', 'hot_desk'),
+       login('sam_signs_in_hot_desk', sam[0], sam[1], 'hot_desk'),
+       container_step('desktop_hot_desk_sam', 'hot_desk'),
+       lock_session_step('lock_hot_desk', 'hot_desk'),
+       container_step('desktop_hot_desk_locked', 'hot_desk'),
+       login('sam_unlocks_hot_desk', sam[0], sam[1], 'hot_desk'),
+       login('sam_refused_at_ian_pc', sam[0], sam[1], 'ian_pc'),
+       login('ian_signs_in_ian_pc', ian[0], ian[1], 'ian_pc'),
+       container_step('desktop_ian_pc', 'ian_pc'),
+       login('switch_user_ian_hot_desk', ian[0], ian[1], 'hot_desk'),
+       container_step('desktop_hot_desk_ian', 'hot_desk'),
+       container_step('archive_locked', 'ian_archive'),
+       unlock('archive_wrong_password', 'object', 'ian_archive', 'password', 'attempt' => 'nope'),
+       unlock('archive_right_password', 'object', 'ian_archive', 'password', 'attempt' => 'staffarchive24'),
+       container_step('archive_open', 'ian_archive'),
+       container_step('desktop_known_pc_no_session', 'known_pc'),
+       logout_step('sign_out_hot_desk', 'hot_desk'),
+       container_step('desktop_hot_desk_after_logout', 'hot_desk'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # Owner claims, typed sign-in at an owned PC and at a hot desk, lock and unlock, a profile file, a guest claim refused.
+  def privilege_test_access_sessions_case
+    privilege_base(
+      'test_access_sessions', 'S5a unit 01: owner claim, typed sign-in, lock and unlock and the desktop through the real routes, before any S5a engine edit.',
+      core_render('test_access_sessions'),
+      [step('bootstrap', 'GET', 'scenario'),
+       step('claim_owner_dana', 'POST', 'login', { 'pc_id' => 'dana_pc', 'claim' => 'owner' }),
+       container_step('desktop_dana_pc_claimed', 'dana_pc'),
+       container_step('profile_file_dana_forecast', 'dana_forecast'),
+       login('ian_signs_in_ian_pc', 'ishaw', 'Kettle-Ian-77', 'ian_pc'),
+       container_step('desktop_ian_pc', 'ian_pc'),
+       lock_session_step('lock_ian_pc', 'ian_pc'),
+       container_step('desktop_ian_pc_locked', 'ian_pc'),
+       login('ian_unlocks_ian_pc', 'ishaw', 'Kettle-Ian-77', 'ian_pc'),
+       login('dana_at_hot_desk', 'dreyes', 'Ledger-Dana-31', 'hot_desk'),
+       container_step('desktop_hot_desk_dana', 'hot_desk'),
+       login('switch_user_omar_hot_desk', 'ohaddad', 'Pipeline-Omar-14', 'hot_desk'),
+       container_step('desktop_hot_desk_omar', 'hot_desk'),
+       login('ian_signs_in_dana_pc', 'ishaw', 'Kettle-Ian-77', 'dana_pc'),
+       step('claim_guest_none', 'POST', 'login', { 'pc_id' => 'hot_desk', 'claim' => 'guest' }),
+       logout_step('sign_out_ian_pc', 'ian_pc'),
+       container_step('desktop_ian_pc_after_logout', 'ian_pc'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # Sign-in with a typed password, GET /keyring, a session-shaped implant at that keyboard session, then
+  # a keyring sign-in through the implant's foothold (a saved connection is never a keyboard sign-in), and a plant the USB policy allows,
+  # through inventory `remove` with used_on. The scenario is the shipped one plus two sockets and
+  # two devices (below) so the implant and the plant exist; nothing else is added.
+  def privilege_test_access_keyring_case
+    scenario = core_render('test_access_keyring')
+    lobby = scenario['rooms']['lobby']['objects']
+    lobby << { 'type' => 'pc', 'id' => 'kit_badusb', 'name' => 'Keystroke injector', 'sprite' => 'drop_box1', 'position' => { 'x' => 6, 'y' => 6 },
+               'takeable' => true, 'usbClass' => 'hid', 'observations' => 'A USB device that types on its own once plugged into a PC.' }
+    lobby << { 'type' => 'pc', 'id' => 'kit_stick', 'name' => 'Spare USB stick', 'sprite' => 'drop_box1', 'position' => { 'x' => 7, 'y' => 6 },
+               'takeable' => true, 'usbClass' => 'storage', 'observations' => 'A spare USB stick.' }
+    scenario['rooms']['finance_room']['objects'] << {
+      'type' => 'pc', 'id' => 'lena_usb_socket', 'name' => 'USB socket', 'sprite' => 'network_rack1', 'position' => { 'x' => 7, 'y' => 4 },
+      'takeable' => false, 'requiresItem' => 'kit_badusb', 'requiresItemHint' => 'You would need a device to plug in here.',
+      'observations' => 'A spare USB socket on Lena\'s desk.',
+      'triggerOnInteract' => [{ 'type' => 'confirm_action', 'text' => 'Plug it in?', 'confirmLabel' => 'Plug it in', 'cancelLabel' => 'Leave it',
+                                'onConfirm' => [{ 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true, 'needsHeld' => 'kit_badusb' }] }]
+    }
+    scenario['rooms']['finance_room']['objects'] << {
+      'type' => 'pc', 'id' => 'stick_dock', 'name' => 'Stick dock', 'sprite' => 'network_rack1', 'position' => { 'x' => 8, 'y' => 4 },
+      'takeable' => false, 'requiresItem' => 'kit_stick', 'requiresItemHint' => 'You would need a stick for this.',
+      'observations' => 'A dock that takes a stick.',
+      'triggerOnInteract' => [{ 'type' => 'remove_item', 'item' => 'kit_stick' }]
+    }
+    held = %w[lena_rdp_file kit_badusb kit_stick].map { |id| lobby.find { |o| o['id'] == id }.deep_dup }
+    privilege_base(
+      'test_access_keyring', 'S5a unit 01: typed and keyring sign-in, GET /keyring, a keyboard implant and an allowed plant through the real routes, before any S5a engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_plain', 'GET', 'keyring'),
+       login('lena_signs_in_typed', 'lfox', 'Ledger-Lena-9', 'lena_pc'),
+       container_step('desktop_lena_pc', 'lena_pc'),
+       container_step('profile_file_passwords', 'lena_passwords_txt'),
+       step('keyring_after_typed_signin', 'GET', 'keyring'),
+       lock_session_step('lock_lena_pc', 'lena_pc'),
+       container_step('desktop_lena_pc_locked', 'lena_pc'),
+       login('lena_unlocks_lena_pc', 'lfox', 'Ledger-Lena-9', 'lena_pc'),
+       step('implant_session_lena_pc', 'POST', 'network/implant', { 'pc_id' => 'lena_pc', 'shape' => 'session' }),
+       step('implant_again_lena_pc', 'POST', 'network/implant', { 'pc_id' => 'lena_pc', 'shape' => 'session' }),
+       logout_step('sign_out_lena_pc', 'lena_pc'),
+       step('keyring_signin_wrong_pc', 'POST', 'login', { 'pc_id' => 'ops_pc', 'credential' => 'lena_rdp', 'foothold' => 'implant_lena_pc' }),
+       step('keyring_signin_no_route', 'POST', 'login', { 'pc_id' => 'lena_pc', 'credential' => 'lena_rdp' }),
+       step('keyring_signin_lena_pc', 'POST', 'login', { 'pc_id' => 'lena_pc', 'credential' => 'lena_rdp', 'foothold' => 'implant_lena_pc' }),
+       step('desktop_lena_pc_keyring', 'GET', 'container/lena_pc', { 'foothold' => 'implant_lena_pc' }),
+       step('keyring_after_keyring_signin', 'GET', 'keyring', { 'foothold' => 'implant_lena_pc' }),
+       step('plant_stick_allowed', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'kit_stick' }, 'used_on' => 'stick_dock' }),
+       step('plant_stick_again', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'kit_stick' }, 'used_on' => 'stick_dock' }),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  # Typed sign-ins at owned PCs, a profile file, lock and unlock, and a borrow "done" (the hand-over
+  # is seeded, since the clock is frozen) that leaves a guest session to claim at the kiosk.
+  def privilege_test_access_social_case
+    handed = { 'level' => 60.0, 'hands' => 1, 'turn' => 1, 'done' => [], 'lastSpent' => {},
+               'handed' => { '0' => { 'hand' => 1, 'time' => Time.iso8601(OpsGolden::DEFAULT_CLOCK).to_f, 'need' => 'social_media' } } }
+    privilege_base(
+      'test_access_social', 'S5a unit 01: typed sign-in, lock and unlock, a borrow done and a guest claim through the real routes, before any S5a engine edit.',
+      core_render('test_access_social'),
+      [step('bootstrap', 'GET', 'scenario'),
+       login('jake_wrong_password', 'jbrooks', 'nope', 'jake_pc'),
+       login('jake_signs_in_jake_pc', 'jbrooks', 'Biscuit1998', 'jake_pc'),
+       container_step('desktop_jake_pc', 'jake_pc'),
+       container_step('profile_file_jake_f5_note', 'jake_f5_note'),
+       lock_session_step('lock_jake_pc', 'jake_pc'),
+       container_step('desktop_jake_pc_locked', 'jake_pc'),
+       login('jake_unlocks_jake_pc', 'jbrooks', 'Biscuit1998', 'jake_pc'),
+       login('jake_refused_at_hot_desk_wrong_account', 'ohaddad', 'Stapler-Omar-71', 'hot_desk'),
+       login('omar_signs_in_omar_pc', 'ohaddad', 'Stapler-Omar-71', 'omar_pc'),
+       step('claim_guest_before_borrow', 'POST', 'login', { 'pc_id' => 'kiosk', 'claim' => 'guest' }),
+       step('borrow_done_omar_kiosk', 'POST', 'npc_workaround', { 'npc_id' => 'omar', 'index' => 0, 'hand' => 1, 'cut' => true }),
+       step('claim_guest_kiosk', 'POST', 'login', { 'pc_id' => 'kiosk', 'claim' => 'guest' }),
+       container_step('desktop_kiosk_guest', 'kiosk'),
+       logout_step('sign_out_kiosk', 'kiosk'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'npcFrustration' => { 'omar' => handed }
+    )
   end
 end

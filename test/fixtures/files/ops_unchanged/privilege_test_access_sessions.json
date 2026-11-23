@@ -1,0 +1,2009 @@
+{
+  "name": "privilege_test_access_sessions",
+  "description": "S5a unit 01: owner claim, typed sign-in, lock and unlock and the desktop through the real routes, before any S5a engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_brief": "TEST: Access model unlocked sessions\n\nA test floor for unlocked sessions and the workstation rule (ACCESS_MODEL_PLAN.md, step 9). Eleven beats, each with a sign. Dana (north, T1 to T3 and T11) leaves her screen open when she fetches coffee; Ian (east, T4) always locks his; Priya (south, T5) is under a policy that locks at once; Omar (beyond Dana, T6) under one that locks after five game minutes; Kai (beyond Ian, T7) is knocked out at his desk; Mei (beyond Priya, T8) ducks out of sight and Tom (beyond the hot desk, T9) leaves the scene; the hot desk (west, T10) has no owner. T11: reload with Dana's session open and Ian signed in.",
+    "endGoal": "Test only: run the eleven unlocked-session beats.",
+    "startRoom": "lobby",
+    "startPosition": {
+      "x": 7,
+      "y": 7
+    },
+    "npcNeedsSeed": "test_access_sessions",
+    "npcWindupMs": 0,
+    "needsDebugOverlay": true,
+    "policies": {
+      "corp_default": {
+        "autoLockMin": 5,
+        "maxAttempts": null,
+        "usb": "allowed",
+        "social": "allowed"
+      },
+      "instant_lock": {
+        "autoLockMin": 0,
+        "maxAttempts": null,
+        "usb": "allowed",
+        "social": "allowed"
+      }
+    },
+    "globalVariables": {
+      "t2_first_claim_open": false,
+      "t7_kai_down": false,
+      "mei_hidden": false,
+      "tom_removed": false
+    },
+    "accountProfiles": {
+      "staff_desktop": {
+        "for": {
+          "roles": [
+            "staff"
+          ]
+        },
+        "contents": [
+          {
+            "type": "text_file",
+            "id": "staff_notice",
+            "name": "Staff notice.txt",
+            "takeable": false,
+            "readable": true,
+            "text": "Staff notice (test floor).\n\nLock your screen every time you stand up: Windows key and L.",
+            "observations": "The staff notice, on every staff desktop."
+          }
+        ]
+      },
+      "dana_files": {
+        "for": {
+          "people": [
+            "dana"
+          ]
+        },
+        "contents": [
+          {
+            "type": "text_file",
+            "id": "dana_forecast",
+            "name": "Q3 forecast.txt",
+            "takeable": true,
+            "readable": true,
+            "text": "Q3 forecast: draft figures for the finance review. (T2: copy this one; it stays on the PC.)",
+            "observations": "Dana's draft quarterly forecast."
+          }
+        ]
+      }
+    },
+    "objectives": [
+      {
+        "aimId": "session_beats",
+        "title": "Run the unlocked-session beats",
+        "description": "Test only. Each task ticks when its beat's event fires.",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "t1_owner_present",
+            "title": "T1: Dana's PC while she sits at it",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t2_claim_and_copy",
+            "title": "T2: use Dana's open session and copy her forecast",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t3_owner_returns",
+            "title": "T3: Dana comes back and her session closes",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t4_lock_chance_1",
+            "title": "T4: Ian's PC is locked while he is away; sign in with his password",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t5_auto_lock_0",
+            "title": "T5: Priya's PC is locked the moment she leaves",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t6_auto_lock_5",
+            "title": "T6: Omar's open session locks after five game minutes",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t7_knocked_out",
+            "title": "T7: Kai knocked out at his desk; use his session",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t8_hidden",
+            "title": "T8: Mei out of sight at her desk: sign-in screen, no session",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t9_removed",
+            "title": "T9: Tom gone from the scene: sign-in screen, no session",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t10_unowned",
+            "title": "T10: the hot desk has no owner: sign-in screen",
+            "type": "custom",
+            "status": "active"
+          },
+          {
+            "taskId": "t11_reload",
+            "title": "T11: after a reload, Ian's PC still opens; Dana's session is gone",
+            "type": "custom",
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_reception",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "dana_room",
+          "east": "ian_room",
+          "south": "priya_room",
+          "west": "hot_desk_room"
+        },
+        "objects": [
+          {
+            "type": "notes1",
+            "id": "sign_lobby",
+            "name": "Sign: Start here",
+            "position": {
+              "x": 4,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Eleven beats. Dana north (T1, T2, T3, T11), Ian east (T4), Priya south (T5), hot desk west (T10).\nOmar is beyond Dana (T6), Kai beyond Ian (T7), Mei beyond Priya (T8), Tom beyond the hot desk (T9). Each room has its own sign.",
+            "observations": "A sign on a stand by the front desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "rob",
+            "displayName": "Rob Hale",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 4
+            },
+            "spriteSheet": "male_telecom_v2",
+            "spriteTalk": "assets/characters/male_telecom_talk.png",
+            "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/rob.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "eventMappings": [
+              {
+                "eventPattern": "pc_in_use",
+                "condition": "data.pcId === 'dana_pc' && data.ownerId === 'dana' && data.signedInBefore === false",
+                "onceOnly": true,
+                "completeTask": "t1_owner_present"
+              },
+              {
+                "eventPattern": "pc_signed_in",
+                "condition": "data.pcId === 'dana_pc' && data.via === 'claim' && data.firstAtPc === true",
+                "onceOnly": true,
+                "setGlobal": {
+                  "t2_first_claim_open": true
+                }
+              },
+              {
+                "eventPattern": "pc_signed_out:dana_pc",
+                "condition": "data.firstAtPc === true && globalVars.t2_first_claim_open",
+                "setGlobal": {
+                  "t2_first_claim_open": false
+                }
+              },
+              {
+                "eventPattern": "item_picked_up:text_file",
+                "condition": "data.itemId === 'dana_forecast' && data.sourcePcId === 'dana_pc' && data.transfer === 'copy' && globalVars.t2_first_claim_open",
+                "onceOnly": true,
+                "completeTask": "t2_claim_and_copy"
+              },
+              {
+                "eventPattern": "pc_signed_out",
+                "condition": "data.pcId === 'dana_pc' && data.reason === 'owner_returned' && data.firstAtPc === true",
+                "onceOnly": true,
+                "completeTask": "t3_owner_returns"
+              },
+              {
+                "eventPattern": "pc_signed_in",
+                "condition": "data.pcId === 'ian_pc' && data.npcId === 'ian' && data.via === 'password'",
+                "onceOnly": true,
+                "completeTask": "t4_lock_chance_1"
+              },
+              {
+                "eventPattern": "workstation_locked_attempt:priya_pc",
+                "condition": "data.ownerId === 'priya'",
+                "onceOnly": true,
+                "completeTask": "t5_auto_lock_0"
+              },
+              {
+                "eventPattern": "pc_signed_out",
+                "condition": "data.pcId === 'omar_pc' && data.npcId === 'omar' && data.reason === 'auto_locked'",
+                "onceOnly": true,
+                "completeTask": "t6_auto_lock_5"
+              },
+              {
+                "eventPattern": "workstation_owner_left:kai_pc",
+                "condition": "data.reason === 'ko'",
+                "onceOnly": true,
+                "setGlobal": {
+                  "t7_kai_down": true
+                }
+              },
+              {
+                "eventPattern": "pc_signed_in",
+                "condition": "data.pcId === 'kai_pc' && data.via === 'claim' && globalVars.t7_kai_down",
+                "onceOnly": true,
+                "completeTask": "t7_knocked_out"
+              },
+              {
+                "eventPattern": "pc_signin_shown",
+                "condition": "data.pcId === 'mei_pc' && data.reason === 'signin' && globalVars.mei_hidden",
+                "onceOnly": true,
+                "completeTask": "t8_hidden"
+              },
+              {
+                "eventPattern": "pc_signin_shown",
+                "condition": "data.pcId === 'tom_pc' && data.reason === 'signin' && globalVars.tom_removed",
+                "onceOnly": true,
+                "completeTask": "t9_removed"
+              },
+              {
+                "eventPattern": "pc_signin_shown",
+                "condition": "data.pcId === 'hot_desk' && data.reason === 'signin'",
+                "onceOnly": true,
+                "completeTask": "t10_unowned"
+              },
+              {
+                "eventPattern": "pc_desktop_opened",
+                "condition": "data.pcId === 'ian_pc' && data.npcId === 'ian' && data.restored === true",
+                "onceOnly": true,
+                "completeTask": "t11_reload"
+              }
+            ]
+          }
+        ]
+      },
+      "dana_room": {
+        "type": "room_office",
+        "door_sign": "Dana",
+        "connections": {
+          "south": "lobby",
+          "north": "omar_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "dana_pc",
+            "owner": "dana",
+            "name": "Dana's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "observations": "Dana's desk PC. She leaves it unlocked when she gets up."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "dana_coffee",
+            "owner": [
+              "dana"
+            ],
+            "private": true,
+            "name": "Dana coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Dana's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 45
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t1",
+            "name": "Sign: T1 Owner present",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T1. While Dana sits at her desk, click her PC: Dana Reyes is using this PC, and nothing else happens.\nShe gets up for coffee within a minute of the start.",
+            "observations": "A sign by Dana's desk."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t2",
+            "name": "Sign: T2 and T3 Owner away, then back",
+            "position": {
+              "x": 8,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T2. When Dana walks to her coffee, click her PC: her desktop opens, signed in as her. Copy Q3 forecast.txt; it stays listed.\nT3. When she walks back, the desktop closes: Dana Reyes is back at the desk.",
+            "observations": "A sign by Dana's desk."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t11",
+            "name": "Sign: T11 Reload",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T11 (after T4). On Dana's next coffee, open her session, then reload the page before she comes back.\nHer session is gone and she is back at her desk; Ian's session at his PC is kept.",
+            "observations": "A sign by Dana's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "dana",
+            "displayName": "Dana Reyes",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "female_office_worker_v2",
+            "spriteTalk": "assets/characters/female_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/owner.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "finance",
+            "creds": {
+              "username": "dreyes",
+              "password": "Ledger-Dana-31"
+            },
+            "needsHome": "dana_pc",
+            "needsRooms": [
+              "dana_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 30,
+                "urgentAt": 40,
+                "initial": 65
+              }
+            }
+          }
+        ]
+      },
+      "ian_room": {
+        "type": "room_office",
+        "door_sign": "Ian",
+        "connections": {
+          "west": "lobby",
+          "east": "kai_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "ian_pc",
+            "owner": "ian",
+            "name": "Ian's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 1,
+            "observations": "Ian's desk PC. He always locks it when he gets up."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "ian_coffee",
+            "owner": [
+              "ian"
+            ],
+            "private": true,
+            "name": "Ian coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Ian's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 45
+            }
+          },
+          {
+            "type": "filing_cabinet",
+            "id": "ian_drawer",
+            "name": "Ian's desk drawer",
+            "position": {
+              "x": 2,
+              "y": 6
+            },
+            "takeable": false,
+            "locked": false,
+            "observations": "Ian's desk drawer. It isn't locked.",
+            "contents": [
+              {
+                "type": "notes1",
+                "id": "ian_password_note",
+                "name": "Note: my sign-in",
+                "takeable": true,
+                "readable": true,
+                "text": "ishaw / Kettle-Ian-77\n(the screen locks itself, so I need this)",
+                "observations": "A scrap of paper in Ian's handwriting."
+              }
+            ]
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t4",
+            "name": "Sign: T4 Always locks",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T4. When Ian walks to his coffee, click his PC: the screen is locked, so you get the sign-in screen.\nHis details are in his desk drawer. Signed in with his password, his desktop stays open when he comes back.",
+            "observations": "A sign by Ian's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "ian",
+            "displayName": "Ian Shaw",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "male_nerd_v2",
+            "spriteTalk": "assets/characters/male_nerd_talk.png",
+            "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/owner.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "it",
+            "creds": {
+              "username": "ishaw",
+              "password": "Kettle-Ian-77"
+            },
+            "needsHome": "ian_pc",
+            "needsRooms": [
+              "ian_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 30,
+                "urgentAt": 40,
+                "initial": 65
+              }
+            }
+          }
+        ]
+      },
+      "priya_room": {
+        "type": "room_office",
+        "door_sign": "Priya",
+        "connections": {
+          "north": "lobby",
+          "south": "mei_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "priya_pc",
+            "owner": "priya",
+            "name": "Priya's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "policy": "instant_lock",
+            "observations": "Priya's desk PC. The instant lock policy applies here."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "priya_coffee",
+            "owner": [
+              "priya"
+            ],
+            "private": true,
+            "name": "Priya coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Priya's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 45
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t5",
+            "name": "Sign: T5 Locks at once",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T5. Priya never locks her screen herself, but this PC's policy locks it the moment she leaves.\nWhen she walks to her coffee, click her PC: the sign-in screen, and no way into her session.",
+            "observations": "A sign by Priya's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "priya",
+            "displayName": "Priya Nair",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "female_blowse_v2",
+            "spriteTalk": "assets/characters/female_blowse_talk.png",
+            "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/owner.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "hr",
+            "creds": {
+              "username": "pnair",
+              "password": "Payroll-Priya-58"
+            },
+            "needsHome": "priya_pc",
+            "needsRooms": [
+              "priya_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 30,
+                "urgentAt": 40,
+                "initial": 65
+              }
+            }
+          }
+        ]
+      },
+      "omar_room": {
+        "type": "room_office",
+        "door_sign": "Omar",
+        "connections": {
+          "south": "dana_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "omar_pc",
+            "owner": "omar",
+            "name": "Omar's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "policy": "corp_default",
+            "observations": "Omar's desk PC. The corporate policy locks an unattended screen after five minutes."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "omar_coffee",
+            "owner": [
+              "omar"
+            ],
+            "private": true,
+            "name": "Omar coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Omar's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 600
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t6",
+            "name": "Sign: T6 Locks after five minutes",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T6. Omar leaves his screen open, and his coffee takes him a long time. Click his PC once he has gone: his desktop.\nFive game minutes after he left, the screen locks itself: the desktop closes with The screen locked.",
+            "observations": "A sign by Omar's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "omar",
+            "displayName": "Omar Haddad",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "male_office_worker_v2",
+            "spriteTalk": "assets/characters/male_office_worker_talk.png",
+            "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/owner.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "sales",
+            "creds": {
+              "username": "ohaddad",
+              "password": "Pipeline-Omar-14"
+            },
+            "needsHome": "omar_pc",
+            "needsRooms": [
+              "omar_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 30,
+                "urgentAt": 40,
+                "initial": 65
+              }
+            }
+          }
+        ]
+      },
+      "kai_room": {
+        "type": "room_office",
+        "door_sign": "Kai",
+        "connections": {
+          "west": "ian_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "kai_pc",
+            "owner": "kai",
+            "name": "Kai's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "observations": "Kai's desk PC. He leaves it unlocked when he gets up."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "kai_coffee",
+            "owner": [
+              "kai"
+            ],
+            "private": true,
+            "name": "Kai coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Kai's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 30
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t7",
+            "name": "Sign: T7 Knocked out",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T7. Kai is not going anywhere soon. Knock him out at his desk: that counts as leaving his desk, screen open.\nClick his PC: his desktop. He stays down, so the session lasts until a reload.",
+            "observations": "A sign by Kai's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "kai",
+            "displayName": "Kai Brennan",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "male_spy_v2",
+            "spriteTalk": "assets/characters/male_spy_talk.png",
+            "spriteVisemes": "assets/characters/male_spy_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/owner.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "ops",
+            "creds": {
+              "username": "kbrennan",
+              "password": "Rota-Kai-62"
+            },
+            "needsHome": "kai_pc",
+            "needsRooms": [
+              "kai_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 5,
+                "urgentAt": 40,
+                "initial": 100
+              }
+            }
+          }
+        ]
+      },
+      "mei_room": {
+        "type": "room_office",
+        "door_sign": "Mei",
+        "connections": {
+          "north": "priya_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "mei_pc",
+            "owner": "mei",
+            "name": "Mei's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "observations": "Mei's desk PC. She leaves it unlocked when she gets up."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "mei_coffee",
+            "owner": [
+              "mei"
+            ],
+            "private": true,
+            "name": "Mei coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Mei's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 30
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t8",
+            "name": "Sign: T8 Hidden",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T8. Ask Mei to duck out of sight. She is still at her desk, just hidden.\nClick her PC: the sign-in screen, and no way into her session.",
+            "observations": "A sign by Mei's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "mei",
+            "displayName": "Mei Lin",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "female_scientist_v2",
+            "spriteTalk": "assets/characters/female_scientist_talk.png",
+            "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/mei.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "legal",
+            "creds": {
+              "username": "mlin",
+              "password": "Clause-Mei-47"
+            },
+            "needsHome": "mei_pc",
+            "needsRooms": [
+              "mei_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 5,
+                "urgentAt": 40,
+                "initial": 100
+              }
+            },
+            "eventMappings": [
+              {
+                "eventPattern": "global_variable_changed:mei_hidden",
+                "condition": "value === true",
+                "onceOnly": true,
+                "setVisible": false
+              }
+            ]
+          }
+        ]
+      },
+      "hot_desk_room": {
+        "type": "room_office",
+        "door_sign": "Hot desk",
+        "connections": {
+          "east": "lobby",
+          "west": "tom_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "hot_desk",
+            "name": "Hot desk PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "observations": "A shared hot desk PC. It belongs to nobody."
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t10",
+            "name": "Sign: T10 Unowned PC",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T10. Nobody owns the hot desk, so there is never an open session to use.\nClick it: the sign-in screen, and no desk light.",
+            "observations": "A sign by the hot desk."
+          }
+        ]
+      },
+      "tom_room": {
+        "type": "room_office",
+        "door_sign": "Tom",
+        "connections": {
+          "east": "hot_desk_room"
+        },
+        "objects": [
+          {
+            "type": "pc",
+            "id": "tom_pc",
+            "owner": "tom",
+            "name": "Tom's PC",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "lockChance": 0,
+            "observations": "Tom's desk PC. He leaves it unlocked when he gets up."
+          },
+          {
+            "type": "coffee_station1",
+            "id": "tom_coffee",
+            "owner": [
+              "tom"
+            ],
+            "private": true,
+            "name": "Tom coffee",
+            "position": {
+              "x": 8,
+              "y": 6
+            },
+            "takeable": false,
+            "observations": "Tom's coffee machine. Nobody else uses it.",
+            "affordance": {
+              "satisfies": "caffeine",
+              "restores": 70,
+              "useSeconds": 30
+            }
+          },
+          {
+            "type": "notes1",
+            "id": "sign_t9",
+            "name": "Sign: T9 Removed",
+            "position": {
+              "x": 2,
+              "y": 3
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "T9. Tell Tom he is wanted elsewhere: he leaves the scene from his desk.\nClick his PC: the sign-in screen, and no way into his session.",
+            "observations": "A sign by Tom's desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "tom",
+            "displayName": "Tom Fletcher",
+            "npcType": "person",
+            "position": {
+              "x": 5,
+              "y": 5
+            },
+            "spriteSheet": "male_hacker_hood_down_v2",
+            "spriteTalk": "assets/characters/male_hacker_hood_down_v2_talk.png",
+            "spriteVisemes": "assets/characters/male_hacker_hood_down_v2_visemes.png",
+            "storyPath": "scenarios/test_access_sessions/ink/tom.json",
+            "currentKnot": "start",
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "role": "facilities",
+            "creds": {
+              "username": "tfletcher",
+              "password": "Boiler-Tom-29"
+            },
+            "needsHome": "tom_pc",
+            "needsRooms": [
+              "tom_room"
+            ],
+            "needsSpeed": 90,
+            "needs": {
+              "caffeine": {
+                "decayPerMin": 5,
+                "urgentAt": 40,
+                "initial": 100
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby",
+      "dana_room",
+      "ian_room",
+      "priya_room",
+      "omar_room",
+      "kai_room",
+      "mei_room",
+      "hot_desk_room",
+      "tom_room"
+    ],
+    "encounteredNPCs": [
+      "rob",
+      "dana",
+      "ian",
+      "priya",
+      "omar",
+      "kai",
+      "mei",
+      "tom"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "claim_owner_dana",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "dana_pc",
+        "claim": "owner"
+      }
+    },
+    {
+      "id": "desktop_dana_pc_claimed",
+      "method": "GET",
+      "path": "container/dana_pc"
+    },
+    {
+      "id": "profile_file_dana_forecast",
+      "method": "GET",
+      "path": "container/dana_forecast"
+    },
+    {
+      "id": "ian_signs_in_ian_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "ian_pc",
+        "username": "ishaw",
+        "password": "Kettle-Ian-77"
+      }
+    },
+    {
+      "id": "desktop_ian_pc",
+      "method": "GET",
+      "path": "container/ian_pc"
+    },
+    {
+      "id": "lock_ian_pc",
+      "method": "POST",
+      "path": "lock_session",
+      "params": {
+        "pc_id": "ian_pc"
+      }
+    },
+    {
+      "id": "desktop_ian_pc_locked",
+      "method": "GET",
+      "path": "container/ian_pc"
+    },
+    {
+      "id": "ian_unlocks_ian_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "ian_pc",
+        "username": "ishaw",
+        "password": "Kettle-Ian-77"
+      }
+    },
+    {
+      "id": "dana_at_hot_desk",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk",
+        "username": "dreyes",
+        "password": "Ledger-Dana-31"
+      }
+    },
+    {
+      "id": "desktop_hot_desk_dana",
+      "method": "GET",
+      "path": "container/hot_desk"
+    },
+    {
+      "id": "switch_user_omar_hot_desk",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk",
+        "username": "ohaddad",
+        "password": "Pipeline-Omar-14"
+      }
+    },
+    {
+      "id": "desktop_hot_desk_omar",
+      "method": "GET",
+      "path": "container/hot_desk"
+    },
+    {
+      "id": "ian_signs_in_dana_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "dana_pc",
+        "username": "ishaw",
+        "password": "Kettle-Ian-77"
+      }
+    },
+    {
+      "id": "claim_guest_none",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk",
+        "claim": "guest"
+      }
+    },
+    {
+      "id": "sign_out_ian_pc",
+      "method": "POST",
+      "path": "logout",
+      "params": {
+        "pc_id": "ian_pc"
+      }
+    },
+    {
+      "id": "desktop_ian_pc_after_logout",
+      "method": "GET",
+      "path": "container/ian_pc"
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "ian_room",
+                "west": "hot_desk_room",
+                "north": "dana_room",
+                "south": "priya_room"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "ian_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "kai_room",
+                "west": "lobby"
+              },
+              "door_sign": "Ian",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "kai_room": {
+              "type": "room_office",
+              "connections": {
+                "west": "ian_room"
+              },
+              "door_sign": "Kai",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "mei_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "priya_room"
+              },
+              "door_sign": "Mei",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "tom_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "hot_desk_room"
+              },
+              "door_sign": "Tom",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "dana_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "omar_room",
+                "south": "lobby"
+              },
+              "door_sign": "Dana",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "omar_room": {
+              "type": "room_office",
+              "connections": {
+                "south": "dana_room"
+              },
+              "door_sign": "Omar",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "priya_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "lobby",
+                "south": "mei_room"
+              },
+              "door_sign": "Priya",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "hot_desk_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "lobby",
+                "west": "tom_room"
+              },
+              "door_sign": "Hot desk",
+              "locked": false
+            }
+          },
+          "endGoal": "Test only: run the eleven unlocked-session beats.",
+          "policies": {
+            "corp_default": {
+              "usb": "allowed",
+              "social": "allowed",
+              "autoLockMin": 5,
+              "maxAttempts": null
+            },
+            "instant_lock": {
+              "usb": "allowed",
+              "social": "allowed",
+              "autoLockMin": 0,
+              "maxAttempts": null
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "session_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "T1: Dana's PC while she sits at it",
+                  "status": "active",
+                  "taskId": "t1_owner_present"
+                },
+                {
+                  "type": "custom",
+                  "title": "T2: use Dana's open session and copy her forecast",
+                  "status": "active",
+                  "taskId": "t2_claim_and_copy"
+                },
+                {
+                  "type": "custom",
+                  "title": "T3: Dana comes back and her session closes",
+                  "status": "active",
+                  "taskId": "t3_owner_returns"
+                },
+                {
+                  "type": "custom",
+                  "title": "T4: Ian's PC is locked while he is away; sign in with his password",
+                  "status": "active",
+                  "taskId": "t4_lock_chance_1"
+                },
+                {
+                  "type": "custom",
+                  "title": "T5: Priya's PC is locked the moment she leaves",
+                  "status": "active",
+                  "taskId": "t5_auto_lock_0"
+                },
+                {
+                  "type": "custom",
+                  "title": "T6: Omar's open session locks after five game minutes",
+                  "status": "active",
+                  "taskId": "t6_auto_lock_5"
+                },
+                {
+                  "type": "custom",
+                  "title": "T7: Kai knocked out at his desk; use his session",
+                  "status": "active",
+                  "taskId": "t7_knocked_out"
+                },
+                {
+                  "type": "custom",
+                  "title": "T8: Mei out of sight at her desk: sign-in screen, no session",
+                  "status": "active",
+                  "taskId": "t8_hidden"
+                },
+                {
+                  "type": "custom",
+                  "title": "T9: Tom gone from the scene: sign-in screen, no session",
+                  "status": "active",
+                  "taskId": "t9_removed"
+                },
+                {
+                  "type": "custom",
+                  "title": "T10: the hot desk has no owner: sign-in screen",
+                  "status": "active",
+                  "taskId": "t10_unowned"
+                },
+                {
+                  "type": "custom",
+                  "title": "T11: after a reload, Ian's PC still opens; Dana's session is gone",
+                  "status": "active",
+                  "taskId": "t11_reload"
+                }
+              ],
+              "title": "Run the unlocked-session beats",
+              "status": "active",
+              "description": "Test only. Each task ticks when its beat's event fires."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_sessions",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Access model unlocked sessions\n\nA test floor for unlocked sessions and the workstation rule (ACCESS_MODEL_PLAN.md, step 9). Eleven beats, each with a sign. Dana (north, T1 to T3 and T11) leaves her screen open when she fetches coffee; Ian (east, T4) always locks his; Priya (south, T5) is under a policy that locks at once; Omar (beyond Dana, T6) under one that locks after five game minutes; Kai (beyond Ian, T7) is knocked out at his desk; Mei (beyond Priya, T8) ducks out of sight and Tom (beyond the hot desk, T9) leaves the scene; the hot desk (west, T10) has no owner. T11: reload with Dana's session open and Ian signed in.",
+          "globalVariables": {
+            "mei_hidden": false,
+            "t7_kai_down": false,
+            "tom_removed": false,
+            "t2_first_claim_open": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "male_telecom_v2",
+            "male_nerd_v2",
+            "male_spy_v2",
+            "female_scientist_v2",
+            "male_hacker_hood_down_v2",
+            "female_office_worker_v2",
+            "male_office_worker_v2",
+            "female_blowse_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      },
+      {
+        "id": "claim_owner_dana",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes",
+          "via": "claim",
+          "portrait": "assets/characters/female_office_worker_talk.png"
+        }
+      },
+      {
+        "id": "desktop_dana_pc_claimed",
+        "status": 200,
+        "body": {
+          "container_id": "dana_pc",
+          "contents": [
+            {
+              "id": "staff_notice",
+              "name": "Staff notice.txt",
+              "text": "Staff notice (test floor).\n\nLock your screen every time you stand up: Windows key and L.",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false,
+              "observations": "The staff notice, on every staff desktop."
+            },
+            {
+              "id": "dana_forecast",
+              "name": "Q3 forecast.txt",
+              "text": "Q3 forecast: draft figures for the finance review. (T2: copy this one; it stays on the PC.)",
+              "type": "text_file",
+              "readable": true,
+              "takeable": true,
+              "observations": "Dana's draft quarterly forecast."
+            }
+          ],
+          "session": {
+            "npcId": "dana",
+            "username": "dreyes",
+            "displayName": "Dana Reyes",
+            "via": "claim",
+            "portrait": "assets/characters/female_office_worker_talk.png"
+          }
+        }
+      },
+      {
+        "id": "profile_file_dana_forecast",
+        "status": 200,
+        "body": {
+          "container_id": "dana_forecast",
+          "contents": []
+        }
+      },
+      {
+        "id": "ian_signs_in_ian_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "ian",
+          "username": "ishaw",
+          "displayName": "Ian Shaw",
+          "via": "password",
+          "portrait": "assets/characters/male_nerd_talk.png"
+        }
+      },
+      {
+        "id": "desktop_ian_pc",
+        "status": 200,
+        "body": {
+          "container_id": "ian_pc",
+          "contents": [
+            {
+              "id": "staff_notice",
+              "name": "Staff notice.txt",
+              "text": "Staff notice (test floor).\n\nLock your screen every time you stand up: Windows key and L.",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false,
+              "observations": "The staff notice, on every staff desktop."
+            }
+          ],
+          "session": {
+            "npcId": "ian",
+            "username": "ishaw",
+            "displayName": "Ian Shaw",
+            "via": "password",
+            "portrait": "assets/characters/male_nerd_talk.png"
+          }
+        }
+      },
+      {
+        "id": "lock_ian_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "pcId": "ian_pc",
+          "locked": true
+        }
+      },
+      {
+        "id": "desktop_ian_pc_locked",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: ian_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "ian_unlocks_ian_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "ian",
+          "username": "ishaw",
+          "displayName": "Ian Shaw",
+          "via": "password",
+          "portrait": "assets/characters/male_nerd_talk.png"
+        }
+      },
+      {
+        "id": "dana_at_hot_desk",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "dana",
+          "username": "dreyes",
+          "displayName": "Dana Reyes",
+          "via": "password",
+          "portrait": "assets/characters/female_office_worker_talk.png"
+        }
+      },
+      {
+        "id": "desktop_hot_desk_dana",
+        "status": 200,
+        "body": {
+          "container_id": "hot_desk",
+          "contents": [
+            {
+              "id": "staff_notice",
+              "name": "Staff notice.txt",
+              "text": "Staff notice (test floor).\n\nLock your screen every time you stand up: Windows key and L.",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false,
+              "observations": "The staff notice, on every staff desktop."
+            },
+            {
+              "id": "dana_forecast",
+              "name": "Q3 forecast.txt",
+              "text": "Q3 forecast: draft figures for the finance review. (T2: copy this one; it stays on the PC.)",
+              "type": "text_file",
+              "readable": true,
+              "takeable": true,
+              "observations": "Dana's draft quarterly forecast."
+            }
+          ],
+          "session": {
+            "npcId": "dana",
+            "username": "dreyes",
+            "displayName": "Dana Reyes",
+            "via": "password",
+            "portrait": "assets/characters/female_office_worker_talk.png"
+          }
+        }
+      },
+      {
+        "id": "switch_user_omar_hot_desk",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "omar",
+          "username": "ohaddad",
+          "displayName": "Omar Haddad",
+          "via": "password",
+          "portrait": "assets/characters/male_office_worker_talk.png"
+        }
+      },
+      {
+        "id": "desktop_hot_desk_omar",
+        "status": 200,
+        "body": {
+          "container_id": "hot_desk",
+          "contents": [
+            {
+              "id": "staff_notice",
+              "name": "Staff notice.txt",
+              "text": "Staff notice (test floor).\n\nLock your screen every time you stand up: Windows key and L.",
+              "type": "text_file",
+              "readable": true,
+              "takeable": false,
+              "observations": "The staff notice, on every staff desktop."
+            }
+          ],
+          "session": {
+            "npcId": "omar",
+            "username": "ohaddad",
+            "displayName": "Omar Haddad",
+            "via": "password",
+            "portrait": "assets/characters/male_office_worker_talk.png"
+          }
+        }
+      },
+      {
+        "id": "ian_signs_in_dana_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "ian",
+          "username": "ishaw",
+          "displayName": "Ian Shaw",
+          "via": "password",
+          "portrait": "assets/characters/male_nerd_talk.png"
+        }
+      },
+      {
+        "id": "claim_guest_none",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Sign in required"
+        }
+      },
+      {
+        "id": "sign_out_ian_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "endedPcIds": []
+        }
+      },
+      {
+        "id": "desktop_ian_pc_after_logout",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: ian_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_reception",
+              "connections": {
+                "east": "ian_room",
+                "west": "hot_desk_room",
+                "north": "dana_room",
+                "south": "priya_room"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "ian_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "kai_room",
+                "west": "lobby"
+              },
+              "door_sign": "Ian",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "kai_room": {
+              "type": "room_office",
+              "connections": {
+                "west": "ian_room"
+              },
+              "door_sign": "Kai",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "mei_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "priya_room"
+              },
+              "door_sign": "Mei",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "tom_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "hot_desk_room"
+              },
+              "door_sign": "Tom",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "dana_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "omar_room",
+                "south": "lobby"
+              },
+              "door_sign": "Dana",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "omar_room": {
+              "type": "room_office",
+              "connections": {
+                "south": "dana_room"
+              },
+              "door_sign": "Omar",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "priya_room": {
+              "type": "room_office",
+              "connections": {
+                "north": "lobby",
+                "south": "mei_room"
+              },
+              "door_sign": "Priya",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "hot_desk_room": {
+              "type": "room_office",
+              "connections": {
+                "east": "lobby",
+                "west": "tom_room"
+              },
+              "door_sign": "Hot desk",
+              "locked": false
+            }
+          },
+          "endGoal": "Test only: run the eleven unlocked-session beats.",
+          "policies": {
+            "corp_default": {
+              "usb": "allowed",
+              "social": "allowed",
+              "autoLockMin": 5,
+              "maxAttempts": null
+            },
+            "instant_lock": {
+              "usb": "allowed",
+              "social": "allowed",
+              "autoLockMin": 0,
+              "maxAttempts": null
+            }
+          },
+          "startRoom": "lobby",
+          "objectives": [
+            {
+              "aimId": "session_beats",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "custom",
+                  "title": "T1: Dana's PC while she sits at it",
+                  "status": "active",
+                  "taskId": "t1_owner_present"
+                },
+                {
+                  "type": "custom",
+                  "title": "T2: use Dana's open session and copy her forecast",
+                  "status": "active",
+                  "taskId": "t2_claim_and_copy"
+                },
+                {
+                  "type": "custom",
+                  "title": "T3: Dana comes back and her session closes",
+                  "status": "active",
+                  "taskId": "t3_owner_returns"
+                },
+                {
+                  "type": "custom",
+                  "title": "T4: Ian's PC is locked while he is away; sign in with his password",
+                  "status": "active",
+                  "taskId": "t4_lock_chance_1"
+                },
+                {
+                  "type": "custom",
+                  "title": "T5: Priya's PC is locked the moment she leaves",
+                  "status": "active",
+                  "taskId": "t5_auto_lock_0"
+                },
+                {
+                  "type": "custom",
+                  "title": "T6: Omar's open session locks after five game minutes",
+                  "status": "active",
+                  "taskId": "t6_auto_lock_5"
+                },
+                {
+                  "type": "custom",
+                  "title": "T7: Kai knocked out at his desk; use his session",
+                  "status": "active",
+                  "taskId": "t7_knocked_out"
+                },
+                {
+                  "type": "custom",
+                  "title": "T8: Mei out of sight at her desk: sign-in screen, no session",
+                  "status": "active",
+                  "taskId": "t8_hidden"
+                },
+                {
+                  "type": "custom",
+                  "title": "T9: Tom gone from the scene: sign-in screen, no session",
+                  "status": "active",
+                  "taskId": "t9_removed"
+                },
+                {
+                  "type": "custom",
+                  "title": "T10: the hot desk has no owner: sign-in screen",
+                  "status": "active",
+                  "taskId": "t10_unowned"
+                },
+                {
+                  "type": "custom",
+                  "title": "T11: after a reload, Ian's PC still opens; Dana's session is gone",
+                  "status": "active",
+                  "taskId": "t11_reload"
+                }
+              ],
+              "title": "Run the unlocked-session beats",
+              "status": "active",
+              "description": "Test only. Each task ticks when its beat's event fires."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_sessions",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 7,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Access model unlocked sessions\n\nA test floor for unlocked sessions and the workstation rule (ACCESS_MODEL_PLAN.md, step 9). Eleven beats, each with a sign. Dana (north, T1 to T3 and T11) leaves her screen open when she fetches coffee; Ian (east, T4) always locks his; Priya (south, T5) is under a policy that locks at once; Omar (beyond Dana, T6) under one that locks after five game minutes; Kai (beyond Ian, T7) is knocked out at his desk; Mei (beyond Priya, T8) ducks out of sight and Tom (beyond the hot desk, T9) leaves the scene; the hot desk (west, T10) has no owner. T11: reload with Dana's session open and Ian signed in.",
+          "globalVariables": {
+            "mei_hidden": false,
+            "t7_kai_down": false,
+            "tom_removed": false,
+            "t2_first_claim_open": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "male_telecom_v2",
+            "male_nerd_v2",
+            "male_spy_v2",
+            "female_scientist_v2",
+            "male_hacker_hood_down_v2",
+            "female_office_worker_v2",
+            "male_office_worker_v2",
+            "female_blowse_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {
+            "dana_pc": {
+              "npcId": "ian",
+              "username": "ishaw",
+              "displayName": "Ian Shaw",
+              "via": "password",
+              "portrait": "assets/characters/male_nerd_talk.png"
+            },
+            "hot_desk": {
+              "npcId": "omar",
+              "username": "ohaddad",
+              "displayName": "Omar Haddad",
+              "via": "password",
+              "portrait": "assets/characters/male_office_worker_talk.png"
+            }
+          },
+          "signedInPcs": [
+            "dana_pc",
+            "ian_pc",
+            "hot_desk"
+          ],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": []
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {
+        "dana_pc": {
+          "id": "ian",
+          "via": "password"
+        },
+        "hot_desk": {
+          "id": "omar",
+          "via": "password"
+        }
+      },
+      "footholds": {},
+      "inventory": [],
+      "pinDusted": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [
+        "dana_pc",
+        "ian_pc",
+        "hot_desk"
+      ],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "lobby",
+        "dana_room",
+        "ian_room",
+        "priya_room",
+        "omar_room",
+        "kai_room",
+        "mei_room",
+        "hot_desk_room",
+        "tom_room"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "rob",
+        "dana",
+        "ian",
+        "priya",
+        "omar",
+        "kai",
+        "mei",
+        "tom"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}
