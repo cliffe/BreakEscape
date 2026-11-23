@@ -565,6 +565,8 @@ module BreakEscape
 
     # Hand-kept: the event registry (lib/break_escape/ops_log_events.rb) records no per-event `as` rule, so there is nothing to derive this from.
     OPS_AS_NIL_EVENTS = %w[network_swept host_scanned service_checked finding_confirmed technique_refused].freeze
+    # technique_used names the session's account (nil for a credential grant): the worst case is an account name.
+    OPS_AS_ACCOUNT_EVENTS = %w[technique_used].freeze
 
     test 'every registered event builds a ceiling-filled row of at most 400 bytes' do
       BreakEscape::OpsLog.events.each do |name, entry|
@@ -578,7 +580,10 @@ module BreakEscape
         end
         # Ops core S1 events are written with `as` nil (OPS_CORE_PLAN.md 13, the "Who" column), so
         # their ceiling row has no `as`; every other event gets the typed-name worst case
-        as = OPS_AS_NIL_EVENTS.include?(name) ? nil : { 'typed' => 'a' * 94, 'cut' => true }
+        as = if OPS_AS_NIL_EVENTS.include?(name) then nil
+        elsif OPS_AS_ACCOUNT_EVENTS.include?(name) then { 'account' => 'a' * 32 }
+        else { 'typed' => 'a' * 94, 'cut' => true }
+        end
         row = { 'seq' => 999_999, 'event' => name, 'as' => as,
                 'where' => { 'kind' => Array(entry[:places]).max_by(&:length) || 'pc', 'id' => 'x' * 40 },
                 'result' => entry[:results].max_by(&:length), 'detail' => detail, 'elapsedMs' => 999_999_999,
