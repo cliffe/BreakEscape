@@ -44,7 +44,13 @@ module BreakEscape
       'technique_used' => { label: 'TECHNIQUE', places: %w[host pc], results: %w[ok],
                             detail: { 'finding' => { alias: 'finding' }, 'technique' => { id: 'technique' },
                                       'grant' => %w[session credential], 'access' => %w[user admin] },
-                            save_limit: { 'ok' => 10 } }
+                            save_limit: { 'ok' => 10 } },
+      # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
+      # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
+      'net_link_up' => { label: 'NET_LINK_UP', places: %w[jack], results: %w[ok] },
+      'net_link_down' => { label: 'NET_LINK_DOWN', places: %w[jack], results: %w[ok] },
+      'net_wifi_join' => { label: 'NET_WIFI_JOIN', places: %w[ap], results: %w[ok] },
+      'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -118,6 +124,11 @@ module BreakEscape
       # A technique card registry entry by its id, shown by its name (ops core S3).
       'technique' => {
         name: ->(game, id) { OpsLogEvents.technique_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      # A file share by its record id, shown by its name (ops log L3). A share has no room.
+      'share' => {
+        name: ->(game, id) { OpsLogEvents.share_named(game, id) },
         room: ->(_game, _id) { nil }
       },
       # A foothold id: a network jack ("jack_<id>" or the jack's id), an access point, or a PC
@@ -210,6 +221,13 @@ module BreakEscape
         end
       end
       nil
+    end
+
+    def share_named(game, id)
+      entry = NetworkModel.resources(game.scenario_data)[id.to_s]
+      return nil unless entry.is_a?(Hash)
+
+      entry['name'].is_a?(String) && !entry['name'].empty? ? entry['name'] : id.to_s
     end
 
     def technique_named(game, id)
