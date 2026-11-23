@@ -52,7 +52,12 @@ at game-design level. Products are invented. Do not open SecGen or the exploit-d
   live only in the realism catalog (`config/break_escape/realism_catalog/*.json`, the skin
   plan's), linked by a plain `realism: "<id>"`; catalog ids are append-only. This build makes
   only the loader and a test-only catalog under `test/fixtures/realism_catalog/`.
-- **Games.** Never edit an existing game row. Live proofs make fresh games with `new-game.rb`.
+- **Games.** Never edit an existing game row. Live proofs make fresh games. A new `test_ops_*`
+  scenario has no Mission row until it is seeded after landing, so `new-game.rb` cannot find
+  it: make its game with
+  `env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin <scenario_dir>`
+  (prints `GAME_ID=`; no seed, no Mission row), run from the worktree root. Do not use
+  `tools/playtest/new-game.sh` here (it sets a `BUNDLE_PATH` that fails).
 - **Event mappings.** A new `eventMappings` entry goes last (the server keys them by index);
   `tools/check_mapping_index_drift.rb` must pass before landing.
 - **New JS imports.** A new static import in an engine JS module is added to every JS test
