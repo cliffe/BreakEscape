@@ -54,7 +54,7 @@ export async function watchSubtitles(page, mark, specs) {
 /** Walk in straight legs to just below an NPC (left/right first, then up), then fall back to moveToNear if the legs did not get in range.
  *  Positions are read live (office-life NPCs move). Leaves the final approach to interactRetry. */
 export async function walkToNpc(bridge, id, mark, stopBelow = 44) {
-  const find = async () => (await bridge.getState({ radius: 14, limit: 40 })).nearby.find(n => n.kind === 'npc' && n.id === id);
+  const find = async () => (await bridge.getState({ radius: 14 * 32, limit: 40 })).nearby.find(n => n.kind === 'npc' && n.id === id);
   const n = await find(); if (!n) throw new Error('npc not found nearby: ' + id);
   mark('walk-start', { npc: id, x: Math.round(n.x), y: Math.round(n.y), player: (await bridge.getState()).player });
   await keyLegs(bridge, [['left', n.x], ['up', n.y + stopBelow]], SPEED, mark);
