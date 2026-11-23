@@ -37,7 +37,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 ## Must avoid
 
 - "Break Escape" on screen; any mission-specific "Play Mission N".
-- Reveals: who the traitors or culprits are, endings, casualty figures, answers, flag values, mission debriefs. Do not carry m01's "naming Derek is fine" over: that was the user's decision for the m01 trailer only. Show a villain's menace freely; ask the user only about a character whose identity is a withheld twist.
+- Reveals: who the traitors or culprits are, endings, casualty outcomes, answers, flag values, mission debriefs. Casualty figures are allowed when they are the stakes, such as Voltage's "forty-odd" in m04 (owner, 2026-11-23: "Relax it"); never as an outcome, and never a debrief total. Do not carry m01's "naming Derek is fine" over: that was the user's decision for the m01 trailer only. Show a villain's menace freely; ask the user only about a character whose identity is a withheld twist.
 - Reusing a mission's music track.
 - Re-recording what a mission trailer already has. Reuse takes by id and keep their spoiler notes.
 - Gameplay-to-gameplay effects (hard cuts only).

@@ -11,9 +11,16 @@ export const Caption: React.FC<{ shot: any; w: number; h: number; localSec: numb
   const size = Math.round(w * 0.034 / 2) * 2; // 36 px at 1080 wide
   const nameSize = Math.round(size * 0.78 / 2) * 2;
   const portrait = h > w;
+  // The box's top sits at `topFrac` of the height; a box too tall to fit above the bottom margin is lifted
+  // instead of running off the frame (three-line captions in 1:1 did, 23 Nov). The spacer above the box
+  // shrinks first when box + spacer overflow the region.
+  const topFrac = portrait ? 0.7 : 0.78;
+  const regionTop = Math.round(h * 0.4);
+  const bottomMargin = Math.round(h * 0.03);
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, top: Math.round(h * (portrait ? 0.7 : 0.78)), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-      <div style={{ width: Math.round(w * 0.86), padding: `${Math.round(size * 0.6)}px ${Math.round(size * 0.7)}px`, background: 'rgba(8,8,20,0.82)', border: '4px solid #c8b98a', boxSizing: 'border-box', fontFamily: PIXEL_FONT, WebkitFontSmoothing: 'none' as any, textRendering: 'optimizeSpeed' as any }}>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: regionTop, bottom: bottomMargin, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', pointerEvents: 'none' }}>
+      <div data-caption-spacer style={{ flex: `0 1 ${Math.round(h * topFrac) - regionTop}px`, minHeight: 0 }} />
+      <div style={{ flexShrink: 0, width: Math.round(w * 0.86), padding: `${Math.round(size * 0.6)}px ${Math.round(size * 0.7)}px`, background: 'rgba(8,8,20,0.82)', border: '4px solid #c8b98a', boxSizing: 'border-box', fontFamily: PIXEL_FONT, WebkitFontSmoothing: 'none' as any, textRendering: 'optimizeSpeed' as any }}>
         {line.speaker ? <div style={{ fontSize: nameSize, color: '#e8d8a0', marginBottom: Math.round(size * 0.5) }}>{line.speaker}</div> : null}
         <div style={{ fontSize: size, color: '#fff', lineHeight: 1.6, wordBreak: 'normal', overflowWrap: 'anywhere' }}>{line.text}</div>
       </div>

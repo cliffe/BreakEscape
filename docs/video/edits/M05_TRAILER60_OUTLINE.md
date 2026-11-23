@@ -1,5 +1,14 @@
 # m05 Insider Trading: 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** the Recruiter, "Everyone has a price, agent. I'm asking what yours is." (existing).
+- **Twist:** keep Torres hidden, off screen throughout (owner: "Keep him hidden").
+- **Hook:** Netherton, as in the table.
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only (2026-11-22). Form follows `M03_TRAILER60_V3_PLAN.md`. Line timings and cached audio are for the scout to check. Paths are under `scenarios/m05_insider_trading/`.
 
 ## 1. Story

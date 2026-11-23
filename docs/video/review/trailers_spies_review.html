@@ -29,6 +29,9 @@ h2{font-family:var(--display);font-size:13px;line-height:1.6;margin:0 0 8px;lett
 .tab:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .card{background:var(--panel);border:2px solid var(--line);padding:16px;display:grid;gap:12px;min-width:0}
 video{width:100%;max-width:100%;aspect-ratio:16/9;background:#000;display:block}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;align-items:start}
+.vgrid video.p916{aspect-ratio:9/16;max-height:75vh;width:auto;margin:0 auto}
+.vgrid video.p11{aspect-ratio:1/1}
 .empty{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;background:var(--chip);color:var(--muted);font-family:var(--mono);text-align:center;padding:16px}
 .stats{display:flex;flex-wrap:wrap;gap:8px}
 .chip{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 8px;font-variant-numeric:tabular-nums}
@@ -63,6 +66,9 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
+    <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
+    <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
+    <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
     <button class="tab" role="tab" id="tab-m03v3" aria-selected="true" data-cut="m03v3">m03 · v3</button>
     <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
     <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
@@ -81,6 +87,103 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  social: {
+    doc: "feedback/trailers_social_v1",
+    title: "Social cuts: m01 v10, m02 v4 and m03 v3 in portrait (9:16) and square (1:1)",
+    intro: "The same cuts as the 16:9 trailers, reframed for phones and feeds, with captions burned in. Each shot is reframed by hand: the speaker is centred, and the game's own subtitle bar is either out of frame (our caption replaces it) or fully in frame with no caption. Some wide panels are letterboxed in 9:16 so they show whole.",
+    noVerdict: true, noVideo: true,
+    videos: [
+      ["m01 · 9:16", "/_blob/13aed06351cca17400caa4b0b316059d", "p916"],
+      ["m01 · 1:1", "/_blob/17dda92cd30d33ffd8ca23c45935050f", "p11"],
+      ["m02 · 9:16", "/_blob/c3167f66e9de891daa8bcb9e014cb3e1", "p916"],
+      ["m02 · 1:1", "/_blob/c14fe7f5685ddb0c17c8353db0c04f25", "p11"],
+      ["m03 · 9:16", "/_blob/bacf63a94a422c7c4c76cf498aaa68ae", "p916"],
+      ["m03 · 1:1", "/_blob/772ca3e7da3b762dcb578573af5eb544", "p11"]
+    ],
+    stats: ["60.0 s each", "1080×1920 and 1080×1080, 30 fps", "−14.0 / −13.8 / −13.9 LUFS (m01 / m02 / m03), the same mix as the 16:9", "review copies 720 wide"],
+    changed: [
+      "The first attempt at these crops was not published: speakers were cut at the right edge in 1:1, and some captions sat on the game's subtitle bar. Every shot was reframed, and both aspects were checked frame by frame.",
+      "Captions of three or four lines ran off the bottom of the square cuts; they are now lifted to fit (Bernie and HaX lost a line before)."
+    ],
+    standinLabel: "Compromises (a wide panel can't fit a narrow frame)",
+    standin: [
+      "m02 recovery console: the right-hand column is cut in both aspects.",
+      "m02 ransom screen: the headline loses a couple of letters at each end in 9:16.",
+      "m02 Ghost reveal: the on-screen subtitle is lost (that line isn't voiced).",
+      "m02 opening room: small in 9:16.",
+      "m03 console: the end of the nmap command and the version column are cut.",
+      "m01 Hydra console and Derek's password panel: the right edge is cut in 9:16.",
+      "m01 shot 23: a few pixels of the window title; m03 shot 3: a thin black band in 9:16."
+    ],
+    questions: [
+      {k:"crops", t:"Do the crops work?", o:[["ok","Yes","",1],["fix","Some shots need another look","Name them in the note"]]},
+      {k:"captions", t:"Burned captions: size and position", o:[["ok","Right","",1],["bigger","Bigger","They're small on a phone"],["move","Move them","Say where"]]},
+      {k:"compromises", t:"The cut-off panels listed above", o:[["accept","Accept them","",1],["swap","Swap those shots for others","Narrow panels or faces instead"]]},
+      {k:"platform", t:"Which platform first?", o:[["shorts","YouTube Shorts / Reels / TikTok (9:16)",""],["linkedin","LinkedIn (1:1)",""],["both","Both",""]]},
+      {k:"other", t:"Anything else?", o:null}
+    ]
+  },
+  lines2: {
+    doc: "feedback/trailer_lines_round2",
+    title: "New lines, round 2: m04 Voltage, m07 hook, m09 Sorensen",
+    noVideo: true, noVerdict: true,
+    intro: "Updated 23 November: your round 2 picks are in (m04 \"maintenance schedule\", m07 \"We are faced with an impossible decision, Agent.\", m09 \"the only index you can ask\"). They're being reviewed as inked, then voiced. Two questions are still open, both on m09, below (the m04 and m07 picks are voiced). The old m09 \"Yours is in tonight's run\" line is withdrawn, because the player's file is in Sorensen's safe and not in tonight's run. Your other round-1 picks are recorded (m05, m06 and m08 are the existing lines) and your m10 ending is in the game and voiced. You asked for alternatives on these three. I drafted four for each and had them reviewed against each mission's ink. Five were dropped as off-canon or spoilers, for example a \"one team, four targets\" hook (the team goes to one of three, and none is a blackout) and a \"no right answer\" line (that is HaX's debrief reveal). Three were fixed. Each line goes into the game where it plays naturally. Your pick gets voiced under the standing TTS yes. Pick one per mission, or write your own in the box. Full notes: docs/video/edits/TRAILER_LINES_ROUND2.md.",
+    changedLabel: "Where each line plays",
+    changed: [
+      "m04: Voltage's confrontation in the battery hall. The fake maintenance firm (OptiGrid) got his crew in, the overcharge runs on a timer, and the Architect has six cities lined up.",
+      "m07: Netherton's briefing at 2:41 am, just after \"The other two go unanswered.\" The player hasn't chosen where the one team goes yet, so the line is not an outcome.",
+      "m09: Sorensen at the shredder (the cage), or at the hatch when she recognises you. ENTROPY's \"placed\" people are filed in her boxes."
+    ],
+    questions: [
+      {k:"m04", t:"m04 ending: Voltage, cleverer menace", o:[
+        ["clock","\"Take me in, if you like. The racks don't need me. They have the clock.\"","New, replaces the \"sums\" line. Level and certain. Reviewer's pick",1],
+        ["schedule","\"I didn't bring a bomb, agent. I brought a maintenance schedule.\"","New, after \"...we walked in the front.\" Dry, proud of the craft"],
+        ["contract","\"Every city has a hall like this. And every one of them has a maintenance contract.\"","New, after \"six cities lined up\". Widens the threat"],
+        ["hand","\"Look at my hand. Then look at the clock.\"","Existing, no voicing"],
+        ["sums","\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\"","Voiced in round 1"]]},
+      {k:"m07hook", t:"m07 hook: Netherton's briefing, before the choice", o:[
+        ["impossible","\"We are faced with an impossible decision, Agent, and it is yours.\"","Your wording. Grave and quiet",1],
+        ["onedecision","\"ENTROPY did not plan four attacks tonight, Agent. It planned one decision.\"","Names the gambit without saying who set it"],
+        ["notthere","\"Whichever you choose, two cities wake up tomorrow knowing we were not there.\"","The cost of the choice, with no numbers"]]},
+      {k:"m09", t:"m09 ending: Margaret Sorensen, more narrative weight", o:[
+        ["lies","\"Every lie they ever lived went through my hands, dear. I'm the last one who can tell you which were lies.\"","New, at the shredder. Quietly wistful; sets up her \"give me a pencil\" path. Reviewer's pick",1],
+        ["index","\"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"","New, replaces \"It's only paper...\". Gentle, without looking up"]]},
+      {k:"m09hookfix", t:"m09 hook: your pick has a story problem. Reword it?", o:[
+        ["reword","\"Whatever ENTROPY cannot afford to keep is on paper in that building. Tonight they are burning it.\"","Reviewer's rewrite. The briefing doesn't yet know what the archive holds; HaX works that out at the dock, and Sorensen says it in the cage. Re-voices one line",1],
+        ["keep","\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\"","Your pick, in the game now. Says the archive's secret early"]]},
+      {k:"m09cage", t:"m09 ending: your pick clashes with what the player finds. Change two words?", o:[
+        ["was","\"Everyone ENTROPY ever placed was filed in this building, dear. By morning, I'll be the only index you can ask.\"","Reviewer's fix. \"Is filed in this room\" isn't true when she says it: one record is in the Harwick & Lowe box in the open stacks, Series R is already shredded, and the ledger copy is in her office. It also points the player at the wrong room"],
+        ["is","\"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"","Your pick as written. Out of the game and not voiced until you say"]]},
+      {k:"other", t:"Anything else, or a line of your own?", o:null}
+    ]
+  },
+  voiced: {
+    doc: "feedback/trailer_lines_voiced",
+    title: "The 8 new lines, voiced (ear check)",
+    noVideo: true, noVerdict: true,
+    intro: "AC0 relayed that you want the trailers moving, so I took the suggested picks from the Lines tab and the standing TTS yes. The 8 lines went into the game's ink at the points in the table and were voiced once each with the character's usual voice. Correction, 23 November: before voicing, only the agent that inserted them had reviewed them. An independent review has now run. As a result the m08 line (not your pick), the m09 ending line (wrong in the story) and the m10 blast-door line (replaced by your pick) are out of the game, and m05's has moved up one place. Branch video/trailer-lines-m04-m10, sent to AC0 for a train. Under your standing TTS yes they count as accepted, and their levels match the rest of the cache, so listening is optional. A line you mark \"redo\" gets one more TTS pass with your note as direction.",
+    clips: [
+      ["m04 · Voltage (replaces the \"blink\" line)", "/_blob/da8fff7e2e395b9c1d7e6ccf18a72ec5", "\"I've done the sums. The city goes dark at eight, and I'll sleep fine.\" Direction: quiet and level, a man reading out a sum he has already checked."],
+      ["m05 · the Recruiter (phone)", "/_blob/9e50ce257907d402a66265ac2bd485be", "\"I find people the week before they break, agent. Then I make them an offer.\" Direction: warm and confiding, a headhunter's smile in the voice."],
+      ["m06 · Satoshi Nakamoto II", "/_blob/6861aaa13b104e4694d316597b4d6e6c", "\"Take me in if you like. The money already knows where it's going.\" Direction: relaxed, a little amused, entirely sure."],
+      ["m07 · the Architect (withheld call)", "/_blob/8d68e67840a46a4624865a4b55da6799", "\"Four fires tonight, and only one of you. I set them so you'd have to choose.\" Direction: soft and measured, faintly pleased. Same voice as m10's Tesseract (the scenarios already share it)."],
+      ["m08 · Director Netherton (opening)", "/_blob/e1e28a84e54faab551c08380e688f73c", "\"They have read our plans for months, Agent. Tonight they will be reading you.\" Direction: low and grave, each word placed."],
+      ["m09 · Margaret Sorensen", "/_blob/357f6dc6ff75a6924960c33b0866e8f6", "\"Yours is in tonight's run, dear. I saved it for last.\" Direction: mild and pleasant, like a librarian mentioning an overdue book."],
+      ["m09 hook · Director Netherton (briefing)", "/_blob/e6a5463b209f113c5350aa384e96ed05", "\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\" Direction: level and grave."],
+      ["m10 · Dr Adrian Tesseract (arrival)", "/_blob/c0545bb6c043c5c316755643eec34b8e", "\"I had the blast door read one badge tonight. Yours.\" Direction: quiet and matter-of-fact, a host who has gone to some trouble. It plays just after his \"Take your time...\" line."]
+    ],
+    questions: [
+      {k:"m04", t:"m04 Voltage", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m05", t:"m05 Recruiter", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m06", t:"m06 Satoshi", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m07", t:"m07 Architect", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m08", t:"m08 Netherton", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09", t:"m09 Sorensen", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m09hook", t:"m09 Netherton hook", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"m10", t:"m10 Tesseract", o:[["ok","Sounds right","",1],["redo","Redo","Say how in the note"]]},
+      {k:"other", t:"Anything else on these lines?", o:null}
+    ]
+  },
   m03v3: {
     doc: "feedback/m03_trailer_v3",
     title: "m03 Ghost in the Machine · 60 s trailer · round v3 (new cut)",
@@ -194,7 +297,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m03v3";
+let current = "social";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
@@ -210,10 +313,12 @@ function render(){
   if (c.intro) top.append(el("p",{class:"why",text:c.intro}));
   if (c.video){ if (c.videoLabel) top.append(el("div",{class:"kicker",text:c.videoLabel})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.src=c.video; if (c.poster) v.poster=c.poster; top.append(v); }
   else if (!c.noVideo) top.append(el("div",{class:"empty",text:"Render in progress: the video appears here when it is ready."}));
+  if (c.clips){ c.clips.forEach(([lab,src,txt])=>{ const b=el("div",{class:"q"}); b.append(el("h3",{text:lab}), el("p",{class:"why",text:txt})); const au=el("audio",{controls:"",preload:"metadata"}); au.src=src; au.style.width="100%"; b.append(au); top.append(b); }); }
+  if (c.videos){ const g=el("div",{class:"vgrid"}); c.videos.forEach(([lab,src,cls])=>{ const b=el("div",{}); b.append(el("div",{class:"kicker",text:lab})); const v=el("video",{controls:"",preload:"metadata",playsinline:""}); v.className=cls; v.src=src; b.append(v); g.append(b); }); top.append(g); }
   if (c.video2){ top.append(el("div",{class:"kicker",text:c.video2Label||"Alternative"})); const v2=el("video",{controls:"",preload:"metadata",playsinline:""}); v2.src=c.video2; top.append(v2); }
   if (c.stats && c.stats.length){ const s=el("div",{class:"stats"}); c.stats.forEach(x=>s.append(el("span",{class:"chip",text:x}))); top.append(s); }
   if (c.changed){ const ch=el("div",{}, el("div",{class:"kicker",text:c.changedLabel||"What changed"})); const ul=el("ul"); c.changed.forEach(x=>ul.append(el("li",{text:x}))); ch.append(ul); top.append(ch); }
-  if (c.standin){ const sd=el("div",{}, el("div",{class:"kicker",text:"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd); }
+  if (c.standin){ const sd=el("div",{}, el("div",{class:"kicker",text:c.standinLabel||"Stand-in or missing"})); const ul2=el("ul"); c.standin.forEach(x=>ul2.append(el("li",{text:x}))); sd.append(ul2); top.append(sd); }
   if (c.srt){ const d=el("details"); d.append(el("summary",{text:"Captions (.srt)"}), el("pre",{text:c.srt})); top.append(d); }
   main.append(top);
 

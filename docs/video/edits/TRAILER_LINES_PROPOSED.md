@@ -36,3 +36,24 @@ Strong existing lines found on the way, which need only a cache check: m04 Volta
 - Surrounding re-voices: none required, since each pick sits beside lines it reads well against, and m04, m06 and m10 already mix tagged and untagged lines. Up to 3 optional if the user hears a mismatch once the new take exists: m09 HaX "...She's got a file on you." (`m09_sorensen_hatch.ink:113`), m08 Netherton "Ask me what you need. Then go and prove something." (`:98`), and m04 Voltage's line before the new one (`:252` or `:255`).
 - Total: 8, at most 11.
 - One pick replaces a voiced line (m04 `:258`). The rest are additions. The replaced clip is orphaned, and `tts:wasted` will list it.
+
+## Owner's picks (review page, saved 2026-11-22 23:41)
+
+From `feedback/trailer_lines_m04_m10`. These override the Pick column above. Use them as the trailer lines.
+
+| Mission | Pick | Line | Status |
+|---|---|---|---|
+| m04 | alternatives wanted | | round 2 (`TRAILER_LINES_ROUND2.md`) |
+| m05 | price | Everyone has a price, agent. I'm asking what yours is. | existing line |
+| m06 | statues | Murder's what they call it when you lose. The winners get statues. | existing line; needs the arrest route filmed around its menus |
+| m07 ending | fires | Four fires tonight, and only one of you. I set them so you'd have to choose. | new, voiced |
+| m07 hook | alternatives wanted | | round 2 |
+| m08 | mole | There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing. | existing line (Netherton) |
+| m09 ending | alternatives wanted | | round 2 |
+| m09 hook | paper | We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it. | new, voiced, in the game |
+| m10 ending | decades | Your service spent decades hoarding the world's weak points. At six, I give them back. | picked 2026-11-23; NOT yet inked (T345 has the unpicked blast-door line, to be replaced in the same commit) |
+| m10 hook | publishes | At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone. | existing line (Netherton) |
+
+Other answers (2026-11-23, via AC0): casualty rule "Relax it"; m05 twist "Keep him hidden" (Torres stays off screen); voice new lines "after the dialogue review".
+
+So the new m05, m06 and m08 lines are in the game (T345) but not in the trailers. In m08, the new line replaced Netherton's "Ask me what you need. Then go and prove something."

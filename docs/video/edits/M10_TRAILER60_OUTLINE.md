@@ -1,5 +1,14 @@
 # m10 Full Disclosure, 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** Tesseract, "Your service spent decades hoarding the world's weak points. At six, I give them back." (`m10_tesseract.ink`, voiced). The blast-door line is out of the game.
+- **Hook:** Netherton's existing "At six he publishes everything...", in place of HaX's.
+- The line after the pick changed to "City by city. Or you press this, and they go everywhere in the same minute..." (voiced).
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only. Model: `M03_TRAILER60_V3_PLAN.md`; format as `M09_TRAILER60_OUTLINE.md`. Every line is "audio: check" until the scout tests the cache. Entry states come from the scenario's mappings and `tools/playtest/new-game.rb` options (`--start-room`, `--set`, `--unlock`), not from walking them; the scout confirms each. Two takes exist: `tools/video/takes/m10/t01_vm_approach.mjs` (gate console, live game) and `t02_briefing.mjs` (fresh-game briefing).
 
 ## Story

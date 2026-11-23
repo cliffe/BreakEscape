@@ -1,5 +1,13 @@
 # m06 Follow the Money: 60 s trailer outline
 
+## Decided lines (2026-11-23)
+
+The owner's picks. Where the older text below disagrees, this block wins.
+
+- **Ending:** Satoshi, "Murder's what they call it when you lose. The winners get statues." (existing). The route to it has to be filmed cleanly.
+- **Hook:** Netherton, as in the table.
+- **Casualty rule (relaxed 2026-11-23):** figures are allowed when they are the stakes, never as an outcome and never a debrief total. This loosens any "Out" or "Off screen" entry below that bars a figure only because it is one.
+
 Planning only (2026-11-22). Model: `M03_TRAILER60_V3_PLAN.md`. Recipe: `docs/video/recipes/mission-trailer.md`. Not yet checked: which of these lines are cached (the scout checks), the exact entry flags for each take, and Kemal's and the guard's walk lines.
 
 ## 1. Story
