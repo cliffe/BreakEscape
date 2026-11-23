@@ -85,6 +85,9 @@ appended after each check. It checks the code against the plan sections named, v
 at file:line, tags findings blocker / major / minor, and ends with a verdict. At least 2 rounds
 and at most 5 per stage; later rounds are delta reviews.
 
+A reviewer's findings must be IN the file, in full, before it reports: the report is a
+summary, and fixers work from the file alone. (An S1 reviewer wrote only a header.)
+
 ## Orchestrator decisions
 
 - 2026-11-23: L1a and L1b are built here first, because core step 1 needs L1a's golden
