@@ -82,16 +82,33 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   `6cc0efa9a` (m3, m4, m6, m7). The reviewer had written only a header to its findings file;
   rebuilt from its report in `d55562487`. LESSON: check a findings file's length before
   committing it; the brief now says findings go in the file in full.
-- RUNNING: delta review R2 (fable52L; fixes of both halves plus a first read of step 5;
-  `reviews/S1_R2.md`, does not commit); Haiku scripted playtest + live proof of
-  `test_ops_scan` on port 3011 (real clicks on Sweep and Scan; results and screenshots in the
-  session scratchpad `s1-playtest/RESULTS.md`).
-- Next: commit R2 findings (check the file is complete); look at the playtest screenshots
-  myself; a Sonnet check of any "stuck"; one fix pass if needed; train check (machine
-  settings above; needs the worktree untouched while it runs); land; push. Then S2: step 6
-  split in two builders (6a model helpers, schema, validator, check/confirm routes,
-  `opsFindings`, events; 6b catalog loader, `cli` from `realism`, tests), step 7 client and
-  graph, step 8 split (scenario + tests / tooling + docs).
+- S1 R2 delta: 19 of 19 R1 fixes confirmed; 1M 6m new + playtest P1 to P3 (`bc8295e0d`);
+  fixed in `4d414c371`, `c06c5bc26`, `705fb6c27`, `3568149ab` (P3 not ours: a replant answers
+  `first: false`, so the view does not auto-open; pre-dates this build; asked the user).
+  Playtest + live proof of `test_ops_scan`: 12 of 12 (scratchpad `s1-playtest/`). R3 delta:
+  ready to land, 3 minors (`reviews/S1_R3.md`): R3-1 to step 8's scanner work, R3-2 to step 7.
+  Train 3 at `bb29363b8` found one JS failure of ours (`playtest-verify-run-access`), fixed
+  in `13893a73d`.
+- **TWO WORKTREES since 2026-11-23 (user: "parallelise further").** BUILD: `/data/be-ops-build`,
+  branch `ops-build` (all agents work here; this note and the brief are maintained here).
+  TRAIN: `/data/be-ops-core`, branch `ops-core`: I fast-forward it (`git merge --ff-only
+  ops-build`) and run train checks there, so a train never blocks building. Land by merging
+  `ops-core` into main at the trained hash, then `git merge main` in the build worktree.
+  Disk: a worktree costs about 4.5 GB and /data has about 9 GB free: at most ONE more.
+- RUNNING: train 4 in the train tree at `13893a73d` (output `/data/tmp/ops-core-train-4`):
+  if only the 3 baseline JS files fail, merge `ops-core` into main, push, merge main into
+  `ops-build`. S2 builders side by side in the build tree, split by file: 6a server
+  (`HANDOVER_core_6a.md`; parts A1 schema/model/validator, A2 routes and findings, A3 `cli`
+  from the loader), 6b catalog loader (interface `RealismCatalog.lookup`, `.with_folder`,
+  `.faults`), 7 client (`HANDOVER_core_7.md`). A Haiku reader is writing a dependency digest
+  of the later plans to the scratchpad `deps/OPS_PARALLEL_DIGEST.md` (which stages can start
+  now in a second stream).
+- Next for S2: step 7's graph part (weakness nodes, 9.3) and step 8 split in two (8a
+  `test_ops_findings` scenario + PLAYTEST + controller tests + flip N14; 8b graph + leak
+  collector check-stage entries + R3-1 + verify-run + docs N14), launched when 6a reports;
+  two fable52L reviews (server, client) as each half lands; fixes; delta; Haiku playtest;
+  train in the train tree; land. If the digest shows an independent stage, open ONE second
+  stream in a third worktree (own branch, own brief section, same loop).
 
 - 2026-11-23: the user pasted the planning session's build handover (whole ops layer, twelve
   steps). Its rules are folded into the brief. Scope here stays the core plan plus L1a and L1b;
