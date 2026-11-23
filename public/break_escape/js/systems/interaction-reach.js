@@ -141,7 +141,7 @@ export function aimDiff(player, target, faceX, faceY, facingAngle) {
 }
 
 /** Scenario object types that are a desk computer (trailing digits are stripped first: laptop1, pc10, pc3). */
-const DESK_COMPUTER_TYPES = new Set(['pc', 'workstation', 'laptop', 'mail_terminal', 'log_filter_terminal', 'drug_library_terminal']);
+const DESK_COMPUTER_TYPES = new Set(['pc', 'workstation', 'laptop', 'mail_terminal', 'log_filter_terminal', 'ops_log_terminal', 'drug_library_terminal']);
 
 /** A seated player's computer must lie within this many degrees of the way they face. */
 export const SEATED_PC_FRONT_DEG = 70;

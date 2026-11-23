@@ -21,7 +21,7 @@ module BreakEscape
     # L1a registers no event: each stage and sibling plan adds its own lines here.
     # L1b: badge, sign-in and session rows (OPS_LOG_ROWS_PLAN.md 13.8).
     EVENTS = {
-      'badge_swipe' => { label: 'BADGE', places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 } },
+      'badge_swipe' => { label: 'BADGE', places: %w[door object], results: %w[ok denied], save_limit: { 'denied' => 10 }, detail: { 'flagged' => { count: 1, show: false } } },
       'signin_ok' => { label: 'SIGN_IN', places: %w[pc], results: %w[ok],
                        detail: { 'method' => %w[password credential], 'route' => %w[keyboard foothold from relay] } },
       'signin_fail' => { label: 'SIGN_IN', places: %w[pc], results: %w[fail] },
@@ -66,7 +66,10 @@ module BreakEscape
     # this file loads without Rails.
     KINDS = {
       'door' => {
-        name: ->(game, id) { OpsLogEvents.room_hash(game, id) && (OpsLogEvents.room_hash(game, id)['name'] || id) },
+        name: lambda { |game, id|
+          room = OpsLogEvents.room_hash(game, id)
+          room && ([room['door_sign'], room['name']].find { |t| t.is_a?(String) && !t.empty? } || id)
+        },
         room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
       },
       'object' => {

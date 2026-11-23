@@ -911,6 +911,7 @@ export function preload() {
     this.load.image('sis_config_panel',    'objects/sis_config_panel.png');
     this.load.image('scada_historian',     'objects/scada_historian.png');
     this.load.image('log_filter_terminal', 'objects/log_filter_terminal.png');
+    this.load.image('ops_log_terminal', 'objects/log_filter_terminal.png');
     this.load.image('network_architecture','objects/network_architecture.png');
     this.load.image('thermometer', 'objects/thermometer.png');
     this.load.image('cable',       'objects/cable.png');

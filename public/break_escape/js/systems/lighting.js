@@ -438,7 +438,7 @@ function prefersReducedMotion() {
 
 // Objects that give off light, matched on texture key.
 const EMITTERS = [
-  { re: /^(pc\d*|laptop\d*|monitor|security_monitor|workstation|vm-launcher|ehr-terminal|cctv_monitors|info_screen|conference_screen|nurse_call_display|drug_library_terminal|lab-workstation|kvm_cart|log_filter_terminal|forensic_data_platform|flag-station|backup_recovery|dual_auth|siem_dashboard|sis_config_panel|smartscreen|network_architecture|tablet)/,
+  { re: /^(pc\d*|laptop\d*|monitor|security_monitor|workstation|vm-launcher|ehr-terminal|cctv_monitors|info_screen|conference_screen|nurse_call_display|drug_library_terminal|lab-workstation|kvm_cart|log_filter_terminal|ops_log_terminal|forensic_data_platform|flag-station|backup_recovery|dual_auth|siem_dashboard|sis_config_panel|smartscreen|network_architecture|tablet)/,
     color: 0x9fd4ff, radius: 44, intensity: 0.65, offsetY: 6, effect: 'screen' },
   { re: /^checkin_kiosk/, color: 0x9fd4ff, radius: 44, intensity: 0.65, offsetY: -14, effect: 'screen' },
   { re: /^screens/, color: 0x9fd4ff, radius: 72, intensity: 0.45, offsetY: 16, effect: 'screen' },

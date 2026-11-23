@@ -4210,7 +4210,10 @@ module BreakEscape
 
       ids = self.class.normalise_card_ids(card_ids)
       card_id = self.class.acl_lock?(lock) && !ids.nil? ? rfid_passing_card_id(lock, ids) : rfid_requires_card(lock)
-      write_log_row!('badge_swipe', as: ops_badge_as(card_id, ids), where: where, result: 'ok')
+      as = ops_badge_as(card_id, ids)
+      # The identity is there only because a source sets showCardHolder: mark it so the reader hides it elsewhere
+      detail = as && ops_badge_flag_only?(card_id, ids) ? { 'flagged' => 1 } : nil
+      write_log_row!('badge_swipe', as: as, where: where, result: 'ok', detail: detail)
     end
 
     # badge_swipe denied: a refused method rfid request at an rfid lock in force, in reach, by a
@@ -4232,10 +4235,7 @@ module BreakEscape
       return nil if card_id.blank?
 
       card_id = card_id.to_s
-      own = held_keycard_ref_ids.include?(card_id)
-      show_holder = own || ids.nil? || ids.size <= 1 ||
-                    OpsLog.sources_for(scenario_data).any? { |_id, source, _cap| source['showCardHolder'] == true }
-      return nil unless show_holder
+      return nil unless ops_badge_holder_natural?(card_id, ids) || ops_badge_flag_set?
 
       holders = self.class.scenario_room_npcs(scenario_data).select do |npc|
         self.class.npc_card(npc)&.[]('card_id').to_s == card_id
@@ -4245,6 +4245,20 @@ module BreakEscape
       end
 
       OpsLog.kinds['card'][:name].call(self, card_id) ? { card: card_id } : nil
+    end
+
+    # The holder is named without any source's flag: the holder's own keycard, or one card sent.
+    def ops_badge_holder_natural?(card_id, ids)
+      held_keycard_ref_ids.include?(card_id.to_s) || ids.nil? || ids.size <= 1
+    end
+
+    def ops_badge_flag_set?
+      OpsLog.sources_for(scenario_data).any? { |_id, source, _cap| source['showCardHolder'] == true }
+    end
+
+    # True when the identity is kept by showCardHolder alone (a source without it must not show it).
+    def ops_badge_flag_only?(card_id, ids)
+      !ops_badge_holder_natural?(card_id, ids) && ops_badge_flag_set?
     end
 
     # True when a refused rfid unlock with card_ids would have passed but for a UID-only

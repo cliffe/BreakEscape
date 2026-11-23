@@ -1640,6 +1640,20 @@ export function handleObjectInteraction(sprite) {
         return;
     }
   
+    // Handle Ops Log Terminal (ops log plan 5.2): the reader's id is its own scenario id, never
+    // sprite.objectId (a throwaway when opened from a desktop); sourceRoute rides along
+    if (sprite.scenarioData.type === 'ops_log_terminal') {
+        if (window.MinigameFramework) {
+            if (!window.MinigameFramework.mainGameScene)
+                window.MinigameFramework.init(window.game);
+            window.MinigameFramework.startMinigame('ops-log', null, {
+                title: sprite.scenarioData?.name || 'Log terminal',
+                sprite
+            });
+        }
+        return;
+    }
+
     // Handle Drug Library Integrity Terminal (MG-09 sis01)
     if (sprite.scenarioData.type === 'drug_library_terminal') {
         console.log('Drug library dispatch firing, calling starter...', { fn: typeof window.startDrugLibraryIntegrityMinigame });

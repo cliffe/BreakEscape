@@ -4,7 +4,7 @@
 
 TEST: Ops log rows
 
-A test floor for the ops log's write side (OPS_LOG_ROWS_PLAN.md, stage L1b). One lobby, one card door and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen. The scenario declares log sources and has no reader: the rows are checked from the server (verify-run.rb --ops-log). Nothing to solve.
+A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lobby, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. Nothing to solve.
 
 ## Scenario Statistics
 
@@ -13,10 +13,10 @@ A test floor for the ops log's write side (OPS_LOG_ROWS_PLAN.md, stage L1b). One
 | Story aims | 1 |
 | Total tasks | 2 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 2 |
+| Physical locks | 3 |
 | AND-gate convergences | 0 |
-| Rooms | 2 |
-| Puzzle graph nodes / edges | 6 / 6 |
+| Rooms | 3 |
+| Puzzle graph nodes / edges | 8 / 8 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -73,20 +73,24 @@ flowchart TD
 
   door_office["Finance office<br/>RFID lock"]
   office("Finance office")
+  door_security["Security office<br/>RFID lock"]
+  security("Security office")
   lock_office_pc["Office PC<br/>Sign-in"]
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
 
   door_office --> office
+  door_security --> security
   office --> lock_office_pc
   lobby --> card_fin_dana_01
   card_fin_dana_01 --> door_office
+  card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
 
-  class door_office,lock_office_pc lock
-  class office,lobby room
+  class door_office,door_security,lock_office_pc lock
+  class office,security,lobby room
   class card_fin_dana_01,signin_dana key
   class node_start start
 ```
@@ -146,6 +150,8 @@ flowchart TD
 
   door_office["Finance office<br/>RFID lock"]
   office("Finance office")
+  door_security["Security office<br/>RFID lock"]
+  security("Security office")
   lock_office_pc["Office PC<br/>Sign-in"]
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
@@ -153,14 +159,16 @@ flowchart TD
   aim_log_beats{{"Make the log write its rows"}}
 
   door_office --> office
+  door_security --> security
   office --> lock_office_pc
   lobby --> card_fin_dana_01
   card_fin_dana_01 --> door_office
+  card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
 
-  class door_office,lock_office_pc lock
-  class office,lobby room
+  class door_office,door_security,lock_office_pc lock
+  class office,security,lobby room
   class card_fin_dana_01,signin_dana key
   class aim_log_beats aim
   class node_start start
@@ -193,11 +201,13 @@ flowchart TD
 
   lobby("Lobby")
   office["Finance office<br/>(locked)"]
+  security["Security office<br/>(locked)"]
 
   lobby --> office
+  office --> security
 
   class lobby room
-  class office lock
+  class office,security lock
   class node_start start
 ```
 
@@ -228,20 +238,26 @@ flowchart TD
 
   lobby("Lobby")
   office["Finance office<br/>(locked)"]
+  security["Security office<br/>(locked)"]
   rc_card_copier_1{"Card copier"}
   rc_sign_lobby_2{"Sign: Start here"}
   rc_npc_dana_reyes_3("Dana Reyes")
   rc_office_pc_4{"Office PC"}
+  rc_door_log_pc_5{"Door log PC"}
+  rc_signin_log_pc_6{"Sign-in log PC"}
 
   lobby --> office
+  office --> security
   lobby --> rc_card_copier_1
   lobby --> rc_sign_lobby_2
   lobby --> rc_npc_dana_reyes_3
   office --> rc_office_pc_4
+  security --> rc_door_log_pc_5
+  security --> rc_signin_log_pc_6
 
   class lobby room
-  class office lock
-  class rc_card_copier_1,rc_sign_lobby_2,rc_office_pc_4 item
+  class office,security lock
+  class rc_card_copier_1,rc_sign_lobby_2,rc_office_pc_4,rc_door_log_pc_5,rc_signin_log_pc_6 item
   class rc_npc_dana_reyes_3 npc
   class node_start start
 ```

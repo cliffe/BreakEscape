@@ -26,6 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
+                                        :log_rows,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -636,35 +637,14 @@ module BreakEscape
       # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
       # that admits it, with it and every container above it unlocked.
       located = @game.login_scope_of(container_id)
-      if located && located[:scope] && located[:scope][:type] == 'resource'
-        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
-        # invented id is, so a browser with no foothold or session cannot tell it exists.
-        # Judged before the sign-in branch, so a sign-in object an author put in a share
-        # is refused as an invented id too, not as an unreachable PC.
-        return render_error("Container not found: #{container_id}", :not_found) unless @game.session_admits?(located[:scope])
-        # Past that, such an object is still no desktop: only a room's sign-in PC is one
-        if BreakEscape::Game.login_pc?(located[:object])
-          return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
-        end
-        unless @game.path_unlocked?(located[:path] + [located[:object]])
-          return render_error("Container not unlocked: #{container_id}", :forbidden)
-        end
+      refusal = container_reach_refusal(located)
+      return render_container_refusal(refusal, container_id, located) if refusal
 
+      if located && located[:scope] && located[:scope][:type] == 'resource'
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       elsif located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
       elsif located && located[:scope]
-        unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
-          return render_error("Container not unlocked: #{container_id}", :forbidden)
-        end
-        # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
-        # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
-        # request at a relay session is refused (the holder's keyboard never reaches the shared
-        # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
-        if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
-          return render json: { error: "PC not reachable: #{located[:scope][:id]}", reason: 'unreachable' }, status: :forbidden
-        end
-
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       end
 
@@ -1954,6 +1934,35 @@ module BreakEscape
       end
     end
 
+    # GET /games/:id/log_rows?object_id=&rev=[&foothold= or &from=] (OPS_LOG_ROWS_PLAN.md section 6)
+    # The rows of an ops_log_terminal's source, for a reader the player has reached. Reads only: no
+    # lock, no save, no row. Every refusal after the id check is the same 404, so the route does
+    # not tell a locked reader from an invented one.
+    def log_rows
+      authorize @game if defined?(Pundit)
+
+      response.headers['Cache-Control'] = 'no-store'
+      object_id = params[:object_id]
+      unless object_id.is_a?(String) && !object_id.empty? && object_id.length <= 64
+        return render json: { success: false, reason: 'invalid_object' }, status: :bad_request
+      end
+
+      located = @game.login_scope_of(object_id)
+      reader = located && located[:object]
+      source_id = reader.is_a?(Hash) && reader.dig('minigameData', 'logSource')
+      unless reader.is_a?(Hash) && reader['type'] == 'ops_log_terminal' && reader['id'].to_s == object_id &&
+             source_id.is_a?(String) && BreakEscape::OpsLog.sources_for(@game.scenario_data).any? { |id, _s, _cap| id == source_id } &&
+             log_reader_reached?(located) && (answer = @game.log_rows_for_client(source_id))
+        return render json: { success: false, reason: 'not_found' }, status: :not_found
+      end
+
+      if params[:rev].present? && params[:rev].to_s == answer[:rev]
+        render json: { rev: answer[:rev], unchanged: true }
+      else
+        render json: answer
+      end
+    end
+
     # POST /games/:id/se/landing_page
     # Record a landing-page build server-side (phish evidence plan, Route 1). Body:
     # { pageId, targetId, choices }. The server validates choices against the page's authored
@@ -3185,6 +3194,62 @@ module BreakEscape
         return nested if nested
       end
       nil
+    end
+
+    # The scoped branches of GET /container (access model section 6), as a pure check shared with
+    # GET /log_rows: nil when the object is not refused, else :not_found, :unreachable or :locked.
+    # Writes nothing and renders nothing. A sign-in PC's own desktop (a login_pc object outside a
+    # share) is judged by render_login_desktop, so it answers nil here.
+    def container_reach_refusal(located)
+      return nil unless located && located[:scope]
+
+      if located[:scope][:type] == 'resource'
+        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
+        # invented id is, so a browser with no foothold or session cannot tell it exists.
+        # Judged before the sign-in branch, so a sign-in object an author put in a share
+        # is refused as an invented id too, not as an unreachable PC.
+        return :not_found unless @game.session_admits?(located[:scope])
+        # Past that, such an object is still no desktop: only a room's sign-in PC is one
+        return :unreachable if BreakEscape::Game.login_pc?(located[:object])
+        return :locked unless @game.path_unlocked?(located[:path] + [located[:object]])
+
+        return nil
+      end
+      return nil if BreakEscape::Game.login_pc?(located[:object])
+
+      unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
+        return :locked
+      end
+      # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
+      # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
+      # request at a relay session is refused (the holder's keyboard never reaches the shared
+      # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
+      return :unreachable if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
+
+      nil
+    end
+
+    # GET /container's three refusals, rendered as they always were.
+    def render_container_refusal(refusal, container_id, located)
+      case refusal
+      when :not_found
+        render_error("Container not found: #{container_id}", :not_found)
+      when :unreachable
+        pc_id = located[:scope][:type] == 'resource' ? container_id : located[:scope][:id]
+        render json: { error: "PC not reachable: #{pc_id}", reason: 'unreachable' }, status: :forbidden
+      else
+        render_error("Container not unlocked: #{container_id}", :forbidden)
+      end
+    end
+
+    # Whether the player has reached a log reader (section 6): a scoped reader by the shared
+    # container check, an unscoped one by its room and its own and its containers' locks.
+    def log_reader_reached?(located)
+      return false if BreakEscape::Game.login_pc?(located[:object]) # a reader is never a desktop
+
+      return container_reach_refusal(located).nil? if located[:scope]
+
+      @game.room_unlocked?(located[:room_id]) && @game.path_unlocked?(located[:path] + [located[:object]])
     end
 
     def check_container_unlocked(container_id, container_data)

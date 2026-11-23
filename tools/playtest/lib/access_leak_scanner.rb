@@ -151,6 +151,14 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # Addresses and ranges match as whole tokens (not inside a longer number); a `service` word counts
 # only when it equals no other service's `service` word or `name`.
 #
+# Ops log reader L2a R2 S6 (OPS_LOG_ROWS_PLAN.md section 7 and 11, `scan_log_rows`): rule `log_row`, for
+# a GET .../log_rows answer. The IDENTITY cell of a SIGN_IN row is the player's own typed text and is
+# not judged by any rule. Findings: a key the answer or a row may not carry (a row has exactly id,
+# elapsedMs or at, event, as, where, result, detail; the answer only rev, title, rows, unchanged,
+# success, reason; seq, serverMs, flagged and the other stored-only keys nowhere), a registered log
+# secret (`BreakEscape::OpsLog.compared_secrets(game)`, or `log_secrets:`) in a text cell, and a raw
+# scenario id (room, object, NPC or card id) as a cell or a detail value where no authored name equals it.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -200,9 +208,10 @@ class AccessLeakScanner
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
   # GET /capture_secrets now (its capture proofs applied); nil keeps the scenario-only rule.
-  def initialize(scenario_data, served_npcs: nil, game: nil, catalog_folder: nil)
+  def initialize(scenario_data, served_npcs: nil, game: nil, catalog_folder: nil, log_secrets: nil)
     @catalog_folder = catalog_folder
     @data = scenario_data.is_a?(Hash) ? scenario_data : {}
+    @log_secrets = log_secrets&.map(&:to_s)
     @served_npcs = served_npcs&.map(&:to_s)&.to_set
     @game = game
     @noted = Set.new # passwords a /login_accounts answer has carried as its note, so far
@@ -357,6 +366,7 @@ class AccessLeakScanner
       next if body.nil?
 
       ctx = response_context(row).merge(index: index)
+      body = log_rows_without_typed(body) if ctx[:log_rows]
       add = lambda do |rule, owner, json_path|
         key = [source, line_no, rule, owner]
         next if seen.include?(key)
@@ -389,6 +399,7 @@ class AccessLeakScanner
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
+      scan_log_rows(body, ctx, add)
     end
     findings
   end
@@ -431,6 +442,7 @@ class AccessLeakScanner
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
     'lockout_unrecorded' => 'a lockout the server\'s check did not record',
+    'log_row' => 'a /log_rows answer with a key it may not carry, a registered log secret, or a raw scenario id in a cell',
     'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
     'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
@@ -828,7 +840,8 @@ class AccessLeakScanner
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
       ops_technique: method == 'POST' && path.end_with?('/network/technique'),
       inventory_add: ops_inventory_add_id(row, method, path),
-      network_view: method == 'GET' && path.end_with?('/network')
+      network_view: method == 'GET' && path.end_with?('/network'),
+      log_rows: method == 'GET' && path.end_with?('/log_rows')
     }
   end
 
@@ -2396,6 +2409,77 @@ class AccessLeakScanner
         add.call('ops_string', 'ops:host_row', '$.footholds') if !own && hash['session'].is_a?(Hash) && hash['remoteSignIn'] == false
       end
     end
+  end
+
+  # ---- ops log reader L2a: GET /log_rows (OPS_LOG_ROWS_PLAN.md section 7) --------------------
+
+  LOG_ANSWER_KEYS = %w[rev title rows unchanged success reason].freeze
+  LOG_ROW_KEYS = [%w[as detail elapsedMs event id result where], %w[as at detail event id result where]].freeze
+  LOG_STORED_ONLY_KEYS = %w[seq serverMs flagged p last by opsLog opsLogSeq opsLogClockAt opsLogOnce opsLogSaves logSources].freeze
+
+  # The answer with the IDENTITY cell of each typed SIGN_IN row blanked: it may hold what the player typed,
+  # which may be a password, and the player is shown their own text (plan section 11). A successful
+  # sign-in (`signin_ok`, the only SIGN_IN row whose detail has `method:`) shows an account, so it is judged.
+  # A refusal for a known account looks the same as one for typed text in the answer (no detail), so it is exempt.
+  def log_rows_without_typed(body)
+    return body unless body.is_a?(Hash) && body['rows'].is_a?(Array)
+
+    typed = ->(r) { r.is_a?(Hash) && r['event'] == 'SIGN_IN' && r.key?('as') && !r['detail'].to_s.match?(/(\A|, )method: /) }
+    body.merge('rows' => body['rows'].map { |r| typed.call(r) ? r.merge('as' => '-') : r })
+  end
+
+  def log_secrets
+    @log_secrets ||= @game && defined?(BreakEscape::OpsLog) ? BreakEscape::OpsLog.compared_secrets(@game).map(&:to_s) : []
+  end
+
+  # Authored raw ids that are not also an authored display text, as cell values to refuse.
+  def log_raw_ids
+    @log_raw_ids ||= begin
+      ids = Set.new((@data['rooms'].is_a?(Hash) ? @data['rooms'].keys : []).map(&:to_s))
+      ids.merge(@object_by_id.keys)
+      each_room_npc { |npc| ids << npc['id'].to_s if npc.is_a?(Hash) }
+      names = Set.new
+      walk_hashes(@data, '$') do |h, _path|
+        %w[name displayName door_sign username].each { |k| names << h[k].to_s if h[k].is_a?(String) }
+        ids << h['card_id'].to_s if h['card_id'].is_a?(String)
+      end
+      ids - names - [''].to_set
+    end
+  end
+
+  def log_cell_texts(row)
+    detail_values = row['detail'].to_s.split(/,\s*/).map { |pair| pair.split(': ', 2).last }
+    [row['as'], row['where'], *detail_values].map { |v| v.to_s.strip }
+  end
+
+  # The keys of a detail string ("key: value, key: value").
+  def log_detail_keys(row)
+    row['detail'].to_s.split(/,\s*/).map { |pair| pair.split(': ', 2).first.to_s.strip }
+  end
+
+  def log_secret_in?(text)
+    log_secrets.any? { |secret| text == secret || (secret.length >= MIN_SUBSTRING_PASSWORD && text.include?(secret)) }
+  end
+
+  def scan_log_rows(body, ctx, add)
+    return unless ctx[:log_rows] && body.is_a?(Hash)
+
+    (body.keys - LOG_ANSWER_KEYS).each { |k| add.call('log_row', "log:answer_key:#{k}", safe_path("$.#{k}")) }
+    walk_hashes(body, '$') do |hash, path|
+      (hash.keys & LOG_STORED_ONLY_KEYS).each { |k| add.call('log_row', "log:stored_key:#{k}", safe_path("#{path}.#{k}")) }
+    end
+    texts = [body['title']]
+    Array(body['rows']).each_with_index do |row, i|
+      next add.call('log_row', 'log:row_shape', "$.rows[#{i}]") unless row.is_a?(Hash)
+
+      add.call('log_row', 'log:row_keys', "$.rows[#{i}]") unless LOG_ROW_KEYS.include?(row.keys.map(&:to_s).sort)
+      cells = %w[event result].map { |k| row[k] } + log_cell_texts(row)
+      texts.concat(cells)
+      texts << row['detail'] # whole, so a secret holding ", " is not cut in two before the compare
+      log_detail_keys(row).each { |k| add.call('log_row', "log:stored_key:#{k}", "$.rows[#{i}].detail") if LOG_STORED_ONLY_KEYS.include?(k) }
+      log_cell_texts(row).each { |t| add.call('log_row', "log:raw_id:#{t}", "$.rows[#{i}]") if log_raw_ids.include?(t) }
+    end
+    texts.each { |t| add.call('log_row', 'log:secret', '$.rows') if t.is_a?(String) && log_secret_in?(t.strip) }
   end
 
   # A Wi-Fi SSID or key in any response is a leak, with no route exemption: unlike a network
