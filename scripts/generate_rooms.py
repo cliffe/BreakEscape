@@ -3874,16 +3874,16 @@ def room_hce_lab():
     _trading_desk(r, 40, 166, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
                   [("energy_cans1", 0.94, 0.30)], chair="chair-darkgray-1")   # the lab's own back-view chairs (c3 LAB-3, c5 LAB-4)
     # the analysis table: Priya's two papers at either end, 90 px apart (cycle 2, LAB-1)
-    t = r.table("zds_conference_table1", 100.0, 240.0, kind="objects")   # x 100-226
+    t = r.table("zds_conference_table1", 118.0, 240.0, kind="objects")   # x 118-244 (body from 128: with the bench's body ending at 80, the click-walk grid keeps a free column x 96-112 to the pizza)
     r.on(t, "notes3", 0.10, 0.30, layer="conditional_table_items")
     r.on(t, "laptop3", 0.36, 0.28)
     r.on(t, "pc6", 0.58, 0.30)
     r.on(t, "coffee_cups1", 0.74, 0.28)
     r.on(t, "notes1", 0.90, 0.30, layer="conditional_table_items")
-    r.item("chair-darkgray-1", 128.0, 252.0)         # back view, facing the table (c5 LAB-4)
-    r.item("chair-darkgray-1", 178.0, 252.0)
+    r.item("chair-darkgray-1", 146.0, 252.0)         # back view, facing the table (c5 LAB-4)
+    r.item("chair-darkgray-1", 196.0, 252.0)
     # west: the hardware bench and the beanbags
-    r.table("it_workbench1", 36.0, 244.0, kind="objects")
+    r.table("it_workbench1", 30.0, 244.0, kind="objects")
     r.solid("beanbag1", 40.0, 292.0)
     r.solid("pizza_boxes1", 88.0, 294.0)
     r.item("fire_extinguisher1", 292.0, 170.0)
