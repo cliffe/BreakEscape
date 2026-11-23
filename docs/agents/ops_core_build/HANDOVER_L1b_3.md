@@ -25,7 +25,7 @@
 ## Gotchas
 - A held keycard only counts if the scenario defines it; tests that need a non-admitting card add one to the lobby objects of
   a scenario copy (the real scenario has only Dana's card, copied).
-- Right password on a locked session unlocks it and writes NO row (no second `signin_ok`); the playtest says so.
+- Right password on a locked session unlocks it and writes a second `signin_ok` (`start_login_session!` via password); it merges into the earlier row, so `n` becomes 2 and no new row appears (R1 M1; the earlier "no row" statement was wrong).
 - A PC sign-in needs the office in `unlockedRooms` ("PC not reachable" otherwise).
 - Stored `logSources` key order is not declaration order (jsonb): sort in tests.
 - PLAYTEST: Lock and Sign out are in the desktop taskbar start panel (`.pc-start-btn`, `#pc-start-lock`,

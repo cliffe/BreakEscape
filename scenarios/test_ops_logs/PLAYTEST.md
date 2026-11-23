@@ -31,8 +31,7 @@ The check after every beat (it prints each source's rows and exits 1 on a failur
 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log
 ```
 
-`verify-run.rb --ops-log` exits 1 if a stored row holds a registered secret (the account password,
-the card id), is over the byte, row or save-counter ceilings, or a source is not declared. Expect
+`verify-run.rb --ops-log` exits 1 if a stored row holds a registered secret (the account password), is over the byte, row or save-counter ceilings, or a source is not declared. Expect
 `ops log OK` at the end of its output after every beat. Rows are written only after the server has
 seen the action, so a row appears as soon as the beat's answer comes back; if a row is missing,
 send `{"cmd":"sync"}` and run the check again before calling it a failure.
@@ -112,8 +111,9 @@ this row's `at <n>ms`: they must be within a few seconds of each other (allow 5 
 
 With the desktop open, press Start and Lock (harness notes). Expect the desktop to close. Check:
 a `session_lock` row, `as {"account":"<the username>"}`, same `where`. Reopen `office_pc`, type
-the password again at the sign-in screen: it unlocks the held session and writes no new row (the
-known gap). Close the desktop.
+the password again at the sign-in screen: it unlocks the held session and is logged as a second
+`signin_ok`, which merges into the first row (count x2, so it sorts before `session_lock`). Close
+the desktop.
 
 ### 7. Signing out
 
@@ -128,7 +128,7 @@ clock comparison in beat 5, and the exit status. Expected final rows, in order:
 | Source | Rows |
 |---|---|
 | `door_controller` | `badge_swipe` ok (dana) |
-| `signin_audit` | `signin_fail` x2, `signin_ok`, `session_lock`, `session_end` |
+| `signin_audit` | `signin_fail` x2, `signin_ok` x2, `session_lock`, `session_end` |
 
 Nothing in the browser shows these rows. Do not add anything from the console that writes them.
 
