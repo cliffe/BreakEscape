@@ -47,8 +47,67 @@ module BreakEscape
       out
     end
 
+    LENA_RDP = { 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }.freeze
+
+    # The ops scenario with a saved connection to lena_pc (a keyring entry whose proof is a held
+    # item), so the keyring and the credential routes have something to offer.
+    def credential_scenario(discovery)
+      data = ops_scenario(discovery: discovery)
+      data['rooms']['lobby']['objects'] << { 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp',
+                                             'takeable' => true, 'credential' => 'lena_rdp', 'text' => 'Saved connection.' }
+      data['credentials'] = { 'lena_rdp' => { 'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'lena_pc',
+                                              'proof' => { 'held' => 'lena_rdp_file' } } }
+      data
+    end
+
+    def hold_with_credentials(discovery)
+      hold_office_foothold({ 'inventory' => [LENA_RDP.dup], 'encounteredNPCs' => %w[sam lena] }, credential_scenario(discovery))
+    end
+
+    def login(params)
+      post game_path('login'), params: params, as: :json
+    end
+
+    # The keyring's offered routes, credential sign-in through the foothold, and the two sign-ins
+    # from a held desktop (typed, and by credential): each as [label, status, body].
+    def run_credential_requests
+      out = []
+      take = ->(label) { out << [label, response.status, response.body] }
+      get game_path('keyring'), params: { pc_id: 'lena_pc', foothold: OFFICE }, as: :json
+      take.call('keyring offered through the foothold')
+      get game_path('keyring'), as: :json
+      take.call('keyring')
+      login(pc_id: 'lena_pc', credential: 'lena_rdp', foothold: OFFICE)
+      take.call('credential sign-in through the foothold')
+      login(pc_id: 'lena_pc', credential: 'no_such_entry', foothold: OFFICE)
+      take.call('credential sign-in, unknown entry')
+      sign_in('sam_pc', 'sokafor', SAM)
+      take.call('keyboard sign-in at sam_pc')
+      login(pc_id: 'lena_pc', username: 'lfox', password: LENA, from: 'sam_pc')
+      take.call('typed sign-in from the held desktop')
+      login(pc_id: 'lena_pc', credential: 'lena_rdp', from: 'sam_pc')
+      take.call('credential sign-in from the held desktop')
+      get game_path('keyring'), params: { pc_id: 'lena_pc', from: 'sam_pc' }, as: :json
+      take.call('keyring offered from the held desktop')
+      out
+    end
+
+    test 'the keyring routes, credential sign-in and sign-in from a held desktop answer on an unswept discovery network as on an open one' do
+      hold_with_credentials('open')
+      reference = run_credential_requests
+      statuses = reference.to_h { |label, status, _body| [label, status] }
+      assert_equal 200, statuses['credential sign-in through the foothold'], 'the reference run really signs in by credential'
+      assert_equal 200, statuses['credential sign-in from the held desktop']
+      assert_includes reference.first[2], 'lena_rdp', 'the keyring offers the entry'
+      assert_includes reference.first[2], OFFICE, 'and names the foothold as the route'
+      hold_with_credentials('scan')
+      discovered = run_credential_requests
+      assert_equal reference.map { |l, s, b| [l, s, normalise(b)] }, discovered.map { |l, s, b| [l, s, normalise(b)] }
+      assert_equal({}, ops_state['opsDiscovered'], 'none of it discovered anything')
+    end
+
     def normalise(text)
-      text.gsub(/"(?:gainedAt|at|ts)":\d+/, '"t":0')
+      text.gsub(/"(?:gainedAt|at|ts)":\d+/, '"t":0').gsub(/"rev":"[0-9a-f]+"/, '"rev":"r"')
     end
 
     test 'sign-in, tiles, desktops, shares and the keyring answer on an unswept discovery network as on an open one' do
