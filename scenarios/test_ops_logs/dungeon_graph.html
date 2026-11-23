@@ -71,7 +71,7 @@
   <h1>test_ops_logs — dependency graph</h1>
   <p class="sub">TEST: Ops log rows
 
-A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lobby, two card doors and one sign-in PC. Copy Dana's badge…</p>
+A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a and L2b). One lobby, two card doors and one sign-in PC. Copy Dana's…</p>
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
     <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
@@ -115,6 +115,7 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
         <div class="edge-row"><span class="edge-solid"></span> Hard dependency (required)</div>
         <div class="edge-row"><span class="edge-dashed"></span> Soft dependency / narrative unlock</div>
         <div class="edge-row"><span class="edge-opt"></span> Optional path</div>
+          <div class="edge-row"><code>-.-</code> log: a log source (a note) and a reader that shows it; it gates nothing</div>
       </div>
       <div class="legend-section">
         <h3>Shapes</h3>
@@ -138,13 +139,13 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">1</td></tr>
-      <tr><th>Total tasks</th><td class="val">2</td></tr>
-      <tr><th>Optional tasks</th><td class="val">0 / 2</td></tr>
+      <tr><th>Total tasks</th><td class="val">3</td></tr>
+      <tr><th>Optional tasks</th><td class="val">0 / 3</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">3</td></tr>
       <tr><th>Rooms</th><td class="val">3</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">8 / 8</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">14 / 14</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -167,6 +168,7 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -181,6 +183,12 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+  log_door_controller[("Door controller<br/>badge_swipe")]
+  log_signin_audit[("Sign-in audit<br/>signin_*, session_*")]
+  log_night_log[("Night door log<br/>badge_swipe")]
+  reader_night_log_pc{"Night log PC<br/>(log reader)"}
+  reader_door_log_pc{"Door log PC<br/>(log reader)"}
+  reader_signin_log_pc{"Sign-in log PC<br/>(log reader)"}
 
   door_office --> office
   door_security --> security
@@ -190,10 +198,18 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
+  office --> reader_night_log_pc
+  log_night_log -.- reader_night_log_pc
+  security --> reader_door_log_pc
+  log_door_controller -.- reader_door_log_pc
+  security --> reader_signin_log_pc
+  log_signin_audit -.- reader_signin_log_pc
 
   class door_office,door_security,lock_office_pc lock
   class office,security,lobby room
   class card_fin_dana_01,signin_dana key
+  class log_door_controller,log_signin_audit,log_night_log note
+  class reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
   class node_start start`,
       story:      `flowchart TD
 
@@ -230,6 +246,7 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44
   classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0
   classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0
+  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
@@ -244,6 +261,12 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   card_fin_dana_01{"Dana Reyes's badge<br/>(Dana Reyes)"}
   lobby("Lobby")
   signin_dana{"Dana Reyes sign-in<br/>(dreyes)"}
+  log_door_controller[("Door controller<br/>badge_swipe")]
+  log_signin_audit[("Sign-in audit<br/>signin_*, session_*")]
+  log_night_log[("Night door log<br/>badge_swipe")]
+  reader_night_log_pc{"Night log PC<br/>(log reader)"}
+  reader_door_log_pc{"Door log PC<br/>(log reader)"}
+  reader_signin_log_pc{"Sign-in log PC<br/>(log reader)"}
   aim_log_beats{{"Make the log write its rows"}}
 
   door_office --> office
@@ -254,10 +277,18 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   card_fin_dana_01 --> door_security
   lobby --> signin_dana
   signin_dana --> lock_office_pc
+  office --> reader_night_log_pc
+  log_night_log -.- reader_night_log_pc
+  security --> reader_door_log_pc
+  log_door_controller -.- reader_door_log_pc
+  security --> reader_signin_log_pc
+  log_signin_audit -.- reader_signin_log_pc
 
   class door_office,door_security,lock_office_pc lock
   class office,security,lobby room
   class card_fin_dana_01,signin_dana key
+  class log_door_controller,log_signin_audit,log_night_log note
+  class reader_night_log_pc,reader_door_log_pc,reader_signin_log_pc item
   class aim_log_beats aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -317,8 +348,9 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   rc_sign_lobby_2{"Sign: Start here"}
   rc_npc_dana_reyes_3("Dana Reyes")
   rc_office_pc_4{"Office PC"}
-  rc_door_log_pc_5{"Door log PC"}
-  rc_signin_log_pc_6{"Sign-in log PC"}
+  rc_night_log_pc_5{"Night log PC"}
+  rc_door_log_pc_6{"Door log PC"}
+  rc_signin_log_pc_7{"Sign-in log PC"}
 
   lobby --> office
   office --> security
@@ -326,12 +358,13 @@ A test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b and L2a). One lob
   lobby --> rc_sign_lobby_2
   lobby --> rc_npc_dana_reyes_3
   office --> rc_office_pc_4
-  security --> rc_door_log_pc_5
-  security --> rc_signin_log_pc_6
+  office --> rc_night_log_pc_5
+  security --> rc_door_log_pc_6
+  security --> rc_signin_log_pc_7
 
   class lobby room
   class office,security lock
-  class rc_card_copier_1,rc_sign_lobby_2,rc_office_pc_4,rc_door_log_pc_5,rc_signin_log_pc_6 item
+  class rc_card_copier_1,rc_sign_lobby_2,rc_office_pc_4,rc_night_log_pc_5,rc_door_log_pc_6,rc_signin_log_pc_7 item
   class rc_npc_dana_reyes_3 npc
   class node_start start`
     };

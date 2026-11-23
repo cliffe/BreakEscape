@@ -109,4 +109,52 @@ class AccessLeakScannerLogRowsTest < ActiveSupport::TestCase
   test 'the rule judges /log_rows answers only' do
     assert_empty scan(answer(good_row('where' => 'office', 'seq' => 3)), path: '/break_escape/games/1/room/office').select { |f| f.rule == 'log_row' }
   end
+
+  # ---- L2b: seed rows; R4-1 and R4-2. The scanner holds no rule about the anomaly: by the plan (7) the
+  # browser holds anomaly.rowId and the flag is checked on the client, so an answer that names no row is the
+  # only thing /log_rows owes.
+
+  def seed_row(id, extra = {})
+    { 'id' => id, 'at' => 'Mon 23:58', 'event' => 'BADGE', 'as' => 'Dana Reyes', 'where' => 'Finance office', 'result' => 'OK', 'detail' => '' }.merge(extra)
+  end
+
+  def scan_run(*entries, secrets: [LOCK_PIN])
+    lines = entries.each_with_index.map do |(method, path, body), i|
+      ['r.jsonl', i + 1, { 'method' => method, 'path' => path, 'status' => 200, 'body' => body }]
+    end
+    AccessLeakScanner.new(scenario, log_secrets: secrets).scan(lines)
+  end
+
+  def rows_answer(*rows, extra: {})
+    ['GET', PATH, answer(*rows, extra: extra)]
+  end
+
+  test 'L2b: seed rows (their own seven keys, with at) ahead of the play rows are clean' do
+    assert_empty scan_run(rows_answer(*%w[s1 s2 s3].map { |id| seed_row(id) }, good_row))
+  end
+
+  test 'L2b: the browser holds the anomaly row and the flag actions in a reader object, which is no finding' do
+    reader = { 'objects' => [{ 'id' => 'night_pc', 'type' => 'ops_log_terminal',
+                               'minigameData' => { 'logSource' => 'night', 'anomaly' => { 'rowId' => 's2' },
+                                                   'flagActions' => [{ 'type' => 'set_global', 'key' => 'k', 'value' => true }] } }] }
+    assert_empty scan_run(['GET', '/break_escape/games/1/room/office', reader]).select { |f| f.rule == 'log_row' }
+  end
+
+  test 'L2b: a seed row with a key beyond its seven is still a finding' do
+    assert_includes owners(scan_run(rows_answer(seed_row('s1', 'anomaly' => true)))), %w[log_row log:row_keys]
+  end
+
+  test 'R4-1: a stored-only key is found by its word in a detail string whatever separates the pairs' do
+    assert_equal [%w[log_row log:stored_key:flagged]], owners(scan_run(rows_answer(good_row('detail' => 'route=keyboard; flagged=1'))))
+    assert_equal [%w[log_row log:stored_key:flagged]], owners(scan_run(rows_answer(good_row('detail' => 'route: keyboard | flagged : 1'))))
+    assert_empty scan_run(rows_answer(good_row('detail' => 'route: keyboard, method: password')))
+  end
+
+  test 'R4-2: a detail key the registry marks hidden is a stored-only key without a list edit' do
+    event = { 'tst_hidden' => { label: 'TST', places: [], results: %w[ok], detail: { 'secretkey' => { count: 1, show: false } } } }
+    assert_empty scan_run(rows_answer(good_row('detail' => 'secretkey: 1')))
+    BreakEscape::OpsLog.with_events(event) do
+      assert_equal [%w[log_row log:stored_key:secretkey]], owners(scan_run(rows_answer(good_row('detail' => 'secretkey: 1'))))
+    end
+  end
 end

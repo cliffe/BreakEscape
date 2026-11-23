@@ -1327,6 +1327,54 @@ rooms.each do |room_id, room|
 end
 
 # ---------------------------------------------------------------------------
+# Ops log sources (OPS_LOG_ROWS_PLAN.md section 9, stage L2b). A log source is neither a lock nor a
+# key, so it adds no gating edge: each source is one `note` node, labelled with its title and events,
+# with a dashed, undirected edge to each ops_log_terminal that reads it. A reader is an item node
+# hung from the room or lock that holds it, as any other object is; its anomaly and flag actions add
+# no edge of their own (only puzzle_graph_unlocks does, through walk_objects). A scenario with no
+# `logSources` draws as before.
+# ---------------------------------------------------------------------------
+LOG_SOURCES = scenario['logSources'].is_a?(Hash) ? scenario['logSources'].select { |id, src| !id.to_s.start_with?('_') && src.is_a?(Hash) } : {}
+unless LOG_SOURCES.empty?
+  log_node = ->(source_id) { "log_#{nid(source_id)}" }
+  LOG_SOURCES.each do |source_id, source|
+    events = Array(source['events']).select { |e| e.is_a?(String) }.join(', ')
+    title  = source['title'].is_a?(String) && !source['title'].strip.empty? ? source['title'] : source_id
+    add_node(log_node.call(source_id), "#{title}<br/>#{events}", 'note')
+  end
+  readers_seen = Set.new
+  add_reader = lambda do |obj, parent|
+    obj_id = obj['id'] || nid((obj['name'] || obj['type']).to_s)
+    reader = "reader_#{nid(obj_id)}"
+    next unless readers_seen.add?(reader)
+
+    name = obj['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+    add_node(reader, "#{name}<br/>(log reader)", 'item')
+    from = obj['locked'] ? "lock_#{obj_id}" : parent
+    if from
+      add_node(from, room_label(from, rooms[from]), 'room') if rooms.key?(from) && !$nodes.key?(from)
+      add_edge(from, reader)
+    end
+    source_id = obj.dig('minigameData', 'logSource')
+    next unless source_id.is_a?(String) && LOG_SOURCES.key?(source_id)
+
+    add_edge(log_node.call(source_id), reader, dashed: true, undirected: true)
+    $edges.last[:log] = true if $edges.last && $edges.last[:to] == reader
+  end
+  find_readers = lambda do |node, parent|
+    case node
+    when Array then node.each { |value| find_readers.call(value, parent) }
+    when Hash
+      add_reader.call(node, parent) if node['type'] == 'ops_log_terminal'
+      inner = node['locked'] ? "lock_#{node['id'] || nid((node['name'] || node['type']).to_s)}" : parent
+      node.each { |key, value| find_readers.call(value, inner) if value.is_a?(Array) || value.is_a?(Hash) }
+    end
+  end
+  rooms.each { |room_id, room| find_readers.call(room['objects'], room_id) }
+  %w[accountProfiles resources].each { |key| find_readers.call(scenario[key], nil) }
+end
+
+# ---------------------------------------------------------------------------
 # puzzle_graph_links — explicit cross-object edges resolved after all nodes exist
 # Use this to connect nodes whose IDs aren't yet known at walk_objects processing
 # time (e.g. action nodes from later rooms, aim nodes, NPC nodes).
@@ -1925,6 +1973,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
   lines << '  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44'
   lines << '  classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0'
   lines << '  classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0'
+  lines << '  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee' if nodes.any? { |_id, n| n[:klass].to_s == 'note' }
   lines << '  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88'
   lines << '  classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa'
   lines << ''
@@ -1948,6 +1997,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
     when 'aim'                 then "{{\"#{lbl}\"}}"
     when 'container'           then "[[\"#{lbl}\"]]"
     when 'npc'                 then "(\"#{lbl}\")"
+    when 'note'                then "[(\"#{lbl}\")]"
     else                            "(\"#{lbl}\")"
     end
     lines << "  #{hid.call(id)}#{shape}"
@@ -2141,7 +2191,8 @@ path_labels = critical_path.map { |id|
 # other graph keeps its legend byte for byte.
 net_labels = $edges.map { |e| e[:label] }.to_set
 net_notes = []
-net_notes << '<code>-.-</code> link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share' if $edges.any? { |e| e[:undirected] }
+net_notes << '<code>-.-</code> link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share' if $edges.any? { |e| e[:undirected] && !e[:log] }
+net_notes << '<code>-.-</code> log: a log source (a note) and a reader that shows it; it gates nothing' if $edges.any? { |e| e[:log] }
 net_notes << '<b>+</b> then <code>pivot</code>: the network reached and a session at that host open the linked network' if net_labels.include?('pivot')
 if (net_labels & Set['held', 'dropped', 'session at PC']).any?
   net_notes << '<code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs'

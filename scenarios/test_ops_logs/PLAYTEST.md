@@ -257,3 +257,48 @@ Every `/log_rows` answer must hold exactly the seven row keys `id`, `elapsedMs`,
   refresh beat acts in the office first and the Refresh button check is a re-read of the same state.
 - Not built in L2a: seed rows, an anomaly and the flag button (L2b), a jack, access point or share (L3), and a reader reached
   through a PC desktop or a foothold (no scenario in this stage uses one; the controller tests cover those routes).
+
+---
+
+# L2b: seed rows and the anomaly (beats 14 to 19)
+
+Stage L2b (`OPS_LOG_ROWS_PLAN.md` 4.2, 5.2, 7, 11). The `office` room now also holds a wall terminal, `night_log_pc` ("Night log PC", east end of the room), that reads a third source, `night_log` ("Night door log"). The source has four authored **seed rows** and no stored rows (its `where` is the lobby, which no swipe ever names): Dana's badge at the Finance office door `Mon 08:12`, at the Security office door `Mon 08:14` and `Mon 23:58`, and at the Finance office door `Tue 07:55`. The row `s3` (`Mon 23:58`) is the **anomaly**: the reader object the browser holds names it (`minigameData.anomaly.rowId`, with `flagActions` and `completionActions`), as the plan says. The flag is checked in the browser, best effort, as the log-filter minigame checks its own; no request is sent for it and no server state holds it. No beat sends a request of its own making.
+
+Run these in the same game, after beat 13 (the office is open, the card copy saved). Same ports (3014 to 3016) and capture file.
+
+The viewer's flag hooks (from `HANDOVER_L2b.md`): `button[data-action="flag"]` (label `Flag the odd swipe`), then `button[data-action="flag-confirm"]` and `button[data-action="flag-cancel"]`; the note `[data-ops-log="flag-note"]` with `data-state` `confirm`, `wrong` or `done` (text `FLAG THIS ROW AS THE ANOMALY?`, `NOT THIS ONE`, `FLAGGED`); a row marked as the flagged one carries `data-flagged="true"` and the class `ol-row-flagged`, and no row carries either before a right flag. Handy reads:
+
+- marked rows: `() => Array.from(document.querySelectorAll('tr[data-flagged="true"]')).map(r => r.dataset.rowId)`
+- row classes, all alike: `() => Array.from(document.querySelectorAll('tr.ol-row[data-row-id]')).map(r => r.className.replace('ol-row-selected', '').trim())`
+- the global: `() => window.gameState?.globalVariables?.found_night_swipe ?? null`
+
+### 14. Opening the night log
+
+`moveToNear` then `interact` `night_log_pc` (in `office`); `waitFor` `{"kind":"minigame"}`. Expect the frame title "Night log PC", the caption "Night door log" and exactly **four** rows with `data-row-id` `s1`, `s2`, `s3`, `s4` in that order (seed ids are the authored ones; the play rows of beats 9 to 12 have ten hex characters). TIME `Mon 08:12`, `Mon 08:14`, `Mon 23:58`, `Tue 07:55` (the authored stamps as the viewer shows them), EVENT `BADGE`, IDENTITY `Dana Reyes`, RESULT `OK`, LOCATION `Finance office`, `Security office`, `Security office`, `Finance office`. The count text reads `4 rows`. No row is marked or tinted: the marked-rows read is `[]` and the class read gives four identical strings. The earlier swipes of beats 3 and 8 added no row here (they are in the door log only).
+
+### 15. The flag control and its confirm
+
+Before any row is selected there is no `button[data-action=flag]`. Click `tr[data-row-id="s1"]`: the detail grid shows the row and the flag button appears with the label "Flag the odd swipe". Click it: the note reads `FLAG THIS ROW AS THE ANOMALY?` (`data-state="confirm"`), with CONFIRM and CANCEL, CONFIRM focused; the flag button is gone. Click CANCEL: the flag button is back (and focused), the global read is `null`, and the capture file holds no new request.
+
+### 16. A wrong flag
+
+Select `s1`, click the flag button, click CONFIRM. At once the note reads `NOT THIS ONE` (`data-state="wrong"`) and the flag button returns. The marked-rows read is still `[]`, the global read is `null`, and the task "Flag the night-time swipe in the night door log" is still open. Do the same for `s2` and `s4`. Selecting another row clears the note (it never sits under a different row). The capture file holds no request for any of these picks.
+
+### 17. The right flag
+
+Select `s3` (`Mon 23:58`, the night swipe), click the flag button, CONFIRM. Expect the note `FLAGGED` (`data-state="done"`), the marked-rows read `["s3"]`, the row `s3` with class `ol-row-flagged` (a green hatched row with a bar on its left edge: it must not look like a selected row; select `s1` and compare), focus on the `s3` row, the global read `true`, and the task "Flag the night-time swipe in the night door log" ticked in the objectives panel. Select `s1`: no flag button now. The reader object in the office room answer (and any other copy of the reader the browser is given) holds `anomaly.rowId` `s3` and both action lists from the start (that is the plan: the check is local), so no beat asserts their absence; the capture file holds no request that this flag caused. The "Task Complete" toast is held while a minigame is open (`notifications.js`): close the viewer, and the toast "Task Complete: Flag the night-time swipe in the night door log" appears, as log-filter's does after it closes.
+
+### 18. Reopen and reload
+
+Open `night_log_pc` again (same page): `s3` is marked at once and there is no flag button. Then `{"cmd":"sync"}` so the global is saved (the normal sync), reload the page the way the harness resumes a game (`docs/test-bridge.md`, `bootstrap` with `resume`), `enter` `office` and open it again: `s3` is marked, because the global `found_night_swipe` is already `true` (the viewer reads the action's global; nothing else holds the flag), there is no flag button, and the task is not completed twice. Close the viewer.
+
+### 19. The leak check
+
+`verify-run.rb <game_id> --ops-log` still exits 0 with `ops log OK` (it prints three sources; `night_log` has no stored row, and the play rows of the other two are as in beats 1 to 13). Run `tools/playtest/access-leak-check.rb` over the capture file. It must report no finding: it judges the `/log_rows` answers (no secret, seed rows and play rows with exactly their own seven keys, no raw id, no stored-only key); it holds no rule about the anomaly.
+In the report: the four rows as the page showed them, the three wrong-flag notes, the right flag's marked row, global and toast, what the reload showed, and the exit status of both checks.
+
+## L2b gotchas
+
+- The anomaly row id and both action lists reach the browser with the reader (plan section 7); the viewer compares the picked row's id with `anomaly.rowId`, runs the actions once, and reads "already flagged" from the action's global (`found_night_swipe`), which the normal sync saves.
+- A server check of the flag is a later piece (the investigator work); this flag is best effort, like log-filter's.
+- The night log's `where` is the lobby so that play never adds a row to it: the scenario tests for beats 9 to 12 are unchanged.
