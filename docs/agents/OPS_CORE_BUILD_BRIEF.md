@@ -180,3 +180,12 @@ summary, and fixers work from the file alone. (An S1 reviewer wrote only a heade
   product in the scenario stays an ERROR (plan 9.2; it catches a typo that would make a card
   silently useless). The plan's section 4.3 example now lists only the version its example
   service has.
+- 2026-11-23, S3 step 11 security R1 rulings: verdict "safe to keep". F1 (major, fails
+  closed): `record_borrow_done!` in `npc_frustration.rb` deletes the player's record at that
+  PC only when it has neither `foothold` nor `from` (plan 5.4); assigned to a Ruby fixer with
+  test T8, plus T1 to T7 and T9 to T12, F3 and F7. F4 is left as built (the plan says no
+  refusal is added: during an outage a technique session's keyboard desktop is served while
+  its no-route folders are refused) and goes to the user as a question. F5 is noted for S5a.
+  F6 and F8 stay. From 12a: the view imports `utils/compromise-bolt.js` STATICALLY, as the
+  plan describes, with the module added to every harness copy list that copies the view; the
+  dynamic `import()` goes (in the S3 client fix pass).
