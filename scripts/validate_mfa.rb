@@ -14,6 +14,7 @@ require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/lock_step_model'
 require_relative 'validate_access_work'
 
 MFA_PUSH_KINDS = %w[push push_number_match].freeze
@@ -107,12 +108,20 @@ def mfa_device_errors(json_data, err)
     owner = item['owner']
     if !cm.present_string?(owner)
       err.call("code_device '#{name}' has no owner: it belongs to one account's NPC.")
-    elsif cm.account_npc(json_data, owner).nil?
-      err.call("code_device '#{name}' owner '#{owner}' is not an account (a room NPC with creds).")
+    elsif cm.account_npc(json_data, owner).nil? && !mfa_lock_step_code_owner?(json_data, owner)
+      err.call("code_device '#{name}' owner '#{owner}' is not an account (a room NPC with creds) and owns no secondStep code lock.")
     end
   end
   devices.select { |i| cm.present_string?(i['owner']) }.group_by { |i| i['owner'] }.each do |owner, list|
     err.call("#{list.size} code_devices belong to '#{owner}': an account has one.") if list.size > 1
+  end
+end
+
+# S8c (D10): an NPC who owns a `secondStep` lock of kind code may own a code_device without being an
+# account.
+def mfa_lock_step_code_owner?(json_data, owner)
+  BreakEscape::LockStepModel.each_lock_step(json_data).any? do |e|
+    e[:step]['kind'] == 'code' && e[:step]['owner'] == owner
   end
 end
 

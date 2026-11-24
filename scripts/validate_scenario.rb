@@ -29,6 +29,7 @@ require_relative 'validate_log_rows'
 require_relative 'validate_network_ops'
 require_relative 'validate_privilege'
 require_relative 'validate_mfa'
+require_relative 'validate_lock_step'
 require_relative 'validate_realism_skin'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
@@ -9126,6 +9127,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_network_ops') { check_network_ops(json_data) }
   run.call('check_privilege') { check_privilege(json_data) }
   run.call('check_mfa') { check_mfa(json_data) }
+  run.call('check_lock_step') { check_lock_step(json_data) }
   run.call('check_realism_skin') { check_realism_skin(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }

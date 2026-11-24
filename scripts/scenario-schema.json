@@ -4367,6 +4367,16 @@
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "combination", "cryptex", "ble"]
         },
+        "secondStep": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["push", "push_number_match", "code"] },
+            "owner": { "type": "string", "minLength": 1, "x-ref": "npc" }
+          },
+          "description": "S8c: a second step after the right first factor on this lock. push asks the owner's phone to approve; push_number_match also shows a number to match; code asks for the six digits on the owner's code_device. owner is an NPC id (an object may fall back to its own single owner; a room needs one). Needs locked: true and a lockType. Sent to the browser as authored; who passes is decided on the server."
+        },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
         "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
@@ -5536,6 +5546,16 @@
         "lockType": {
           "type": "string",
           "enum": ["key", "pin", "rfid", "password", "bluetooth", "biometric", "flag", "ransomware_display", "network_architecture", "alarm_panel", "login", "combination", "cryptex", "ble"]
+        },
+        "secondStep": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["push", "push_number_match", "code"] },
+            "owner": { "type": "string", "minLength": 1, "x-ref": "npc" }
+          },
+          "description": "S8c: a second step after the right first factor on this lock. push asks the owner's phone to approve; push_number_match also shows a number to match; code asks for the six digits on the owner's code_device. owner is an NPC id (an object may fall back to its own single owner; a room needs one). Needs locked: true and a lockType. Sent to the browser as authored; who passes is decided on the server."
         },
         "requires": {
           "x-serverOnly": { "unlessLockType": ["biometric", "bluetooth", "rfid"] },
