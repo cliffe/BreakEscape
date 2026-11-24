@@ -63,7 +63,7 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # flag reward (grant_fact) awards is a finding anywhere until a 200 answer grants it, in the server's own place and shape:
 # the top-level `facts` of an inventory answer (item facts), a grant_fact reward's `entry`, a give_item reward's `facts`.
 # After the grant the bootstrap's social.intelFacts may hold it, and its text or label may appear in any string. An entry
-# anywhere else is a finding even when earned. Given a game, a fact it has not earned (earned_fact_ids at the end of the
+# in a hash keyed by the fact's id anywhere else is a finding even when earned. Given a game, a fact it has not earned (earned_fact_ids at the end of the
 # run) is a finding at every place; without a game the scanner cannot tell earned from unearned, so only the place, the
 # shape and the order are judged (a grant is taken from the answer itself). Feed facts keep the feed rules. Limit: the
 # earned set is read once, at the end of the run.
@@ -3997,9 +3997,12 @@ class AccessLeakScanner
   end
 
   # The room data ships a flag reward's own authored label (`...flagRewards[i].label`); when it reads the same as the fact's
-  # label it is that authored string, not the withheld entry. Only the label, only at that key, only the reward's own text.
+  # label it is that authored string, not the withheld entry. Only the label, only at that key, only the reward's own text,
+  # and only when that label does not hold the fact's text (a label with the text inside a longer sentence is a finding).
   def fact_reward_label_place?(id, str, json_path)
-    json_path.match?(/\.flagRewards\[\d+\]\.label\z/) && @fact_reward_labels[id].include?(str) && str.strip != @fact_entries[id][:text]
+    text = @fact_entries[id][:text]
+    json_path.match?(/\.flagRewards\[\d+\]\.label\z/) && @fact_reward_labels[id].include?(str) &&
+      !(text.is_a?(String) && !text.empty? && str.include?(text))
   end
 
   def fact_entry_ok?(id, entry, sources)

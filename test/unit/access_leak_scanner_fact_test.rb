@@ -180,6 +180,25 @@ class AccessLeakScannerFactTest < ActiveSupport::TestCase
     assert_equal [[1, 'fact:dana_year']], fact_hits([room.call('flagRewards', 'Dana joined the firm in 2003.')], earned: [])
   end
 
+  test 'label: an authored reward label that holds the fact text inside a longer sentence is a finding, a plain label stays clean (R3-6)' do
+    long = 'Note: Dana joined the firm in 2003. Filed.'
+    data = JSON.parse(scenario.to_json)
+    patched = 0
+    walk = lambda do |n|
+      case n
+      when Hash then n.each_value { |v| walk.call(v) }
+      when Array then n.each { |v| (v['label'] = long; patched += 1) if v.is_a?(Hash) && v['type'] == 'grant_fact' && v['fact'] == 'dana_year'; walk.call(v) }
+      end
+    end
+    walk.call(data)
+    assert_operator patched, :>, 0
+    room = ->(label) { get('room/lobby', { 'room' => { 'objects' => [{ 'id' => 'st', 'flagRewards' => [{ 'type' => 'grant_fact', 'fact' => 'dana_year', 'label' => label }] }] } }) }
+    found = AccessLeakScanner.new(data, game: Game.new([])).scan([['r.jsonl', 1, room.call(long)]])
+    assert_equal [[1, 'fact:dana_year']], found.select { |f| f.rule == 'fact_unearned' }.map { |f| [f.line, f.owner] }
+    # the unpatched scenario: its own short label is still the exemption
+    assert_empty fact_hits([room.call("Dana's start year")], earned: [])
+  end
+
   test 'an unlock answer with a fact entry under a new key is a finding even for an earned fact' do
     rows = [inventory({ 'dana_pet' => PET }), post('unlock', { 'success' => true, 'clue' => { 'dana_pet' => PET } })]
     assert_equal [[2, 'fact:dana_pet']], fact_hits(rows, earned: ALL)
