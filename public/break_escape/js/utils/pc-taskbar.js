@@ -51,6 +51,8 @@ const ACTION_LABELS = Object.freeze({ lock: 'Lock', switch: 'Switch user', signo
 export const RELAY_HEADER_TEXT = 'Remote assist session';
 export const RELAY_NO_SHARES_TEXT = 'Shared drives are not mapped over remote assist.';
 export const RELAY_TAG_TEXT = 'Assist';
+/** The marker beside the account name on an admin session (privilege plan S5a). */
+export const ADMIN_TAG_TEXT = 'Administrator';
 /** The one-line message a relay desktop closes with after Disconnect. */
 export const RELAY_DISCONNECTED_TEXT = 'Disconnected';
 export const relayAccountText = (name, username) => `Using ${name || 'the account holder'}'s session${username ? ` (${username})` : ''}`;
@@ -167,6 +169,8 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 username: session.username || '',
                 npcId: session.npcId || null,
                 claimed: session.via === 'claim',
+                // The server's level, carried as sent: only 'admin' marks, and never a locked entry
+                ...(session.access === 'admin' && session.locked !== true ? { admin: true } : {}),
                 ...(isRelay ? { relay: true, relayLine: relayAccountText(session.displayName || session.username, session.username) } : {}),
                 // A keyring credential session names how it signed in (K3a 8.1)
                 ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session), credentialHtml: credentialLineHtml(session) } : {}),
@@ -240,9 +244,9 @@ export function pcTaskbarHtml(model, { windowTitle = '', takeable = false } = {}
     const m = model || pcTaskbarModel();
     const name = m.account ? escapeHtml(displayDashes(m.account.name)) : '';
     const account = m.account ? `
-        <span class="pc-taskbar-account" title="${name}">
+        <span class="pc-taskbar-account" title="${name}${m.account.admin ? `, ${ADMIN_TAG_TEXT}` : ''}">
             <span class="pc-headshot pc-taskbar-headshot" aria-hidden="true"></span>
-            <span class="pc-taskbar-name">${name}</span>
+            <span class="pc-taskbar-name">${name}</span>${m.account.admin ? `<span class="pc-taskbar-admin">${ADMIN_TAG_TEXT}</span>` : ''}
         </span>` : '';
     const win = windowTitle ? `
         <span class="pc-taskbar-window" title="${escapeHtml(displayDashes(windowTitle))}">${escapeHtml(displayDashes(windowTitle))}</span>` : '';

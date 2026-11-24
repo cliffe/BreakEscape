@@ -25,7 +25,8 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
-                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
+                                        :log_rows,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -101,7 +102,7 @@ module BreakEscape
     # se_landing_pages.built to false (observed on the branch; main has no such route). It
     # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
                                           :npc_frustration, :npc_workaround, :feed_post, :wear, :pin_dust, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
@@ -636,35 +637,17 @@ module BreakEscape
       # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
       # that admits it, with it and every container above it unlocked.
       located = @game.login_scope_of(container_id)
-      if located && located[:scope] && located[:scope][:type] == 'resource'
-        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
-        # invented id is, so a browser with no foothold or session cannot tell it exists.
-        # Judged before the sign-in branch, so a sign-in object an author put in a share
-        # is refused as an invented id too, not as an unreachable PC.
-        return render_error("Container not found: #{container_id}", :not_found) unless @game.session_admits?(located[:scope])
-        # Past that, such an object is still no desktop: only a room's sign-in PC is one
-        if BreakEscape::Game.login_pc?(located[:object])
-          return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
-        end
-        unless @game.path_unlocked?(located[:path] + [located[:object]])
-          return render_error("Container not unlocked: #{container_id}", :forbidden)
-        end
+      refusal = container_reach_refusal(located)
+      return render_container_refusal(refusal, container_id, located) if refusal
 
+      if located && located[:scope] && located[:scope][:type] == 'resource'
+        log_share_folder_opened(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       elsif located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
       elsif located && located[:scope]
-        unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
-          return render_error("Container not unlocked: #{container_id}", :forbidden)
-        end
-        # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
-        # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
-        # request at a relay session is refused (the holder's keyboard never reaches the shared
-        # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
-        if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
-          return render json: { error: "PC not reachable: #{located[:scope][:id]}", reason: 'unreachable' }, status: :forbidden
-        end
-
+        # S5a R1 F3: the row is written only in the scoped branch (a sign-in PC object authored in a profile never reaches it)
+        record_admin_profile_read(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       end
 
@@ -1220,12 +1203,20 @@ module BreakEscape
       # Open before this request: validate_unlock grants it whatever is sent, so the answer
       # must not say which of the sent cards the list admits, or a request per copy would
       # sort the player's copies after the first yes (UX slice 3b R1 m1)
-      already_open = method == 'rfid' && card_ids &&
+      # Ops log L1b: every rfid request answers it, a card list or not
+      already_open = method == 'rfid' &&
                      (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
+      # Ops log L1b: an rfid lock in force and not open, judged before the unlock changes it
+      rfid_in_force = method == 'rfid' && !already_open && !@game.ops_rfid_lock_in_force(target_type, target_id).nil?
 
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # Ops log L1b: a refused rfid post at an rfid lock in force; saves only when the row stored
+        if rfid_in_force
+          badge = @game.write_badge_swipe_denied!(target_type, target_id)
+          @game.save! if badge&.stored?
+        end
         # Under a session the player holds at a PC that is off, or over a route that is down
         # (review R3 m1): say why, so the pad counts no attempt. Nil where that would tell the
         # player something new; those answer as any wrong code.
@@ -1290,6 +1281,9 @@ module BreakEscape
             annotate_station_submission_status!(room_data, target_id) if room_data
             track_npc_encounters(target_id, room_data)
           else
+            # Ops log L1b: the granted swipe, only for a real unlock (not the route-room record
+            # above, which opens nothing), before serve_opened_room's unlock_room! saves it
+            @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
             # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
             # unlock_room! adds the room, then credit viaCredential on the server possession result
             # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
@@ -1312,6 +1306,8 @@ module BreakEscape
           render json: door_answer
         else
           # Object/container unlock
+          # Ops log L1b: the granted swipe, before unlock_object! saves it
+          @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
           @game.unlock_object!(target_id)
 
           # Find the unlocked object and return its contents if it's a container
@@ -1455,6 +1451,15 @@ module BreakEscape
           # A plant (engine plan section 6): the client names the object the device was used
           # on, and the server records it when that object takes the item, before removing.
           used_on = params[:used_on] || params[:usedOn]
+          # A lapsed admin override (token expired, foothold unplugged, route dropped) refuses
+          # the plant before anything is removed or recorded; the item stays in the tray (S5a).
+          if used_on.present?
+            usb_line = @game.plant_policy_refusal(item['id'], used_on)
+            if usb_line
+              return render json: { success: false, reason: 'usb_refused', error: usb_line },
+                            status: :unprocessable_entity
+            end
+          end
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
           render json: { success: true }
@@ -1808,6 +1813,59 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/network/scan (foothold, and one of network_id or host_id): a sweep of a
+    # discovery network, or a scan of a host's services (OPS_CORE_PLAN.md section 6). A request
+    # that is not well formed is one 400 that depends on no id.
+    def network_scan
+      authorize @game if defined?(Pundit)
+
+      scan = %i[network_id host_id].select { |key| params.key?(key) }
+      ids = ([:foothold] + scan).map { |key| params[key] }
+      unless scan.size == 1 && ids.all? { |value| value.is_a?(String) && !value.empty? && value.length <= 200 }
+        return render json: { success: false, reason: 'bad_request' }, status: :bad_request
+      end
+
+      result = scan.first == :network_id ? @game.scan_network!(params[:foothold], params[:network_id]) : @game.scan_host!(params[:foothold], params[:host_id])
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/check (foothold, host_id, service): checks a scanned service for
+    # findings (OPS_CORE_PLAN.md section 6). One 400 for any parameter that is missing, not a string,
+    # empty or over 200 characters; it depends on no id.
+    def network_check
+      authorize @game if defined?(Pundit)
+
+      ids = %i[foothold host_id service].map { |key| params[key] }
+      return render json: { success: false, reason: 'bad_request' }, status: :bad_request unless ops_ids_well_formed?(ids)
+
+      result = @game.check_service!(*ids)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/confirm (foothold, finding_id): settles a finding the player holds.
+    def network_confirm
+      authorize @game if defined?(Pundit)
+
+      ids = %i[foothold finding_id].map { |key| params[key] }
+      return render json: { success: false, reason: 'bad_request' }, status: :bad_request unless ops_ids_well_formed?(ids)
+
+      result = @game.confirm_finding!(*ids)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/network/technique (foothold, finding_id, item_id): uses a technique card on a
+    # finding (OPS_CORE_PLAN.md sections 5.4 and 6). One 400 for any parameter that is missing, not a
+    # string, empty or over 200 characters; it depends on no id.
+    def network_technique
+      authorize @game if defined?(Pundit)
+
+      ids = %i[foothold finding_id item_id].map { |key| params[key] }
+      return render json: { success: false, reason: 'bad_request' }, status: :bad_request unless ops_ids_well_formed?(ids)
+
+      result = @game.use_technique!(*ids)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/network/unplug (jack_id)
     def network_unplug
       authorize @game if defined?(Pundit)
@@ -1883,6 +1941,35 @@ module BreakEscape
         live = @game.keyring_live_expires(answer[:entries])
         unchanged[:expiresInS] = live if live.any?
         render json: unchanged
+      else
+        render json: answer
+      end
+    end
+
+    # GET /games/:id/log_rows?object_id=&rev=[&foothold= or &from=] (OPS_LOG_ROWS_PLAN.md section 6)
+    # The rows of an ops_log_terminal's source, for a reader the player has reached. Reads only: no
+    # lock, no save, no row. Every refusal after the id check is the same 404, so the route does
+    # not tell a locked reader from an invented one.
+    def log_rows
+      authorize @game if defined?(Pundit)
+
+      response.headers['Cache-Control'] = 'no-store'
+      object_id = params[:object_id]
+      unless object_id.is_a?(String) && !object_id.empty? && object_id.length <= 64
+        return render json: { success: false, reason: 'invalid_object' }, status: :bad_request
+      end
+
+      located = @game.login_scope_of(object_id)
+      reader = located && located[:object]
+      source_id = reader.is_a?(Hash) && reader.dig('minigameData', 'logSource')
+      unless reader.is_a?(Hash) && reader['type'] == 'ops_log_terminal' && reader['id'].to_s == object_id &&
+             source_id.is_a?(String) && BreakEscape::OpsLog.sources_for(@game.scenario_data).any? { |id, _s, _cap| id == source_id } &&
+             log_reader_reached?(located) && (answer = @game.log_rows_for_client(source_id))
+        return render json: { success: false, reason: 'not_found' }, status: :not_found
+      end
+
+      if params[:rev].present? && params[:rev].to_s == answer[:rev]
+        render json: { rev: answer[:rev], unchanged: true }
       else
         render json: answer
       end
@@ -2349,6 +2436,11 @@ module BreakEscape
     end
 
     private
+
+    # Every id of an ops request is a non-empty String of at most 200 characters.
+    def ops_ids_well_formed?(ids)
+      ids.all? { |value| value.is_a?(String) && !value.empty? && value.length <= 200 }
+    end
 
     # A player who may see any game's VM console regardless of in-game progress (admins and
     # managing account managers). Mirrors the bypass in vm_panel.
@@ -3116,6 +3208,112 @@ module BreakEscape
       nil
     end
 
+    # Ops log L3: one `share_folder_opened` row per folder and account for an admitted share open
+    # (never a file: the reader opens files in the browser with no request of its own). The row
+    # names the account of the first admitting session in sign-in-list order, none when only a
+    # foothold does. This route saves nothing else, so it saves only when the row was stored.
+    def log_share_folder_opened(located)
+      return if BreakEscape::OpsLog.sources_for(@game.scenario_data).empty?
+
+      scope = located[:scope]
+      # The share itself opened: no folder key. A folder (an object with `contents`): its own id.
+      # A file, or a folder with no id, writes nothing (a file is never named, and a nameless
+      # folder must not borrow the share's once key).
+      share = BreakEscape::NetworkModel.resources(@game.scenario_data)[scope[:id].to_s]
+      object = located[:object]
+      folder_id = object['id'].to_s
+      if object.equal?(share)
+        detail = nil
+      elsif object['contents'].is_a?(Array) && !folder_id.empty?
+        detail = { 'folder' => folder_id }
+      else
+        return
+      end
+      as = @game.ops_share_as(scope)
+      row = @game.write_log_row!('share_folder_opened', as: as, where: { kind: 'share', id: scope[:id].to_s },
+                                                        detail: detail, once: true)
+      @game.save! if row&.stored?
+    end
+
+    # The scoped branches of GET /container (access model section 6), as a pure check shared with
+    # GET /log_rows: nil when the object is not refused, else :not_found, :unreachable or :locked.
+    # Writes nothing and renders nothing. A sign-in PC's own desktop (a login_pc object outside a
+    # share) is judged by render_login_desktop, so it answers nil here.
+    def container_reach_refusal(located)
+      return nil unless located && located[:scope]
+
+      if located[:scope][:type] == 'resource'
+        # A share, or a folder in one (networks slice 9.3a, 4.5): refused exactly as an
+        # invented id is, so a browser with no foothold or session cannot tell it exists.
+        # Judged before the sign-in branch, so a sign-in object an author put in a share
+        # is refused as an invented id too, not as an unreachable PC.
+        return :not_found unless @game.session_admits?(located[:scope])
+        # Past that, such an object is still no desktop: only a room's sign-in PC is one
+        return :unreachable if BreakEscape::Game.login_pc?(located[:object])
+        return :locked unless @game.path_unlocked?(located[:path] + [located[:object]])
+
+        return nil
+      end
+      return nil if BreakEscape::Game.login_pc?(located[:object])
+
+      unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
+        return :locked
+      end
+      # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
+      # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
+      # request at a relay session is refused (the holder's keyboard never reaches the shared
+      # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
+      return :unreachable if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
+
+      nil
+    end
+
+    # S5a: an admin session reading a folder inside another account's profile leaves one
+    # admin_profile_read row (per PC, profile and account). Called only after the reach check
+    # has passed, never from GET /log_rows. Saves only when the row was stored (`once` answers
+    # nil for a repeat), so a repeating client causes no further saves. The row holds an
+    # account name, a PC id and a profile id: no secret.
+    def record_admin_profile_read(located)
+      scope = located && located[:scope]
+      return unless scope.is_a?(Hash) && scope[:type] == 'profile'
+      # A profile id a row cannot store (over 40 characters) leaves no row: the helper would
+      # raise in test and development, and the read itself must not fail for it.
+      return unless scope[:id].to_s.match?(BreakEscape::OpsLogEvents::ID_PATTERN)
+
+      reader = @game.admin_profile_reader(scope[:id])
+      return unless reader
+
+      username = reader[:npc].is_a?(Hash) ? reader[:npc].dig('creds', 'username') : nil
+      row = @game.write_log_row!('admin_profile_read',
+                                 as: username.present? ? { account: username } : nil,
+                                 where: { kind: 'pc', id: reader[:pc_id].to_s },
+                                 detail: { 'profile' => scope[:id].to_s }, once: true)
+      @game.save! if row&.stored?
+    end
+
+    # GET /container's three refusals, rendered as they always were.
+    def render_container_refusal(refusal, container_id, located)
+      case refusal
+      when :not_found
+        render_error("Container not found: #{container_id}", :not_found)
+      when :unreachable
+        pc_id = located[:scope][:type] == 'resource' ? container_id : located[:scope][:id]
+        render json: { error: "PC not reachable: #{pc_id}", reason: 'unreachable' }, status: :forbidden
+      else
+        render_error("Container not unlocked: #{container_id}", :forbidden)
+      end
+    end
+
+    # Whether the player has reached a log reader (section 6): a scoped reader by the shared
+    # container check, an unscoped one by its room and its own and its containers' locks.
+    def log_reader_reached?(located)
+      return false if BreakEscape::Game.login_pc?(located[:object]) # a reader is never a desktop
+
+      return container_reach_refusal(located).nil? if located[:scope]
+
+      @game.room_unlocked?(located[:room_id]) && @game.path_unlocked?(located[:path] + [located[:object]])
+    end
+
     def check_container_unlocked(container_id, container_data)
       unlocked_list = @game.player_state['unlockedObjects'] || []
 
@@ -3191,6 +3389,9 @@ module BreakEscape
 
       if route.nil?
         session = @game.access_sessions[pc_id.to_s]
+        # Network ops S3 (plan 5.4): a technique session's folders open only where the keyboard desktop would
+        return @game.desktop_request_allowed?(info, nil) if session.is_a?(Hash) && session['via'] == 'technique'
+
         return !@game.relay_session?(session)
       end
       @game.desktop_request_allowed?(info, route)

@@ -1,0 +1,342 @@
+{
+  "scenario": "test_ops_privilege",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_bay_pc",
+      "label": "Bay desk PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_store_pc",
+      "label": "Records PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_olu",
+      "label": "Olu Marsh sign-in<br/>(omarsh)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "bay",
+      "label": "Bay",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_uma",
+      "label": "Uma Quayle sign-in<br/>(umaquay)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_adel",
+      "label": "Adel Wick sign-in<br/>(adelwick)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "weak_store_pc_records_stale_build",
+      "label": "Records PC<br/>records :8081<br/>unpatched / high",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "implant_bay_pc",
+      "label": "Implant: bay_pc<br/>(implant)",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "device_kit_badusb",
+      "label": "Keystroke injector<br/>(implant device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "log_priv_audit",
+      "label": "Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_adel_token",
+      "label": "Adel Wick token<br/>(adelwick)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_uma_assist",
+      "label": "Uma Quayle assist invite<br/>(umaquay)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_assist_code",
+      "label": "Uma assist code.txt",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "tech_field_release_notes",
+      "label": "Release notes: records build",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_card_stale",
+      "label": "Field note: records updates",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "admin@bay_pc",
+      "label": "Bay desk PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "admin@store_pc",
+      "label": "Records PC<br/>Administrator session",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "bay",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "bay",
+      "to": "signin_olu",
+      "soft": false
+    },
+    {
+      "from": "signin_olu",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_olu",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_uma",
+      "soft": false
+    },
+    {
+      "from": "signin_uma",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_uma",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_adel",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_adel",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_bay_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_store_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "weak_store_pc_records_stale_build",
+      "soft": false,
+      "label": "records"
+    },
+    {
+      "from": "bay",
+      "to": "implant_bay_pc",
+      "soft": false,
+      "label": "at USB socket by the bay PC"
+    },
+    {
+      "from": "bay",
+      "to": "device_kit_badusb",
+      "soft": false
+    },
+    {
+      "from": "device_kit_badusb",
+      "to": "implant_bay_pc",
+      "soft": false,
+      "label": "held"
+    },
+    {
+      "from": "lock_bay_pc",
+      "to": "implant_bay_pc",
+      "soft": false,
+      "label": "session at PC"
+    },
+    {
+      "from": "implant_bay_pc",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "bay",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "store",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_priv_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_adel_token",
+      "to": "lock_bay_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_assist_code",
+      "to": "cred_uma_assist",
+      "soft": false
+    },
+    {
+      "from": "cred_uma_assist",
+      "to": "lock_store_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_card_stale",
+      "to": "tech_field_release_notes",
+      "soft": false
+    },
+    {
+      "from": "tech_field_release_notes",
+      "to": "weak_store_pc_records_stale_build",
+      "soft": false
+    },
+    {
+      "from": "weak_store_pc_records_stale_build",
+      "to": "lock_store_pc",
+      "soft": false,
+      "label": "grants session"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@bay_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "signin_adel",
+      "to": "admin@store_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "weak_store_pc_records_stale_build",
+      "to": "admin@store_pc",
+      "soft": false,
+      "label": "administrator"
+    },
+    {
+      "from": "lock_store_pc",
+      "to": "weak_store_pc_records_stale_build",
+      "soft": false
+    }
+  ]
+}

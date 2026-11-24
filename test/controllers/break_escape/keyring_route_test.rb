@@ -52,6 +52,18 @@ module BreakEscape
       response.parsed_body
     end
 
+    test 'a technique_card entry is absent from GET /keyring before the use and present after' do
+      data = @game.scenario_data.deep_dup
+      data['credentials']['print_admin'] = { 'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'lena_pc',
+                                             'proof' => { 'technique_card' => 'print01.admin_page.factory_login' } }
+      @game.update_columns(scenario_data: data)
+      refute_includes keyring['entries'].map { |e| e['id'] }, 'print_admin'
+      @game.update_columns(player_state: @game.player_state.merge('opsUsed' => ['print01.admin_page.factory_login']))
+      entry = keyring['entries'].find { |e| e['id'] == 'print_admin' }
+      assert entry, 'listed once the state records the use'
+      assert_equal 'saved_connection', entry['kind']
+    end
+
     test 'K3d R2: two GETs give the same gainedAt and the second writes nothing' do
       first = keyring
       assert_response :success

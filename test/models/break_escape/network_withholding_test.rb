@@ -36,6 +36,34 @@ module BreakEscape
       every_hash(filtered['rooms']) { |hash| refute hash.key?('network'), 'a bootstrap room carries network' }
     end
 
+    test 'the bootstrap deletes logSources (ops log L1a)' do
+      scenario = NetworkModelScenario.scenario
+      scenario['logSources'] = { 'notes' => { 'title' => 'Notes', 'events' => ['tst_note'] } }
+      refute build({}, scenario).filtered_scenario_for_bootstrap.key?('logSources')
+    end
+
+    # Ops core S1 (OPS_CORE_PLAN.md section 7): `hosts` never reaches the bootstrap and `services` never
+    # rides on room data, whether on a sign-in object or on any other room object.
+    test 'the bootstrap deletes hosts and room data carries no services (ops core S1)' do
+      scenario = NetworkModelScenario.scenario
+      scenario['hosts'] = { 'print01' => { 'name' => 'Zxprinter', 'network' => 'office_lan',
+                                           'services' => [{ 'name' => 'print', 'port' => 9100, 'product' => 'Zxproduct', 'version' => '9.9' }] } }
+      service = [{ 'name' => 'files', 'port' => 445, 'product' => 'Zxshare', 'version' => '3.1' }]
+      scenario['rooms']['lobby']['objects'].each { |obj| obj['services'] = service }
+      game = build({}, scenario)
+      filtered = game.filtered_scenario_for_bootstrap
+      refute filtered.key?('hosts'), 'the bootstrap ships hosts'
+      refute_includes filtered.to_json, 'Zxprinter'
+      %w[lobby desk_room].each do |room_id|
+        room = game.filtered_room_data(room_id)
+        every_hash(room['objects']) { |obj| refute obj.key?('services'), "#{room_id}: #{obj['id']} ships services" }
+        refute_includes room.to_json, 'Zxshare'
+      end
+      assert scenario['rooms']['lobby']['objects'].any? { |obj| obj['services'] }, 'the probe put services on an object'
+      assert_includes BreakEscape::NetworkAccess::WITHHELD_SCENARIO_KEYS, 'hosts'
+      assert_includes BreakEscape::NetworkAccess::WITHHELD_OBJECT_FIELDS, 'services'
+    end
+
     test 'room data carries no network, linkName or linkStoreIn on the room or any object' do
       game = build
       ALL_ROOMS.each do |room_id|

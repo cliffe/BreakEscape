@@ -1,0 +1,289 @@
+{
+  "scenario_brief": "TEST: Ops log rows\n\nA test floor for the ops log (OPS_LOG_ROWS_PLAN.md, stages L1b, L2a, L2b and L3). One lobby, a comms room, two card doors and one sign-in PC. Copy Dana's badge and swipe into the office, fail the sign-in, sign in, lock the screen, then swipe into the security office and read both logs at its two terminals. The office also has a night door log with authored history: one swipe there is out of place, and flagging it is checked in the browser. Nothing to solve.",
+  "endGoal": "Test only: make the log write its rows.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_logs",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "logSources": {
+    "door_controller": {
+      "title": "Door controller",
+      "events": ["badge_swipe"]
+    },
+    "signin_audit": {
+      "title": "Sign-in audit",
+      "events": ["signin_*", "session_*"],
+      "where": { "objects": ["office_pc"] }
+    },
+    "network_log": {
+      "title": "Network log",
+      "events": ["net_*", "share_*"],
+      "where": { "places": ["jack:comms_port", "ap:guest_ap", "share:scanned_inbox"] }
+    },
+    "night_log": {
+      "title": "Night door log",
+      "events": ["badge_swipe"],
+      "where": { "rooms": ["lobby"] },
+      "seedRows": [
+        { "id": "s1", "at": "Mon 08:12", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "office" }, "result": "ok" },
+        { "id": "s2", "at": "Mon 08:14", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "security" }, "result": "ok" },
+        { "id": "s3", "at": "Mon 23:58", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "security" }, "result": "ok" },
+        { "id": "s4", "at": "Tue 07:55", "event": "badge_swipe", "as": "dana", "where": { "kind": "door", "id": "office" }, "result": "ok" }
+      ]
+    }
+  },
+
+  "networks": {
+    "office_lan": { "name": "Harbour office LAN" },
+    "guest_wifi": { "name": "Guest Wi-Fi", "wifi": { "ssid": "Harbour-Guest", "psk": "seabreeze-2025" } }
+  },
+
+  "resources": {
+    "scanned_inbox": {
+      "kind": "file_share",
+      "name": "Scanned-Inbox",
+      "host": "OL-FS07",
+      "network": "office_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "inbox_note",
+          "name": "reminder.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Scanner reminder: the letters folder is emptied on Fridays.",
+          "observations": "A note left in the scanned-documents share."
+        },
+        {
+          "type": "folder",
+          "id": "inbox_letters",
+          "name": "Letters",
+          "takeable": false,
+          "locked": false,
+          "observations": "A folder of scanned letters.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "inbox_letter",
+              "name": "letter.txt",
+              "takeable": true,
+              "readable": true,
+              "text": "A scanned letter about the spring newsletter.",
+              "observations": "A scanned letter."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "policies": {
+    "corp_default": { "autoLockMin": null, "maxAttempts": 5, "usb": "allowed", "social": "allowed" }
+  },
+
+  "objectives": [
+    {
+      "aimId": "log_beats",
+      "title": "Make the log write its rows",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "l1_into_office", "title": "Copy Dana's badge and open the office door", "type": "custom", "status": "active" },
+        { "taskId": "l2_signed_in", "title": "Sign in at the office PC", "type": "custom", "status": "active" },
+        { "taskId": "l3_flagged_night_swipe", "title": "Flag the night-time swipe in the night door log", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "east": "office", "north": "comms_room" },
+      "objects": [
+        {
+          "type": "rfid_cloner",
+          "id": "card_copier",
+          "name": "Card copier",
+          "position": { "x": 2, "y": 4 },
+          "takeable": true,
+          "observations": "A handheld card copier. It reads a card and saves a copy it can play back at a reader."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops log write side. Take the card copier and ask Dana to scan her badge. The office door (east) opens for finance staff. At the office PC, fail the sign-in twice, sign in, then lock the screen. The security office (east of the office) opens for finance staff too: its two terminals show the door and sign-in logs. The office wall terminal holds the night door log: flag the swipe that does not belong. North of here the comms room has a spare wall port and the network log terminal: take the drop box from the table and plug it in, unplug it, join the guest Wi-Fi at the wall access point (the key is on the reception card), open the share the box shows and the folder in it, then read the network log.\nThe office PC's sticky note holds the password.",
+          "observations": "A sign on a stand by the front desk."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap",
+          "name": "Guest access point",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest_wifi",
+          "observations": "A small wireless access point on the wall. Its label reads Harbour-Guest."
+        },
+        {
+          "type": "notes1",
+          "id": "wifi_note",
+          "name": "Reception Wi-Fi card",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Harbour-Guest\nKey: seabreeze-2025",
+          "observations": "A printed card on the reception desk with the guest Wi-Fi details."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_ops_logs/ink/dana.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": {
+            "username": "dreyes",
+            "password": "Ledger-Dana-7",
+            "card": { "name": "Dana Reyes's badge", "card_id": "FIN-DANA-01", "rfid_protocol": "EM4100" }
+          },
+          "eventMappings": [
+            { "eventPattern": "door_unlocked", "condition": "data.connectedRoom === 'office'", "onceOnly": true, "completeTask": "l1_into_office" },
+            { "eventPattern": "pc_signed_in", "condition": "data.pcId === 'office_pc' && data.npcId === 'dana'", "onceOnly": true, "completeTask": "l2_signed_in" }
+          ]
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_office",
+      "door_sign": "Comms room",
+      "network": "office_lan",
+      "connections": { "south": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "comms_port",
+          "name": "Spare wall port",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into this port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A spare network port. Something small could be plugged in here.",
+          "observations": "A spare network port on the wall, with a patch cable tucked beside it."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "net_log_pc",
+          "name": "Network log PC",
+          "position": { "x": 8, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the network log.",
+          "minigameData": { "logSource": "network_log" }
+        }
+      ]
+    },
+
+    "office": {
+      "type": "room_office",
+      "door_sign": "Finance office",
+      "connections": { "west": "lobby", "east": "security" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["finance"] },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "office_pc",
+          "name": "Office PC",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "policy": "corp_default",
+          "postitNote": "Dana: dreyes / Ledger-Dana-7",
+          "showPostit": true,
+          "observations": "The finance office PC. It asks for a username."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "night_log_pc",
+          "name": "Night log PC",
+          "position": { "x": 8, "y": 4 },
+          "takeable": false,
+          "observations": "A wall terminal with last week's door history. One swipe does not belong.",
+          "minigameData": {
+            "logSource": "night_log",
+            "anomaly": { "rowId": "s3" },
+            "flagActionLabel": "Flag the odd swipe",
+            "flagActions": [{ "type": "set_global", "key": "found_night_swipe", "value": true }],
+            "completionActions": [{ "type": "complete_task", "taskId": "l3_flagged_night_swipe" }]
+          }
+        }
+      ]
+    },
+
+    "security": {
+      "type": "room_office",
+      "door_sign": "Security office",
+      "connections": { "west": "office" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["finance"] },
+      "objects": [
+        {
+          "type": "ops_log_terminal",
+          "id": "door_log_pc",
+          "name": "Door log PC",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the door controller's log.",
+          "minigameData": { "logSource": "door_controller" }
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "signin_log_pc",
+          "name": "Sign-in log PC",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the sign-in audit log.",
+          "minigameData": { "logSource": "signin_audit" }
+        }
+      ]
+    }
+  }
+}

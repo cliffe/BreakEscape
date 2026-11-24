@@ -130,3 +130,28 @@ test('the three capture secrets carry x-serverOnly and GET /capture_secrets', ()
   assert.equal(addCapture['x-serverOnly'], true, 'addCapture.secret not x-serverOnly');
   assert.equal(addCapture['x-servedBy'], 'GET /capture_secrets', 'addCapture.secret servedBy');
 });
+
+// Ops core S1 (OPS_CORE_PLAN.md 9.1): `hosts` is declared, server-only, served by the two network routes,
+// and its map node carries no patternProperties (key-name rules live in scripts/validate_network_ops.rb).
+test('hosts is declared as a server-only id map', () => {
+  const hosts = schema.properties.hosts;
+  assert.ok(hosts, "top-level key 'hosts' is not declared");
+  assert.equal(hosts['x-serverOnly'], true);
+  assert.equal(hosts['x-id-map'], true);
+  assert.deepEqual(hosts['x-servedBy'], ['GET /network', 'POST /network/scan', 'POST /network/check', 'POST /network/confirm']);
+  assert.equal(hosts.patternProperties, undefined);
+  assert.equal(hosts.additionalProperties.additionalProperties, false);
+});
+
+// Ops core S3 (OPS_CORE_PLAN.md 9.1): `techniques` is declared, server-only, served by GET /network, capped at
+// 32 entries, and its map node carries no patternProperties (key-name rules live in scripts/validate_network_ops.rb).
+test('techniques is declared as a server-only id map', () => {
+  const techniques = schema.properties.techniques;
+  assert.ok(techniques, "top-level key 'techniques' is not declared");
+  assert.equal(techniques['x-serverOnly'], true);
+  assert.equal(techniques['x-id-map'], true);
+  assert.deepEqual(techniques['x-servedBy'], ['GET /network']);
+  assert.equal(techniques.maxProperties, 32);
+  assert.equal(techniques.patternProperties, undefined);
+  assert.equal(techniques.additionalProperties.additionalProperties, false);
+});

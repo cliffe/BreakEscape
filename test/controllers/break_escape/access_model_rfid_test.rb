@@ -663,5 +663,315 @@ module BreakEscape
                                  player_state: { 'unlockedRooms' => %w[lobby finance], 'encounteredNPCs' => ['exec'],
                                                  'inventory' => [CLONER.dup] })
     end
+
+    # ---- Ops log L1b: badge_swipe rows (OPS_LOG_ROWS_PLAN.md 5.1, 13.8) ----------------
+    #
+    # Every assertion reads a re-read game, so a missing save fails.
+
+    BADGE_SOURCE = { 'doors' => { 'title' => 'Doors', 'events' => ['badge_swipe'] } }.freeze
+
+    # A game with a badge source. Lobby is the start room; its east wall has the rfid doors,
+    # pin_door (another lock type) and none leads to far_door (an rfid door nobody can reach).
+    def logged_build(inventory: [], state: {}, source: BADGE_SOURCE, edit: nil)
+      data = AccessModelScenario.routes_scenario
+      data['logSources'] = source.deep_dup
+      rooms = data['rooms']
+      rooms['lobby']['connections'] = { 'north' => 'finance',
+                                        'east' => %w[records mixed exec_suite exec_lounge power_room plant_room badge_door pin_door] }
+      rooms['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'rfid',
+                              'requires' => ['VISITOR-07'] }
+      rooms['pin_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'pin',
+                            'requires' => '1234' }
+      rooms['far_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'rfid',
+                            'access' => { 'roles' => ['finance'] } }
+      rooms['jake_only'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true, 'lockType' => 'rfid',
+                             'requires' => [JAKE_CARD_ID] }
+      rooms['lobby']['connections']['east'] << 'jake_only'
+      edit&.call(data)
+      len = rooms['lobby']['npcs'].find { |n| n['id'] == 'len' }
+      len['eventMappings'] = [{ 'eventPattern' => 'x', 'unlockDoor' => %w[records] }]
+      len['unlockable'] = ['finance_cabinet']
+      rooms['lobby']['objects'] << { 'id' => 'reward_station', 'type' => 'flag_station', 'name' => 'Reward station',
+                                     'flagRewards' => { 'FLAG{OPEN_CABINET}' => { 'type' => 'unlock_object',
+                                                                                   'objectId' => 'finance_cabinet' } } }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby finance],
+                                                 'encounteredNPCs' => %w[len jake dana exec imran gary],
+                                                 'inventory' => inventory }.merge(state))
+    end
+
+    def badge_rows
+      Game.find(@game.id).log_rows_for('doors')
+    end
+
+    def post_door(room_id, method:, attempt: nil, card_ids: nil)
+      params = { targetType: 'door', targetId: room_id, method: method, attempt: attempt }.compact
+      params[:card_ids] = card_ids unless card_ids.nil?
+      post unlock_game_url(@game), params: params, as: :json
+      response.parsed_body
+    end
+
+    test 'badge: a card swipe that opens a door writes one ok row naming the holder, and the re-read game has it' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      body = door('records', card_ids: [JAKE_CARD_ID])
+      assert_response :success, body.inspect
+      assert_equal 1, badge_rows.size
+      row = badge_rows.first
+      assert_equal 'badge_swipe', row['event']
+      assert_equal 'ok', row['result']
+      assert_equal({ 'npc' => 'jake' }, row['as'])
+      assert_equal({ 'kind' => 'door', 'id' => 'records' }, row['where'])
+    end
+
+    test 'badge: the same open door posted again writes nothing more and answers alreadyOpen, card list or not' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      door('records', card_ids: [JAKE_CARD_ID])
+      body = door('records', card_ids: [JAKE_CARD_ID])
+      assert_equal true, body['alreadyOpen']
+      body = door('records')
+      assert_response :success
+      assert_equal true, body['alreadyOpen'], 'already_open now answers for every rfid request'
+      assert_equal 1, badge_rows.size
+    end
+
+    test 'badge: an NPC unlockDoor opens an rfid door and writes no badge_swipe; the same door by card writes one' do
+      logged_build
+      body = post_door('records', method: 'npc', attempt: 'len')
+      assert_response :success, body.inspect
+      assert Game.find(@game.id).room_unlocked?('records')
+      assert_empty badge_rows
+      assert_nil Game.find(@game.id).player_state['opsLog']
+
+      logged_build(inventory: [keycard_item('jake_spare')])
+      door('records', card_ids: [JAKE_CARD_ID])
+      assert_equal 1, badge_rows.size
+    end
+
+    test 'badge: an NPC unlockable opens an rfid object and a flag_reward open writes no row' do
+      logged_build(state: { 'unlockedObjects' => [] })
+      post unlock_game_url(@game), params: { targetType: 'object', targetId: 'finance_cabinet', method: 'npc', attempt: 'len' },
+                                   as: :json
+      assert_response :success, response.body
+      assert_empty badge_rows
+
+      logged_build(state: { 'flag_rewards_claimed' => ['FLAG{OPEN_CABINET}'] })
+      post unlock_game_url(@game), params: { targetType: 'object', targetId: 'finance_cabinet', method: 'flag_reward' },
+                                   as: :json
+      assert_response :success, response.body
+      assert Game.find(@game.id).object_unlocked?('finance_cabinet')
+      assert_empty badge_rows
+    end
+
+    test 'badge: an object opened by card writes one row at the object' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal [{ 'kind' => 'object', 'id' => 'finance_cabinet' }], badge_rows.map { |r| r['where'] }
+      assert_equal 'ok', badge_rows.first['result']
+    end
+
+    test 'badge: a refused rfid post with a card held writes one denied row with no identity' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      body = door('power_room', card_ids: [JAKE_CARD_ID])
+      assert_refused(body)
+      assert_equal 1, badge_rows.size
+      row = badge_rows.first
+      assert_equal 'denied', row['result']
+      assert_nil row['as']
+      assert_equal({ 'kind' => 'door', 'id' => 'power_room' }, row['where'])
+    end
+
+    test 'badge: a refused npc post and a lockpick post at an rfid door write no denied row, a card held' do
+      logged_build(inventory: [keycard_item('jake_spare'), { 'type' => 'lockpick', 'name' => 'Lockpick' }])
+      post_door('power_room', method: 'npc', attempt: 'len')
+      assert_response :unprocessable_entity
+      post_door('power_room', method: 'lockpick')
+      assert_response :unprocessable_entity
+      assert_empty badge_rows
+      assert_nil Game.find(@game.id).player_state['opsLog']
+    end
+
+    test 'badge: forged rfid posts write nothing' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      door('lobby', card_ids: [JAKE_CARD_ID])        # already open
+      door('finance', card_ids: [JAKE_CARD_ID])      # not an rfid lock, and open
+      door('pin_door', card_ids: [JAKE_CARD_ID])     # another lock type
+      door('far_door', card_ids: [JAKE_CARD_ID])    # unreached
+      door('no_such_door', card_ids: [JAKE_CARD_ID]) # a missing id
+      object('no_such_object', card_ids: [JAKE_CARD_ID])
+      assert_empty badge_rows
+
+      logged_build # no card held at all
+      assert_refused(door('records', card_ids: [JAKE_CARD_ID]))
+      assert_empty badge_rows
+      assert_nil Game.find(@game.id).player_state['opsLog']
+    end
+
+    test 'badge: a refused swipe at an unreached door writes no denied row (m4 a)' do
+      logged_build(inventory: [keycard_item('visitor_badge')])
+      assert_refused(door('far_door', card_ids: ['VISITOR-07']))
+      assert_empty badge_rows
+      assert_nil Game.find(@game.id).player_state['opsLog']
+    end
+
+    test 'badge: an rfid lock not in force (locked false) writes no row, door or object (m4 b)' do
+      edit = lambda do |data|
+        data['rooms']['badge_door']['locked'] = false
+        data['rooms']['finance']['objects'].find { |o| o['id'] == 'finance_cabinet' }['locked'] = false
+      end
+      logged_build(inventory: [keycard_item('visitor_badge'), keycard_item('jake_spare')], edit: edit)
+      door('badge_door', card_ids: ['VISITOR-07'])
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_empty badge_rows
+      # a swipe at a lock that is in force still logs its refusal
+      door('power_room', card_ids: ['VISITOR-07'])
+      assert_equal %w[denied], badge_rows.map { |r| r['result'] }
+    end
+
+    test 'badge: a requires-only lock opened by an NPC keycard names its holder, a copy of it too (m4 c)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      door('jake_only', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+
+      logged_build(inventory: [CLONER.dup])
+      assert_equal true, clone_card(JAKE_CARD_ID, npc_id: 'jake')['recorded']
+      door('jake_only', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+    end
+
+    test 'badge: a malformed badge row call rolls the unlock back (m4 g)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      Game.class_eval do
+        alias_method :ops_badge_as_original, :ops_badge_as
+        define_method(:ops_badge_as) { |*_args| { npc: 'nobody_here' } }
+      end
+      begin
+        door('records', card_ids: [JAKE_CARD_ID])
+        assert_response :internal_server_error
+      ensure
+        Game.class_eval do
+          alias_method :ops_badge_as, :ops_badge_as_original
+          remove_method :ops_badge_as_original
+        end
+      end
+      assert_not Game.find(@game.id).room_unlocked?('records'), 'no grant without its row'
+      assert_empty badge_rows
+    end
+
+    test 'badge: a card-less rfid post at an open object answers alreadyOpen, logged or not (m4 h, m6)' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      body = object('finance_cabinet')
+      assert_equal true, body['alreadyOpen']
+      assert_equal 1, badge_rows.size
+
+      build('unlockedRooms' => %w[lobby finance records])
+      body = door('records')
+      assert_response :success
+      assert_equal true, body['alreadyOpen'], 'a scenario with no logSources answers it too'
+    end
+
+    test 'badge: rfid_requires_card answers the matched card id or nil (m4 i)' do
+      logged_build(inventory: [keycard_item('visitor_badge')])
+      lock = { 'requires' => ['VISITOR-07'] }
+      assert_equal 'VISITOR-07', @game.send(:rfid_requires_card, lock)
+      assert_nil @game.send(:rfid_requires_card, { 'requires' => ['OTHER-99'] })
+      assert_nil @game.send(:rfid_requires_card, { 'requires' => [] })
+      assert_nil @game.send(:rfid_requires_card, {})
+
+      logged_build
+      assert_nil @game.send(:rfid_requires_card, lock), 'no card held'
+    end
+
+    test 'badge: a forged rfid post naming an NPC of a split gate writes no ok row (m5)' do
+      edit = lambda do |data|
+        (data['rooms']['lobby']['doors'] ||= []) << { 'connectedRoom' => 'badge_door', 'direction' => 'east',
+                                                       'gate' => { 'openFor' => ['len'] } }
+        data['rooms']['lobby']['objects'] << CLONER.merge('id' => 'floor_cloner') # a cloner makes the gate split
+      end
+      logged_build(inventory: [keycard_item('visitor_badge')], edit: edit)
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'badge_door', method: 'rfid',
+                                             attempt: 'len', card_ids: ['VISITOR-07'] }, as: :json
+      state = Game.find(@game.id)
+      assert_includes state.player_state['npcRouteRooms'].to_a, 'badge_door', 'the route-room branch was taken'
+      assert_not state.room_unlocked?('badge_door')
+      assert_empty badge_rows
+    end
+
+    test 'badge: a requires-only lock logs ok with the matched card, and a refusal logs denied' do
+      logged_build(inventory: [keycard_item('visitor_badge')])
+      door('badge_door', card_ids: ['VISITOR-07'])
+      assert_response :success
+      assert_equal 'ok', badge_rows.last['result']
+      assert_equal({ 'card' => 'VISITOR-07' }, badge_rows.last['as'])
+
+      logged_build(inventory: [keycard_item('jake_spare')])
+      assert_refused(door('badge_door'))
+      assert_equal %w[denied], badge_rows.map { |r| r['result'] }
+    end
+
+    test 'badge: a granted swipe the route-room check refuses leaves no row' do
+      logged_build(inventory: [keycard_item('jake_spare')],
+                   state: { 'unlockedRooms' => %w[lobby], 'npcRouteRooms' => %w[finance] })
+      object('finance_cabinet', card_ids: [JAKE_CARD_ID])
+      assert_response :forbidden
+      assert_empty badge_rows
+    end
+
+    test 'badge: twenty refused swipes in one window leave one row shown x10 and cost ten saves' do
+      logged_build(inventory: [keycard_item('jake_spare')])
+      9.times { door('power_room', card_ids: [JAKE_CARD_ID]) }
+      stamps = []
+      11.times do
+        door('power_room', card_ids: [JAKE_CARD_ID])
+        stamps << Game.find(@game.id).updated_at
+      end
+      assert_equal 1, badge_rows.size
+      assert_equal 10, badge_rows.first['n']
+      assert badge_rows.first['p']
+      assert_equal [stamps.last], stamps.last(10).uniq, 'later refusals cause no save'
+    end
+
+    test 'badge: a copy sent alone shows its holder, several cards at once show none, showCardHolder always shows it' do
+      logged_build(inventory: [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      door('records', card_ids: [JAKE_CARD_ID])
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+
+      logged_build(inventory: [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      door('records', card_ids: [JAKE_CARD_ID, EXEC_CARD_ID])
+      assert_response :success
+      assert_nil badge_rows.last['as']
+
+      logged_build(inventory: [CLONER.dup], source: { 'doors' => BADGE_SOURCE['doors'].merge('showCardHolder' => true) })
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      door('records', card_ids: [JAKE_CARD_ID, EXEC_CARD_ID])
+      assert_equal({ 'npc' => 'jake' }, badge_rows.last['as'])
+    end
+
+    test 'badge: a game without logSources answers and stores as before' do
+      build('inventory' => [keycard_item('jake_spare')])
+      body = door('records', card_ids: [JAKE_CARD_ID])
+      assert_response :success
+      assert_equal true, body.key?('success')
+      assert_nil Game.find(@game.id).player_state['opsLog']
+      assert_nil Game.find(@game.id).player_state['opsLogSeq']
+    end
+
+    # Ops log L3 (OPS_LOG_ROWS_PLAN.md 5.1): a card copy writes no row of any kind.
+    test 'badge: recording a card copy writes no row' do
+      every = { 'all' => { 'title' => 'All', 'events' => %w[badge_* signin_* session_* net_* share_*] } }
+      logged_build(inventory: [CLONER.dup], source: every)
+      assert_equal true, clone_card(JAKE_CARD_ID, npc_id: 'jake')['recorded']
+      assert_nil Game.find(@game.id).player_state['opsLog']
+      assert_nil Game.find(@game.id).player_state['opsLogSeq']
+    end
   end
 end

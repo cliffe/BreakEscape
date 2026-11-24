@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['feed', 'footholds', 'guest', 'hiddenDevices', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['compromiseMarks', 'feed', 'footholds', 'guest', 'hiddenDevices', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -174,6 +174,36 @@ test('networkView() returns the last view fetched for a foothold, or null', () =
   out.hosts[0].name = 'changed';
   assert.equal(view.hosts[0].name, "Lena's PC", 'the returned view is a copy');
   assert.equal(accessBridge.networkView('jack_other'), null);
+  delete window.networkLinks;
+});
+
+test('networkView() carries the blocks (networks) and techniques through, with swept, ops and scanned rows', () => {
+  const view = { id: 'jack_a', via: 'jack', name: 'Drop box', network: { id: 'lab', name: 'Lab' },
+                 hosts: [{ id: 'print01', kind: 'device', name: 'Printer', scanned: true, services: [{ name: 'web', port: 80 }] }],
+                 networks: [{ id: 'lab', name: 'Lab', route: 'up', swept: true, ops: true, hosts: [{ id: 'print01', kind: 'device', scanned: true }] },
+                            { id: 'far', name: 'Far', route: 'up', swept: false, hosts: [] }],
+                 techniques: { card1: { name: 'Card' } } };
+  window.networkLinks = { lastView: id => (id === 'jack_a' ? view : undefined) };
+  const out = accessBridge.networkView('jack_a');
+  assert.deepEqual(out.networks, view.networks);
+  assert.equal(out.networks[0].swept, true);
+  assert.equal(out.networks[1].swept, false);
+  assert.deepEqual(out.techniques, view.techniques);
+  assert.deepEqual(out.hosts[0].services, [{ name: 'web', port: 80 }]);
+  out.networks[0].swept = false;
+  assert.equal(view.networks[0].swept, true, 'the returned blocks are a copy');
+  delete window.networkLinks;
+});
+
+test('networkView() carries a host row\'s findings (with needs and fixed) through as a copy', () => {
+  const finding = { id: 'p.web.a', alias: 'f1', hostId: 'p', service: 'web', class: 'default_creds', severity: 'high', summary: 's', status: 'confirmed',
+                    needs: [{ kind: 'item', label: 'Manual', met: false }], fixed: true };
+  const view = { id: 'jack_a', via: 'jack', name: 'Drop box', network: { id: 'lab', name: 'Lab' }, hosts: [{ id: 'p', kind: 'device', scanned: true, findings: [finding] }], networks: [] };
+  window.networkLinks = { lastView: id => (id === 'jack_a' ? view : undefined) };
+  const out = accessBridge.networkView('jack_a');
+  assert.deepEqual(out.hosts[0].findings, [finding]);
+  out.hosts[0].findings[0].needs[0].met = true;
+  assert.equal(finding.needs[0].met, false);
   delete window.networkLinks;
 });
 

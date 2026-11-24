@@ -1,0 +1,283 @@
+{
+  "scenario_brief": "TEST: Ops scan\n\nA test floor for the ops core's first stage (OPS_CORE_PLAN.md, S1). One lobby with a drop box, a guest port and an office port, a wall switch and a note. Plug the box into the office port: the office network opens empty. Sweep it, scan a host, then sign in to the file server with the note's password and sweep the plant network that opens. Nothing to solve.",
+  "endGoal": "Test only: sweep, scan and pivot.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_scan",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "guest_lan": { "name": "Guest network" },
+    "office_lan": { "name": "Office network", "discovery": "scan" },
+    "plant_lan": { "name": "Plant network", "discovery": "scan" }
+  },
+
+  "networkLinks": [
+    ["office_lan", "plant_lan"]
+  ],
+
+  "hosts": {
+    "printer01": {
+      "name": "Second floor printer",
+      "network": "office_lan",
+      "sprite": "pnw_portable_printer1",
+      "services": [
+        { "name": "print", "port": 9100, "product": "Inkvale JetServe", "version": "1.4" },
+        { "name": "admin_page", "label": "Admin page", "port": 80, "product": "Inkvale WebPanel", "version": "2.0" }
+      ]
+    },
+    "camrec01": {
+      "name": "Camera recorder",
+      "network": "office_lan",
+      "sprite": "cctv_camera1",
+      "offWhen": "camrec_off",
+      "services": [
+        { "name": "stream", "port": 554, "product": "Lookwell RecordView", "version": "5.0" }
+      ]
+    },
+    "doorctl01": {
+      "name": "Door controller",
+      "network": "plant_lan",
+      "sprite": "m09_door_controller1",
+      "services": [
+        { "name": "control", "port": 502, "product": "Gatewright DoorLink", "version": "2.3" },
+        { "name": "status_page", "label": "Status page", "port": 8080, "product": "Gatewright LinkView", "version": "1.1" }
+      ]
+    }
+  },
+
+  "resources": {
+    "office_drop": {
+      "kind": "file_share",
+      "name": "Office-Drop",
+      "host": "OFFICE-FS",
+      "network": "office_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "drop_note",
+          "name": "welcome.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the office network. Nothing secret lives in this share.",
+          "observations": "A readme in the office's open share."
+        }
+      ]
+    }
+  },
+
+  "logSources": {
+    "network_audit": {
+      "title": "Network audit",
+      "events": ["network_swept", "host_scanned"]
+    }
+  },
+
+  "policies": {
+    "managed": { "remote": "allowed" }
+  },
+
+  "globalVariables": {
+    "camrec_off": false
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "scan_beats",
+      "title": "Sweep, scan and pivot",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "s1_sweep_office", "title": "Sweep the office network", "type": "custom", "status": "active" },
+        { "taskId": "s2_scan_printer", "title": "Scan the printer", "type": "custom", "status": "active" },
+        { "taskId": "s3_sweep_plant", "title": "Sweep the plant network", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "comms_room", "east": "back_office" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "guest_port",
+          "name": "Guest wall port",
+          "sprite": "network_rack1",
+          "network": "guest_lan",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the guest port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Guest. Something small could be plugged in here.",
+          "observations": "A wall port marked Guest."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "pc",
+          "id": "guest_kiosk",
+          "name": "Guest kiosk",
+          "host": "KIOSK01",
+          "sprite": "pc_desktop",
+          "network": "guest_lan",
+          "position": { "x": 8, "y": 7 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": false,
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A guest sign-in kiosk by the door.",
+          "services": [
+            { "name": "portal", "port": 8000, "product": "Heronvale PortalLite", "version": "1.2" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "camrec_switch",
+          "name": "Wall power switch",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "observations": "A wall switch marked Recorder.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "camrec_off", "value": true },
+            { "type": "hint", "title": "Power switch", "message": "The recorder's light goes out." }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "it_note",
+          "name": "Note: file server sign-in",
+          "position": { "x": 4, "y": 7 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "File server: iokafor / Dockyard-Ian-41",
+          "observations": "A note left on the desk."
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops scan test. Take the drop box and plug it into a port. The guest network lists its machines at once. The office network opens empty: sweep it, then scan a machine. The note on the desk holds the file server's sign-in.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Okafor",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_scan/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "iokafor", "password": "Dockyard-Ian-41" },
+          "eventMappings": [
+            { "eventPattern": "network_swept", "condition": "data.networkId === 'office_lan'", "onceOnly": true, "completeTask": "s1_sweep_office" },
+            { "eventPattern": "network_host_scanned", "condition": "data.hostId === 'printer01'", "onceOnly": true, "completeTask": "s2_scan_printer" },
+            { "eventPattern": "network_swept", "condition": "data.networkId === 'plant_lan'", "onceOnly": true, "completeTask": "s3_sweep_plant" }
+          ]
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_servers",
+      "door_sign": "Comms room",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "files01",
+          "name": "File server",
+          "host": "FILES01",
+          "sprite": "pc_desktop",
+          "position": { "x": 4, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            { "name": "files", "port": 445, "product": "Brackley ShareServe", "version": "3.1" }
+          ]
+        }
+      ]
+    },
+
+    "back_office": {
+      "type": "room_office",
+      "door_sign": "Back office",
+      "connections": { "west": "lobby" },
+      "network": "office_lan",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "7391",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "desk01",
+          "name": "Desk PC",
+          "host": "DESK01",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A desk PC in the back office.",
+          "services": [
+            { "name": "remote_desk", "port": 3389, "product": "Larkspur RemoteDesk", "version": "1.8" }
+          ]
+        }
+      ]
+    }
+  }
+}

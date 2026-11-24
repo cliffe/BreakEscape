@@ -231,3 +231,21 @@ Next:
 2. Render m07 v2, m05 v5, m03 v4, m01 v13, m08 v1 (render6.sh, one mission at a time). Check console crops in 9:16/1:1 (left-anchored cx .281), Hollis, lobby door, the m08 drop under Athena's line (ear).
 3. Review copies, page tabs (questions: m07 method text, m09 spliced strips, m08 music), hash to AC0.
 4. m09 takes (fresh Sonnet agent from takes_m09.md "Not done"), then CA0 B1, m10 takes, m09/m10 edits.
+
+## State 24 Nov, ~13:00 (pre-compaction refresh)
+
+- main merged at 322a6253e (AC0 landed T382-T384: poster fix, m01 v12, Ghost/Architect baked FX with real-path proof, Hollis visemes). Voice FX real-path proof script: tools/playtest/voice-fx-real-path-proof.mjs.
+- CA0 finished B2. CA0 agreed: my 5-mission render batch runs through (log scratchpad/render_batch5.log; order m07, m05, m01, m08, m03), then CA0 B1, then my m09/m10 takes. MESSAGE CA0 ("LIVE CA0: Access work slice 9.2 scenario design") WHEN THE BATCH ENDS.
+- m07 v2 rendered (-13.94), checked (frozen faces diff 0, Hollis, console 9:16 readable), review copies uploaded, tab committed 412279402, NOT yet published (publishing with m05).
+- m05 v5 rendered (-14.03), door clear in all aspects, console readable; review copies encoding; tab to add (changes: lobby retake t11b fixes 0:40 door; console = attack-script read with bludit module name; Netherton/HaX as v4). Then publish page and send AC0 hash.
+- Then m01 v13 (Emerald Trigger; check card times and Derek cut), m08 v1 (Shadowline; ear-check drop under Athena's line at ~12.9 s; console shell landing), m03 v4 (msf use console). Same check, encode, tab, publish, hash.
+- Owner questions on the m07v2 tab: console content (recommend crop to first lines), module names (recommend keep). m09 clip is two spliced strips (ask when m09 edit exists).
+- After B1: m09 takes (fresh Sonnet agent from docs/video/takes_m09.md "Not done": t22-t30, re-run t16/t19/t21, frame-check t14/t15/t17/t20), then m10 takes, then m09/m10 edits with clips m09_console_msfrun_clip.mp4 and m10_console_fileread_clip.mp4.
+- Gotcha: shot start times = sum of durations + the open bumper (~6.0 s; preset shots have no duration field).
+
+## State 24 Nov, ~13:50
+
+- Page v25 (f0b451472): m05 v5, m07 v2 published. Page v26 (1a294774d, hash sent to AC0): m01 v13 (Emerald Trigger) and m08 v1 (first round; question on the music drop at 0:12.9 under ATHENA's line, placeholder "fine as is").
+- m08 v1: -13.99 LUFS, TP -1.85; 9:16 console (shell landing) readable at full res.
+- m03 v4 (msf use console) is the last render of batch5. When it finishes: check console crops, encode, tab, publish, hash; then MESSAGE CA0 that B1 can start.
+- Then as before: m09 takes, m10 takes, m09/m10 edits.

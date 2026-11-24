@@ -211,6 +211,42 @@ export class ApiClient {
     return this.post('/network/join', { ap_id: apId, delta: true, ...(key != null ? { key } : {}) });
   }
 
+  // The ops loop's one route, for its two moves (ops core plan 6): a sweep sends `networkId`, a
+  // host scan sends `hostId`, never both. `footholdId` is the link the view is open on. Answers
+  // { success, network: { id, swept, hosts } } or { success, host } (an `already` repeat carries the
+  // same fields); a refusal throws with err.status (400, 403, 404, 422) and err.body
+  // { success: false, reason }. No retry: one press is one request.
+  static async networkScan(footholdId, { networkId = null, hostId = null } = {}) {
+    return this.post('/network/scan', {
+      foothold: footholdId,
+      ...(networkId != null ? { network_id: networkId } : {}),
+      ...(hostId != null ? { host_id: hostId } : {})
+    });
+  }
+
+  // Check a service (ops core plan 6): `hostId` and `service` name the tile. Answers
+  // { success, already?, hostId, service, findings: [...] }; a refusal throws with err.status
+  // (400, 403, 404) and err.body { success: false, reason }. No retry: one press is one request.
+  static async networkCheck(footholdId, { hostId, service } = {}) {
+    return this.post('/network/check', { foothold: footholdId, host_id: hostId, service });
+  }
+
+  // Confirm a finding (ops core plan 6): `findingId` is the built id, never the alias. Answers
+  // { success, already?, finding } (a confirmed finding carries needs[]); a refusal throws with
+  // err.status (400, 403, 404) and err.body { success: false, reason }. No retry.
+  static async networkConfirm(footholdId, { findingId } = {}) {
+    return this.post('/network/confirm', { foothold: footholdId, finding_id: findingId });
+  }
+
+  // Use a technique card on a finding (ops core plan 6): `findingId` is the built id and `itemId`
+  // the held card's item id (the `itemId` of the `techniques` entry), never the registry key.
+  // Answers { success, already?, grant: 'session' | 'credential', session?, endedPcIds?,
+  // keyringChanged? }; a refusal throws with err.status (400, 403, 404, 422) and err.body
+  // { success: false, reason, need? }. No retry.
+  static async networkTechnique(footholdId, { findingId, itemId } = {}) {
+    return this.post('/network/technique', { foothold: footholdId, finding_id: findingId, item_id: itemId });
+  }
+
   // What a foothold reaches: { footholds: [{ id, via, name, network, hosts }] }, every
   // held foothold, or only `footholdId` when given (404 when it is not held).
   static async network(footholdId = null) {
@@ -261,6 +297,19 @@ export class ApiClient {
     else if (typeof from === 'string' && from) params.push(`from=${encodeURIComponent(from)}`);
     if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
     return this.get(`/keyring${params.length ? `?${params.join('&')}` : ''}`, { signal });
+  }
+
+  // The rows of an in-game log terminal (ops log plan 5.2, 6): GET /log_rows. The answer is
+  // { rev, title, rows } or { rev, unchanged: true } when rev still matches; any refusal throws
+  // (err.status). foothold, from or relay is the route the screen was reached by, as for keyring;
+  // relay is sent as relay=1 and only when true.
+  static async logRows(objectId, { foothold, from, relay, rev, signal } = {}) {
+    const params = [`object_id=${encodeURIComponent(objectId)}`];
+    if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
+    if (foothold !== undefined && foothold !== null && foothold !== '') params.push(`foothold=${encodeURIComponent(foothold)}`);
+    else if (typeof from === 'string' && from) params.push(`from=${encodeURIComponent(from)}`);
+    else if (relay === true) params.push('relay=1');
+    return this.get(`/log_rows?${params.join('&')}`, { signal });
   }
 
   // Sign in with a keyring credential (keyring K2, plan 7): POST /login { pc_id, credential }

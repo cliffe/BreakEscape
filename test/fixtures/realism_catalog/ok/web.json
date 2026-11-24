@@ -1,0 +1,10 @@
+{
+  "entries": {
+    "test_web_panel": {
+      "title": "Placeholder web panel default login",
+      "module": "example/placeholder/three",
+      "script": "placeholder-panel",
+      "output": ["Default login accepted (invented test line)."]
+    }
+  }
+}

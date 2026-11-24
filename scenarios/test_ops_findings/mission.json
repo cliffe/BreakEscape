@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Ops findings",
+  "description": "Test of the ops core's second stage (core plan S2, N14): a service's weaknesses stay hidden until it is checked, a decoy confirms false with its reason, a real finding confirms and lists what it needs, and a fixed weakness yields no finding. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 20,
+  "test_type": "ops_findings",
+  "test_objective": "Prove no finding reaches the browser before its service is checked, a decoy confirms false with its reason, a real finding confirms and lists its needs with a tick that follows the inventory, a weakness fixed by the switch shows Fixed only after its confirm and is never listed once fixed before the check"
+}

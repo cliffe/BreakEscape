@@ -58,6 +58,10 @@ module BreakEscape
       show?
     end
 
+    def log_rows?
+      show?
+    end
+
     def complete_task?
       show?
     end
@@ -162,6 +166,22 @@ module BreakEscape
     end
 
     def network_join?
+      show?
+    end
+
+    def network_scan?
+      show?
+    end
+
+    def network_check?
+      show?
+    end
+
+    def network_confirm?
+      show?
+    end
+
+    def network_technique?
       show?
     end
 

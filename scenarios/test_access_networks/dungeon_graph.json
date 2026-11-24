@@ -27,8 +27,32 @@
       "optional": false
     },
     {
+      "id": "lock_bench_pc",
+      "label": "Bench PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_bench_logs",
+      "label": "Bench logs<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "lock_sam_pc",
       "label": "Sam's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_it_pc",
+      "label": "IT bench PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_ops_pc",
+      "label": "Ops desk PC<br/>Sign-in",
       "kind": "lock",
       "optional": false
     },
@@ -196,7 +220,7 @@
     },
     {
       "id": "implant_sam_pc",
-      "label": "BadUSB: Sam's desk<br/>(implant)",
+      "label": "Implant: sam_pc<br/>(implant)",
       "kind": "lock",
       "optional": false
     },
@@ -214,7 +238,7 @@
     },
     {
       "id": "implant_kiosk_pc",
-      "label": "BadUSB: kiosk<br/>(implant)",
+      "label": "Implant: kiosk_pc<br/>(implant)",
       "kind": "lock",
       "optional": false
     },
@@ -226,7 +250,7 @@
     },
     {
       "id": "implant_door_box",
-      "label": "USB foothold: door controller<br/>(implant)",
+      "label": "Implant: door_box<br/>(implant)",
       "kind": "lock",
       "optional": false
     },
@@ -249,6 +273,12 @@
       "optional": false
     },
     {
+      "id": "pivot_it_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
       "id": "pivot_kiosk_pc",
       "label": "+",
       "kind": "gate",
@@ -256,6 +286,12 @@
     },
     {
       "id": "pivot_lena_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_ops_pc",
       "label": "+",
       "kind": "gate",
       "optional": false
@@ -296,8 +332,28 @@
       "soft": false
     },
     {
+      "from": "workshop",
+      "to": "lock_bench_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_bench_pc",
+      "to": "lock_bench_logs",
+      "soft": false
+    },
+    {
       "from": "desk_room",
       "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "lock_it_pc",
+      "soft": false
+    },
+    {
+      "from": "desk_room",
+      "to": "lock_ops_pc",
       "soft": false
     },
     {
@@ -317,7 +373,17 @@
     },
     {
       "from": "signin_sam",
+      "to": "lock_bench_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
       "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_sam",
+      "to": "lock_ops_pc",
       "soft": false
     },
     {
@@ -332,7 +398,17 @@
     },
     {
       "from": "signin_lena",
+      "to": "lock_bench_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
       "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_ops_pc",
       "soft": false
     },
     {
@@ -357,7 +433,22 @@
     },
     {
       "from": "signin_ian",
+      "to": "lock_bench_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
       "to": "lock_sam_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_it_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_ops_pc",
       "soft": false
     },
     {
@@ -423,6 +514,12 @@
     },
     {
       "from": "net_office_lan",
+      "to": "lock_it_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
       "to": "lock_kiosk_pc",
       "soft": false,
       "label": "exposes"
@@ -430,6 +527,12 @@
     {
       "from": "net_office_lan",
       "to": "lock_lena_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_ops_pc",
       "soft": false,
       "label": "exposes"
     },
@@ -453,6 +556,12 @@
     {
       "from": "net_office_lan",
       "to": "resource_scanned_inbox",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_workshop_lan",
+      "to": "lock_bench_pc",
       "soft": false,
       "label": "exposes"
     },
@@ -617,6 +726,22 @@
     },
     {
       "from": "net_office_lan",
+      "to": "pivot_it_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_it_pc",
+      "to": "pivot_it_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_it_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
       "to": "pivot_kiosk_pc",
       "soft": false
     },
@@ -643,6 +768,22 @@
     },
     {
       "from": "pivot_lena_pc",
+      "to": "net_server_net",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_ops_pc",
+      "to": "pivot_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_ops_pc",
       "to": "net_server_net",
       "soft": false,
       "label": "pivot"

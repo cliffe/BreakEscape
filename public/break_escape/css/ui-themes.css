@@ -1574,3 +1574,55 @@
 [data-ui-theme] #session-resume-overlay p {
   color: var(--ui-text-dim) !important;
 }
+
+/* ===== Remote view (core plan 5.4): a desktop reached through a technique session ===== */
+:root {
+  --ui-remote-view: #e04848;
+}
+
+/* The PC monitor's screen rim turns red: someone else's machine seen from outside */
+.pc-monitor-screen.desktop-frame--remote-view {
+  border: 2px solid var(--ui-remote-view);
+}
+
+.desktop-remote-view-line {
+  color: var(--ui-remote-view);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.desktop-remote-bolt canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* The stepped static wipe on opening: four hard frames in 0.3s, no smoothing; the class is
+   never added under the reduced-motion setting (container-minigame.js), and the media query
+   below is a second guard */
+.pc-desktop.desktop-wipe {
+  position: relative;
+}
+
+.pc-desktop.desktop-wipe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: #111111;
+  background-image: repeating-linear-gradient(90deg, #4a5560 0 2px, transparent 2px 6px);
+  image-rendering: pixelated;
+  animation: desktop-remote-wipe 0.3s steps(4, end) 1 forwards;
+}
+
+@keyframes desktop-remote-wipe {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-desktop.desktop-wipe::after {
+    animation: none;
+    display: none;
+  }
+}

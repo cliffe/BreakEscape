@@ -169,7 +169,7 @@ or PC desktop like other minigame objects:
 ```
 
 Its `minigameData` gets its own entry in `scripts/minigame-data-schemas.json` (required
-`logSource`; optional `title`, `anomaly`, `flagActionLabel`, `flagActions`, `completionActions`),
+`logSource`; optional `anomaly`, `flagActionLabel`, `flagActions`, `completionActions`),
 loaded by the validator's minigame check (`scripts/validate_scenario.rb:902-950`); the
 `log_filter_terminal` entry (`:63-87`) is unchanged, and the example above validates clean.
 `anomaly.rowId` is optional and names a seed row, never a play row (whose id is not stable across
@@ -297,7 +297,7 @@ The viewer, `public/break_escape/js/minigames/ops-log/ops-log-minigame.js` (abou
 return to the screen (`:2456-2468`) and hands `window.handleObjectInteraction` a stand-in sprite
 whose `objectId` is a throwaway `temp_<time>` (`:2471-2477`). So the `ops_log_terminal` branch
 takes the reader's id from `sprite.scenarioData.id`, never `sprite.objectId`. `sourceExtras()`
-also carries the `foothold` or `from` the container passed to `ApiClient.container`
+also carries the `foothold`, `from` or `relay` the container passed to `ApiClient.container`
 (`api-client.js:240-250`) as `sourceRoute`, and the branch passes it to `ApiClient.logRows`, since
 `GET /log_rows` judges the route as `/container` does (section 6). A JS test covers this path.
 
@@ -305,7 +305,7 @@ also carries the `foothold` or `from` the container passed to `ApiClient.contain
 
 One new route. The helper adds no route of its own; every write rides on an existing route.
 
-**`GET /games/:id/log_rows?object_id=<id>&rev=<rev>[&foothold=<id> or &from=<id>]`** (L2a)
+**`GET /games/:id/log_rows?object_id=<id>&rev=<rev>[&foothold=<id>, &from=<id> or &relay=1]`** (L2a)
 
 - On `set_game` (`games_controller.rb:27`) and authorised like `keyring`. Not under
   `with_game_lock`: it reads only.
@@ -386,7 +386,7 @@ Rules that keep a row from telling the player something new:
   `textContent`.
 
 **The reader's own fields reach the browser with its room or container**, as log-filter's do:
-`minigameData.logSource` (a raw source id), `title`, `anomaly.rowId`, `flagActionLabel`,
+`minigameData.logSource` (a raw source id), `anomaly.rowId`, `flagActionLabel`,
 `flagActions` and `completionActions`. The flag is checked on the client, best effort, the same
 standing as log-filter's anomaly today; a server check belongs to the investigator work (4.2).
 
@@ -471,7 +471,8 @@ gets the same edges any other object with those actions gets, from the reader to
 No scenario in the repo has `logSources`, so:
 
 - `write_log_row!` returns at its first line; no row, no `opsLog`, no `opsLogSeq`.
-- No answer from an existing route gains a field.
+- No answer from an existing route gains a field, except that a card-less rfid request at an
+  already open door or object now answers `alreadyOpen: true` (section 12, L1b item 2).
 - sis01's and sis02's log-filter terminals (`vpn` and `ics_rdp`) run code this plan does not edit:
   `log-filter-minigame.js`, its CSS and its schema entry are untouched.
 - Every save this plan adds (the `/unlock` refusal path, the two `attempt_login!` refusals, the
@@ -644,7 +645,8 @@ with its status; the same 404 for missing, wrong type, undeclared source, unreac
 in a locked cabinet, a reader with its own lock not yet unlocked (no scope), a reader on a
 desktop without a session, and a reader on a share without one; a reader under a sign-in PC
 answers while its session is held and 404 after the session is locked or ended; a reader through
-a foothold route answers with the route and 404 without it; a room-gated reader answers from any
+a foothold route answers with the route, and without one answers as `/container` does for a
+folder (`folder_route_allowed?`, section 6); a room-gated reader answers from any
 position, including rows written later; `rev` unchanged; `no-store`;
 `assert_ops_log_holds_no_secret` over every response body. A reader inside a profile opened by an
 admin account: `GET /log_rows` answers and the log has no `admin_profile_read` row, while
@@ -678,6 +680,7 @@ terminal over both sources, L2b seed rows and an anomaly, L3 a jack and a share 
   the copy row's identity per the default; the `/log_rows` answers carry exactly the seven row
   keys; `tools/playtest/access-leak-check.rb`, extended to cover `/log_rows` responses and
   skipping the IDENTITY cell of a typed row, reports no secret; a second open answers `unchanged`.
+  The check also allows a share's name in the LOCATION cell of a `SHARE_OPEN` row, only for a share with an earlier successful `GET /container/<that share or an item in it>` in the same run, and drops only that owner (a `/network` listing does not earn it).
 
 **Live proof:** the same run on the keyless dev server (port 3001), real path, screenshots of both
 logs.
@@ -935,7 +938,7 @@ over 400 bytes, so the run-time check never fires.
    refusals sent in turn (A, B, A, B) merge into their own rows. Merging bounds rows, not saves:
    eleven distinct rows sent in rotation never find their own row in the window and append each
    time, which is why a branch with no save of its own is bounded by `save_limit`, never by this
-   step.
+   step. An event registered `merge: false` skips the search and always appends.
 6. **Append, evict, record.** Otherwise it appends the row. While that source holds more than its
    `maxRows`, it evicts one row from that source, taking the first class that has one. A
    **protected** row is the first row of its event in that source (per event, not per event and
@@ -1183,15 +1186,21 @@ Sources match these by prefix: `badge_*`, `signin_*`, `session_*`, `net_*`, `sha
 | `signin_refused` | `{ typed: }` | `pc` | `attempt_login!` locked-out return | blocked | none | `save_limit: true`, 10 per PC (result `blocked`), whatever username is typed | `save!` only when `r&.stored?` |
 | `session_end` | `{ account: }` | `pc` | `logout_session!`, explicit sign-out only | ok | none | one per session | the method's save |
 | `session_lock` | `{ account: }` | `pc` | `lock_session!`, past its refusals | ok | none | merged repeats | the method's save |
-| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none | one per plant or unplug | the methods' saves |
+| `net_link_up`, `net_link_down` | none | `jack` | `plant_device!`, `unplug_device!` (L3) | ok | none; registered `merge: false`, never merged, so a plant after an unplug is its own row | one per plant or unplug (link rows are not merged, so a long plant and unplug loop can evict older rows of the source, a once-only folder row among them) | the methods' saves |
 | `net_wifi_join` | none (an access point logs a device) | `ap` | `join_network!` (L3) | ok | none | one per join | the method's save |
-| `share_folder_opened` | `{ account: }` of the oldest session that admits the share; nil when only a foothold admits it | `share` | `#container`, admitted share branch (L3) | ok | `folder` (`{ id: 'object' }`; absent when the share itself is opened) | `once: true`: one per folder and account | `save!` only when `r&.stored?` |
+| `share_folder_opened` | `{ account: }` of the first admitting session in sign-in-list order; nil when only a foothold admits it | `share` | `#container`, admitted share branch (L3) | ok | `folder` (`{ id: 'object' }`; absent when the share itself is opened) | `once: true`: one per folder and account | `save!` only when `r&.stored?` |
 
 Code lines and branch detail for each row are in 5.1.
 
-**`share_folder_opened` records opening a folder, never a file** (question 3). When several
-sessions admit a share, the row names the account of the session signed in first, through
-`session_admitting(scope)`, which returns the admitting PC id. `session_admits?(scope)` is
+**`share_folder_opened` records opening a folder, never a file** (question 3). A request for a
+file, or for a folder with no id, writes no row. When several sessions admit a share, the row names
+the account of the first admitting session in `signedInPcs` order (token sessions, which are not in
+that list, last), through `session_admitting(scope)`, which returns the admitting PC id (`:foothold`
+when only a foothold admits, `:unscoped` for no scope). It is always an account the player holds a
+live admitting session as; it may not be the oldest by time (sign in at A, at B, sign out at A, sign
+in at A again: A ranks first). A `seq` on the session record would fix that and is deferred. The
+once-set keeps the last 256 keys, so a scenario with over 200 shares plus share folders could pass
+the once-only limit; the validator warns. `session_admits?(scope)` is
 `!session_admitting(scope).nil?`, so the admin branch the privilege plan adds and the line the core
 plan adds apply to both from one rule in one place.
 
