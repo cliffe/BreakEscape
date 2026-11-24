@@ -1924,7 +1924,11 @@ export function handleObjectInteraction(sprite) {
     // so it is picked up below and opened from the inventory (USB habit review R2, B1).
     const pocketStickInWorld = !isInventoryItem && data.type === 'usb' && data.takeable === true &&
         data.hasContents === true && data.locked !== true && !Array.isArray(data.contents);
-    if (!pocketStickInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
+    // A locked droppable the player put down (a carried briefcase with a lock, S8c R1 playtest 13c) is
+    // taken first, like the stick above, and opened from the tray ("Unlock"): a click on the floor copy
+    // must not open its pad where it lies. Only a droppable that is locked; every other container is as before.
+    const droppedLockedInWorld = !isInventoryItem && data.droppable === true && data.takeable === true && data.locked === true;
+    if (!pocketStickInWorld && !droppedLockedInWorld && (data.type === 'suitcase' || data.type === 'briefcase' || data.type === 'bag1' || data.type === 'bin1' || data.contents || data.hasContents)) {
         console.log('CONTAINER ITEM INTERACTION', data);
 
         // SECURITY: Always validate with server
@@ -1936,7 +1940,7 @@ export function handleObjectInteraction(sprite) {
     }
     
     // Check if item is locked (non-container items)
-    if (data.locked === true) {
+    if (data.locked === true && !droppedLockedInWorld) {
         console.log('ITEM LOCKED', data);
         handleUnlock(sprite, 'item');
         return;
