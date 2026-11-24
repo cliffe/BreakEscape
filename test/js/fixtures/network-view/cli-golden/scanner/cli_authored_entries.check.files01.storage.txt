@@ -1,0 +1,35 @@
+[prompt|$ ]nmap -sV --script vuln -p 445 files01
+[head|Starting Nmap against files01]
+[note|Running vuln scripts on 445/tcp (filehold)]
+[head|Nmap scan report for ][head|files01][head| (10.20.0.10)]
+[ok|Host is up.]
+[head|PORT      STATE   SERVICE]
+445/tcp   open    filehold
+[note|| ][head|filehold-update-lag:]
+[note||   ]Storage service behind its fixes
+[note|| ][note|IDs: ]TRN-0000-0101 TRN-0000-0102
+[note||     ]build: 4.2 (fix level lagging)
+[note||     ]fixes pending: 2
+[note||     ][note|Finding: ]f1
+[note||     ][note|State: ]Unconfirmed
+[note||     ][note|Risk: ]Out of date High
+[note||_    ]The storage service is behind its published fixes.
+[note|| ][head|filehold-release-line:]
+[note||   ]Storage release line reported old
+[note|| ][note|IDs: ]TRN-0000-0111 TRN-0000-0112
+[note||     ]release line: 4.0 (label only)
+[note||     ]label checked: yes
+[note||     ][note|Finding: ]f2
+[note||     ][note|State: ]Unconfirmed
+[note||     ][note|Risk: ]Out of date High
+[note||_    ]The service reports an older build number.
+[note|| ][head|filehold-link-setting:]
+[note||   ]Storage link setting left open
+[note|| ][note|IDs: ]TRN-0000-0121
+[note||     ]link setting: open
+[note||     ]scope: any host
+[note||     ][note|Finding: ]f3
+[note||     ][note|State: ]Unconfirmed
+[note||     ][note|Risk: ]Misconfigured Medium
+[note||_    ]A setting on the storage service was left open.
+Nmap done: 1 IP address (1 host up) scanned

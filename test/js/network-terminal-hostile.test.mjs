@@ -44,13 +44,22 @@ const hostile = () => HOSTILE;
 function world(gen) {
     const t = {};
     const text = (name) => { t[name] = gen(name); return t[name]; };
-    const svc = (name, port) => ({ name, label: text(`svcLabel_${name}`), port, product: text(`product_${name}`), version: text(`version_${name}`) });
+    // Every served `cli` field (unit 24): a service's protocol, service word and banner; a finding's title, module, script,
+    // each advisory and each output line; a host's address; a block's range.
+    const svc = (name, port) => ({
+        name, label: text(`svcLabel_${name}`), port, product: text(`product_${name}`), version: text(`version_${name}`),
+        cli: { protocol: text(`cliProtocol_${name}`), service: text(`cliService_${name}`), banner: text(`cliBanner_${name}`) }
+    });
+    const findingCli = (alias) => ({
+        title: text(`cliTitle_${alias}`), module: text(`cliModule_${alias}`), script: text(`cliScript_${alias}`),
+        advisories: [text(`cliAdvisoryA_${alias}`), text(`cliAdvisoryB_${alias}`)], output: [text(`cliOutputA_${alias}`), text(`cliOutputB_${alias}`)]
+    });
     const finding = (id, alias, service, status, extra = {}) => ({
         id, alias, hostId: 'dev_b', service, class: 'default_creds', severity: 'high',
-        summary: text(`summary_${alias}`), status, needs: [], ...extra
+        summary: text(`summary_${alias}`), status, needs: [], cli: findingCli(alias), ...extra
     });
     const rows = [
-        { id: 'pc_a', kind: 'pc', name: text('pcA'), host: text('hostA'), sprite: 'pc_desktop', headless: false, remoteSignIn: true },
+        { id: 'pc_a', kind: 'pc', name: text('pcA'), host: text('hostA'), sprite: 'pc_desktop', headless: false, remoteSignIn: true, address: text('addressA') },
         { id: 'pc_b', kind: 'pc', name: text('pcB'), host: text('hostB'), sprite: 'pc_desktop', headless: false, remoteSignIn: true,
             session: { displayName: text('whoB'), username: text('userB'), access: 'admin', via: 'technique' } },
         { id: 'pc_c', kind: 'pc', name: text('pcC'), host: text('hostC'), sprite: 'pc_desktop', headless: false, remoteSignIn: true,
@@ -59,7 +68,7 @@ function world(gen) {
         { id: 'pc_e', kind: 'pc', name: text('pcE'), host: text('hostE'), sprite: 'pc_desktop', headless: false, remoteSignIn: true, responding: false },
         { id: 'dev_a', kind: 'device', name: text('devA'), sprite: 'pnw_portable_printer1' },
         {
-            id: 'dev_b', kind: 'device', name: text('devB'), sprite: 'pnw_portable_printer1', scanned: true,
+            id: 'dev_b', kind: 'device', name: text('devB'), sprite: 'pnw_portable_printer1', scanned: true, address: text('addressB'),
             services: [svc('web', 80), svc('ftp', 21)],
             findings: [
                 finding('dev_b.web.one', 'f1', 'web', 'unconfirmed'),
@@ -79,7 +88,7 @@ function world(gen) {
         network: { id: 'lab_net', name: text('networkName') },
         hosts: rows,
         networks: [
-            { id: 'lab_net', name: text('blockName'), route: 'up', via: null, hosts: rows, swept: true, ops: true },
+            { id: 'lab_net', name: text('blockName'), route: 'up', via: null, cli: { range: text('cliRange') }, hosts: rows, swept: true, ops: true },
             { id: 'far_net', name: text('farName'), route: 'up', via: { hostId: 'pc_b', host: text('viaHost'), locked: true }, hosts: far, swept: false, ops: true },
             { id: 'dead_net', name: text('deadName'), route: 'down', hosts: [{ id: 'dead_pc', kind: 'pc', name: text('deadPc'), host: text('deadHost') }] }
         ]
@@ -90,10 +99,10 @@ function world(gen) {
     const grantWho = text('grantWho');
     const needLabel = text('needLabel');
     const unplugMessage = text('unplugMessage');
-    const found = { id: 'dev_b.web.five', alias: 'f5', hostId: 'dev_b', service: 'web', class: 'misconfig', severity: 'low', summary: text('summary_f5'), status: 'unconfirmed', needs: [] };
+    const found = { id: 'dev_b.web.five', alias: 'f5', hostId: 'dev_b', service: 'web', class: 'misconfig', severity: 'low', summary: text('summary_f5'), status: 'unconfirmed', needs: [], cli: findingCli('f5') };
     const answers = {
         sweep: { success: true, network: { id: 'far_net', swept: true, hosts: [
-            { id: 'far_pc', kind: 'pc', name: text('farPc'), host: text('farHost'), sprite: 'pc_desktop', headless: false, remoteSignIn: true },
+            { id: 'far_pc', kind: 'pc', name: text('farPc'), host: text('farHost'), sprite: 'pc_desktop', headless: false, remoteSignIn: true, address: text('addressFar') },
             { id: 'far_dev', kind: 'device', name: text('farDev'), sprite: 'pnw_portable_printer1' }
         ] } },
         scan: { success: true, host: { id: 'dev_a', kind: 'device', name: t.devA, sprite: 'pnw_portable_printer1', scanned: true, services: [svc('smb', 445)] } },
@@ -359,6 +368,42 @@ test('an unplug refused with a hostile message, and one with no reply', async ()
     await hostileStep('unplug refused', (w) => stepFor(offer, { action: 'error', message: w.unplugMessage }), problems);
     await hostileStep('unplug no reply', () => stepFor(offer, new Error('no reply')), problems);
     failing(problems);
+});
+
+// Every served `cli` field (unit 24) as the Terminal's log holds it: through the generators and the log's own recorders,
+// with no DOM. Each field is its own hostile string (the hostile text, then the field's name), so each is found on its own:
+// as literal text, with its control characters replaced.
+test('every served cli field is held as literal text in the log, with its control characters replaced', async () => {
+    const FMT = await imp(`${NV}terminal-format.js`);
+    const FW = await imp(`${NV}cli-gen/framework-console.js`);
+    const w = world((name) => `${HOSTILE}${name}`);
+    const view = { ...clone(w.body.footholds[0]), techniques: clone(w.body.techniques) };
+    const dev = view.hosts.find(r => r.id === 'dev_b');
+    const offers = {
+        sweep: { action: 'sweep', target: 'lab_net', ids: { networkId: 'lab_net' } },
+        scan: { action: 'scan', target: 'dev_b', ids: { hostId: 'dev_b' } },
+        check: { action: 'check', target: 'dev_b:web', ids: { hostId: 'dev_b', service: 'web' } },
+        confirm: { action: 'confirm', target: 'dev_b.web.one', ids: { findingId: 'dev_b.web.one' } },
+        use: { action: 'use', target: { card: 't1', finding: 'dev_b.web.one' }, ids: { findingId: 'dev_b.web.one', techniqueId: 't1', itemId: 'card_t1' } }
+    };
+    const answers = {
+        sweep: { success: true, network: { id: 'lab_net', swept: true, hosts: clone(view.hosts) } },
+        scan: { success: true, host: clone(dev) },
+        check: { success: true, hostId: 'dev_b', service: 'web', findings: clone(dev.findings.filter(f => f.service === 'web')) },
+        confirm: { success: true, finding: { ...clone(dev.findings[0]), status: 'confirmed', needs: [] } },
+        use: w.answers.useSession
+    };
+    const log = FMT.logFor('hostile-cli', { create: true });
+    for (const [k, offer] of Object.entries(offers)) { FMT.recordSent(log, offer, undefined, view); FMT.recordResult(log, offer, answers[k], view); }
+    const mode = { prompt: 'msf', module: 'dev_b.web.one', technique: 't1' };
+    for (const lines of [FW.search(view), FW.info(view, mode), FW.showOptions(view, mode)]) for (const l of lines) FMT.appendLine(log, l);
+    const spans = log.lines.flat();
+    for (const sp of spans) assert.doesNotMatch(sp.text, CONTROL, `control character in ${JSON.stringify(sp.text)}`);
+    const text = spans.map(sp => sp.text).join('\n');
+    const want = ['cliTitle_f1', 'cliModule_f1', 'cliScript_f1', 'cliAdvisoryA_f1', 'cliAdvisoryB_f1', 'cliOutputA_f1', 'cliOutputB_f1', 'cliBanner_web', 'cliService_web', 'cliProtocol_web', 'addressB', 'cliRange'];
+    const missing = want.filter(name => !text.includes(`${SAFE}${name}`));
+    assert.deepEqual(missing, [], `fields never shown as literal text: ${missing.join(', ')}`);
+    FMT.dropLog('hostile-cli');
 });
 
 test('the checks themselves find a tag, an attribute, a control character and an extra line', () => {

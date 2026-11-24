@@ -1,0 +1,7 @@
+[head|Name       ][head|Current Setting  ][head|Required  ][head|Description]
+RHOSTS     10.40.0.4        yes       The target host
+RPORT      554              yes       The target port
+TECHNIQUE                   yes       The held technique to use
+[head|Techniques:]
+  settings_review  Settings review
+  update_notes  Update notes: FileHold 4.2

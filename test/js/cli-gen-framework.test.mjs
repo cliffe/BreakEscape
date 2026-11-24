@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import * as AU from './support/cli-authored.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const NV = join(here, '../../public/break_escape/js/minigames/network-view');
@@ -124,4 +125,107 @@ test('every fixed string is listed, pure and safe', () => {
 test('the built finding id is never printed', () => {
     const all = [F.search(states), F.info(states, mode('f1')), F.started(offer('confirm', fid('f1')), states)].map(show).join('');
     assert.ok(!all.includes(fid('f1')));
+});
+
+// ---------------------------------------------------------------------------------------------
+// The authored `cli` fixtures (Ops S6 unit 24): golden files over a view with every `cli` field served. A confirm
+// and a use are written as the Terminal logs them (the echo, the `started` lines, the result). New files only.
+// ---------------------------------------------------------------------------------------------
+const authoredSteps = [];
+for (const name of AU.AUTHORED) {
+    const listing = AU.stageView(name, 'confirm');
+    const ans = AU.answers(name);
+    const id = (alias) => OM.findFinding(listing, alias).finding.id;
+    const confirmed = (alias) => {
+        const v = AU.clone(listing);
+        for (const r of [...v.hosts, ...v.networks.flatMap(b => b.hosts)]) for (const f of r.findings || []) if (f.alias === alias) { f.status = 'confirmed'; f.needs = []; }
+        return v;
+    };
+    const msf = (alias, technique = null) => ({ prompt: 'msf', module: id(alias), technique });
+    authoredSteps.push(
+        [name, 'search.all', () => F.search(listing)],
+        [name, 'search.word', () => F.search(listing, 'filehold')],
+        [name, 'search.address', () => F.search(listing, '10.40.0.4')],
+        [name, 'info.f1', () => F.info(listing, msf('f1'))],
+        [name, 'info.f2', () => F.info(listing, msf('f2'))],
+        [name, 'info.f3', () => F.info(listing, msf('f3'))],
+        [name, 'info.f4', () => F.info(listing, msf('f4'))],
+        [name, 'info.f1.confirmed', () => F.info(confirmed('f1'), msf('f1'))],
+        [name, 'options.f1', () => F.showOptions(listing, msf('f1'))],
+        [name, 'options.f1.technique', () => F.showOptions(listing, msf('f1', 'update_notes'))],
+        [name, 'options.f4', () => F.showOptions(listing, msf('f4'))],
+        [name, 'confirm.f1.confirmed', () => AU.moveLines(listing, AU.confirmOffer(id('f1')), ans.confirm(id('f1')))],
+        [name, 'confirm.f2.false', () => AU.moveLines(listing, AU.confirmOffer(id('f2')), ans.confirm(id('f2'), 'false'))],
+        [name, 'confirm.f4.confirmed', () => AU.moveLines(listing, AU.confirmOffer(id('f4')), ans.confirm(id('f4')))],
+        [name, 'use.f1.session', () => AU.moveLines(confirmed('f1'), AU.useOffer(id('f1'), 'update_notes'), ans.session)],
+        [name, 'use.f1.before-confirm', () => AU.moveLines(listing, AU.useOffer(id('f1'), 'update_notes'), { success: false, reason: 'not_confirmed' })],
+        [name, 'use.f2.before-confirm', () => AU.moveLines(listing, AU.useOffer(id('f2'), 'update_notes'), { success: false, reason: 'not_confirmed' })]
+    );
+}
+
+for (const [name, step, make] of authoredSteps) {
+    test(`golden ${name}.${step}`, () => {
+        const file = join(GOLD, `${name}.${step}.txt`);
+        const got = AU.show(make());
+        if (process.env.UPDATE_GOLDEN === '1' && !existsSync(file)) writeFileSync(file, got);
+        assert.equal(got, readFileSync(file, 'utf8'), `${name}.${step}`);
+        assert.equal(AU.show(make()), got, 'called twice, equal lines');
+    });
+}
+
+test('authored fixtures: the address, the references and the module reach the lines', () => {
+    const v = AU.stageView('cli_authored_entries', 'confirm');
+    const f = (a) => OM.findFinding(v, a).finding;
+    const info = show(F.info(v, { prompt: 'msf', module: f('f1').id }));
+    assert.match(info, /files01 \(10\.20\.0\.10\), port 445, filehold/);
+    assert.match(info, /References:/);
+    assert.match(info, /TRN-0000-0101/);
+    assert.match(info, /training\/filehold\/update_lag/);
+    assert.match(show(F.showOptions(v, { prompt: 'msf', module: f('f1').id })), /RHOSTS\s+10\.20\.0\.10/);
+    assert.match(show(F.showOptions(v, { prompt: 'msf', module: f('f4').id })), /RHOSTS\s+10\.40\.0\.4/);
+    const lines = AU.show(AU.moveLines(v, AU.confirmOffer(f('f1').id), AU.answers('cli_authored_entries').confirm(f('f1').id)));
+    assert.match(lines, /\[note\|\[\*\]\] Checking 10\.20\.0\.10:445/);
+    assert.match(lines, /\[ok\|\[\+\]\] 10\.20\.0\.10:445 - The target appears to be vulnerable\./);
+    const bare = show(F.info(AU.stageView('cli_authored_bare', 'confirm'), { prompt: 'msf', module: f('f1').id }));
+    assert.doesNotMatch(bare, /References:/);
+});
+
+test('authored fixtures: a decoy and a weakness with entries of equal form read the same before a confirm', () => {
+    for (const name of AU.AUTHORED) {
+        const v = AU.stageView(name, 'confirm');
+        const ans = AU.answers(name);
+        const a = OM.findFinding(v, 'f1').finding;
+        const d = OM.findFinding(v, 'f2').finding;
+        assert.equal(a.class, d.class);
+        assert.equal(a.severity, d.severity);
+        assert.equal(a.status, d.status);
+        assert.deepEqual(Object.keys(a.cli), Object.keys(d.cli), 'the entries have the same form');
+        assert.equal((a.cli.advisories || []).length, (d.cli.advisories || []).length);
+        assert.equal((a.cli.output || []).length, (d.cli.output || []).length);
+        // one placeholder for every text an entry carries (and the summary, which is also the entry's)
+        const flat = (f) => (text) => {
+            let out = text;
+            for (const t of [...AU.entryTexts(f), f.summary].sort((x, y) => y.length - x.length)) out = out.split(t).join('TEXT');
+            return out.replace(new RegExp(`\\b${f.alias}\\b`, 'g'), 'fX').replace(/[ ]+/g, ' ');
+        };
+        const lines = (f) => {
+            const m = (technique) => ({ prompt: 'msf', module: f.id, technique });
+            const offerC = AU.confirmOffer(f.id);
+            const offerU = AU.useOffer(f.id, 'update_notes');
+            return {
+                info: show(F.info(v, m(null))),
+                options: show(F.showOptions(v, m('update_notes'))),
+                confirmStarted: show(F.started(offerC, v)),
+                useStarted: show(F.started(offerU, v)),
+                useBefore: AU.show(AU.moveLines(v, offerU, { success: false, reason: 'not_confirmed' })),
+                row: show(F.search(v, f.cli.module)).split('\n').filter(l => /^\d/.test(l)).join('\n')
+            };
+        };
+        const x = lines(a), y = lines(d);
+        for (const key of Object.keys(x)) {
+            assert.notEqual(x[key].length, 0, key);
+            assert.equal(flat(a)(x[key]), flat(d)(y[key]), `${name} ${key}`);
+        }
+        assert.ok(ans);
+    }
 });

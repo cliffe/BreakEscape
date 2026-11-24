@@ -1,0 +1,2 @@
+[head|#  ][head|Name                             ][head|Alias  ][head|Description]
+1  training/viewline/stock_account  f4     Stream account left at its default

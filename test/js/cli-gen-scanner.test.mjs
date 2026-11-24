@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, readdirSyn
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import * as AU from './support/cli-authored.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const nv = join(here, '../../public/break_escape/js/minigames/network-view');
@@ -42,7 +43,7 @@ const withRange = (v, range) => { const c = clone(v); c.networks[0] = { ...c.net
 
 /** [fixture, step, view, offer, answer] for every golden file. */
 const cases = [];
-const names = readdirSync(fixtures).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5)).sort();
+const names = readdirSync(fixtures).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5)).filter(n => !AU.AUTHORED.includes(n)).sort();
 for (const name of names) {
     const v = load(name);
     if (!Array.isArray(v.hosts) || !v.hosts.some(h => h.kind === 'pc' || h.kind === 'device')) continue;
@@ -87,8 +88,51 @@ for (const [name, step, view, offer, answer] of cases) {
     });
 }
 
+// The authored `cli` fixtures (unit 24): each move's golden is the echo, the `started` lines and the result, built from the
+// view the scene holds before that move (see support/cli-authored.mjs for which answer carries which authored text).
+const authored = [];
+for (const name of AU.AUTHORED) {
+    const ans = AU.answers(name);
+    authored.push([name, 'sweep.office_lan', AU.stageView(name, 'sweep'), AU.sweepOffer('office_lan'), ans.sweep()]);
+    authored.push([name, 'scan.files01', AU.stageView(name, 'scan'), AU.scanOffer('files01'), ans.scan('files01')]);
+    authored.push([name, 'scan.guest_cam01', AU.stageView(name, 'scan'), AU.scanOffer('guest_cam01'), ans.scan('guest_cam01')]);
+    authored.push([name, 'check.files01.storage', AU.stageView(name, 'check'), AU.checkOffer('files01', 'storage'), ans.check('files01', 'storage')]);
+    authored.push([name, 'check.guest_cam01.stream', AU.stageView(name, 'check'), AU.checkOffer('guest_cam01', 'stream'), ans.check('guest_cam01', 'stream')]);
+}
+for (const [name, step, view, offer, answer] of authored) {
+    test(`golden ${name}.${step}`, () => {
+        const text = AU.show(AU.moveLines(view, offer, answer));
+        const file = join(golden, `${name}.${step}.txt`);
+        if (process.env.GOLDEN_WRITE === '1') { mkdirSync(golden, { recursive: true }); writeFileSync(file, text); }
+        assert.ok(existsSync(file), `missing golden ${name}.${step}.txt`);
+        assert.equal(text, readFileSync(file, 'utf8'));
+        assert.deepEqual(AU.moveLines(view, offer, answer), AU.moveLines(view, offer, answer), 'called twice, equal lines');
+    });
+}
+
+test('authored fixtures: the address, the udp flag, the banner and the range reach the lines', () => {
+    for (const name of AU.AUTHORED) {
+        const text = (step) => AU.show(AU.moveLines(...(authored.find(([n, s]) => n === name && s === step).slice(2))));
+        assert.match(text('sweep.office_lan'), /Starting Nmap against 10\.20\.0\.0\/24/);
+        assert.match(text('sweep.office_lan'), /\[head\|files01\]\[head\| \(10\.20\.0\.10\)\]/);
+        assert.match(text('sweep.office_lan'), /\[head\|records01\]\n/);
+        assert.match(text('sweep.office_lan'), /Nmap done: 256 IP addresses \(2 hosts up\) scanned/);
+        assert.match(text('scan.files01'), /445\/tcp\s+open\s+filehold/);
+        assert.match(text('scan.files01'), /\[note\|\|_banner: \]Tarnwick FileHold 4\.2 file service ready/);
+        assert.match(text('scan.guest_cam01'), /554\/udp\s+open\s+viewline/);
+        assert.match(text('check.guest_cam01.stream'), /\$ \]nmap -sV --script vuln -sU -p 554 guest_cam01/);
+        assert.match(text('check.files01.storage'), /\$ \]nmap -sV --script vuln -p 445 files01\n/);
+    }
+    const full = AU.show(AU.moveLines(...authored.find(([n, s]) => n === 'cli_authored_entries' && s === 'check.files01.storage').slice(2)));
+    assert.match(full, /\[note\|IDs: \]TRN-0000-0101 TRN-0000-0102/);
+    assert.match(full, /\[note\|\|     \]build: 4\.2 \(fix level lagging\)/);
+    const bare = AU.show(AU.moveLines(...authored.find(([n, s]) => n === 'cli_authored_bare' && s === 'check.files01.storage').slice(2)));
+    assert.doesNotMatch(bare, /IDs:/);
+    assert.match(bare, /\[note\|\|   \]Storage service behind its fixes/);
+});
+
 test('every golden file has a case', () => {
-    const want = new Set(cases.map(([n, s]) => `${n}.${s}.txt`));
+    const want = new Set([...cases, ...authored].map(([n, s]) => `${n}.${s}.txt`));
     for (const f of readdirSync(golden)) assert.ok(want.has(f), `stray golden ${f}`);
 });
 
