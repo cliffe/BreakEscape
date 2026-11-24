@@ -732,6 +732,11 @@ export function openLoginDesktop(lockable) {
     }
 }
 
+/** S5c: a PC's `domain` when it is a non-blank string, else null. Shown through escapeHtml only. */
+export function domainOf(data) {
+    return typeof data?.domain === 'string' && data.domain.trim() ? data.domain.trim() : null;
+}
+
 /**
  * The sign-in screen: the password minigame in sign-in mode, with the account tiles
  * refreshed from GET /login_accounts every time it opens (5.3: "known" changes as the
@@ -823,6 +828,8 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
         signIn: {
             pcId,
             pcName: data.name || pcId,
+            // S5c: the PC's domain, author text, shown as text only (null when it has none)
+            domain: domainOf(data),
             picker,
             tiles: picker === false ? [] : tiles,
             current,
@@ -886,6 +893,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
             picker: false,
             tiles: [],
+            domain: domainOf(data),
             current: held && held.via !== 'claim' ? held : null,
             // A locked held session pre-chooses its own account, as the local screen does; a
             // refused Connect (K3b) pre-chooses the credential's account and shows the refusal

@@ -1661,6 +1661,7 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="${inMonitor ? 'pc-lock-screen' : 'monitor-bezel'}">
                     <div class="${inMonitor ? 'signin-screen' : 'monitor-screen signin-screen'}">
                         <div class="signin-title">${escapeHtml(displayDashes(s.pcName))}</div>
+                        ${typeof s.domain === 'string' && s.domain.trim() ? `<div class="signin-domain">Domain: ${escapeHtml(s.domain.trim())}</div>` : ''}
                         ${headerSlabs}
                         ${tiles}${inMonitor ? `
                         <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
