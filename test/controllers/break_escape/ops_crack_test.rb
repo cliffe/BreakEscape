@@ -249,10 +249,34 @@ module BreakEscape
       end
     end
 
-    test 'two posts in turn grant once' do
+    test 'two posts in turn grant once (the second finds the account held; the lock itself is the next test)' do
       game = build_game
       2.times { crack(game, 'cal_hash') }
       assert_equal ['cal'], game.reload.player_state['crackedAccounts']
+    end
+
+    # A two-thread race cannot run here (a transactional test's rows are invisible to a second
+    # connection), so this proves the lock is TAKEN around the route's check and run: it fails if
+    # with_lock is removed from #crack. That the row lock serialises two posts is Postgres's, by reading.
+    module LockProbe
+      class << self
+        attr_accessor :calls
+      end
+
+      def with_lock(*args, **kwargs, &block)
+        LockProbe.calls&.push(:with_lock)
+        super
+      end
+    end
+    Game.prepend(LockProbe)
+
+    test 'POST /crack takes the game row lock' do
+      game = build_game
+      LockProbe.calls = []
+      crack(game, 'cal_hash')
+      assert_includes LockProbe.calls, :with_lock
+    ensure
+      LockProbe.calls = nil
     end
 
     test 'POST /crack leaves the log rows unchanged' do
@@ -444,14 +468,35 @@ module BreakEscape
       game = build_game
       earn(game, 'pet', 'year')
       bodies = []
-      crack(game, 'gus_hash', %w[pet town]) rescue nil
-      bodies << response.body
-      get keyring_game_url(game), as: :json
-      bodies << response.body
-      put sync_state_game_url(game), params: { currentRoom: 'office' }, as: :json
-      bodies << response.body
+      travel_to Time.zone.local(2026, 11, 24, 12, 0, 0) do
+        # a refusal, a running wait, a missing-facts answer, and the keyring, take, flag, room and sync answers
+        crack(game, 'gus_hash', %w[pet town])
+        bodies << response.body
+        crack(game, 'sam_hash', %w[pet year])
+        assert_equal 'running', response.parsed_body['status']
+        bodies << response.body
+        crack(game, 'sam_hash', %w[pet year])
+        bodies << response.body
+        earn(game, 'pet')
+        crack(game, 'gus_hash', %w[pet])
+        assert_equal 'needMoreFacts', response.parsed_body['status']
+        bodies << response.body
+        get keyring_game_url(game), as: :json
+        bodies << response.body
+        post inventory_game_url(game), params: { action_type: 'add', item: note('year_note'), source_npc_id: 'gus' }, as: :json
+        bodies << response.body
+        post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station' }, as: :json
+        bodies << response.body
+        get room_game_url(game, room_id: 'office'), as: :json
+        bodies << response.body
+        get scenario_game_url(game), as: :json
+        bodies << response.body
+        put sync_state_game_url(game), params: { currentRoom: 'office' }, as: :json
+        bodies << response.body
+      end
+      assert_operator bodies.size, :>=, 9
       bodies.each do |text|
-        refute_includes text, PASSWORD
+        [PASSWORD, 'Sam-Strong-1'].each { |pw| refute_includes text, pw }
         STATE_KEYS.each { |k| refute_includes text, "\"#{k}\"" }
         refute_match(/difficulty/i, text)
       end
