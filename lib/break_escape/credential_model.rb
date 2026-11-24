@@ -33,7 +33,7 @@ module BreakEscape
     TOKEN_MAX_MIN = 240
 
     # Exactly one of these keys names a proof (section 3.5).
-    PROOF_KINDS = %w[session planted dropped held foothold technique_card].freeze
+    PROOF_KINDS = %w[session planted dropped held foothold technique_card harvested].freeze
 
     # Registry caps (section 3.3).
     MAX_ENTRIES = 64
