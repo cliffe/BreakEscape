@@ -73,41 +73,33 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import {
-    pendingKey, refusalText, applyOpsAnswer, isOpsBlock, offersSweep, offersScan, rowServices, serviceLine,
-    offersCheck, offersConfirm, rowFindings, classWord, severityWord, statusWord, findingSummary, falseReason, severityClass,
-    findingNeeds, needLine, isFixed, FIXED_TEXT, checkTarget, parseCheckTarget, findFinding,
-    techniqueList, techniqueItemId, accessTag, isTechniqueSession, parseUseTarget, useTarget, refusalLine
+    pendingKey, refusalText, applyOpsAnswer, isOpsBlock, offersSweep, offersScan, rowServices,
+    offersCheck, offersConfirm, rowFindings, findingSummary, falseReason, findingNeeds, isFixed,
+    parseCheckTarget, findFinding, techniqueList, techniqueItemId, accessTag, isTechniqueSession,
+    parseUseTarget, refusalLine, sessionWho, unplugNoticeText
 } from './ops-model.js';
-import { createBoltCanvas } from '../../utils/compromise-bolt.js';
+import {
+    NO_FINDINGS_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText
+} from './view-texts.js';
+import { offers, hostAction, resourceAction, downState, shareLockable, LOCAL_ACTIONS } from './view-controls.js';
+import { PanelsRenderer } from './network-view-panels.js';
 
 export { pendingKey };
 
-const TECHNIQUES_FOCUS = '@techniques';
-
-
-// The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
-// NOT_RESPONDING_TEXT is the powered-down state's name; its row shows only the tag.
-/**
- * Escaped text with each space-separated word in a nowrap span, so a name can wrap at its
- * spaces but never at a hyphen ("Ledger-Archive", "sign-in"). The text reads the same.
- */
-// A word longer than this is left out of the nowrap span, so one very long name can still
-// break instead of pushing the list sideways on a phone (PC polish R2 m2)
-export const NOWRAP_WORD_MAX = 20;
-
-export function wordsHtml(text) {
-    return String(text ?? '').split(/(\s+)/).map((part) => {
-        if (!part || /^\s+$/.test(part)) return part;
-        if (part.length > NOWRAP_WORD_MAX) return escapeHtml(part);
-        return `<span class="network-row-word">${escapeHtml(part)}</span>`;
-    }).join('');
-}
-
-// A host label stays on one line (no break at its hyphen) unless it is too long to fit a phone
-// row at all; then it may break like any other very long word (PC polish R2 proof)
-export function hostnameClass(name) {
-    return String(name ?? '').length > NOWRAP_WORD_MAX ? 'network-row-hostname-long' : 'network-row-hostname';
-}
+// Every name this module exported before the Panels split is still exported from here (the texts
+// from view-texts.js, the row helpers from view-controls.js, the drawing helpers from the Panels
+// renderer), so existing tests and callers see no change.
+export {
+    REMOTE_OFF_TEXT, NOT_RESPONDING_TEXT, NO_ROUTE_TEXT, DOWN_TAG, POWERED_DOWN_TAG, sessionKeptText,
+    OWN_HEADING, STALE_TEXT, linkOffText, HOST_LOCKED_LABEL, SHARE_LOCKED_LABEL, lockBadgeLabel,
+    UNPLUG_TEXT, UNPLUGGING_TEXT, SWEEP_TEXT, SWEEPING_TEXT, SCAN_TEXT, SCANNING_TEXT, CHECK_TEXT,
+    CHECKING_TEXT, CONFIRM_TEXT, CONFIRMING_TEXT, NO_FINDINGS_TEXT, TECHNIQUES_HEADING, USE_TEXT,
+    USING_TEXT, PICK_HINT_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText, pickedText, NEEDS_HEADING,
+    SWEEP_HINT_TEXT, SHARE_LOCKED_TEXT
+} from './view-texts.js';
+export { displayOrder, downState, hostAction, resourceAction, shareLockable } from './view-controls.js';
+export { NOWRAP_WORD_MAX, wordsHtml, hostnameClass } from './network-view-panels.js';
+export { MORE_BELOW_TEXT };
 
 /** Plan 9.3b 5.2: an open view refetches this often (ms). */
 export const REFETCH_MS = 5000;
@@ -115,111 +107,18 @@ export const REFETCH_MS = 5000;
 export const REFETCH_IDLE_AFTER = 3;
 export const POINTER_HOLD_MAX_MS = 3000;
 export const REFETCH_IDLE_MS = 15000;
-export const REMOTE_OFF_TEXT = 'Remote sign-in off';
-export const NOT_RESPONDING_TEXT = 'Powered down';
-export const NO_ROUTE_TEXT = 'No route';
-export const DOWN_TAG = '(down)';
-export const POWERED_DOWN_TAG = '(powered down)';
-export const sessionKeptText = (name) => `Session kept: ${name}`;
-// The own block's heading on every view: the subtitle (or a Wi-Fi title) already names the
-// network (R1 n2, code review R2 m1)
-export const OWN_HEADING = 'Reachable';
-export { MORE_BELOW_TEXT };
-// Shown when the view was fetched before the latest globals reached the server (review R2 m3)
-export const STALE_TEXT = 'Still updating, so this may be out of date.';
-// An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
-export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
-// Two different reasons for a padlock badge, so two plain words: a held session that was locked
-// (its owner returns with the password), and a share that needs an account the player has not
-// signed in with. Both keep the same badge look.
-export const HOST_LOCKED_LABEL = 'Locked';
-export const SHARE_LOCKED_LABEL = 'Needs account';
-
-/** The padlock badge's label for a row: a locked session ('host') or a share needing an account. */
-export function lockBadgeLabel(kind) {
-    return kind === 'share' ? SHARE_LOCKED_LABEL : HOST_LOCKED_LABEL;
-}
-
-/** The padlock badge, the same look for either label. */
-function lockBadgeHtml(kind) {
-    return `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> ${lockBadgeLabel(kind)}</span>`;
-}
-
-// A planted box's view opened at its jack (UI PC 2, critique N05): Unplug in the header takes
-// the box back out, through window.networkLinks.unplugFromView. Not offered from the inventory.
-export const UNPLUG_TEXT = 'Unplug';
-export const UNPLUGGING_TEXT = 'Unplugging...';
-// Ops controls (S1): the label of a control while its request is out
-export const SWEEP_TEXT = 'Sweep';
-export const SWEEPING_TEXT = 'Sweeping...';
-export const SCAN_TEXT = 'Scan';
-export const SCANNING_TEXT = 'Scanning...';
 export const OPS_ACTIONS = Object.freeze(['sweep', 'scan', 'check', 'confirm', 'use']);
-export const CHECK_TEXT = 'Check';
-export const CHECKING_TEXT = 'Checking...';
-export const CONFIRM_TEXT = 'Confirm';
-export const CONFIRMING_TEXT = 'Confirming...';
-export const NO_FINDINGS_TEXT = 'Nothing was found on that service.';
-export const TECHNIQUES_HEADING = 'Techniques';
-export const USE_TEXT = 'Use';
-export const USING_TEXT = 'Using...';
-export const PICK_HINT_TEXT = 'Pick a finding, then a card.';
-export const CREDENTIAL_GRANT_TEXT = 'That gave you a saved sign-in. It is in your keyring.';
-export const sessionGrantText = (host, who) => `You now hold a session on ${host || 'that host'}${who ? ` as ${who}` : ''}.`;
-export const pickedText = (alias, name) => `Finding ${alias} with ${name}`;
-const COMPROMISED_TEXT = 'Compromised';
-export const NEEDS_HEADING = 'Needs';
-export const SWEEP_HINT_TEXT = 'Nothing is listed here yet. Sweep to see what answers.';
-const DEVICE_ICON = '/break_escape/assets/objects/network_rack1.png';
-const SPRITE_NAME = /^[A-Za-z0-9_-]{1,60}$/;
 
-export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
+// The kinds of row: the name shown under a row, its icon, and the heading of its group. Handed to
+// the Panels renderer, which draws them.
 const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer', phone: 'Phone' };
-const WIFI_ICON = '/break_escape/assets/icons/wifi.png';
 const KIND_ICONS = {
     pc: '/break_escape/assets/objects/pc_desktop.png',
     file_share: '/break_escape/assets/objects/m09_folder1.png',
     printer: '/break_escape/assets/icons/npc-print.png',
     phone: '/break_escape/assets/objects/phone5.png'
 };
-
-// The order rows are shown in (UX access R1 finding 10): computers, then shares, then
-// printers and other devices, each group by its name. The server's order is the scenario's.
-const KIND_RANK = { pc: 0, device: 1, file_share: 2, printer: 3, phone: 4 };
 const KIND_GROUPS = { pc: 'Computers', device: 'Devices', file_share: 'File shares', printer: 'Printers and devices', phone: 'Phones' };
-const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
-const rowRank = (r) => KIND_RANK[r?.kind] ?? 5;
-
-/** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
-export function displayOrder(rows) {
-    return [...(rows || [])].sort((a, b) => (rowRank(a) - rowRank(b))
-        || rowLabel(a).localeCompare(rowLabel(b), 'en', { numeric: true, sensitivity: 'base' }));
-}
-
-const NOT_DOWN = Object.freeze({ down: false, tag: null, reason: null, kept: null });
-
-/**
- * How a row, a block or the link itself is down (UX feedback slice 1), as { down, tag, reason,
- * kept }: `tag` follows the name, `reason` stands where the control would be, `kept` names the
- * account a held session is kept for. A link (a foothold, `via` a string) is down when its
- * implant's PC is off; a block when it has no route, and every row in it with it
- * (inDownBlock); a host row when its own service is off. Remote sign-in off has a reason and
- * no tag, and is not down. Exported for tests.
- */
-export function downState(item, { inDownBlock = false } = {}) {
-    if (!item || typeof item !== 'object') return NOT_DOWN;
-    if (typeof item.via === 'string') {
-        return item.responding === false
-            ? { down: true, tag: DOWN_TAG, reason: linkOffText(item.sourceHost), kept: null }
-            : NOT_DOWN;
-    }
-    const kept = item.heldAs ? String(item.heldAs) : null;
-    if (item.route === 'down' || inDownBlock) return { down: true, tag: DOWN_TAG, reason: NO_ROUTE_TEXT, kept };
-    // The tag says it: no "Powered down" reason beside "(powered down)" (code review R1 n1)
-    if (item.responding === false) return { down: true, tag: POWERED_DOWN_TAG, reason: null, kept };
-    if (item.kind === 'pc' && item.remoteSignIn === false) return { down: false, tag: null, reason: REMOTE_OFF_TEXT, kept: null };
-    return NOT_DOWN;
-}
 
 /** Whether a link name ends with ", <source>" or ", <source> <n>", as distinct_link_name writes it. */
 function nameEndsWithSource(name, source) {
@@ -258,46 +157,6 @@ export function joinedStatus(n) {
     return `Joined. Reaches ${n} ${n === 1 ? 'host' : 'hosts'}.`;
 }
 
-/**
- * The action a host row offers (4.3), in the plan's order: 'not_responding' (the host's own
- * service is off, 9.3b plan 5.2) | 'off' | 'open' | 'sign-in'. Exported for tests.
- */
-export function hostAction(row) {
-    if (row?.responding === false) return 'not_responding';
-    // A blocked host stays off unless the server says this view's foothold can open the session it
-    // holds there (`session.openHere`, set only for a technique session through this foothold)
-    if (row?.remoteSignIn === false && row?.session?.openHere !== true) return 'off';
-    // UI slice 6: a held-but-locked session is shown Locked, not Open: opening it is refused
-    // by the server until the account's password is entered again.
-    if (row?.session && row.session.via !== 'claim') return row.session.locked ? 'locked' : 'open';
-    return 'sign-in';
-}
-
-/**
- * The action a resource row offers: 'open' | 'locked' for a share with contents, 'observe'
- * for any other resource and for a share the server marks `listed` (one with no contents).
- * Exported for tests.
- */
-export function resourceAction(row) {
-    if (row?.kind === 'file_share' && row.listed !== true) return row.open === false ? 'locked' : 'open';
-    return 'observe';
-}
-
-/** A share opened from the view, as the container minigame's lockable (4.5). */
-export function shareLockable(row, footholdId) {
-    const name = row?.host ? `${row.name} (\\\\${row.host}\\${row.name})` : (row?.name || row?.id);
-    return {
-        scenarioData: {
-            id: row?.id, type: 'network_share', name, locked: false, takeable: false,
-            observations: row?.host ? `A file share on ${row.host}.` : 'A file share.',
-            networkShare: { footholdId }
-        },
-        name: 'network_share',
-        objectId: `share_${row?.id}`,
-        sourceResourceId: row?.id
-    };
-}
-
 export class NetworkViewMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): the link's name is the title, the
     // subtitle line is the bar's subtitle, the X is the shared one. The list wraps its rows.
@@ -320,7 +179,6 @@ export class NetworkViewMinigame extends MinigameScene {
         this.pending = new Set();
         this.onSent = () => {};
         this.onEnded = () => {};
-        this._pendingFocus = null;
         this.noticeKey = null;
         this.unplugNotice = '';
         this.view = null;
@@ -342,16 +200,18 @@ export class NetworkViewMinigame extends MinigameScene {
         this._unchanged = 0;
         this._pointerDown = null;
         this._held = false;
-        this._headerHtml = null;
         this._viewedKeys = new Set();
         this.noticeRowId = null;
-        // S3: the finding (built id) and the card (technique id) picked for Use; the last session
-        // a card granted, drawn in the Techniques panel
-        this.selectedFinding = null;
-        this.selectedTechnique = null;
+        // The last session a card granted, drawn in the Techniques panel. The finding and card picked
+        // for Use are the renderer's own state (part of no offer); `selectedFinding` and
+        // `selectedTechnique` below read them.
         this.lastGrant = null;
-        this._dragCard = null;
+        // The skin: Panels draws from rows and offers and hands a chosen offer back through ctx.perform
+        this.renderer = new PanelsRenderer({ labels: KIND_LABELS, icons: KIND_ICONS, groups: KIND_GROUPS });
     }
+
+    get selectedFinding() { return this.renderer.selectedFinding; }
+    get selectedTechnique() { return this.renderer.selectedTechnique; }
 
     links() { return window.networkLinks || null; }
 
@@ -369,94 +229,35 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.container?.classList) this.container.classList.add('network-view-minigame');
         this.buildFrame();
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
+        this.renderer.mount(this.gameContainer, {
+            perform: (offer, echo) => this.dispatch(offer, echo),
+            requestClose: () => this.complete(false),
+            requestSkin: () => false
+        });
         // Unplug is there from the start: it does not wait for the link to answer
-        this.showHeader('');
+        this.showHeader();
         this.bindDelegates();
         this.loaded = this.load();
     }
 
     /**
-     * One set of listeners for the life of the view, so a redraw adds none (review R1 n2): a
-     * click on a row's control, on Unplug, an image settling, and the pointer-down flag that
-     * holds a redraw while a press is in progress (R1 m1).
+     * The scene's own listeners, one set for the life of the view so a redraw adds none: an image
+     * settling, a redraw of the list, the pointer-down flag that holds a redraw while a press is in
+     * progress, and a return to a visible tab. The renderer listens for the clicks and drags on its
+     * own controls and hands each chosen offer back through `dispatch`.
      */
     bindDelegates() {
         const game = this.gameContainer;
         if (!game) return;
+        // A pick (a finding or a card) sends nothing, but the player did something: the short gap again
         this.addEventListener(game, 'click', (e) => {
             const btn = e.target?.closest?.('[data-action]');
-            if (!btn || !game.contains(btn)) return;
-            const act = btn.dataset.action;
-            if (act === 'select-technique' || act === 'use' || act === 'select-finding') {
-                e.preventDefault?.();
-                this.noteActivity();
-                if (act === 'use') { this.useSelected(); return; }
-                if (act === 'select-technique') this.selectTechnique(btn.closest('[data-technique]')?.dataset.technique);
-                else this.selectFinding(btn.closest('[data-finding]')?.dataset.finding);
-                return;
-            }
-            if (btn.dataset.action === 'sweep') {
-                const block = btn.closest('[data-network-id]');
-                if (!block || !game.contains(block)) return;
-                e.preventDefault?.();
-                this.noteActivity();
-                this.perform({ action: 'sweep', target: block.dataset.networkId });
-                return;
-            }
-            const li = btn.closest('[data-host-id], [data-resource-id]');
-            const id = li?.dataset.hostId || li?.dataset.resourceId;
-            const row = this.allRows().find(r => r.id === id);
-            if (!row) return;
-            e.preventDefault?.();
-            if (btn.dataset.action === 'scan') {
-                this.noteActivity();
-                this.perform({ action: 'scan', target: row.id });
-                return;
-            }
-            if (btn.dataset.action === 'confirm') {
-                const alias = btn.closest('[data-finding]')?.dataset.finding;
-                const hit = alias ? findFinding(this.view, alias) : null;
-                if (!hit) return;
-                this.noteActivity();
-                this.perform({ action: 'confirm', target: hit.finding.id });
-                return;
-            }
-            if (btn.dataset.action === 'check') {
-                const service = btn.closest('[data-service]')?.dataset.service;
-                if (!service) return;
-                this.noteActivity();
-                this.perform({ action: 'check', target: checkTarget(row.id, service) });
-                return;
-            }
-            this.act(row, btn.dataset.action);
-        });
-        // Drag is a pointer shortcut for select-then-Use: a card dropped on a finding sends the same request
-        this.addEventListener(game, 'dragstart', (e) => {
-            const id = e.target?.closest?.('[data-technique]')?.dataset.technique;
-            this._dragCard = id || null;
-            try { if (id && e.dataTransfer) { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', id); } } catch (err) { /* a drag without data still drops */ }
-        });
-        this.addEventListener(game, 'dragend', () => { this._dragCard = null; });
-        this.addEventListener(game, 'dragover', (e) => {
-            if (this._dragCard && e.target?.closest?.('[data-finding]')) e.preventDefault?.();
-        });
-        this.addEventListener(game, 'drop', (e) => {
-            const alias = e.target?.closest?.('[data-finding]')?.dataset.finding;
-            const card = this._dragCard;
-            this._dragCard = null;
-            if (!card || !alias) return;
-            e.preventDefault?.();
-            this.noteActivity();
-            this.dropCard(card, alias);
+            if (btn && game.contains(btn) && LOCAL_ACTIONS.includes(btn.dataset.action)) this.noteActivity();
         });
         const root = this.frameElement || game;
-        this.addEventListener(root, 'click', (e) => {
-            const btn = e.target?.closest?.('[data-unplug]');
-            if (!btn || !root.contains(btn)) return;
-            e.preventDefault?.();
-            this.unplugBox();
-        });
         this.addEventListener(game, 'load', () => this.updateScrollCue(), true);
+        // The renderer draws again by itself when a pick changes: look at the scroll cue each time
+        this.addEventListener(game, 'network-view-drawn', () => this.afterDraw());
         // Back to a visible tab: ask now rather than at the next tick (R2 n4)
         if (typeof document !== 'undefined') {
             this.addEventListener(document, 'visibilitychange', () => {
@@ -505,7 +306,7 @@ export class NetworkViewMinigame extends MinigameScene {
         more.className = 'network-view-more';
         more.hidden = true;
         more.setAttribute('aria-hidden', 'true');
-        more.innerHTML = `<span class="network-view-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+        more.innerHTML = `<span class="network-view-more-arrow"></span><span>${escapeHtml(MORE_BELOW_TEXT)}</span>`;
         game.after(more);
         this.frameElement = win;
         this.headerStrip = header;
@@ -540,7 +341,7 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!answer.ok) {
             this.status = 'error';
             this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-error">The link did not answer. Close this and try again.</div></div>';
-            this.showHeader('');
+            this.showHeader();
             return answer;
         }
         this.view = answer.view;
@@ -668,8 +469,6 @@ export class NetworkViewMinigame extends MinigameScene {
                 // left as it was, so the next tick sees the difference and draws it (R1 m1)
                 this._unchanged = 0;
                 if (this.pressHeld()) { this._held = true; return answer; }
-                const top = this.gameContainer?.scrollTop ?? 0;
-                const focus = this.focusedControl();
                 this.view = answer.view;
                 this.stale = stale;
                 // The Look text goes when the row it describes has gone
@@ -679,10 +478,8 @@ export class NetworkViewMinigame extends MinigameScene {
                 }
                 // A refusal for a control whose row or block has gone goes with it (R1 m6)
                 if (this.noticeKey && !this.noticeTargetListed()) { this.notice = null; this.noticeKey = null; }
+                // The renderer keeps the list's scroll and the focused control across the draw
                 this.render();
-                if (this.gameContainer) this.gameContainer.scrollTop = top;
-                this.restoreFocus(focus);
-                this.updateScrollCue?.();
                 this.emitViewed();
             } else {
                 this._unchanged++;
@@ -711,36 +508,10 @@ export class NetworkViewMinigame extends MinigameScene {
         return this._pointerDown != null && Date.now() - this._pointerDown < POINTER_HOLD_MAX_MS;
     }
 
-    /** Which row control has keyboard focus, as { id, action }, so a redraw can give it back. */
-    focusedControl() {
-        const el = typeof document !== 'undefined' ? document.activeElement : null;
-        if (!el || !this.gameContainer?.contains?.(el)) return null;
-        const btn = el.closest?.('[data-action]');
-        if (btn && btn.closest?.('[data-techniques]')) {
-            return { id: TECHNIQUES_FOCUS, action: btn.dataset.action, sub: btn.closest('[data-technique]')?.dataset.technique || null };
-        }
-        const li = btn?.closest?.('[data-host-id], [data-resource-id], [data-network-id]');
-        const id = li?.dataset?.hostId || li?.dataset?.resourceId || li?.dataset?.networkId;
-        if (!btn) return null;
-        const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
-        return id ? { id, action: btn.dataset.action, sub } : null;
-    }
+    /** Which row control has keyboard focus, as { id, action } (the renderer reads its own DOM). */
+    focusedControl() { return this.renderer.focusedControl(); }
 
-    restoreFocus(target) {
-        if (!target) return;
-        const match = [...(this.gameContainer?.querySelectorAll?.('[data-action]') || [])].find(btn => {
-            if (target.id === TECHNIQUES_FOCUS) {
-                return !!btn.closest('[data-techniques]') && btn.dataset.action === target.action
-                    && (target.sub ?? null) === (btn.closest('[data-technique]')?.dataset.technique || null);
-            }
-            if (btn.closest('[data-techniques]')) return false;
-            const li = btn.closest('[data-host-id], [data-resource-id], [data-network-id]');
-            const sub = btn.closest('[data-finding]')?.dataset.finding || btn.closest('[data-service]')?.dataset.service || null;
-            return (li?.dataset.hostId || li?.dataset.resourceId || li?.dataset.networkId) === target.id && btn.dataset.action === target.action
-                && (target.sub ?? null) === sub;
-        });
-        match?.focus?.();
-    }
+    restoreFocus(target) { return this.renderer.restoreFocus(target); }
 
     ownNetworkId() { return this.view?.network?.id ?? null; }
 
@@ -795,298 +566,40 @@ export class NetworkViewMinigame extends MinigameScene {
         return rows;
     }
 
-    /** One further-network block (up: live controls; down: greyed "No route" rows). */
-    blockSectionHtml(block) {
-        // UI slice 6: a locked pivot still bridges structurally (the view draws structural
-        // reach), so the "through <host>" label stays but is marked Locked, matching that the
-        // far network's rows will not open until the password is re-entered.
-        const via = block.via
-            ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}${block.via.locked ? ' (Locked)' : ''}`
-            : '';
-        if (block.route === 'down') {
-            // Each row drawn as its own kind, under the same group headings as an up block
-            // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
-            // computers with nothing to say why)
-            const rows = this.rowsHtml(this.blockRows(block), (r) => {
-                const kind = KIND_ICONS[r.kind] ? r.kind : 'pc';
-                return `
-                <li class="network-row network-row-host network-row-down" data-kind="${escapeHtml(kind)}">
-                    <img class="network-row-icon" src="${KIND_ICONS[kind]}" alt="">
-                    ${this.labelHtml(r.host || r.id, r.name || '', downState(r, { inDownBlock: true }))}
-                    ${this.downControlHtml(downState(r, { inDownBlock: true }))}
-                </li>`;
-            });
-            return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} ${this.tagHtml(downState(block))}</h5><ul class="network-view-rows">${rows}</ul></div>`;
-        }
-        const rows = this.blockRows(block);
-        const ops = isOpsBlock(block);
-        const body = rows.length ? this.rowsHtml(rows, (r) => this.rowHtml(r, { block }))
-            : (offersSweep(block) ? `<li class="network-row-empty">${SWEEP_HINT_TEXT}</li>` : '<li class="network-row-empty">Nothing answers on this network.</li>');
-        return `<div class="network-block network-block-up"${ops ? ` data-network-id="${escapeHtml(block.id)}"` : ''}><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5>${this.sweepHtml(block)}<ul class="network-view-rows">${body}</ul></div>`;
+    /** What the scene knows that is neither the view nor an offer, for the renderer's drawing. */
+    sceneState() {
+        return {
+            notice: this.notice,
+            unplugNotice: this.unplugNotice,
+            message: this.message,
+            stale: this.stale,
+            status: this.statusLine(),
+            hint: this.unplugHint(),
+            lastGrant: this.lastGrant
+        };
     }
 
-    /**
-     * Rows in display order, with a group heading wherever the kind changes. Every list has its
-     * headings, one kind or several (UX feedback slice 1: the same layout on every view).
-     */
-    rowsHtml(rows, rowFn = (r) => this.rowHtml(r)) {
-        const ordered = displayOrder(rows);
-        let last = null;
-        return ordered.map(r => {
-            const group = KIND_GROUPS[r.kind] || 'Other devices';
-            const head = group !== last ? `<li class="network-row-group">${group}</li>` : '';
-            last = group;
-            return head + rowFn(r);
-        }).join('');
+    /** Every offer open right now, for the renderer: the pending set and the jack this view was opened at. */
+    currentOffers() {
+        return offers(this.view, { pending: this.pending, unplugJack: this.unplugJack });
     }
 
-    /** A down tag after a name, or nothing. */
-    tagHtml(ds) {
-        return ds?.tag ? `<span class="network-row-tag">${escapeHtml(ds.tag)}</span>` : '';
-    }
-
-    /** A row's label: its name, the down tag after it, and the line under it. */
-    labelHtml(title, sub, ds) {
-        return `<span class="network-row-label"><span class="network-row-title"><span class="${hostnameClass(title)}">${escapeHtml(title)}</span>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
-                        <span class="network-row-name">${escapeHtml(sub)}</span></span>`;
-    }
-
-    /** The reason where a control would be, and the held session it keeps. */
-    downControlHtml(ds) {
-        const kept = ds?.kept ? `<span class="network-row-kept">${escapeHtml(sessionKeptText(ds.kept))}</span>` : '';
-        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${wordsHtml(ds.reason)}</span>` : ''}${kept}</span>`;
-    }
-
-    /** The Sweep control of an unswept discovery block (in its pending label while the request is out). */
-    sweepHtml(block) {
-        if (!offersSweep(block)) return '';
-        const busy = this.pending.has(pendingKey('sweep', block.id));
-        return `<div class="network-block-ops"><button type="button" class="minigame-button network-row-action network-sweep" data-action="sweep"${busy ? ' disabled' : ''}>${busy ? SWEEPING_TEXT : SWEEP_TEXT}</button></div>`;
-    }
-
-    /** The Scan control of a host row in an ops block, or ''. */
-    scanHtml(row, block) {
-        if (!offersScan(row, block)) return '';
-        const busy = this.pending.has(pendingKey('scan', row.id));
-        return `<button type="button" class="minigame-button network-row-action network-scan" data-action="scan"${busy ? ' disabled' : ''}>${busy ? SCANNING_TEXT : SCAN_TEXT}</button>`;
-    }
-
-    /**
-     * A scanned host's service tiles (name, port, product and version), as text. A tile of a
-     * responding host offers Check, and lists the findings the player holds for that service.
-     */
-    servicesHtml(row) {
-        const services = rowServices(row);
-        if (!services.length) return '';
-        return `<ul class="network-service-tiles">${services.map(s => this.tileHtml(row, s)).join('')}</ul>`;
-    }
-
-    tileHtml(row, s) {
-        const findings = rowFindings(row, s.name);
-        let check = '';
-        if (offersCheck(row)) {
-            const busy = this.pending.has(pendingKey('check', checkTarget(row.id, s.name)));
-            check = `<button type="button" class="minigame-button network-row-action network-check" data-action="check"${busy ? ' disabled' : ''}>${busy ? CHECKING_TEXT : CHECK_TEXT}</button>`;
-        }
-        return `<li class="network-service${findings.length ? ' network-service-with-findings' : ''}" data-service="${escapeHtml(s.name)}"><span class="network-service-line">${escapeHtml(serviceLine(s))}</span>${check}${findings.length ? `<ul class="network-findings">${findings.map(f => this.findingHtml(row, f)).join('')}</ul>` : ''}</li>`;
-    }
-
-    /** One finding: alias, class, severity, status (Fixed on a confirmed one), the line, then Confirm, needs or the reason. */
-    findingHtml(row, f) {
-        const status = f.status === 'confirmed' || f.status === 'false' ? f.status : 'unconfirmed';
-        let body = '';
-        if (offersConfirm(row, f)) {
-            const busy = this.pending.has(pendingKey('confirm', f.id));
-            body += `<button type="button" class="minigame-button network-row-action network-confirm" data-action="confirm"${busy ? ' disabled' : ''}>${busy ? CONFIRMING_TEXT : CONFIRM_TEXT}</button>`;
-        }
-        const needs = findingNeeds(f);
-        if (needs.length) {
-            body += `<ul class="network-finding-needs" aria-label="${NEEDS_HEADING}">${needs.map(n => `<li class="network-need network-need-${n.met ? 'met' : 'unmet'}" data-met="${n.met ? 'true' : 'false'}"><span class="network-need-mark" aria-hidden="true">${n.met ? '\u2713' : '\u2717'}</span> <span class="network-need-text">${escapeHtml(needLine(n))}</span></li>`).join('')}</ul>`;
-        }
-        const reason = falseReason(f);
-        if (reason) body += `<p class="network-finding-reason">${escapeHtml(reason)}</p>`;
-        const picked = this.selectedFinding === f.id;
-        // The alias is a select control only while a card is held; with none it is the plain chip (R1 m5)
-        const aliasHtml = techniqueList(this.view).length
-            ? `<button type="button" class="network-finding-alias network-finding-select" data-action="select-finding" aria-pressed="${picked ? 'true' : 'false'}">${escapeHtml(f.alias ?? '')}</button>`
-            : `<span class="network-finding-alias">${escapeHtml(f.alias ?? '')}</span>`;
-        return `<li class="network-finding network-finding-${status}${picked ? ' network-finding-selected' : ''}" data-finding="${escapeHtml(f.alias ?? '')}" data-status="${status}" data-selected="${picked ? 'true' : 'false'}"><span class="network-finding-head">${aliasHtml} <span class="network-finding-class">${escapeHtml(classWord(f.class))}</span> <span class="network-finding-severity ${severityClass(f.severity)}">${escapeHtml(severityWord(f.severity))}</span> <span class="network-finding-status">${escapeHtml(statusWord(status))}</span>${isFixed(f) ? ` <span class="network-finding-fixed">${FIXED_TEXT}</span>` : ''}</span><span class="network-finding-summary">${escapeHtml(findingSummary(f))}</span>${body}</li>`;
-    }
-
-    /** The compromise bolt beside a row's icon: a placeholder the render fills with the canvas (paintBolts). */
-    boltHtml(row) {
-        return isTechniqueSession(row?.session)
-            ? `<span class="network-row-bolt" role="img" aria-label="${COMPROMISED_TEXT}" title="${COMPROMISED_TEXT}"></span>` : '';
-    }
-
-    /** The access tag of a session: "admin" when the server says so, nothing otherwise. */
-    accessTagHtml(session) {
-        const tag = accessTag(session);
-        return tag ? `<span class="network-access-tag" data-access="admin">${escapeHtml(tag)}</span>` : '';
-    }
-
-    /** Draw the bolt canvas into each placeholder the last render made. */
-    paintBolts() {
-        if (typeof document === 'undefined') return;
-        for (const spot of this.gameContainer?.querySelectorAll?.('.network-row-bolt') || []) {
-            if (spot.firstChild) continue;
-            const canvas = createBoltCanvas(document, 2);
-            if (canvas) { canvas.className = 'network-bolt-canvas'; spot.appendChild(canvas); }
-        }
-    }
-
-    /** Selection can name only what the view still lists: a finding that went, or a card no longer held, is let go. */
-    pruneSelection() {
-        if (this.selectedFinding && !findFinding(this.view, this.selectedFinding)) this.selectedFinding = null;
-        if (this.selectedTechnique && !techniqueList(this.view).some(t => t.id === this.selectedTechnique)) this.selectedTechnique = null;
-    }
-
-    /** The Techniques panel: the held cards (name, summary, works-on line), the picked pair, Use, and the last grant. */
-    techniquesHtml() {
-        const cards = techniqueList(this.view);
-        if (!cards.length) return '';
-        const hit = this.selectedFinding ? findFinding(this.view, this.selectedFinding) : null;
-        const card = cards.find(t => t.id === this.selectedTechnique) || null;
-        const ready = !!hit && !!card;
-        const busy = ready && this.pending.has(pendingKey('use', useTarget(card.id, hit.finding.id)));
-        const list = cards.map(t => {
-            const on = t.id === this.selectedTechnique;
-            return `<li class="network-technique${on ? ' network-technique-selected' : ''}" data-technique="${escapeHtml(t.id)}" data-selected="${on ? 'true' : 'false'}" draggable="true">`
-                + `<button type="button" class="minigame-button network-row-action network-technique-select" data-action="select-technique" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(t.name)}</button>`
-                + (t.summary ? `<span class="network-technique-summary">${escapeHtml(t.summary)}</span>` : '')
-                + (t.worksOn ? `<span class="network-technique-works">${escapeHtml(t.worksOn)}</span>` : '')
-                + '</li>';
-        }).join('');
-        const grant = this.lastGrant
-            ? `<p class="network-technique-grant" data-host="${escapeHtml(this.lastGrant.hostId)}">${escapeHtml(sessionGrantText(this.lastGrant.host, this.lastGrant.who))} ${this.accessTagHtml({ access: this.lastGrant.access })}</p>` : '';
-        return `<div class="network-block network-techniques" data-techniques><h5 class="network-block-title">${TECHNIQUES_HEADING}</h5>`
-            + `<ul class="network-technique-list">${list}</ul>`
-            + `<div class="network-technique-use"><span class="network-technique-pick">${ready ? escapeHtml(pickedText(hit.finding.alias ?? '', card.name)) : PICK_HINT_TEXT}</span>`
-            + `<button type="button" class="minigame-button network-row-action network-use" data-action="use"${ready && !busy ? '' : ' disabled'}>${busy ? USING_TEXT : USE_TEXT}</button></div>${grant}</div>`;
-    }
-
-    /** The icon of a device row: its sprite when it names a plain object file, else a plain device icon. */
-    deviceIcon(row) {
-        return typeof row?.sprite === 'string' && SPRITE_NAME.test(row.sprite)
-            ? `/break_escape/assets/objects/${row.sprite}.png` : DEVICE_ICON;
-    }
-
-    /** A device row (S1): a host with no sign-in; a name, its sprite, Scan in an ops block, then its tiles. */
-    deviceRowHtml(row, block) {
-        const ds = downState(row);
-        const scan = this.scanHtml(row, block);
-        const tiles = this.servicesHtml(row);
-        return `
-                <li class="network-row network-row-host network-row-device${ds.down ? ' network-row-down' : ''}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="device">
-                    <img class="network-row-icon" src="${escapeHtml(this.deviceIcon(row))}" alt="">${this.boltHtml(row)}
-                    ${this.labelHtml(row.name || row.id, '', ds)}
-                    ${this.downControlHtml(ds)}${scan ? `<span class="network-row-control">${scan}</span>` : ''}${tiles}
-                </li>`;
-    }
-
-    rowHtml(row, { block = null } = {}) {
-        if (row.kind === 'device') return this.deviceRowHtml(row, block);
-        if (row.kind === 'pc') {
-            const action = hostAction(row);
-            const ds = downState(row);
-            let control;
-            if (action === 'not_responding' || action === 'off') {
-                control = null;
-            } else if (action === 'locked') {
-                // UI slice 6: the same padlock "Locked" badge a locked share shows, in place of
-                // the Open button; the server refuses the open until the password is re-entered.
-                // The row also offers Sign in (the remote sign-in screen with the held account
-                // pre-chosen), so a locked remote session is never stranded (review R2 blocker 1).
-                control = lockBadgeHtml('host')
-                    + '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
-            } else if (action === 'open') {
-                const who = row.session.displayName || row.session.username || 'session';
-                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;
-            } else {
-                control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
-            }
-            // A powered-down PC is greyed like a no-route row; remote sign-in off stays readable
-            const down = ds.down ? ' network-row-down' : '';
-            const scan = this.scanHtml(row, block);
-            const tiles = this.servicesHtml(row);
-            if (control !== null) control = this.accessTagHtml(row.session) + control;
-            if (scan && control !== null) control += scan;
-            return `
-                <li class="network-row network-row-host${down}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
-                    <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">${this.boltHtml(row)}
-                    ${this.labelHtml(row.host || row.id, row.name || '', ds)}
-                    ${control === null ? this.downControlHtml(ds) + (scan ? `<span class="network-row-control">${scan}</span>` : '') : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}${tiles}
-                </li>`;
-        }
-        const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;
-        const kindLabel = KIND_LABELS[row.kind] || 'Device';
-        let control;
-        const action = resourceAction(row);
-        if (action !== 'observe') {
-            // A locked share: a padlock badge where other rows have a button, and the reason
-            // under the share's name as a plain line (not three lines of italics)
-            control = action === 'locked'
-                ? lockBadgeHtml('share')
-                : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
-        } else {
-            control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
-        }
-        return `
-                <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
-                    <img class="network-row-icon" src="${icon}" alt="">
-                    <span class="network-row-label"><span class="network-row-resource-title">${wordsHtml(row.name || row.id)}</span>
-                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="${hostnameClass(row.host)}">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
-                        <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
-                    <span class="network-row-control">${control}</span>
-                </li>`;
-    }
-
+    /** Draw the view again (the renderer keeps its own scroll, focus and picks). */
     render() {
-        this.pruneSelection();
         const v = this.view || {};
         // UX access R2: the link's name alone as the title; its own network is a block heading
-        // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
-        // and the office network is named beside the networks reached through it.
-        // UX feedback slice 1: one header for every kind; a subtitle that adds what the title
-        // lacks; a Wi-Fi link shows the icon and, once joined, a status line. The inventory
-        // line ("Your drop box on ...") repeated the subtitle, so no view shows it (R1 m1).
+        // like any further network's. UX feedback slice 1: one header for every kind; a subtitle
+        // that adds what the title lacks; a Wi-Fi link shows the icon and, once joined, a status
+        // line. The name (with its down tag) and the subtitle are the shared bar's title and subtitle
         const title = v.name || 'Your link';
-        const ownName = OWN_HEADING;
         const linkDown = downState(v);
-        const subtitle = viewSubtitle(v);
-        const status = this.statusLine();
-        const rows = this.rows();
-        const ownOps = this.ownOpsBlock();
-        const icon = v.via === 'wifi' ? `<img class="network-view-title-icon" src="${WIFI_ICON}" alt="">` : '';
-        // The name (with its down tag) and the subtitle are the shared bar's title and subtitle
-        this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, subtitle || '');
-        const headerHtml = `
-                    ${status ? `<p class="network-view-status">${icon}<span>${escapeHtml(status)}</span></p>` : ''}
-                    ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
-                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}${this.unplugHintHtml()}`;
-        // The strip sits above the scroll area; with no strip (no DOM parent) it heads the list
-        const inList = !this.headerElement;
-        if (!inList) this.showHeader(headerHtml);
-        this.gameContainer.innerHTML = `
-            <div class="network-view${v.via ? ` network-view-${escapeHtml(v.via)}` : ''}">
-                ${inList ? `<div class="network-view-header">${headerHtml}${this.unplugHtml()}</div>` : ''}
-                ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own"${ownOps ? ` data-network-id="${escapeHtml(ownOps.id)}"` : ''}>
-                    ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}${v.responding === false ? '' : this.sweepHtml(ownOps)}
-                    <ul class="network-view-rows">
-                    ${v.responding === false
-                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkDown.reason)}</li>`
-                        : (rows.length ? this.rowsHtml(rows, (r) => this.rowHtml(r, { block: ownOps }))
-                            : (offersSweep(ownOps) ? `<li class="network-row-empty">${SWEEP_HINT_TEXT}</li>` : '<li class="network-row-empty">Nothing answers on this network.</li>'))}
-                    </ul>
-                </div>`}
-                ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
-                ${this.techniquesHtml()}
-                <div class="network-view-notice" aria-live="polite">${escapeHtml(this.notice || '')}</div>
-            </div>`;
-        this.paintBolts();
+        this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, viewSubtitle(v) || '');
+        this.renderer.render(this.view, this.currentOffers(), this.sceneState());
+    }
+
+    /** After the renderer drew: the "More below" cue, and again once images and fonts settle. */
+    afterDraw() {
         this.updateScrollCue();
-        // Images and fonts can change the height after this frame: look again once they settle
-        // (the delegated load listener catches images, bindDelegates)
         if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.updateScrollCue());
     }
 
@@ -1105,38 +618,23 @@ export class NetworkViewMinigame extends MinigameScene {
         return joinedStatus(this.reachedHostCount());
     }
 
-    /** The header's text (title, subtitle, lines) with the Unplug button after it, when offered. */
-    showHeader(html) {
-        if (!this.headerElement) return;
-        const full = `${html}${this.unplugHtml()}`;
-        // An unchanged header keeps its button, so a press or focus on Unplug survives (R2 m1)
-        if (full === this._headerHtml) return;
-        this._headerHtml = full;
-        this.headerElement.innerHTML = full;
-        if (this.headerStrip) this.headerStrip.hidden = !full.trim();
+    /** The header strip alone (the view has not loaded, or failed): Unplug is there from the first moment. */
+    showHeader() {
+        this.renderer.render(null, this.currentOffers(), this.sceneState());
     }
 
     /**
      * A view opened from the inventory has no Unplug (the box can only be pulled out at its
      * jack), so a plugged-in jack box says where: its link's name ends with the room and the
-     * port ("Drop box: Desks, Spare wall port"). Fix round 1, nit.
+     * port ("Drop box: Desks, Spare wall port"). Fix round 1, nit. Returns the sentence, or ''.
      */
-    unplugHintHtml() {
+    unplugHint() {
         if (this.unplugJack) return '';
         const f = this.links()?.get?.(this.footholdId);
         if (!f || f.via !== 'jack' || typeof f.name !== 'string') return '';
         const where = f.name.includes(': ') ? f.name.slice(f.name.indexOf(': ') + 2).trim() : '';
         if (!where) return '';
-        return `<p class="network-view-hint">${escapeHtml(`You can unplug the box at its port (${where}).`)}</p>`;
-    }
-
-    unplugHtml() {
-        if (!this.unplugJack) return '';
-        const busy = this.pending.has(pendingKey('unplug', this.unplugJack));
-        const label = busy ? UNPLUGGING_TEXT : UNPLUG_TEXT;
-        return `
-                    <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${busy ? ' disabled' : ''}>${label}</button></div>
-                    <p class="network-view-unplug-notice" aria-live="polite"${this.unplugNotice ? '' : ' hidden'}>${escapeHtml(this.unplugNotice || '')}</p>`;
+        return `You can unplug the box at its port (${where}).`;
     }
 
     /**
@@ -1145,9 +643,9 @@ export class NetworkViewMinigame extends MinigameScene {
      * back to the world, the device in the inventory again); a refusal keeps it open, its
      * message shown by the button, not as a toast over the header (fix round 1, m2).
      */
-    async unplugBox() {
+    async unplugBox({ echo } = {}) {
         if (!this.unplugJack) return { action: 'none' };
-        const out = await this.perform({ action: 'unplug', target: this.unplugJack });
+        const out = await this.perform({ action: 'unplug', target: this.unplugJack }, { echo });
         return out.sent ? (out.answer ?? { action: 'error' }) : { action: 'none' };
     }
 
@@ -1172,7 +670,6 @@ export class NetworkViewMinigame extends MinigameScene {
         const offerHostId = this.hostOfOffer(offer);
         let answer = null;
         try {
-            this._pendingFocus = this.focusedControl();
             this._opsEpoch++;
             this._runHook('onSent', offer, echo);
             this._safely('redraw', () => this.redraw());
@@ -1187,7 +684,6 @@ export class NetworkViewMinigame extends MinigameScene {
             this.pending.delete(key);
         }
         this._safely('redraw', () => this.redraw());
-        this._pendingFocus = null;
         this._safely('showResult', () => this.showResult(offer, answer));
         await this.afterAnswer(offer, answer, offerHostId);
         return { sent: true, answer };
@@ -1259,7 +755,7 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** The previous result of this control goes first (after the guard, before the key goes in). */
     clearResult(action, target, key) {
-        if (action === 'unplug') { this.setUnplugNotice(''); return; }
+        if (action === 'unplug') { this.noteUnplug(''); return; }
         if (action === 'use') this.lastGrant = null;
         if (this.noticeKey === key) { this.showNotice(null); this.noticeKey = null; }
     }
@@ -1271,14 +767,8 @@ export class NetworkViewMinigame extends MinigameScene {
      */
     redraw() {
         if (this._reported || !this.gameContainer) return;
-        if (this.status !== 'ready' || !this.view) { this.showHeader(''); return; }
-        const top = this.gameContainer.scrollTop ?? 0;
-        const focus = this.focusedControl() || this._pendingFocus;
-        const unplugFocused = typeof document !== 'undefined' && document.activeElement?.hasAttribute?.('data-unplug');
+        if (this.status !== 'ready' || !this.view) { this.showHeader(); return; }
         this.render();
-        this.gameContainer.scrollTop = top;
-        this.restoreFocus(focus);
-        if (unplugFocused) this.container?.querySelector?.('[data-unplug]')?.focus?.();
     }
 
     /** Draws what a finished move left: the unplug's line, a refusal's words, or the answer's rows. */
@@ -1287,7 +777,8 @@ export class NetworkViewMinigame extends MinigameScene {
         if (action === 'unplug') {
             if (answer?.action === 'unplugged' || answer?.action === 'not_planted') return;
             // A refusal is said here, next to the button, not as a toast over the header
-            this.setUnplugNotice(answer?.message || 'The port did not respond. Try again.');
+            this.noteUnplug(unplugNoticeText(answer));
+            this.renderer.showResult(offer, answer, this.sceneState());
             return;
         }
         if (!OPS_ACTIONS.includes(action)) return;
@@ -1299,12 +790,10 @@ export class NetworkViewMinigame extends MinigameScene {
             if (action === 'use') this.noteGrant(hostId, answer);
             // A view that has closed is not drawn again (R1 m3)
             if (this._reported || this._ending) return;
-            // Scroll stays, and focus stays with the control's row or the next control (R1 m4)
-            const top = this.gameContainer?.scrollTop ?? 0;
-            const hadFocus = !!this.focusedControl();
+            // Scroll stays, and focus stays with the control's row or the next control (R1 m4): the
+            // renderer keeps the scroll across the draw and places the focus in showResult
             this.render();
-            if (this.gameContainer) this.gameContainer.scrollTop = top;
-            if (hadFocus) this.focusAfterOps(offer, answer, hostId);
+            this.renderer.showResult(offer, answer, this.sceneState());
             // A check that held nothing says so; the view records no "checked" mark of its own
             if (action === 'check' && Array.isArray(answer.findings) && !answer.findings.length) this.showNotice(NO_FINDINGS_TEXT, hostId, key);
             if (action === 'use') this.showNotice(answer.grant === 'credential' ? CREDENTIAL_GRANT_TEXT : sessionGrantText(this.lastGrant?.host, this.lastGrant?.who), hostId);
@@ -1321,62 +810,38 @@ export class NetworkViewMinigame extends MinigameScene {
         this.lastGrant = {
             hostId: hostId || '',
             host: String(row?.host || row?.name || hostId || ''),
-            who: String(answer.session.displayName || answer.session.username || ''),
+            who: sessionWho(answer.session),
             access: answer.session.access === 'admin' ? 'admin' : ''
         };
     }
 
-    /**
-     * Bring an element into view with the least movement (a phone-width view puts the Use control
-     * and the message below the fold). Nothing moves when it is already visible. The jump is
-     * instant, never animated: a smooth scroll would be cut short by the next redraw (which puts
-     * the scroll position back) and would ignore prefers-reduced-motion.
-     */
-    scrollIntoViewSoft(el) {
-        if (!el || typeof el.scrollIntoView !== 'function') return false;
-        el.scrollIntoView({ block: 'nearest' });
-        return true;
-    }
-
-    /** After a pick: the Use control into view. */
-    scrollUseIntoView() {
-        return this.scrollIntoViewSoft(this.gameContainer?.querySelector?.('[data-action="use"]'));
-    }
-
-    /** Pick a finding by alias (or id) for Use; picking it again lets it go. */
-    selectFinding(aliasOrId) {
-        const hit = findFinding(this.view, aliasOrId);
-        if (!hit) return false;
-        this.selectedFinding = this.selectedFinding === hit.finding.id ? null : hit.finding.id;
-        this.redraw();
-        if (this.selectedFinding) this.scrollUseIntoView();
-        return true;
-    }
+    /** Pick a finding by alias (or id) for Use; picking it again lets it go. The pick is the renderer's. */
+    selectFinding(aliasOrId) { return this.renderer.selectFinding(aliasOrId); }
 
     /** Pick a held card by technique id for Use; picking it again lets it go. */
-    selectTechnique(id) {
-        if (!techniqueList(this.view).some(t => t.id === id)) return false;
-        this.selectedTechnique = this.selectedTechnique === id ? null : id;
-        this.redraw();
-        if (this.selectedTechnique) this.scrollUseIntoView();
-        return true;
-    }
+    selectTechnique(id) { return this.renderer.selectTechnique(id); }
 
     /** Use: the picked card on the picked finding, through `perform`. Resolves like `perform`. */
-    async useSelected() {
-        if (!this.selectedFinding || !this.selectedTechnique) return { sent: false };
-        return this.perform({ action: 'use', target: useTarget(this.selectedTechnique, this.selectedFinding) });
-    }
+    useSelected() { return this.renderer.useSelected(); }
 
     /** A card dropped on a finding (the pointer shortcut): the same pick and the same `perform`. */
-    async dropCard(cardId, findingAlias) {
-        const hit = findFinding(this.view, findingAlias);
-        if (!hit || !techniqueList(this.view).some(t => t.id === cardId)) return { sent: false };
-        this.selectedFinding = hit.finding.id;
-        this.selectedTechnique = cardId;
-        const out = await this.perform({ action: 'use', target: useTarget(cardId, hit.finding.id) });
-        if (!out?.sent) this.redraw();
-        return out;
+    dropCard(cardId, findingAlias) { return this.renderer.dropCard(cardId, findingAlias); }
+
+    /**
+     * Where an offer chosen in the renderer goes (the renderer's `ctx.perform`): the core's guarded
+     * `perform` for sweep, scan, check, confirm and use; `unplugBox` for unplug; `act` for a row's
+     * sign-in, open and look, which are not guarded. Resolves like `perform` for the guarded ones.
+     */
+    dispatch(offer, echo) {
+        const action = offer?.action;
+        if (action === 'unplug') return this.unplugBox({ echo });
+        if (OPS_ACTIONS.includes(action)) {
+            this.noteActivity();
+            return this.perform(offer, { echo });
+        }
+        const row = this.allRows().find(r => r.id === offer?.target);
+        if (!row) return false;
+        return this.act(row, action);
     }
 
     /** The host row an ops offer is about: a scan's target, a check's host, a confirm's finding's host. */
@@ -1386,35 +851,6 @@ export class NetworkViewMinigame extends MinigameScene {
         if (offer?.action === 'confirm') return findFinding(this.view, offer.target)?.row.id ?? null;
         if (offer?.action === 'use') return findFinding(this.view, parseUseTarget(offer.target)?.finding)?.row.id ?? null;
         return null;
-    }
-
-    /** Focus after a move: a check or confirm keeps focus inside its tile; the rest as before. */
-    focusAfterOps(offer, answer, hostId) {
-        const root = this.gameContainer;
-        if (offer?.action === 'use') { this.restoreFocus({ id: TECHNIQUES_FOCUS, action: 'use', sub: null }); return; }
-        if (offer?.action === 'check' || offer?.action === 'confirm') {
-            const service = offer.action === 'check' ? parseCheckTarget(offer.target)?.service
-                : (answer?.finding?.service ?? findFinding(this.view, offer.target)?.finding.service);
-            const tile = [...(root?.querySelectorAll?.('[data-host-id] [data-service]') || [])]
-                .find(el => el.closest('[data-host-id]')?.dataset.hostId === hostId && el.dataset.service === service);
-            const next = tile ? [...tile.querySelectorAll('[data-action]')].find(b => !b.disabled) : null;
-            if (next) { next.focus?.(); return; }
-            this.focusAfterMove(hostId);
-            return;
-        }
-        this.focusAfterMove(offer?.target);
-    }
-
-    /** After a move redrew the list: focus the first control in the target's row or block, else the next one after it. */
-    focusAfterMove(target) {
-        const root = this.gameContainer;
-        if (!root?.querySelectorAll) return;
-        const holder = [...root.querySelectorAll('[data-host-id], [data-network-id]')]
-            .find(el => el.dataset.hostId === target || el.dataset.networkId === target);
-        const controls = [...root.querySelectorAll('[data-action]')].filter(b => !b.disabled);
-        let next = holder ? controls.find(b => holder.contains(b)) : null;
-        if (!next && holder) next = controls.find(b => holder.compareDocumentPosition(b) & 4);
-        (next || controls[0])?.focus?.();
     }
 
     /** What follows a finished move: the unplug that ends the trip, or the events and the refetch of an ops success. */
@@ -1489,12 +925,9 @@ export class NetworkViewMinigame extends MinigameScene {
         try { await this.refetch({ sync: false }); } catch (e) { console.warn('[network-view] refetch failed', e); }
     }
 
-    setUnplugNotice(text) {
+    noteUnplug(text) {
         this.unplugNotice = text || '';
-        const el = this.container?.querySelector?.('.network-view-unplug-notice');
-        if (!el) return;
-        el.textContent = this.unplugNotice;
-        el.hidden = !this.unplugNotice;
+        this.renderer.noteChange(this.sceneState(), 'unplug');
     }
 
     showNotice(text, rowId = null, key = null) {
@@ -1502,9 +935,7 @@ export class NetworkViewMinigame extends MinigameScene {
         this.noticeRowId = rowId;
         // Only a refusal drawn for a control keeps its key; any other line clears it (R1 m6)
         this.noticeKey = text ? key : null;
-        const el = this.gameContainer?.querySelector('.network-view-notice');
-        if (el) el.textContent = text;
-        if (el && text) this.scrollIntoViewSoft(el);
+        this.renderer.noteChange(this.sceneState(), 'notice');
     }
 
     /** A row's control: sign in, open a held session or a share, or look at a resource. */
@@ -1552,6 +983,7 @@ export class NetworkViewMinigame extends MinigameScene {
 
     cleanup() {
         this.stopRefetchTimer();
+        this.renderer.unmount();
         super.cleanup();
         if (this._reported) return;
         this._reported = true;
@@ -1603,32 +1035,6 @@ export class NetworkViewMinigame extends MinigameScene {
         return out;
     }
 
-    /**
-     * The Techniques panel's facts for getTestState, only when the view holds a card or something is picked:
-     * `techniques` (each card's face, its picked flag and the selector of its select control), the picked
-     * finding's alias and card, the Use selector with `canUse`, and the last grant. Nothing here says which
-     * card fits which finding.
-     */
-    techniquesState() {
-        const cards = techniqueList(this.view);
-        if (!cards.length && !this.selectedFinding && !this.selectedTechnique) return {};
-        const hit = this.selectedFinding ? findFinding(this.view, this.selectedFinding) : null;
-        const card = cards.find(t => t.id === this.selectedTechnique) || null;
-        const busy = !!hit && !!card && this.pending.has(pendingKey('use', useTarget(card.id, hit.finding.id)));
-        return {
-            techniques: cards.map(t => ({
-                id: t.id, name: t.name, summary: t.summary, worksOn: t.worksOn, itemId: t.itemId || null,
-                selected: t.id === this.selectedTechnique,
-                select: `[data-technique="${t.id}"] [data-action="select-technique"]`
-            })),
-            selectedFinding: hit ? (hit.finding.alias ?? null) : null,
-            selectedTechnique: card ? card.id : null,
-            use: '[data-techniques] [data-action="use"]',
-            canUse: !!hit && !!card && !busy,
-            ...(this.lastGrant ? { grant: { hostId: this.lastGrant.hostId, who: this.lastGrant.who, ...(this.lastGrant.access ? { access: this.lastGrant.access } : {}) } } : {})
-        };
-    }
-
     /** One row of getTestState; a host or device row in an ops block adds `scanned`, `services` and `scan`. */
     rowState(r, block, action) {
         const ops = isOpsBlock(block);
@@ -1670,7 +1076,7 @@ export class NetworkViewMinigame extends MinigameScene {
             // services answers the keys it always did. `pending` lists the keys of requests out.
             ...(this.pending.size ? { pending: [...this.pending] } : {}),
             ...this.ownOpsState(),
-            ...this.techniquesState(),
+            ...this.renderer.testState(),
             rows: this.rows().map(r => this.rowState(r, this.ownOpsBlock(), hostAction(r))),
             networks: this.networkBlocks().map(b => ({
                 id: b.id, name: b.name || null, route: b.route || 'up', via: b.via?.hostId ?? null,

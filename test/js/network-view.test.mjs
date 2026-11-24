@@ -34,6 +34,9 @@ copy('utils/sync-before-fetch.js');
 copy('systems/network-links.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/network-view/ops-model.js');
+copy('minigames/network-view/view-texts.js');
+copy('minigames/network-view/view-controls.js');
+copy('minigames/network-view/network-view-panels.js');
 copy('minigames/network-view/network-view-minigame.js');
 copy('utils/compromise-bolt.js');
 
