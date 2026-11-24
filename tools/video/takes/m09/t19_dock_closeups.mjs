@@ -11,8 +11,10 @@ export default async (page, bridge, mark) => {
   await openMg(bridge, 'incident_book', 'note', mark); await sleep(2600); await closeAll(page, bridge); mark('note-closed'); await sleep(900);
   const D = await doorId(bridge, 'loading_dock', 'front_desk');
   await bridge.moveToNear(D, { timeoutMs: 25000 }); await sleep(900); mark('interact-door', { D });
-  await bridge.interact(D, { timeoutMs: 20000, approach: false });
-  await bridge.waitForMinigame('lockpicking', { timeoutMs: 10000 }); await sleep(900);
+  let ir = await bridge.interact(D, { timeoutMs: 20000, approach: false }); mark('interact-result', { r: JSON.stringify(ir).slice(0, 300) });
+  let w = await bridge.waitForMinigame('lockpicking', { timeoutMs: 4000 });
+  if (!w || w.ok === false) { const st = await bridge.getState(); mark('retry', { room: st.currentRoom, mg: JSON.stringify(st.activeMinigame || null).slice(0, 200), near: JSON.stringify((st.nearby || []).filter(n => n.id === D)).slice(0, 300) }); ir = await bridge.interact(D, { timeoutMs: 20000 }); mark('interact-result-2', { r: JSON.stringify(ir).slice(0, 300) }); await bridge.waitForMinigame('lockpicking', { timeoutMs: 8000 }); }
+  await sleep(900);
   let ks = await bridge.minigame.getState(); mark('key-mode', { keyMode: ks && ks.keyMode }); await sleep(1200);
   const sel = ks && (ks.keySelection || (ks.state && ks.state.keySelection));
   if (sel && sel.length) { const pick = sel.find(s => /dock|key ring/i.test(s.label || '')) || sel[0]; await bridge.minigame.clickCanvas(pick.x, pick.y); mark('key-selected', { label: pick.label, n: sel.length }); await sleep(1200); ks = await bridge.minigame.getState(); }
