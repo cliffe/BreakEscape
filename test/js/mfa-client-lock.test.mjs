@@ -73,9 +73,31 @@ test('verify with a lock subject posts target fields, skips onSession, emits tar
     assert.equal(sessions.length, 0);
     assert.equal('pc_id' in calls[0].payload, false);
     const ap = events.find(e => e.name === 'mfa_approved');
-    assert.deepEqual(ap.detail, { npcId: '', targetType: 'object', targetId: 'locker', by: 'code' });
+    // the pass body names no owner: the owner is the one the gate answer named
+    assert.deepEqual(ap.detail, { npcId: 'moira', targetType: 'object', targetId: 'locker', by: 'code' });
     assert.ok(M.takeCompleted('object:locker'));
     assert.equal(events.some(e => /pc_signin_failed/.test(e.name)), false);
+});
+
+test('an mfa_approved:<owner> listener fires for a lock, by code and by phone approval', async () => {
+    const { events } = setup(() => answer('verify_passed'));
+    M.noteRequired('object:locker', { kind: 'code', npcId: 'moira' });
+    await M.verify('object:locker', '123456');
+    const named = events.filter(e => e.name === 'mfa_approved:moira');
+    assert.equal(named.length, 1);
+    assert.deepEqual(named[0].detail, { npcId: 'moira', targetType: 'object', targetId: 'locker', by: 'code' });
+
+    const second = setup(() => answer('approve_passed'));
+    M.noteRequired('door:records', { kind: 'push', npcId: 'priya' });
+    await M.approve('door:records', {});
+    const byPhone = second.events.filter(e => e.name === 'mfa_approved:priya');
+    assert.equal(byPhone.length, 1);
+    assert.equal(byPhone[0].detail.targetType, 'door');
+
+    // with no gate answer noted there is no owner to name, so only the plain event fires
+    const third = setup(() => answer('verify_passed'));
+    await M.verify('object:never_noted', '1');
+    assert.deepEqual(third.events.map(e => e.name), ['mfa_approved']);
 });
 
 test('a wrong code on a lock is reason wrong with no attemptsLeft, and emits mfa_failed with target detail', async () => {

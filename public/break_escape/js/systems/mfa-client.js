@@ -164,9 +164,12 @@ export function codeFor(pending) {
 
 function passed(parsed, body, { keep }) {
     // R3-9: the way in the step began over stays with the completed answer, so only a screen with that way in takes it up
-    const route = (pendingBySubject.get(parsed.key) || {}).route || '';
+    const pending = pendingBySubject.get(parsed.key) || {};
+    const route = pending.route || '';
     pendingBySubject.delete(parsed.key);
-    const npcId = (body && body.npcId) || '';
+    // A lock's pass body names no owner: it is the owner the gate answer named (noteRequired). A PC
+    // subject reads the pass body only, as before.
+    const npcId = (body && body.npcId) || (parsed.kind === 'pc' ? '' : (pending.npcId || ''));
     // The code just used must not be offered again for the next sign-in
     if (lastRead && lastRead.npcId === npcId) lastRead = null;
     if (parsed.kind === 'pc') {
