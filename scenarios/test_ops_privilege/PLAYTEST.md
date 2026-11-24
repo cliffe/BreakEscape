@@ -16,7 +16,7 @@ Four things have no browser beat, and why:
   and the plan's "plant a second stick under remote admin" (plan beat 5) and "token admin session expires, then a refused plant keeps the stick" (plan beat 8) are made by the Rails tests on a copy of the
   scenario in which the bay PC takes a stick. A later small unit may add a field on a governed port naming the PC that judges it (an open question for the owner, brief O3).
 - **A claim feeding the step up** needs the PC's owner to walk away at a moment the script cannot force; the Rails test sets the claim record by hand.
-- **A token session expiring.** Beat 6 shows it only if the tester waits out the game clock (4 game minutes from the first sign-in); the server answer is read with `verify-run.rb`.
+- **A token session expiring** is shown in beat 6 only by waiting four REAL minutes from the plant of beat 5 (see the deadline there); the exact-second expiry is the Rails test's (`travel_to`).
 - **A refused request leaves nothing behind** is read in the Rails test (state before and after); the browser only shows the toast.
 
 ## Setup
@@ -40,12 +40,37 @@ game, one by one, oldest first (the first file has no suffix; never a glob):
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --access
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log
-env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
 ```
 
-`--access` prints each session with its stored `access`, and (from unit 16) its computed level word `level admin`, `level user` or `level none`; before unit 16 lands
-read the stored line only. `--ops-log` prints the `priv_audit` rows and ends with `ops log OK`. Until unit 16 lands the leak check may report the administrator's
-`access` as a leak: that is the scanner not yet knowing the second way to earn it (report it, do not treat it as a game finding).
+`--access` prints each session with its stored `access` and its computed level word `level admin`, `level user`, `level none` (`level error` if the work raised). `--ops-log` prints the `priv_audit` rows and ends with `ops log OK`.
+
+**The leak check needs each keyboard sign-in named.** The capture holds neither the request body nor a PC id in a keyboard sign-in answer (a remote sign-in carries its PC's host label, so it needs nothing). Where more than one PC admits the account
+(here both PCs admit every account) an unnamed keyboard sign-in earns nothing, and the check then reports the administrator's `access` and the owner's items as leaks (these are the check failing closed, not a game finding).
+List the sign-ins of the run, oldest first, with the order each has among its account's sign-ins (a remote one is marked and needs no entry):
+
+```bash
+python3 -c '
+import json,sys,collections
+c=collections.Counter()
+for f in sys.argv[1:]:
+    for l in open(f):
+        r=json.loads(l);b=r.get("body")
+        if r.get("method")=="POST" and r.get("path","").endswith("/login") and isinstance(b,dict) and b.get("success"):
+            c[b["npcId"]]+=1
+            print(b["npcId"]+"#"+str(c[b["npcId"]]),"remote host "+b["host"] if b.get("host") else "KEYBOARD (name its PC)",r["t"])
+' $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
+```
+
+Then give every KEYBOARD line to the check, with the PC you signed in at (`bay_pc` or `store_pc`; the beats say where), after the game id and before the files. Example for a run with Uma's and Adel's keyboard sign-ins at `bay_pc`:
+
+```bash
+env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> \
+  --signin uma@bay_pc#1 --signin adel@bay_pc#1 --signin adel@bay_pc#2 --signin adel@bay_pc#5 \
+  $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
+```
+
+Each entry is credited from its own row onward and for its own account only (`--signin <account>@<pc>@<row time>` names the row by its `t` instead). A wrong PC named is a finding at the next answer for the real PC. The check also takes an earned step back at a sign-out, a lock, a later sign-in at that PC, a refused desktop, and a reload that no longer holds the session.
+It cannot see a token running out between requests.
 
 ## Layout
 
@@ -53,12 +78,12 @@ read the stored line only. `--ops-log` prints the `priv_audit` rows and ends wit
   `card_stale` ("Field note: records updates") and the shared-screen code `assist_code` ("Uma assist code.txt"); the sign `sign_lobby`. Doors: north to `bay`, east to `store`.
 - `bay` (north): `bay_pc` (a desk PC, host label BAY01, owner Olu, USB policy blocked, remote sign-in allowed); `bay_dock` ("USB socket by the bay PC", takes `kit_badusb`, a confirm
   whose grant needs a session at `bay_pc`); `bay_port` ("Stick port on the bay shelf", same policy, takes a USB stick through a confirm whose `remove_item` is first);
-  `bay_breaker` ("Wall switch: bay power", turns the PC's service off); the items `kit_badusb` ("Keystroke injector"), `kit_stick_a` and `kit_stick_b` (sticks); Olu Marsh (owner).
+  `bay_breaker` ("Wall switch: bay power", turns the PC's service off) and `bay_breaker_on` ("Wall switch: bay power back on", turns it on again); the items `kit_badusb` ("Keystroke injector"), `kit_stick_a` and `kit_stick_b` (sticks); Olu Marsh (owner).
 - `store` (east): `store_pc` ("Records PC", a desk PC, host label RECS01, remote sign-in allowed; one service with one weakness, a step up to admin, needing a user session); the notes
   `note_uma` and `note_adel` (the typed logins: the earned secrets); Uma Quayle (`uma`, user) and Adel Wick (`adel`, the administrator: `creds.admin`).
 - Accounts: Uma (`umaquay`), Adel (`adelwick`, administrator), Olu (`omarsh`, owner of the bay PC, never signs in). Profiles: `uma_files` ("Uma to do.txt"), `adel_files` ("Admin runbook.txt"),
-  `olu_files` ("Olu notes.txt" and a folder "Olu projects" holding "Budget draft.txt"). Both PCs admit every staff account.
-- Credentials: `adel_token` (a saved sign-in token for `bay_pc`, expires 4 game minutes after the foothold is gained; listed by the sign-in control over the foothold) and `uma_assist` (a
+  `olu_files` ("Olu notes.txt" and a folder "Olu projects" holding "Budget draft.txt"; the folder is an ordinary unlocked `folder` item, so one click opens it). Both PCs admit every staff account.
+- Credentials: `adel_token` (a saved sign-in token for `bay_pc`, expires 4 REAL minutes after the drop box is first plugged in at `office_port`; a re-plant does not restart it; listed by the sign-in control over the foothold) and `uma_assist` (a
   shared-screen code for `store_pc`, from `assist_code`).
 - The log source `priv_audit` takes `admin_profile_read` and `usb_install_overridden` (and the ops events).
 - The one finding (`store_pc.records.stale_build`, id from the screen alias) is the step up; the card `field_release_notes` fits it.
@@ -88,19 +113,19 @@ Read `sign_lobby`. Walk north to `bay`. `interact` `bay_pc`, choose the Uma Quay
 ### 2. The administrator sees the owner's profile, and the read is logged once
 
 Sign in at `bay_pc` as Adel Wick (password from `note_adel`).
-- Browser: the taskbar shows "Administrator"; the desktop lists "Admin runbook.txt", "Olu notes.txt" and the folder "Olu projects" (and no "Uma to do.txt"); open "Olu projects": "Budget draft.txt" is inside; open it and read it; close the folder and open it again.
+- Browser: the taskbar shows "Administrator"; the desktop lists "Admin runbook.txt", "Olu notes.txt" and the folder "Olu projects" (and no "Uma to do.txt"); click the "Olu projects" icon (`clickText` on its name, or `clickSelector` `.desktop-icon[aria-label="Olu projects"]`): the folder window lists "Budget draft.txt"; open that file and read it; close the folder and open it again.
 - Server: `sessions.bay_pc` is `via password` for `adel`, `access` shown as `admin` by `--access` (and `level admin`); `--ops-log` shows one `admin_profile_read` row as `adelwick` at `bay_pc` for the profile `olu_files` (a repeat open merged: no second row); the row holds no password and no file text.
 
 ### 2b. The audit terminal shows the read
 
 Walk to the lobby and `interact` `audit_log_pc`.
-- Browser: the log reader opens and lists the privilege events so far; one row of kind `ADMIN_READ`, by the account `adelwick`, at `bay_pc`, for the profile `olu_files` (kind words and names only, no raw id, no password, no file text). Close it.
+- Browser: the log reader opens and lists the privilege events so far; one row of kind `ADMIN_READ`, identity `adelwick`, location the PC's display name ("Bay desk PC"), detail the word `profile` only (no raw id of the profile or the PC, no password, no file text). Close it.
 - Server: opening the reader saves nothing (`GET /log_rows` writes no row); `--ops-log` still shows exactly one `admin_profile_read` row.
 
 ### 3. A stick at the shelf port is refused, for the administrator too
 
 With Adel's session still open, close the desktop. Take `kit_stick_a`. `interact` `bay_port`.
-- Browser: no confirm opens; a toast reads "USB devices are disabled on this PC."; `getState().inventory` still lists `kit_stick_a`; the event `usb_refused:bay_port` fires.
+- Browser: no confirm opens; a toast reads "USB devices are disabled on this PC."; `getState().inventory` still lists `kit_stick_a`; read the refusal from the toast (`{"cmd":"toasts"}`): `drain` does not keep `usb_refused:*` or `network_device_refused` events (its filter holds `pc_*`, workstation and game events), and a direct socket refusal does not take the gated-remove path that emits them. The event is covered by `test/js/apply-actions-gated-remove.test.mjs`.
 - Server: `plantedItems` is empty (`--access`); nothing else changed. (The shelf port is not a sign-in PC and has no grant, so no session overrides it: see "Not played in the browser".)
 
 ### 4. Lock the screen: a keystroke device is refused
@@ -109,18 +134,21 @@ Take `kit_badusb`. Open the `bay_pc` desktop (still Adel's), Start, Lock (`#pc-s
 - Browser: a toast "USB devices are disabled on this PC." (the policy line for a blocked PC); the device stays in the tray; no foothold mark appears on `bay_pc`.
 - Server: `--access` shows the session locked with `level none`; no `usb_install_overridden` row; no `implant_bay_pc` foothold.
 
-### 5. Remote administrator: told nobody is at the keyboard
+### 5. The drop box and the token session (the clock starts here: four real minutes)
 
-Unlock by signing in again as Adel at the keyboard (type the password) so the lock is gone, sign out (`#pc-start-signout`). Go to the lobby, take `kit_dropbox`, `interact` `office_port`, answer "Plug it in"; the box's network view opens.
-Sweep `office_lan`, Scan `bay_pc`. In the view open `bay_pc`'s sign-in control, choose the Adel tile, type the password: the remote desktop opens (a red frame; the taskbar shows "Administrator"). Close it, close the view, walk to `bay`, `interact` `bay_dock`, answer "Plug it in".
-- Browser: a toast "Nobody is signed in at this keyboard."; the event `network_device_refused` with reason `needs_console`; `kit_badusb` is still in the tray.
-- Server: the `bay_pc` session shows a foothold (`jack_office_port`), `level admin`, `access admin`; no `implant_bay_pc`; no `usb_install_overridden` row.
+Unlock the locked screen by typing Adel's password into the password box it shows (the lock screen has NO tile for Adel to click; the box is for the locked account), then sign out (`#pc-start-signout`). Go to the lobby, take `kit_dropbox`, `interact` `office_port`, answer "Plug it in".
+**The token's deadline is four real minutes from this first plant; a re-plant does not restart it, and nothing in the game brings it back.** Do the next steps without a pause, and note the wall-clock time of the plant.
+The box's network view opens (if it does not, `interact` `office_port` again). A toast "Session token captured: Bay PC sign-in token for Adel Wick on BAY01." appears. Sweep `office_lan`, Scan `bay_pc`, open `bay_pc`'s sign-in control, click the Adel tile: "Connect with / Bay PC sign-in token" is offered. Connect with it.
+- Browser: the remote desktop opens as Adel (a red frame, `desktop-remote-line`) with the "Administrator" marker. Read the marker, then sign out of the remote session (Start, `#pc-start-signout`).
+- If the four minutes have already passed: the tile offers no "Connect with" and reads "Bay PC sign-in token has expired." Report beat 5 as failed on timing, not as a game fault, and run the rest in a fresh game (a re-plant does not help).
+- Server: `--access` lists the session `via credential` at `bay_pc` while it is held.
 
-### 6. The token session, then it lapses
+### 6. Typed remote administrator: nobody at the keyboard; then the token lapses
 
-Open the network view again; `bay_pc`'s sign-in control lists "Bay PC sign-in token" as a "Connect with ..." button (the foothold earned it). Sign out of the remote session first (taskbar Start, `#pc-start-signout`), then connect with the token: the remote desktop opens as Adel with the marker.
-- Browser: the marker shows. Optional: wait about 5 game minutes (`{"cmd":"eval","fn":"() => window.__test.getState().gameClock ?? null"}` if the bridge shows it, else real time) without touching the PC.
-- Server: `--access` lists the session `via credential`; once the clock has run out it reads `level none` (the browser's marker may stay until the next request: that is the point; the server answers on every read). A reopen of the desktop is then refused with "sign in again".
+Still in the view (or reopen it from `office_port`), open `bay_pc`'s sign-in control, click the Adel tile and TYPE the password (not the token): the remote desktop opens with the marker. Close it, close the view, walk to `bay`, `interact` `bay_dock`, answer "Plug it in". Read the toast now, before the bay PC is switched off in beat 8.
+- Browser: a toast "Nobody is signed in at this keyboard." (take the screenshot now); `kit_badusb` is still in the tray. The `network_device_refused` event (reason `needs_console`) is not kept by `drain`; it is covered by `test/js/network-links-needs-console.test.mjs`.
+- Server: the `bay_pc` session shows a foothold (`jack_office_port`), `level admin`, `access admin`; no `implant_bay_pc`; no `usb_install_overridden` row; the refused plug is a 422 with reason `needs_console` in the capture.
+- The lapse, optional: if you still hold a token session (connect with the token again before the four minutes are up) leave the desktop open until four real minutes have passed since the plant. The marker clears itself at expiry (no request is needed) with a toast "Bay PC sign-in token expired. Your session on BAY01 ended."; reopening from the Adel tile is refused with "Bay PC sign-in token has expired." and sends no request. The server reads `level none` for that session.
 
 ### 7. At the keyboard the administrator's override installs the device
 
@@ -128,21 +156,24 @@ Sign out any remote session at `bay_pc`, unplug the drop box (view's Unplug) if 
 - Browser: no refusal toast; `kit_badusb` leaves the tray; `bay_pc` is marked with the compromise bolt (the implant foothold, source `implant_bay_pc`; read `{"cmd":"eval","fn":"() => window.__test.access.compromiseMarks()"}`).
 - Server: `footholds` holds `implant_bay_pc`; `--ops-log` shows one `usb_install_overridden` row as `adelwick` at `bay_pc` with device `hid`; a user session doing the same (sign out, sign in as Uma with a second device, which this scenario does not hold) would be refused: Rails test.
 
-### 8. The power switch ends the level
+### 8. The power switch ends the level, and the second switch gives it back
 
 `interact` `bay_breaker` (hint "The bay PC has gone quiet."), then `{"cmd":"sync"}`, then open `bay_pc` again.
-- Browser: the desktop is refused ("not responding" or "off", as the PC state words it) and the taskbar marker for that session is gone.
+- Browser: the toast "This PC is off." and no desktop; the taskbar marker for that session is gone.
 - Server: `--access` reads `level none` for `bay_pc`.
+Then `interact` `bay_breaker_on` (hint "The bay PC hums again."), `{"cmd":"sync"}`, and sign in again as Adel at the keyboard (the old session may have ended with the power; type the password).
+- Browser: the desktop opens and the "Administrator" marker is back. (That the marker returns for a SURVIVING session after power-on, without a new sign-in, is the node test `test/js/pc-sessions-admin.test.mjs` ("a locked entry never gains the level; a technique entry gets it back after not_responding") and the Rails test "the bay power switch ends the level" which sets the global back and reads `admin` again.)
+- Server: `--access` reads `level admin` for `bay_pc` again.
 
 ### 9. The step up from a typed user session
 
-In the lobby take `card_stale` from `lobby_cabinet`. Plant the drop box again if unplugged. In the view: Sweep `office_lan`, Scan `store_pc`, Check its service, Confirm the finding. Select the finding and the card, Use.
+In the lobby take `card_stale` from `lobby_cabinet`. Plant the drop box again if unplugged. In the view: Sweep `office_lan` (`[data-network-id="office_lan"] [data-action="sweep"]`), Scan `store_pc` (`[data-host-id="store_pc"] [data-action="scan"]`), Check its service with `.network-check` and Confirm the finding with `.network-confirm` (`clickText` hits the host row, whose text holds the same words). Select the finding (`.network-finding-select`) and the card (`.network-technique-select`), Use (`.network-use`).
 - Browser: "Something this needs is still missing." (no session). Open `store_pc`'s sign-in control, choose the Uma tile and type her password (remote): the desktop opens; close it. Select the finding and the card, Use: success; the host row shows the bolt and the admin tag; the desktop now opens in the remote-view frame with the marker.
 - Server: `sessions.store_pc` is `via technique`, `access admin`, the foothold `jack_office_port`, granted by the finding; one `technique_used` row.
 
 ### 10. A shared screen never steps up
 
-Sign out of `store_pc` (Start, `#pc-start-signout`). Take `assist_code` from the cabinet. In the view, `store_pc`'s sign-in control lists "Uma's assist code"; connect with it (a relay session: the owner's own screen). Select the finding and the card, Use.
+Sign out of `store_pc` (Start, `#pc-start-signout`). Take `assist_code` from the cabinet (a toast says to connect it from your inventory). The sign-in control does NOT list it. Open the tray item (`{"cmd":"inventoryAct","item":"assist_code","entry":"Connect"}`; `{"cmd":"openInventoryItem","item":"assist_code"}` opens the menu first): it opens `store_pc`'s desktop as a relay session (Uma's own screen; toast "Uma Quayle let you into the session. Check who is asking before you share access."). Close it. Select the finding and the card, Use.
 - Browser: "Something this needs is still missing."; no bolt, no admin tag on the row.
 - Server: `sessions.store_pc` is `via credential` with `relay` true, no `access`; no new `technique_used` row.
 

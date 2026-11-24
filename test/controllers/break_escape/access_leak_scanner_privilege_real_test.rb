@@ -173,6 +173,25 @@ module BreakEscape
       assert_includes owners(judge.call(plain.first(index) + [unnamed])), %w[ops_string ops:key:access]
     end
 
+    # A real browser capture of a played test_ops_privilege (the scripted S5a playtest: no recorder tag, no request body).
+    def browser_run
+      %w[ops_privilege_browser_run_1.jsonl ops_privilege_browser_run_2.jsonl].flat_map do |name|
+        File.foreach(File.expand_path("../../fixtures/files/#{name}", __dir__)).with_index(1).map { |text, no| [name, no, JSON.parse(text)] }
+      end
+    end
+
+    BROWSER_SIGNINS = %w[uma@bay_pc#1 adel@bay_pc#1 adel@bay_pc#2 adel@bay_pc#5].freeze
+
+    test 'the real browser capture reports nothing when each untagged keyboard sign-in is named, and its false alarms are all the sign-ins' do
+      run = browser_run
+      assert_empty AccessLeakScanner.new(scenario).scan(run, signins: BROWSER_SIGNINS).map { |f| [f.source, f.line, f.rule, f.owner] }
+      bare = AccessLeakScanner.new(scenario).scan(run)
+      assert_equal %w[ops_string profile_admin_read], bare.map(&:rule).uniq.sort, 'unnamed sign-ins earn nothing: fail closed'
+      assert_equal [17, 10], [bare.count { |f| f.rule == 'profile_admin_read' }, bare.count { |f| f.rule == 'ops_string' }]
+      wrong = AccessLeakScanner.new(scenario).scan(run, signins: BROWSER_SIGNINS.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e })
+      refute_empty wrong, 'the wrong PC named is still a finding'
+    end
+
     test 'a malformed signin entry is refused' do
       run_game
       assert_raises(ArgumentError) { scan(@log, signins: ['adel-bay_pc']) }

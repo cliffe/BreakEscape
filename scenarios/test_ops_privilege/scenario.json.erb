@@ -13,7 +13,7 @@
 
   "policies": {
     "bay_locked": { "remote": "allowed", "usb": "blocked" },
-    "records": { "remote": "allowed" }
+    "records_policy": { "remote": "allowed" }
   },
 
   "techniques": {
@@ -85,7 +85,7 @@
           "observations": "Olu's notes on the bay PC."
         },
         {
-          "type": "zip_archive",
+          "type": "folder",
           "id": "olu_folder",
           "name": "Olu projects",
           "takeable": false,
@@ -302,6 +302,19 @@
         },
         {
           "type": "pc",
+          "id": "bay_breaker_on",
+          "name": "Wall switch: bay power back on",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "observations": "A second wall switch, marked Bay power on.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "bay_off", "value": false },
+            { "type": "hint", "title": "Bay power", "message": "The bay PC hums again." }
+          ]
+        },
+        {
+          "type": "pc",
           "id": "kit_badusb",
           "name": "Keystroke injector",
           "sprite": "drop_box1",
@@ -367,7 +380,7 @@
           "lockType": "login",
           "loginPicker": "accounts",
           "access": { "roles": ["staff"] },
-          "policy": "records",
+          "policy": "records_policy",
           "observations": "The records machine, a desk PC kept in the store room.",
           "services": [
             {

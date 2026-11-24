@@ -120,7 +120,8 @@ module BreakEscape
       assert_equal 'user', level
       assert_equal %w[uma_todo], desktop_ids
       body = folder
-      assert_includes [403, 404], response.status, body.to_s
+      assert_response :forbidden, body.to_s
+      assert_equal 'Container not unlocked: olu_folder', body['error']
       refute_includes response.body, 'olu_budget'
       assert_empty rows('admin_profile_read')
     end
@@ -181,7 +182,8 @@ module BreakEscape
       admin_in('store_pc')
       refute_includes desktop_ids('store_pc'), 'olu_notes'
       folder
-      assert_includes [403, 404], response.status
+      assert_response :forbidden
+      assert_equal 'Container not unlocked: olu_folder', response.parsed_body['error']
     end
 
     # ---- beats 3 and 4: the keystroke device, keyboard and remote ---------------------------
@@ -262,6 +264,10 @@ module BreakEscape
       refute body['success'], body.to_s
       assert_includes held_ids, 'kit_badusb'
       assert_empty rows('usb_install_overridden')
+      # the second switch (`bay_breaker_on`) sets the global back: the same password session is an administrator again
+      @game.reload.player_state['globalVariables'] = (@game.player_state['globalVariables'] || {}).merge('bay_off' => false)
+      @game.save!
+      assert_equal 'admin', level
     end
 
     # ---- the stick port ------------------------------------------------------------------
@@ -420,7 +426,8 @@ module BreakEscape
       remove('kit_stick_a', 'bay_port')
       assert_response :unprocessable_entity
       folder
-      assert_includes [403, 404], response.status
+      assert_response :forbidden
+      assert_equal 'Container not unlocked: olu_folder', response.parsed_body['error']
       assert_equal before, state.slice('sessions', 'plantedItems', 'footholds', 'inventory')
       assert_empty rows('usb_install_overridden')
       assert_empty rows('admin_profile_read')

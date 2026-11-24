@@ -48,6 +48,10 @@ module BreakEscape
         get game_path("container/#{pc}"), as: :json
         list << ["container #{pc}", response.body]
       end
+      # the one route the admin profile branch widened: the owner's folder (refused unless an admin session at the bay PC)
+      get game_path('container/olu_folder'), as: :json
+      # a refusal repeats the id the request itself named; that is not the owner's item
+      list << ['container olu_folder', response.body.sub('Container not unlocked: olu_folder', 'Container not unlocked')]
       get game_path('network'), params: { foothold: OFFICE }, as: :json
       list << ['network', response.body]
       list
@@ -86,12 +90,25 @@ module BreakEscape
       assert_world_clean('locked administrator session')
     end
 
+    test 'an administrator session at the bay PC that is then locked or signed out opens nothing of the owner' do
+      build
+      assert sign_in('bay_pc', *ADEL)['success']
+      assert_equal 'admin', level('bay_pc')
+      assert_world_clean('administrator at the bay PC', owner_items: true)
+      post game_path('lock_session'), params: { pc_id: 'bay_pc' }, as: :json
+      assert_nil level('bay_pc')
+      assert_world_clean('locked administrator at the bay PC')
+      assert sign_in('bay_pc', *ADEL)['success']
+      post game_path('logout'), params: { pc_id: 'bay_pc' }, as: :json
+      assert_world_clean('signed out administrator at the bay PC')
+    end
+
     test 'the owner items appear only in an answer for an admin session at the bay PC, and then only the bay PC desktop' do
       build
       body = sign_in('bay_pc', *ADEL)
       assert_equal 'admin', body['access']
       shown = answers.select { |_, b| OWNER_STRINGS.any? { |t| b.include?(t) } }.map(&:first)
-      assert_equal ['container bay_pc'], shown
+      assert_equal ['container bay_pc', 'container olu_folder'], shown
       assert_world_clean('administrator at the bay PC', owner_items: true)
     end
 

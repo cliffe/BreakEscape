@@ -421,15 +421,16 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   rc_bay_dock_9{"USB socket by the bay PC"}
   rc_bay_port_10{"Stick port on the bay shelf"}
   rc_bay_breaker_11{"Wall switch: bay power"}
-  rc_kit_badusb_12{"Keystroke injector"}
-  rc_kit_stick_a_13{"Grey USB stick"}
-  rc_kit_stick_b_14{"Blue USB stick"}
-  rc_npc_olu_marsh_15("Olu Marsh")
-  rc_store_pc_16{"Records PC"}
-  rc_note_uma_17{"Note: Uma's login"}
-  rc_note_adel_18{"Note: Adel's login"}
-  rc_npc_uma_quayle_19("Uma Quayle")
-  rc_npc_adel_wick_20("Adel Wick")
+  rc_bay_breaker_on_12{"Wall switch: bay power back on"}
+  rc_kit_badusb_13{"Keystroke injector"}
+  rc_kit_stick_a_14{"Grey USB stick"}
+  rc_kit_stick_b_15{"Blue USB stick"}
+  rc_npc_olu_marsh_16("Olu Marsh")
+  rc_store_pc_17{"Records PC"}
+  rc_note_uma_18{"Note: Uma's login"}
+  rc_note_adel_19{"Note: Adel's login"}
+  rc_npc_uma_quayle_20("Uma Quayle")
+  rc_npc_adel_wick_21("Adel Wick")
 
   lobby --> bay
   lobby --> store
@@ -444,20 +445,21 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   bay --> rc_bay_dock_9
   bay --> rc_bay_port_10
   bay --> rc_bay_breaker_11
-  bay --> rc_kit_badusb_12
-  bay --> rc_kit_stick_a_13
-  bay --> rc_kit_stick_b_14
-  bay --> rc_npc_olu_marsh_15
-  store --> rc_store_pc_16
-  store --> rc_note_uma_17
-  store --> rc_note_adel_18
-  store --> rc_npc_uma_quayle_19
-  store --> rc_npc_adel_wick_20
+  bay --> rc_bay_breaker_on_12
+  bay --> rc_kit_badusb_13
+  bay --> rc_kit_stick_a_14
+  bay --> rc_kit_stick_b_15
+  bay --> rc_npc_olu_marsh_16
+  store --> rc_store_pc_17
+  store --> rc_note_uma_18
+  store --> rc_note_adel_19
+  store --> rc_npc_uma_quayle_20
+  store --> rc_npc_adel_wick_21
 
   class lobby,bay,store room
-  class rc_kit_dropbox_1,rc_office_port_2,rc_audit_log_pc_3,rc_card_stale_5,rc_assist_code_6,rc_sign_lobby_7,rc_bay_pc_8,rc_bay_dock_9,rc_bay_port_10,rc_bay_breaker_11,rc_kit_badusb_12,rc_kit_stick_a_13,rc_kit_stick_b_14,rc_store_pc_16,rc_note_uma_17,rc_note_adel_18 item
+  class rc_kit_dropbox_1,rc_office_port_2,rc_audit_log_pc_3,rc_card_stale_5,rc_assist_code_6,rc_sign_lobby_7,rc_bay_pc_8,rc_bay_dock_9,rc_bay_port_10,rc_bay_breaker_11,rc_bay_breaker_on_12,rc_kit_badusb_13,rc_kit_stick_a_14,rc_kit_stick_b_15,rc_store_pc_17,rc_note_uma_18,rc_note_adel_19 item
   class rc_lobby_cabinet_4 container
-  class rc_npc_olu_marsh_15,rc_npc_uma_quayle_19,rc_npc_adel_wick_20 npc
+  class rc_npc_olu_marsh_16,rc_npc_uma_quayle_20,rc_npc_adel_wick_21 npc
   class node_start start`
     };
     const rendered = {};

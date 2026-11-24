@@ -214,3 +214,27 @@ None skipped. Limits: no browser and no server were started, so R2-B1 (the four-
 ## Verdict
 
 Fix first, small: R2-C1 (the recorder's sign-in tag, the label fall-through, the `ops_steps` branch), because until then the leak check of the browser run of this scenario reports false leaks at every keyboard admin beat and cannot be trusted either way; and R2-B1 (one reorder or one number in the scenario and `PLAYTEST.md`) before the scripted run is repeated. The engine, client, validator and graph code is ready to land after the playtest and the train: no client reaches a profile, plant or grant it has not earned by any path found, and no existing scenario changes beyond section 4, with one client-only exception to rule on (R2-A1: the step up from a technique user session in `test_ops_access` no longer emits `pc_signed_in`). R2-C2 should be done in the same pass if the scanner is to guard the lapsed-session cases at all.
+
+## Fix pass outcomes (fixer, after the orchestrator's rulings)
+
+| Finding | Outcome |
+|---|---|
+| R2-C1 (major) | Fixed. A real capture holds no request body and no PC id in a keyboard `POST /login` row (checked on the S5a capture, `responses-68.jsonl`; only a remote sign-in carries a `host` label). So: no tag is read for attribution beyond a log that has one; where more than one PC admits the account an unnamed keyboard sign-in earns nothing. `access-leak-check.rb --signin <account>@<pc>#<n>` (or `@<row time>`) / `scan(signins:)` names the PC of ONE sign-in row, credited from that row only and for that account only. An `ops_steps` `admin:` entry is refused (ArgumentError); it no longer earns from line 1. Tests: right PC credited, wrong PC still a finding, another account's sign-in not credited, nothing before the row, malformed entry refused, and the real browser capture (fixtures `ops_privilege_browser_run_1/2.jsonl`): 0 findings with four `--signin` entries, 27 (17 `profile_admin_read`, 10 `ops:key:access`) without; each of the 27 is at an unnamed sign-in of Adel at `bay_pc` or Uma's own item, none a real leak. |
+| R2-C2 | Fixed for: successful sign-out (every PC: the answer names none, fail closed), `POST /lock_session` (`pcId`), a later sign-in at the PC, a desktop answer 403 (off, not_responding, expired, no_session), `endedPcIds` on any answer (displacing grant, claim, hand-back that names PCs), a bootstrap `sessions` map lacking the PC, locked, or holding another account. One test per case. Not shown by any answer, so not tracked: a token running out between requests, a power cut or dropped route between requests, a hand-back whose answer names no PC. Header says so. |
+| R2-C3 | Fixed: a profile item in an `/unlock` answer is judged by the any-PC form; test. |
+| R2-C4 | Fixed: the keyboard-desktop owner fallback runs only when the privilege rules are active (older scenario outcome restored); test. Header says so. |
+| R2-C5 | Fixed: a host label naming no PC earns nothing and takes accounts back at the admitting PCs; test on a copy where one PC admits the account. |
+| R2-C6 | Fixed: class comment; `verify-run` prints `level error` on a rescue (test); the two-admins-one-read false alarm noted in the header. |
+| R2-B1 (major) | Fixed in PLAYTEST: beat 5 now plants and connects with the token first, stating the four real minute deadline (first plant, a re-plant does not restart it) and what is seen if it lapses; beat 6 does the typed remote sign-in and the `needs_console` toast, then the lapse. |
+| R2-A1 | Fixed: `noteTechniqueSession(..., already)`; only the server's `already: true` sets `access` in place; a step up fires the sign-in and honours `endedPcIds`. Old m2 expectation restored, new tests for the step up and the same-level repeat; `network-view-minigame.js` passes `already`. |
+| R2-A2 | Declined: three copies (Ruby, JS, validator) and a non-boolean `needsSession` the schema should refuse; not needed to land. |
+| R2-A3 | Declined: an abort limit is a design change to the gated remove; not asked for S5a. |
+| R2-B2 | Fixed in PLAYTEST (2b row as the reader prints it, stale unit 16 lines, expiry wording "has expired", `gameClock` dropped). |
+| R2-B3 | Fixed: `answers` asks `GET /container/olu_folder`; new test for admin at the bay PC then locked and then signed out. |
+| R2-B4 | Declined: profile items are `takeable: false`; fix when next touched. |
+| R2-B5 | Fixed: the three refusals pinned to 403 and `Container not unlocked: olu_folder`. |
+| R2-B6 | Fixed: policy renamed `records_policy`. |
+| Playtest 1 (folder) | `olu_folder` is now `type: "folder"`, `locked: false`. The click opens the folder window, which fetches `GET /container/olu_folder` (`container-minigame.js:983`); `record_admin_profile_read` is hooked on that request (`games_controller.rb:650`), and the scenario tests make the same request. No engine gap. Graph files regenerated. |
+| Playtest 2 (power) | A second switch `bay_breaker_on` sets `bay_off` false; beat 8 uses it; Rails test asserts the level returns. |
+| Playtest 3 | Beats 5, 6, 9, 10 corrected as listed (lock screen has no tile; token wording; `.network-check`/`.network-confirm`; inventory Connect; events not in `drain`, node tests named; `needs_console` toast read before the power-off). |
+| Docs | C2-2 and C2-4 sentences added to A18 Known limits; the leak-check line gives `--signin`. |
