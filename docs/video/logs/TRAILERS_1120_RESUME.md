@@ -169,3 +169,10 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - (24 Nov) m03: shipped cut already has the real console clip (16:9 contact checked); manifest fixed hacktivity-videos ddf9dd0 (local, unpushed with e41017f). m01 v11 edit 0877b37db (cards: People Keep Vanishing / Stay in Character / Before the Sunday Launch; alts in m01_VIDEO_LOG). Kevin visemes b25aafe58 (art/kevin-visemes, kevin_park, PixelLab inpaint, teeth on 4 frames; strip checked) merged here; hash to AC0.
 - Still running: Netherton visemes2 (netherton-visemes wt), lines r2 (v-trailer-lines wt), m02 v5 edit, m06 v1 render queue.
 - Machine block plan: merge main; m05 t24 Niamh; m01 Kevin shots re-take (find Kevin's take ids in takes_m01.md / m01 edit, new ids); after visemes2: m04/m05/m06 Netherton re-takes again (t01c/t10c); after lines r2: Voltage ending take (m04) + m07-m10 takes with the r2 lines; renders m01 v11, m02 v5, m04 v3, m05 v4, m06 v1(done?).
+
+## 24 Nov, later
+- Landed on trailer branch: Netherton visemes 0b206256f (PixelLab mouth-mask inpaints; merge ef14bfc00), m02 v5 edit 7c947a76d (2x crops, Ghost dual-layer FX via tools/video/takes/m02/ghost_voice_fx.sh; not rendered), round-2 lines 694a7ab18 (only m09 changed). All three hashes sent to AC0.
+- m06 v1 render running (bphx8iig8, log scratchpad/render_m06v1.log); still has the m02-slate console stand-in.
+- Owner via AC0: console recordings done for m01–m10. Local mirror ~/safetynet-footage (read only) has all of them; use recon takes s958 (m04), s959 (m05), s960, s945–s948, s940. Agent cutting <m>_console_recon_clip.mp4 into ~/video-takes-local/<m>/clips and swapping m04–m06 edits; log docs/video/logs/CONSOLE_CLIPS.md.
+- Agent aligning m07/m08/m10 take scripts to round-2 lines (script only).
+- Machine: CA0 gets it after the m06 render ("machine yours" + avatar reading). My next block: m05 t24 Niamh, m01 Kevin, Netherton re-takes m04–m06, m04 Voltage ending, m07–m10 takes; renders m01 v11, m02 v5, m04 v3, m05 v4, m06 v2.

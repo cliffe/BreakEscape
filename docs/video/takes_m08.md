@@ -49,3 +49,9 @@ Digit check (`ruby tools/video/takes/m08/check_digits.rb`): the PAD is 3 digits,
 - Not written: Netherton face flash (he has lines), Vector/Phantom/Nightshade faces (lines), HaX in person (break room; her first lines unread), the Interview/Hunt card shots (cards need no footage), the lobby ATHENA second walk, a lights-strike-only fallback take, the interrogation suite and the debrief (left out by the picks).
 - Not checked: the delivery of Phantom's line (by ear), the cut points (hook 2.8 s, stakes, Phantom second sentence from 3.4 s, Netherton first sentence 2.7 s), cached audio for Netherton `:94`, Phantom `:138`, Vector "I left it out...".
 - Open: the lockers' contents after opening (not read; edit cuts before them).
+
+## Round-2 line: which script films it (24 Nov)
+Ending line "There is a mole in SAFETYNET. I am reasonably certain they are within a hundred metres of where you are standing." (`m08_director_netherton.ink:97`, knot `start`, 9.02 s) is filmed by t15_netherton_ending (first talk, no choices; regex matches `There is a mole in SAFETYNET\. I am reasonably certain`). Changed: linger after the line 300 ms to 700 ms so the tail of the 9.02 s clip is not clipped. The picks file already names this line; nothing overridden.
+Risks to check on the first run (round 2):
+- The opening runs once per game (`met`); a re-run needs a fresh game. If the Mission Brief notes are open at start, close them (setup clears the screen).
+- The line is the second-to-last of the opening; "Ask me what you need..." follows at once, so cut by the mark.
