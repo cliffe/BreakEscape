@@ -348,3 +348,27 @@ test('real pad beneath: after the pane closes the pad takes digits again, and th
     key(document.body, 'keydown', '5');
     assert.equal(pad.currentInput, '5');
 });
+
+// S8c R1-CLIENT6: a browser key (reload, developer tools) is never blocked, whichever element holds focus
+test('browser keys are left alone with focus on the body: F5, Ctrl+R, F12, Alt+Left, Cmd+R', () => {
+    rig();
+    const h = pane.openPane(ctxFor('gate_code'));
+    for (const [k, extra] of [['F5', {}], ['r', { ctrlKey: true }], ['F12', {}], ['ArrowLeft', { altKey: true }], ['r', { metaKey: true }]]) {
+        const e = key(document.body, 'keydown', k, extra);
+        assert.equal(e.defaultPrevented, false, `${k} ${JSON.stringify(extra)} keeps its default`);
+    }
+    h.close();
+});
+
+test('browser keys still do not reach a pad beneath (propagation stopped), and a plain key outside is still held back', () => {
+    rig();
+    const pad = openRealPad();
+    let reached = 0;
+    pad.handleNumberInput = () => { reached++; };
+    const h = pane.openPane(ctxFor('gate_code'));
+    key(document.body, 'keydown', 'F5');
+    key(document.body, 'keydown', '5');
+    assert.equal(reached, 0);
+    assert.equal(key(document.body, 'keydown', 'a').defaultPrevented, true);
+    h.close();
+});

@@ -241,8 +241,11 @@ export function openPane(ctx = {}) {
             }
             if (e.key === 'Enter' && inLayer && field && e.target === field) { e.preventDefault(); submit(); return; }
         }
-        // A key that lands outside the layer must not press a pad's focused button either
-        if (!inLayer) e.preventDefault();
+        // A key that lands outside the layer must not press a pad's focused button either. A browser key
+        // (reload, developer tools, history, a shortcut with Ctrl, Cmd or Alt) keeps its default: the pane
+        // stops it reaching the game, not the browser (S8c R1-CLIENT6).
+        const browserKey = e.ctrlKey || e.metaKey || e.altKey || /^F\d+$/.test(e.key || '');
+        if (!inLayer && !browserKey) e.preventDefault();
     }
     w.addEventListener?.('keydown', onKey, true);
     w.addEventListener?.('keyup', onKey, true);
