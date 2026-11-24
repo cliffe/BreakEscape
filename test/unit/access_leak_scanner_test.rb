@@ -396,7 +396,12 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   test 'access-leak-check.rb prints findings without values and exits 1, or 0 when clean' do
     game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
                               scenario: scenario)
-    out, status = run_check(game.id, file_fixture('access_leak/responses.jsonl').to_s)
+    # the fixture's paths name game 1; a run judges one game (R4-6), so it is copied with this game's id
+    fixture = file_fixture('access_leak/responses.jsonl').read.gsub('/games/1/', "/games/#{game.id}/")
+    full = Tempfile.new(['responses', '.jsonl'])
+    full.write(fixture)
+    full.close
+    out, status = run_check(game.id, full.path)
     assert_equal 1, status, out
     assert_includes out, '14 responses from 1 file(s)'
     assert_includes out, '2 NPC password(s)'
@@ -408,10 +413,108 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
 
     Dir.mktmpdir do |dir|
       clean = File.join(dir, 'clean.jsonl')
-      File.write(clean, file_fixture('access_leak/responses.jsonl').read.lines.first(3).join)
+      File.write(clean, fixture.lines.first(3).join)
       out, status = run_check(game.id, clean)
       assert_equal 0, status, out
       assert_includes out, 'VERDICT: no leaks found.'
+    end
+  end
+
+  # Ops core S3 PL7: three capture files given in glob order (-2, -3, then the first) made 776 false
+  # findings; the check now refuses files whose first timed rows are not oldest first. The fixtures are the
+  # first three rows of the real game-35 files.
+  def order_fixture(name)
+    path = file_fixture("access_leak/order/responses-#{name}.jsonl")
+    [path.basename.to_s, path.read.lines.map { |l| JSON.parse(l) }]
+  end
+
+  test 'PL7: capture files oldest first pass the order check, glob order and a swapped pair are named' do
+    first, second, third = %w[35 35-2 35-3].map { |n| order_fixture(n) }
+    assert_nil AccessLeakScanner.file_order_problem([first, second, third])
+    assert_nil AccessLeakScanner.file_order_problem([first])
+    assert_nil AccessLeakScanner.file_order_problem([])
+    glob = AccessLeakScanner.file_order_problem([second, third, first])
+    assert_includes glob, 'responses-35.jsonl starts at 2026-11-23T21:09:49.088Z, before responses-35-3.jsonl'
+    assert_includes AccessLeakScanner.file_order_problem([first, third, second]), 'responses-35-2.jsonl starts at'
+    # rows without a time (a DOM row, an old log) are not judged
+    assert_nil AccessLeakScanner.file_order_problem([['a', [{ 'dom' => 'x' }]], ['b', [{ 'n' => 1 }]], second])
+  end
+
+  # The order fixtures name game 35 in their paths; a run judges one game, so they are copied with the test game's id.
+  def order_files_for(game, dir)
+    %w[35 35-2 35-3].map do |n|
+      path = File.join(dir, "responses-#{n}.jsonl")
+      File.write(path, file_fixture("access_leak/order/responses-#{n}.jsonl").read.gsub('/games/35/', "/games/#{game.id}/"))
+      path
+    end
+  end
+
+  test 'PL7: access-leak-check.rb exits 2 on files out of order, before judging anything' do
+    game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                              scenario: scenario)
+    Dir.mktmpdir do |dir|
+      ordered = order_files_for(game, dir)
+      _out, status = run_check(game.id, *ordered)
+      assert_equal 0, status
+      out, status = run_check(game.id, *ordered.rotate(1))
+      assert_equal 2, status
+      refute_includes out, 'VERDICT'
+    end
+  end
+
+  def timed(label, *times, path: '/break_escape/games/35/scenario')
+    [label, times.map { |t| { 't' => t, 'method' => 'GET', 'path' => path, 'status' => 200 } }]
+  end
+
+  test 'R4-5: an untimed file between two timed files does not hide a wrong pair' do
+    a = timed('a.jsonl', '2026-11-23T21:12:00.000Z')
+    c = timed('c.jsonl', '2026-11-23T21:09:00.000Z')
+    untimed = ['mid.jsonl', [{ 'dom' => 'x' }]]
+    assert_nil AccessLeakScanner.file_order_problem([c, untimed, a])
+    assert_includes AccessLeakScanner.file_order_problem([a, untimed, c]), 'c.jsonl starts at 2026-11-23T21:09:00.000Z, before a.jsonl'
+  end
+
+  test 'R4-5: overlapping captures are refused, files that touch or follow are not' do
+    first = timed('one.jsonl', '2026-11-23T21:00:00.000Z', '2026-11-23T21:10:00.000Z')
+    inside = timed('two.jsonl', '2026-11-23T21:05:00.000Z', '2026-11-23T21:20:00.000Z')
+    after = timed('three.jsonl', '2026-11-23T21:10:00.000Z', '2026-11-23T21:30:00.000Z')
+    problem = AccessLeakScanner.file_order_problem([first, inside])
+    assert_includes problem, 'two.jsonl starts at 2026-11-23T21:05:00.000Z, inside the span of one.jsonl'
+    assert_includes problem, 'merged into one file'
+    assert_nil AccessLeakScanner.file_order_problem([first, after])
+    assert_nil AccessLeakScanner.file_order_problem([first, ['gap.jsonl', []], after])
+    # the comparison is with the last TIMED file, so a file inside the span is still named across an untimed one
+    assert_includes AccessLeakScanner.file_order_problem([first, ['gap.jsonl', [{ 'dom' => 'x' }]], inside]), 'two.jsonl starts at'
+  end
+
+  test 'T-4: unsorted rows inside a file are judged by the file\'s min and max' do
+    first = ['one.jsonl', [{ 't' => '2026-11-23T21:10:00.000Z' }, { 't' => '2026-11-23T21:00:00.000Z' }]]
+    overlap = ['two.jsonl', [{ 't' => '2026-11-23T21:12:00.000Z' }, { 't' => '2026-11-23T21:05:00.000Z' }]]
+    follow = ['three.jsonl', [{ 't' => '2026-11-23T21:20:00.000Z' }, { 't' => '2026-11-23T21:11:00.000Z' }]]
+    assert_includes AccessLeakScanner.file_order_problem([first, overlap]), 'two.jsonl starts at 2026-11-23T21:05:00.000Z, inside the span of one.jsonl'
+    assert_nil AccessLeakScanner.file_order_problem([first, follow])
+  end
+
+  test 'R4-6: rows naming another game are refused, the right game and rows without a game path are not' do
+    mine = timed('mine.jsonl', '2026-11-23T21:00:00.000Z', path: '/break_escape/games/7/network?x=1')
+    other = timed('other.jsonl', '2026-11-23T21:01:00.000Z', path: '/break_escape/games/8/keyring')
+    bare = ['bare.jsonl', [{ 'dom' => 'page' }, { 'method' => 'GET', 'path' => '/break_escape/missions' }]]
+    assert_nil AccessLeakScanner.game_mismatch_problem(7, [mine, bare])
+    assert_nil AccessLeakScanner.game_mismatch_problem('7', [])
+    problem = AccessLeakScanner.game_mismatch_problem(7, [mine, other])
+    assert_includes problem, 'other.jsonl holds rows for game 8, not game 7'
+    assert_includes AccessLeakScanner.game_mismatch_problem(70, [mine]), 'game 7, not game 70'
+  end
+
+  test 'R4-6: access-leak-check.rb exits 2 on capture files from another game, before judging anything' do
+    game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                              scenario: scenario)
+    Dir.mktmpdir do |dir|
+      ordered = order_files_for(game, dir)
+      File.write(ordered[1], File.read(ordered[1]).gsub("/games/#{game.id}/", "/games/#{game.id + 1}/"))
+      out, status = run_check(game.id, *ordered)
+      assert_equal 2, status
+      refute_includes out, 'VERDICT'
     end
   end
 

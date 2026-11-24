@@ -9,7 +9,8 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage } from '../../utils/remote-host-text.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage, remoteViewLine } from '../../utils/remote-host-text.js';
+import { createBoltCanvas } from '../../utils/compromise-bolt.js';
 import { syncBeforeFetch } from '../../utils/sync-before-fetch.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
@@ -787,6 +788,40 @@ export class ContainerMinigame extends MinigameScene {
         const note = raw ? escapeHtmlKeepWords(displayDashes(raw), { joinPunctuation: true }) : '';
         this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
         if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+        // A technique session's screen is a remote view: the red frame (core plan 5.4)
+        if (this.isRemoteView(window.pcSessions?.get?.(this.monitorPcId()))) this.pcMonitor?.screen?.classList?.add('desktop-frame--remote-view');
+    }
+
+    /** True for a technique session's copy: its desktop is a remote view, however it was opened. */
+    isRemoteView(session) { return session?.via === 'technique'; }
+
+    /** The remote-view line: the bolt, then "Remote view: <account> through <link>" as text. */
+    remoteViewLineHtml(session) {
+        const id = this.remote?.footholdId || session?.footholdId || null;
+        const link = id ? (window.networkLinks?.get?.(id)?.name || null) : null;
+        const text = remoteViewLine(session.displayName || session.username, link ? displayDashes(link) : null);
+        return `
+                    <div class="desktop-remote-line desktop-remote-view-line"><span class="desktop-remote-bolt" aria-hidden="true"></span>${escapeHtml(displayDashes(text))}</div>`;
+    }
+
+    /** After a render: draw the bolt into each remote-view line and start the stepped wipe once. */
+    decorateRemoteView(session) {
+        if (!this.isRemoteView(session)) return;
+        const root = this.gameContainer;
+        for (const slot of root?.querySelectorAll?.('.desktop-remote-bolt') || []) {
+            if (slot.firstChild) continue;
+            const canvas = createBoltCanvas(document, 1);
+            if (canvas) slot.appendChild(canvas);
+        }
+        const area = root?.querySelector?.('.pc-desktop');
+        if (!area || this._wipeDone) return;
+        this._wipeDone = true;
+        let reduced = false;
+        try { reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { reduced = false; }
+        if (reduced) return;
+        area.classList.add('desktop-wipe');
+        const end = () => area.classList.remove('desktop-wipe');
+        this.addEventListener(area, 'animationend', end);
     }
 
     /**
@@ -1040,6 +1075,7 @@ export class ContainerMinigame extends MinigameScene {
                 // host's own service is off, 9.3b plan 5.2) it keeps it
                 const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.exitReason = reason;
                 this.complete(false);
                 return null;
@@ -1051,6 +1087,7 @@ export class ContainerMinigame extends MinigameScene {
                 // says the line itself (landed); with none the line is said here.
                 const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.exitReason = reason;
                 this.complete(false);
                 if (!window.networkLinks?.trip) {
@@ -1063,6 +1100,7 @@ export class ContainerMinigame extends MinigameScene {
             }
             if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
                 // A powered-off PC is not an end: the relay is kept for when it comes back (R1 m1)
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.complete(false);
                 window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
@@ -1081,6 +1119,7 @@ export class ContainerMinigame extends MinigameScene {
             if (response.status === 403 && refusal?.reason === 'off') {
                 // At the keyboard of a switched-off PC (q72): the session is kept for when it
                 // comes back on, and no sign-in screen opens
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.complete(false);
                 window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
@@ -1560,7 +1599,7 @@ export class ContainerMinigame extends MinigameScene {
         const name = session.displayName || session.username;
         if (this.relay || session.relay === true) return relayAccountBarHtml(session);
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
-        const remoteLine = this.remote
+        const remoteLine = this.isRemoteView(session) ? this.remoteViewLineHtml(session) : this.remote
             ? `
                     <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
             : (this.fromRoute ? `
@@ -1647,6 +1686,7 @@ export class ContainerMinigame extends MinigameScene {
             </div>
         `;
         this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));
+        this.decorateRemoteView(this.loginSession());
         this.watchDesktopScroll();
     }
 
@@ -1661,7 +1701,7 @@ export class ContainerMinigame extends MinigameScene {
                     <div class="desktop-claim-line">${escapeHtml(displayDashes(relayAccountText(session.displayName || session.username, session.username)))}</div>`;
         }
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
-        const remoteLine = this.remote ? `
+        const remoteLine = this.isRemoteView(session) ? this.remoteViewLineHtml(session) : this.remote ? `
                     <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
             : (this.fromRoute ? `
                     <div class="desktop-remote-line">${escapeHtml(displayDashes(this.fromSessionText()))}</div>` : '');
@@ -1715,7 +1755,7 @@ export class ContainerMinigame extends MinigameScene {
         } else {
             places = rememberedDesktop(pcId)?.places || [];
         }
-        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, fromHost, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, fromHost, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop && window.pcSessions?.canSwitchUser?.(pcId) !== false });
         this.taskbarModel = model;
         this.taskbar = mountPcTaskbar(host, model, {
             windowTitle,
@@ -2219,8 +2259,23 @@ export class ContainerMinigame extends MinigameScene {
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
     sourceExtras() {
         if (this.mode === 'npc') return {};
-        if (this.sourcePcId) return { sourcePcId: this.sourcePcId };
-        if (this.sourceResourceId) return { sourceResourceId: this.sourceResourceId };
+        if (this.sourcePcId) return { sourcePcId: this.sourcePcId, ...this.routeExtra() };
+        if (this.sourceResourceId) return { sourceResourceId: this.sourceResourceId, ...this.routeExtra() };
+        return { ...this.routeExtra() };
+    }
+
+    /** The route this screen was reached by, as a reader opened from it must send it (ops log 5.2). */
+    routeExtra() {
+        if (this.remote?.footholdId) return { sourceRoute: { foothold: this.remote.footholdId } };
+        if (this.relay) return { sourceRoute: { relay: true } };
+        if (this.fromRoute?.fromPcId) return { sourceRoute: { from: this.fromRoute.fromPcId } };
+        // A folder under a sign-in PC names the route that PC's session names, as the folder fetch does
+        if (this.sourcePcId && !this.loginPcId && !this.shareFolder) {
+            const q = new URLSearchParams(folderRouteQuery(this.sourcePcId).replace(/^\?/, ''));
+            if (q.get('relay') === '1') return { sourceRoute: { relay: true } };
+            if (q.get('foothold')) return { sourceRoute: { foothold: q.get('foothold') } };
+            if (q.get('from')) return { sourceRoute: { from: q.get('from') } };
+        }
         return {};
     }
 
@@ -2423,6 +2478,7 @@ export class ContainerMinigame extends MinigameScene {
         // Custom minigame types (VM-01, VM-02 and future minigame objects in containers)
         if (item.type === 'scada_historian' ||
             item.type === 'log_filter_terminal' ||
+            item.type === 'ops_log_terminal' ||
             item.type === 'drug_library_terminal' ||
             item.minigameId) {
             return true;

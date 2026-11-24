@@ -53,10 +53,15 @@ BreakEscape::Engine.routes.draw do
       post 'network/unplug',  to: 'games#network_unplug',  as: 'network_unplug'   # Take it back
       post 'network/implant', to: 'games#network_implant', as: 'network_implant' # Foothold from a device in a PC (9.3b I)
       post 'network/join',    to: 'games#network_join',    as: 'network_join'     # Join an in-game Wi-Fi network (slice 9.3b W)
+      post 'network/scan',    to: 'games#network_scan',    as: 'network_scan'     # Sweep a network or scan a host (ops core S1)
+      post 'network/check',   to: 'games#network_check',   as: 'network_check'    # Check a scanned service for findings (ops core S2)
+      post 'network/confirm', to: 'games#network_confirm', as: 'network_confirm'  # Confirm a finding (ops core S2)
+      post 'network/technique', to: 'games#network_technique', as: 'network_technique' # Use a technique card on a finding (ops core S3)
 
       # Objectives system
       get 'objectives'                                      # Get current objective state
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
+      get 'log_rows'          # Ops log reader (OPS_LOG_ROWS_PLAN.md section 6): the rows of an ops_log_terminal's source
       get 'keyring'           # Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1): the player's earned credentials, computed server-side
       post 'se/landing_page', to: 'games#se_landing_page', as: 'se_landing_page' # SE: record a landing-page build server-side (phish evidence plan, Route 1)
       post 'se/phish_send',   to: 'games#se_phish_send',   as: 'se_phish_send'   # SE: record a phish send server-side (phish evidence plan, Route 2)

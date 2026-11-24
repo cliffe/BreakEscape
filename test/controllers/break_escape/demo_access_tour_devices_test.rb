@@ -338,7 +338,7 @@ module BreakEscape
         assert_not_nil sessions.dig('reception_pc', 'foothold'), 'the session carries the box foothold'
         body = implant
         assert_response :unprocessable_entity, body.inspect
-        assert_equal 'not_ready', body['reason']
+        assert_equal 'needs_console', body['reason']
       end
       refute_includes foothold_ids, 'implant_reception_pc'
     end

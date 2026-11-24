@@ -1,0 +1,33 @@
+# Real product names that scenario examples must not use (OPS_CORE_PLAN.md 9.2; the skin plan's catalog
+# validator reads this list too). One name per line, matched as a whole word, case-insensitive. Lines
+# starting # are notes. Products in this game are invented; keep the list short and add on a real slip.
+apache
+nginx
+openssh
+samba
+vsftpd
+proftpd
+postfix
+exim
+dovecot
+mysql
+mariadb
+postgresql
+tomcat
+jenkins
+wordpress
+drupal
+joomla
+phpmyadmin
+webmin
+cups
+openssl
+iis
+lighttpd
+squid
+bind
+dnsmasq
+openvpn
+redis
+mongodb
+elasticsearch

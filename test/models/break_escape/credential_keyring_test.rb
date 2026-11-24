@@ -67,6 +67,49 @@ module BreakEscape
       entries.find { |e| e['id'] == id }
     end
 
+    # --- technique_card proof (OPS_CORE_PLAN.md 4.3, 5.4) ---------------------------------------
+
+    def add_technique_entry
+      @game.scenario_data['credentials']['print_admin'] = {
+        'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'lena_pc',
+        'proof' => { 'technique_card' => 'print01.admin_page.factory_login' }
+      }
+    end
+
+    test 'a technique_card proof holds only once opsUsed records the finding' do
+      add_technique_entry
+      assert_nil entry('print_admin'), 'absent before any use'
+      @game.player_state['opsUsed'] = ['other.svc.finding']
+      assert_nil entry('print_admin'), 'another finding id does not hold it'
+      @game.player_state['opsUsed'] = ['print01.admin_page.factory_login']
+      e = entry('print_admin')
+      assert e, 'present once the finding is recorded'
+      assert_equal 'saved_connection', e['kind']
+    end
+
+    test 'a technique_card proof never holds for a malformed opsUsed or from other state keys' do
+      add_technique_entry
+      [nil, {}, 'print01.admin_page.factory_login', [nil, 1]].each do |bad|
+        @game.player_state['opsUsed'] = bad
+        assert_nil entry('print_admin'), "opsUsed #{bad.inspect} never holds"
+      end
+      @game.player_state.delete('opsUsed')
+      @game.player_state['opsFindings'] = { 'print01.admin_page.factory_login' => 'c1' }
+      @game.player_state['opsDiscovered'] = { 'hosts' => ['print01.admin_page.factory_login'] }
+      assert_nil entry('print_admin'), 'a finding that is merely held does not prove use'
+    end
+
+    test 'a technique_card proof is served only for a saved_connection entry, whatever kind a used finding is named on' do
+      add_technique_entry
+      @game.player_state['opsUsed'] = ['print01.admin_page.factory_login']
+      assert entry('print_admin'), 'the saved_connection entry is served'
+      %w[token assist_invite password].each do |kind|
+        @game.scenario_data['credentials']['print_admin']['kind'] = kind
+        assert_nil entry('print_admin'), "a #{kind} entry is not served on a technique_card proof"
+        refute @game.credential_proof_holds?('print_admin', @game.scenario_data['credentials']['print_admin']), kind
+      end
+    end
+
     # --- label (K3a R1) -----------------------------------------------------------------------
 
     test 'a connecting credential label is its own label, else its item name, else empty and never the connectsTo id' do

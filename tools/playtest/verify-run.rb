@@ -40,6 +40,11 @@
 # needed first. --access prints only that
 # section, for the check after each beat of a scripted run, and always exits 0.
 #
+# --ops-log prints only the ops log (OPS_LOG_ROWS_PLAN.md 5.1, stage L1a): the clock key, the counters,
+# and per source the stored rows (seq, event, as, where, result, n, detail, elapsedMs). It runs the
+# secret matcher the helper uses over every stored row, checks the 400-byte row, 300-row and 128 KB
+# ceilings and that seq ascends, and exits 1 on any failure. A hit is reported by key path, never value.
+#
 # With it, a `habits` block (slice 9.1, ACCESS_MODEL_SLICE_9_1_PLAN.md step 6) of values only,
 # read from the game's saved scenario: one line per NPC with a habits object (its habits and
 # its habits.screen as saved) and one per owned workstation (its owner, its own lockChance or
@@ -56,27 +61,45 @@ require_relative 'lib/flag_redaction'
 count_tasks_flag = !ARGV.delete('--tasks').nil?
 show_flags = !ARGV.delete('--show-flags').nil?
 access_only = !ARGV.delete('--access').nil?
+ops_log_only = !ARGV.delete('--ops-log').nil?
 log_path = nil
 if (i = ARGV.index('--log'))
   ARGV.delete_at(i)
   log_path = ARGV.delete_at(i) or abort 'usage: --log needs a session log path'
 end
-game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] [--access] <game_id>'
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] [--show-flags] [--log SESSION.jsonl] [--access] [--ops-log] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed].freeze
+
+# A finding id as printed on the opsFindings and opsUsed lines and a session's `granted by`: author-chosen
+# words, dots and underscores, nothing longer than the log's foothold ids allow; anything else is left out.
+OPS_ID = /\A[A-Za-z0-9_.\-]{1,120}\z/.freeze
+
+# S5a (privilege plan): the level the server works out NOW for a session, from the game's own `session_access`: `admin`,
+# `user`, or `none` (locked, expired, route down, PC off, account gone, or no game to ask), or `error` when asking raised (never the same word as a
+# locked session). A word only, never stored.
+def computed_level(game, pc_id)
+  level = game.respond_to?(:session_access) ? game.session_access(pc_id) : nil
+  %w[admin user].include?(level) ? level : 'none'
+rescue StandardError
+  'error'
+end
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
-def access_section(ps)
+def access_section(ps, game = nil)
   hash = ->(v) { v.is_a?(Hash) ? v : {} }
   list = ->(v) { v.is_a?(Array) ? v : [] }
   sessions = hash.call(ps['sessions']).map do |pc, s|
     s = {} unless s.is_a?(Hash)
     remote = s['foothold'].is_a?(String) && !s['foothold'].empty? ? ", remote, foothold #{s['foothold']}" : ''
-    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote})"
+    # Ops core S3 (plan 11.4): a technique session's level and the finding that granted it (ids and words only)
+    level = %w[user admin].include?(s['access']) ? ", access #{s['access']}" : ''
+    granted = s['technique'].is_a?(String) && s['technique'].match?(OPS_ID) ? ", granted by #{s['technique']}" : ''
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote}#{level}#{granted}), level #{computed_level(game, pc)}"
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
@@ -105,6 +128,28 @@ def access_section(ps)
     ['loginLockouts', list.call(ps['loginLockouts']).map(&:to_s)],
     ['footholds', footholds],
     ['gainedFootholds', list.call(ps['gainedFootholds']).map(&:to_s)],
+    # Ops core S1 (OPS_CORE_PLAN.md 11.4): what the player has swept and scanned, each list in id order
+    # (networks, then hosts, then checked services as `<host>.<service>`); ids only.
+    ['opsDiscovered', %w[networks hosts services].filter_map do |key|
+      ids = list.call(hash.call(ps['opsDiscovered'])[key]).select { |id| id.is_a?(String) }.sort
+      "#{key} #{ids.join(' ')}" unless ids.empty?
+    end],
+    # Ops core S2 (OPS_CORE_PLAN.md 11.4): the findings the player holds, in alias order, each as
+    # `<alias> <finding id> <status word>`; a stored value that is not `<u|c|f><n>` is left out. Ids and
+    # words only.
+    ['opsFindings', hash.call(ps['opsFindings']).filter_map do |id, value|
+      match = /\A([ucf])([0-9]{1,4})\z/.match(value.to_s)
+      next unless match
+
+      [match[2].to_i, "f#{match[2].to_i} #{id} #{{ 'u' => 'unconfirmed', 'c' => 'confirmed', 'f' => 'false' }[match[1]]}"]
+    end.sort.map(&:last)],
+    # Ops core S3 (plan 11.4): the findings a technique card was used on, each as `<alias> <finding id>` (the
+    # alias from opsFindings, or the bare id when none is held), in alias order; ids only, bad values left out.
+    ['opsUsed', list.call(ps['opsUsed']).select { |id| id.is_a?(String) && id.match?(OPS_ID) }.uniq.map do |id|
+      held = hash.call(ps['opsFindings'])[id].to_s
+      number = /\A[ucf]([0-9]{1,4})\z/.match(held)&.[](1)
+      [number ? number.to_i : Float::INFINITY, id, number ? "f#{number.to_i} #{id}" : id]
+    end.sort_by { |number, id, _| [number.to_f, id] }.map(&:last)],
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 11): level, hand-overs and done workarounds per NPC;
     # sub-slice L adds the PCs a check recorded the NPC locked out at (only when there are any)
     ['npcFrustration', hash.call(ps['npcFrustration']).sort.map do |id, e|
@@ -244,9 +289,57 @@ def workaround_log_section(log_path)
   lines
 end
 
+# The ops log (stage L1a). Rows carry no secret by design; this proves it for a real run.
+def ops_log_section(game, show_flags = false)
+  ps = game.player_state || {}
+  log = ps['opsLog'].is_a?(Hash) ? ps['opsLog'] : {}
+  op = BreakEscape::OpsLog
+  secrets = op.compared_secrets(game)
+  problems = []
+  lines = ["ops log  clockAt #{ps['opsLogClockAt'].inspect}  seq #{ps['opsLogSeq'].inspect}  " \
+           "once #{Array(ps['opsLogOnce']).size}  saves #{ps['opsLogSaves'].is_a?(Hash) ? ps['opsLogSaves'].size : 0}  " \
+           "bytes #{log.to_json.bytesize}"]
+  total = 0
+  sources = game.scenario_data.is_a?(Hash) ? op.sources_for(game.scenario_data).to_h { |id, _s, cap| [id, cap] } : {}
+  log.each do |source, rows|
+    rows = rows.is_a?(Array) ? rows : []
+    total += rows.size
+    cap = sources[source]
+    lines << "  #{source} (#{rows.size} rows#{cap ? ", cap #{cap}" : ''})"
+    problems << "#{source}: not a declared source" if cap.nil?
+    problems << "#{source}: #{rows.size} rows over its cap #{cap}" if cap && rows.size > cap
+    problems << "#{source}: seq does not ascend" unless rows.map { |r| r['seq'].to_i }.each_cons(2).all? { |a, b| a < b }
+    rows.each do |row|
+      hit = op.find_secret_hit(secrets, row)
+      shown = hit ? { 'as' => '[withheld]', 'where' => '[withheld]', 'detail' => nil } : row
+      # as.typed is what the player typed into a username box: it may be a password. Length only,
+      # unless --show-flags.
+      if !show_flags && shown['as'].is_a?(Hash) && shown['as'].key?('typed')
+        shown = shown.merge('as' => { 'typed' => "[#{shown['as']['typed'].to_s.length} chars]", 'cut' => shown['as']['cut'] }.compact)
+      end
+      lines << "    ##{row['seq']} #{row['event']} as #{shown['as'].to_json} where #{shown['where'].to_json} " \
+               "#{row['result']}#{row['n'].to_i > 1 ? " x#{row['n']}" : ''}#{shown['detail'] ? " #{shown['detail'].to_json}" : ''} " \
+               "at #{row['elapsedMs']}ms"
+      problems << "#{source} ##{row['seq']}: over #{op::MAX_ROW_BYTES} bytes" if row.to_json.bytesize > op::MAX_ROW_BYTES
+      problems << "#{source} ##{row['seq']}: a secret appears at #{hit}" if hit
+    end
+  end
+  problems << "#{total} rows over #{op::MAX_TOTAL_ROWS}" if total > op::MAX_TOTAL_ROWS
+  problems << "opsLog is over #{op::MAX_OPS_LOG_BYTES} bytes" if log.to_json.bytesize > op::MAX_OPS_LOG_BYTES
+  lines << (problems.empty? ? '  ops log OK: no secret, caps and ordering hold' : problems.map { |m| "  FAIL #{m}" })
+  [lines.flatten, problems.empty?]
+end
+
+if ops_log_only
+  puts "game            #{g.id}  (mission #{g.mission_id})"
+  out, ok = ops_log_section(g, show_flags)
+  puts out
+  exit(ok ? 0 : 1)
+end
+
 if access_only
   puts "game            #{g.id}  (mission #{g.mission_id})"
-  puts access_section(ps)
+  puts access_section(ps, g)
   puts habits_section(g)
   if log_path
     abort "no such log: #{log_path}" unless File.file?(log_path)
@@ -274,7 +367,7 @@ puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
-  puts access_section(ps)
+  puts access_section(ps, g)
   puts habits_section(g)
 else
   puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files, failed sign-ins or footholds)'

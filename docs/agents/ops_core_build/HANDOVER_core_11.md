@@ -1,0 +1,27 @@
+# Handover: core step 11 (S3, N15): the existing access checks (one commit, a756be26e)
+
+Done and committed; nothing open in my files. Revert alone with `git revert a756be26e` (it also removes the two test files).
+
+## Changes (all in `network_access.rb` unless named)
+- `WITHHELD_SCENARIO_KEYS` (:18) gains `techniques`; 10b's `withhold_network_keys!` override removed from `network_ops.rb`.
+- `technique_session_through?(session, foothold_id)` (:1567): exactly the plan's predicate (record Hash, `via == 'technique'`, foothold present, record `foothold` equals it). Reads the server record only.
+- `desktop_request_allowed?` foothold branch (:1527): `!remote_blocked?(pc)` became `(!remote_blocked?(pc) || technique_session_through?(session, route[:foothold]))`. Other terms, other branches untouched.
+- `desktop_refusal` foothold branch (:1043): `not_responding` when reachable, host off, and (`!remote_blocked?` or the same predicate on the PC's record). Same result as before for every non-technique session.
+- `host_row(pc, foothold_id)` (:1054): `open_here = !remote && technique_session_through?(session, foothold_id)`; the session is listed when `remote || open_here`; `held['access'] = 'admin'` when `client_access_level` is admin (10b's `host_row` wrapper in `network_ops.rb` removed; S5a changes `client_access_level` only); `held['openHere'] = true` only when `open_here`.
+- `settle_session_at_keyboard!` (:1587): `return if session['via'] == 'technique'` after the credential line.
+- `folder_route_allowed?` (`games_controller.rb:3266`): a no-route request at a technique session returns `@game.desktop_request_allowed?(info, nil)` (the keyboard branch); every other no-route case as before.
+- `network_rows`, `down_blocks`, `network_view`, `network_blocks` already passed the foothold (S1); no edit needed. `network_view` wrapper for `techniques` stays in `network_ops.rb`.
+- Not touched: `host_reachable_through?`, `from_route_refusal`, `resource_admits_player?`, `npc_frustration.rb` (`record_borrow_done!` is not in step 11 or step 12's row; it is plan 5.4 "NPC at the PC" work, nobody's row: step 12 or the orchestrator must assign it).
+
+## `openHere` as built (for the client builders)
+A host row's `session` carries `openHere: true` only when the host blocks remote sign-in AND the session is a technique session through the foothold of the view being built. In that view the row is `remoteSignIn: false`, `session: { ..., via: 'technique', remote: true, openHere: true }` (+ `access: 'admin'`). In another foothold's view of the same host: `remoteSignIn: false`, no `session`, no `heldAs` (unless the host is off, then `heldAs` only in the session's own foothold view). On a host that allows remote sign-in there is never `openHere`. `hostAction` must keep `responding === false` first, then `remoteSignIn === false && !session.openHere` -> off, else the existing session line. Down blocks strip `session` and keep `heldAs` only in the session's own foothold view.
+
+## Tests (run under the lock)
+- `network_technique_blocked_host_test.rb`: 22 runs, 251 assertions. Covers: remote sign-in and tiles refused (`remoteBlocked`), no_session, keyboard password session, claim / credential / password-with-foothold records refused `unreachable`, `from` route refused, sync body cannot write a technique session, own foothold serves desktop and folder and the second foothold does not (403 `unreachable`), openHere in the first view only, no openHere on an allowed host, admin on the row, headless blocked host at admin through `desktop_request_allowed?` (own foothold true; other foothold, `from`, no route false), predicate unit cases, no-route folder away/beside/headless, no-route desktop served and foothold kept then unplug ends it, unplug -> no_session, host off -> not_responding then served, password session on a blocked host off -> unreachable, allowed host unchanged. "Away" = the PC's room locked and not unlocked (on foot means room unlocked, not `currentRoom`).
+- `network_technique_session_test.rb`: 10 runs, 74 assertions: lock refused, remote-view desktop served and record kept, keyboard desktop keeps foothold, sign-in from its desktop (`from`), grant ends a guest record, implant `needsSession` refused (device kept) and met by a keyboard sign-in, host off kept/refused (`not_responding` through foothold, `off` at keyboard)/works again, fixedIf true afterwards keeps session (exact repeat answers `already`), reload, unplug.
+- Mutation check: removing the settle skip and the folder line made 3 blocked-host tests fail.
+- Existing groups, unmodified, all 0 failures: network_* controller files 416 runs (two groups: 196 + 220; includes `network_technique_test` 26), keyring_* + credential_* 134, access_model_* + `technique_session_record_test` + `ops_scan_scenario_test` + `ops_findings_scenario_test` 199. `bin/ops-golden-compare` 12 runs 0 failures after every edit. Rubocop clean on all five files.
+
+## Departures / gaps
+- The plan's session-test cases for the NPC borrow (`record_borrow_done!`), pivot and share mapping are not in the session test: the first is the unassigned `npc_frustration.rb` change; pivot and share mapping read `session_identity` and `reach_session_hosts`, which are unchanged, and have no fixture host reached through sam_pc.
+- A repeat use of a finding whose weakness has since become fixed answers `already: true` (10b's repeat check runs before `fixed`), so "a new use is refused" is tested on the exact repeat only.

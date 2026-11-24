@@ -606,6 +606,17 @@ test('two sign-in hosts with one host label warn', { skip }, () => {
     assertHas(warnings(issues(sc)), "sign-in objects 'lena_pc', 'door_box' share the host label 'HB-FIN-02'");
 });
 
+test('a hosts device (N13) shares a host label with a sign-in object: warns, both kinds', { skip }, () => {
+    const sc = clean();
+    sc.hosts = { cam01: { name: 'HB-FIN-02', network: 'office_lan' }, cam02: { name: 'Quiet camera', network: 'office_lan' } };
+    obj(sc, 'finance_office', 'lena_pc').host = 'HB-FIN-02';
+    assertHas(warnings(issues(sc)), "hosts 'lena_pc', 'cam01' share the host label 'HB-FIN-02'");
+    const two = clean();
+    two.hosts = { cam01: { name: 'Same name', network: 'office_lan' }, cam02: { name: 'Same name', network: 'office_lan' } };
+    assertHas(warnings(issues(two)), "hosts 'cam01', 'cam02' share the host label 'Same name'");
+    assertNot(warnings(issues(clean())), 'share the host label');
+});
+
 test('a physical item on a host\'s desktop warns', { skip }, () => {
     const sc = clean();
     obj(sc, 'store', 'door_box').contents = [{ id: 'spare_card', type: 'keycard', name: 'Spare card', takeable: true }];
@@ -716,6 +727,22 @@ test('a pivot chain with a sign-in host on every network before the target does 
     room(sc, 'store').objects.push({ id: 'mid_pc', type: 'pc', name: 'Middle host', host: 'MID-01', network: 'mid_net',
         locked: true, lockType: 'login', access: { roles: ['it'] } });
     assertNot(warnings(issues(sc)), "network 'server_net' is reachable only by pivoting");
+});
+
+// N13: a network that holds only a `hosts` device carries something worth reaching (a device has no
+// session to pivot through, so it never opens a hop: the middle network's device does not help).
+test('a device-only network reached through a network with no sign-in host warns; a device does not open the hop', { skip }, () => {
+    const sc = linkClean();
+    sc.networks.mid_net = { name: 'Middle network' };
+    sc.networks.plant_net = { name: 'Plant network' };
+    sc.networkLinks = [['office_lan', 'mid_net'], ['mid_net', 'plant_net']];
+    sc.hosts = { plant_dev: { name: 'Plant device', network: 'plant_net' }, mid_dev: { name: 'Middle device', network: 'mid_net' } };
+    assertHas(warnings(issues(sc)), "network 'plant_net' is reachable only by pivoting");
+    const ok = linkClean();
+    ok.networks.plant_net = { name: 'Plant network' };
+    ok.networkLinks = [['office_lan', 'plant_net']];
+    ok.hosts = { plant_dev: { name: 'Plant device', network: 'plant_net' } };
+    assertNot(warnings(issues(ok)), "network 'plant_net' is reachable only by pivoting");
 });
 
 test('more than eight link paths between two carrying networks warns', { skip }, () => {

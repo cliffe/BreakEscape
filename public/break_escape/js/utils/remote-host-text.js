@@ -22,6 +22,9 @@ export const unreachableMessage = (host) => `${named(host)} can't be reached ove
 /** A host whose policy turns remote sign-in off (the view's row label stays "Remote sign-in off"). */
 export const remoteOffMessage = (host) => `Remote sign-in is off on ${named(host, 'that host')}.`;
 
+/** The remote-view line of a desktop opened on a technique session (core plan 5.4); the link part only when known. */
+export const remoteViewLine = (account, link) => `Remote view: ${account || 'the account'}${link ? ` through ${link}` : ''}`;
+
 /** A remote sign-in refused because the account is not admitted there (typed names too). */
 export const remoteNotPermittedMessage = (host) => `That account can't sign in on ${named(host, 'that host')}.`;
 

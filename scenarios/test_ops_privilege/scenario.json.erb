@@ -1,0 +1,456 @@
+{
+  "scenario_brief": "TEST: Ops privilege\n\nA test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLAN.md, S5a). A lobby with a drop box, a wall port and a cabinet; a bay with an owned desk PC, a USB socket and a stick port; a store room with a records server and two staff accounts. Sign in as an ordinary account, then as the administrator, and see what the administrator can do that the ordinary account cannot. Nothing to solve.",
+  "endGoal": "Test only: compare what an ordinary account and an administrator can open and plug in.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_privilege",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Office network", "discovery": "scan" }
+  },
+
+  "policies": {
+    "bay_locked": { "remote": "allowed", "usb": "blocked" },
+    "records_policy": { "remote": "allowed" }
+  },
+
+  "techniques": {
+    "field_release_notes": {
+      "name": "Release notes: records build",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Tallowmere RecordKeep", "versions": ["4.2"] }
+    }
+  },
+
+  "credentials": {
+    "adel_token": {
+      "kind": "token",
+      "account": "adel",
+      "connectsTo": "bay_pc",
+      "label": "Bay PC sign-in token",
+      "expiresMin": 4,
+      "proof": { "foothold": "jack_office_port" }
+    },
+    "uma_assist": {
+      "kind": "assist_invite",
+      "account": "uma",
+      "connectsTo": "store_pc",
+      "label": "Uma's assist code",
+      "proof": { "held": "assist_code" },
+      "endsOnGlobal": "assist_ended"
+    }
+  },
+
+  "accountProfiles": {
+    "uma_files": {
+      "for": { "people": ["uma"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "uma_todo",
+          "name": "Uma to do.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Uma's list: order toner, book the van, ask Adel about the shared drive.",
+          "observations": "Uma's own list."
+        }
+      ]
+    },
+    "adel_files": {
+      "for": { "people": ["adel"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "adel_runbook",
+          "name": "Admin runbook.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Admin runbook: check the backups on Fridays, rotate the bay PC token monthly.",
+          "observations": "Adel's own runbook."
+        }
+      ]
+    },
+    "olu_files": {
+      "for": { "people": ["olu"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "olu_notes",
+          "name": "Olu notes.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Olu's notes: the bay PC is mine, ask before you borrow it.",
+          "observations": "Olu's notes on the bay PC."
+        },
+        {
+          "type": "folder",
+          "id": "olu_folder",
+          "name": "Olu projects",
+          "takeable": false,
+          "locked": false,
+          "observations": "A folder of Olu's project files.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "olu_budget",
+              "name": "Budget draft.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Budget draft: the van, the toner and one new chair.",
+              "observations": "A draft budget."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "logSources": {
+    "priv_audit": {
+      "title": "Privilege audit",
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used", "admin_profile_read", "usb_install_overridden"]
+    }
+  },
+
+  "globalVariables": {
+    "assist_ended": false,
+    "bay_stick_in": false,
+    "bay_off": false
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "privilege_beats",
+      "title": "Compare the two accounts",
+      "description": "Test only. Nothing here ticks by itself.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "p1_signed_in", "title": "Sign in at the bay PC", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "bay", "east": "store" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "audit_log_pc",
+          "name": "Audit log terminal",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the building's privilege audit log.",
+          "minigameData": { "logSource": "priv_audit" }
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "lobby_cabinet",
+          "name": "Cabinet by the front door",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cabinet of notes the front desk keeps.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_stale",
+              "name": "Field note: records updates",
+              "technique_card": "field_release_notes",
+              "takeable": true,
+              "observations": "A folded note about an update the records machine missed."
+            },
+            {
+              "type": "text_file",
+              "id": "assist_code",
+              "name": "Uma assist code.txt",
+              "takeable": true,
+              "readable": true,
+              "credential": "uma_assist",
+              "text": "Assist code left by Uma for the records machine. Use it from the sign-in screen there.",
+              "observations": "A shared-screen code Uma left for the front desk."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops privilege test. The bay is north, the store room east. Take the drop box and plug it into the wall port to work from another desk. The cabinet holds a note and a shared-screen code. The two logins you need are on notes in the store room.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ]
+    },
+
+    "bay": {
+      "type": "room_office",
+      "door_sign": "Bay",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "bay_pc",
+          "name": "Bay desk PC",
+          "host": "BAY01",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "owner": "olu",
+          "offWhen": "bay_off",
+          "policy": "bay_locked",
+          "observations": "A desk PC in the bay. A tag on the monitor reads Olu."
+        },
+        {
+          "type": "pc",
+          "id": "bay_dock",
+          "name": "USB socket by the bay PC",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "observations": "A spare USB socket on the desk. Useful only while you are signed in at the bay PC.",
+          "requiresItem": "kit_badusb",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into the bay PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "bay_pc", "needsSession": true, "needsHeld": "kit_badusb" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "bay_port",
+          "name": "Stick port on the bay shelf",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 6 },
+          "takeable": false,
+          "policy": "bay_locked",
+          "observations": "A USB port on a shelf, wired to the bay PC's policy.",
+          "requiresItem": "usb",
+          "requiresItemHint": "You would need a USB stick to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the stick into the shelf port?",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "remove_item", "item": "usb" },
+                { "type": "set_global", "key": "bay_stick_in", "value": true }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "bay_breaker",
+          "name": "Wall switch: bay power",
+          "sprite": "network_rack1",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "observations": "A wall switch marked Bay power.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "bay_off", "value": true },
+            { "type": "hint", "title": "Bay power", "message": "The bay PC has gone quiet." }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "bay_breaker_on",
+          "name": "Wall switch: bay power back on",
+          "sprite": "network_rack1",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "observations": "A second wall switch, marked Bay power on.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "bay_off", "value": false },
+            { "type": "hint", "title": "Bay power", "message": "The bay PC hums again." }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "kit_badusb",
+          "name": "Keystroke injector",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 6 },
+          "takeable": true,
+          "usbClass": "hid",
+          "observations": "A USB device that types on its own once plugged into a PC. It needs a desk you are signed in at."
+        },
+        {
+          "type": "usb",
+          "id": "kit_stick_a",
+          "name": "Grey USB stick",
+          "sprite": "usb_bowl1",
+          "position": { "x": 3, "y": 5 },
+          "takeable": true,
+          "usbClass": "storage",
+          "observations": "An ordinary USB stick."
+        },
+        {
+          "type": "usb",
+          "id": "kit_stick_b",
+          "name": "Blue USB stick",
+          "sprite": "usb_bowl1",
+          "position": { "x": 3, "y": 6 },
+          "takeable": true,
+          "usbClass": "storage",
+          "observations": "A second ordinary USB stick."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "olu",
+          "displayName": "Olu Marsh",
+          "npcType": "person",
+          "position": { "x": 6, "y": 6 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/olu.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "omarsh", "password": "Harbourlight-Olu-08" }
+        }
+      ]
+    },
+
+    "store": {
+      "type": "room_servers",
+      "door_sign": "Store room",
+      "connections": { "west": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "store_pc",
+          "name": "Records PC",
+          "host": "RECS01",
+          "sprite": "pc_desktop",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "policy": "records_policy",
+          "observations": "The records machine, a desk PC kept in the store room.",
+          "services": [
+            {
+              "name": "records", "port": 8081, "product": "Tallowmere RecordKeep", "version": "4.2",
+              "weaknesses": [
+                {
+                  "id": "stale_build", "class": "unpatched", "severity": "high",
+                  "summary": "The records service is behind its published fixes.",
+                  "needs": { "session": "user" },
+                  "grants": { "session": { "account": "adel", "access": "admin" } }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "note_uma",
+          "name": "Note: Uma's login",
+          "position": { "x": 3, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Uma's login: umaquay / Quayside-Uma-17",
+          "observations": "A note pinned by the door."
+        },
+        {
+          "type": "notes1",
+          "id": "note_adel",
+          "name": "Note: Adel's login",
+          "position": { "x": 7, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Adel's login (administrator): adelwick / Lanternwick-Adel-52",
+          "observations": "A note left under the keyboard tray."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "uma",
+          "displayName": "Uma Quayle",
+          "npcType": "person",
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/uma.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "umaquay", "password": "Quayside-Uma-17" }
+        },
+        {
+          "id": "adel",
+          "displayName": "Adel Wick",
+          "npcType": "person",
+          "position": { "x": 8, "y": 4 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/adel.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "adelwick", "password": "Lanternwick-Adel-52", "admin": true }
+        }
+      ]
+    }
+  }
+}
