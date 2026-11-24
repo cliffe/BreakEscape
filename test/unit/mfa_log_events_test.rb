@@ -7,7 +7,8 @@ module BreakEscape
   # detail the build brief names, and the helper accepts exactly those.
   class MfaLogEventsTest < ActiveSupport::TestCase
     EXPECTED = {
-      'mfa_challenge' => { results: %w[ok], detail: { 'route' => %w[keyboard foothold from] } },
+      'mfa_challenge' => { results: %w[ok], detail: { 'route' => %w[keyboard foothold from],
+                                                      'method' => %w[key lockpick rfid biometric bluetooth ble pin password combination cryptex npc] } },
       'mfa_code_ok' => { results: %w[ok] },
       'mfa_code_wrong' => { results: %w[fail] },
       'mfa_code_locked' => { results: %w[locked] },
@@ -36,11 +37,11 @@ module BreakEscape
       @game.write_log_row!(event, as: nil, where: where, result: result, detail: detail)
     end
 
-    test 'the eight events are registered last, in order, as pc events labelled within the pattern' do
+    test 'the eight events are registered last, in order, for a PC, an object or a door, labelled within the pattern' do
       assert_equal EXPECTED.keys, OpsLogEvents::EVENTS.keys.last(8)
       EXPECTED.each do |name, want|
         entry = OpsLogEvents::EVENTS[name]
-        assert_equal %w[pc], entry[:places], name
+        assert_equal %w[pc object door], entry[:places], name
         assert_equal want[:results], entry[:results], name
         assert_equal want[:detail] || {}, entry[:detail] || {}, name
         assert_match OpsLogEvents::LABEL_PATTERN, entry[:label]
@@ -54,7 +55,7 @@ module BreakEscape
       EXPECTED.each do |name, want|
         want[:results].each { |result| assert write(name, result: result, detail: want[:detail] && { want[:detail].keys.first => want[:detail].values.first.first }), name }
         assert_raises(OpsLog::Malformed, name) { write(name, result: 'granted') }
-        assert_raises(OpsLog::Malformed, name) { write(name, result: want[:results].first, where: { kind: 'door', id: 'lobby' }) }
+        assert_raises(OpsLog::Malformed, name) { write(name, result: want[:results].first, where: { kind: 'network', id: 'lobby' }) }
         if want[:detail]
           key = want[:detail].keys.first
           assert_raises(OpsLog::Malformed, name) { write(name, result: want[:results].first, detail: { key => 'telepathy' }) }
