@@ -1329,6 +1329,26 @@ export function startAuthenticator(params = {}) {
 }
 window.startAuthenticator = startAuthenticator;
 
+// Code device (ops layer S8a): params { itemId, returnTo, onComplete }. Alone it just closes; as a
+// child (returnTo set) it returns to the sign-in screen.
+export function startCodeDevice(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Code device unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    return window.MinigameFramework.startMinigame('code-device', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startCodeDevice = startCodeDevice;
+
 // Authenticator device (a room object): the push stream is the object's minigameData
 // ({ pushes, approvesAt } or { choice, pushTemplate, defenderNote }, plus optional strings).
 // With setGlobalPrefix, closing the phone writes <prefix>approved (never cleared once true)
