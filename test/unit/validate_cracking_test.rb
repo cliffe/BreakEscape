@@ -360,6 +360,41 @@ class ValidateCrackingTest < ActiveSupport::TestCase
     assert(warnings(s).none? { |w| w.include?('without their own recipe') })
   end
 
+  # R2-L6: whatever the salt, a cracked entry shows the password, so cracking an easier account hands over the password of
+  # a harder one with the same value. strong beside guessable or common, guessable beside common, is a warning.
+  def classed_pair(first, second, salted: false)
+    s = unsalted_pair('strong')
+    pair = { 'common' => { 'password' => 'common', 'difficulty' => 'easy' },
+             'reused' => { 'password' => 'reused', 'difficulty' => 'medium' },
+             'strong' => { 'password' => 'strong', 'difficulty' => 'hard' },
+             'guessable' => { 'password' => 'guessable', 'difficulty' => 'hard', 'facts' => %w[pet town] } }
+    rec(s)['crack'] = pair[first].dup
+    s['credentials']['eli_hash']['crack'] = pair[second].dup
+    [rec(s), s['credentials']['eli_hash']].each { |r| r['salted'] = salted }
+    s
+  end
+
+  test 'warnings: equal passwords whose cracking shows a harder account password, salted or not' do
+    [%w[common strong], %w[common guessable], %w[guessable strong]].each do |first, second|
+      [true, false].each do |salted|
+        s = classed_pair(first, second, salted: salted)
+        assert(warnings(s).any? { |w| w.include?('shows the password') }, "#{first} beside #{second}, salted #{salted}")
+        refute_includes check(s).join("\n"), 'Pw-One-1'
+      end
+    end
+  end
+
+  test 'warnings: equal passwords the value rule leaves silent (guessable beside reused, a reused pair, strong pair, distinct)' do
+    quiet = ->(s) { warnings(s).none? { |w| w.include?('shows the password') } }
+    assert quiet.call(classed_pair('reused', 'guessable', salted: true))
+    assert quiet.call(classed_pair('reused', 'strong', salted: true))
+    assert quiet.call(classed_pair('strong', 'strong', salted: true))
+    assert quiet.call(classed_pair('common', 'common', salted: false))
+    s = classed_pair('common', 'strong', salted: true)
+    s['rooms']['office']['npcs'].last['creds']['password'] = 'Pw-Other-3'
+    assert quiet.call(s)
+  end
+
   test 'warnings: password equals a capture secret without revealSecret' do
     s = base
     s['rooms']['office']['npcs'].last['eventMappings'] = [{ 'addCapture' => { 'targetId' => 't1', 'secret' => 'Pw-One-1' } }]

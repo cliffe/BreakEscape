@@ -9,7 +9,7 @@ export const MAX_PICKS = 4;
 
 /** Every word the scene shows for a status. Nothing here comes from a server string. */
 export const STATUS_TEXT = Object.freeze({
-    ready: 'Pick the facts you think this password was built from, then press Crack.',
+    ready: 'Pick the facts you think it was built from, then press Crack.',
     running: 'Working on it...',
     ready_to_finish: 'Ready to finish. Press Finish to see the result.',
     nomatch: 'No match',

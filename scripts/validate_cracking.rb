@@ -363,6 +363,28 @@ def check_cracking(json_data)
               "is strong or guessable: an unsalted crack of any of them would grant the others without their own recipe; give each account its own password")
   end
 
+  # R2-L6: a cracked entry shows the password whatever the salt. Hash-record accounts with equal passwords, where a strong or
+  # guessable one sits beside an easier one (common, or guessable beside strong), hand the harder password over by value.
+  # A guessable or strong account beside a reused one is silent (the reused record needs its partner first).
+  value_groups = Hash.new { |h, k| h[k] = {} }
+  hashes.each do |_id, entry|
+    npc = cm.account_npc(json_data, entry['account'])
+    password = npc && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
+    next unless cm.present_string?(password) && cd.resolve(entry, npc)
+
+    crack = entry['crack'].is_a?(Hash) ? entry['crack'] : {}
+    habits = npc['habits'].is_a?(Hash) ? npc['habits'] : {}
+    value_groups[password][npc['id']] = crack['password'] || habits['password']
+  end
+  value_groups.each_value do |members|
+    classes = members.values
+    next unless (classes.include?('strong') && (classes.include?('guessable') || classes.include?('common'))) ||
+                (classes.include?('guessable') && classes.include?('common'))
+
+    warn.call("accounts #{members.keys.map { |a| a.to_s[0, 40] }.sort.join(', ')} have hash records and equal passwords of different classes: " \
+              "cracking the easier one shows the password of the harder one without its recipe, salted or not; give each account its own password")
+  end
+
   # ---- policies: accepts hash --------------------------------------------------------------
   if json_data['policies'].is_a?(Hash)
     json_data['policies'].each do |pname, policy|
