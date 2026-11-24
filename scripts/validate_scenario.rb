@@ -28,6 +28,7 @@ require_relative 'validate_capture_log'
 require_relative 'validate_log_rows'
 require_relative 'validate_network_ops'
 require_relative 'validate_privilege'
+require_relative 'validate_mfa'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_plant_hiding'
@@ -9122,6 +9123,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_log_rows') { check_log_rows(json_data) }
   run.call('check_network_ops') { check_network_ops(json_data) }
   run.call('check_privilege') { check_privilege(json_data) }
+  run.call('check_mfa') { check_mfa(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_plant_hiding') { check_plant_hiding(json_data, repo_root) }

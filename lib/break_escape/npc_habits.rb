@@ -39,10 +39,11 @@ module BreakEscape
 
     LOCK_FIELDS = %w[lockChance locksScreenOnLeave].freeze
 
+    # MFA plan S8a: approvesPrompts and promptPatience are read raw by MfaModel, not expanded.
     # Step 8c: the office-life habit sub-blocks that live in `habits` but are not awareness
     # habits (they are not in HABITS or PARAMETERS). `authored`/`expanded` ignore them, so
     # `expand!` carries an authored one across the awareness expansion unchanged.
-    FOLDED = %w[screen print usb].freeze
+    FOLDED = %w[screen print usb approvesPrompts promptPatience].freeze
 
     def level?(value)
       value.is_a?(String) && LEVELS.include?(value)
