@@ -1014,6 +1014,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
+      status: row['status'],
+      mfa_verify_strict: method == 'POST' && path.match?(%r{/games/[^/]+/mfa/verify\z}),
       logout: method == 'POST' && path.end_with?('/logout'),
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
@@ -1687,7 +1689,7 @@ class AccessLeakScanner
         value.each do |pc|
           add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
         end
-      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login] && !mfa_verify_lockout_proved?(body, hash, json_path, ctx)
         # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
         add.call('lockout_list', 'lockedOut', safe_path(path))
       elsif value == true && ctx[:npc_frustration] && @game
@@ -1708,6 +1710,30 @@ class AccessLeakScanner
 
       add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
     end
+  end
+
+  # S8a playtest 3: the lock a run's own wrong second-step codes reach. `POST mfa/verify` answers 422 with the four-key body
+  # a `login` lockout answer has (Game#login_locked_out_answer) only when the failure count of the step's account at the
+  # step's PC reaches `maxAttempts`. Credited only when the capture shows exactly one open code step (the answer names no
+  # PC or account) and exactly `maxAttempts` less one wrong-code answers for that account at that PC since its last pass.
+  # A lock reached through wrong passwords too (their answers name no PC), no open step, two open steps, another body,
+  # route, verb or status stays a finding.
+  MFA_VERIFY_LOCK_KEYS = %w[attemptsLeft lockedOut message success].freeze
+
+  def mfa_verify_lockout_proved?(body, hash, json_path, ctx)
+    return false unless @game && ctx[:mfa_verify_strict] && ctx[:status] == 422 && json_path == '$' && hash.equal?(body)
+    return false unless hash.keys.sort == MFA_VERIFY_LOCK_KEYS
+    return false unless hash['success'] == false && hash['lockedOut'] == true && hash['attemptsLeft'] == 0 && hash['message'] == BreakEscape::Game::LOGIN_LOCKED_OUT
+
+    open = (@mfa_pending || {}).select { |_pc, rec| rec[:kind] == 'code' }
+    return false unless open.size == 1
+
+    pc, rec = open.first
+    pair = [pc, rec[:npc]]
+    return false if (@mfa_wrong_unknown || Set.new).include?(pair) || !@priv_pcs.key?(pc)
+
+    max = @game.login_max_attempts(@priv_pcs[pc])
+    max && (@mfa_wrong || {})[pair].to_i == max - 1
   end
 
   # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
@@ -3510,6 +3536,8 @@ class AccessLeakScanner
   MFA_ROUTE_NAMES = 'mfa/[a-z]+|login|inventory|lock_session|logout|scenario'
 
   def mfa_begin_scan
+    @mfa_wrong = Hash.new(0)  # [PC id, account id] => wrong-code answers since the last pass (counted with exactly one open code step)
+    @mfa_wrong_unknown = Set.new # [PC id, account id] pairs a wrong-code answer could belong to, with two code steps open
     @mfa_pending = {}     # PC id => { npc:, kind:, number: }, opened by an `mfaRequired` answer, closed by a pass answer
     @mfa_held = {}        # PC id => account id, a session a second step earned in this run
     @mfa_locked = Set.new # PC ids whose earned session a 200 lock_session answer locked (used up by the one unlock)
@@ -4069,10 +4097,13 @@ class AccessLeakScanner
 
       # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
       # a pass answer on the strict route earns
+      mfa_count_wrong_code(body, info, row)
       if body['success'] == true
         pc = mfa_pass_pc(body, info, row)
         return unless pc
 
+        @mfa_wrong.delete([pc, body['npcId']])
+        @mfa_wrong_unknown.delete([pc, body['npcId']])
         @mfa_pending.delete(pc)
         @mfa_passed << [pc, body['npcId']]
         @mfa_held[pc] = @mfa_at[pc] = body['npcId']
@@ -4088,6 +4119,21 @@ class AccessLeakScanner
       @mfa_locked << body['pcId'] if info[:route] && info[:ok] && body.is_a?(Hash) && body['success'] == true && body['locked'] == true && body['pcId'].is_a?(String)
     when 'logout' then mfa_note_logout(body, info, row)
     when nil then mfa_note_foreign_session(body, info)
+    end
+  end
+
+  # A wrong-code answer (422 on the strict route, `mfaIncorrect` with an `attemptsLeft`: the expiring one counts too) belongs to
+  # the one open code step; with two open the pairs are unknown, and stay so until a pass answer for the pair.
+  def mfa_count_wrong_code(body, info, row)
+    return unless info[:route] == 'mfa/verify' && info[:method] == 'POST' && row['status'] == 422 && body['mfaIncorrect'] == true && body['attemptsLeft'].is_a?(Integer)
+
+    tag = mfa_row_pc_tag(row)
+    open = @mfa_pending.select { |pc, rec| rec[:kind] == 'code' && (tag.nil? || pc == tag) }
+    if open.size == 1
+      pc, rec = open.first
+      @mfa_wrong[[pc, rec[:npc]]] += 1
+    else
+      @mfa_pending.each { |pc, rec| @mfa_wrong_unknown << [pc, rec[:npc]] if rec[:kind] == 'code' }
     end
   end
 
