@@ -9,6 +9,7 @@ module BreakEscape
     include NetworkOps
     include CaptureProofs
     include CredentialKeyring
+    include EarnedFacts
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
@@ -718,7 +719,7 @@ module BreakEscape
       end
     end
 
-    def add_inventory_item!(item)
+    def add_inventory_item!(item, fact_source: false)
       player_state['inventory'] ||= []
 
       # `credential` is a forgeable field (stripped from every client contribution and
@@ -732,6 +733,8 @@ module BreakEscape
 
       unless item_exists
         player_state['inventory'] << item
+        # S7: facts the stored copy reveals (a take or a server-given item), before the save below
+        stamp_item_facts!(item) if fact_source
         # q35: an NPC's Friendface phone reaching the inventory is taken for good (review R1 m2)
         note_friendface_phone_taken!(item)
         save!
@@ -3100,7 +3103,11 @@ module BreakEscape
       'opsFindings' => {},
       # Network ops S3 (OPS_CORE_PLAN.md 8): [findingId], the findings a technique card was used on
       # (a credential grant, once each). Server-written only, never in a sync body or any answer.
-      'opsUsed' => []
+      'opsUsed' => [],
+      # Offline cracking S7 (S7_BUILD_BRIEF.md 4): earnedFacts [factId] (at most 64), crackRuns and
+      # crackStarted { hashId => ... }, crackedAccounts [npcId]. Server-written only, never in a sync
+      # body, the bootstrap or any answer whole, at most 64 entries each.
+      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
