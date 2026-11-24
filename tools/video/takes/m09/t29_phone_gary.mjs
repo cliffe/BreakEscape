@@ -11,7 +11,7 @@ export default async (page, bridge, mark) => {
   let nsub = 0; const drain = async () => { const a = await page.evaluate(() => window.__subs.slice()).catch(() => []); for (; nsub < a.length; nsub++) mark('sub:' + a[nsub].text.slice(0, 60), { text: a[nsub].text }, a[nsub].t); };
   const timer = setInterval(drain, 200);
   await sleep(1000); const D = await doorId(bridge, 'tape_room', 'salvage_cage');
-  await bridge.moveToNear(D, { timeoutMs: 25000 }); await sleep(700); await bridge.interact(D, { timeoutMs: 20000, approach: false }); mark('keypad-tried', { D }); await sleep(900); await closeAll(page, bridge);
+  await bridge.moveToNear(D, { timeoutMs: 25000 }); await sleep(700); const ir = await bridge.interact(D, { timeoutMs: 20000, approach: false }).catch(e => ({ err: String(e).slice(0, 120) })); mark('keypad-tried', { D, ir: JSON.stringify(ir).slice(0, 200), mg: (await bridge.getState()).activeMinigame }); await sleep(900); await closeAll(page, bridge);
   const t0 = Date.now(); let ok = false;
   while (Date.now() - t0 < 20000) { ok = await page.evaluate(() => { const b = document.querySelector('.incoming-call-answer'); return !!(b && b.offsetParent); }).catch(() => false); if (ok) break; await sleep(100); }
   if (!ok) throw new Error('no ring'); mark('ring-seen'); await sleep(1500);
