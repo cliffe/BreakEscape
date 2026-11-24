@@ -38,3 +38,20 @@ The scan results land at one instant in each take (found by frame-brightness ons
 
 - m07-m10 have no edits yet; clips only.
 - m01 edit left on the Hydra shot (see above).
+
+## Varied console beats: draft plan (24 Nov, not yet cut)
+
+Owner note: too many trailers show the nmap scan. Surveyed from the full-solution RAW takes (`vm_console_full_RAW_s9xx.trimmed.mkv`, times in trimmed seconds) against each mask log. No clips cut yet; frame-level checks still to do before any cut.
+
+| Mission | Beat kind | Source and time | Mask / risk | Text extent | Neighbour check |
+|---|---|---|---|---|---|
+| m01 | brute force (Hydra, kept) | current edit | password mosaicked (existing) | n/a | m02 differs |
+| m02 | file read (backdoor warning email) | s943, foothold stage 104.7-117.6 | flag line and account name above the email: crop below them | Subject line ~0-470 px; body full width | m01, m03 differ |
+| m03 | keep recon | s949 | distcc output lands in one frame with a flag | as now | m02, m04 differ |
+| m04 | msf module run | s958, rce stage ~174-190 | base64 payload rows on top: crop out; flag only from ~212 | left, ~560-900 px | m03, m05 differ |
+| m05 | keep recon | s959 | later stages are config dumps | as now | m04, m06 differ |
+| m06 | shell landing (uid + runbook note) | s960, foothold-run, lands 80-90 | clean per mask log | top-left, ~0-650 px | m05, m07 differ |
+| m07 | keep recon | s945 | later stages show account, password, flag at once | as now | m06, m08 differ |
+| m08 | shell landing (msf session opened, www-data) | s946, gitlist_rce ~105-150 | no flag in span; check every frame | top-left, under ~700 px | m07, m09 differ |
+| m09 | msf module run | s947, tomb_privesc ~170-176 | base64 blob mid-screen: crop out | top and bottom rows, left | m08, m10 differ |
+| m10 | to pick (not msf module run) | s948 | see mask log | - | - |
