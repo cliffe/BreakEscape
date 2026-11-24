@@ -569,7 +569,7 @@ module HelpdeskLeakRules
       pc = mfa_pass_pc(body, minfo, @hd_row || {})
       @hd_close_after << pc if pc
     elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
-      kinds = route == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
+      kinds = route == 'mfa/verify' ? %w[code] : AccessLeakScanner::MFA_PUSH_KINDS
       tag = hd_row_tag
       @hd_close_after.concat(@hd_own_steps.keys.select do |pc|
         rec = @mfa_pending[pc]
