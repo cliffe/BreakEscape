@@ -49,6 +49,43 @@ def crack_hashes_with(data, key)
   out
 end
 
+# R2-4: fact id => where else it is awarded: a mail highlight, a pretext call's intel list, or a
+# grant_fact action that is not a flag reward.
+def crack_other_award_paths(data)
+  out = {}
+  walk = lambda do |node, path, under_rewards|
+    case node
+    when Hash
+      out[node['fact']] ||= path if !under_rewards && node['type'] == 'grant_fact' && node['fact'].is_a?(String)
+      out[node['grants']] ||= "a mail highlight at #{path}" if node['grants'].is_a?(String) && path.include?('highlights')
+      if node['grants'].is_a?(Hash)
+        Array(node['grants']['intel']).each { |f| out[f] ||= "a pretext call at #{path}" if f.is_a?(String) }
+      end
+      node.each { |k, v| walk.call(v, "#{path}/#{k}", under_rewards || k == 'flagRewards') }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}/#{i}", under_rewards) }
+    end
+  end
+  walk.call(data, '', false)
+  out.transform_values { |w| w.start_with?('a ') ? w : "a grant_fact action at #{w[0, 80]}" }
+end
+
+# R1-C2: any item of type capture_log that holds captures, anywhere in the scenario.
+def crack_has_capture_log?(data)
+  found = false
+  walk = lambda do |node|
+    case node
+    when Hash
+      found = true if node['type'] == 'capture_log' && node['holds'].is_a?(Hash) && node['holds']['captures'] == true
+      node.each_value { |v| walk.call(v) } unless found
+    when Array
+      node.each { |v| walk.call(v) unless found }
+    end
+  end
+  walk.call(data)
+  found
+end
+
 # Whether this revealsFacts item is somewhere the server sees the player get it.
 def crack_item_is_source?(entry, data)
   item = entry[:item]
@@ -203,7 +240,9 @@ def check_cracking(json_data)
   # ---- grant_fact flag rewards ------------------------------------------------------------
   grant_fact_ids = Set.new
   crack_hashes_with(json_data, 'flagRewards').each do |h|
-    Array(h[:node]['flagRewards']).each do |r|
+    rewards = h[:node]['flagRewards']
+    rewards = rewards.values if rewards.is_a?(Hash) # the hash form { "<flag>": { type, ... } } (R2-3)
+    Array(rewards).each do |r|
       next unless r.is_a?(Hash) && r['type'] == 'grant_fact'
 
       problem = bad_fact.call(r['fact'])
@@ -213,6 +252,17 @@ def check_cracking(json_data)
         grant_fact_ids << r['fact']
       end
     end
+  end
+
+  # R2-4: the server withholds a fact named by revealsFacts or a flag grant_fact until it sees it
+  # earned, so a second award path the server cannot see (a mail highlight, a pretext call, a
+  # grant_fact action on an object or in dialogue) would do nothing.
+  other_paths = Hash.new { |h, k| h[k] = [] }
+  crack_other_award_paths(json_data).each { |fid, where| other_paths[fid] << where }
+  (reveal_entries.flat_map { |e| Array(e[:item]['revealsFacts']).grep(String) }.to_set | grant_fact_ids).each do |fid|
+    next unless other_paths.key?(fid)
+
+    err.call("fact `#{fid}` is awarded by an item or flag reward and also by #{other_paths[fid].first}; the server withholds it until it sees it earned there, so the second path does nothing. Give each fact one award path")
   end
 
   # ---- fact sources -----------------------------------------------------------------------
@@ -236,6 +286,11 @@ def check_cracking(json_data)
   end
   if hashes.size > OPS_CRACK_CAP
     err.call("this scenario has #{hashes.size} hash records; the server keeps at most #{OPS_CRACK_CAP} cracked accounts")
+  end
+
+  # R1-C2: a hash row is only listed, and the cracker only opens, from the capture log
+  unless hashes.empty? || crack_has_capture_log?(json_data)
+    err.call("this scenario has hash records but no capture log item (type capture_log with holds.captures true) the player can hold; the capture log is the only way to list a hash and open the cracker")
   end
 
   hashes.each do |id, entry|

@@ -13,7 +13,8 @@ class ValidateCrackingTest < ActiveSupport::TestCase
         'team' => { 'label' => 'Team' }, 'colour' => { 'label' => 'Colour' }
       } },
       'startItemsInInventory' => [
-        { 'type' => 'notes', 'id' => 'diary', 'name' => 'Diary', 'takeable' => true, 'revealsFacts' => %w[pet town] }
+        { 'type' => 'notes', 'id' => 'diary', 'name' => 'Diary', 'takeable' => true, 'revealsFacts' => %w[pet town] },
+        { 'type' => 'capture_log', 'id' => 'capture_log', 'name' => 'Capture log', 'takeable' => true, 'holds' => { 'captures' => true } }
       ],
       'credentials' => {
         'dana_hash' => { 'kind' => 'hash', 'account' => 'dana', 'proof' => { 'held' => 'share_file' },
@@ -63,6 +64,37 @@ class ValidateCrackingTest < ActiveSupport::TestCase
 
   test 'a clean scenario has no errors or warnings' do
     assert_empty check(base), check(base).join("\n")
+  end
+
+  test 'R1-C2: hash records with no way to open the capture log is an error; a held log anywhere clears it' do
+    s = base
+    s['startItemsInInventory'].reject! { |i| i['type'] == 'capture_log' }
+    assert_error(s, 'capture log')
+    s['rooms']['office']['objects'] << { 'type' => 'capture_log', 'id' => 'cl', 'name' => 'Log', 'takeable' => true, 'holds' => { 'captures' => true } }
+    assert_empty errors(s), errors(s).join("\n")
+  end
+
+  test 'R2-3: a grant_fact in the hash form of flagRewards is read (bad fact id is an error)' do
+    s = base
+    s['rooms']['office']['objects'] << { 'id' => 'station', 'type' => 'flag-station', 'name' => 'Station',
+                                         'flagRewards' => { 'flag{x}' => { 'type' => 'grant_fact', 'fact' => 'ghost' } } }
+    assert_error(s, 'grant_fact flag reward fact')
+  end
+
+  test 'R2-4: a fact awarded by an item or flag reward and also by another path the server cannot see is an error' do
+    s = base
+    s['rooms']['office']['objects'] << { 'id' => 'desk', 'type' => 'notes', 'name' => 'Desk', 'readable' => true,
+                                         'onRead' => [{ 'type' => 'grant_fact', 'fact' => 'pet' }] }
+    assert_error(s, 'also by')
+    s = base
+    s['social']['mailClient'] = { 'seededMessages' => [{ 'id' => 'm1', 'highlights' => [{ 'id' => 'h1', 'grants' => 'town' }] }] }
+    assert_error(s, 'a mail highlight')
+    s = base
+    s['social']['pretextNpcs'] = { 'dana' => { 'grants' => { 'intel' => ['pet'] } } }
+    assert_error(s, 'a pretext call')
+    s = base
+    s['social']['mailClient'] = { 'seededMessages' => [{ 'id' => 'm1', 'highlights' => [{ 'id' => 'h1', 'grants' => 'colour' }] }] }
+    assert_empty errors(s), 'a fact outside any recipe item or reward is not affected'
   end
 
   test 'a scenario with no hash record is silent' do
