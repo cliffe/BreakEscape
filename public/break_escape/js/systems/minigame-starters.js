@@ -1329,6 +1329,25 @@ export function startAuthenticator(params = {}) {
 }
 window.startAuthenticator = startAuthenticator;
 
+// Live authenticator (ops layer S8a): the held phone's real prompts. params { npcId, returnTo, onComplete }.
+export function startAuthenticatorLive(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    return window.MinigameFramework.startMinigame('authenticator-live', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startAuthenticatorLive = startAuthenticatorLive;
+
 // Code device (ops layer S8a): params { itemId, returnTo, onComplete }. Alone it just closes; as a
 // child (returnTo set) it returns to the sign-in screen.
 export function startCodeDevice(params = {}) {

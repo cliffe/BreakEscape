@@ -26,6 +26,7 @@ export { PasswordGuesserMinigame } from './password-guesser/password-guesser-min
 export { AssistantChatMinigame } from './assistant-chat/assistant-chat-minigame.js';
 export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
+export { AuthenticatorLiveMinigame } from './authenticator/authenticator-live-minigame.js';
 export { CodeDeviceMinigame } from './code-device/code-device-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
@@ -129,6 +130,7 @@ import { PasswordGuesserMinigame } from './password-guesser/password-guesser-min
 import { AssistantChatMinigame } from './assistant-chat/assistant-chat-minigame.js';
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
+import { AuthenticatorLiveMinigame } from './authenticator/authenticator-live-minigame.js';
 import { CodeDeviceMinigame } from './code-device/code-device-minigame.js';
 
 // Import the PIN minigame
@@ -215,6 +217,7 @@ MinigameFramework.registerScene('password-guesser', PasswordGuesserMinigame);
 MinigameFramework.registerScene('assistant-chat', AssistantChatMinigame);
 MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
 MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
+MinigameFramework.registerScene('authenticator-live', AuthenticatorLiveMinigame);
 MinigameFramework.registerScene('code-device', CodeDeviceMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
