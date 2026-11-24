@@ -1,0 +1,13 @@
+{
+  "key": "4eef8e54928be2a844aa2acab33e53d4",
+  "npc": "leila_servicedesk",
+  "text": "I'm going to stop there. I'll call you back on the number we hold on file. If that's really you, you'll hear from us.",
+  "voice": "Sulafat",
+  "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T09:39:07Z"
+}

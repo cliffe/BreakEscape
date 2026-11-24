@@ -1,0 +1,13 @@
+{
+  "key": "8d57a1442f1240348e5082f6bf2cd099",
+  "npc": "leila_servicedesk",
+  "text": "Let's slow down a moment. I still have to check who you are.",
+  "voice": "Sulafat",
+  "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca03_helpdesk_reset",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T09:38:25Z"
+}
