@@ -90,6 +90,23 @@ test('switch both ways and back: the same rows, one renderer at a time, and noth
     h.end();
 });
 
+test('"More below" follows the mounted skin at once: hidden on a switch to the Terminal, measured again on the way back', async () => {
+    const h = await mount(opsBody(), { params: { skin: 'gui' } });
+    const v = h.view();
+    // jsdom has no layout: say the list runs past the bottom edge
+    Object.defineProperty(v.gameContainer, 'scrollHeight', { configurable: true, value: 1000 });
+    Object.defineProperty(v.gameContainer, 'clientHeight', { configurable: true, value: 100 });
+    v.updateScrollCue();
+    assert.equal(v.moreElement.hidden, false, 'shown in Panels');
+    switchBtn(h).click();
+    await settle();
+    assert.equal(v.moreElement.hidden, true, 'hidden as the Terminal is mounted');
+    switchBtn(h).click();
+    await settle();
+    assert.equal(v.moreElement.hidden, false, 'back in Panels');
+    h.end();
+});
+
 test('a press of the switch is remembered for this page (skin-choice.js)', async () => {
     const h = await mount(opsBody(), { params: { skin: 'gui' } });
     assert.equal(choice.pressed(), null);

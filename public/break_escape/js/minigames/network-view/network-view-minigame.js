@@ -702,6 +702,8 @@ export class NetworkViewMinigame extends MinigameScene {
             this.renderer.mount(this.gameContainer, this.rendererCtx());
         }
         this.mounted = want;
+        // the cue follows the skin now mounted: hidden for the Terminal, measured again for Panels
+        this.updateScrollCue();
     }
 
     /** The switch: one button in the window's title bar, labelled with the other skin's name. */
