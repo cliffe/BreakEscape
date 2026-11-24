@@ -77,6 +77,8 @@ module LockStepLeakRules
 
   # the values `waiting` takes on a lock answer (mfa_access.rb: the owner, or the owner's phone held by the player)
   LS_WAITING_VALUES = %w[owner held_phone].freeze
+  # the refusals a PC's form always sends with its `message` (mfa_sign_in.rb); the lock's of the same name never has one
+  LS_PC_MESSAGE_KEYS = %w[mfaIncorrect stale expired codeLocked tooSoon].freeze
 
   # ---- what the PC rules ask (public to the scanner, which includes this module) ---------------------------------------
 
@@ -466,8 +468,12 @@ module LockStepLeakRules
   end
 
   # With a PC step open the answer may be that PC's (it has no echo, the lock's always has): the PC rules judge it.
+  # An answer a PC's form sends with its `message` (mfaIncorrect, stale, expired, codeLocked, tooSoon) and which has none is the
+  # lock's with its echo dropped, so it is not the PC's (only the shapes of both forms alike, a cancel and a waiting prompt, can be).
   def ls_pc_owns?(root)
-    !@mfa_pending.empty? && root.keys.all? { |k| LS_PC_REFUSAL_KEYS.include?(k) }
+    return false if @mfa_pending.empty? || !root.keys.all? { |k| LS_PC_REFUSAL_KEYS.include?(k) }
+
+    root.key?('message') || (root.keys & LS_PC_MESSAGE_KEYS).empty?
   end
 
   # The answers the server gives with no lock to name: the generic 422 and the 403/404 error answers.
@@ -558,8 +564,15 @@ module LockStepLeakRules
     return [nil, []] if candidates.empty?
 
     passed = candidates.select { |k| @ls_passed.include?(k) }
-    return [passed.first, []] if passed.size == 1
-    return [candidates.first, []] if passed.empty? && candidates.all? { |k| @ls_opened.include?(k) }
+    placed = passed.size == 1 ? passed.first : (passed.empty? && candidates.all? { |k| @ls_opened.include?(k) } ? candidates.first : nil)
+    if placed
+      # the open answer says what it opened: an object lock's is `type: object`, a door's `type: door`, and a door's room data is
+      # never a contents list (the server's two shapes, games_controller#unlock)
+      return [placed, []] if root['type'] == @ls_locks[placed][:type]
+
+      add.call('lock_step_answer', "lockstep:open:type:#{placed}", '$')
+      return [nil, [placed]]
+    end
 
     add.call('lock_step_content', "lockstep:open:#{passed.empty? ? candidates.min : 'ambiguous'}", '$')
     [nil, candidates] # the open is the finding; its own contents are not reported a second time
