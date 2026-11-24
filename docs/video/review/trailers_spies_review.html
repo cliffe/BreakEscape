@@ -38,6 +38,9 @@ video{width:100%;max-width:100%;aspect-ratio:16/9;background:#000;display:block}
 ul{margin:0;padding-left:20px}
 li{margin:2px 0}
 details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.earlier{border:2px solid var(--line);padding:10px 12px;background:var(--panel)}
+.earlier summary{font-family:var(--display);font-size:11px;color:var(--fg)}
+.earlier[open] summary{margin-bottom:10px}
 pre{font-family:var(--mono);font-size:12px;white-space:pre-wrap;margin:8px 0 0;overflow-x:auto}
 .q{display:grid;gap:8px;border-top:2px solid var(--line);padding-top:14px}
 .q:first-child{border-top:0;padding-top:0}
@@ -61,37 +64,42 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · 22 Nov 2026</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 24 Nov 2026</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m07v2" aria-selected="true" data-cut="m07v2">m07 · v2</button>
-    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
+  <nav class="tabs" role="tablist" aria-label="Current round per mission">
     <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
-    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1</button>
-    <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4</button>
-    <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
-    <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
-    <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
+    <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4</button>
     <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
-    <button class="tab" role="tab" id="tab-m05v4" aria-selected="false" data-cut="m05v4">m05 · v4</button>
+    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
     <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2 · final</button>
-    <button class="tab" role="tab" id="tab-m06v1" aria-selected="false" data-cut="m06v1">m06 · v1</button>
-    <button class="tab" role="tab" id="tab-m05v3" aria-selected="false" data-cut="m05v3">m05 · v3</button>
-    <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
-    <button class="tab" role="tab" id="tab-m05v2" aria-selected="false" data-cut="m05v2">m05 · v2</button>
-    <button class="tab" role="tab" id="tab-m04v1" aria-selected="false" data-cut="m04v1">m04 · v1</button>
-    <button class="tab" role="tab" id="tab-m05v1" aria-selected="false" data-cut="m05v1">m05 · v1</button>
-    <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
-    <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
-    <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
-    <button class="tab" role="tab" id="tab-m03v3" aria-selected="false" data-cut="m03v3">m03 · v3</button>
-    <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
-    <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
-    <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
+    <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2</button>
+    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1</button>
   </nav>
+  <details class="earlier" id="earlier">
+    <summary>Earlier rounds (17)</summary>
+    <nav class="tabs" role="tablist" aria-label="Earlier rounds">
+      <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
+      <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
+      <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
+      <button class="tab" role="tab" id="tab-m02" aria-selected="false" data-cut="m02">m02 · v4</button>
+      <button class="tab" role="tab" id="tab-m03v3" aria-selected="false" data-cut="m03v3">m03 · v3</button>
+      <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
+      <button class="tab" role="tab" id="tab-m04v1" aria-selected="false" data-cut="m04v1">m04 · v1</button>
+      <button class="tab" role="tab" id="tab-m05v4" aria-selected="false" data-cut="m05v4">m05 · v4</button>
+      <button class="tab" role="tab" id="tab-m05v3" aria-selected="false" data-cut="m05v3">m05 · v3</button>
+      <button class="tab" role="tab" id="tab-m05v2" aria-selected="false" data-cut="m05v2">m05 · v2</button>
+      <button class="tab" role="tab" id="tab-m05v1" aria-selected="false" data-cut="m05v1">m05 · v1</button>
+      <button class="tab" role="tab" id="tab-m06v1" aria-selected="false" data-cut="m06v1">m06 · v1</button>
+      <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
+      <button class="tab" role="tab" id="tab-social" aria-selected="false" data-cut="social">Social cuts · 9:16 and 1:1</button>
+      <button class="tab" role="tab" id="tab-voiced" aria-selected="false" data-cut="voiced">New lines · audio</button>
+      <button class="tab" role="tab" id="tab-lines2" aria-selected="false" data-cut="lines2">Lines · round 2</button>
+      <button class="tab" role="tab" id="tab-lines" aria-selected="false" data-cut="lines">Lines m04–m10</button>
+    </nav>
+  </details>
 
   <main id="cut"></main>
 
@@ -654,7 +662,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m07v2";
+let current = "m01v13";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
@@ -717,6 +725,8 @@ function showSaved(){ const st=document.getElementById("savestatus"); if (st && 
 
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{current=t.dataset.cut; render(); try{localStorage.setItem(LS+"_tab",current);}catch(_){} }));
 try { const t=localStorage.getItem(LS+"_tab"); if (t && CUTS[t]) current=t; } catch(_){}
+const EARLIER = new Set([...document.querySelectorAll("#earlier .tab")].map(t=>t.dataset.cut));
+if (EARLIER.has(current)) document.getElementById("earlier").open = true;
 document.getElementById("copybtn").addEventListener("click",async()=>{ const box=document.getElementById("copybox"), s=document.getElementById("copystatus");
   try{ await navigator.clipboard.writeText(box.value); s.textContent="Copied."; } catch(_){ box.select(); s.textContent="Selected: press Ctrl+C."; } });
 render();
