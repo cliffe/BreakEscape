@@ -3418,11 +3418,24 @@ class AccessLeakScanner
     @priv_pcs.each_key { |pc| @ops_earned << "admin_read:#{profile}@#{pc}" if priv_admin_opens?(acl, pc) }
   end
 
-  # Is `admin:<pc>` earned at a PC (the given one, or any) whose owner the list admits?
+  # Is an admin session earned at a PC (the given one, or any) whose owner, or any account cached there now, the list admits?
+  # R1-L3: since unit 08 an admin at a PC reaches the profile of every account cached there now (`admin_present_accounts`: the
+  # owner, then a start candidate always, a borrow candidate only once its borrow is proved as the collect proves it). The
+  # admin session is the S5a step or a proved relay administrator (the same reach, ruling B).
   def priv_admin_opens?(acl, pc_id)
     (pc_id ? [pc_id] : @priv_pcs.keys).any? do |pc|
-      @ops_earned.include?("admin:#{pc}") && (owner = priv_owner(pc)) && priv_acl_admits?(acl, owner)
+      (@ops_earned.include?("admin:#{pc}") || @hv_relay.key?(pc)) && priv_admin_reach(pc).any? { |id| priv_acl_admits?(acl, id) }
     end
+  end
+
+  # The account ids an admin session at the PC reaches: its owner, then the accounts cached there now.
+  def priv_admin_reach(pc)
+    owner = priv_owner(pc)
+    reach = owner ? [owner] : []
+    @hv_candidates.each do |npc, entries|
+      entries.each { |declared, after| reach << npc if declared == pc && (after.nil? || harvest_borrowed?(pc, npc)) }
+    end
+    reach
   end
 
   # May this container answer hold the profile's items? `container` is a PC id (the desktop) or a folder id.

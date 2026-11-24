@@ -382,4 +382,47 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     assert_includes rules(scan(rows, scenario: scenario)), 'harvest_unearned'
     assert_empty scan(rows, scenario: scenario, signins: ['dana@profile_pc#1'])
   end
+
+  # ---- R1-L3: an admin's reach to the profile of an account cached at the PC ----
+
+  def profile_read(pc, items)
+    session = { 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'password', 'access' => 'admin' }
+    row({ 'session' => session, 'contents' => items }, path: "container/#{pc}")
+  end
+
+  JAKE_ITEM = { 'id' => 'jake_budget', 'type' => 'text_file', 'name' => 'Q3 budget.xlsx', 'takeable' => true }.freeze
+  SAM_ITEM = { 'id' => 'sam_note', 'type' => 'text_file', 'name' => 'Sam note', 'takeable' => true }.freeze
+
+  test 'R1-L3: an admin session at a PC may read the profile of an account cached there, a borrow candidate only after its borrow' do
+    game = FakeGame.new(cached_at: ['profile_pc|sam'])
+    done = borrow_done
+    assert_empty scan([admin_signin, profile_read('profile_pc', [JAKE_ITEM])], game: game)
+    sam_read = profile_read('profile_pc', [SAM_ITEM])
+    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read], game: game))
+    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read], game: nil))
+    assert_empty scan([admin_signin, done, sam_read], game: game)
+    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read, done], game: game))
+  end
+
+  test 'R1-L3: the profile of an account neither owning nor cached at the PC is still flagged, and so is a read with no admin session' do
+    game = FakeGame.new
+    # jake is cached at profile_pc only: the admin session at it_pc (which jake owns) reaches him as owner, but not a hot-desk-only account
+    # (no sign-in: the desktop answer's own `access: admin` is a finding too, so only the profile rule is compared)
+    only_profile = ->(found) { hits(found.select { |f| f.rule == 'profile_admin_read' }) }
+    assert_equal [%w[profile_admin_read item:jake_budget]], only_profile.call(scan([profile_read('profile_pc', [JAKE_ITEM])], game: game))
+    scenario = data
+    scenario['rooms']['finance']['objects'].find { |o| o['id'] == 'profile_pc' }['cachedAccounts'] = [{ 'npc' => 'dana' }]
+    assert_equal [%w[profile_admin_read item:jake_budget]], hits(scan([admin_signin, profile_read('profile_pc', [JAKE_ITEM])], scenario: scenario, game: game))
+  end
+
+  test 'R1-L3: a proved relay administrator reaches the same profiles, and no further' do
+    game = FakeGame.new
+    scenario = relay_scenario
+    relay = relay_session
+    read = ->(items) { row({ 'session' => relay, 'contents' => items }, path: 'container/profile_pc') }
+    assert_empty scan([relay_login, read.call([JAKE_ITEM])], scenario: scenario, game: game)
+    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([relay_login, read.call([SAM_ITEM])], scenario: scenario, game: game))
+    without = relay_scenario(invite: false)
+    assert_includes rules(scan([relay_login, read.call([JAKE_ITEM])], scenario: without, game: game)), 'profile_admin_read'
+  end
 end
