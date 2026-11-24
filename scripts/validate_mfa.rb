@@ -34,6 +34,7 @@ def check_mfa(json_data)
   mfa_policy_values(json_data, err)
   mfa_creds_values(json_data, err)
   mfa_device_errors(json_data, err)
+  mfa_leak_key_errors(json_data, err)
   mfa_pc_errors(json_data, err, warn, info, mm)
   mfa_device_warnings(json_data, warn, info, mm, story)
   mfa_loose_phones(json_data, warn, mm)
@@ -113,6 +114,34 @@ def mfa_device_errors(json_data, err)
   devices.select { |i| cm.present_string?(i['owner']) }.group_by { |i| i['owner'] }.each do |owner, list|
     err.call("#{list.size} code_devices belong to '#{owner}': an account has one.") if list.size > 1
   end
+end
+
+# R3-6: the leak check reads a `code` key as a second-step code (six digits) where a code_device is authored, and a `numbers`
+# key as the number-matching choices where a policy matches numbers; it reports every authored value it cannot tell apart.
+def mfa_leak_key_errors(json_data, err)
+  mm = BreakEscape::MfaModel
+  codes = mm.each_authored_item(json_data).any? { |e| e[:item].is_a?(Hash) && e[:item]['type'] == mm::CODE_DEVICE }
+  policies = json_data['policies']
+  numbers = policies.is_a?(Hash) && policies.values.any? { |p| mm.kind(p) == 'push_number_match' }
+  return unless codes || numbers
+
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      node.each do |key, value|
+        at = "#{path}.#{key}"
+        if codes && key == 'code' && (!(value.is_a?(String) || value.is_a?(Integer)) || value.to_s.delete(" \t-").match?(/\d{6}/))
+          err.call("\"code\" at #{at} looks like a second-step code (six digits) in a scenario with a code_device: the leak check reports it on every answer that carries it. Rename the key or change the value.")
+        end
+        if numbers && key == 'numbers'
+          err.call("\"numbers\" at #{at}: the leak check reads this key as the number-matching choices and reports it. Rename the key.")
+        end
+        walk.call(value, at)
+      end
+    when Array then node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '$')
 end
 
 # [{ pc:, policy_name:, kind:, accounts: [admitted enrolled account NPCs] }] for every PC whose

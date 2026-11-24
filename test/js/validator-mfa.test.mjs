@@ -271,3 +271,31 @@ test('schema: the new fields are declared', () => {
     assert.equal(habits.properties.promptPatience.minimum, 2);
     assert.equal(habits.properties.promptPatience.maximum, 9);
 });
+
+// R3-6: the leak check reads a `code` key as a second-step code where a code_device is authored, and `numbers` as the
+// number-matching choices where a policy matches numbers; an authored value it cannot tell apart is an error.
+test('error: an authored six-digit code in a scenario with a code_device, both directions', { skip }, () => {
+    const probe = value => {
+        const sc = base();
+        room(sc).objects.push({ id: 'cab', type: 'safe', name: 'Cabinet', code: value });
+        return errors(issues(sc));
+    };
+    for (const value of ['123456', '123-456', '12 34 56', 123456, 12.5, null, true]) {
+        assertHas(probe(value), '"code" at $.rooms.office.objects[2].code looks like a second-step code');
+    }
+    for (const value of ['1234', 4821, 'W-03', '12345']) assert.deepEqual(probe(value), [], String(value));
+    // no code device: the leak check's code rule is off, so no error
+    const sc = base();
+    room(sc).objects = [room(sc).objects[0], { id: 'cab', type: 'safe', name: 'Cabinet', code: '123456' }];
+    omar(sc).creds.mfa = false;
+    assert.ok(!has(errors(issues(sc)), 'second-step code'));
+});
+
+test('error: a numbers key in a scenario where a policy matches numbers, both directions', { skip }, () => {
+    let sc = base('push_number_match');
+    sc.rooms.office.objects.push({ id: 'cab', type: 'safe', name: 'Cabinet', numbers: [1, 2, 3] });
+    assertHas(errors(issues(sc)), '"numbers" at $.rooms.office.objects[2].numbers');
+    sc = base();
+    sc.rooms.office.objects.push({ id: 'cab', type: 'safe', name: 'Cabinet', numbers: [1, 2, 3] });
+    assert.ok(!has(errors(issues(sc)), '"numbers" at'));
+});
