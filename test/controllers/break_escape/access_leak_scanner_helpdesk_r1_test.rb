@@ -135,21 +135,19 @@ module BreakEscape
       data = cal_scenario
       run = [grant_mfa(npc: 'cal'), own_push_login, own_list(data), session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')]
       assert_empty scan(run, data)
-      with_query = run.dup
-      with_query[-1] = session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')
-      assert_empty scan(with_query, data), 'the client sends own in the body; a query, if the row has one, may be own=1'
       later = scan(run + [row('GET', 'container/push_pc', { 'status' => 200, 'body' => { 'contents' => [] } })], data)
       assert_not_includes rules(later), 'mfa_session'
     end
 
     test 'R1-L4: an own-phone approval with any proof missing stays a finding' do
       data = cal_scenario
-      approve = ->(query = nil, npc = 'cal') { session_pass('mfa/approve', npc, data, { 'approvedBy' => 'own_phone' }, query: query) }
+      approve = ->(query = 'own=1', npc = 'cal') { session_pass('mfa/approve', npc, data, { 'approvedBy' => 'own_phone' }, query: query) }
       cases = {
         'no grant' => [own_push_login, own_list(data), approve.call],
         'no step' => [grant_mfa(npc: 'cal'), own_list(data), approve.call],
         'no list' => [grant_mfa(npc: 'cal'), own_push_login, approve.call],
         'grant for another account' => [grant_mfa(npc: 'hana'), own_push_login, own_list(data), approve.call],
+        'no query (the client sends own=1 in the URL)' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call(nil)],
         'own=2' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call('own=2')],
         'a second parameter' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call('own=1&x=1')],
         'the step closed by a cancel' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data),

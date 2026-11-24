@@ -84,7 +84,7 @@ mfa.configure({
         world.requests.push({ method, path, payload });
         if (path === 'mfa/device') return serve(world.reads.device);
         if (path === 'mfa/phone') return serve(world.reads.phone);
-        if (path === 'mfa/approve') return serve(world.reads.approve);
+        if (path.startsWith('mfa/approve')) return serve(world.reads.approve);
         if (path === 'mfa/prompt') return serve(answer('prompt.waiting_own'));
         return {};
     },

@@ -383,7 +383,8 @@ module BreakEscape
       post game_path('mfa/approve'), params: { pc_id: 'ops_pc' }, as: :json
       assert_response :forbidden, 'without own=1 a re-enrolled account is not approved'
       assert_nil state['sessions']['ops_pc']
-      post game_path('mfa/approve'), params: { pc_id: 'ops_pc', own: 1 }, as: :json
+      # the client sends own=1 in the URL query (the body carries pc_id only): the action reads params either way
+      post "#{game_path('mfa/approve')}?own=1", params: { pc_id: 'ops_pc' }, as: :json
       assert_signed_in_shape('approve.own_passed', response.status, response.parsed_body, 'wim')
       assert_equal 'own_phone', response.parsed_body['approvedBy']
       assert_equal 'wim', state['sessions']['ops_pc']['id']
@@ -394,7 +395,7 @@ module BreakEscape
       get game_path('mfa/phone'), params: { own: 1 }, as: :json
       assert_response :success
       assert_equal [], response.parsed_body['requests'], 'no pending sign-in, so nothing to list'
-      post game_path('mfa/approve'), params: { pc_id: 'ops_pc', own: 1 }, as: :json
+      post "#{game_path('mfa/approve')}?own=1", params: { pc_id: 'ops_pc' }, as: :json
       assert_not state['sessions']['ops_pc']
     end
 
@@ -518,7 +519,8 @@ module BreakEscape
       sign_in_row('ops_pc', WIM, :wim_required)
       post_row('mfa/prompt', { pc_id: 'ops_pc' }, :wim_prompt)
       get_row('mfa/phone', { own: 1 }, :own_phone)
-      post_row('mfa/approve', { pc_id: 'ops_pc', own: 1 }, :own_approve)
+      post "#{game_path('mfa/approve')}?own=1", params: { pc_id: 'ops_pc' }, as: :json
+      rec(:own_approve)
       # beat 9 and 10
       ask_row(VERA[0], 'mfa', {}, :omar_refused, desk: 'id_desk')
       take_row('vera_phone', 'phone_friendface', "Vera's phone", :take_vera_phone, npc: 'vera')
@@ -567,6 +569,7 @@ module BreakEscape
       assert_equal 'item_id=vera_device', @marks[:old_device]['query']
       assert_equal 'npc_id=vera', @marks[:own_device]['query']
       assert_equal 'own=1', @marks[:own_phone]['query']
+      assert_equal 'own=1', @marks[:own_approve]['query'], 'the approve row carries own=1 in its query, as the client sends it'
       assert_includes @marks[:boot0]['body'].keys, 'helpdeskForms'
       assert_equal %w[desk id name type], @marks[:front_desktop]['body']['contents'].find { |i| i['id'] == 'front_form' }.keys.sort
       write_capture if ENV['CAPTURE']

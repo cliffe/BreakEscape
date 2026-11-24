@@ -121,7 +121,8 @@ test('an approval on an ownPhone note emits mfa_approved by own_phone', async ()
     M.noteRequired('pc:ops_pc', answer('login.mfa_required_own_push').body);
     const res = await M.approve('pc:ops_pc', {});
     assert.equal(res.passed, true);
-    assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc', own: 1 });
+    assert.equal(calls[0].path, 'mfa/approve?own=1');
+    assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc' });
     const ev = events.filter(e => e.name.startsWith('mfa_approved'));
     assert.equal(ev.length, 2);
     assert.ok(ev.every(e => e.detail.by === 'own_phone'));

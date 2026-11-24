@@ -229,9 +229,9 @@ function refusalResult(parsed, err) {
     return { ok: false, reason: 'gone', status, body: b, message: typeof b.message === 'string' ? b.message : null };
 }
 
-async function post(path, subject, extra, { keep = false } = {}) {
+async function post(path, subject, extra, { keep = false, query = '' } = {}) {
     const parsed = parseKey(subject);
-    const res = await call('POST', path, { ...subjectFields(parsed), ...extra });
+    const res = await call('POST', query ? `${path}?${query}` : path, { ...subjectFields(parsed), ...extra });
     if (!res.ok) {
         // Only "no such phone" means the phone is not held; any other 403 (the PC is off, the route is
         // gone) keeps its own reason in the body for the caller
@@ -286,15 +286,16 @@ export async function phone({ npcId, own = false } = {}) {
 
 /**
  * A tap on the phone: { number } to approve a number match, { deny: true } to refuse. For an account a
- * desk re-enrolled (the pending note has ownPhone) the request carries own=1, as the server requires;
- * for a held phone there is no `own` key.
+ * desk re-enrolled (the pending note has ownPhone) the request URL carries `?own=1` (the server reads
+ * params either way; a playtest recorder keeps the query, not the body); for a held phone there is no
+ * `own` anywhere.
  */
 export function approve(subject, { number, deny } = {}) {
     const extra = {};
-    if ((pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true) extra.own = 1;
+    const own = (pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true;
     if (number != null) extra.number = number;
     if (deny) extra.deny = true;
-    return post('mfa/approve', subject, extra, { keep: true });
+    return post('mfa/approve', subject, extra, { keep: true, query: own ? 'own=1' : '' });
 }
 
 /** The completed answer a child scene left, left in place. Null when there is none. */

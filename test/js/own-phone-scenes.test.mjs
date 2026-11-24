@@ -165,24 +165,24 @@ test('own authenticator lists the own-phone push and number-match cards', async 
 });
 
 test('own authenticator: Approve passes and is named own_phone', async () => {
-    const { calls, events } = client((method, path) => (path === 'mfa/approve' ? serve('approve.own_passed') : serve('phone.own')));
+    const { calls, events } = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own')));
     M.noteRequired('pc:ops_pc', answer('login.mfa_required_own_push').body);
     const s = await openPhone();
     const key = `pc:${answer('phone.own').body.requests[0].pcId}`;
     const res = await s.tapApprove(key);
     assert.equal(res.ok, true);
     assert.equal(res.passed, true);
-    assert.equal(calls.find((c) => c.path === 'mfa/approve').method, 'POST');
+    assert.equal(calls.find((c) => c.path.startsWith('mfa/approve')).method, 'POST');
     assert.equal(events.find((e) => e.name === 'mfa_approved').detail.by, 'own_phone');
     assert.equal(s.getTestState().authenticator.live.approved, 1);
 });
 
-test('own authenticator: the approve and deny requests carry own=1 for an own-phone note, no own key for a held phone', async () => {
+test('own authenticator: the approve and deny requests carry own=1 for an own-phone note, no own for a held phone', async () => {
     const reqs = answer('phone.own').body.requests;
     const key = `pc:${reqs[0].pcId}`;
-    const post = (calls) => calls.filter((c) => c.path === 'mfa/approve').map((c) => c.payload);
+    const post = (calls) => calls.filter((c) => c.path.startsWith('mfa/approve')).map((c) => ({ path: c.path, ...c.payload }));
     // own-phone note: Approve, then Deny
-    let { calls } = client((method, path) => (path === 'mfa/approve' ? serve('approve.own_passed') : serve('phone.own')));
+    let { calls } = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own')));
     M.noteRequired(key, answer('login.mfa_required_own_push').body);
     let s = await openPhone();
     await s.tapApprove(key);
@@ -190,11 +190,14 @@ test('own authenticator: the approve and deny requests carry own=1 for an own-ph
     await s.tapDeny(key);
     const own = post(calls);
     assert.equal(own.length, 2);
-    assert.equal(own[0].own, 1);
-    assert.equal(own[1].own, 1);
+    // own=1 rides in the URL query (what a recorder keeps), never in the body
+    assert.equal(own[0].path, 'mfa/approve?own=1');
+    assert.equal(own[1].path, 'mfa/approve?own=1');
+    assert.equal('own' in own[0], false);
+    assert.equal('own' in own[1], false);
     assert.equal(own[1].deny, true);
     // held phone: the same note without ownPhone sends no own key at all
-    ({ calls } = client((method, path) => (path === 'mfa/approve' ? serve('approve.own_passed') : serve('phone.own'))));
+    ({ calls } = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own'))));
     const held = { ...answer('login.mfa_required_own_push').body }; delete held.ownPhone;
     M.noteRequired(key, held);
     s = await openPhone();
@@ -203,11 +206,11 @@ test('own authenticator: the approve and deny requests carry own=1 for an own-ph
     await s.tapDeny(key);
     const sent = post(calls);
     assert.equal(sent.length, 2);
-    for (const p of sent) assert.equal('own' in p, false);
+    for (const p of sent) { assert.equal('own' in p, false); assert.equal(p.path, 'mfa/approve'); }
 });
 
 test('own authenticator: a wrong number cancels the request', async () => {
-    client((method, path) => (path === 'mfa/approve' ? serve('approve.cancelled') : serve('phone.own_number_match')));
+    client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.cancelled') : serve('phone.own_number_match')));
     const s = await openPhone();
     const req = answer('phone.own_number_match').body.requests[0];
     const wrong = req.numbers[0];
