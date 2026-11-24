@@ -3312,6 +3312,10 @@ module BreakEscape
     # right now (OPS_PRIVILEGE_ACCOUNTS_PLAN S5a). Worked out on every read and never stored,
     # except that a technique record carries the `access` the core's step up wrote. The steps
     # run in this order: a relay record is `via: "credential"`, so step 5 comes before step 7.
+    # S5 ruling B: a relayed session has exactly the rights of the account relayed, so a relay
+    # record is read like any credential record (its account, at this PC's access list). Only a
+    # claim is always `user`. A relay still never feeds a step up (ops_need_session refuses it)
+    # and is never a keyboard admin.
     def session_access(pc_id)
       session = access_sessions[pc_id.to_s]
       return nil unless session.is_a?(Hash)
@@ -3320,7 +3324,7 @@ module BreakEscape
       npc = session_identity(pc_id)
       return nil unless npc
       return nil unless session_route_up?(pc_id)
-      return 'user' if relay_session?(session) || session['via'] == 'claim'
+      return 'user' if session['via'] == 'claim'
 
       case session['via']
       when 'technique'
