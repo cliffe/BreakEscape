@@ -200,7 +200,8 @@ def mfa_pc_errors(json_data, err, warn, info, mm)
     next unless MFA_PUSH_KINDS.include?(entry[:kind])
 
     stuck = entry[:accounts].all? do |npc|
-      mm.prompt_habit(npc, json_data) == 'never' && all_ways[npc].reject { |w| w == "the account's phone" }.empty? &&
+      # number matching is never approved by the owner, whatever the habit
+      (entry[:kind] == 'push_number_match' || mm.prompt_habit(npc, json_data) == 'never') && all_ways[npc].reject { |w| w == "the account's phone" }.empty? &&
         !phones.include?(npc['id'])
     end
     warn.call("#{who}: nobody passes this push step (every admitted owner never approves, no phone can be held, no other way through).") if stuck
