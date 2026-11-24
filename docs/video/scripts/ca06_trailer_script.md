@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22, as carried by the earlier scripts and 
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–3.9 | hook | t07_notice_beat, in = Z1 audio start minus 0.15, out = in plus 3.9 s (line expected about 1.5 s after Look up) · Zainab at the newly revealed parking notice, world bark with the game's own bar, notice in frame · cold open, no tells · **pending take** | — | Zainab: "Is that new? I've not seen a parking notice up in here before." (cached, 4.01 s; speech 0.25 to 3.66 s) |
-| 3.9–9.0 | open | Title: Texts and QR codes / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 3.9–9.0 | open | Title: Texts and QR codes / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.0–15.8 | topic | t05_work_phone run A 3-9.8 s · tab THE WORK PHONE · the six-row list, '0 of 6 sorted', kind labels Text, QR notice and Email readable, held, nothing picked · **pending take** | **v1b** "Some texts and printed codes are fakes."<br>**v1c** "This episode: texts and QR codes." | — |
 | 15.8–18.8 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 18.8–26.6 | research | t02_attack_run, two windows: 8-12.2 s (4.2 s) tab OPEN-SOURCE RESEARCH · Tarrowby "Our depot team" page, Kaylee Dunford noted; then 14-17.6 s (3.6 s) the "Depot notices" page, the permit scheme noted (public facts only) · **pending take** | **v3** "The depot's page names Kaylee, a warehouse operative." (first window)<br>**v3b** "Its notices name the new permit scheme." (second window) | — |

@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22) and batch 1 lessons (23 Nov): the trai
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.0 | hook | t07_lorna_photo, room beat after Look up · Lorna at her PC, bubble L1 (cached, 3.46 s; speech 0.33 to 3.05 s); in = bubble start minus 0.3; burned caption; avatar BE_SPRITE=female_office_worker_v2 · **pending take** | — | Lorna: "Got a lovely one of the team for the studio page." |
-| 4.0–9.1 | open | Title: Social media and oversharing / Merrin & Sallow | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.0–9.1 | open | Title: Social media and oversharing / Merrin & Sallow | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.1–15.6 | topic | t03_friendface_profile 1.5-8 s · tab OPEN-SOURCE RESEARCH · Dani Fenwick's public profile and the "away all next week" and "new finance system" posts, nothing pinned yet · **pending take** | **v1b** "Public posts say more than their owner meant."<br>**v1c** "This episode: social media." | — |
 | 15.6–19.0 | red_card | attack card: "You play the attacker" | **v2** "First, you play the attacker." | — |
 | 19.0–24.0 | research | t03_friendface_profile 8-13 s · tab OPEN-SOURCE RESEARCH · the leave post and the system post pinned (the pin lights up, a "Noted" line each; marks at about 8.5 s and 10.5 s of the take so the second pin does not land late); 9:16 from the narrowed take · **pending take** | **v3** "Pin what Dani's public posts give away." | — |

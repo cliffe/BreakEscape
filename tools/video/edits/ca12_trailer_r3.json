@@ -4,7 +4,7 @@
  "theme": "ca",
  "title": "Cyber Aware ca12 trailer, round 3, script R6 (narrator VO + Lorna lines; retime to the chosen voice pending D348)",
  "fps": 30,
- "length": 71.69,
+ "length": 71.9567,
  "music": {
   "none": true,
   "note": "silent bed; MUSIC SLOT: a CA track is still to be chosen (attack cut, defence cut, flip on the change); game room sound and voiced lines only"
@@ -95,7 +95,7 @@
     "company": "Merrin & Sallow Architects",
     "stripe": "#8a5a2b"
    },
-   "duration": 5.1
+   "duration": 5.3667
   },
   {
    "id": "topic",
@@ -708,102 +708,102 @@
   {
    "id": "v1",
    "start": 5,
-   "end": 9.7,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v1.mp3",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play."
+   "end": 10.112,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1.mp3",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play."
   },
   {
    "id": "v1b",
-   "start": 10.2,
-   "end": 12.24,
+   "start": 10.467,
+   "end": 12.507,
    "text": "Nobody checks she's expected.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v1b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 12.49,
-   "end": 15.68,
+   "start": 12.757,
+   "end": 15.947,
    "text": "This episode: visitors and tailgating.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v1c.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 16.38,
-   "end": 18.78,
+   "start": 16.647,
+   "end": 19.047,
    "text": "First, you play the attacker.",
    "onCard": "hide",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v2.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 19.68,
-   "end": 22.56,
+   "start": 19.947,
+   "end": 22.827,
    "text": "Dig into what staff post in public.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v3.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 23.18,
-   "end": 25.6,
+   "start": 23.447,
+   "end": 25.867,
    "text": "Build a cover story from what you found.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v4.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v5",
-   "start": 26.68,
-   "end": 28.26,
+   "start": 26.947,
+   "end": 28.527,
    "text": "Then talk your way in.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v5.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 33.58,
-   "end": 34.32,
+   "start": 33.847,
+   "end": 34.587,
    "text": "You're in.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v6.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v8a",
-   "start": 44.28,
-   "end": 47.35,
+   "start": 44.547,
+   "end": 47.617,
    "text": "Tailgating: slipping in behind a badge-holder.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v8a.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8a.mp3"
   },
   {
    "id": "v8a2",
-   "start": 47.6,
-   "end": 51.13,
+   "start": 47.867,
+   "end": 51.397,
    "text": "Inside: client plans on open screens.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v8a2.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8a2.mp3"
   },
   {
    "id": "v8b",
-   "start": 51.63,
-   "end": 54.92,
+   "start": 51.897,
+   "end": 55.187,
    "text": "Decide who gets in, and who gets checked.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v8b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v8b.mp3"
   },
   {
    "id": "v9",
-   "start": 55.17,
-   "end": 56.99,
+   "start": 55.437,
+   "end": 57.257,
    "text": "You've used these tricks yourself.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v9.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
-   "start": 57.24,
-   "end": 62.02,
+   "start": 57.507,
+   "end": 62.287,
    "text": "Check the list. Escort them. Badge in. Lock your screen.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v10.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 66.42,
-   "end": 71.39,
+   "start": 66.687,
+   "end": 71.657,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
-   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat/trim/v11.mp3"
+   "file": "/home/cliffe/video-takes-local/ca12/vo/Sulafat_v2/trim/v11.mp3"
   }
  ]
 }

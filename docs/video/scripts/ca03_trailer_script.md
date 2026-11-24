@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22, as carried by ca01 and the batch 1 rev
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.2 | hook | t01_niamh_hook · Niamh after the defend set, not-caught branch (cached, 5.74 s): person-chat view, cut after the first sentence, which ends at 3.79 s (silence 3.79 to 4.32 s), game's bar cropped out and the sentence burned as the caption; in = line start minus 0.3 s, out = 3.79 s plus 0.15 s (4.2 s window; confirm the pause by ear) · **pending take** | — | Niamh: "Helpdesk's had a run of odd reset calls lately." |
-| 4.2–9.3 | open | Title: Help desk resets / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.2–9.3 | open | Title: Help desk resets / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.3–15.3 | topic | t04_service_queue 5-11 s · tab SERVICE DESK QUEUE · the first call card opened, framed on its header "Gordon McLeish, Claims (calling from a mobile)" and the four claimed facts; transcript and buttons out of frame · **pending take** | **v1b** "A caller says he's locked out."<br>**v1c** "This episode: help desk resets." | — |
 | 15.3–18.8 | red_card | attack card, title only: "You play the attacker" (3.5 s) | **v2** "First, you play the attacker." | — |
 | 18.8–23.8 | research | t02_attack_run 8-13 s · tab OPEN-SOURCE RESEARCH · Quayholt "Our people" page with Gordon McLeish noted, then the Events page with the staff reference noted (public facts only) · **pending take** | **v3** "Public pages give a name, manager and staff number." | — |
@@ -86,3 +86,13 @@ Both reviews: v6 wording meets the meter fact and the timing (7 words, 6.7 s in 
 - The defend-state shortcut (`episode_e3_helpdesk_reset_state` with `done` through `flip`) is untested for ca03; the take falls back to replaying the call.
 - Tab labels for the call, prompt and queue panels are placeholders until the panels are seen.
 - The prompt stage opens only when the call lands (`skipMfaIfUnlanded`).
+
+## Voiced call (24 Nov 2026, B2 r3)
+
+The owner asked for the help-desk call to be a voiced phone call (scenario change 3538b7dfa; Leila is voiced in Laomedeia so she does not sound like the Sulafat narrator). This settles L1, and the call beat is recut so no narrator line sits over Leila:
+
+- **call_a (4.52 s).** The Make the call click, then Leila's greeting heard: "IT service desk, Leila speaking. How can I help?" (captioned). v4 and v5 move 0.6 s and 1.9 s earlier so v5 ends 0.2 s before she answers.
+- **call_b (3.88 s).** The quiet gap after her reply to the first line: the manager pick moves the meter under v6 "The meter shows how wary Leila gets." Her next reply starts after the cut.
+- **lands (7.9 s).** v7 "Now ask her for the reset." over the menu, then the ask, then Leila heard: "All done. I've reset it and sent a temporary password through." (captioned), with 0.5 s of hold after it.
+- Takes t02 and t02b were re-recorded with the voiced call (the script waits for each line to end and leaves a 3 s gap after each reply). Shots are anchored on each line's onset (voice_end mark minus the clip length).
+- The trailer is 3.6 s longer: 77.59 s.

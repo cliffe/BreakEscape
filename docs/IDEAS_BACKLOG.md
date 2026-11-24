@@ -20,6 +20,8 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Engine and UI
 
+- **Voice the ca03 defend-queue calls** (ca03 voiced call, AC0 2026-11-24; M). The attack half's call with Leila is now a voiced phone call (3538b7dfa). The defend half (`scenarios/ca03_helpdesk_reset_defend`) still shows its queued help-desk calls as text cards. Voicing them needs engine work so a queue card can play as a voiced call (caller voice, TTS lines, the same call UI), then the call lines voiced and their routes tested.
+
 From the PIN cracker fix (2026-10-10), found but not fixed:
 
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.

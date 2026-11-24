@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca04_trailer_script.md (round 1 after review) and docs/video/takes_ca04.md (recorded 23 Nov, commit 9f3f93264). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Guitar Motif window from 55.126 s. The hook is the owner-question placeholder (reply cold open)."
  },
  "fps": 30,
- "length": 71.5,
+ "length": 71.8,
  "music": {
   "track": "PeaceFolk/Guitar Motif.mp3",
   "analysis": "guitar_motif_75.json",
   "start": 55.126,
-  "length": 71.5,
+  "length": 71.8,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -96,7 +96,7 @@
     "company": "Merrin & Sallow Architects",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
@@ -404,8 +404,8 @@
    },
    "source": {
     "file": "t03_thandiwe_flip.trimmed.mkv",
-    "in": 15.7,
-    "out": 22.8
+    "in": 9.398,
+    "out": 16.498
    },
    "audio": {
     "gain_db": 0,
@@ -591,8 +591,8 @@
    },
    "source": {
     "file": "t06_thandiwe_end.trimmed.mkv",
-    "in": 16.8,
-    "out": 22.9
+    "in": 22.116,
+    "out": 28.216
    },
    "audio": {
     "gain_db": 0,
@@ -684,98 +684,98 @@
   {
    "id": "v1",
    "start": 5.12,
-   "end": 9.904,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 10.232,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 10.3,
-   "end": 13.492,
+   "start": 10.6,
+   "end": 13.792,
    "text": "An email in the boss's name asks for payment.",
    "caption": "An email in the boss's name\nasks for payment.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 13.742,
-   "end": 16.718,
+   "start": 14.042,
+   "end": 17.018,
    "text": "This episode: executive impersonation.",
    "caption": "This episode:\nexecutive impersonation.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 17.1,
-   "end": 19.5,
+   "start": 17.4,
+   "end": 19.8,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 20.1,
-   "end": 23.532,
+   "start": 20.4,
+   "end": 23.832,
    "text": "The firm's website says Catherine is away this week.",
    "caption": "The firm's website says\nCatherine is away this week.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 24.7,
-   "end": 27.772,
+   "start": 25.0,
+   "end": 28.072,
    "text": "Write the email as Catherine, the managing partner.",
    "caption": "Write the email as Catherine,\nthe managing partner.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
-   "start": 28.022,
-   "end": 29.294,
+   "start": 28.322,
+   "end": 29.594,
    "text": "Tie it to her trip.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
-   "start": 31.5,
-   "end": 33.828,
+   "start": 31.8,
+   "end": 34.128,
    "text": "Send it to her assistant, Tomás.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 34.078,
-   "end": 35.11,
+   "start": 34.378,
+   "end": 35.41,
    "text": "It landed.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v8a",
-   "start": 46.6,
-   "end": 49.984,
+   "start": 46.9,
+   "end": 50.284,
    "text": "Five messages are waiting, two of them voicemails.",
    "caption": "Five messages are waiting,\ntwo of them voicemails.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v8a.mp3"
   },
   {
    "id": "v8b",
-   "start": 50.234,
-   "end": 51.794,
+   "start": 50.534,
+   "end": 52.094,
    "text": "Both sound like Catherine.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v8b.mp3"
   },
   {
    "id": "v10",
-   "start": 52.044,
-   "end": 56.172,
+   "start": 52.344,
+   "end": 56.472,
    "text": "Payment requests from senior people deserve a second check.",
    "caption": "Payment requests from senior\npeople deserve a second check.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 66.2,
-   "end": 71.168,
+   "start": 66.5,
+   "end": 71.468,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca04/vo/Sulafat_v2/trim/v11.mp3"

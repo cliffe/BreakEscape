@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.5 | hook | t01_gwen_hook 0-4.5 s · Gwen G2 after the defend set (cached, 3.94 s): mild, not a verdict; in/out from line-start minus 0.3 s · **pending take** | — | Gwen: "Heard you've been through the inbox. Some real traps in there lately." |
-| 4.5–9.6 | open | Title: Invoice fraud / Brightwell Foods | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.5–9.6 | open | Title: Invoice fraud / Brightwell Foods | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.6–15.6 | topic | t04_payments_inbox 9-14.98 s · Lure card 'Updated bank details, please action today', body readable: change the payee account on INV-2217; framed on subject and body; no verdict · **pending take** | **v1b** "A real invoice, a new bank account."<br>**v1c** "This episode: invoice fraud." | — |
 | 15.6–19.1 | red_card | attack card: "You play the attacker" | **v2** "First, you play the attacker." | — |
 | 19.1–23.3 | research | t02_attack_run 8-12.2 s · tab OPEN-SOURCE RESEARCH · Brightwell suppliers page: Harlow and Derek Mason noted, then the finance update with INV-2217 (public facts only) · **pending take** | **v3** "Their own website names the supplier." | — |

@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca14_trailer_script.md and docs/video/takes_ca14.md (recorded 23 Nov, commit 124d19a2c). Model ca03 (attack-first). Marks and frame-time windows from the recorded takes; Sulafat VO; PeaceFolk Gently Decaying Again window from 102.341 s (lift 3.9 s, quiet bar under the flip and Julian line at 35.4 s, lifts at 56.3 and 58.9 s). Hook is Lorna's L1 bark, end line is Lorna's L2 in the chat. The landed panel is not shown (debrief rule); v6 sits on the flip page."
  },
  "fps": 30,
- "length": 70.32,
+ "length": 70.62,
  "music": {
   "track": "PeaceFolk/Gently Decaying Again.mp3",
   "analysis": "gently_decaying_again_75.json",
   "start": 102.341,
-  "length": 70.32,
+  "length": 70.62,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -112,7 +112,7 @@
     "company": "Merrin & Sallow Architects",
     "stripe": "#8a5a2b"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
@@ -697,106 +697,106 @@
   {
    "id": "v1",
    "start": 4.12,
-   "end": 8.904,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 9.232,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 9.3,
-   "end": 12.492,
+   "start": 9.6,
+   "end": 12.792,
    "text": "Public posts say more than their owner meant.",
    "caption": "Public posts say more than\ntheir owner meant.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 12.742,
-   "end": 14.95,
+   "start": 13.042,
+   "end": 15.25,
    "text": "This episode: social media.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 15.8,
-   "end": 18.2,
+   "start": 16.1,
+   "end": 18.5,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 18.8,
-   "end": 21.632,
+   "start": 19.1,
+   "end": 21.932,
    "text": "Pin what Dani's public posts give away.",
    "caption": "Pin what Dani's public posts\ngive away.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 23.2,
-   "end": 25.864,
+   "start": 23.5,
+   "end": 26.164,
    "text": "Write to Yasmin as Dani.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
-   "start": 26.114,
-   "end": 29.282,
+   "start": 26.414,
+   "end": 29.582,
    "text": "Mention his week off and the new finance system.",
    "caption": "Mention his week off and\nthe new finance system.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
-   "start": 30.2,
-   "end": 31.112,
+   "start": 30.5,
+   "end": 31.412,
    "text": "Then send it.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 32.4,
-   "end": 33.72,
+   "start": 32.7,
+   "end": 34.02,
    "text": "It landed.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v7",
-   "start": 40.17,
-   "end": 43.53,
+   "start": 40.47,
+   "end": 43.83,
    "text": "Now decide what to post, what to answer.",
    "caption": "Now decide what to post,\nwhat to answer.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v7.mp3"
   },
   {
    "id": "v8",
-   "start": 44.57,
-   "end": 48.002,
+   "start": 44.87,
+   "end": 48.302,
    "text": "Post it, tweak it, or hold it back.",
    "caption": "Post it, tweak it,\nor hold it back.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
-   "start": 50.07,
-   "end": 53.43,
+   "start": 50.37,
+   "end": 53.73,
    "text": "Then tighten Dani's privacy settings.",
    "caption": "Then tighten Dani's\nprivacy settings.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
-   "start": 55.47,
-   "end": 58.206,
+   "start": 55.77,
+   "end": 58.506,
    "text": "Six messages arrive. Which are real?",
    "caption": "Six messages arrive.\nWhich are real?",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 65.02,
-   "end": 69.988,
+   "start": 65.32,
+   "end": 70.288,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack, learn to\nstop it, on Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca14/vo/Sulafat_v2/trim/v11.mp3"

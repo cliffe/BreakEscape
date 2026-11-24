@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca05_trailer_script.md (round 2) and docs/video/takes_ca05.md (recorded 23 Nov). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quiet Reflection window from 24.014 s."
  },
  "fps": 30,
- "length": 64.8,
+ "length": 65.1,
  "music": {
   "track": "PeaceFolk/Quiet Reflection.mp3",
   "analysis": "quiet_reflection_75.json",
   "start": 24.014,
-  "length": 64.8,
+  "length": 65.1,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -110,7 +110,7 @@
     "company": "Quayholt Insurance",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
@@ -582,97 +582,97 @@
   {
    "id": "v1",
    "start": 4.787,
-   "end": 9.571,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 9.899,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 9.967,
-   "end": 13.519,
+   "start": 10.267,
+   "end": 13.819,
    "text": "A copied sign-in page looks just like the real one.",
    "caption": "A copied sign-in page\nlooks just like the real one.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 13.769,
-   "end": 16.529,
+   "start": 14.069,
+   "end": 16.829,
    "text": "This episode: fake sign-in pages.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 16.967,
-   "end": 19.367,
+   "start": 17.267,
+   "end": 19.667,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 19.967,
-   "end": 22.511,
+   "start": 20.267,
+   "end": 22.811,
    "text": "The company's own news gives you a reason.",
    "caption": "The company's own news\ngives you a reason.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 23.567,
-   "end": 25.895,
+   "start": 23.867,
+   "end": 26.195,
    "text": "Build the page from ready-made parts.",
    "caption": "Build the page from\nready-made parts.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
-   "start": 26.145,
-   "end": 28.113,
+   "start": 26.445,
+   "end": 28.413,
    "text": "Choose the address it would live at.",
    "caption": "Choose the address\nit would live at.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
-   "start": 30.567,
-   "end": 32.583,
+   "start": 30.867,
+   "end": 32.883,
    "text": "Email the link to Hana.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v8a",
-   "start": 42.167,
-   "end": 44.927,
+   "start": 42.467,
+   "end": 45.227,
    "text": "Five pages, each behind a link.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8a.mp3"
   },
   {
    "id": "v8b",
-   "start": 45.177,
-   "end": 46.905,
+   "start": 45.477,
+   "end": 47.205,
    "text": "Every one has a padlock.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8b.mp3"
   },
   {
    "id": "v10",
-   "start": 47.155,
-   "end": 50.611,
+   "start": 47.455,
+   "end": 50.911,
    "text": "A page can look right and live somewhere else.",
    "caption": "A page can look right\nand live somewhere else.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v10b",
-   "start": 50.861,
-   "end": 52.541,
+   "start": 51.161,
+   "end": 52.841,
    "text": "Then a colleague asks.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10b.mp3"
   },
   {
    "id": "v11",
-   "start": 59.5,
-   "end": 64.468,
+   "start": 59.8,
+   "end": 64.768,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v11.mp3"

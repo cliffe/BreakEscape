@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–3.9 | hook | t07_stick_beat 1.2-5.1 s · Fatima's bark: a memory stick on the depot floor; cold open, no tells · **pending take** | — | Fatima: "Hang on, someone's dropped a memory stick over here." |
-| 3.9–9.0 | open | Title: Shadow IT / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play."<br>**v1b** "Slow file share. Pack due Monday." | — |
+| 3.9–9.0 | open | Title: Shadow IT / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Security awareness training you can play."<br>**v1b** "Slow file share. Pack due Monday." | — |
 | 9.0–13.1 | topic | t03_choices_reveal 3-7.1 s · Choice 1 of 4 before any pick: Colin's 'email the pack to your personal address' and the two options · **pending take** | **v1c** "This episode: Shadow IT." | — |
 | 13.1–16.2 | red_card | attack card: "Take the shortcut" | **v2** "First, take the shortcuts anyone would." | — |
 | 16.2–19.6 | pick_email | t03_choices_reveal 7.6-11 s · tab FRIDAY DEADLINE · Card 1: 'Send the pack to your personal email' picked; no marks before Next · **pending take** | **v3** "Email the pack to your personal address." | — |

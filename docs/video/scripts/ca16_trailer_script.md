@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.2 | hook | t01_anjali_hook · fresh game, Anjali's welcome in person-chat, her second sentence only; in = audio start of sentence 2 (3.58 s into the clip) minus 0.2 s, out = 7.54 s (speech ends 7.34 s, plus 0.2 s), 4.16 s; the game's bar cropped in every format (it prints sentence 3, "You're not here to catch anyone") and sentence 2 burned as the caption · cold open, no tell, no reply clicked · **pending take** | — | Anjali: "This week someone's leaving and there's a bit of talk going round." |
-| 4.2–9.3 | open | Title: Insider risk / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.2–9.3 | open | Title: Insider risk / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.3–13.4 | topic | t02_brief 1–5.1 s · the Brief panel, framed on the Quayholt purple tab, the heading and the five-step strip only (the paragraph with the advice is out of frame), `Start` unpressed · **pending take** | **v1c** "This episode: insider risk." | — |
 | 13.4–16.5 | red_card | chapter card, title only: "Make the week's calls" (left seat colour) | **v2** "First, make the week's calls." | — |
 | 16.5–19.9 | pick_offer | t03_choices_reveal, beat 3 of 5 · the card "An unknown contact messages you: ... 25% of what we make. Totally anonymous. Interested?" with its two options, the learner's pick highlighted ("Reply to find out who's really behind it"), no marks before Next · **pending take** | **v3** "Someone offers you money for access." | — |

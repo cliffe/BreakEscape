@@ -9,7 +9,7 @@ Shape: ca17 is defend only (no attacker, no flip, no step-away), so there is no 
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.1 | hook | t01_nilesh_talk, in = N1 audio start minus 0.15 s, out = N1 start plus 3.93 s · tab SERVICE DESK · Nilesh in the person-chat view, first visit; `--set kit_quiet=true` so no bark is cut at chat open; game bar cropped, burned captions "Nilesh, service desk." then "Every rule here has a 'because'." · cut lands in the gap before "Sort" (sentence 2 ends 3.86, sentence 3 starts 4.02) · **pending take** | — | Nilesh: "Nilesh, service desk. Every rule here has a 'because'." (cached, first two sentences of 13.49 s) |
-| 4.1–9.2 | open | Title: Acceptable use / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.1–9.2 | open | Title: Acceptable use / Tarrowby Logistics | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.2–17.2 | room | t02_room_wide 0–8.0 s · tab TRAINING ROOM · the Tarrowby depot office, Nilesh at his desk, Fatima and Chidi at theirs, the drinks machine; the player walks straight to the training screen; run with `--set kit_quiet=true` so no bark sits under the VO · **pending take** | **v1b** "A working day at a haulage firm." | — |
 | 17.2–20.6 | topic | t04_sort_cards, card "Plug in a USB stick a supplier handed you at a fair" held · tab "CAN I?" CARDS · framed on the card text only, the three bins out of frame, nothing pressed · **pending take** | **v1c** "This episode: acceptable use." | — |
 | 20.6–23.6 | blue_card | defend card, title only: "You sort the everyday moments" (3.0 s) | **v2** "One everyday moment per card." | — |
