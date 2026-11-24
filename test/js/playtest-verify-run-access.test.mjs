@@ -51,7 +51,7 @@ test('--access prints only the access section, one line per key, and exits 0', (
   assert.match(lines[0], /^game\s+1\s+\(mission stub\)/);
   assert.equal(lines[1], 'access model');
   assert.equal(lines.length, 17, r.out);   // npcFrustration: slice 9.2; guestSessions, sharedLogins: 9.2 H; feedRevealed: 9.2 C; opsDiscovered: N13; opsFindings: N14; opsUsed: N15
-  assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\); it_pc = dana \(claim\)/);
+  assert.match(r.out, /sessions\s+2: jake_pc = jake \(password\), level none; it_pc = dana \(claim\), level none/);
   assert.match(r.out, /signedInPcs\s+2: jake_pc; it_pc/);
   assert.match(r.out, /serverClones\s+2: 4F00A1C2 from npc jake; EXEC-DF-01 from object exec_badge \(UID-only\)/);
   assert.match(r.out, /copiedItems\s+1: jake_payroll/);
@@ -76,7 +76,7 @@ test('--access prints the PCs a check recorded an NPC locked out at (slice 9.2 L
 test('--access prints footholds, gainedFootholds, and remote and foothold beside a session', () => {
   const r = verify(['1', '--access'], NETWORK_STATE);
   assert.equal(r.status, 0, r.out);
-  assert.match(r.out, /sessions\s+3: jake_pc = jake \(password\); it_pc = dana \(claim\); lena_pc = lena \(password, remote, foothold jack_comms_port\)/);
+  assert.match(r.out, /sessions\s+3: jake_pc = jake \(password\), level none; it_pc = dana \(claim\), level none; lena_pc = lena \(password, remote, foothold jack_comms_port\), level none/);
   assert.match(r.out, /footholds\s+2: jack_comms_port = jack comms_port, device kit_dropbox \(network office_lan\); jack_lobby_port = jack lobby_port, device kit_b \(network office_lan\)/,
     'oldest seq first');
   assert.match(r.out, /gainedFootholds\s+3: comms_port; lobby_port; store_port/);
