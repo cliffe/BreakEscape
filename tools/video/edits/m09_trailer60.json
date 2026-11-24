@@ -1,0 +1,1524 @@
+{
+ "mission": "m09",
+ "id": "m09_trailer60_v1",
+ "title": "SAFETYNET: Licence to Hack, m09 Digital Archaeology 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v1 first edit list (2026-11-24): not rendered. Music SpyAgro/Action Dub from 0.0 s (120 BPM, 0.5001 s), 2 s fade-out. Mission 9 card on the 10.7 lift, All boundaries frame-aligned, snap false.",
+ "music": {
+  "track": "SpyAgro/Action Dub.mp3",
+  "analysis": "action_dub_60.json",
+  "start": 0.0,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2,
+  "alternatives": [
+   "Action Dub window 0.695 (lift 10.0, CTA hits exactly at 52/54, but the hook voice would need pre 3.7)",
+   "Hybrid Attack 0 window 21.895 (analysis best, flat energy)",
+   "Shadow Protocol (original) window 84.687 (close to m04 Remastered by ear: avoid)"
+  ]
+ },
+ "beat": {
+  "bpm": 119.99,
+  "period": 0.5001,
+  "offset": 0,
+  "note": "window = track from 0.0; quiet bars 0-10.7, lift 6.7, near-silent bar 8.7-10.7, lift+hit 10.7 = Mission 9 card, drop 18.7, lift 20.7, hit 24.02, drops 28.7/32.7, lift 42.7, quiet bar 48.7-50.7 (close-up cut on 48.7 under \"By morning\"), hits 50.69, 52.69, 54.02, 54.7 (strongest), 56.69 under the CTA. No natural end: fade_out 2."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no PIN, password, code or flag value on screen; no typed digits (the Floor Safe pad is used empty)",
+  "the Shelf Marks chart (t15 2.9-5.3) is never used; the salvage password screen shows its hint only, no typed characters",
+  "crate contents panel (t23 after 11.4) never used; the lockpick shot is a mid-pick frame",
+  "Lantern's subtitle bar names Nightshade: every team face is a crop with the bar off, in all three aspects",
+  "no menu, toast, reply choices or task panel",
+  "no debrief, no outcome, no tape or shredder results beyond the Wipe panels"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_netherton",
+   "type": "gameplay",
+   "duration": 3.7,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_hook_briefing.trimmed.mkv",
+    "in": 7.4,
+    "out": 11.1
+   },
+   "note": "hook: Netherton, voice 4.62-11.72 (silencedetect; line-start marker 4.39 is early); in 7.4, J-cut pre 2.9 (audio from 4.5, after the previous line's tail ends 4.36), L-cut post 0.8 runs the last words over the team flash. Bar cropped in 16:9.",
+   "framing": {
+    "16:9": {
+     "cx": 0.615,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.9,
+    "post": 0.8
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "hook line, no outcome named"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.",
+     "start": -2.78,
+     "end": 4.32
+    }
+   ]
+  },
+  {
+   "id": "flash_anchor",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_team_faces.trimmed.mkv",
+    "in": 18.8,
+    "out": 19.0667
+   },
+   "note": "Anchor face flash, subtitle bar cropped off in every aspect (Lantern's bar names Nightshade)",
+   "framing": {
+    "16:9": {
+     "cx": 0.53,
+     "cy": 0.19,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.53,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.53,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only, bar cropped"
+   }
+  },
+  {
+   "id": "flash_malhotra",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_team_faces.trimmed.mkv",
+    "in": 22.3,
+    "out": 22.5333
+   },
+   "note": "Malhotra face flash, subtitle bar cropped off in every aspect (Lantern's bar names Nightshade)",
+   "framing": {
+    "16:9": {
+     "cx": 0.47,
+     "cy": 0.19,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.47,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.47,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only, bar cropped"
+   }
+  },
+  {
+   "id": "flash_arakawa",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_team_faces.trimmed.mkv",
+    "in": 25.8,
+    "out": 26.0667
+   },
+   "note": "Arakawa face flash, subtitle bar cropped off in every aspect (Lantern's bar names Nightshade)",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.19,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only, bar cropped"
+   }
+  },
+  {
+   "id": "flash_lantern",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_team_faces.trimmed.mkv",
+    "in": 28.4,
+    "out": 28.6333
+   },
+   "note": "Lantern face flash, subtitle bar cropped off in every aspect (Lantern's bar names Nightshade)",
+   "framing": {
+    "16:9": {
+     "cx": 0.46,
+     "cy": 0.19,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.46,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.46,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only, bar cropped"
+   }
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 9",
+    "Digital",
+    "Archaeology"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "drop_lights",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_drop_staff_passage.trimmed.mkv",
+    "in": 4.6,
+    "out": 6.1
+   },
+   "note": "the Drop: player walks up through the door, motion lights strike the staff passage (strike 5.04-6.0); camera scrolls, so a wide crop",
+   "framing": {
+    "16:9": {
+     "cx": 0.65,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.52,
+     "cy": 0.45,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room and lights only"
+   }
+  },
+  {
+   "id": "noor_cover",
+   "type": "gameplay",
+   "duration": 4.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_noor_cover.trimmed.mkv",
+    "in": 3.1,
+    "out": 7.3
+   },
+   "note": "Noor at the front desk, voice 3.07-6.77; in 3.1 (conversation open, text still fading in), out 7.3 before the reply menu (7.7)",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.05,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "cover line, no menu"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Noor Haddad",
+     "text": "We're closed. Nobody comes in for a deed at this hour.",
+     "start": -0.03,
+     "end": 3.67
+    }
+   ]
+  },
+  {
+   "id": "card_wipe",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Stop the",
+    "Wipe"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "wipe_running",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_wipe_running.trimmed.mkv",
+    "in": 3.2,
+    "out": 4.4
+   },
+   "note": "Wipe Console panel reading WIPE IN PROGRESS, 212 reels (text only)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "panel text, no code"
+   }
+  },
+  {
+   "id": "jesse_line",
+   "type": "gameplay",
+   "duration": 4.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_wipe_running.trimmed.mkv",
+    "in": 19.25,
+    "out": 23.65
+   },
+   "note": "Jesse Tran portrait, voice 19.35-23.61; the speech bubble and LOS cone belong to the map and are not in this shot",
+   "framing": {
+    "16:9": {
+     "cx": 0.6,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.66,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.66,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "line only"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Jesse Tran",
+     "text": "Paper. You people break into buildings at night for paper.",
+     "start": 0.1,
+     "end": 4.36
+    }
+   ]
+  },
+  {
+   "id": "wipe_halted",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_wipe_halted.trimmed.mkv",
+    "in": 2.8,
+    "out": 4.0
+   },
+   "note": "same panel reading WIPE HALTED, 97 of 212 reels intact (held 3-5.3)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "panel text, no code"
+   }
+  },
+  {
+   "id": "card_vig",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Vigenère",
+    "Cipher"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "vig_password",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_vigenere_chart.trimmed.mkv",
+    "in": 9.9,
+    "out": 11.9
+   },
+   "note": "salvage password screen, field empty, hint shown from 9.64 (hint text names the cipher, not the key); panel closes by 12.8; never 2.9-5.3 (Shelf Marks chart)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.85
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "prompt and hint only"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 2.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m09_console_msfrun_clip.mp4",
+    "in": 0.4,
+    "out": 2.4
+   },
+   "note": "msf run over a SAFETYNET VM console: two spliced strips (clip note), set CMD lines cut so run follows PAYLOAD; no flag or credential",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.281,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "msf session text only"
+   },
+   "placeholder": false
+  },
+  {
+   "id": "cyberchef",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_cyberchef_vigenere.trimmed.mkv",
+    "in": 8.5,
+    "out": 9.5
+   },
+   "note": "CyberChef Vigenere Decode on a textbook example (key LEMON, output ATTACKATDAWN), not the mission cipher",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 1.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "neutral textbook sentence"
+   }
+  },
+  {
+   "id": "card_burn",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Burn Helena"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "dillard",
+   "type": "gameplay",
+   "duration": 6.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_dillard_stacks.trimmed.mkv",
+    "in": 13.6,
+    "out": 19.6
+   },
+   "note": "dark stacks, lights strike at 13.9, Dillard portrait; voice 15.28-19.60",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.62,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "guard line, no outcome"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Lyle Dillard",
+     "text": "Dillard, Statewide Security. Stay where you are.",
+     "start": 1.68,
+     "end": 6.0
+    }
+   ]
+  },
+  {
+   "id": "card_ash",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before It's",
+    "All Ash"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_cloner",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_frontdesk_rfid.trimmed.mkv",
+    "in": 3.0,
+    "out": 3.5
+   },
+   "note": "RFID cloner Read screen, UID rows blurred",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "read screen, UID blurred"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23_crate_lockpick.trimmed.mkv",
+    "in": 4.8,
+    "out": 5.3
+   },
+   "note": "crate lockpick pins moving, before the pick completes (opens at 11.4)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "cr_key",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_dock_closeups.trimmed.mkv",
+    "in": 16.4,
+    "out": 16.8
+   },
+   "note": "key lock: key going in",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "cr_notes",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_dock_closeups.trimmed.mkv",
+    "in": 5.2,
+    "out": 5.3333
+   },
+   "note": "Incident Log note (shredder log, no code)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.75
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "note text, no code"
+   }
+  },
+  {
+   "id": "cr_pin",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_office_pin.trimmed.mkv",
+    "in": 4.3,
+    "out": 4.6333
+   },
+   "note": "Floor Safe PIN pad, display empty (before the 3 safe digits are typed from about 5.9)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.9
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty pad"
+   }
+  },
+  {
+   "id": "cr_dust",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_stamp_hatch.trimmed.mkv",
+    "in": 16.0,
+    "out": 16.2667
+   },
+   "note": "fingerprint kit, dusting a print",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.85
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "kit only"
+   }
+  },
+  {
+   "id": "cr_cody",
+   "type": "gameplay",
+   "duration": 0.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_stacks_closeups.trimmed.mkv",
+    "in": 14.0,
+    "out": 14.2
+   },
+   "note": "Cody Old Coyote face, bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.38,
+     "cy": 0.19,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.38,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.38,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t27_flag_station.trimmed.mkv",
+    "in": 3.5,
+    "out": 3.6667
+   },
+   "note": "empty flag station",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty field"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_stacks_closeups.trimmed.mkv",
+    "in": 7.0,
+    "out": 7.2667
+   },
+   "note": "Harwick & Lowe box password screen, field empty",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty field"
+   }
+  },
+  {
+   "id": "cr_reader",
+   "type": "gameplay",
+   "duration": 0.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_frontdesk_rfid.trimmed.mkv",
+    "in": 14.5,
+    "out": 14.6667
+   },
+   "note": "RFID reader, Emulate Staff Card",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.7
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card name only"
+   }
+  },
+  {
+   "id": "cr_biometric",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t26_cage_sorensen.trimmed.mkv",
+    "in": 13.8,
+    "out": 14.0333
+   },
+   "note": "fingerprint reader on the plan cabinet, one lift, not identified",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "reader only"
+   }
+  },
+  {
+   "id": "cr_hatch",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_stamp_hatch.trimmed.mkv",
+    "in": 26.0,
+    "out": 26.1333
+   },
+   "note": "Sorensen hatch face flash, narrator bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "ending_wide",
+   "type": "gameplay",
+   "duration": 3.7,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_sorensen_ending.trimmed.mkv",
+    "in": 12.45,
+    "out": 16.15
+   },
+   "note": "J-cut: Sorensen's voice (onset 10.4) starts 2.1 s under the crescendo end; picture joins mid-line at 12.45; portrait wide, bar cropped in 16:9",
+   "framing": {
+    "16:9": {
+     "cx": 0.615,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.73,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.73,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.1,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "index line, first half"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Margaret Sorensen",
+     "text": "Everyone ENTROPY ever placed is filed in this room, dear.",
+     "start": -2.05,
+     "end": 2.8
+    }
+   ]
+  },
+  {
+   "id": "ending_close",
+   "type": "gameplay",
+   "duration": 3.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_sorensen_ending.trimmed.mkv",
+    "in": 16.15,
+    "out": 19.45
+   },
+   "note": "hard cut at the quiet bar (48.7) into a 3x face crop on \"By morning\"; voice ends 19.1; bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.74,
+     "cy": 0.2,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.74,
+     "cy": 0.3,
+     "zoom": 1.8
+    },
+    "1:1": {
+     "cx": 0.74,
+     "cy": 0.25,
+     "zoom": 2.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "index line, second half"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Margaret Sorensen",
+     "text": "By morning, I'll be the only index you can ask.",
+     "start": 0.0,
+     "end": 2.95
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}

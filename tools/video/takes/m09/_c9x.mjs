@@ -1,7 +1,9 @@
 // Extras for the m09 crescendo/flash/walk takes t19..t33 (23 Nov, written, NOT run). Never types a PIN/password/code: only PAD digits (checked by check_digits.rb), never ENTER.
 import { sleep } from '../lib/lib.mjs';
-import { openChat, closeAll } from '../m06/_cres.mjs';
-export { faceFlash, openMg, typeKeys, pickLock, closeAll, openChat } from '../m06/_cres.mjs';
+import { openChat } from '../m06/_cres.mjs';
+import { closeAll } from './_c9.mjs';
+export { closeAll } from './_c9.mjs';
+export { faceFlash, openMg, typeKeys, pickLock, openChat } from '../m06/_cres.mjs';
 export { blurUid, cloneAndSave, buttons, clickBtn } from '../m05/t13_rfid_clone.mjs';
 export { goRoom } from '../m05/_live.mjs';
 export { setGlobal } from './_c9.mjs';

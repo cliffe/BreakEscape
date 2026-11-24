@@ -12,6 +12,6 @@ export default async (page, bridge, mark) => {
   const r = await bridge.interact('clock_server_hall', { timeoutMs: 15000, approach: false }); await sleep(1500);
   mark('panel-open', { ok: r && r.ok, mg: JSON.stringify((await bridge.getState()).activeMinigame).slice(0, 100) });
   await sleep(4000); mark('panel-held');
-  await closeAll(page, bridge); await page.keyboard.press('Escape').catch(() => {}); mark('panel-closed'); await sleep(900);
+  await page.evaluate(() => { const x = document.querySelector('.game-display-dialog .game-modal-close'); if (x) x.click(); }).catch(() => {}); await sleep(500); await closeAll(page, bridge); if ((await bridge.getState()).activeMinigame) await page.keyboard.press('Escape').catch(() => {}); mark('panel-closed'); await sleep(900);
   try { await faceFlash(page, bridge, mark, 'asante'); } catch (err) { mark('asante-error', { e: String(err).slice(0, 150) }); }
 };

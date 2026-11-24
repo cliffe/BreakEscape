@@ -77,6 +77,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2 · final</button>
     <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2 · final</button>
     <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1 · final</button>
+    <button class="tab" role="tab" id="tab-m09v1" aria-selected="false" data-cut="m09v1">m09 · v1</button>
   </nav>
   <details class="earlier" id="earlier">
     <summary>Earlier rounds (18)</summary>
@@ -141,6 +142,20 @@ const CUTS = {
     standin: ["The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, Derek's cut, loudness and captions checked in all three aspects."],
     srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,090 --> 00:00:49,450\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,190 --> 00:00:51,850\nDerek Lawson: That's optimisation.\n",
     questions: [{k:"music", t:"Emerald Trigger on m01", o:[["ok", "Keep", "", 1], ["back", "Back to Midnight Cipher Chase (v12)", ""]]}, {k:"cuts", t:"Cards and Derek's cut on the beat", o:[["ok", "Right", "", 1], ["fix", "Off", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m09v1: {
+    doc: "feedback/m09_trailer_v1",
+    title: "m09 Digital Archaeology · 60 s trailer · v1",
+    videoLabel: "16:9",
+    video: "/_blob/7f5d513a334bc1dac418da27feb188a6",
+    videos: [["9:16", "/_blob/de079b39392fdb264abe0b8322be09a7", "p916"], ["1:1", "/_blob/dab9c73d97fcb8effe3ec458d2e06200", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.1 LUFS, true peak −1.5 dB", "music: SpyAgro Action Dub from 0.0 s, 2 s fade-out", "36 shots"],
+    changedLabel: "What this first cut does",
+    changed: ["Netherton's hook (\"We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\") opens under the title, with a 1 s flash of four team faces.", "Cards: \"Mission 9 / Digital Archaeology\", \"Stop the / Wipe\", \"Vigenère / Cipher\", \"Real / Hacking\", \"Burn Helena\", \"Before It's / All Ash\".", "Noor at the front desk, Jesse at the wipe console (WIPE IN PROGRESS, then WIPE HALTED), the salvage password screen with its hint, CyberChef on a textbook example, Dillard's challenge in the stacks, a 12-cut crescendo, and Sorensen's ending: \"Everyone ENTROPY ever placed is filed in this room, dear. By morning, I'll be the only index you can ask.\"", "Real Hacking is m09's own console footage: the attack script running in Metasploit (module, target and port, no secret values).", "Music is a track no trailer has used, so m01's options stay free."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The Shelf Marks chart never appears (it shows the cipher key word). The crate contents panel, the team names in subtitles and typed codes are cut.", "Not filmed: the walk to the VM, the phone contact list (only HaX is in it at that point) and Gary's call (it did not ring in two runs). The picks' safe dial does not exist in m09.", "The console clip is two strips of the run spliced together; see the question.", "Checked by me: contact sheets in all three aspects, the fixed crops frame by frame, loudness and captions. Not watched end to end."],
+    srt: "1\n00:00:03,220 --> 00:00:10,320\nDirector Magnus Netherton: We believe ENTROPY keeps its people on paper in that building. Tonight they are burning it.\n\n2\n00:00:13,670 --> 00:00:17,370\nNoor Haddad: We're closed. Nobody comes in for a deed at this hour.\n\n3\n00:00:20,400 --> 00:00:24,660\nJesse Tran: Paper. You people break into buildings at night for paper.\n\n4\n00:00:36,180 --> 00:00:40,500\nLyle Dillard: Dillard, Statewide Security. Stay where you are.\n\n5\n00:00:42,950 --> 00:00:47,800\nMargaret Sorensen: Everyone ENTROPY ever placed is filed in this room, dear.\n\n6\n00:00:48,700 --> 00:00:51,650\nMargaret Sorensen: By morning, I'll be the only index you can ask.\n",
+    questions: [{k:"console", t:"Real Hacking: the console clip is two spliced strips of the run", o:[["ok", "Fine, reads as one scroll", "", 1], ["one", "Use one continuous strip", "Shorter, less shown"]]}, {k:"music", t:"Action Dub (quiet start, lift on the Mission card)", o:[["ok", "Keep", "", 1], ["alt", "Try another", "Say which mood"]]}, {k:"faces", t:"Netherton's hook running over the team-face flash", o:[["ok", "Keep", "", 1], ["cut", "Hook on Netherton only", ""]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
   },
   m08v1: {
     doc: "feedback/m08_trailer_v1",

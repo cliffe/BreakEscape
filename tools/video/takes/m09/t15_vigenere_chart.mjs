@@ -8,7 +8,7 @@ const DOOR = 'door:tape_room->salvage_cage';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await bridge.moveToNear('shelf_code_legend', { timeoutMs: 25000 }); await sleep(900); }
 export default async (page, bridge, mark) => {
   await sleep(1000); await blurShelfText(page);
-  await openMg(bridge, 'shelf_code_legend', 'chart', mark); await sleep(1800); await closeAll(page, bridge); mark('chart-closed'); await sleep(800);
+  await openMg(bridge, 'shelf_code_legend', 'chart', mark); await sleep(1800); await closeAll(page, bridge); mark('chart-closed'); await page.evaluate(() => { clearInterval(window.__shelfBlur); window.__shelfBlur = 0; document.querySelectorAll('*').forEach(d => { if (d.style && d.style.filter) d.style.filter = ''; }); }); await sleep(800);
   await bridge.moveToNear(DOOR, { timeoutMs: 25000 }); await sleep(700);
-  await openMg(bridge, DOOR, 'pw', mark); await sleep(2400); await closeAll(page, bridge); mark('pw-closed'); await sleep(900);
+  await openMg(bridge, DOOR, 'pw', mark); await sleep(1200); await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /show hint/i.test(x.textContent)); if (b) b.click(); }); mark('hint-shown'); await sleep(2800); await closeAll(page, bridge); mark('pw-closed'); await sleep(900);
 };
