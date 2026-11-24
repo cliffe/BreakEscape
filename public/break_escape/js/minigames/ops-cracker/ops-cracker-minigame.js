@@ -116,6 +116,13 @@ export class OpsCrackerMinigame extends SocialOverlayScene {
         this._timer = setInterval(() => this._tick(), TICK_MS);
         // the keyring may know more than it did when the row was drawn
         this._refreshKeyring();
+        // a fact earned while the scene is open (a feed post, a flag reward) adds its chip
+        const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (d && typeof d.on === 'function') {
+            this._intelListener = () => { if (!this._closed) this._refreshKeyring(); };
+            this._intelDispatcher = d;
+            d.on('intel_collected', this._intelListener);
+        }
     }
 
     _refreshKeyring() {
@@ -127,6 +134,8 @@ export class OpsCrackerMinigame extends SocialOverlayScene {
 
     cleanup() {
         this._closed = true;
+        if (this._intelDispatcher && this._intelListener) this._intelDispatcher.off?.('intel_collected', this._intelListener);
+        this._intelListener = null; this._intelDispatcher = null;
         if (this._timer) { clearInterval(this._timer); this._timer = null; }
         super.cleanup();
     }

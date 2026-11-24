@@ -357,3 +357,20 @@ test('R1-S1: an earned fact merged after the scene opened, or carried by a reloa
     assert.equal(chip(host, 'year').textContent, 'Born in 1990');
     m.cleanup();
 });
+
+test('S7 R2-7: a fact earned while the scene is open (intel_collected) re-reads the keyring; after close it does not', async () => {
+    const { default: Dispatcher } = await import(pathToFileURL(join(here, '../../public/break_escape/js/systems/npc-events.js')));
+    const prev = window.eventDispatcher;
+    window.eventDispatcher = new Dispatcher();
+    try {
+        const { m, kr } = open({});
+        const before = kr.refreshes;
+        window.eventDispatcher.emit('intel_collected', { id: 'year', fact: 'year', label: 'Born in 1990', source: 'feed' });
+        await settle();
+        assert.equal(kr.refreshes, before + 1);
+        m.cleanup();
+        window.eventDispatcher.emit('intel_collected', { id: 'pet', fact: 'pet' });
+        await settle();
+        assert.equal(kr.refreshes, before + 1, 'no listener left behind');
+    } finally { window.eventDispatcher = prev; }
+});
