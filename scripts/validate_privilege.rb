@@ -10,17 +10,18 @@
 #       admin session, when the PC's owner is admitted by one of the two profiles;
 #   (b) a remove_item that is not the first action of its list on a USB-governed object;
 #   (c) one object whose needsSession grants name two different PCs.
-# Errors: a field of a later stage (S5b, S5c) is not built yet, so it fails loudly.
+# Errors: a field of a later stage (S5c) is not built yet, so it fails loudly. S5b adds the cached
+# accounts checks (privilege_cached_accounts).
 # A scenario with no `creds.admin` account and no admin grant gets no line from this file.
 require 'json'
 require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/credential_model'
+require_relative '../lib/break_escape/cached_accounts'
 require_relative '../lib/break_escape/access_work' unless defined?(BreakEscape::AccessWork)
 
 # Field => stage, by where the field sits.
-PRIVILEGE_NOT_BUILT_S5B = %w[cachedAccounts].freeze
 PRIVILEGE_NOT_BUILT_S5C_CREDS = %w[accountKind localTo domain].freeze
 
 def check_privilege(json_data)
@@ -29,7 +30,9 @@ def check_privilege(json_data)
 
   err = ->(msg) { issues << "❌ ERROR: privilege: #{msg}" }
   warn = ->(msg) { issues << "⚠️ WARNING: privilege: #{msg}" }
+  info = ->(msg) { issues << "ℹ️ INFO: privilege: #{msg}" }
   privilege_not_built(json_data, err)
+  privilege_cached_accounts(json_data, err, warn, info) # S5b
   privilege_admin_profile_collisions(json_data, warn)
   privilege_object_warnings(json_data, warn)
   issues
@@ -43,18 +46,13 @@ end
 # quiet for a warning.
 def privilege_not_built(json_data, err)
   ai = BreakEscape::AccessIdentities
-  cm = BreakEscape::CredentialModel
   line = ->(field, stage) { "\"#{field}\" is not built yet (privilege plan stage #{stage})" }
 
-  # S5b: cachedAccounts on any object, and a harvested credential proof.
+  # S5c: a domain on a sign-in PC. (S5b's cachedAccounts and harvested guards are lifted: see
+  # privilege_cached_accounts.)
   ai.room_objects(json_data).each do |entry|
     obj = entry[:object]
-    err.call("#{entry[:path]}: #{line.call('cachedAccounts', 'S5b')}") if obj.key?('cachedAccounts')
     err.call("#{entry[:path]}: #{line.call('domain', 'S5c')}") if ai.login_pc?(obj) && obj.key?('domain')
-  end
-  cm.registry(json_data).each do |id, entry|
-    proof = entry['proof']
-    err.call("credentials/#{id}: #{line.call('harvested', 'S5b')}") if proof.is_a?(Hash) && proof.key?('harvested')
   end
 
   # S5c: account kinds on creds, and accountOnly on an NPC (the NPC schema is open).
@@ -192,4 +190,122 @@ def privilege_object_warnings(json_data, warn)
     warn.call("#{where}: its needsSession grants name more than one PC (#{pcs.join(', ')}). " \
               "The engine judges only the first, '#{pcs.first}'.")
   end
+end
+
+# ---- S5b: cached accounts ---------------------------------------------------------------------
+# Every message below needs a `cachedAccounts` list or a `harvested` proof to be present, so a
+# scenario with neither gets no line from this part.
+PRIVILEGE_PC_ID_MAX = 40
+
+def privilege_cached_accounts(json_data, err, warn, info)
+  ai = BreakEscape::AccessIdentities
+  cm = BreakEscape::CredentialModel
+  ca = BreakEscape::CachedAccounts
+  pcs = ai.sign_in_pcs(json_data).to_h { |e| [e[:object]['id'].to_s, e[:object]] }
+  registry = cm.registry(json_data)
+
+  ai.room_objects(json_data).each do |entry|
+    obj = entry[:object]
+    next unless obj.key?('cachedAccounts')
+
+    where = "#{entry[:path]} (#{obj['id'] || obj['name'] || '?'})"
+    unless ai.login_pc?(obj)
+      err.call("#{where}: cachedAccounts is only for a sign-in PC (a sign-in PC has lockType \"login\")")
+      next
+    end
+    privilege_check_cache_list(json_data, obj, where, registry, err, warn, info)
+  end
+
+  registry.each do |id, rec|
+    proof = rec['proof']
+    next unless proof.is_a?(Hash) && proof.key?('harvested')
+
+    label = "credentials/#{id.to_s[0, 64]}"
+    unless rec['kind'] == 'hash'
+      err.call("#{label}: a harvested proof is only for a hash credential")
+      next
+    end
+    pc_id = proof['harvested']
+    pc = pc_id.is_a?(String) ? pcs[pc_id] : nil
+    unless pc
+      err.call("#{label}: harvested names '#{pc_id.to_s[0, 60]}', which is not a sign-in PC")
+      next
+    end
+    next if ca.candidates(pc).any? { |c| c['npc'] == rec['account'] }
+
+    err.call("#{label}: account '#{rec['account'].to_s[0, 60]}' is not in the cachedAccounts of '#{pc_id}'")
+  end
+end
+
+def privilege_check_cache_list(json_data, pc, where, registry, err, warn, info)
+  cm = BreakEscape::CredentialModel
+  ai = BreakEscape::AccessIdentities
+  ca = BreakEscape::CachedAccounts
+  pc_id = pc['id'].to_s
+  list = pc['cachedAccounts']
+  unless list.is_a?(Array)
+    err.call("#{where}: cachedAccounts must be a list of { npc, after? } entries")
+    return
+  end
+  err.call("#{where}: cachedAccounts lists #{list.length} accounts; the server reads at most #{ca::MAX_CANDIDATES}") if list.length > ca::MAX_CANDIDATES
+  err.call("#{where}: PC id '#{pc_id[0, 60]}' holds a '#{ca::PAIR_SEPARATOR}', which the cached-account pair strings use as a separator") if pc_id.include?(ca::PAIR_SEPARATOR)
+  err.call("#{where}: PC id '#{pc_id[0, 60]}' is #{pc_id.length} characters; a cached-accounts PC id is at most #{PRIVILEGE_PC_ID_MAX}") if pc_id.length > PRIVILEGE_PC_ID_MAX
+
+  owned = !ai.owner_id(pc).nil?
+  headless = BreakEscape::NetworkModel.headless?(pc)
+  seen = {}
+  named_ok = []
+  list.each_with_index do |item, i|
+    unless item.is_a?(Hash) && item['npc'].is_a?(String) && !item['npc'].empty?
+      err.call("#{where}: cachedAccounts[#{i}] must be an object with an npc id")
+      next
+    end
+    npc_id = item['npc']
+    if seen[npc_id]
+      err.call("#{where}: cachedAccounts names '#{npc_id[0, 60]}' more than once")
+      next
+    end
+    seen[npc_id] = true
+    err.call("#{where}: account id '#{npc_id[0, 60]}' holds a '#{ca::PAIR_SEPARATOR}', which the cached-account pair strings use as a separator") if npc_id.include?(ca::PAIR_SEPARATOR)
+    npc = cm.account_npc(json_data, npc_id)
+    unless npc
+      err.call("#{where}: cachedAccounts names '#{npc_id[0, 60]}', which is not an account holder")
+      next
+    end
+    named_ok << npc
+
+    after = item['after']
+    err.call("#{where}: cachedAccounts['#{npc_id[0, 60]}'] 'after' must be \"borrow\" or absent") unless ca::AFTER_VALUES.include?(after)
+    privilege_check_borrow_candidate(json_data, pc, npc, where, owned, headless, err) if after == 'borrow'
+
+    hashes = registry.select do |_id, rec|
+      rec['kind'] == 'hash' && rec['account'] == npc_id && cm.proof_kind(rec['proof']) == 'harvested' && rec.dig('proof', 'harvested') == pc_id
+    end
+    unless hashes.length == 1
+      err.call("#{where}: cached accounts are hashes: author one hash record per PC and account (PC '#{pc_id[0, 60]}', account '#{npc_id[0, 60]}')")
+    end
+    info.call("#{where}: account '#{npc_id}' is collect-only on PC '#{pc_id}' (the PC's access list does not admit it)") unless cm.pc_admits_account?(pc, npc)
+  end
+
+  admins = privilege_admin_accounts_at(json_data, pc)
+  if admins.empty?
+    warn.call("#{where}: PC '#{pc_id}' caches accounts but no admin path reaches it (no admitted account with creds.admin and no step-up weakness on its host), so nothing here can be collected")
+    return
+  end
+  owner = owned ? cm.account_npc(json_data, ai.owner_id(pc)) : nil
+  return unless owner && named_ok.none? { |n| n['id'] == owner['id'] }
+
+  info.call("#{where}: owner '#{owner['id']}' of PC '#{pc_id}' is not collectable here (its cachedAccounts does not name the owner)")
+end
+
+# An `after: "borrow"` candidate: an unowned, non-headless PC (the engine performs a borrow only
+# there), and a borrow_session workaround of the account holder that names this PC.
+def privilege_check_borrow_candidate(json_data, pc, npc, where, owned, headless, err)
+  pc_id = pc['id'].to_s
+  err.call("#{where}: after \"borrow\" is only for a PC with no owner ('#{pc_id}' has owner '#{pc['owner'].to_s[0, 60]}'); the engine never borrows an owned PC") if owned
+  err.call("#{where}: after \"borrow\" is not allowed on a headless PC ('#{pc_id}'); the engine never borrows one") if headless
+  borrows = BreakEscape::AccessWork.workarounds(json_data, npc).any? { |w| w['do'] == 'borrow_session' && w['pc'].to_s == pc_id }
+  return if borrows
+
+  err.call("#{where}: '#{npc['id']}' has no borrow_session workaround for PC '#{pc_id}', so the account is never cached after a borrow")
 end

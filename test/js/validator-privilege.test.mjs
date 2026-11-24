@@ -148,16 +148,16 @@ test('(c) the same PC twice does not warn', { skip }, () => {
     assert.deepEqual(warnings(issues(sc)).filter(s => s.includes('needsSession')), []);
 });
 
-// Not built yet: one fixed line each, an error.
-test('S5b fields are errors: cachedAccounts and a harvested proof', { skip }, () => {
+// S5b is built (unit 10): its fields are no longer "not built yet" (the checks are in
+// validator-privilege-cached.test.mjs).
+test('S5b fields are no longer errors: cachedAccounts and a harvested proof', { skip }, () => {
     const sc = base();
     objects(sc)[0].cachedAccounts = [{ npc: 'kemi' }];
-    sc.credentials = { c1: { kind: 'password', account: 'kemi', proof: { harvested: 'desk_pc' } } };
-    const out = errors(issues(sc));
-    assertHas(out, '"cachedAccounts" is not built yet (privilege plan stage S5b)');
-    assertHas(out, '"harvested" is not built yet (privilege plan stage S5b)');
+    sc.credentials = { c1: { kind: 'hash', account: 'kemi', proof: { harvested: 'desk_pc' } } };
+    assert.ok(!has(issues(sc), 'is not built yet (privilege plan stage S5b)'));
 });
 
+// Not built yet: one fixed line each, an error.
 test('S5c fields are errors: accountKind, localTo, domain on creds, accountOnly, domain on a sign-in PC', { skip }, () => {
     const sc = base();
     Object.assign(npc(sc, 'omar').creds, { accountKind: 'local', localTo: ['desk_pc'], domain: 'HQ' });

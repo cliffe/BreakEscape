@@ -299,7 +299,7 @@ def check_cracking(json_data)
     err.call("#{label} account '#{entry['account'].to_s[0, 60]}' is not an account holder") unless npc
     err.call("#{label} is a hash and must not set connectsTo (a hash never signs in)") if entry.key?('connectsTo')
     proof = entry['proof'].is_a?(Hash) ? entry['proof'] : {}
-    unless %w[held technique_card].any? { |k| cm.present_string?(proof[k]) }
+    unless %w[held technique_card harvested].any? { |k| cm.present_string?(proof[k]) }
       err.call("#{label} proof must be `held` (a hash file the player holds) or `technique_card`; no other proof kind lists a hash row")
     end
 
