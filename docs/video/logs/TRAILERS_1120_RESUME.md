@@ -242,3 +242,10 @@ Next:
 - Owner questions on the m07v2 tab: console content (recommend crop to first lines), module names (recommend keep). m09 clip is two spliced strips (ask when m09 edit exists).
 - After B1: m09 takes (fresh Sonnet agent from docs/video/takes_m09.md "Not done": t22-t30, re-run t16/t19/t21, frame-check t14/t15/t17/t20), then m10 takes, then m09/m10 edits with clips m09_console_msfrun_clip.mp4 and m10_console_fileread_clip.mp4.
 - Gotcha: shot start times = sum of durations + the open bumper (~6.0 s; preset shots have no duration field).
+
+## State 24 Nov, ~13:50
+
+- Page v25 (f0b451472): m05 v5, m07 v2 published. Page v26 (1a294774d, hash sent to AC0): m01 v13 (Emerald Trigger) and m08 v1 (first round; question on the music drop at 0:12.9 under ATHENA's line, placeholder "fine as is").
+- m08 v1: -13.99 LUFS, TP -1.85; 9:16 console (shell landing) readable at full res.
+- m03 v4 (msf use console) is the last render of batch5. When it finishes: check console crops, encode, tab, publish, hash; then MESSAGE CA0 that B1 can start.
+- Then as before: m09 takes, m10 takes, m09/m10 edits.
