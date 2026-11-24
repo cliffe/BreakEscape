@@ -26,6 +26,7 @@ require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/helpdesk_model'
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1903,6 +1904,75 @@ BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
     end
     sources.compact.each do |src|
       add_edge(src, lock_node, label: 'second step') unless $edges.any? { |e| e[:from] == src && e[:to] == lock_node }
+    end
+  end
+end
+
+# S8b unit 06 (helpdesk plan, dungeon graph): a desk that covers an account (HM.covers?) draws one grant node per
+# thing it resets, labelled with the desk NPC's name. A `password` grant is a key source for every sign-in lock
+# that admits the account. An `mfa` grant is a source for that account's `second step` edge, beside the device or
+# phone edge. The grant's own requirements: the desk NPC's room; for `questions`, the readable homes of the
+# recovery answers (the clue walk, `NpcHabits::Clues.readable_texts`); for `callback`, the owner's phone item.
+# No answer, password or code is in any label. A scenario with no `helpdesks` draws nothing here.
+unless BreakEscape::HelpdeskModel.desks(scenario).empty?
+  hm_graph = BreakEscape::HelpdeskModel
+  desk_texts = nil
+  desk_room_of = lambda do |npc_id|
+    found = rooms.find { |_rid, room| room.is_a?(Hash) && Array(room['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }
+    found && found[0]
+  end
+  hm_graph.desks(scenario).each do |desk_id, desk|
+    desk_npc_id = desk['npc']
+    desk_room = desk_room_of.call(desk_npc_id)
+    desk_npc = desk_room && Array(rooms[desk_room]['npcs']).find { |n| n.is_a?(Hash) && n['id'] == desk_npc_id }
+    desk_name = scrub_label((desk_npc && (desk_npc['displayName'] || desk_npc['id']) || desk_npc_id).to_s)
+    BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+      npc = account[:npc]
+      next if account[:opens].empty?
+
+      sinks = { 'password' => [], 'mfa' => [] }
+      account[:opens].each do |lock_entry|
+        next unless lock_entry[:kind] == 'login'
+
+        sinks['password'] << [access_lock_node(lock_entry, rooms), 'password reset']
+        next unless mfa_graph.enrolled?(npc)
+        next if mfa_graph.kind(BreakEscape::CredentialModel.policy_for(scenario, lock_entry[:lock])) == 'none'
+
+        sinks['mfa'] << [access_lock_node(lock_entry, rooms), 'second step']
+      end
+      %w[password mfa].each do |what|
+        next if sinks[what].empty? || !hm_graph.covers?(desk, npc, what)
+
+        grant = add_node("desk_#{nid(desk_id)}_#{nid(npc['id'])}_#{what}",
+                         "#{desk_name}<br/>resets #{what == 'password' ? 'password' : 'second step'}", 'key')
+        if desk_room
+          add_node(desk_room, room_label(desk_room, rooms[desk_room]), 'room')
+          add_edge(desk_room, grant)
+        end
+        case desk['verify']
+        when 'questions'
+          desk_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE))
+          recovery = npc['creds']['recovery'].is_a?(Hash) ? npc['creds']['recovery'] : {}
+          Array(desk['questions']).each do |qid|
+            want = hm_graph.normalise_answer(recovery[qid])
+            next if want.empty?
+
+            desk_texts.select { |t| t[:text].is_a?(String) && hm_graph.normalise_answer(t[:text]).include?(want) }
+                      .uniq { |t| t[:path] }.each do |t|
+              source = t[:room] ? t : t.merge(room: account[:room], locks: [])
+              clue = clue_node_for.call(source, scrub_label((t[:name] || 'note').to_s))
+              add_edge(clue, grant, label: 'answer') unless $edges.any? { |e| e[:from] == clue && e[:to] == grant }
+            end
+          end
+        when 'callback'
+          phone = mfa_phone_for.call(npc['id'])
+          src = phone && mfa_item_node.call(phone)
+          add_edge(src, grant, label: 'callback') if src && $edges.none? { |e| e[:from] == src && e[:to] == grant }
+        end
+        sinks[what].each do |lock_node, label|
+          add_edge(grant, lock_node, label: label) unless $edges.any? { |e| e[:from] == grant && e[:to] == lock_node }
+        end
+      end
     end
   end
 end
