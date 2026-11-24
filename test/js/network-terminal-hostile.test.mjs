@@ -34,7 +34,8 @@ const CONTROL = /[\u0000-\u001F\u007F-\u009F\u2028\u2029\u202A-\u202E\u2066-\u20
 
 let counter = 0;
 const plain = (field) => `Mk${++counter}${field}`;
-const hostile = () => HOSTILE;
+// A host's hostname must differ from its name, as the plain run's does: the sweep prints a Hostname line only then
+const hostile = (field) => (/host/i.test(field) ? `${HOSTILE}h` : HOSTILE);
 
 // ---------------------------------------------------------------------------------------------
 // The fixture

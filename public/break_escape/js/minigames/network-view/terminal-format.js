@@ -14,7 +14,7 @@
 import {
     isHostRow, isOpsBlock, offersSweep, rowServices, rowFindings, classWord, severityWord, statusWord,
     findingSummary, falseReason, findingNeeds, needLine, needMark, isFixed, FIXED_TEXT, accessTag, isTechniqueSession,
-    techniqueList, openWho, refusalLine, unplugNoticeText
+    techniqueList, openWho, refusalLine, refusalText, unplugNoticeText
 } from './ops-model.js';
 import {
     REQUEST_FAILED_TEXT, STALE_TEXT, OWN_HEADING, SWEEP_HINT_TEXT, SHARE_LOCKED_TEXT, SHARE_LOCKED_LABEL, HOST_LOCKED_LABEL,
@@ -106,9 +106,14 @@ export function dropLog(footholdId) {
 
 const alive = (log) => isObj(log) && log.dropped !== true && Array.isArray(log.lines);
 
+/** The one cleaning function: control characters in any scenario-authored or server-sent string become U+FFFD. */
+export function cleanText(v) {
+    return str(v).replace(CONTROL_CHARS, REPLACEMENT);
+}
+
 /** A span with its control characters replaced and a class kept only when it is one of the five. */
 function cleanSpan(s) {
-    const out = { text: str(isObj(s) ? s.text : s).replace(CONTROL_CHARS, REPLACEMENT) };
+    const out = { text: cleanText(isObj(s) ? s.text : s) };
     if (isObj(s) && CLASSES.includes(s.cls)) out.cls = s.cls;
     return out;
 }
@@ -164,8 +169,17 @@ function plainResult(offer, answer, view) {
 /** What a finished move writes: the generator's lines, or the plain layout for an action with none. */
 export function recordResult(log, offer, answer, view) {
     if (!alive(log)) return;
-    const gen = generatorFor(offer?.action);
-    appendLines(log, gen ? gen.result(offer, answer, view) : plainResult(offer, answer, view));
+    const action = offer?.action;
+    const gen = generatorFor(action);
+    const lines = gen ? gen.result(offer, answer, view) : plainResult(offer, answer, view);
+    // No reply: say what the Panels say (their notice, "The link did not answer. Try again."), from the same text constant.
+    // A sweep or scan keeps its second sentence on its row in Panels: the log holds both, and `show` draws it too (the scene's `rowNotice`)
+    if (answer === null && ['sweep', 'scan', 'check', 'confirm', 'use'].includes(action)) {
+        const said = [[span(refusalText('no_answer'), 'bad')]];
+        appendLines(log, action === 'sweep' || action === 'scan' ? [...lines, ...said] : said);
+        return;
+    }
+    appendLines(log, lines);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -393,6 +407,8 @@ export function formatListing(view, scene = {}) {
     for (const b of furtherBlocks(v)) out.push(...blockLines(b, kinds));
     out.push(...techniqueLines(v, s));
     if (s.notice) out.push(note(s.notice));
+    if (s.rowNotice) out.push(note(s.rowNotice));
+    if (s.unplugNotice) out.push(note(s.unplugNotice));
     return out;
 }
 

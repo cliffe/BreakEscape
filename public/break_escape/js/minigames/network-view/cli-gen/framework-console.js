@@ -205,7 +205,9 @@ function useResult(offer, answer, view) {
             span(` ${sentence}`)
         )];
     }
-    return [lineOf(span('[+]', 'ok'), span(` ${sentence}`))];
+    // A repeat reads the same and keeps the access tag the Panels draw on the grant sentence
+    const again = answer.grant === 'session' && answer.session && typeof answer.session === 'object' ? accessTag(answer.session) : '';
+    return [lineOf(span('[+]', 'ok'), span(` ${sentence}`), again ? span(` ${again}`, 'ok') : null)];
 }
 
 export function result(offer, answer, view) {

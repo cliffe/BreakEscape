@@ -34,7 +34,7 @@ import {
 import { CONTROLS } from './view-controls.js';
 import { parse, complete } from './terminal-grammar.js';
 import {
-    logFor, appendLine, localLines, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL
+    logFor, appendLine, localLines, cleanText, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL
 } from './terminal-format.js';
 import { promptMark } from './cli-gen/framework-console.js';
 
@@ -165,6 +165,7 @@ export class TerminalRenderer {
     showResult(offer, answer, scene) {
         if (scene) this.scene = scene;
         if (!this.root) return;
+        if (offer?.action === 'use') this.useStep = null;
         this.render(this.view, this.offers, this.scene);
         this._scrollLog();
         this._soft(this.input);
@@ -234,7 +235,7 @@ export class TerminalRenderer {
         if (!this.markEl) return;
         let mark;
         try { mark = promptMark(this.mode, this.view || {}); } catch (e) { mark = '$'; }
-        this.markEl.textContent = mark;
+        this.markEl.textContent = cleanText(mark);
     }
 
     // ----- the quick commands -----
@@ -298,16 +299,16 @@ export class TerminalRenderer {
         if (offer.action === 'unplug') btn.setAttribute('data-unplug', '');
         else btn.setAttribute('data-action', offer.action);
         const title = offer.title ?? CONTROLS[offer.action]?.title;
-        if (title) btn.title = title;
+        if (title) btn.title = cleanText(title);
         const busy = this._pendingOf(offer);
         const label = busy && PENDING_LABELS[offer.action] ? PENDING_LABELS[offer.action] : (offer.label ?? CONTROLS[offer.action]?.label ?? '');
         const name = doc.createElement('span');
         name.className = 'network-term-quick-label';
-        name.textContent = who && !busy ? `${label} (${who})` : label;
+        name.textContent = cleanText(who && !busy ? `${label} (${who})` : label);
         btn.appendChild(name);
         if (typeof offer.command === 'string' && offer.command !== '') {
             const code = doc.createElement('code');
-            code.textContent = offer.command;
+            code.textContent = cleanText(offer.command);
             btn.append(' ', code);
         }
         if (busy) btn.disabled = true;
@@ -330,12 +331,12 @@ export class TerminalRenderer {
         wrap.setAttribute('data-technique', t.id);
         const btn = this._button(doc, 'network-term-quick');
         btn.setAttribute('data-action', 'select-technique');
-        if (CONTROLS.use?.title) btn.title = CONTROLS.use.title;
+        if (CONTROLS.use?.title) btn.title = cleanText(CONTROLS.use.title);
         const label = doc.createElement('span');
         label.className = 'network-term-quick-label';
         label.textContent = CONTROLS.use.label;
         const code = doc.createElement('code');
-        code.textContent = t.name;
+        code.textContent = cleanText(t.name);
         btn.append(label, ' ', code);
         btn.addEventListener('click', (e) => { e.preventDefault(); this._pickTechnique(t.id); });
         wrap.appendChild(btn);
@@ -345,12 +346,15 @@ export class TerminalRenderer {
     _drawUseStrip() {
         const doc = this.root.ownerDocument;
         const list = this.listEl;
-        const back = this._button(doc, 'network-term-back');
-        back.setAttribute('aria-label', BACK_LABEL);
-        back.textContent = BACK_MARK;
-        back.addEventListener('click', (e) => { e.preventDefault(); this._backToList(); });
-        list.appendChild(back);
         const uses = this.offers.filter(o => o.action === 'use' && o.ids?.techniqueId === this.useStep);
+        // While a use is out the strip shows only what the Panels show (the pending label); the way back returns with the answer
+        if (!uses.some(o => this._pendingOf(o))) {
+            const back = this._button(doc, 'network-term-back');
+            back.setAttribute('aria-label', BACK_LABEL);
+            back.textContent = BACK_MARK;
+            back.addEventListener('click', (e) => { e.preventDefault(); this._backToList(); });
+            list.appendChild(back);
+        }
         for (const offer of uses) {
             const hit = findFinding(this.view, offer.ids.findingId);
             const wrap = doc.createElement('span');
@@ -360,11 +364,11 @@ export class TerminalRenderer {
             const btn = this._button(doc, 'network-term-quick');
             btn.setAttribute('data-action', 'use');
             const title = offer.title ?? CONTROLS.use.title;
-            if (title) btn.title = title;
+            if (title) btn.title = cleanText(title);
             const busy = this._pendingOf(offer);
             const text = doc.createElement('span');
             text.className = 'network-term-quick-label';
-            text.textContent = busy ? USING_TEXT : String(hit?.finding?.alias ?? offer.ids.findingId ?? '');
+            text.textContent = cleanText(busy ? USING_TEXT : (hit?.finding?.alias ?? offer.ids.findingId ?? ''));
             btn.appendChild(text);
             if (busy) btn.disabled = true;
             else btn.addEventListener('click', (e) => { e.preventDefault(); this._pressUse(offer); });
@@ -399,11 +403,12 @@ export class TerminalRenderer {
 
     _pressUse(offer) {
         if (!this.ctx) return;
-        this.useStep = null;
+        // The strip stays on the findings while the request is out, so the held one wears "Using..."; the answer ends the step
         this.input.value = '';
         this._tabAttr();
-        this._drawStrip();
         this.ctx.perform(offer, offer.command ?? undefined);
+        // A press the scene did not hold (a refused one) ends the step now; a held one ends with its answer (showResult)
+        if (!this._pendingOf(offer)) { this.useStep = null; this._drawStrip(); }
         this.focusPrompt();
     }
 

@@ -90,7 +90,7 @@ import {
     parseUseTarget, refusalLine, sessionWho, unplugNoticeText
 } from './ops-model.js';
 import {
-    NO_FINDINGS_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText, SKIN_LABELS
+    NO_FINDINGS_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText, SKIN_LABELS, REQUEST_FAILED_TEXT
 } from './view-texts.js';
 import { offers, hostAction, resourceAction, downState, shareLockable, LOCAL_ACTIONS } from './view-controls.js';
 import { PanelsRenderer } from './network-view-panels.js';
@@ -204,6 +204,8 @@ export class NetworkViewMinigame extends MinigameScene {
         this.onEnded = () => {};
         this.noticeKey = null;
         this.unplugNotice = '';
+        // The sentence a sweep or scan with no reply keeps on its row in Panels; the Terminal's `show` draws it
+        this.rowNotice = '';
         this.view = null;
         this.status = 'loading';
         this.exitReason = 'close';
@@ -617,6 +619,7 @@ export class NetworkViewMinigame extends MinigameScene {
         return {
             notice: this.notice,
             unplugNotice: this.unplugNotice,
+            rowNotice: this.rowNotice,
             message: this.message,
             stale: this.stale,
             status: this.statusLine(),
@@ -906,6 +909,7 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** The previous result of this control goes first (after the guard, before the key goes in). */
     clearResult(action, target, key) {
+        this.rowNotice = '';
         if (action === 'unplug') { this.noteUnplug(''); return; }
         if (action === 'use') this.lastGrant = null;
         if (this.noticeKey === key) { this.showNotice(null); this.noticeKey = null; }
@@ -952,6 +956,7 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         this.showNotice(action === 'use' ? refusalLine(answer) : refusalText(answer ? answer.reason : 'no_answer'),
             action === 'scan' ? target : (hostId || null), key);
+        this.rowNotice = !answer && ['sweep', 'scan'].includes(action) ? REQUEST_FAILED_TEXT : '';
         // A request with no reply is said on its row too (and a refusal redraws the Terminal's log)
         if (!this._reported && !this._ending) this.renderer.showResult(offer, answer, this.sceneState());
     }

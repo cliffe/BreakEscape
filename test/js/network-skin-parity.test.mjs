@@ -647,7 +647,7 @@ for (const [action, key] of Object.entries(MOVES)) {
 
 const ENDINGS = Object.freeze({
     refusal: { answer: () => ({ success: false, reason: 'not_found' }), has: () => MODEL.refusalText('not_found') },
-    failure: { answer: () => Object.assign(new Error('down'), { status: 500 }), has: () => TEXTS.REQUEST_FAILED_TEXT },
+    failure: { answer: () => Object.assign(new Error('down'), { status: 500 }), has: () => MODEL.refusalText('no_answer') },
     table: {
         answer: () => ({ success: true, host: { id: 'print02', kind: 'device', name: 'Print Two', sprite: 'pnw_portable_printer1', scanned: true,
             services: [{ name: 'web', label: 'web', port: 80, product: 'Brackley PrintPanel', version: '2.0' }] } }),

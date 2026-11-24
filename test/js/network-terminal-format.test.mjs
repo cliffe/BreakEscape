@@ -128,13 +128,15 @@ test('a refusal writes its words and no table', () => {
     assert.ok(flat(log.lines).includes('Missing: Admin login'));
 });
 
-test('a null answer writes the request-failed line and no table', () => {
+test('a null answer writes the Panels no-reply sentence and no table', () => {
     for (const offer of [sweepOffer, scanOffer, checkOffer, confirmOffer('f1'), useOffer('f1')]) {
         const log = fresh();
         FMT.recordSent(log, offer, undefined, states);
         const before = log.lines.length;
         FMT.recordResult(log, offer, null, states);
-        assert.deepEqual(text(log.lines.slice(before)), [VT.REQUEST_FAILED_TEXT], offer.action);
+        // The words the Panels notice says (the row's own sentence is drawn by `show` from the scene's rowNotice)
+        const rowToo = ['sweep', 'scan'].includes(offer.action) ? [VT.REQUEST_FAILED_TEXT] : [];
+        assert.deepEqual(text(log.lines.slice(before)), [...rowToo, OM.REFUSAL_TEXT.no_answer], offer.action);
     }
 });
 
