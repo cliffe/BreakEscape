@@ -1,6 +1,6 @@
 {
  "mission": "m05",
- "id": "m05_trailer60_v4",
+ "id": "m05_trailer60_v5",
  "title": "SAFETYNET: Licence to Hack, m05 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -633,11 +633,11 @@
    },
    "source": {
     "type": "clip",
-    "file": "m05_console_recon_clip.mp4",
+    "file": "m05_console_script_clip.mp4",
     "in": 0.4,
     "out": 2.2
    },
-   "note": "m05 console recon (~/safetynet-footage/m05/solution/vm_console_recon_s959.trimmed.mkv, 35.63-38.23 s): crop x0-545 y0-143 of the 1024x768 console scaled 3.45x nearest on #21242D, 1920x1080 (m05_console_recon_clip.mp4, 2.6 s, shot uses 0.4-2.2). nmap -Pn -sV command, 'Starting Nmap', then the ssh and http service banners appear (MAC/vendor line is below the crop). No flag, password or credential on screen. BE_CLIPS_DIR=$HOME/video-takes-local/m05/clips",
+   "note": "v5: m05 attack-script read (vm_console_full_RAW_s959 67.0-69.6; crop x0-500 y342-558 at 3.45x nearest on #21242D): msf resource lines with shell variables only; account-name line and base64 blob above the crop never appear (CONSOLE_CLIPS.md, 67fa6f631). Replaces the nmap recon (owner note 7).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -645,12 +645,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.28,
+     "cx": 0.281,
      "cy": 0.5,
      "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.28,
+     "cx": 0.281,
      "cy": 0.5,
      "zoom": 1
     }
@@ -665,7 +665,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "terminal scan output only, no credential or flag"
+    "note": "script lines with variables only; no flag, password or credential"
    }
   },
   {
@@ -677,11 +677,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t11_night_corridor.trimmed.mkv",
+    "file": "t11b_night_corridor.trimmed.mkv",
     "in": 79.0,
     "out": 80.6
    },
-   "note": "night turn: corridor lights time out at 79.5 (empty corridor, player in the lobby); 2x nearest; Recruiter voice J-cut starts here; caption carries the line (lines are caption-only; the voice and its duck belong to recruiter_night's pre)",
+   "note": "night turn: corridor lights time out at 79.5 (empty corridor, player in the lobby); 2x nearest; Recruiter voice J-cut starts here; caption carries the line (lines are caption-only; the voice and its duck belong to recruiter_night's pre) | v5: retake t11b after the lobby fix (5fc162203): the 999 ROLLOUT screen no longer covers the north door (owner note 5).",
    "framing": {
     "16:9": {
      "cx": 0.333,
@@ -733,11 +733,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t11_night_corridor.trimmed.mkv",
-    "in": 87.9,
-    "out": 89.7
+    "file": "t11b_night_corridor.trimmed.mkv",
+    "in": 88.0,
+    "out": 89.8
    },
-   "note": "player walks back up, the corridor light strikes 88-89.5; 2x nearest (lines are caption-only; the voice and its duck belong to recruiter_night's pre)",
+   "note": "player walks back up, the corridor light strikes 88-89.5; 2x nearest (lines are caption-only; the voice and its duck belong to recruiter_night's pre) | v5: retake t11b after the lobby fix (5fc162203): the 999 ROLLOUT screen no longer covers the north door (owner note 5).",
    "framing": {
     "16:9": {
      "cx": 0.333,
