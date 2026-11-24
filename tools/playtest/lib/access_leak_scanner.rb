@@ -505,7 +505,11 @@ class AccessLeakScanner
       elsif row.key?('body') then row['body']
       else row['bodyText']
       end
-      next if body.nil?
+      @mfa_row_ref = "#{source}:#{line_no}"
+      if body.nil?
+        mfa_note_bodyless(row)
+        next
+      end
 
       ctx = response_context(row).merge(index: index)
       body = log_rows_without_typed(body) if ctx[:log_rows]
@@ -550,6 +554,7 @@ class AccessLeakScanner
       note_share_opened(body, ctx, row)
       scan_mfa(body, row, add)
     end
+    mfa_finish_scan
     findings
   end
 
@@ -3499,7 +3504,8 @@ class AccessLeakScanner
     @mfa_signin_counts = Hash.new(0)
     @mfa_logout_count = 0
     @mfa_used = Set.new   # [:signin | :logout, key] of the --signin and --logout entries these rules used
-    @mfa_signin_pending = nil
+    @mfa_confirm = nil    # R2-L1: the one `--signin` name a sign-in used, until a desktop row confirms it
+    @mfa_row_strict = false
     @mfa_logout_pending = {}
     @mfa_row_pcs = nil
     @mfa_row_clear = nil
@@ -3519,10 +3525,11 @@ class AccessLeakScanner
 
   # One response row: judges it, then lets it earn what it proves (so a row never proves itself).
   def scan_mfa(body, row, add)
-    return unless body.is_a?(Hash) || body.is_a?(Array)
-
     info = mfa_route(row)
     @mfa_row_pcs = @mfa_row_clear = @mfa_unlocked_pc = nil
+    mfa_confirm_step(body, info) if @mfa_active
+    return unless body.is_a?(Hash) || body.is_a?(Array)
+
     if @mfa_active && body.is_a?(Hash)
       mfa_check_named(body, info)
       mfa_place_signin(body, info, row)
@@ -3757,14 +3764,15 @@ class AccessLeakScanner
 
     npc = body['npcId'].is_a?(String) ? body['npcId'] : nil
     @mfa_signin_counts[npc] += 1 if npc
-    @mfa_signin_pending = nil if @mfa_signin_pending && @mfa_signin_pending[:account] == npc
+    # R2-L6: only the answer the server gives (the strict route, status 200) uses a name up or writes down where the run sits
+    @mfa_row_strict = !info[:route].nil? && info[:ok]
     tag = mfa_row_pc_tag(row)
     label = body['host']
     if tag
       @mfa_row_pcs = @mfa_row_clear = [tag]
     elsif label.is_a?(String)
       @mfa_row_pcs = @mfa_row_clear = [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
-    elsif (named = mfa_named_signin(npc, row, body))
+    elsif @mfa_row_strict && (named = mfa_named_signin(npc, row, body))
       @mfa_row_pcs = @mfa_row_clear = [named]
     else
       @mfa_row_pcs = @priv_pcs.keys
@@ -3791,8 +3799,78 @@ class AccessLeakScanner
     end
 
     @mfa_used << [:signin, key]
-    @mfa_signin_pending = { account: npc, pc: named } if body['via'] == 'password' && !body['remote']
+    mfa_arm_confirm(key, named, npc, body)
     named
+  end
+
+  # R2-L1, R2-L2: a `--signin` name is only a claim. It stands only when the first desktop row of a PC that follows this
+  # sign-in answer is the named PC, showing the named account signed in by a keyboard password there. Armed here, resolved
+  # by `mfa_confirm_step`; a name the capture never confirms ends the scan with an error that names it.
+  def mfa_arm_confirm(key, pc, npc, body)
+    @mfa_confirm = nil if @mfa_confirm && mfa_unconfirmed!("another name was armed (#{@mfa_row_ref}) before a desktop row followed it")
+    @mfa_confirm = { account: npc, pc: pc, text: priv_entry_text(key, pc), ref: @mfa_row_ref,
+                     prior: @mfa_at[pc] == npc, locked: @mfa_locked.include?(pc) }
+    return if body['via'] == 'password' && !body['remote']
+
+    mfa_unconfirmed!("the sign-in answer is not a keyboard password sign-in (via #{body['via'].inspect}#{body['remote'] ? ', remote' : ''}), so no desktop can confirm it")
+  end
+
+  def mfa_unconfirmed!(why)
+    pending = @mfa_confirm
+    @mfa_confirm = nil
+    raise ArgumentError, "sign-in entry #{pending[:text]}: named, unconfirmed (the sign-in answer is at #{pending[:ref]}): #{why}. " \
+                         'Give the capture up to the desktop of the PC that followed the sign-in'
+  end
+
+  # What a row does to the name waiting for its desktop: the first desktop row of a PC confirms or refutes it; the same
+  # account signing in again, a pass for it, any sign-out, or the scan ending first leaves it unconfirmed.
+  def mfa_confirm_step(body, info)
+    pending = @mfa_confirm
+    return unless pending
+
+    if info[:container] && @priv_pcs.key?(info[:container])
+      mfa_confirm_desktop(pending, body, info)
+    elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
+      mfa_unconfirmed!('a sign-out came before any desktop row')
+    elsif body.is_a?(Hash) && body['success'] == true && body['npcId'] == pending[:account] && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+      mfa_unconfirmed!("#{pending[:account]} signed in or passed a step again before any desktop row")
+    end
+  end
+
+  def mfa_confirm_desktop(pending, body, info)
+    shown = info[:container]
+    session = body.is_a?(Hash) ? body['session'] : nil
+    mfa_unconfirmed!("the first desktop row after it has status #{info[:ok] ? 200 : 'other than 200'} and is unreadable or shows no session") unless info[:ok] && session.is_a?(Hash)
+    mfa_unconfirmed!("the first desktop that followed is #{shown}, not #{pending[:pc]}") unless shown == pending[:pc]
+    unless session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
+      mfa_unconfirmed!("the desktop of #{shown} shows #{session['npcId'].inspect} (via #{session['via'].inspect}), not #{pending[:account]} signed in by a password")
+    end
+    if pending[:prior] && !pending[:locked] && mfa_kind_at(shown, pending[:account]) == 'none'
+      mfa_unconfirmed!("the run already held #{pending[:account]} at #{shown} before this sign-in, so the desktop cannot be told from the earlier session's")
+    end
+    @mfa_confirm = nil
+  end
+
+  # A row with no readable body (the recorder lost it): it cannot confirm a name, and a sign-in or step answer among them
+  # cannot be placed, so every session the run earned is taken back.
+  def mfa_note_bodyless(row)
+    return unless @mfa_active
+
+    info = mfa_route(row)
+    mfa_confirm_step(nil, info)
+    return unless info[:method] == 'POST' && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+
+    mfa_end_pcs(@priv_pcs.keys)
+  end
+
+  def mfa_finish_scan
+    return unless @mfa_active
+
+    mfa_unconfirmed!('the capture ends before a desktop row followed it') if @mfa_confirm
+    pc, account = @mfa_logout_pending.first
+    return unless pc
+
+    raise ArgumentError, "logout entry #{account}@#{pc}: named, unconfirmed: no later answer listed #{pc}'s session. Give the capture up to an answer that lists it"
   end
 
   # A name the tester gave is not taken on trust once a later answer shows otherwise (the privilege rules' R4-5 and R4-7).
@@ -3812,18 +3890,6 @@ class AccessLeakScanner
       raise ArgumentError, "logout entry #{account}@#{pc}: the next answer that lists #{pc}'s session still shows #{account} there, so the sign-out was not at #{pc}" if shown
 
       @mfa_logout_pending.delete(pc)
-    end
-    pending = @mfa_signin_pending
-    return unless pending && info[:container] && @priv_pcs.key?(info[:container])
-
-    session = body['session']
-    return unless session.is_a?(Hash) && session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
-
-    shown = info[:container]
-    if shown == pending[:pc]
-      @mfa_signin_pending = nil
-    elsif @mfa_at[shown] != pending[:account]
-      raise ArgumentError, "sign-in entry #{pending[:account]}@#{pending[:pc]}: the desktop that followed it is #{shown}, where the run holds no session of #{pending[:account]}, so the sign-in was not at #{pending[:pc]}"
     end
   end
 
@@ -3962,7 +4028,7 @@ class AccessLeakScanner
         @mfa_at.delete(pc)
       end
     end
-    @mfa_at[pcs.first] = npc if @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
+    @mfa_at[pcs.first] = npc if @mfa_row_strict && @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
   end
 
   def mfa_note_inventory(body, info, row)

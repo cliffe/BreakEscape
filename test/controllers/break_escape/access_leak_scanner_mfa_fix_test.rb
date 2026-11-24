@@ -10,6 +10,20 @@ module BreakEscape
 
     SESSION = ->(npc) { ['mfa_session', "mfa:session:#{npc}"] }
 
+    # R2-L1: the browser opens the desktop of the PC it has just signed in at, and a `--signin` name stands only when that
+    # desktop row follows its sign-in. So the honest run holds one `GET container/<pc>` row after each keyboard sign-in.
+    def sign_in_row(pc, creds, mark, foothold: nil)
+      login = super
+      body = login['body']
+      if body.is_a?(Hash) && body['success'] == true
+        session = body.slice('npcId', 'username', 'displayName', 'via', 'portrait')
+        @log << { 't' => (Time.utc(2026, 1, 1) + @log.length).iso8601(3), 'method' => 'GET', 'status' => 200,
+                  'path' => login['path'].sub(%r{/login\z}, "/container/#{pc}"),
+                  'body' => { 'container_id' => pc, 'contents' => [], 'session' => session } }
+      end
+      login
+    end
+
     def idx(mark)
       @log.index { |r| r.equal?(@marks[mark]) }
     end
@@ -124,7 +138,9 @@ module BreakEscape
         rows = browser_run
         i = rows.index { |r| r['body'] == @marks[:cal_pass]['body'] }
         j = rows.index { |r| r['body'] == @marks[:ines_pass]['body'] }
-        rows.insert(j + 1, row('POST', 'logout', { 'success' => true }), row('GET', 'scenario', listing.call('push_pc' => cal_session)))
+        # the desktop of the PC the sign-out was at shows nobody: the answer that confirms the named logout
+        rows.insert(j + 1, row('POST', 'logout', { 'success' => true }), row('GET', 'scenario', listing.call('push_pc' => cal_session)),
+                    row('GET', 'container/code_pc2', { 'container_id' => 'code_pc2', 'contents' => [], 'session' => nil }))
         [rows, i, j]
       end
       rows, = build.call
