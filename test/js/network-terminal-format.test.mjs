@@ -377,3 +377,16 @@ test('R1-C14: the cap never cuts into the newest command: its echo stays above i
     assert.equal(log.lines.length, FMT.LOG_CAP);
     assert.ok(log.lines.some(l => l.map(s => s.text).join('') === '$ help'));
 });
+
+test('R1-C17: an echo recognises the prompt as the grammar reads it: any case, any spacing, a path with a bracket', () => {
+    for (const [typed, mark, rest] of [['MSF> check', 'MSF>', 'check'], ['msf  > check', 'msf  >', 'check'], ['msf (a)b) > check', 'msf (a)b) >', 'check'], ['$ show', '$', 'show']]) {
+        const log = fresh();
+        FMT.recordSent(log, { action: 'open', ids: {} }, typed, null);
+        const line = log.lines[log.lines.length - 1];
+        assert.deepEqual(line.map(s => s.text), [`${mark} `, rest], typed);
+        assert.equal(line[0].cls, 'prompt');
+    }
+    const log = fresh();
+    FMT.recordSent(log, { action: 'open', ids: {} }, 'open x', null);
+    assert.deepEqual(log.lines[log.lines.length - 1].map(s => s.text), ['$ ', 'open x']);
+});

@@ -1015,8 +1015,9 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!row) return false;
         // Not guarded, so the scene writes these moves into the log itself
         const live = this.gameState?.isActive && this.status === 'ready';
-        if (live) this.logSent(offer, echo);
         const done = this.act(row, action);
+        // A move that opened nothing leaves no line (as a guarded move the guard turned away leaves none)
+        if (live && done) this.logSent(offer, echo);
         if (live) {
             if (action === 'observe' && done) this.logEnded(offer, undefined);
             this.resyncTerminal();

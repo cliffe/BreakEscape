@@ -135,7 +135,7 @@ const appendLines = (log, lines) => { for (const l of lines) appendLine(log, l);
 // recordSent and recordResult
 // ---------------------------------------------------------------------------------------------
 
-const PROMPT_AT_START = /^(\$|msf(?: \([^)]*\))? >)(?: |$)/;
+const PROMPT_AT_START = /^(\$|msf\s*(?:\(.*?\))?\s*>)(?:\s+|$)/i;
 
 /** The echoed line: its own prompt mark (the framework's lines carry one), else the shell's. */
 function echoLine(text) {

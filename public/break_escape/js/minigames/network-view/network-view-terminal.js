@@ -41,7 +41,7 @@ import { promptMark } from './cli-gen/framework-console.js';
 export const HISTORY_MAX = 20;
 export const BACK_LABEL = 'Back to all commands';
 const BACK_MARK = 'X';
-const PROMPT_AT_START = /^(\$|msf(?: \([^)]*\))? >)(?: |$)/;
+const PROMPT_AT_START = /^(\$|msf\s*(?:\(.*?\))?\s*>)(?:\s+|$)/i;
 
 // The label a control wears while its request is out (the same words as the Panels)
 const PENDING_LABELS = Object.freeze({

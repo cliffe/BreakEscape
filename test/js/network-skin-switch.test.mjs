@@ -407,3 +407,17 @@ test('R1-C16: a request that gets no reply draws its row sentence in Panels thro
     assert.equal(row.textContent, TEXTS.REQUEST_FAILED_TEXT);
     h.end();
 });
+
+test('R1-C17: a sign-in that opens nothing leaves no echo line', async () => {
+    const body = opsBody();
+    const h = await mount(body, { params: { skin: 'cli' } });
+    const row = [...h.view().allRows()].find(r => r.kind === 'pc');
+    assert.ok(row, 'the fixture has a computer');
+    window.openRemoteSignIn = undefined;
+    const before = lines(h).length;
+    const done = h.view().dispatch({ action: 'sign-in', target: row.id, ids: { hostId: row.id } }, `sign in ${row.id}`);
+    await settle();
+    assert.equal(done, false);
+    assert.equal(lines(h).length, before, JSON.stringify(lines(h).slice(before)));
+    h.end();
+});
