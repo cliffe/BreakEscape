@@ -3651,7 +3651,7 @@ class AccessLeakScanner
     return 'none' unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
 
     kind = BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc))
-    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil?
+    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil? && !hd_reenrolled?(npc['id']) # S8b: a re-enrolled account owes a code step with no authored device
 
     kind
   end
@@ -4059,7 +4059,7 @@ class AccessLeakScanner
       case route
       when 'verify' then rec[:kind] == 'code' && !body.key?('approvedBy')
       when 'prompt' then rec[:kind] == 'push' && body['approvedBy'] == 'owner' && mfa_owner_may_approve?(npc)
-      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && body['approvedBy'] == 'player' && mfa_phone_taken?(npc)
+      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && ((body['approvedBy'] == 'player' && mfa_phone_taken?(npc)) || hd_own_approval?(body, info, pc, npc))
       end
     good ? pc : nil
   end

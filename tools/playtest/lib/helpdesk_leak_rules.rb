@@ -146,6 +146,9 @@ module HelpdeskLeakRules
   def scan_helpdesk(body, row, add)
     return body unless @hd_active
 
+    @hd_close_after.each { |pc| @hd_own_steps.delete(pc) }
+    @hd_close_after = []
+    @hd_row = row
     @hd_row_time = capture_time(row)
     info = hd_route(row)
     minfo = mfa_route(row)
@@ -156,6 +159,8 @@ module HelpdeskLeakRules
     hd_judge_passwords(body, allowed, add)
     flags = hd_own_flags(body, minfo, row)
     hd_judge_phone_route(body, minfo, row, flags, add)
+    hd_judge_own_step(body, minfo, flags, add)
+    hd_judge_old_forms(body, minfo, add)
     hd_walk_keys(body, minfo, flags, add)
     hd_note_request(body, info, earned)
     hd_strip_own(body, flags)
@@ -182,6 +187,11 @@ module HelpdeskLeakRules
           else
             add.call('helpdesk_secret', 'helpdesk:key:helpdeskForms', at)
           end
+        elsif key == 'code' && @hd_mfa_reset_possible && !@mfa_code_possible && value.to_s.delete(" \t-").match?(/\d{6}/) &&
+              !(hash.equal?(body) && flags[:device])
+          # no code device is authored, so the second-step rules treat every code as impossible and say nothing; here a
+          # six-digit code (however spaced) is allowed only as the root code of an earned own-device answer
+          add.call('helpdesk_secret', 'helpdesk:own:code', at)
         elsif key == 'ownPhone' && !(hash.equal?(body) && flags[:required])
           add.call('helpdesk_secret', 'helpdesk:own:ownPhone', at)
         elsif key == 'deviceId' && value.is_a?(String) && value.start_with?('own:') && !(hash.equal?(body) && flags[:device])
@@ -446,6 +456,82 @@ module HelpdeskLeakRules
 
     body['requests'].each_with_index { |entry, i| @hd_own_listed << [entry['pcId'], owners[i]] }
     body['requests']
+  end
+
+  # ---- the own-phone step: who may close it ---------------------------------------------------------------------------------
+
+  # An allowed `ownPhone` login answer opens an own-phone step at its PC for its account. The server never sends a plain
+  # `mfaRequired` for a re-enrolled account, and never lets the owner, the old phone or a held phone close an own-phone step: an
+  # approval for the account while the step is open is allowed only as `approvedBy: "own_phone"` (and then only by the hook in
+  # `mfa_pass_pc`, which asks `hd_own_approval?`). Every other pass for the account is a finding.
+  def hd_judge_own_step(body, minfo, flags, add)
+    return unless body.is_a?(Hash)
+
+    route = mfa_route_name(minfo)
+    if route == 'login' && minfo[:method] == 'POST' && body['mfaRequired'] == true && body['pcId'].is_a?(String)
+      if flags[:required]
+        @hd_own_steps[body['pcId']] = body['npcId']
+      else
+        @hd_own_steps.delete(body['pcId'])
+        add.call('helpdesk_secret', 'helpdesk:own:plain', '$') if hd_account_earned?(body['npcId'])
+      end
+      return
+    end
+    hd_note_own_close(body, minfo, route)
+    return unless %w[mfa/prompt mfa/approve].include?(route) && body['success'] == true && @hd_own_steps.value?(body['npcId'])
+    return if route == 'mfa/approve' && body['approvedBy'] == 'own_phone'
+
+    add.call('helpdesk_secret', 'helpdesk:own:pass', '$')
+  end
+
+  # A pass, a cancel, an expiry, a lockout or an ended PC closes the step: the record goes before the next row.
+  def hd_note_own_close(body, minfo, route)
+    if minfo[:ok] && body['endedPcIds'].is_a?(Array)
+      @hd_close_after.concat(body['endedPcIds'].select { |pc| pc.is_a?(String) })
+    end
+    return unless %w[mfa/verify mfa/prompt mfa/approve].include?(route)
+
+    if body['success'] == true
+      @hd_close_after.concat(@hd_own_steps.select { |_pc, npc| npc == body['npcId'] }.keys)
+    elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
+      tag = hd_row_tag
+      @hd_close_after.concat(@hd_own_steps.keys.select { |pc| tag.nil? || pc == tag })
+    end
+  end
+
+  def hd_row_tag
+    @hd_row && mfa_row_pc_tag(@hd_row)
+  end
+
+  # The hook `mfa_pass_pc` asks for an approval answer: `approvedBy` is `own_phone`, the row asked `own=1` and nothing else, the
+  # open step at that PC was opened by an allowed `ownPhone` answer for this account, an allowed own-phone list showed the
+  # account's request at that PC, and a credited grant named the account. A pure question: it changes nothing.
+  def hd_own_approval?(body, info, pc, npc)
+    return false unless @hd_active && body.is_a?(Hash) && body['approvedBy'] == 'own_phone'
+
+    mfa_query_value(info, 'own') == '1' && @hd_own_steps[pc] == npc && @hd_own_listed.include?([pc, npc]) && hd_account_earned?(npc)
+  end
+
+  # Whether a credited grant re-enrolled the account (the hook in `mfa_kind_at`: such an account owes a code step without an
+  # authored device).
+  def hd_reenrolled?(npc_id)
+    !@hd_mfa_earned.nil? && @hd_mfa_earned.include?(npc_id)
+  end
+
+  # R1-L10: once a grant re-enrolled an account, its held device answers `enrolled: false` and its held phone 403s: a code on
+  # `mfa/device?item_id=` or a 200 list on `mfa/phone?npc_id=` for that account is a finding.
+  def hd_judge_old_forms(body, minfo, add)
+    return unless body.is_a?(Hash) && minfo[:method] == 'GET' && minfo[:ok]
+
+    case minfo[:route]
+    when 'mfa/device'
+      item = mfa_query_value(minfo, 'item_id')
+      owner = item && @mfa_devices[item] ? @mfa_devices[item]['owner'] : body['npcId']
+      add.call('helpdesk_secret', 'helpdesk:old:code', '$.code') if item && body.key?('code') && hd_reenrolled?(owner)
+    when 'mfa/phone'
+      owner = mfa_query_value(minfo, 'npc_id')
+      add.call('helpdesk_secret', 'helpdesk:old:phone', '$.requests') if owner && body.key?('requests') && hd_reenrolled?(owner)
+    end
   end
 
   # A GET mfa/phone with an `own` query: judged here whatever the status; only the canonical 403 and an earned list pass.
