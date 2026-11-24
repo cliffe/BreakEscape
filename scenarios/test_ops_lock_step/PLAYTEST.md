@@ -5,13 +5,11 @@ Feature scenario for the second step on a lock. One fresh game for beats 1 to 12
 The scenario is for testing, not play: no sign names a password, PIN, code or number. First factors are on the notes in the Office; the six digits and the two-digit number are only ever read off the screen, never computed. No beat sends a hand-built request (those checks are Rails tests).
 
 **Things that hold all through the run.**
-- The second-step pane opens by itself over the lock pad (or alone over a door) when the first factor is right. Never click a button to open it. Its X closes only the pane: no reject sound, no line. The pad beneath closes itself about 2 seconds later, as a cancel with no message; click the lock again to start over.
+- The second-step pane opens by itself over the lock pad (or alone over a door) when the first factor is right. Never click a button to open it. Its X closes only the pane: no reject sound, no line. The pad beneath closes itself after its own 2 second hold, which starts once the pane is gone, so allow up to 4 seconds from the click on X (or from a denial); it closes as a cancel with no message. Click the lock again to start over.
 - A reload puts the player at the start point in the Office (inventory and the server's record of a pending step are kept; no pane reopens by itself, click the lock again). A pending step is dropped after five minutes, so do not leave one pending longer.
-- "Send again" is greyed for 2 seconds after each request (the server's gap), then works. Moira approves the third request (patience 3): on that request the pane closes at once, so the count never shows 3.
+- "Send again" is greyed for 2 seconds after each request (the server's gap), then works. The greyed state is short: read `S().controls` at once (it shows `disabled: true`), a screenshot taken a moment later can already show it enabled. Moira approves the third request (patience 3): on that request the pane closes at once, so the count never shows 3.
 - A denial or an expiry (a wrong number, Deny, a step that ran out) shows one toast, "Not approved." (type error, no title), with the reject tone once, and opens nothing. The player's own X shows neither.
 - The pane names the owner by the NPC's display name ("Moira Hale", "Gordon Pike", "Priya Nair") and falls back to the id (`moira`) when the NPC is not loaded. The title is the lock's name (the object's name, or a door's sign). Every line below is what the pane's `getTestState()` and the push part show.
-
-**Known blocker found by the unit 27 tests (not yet fixed when this was written).** The game's click path calls `handleUnlock(sprite, 'item')` for every object lock, so the pad posts `targetType: "item"`. The server's gate answers only for `"object"` or `"door"`, so a gated object answers 422 "Invalid attempt" (no pane) in a real game, and every object beat below (2 to 10, 13) fails at its first step until the server accepts `item` as `object` (or the client sends `object`). The two door beats (11, 12) are not affected. Check this first: if the pad shows its ordinary wrong-code line for a right first factor, this is why.
 
 ## Scripted tester: the `__test.lockStep` bridge
 
@@ -85,22 +83,22 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 2. Click "quarterly_export.zip" in the open PC, type its password, press Enter.
 - See: `S()`: `kind: "push_number_match"`, `title: "quarterly_export.zip"`, `text` with "A request was sent to Gordon Pike's phone.", "Number: NN" (two digits) and "Requests sent: 1"; `controls`: X and "Send again" only (no "Check Gordon Pike's phone": the player holds no phone of his).
 3. Click the pane's X.
-- See: no reject sound, no toast. About 2 seconds later the pad closes itself, with no message.
+- See: no reject sound, no toast. Within about 4 seconds the pad closes itself, with no message.
 - Bridge: `__test.lockStep.close()`.
 
 ### 5. Reload
 1. Reload the page.
 2. Click "Moira's PC" (it is still open, no password), click "quarterly_export.zip", type the password, press Enter.
-- See: the pane with the same "Number: NN" as beat 4, and "Requests sent: 2" (the new request on the same record; if you reopen within 2 seconds of the last one the pane says "Wait a moment before sending another request." and counts from the next request).
+- See: the pane with the same "Number: NN" as beat 4, and "Requests sent: 2" (the new request on the same record; if you reopen within 2 seconds of the last one the first line of the pane says "Wait a moment before sending another request." in place of "A request was sent", and no count shows until the next request goes out).
 
 ### 6. Wrong number (number match, held phone)
 1. Click the pane's X (`__test.lockStep.close()`).
-2. Click "Gordon Pike", choose "Could I borrow your phone for a minute?". The inventory shows "Gordon's phone". End the chat ("Nothing, thanks.").
+2. Click "Gordon Pike", choose "Could I borrow your phone for a minute?". The inventory shows "Gordon's phone" (the toast "Picked up Gordon's phone" may show; "Someone's in the way." may also show if the player stands against another character: neither is part of the lock step). End the chat ("Nothing, thanks.").
 3. Click "Moira's PC", "quarterly_export.zip", type the password, press Enter.
 4. In the pane click "Check Gordon Pike's phone" (`__test.lockStep.click("Check Gordon Pike's phone")`).
 - See: a card named "quarterly_export.zip" with three number buttons in ascending order (for example "31", "47", "82") and "Deny". `S().controls` now ends `..., "31", "47", "82", "Deny"`.
 5. Click a number that is not the one the pane shows (`__test.lockStep.click('31')` when the pane shows 47).
-- See: the toast "Not approved." once with the reject tone; the pane closes; the pad closes itself about 2 seconds later; the archive is still shut. The pad shows no wrong-password line.
+- See: the toast "Not approved." once with the reject tone; the pane closes; the pad closes itself within about 4 seconds; the archive is still shut. The pad shows no wrong-password line.
 
 ### 7. Right number
 1. Click "quarterly_export.zip", type the password, press Enter, click "Check Gordon Pike's phone" (a new pane, a new request).
@@ -120,7 +118,7 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 ### 9. Close and reopen (push, locker)
 1. Click "Note: Staff locker code" and read it. Click "Staff locker", type the PIN, press Enter. Pane opens, "Requests sent: 1".
 2. Click the pane's X. See: silent (`__test.lockStep.close()`).
-3. Click "Staff locker", type the PIN again, press Enter. See: "Requests sent: 2" (a new request on the same record; within 2 seconds of the last it says "Wait a moment before sending another request.").
+3. Click "Staff locker", type the PIN again, press Enter. See: "Requests sent: 2" (a new request on the same record; within 2 seconds of the last the first line says "Wait a moment before sending another request." and no count shows until the next request goes out).
 4. Wait for "Send again", click it: the third request is approved. See: the pane closes; the pad shows "PIN Correct! Access Granted."; the locker lists "Locker memo".
 
 ### 10. Never passes
@@ -137,16 +135,16 @@ Every "See" line is what the code puts on screen. `S()` below is `__test.lockSte
 - Denied or expired instead: one "Not approved." and the door stays shut.
 
 ### 12. NPC-opened door (key door, Gordon opens it)
-**12a.** Click "Gordon Pike", choose "Could you let me into the plant room?". See the toast "Second step pending. It opens when you finish here." during the chat. Choose "Nothing, thanks." to end the chat. See: the pane opens only after the chat has closed (`title: "Plant room"`, "A request was sent to Moira Hale's phone.").
+**12a.** Click "Gordon Pike", choose "Could you let me into the plant room?". The toast "Second step pending. It opens when you finish here." is raised when the line is chosen; notifications sit beneath the chat window, so it is seen only as the chat closes (and may be gone by then): judge it by the pane opening after the chat, not by the toast. Choose "Nothing, thanks." to end the chat. See: the pane opens only after the chat has closed (`title: "Plant room"`, "A request was sent to Moira Hale's phone.").
 **12b.** Click the pane's X (`__test.lockStep.close()`). See: silent; the door is shut.
 **12c.** Click the door in the east wall (to the Plant room). See: the pane reopens with no conversation and no key prompt.
-**12d.** Reload the page, then click the east door. See: the pane again (the opener came from the bootstrap).
-**12e.** Wait for "Send again" and click it until approved. See: the door opens and the Plant room loads. Server: `door_unlocked_by_npc` fired exactly once, with `retry: true`. A denial shows "Not approved." once and no "Access denied".
+**12d.** Reload the page, then click the east door. See, by what the server holds. If the approval from 12c is still pending (the request count carried over), the door opens at once with no pane and the toast "Approved earlier. The door opens."; the retry posts once and the server's answer is the open. If the server no longer holds an approval, the pane opens again (the opener came from the bootstrap). Either way the client says what happened; no pane on a carried-over approval is expected, not a fault.
+**12e.** Wait for "Send again" and click it until approved. See: the door opens and the Plant room loads. Client event (the browser emits it, the server does not record it): `door_unlocked_by_npc` fired exactly once, with `retry: true`. Server row to check: `mfa_prompt_approved` at `door` `plant_room`. A denial shows "Not approved." once and no "Access denied".
 
 ### 13. Carried gated item (briefcase, held), then a plain carried container
 **13a.** (Gordon's phone must be in the inventory: beat 6 step 2 if it is a fresh game.) Click "Gordon Pike", choose "Could I take your briefcase?". See: "Gordon's briefcase" in the inventory, locked.
-**13b.** Click "Note: Briefcase code" and read it. Click the briefcase in the inventory tray, type its PIN, press Enter. See: the pane: `title: "Gordon's briefcase"`, "A request was sent to Gordon Pike's phone.", "Requests sent: 1", and "Check Gordon Pike's phone".
-**13c.** Click the pane's X. Drop the briefcase from its inventory menu, click it on the floor to pick it up, click it in the tray, type the PIN, press Enter. See: "Requests sent: 2" (the count carries on from 13b).
+**13b.** Click "Note: Briefcase code" and read it. Click the briefcase in the inventory tray: its menu opens with "Unlock", "Drop here" and "Examine". Choose "Unlock", type its PIN, press Enter. See: the pane: `title: "Gordon's briefcase"`, "A request was sent to Gordon Pike's phone.", "Requests sent: 1", and "Check Gordon Pike's phone". (Bridge: `await __test.openInventoryItem("Gordon's briefcase")`, then `await __test.inventoryAct("Gordon's briefcase", "Unlock")`.)
+**13c.** Click the pane's X. Open the briefcase's tray menu and choose "Drop here". Click the briefcase on the floor: it is picked up (toast "Picked up Gordon's briefcase"); no PIN pad opens where it lies. Choose "Unlock" in the tray menu again, type the PIN, press Enter. See: "Requests sent: 2" (the count carries on from 13b).
 **13d.** Click "Check Gordon Pike's phone": a card named "Gordon's briefcase" with "Approve" and "Deny". Click "Approve" (`__test.lockStep.click('Approve')`). See: the pane closes, the pad shows "PIN Correct! Access Granted.", and the briefcase lists "Board minutes".
 **13e (fresh game).** Do 13a, then click "Courier box" and confirm "Put it in". See: the briefcase leaves the inventory; nothing in the tray or the room opens it.
 
