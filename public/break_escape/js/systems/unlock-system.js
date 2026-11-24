@@ -47,7 +47,12 @@ export async function notifyServerUnlock(lockable, type, method) {
             // promoted, i.e. a forge): surface as the normal refusal, exactly as before.
             // S8c: a second step the player did not pass: no refusal text of ours, the lock
             // step already gave its own feedback. The callers see no success and mark nothing open.
-            if (isSecondStepCancel(error)) return { success: false, secondStepCancelled: true };
+            if (isSecondStepCancel(error)) {
+                // The tone and "Not approved." (nothing for the player's own X) are lockStep's, said once here:
+                // no pad is up on this path to say them (the pads say them through lockScopeRefusalLine)
+                try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the unlock */ }
+                return { success: false, secondStepCancelled: true };
+            }
             console.error(`Failed to notify server of ${method} unlock:`, error);
         }
     }
