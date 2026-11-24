@@ -15,6 +15,7 @@ module OpsUnchangedCases
     { 'log_unlock_refusals' => log_unlock_refusals, 'log_container_cases' => log_container_cases }
       .merge(core_network_cases)
       .merge(privilege_cases)
+      .merge(cracking_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -417,6 +418,140 @@ module OpsUnchangedCases
        logout_step('sign_out_kiosk', 'kiosk'),
        step('bootstrap_after', 'GET', 'scenario')],
       'npcFrustration' => { 'omar' => handed }
+    )
+  end
+
+  # ---- Ops cracking (S7), unit 01: golden answers for what the hash records must leave alone ----
+  #
+  # Captured on the code as it stood BEFORE any S7 engine edit (first capture, not a re-record). They
+  # pin GET /keyring and its rev answer, the inventory add paths (room take, NPC give, declared grant,
+  # a flag station's item taken again) and POST /flags with give_item and set_global rewards. No
+  # existing core_* or privilege_* case sends a rev, adds to the inventory or submits a flag, so
+  # nothing here repeats one.
+
+  # What a keyring with no entries digests to (the rev core_test_access_networks records), and a
+  # rev that matches nothing.
+  CRACKING_KEYRING_REV = '06f67e'.freeze
+
+  def cracking_cases
+    { 'cracking_keyring' => cracking_keyring_case,
+      'cracking_inventory_add' => cracking_inventory_add_case,
+      'cracking_flag_submit' => cracking_flag_submit_case }
+  end
+
+  def cracking_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => name, 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  def keyring_rev_step(id, rev, params = {})
+    step(id, 'GET', 'keyring', { 'rev' => rev }.merge(params))
+  end
+
+  # GET /keyring over test_access_networks: plain, with a matching rev, with a stale rev, then the
+  # same after a typed sign-in and under a planted jack's foothold.
+  def cracking_keyring_case
+    cracking_base(
+      'cracking_keyring', 'S7 unit 01: GET /keyring with and without a matching rev, before any S7 engine edit.',
+      core_render('test_access_networks'),
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_plain', 'GET', 'keyring'),
+       keyring_rev_step('keyring_rev_match', CRACKING_KEYRING_REV),
+       keyring_rev_step('keyring_rev_stale', 'stale0'),
+       step('keyring_pc_id', 'GET', 'keyring', { 'pc_id' => 'sam_pc' }),
+       login('sam_signs_in_typed', 'sokafor', 'Marmalade-82', 'sam_pc'),
+       step('keyring_after_signin', 'GET', 'keyring', { 'pc_id' => 'sam_pc' }),
+       keyring_rev_step('keyring_after_signin_rev_match', CRACKING_KEYRING_REV, 'pc_id' => 'sam_pc'),
+       step('keyring_bad_from', 'GET', 'keyring', { 'from' => 'sam_pc' }),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       step('keyring_jack_foothold', 'GET', 'keyring', { 'foothold' => 'jack_comms_port' }),
+       keyring_rev_step('keyring_jack_foothold_rev_match', CRACKING_KEYRING_REV, 'foothold' => 'jack_comms_port'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => core_network_case('test_access_networks')['playerState']['inventory']
+    )
+  end
+
+  CRACKING_FLAG_ONE = 'flag{cracking_one}'.freeze
+  CRACKING_FLAG_TWO = 'flag{cracking_two}'.freeze
+
+  # test_simple_vm_flag as shipped, plus what the inventory and flag cases need: a takeable file in the
+  # room, an NPC holding one, a declared give_item on a sign, and flags and rewards on its station
+  # (one flag gives an item the station holds, the other sets a global).
+  def cracking_station_scenario
+    scenario = core_render('test_simple_vm_flag')
+    scenario['flags'] = { 'desktop' => { 'flag_1' => CRACKING_FLAG_ONE, 'flag_2' => CRACKING_FLAG_TWO } }
+    room = scenario['rooms']['test_room']
+    station = room['objects'].find { |obj| obj['type'] == 'flag-station' }
+    station['flags'] = %w[desktop:flag_1 desktop:flag_2]
+    station['itemsHeld'] = [{ 'type' => 'text_file', 'id' => 'cr_station_map', 'name' => 'Station Map', 'takeable' => true }]
+    station['flagRewards'] = [{ 'type' => 'give_item', 'item_name' => 'Station Map' },
+                              { 'type' => 'set_global', 'key' => 'cr_second_flag', 'value' => true }]
+    room['objects'] << { 'type' => 'text_file', 'id' => 'cr_floor_note', 'name' => 'Floor Note', 'position' => { 'x' => 3, 'y' => 5 },
+                         'takeable' => true, 'observations' => 'A note on the floor.' }
+    room['objects'] << { 'type' => 'notes', 'id' => 'cr_sign', 'name' => 'Sign', 'position' => { 'x' => 4, 'y' => 5 }, 'takeable' => false,
+                         'observations' => 'A sign.',
+                         'triggerOnInteract' => [{ 'type' => 'give_item',
+                                                   'item' => { 'type' => 'text_file', 'id' => 'cr_sign_memo', 'name' => 'Sign Memo', 'takeable' => true } }] }
+    room['npcs'] = [{ 'id' => 'cr_npc', 'displayName' => 'Cass', 'npcType' => 'person', 'position' => { 'x' => 6, 'y' => 5 },
+                      'itemsHeld' => [{ 'type' => 'text_file', 'id' => 'cr_npc_file', 'name' => 'Cass File', 'takeable' => true }] }]
+    scenario
+  end
+
+  def cracking_item(id, name)
+    { 'type' => 'text_file', 'id' => id, 'name' => name, 'takeable' => true }
+  end
+
+  def inventory_add_step(id, item, extra = {})
+    step(id, 'POST', 'inventory', { 'action_type' => 'add', 'item' => item }.merge(extra))
+  end
+
+  def flag_step(id, flag, station = 'flag_station_desktop')
+    step(id, 'POST', 'flags', { 'flag' => flag, 'stationId' => station })
+  end
+
+  # POST /inventory add: a room take (and again), an invented item, an NPC give (and again), a declared
+  # grant, a station item before its flag, after it, and taken again once removed.
+  def cracking_inventory_add_case
+    station_map = cracking_item('cr_station_map', 'Station Map')
+    cracking_base(
+      'cracking_inventory_add', 'S7 unit 01: inventory adds (room take, NPC give, declared grant, flag station re-collect) through the real routes, before any S7 engine edit.',
+      cracking_station_scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       inventory_add_step('take_room_item', cracking_item('cr_floor_note', 'Floor Note')),
+       inventory_add_step('take_room_item_again', cracking_item('cr_floor_note', 'Floor Note')),
+       inventory_add_step('take_invented_item', cracking_item('cr_invented', 'Invented File')),
+       inventory_add_step('npc_give', cracking_item('cr_npc_file', 'Cass File'), 'source_npc_id' => 'cr_npc'),
+       inventory_add_step('npc_give_again', cracking_item('cr_npc_file', 'Cass File'), 'source_npc_id' => 'cr_npc'),
+       inventory_add_step('declared_grant', cracking_item('cr_sign_memo', 'Sign Memo')),
+       inventory_add_step('station_item_before_flag', station_map),
+       flag_step('station_flag_one', CRACKING_FLAG_ONE),
+       step('remove_station_item', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'cr_station_map' } }),
+       inventory_add_step('station_item_recollect', station_map),
+       inventory_add_step('station_item_recollect_again', station_map),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # POST /flags at a station whose rewards are give_item and set_global: a wrong flag, the give_item
+  # flag, the same flag again, the set_global flag, an unknown station, and the stored flag_rewards_claimed.
+  def cracking_flag_submit_case
+    cracking_base(
+      'cracking_flag_submit', 'S7 unit 01: flag answers with give_item and set_global rewards through the real routes, before any S7 engine edit.',
+      cracking_station_scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       flag_step('flag_wrong', 'flag{not_a_flag}'),
+       flag_step('flag_one_give_item', CRACKING_FLAG_ONE),
+       flag_step('flag_one_again', CRACKING_FLAG_ONE),
+       flag_step('flag_two_set_global', CRACKING_FLAG_TWO.upcase),
+       flag_step('flag_two_again', CRACKING_FLAG_TWO),
+       flag_step('flag_unknown_station', CRACKING_FLAG_ONE, 'no_such_station'),
+       step('bootstrap_after', 'GET', 'scenario')]
     )
   end
 end
