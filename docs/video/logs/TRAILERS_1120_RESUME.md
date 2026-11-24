@@ -259,3 +259,11 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - m01 music previews: edits in scratchpad/musprev/ (emstart, midtrig, coldbond; v13 cut, music swapped, cuts not re-timed). Render with scratchpad/render_musprev.sh AFTER the HT suite (16:9 only). Then review copies, a "m01 music" tab with the three plus a v12 pointer, my recommendation, publish, hash.
 - CA0 handed the machine over at 16:17 (ca07/ca14 done). Tell CA0 when capture/render finishes. Order: HT suite -> music previews -> m09 takes (Sonnet, takes_m09.md "Not done") -> m10 takes -> m09/m10 edits.
 - Review page tidy check in a real browser still owed (v28 structure: current per mission on top, "Earlier rounds" details).
+
+## State 24 Nov, ~evening (pre-compaction refresh)
+
+- HT full suite done (only known failures, plus ReauthHardeningTest flaky: passes alone). HT S1 at 3ee4d7bb, not pushed; still owes live briefing screenshot + Electron hidden check + report to AC0.
+- Derek re-voice done: 0682e7a43 (5 #delivery tags in evil_monologue_part3, 5 clips, routes run). t09c retaken (old take in m01/takes/old_t09c_v13/); line 44.891-54.192 in the new take.
+- m01 edit now id m01_trailer60_v14: derek_wide in 47.6167 out 51.95 (audio pre 2.7257), derek_close 51.95-53.95. Frames checked, lint clean. Music still Emerald Trigger (placeholder until owner picks).
+- Music previews regenerated from v14 (scratchpad/musprev/), rendering via render_musprev.sh (log scratchpad/render_musprev.log; outputs m01/renders/m01_musprev_<tag>_16x9.mp4). Next: review copies, "m01 music" tab (emstart, midtrig, coldbond + pointer to v12 Midnight Cipher Chase), recommendation, publish, commit, hash to AC0.
+- Then: m09 takes agent (Sonnet), m10 takes, m09/m10 edits; message CA0 when all capture/render ends. After owner music pick: v14 in all aspects; after sign-off export + rebuild game-level .vtt in HT.

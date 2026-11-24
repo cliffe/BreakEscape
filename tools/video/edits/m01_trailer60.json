@@ -1,6 +1,6 @@
 {
  "mission": "m01",
- "id": "m01_trailer60_v13",
+ "id": "m01_trailer60_v14",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -1280,17 +1280,17 @@
    },
    "source": {
     "file": "t09c_derek_optimisation.trimmed.mkv",
-    "in": 45.6667,
-    "out": 50.0
+    "in": 47.6167,
+    "out": 51.95
    },
    "dialogue": true,
-   "note": "v10: t09c, the user's chosen line (2026-11-22). Line 43.09-52.16 in the take; audio starts 2.57 s early under the crescendo, picture joins at 45.66, cut in the gap before \"That's optimisation\" (take gap 49.45-50.19, cut at 50.0). Cropped (cx .5 cy .4 zoom 1.3) to hide the name bar and Skip.; v13 music: in 45.66->45.6667, pre 2.57->2.5767 (audio from 43.09 as before), line end 49.45 unchanged",
+   "note": "v10: t09c, the user's chosen line (2026-11-22). Line 43.09-52.16 in the take; audio starts 2.57 s early under the crescendo, picture joins at 45.66, cut in the gap before \"That's optimisation\" (take gap 49.45-50.19, cut at 50.0). Cropped (cx .5 cy .4 zoom 1.3) to hide the name bar and Skip.; v13 music: in 45.66->45.6667, pre 2.57->2.5767 (audio from 43.09 as before), line end 49.45 unchanged; v14: t09c retaken with the darker re-voice (line 44.89-54.19 in the new take, \"That's optimisation\" 52.00-53.82 from the clean clip's pauses); picture 47.6167-51.95, audio from 44.891",
    "lines": [
     {
      "speaker": "Derek Lawson",
      "text": "Sixty deaths to save tens of thousands per year. That's not murder.",
-     "start": -2.5767,
-     "end": 3.783
+     "start": -2.7257,
+     "end": 3.644
     }
    ],
    "framing": {
@@ -1318,7 +1318,7 @@
     "gain_db": 1.5,
     "dialogue": true,
     "duck_music": true,
-    "pre": 2.5767
+    "pre": 2.7257
    },
    "spoiler": {
     "reviewed": true,
@@ -1345,17 +1345,17 @@
    },
    "source": {
     "file": "t09c_derek_optimisation.trimmed.mkv",
-    "in": 50.0,
-    "out": 52.0
+    "in": 51.95,
+    "out": 53.95
    },
    "dialogue": true,
-   "note": "hard cut to the close-up of the face on \"That's optimisation\" (as the old trailer), out 52.16 before the choice menu (52.2); v13 music: cut 49.84->50.0 on the 50.0 hit; out 52.16->52.0 trims 0.16 s of silence after the line (ends 51.85; frame 51.97 clean), no line cut",
+   "note": "hard cut to the close-up of the face on \"That's optimisation\" (as the old trailer), out 52.16 before the choice menu (52.2); v13 music: cut 49.84->50.0 on the 50.0 hit; out 52.16->52.0 trims 0.16 s of silence after the line (ends 51.85; frame 51.97 clean), no line cut; v14: new take, cut at 51.95 on the word onset (52.00), out 53.95 (word ends 53.82)",
    "lines": [
     {
      "speaker": "Derek Lawson",
      "text": "That's optimisation.",
-     "start": 0.19,
-     "end": 1.85
+     "start": 0.05,
+     "end": 1.87
     }
    ],
    "framing": {
