@@ -7,7 +7,7 @@ The run never types a forged or hand-built request, never waits five minutes (th
 **Holding for the whole run.**
 - The X on a PC screen closes the desktop and keeps the session; only Start > Sign out ends it.
 - A reload puts the player at the start point in the Front Office; click the PC again to reopen a pane.
-- The form is a paper request: the username field, "Password" or "Second step", and one field per question ("Staff number", "Line manager"). Close it with its Close button.
+- The form is a paper request: the "Username" field, an "Ask for" choice ("A password reset" or "A sign-in approval reset") only when the desk does both, and one field per question ("Staff number", "Line manager"). Close it with its Close button.
 
 ## Setup
 
@@ -50,7 +50,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 
 ### 2. Refused, then stopped
 1. Walk back through the Front Office and north to the Service Desk. Click Ria Vance. Choose "Ask for an account reset". Ria says "Fill in the form and I will look at it." and the "IT request form" opens over the chat.
-2. Type Ugo's username (on the "Staff file" in Records, `u.reyes`), choose "Password", type any text in "Staff number" and "Line manager". Click Send.
+2. Type Ugo's username (on the "Staff file" in Records, `u.reyes`), choose "A password reset", type any text in "Staff number" and "Line manager". Click Send.
 - See: "Tries left: 2". Close the form: Ria says "I can't verify you."
 3. Choose "Ask for an account reset" again, repeat with different wrong answers: "Tries left: 1", then "Tries left: 0".
 4. A fourth Send for the same username.
@@ -58,7 +58,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - Server: tries 3 for `it_desk|u.reyes`, stopped yes; `HELPDESK` rows refused, refused, refused, blocked.
 
 ### 3. An unknown name looks the same
-1. Ria, "Ask for an account reset", a username nobody has (for example `z.nobody`), "Password", any answers, Send.
+1. Ria, "Ask for an account reset", a username nobody has (for example `z.nobody`), "A password reset", any answers, Send.
 - See: the same refusal line and "Tries left: 2" as the first try of beat 2.
 
 ### 4. Find the answers
@@ -67,7 +67,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - See: the facts on screen. They are public by design.
 
 ### 5. The reset
-1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "Password", Tess's staff number and her line manager from beat 4. Send.
+1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "A password reset", Tess's staff number and her line manager from beat 4. Send.
 - See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." The bark "Next, please." shows.
 - Open the keyring (K): a "Reset" sign-in for Tess.
 - Server: reset password yes for Tess; the lockout at `records_pc` gone; typed no. `ACCT_RESET` row.
@@ -106,12 +106,12 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 
 ### 11. No phone, no callback
 1. Front Office: click Omar Stack. Choose "Ask for an account reset". The form opens.
-2. Type Vera's username (`v.holt`), "Second step". Send.
+2. Type Vera's username (`v.holt`). Omar's form has no "Ask for" choice (his desk resets the second step only). Send.
 - See: refused. Close the form: Omar says "I can't verify you."
 
 ### 12. With her phone
 1. Records: click Vera Holt, choose "Could I borrow your phone for a minute?". "Vera's phone" joins the inventory.
-2. Front Office: click Omar, "Ask for an account reset", `v.holt`, "Second step". Send.
+2. Front Office: click Omar, "Ask for an account reset", `v.holt`. Send.
 - See: "Sign-in approvals now come to your phone." Omar says "That matches our records."
 - Server: reset second step yes for Vera.
 
