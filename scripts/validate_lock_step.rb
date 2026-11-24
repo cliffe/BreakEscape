@@ -5,9 +5,7 @@
 # it can pass is answered through BreakEscape::LockStepModel and MfaModel, so the validator and
 # the server agree. No line quotes a code, a number or a password.
 #
-# A scenario with no `secondStep` anywhere gets no line from this file, except one warning that
-# reads the carried containers (a carried container with a lock or contents and no id), because
-# that shape exists without a step.
+# A scenario with no `secondStep` anywhere gets no line from this file.
 require 'json'
 require_relative '../lib/break_escape/mfa_model'
 require_relative '../lib/break_escape/lock_step_model'
@@ -44,9 +42,10 @@ def check_lock_step(json_data)
   model = BreakEscape::LockStepModel
   ctx = lock_step_context(json_data)
 
-  lock_step_carried_warnings(ctx, warn)
   return issues unless ctx[:entries].any? { |e| e[:node].is_a?(Hash) && e[:node].key?('secondStep') } ||
                        ctx[:door_steps].any?
+
+  lock_step_carried_warnings(ctx, warn)
 
   ctx[:door_steps].each { |path| err.call("#{path}: secondStep belongs on the room the door leads into, not on a doors[] entry.") }
   ctx[:entries].each do |e|

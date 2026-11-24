@@ -168,11 +168,17 @@ test('twins: legal shapes give no warning', { skip }, () => {
     assert.deepEqual(warnings(issues(sc)), []);
 });
 
-test('the carried warning is the only line without a secondStep', { skip }, () => {
+test('a scenario with no secondStep anywhere gets no lock-step line, even for a carried lockable with no id', { skip }, () => {
     const sc = base(); delete safe(sc).secondStep;
-    sc.startItemsInInventory = [{ type: 'briefcase', name: 'Case', contents: [{ id: 'x', type: 'notes', name: 'x' }] }];
-    const out = issues(sc);
-    assert.equal(out.length, 1); assertHas(out, 'carried container');
+    sc.startItemsInInventory = [{ type: 'briefcase', name: 'Case', locked: true, lockType: 'pin', requires: '1',
+        contents: [{ id: 'x', type: 'notes', name: 'x' }] }];
+    assert.deepEqual(issues(sc), []);
+});
+
+test('the same carrier still gets the warning when another lock has a secondStep', { skip }, () => {
+    const sc = base();
+    sc.startItemsInInventory = [{ type: 'briefcase', name: 'Case', locked: true, lockType: 'pin', requires: '1' }];
+    assertHas(warnings(issues(sc)), 'carried container');
 });
 
 test('lines never quote a secret', { skip }, () => {
