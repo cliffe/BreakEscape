@@ -1327,7 +1327,7 @@
    }
   },
   {
-   "id": "cr_reader",
+   "id": "cr_imran",
    "type": "gameplay",
    "duration": 0.2667,
    "snap": false,
@@ -1335,26 +1335,26 @@
     "type": "cut"
    },
    "source": {
-    "file": "t18_workshop_pads.trimmed.mkv",
-    "in": 27.5,
-    "out": 27.7667
+    "file": "t24_workshop_faces.trimmed.mkv",
+    "in": 10.9,
+    "out": 11.1333
    },
-   "note": "crescendo cut: reader, Access Granted. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 3.0
+     "cy": 0.19,
+     "zoom": 2.6
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.3
+     "cy": 0.32,
+     "zoom": 1.6
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.45,
-     "zoom": 1.7
+     "cy": 0.26,
+     "zoom": 2.0
     }
    },
    "audio": {
@@ -1366,7 +1366,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "reader, Access Granted"
+    "note": "face, bar off"
    }
   },
   {
@@ -1413,7 +1413,7 @@
    }
   },
   {
-   "id": "cr_imran",
+   "id": "cr_reader",
    "type": "gameplay",
    "duration": 0.2333,
    "snap": false,
@@ -1421,26 +1421,26 @@
     "type": "cut"
    },
    "source": {
-    "file": "t24_workshop_faces.trimmed.mkv",
-    "in": 10.9,
-    "out": 11.1333
+    "file": "t18_workshop_pads.trimmed.mkv",
+    "in": 27.5,
+    "out": 27.7667
    },
-   "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
+   "note": "crescendo cut: reader, Access Granted. Framing is a guess: check in and out frame per aspect.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.19,
-     "zoom": 2.6
+     "cy": 0.45,
+     "zoom": 3.0
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.32,
-     "zoom": 1.6
+     "cy": 0.45,
+     "zoom": 1.3
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.26,
-     "zoom": 2.0
+     "cy": 0.45,
+     "zoom": 1.7
     }
    },
    "audio": {
@@ -1452,7 +1452,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "face, bar off"
+    "note": "reader, Access Granted"
    }
   },
   {
