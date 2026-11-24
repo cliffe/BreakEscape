@@ -110,3 +110,30 @@ Proposals only: no ink edited, nothing voiced. Each needs the user's pick, an `n
   - `#delivery: level and grave`
   - State: fresh game, the briefing cutscene.
   - Why: it says what is in the building and what is happening to it, which the courier line leaves out. It also sets up the `Stop the / Wipe` and `Before It's / All Ash` cards.
+
+## Handover: m09_trailer60.json v1 (24 Nov, edit agent stopped at its context limit)
+
+Done: read the skill, recipe, picks, owner questions, takes_m09.md (all three runs) and m08/m05/m07 edits. Music analysed (60 s windows, committed): `tools/video/edits/music/action_dub_60.json`, `hybrid_attack_0_60.json`, `shadow_protocol_60.json`, `hybrid_attack_2_60.json`. librosa runs with `PYTHONPATH=~/video-takes-local/music-pylibs python3` (python3-venv is missing, so setup-venv.sh fails). Not started: `tools/video/edits/m09_trailer60.json` (no file yet), frame checks, lint, README music row.
+
+**Music decision: SpyAgro "Action Dub"** (120 BPM, period 0.5001 s, so 15 frames a beat), window **start 0.0** (track start, its own intro). Window times = track times: quiet bars 0-10.7 (rms 13, 1, 6, 12, 2), lift 6.7, near-silent bar 8.7-10.7, **lift + hit 10.7 = Mission 9 card**, drop 18.7, lift 20.7, hit 24.02, lift 24.7, drops 28.7/32.7, lift 42.7, quiet bar 48.7-50.7 (under Sorensen), hits 50.69 (close-up cut), 52.69, 54.02, 54.7 (strongest) and 56.69 under the CTA. No natural end at 60: fade_out 2. Alternatives for the `alternatives` list: Action Dub 0.695 (lift 10.0, CTA hits exactly at 52/54, but the hook voice would need pre 3.7); Hybrid Attack 0 at 21.895 (analysis best, flat energy); Shadow Protocol (original) at 84.687 (close to m04's Remastered by ear, so avoid). Hybrid Attack 2 is m10's fallback; Hybrid Attack 1 is pencilled for m10: both avoided. Add the README row for m09 (and the missing m05 Midnight Double Agent 47.992, m07 Shadow Tide 0.05, m08 Shadowline Protocol 109.406, m01 now Emerald Trigger 85.571, all read from the edit JSONs).
+
+**Time plan (snap false, frame-aligned boundaries, as m08):**
+- 0-6 `safetynet-open` preset.
+- 6.0-9.7 `hook_netherton` t10, source in 7.4 out 11.1, `audio.pre` 3.1 (audio from 4.3, voice 4.39 starts at timeline 2.9), `audio.post` 1.0 (L-cut: "Tonight they are burning it." runs over the team flash; mix-audio supports `post`). Line 4.39-12.08. Check the skipped-line audio at 4.0-4.39.
+- 9.7-10.7 team flash, 4 x 0.25 s, t11: Anchor 18.7-19.6, Malhotra 22.2-23.0, Arakawa 25.7-26.5, Lantern 28.3-29.0, each a face crop with the subtitle bar OFF (Lantern's bar names Nightshade: crop it out in every aspect). Muted.
+- 10.7-12.2 card `Mission 9 / Digital / Archaeology` (glitch).
+- 12.2-13.7 drop t21 (strike at 5.3-6.0; about in 4.6 out 6.1, frames to check).
+- Noor: t12 walk 1.5-2.1 then line 3.2-7.1 (about 4.5 s).
+- card `Stop the / Wipe` 1.2; wipe beat: t13 console 3.2-4.4, Jesse t13 line 19.3-23.7 (or J-cut his voice under the console), t14 halted 2.8-5.3 (about 1.2 s). Cone overlay and speech bubble on t13 map frames: use the panel and portrait only.
+- card `Vigenère / Cipher` 1.2; t15 password screen with hint 9.9-12.9 (about 2 s; never 2.9-5.3).
+- card `Real / Hacking` 1.2; no walk to the VM (t30 laptop failed). Clip `m09_console_msfrun_clip.mp4` (2.6 s, 78 frames) in 0.3-0.4 to about 2.4, `placeholder: false` as m05/m07/m08, framing as m08 (9:16 cx 0.281 zoom 0.5625). Note: two spliced strips, `set CMD` lines cut out so `run` follows PAYLOAD (owner question). Then t16 CyberChef 4-10 window, about 1 s, muted, no line.
+- card `Burn Helena` 1.2; Dillard t17 about 13.6-19.65 (lights strike 13.9, line 15.28-19.60).
+- card `Before It's / All Ash` 1.2 only if it fits (drop first).
+- crescendo about 2.5-3 s, hard cuts, muted: t20 cloner 1.6-7.0 and reader 12.0-17.9, t23 lockpick 2.0-11.0 (never past 11.8), t19 key lock 15.0-21.3 and note 3.4-6.3, t25 PIN pad 3.2-9.4, t22 H&L password 5.0-8.9 and Cody 13.4-15.8 (face, bar off), t24 dusting 12-21 and hatch Sorensen 25.2-27.3, t26 biometric reader 12.8-16.0, t27 flag station 2.8-5.6 (crop in), t30 closet 4.0-8.3 if a walk is wanted. No t28, t29, failed t30 walks, no safe dial (none in m09).
+- Sorensen: t18 line 10.13-19.90 whole; J-cut about 3 s under the crescendo, wide (or t26 wide 2.6-9.4 UI-free under the J-cut), then 3-frame `hit` to a 3x close-up at the pause after "dear." (silencedetect found no gap: find it with ebur128 or by waveform). Close-up cut near the 50.69 hit; picture ends at 52.0.
+- 52-60 `hacktivity-close` preset.
+Estimated sum between presets about 43 s of 46: slack for the All Ash card and a longer crescendo.
+
+Owner questions to carry: the spliced console strips (suggest: keep, it reads as one scroll); hook L-cut over the team faces (suggest: keep); Action Dub by ear (suggest: keep, 120 BPM fits the m01 grid pattern); no walk-to-VM shot (suggest: fine, re-take t30 laptop later if wanted).
+
+Next agent: write the JSON from m08's structure, check frames at every in and out (`ffmpeg -ss <t> -i <take> -frames:v 1`), run the lint line from the brief until 0 errors, add the README row, commit with explicit paths.
