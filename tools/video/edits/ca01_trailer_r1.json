@@ -107,7 +107,7 @@
    "ca": {
     "title": "Invoice fraud",
     "company": "Brightwell Foods",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "duration": 5.3667
   },
@@ -202,7 +202,7 @@
    "seat": {
     "seat": "attack",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -261,7 +261,7 @@
    "seat": {
     "seat": "attack",
     "chip": "SUPPLIER EMAIL BUILDER",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -324,7 +324,7 @@
    "seat": {
     "seat": "attack",
     "chip": "THE SEND",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -370,7 +370,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -418,7 +418,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -498,7 +498,7 @@
    "seat": {
     "seat": "defend",
     "chip": "PAYMENTS INBOX",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -563,7 +563,7 @@
    "seat": {
     "seat": "defend",
     "chip": "THE TEAM",
-    "stripe": "#2f6f5e"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
