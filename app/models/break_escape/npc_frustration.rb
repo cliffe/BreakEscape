@@ -407,6 +407,10 @@ module BreakEscape
         guest_sessions[pc_id] = npc['id']
         guest_sessions_at[pc_id] = server_now
       end
+      # S5b: an accepted "done" at this PC caches a declared `after: "borrow"` account there, whether
+      # or not the guest is left signed in (a careful guest, a cut-short use). note_borrow_cached!
+      # refuses a locked-out borrower, a repeat and an undeclared pair; the caller's save! persists.
+      note_borrow_cached!(pc, npc) if pc
       ended
     end
 
