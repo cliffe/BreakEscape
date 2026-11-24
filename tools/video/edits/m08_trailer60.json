@@ -630,7 +630,7 @@
     "in": 0.4,
     "out": 2.2
    },
-   "note": "m08 console recon (1920x1080, 2.6 s): nmap -Pn -sV on two ports, then the report with two open services and their versions. Frames 0.4 and 2.15 viewed. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m08/clips",
+   "note": "m08 console recon (1920x1080, 2.6 s): nmap -Pn -sV on two ports, then the report with two open services and their versions. Frames 0.4 and 2.15 viewed. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m08/clips; v1 r2: m08's clip text spans the full 1920 px, so 9:16 and 1:1 show the whole width (letterboxed); m07's framing cut the command",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -640,12 +640,12 @@
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 0.5625
+     "zoom": 0.316
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 0.5625
     }
    },
    "audio": {
@@ -867,7 +867,7 @@
     "in": 14.0,
     "out": 14.4667
    },
-   "note": "Security Alert Board, 'SECURITY POSTURE: LEVEL RED' (frame 14.5 viewed); panel x 440-1481, y 178-905",
+   "note": "Security Alert Board, 'SECURITY POSTURE: LEVEL RED' (frame 14.5 viewed); panel x 440-1481, y 178-905; v1 r2: board ~930 px wide, so 9:16/1:1 widened to show it whole (old crops cut its left edge)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -876,13 +876,13 @@
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.501,
-     "zoom": 1.55
+     "cy": 0.5,
+     "zoom": 0.65
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.45,
-     "zoom": 2.0
+     "zoom": 1.16
     }
    },
    "audio": {
@@ -1211,7 +1211,7 @@
     "in": 13.6,
     "out": 14.0
    },
-   "note": "Operations Status Board, every team 'STAND DOWN' (frame 14.5 viewed); same board geometry",
+   "note": "Operations Status Board, every team 'STAND DOWN' (frame 14.5 viewed); same board geometry; v1 r2: board ~930 px wide, so 9:16/1:1 widened to show it whole (old crops cut its left edge)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1220,13 +1220,13 @@
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.501,
-     "zoom": 1.55
+     "cy": 0.5,
+     "zoom": 0.65
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.45,
-     "zoom": 2.0
+     "zoom": 1.16
     }
    },
    "audio": {
