@@ -391,7 +391,8 @@ module BreakEscape
     def record_borrow_done!(npc, w)
       pc = find_login_pc(w['pc'])&.dig(:object)
       pc_id = (pc && pc['id'] || w['pc']).to_s
-      player_state['sessions'] = access_sessions.except(pc_id)
+      held = access_sessions[pc_id]
+      player_state['sessions'] = access_sessions.except(pc_id) unless held.is_a?(Hash) && (held['foothold'].present? || held['from'].present?)
       # Keyring K4 (plan 9): ending the player's session here can end a `from` session sourced
       # from it (and anything chained beyond), so the prune runs and its ids are returned
       ended = prune_unreachable_sessions!

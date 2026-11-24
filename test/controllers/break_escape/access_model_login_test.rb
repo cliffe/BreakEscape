@@ -589,5 +589,204 @@ module BreakEscape
       assert_response :success, response.body
       assert_equal 'completed', @game.reload.player_state.dig('objectivesState', 'tasks', 'sign_in_jake', 'status')
     end
+
+    # ---- Ops log L1b: sign-in and session rows (OPS_LOG_ROWS_PLAN.md 5.1, 13.8) ----------
+    #
+    # Every assertion reads a re-read game, so a missing save fails.
+
+    SIGNIN_SOURCE = { 'signins' => { 'title' => 'Sign-ins', 'events' => %w[signin_* session_*] } }.freeze
+
+    def build_logged(scenario: tracked_scenario, player_state: {})
+      scenario['logSources'] = SIGNIN_SOURCE.deep_dup
+      build(scenario: scenario, player_state: player_state)
+    end
+
+    def signin_rows
+      Game.find(@game.id).log_rows_for('signins')
+    end
+
+    def events_of(rows)
+      rows.map { |r| r['event'] }
+    end
+
+    test 'ops log: a password sign-in writes one signin_ok naming the account, method and route' do
+      build_logged
+      login('jbrooks', JAKE_PASSWORD)
+      assert_response :success
+      assert_equal 1, signin_rows.size
+      row = signin_rows.first
+      assert_equal 'signin_ok', row['event']
+      assert_equal({ 'account' => 'jbrooks' }, row['as'])
+      assert_equal({ 'kind' => 'pc', 'id' => 'jake_pc' }, row['where'])
+      assert_equal({ 'method' => 'password', 'route' => 'keyboard' }, row['detail'])
+    end
+
+    test 'ops log: a claimed session writes no signin_ok, and its sign-out writes session_end' do
+      build_logged
+      claim
+      assert_response :success, response.body
+      assert_empty signin_rows
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_response :success
+      assert_equal ['session_end'], events_of(signin_rows)
+      assert_equal({ 'account' => 'jbrooks' }, signin_rows.first['as'])
+    end
+
+    test 'ops log: a claimed guest session signed out writes session_end with no identity (m1)' do
+      build_logged
+      @game.player_state['sessions'] = { 'jake_pc' => { 'id' => 'len', 'via' => 'claim' } }
+      @game.player_state['guestSessions'] = { 'jake_pc' => 'len' }
+      @game.save!
+      assert_nil @game.send(:ops_account_as, 'len'), 'len holds no account'
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_response :success, response.body
+      assert_equal ['session_end'], events_of(signin_rows)
+      assert_nil signin_rows.first['as']
+      assert_equal({ 'kind' => 'pc', 'id' => 'jake_pc' }, signin_rows.first['where'])
+    end
+
+    test 'ops log: signin_ok names method credential and each route code (m4 d)' do
+      build_logged
+      jake = @game.account_npcs.find { |n| n['id'] == 'jake' }
+      {
+        'keyboard' => {},
+        'foothold' => { foothold: 'fh1' },
+        'from' => { from: 'office_pc' },
+        'relay' => { relay: true }
+      }.each do |route, opts|
+        @game.send(:start_login_session!, 'jake_pc', jake, 'password', **opts)
+        assert_equal({ 'method' => 'password', 'route' => route }, @game.log_rows_for('signins').last['detail'])
+      end
+      @game.send(:start_login_session!, 'jake_pc', jake, 'credential', credential: 'tok')
+      assert_equal({ 'method' => 'credential', 'route' => 'keyboard' }, @game.log_rows_for('signins').last['detail'])
+      assert_equal 5, @game.log_rows_for('signins').size
+    end
+
+    test 'ops log: start_login_session! with via claim or technique writes no signin_ok and does not raise' do
+      build_logged
+      jake = @game.account_npcs.find { |n| n['id'] == 'jake' }
+      assert_nothing_raised do
+        @game.send(:start_login_session!, 'jake_pc', jake, 'claim')
+        @game.send(:start_login_session!, 'jake_pc', jake, 'technique')
+      end
+      assert_empty @game.log_rows_for('signins')
+    end
+
+    test 'ops log: failed sign-ins for an account and a made-up name differ only in the username' do
+      build_logged
+      login('jbrooks', 'nope')
+      login('nobody', 'nope')
+      real, fake = signin_rows
+      assert_equal 'signin_fail', real['event']
+      assert_equal({ 'typed' => 'jbrooks' }, real['as'])
+      assert_equal({ 'typed' => 'nobody' }, fake['as'])
+      assert_equal real.except('as', 'seq', 'serverMs', 'elapsedMs'), fake.except('as', 'seq', 'serverMs', 'elapsedMs')
+    end
+
+    test 'ops log: repeats merge, and the lockout at maxAttempts writes one signin_lockout' do
+      build_logged
+      5.times { login('jbrooks', 'nope') }
+      assert_equal %w[signin_fail signin_lockout], events_of(signin_rows)
+      assert_equal 5, signin_rows.first['n']
+      assert_equal 'ok', signin_rows.last['result']
+      assert_equal({ 'typed' => 'jbrooks' }, signin_rows.last['as'])
+    end
+
+    test 'ops log: a right password at a PC that does not admit the account stores denied, twelve cause ten saves' do
+      build_logged
+      stamps = []
+      12.times do
+        login('jbrooks', JAKE_PASSWORD, pc_id: 'it_pc')
+        assert_response :unprocessable_entity
+        stamps << Game.find(@game.id).updated_at
+      end
+      assert_equal 1, signin_rows.size
+      row = signin_rows.first
+      assert_equal 'signin_refused', row['event']
+      assert_equal 'denied', row['result']
+      assert_equal({ 'account' => 'jbrooks' }, row['as'])
+      assert_equal 10, row['n']
+      assert_equal [stamps[9]], stamps.last(3).uniq, 'attempts after the tenth cause no save'
+      assert_not_equal stamps[8], stamps[9]
+    end
+
+    test 'ops log: after a lockout twelve made-up usernames store at most ten blocked rows, and denied does not spend them' do
+      build_logged
+      names = (1..12).map { |i| "ghost#{i}" }
+      names.each { |name| 5.times { login(name, 'nope') } }
+      before = signin_rows.count { |r| r['result'] == 'blocked' }
+      assert_equal 0, before
+      stamps = names.map do |name|
+        login(name, 'nope')
+        assert_equal true, response.parsed_body['lockedOut']
+        Game.find(@game.id).updated_at
+      end
+      blocked = signin_rows.select { |r| r['event'] == 'signin_refused' }
+      assert_equal 10, blocked.size
+      assert(blocked.all? { |r| r['result'] == 'blocked' && r['as']['typed'].start_with?('ghost') })
+      assert_equal [stamps[9]], stamps.last(2).uniq, 'the rest cause no save'
+    end
+
+    test 'ops log: denied attempts at a PC do not spend its blocked stored rows (m4 e)' do
+      build_logged
+      5.times { login('ghost', 'nope', pc_id: 'it_pc') } # the lockout of "ghost" at it_pc
+      12.times { login('jbrooks', JAKE_PASSWORD, pc_id: 'it_pc') } # denied, past its ten stored saves
+      before = Game.find(@game.id).updated_at
+      login('ghost', 'nope', pc_id: 'it_pc')
+      assert_equal true, response.parsed_body['lockedOut']
+      blocked = signin_rows.select { |r| r['result'] == 'blocked' }
+      assert_equal 1, blocked.size, 'the blocked row is stored although denied is spent'
+      assert_not_equal before, Game.find(@game.id).updated_at, 'and it cost a save'
+    end
+
+    test 'ops log: sign-out at a PC with no session writes nothing, a held one writes session_end' do
+      build_logged
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_empty signin_rows
+      login('jbrooks', JAKE_PASSWORD)
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      assert_equal %w[signin_ok session_end], events_of(signin_rows)
+    end
+
+    test 'ops log: locking a held session writes session_lock, a refused lock writes none' do
+      build_logged
+      lock_session
+      assert_response :unprocessable_entity
+      assert_empty signin_rows
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      assert_response :success
+      assert_equal %w[signin_ok session_lock], events_of(signin_rows)
+      assert_equal({ 'account' => 'jbrooks' }, signin_rows.last['as'])
+    end
+
+    test 'ops log: a scenario without logSources writes no log state through every sign-in route' do
+      build(scenario: tracked_scenario)
+      login('jbrooks', 'nope')
+      login('jbrooks', JAKE_PASSWORD)
+      lock_session
+      post logout_game_url(@game), params: { pc_id: 'jake_pc' }, as: :json
+      state = Game.find(@game.id).player_state
+      assert_equal [], %w[opsLog opsLogSeq opsLogClockAt opsLogOnce opsLogSaves].select { |k| state.key?(k) }
+    end
+
+    test 'ops log: a malformed row call in development fails the route and leaves the game row unchanged' do
+      build_logged
+      before = Game.find(@game.id).player_state
+      Game.class_eval do
+        alias_method :ops_account_as_original, :ops_account_as
+        define_method(:ops_account_as) { |_id| { account: 'nobody_here' } }
+      end
+      begin
+        login('jbrooks', JAKE_PASSWORD)
+        assert_response :internal_server_error
+      ensure
+        Game.class_eval do
+          alias_method :ops_account_as, :ops_account_as_original
+          remove_method :ops_account_as_original
+        end
+      end
+      assert_equal before, Game.find(@game.id).player_state, 'no grant without its row'
+    end
   end
 end

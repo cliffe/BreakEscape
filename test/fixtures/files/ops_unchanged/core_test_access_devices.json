@@ -1,0 +1,3237 @@
+{
+  "name": "core_test_access_devices",
+  "clock": "2026-01-15T12:00:00Z",
+  "description": "Ops core plan section 10 part 1: test_access_devices through the network routes, captured before any ops-core edit.",
+  "scenario": {
+    "scenario_brief": "TEST: Access model devices\n\nA test floor for the physical pentest devices (PHYSICAL_PENTEST_DEVICES_PLAN.md). The rogue AP half is in reception: hide the pocket rogue AP in a reception plant, clone a network from its console and wait for Kieran's laptop. The drop box half sits behind the patch panel.",
+    "endGoal": "Test only: run the device beats.",
+    "startRoom": "reception",
+    "startPosition": {
+      "x": 6,
+      "y": 7
+    },
+    "npcNeedsSeed": "test_access_devices",
+    "npcWindupMs": 0,
+    "needsDebugOverlay": true,
+    "social": {
+      "captures": {
+        "revealSecret": true
+      }
+    },
+    "lighting": {
+      "enabled": true,
+      "defaultMode": "on"
+    },
+    "networks": {
+      "office_lan": {
+        "name": "Ledgerwell office LAN",
+        "wifi": {
+          "ssid": "Ledgerwell-Staff",
+          "psk": "Di8mE1Fj"
+        }
+      },
+      "lw_voice": {
+        "name": "Ledgerwell voice VLAN"
+      },
+      "lw_guest": {
+        "name": "Ledgerwell guest Wi-Fi",
+        "wifi": {
+          "ssid": "Ledgerwell-Guest",
+          "psk": "Visitor-Pebble-2026"
+        }
+      }
+    },
+    "resources": {
+      "lw_fs01_records": {
+        "kind": "file_share",
+        "name": "Client-Records",
+        "host": "LW-FS01",
+        "network": "office_lan",
+        "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+      },
+      "lw_callmgr": {
+        "kind": "phone",
+        "name": "Call manager",
+        "host": "LW-CM01",
+        "network": "lw_voice",
+        "observations": "The call manager for the office phones. It answers on the voice network with the extension list: 100 reception, 101 open plan. Calls are set up here and nothing else."
+      },
+      "lw_ph_recep": {
+        "kind": "phone",
+        "name": "Reception desk phone",
+        "host": "LW-PH-RECEP",
+        "network": "lw_voice",
+        "observations": "A desk phone registered as extension 100. Its call signalling is all that answers."
+      },
+      "lw_ph_open1": {
+        "kind": "phone",
+        "name": "Open plan desk phone",
+        "host": "LW-PH-OPEN1",
+        "network": "lw_voice",
+        "observations": "A desk phone registered as extension 101. Its call signalling is all that answers."
+      }
+    },
+    "accountProfiles": {
+      "kieran_desktop": {
+        "for": {
+          "people": [
+            "kieran"
+          ]
+        },
+        "contents": [
+          {
+            "type": "text_file",
+            "id": "kieran_requests",
+            "name": "Facilities requests",
+            "takeable": false,
+            "readable": true,
+            "onRead": {
+              "setVariable": {
+                "kp_signed_in": true
+              }
+            },
+            "text": "Facilities requests (test)\n\nDoor faults, the post-room printer and the contractor visits booked this week. The booking list tells a stranger which names and uniforms reception expects. Booking a visit is out of scope."
+          }
+        ]
+      }
+    },
+    "globalVariables": {
+      "ap_planted": false,
+      "ap_twin_staff": false,
+      "ap_twin_wrong": false,
+      "ap_portal_account": false,
+      "kp_twin_captured": false,
+      "kp_twin_account_captured": false,
+      "kp_twin_signed_in": false,
+      "kp_wifi_joined": false,
+      "kp_signed_in": false,
+      "lw_staff_ap_planted": false,
+      "lw_guest_ap_planted": false,
+      "network_port_planted": false,
+      "voice_port_planted": false,
+      "guest_port_planted": false
+    },
+    "startItemsInInventory": [
+      {
+        "type": "rogue_ap",
+        "sprite": "rogue_ap",
+        "id": "kit_rogue_ap",
+        "name": "Pocket rogue AP",
+        "takeable": true,
+        "droppable": false,
+        "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Hide it in a plant in reception, then set it up from its console.",
+        "hideable": {
+          "rooms": [
+            "reception"
+          ],
+          "spots": "plants",
+          "exclude": [
+            "reception_plant-large11-top-ani3_76"
+          ],
+          "device": "planted_rogue_ap",
+          "overlay": {
+            "sprite": "rogue_ap_tucked"
+          },
+          "confirm": "Hide the pocket rogue AP in this plant?",
+          "onHidden": [
+            {
+              "type": "set_global",
+              "key": "ap_planted",
+              "value": true
+            }
+          ]
+        }
+      },
+      {
+        "type": "page-builder",
+        "id": "captures_terminal",
+        "name": "Harvested Credentials",
+        "sprite": "tablet",
+        "takeable": true,
+        "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
+        "minigameData": {
+          "view": "captures",
+          "landingPageId": "cm_captures"
+        }
+      },
+      {
+        "type": "phone",
+        "name": "Your phone",
+        "takeable": true,
+        "phoneId": "player_phone",
+        "npcIds": [
+          "ruth_phone"
+        ],
+        "observations": "Your work phone, with Ruth a message away."
+      },
+      {
+        "type": "pc",
+        "id": "kit_dropbox",
+        "name": "Network drop box",
+        "sprite": "pi_cluster1",
+        "takeable": true,
+        "rogueDevice": true,
+        "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+      }
+    ],
+    "objectives": [
+      {
+        "aimId": "wireless",
+        "title": "Wireless",
+        "description": "Plant the pocket rogue AP in reception and see what a copy of the staff Wi-Fi harvests: the shared Wi-Fi key, or one person's staff sign-in. Either harvest completes this aim.",
+        "status": "active",
+        "order": 0,
+        "tasks": [
+          {
+            "taskId": "wireless_harvest",
+            "title": "Harvest something with the rogue AP: the Wi-Fi key page or the staff sign-in page",
+            "type": "manual",
+            "status": "active"
+          },
+          {
+            "taskId": "opt_rogue_ap",
+            "title": "Optional: harvest the staff Wi-Fi key with the rogue AP's key page",
+            "type": "manual",
+            "optional": true,
+            "status": "active"
+          },
+          {
+            "taskId": "opt_wifi_join",
+            "title": "Optional: join the staff Wi-Fi with the harvested key",
+            "type": "unlock_object",
+            "targetObject": "lw_staff_ap",
+            "optional": true,
+            "status": "active"
+          },
+          {
+            "taskId": "opt_rogue_ap_account",
+            "title": "Optional: harvest a staff sign-in with the rogue AP's sign-in page",
+            "type": "manual",
+            "optional": true,
+            "status": "active"
+          },
+          {
+            "taskId": "opt_twin_signin",
+            "title": "Optional: sign in at the hot desk with the account the portal harvested",
+            "type": "manual",
+            "optional": true,
+            "status": "active"
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "reception": {
+        "type": "room_reception",
+        "door_sign": "Reception",
+        "connections": {
+          "north": "comms"
+        },
+        "lighting": {
+          "emitters": {
+            "lw_staff_ap": {
+              "color": "#2a8cff",
+              "radius": 6,
+              "intensity": 0.6,
+              "effect": "blink",
+              "above": true,
+              "offsetX": 0,
+              "offsetY": -1
+            },
+            "lw_guest_ap": {
+              "color": "#2a8cff",
+              "radius": 6,
+              "intensity": 0.6,
+              "effect": "blink",
+              "above": true,
+              "offsetX": 0,
+              "offsetY": -1
+            },
+            "planted_rogue_ap": {
+              "color": "#3fa8ff",
+              "radius": 5,
+              "intensity": 0.7,
+              "effect": "blink",
+              "above": true,
+              "offsetX": -4,
+              "offsetY": 3
+            }
+          }
+        },
+        "objects": [
+          {
+            "type": "plant",
+            "id": "wall_strip_plant",
+            "name": "Plant by the back wall",
+            "sprite": "plant-large11",
+            "position": {
+              "x": 3.6,
+              "y": 1.0
+            },
+            "takeable": false,
+            "observations": "A tall plant against the back wall."
+          },
+          {
+            "type": "pc",
+            "id": "planted_rogue_ap",
+            "name": "Planted rogue AP",
+            "sprite": "rogue_ap_planted",
+            "hiddenWith": "kit_rogue_ap",
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "wifiTwin": true,
+            "observations": "Your pocket rogue AP, tucked into the plant. Click the plant to open its console.",
+            "apScan": [
+              {
+                "ssid": "Ledgerwell-Staff",
+                "security": "WPA2",
+                "signal": 4,
+                "clients": 3,
+                "inScope": true,
+                "cloneGlobals": {
+                  "ap_twin_staff": true,
+                  "ap_twin_wrong": false
+                },
+                "cloneLog": {
+                  "wifi_key": "Copy of Ledgerwell-Staff up (open), showing the Wi-Fi key page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy.",
+                  "staff_signin": "Copy of Ledgerwell-Staff up (open), showing the staff sign-in page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy."
+                },
+                "knownClients": [
+                  {
+                    "npcId": "kieran",
+                    "label": "Kieran's laptop"
+                  }
+                ]
+              },
+              {
+                "ssid": "Ledgerwell-Guest",
+                "security": "WPA2",
+                "signal": 3,
+                "clients": 1,
+                "inScope": true,
+                "cloneGlobals": {
+                  "ap_twin_wrong": true,
+                  "ap_twin_staff": false
+                },
+                "cloneLog": "Copy of Ledgerwell-Guest up (open). It harvests nothing worth having: the guest key is printed on a card in reception, and staff laptops hold the staff network, not this one."
+              },
+              {
+                "ssid": "BT-Hub-4F2A",
+                "security": "WPA2",
+                "signal": 2,
+                "clients": 2,
+                "inScope": false,
+                "refusal": "Out of scope. BT-Hub-4F2A is not the client."
+              },
+              {
+                "ssid": "Corrigan-Dental",
+                "security": "WPA2",
+                "signal": 1,
+                "clients": 1,
+                "inScope": false,
+                "refusal": "Out of scope. Corrigan Dental is not the client."
+              }
+            ],
+            "apPortal": {
+              "templates": [
+                {
+                  "id": "wifi_key",
+                  "label": "Key page",
+                  "setGlobals": {
+                    "ap_portal_account": false
+                  },
+                  "page": {
+                    "brands": [
+                      {
+                        "id": "ledgerwell",
+                        "name": "Ledgerwell",
+                        "look": "generic",
+                        "realDomain": "ledgerwell.example",
+                        "domains": [
+                          {
+                            "id": "d_wifi",
+                            "domain": "wifi-login.example",
+                            "trick": "unrelated",
+                            "tier": 0
+                          }
+                        ]
+                      }
+                    ],
+                    "purposes": [
+                      {
+                        "id": "wifi",
+                        "label": "Reconnect",
+                        "button": "Reconnect"
+                      }
+                    ],
+                    "wordings": [
+                      {
+                        "id": "w_key",
+                        "match": true,
+                        "text": "Ledgerwell-Staff: the router has been updated. Enter the Wi-Fi key to reconnect."
+                      }
+                    ],
+                    "fields": [
+                      "password"
+                    ],
+                    "fieldLabels": {
+                      "password": "Wi-Fi key"
+                    },
+                    "choices": {
+                      "brand": "ledgerwell",
+                      "purpose": "wifi",
+                      "domainId": "d_wifi",
+                      "wording": "w_key",
+                      "fields": [
+                        "password"
+                      ],
+                      "logo": true,
+                      "padlock": false
+                    }
+                  }
+                },
+                {
+                  "id": "staff_signin",
+                  "label": "Sign-in page",
+                  "setGlobals": {
+                    "ap_portal_account": true
+                  },
+                  "page": {
+                    "brands": [
+                      {
+                        "id": "ledgerwell",
+                        "name": "Ledgerwell",
+                        "look": "generic",
+                        "realDomain": "ledgerwell.example",
+                        "domains": [
+                          {
+                            "id": "d_wifi",
+                            "domain": "wifi-login.example",
+                            "trick": "unrelated",
+                            "tier": 0
+                          }
+                        ]
+                      }
+                    ],
+                    "purposes": [
+                      {
+                        "id": "wifi",
+                        "label": "Sign in",
+                        "button": "Sign in"
+                      }
+                    ],
+                    "wordings": [
+                      {
+                        "id": "w_signin",
+                        "match": true,
+                        "text": "Ledgerwell-Staff: the network now uses staff accounts. Sign in with your Ledgerwell username and password."
+                      }
+                    ],
+                    "fields": [
+                      "email",
+                      "password"
+                    ],
+                    "fieldLabels": {
+                      "email": "Ledgerwell username"
+                    },
+                    "choices": {
+                      "brand": "ledgerwell",
+                      "purpose": "wifi",
+                      "domainId": "d_wifi",
+                      "wording": "w_signin",
+                      "fields": [
+                        "email",
+                        "password"
+                      ],
+                      "logo": true,
+                      "padlock": false
+                    }
+                  }
+                }
+              ]
+            },
+            "apCaptureLog": [
+              {
+                "global": "kp_twin_captured",
+                "text": "Kieran's laptop joined the copy; Wi-Fi key page submitted.",
+                "npcId": "kieran"
+              },
+              {
+                "global": "kp_twin_account_captured",
+                "text": "Kieran's laptop joined the copy; staff sign-in page submitted.",
+                "npcId": "kieran"
+              }
+            ]
+          },
+          {
+            "type": "pc",
+            "id": "lw_staff_ap",
+            "name": "Ledgerwell-Staff access point",
+            "sprite": "lw_staff_ap",
+            "position": {
+              "x": 5,
+              "y": 2.2
+            },
+            "takeable": false,
+            "wifiAp": true,
+            "network": "office_lan",
+            "observations": "A wall access point above the waiting area. Its label reads Ledgerwell-Staff. It asks for a key."
+          },
+          {
+            "type": "pc",
+            "id": "lw_guest_ap",
+            "name": "Ledgerwell-Guest access point",
+            "sprite": "lw_guest_ap",
+            "position": {
+              "x": 2,
+              "y": 2.2
+            },
+            "takeable": false,
+            "wifiAp": true,
+            "network": "lw_guest",
+            "observations": "A second access point on the wall. Its label reads Ledgerwell-Guest."
+          },
+          {
+            "type": "notes1",
+            "id": "lw_guest_card",
+            "name": "Reception Wi-Fi card",
+            "sprite": "lw_guest_card",
+            "position": {
+              "x": 0.4375,
+              "y": 3.25
+            },
+            "takeable": false,
+            "readable": true,
+            "readDisplay": "gameDisplay",
+            "addToNotes": false,
+            "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Ledgerwell-Guest\nKey: Visitor-Pebble-2026",
+            "observations": "A printed flyer pinned to the wall with the guest Wi-Fi details."
+          },
+          {
+            "type": "pc",
+            "id": "hot_desk_pc",
+            "name": "Hot desk PC",
+            "network": "office_lan",
+            "host": "LW-HOT-01",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 7.5,
+              "y": 5
+            },
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "locked": true,
+            "lockType": "login",
+            "access": {
+              "people": [
+                "kieran"
+              ]
+            },
+            "observations": "A spare desk with a PC on the office domain. Only Kieran's account signs in here in this test."
+          },
+          {
+            "type": "pc",
+            "id": "kieran_laptop",
+            "owner": [
+              "kieran"
+            ],
+            "private": true,
+            "name": "Kieran's laptop",
+            "sprite": "laptop1",
+            "position": {
+              "x": 3.6,
+              "y": 5.2,
+              "elevation": 30
+            },
+            "takeable": false,
+            "affordance": {
+              "satisfies": "work",
+              "restores": 60,
+              "useSeconds": 3,
+              "useFrom": {
+                "dx": 0,
+                "dy": -1
+              }
+            },
+            "observations": "Kieran's laptop on the front desk."
+          }
+        ],
+        "npcs": [
+          {
+            "id": "ruth_phone",
+            "displayName": "Ruth Adeyemi",
+            "npcType": "phone",
+            "avatar": "assets/characters/ruth_adeyemi_headshot.png",
+            "spriteTalk": "assets/characters/ruth_adeyemi_talk.png",
+            "spriteVisemes": "assets/characters/ruth_adeyemi_visemes.png",
+            "phoneId": "player_phone",
+            "storyPath": "scenarios/test_access_devices/ink/ruth_phone.json",
+            "currentKnot": "start",
+            "eventMappings": [
+              {
+                "eventPattern": "npc_used:kieran_laptop",
+                "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true",
+                "onceOnly": true,
+                "addCapture": {
+                  "targetId": "staff_wifi_key",
+                  "roleLabel": "Ledgerwell Ltd, reception",
+                  "kind": "credential",
+                  "host": "Ledgerwell-Staff, rogue access point",
+                  "address": "Ledgerwell-Staff",
+                  "secret": "Di8mE1Fj",
+                  "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).",
+                  "proof": {
+                    "planted": "kit_rogue_ap"
+                  }
+                },
+                "setGlobal": {
+                  "kp_twin_captured": true
+                },
+                "completeTask": "wireless_harvest"
+              },
+              {
+                "eventPattern": "global_variable_changed:kp_twin_captured",
+                "condition": "value === true",
+                "onceOnly": true,
+                "bark": "That is the staff Wi-Fi key. Read it on your tablet, then try it on the staff access point.",
+                "completeTask": "opt_rogue_ap"
+              },
+              {
+                "eventPattern": "global_variable_changed:kp_twin_account_captured",
+                "condition": "value === true",
+                "onceOnly": true,
+                "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk.",
+                "completeTask": "opt_rogue_ap_account"
+              },
+              {
+                "eventPattern": "global_variable_changed:ap_twin_staff",
+                "condition": "value === true && globalVars.ap_planted === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured",
+                "onceOnly": true,
+                "delayMs": 60000,
+                "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute. If you reloaded, the capture lands once Kieran is working again."
+              },
+              {
+                "eventPattern": "global_variable_changed:ap_portal_account",
+                "condition": "value === true && globalVars.ap_portal_account === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_account_captured",
+                "onceOnly": true,
+                "delayMs": 60000,
+                "bark": "Your copy now asks for a staff sign-in. Kieran's laptop has to pick it again; give him a minute. If you reloaded, the capture lands once Kieran is working again."
+              },
+              {
+                "eventPattern": "network_joined",
+                "condition": "data.apId === 'lw_staff_ap'",
+                "onceOnly": true,
+                "addCapture": {
+                  "targetId": "wifi_join",
+                  "roleLabel": "Ledgerwell Ltd, reception",
+                  "kind": "foothold",
+                  "host": "Ledgerwell-Staff access point",
+                  "note": "Joined the staff Wi-Fi with the harvested key: one shared key, and the staff Wi-Fi is the office LAN."
+                },
+                "setGlobal": {
+                  "kp_wifi_joined": true
+                }
+              },
+              {
+                "eventPattern": "pc_signed_in:hot_desk_pc",
+                "condition": "data.npcId === 'kieran' && data.via === 'password'",
+                "onceOnly": true,
+                "addCapture": {
+                  "targetId": "twin_signin",
+                  "roleLabel": "Ledgerwell Ltd, reception",
+                  "kind": "foothold",
+                  "host": "Hot desk PC",
+                  "note": "A password typed into a fake Wi-Fi page opened a staff desk. The control is a second factor on every sign-in."
+                },
+                "setGlobal": {
+                  "kp_twin_signed_in": true
+                },
+                "completeTask": "opt_twin_signin"
+              }
+            ]
+          },
+          {
+            "id": "kieran",
+            "displayName": "Kieran Doyle",
+            "npcType": "person",
+            "position": {
+              "x": 3.5,
+              "y": 4.3
+            },
+            "behavior": {
+              "facePlayer": true,
+              "facePlayerDistance": 96
+            },
+            "spriteSheet": "kieran_doyle",
+            "spriteTalk": "assets/characters/kieran_doyle_talk.png",
+            "spriteVisemes": "assets/characters/kieran_doyle_visemes.png",
+            "storyPath": "scenarios/test_access_devices/ink/kieran.json",
+            "currentKnot": "start",
+            "voice": {
+              "name": "Achird",
+              "style": "Office junior on the front desk of a small British firm, early twenties, Irish, from Dublin. Speak with a consistent Dublin accent throughout. Do not shift to any other accent. Light, quick, cheerful; always slightly in a hurry, never rude.",
+              "language": "en-GB"
+            },
+            "needsHome": "kieran_laptop",
+            "needsDeferMin": 0.5,
+            "role": "facilities",
+            "creds": {
+              "username": "k.doyle",
+              "password": "Quarry-Beacon-Saffron-59"
+            },
+            "captureProof": [
+              {
+                "planted": "kit_rogue_ap"
+              }
+            ],
+            "needs": {
+              "work": {
+                "decayPerMin": 90,
+                "urgentAt": 50,
+                "initial": 40
+              }
+            },
+            "eventMappings": [
+              {
+                "eventPattern": "npc_used:kieran_laptop",
+                "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true",
+                "onceOnly": true,
+                "bark": "My Wi-Fi dropped, so I picked the network again. It wanted the key again, so I typed it in."
+              },
+              {
+                "eventPattern": "npc_used:kieran_laptop",
+                "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account === true",
+                "onceOnly": true,
+                "bark": "The Wi-Fi dropped again, and this time it wanted my Ledgerwell sign-in, so I typed that in.",
+                "addCapture": {
+                  "targetId": "kieran",
+                  "roleLabel": "Ledgerwell Ltd, reception",
+                  "kind": "credential",
+                  "address": "k.doyle",
+                  "host": "Ledgerwell-Staff, rogue access point",
+                  "note": "Typed his staff sign-in into the rogue AP's sign-in page (proof: planted)."
+                },
+                "setGlobal": {
+                  "kp_twin_account_captured": true
+                },
+                "completeTask": "wireless_harvest"
+              }
+            ]
+          }
+        ]
+      },
+      "comms": {
+        "type": "room_lw_comms",
+        "door_sign": "Comms Cupboard",
+        "connections": {
+          "south": "reception"
+        },
+        "objects": [
+          {
+            "type": "notes",
+            "id": "p3_patch_panel",
+            "name": "Patch panel and comms cabinet",
+            "sprite": "comms_cabinet1",
+            "position": {
+              "x": 2,
+              "y": 1
+            },
+            "takeable": false,
+            "readable": false,
+            "interactable": true,
+            "active": true,
+            "observations": "A wall patch panel, the ports labelled by desk.",
+            "panelPorts": [
+              {
+                "port": 1,
+                "label": "D01",
+                "desk": "Desk 1, data",
+                "jack": "network_port"
+              },
+              {
+                "port": 2,
+                "label": "V02",
+                "desk": "Reception phone",
+                "jack": "voice_port"
+              },
+              {
+                "port": 3,
+                "label": "G03",
+                "desk": "Guest meeting room",
+                "jack": "guest_port"
+              },
+              {
+                "port": 4,
+                "label": "M04",
+                "desk": "Managed uplink",
+                "jack": "secured_port"
+              },
+              {
+                "port": 5,
+                "label": "D05",
+                "desk": "Spare desk"
+              }
+            ]
+          },
+          {
+            "type": "pc",
+            "id": "network_port",
+            "name": "Live wall network port",
+            "sprite": "network_rack1",
+            "position": {
+              "x": 1,
+              "y": 3
+            },
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "networkJack": true,
+            "network": "office_lan",
+            "plantedSprite": "pi_cluster1",
+            "linkName": "Drop box: comms cupboard",
+            "jackConfirm": "Plug the network drop box into this live port?",
+            "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+            "observations": "A live data port on the office network."
+          },
+          {
+            "type": "pc",
+            "id": "secured_port",
+            "name": "Managed wall network port",
+            "sprite": "hce_comms_cabinet1",
+            "position": {
+              "x": 3,
+              "y": 3
+            },
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "networkJack": true,
+            "network": "office_lan",
+            "portSecurity": true,
+            "portSecurityMessage": "The switch logs the drop box's address and shuts the port, so an unknown device gets no network.",
+            "jackConfirm": "Try the network drop box in this managed switch port?",
+            "requiresItemHint": "You would need the network drop box from your kit to try this port.",
+            "observations": "A wall port running to a managed switch with port security on."
+          },
+          {
+            "type": "pc",
+            "id": "voice_port",
+            "name": "Voice VLAN port",
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "networkJack": true,
+            "network": "lw_voice",
+            "panelOf": "p3_patch_panel",
+            "linkName": "Drop box: voice VLAN port",
+            "jackConfirm": "Plug the network drop box into the patch panel's voice port?",
+            "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+            "observations": "A patch panel port patched through to the phones."
+          },
+          {
+            "type": "pc",
+            "id": "guest_port",
+            "name": "Guest VLAN port",
+            "takeable": false,
+            "interactable": true,
+            "active": true,
+            "networkJack": true,
+            "network": "lw_guest",
+            "panelOf": "p3_patch_panel",
+            "linkName": "Drop box: guest VLAN port",
+            "jackConfirm": "Plug the network drop box into the patch panel's guest port?",
+            "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+            "observations": "A patch panel port patched through to the guest network."
+          },
+          {
+            "type": "pc",
+            "id": "lan_signin_pc",
+            "name": "Back office PC",
+            "host": "LW-PC-BACK",
+            "sprite": "pc_desktop",
+            "position": {
+              "x": 5,
+              "y": 3
+            },
+            "network": "office_lan",
+            "takeable": false,
+            "locked": true,
+            "lockType": "login",
+            "loginPicker": false,
+            "observations": "A sign-in host on the office network."
+          }
+        ],
+        "npcs": []
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "reception",
+    "unlockedRooms": [
+      "reception",
+      "comms"
+    ],
+    "encounteredNPCs": [
+      "ruth_phone",
+      "kieran"
+    ],
+    "inventory": [
+      {
+        "type": "pc",
+        "id": "kit_dropbox",
+        "name": "Network drop box",
+        "sprite": "pi_cluster1",
+        "takeable": true,
+        "rogueDevice": true,
+        "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+      }
+    ],
+    "droppedItems": []
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_reception",
+      "method": "GET",
+      "path": "room/reception"
+    },
+    {
+      "id": "room_comms",
+      "method": "GET",
+      "path": "room/comms"
+    },
+    {
+      "id": "network_plain",
+      "method": "GET",
+      "path": "network"
+    },
+    {
+      "id": "keyring_plain",
+      "method": "GET",
+      "path": "keyring"
+    },
+    {
+      "id": "plant_network_port",
+      "method": "POST",
+      "path": "network/plant",
+      "params": {
+        "jack_id": "network_port"
+      }
+    },
+    {
+      "id": "network_jack_network_port",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "jack_network_port"
+      }
+    },
+    {
+      "id": "keyring_jack_network_port",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "jack_network_port"
+      }
+    },
+    {
+      "id": "signin_jack_network_port_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "jack_network_port"
+      }
+    },
+    {
+      "id": "desktop_jack_network_port_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "jack_network_port"
+      }
+    },
+    {
+      "id": "unplug_network_port",
+      "method": "POST",
+      "path": "network/unplug",
+      "params": {
+        "jack_id": "network_port"
+      }
+    },
+    {
+      "id": "plant_secured_port",
+      "method": "POST",
+      "path": "network/plant",
+      "params": {
+        "jack_id": "secured_port"
+      }
+    },
+    {
+      "id": "network_jack_secured_port",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "jack_secured_port"
+      }
+    },
+    {
+      "id": "keyring_jack_secured_port",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "jack_secured_port"
+      }
+    },
+    {
+      "id": "signin_jack_secured_port_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "jack_secured_port"
+      }
+    },
+    {
+      "id": "desktop_jack_secured_port_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "jack_secured_port"
+      }
+    },
+    {
+      "id": "unplug_secured_port",
+      "method": "POST",
+      "path": "network/unplug",
+      "params": {
+        "jack_id": "secured_port"
+      }
+    },
+    {
+      "id": "plant_voice_port",
+      "method": "POST",
+      "path": "network/plant",
+      "params": {
+        "jack_id": "voice_port"
+      }
+    },
+    {
+      "id": "network_jack_voice_port",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "jack_voice_port"
+      }
+    },
+    {
+      "id": "keyring_jack_voice_port",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "jack_voice_port"
+      }
+    },
+    {
+      "id": "signin_jack_voice_port_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "jack_voice_port"
+      }
+    },
+    {
+      "id": "desktop_jack_voice_port_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "jack_voice_port"
+      }
+    },
+    {
+      "id": "unplug_voice_port",
+      "method": "POST",
+      "path": "network/unplug",
+      "params": {
+        "jack_id": "voice_port"
+      }
+    },
+    {
+      "id": "plant_guest_port",
+      "method": "POST",
+      "path": "network/plant",
+      "params": {
+        "jack_id": "guest_port"
+      }
+    },
+    {
+      "id": "network_jack_guest_port",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "jack_guest_port"
+      }
+    },
+    {
+      "id": "keyring_jack_guest_port",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "jack_guest_port"
+      }
+    },
+    {
+      "id": "signin_jack_guest_port_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "jack_guest_port"
+      }
+    },
+    {
+      "id": "desktop_jack_guest_port_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "jack_guest_port"
+      }
+    },
+    {
+      "id": "unplug_guest_port",
+      "method": "POST",
+      "path": "network/unplug",
+      "params": {
+        "jack_id": "guest_port"
+      }
+    },
+    {
+      "id": "join_lw_staff_ap",
+      "method": "POST",
+      "path": "network/join",
+      "params": {
+        "ap_id": "lw_staff_ap",
+        "key": "Di8mE1Fj"
+      }
+    },
+    {
+      "id": "network_wifi_office_lan",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "wifi_office_lan"
+      }
+    },
+    {
+      "id": "keyring_wifi_office_lan",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "wifi_office_lan"
+      }
+    },
+    {
+      "id": "signin_wifi_office_lan_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "wifi_office_lan"
+      }
+    },
+    {
+      "id": "desktop_wifi_office_lan_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "wifi_office_lan"
+      }
+    },
+    {
+      "id": "join_lw_guest_ap",
+      "method": "POST",
+      "path": "network/join",
+      "params": {
+        "ap_id": "lw_guest_ap",
+        "key": "Visitor-Pebble-2026"
+      }
+    },
+    {
+      "id": "network_wifi_lw_guest",
+      "method": "GET",
+      "path": "network",
+      "params": {
+        "foothold": "wifi_lw_guest"
+      }
+    },
+    {
+      "id": "keyring_wifi_lw_guest",
+      "method": "GET",
+      "path": "keyring",
+      "params": {
+        "foothold": "wifi_lw_guest"
+      }
+    },
+    {
+      "id": "signin_wifi_lw_guest_hot_desk_pc",
+      "method": "POST",
+      "path": "login",
+      "params": {
+        "pc_id": "hot_desk_pc",
+        "username": "k.doyle",
+        "password": "Quarry-Beacon-Saffron-59",
+        "foothold": "wifi_lw_guest"
+      }
+    },
+    {
+      "id": "desktop_wifi_lw_guest_hot_desk_pc",
+      "method": "GET",
+      "path": "container/hot_desk_pc",
+      "params": {
+        "foothold": "wifi_lw_guest"
+      }
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "comms": {
+              "type": "room_lw_comms",
+              "connections": {
+                "south": "reception"
+              },
+              "door_sign": "Comms Cupboard",
+              "hasPresentNpc": false,
+              "locked": false
+            },
+            "reception": {
+              "type": "room_reception",
+              "connections": {
+                "north": "comms"
+              },
+              "door_sign": "Reception",
+              "lighting": {
+                "emitters": {
+                  "lw_guest_ap": {
+                    "above": true,
+                    "color": "#2a8cff",
+                    "effect": "blink",
+                    "radius": 6,
+                    "offsetX": 0,
+                    "offsetY": -1,
+                    "intensity": 0.6
+                  },
+                  "lw_staff_ap": {
+                    "above": true,
+                    "color": "#2a8cff",
+                    "effect": "blink",
+                    "radius": 6,
+                    "offsetX": 0,
+                    "offsetY": -1,
+                    "intensity": 0.6
+                  },
+                  "planted_rogue_ap": {
+                    "above": true,
+                    "color": "#3fa8ff",
+                    "effect": "blink",
+                    "radius": 5,
+                    "offsetX": -4,
+                    "offsetY": 3,
+                    "intensity": 0.7
+                  }
+                }
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "endGoal": "Test only: run the device beats.",
+          "lighting": {
+            "enabled": true,
+            "defaultMode": "on"
+          },
+          "startRoom": "reception",
+          "objectives": [
+            {
+              "aimId": "wireless",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "manual",
+                  "title": "Harvest something with the rogue AP: the Wi-Fi key page or the staff sign-in page",
+                  "status": "active",
+                  "taskId": "wireless_harvest"
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: harvest the staff Wi-Fi key with the rogue AP's key page",
+                  "status": "active",
+                  "taskId": "opt_rogue_ap",
+                  "optional": true
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "Optional: join the staff Wi-Fi with the harvested key",
+                  "status": "active",
+                  "taskId": "opt_wifi_join",
+                  "optional": true,
+                  "targetObject": "lw_staff_ap"
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: harvest a staff sign-in with the rogue AP's sign-in page",
+                  "status": "active",
+                  "taskId": "opt_rogue_ap_account",
+                  "optional": true
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: sign in at the hot desk with the account the portal harvested",
+                  "status": "active",
+                  "taskId": "opt_twin_signin",
+                  "optional": true
+                }
+              ],
+              "title": "Wireless",
+              "status": "active",
+              "description": "Plant the pocket rogue AP in reception and see what a copy of the staff Wi-Fi harvests: the shared Wi-Fi key, or one person's staff sign-in. Either harvest completes this aim."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_devices",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 6,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Access model devices\n\nA test floor for the physical pentest devices (PHYSICAL_PENTEST_DEVICES_PLAN.md). The rogue AP half is in reception: hide the pocket rogue AP in a reception plant, clone a network from its console and wait for Kieran's laptop. The drop box half sits behind the patch panel.",
+          "globalVariables": {
+            "ap_planted": false,
+            "kp_signed_in": false,
+            "ap_twin_staff": false,
+            "ap_twin_wrong": false,
+            "kp_wifi_joined": false,
+            "kp_twin_captured": false,
+            "ap_portal_account": false,
+            "kp_twin_signed_in": false,
+            "guest_port_planted": false,
+            "voice_port_planted": false,
+            "lw_guest_ap_planted": false,
+            "lw_staff_ap_planted": false,
+            "network_port_planted": false,
+            "kp_twin_account_captured": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "kieran_doyle"
+          ],
+          "savedCurrentRoom": "reception",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "hideables": {
+            "kit_rogue_ap": {
+              "rooms": [
+                "reception"
+              ],
+              "spots": "plants",
+              "exclude": [
+                "reception_plant-large11-top-ani3_76"
+              ],
+              "device": "planted_rogue_ap",
+              "overlay": {
+                "sprite": "rogue_ap_tucked"
+              },
+              "spotAt": {},
+              "confirm": "Hide the pocket rogue AP in this plant?"
+            }
+          },
+          "hiddenDevices": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_reception",
+        "status": 200,
+        "body": {
+          "room_id": "reception",
+          "room": {
+            "npcs": [
+              {
+                "id": "ruth_phone",
+                "avatar": "assets/characters/ruth_adeyemi_headshot.png",
+                "npcType": "phone",
+                "phoneId": "player_phone",
+                "storyPath": "scenarios/test_access_devices/ink/ruth_phone.json",
+                "spriteTalk": "assets/characters/ruth_adeyemi_talk.png",
+                "currentKnot": "start",
+                "displayName": "Ruth Adeyemi",
+                "eventMappings": [
+                  {
+                    "onceOnly": true,
+                    "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true",
+                    "setGlobal": {
+                      "kp_twin_captured": true
+                    },
+                    "addCapture": {
+                      "host": "Ledgerwell-Staff, rogue access point",
+                      "kind": "credential",
+                      "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).",
+                      "proof": {
+                        "planted": "kit_rogue_ap"
+                      },
+                      "address": "Ledgerwell-Staff",
+                      "targetId": "staff_wifi_key",
+                      "roleLabel": "Ledgerwell Ltd, reception"
+                    },
+                    "completeTask": "wireless_harvest",
+                    "eventPattern": "npc_used:kieran_laptop"
+                  },
+                  {
+                    "bark": "That is the staff Wi-Fi key. Read it on your tablet, then try it on the staff access point.",
+                    "onceOnly": true,
+                    "condition": "value === true",
+                    "completeTask": "opt_rogue_ap",
+                    "eventPattern": "global_variable_changed:kp_twin_captured"
+                  },
+                  {
+                    "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk.",
+                    "onceOnly": true,
+                    "condition": "value === true",
+                    "completeTask": "opt_rogue_ap_account",
+                    "eventPattern": "global_variable_changed:kp_twin_account_captured"
+                  },
+                  {
+                    "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute. If you reloaded, the capture lands once Kieran is working again.",
+                    "delayMs": 60000,
+                    "onceOnly": true,
+                    "condition": "value === true && globalVars.ap_planted === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured",
+                    "eventPattern": "global_variable_changed:ap_twin_staff"
+                  },
+                  {
+                    "bark": "Your copy now asks for a staff sign-in. Kieran's laptop has to pick it again; give him a minute. If you reloaded, the capture lands once Kieran is working again.",
+                    "delayMs": 60000,
+                    "onceOnly": true,
+                    "condition": "value === true && globalVars.ap_portal_account === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_account_captured",
+                    "eventPattern": "global_variable_changed:ap_portal_account"
+                  },
+                  {
+                    "onceOnly": true,
+                    "condition": "data.apId === 'lw_staff_ap'",
+                    "setGlobal": {
+                      "kp_wifi_joined": true
+                    },
+                    "addCapture": {
+                      "host": "Ledgerwell-Staff access point",
+                      "kind": "foothold",
+                      "note": "Joined the staff Wi-Fi with the harvested key: one shared key, and the staff Wi-Fi is the office LAN.",
+                      "targetId": "wifi_join",
+                      "roleLabel": "Ledgerwell Ltd, reception"
+                    },
+                    "eventPattern": "network_joined"
+                  },
+                  {
+                    "onceOnly": true,
+                    "condition": "data.npcId === 'kieran' && data.via === 'password'",
+                    "setGlobal": {
+                      "kp_twin_signed_in": true
+                    },
+                    "addCapture": {
+                      "host": "Hot desk PC",
+                      "kind": "foothold",
+                      "note": "A password typed into a fake Wi-Fi page opened a staff desk. The control is a second factor on every sign-in.",
+                      "targetId": "twin_signin",
+                      "roleLabel": "Ledgerwell Ltd, reception"
+                    },
+                    "completeTask": "opt_twin_signin",
+                    "eventPattern": "pc_signed_in:hot_desk_pc"
+                  }
+                ],
+                "spriteVisemes": "assets/characters/ruth_adeyemi_visemes.png"
+              },
+              {
+                "id": "kieran",
+                "needs": {
+                  "work": {
+                    "initial": 40,
+                    "urgentAt": 50,
+                    "decayPerMin": 90
+                  }
+                },
+                "voice": {
+                  "name": "Achird",
+                  "style": "Office junior on the front desk of a small British firm, early twenties, Irish, from Dublin. Speak with a consistent Dublin accent throughout. Do not shift to any other accent. Light, quick, cheerful; always slightly in a hurry, never rude.",
+                  "language": "en-GB"
+                },
+                "npcType": "person",
+                "behavior": {
+                  "facePlayer": true,
+                  "facePlayerDistance": 96
+                },
+                "position": {
+                  "x": 3.5,
+                  "y": 4.3
+                },
+                "needsHome": "kieran_laptop",
+                "storyPath": "scenarios/test_access_devices/ink/kieran.json",
+                "spriteTalk": "assets/characters/kieran_doyle_talk.png",
+                "currentKnot": "start",
+                "displayName": "Kieran Doyle",
+                "spriteSheet": "kieran_doyle",
+                "captureProof": [
+                  {
+                    "planted": "kit_rogue_ap"
+                  }
+                ],
+                "eventMappings": [
+                  {
+                    "bark": "My Wi-Fi dropped, so I picked the network again. It wanted the key again, so I typed it in.",
+                    "onceOnly": true,
+                    "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true",
+                    "eventPattern": "npc_used:kieran_laptop"
+                  },
+                  {
+                    "bark": "The Wi-Fi dropped again, and this time it wanted my Ledgerwell sign-in, so I typed that in.",
+                    "onceOnly": true,
+                    "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account === true",
+                    "setGlobal": {
+                      "kp_twin_account_captured": true
+                    },
+                    "addCapture": {
+                      "host": "Ledgerwell-Staff, rogue access point",
+                      "kind": "credential",
+                      "note": "Typed his staff sign-in into the rogue AP's sign-in page (proof: planted).",
+                      "address": "k.doyle",
+                      "targetId": "kieran",
+                      "roleLabel": "Ledgerwell Ltd, reception"
+                    },
+                    "completeTask": "wireless_harvest",
+                    "eventPattern": "npc_used:kieran_laptop"
+                  }
+                ],
+                "needsDeferMin": 0.5,
+                "spriteVisemes": "assets/characters/kieran_doyle_visemes.png"
+              }
+            ],
+            "type": "room_reception",
+            "objects": [
+              {
+                "id": "wall_strip_plant",
+                "name": "Plant by the back wall",
+                "type": "plant",
+                "sprite": "plant-large11",
+                "position": {
+                  "x": 3.6,
+                  "y": 1.0
+                },
+                "takeable": false,
+                "observations": "A tall plant against the back wall."
+              },
+              {
+                "id": "planted_rogue_ap",
+                "name": "Planted rogue AP",
+                "type": "pc",
+                "active": true,
+                "apScan": [
+                  {
+                    "ssid": "Ledgerwell-Staff",
+                    "signal": 4,
+                    "clients": 3,
+                    "inScope": true,
+                    "cloneLog": {
+                      "wifi_key": "Copy of Ledgerwell-Staff up (open), showing the Wi-Fi key page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy.",
+                      "staff_signin": "Copy of Ledgerwell-Staff up (open), showing the staff sign-in page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy."
+                    },
+                    "security": "WPA2",
+                    "cloneGlobals": {
+                      "ap_twin_staff": true,
+                      "ap_twin_wrong": false
+                    },
+                    "knownClients": [
+                      {
+                        "label": "Kieran's laptop",
+                        "npcId": "kieran"
+                      }
+                    ]
+                  },
+                  {
+                    "ssid": "Ledgerwell-Guest",
+                    "signal": 3,
+                    "clients": 1,
+                    "inScope": true,
+                    "cloneLog": "Copy of Ledgerwell-Guest up (open). It harvests nothing worth having: the guest key is printed on a card in reception, and staff laptops hold the staff network, not this one.",
+                    "security": "WPA2",
+                    "cloneGlobals": {
+                      "ap_twin_staff": false,
+                      "ap_twin_wrong": true
+                    }
+                  },
+                  {
+                    "ssid": "BT-Hub-4F2A",
+                    "signal": 2,
+                    "clients": 2,
+                    "inScope": false,
+                    "refusal": "Out of scope. BT-Hub-4F2A is not the client.",
+                    "security": "WPA2"
+                  },
+                  {
+                    "ssid": "Corrigan-Dental",
+                    "signal": 1,
+                    "clients": 1,
+                    "inScope": false,
+                    "refusal": "Out of scope. Corrigan Dental is not the client.",
+                    "security": "WPA2"
+                  }
+                ],
+                "sprite": "rogue_ap_planted",
+                "apPortal": {
+                  "templates": [
+                    {
+                      "id": "wifi_key",
+                      "page": {
+                        "brands": [
+                          {
+                            "id": "ledgerwell",
+                            "look": "generic",
+                            "name": "Ledgerwell",
+                            "domains": [
+                              {
+                                "id": "d_wifi",
+                                "tier": 0,
+                                "trick": "unrelated",
+                                "domain": "wifi-login.example"
+                              }
+                            ],
+                            "realDomain": "ledgerwell.example"
+                          }
+                        ],
+                        "fields": [
+                          "password"
+                        ],
+                        "choices": {
+                          "logo": true,
+                          "brand": "ledgerwell",
+                          "fields": [
+                            "password"
+                          ],
+                          "padlock": false,
+                          "purpose": "wifi",
+                          "wording": "w_key",
+                          "domainId": "d_wifi"
+                        },
+                        "purposes": [
+                          {
+                            "id": "wifi",
+                            "label": "Reconnect",
+                            "button": "Reconnect"
+                          }
+                        ],
+                        "wordings": [
+                          {
+                            "id": "w_key",
+                            "text": "Ledgerwell-Staff: the router has been updated. Enter the Wi-Fi key to reconnect.",
+                            "match": true
+                          }
+                        ],
+                        "fieldLabels": {
+                          "password": "Wi-Fi key"
+                        }
+                      },
+                      "label": "Key page",
+                      "setGlobals": {
+                        "ap_portal_account": false
+                      }
+                    },
+                    {
+                      "id": "staff_signin",
+                      "page": {
+                        "brands": [
+                          {
+                            "id": "ledgerwell",
+                            "look": "generic",
+                            "name": "Ledgerwell",
+                            "domains": [
+                              {
+                                "id": "d_wifi",
+                                "tier": 0,
+                                "trick": "unrelated",
+                                "domain": "wifi-login.example"
+                              }
+                            ],
+                            "realDomain": "ledgerwell.example"
+                          }
+                        ],
+                        "fields": [
+                          "email",
+                          "password"
+                        ],
+                        "choices": {
+                          "logo": true,
+                          "brand": "ledgerwell",
+                          "fields": [
+                            "email",
+                            "password"
+                          ],
+                          "padlock": false,
+                          "purpose": "wifi",
+                          "wording": "w_signin",
+                          "domainId": "d_wifi"
+                        },
+                        "purposes": [
+                          {
+                            "id": "wifi",
+                            "label": "Sign in",
+                            "button": "Sign in"
+                          }
+                        ],
+                        "wordings": [
+                          {
+                            "id": "w_signin",
+                            "text": "Ledgerwell-Staff: the network now uses staff accounts. Sign in with your Ledgerwell username and password.",
+                            "match": true
+                          }
+                        ],
+                        "fieldLabels": {
+                          "email": "Ledgerwell username"
+                        }
+                      },
+                      "label": "Sign-in page",
+                      "setGlobals": {
+                        "ap_portal_account": true
+                      }
+                    }
+                  ]
+                },
+                "takeable": false,
+                "wifiTwin": true,
+                "hiddenWith": "kit_rogue_ap",
+                "apCaptureLog": [
+                  {
+                    "text": "Kieran's laptop joined the copy; Wi-Fi key page submitted.",
+                    "npcId": "kieran",
+                    "global": "kp_twin_captured"
+                  },
+                  {
+                    "text": "Kieran's laptop joined the copy; staff sign-in page submitted.",
+                    "npcId": "kieran",
+                    "global": "kp_twin_account_captured"
+                  }
+                ],
+                "interactable": true,
+                "observations": "Your pocket rogue AP, tucked into the plant. Click the plant to open its console."
+              },
+              {
+                "id": "lw_staff_ap",
+                "name": "Ledgerwell-Staff access point",
+                "type": "pc",
+                "sprite": "lw_staff_ap",
+                "wifiAp": true,
+                "position": {
+                  "x": 5,
+                  "y": 2.2
+                },
+                "takeable": false,
+                "observations": "A wall access point above the waiting area. Its label reads Ledgerwell-Staff. It asks for a key."
+              },
+              {
+                "id": "lw_guest_ap",
+                "name": "Ledgerwell-Guest access point",
+                "type": "pc",
+                "sprite": "lw_guest_ap",
+                "wifiAp": true,
+                "position": {
+                  "x": 2,
+                  "y": 2.2
+                },
+                "takeable": false,
+                "observations": "A second access point on the wall. Its label reads Ledgerwell-Guest."
+              },
+              {
+                "id": "lw_guest_card",
+                "name": "Reception Wi-Fi card",
+                "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Ledgerwell-Guest\nKey: Visitor-Pebble-2026",
+                "type": "notes1",
+                "sprite": "lw_guest_card",
+                "position": {
+                  "x": 0.4375,
+                  "y": 3.25
+                },
+                "readable": true,
+                "takeable": false,
+                "addToNotes": false,
+                "readDisplay": "gameDisplay",
+                "observations": "A printed flyer pinned to the wall with the guest Wi-Fi details."
+              },
+              {
+                "id": "hot_desk_pc",
+                "host": "LW-HOT-01",
+                "name": "Hot desk PC",
+                "type": "pc",
+                "access": {
+                  "people": [
+                    "kieran"
+                  ]
+                },
+                "active": true,
+                "locked": true,
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 7.5,
+                  "y": 5
+                },
+                "takeable": false,
+                "interactable": true,
+                "observations": "A spare desk with a PC on the office domain. Only Kieran's account signs in here in this test.",
+                "hasContents": true,
+                "loginAccounts": [
+                  {
+                    "username": "k.doyle",
+                    "displayName": "Kieran Doyle",
+                    "portrait": "assets/characters/kieran_doyle_talk.png",
+                    "avatar": null
+                  }
+                ]
+              },
+              {
+                "id": "kieran_laptop",
+                "name": "Kieran's laptop",
+                "type": "pc",
+                "owner": [
+                  "kieran"
+                ],
+                "sprite": "laptop1",
+                "private": true,
+                "position": {
+                  "x": 3.6,
+                  "y": 5.2,
+                  "elevation": 30
+                },
+                "takeable": false,
+                "affordance": {
+                  "useFrom": {
+                    "dx": 0,
+                    "dy": -1
+                  },
+                  "restores": 60,
+                  "satisfies": "work",
+                  "useSeconds": 3
+                },
+                "observations": "Kieran's laptop on the front desk."
+              }
+            ],
+            "lighting": {
+              "emitters": {
+                "lw_guest_ap": {
+                  "above": true,
+                  "color": "#2a8cff",
+                  "effect": "blink",
+                  "radius": 6,
+                  "offsetX": 0,
+                  "offsetY": -1,
+                  "intensity": 0.6
+                },
+                "lw_staff_ap": {
+                  "above": true,
+                  "color": "#2a8cff",
+                  "effect": "blink",
+                  "radius": 6,
+                  "offsetX": 0,
+                  "offsetY": -1,
+                  "intensity": 0.6
+                },
+                "planted_rogue_ap": {
+                  "above": true,
+                  "color": "#3fa8ff",
+                  "effect": "blink",
+                  "radius": 5,
+                  "offsetX": -4,
+                  "offsetY": 3,
+                  "intensity": 0.7
+                }
+              }
+            },
+            "door_sign": "Reception",
+            "connections": {
+              "north": "comms"
+            }
+          }
+        }
+      },
+      {
+        "id": "room_comms",
+        "status": 200,
+        "body": {
+          "room_id": "comms",
+          "room": {
+            "npcs": [],
+            "type": "room_lw_comms",
+            "objects": [
+              {
+                "id": "p3_patch_panel",
+                "name": "Patch panel and comms cabinet",
+                "type": "notes",
+                "active": true,
+                "sprite": "comms_cabinet1",
+                "position": {
+                  "x": 2,
+                  "y": 1
+                },
+                "readable": false,
+                "takeable": false,
+                "panelPorts": [
+                  {
+                    "desk": "Desk 1, data",
+                    "jack": "network_port",
+                    "port": 1,
+                    "label": "D01"
+                  },
+                  {
+                    "desk": "Reception phone",
+                    "jack": "voice_port",
+                    "port": 2,
+                    "label": "V02"
+                  },
+                  {
+                    "desk": "Guest meeting room",
+                    "jack": "guest_port",
+                    "port": 3,
+                    "label": "G03"
+                  },
+                  {
+                    "desk": "Managed uplink",
+                    "jack": "secured_port",
+                    "port": 4,
+                    "label": "M04"
+                  },
+                  {
+                    "desk": "Spare desk",
+                    "port": 5,
+                    "label": "D05"
+                  }
+                ],
+                "interactable": true,
+                "observations": "A wall patch panel, the ports labelled by desk."
+              },
+              {
+                "id": "network_port",
+                "name": "Live wall network port",
+                "type": "pc",
+                "active": true,
+                "sprite": "network_rack1",
+                "position": {
+                  "x": 1,
+                  "y": 3
+                },
+                "takeable": false,
+                "jackConfirm": "Plug the network drop box into this live port?",
+                "networkJack": true,
+                "interactable": true,
+                "observations": "A live data port on the office network.",
+                "plantedSprite": "pi_cluster1",
+                "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+                "jackPlanted": false
+              },
+              {
+                "id": "secured_port",
+                "name": "Managed wall network port",
+                "type": "pc",
+                "active": true,
+                "sprite": "hce_comms_cabinet1",
+                "position": {
+                  "x": 3,
+                  "y": 3
+                },
+                "takeable": false,
+                "jackConfirm": "Try the network drop box in this managed switch port?",
+                "networkJack": true,
+                "interactable": true,
+                "observations": "A wall port running to a managed switch with port security on.",
+                "portSecurity": true,
+                "requiresItemHint": "You would need the network drop box from your kit to try this port.",
+                "portSecurityMessage": "The switch logs the drop box's address and shuts the port, so an unknown device gets no network.",
+                "jackPlanted": false
+              },
+              {
+                "id": "voice_port",
+                "name": "Voice VLAN port",
+                "type": "pc",
+                "active": true,
+                "panelOf": "p3_patch_panel",
+                "takeable": false,
+                "jackConfirm": "Plug the network drop box into the patch panel's voice port?",
+                "networkJack": true,
+                "interactable": true,
+                "observations": "A patch panel port patched through to the phones.",
+                "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+                "jackPlanted": false
+              },
+              {
+                "id": "guest_port",
+                "name": "Guest VLAN port",
+                "type": "pc",
+                "active": true,
+                "panelOf": "p3_patch_panel",
+                "takeable": false,
+                "jackConfirm": "Plug the network drop box into the patch panel's guest port?",
+                "networkJack": true,
+                "interactable": true,
+                "observations": "A patch panel port patched through to the guest network.",
+                "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+                "jackPlanted": false
+              },
+              {
+                "id": "lan_signin_pc",
+                "host": "LW-PC-BACK",
+                "name": "Back office PC",
+                "type": "pc",
+                "locked": true,
+                "sprite": "pc_desktop",
+                "lockType": "login",
+                "position": {
+                  "x": 5,
+                  "y": 3
+                },
+                "takeable": false,
+                "loginPicker": false,
+                "observations": "A sign-in host on the office network.",
+                "hasContents": true,
+                "loginAccounts": []
+              }
+            ],
+            "door_sign": "Comms Cupboard",
+            "connections": {
+              "south": "reception"
+            }
+          }
+        }
+      },
+      {
+        "id": "network_plain",
+        "status": 200,
+        "body": {
+          "footholds": []
+        }
+      },
+      {
+        "id": "keyring_plain",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "plant_network_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "foothold": {
+            "id": "jack_network_port",
+            "via": "jack",
+            "name": "Drop box: comms cupboard",
+            "itemId": "netlink_jack_network_port",
+            "sourceId": "network_port",
+            "network": {
+              "id": "office_lan",
+              "name": "Ledgerwell office LAN"
+            }
+          },
+          "first": true,
+          "inventory": [
+            {
+              "id": "netlink_jack_network_port",
+              "type": "network_link",
+              "name": "Drop box: comms cupboard",
+              "sprite": "pi_cluster1",
+              "takeable": false,
+              "footholdId": "jack_network_port",
+              "sourceId": "network_port",
+              "observations": "Your Network drop box on Live wall network port. Open it to see what it reaches."
+            }
+          ]
+        }
+      },
+      {
+        "id": "network_jack_network_port",
+        "status": 200,
+        "body": {
+          "footholds": [
+            {
+              "id": "jack_network_port",
+              "via": "jack",
+              "name": "Drop box: comms cupboard",
+              "itemId": "netlink_jack_network_port",
+              "sourceId": "network_port",
+              "network": {
+                "id": "office_lan",
+                "name": "Ledgerwell office LAN"
+              },
+              "source": {
+                "name": "Live wall network port",
+                "room": "Comms Cupboard"
+              },
+              "hosts": [
+                {
+                  "id": "hot_desk_pc",
+                  "kind": "pc",
+                  "name": "Hot desk PC",
+                  "host": "LW-HOT-01",
+                  "sprite": "pc_desktop",
+                  "headless": false,
+                  "remoteSignIn": true
+                },
+                {
+                  "id": "lan_signin_pc",
+                  "kind": "pc",
+                  "name": "Back office PC",
+                  "host": "LW-PC-BACK",
+                  "sprite": "pc_desktop",
+                  "headless": false,
+                  "remoteSignIn": true
+                },
+                {
+                  "id": "lw_fs01_records",
+                  "kind": "file_share",
+                  "name": "Client-Records",
+                  "host": "LW-FS01",
+                  "open": true,
+                  "listed": true,
+                  "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+                }
+              ],
+              "networks": [
+                {
+                  "id": "office_lan",
+                  "name": "Ledgerwell office LAN",
+                  "via": null,
+                  "hosts": [
+                    {
+                      "id": "hot_desk_pc",
+                      "kind": "pc",
+                      "name": "Hot desk PC",
+                      "host": "LW-HOT-01",
+                      "sprite": "pc_desktop",
+                      "headless": false,
+                      "remoteSignIn": true
+                    },
+                    {
+                      "id": "lan_signin_pc",
+                      "kind": "pc",
+                      "name": "Back office PC",
+                      "host": "LW-PC-BACK",
+                      "sprite": "pc_desktop",
+                      "headless": false,
+                      "remoteSignIn": true
+                    },
+                    {
+                      "id": "lw_fs01_records",
+                      "kind": "file_share",
+                      "name": "Client-Records",
+                      "host": "LW-FS01",
+                      "open": true,
+                      "listed": true,
+                      "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+                    }
+                  ],
+                  "route": "up"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_jack_network_port",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_jack_network_port_hot_desk_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "kieran",
+          "username": "k.doyle",
+          "displayName": "Kieran Doyle",
+          "via": "password",
+          "portrait": "assets/characters/kieran_doyle_talk.png",
+          "remote": true,
+          "footholdId": "jack_network_port",
+          "host": "LW-HOT-01"
+        }
+      },
+      {
+        "id": "desktop_jack_network_port_hot_desk_pc",
+        "status": 200,
+        "body": {
+          "container_id": "hot_desk_pc",
+          "contents": [
+            {
+              "id": "kieran_requests",
+              "name": "Facilities requests",
+              "text": "Facilities requests (test)\n\nDoor faults, the post-room printer and the contractor visits booked this week. The booking list tells a stranger which names and uniforms reception expects. Booking a visit is out of scope.",
+              "type": "text_file",
+              "onRead": {
+                "setVariable": {
+                  "kp_signed_in": true
+                }
+              },
+              "readable": true,
+              "takeable": false
+            }
+          ],
+          "session": {
+            "npcId": "kieran",
+            "username": "k.doyle",
+            "displayName": "Kieran Doyle",
+            "via": "password",
+            "portrait": "assets/characters/kieran_doyle_talk.png",
+            "remote": true,
+            "footholdId": "jack_network_port",
+            "host": "LW-HOT-01"
+          }
+        }
+      },
+      {
+        "id": "unplug_network_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "endedPcIds": [
+            "hot_desk_pc"
+          ],
+          "inventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            }
+          ]
+        }
+      },
+      {
+        "id": "plant_secured_port",
+        "status": 422,
+        "body": {
+          "success": false,
+          "reason": "port_security",
+          "error": "The switch logs the drop box's address and shuts the port, so an unknown device gets no network."
+        }
+      },
+      {
+        "id": "network_jack_secured_port",
+        "status": 404,
+        "body": {
+          "error": "Foothold not found: jack_secured_port"
+        }
+      },
+      {
+        "id": "keyring_jack_secured_port",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_jack_secured_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "success": false,
+          "message": "PC not reachable"
+        }
+      },
+      {
+        "id": "desktop_jack_secured_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: hot_desk_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "unplug_secured_port",
+        "status": 422,
+        "body": {
+          "success": false,
+          "reason": "not_planted",
+          "error": "Nothing is plugged in here"
+        }
+      },
+      {
+        "id": "plant_voice_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "foothold": {
+            "id": "jack_voice_port",
+            "via": "jack",
+            "name": "Drop box: voice VLAN port",
+            "itemId": "netlink_jack_voice_port",
+            "sourceId": "voice_port",
+            "network": {
+              "id": "lw_voice",
+              "name": "Ledgerwell voice VLAN"
+            }
+          },
+          "first": true,
+          "inventory": [
+            {
+              "id": "netlink_jack_voice_port",
+              "type": "network_link",
+              "name": "Drop box: voice VLAN port",
+              "sprite": "pi_cluster1",
+              "takeable": false,
+              "footholdId": "jack_voice_port",
+              "sourceId": "voice_port",
+              "observations": "Your Network drop box on Voice VLAN port. Open it to see what it reaches."
+            }
+          ]
+        }
+      },
+      {
+        "id": "network_jack_voice_port",
+        "status": 200,
+        "body": {
+          "footholds": [
+            {
+              "id": "jack_voice_port",
+              "via": "jack",
+              "name": "Drop box: voice VLAN port",
+              "itemId": "netlink_jack_voice_port",
+              "sourceId": "voice_port",
+              "network": {
+                "id": "lw_voice",
+                "name": "Ledgerwell voice VLAN"
+              },
+              "source": {
+                "name": "Voice VLAN port",
+                "room": "Comms Cupboard"
+              },
+              "hosts": [
+                {
+                  "id": "lw_callmgr",
+                  "kind": "phone",
+                  "name": "Call manager",
+                  "host": "LW-CM01",
+                  "open": true,
+                  "observations": "The call manager for the office phones. It answers on the voice network with the extension list: 100 reception, 101 open plan. Calls are set up here and nothing else."
+                },
+                {
+                  "id": "lw_ph_open1",
+                  "kind": "phone",
+                  "name": "Open plan desk phone",
+                  "host": "LW-PH-OPEN1",
+                  "open": true,
+                  "observations": "A desk phone registered as extension 101. Its call signalling is all that answers."
+                },
+                {
+                  "id": "lw_ph_recep",
+                  "kind": "phone",
+                  "name": "Reception desk phone",
+                  "host": "LW-PH-RECEP",
+                  "open": true,
+                  "observations": "A desk phone registered as extension 100. Its call signalling is all that answers."
+                }
+              ],
+              "networks": [
+                {
+                  "id": "lw_voice",
+                  "name": "Ledgerwell voice VLAN",
+                  "via": null,
+                  "hosts": [
+                    {
+                      "id": "lw_callmgr",
+                      "kind": "phone",
+                      "name": "Call manager",
+                      "host": "LW-CM01",
+                      "open": true,
+                      "observations": "The call manager for the office phones. It answers on the voice network with the extension list: 100 reception, 101 open plan. Calls are set up here and nothing else."
+                    },
+                    {
+                      "id": "lw_ph_open1",
+                      "kind": "phone",
+                      "name": "Open plan desk phone",
+                      "host": "LW-PH-OPEN1",
+                      "open": true,
+                      "observations": "A desk phone registered as extension 101. Its call signalling is all that answers."
+                    },
+                    {
+                      "id": "lw_ph_recep",
+                      "kind": "phone",
+                      "name": "Reception desk phone",
+                      "host": "LW-PH-RECEP",
+                      "open": true,
+                      "observations": "A desk phone registered as extension 100. Its call signalling is all that answers."
+                    }
+                  ],
+                  "route": "up"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_jack_voice_port",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_jack_voice_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "success": false,
+          "message": "PC not reachable"
+        }
+      },
+      {
+        "id": "desktop_jack_voice_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: hot_desk_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "unplug_voice_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "endedPcIds": [],
+          "inventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            }
+          ]
+        }
+      },
+      {
+        "id": "plant_guest_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "foothold": {
+            "id": "jack_guest_port",
+            "via": "jack",
+            "name": "Drop box: guest VLAN port",
+            "itemId": "netlink_jack_guest_port",
+            "sourceId": "guest_port",
+            "network": {
+              "id": "lw_guest",
+              "name": "Ledgerwell guest Wi-Fi"
+            }
+          },
+          "first": true,
+          "inventory": [
+            {
+              "id": "netlink_jack_guest_port",
+              "type": "network_link",
+              "name": "Drop box: guest VLAN port",
+              "sprite": "pi_cluster1",
+              "takeable": false,
+              "footholdId": "jack_guest_port",
+              "sourceId": "guest_port",
+              "observations": "Your Network drop box on Guest VLAN port. Open it to see what it reaches."
+            }
+          ]
+        }
+      },
+      {
+        "id": "network_jack_guest_port",
+        "status": 200,
+        "body": {
+          "footholds": [
+            {
+              "id": "jack_guest_port",
+              "via": "jack",
+              "name": "Drop box: guest VLAN port",
+              "itemId": "netlink_jack_guest_port",
+              "sourceId": "guest_port",
+              "network": {
+                "id": "lw_guest",
+                "name": "Ledgerwell guest Wi-Fi"
+              },
+              "source": {
+                "name": "Guest VLAN port",
+                "room": "Comms Cupboard"
+              },
+              "hosts": [],
+              "networks": [
+                {
+                  "id": "lw_guest",
+                  "name": "Ledgerwell guest Wi-Fi",
+                  "via": null,
+                  "hosts": [],
+                  "route": "up"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_jack_guest_port",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_jack_guest_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "success": false,
+          "message": "PC not reachable"
+        }
+      },
+      {
+        "id": "desktop_jack_guest_port_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "error": "Not signed in: hot_desk_pc",
+          "reason": "no_session"
+        }
+      },
+      {
+        "id": "unplug_guest_port",
+        "status": 200,
+        "body": {
+          "success": true,
+          "endedPcIds": [],
+          "inventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            }
+          ]
+        }
+      },
+      {
+        "id": "join_lw_staff_ap",
+        "status": 200,
+        "body": {
+          "success": true,
+          "foothold": {
+            "id": "wifi_office_lan",
+            "via": "wifi",
+            "name": "Wi-Fi: Ledgerwell office LAN",
+            "itemId": "netlink_wifi_office_lan",
+            "sourceId": "lw_staff_ap",
+            "network": {
+              "id": "office_lan",
+              "name": "Ledgerwell office LAN"
+            }
+          },
+          "first": true,
+          "inventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            },
+            {
+              "id": "netlink_wifi_office_lan",
+              "type": "network_link",
+              "name": "Wi-Fi: Ledgerwell office LAN",
+              "takeable": false,
+              "footholdId": "wifi_office_lan",
+              "sourceId": "lw_staff_ap",
+              "observations": "Your Wi-Fi link to Ledgerwell office LAN. Open it to see what it reaches.",
+              "sprite": "lw_staff_ap"
+            }
+          ]
+        }
+      },
+      {
+        "id": "network_wifi_office_lan",
+        "status": 200,
+        "body": {
+          "footholds": [
+            {
+              "id": "wifi_office_lan",
+              "via": "wifi",
+              "name": "Wi-Fi: Ledgerwell office LAN",
+              "itemId": "netlink_wifi_office_lan",
+              "sourceId": "lw_staff_ap",
+              "network": {
+                "id": "office_lan",
+                "name": "Ledgerwell office LAN"
+              },
+              "source": {
+                "name": "Ledgerwell-Staff access point",
+                "room": "Reception"
+              },
+              "hosts": [
+                {
+                  "id": "hot_desk_pc",
+                  "kind": "pc",
+                  "name": "Hot desk PC",
+                  "host": "LW-HOT-01",
+                  "sprite": "pc_desktop",
+                  "headless": false,
+                  "remoteSignIn": true
+                },
+                {
+                  "id": "lan_signin_pc",
+                  "kind": "pc",
+                  "name": "Back office PC",
+                  "host": "LW-PC-BACK",
+                  "sprite": "pc_desktop",
+                  "headless": false,
+                  "remoteSignIn": true
+                },
+                {
+                  "id": "lw_fs01_records",
+                  "kind": "file_share",
+                  "name": "Client-Records",
+                  "host": "LW-FS01",
+                  "open": true,
+                  "listed": true,
+                  "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+                }
+              ],
+              "networks": [
+                {
+                  "id": "office_lan",
+                  "name": "Ledgerwell office LAN",
+                  "via": null,
+                  "hosts": [
+                    {
+                      "id": "hot_desk_pc",
+                      "kind": "pc",
+                      "name": "Hot desk PC",
+                      "host": "LW-HOT-01",
+                      "sprite": "pc_desktop",
+                      "headless": false,
+                      "remoteSignIn": true
+                    },
+                    {
+                      "id": "lan_signin_pc",
+                      "kind": "pc",
+                      "name": "Back office PC",
+                      "host": "LW-PC-BACK",
+                      "sprite": "pc_desktop",
+                      "headless": false,
+                      "remoteSignIn": true
+                    },
+                    {
+                      "id": "lw_fs01_records",
+                      "kind": "file_share",
+                      "name": "Client-Records",
+                      "host": "LW-FS01",
+                      "open": true,
+                      "listed": true,
+                      "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+                    }
+                  ],
+                  "route": "up"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_wifi_office_lan",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_wifi_office_lan_hot_desk_pc",
+        "status": 200,
+        "body": {
+          "success": true,
+          "npcId": "kieran",
+          "username": "k.doyle",
+          "displayName": "Kieran Doyle",
+          "via": "password",
+          "portrait": "assets/characters/kieran_doyle_talk.png",
+          "remote": true,
+          "footholdId": "wifi_office_lan",
+          "host": "LW-HOT-01"
+        }
+      },
+      {
+        "id": "desktop_wifi_office_lan_hot_desk_pc",
+        "status": 200,
+        "body": {
+          "container_id": "hot_desk_pc",
+          "contents": [
+            {
+              "id": "kieran_requests",
+              "name": "Facilities requests",
+              "text": "Facilities requests (test)\n\nDoor faults, the post-room printer and the contractor visits booked this week. The booking list tells a stranger which names and uniforms reception expects. Booking a visit is out of scope.",
+              "type": "text_file",
+              "onRead": {
+                "setVariable": {
+                  "kp_signed_in": true
+                }
+              },
+              "readable": true,
+              "takeable": false
+            }
+          ],
+          "session": {
+            "npcId": "kieran",
+            "username": "k.doyle",
+            "displayName": "Kieran Doyle",
+            "via": "password",
+            "portrait": "assets/characters/kieran_doyle_talk.png",
+            "remote": true,
+            "footholdId": "wifi_office_lan",
+            "host": "LW-HOT-01"
+          }
+        }
+      },
+      {
+        "id": "join_lw_guest_ap",
+        "status": 200,
+        "body": {
+          "success": true,
+          "foothold": {
+            "id": "wifi_lw_guest",
+            "via": "wifi",
+            "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+            "itemId": "netlink_wifi_lw_guest",
+            "sourceId": "lw_guest_ap",
+            "network": {
+              "id": "lw_guest",
+              "name": "Ledgerwell guest Wi-Fi"
+            }
+          },
+          "first": true,
+          "inventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            },
+            {
+              "id": "netlink_wifi_office_lan",
+              "name": "Wi-Fi: Ledgerwell office LAN",
+              "type": "network_link",
+              "sprite": "lw_staff_ap",
+              "sourceId": "lw_staff_ap",
+              "takeable": false,
+              "footholdId": "wifi_office_lan",
+              "observations": "Your Wi-Fi link to Ledgerwell office LAN. Open it to see what it reaches."
+            },
+            {
+              "id": "netlink_wifi_lw_guest",
+              "type": "network_link",
+              "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+              "takeable": false,
+              "footholdId": "wifi_lw_guest",
+              "sourceId": "lw_guest_ap",
+              "observations": "Your Wi-Fi link to Ledgerwell guest Wi-Fi. Open it to see what it reaches.",
+              "sprite": "lw_guest_ap"
+            }
+          ]
+        }
+      },
+      {
+        "id": "network_wifi_lw_guest",
+        "status": 200,
+        "body": {
+          "footholds": [
+            {
+              "id": "wifi_lw_guest",
+              "via": "wifi",
+              "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+              "itemId": "netlink_wifi_lw_guest",
+              "sourceId": "lw_guest_ap",
+              "network": {
+                "id": "lw_guest",
+                "name": "Ledgerwell guest Wi-Fi"
+              },
+              "source": {
+                "name": "Ledgerwell-Guest access point",
+                "room": "Reception"
+              },
+              "hosts": [],
+              "networks": [
+                {
+                  "id": "lw_guest",
+                  "name": "Ledgerwell guest Wi-Fi",
+                  "via": null,
+                  "hosts": [],
+                  "route": "up"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "keyring_wifi_lw_guest",
+        "status": 200,
+        "body": {
+          "rev": "06f67e",
+          "entries": [],
+          "captures": {}
+        }
+      },
+      {
+        "id": "signin_wifi_lw_guest_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "success": false,
+          "message": "PC not reachable"
+        }
+      },
+      {
+        "id": "desktop_wifi_lw_guest_hot_desk_pc",
+        "status": 403,
+        "body": {
+          "error": "PC not reachable: hot_desk_pc",
+          "reason": "unreachable"
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "comms": {
+              "type": "room_lw_comms",
+              "connections": {
+                "south": "reception"
+              },
+              "door_sign": "Comms Cupboard",
+              "hasPresentNpc": false,
+              "locked": false
+            },
+            "reception": {
+              "type": "room_reception",
+              "connections": {
+                "north": "comms"
+              },
+              "door_sign": "Reception",
+              "lighting": {
+                "emitters": {
+                  "lw_guest_ap": {
+                    "above": true,
+                    "color": "#2a8cff",
+                    "effect": "blink",
+                    "radius": 6,
+                    "offsetX": 0,
+                    "offsetY": -1,
+                    "intensity": 0.6
+                  },
+                  "lw_staff_ap": {
+                    "above": true,
+                    "color": "#2a8cff",
+                    "effect": "blink",
+                    "radius": 6,
+                    "offsetX": 0,
+                    "offsetY": -1,
+                    "intensity": 0.6
+                  },
+                  "planted_rogue_ap": {
+                    "above": true,
+                    "color": "#3fa8ff",
+                    "effect": "blink",
+                    "radius": 5,
+                    "offsetX": -4,
+                    "offsetY": 3,
+                    "intensity": 0.7
+                  }
+                }
+              },
+              "hasPresentNpc": true,
+              "locked": false
+            }
+          },
+          "social": {
+            "captures": {
+              "revealSecret": true
+            }
+          },
+          "endGoal": "Test only: run the device beats.",
+          "lighting": {
+            "enabled": true,
+            "defaultMode": "on"
+          },
+          "startRoom": "reception",
+          "objectives": [
+            {
+              "aimId": "wireless",
+              "order": 0,
+              "tasks": [
+                {
+                  "type": "manual",
+                  "title": "Harvest something with the rogue AP: the Wi-Fi key page or the staff sign-in page",
+                  "status": "active",
+                  "taskId": "wireless_harvest"
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: harvest the staff Wi-Fi key with the rogue AP's key page",
+                  "status": "active",
+                  "taskId": "opt_rogue_ap",
+                  "optional": true
+                },
+                {
+                  "type": "unlock_object",
+                  "title": "Optional: join the staff Wi-Fi with the harvested key",
+                  "status": "active",
+                  "taskId": "opt_wifi_join",
+                  "optional": true,
+                  "targetObject": "lw_staff_ap"
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: harvest a staff sign-in with the rogue AP's sign-in page",
+                  "status": "active",
+                  "taskId": "opt_rogue_ap_account",
+                  "optional": true
+                },
+                {
+                  "type": "manual",
+                  "title": "Optional: sign in at the hot desk with the account the portal harvested",
+                  "status": "active",
+                  "taskId": "opt_twin_signin",
+                  "optional": true
+                }
+              ],
+              "title": "Wireless",
+              "status": "active",
+              "description": "Plant the pocket rogue AP in reception and see what a copy of the staff Wi-Fi harvests: the shared Wi-Fi key, or one person's staff sign-in. Either harvest completes this aim."
+            }
+          ],
+          "npcWindupMs": 0,
+          "npcNeedsSeed": "test_access_devices",
+          "formatVersion": 3,
+          "startPosition": {
+            "x": 6,
+            "y": 7
+          },
+          "scenario_brief": "TEST: Access model devices\n\nA test floor for the physical pentest devices (PHYSICAL_PENTEST_DEVICES_PLAN.md). The rogue AP half is in reception: hide the pocket rogue AP in a reception plant, clone a network from its console and wait for Kieran's laptop. The drop box half sits behind the patch panel.",
+          "globalVariables": {
+            "ap_planted": false,
+            "kp_signed_in": false,
+            "ap_twin_staff": false,
+            "ap_twin_wrong": false,
+            "kp_wifi_joined": false,
+            "kp_twin_captured": false,
+            "ap_portal_account": false,
+            "kp_twin_signed_in": false,
+            "guest_port_planted": false,
+            "voice_port_planted": false,
+            "lw_guest_ap_planted": false,
+            "lw_staff_ap_planted": false,
+            "network_port_planted": false,
+            "kp_twin_account_captured": false
+          },
+          "needsDebugOverlay": true,
+          "characterSprites": [
+            "kieran_doyle"
+          ],
+          "savedCurrentRoom": "reception",
+          "sessions": {
+            "hot_desk_pc": {
+              "npcId": "kieran",
+              "username": "k.doyle",
+              "displayName": "Kieran Doyle",
+              "via": "password",
+              "portrait": "assets/characters/kieran_doyle_talk.png",
+              "remote": true,
+              "footholdId": "wifi_office_lan",
+              "host": "LW-HOT-01"
+            }
+          },
+          "signedInPcs": [
+            "hot_desk_pc"
+          ],
+          "sessionLockingSupported": true,
+          "credentialsDeclared": false,
+          "footholds": [
+            {
+              "id": "wifi_office_lan",
+              "via": "wifi",
+              "name": "Wi-Fi: Ledgerwell office LAN",
+              "itemId": "netlink_wifi_office_lan",
+              "sourceId": "lw_staff_ap",
+              "network": {
+                "id": "office_lan",
+                "name": "Ledgerwell office LAN"
+              },
+              "sprite": "lw_staff_ap",
+              "observations": "Your Wi-Fi link to Ledgerwell office LAN. Open it to see what it reaches."
+            },
+            {
+              "id": "wifi_lw_guest",
+              "via": "wifi",
+              "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+              "itemId": "netlink_wifi_lw_guest",
+              "sourceId": "lw_guest_ap",
+              "network": {
+                "id": "lw_guest",
+                "name": "Ledgerwell guest Wi-Fi"
+              },
+              "sprite": "lw_guest_ap",
+              "observations": "Your Wi-Fi link to Ledgerwell guest Wi-Fi. Open it to see what it reaches."
+            }
+          ],
+          "gainedFootholds": [
+            "network_port",
+            "voice_port",
+            "guest_port",
+            "lw_staff_ap",
+            "lw_guest_ap"
+          ],
+          "hideables": {
+            "kit_rogue_ap": {
+              "rooms": [
+                "reception"
+              ],
+              "spots": "plants",
+              "exclude": [
+                "reception_plant-large11-top-ani3_76"
+              ],
+              "device": "planted_rogue_ap",
+              "overlay": {
+                "sprite": "rogue_ap_tucked"
+              },
+              "spotAt": {},
+              "confirm": "Hide the pocket rogue AP in this plant?"
+            }
+          },
+          "hiddenDevices": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "kit_dropbox",
+              "name": "Network drop box",
+              "type": "pc",
+              "sprite": "pi_cluster1",
+              "takeable": true,
+              "rogueDevice": true,
+              "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+            },
+            {
+              "id": "netlink_wifi_office_lan",
+              "name": "Wi-Fi: Ledgerwell office LAN",
+              "type": "network_link",
+              "sprite": "lw_staff_ap",
+              "sourceId": "lw_staff_ap",
+              "takeable": false,
+              "footholdId": "wifi_office_lan",
+              "observations": "Your Wi-Fi link to Ledgerwell office LAN. Open it to see what it reaches."
+            },
+            {
+              "id": "netlink_wifi_lw_guest",
+              "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+              "type": "network_link",
+              "sprite": "lw_guest_ap",
+              "sourceId": "lw_guest_ap",
+              "takeable": false,
+              "footholdId": "wifi_lw_guest",
+              "observations": "Your Wi-Fi link to Ledgerwell guest Wi-Fi. Open it to see what it reaches."
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "sessions": {
+        "hot_desk_pc": {
+          "id": "kieran",
+          "via": "password",
+          "foothold": "wifi_office_lan"
+        }
+      },
+      "footholds": {
+        "wifi_lw_guest": {
+          "seq": 2,
+          "via": "wifi",
+          "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+          "source": "lw_guest_ap",
+          "sprite": "lw_guest_ap",
+          "network": "lw_guest"
+        },
+        "wifi_office_lan": {
+          "seq": 1,
+          "via": "wifi",
+          "name": "Wi-Fi: Ledgerwell office LAN",
+          "source": "lw_staff_ap",
+          "sprite": "lw_staff_ap",
+          "network": "office_lan"
+        }
+      },
+      "inventory": [
+        {
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "type": "pc",
+          "sprite": "pi_cluster1",
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+        },
+        {
+          "id": "netlink_wifi_office_lan",
+          "name": "Wi-Fi: Ledgerwell office LAN",
+          "type": "network_link",
+          "sprite": "lw_staff_ap",
+          "sourceId": "lw_staff_ap",
+          "takeable": false,
+          "footholdId": "wifi_office_lan",
+          "observations": "Your Wi-Fi link to Ledgerwell office LAN. Open it to see what it reaches."
+        },
+        {
+          "id": "netlink_wifi_lw_guest",
+          "name": "Wi-Fi: Ledgerwell guest Wi-Fi",
+          "type": "network_link",
+          "sprite": "lw_guest_ap",
+          "sourceId": "lw_guest_ap",
+          "takeable": false,
+          "footholdId": "wifi_lw_guest",
+          "observations": "Your Wi-Fi link to Ledgerwell guest Wi-Fi. Open it to see what it reaches."
+        }
+      ],
+      "pinDusted": {},
+      "copiedItems": [],
+      "currentRoom": "reception",
+      "room_states": {},
+      "signedInPcs": [
+        "hot_desk_pc"
+      ],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "unlockedRooms": [
+        "reception",
+        "comms"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "ruth_phone",
+        "kieran"
+      ],
+      "gainedFootholds": [
+        "network_port",
+        "voice_port",
+        "guest_port",
+        "lw_staff_ap",
+        "lw_guest_ap"
+      ],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {},
+      "submitted_flags": [],
+      "unlockedObjects": [],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}

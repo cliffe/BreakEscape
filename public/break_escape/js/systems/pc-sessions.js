@@ -82,9 +82,9 @@
  * never on an owner's return. One screen holds one session: when an NPC sits down at a PC
  * (npc_sat_at:<pcId>), and again when it leaves a borrowed session there
  * (npc_borrowed_session:<pcId>, for a remote sign-in started while it sat), displaced(pcId, name)
- * ends whatever session the player holds there (password, claim, guest claim or remote): POST
- * /logout, pc_signed_out with reason displaced, and an open desktop closes with
- * "<name> has signed in at this PC".
+ * ends a keyboard session the player holds there (password, claim or guest claim; a remote copy
+ * stays, core plan 5.4): POST /logout, pc_signed_out with reason displaced, and an open desktop
+ * closes with "<name> has signed in at this PC".
  *
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
@@ -194,6 +194,9 @@ function publicSession(pcId, s) {
     if (s.relay === true) Object.assign(out, { relay: true, host: s.host ?? null });
     // A guest claim says so, so its desktop can say how it ends (UX access R1 finding 5)
     if (s.guest === true) out.guest = true;
+    // The level a technique session was granted at (core plan 5.4): only 'admin' is carried
+    // Never out of a locked entry: a lock or an expired session leaves no admin on the client
+    if (s.access === 'admin' && s.locked !== true) out.access = 'admin';
     // A locked session (UI slice 6) stays held but needs the password again; the open flow
     // reads this to show the sign-in screen with the account pre-chosen.
     if (s.locked === true) out.locked = true;
@@ -240,6 +243,11 @@ function pictureFields(s) {
 /** The relay fields of a server session entry (keyring K3c): only a relay one carries them. */
 function relayFields(s) {
     return s && s.relay === true ? { relay: true, host: s.host ?? null } : {};
+}
+
+/** The access level of a server session entry (core plan 5.4): 'admin' only, else nothing. */
+function accessFields(s) {
+    return s && s.access === 'admin' ? { access: 'admin' } : {};
 }
 
 /** The remote fields of a server session entry (4.4): only a remote one carries them. */
@@ -376,6 +384,8 @@ export class PcSessions {
                 ...(s.via === 'credential' ? credentialFields(s) : {}),
                 ...tokenFields(s),
                 ...pictureFields(s),
+                // A locked session carries no level (the mirror drops it at the lock, as here)
+                ...(s.locked === true ? {} : accessFields(s)),
                 restored: true,
                 // A locked session survives a reload like any other session state (UI slice 6)
                 ...(s.locked === true ? { locked: true } : {}),
@@ -436,6 +446,53 @@ export class PcSessions {
     isLocked(pcId) { return this.sessions.get(pcId)?.locked === true; }
 
     /**
+     * Admin level at pcId (privilege plan S5a): the server's `access` on the held entry, and the
+     * entry is not locked. No entry, a locked one or no `access` is false. Never decided here.
+     */
+    sessionAdmin(pcId) {
+        const s = this.sessions.get(pcId);
+        return !!s && s.access === 'admin' && s.locked !== true;
+    }
+
+    /**
+     * Admin at the keyboard (S5a): sessionAdmin, and the entry is none of remote, through a
+     * foothold, a relay or from another desktop (a technique copy carries remote and a foothold).
+     */
+    keyboardAdmin(pcId) {
+        if (!this.sessionAdmin(pcId)) return false;
+        const s = this.sessions.get(pcId);
+        if (s.remote === true || s.relay === true) return false;
+        if (typeof s.footholdId === 'string' && s.footholdId !== '') return false;
+        if (typeof s.fromPcId === 'string' && s.fromPcId !== '') return false;
+        return true;
+    }
+
+    /**
+     * Whether a plant at this object is made as an admin (S5a): for an object that needs a
+     * session, keyboardAdmin of the PC its grant names; else sessionAdmin of the object's own id.
+     * Reads window.pcPolicy.sessionGrantPc (set by pc-policy.js) so this module imports nothing new.
+     */
+    plantAdmin(objectData) {
+        if (!objectData || typeof objectData !== 'object') return false;
+        const pcId = (typeof window !== 'undefined' && window.pcPolicy?.sessionGrantPc?.(objectData)) || null;
+        if (pcId) return this.keyboardAdmin(pcId);
+        return typeof objectData.id === 'string' && this.sessionAdmin(objectData.id);
+    }
+
+    /**
+     * A desktop 403 whose serverReason is 'off' or 'not_responding' (S5a): power or the host's
+     * service is gone, so the entry keeps nothing of its level. The session itself stays.
+     * Returns true when an access was dropped.
+     */
+    noteDesktopRefused(pcId, serverReason) {
+        if (serverReason !== 'off' && serverReason !== 'not_responding') return false;
+        const s = this.sessions.get(pcId);
+        if (!s || !('access' in s)) return false;
+        delete s.access;
+        return true;
+    }
+
+    /**
      * Whether the start panel may offer Lock for pcId (UI slice 6, K-lock): the server
      * supports locking, a session is held here, it has a way back in (sessionLockable: a
      * password sign-in or a foothold or `from` credential session; never a claim, guest or
@@ -480,6 +537,36 @@ export class PcSessions {
     heldAtKeyboard(pcId) {
         const s = this.sessions.get(pcId);
         return !!s && s.relay !== true;
+    }
+
+    /**
+     * The foothold a click on pcId opens its remote view through (core plan 5.4): the copy's
+     * footholdId when the copy is a technique session and networkLinks still holds that
+     * foothold, else null. The one rule the click path and the compromise marks both read.
+     */
+    remoteViewFoothold(pcId) {
+        const s = this.sessions.get(pcId);
+        if (!s || s.via !== 'technique' || s.remote !== true) return null;
+        const id = typeof s.footholdId === 'string' && s.footholdId ? s.footholdId : null;
+        if (!id) return null;
+        const links = typeof window !== 'undefined' ? window.networkLinks : null;
+        return links?.get?.(id) ? id : null;
+    }
+
+    /**
+     * Whether the taskbar of the desktop at pcId offers Switch user (core plan 5.4): false only
+     * for a technique copy whose host row in its foothold's view says remote sign-in is off
+     * (the switch would open a remote sign-in that can only refuse). True otherwise.
+     */
+    canSwitchUser(pcId) {
+        const s = this.sessions.get(pcId);
+        if (!s || s.via !== 'technique' || !s.footholdId) return true;
+        const view = typeof window !== 'undefined' ? window.networkLinks?.lastView?.(s.footholdId) : null;
+        // The host sits in the foothold's own network or in one of the further networks
+        const hosts = [...(Array.isArray(view?.hosts) ? view.hosts : []),
+            ...(Array.isArray(view?.networks) ? view.networks : []).flatMap(n => (Array.isArray(n?.hosts) ? n.hosts : []))];
+        const row = hosts.find(h => h?.id === pcId);
+        return row?.remoteSignIn !== false;
     }
 
     get(pcId) {
@@ -555,11 +642,44 @@ export class PcSessions {
         const session = {
             npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: body.via || 'password',
             ...pictureFields(body),
+            ...accessFields(body),
             ...remoteFields(body)
         };
         this._replace(pcId, session);
         this._dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds);
         return { ok: true, session: publicSession(pcId, session) };
+    }
+
+    /**
+     * A session the server granted with no sign-in (a technique, core plan 5.4): `session` is the
+     * answer's session (npcId, username, displayName, via 'technique', remote, footholdId, host,
+     * access?). Recorded as a sign-in's answer is: pc_signed_in, the sessions it ended dropped. `already` is the answer's
+     * `already === true`: a repeat of a grant already held, which sets the level in place and fires nothing.
+     */
+    noteTechniqueSession(pcId, session, endedPcIds = null, tokenExpiredPcIds = null, already = false) {
+        this.listen();
+        if (!pcId || !session?.npcId) return null;
+        const held = {
+            npcId: session.npcId, username: session.username ?? null, displayName: session.displayName ?? null,
+            via: 'technique', ...pictureFields(session), ...accessFields(session), ...remoteFields(session)
+        };
+        // A repeat grant (core plan 5.4) changes nothing: the same copy is already held, so no sign-out or sign-in fires.
+        // The server's own word (`already: true`) says it is a repeat; a real step up at the same copy (user, then admin)
+        // is a new grant and is recorded as a sign-in is (R2-A1)
+        const now = this.sessions.get(pcId);
+        if (now && now.via === 'technique' && now.npcId === held.npcId && now.footholdId === held.footholdId) {
+            if (already === true) {
+                // Only the level may differ (a dropped `access` coming back after a refused desktop): set it in place, no events
+                if (now.access !== held.access) {
+                    if (held.access === undefined) delete now.access; else now.access = held.access;
+                }
+                return publicSession(pcId, now);
+            }
+            if (now.access === held.access) return publicSession(pcId, now);
+        }
+        this._replace(pcId, held);
+        this._dropEnded(endedPcIds, pcId, tokenExpiredPcIds);
+        return publicSession(pcId, held);
     }
 
     /** The sessions a sign-in's answer says ended (keyring K2 3.8), never the new one itself. */
@@ -625,6 +745,7 @@ export class PcSessions {
             ...tokenFields({ ...body, via: 'credential' }),
             ...(body.route && typeof body.route === 'object' ? { route: body.route } : {}),
             ...pictureFields(body),
+            ...accessFields(body),
             ...remoteFields(body),
             ...relayFields(body)
         };
@@ -669,7 +790,7 @@ export class PcSessions {
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'refused', message: body?.message || 'Sign in required' };
         }
-        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim', ...pictureFields(body) };
+        const session = { npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'claim', ...pictureFields(body), ...accessFields(body) };
         if (guest) session.guest = true;
         this._replace(pcId, session);
         // The owner came back while the claim was in flight: workstation_owner_returned
@@ -735,7 +856,7 @@ export class PcSessions {
     }
 
     /**
-     * 9.2 H (6.4): an NPC signed in at pcId, so the player's session there (of any kind) ends:
+     * 9.2 H (6.4): an NPC signed in at pcId, so the player's keyboard session there (not a remote copy) ends:
      * POST /logout, pc_signed_out with reason displaced, and an open desktop closes with
      * "<name> has signed in at this PC". Resolves false when the player held none there.
      */
@@ -744,6 +865,8 @@ export class PcSessions {
         if (!previous) return false;
         // The holder sitting down at his own PC does not end the relay he invited the player into (K3c, 8.3)
         if (previous.relay === true && npcId && previous.npcId === npcId) return false;
+        // A remote copy is not at this keyboard: nothing an NPC does there ends it (core plan 5.4)
+        if (previous.remote === true) return false;
         this.sessions.delete(pcId);
         this._disarmToken(pcId);
         const message = displacedMessage(name);
@@ -854,6 +977,7 @@ export class PcSessions {
             return { ok: false, reason: err?.status === 422 ? 'refused' : 'error', status: err?.status ?? null, message: b.message || b.error || 'Could not lock the session' };
         }
         s.locked = true;
+        delete s.access;
         this._emit('pc_session_locked', { pcId, npcId: s.npcId ?? null });
         this._closeDesktop(pcId, message, 'locked');
         return { ok: true };
@@ -966,6 +1090,9 @@ export class PcSessions {
         // A keyboard fetch drops a desktop route too (K4): no fromPcId in the answer, none here
         if (!fields.fromPcId) { delete s.fromPcId; delete s.fromHost; }
         Object.assign(s, fields);
+        // The level follows this answer and nothing remembered: `access: 'admin'` sets it, anything
+        // else (and a locked entry) has none (S5a)
+        if (session.access === 'admin' && s.locked !== true) s.access = 'admin'; else delete s.access;
         return true;
     }
 
@@ -1034,6 +1161,11 @@ export class PcSessions {
 }
 
 export const pcSessions = new PcSessions();
+
+// Plain-function forms of the level readers, bound to the shared mirror
+export const sessionAdmin = (pcId) => pcSessions.sessionAdmin(pcId);
+export const keyboardAdmin = (pcId) => pcSessions.keyboardAdmin(pcId);
+export const plantAdmin = (objectData) => pcSessions.plantAdmin(objectData);
 if (typeof window !== 'undefined') window.pcSessions = pcSessions;
 
 export default pcSessions;

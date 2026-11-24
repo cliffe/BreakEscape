@@ -335,6 +335,182 @@ module BreakEscape
       end
     end
 
+    # Ops core S1 (docs/achitechture/OPS_CORE_PLAN.md 5.1). Hosts, discovery and services.
+    # SERVICES_PER_HOST is the schema's maxItems; services_of reads no more than that.
+    SERVICES_PER_HOST = 8
+
+    # { hostId => entry } for the top-level `hosts` map (hosts with no sign-in), only the
+    # entries that are hashes. Notes (keys starting `_`) are not hosts.
+    def hosts(data)
+      map = data.is_a?(Hash) ? data['hosts'] : nil
+      return {} unless map.is_a?(Hash)
+
+      map.select { |id, entry| entry.is_a?(Hash) && !(id.is_a?(String) && id.start_with?('_')) }
+    end
+
+    # True when the network is a discovery network (`discovery: "scan"`); false for "open",
+    # an absent key, any other value and an unknown network.
+    def discovery?(data, network_id)
+      net = networks(data)[network_id]
+      net.is_a?(Hash) && net['discovery'] == 'scan'
+    end
+
+    # One record per host on a network, of either kind, sorted by id:
+    # { id:, kind: 'pc' | 'device', object:, network:, services: }. A 'pc' is a sign-in
+    # room object (object: the room object); a 'device' is a `hosts` entry (object: the
+    # entry). A `hosts` entry whose network is not a `networks` key is left out. An id
+    # held by both kinds (the validator refuses it) lists the sign-in object.
+    def hosts_on(network_id, data)
+      return [] unless present_string?(network_id) && networks(data).key?(network_id)
+
+      out = sign_in_objects_on(network_id, data).map do |entry|
+        obj = entry[:object]
+        { id: obj['id'], kind: 'pc', object: obj, network: network_id, services: services_of(obj) }
+      end
+      taken = out.map { |rec| rec[:id] }
+      hosts(data).each do |id, entry|
+        next unless entry['network'] == network_id && !taken.include?(id)
+
+        out << { id: id, kind: 'device', object: entry, network: network_id, services: services_of(entry) }
+      end
+      sort_by_id(out) { |rec| rec[:id] }
+    end
+
+    # The services a host declares, at most SERVICES_PER_HOST, malformed entries (not a hash)
+    # skipped, never raised on. Takes a host record from hosts_on, a room object or a
+    # `hosts` entry.
+    def services_of(host)
+      host = host[:object] if host.is_a?(Hash) && host.key?(:object)
+      list = host.is_a?(Hash) ? host['services'] : nil
+      return [] unless list.is_a?(Array)
+
+      list.select { |svc| svc.is_a?(Hash) }.first(SERVICES_PER_HOST)
+    end
+
+    # Ops core S2 (OPS_CORE_PLAN.md 5.1). Weaknesses and decoys of services, at most
+    # FINDINGS_PER_LIST of each kind per service (the schema's maxItems); a malformed entry
+    # (not a hash, or with no usable id) is skipped, never raised on.
+    FINDINGS_PER_LIST = 4
+
+    # A finding id is built, never authored: three ids joined by dots.
+    def finding_id(host_id, service_name, id)
+      "#{host_id}.#{service_name}.#{id}"
+    end
+
+    # Every weakness of every service of every host, sorted by finding id, each
+    # { finding_id:, host_id:, host: <hosts_on record>, service_name:, service:, kind: 'weakness', id:, entry: }.
+    def weaknesses(data)
+      service_findings(data, 'weaknesses', 'weakness')
+    end
+
+    # The same for decoys (kind: 'decoy').
+    def decoys(data)
+      service_findings(data, 'decoys', 'decoy')
+    end
+
+    # Every host record of every network, in network then id order.
+    def hosts_on_all(data)
+      networks(data).keys.flat_map { |net_id| hosts_on(net_id, data) }
+    end
+
+    def service_findings(data, key, kind)
+      out = []
+      networks(data).each_key do |net_id|
+        hosts_on(net_id, data).each do |rec|
+          rec[:services].each do |svc|
+            findings_in(rec[:id], svc, key, kind).each { |found| out << found.merge(host: rec) }
+          end
+        end
+      end
+      out.sort_by { |rec| rec[:finding_id] }
+    end
+
+    # The weaknesses and decoys of one service of a host (by host id), together, sorted by finding id:
+    # { finding_id:, host_id:, service_name:, service:, kind:, id:, entry: }. The one reader the
+    # server's finding builder uses, so a decoy and a weakness are read the same way.
+    def findings_of(host_id, service)
+      # One record per finding id, a weakness before a decoy of the same id (sort_by is not stable), so
+      # a scenario that was never validated still reads the same way every time.
+      (findings_in(host_id, service, 'weaknesses', 'weakness') + findings_in(host_id, service, 'decoys', 'decoy'))
+        .uniq { |rec| rec[:finding_id] }.sort_by { |rec| rec[:finding_id] }
+    end
+
+    def findings_in(host_id, svc, key, kind)
+      return [] unless svc.is_a?(Hash) && present_string?(svc['name']) && svc[key].is_a?(Array)
+
+      svc[key].select { |entry| entry.is_a?(Hash) && present_string?(entry['id']) }.first(FINDINGS_PER_LIST).map do |entry|
+        { finding_id: finding_id(host_id, svc['name'], entry['id']), host_id: host_id,
+          service_name: svc['name'], service: svc, kind: kind, id: entry['id'], entry: entry }
+      end
+    end
+
+    # Ops core S3 (OPS_CORE_PLAN.md 4.3 and 5.1). The technique card registry and the cards that
+    # carry its keys. A malformed entry is skipped, never raised on.
+
+    # { techniqueId => entry } for the top-level `techniques` map: hashes only, `_` notes skipped.
+    def techniques(data)
+      map = data.is_a?(Hash) ? data['techniques'] : nil
+      return {} unless map.is_a?(Hash)
+
+      map.select { |id, entry| entry.is_a?(Hash) && !(id.is_a?(String) && id.start_with?('_')) }
+    end
+
+    # Can this registry entry be used on this weakness of this service? `technique` is the entry
+    # (with its `worksOn`), `service` the service hash, `weakness` the weakness hash. The class must
+    # be equal; the product must equal the service's product when `worksOn` gives one; the service's
+    # version must be in the `versions` list when it gives one. No version comparison.
+    def technique_matches?(technique, service, weakness)
+      works = technique.is_a?(Hash) ? technique['worksOn'] : nil
+      return false unless works.is_a?(Hash) && service.is_a?(Hash) && weakness.is_a?(Hash)
+      return false unless present_string?(works['class']) && works['class'] == weakness['class']
+      return false if works.key?('product') && works['product'] != service['product']
+      return false if works.key?('versions') &&
+                      !(works['versions'].is_a?(Array) && works['versions'].include?(service['version']))
+
+      true
+    end
+
+    # Every item carrying `technique_card`, where an item can be: [{ item:, home:, path: }], home one
+    # of 'room', 'container', 'start', 'npc', 'share', 'grant'. Found the way rogue_device_definitions
+    # finds devices, plus a share's `contents`; a container item's own `contents` are walked too.
+    # Items inside a sign-in PC's desktop are not listed (a card is a tray item, not a desktop file).
+    def technique_items(data)
+      out = []
+      return out unless data.is_a?(Hash)
+
+      add = lambda do |item, home, path|
+        out << { item: item, home: home, path: path } if item.is_a?(Hash) && item.key?('technique_card')
+      end
+      walk = lambda do |list, home, path|
+        next unless list.is_a?(Array)
+
+        list.each_with_index do |item, idx|
+          next unless item.is_a?(Hash)
+
+          add.call(item, home, "#{path}[#{idx}]")
+          walk.call(item['contents'], home, "#{path}[#{idx}]/contents")
+        end
+      end
+
+      room_objects(data).each do |entry|
+        add.call(entry[:object], entry[:container] ? 'container' : 'room', entry[:path])
+      end
+      walk.call(data['startItemsInInventory'], 'start', 'startItemsInInventory')
+      rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
+      rooms.each do |room_id, room|
+        next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+        room['npcs'].each_with_index do |npc, i|
+          walk.call(npc['itemsHeld'], 'npc', "rooms/#{room_id}/npcs[#{i}]/itemsHeld") if npc.is_a?(Hash)
+        end
+      end
+      resources(data).each do |id, resource|
+        walk.call(resource['contents'], 'share', "resources/#{id}/contents") if resource.is_a?(Hash)
+      end
+      DeclaredGrants.for(data).each { |grant| add.call(grant['item'], 'grant', grant['path']) }
+      out
+    end
+
     def present_string?(value)
       value.is_a?(String) && !value.strip.empty?
     end

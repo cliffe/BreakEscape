@@ -34,6 +34,8 @@ class CredentialModelTest < ActiveSupport::TestCase
     assert_equal 'held', CM.proof_kind({ 'held' => 'item' })
     assert_equal 'foothold', CM.proof_kind({ 'foothold' => 'jack' })
     assert_nil CM.proof_kind({ 'session' => 'pc', 'held' => 'item' })
+    assert_equal 'technique_card', CM.proof_kind({ 'technique_card' => 'print01.admin_page.factory_login' })
+    assert_nil CM.proof_kind({ 'technique_card' => 'a.b.c', 'foothold' => 'jack' })
     assert_nil CM.proof_kind({})
     assert_nil CM.proof_kind({ 'planted' => 'x', 'on' => 'y' }.tap { |h| h.delete('planted') })
     # planted with an optional on is still exactly one proof key.

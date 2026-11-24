@@ -35,6 +35,7 @@ copy('utils/npc-headshot.js');
 copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 copy('utils/remote-host-text.js');
+copy('utils/compromise-bolt.js');
 copy('utils/sync-before-fetch.js');
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
 put('systems/inventory.js',

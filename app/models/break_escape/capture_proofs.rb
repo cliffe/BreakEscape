@@ -24,39 +24,41 @@ module BreakEscape
     # room is the start room or unlocked. Called
     # before the removal; the removal happens either way. Returns true when recorded.
     def record_planted_item!(item_id, used_on)
-      item_id = item_id.to_s
-      used_on = used_on.to_s
-      return false if item_id.empty? || used_on.empty?
-      # A hideable item is planted only through hide_device! (plant-hiding plan, section 7), so
-      # an authored object outside hideable.rooms that takes it can never mint a plant proof.
-      return false if HidingSpots.item_defs(scenario_data).key?(item_id)
-
-      held = (player_state['inventory'] || []).find do |inv|
-        # An object added to a room with no server-known source is a bare client hash
-        # stamped clientAdded (ItemIdentity::CLIENT_ADDED_MARKER): its type/name are
-        # client-chosen, so a forged device must never be matched against a plant
-        # target's requiresItem and mint a capture proof (code review R2, B1).
-        next false if BreakEscape::ItemIdentity.client_forged?(inv)
-
-        data = inv.is_a?(Hash) ? (inv['scenarioData'] || inv) : nil
-        data.is_a?(Hash) && data['id'].to_s == item_id
-      end
-      held_data = held && (held['scenarioData'] || held)
-      return false unless held_data.is_a?(Hash)
-
-      found = planted_target_object(used_on)
-      return false unless found
-      return false unless CaptureModel.object_takes_item?(found[:object], held_data)
+      held_data, found = plant_target_for(item_id, used_on)
+      return false unless held_data
       # Slice 9.2 sub-slice U: a plant the object's USB policy refuses is never recorded, whatever
-      # the browser decided (review R1, client reviewer's server item 1)
-      return false if AccessWork.plant_refused?(scenario_data, found[:object], held_data)
+      # the browser decided (review R1, client reviewer's server item 1). S5a: an unlocked admin
+      # session on the PC that judges the plant (plant_admin_pc) overrides the policy.
+      admin_pc = plant_admin_pc(found[:object])
+      admin = plant_admin?(found[:object])
+      return false if AccessWork.plant_refused?(scenario_data, found[:object], held_data, admin: admin)
       return false unless room_unlocked?(found[:room_id])
+
+      write_usb_override_row!(admin_pc, held_data) if admin && AccessWork.plant_refused?(scenario_data, found[:object], held_data)
 
       list = (player_state['plantedItems'] ||= [])
       entry = { 'item' => item_id, 'on' => used_on }
       list << entry unless list.include?(entry)
       save!
       true
+    end
+
+    # The USB policy's refusal line for a plant the inventory remove would make, or nil. Judges
+    # exactly what record_planted_item! judges before its room check (same early returns), so it
+    # never refuses a remove the plant proof would not have judged (an object in a room not yet
+    # unlocked answers nil, as before S5a: the remove must not probe it), and writes nothing. A line is
+    # the same text the implant path words (USB_REFUSAL_LINES); nil also when an admin session
+    # overrides the policy.
+    def plant_policy_refusal(item_id, used_on)
+      held_data, found = plant_target_for(item_id, used_on)
+      return nil unless held_data
+      return nil unless room_unlocked?(found[:room_id])
+      return nil unless AccessWork.plant_refused?(scenario_data, found[:object], held_data)
+
+      return nil if plant_admin?(found[:object])
+
+      usb = AccessWork.usb_policy_for(scenario_data, found[:object])
+      NetworkAccess::USB_REFUSAL_LINES[usb] || NetworkAccess::USB_REFUSAL_LINES['blocked']
     end
 
     # ------------------------------------------------------------------
@@ -149,6 +151,66 @@ module BreakEscape
     end
 
     private
+
+    # The held item's data and the target object for a plant, or nil: the early returns shared by
+    # record_planted_item! and plant_policy_refusal (empty ids, a hideable item, a client-forged
+    # item, an item not held, no target object, an object that does not take the item).
+    def plant_target_for(item_id, used_on)
+      item_id = item_id.to_s
+      used_on = used_on.to_s
+      return nil if item_id.empty? || used_on.empty?
+      # A hideable item is planted only through hide_device! (plant-hiding plan, section 7), so
+      # an authored object outside hideable.rooms that takes it can never mint a plant proof.
+      return nil if HidingSpots.item_defs(scenario_data).key?(item_id)
+
+      held = (player_state['inventory'] || []).find do |inv|
+        # An object added to a room with no server-known source is a bare client hash
+        # stamped clientAdded (ItemIdentity::CLIENT_ADDED_MARKER): its type/name are
+        # client-chosen, so a forged device must never be matched against a plant
+        # target's requiresItem and mint a capture proof (code review R2, B1).
+        next false if BreakEscape::ItemIdentity.client_forged?(inv)
+
+        data = inv.is_a?(Hash) ? (inv['scenarioData'] || inv) : nil
+        data.is_a?(Hash) && data['id'].to_s == item_id
+      end
+      held_data = held && (held['scenarioData'] || held)
+      return nil unless held_data.is_a?(Hash)
+
+      found = planted_target_object(used_on)
+      return nil unless found
+      return nil unless CaptureModel.object_takes_item?(found[:object], held_data)
+
+      [held_data, found]
+    end
+
+    # The PC whose session judges the USB override for a plant on this object (S5a): the PC of
+    # its first needsSession grant, else the object itself when it is a sign-in PC, else nil.
+    def plant_admin_pc(obj)
+      grant_pc = CaptureModel.session_grant_pc(obj)
+      return grant_pc if grant_pc.present?
+
+      self.class.login_pc?(obj) ? obj['id'].to_s : nil
+    end
+
+    # A device that needs a session takes only the keyboard; any other plant takes any admin
+    # session (plan section 4 "A device that needs a session takes only the keyboard").
+    def keyboard_or_session_admin?(obj, pc_id)
+      CaptureModel.session_grant_pc(obj).present? ? keyboard_admin?(pc_id) : session_admin?(pc_id)
+    end
+
+    def plant_admin?(obj)
+      pc_id = plant_admin_pc(obj)
+      !pc_id.nil? && keyboard_or_session_admin?(obj, pc_id)
+    end
+
+    # usb_install_overridden (log rows plan 11): written only when an admin session's override let
+    # a plant through that the policy would have refused; as the session's account, where the PC.
+    def write_usb_override_row!(pc_id, item)
+      session = access_sessions[pc_id.to_s]
+      write_log_row!('usb_install_overridden', as: ops_account_as(session.is_a?(Hash) ? session['id'] : nil),
+                                               where: { kind: 'pc', id: pc_id.to_s },
+                                               detail: { 'device' => item['usbClass'].to_s })
+    end
 
     def hide_refusal(reason)
       { ok: false, reason: reason, message: HIDE_MESSAGES.fetch(reason) }

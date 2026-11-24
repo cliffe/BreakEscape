@@ -9,6 +9,13 @@ import { displayDashes } from '../../utils/display-dashes.js';
 // A surface that has given a lift this good is done: the kit skips it.
 const EXCELLENT_LIFT = 0.85;
 
+// The tint an object rests at when the view closes: its compromise mark's (sprite.compromiseTint,
+// set by systems/compromise-marks.js) or none
+function restTint(obj) {
+    if (obj.compromiseTint !== undefined && typeof obj.setTint === 'function') obj.setTint(obj.compromiseTint);
+    else obj.clearTint();
+}
+
 // Biometrics Minigame Scene implementation (the fingerprint kit panel)
 export class BiometricsMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -318,7 +325,7 @@ export class BiometricsMinigame extends MinigameScene {
         // Remove highlights from all objects
         this.highlightedObjects.forEach(obj => {
             if (obj.clearTint) {
-                obj.clearTint();
+                restTint(obj);
             }
             if (obj.fingerprintIndicator) {
                 obj.fingerprintIndicator.destroy();

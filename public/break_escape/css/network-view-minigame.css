@@ -151,6 +151,9 @@
        at its own width, not a 340px row that scrolls sideways */
     grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
     gap: 4px 6px;
+    /* A short card beside a tall one (findings open) keeps its own height, content at the top,
+       rather than stretching to the tall one's height with its content floating in the middle (S2 PT4) */
+    align-items: start;
 }
 
 .network-view-rows > .network-row-group,
@@ -404,6 +407,12 @@
     color: #ffe680;
 }
 
+/* scrollIntoView({ block: 'nearest' }) of the Use control and the message stops short of the "More below" bar */
+.network-use,
+.network-view-notice {
+    scroll-margin-bottom: 44px;
+}
+
 .network-view-notice:empty {
     display: none;
 }
@@ -495,4 +504,256 @@
     width: 100%;
     text-align: center;
     color: #b8c4cc;
+}
+
+/* Ops (S1): Sweep on an unswept discovery block, Scan on a host row, and a scanned host's
+   service tiles. Pixel-art rule: 2px solid square borders, flat fills, no radius or shadow. */
+.network-block-ops {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.network-view .network-row-action[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.network-row[data-kind="device"] .network-row-icon {
+    object-fit: contain;
+    width: 72px;
+    height: 48px;
+}
+
+.network-row-scanned {
+    flex-wrap: wrap;
+}
+
+/* A device card holds its icon fully inside, with room above and below it (R2 P2), and a
+   row's cards share the row's height: the grid stretches them, the content stays centred */
+.network-row[data-kind="device"] {
+    align-content: center;
+    box-sizing: border-box;
+    min-height: 60px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.network-row[data-kind="device"] .network-row-icon {
+    align-self: center;
+}
+
+/* The tiles sit on their own line under the icon and name, inside the card. The 80px indent
+   is padding in a border-box, not a margin, so it cannot push the line past the right edge
+   (R2 P1); a long tile wraps */
+.network-service-tiles {
+    flex: 1 0 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0;
+    padding: 0 0 0 80px;
+    list-style: none;
+}
+
+.network-service {
+    padding: 2px 6px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+    color: #cfe9f5;
+    font-size: 16px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+/* Ops (S2): Check on a service tile and the findings under it. Same pixel-art rule: 2px solid
+   square borders, flat fills, no radius or shadow. Long text wraps inside its card. */
+.network-service-with-findings {
+    flex: 1 0 100%;
+}
+
+.network-service .network-check {
+    margin-left: 6px;
+}
+
+.network-findings {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+}
+
+.network-finding {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 2px solid #2d3a44;
+    background: #0e151b;
+    color: #cfe9f5;
+    overflow-wrap: anywhere;
+}
+
+.network-finding-confirmed { border-color: #3f7d4e; }
+.network-finding-false { border-color: #6b5a3a; color: #a9b4bb; }
+
+.network-finding-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+.network-finding-alias,
+.network-finding-class,
+.network-finding-severity,
+.network-finding-status,
+.network-finding-fixed {
+    padding: 0 4px;
+    border: 2px solid #2d3a44;
+    background: #131b22;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+.network-severity-high { border-color: #a24b4b; }
+.network-severity-medium { border-color: #a58a3c; }
+.network-finding-fixed { border-color: #3f7d4e; }
+
+.network-finding-summary,
+.network-finding-reason {
+    display: block;
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.network-finding .network-confirm {
+    margin-top: 4px;
+}
+
+.network-finding-needs {
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.network-need {
+    overflow-wrap: anywhere;
+}
+
+.network-need-met .network-need-mark { color: #6fcf86; }
+.network-need-unmet .network-need-mark { color: #e07a7a; }
+
+/* Ops (S3): the Techniques panel, select-then-Use, the access tag and the compromise bolt on a
+   host row. Same pixel-art rule: 2px solid square borders, flat fills, no radius or shadow, and
+   long text wraps inside its card. */
+/* The alias is a control, so it looks like one: the selected state's blue border at rest, filled when picked (S3 R1 m9) */
+button.network-finding-alias {
+    font: inherit;
+    color: #9ee6ff;
+    cursor: pointer;
+    border-color: #4aa3d8;
+}
+
+button.network-finding-alias:hover { background: #1b3a4d; }
+
+.network-finding-selected { border-color: #4aa3d8; }
+.network-finding-selected .network-finding-alias { border-color: #4aa3d8; background: #1b3a4d; }
+
+.network-techniques {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.network-technique-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.network-technique {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-sizing: border-box;
+    flex: 1 1 180px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 6px;
+    border: 2px solid #2d3a44;
+    background: #0e151b;
+    color: #cfe9f5;
+    overflow-wrap: anywhere;
+    cursor: grab;
+}
+
+.network-technique-selected { border-color: #4aa3d8; background: #12232d; }
+
+.network-technique .network-technique-select {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: normal;
+}
+
+.network-technique-summary,
+.network-technique-works {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.network-technique-works { color: #a9b4bb; }
+
+.network-technique-use {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.network-technique-pick {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.network-technique-grant {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.network-access-tag {
+    display: inline-block;
+    padding: 0 4px;
+    border: 2px solid #a24b4b;
+    background: #2a1313;
+    color: #ffd0d0;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.network-row-bolt {
+    display: inline-block;
+    flex: none;
+    align-self: center;
+    margin: 0 4px;
+    line-height: 0;
+}
+
+.network-bolt-canvas {
+    display: block;
+    image-rendering: pixelated;
 }

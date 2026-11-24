@@ -33,8 +33,11 @@ if (typeof window !== 'undefined') window.recordSECapture = recordSECapture;
  * a plant when that object takes the item (engine plan section 6, capture proofs). Awaits the
  * answer and retries once on a network error or a 5xx; a refusal is logged and not retried.
  * Resolves true when the server accepted the removal.
+ * `withBody: true` (a gated remove, the caller waits): resolves true on success, the refusal body
+ * (a plain object) on a 4xx refusal that has one, and false after the retried network failure, a
+ * 5xx or a refusal with no body. The caller reads only `error` from a body, never `message`.
  */
-export async function sendInventoryRemove(id, { usedOn = null, gameId = null } = {}) {
+export async function sendInventoryRemove(id, { usedOn = null, gameId = null, withBody = false } = {}) {
     const gid = gameId || (typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null);
     if (!id || !gid) return false;
     const body = { action_type: 'remove', item: { id } };
@@ -54,6 +57,12 @@ export async function sendInventoryRemove(id, { usedOn = null, gameId = null } =
             if (resp?.ok !== false) return true;
             if (resp.status >= 500 && attempt === 1) continue;
             console.warn('[applyActions] the server refused an inventory remove:', id, resp.status);
+            if (withBody && resp.status < 500) {
+                try {
+                    const refusal = await resp.json();
+                    if (refusal && typeof refusal === 'object' && !Array.isArray(refusal)) return refusal;
+                } catch (e) { /* no body: a plain failure */ }
+            }
             return false;
         } catch (err) {
             if (attempt === 1) continue;
@@ -64,6 +73,50 @@ export async function sendInventoryRemove(id, { usedOn = null, gameId = null } =
     return false;
 }
 if (typeof window !== 'undefined') window.sendInventoryRemove = sendInventoryRemove;
+
+// Gated removes (privilege plan P478-541): a remove of an item the object's USB policy refuses is
+// sent first and waited for, because the server may refuse it (a lapsed override). Both sets hold
+// scenario ids from the send until every kind of answer. No state is synced.
+export const plantsInFlight = new Set();   // object ids with a gated remove awaiting its answer
+export const itemsInFlight = new Set();    // item ids with a gated remove awaiting its answer
+
+const REMOVE_FAILED_LINE = 'That did not go through. Try again.';
+
+/**
+ * Send one gated remove and wait. Resolves true when the server took the item; the caller then
+ * removes it from the tray and carries on. On anything else it shows the line (the server's
+ * `error` only, never `message`), emits usb_refused:<objectId> for that refusal, and resolves
+ * false: the item stays. Both in-flight sets are filled for the send and emptied on every answer.
+ * Shared with the plant in interactions.js.
+ */
+export async function sendGatedRemove(itemId, objectId, { gameId = null } = {}) {
+    plantsInFlight.add(objectId);
+    itemsInFlight.add(itemId);
+    let answer = false;
+    try {
+        answer = await sendInventoryRemove(itemId, { usedOn: objectId, gameId, withBody: true });
+    } catch (err) {
+        answer = false;
+    } finally {
+        plantsInFlight.delete(objectId);
+        itemsInFlight.delete(itemId);
+    }
+    if (answer === true) return true;
+    const line = answer && typeof answer.error === 'string' && answer.error.trim() ? answer.error : REMOVE_FAILED_LINE;
+    window.gameAlert?.(line, 'warning', '', 4000);
+    if (answer && answer.reason === 'usb_refused') {
+        window.eventDispatcher?.emit(`usb_refused:${objectId}`, { objectId, itemId, usbClass: null });
+    }
+    return false;
+}
+
+function heldMatches(wanted) {
+    return (window.inventory?.items || []).filter(it => {
+        const d = it?.scenarioData || {};
+        if (d.id && itemsInFlight.has(d.id)) return false;
+        return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
+    });
+}
 
 /**
  * Card revocation (the left-card consequence, NPC_NEEDS_SYSTEM.md §3.3b).
@@ -130,7 +183,9 @@ if (typeof window !== 'undefined') window.isCardRevoked = isCardRevoked;
  */
 // objectId: the scenario id of the object whose interaction runs these actions (its
 // triggerOnInteract, directly or through a confirm_action); remove_item sends it as used_on.
-export function applyActions(actions, { source = 'scenario', gameId = null, objectId = null } = {}) {
+// objectData: that object's scenario data, so a remove_item can tell whether its USB policy gates the
+// remove (apply-actions reads window.pcPolicy and window.pcSessions; no import is added).
+export function applyActions(actions, { source = 'scenario', gameId = null, objectId = null, objectData = null } = {}) {
     // The addToInventory promises started for give_item actions, in order, so a caller
     // (the timer dispatcher) can retry a give lost to the network. Each carries the action
     // it ran as `.action`: a give skipped by its condition starts no promise, so the list
@@ -138,7 +193,9 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
     const gives = [];
     if (!Array.isArray(actions) || actions.length === 0) return gives;
 
-    for (const action of actions) {
+    let stopped = false;   // a gated remove took over the rest of the list
+    for (const [index, action] of actions.entries()) {
+        if (stopped) break;
         if (action && action.condition !== undefined) {
             const holds = window.evaluateActionCondition;
             if (typeof holds !== 'function' || holds(action.condition, window.gameState?.globalVariables || {}) !== true) continue;
@@ -276,17 +333,39 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             // action: { type: 'remove_item', item: '<type|id|name>' | [ ... ] }
             case 'remove_item': {
                 const wanted = Array.isArray(action.item) ? action.item : [action.item];
-                const held = (window.inventory?.items || []).find(it => {
-                    const d = it?.scenarioData || {};
-                    return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
-                });
+                if (objectId && plantsInFlight.has(objectId)) {
+                    console.log('[applyActions] remove_item: a remove for this object is in flight, ignored:', objectId);
+                    // Nothing after it runs either: the answer to the first request decides the list
+                    stopped = true;
+                    break;
+                }
+                const matches = heldMatches(wanted);
+                // Pick the match the object's policy accepts (as the plant does), else the first.
+                const admin = objectData ? window.pcSessions?.plantAdmin?.(objectData) === true : false;
+                const picked = objectData && window.pcPolicy?.plantRefusal
+                    ? window.pcPolicy.plantRefusal(matches, objectData, window.gameScenario, { admin }).item
+                    : null;
+                const held = picked || matches[0];
                 if (!held) {
                     console.log('[applyActions] remove_item: not held, no-op:', action.item);
                     break;
                 }
+                const id = held?.scenarioData?.id;
+                if (objectId && id && objectData && window.pcPolicy?.gatedRemove?.(held, objectData, window.gameScenario) === true) {
+                    // Gated: send, wait, and run the rest of the list only on success.
+                    const rest = actions.slice(index + 1);
+                    const opts = { source, gameId, objectId, objectData };
+                    stopped = true;
+                    sendGatedRemove(id, objectId, { gameId }).then(ok => {
+                        if (!ok) return;
+                        try { window.removeFromInventory?.(held); } catch (err) { console.warn('[applyActions] remove_item failed:', err); }
+                        console.log('[applyActions] remove_item:', id);
+                        applyActions(rest, opts);
+                    }).catch(err => console.warn('[applyActions] gated remove follow-up failed:', err));
+                    break;
+                }
                 try {
                     window.removeFromInventory?.(held);
-                    const id = held?.scenarioData?.id;
                     // From an object (its triggerOnInteract, or a confirm_action there) the
                     // request names that object, so the server can record the plant.
                     if (id) sendInventoryRemove(id, { usedOn: objectId, gameId });
@@ -427,7 +506,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
                 if (action.closeX === true) confirmArgs.push({ closeX: true });
                 window.gameConfirm(...confirmArgs).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
-                        applyActions(onConfirm, { source, gameId, objectId });
+                        applyActions(onConfirm, { source, gameId, objectId, objectData });
                     }
                 });
                 break;

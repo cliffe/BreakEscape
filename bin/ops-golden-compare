@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+# Compares the ops_unchanged golden fixtures with the code as it stands, or two JSON results.
+#
+#   bin/ops-golden-compare [name ...]          replay the named fixtures (default: all) through the real
+#                                              routes in the test environment, under the shared test
+#                                              lock, and fail on any difference (test/lib/ops_unchanged_replay_test.rb)
+#   bin/ops-golden-compare --diff A.json B.json
+#                                              compare two files with the same normalisations (A is
+#                                              the expected side); each is a fixture or a { answers, state } result
+#
+# See test/support/ops_golden.rb for the normalisations and lib/tasks/ops_unchanged.rake for how to add a fixture.
+ROOT = File.expand_path('..', __dir__)
+
+if ARGV.first == '--diff'
+  a_path, b_path = ARGV[1], ARGV[2]
+  abort 'usage: bin/ops-golden-compare --diff A.json B.json' unless a_path && b_path
+  ENV['RAILS_ENV'] = 'test'
+  ENV['BUNDLE_GEMFILE'] ||= File.join(ROOT, 'Gemfile')
+  require 'bundler/setup'
+  require 'rails/all'
+  require File.join(ROOT, 'test/dummy/config/environment')
+  require 'json'
+  require_relative '../test/support/ops_golden'
+  expect = JSON.parse(File.read(a_path))
+  actual = JSON.parse(File.read(b_path))
+  expect = expect['expected'] || expect
+  actual = actual['expected'] || actual
+  diffs = OpsGolden.compare(expect, actual, defaults: BreakEscape::Game::ACCESS_STATE_DEFAULTS)
+  puts(diffs.empty? ? 'match' : diffs.first(100))
+  exit(diffs.empty? ? 0 : 1)
+end
+
+common = `git -C #{ROOT} rev-parse --git-common-dir 2>/dev/null`.strip
+lock = ENV['TESTS_LOCK'] || File.join(common.empty? ? ROOT : File.dirname(File.expand_path(common, ROOT)), 'tmp', 'tests.lock')
+env = { 'RAILS_ENV' => 'test', 'OPS_GOLDEN_ONLY' => ARGV.join(',') }
+exec(env, 'flock', lock, File.join(ROOT, 'bin/rails'), 'test', File.join(ROOT, 'test/lib/ops_unchanged_replay_test.rb'))

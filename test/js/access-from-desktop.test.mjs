@@ -46,7 +46,7 @@ put('systems/inventory.js',
     'export function removeFromInventory() {}\n' +
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
 for (const rel of ['utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
-    'utils/remote-host-text.js',
+    'utils/remote-host-text.js', 'utils/compromise-bolt.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'utils/sync-before-fetch.js', 'systems/keyring.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js']) copy(rel);

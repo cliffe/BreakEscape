@@ -15,10 +15,10 @@ module BreakEscape
     extend ActiveSupport::Concern
 
     # Top-level scenario keys the bootstrap never ships (section 6).
-    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources].freeze
+    WITHHELD_SCENARIO_KEYS = %w[networks networkLinks resources logSources hosts techniques].freeze
     # Fields deleted from every object the server sends: membership, and the jack's
     # link name and holder, which arrive on the link item (section 6).
-    WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn].freeze
+    WITHHELD_OBJECT_FIELDS = %w[network linkName linkStoreIn services].freeze
 
     def withhold_network_keys!(filtered)
       WITHHELD_SCENARIO_KEYS.each { |key| filtered.delete(key) }
@@ -279,6 +279,8 @@ module BreakEscape
       player_state['inventory'] << link_item_for(foothold_id)
       # A worn device planted in a jack comes off (Wearables)
       release_worn_unless_held!
+      # Ops log L3: one row per plant (an already-planted jack returned above); the save below stores it
+      write_log_row!('net_link_up', as: nil, where: { kind: 'jack', id: jack_id })
       save!
 
       touched = [link_item_id(foothold_id), copy['id']]
@@ -313,6 +315,8 @@ module BreakEscape
       # Keyring K4 (plan 9): a `from` session carries no foothold, so the prune ends one whose
       # source (or the source's own route) went with the foothold, and the answer names it too
       ended += prune_unreachable_sessions!
+      # Ops log L3: one row per unplug (a jack with nothing planted returned above); the save below stores it
+      write_log_row!('net_link_down', as: nil, where: { kind: 'jack', id: jack[:object]['id'].to_s })
       save!
 
       device_id = device.is_a?(Hash) ? device['id'] : nil
@@ -389,6 +393,8 @@ module BreakEscape
       start_token_clocks!(foothold_id) # keyring K5 (plan 10)
       player_state['inventory'] = Array(player_state['inventory'])
       player_state['inventory'] << link_item_for(foothold_id)
+      # Ops log L3: one row per join (a network already held, or a wrong key, returned above)
+      write_log_row!('net_wifi_join', as: nil, where: { kind: 'ap', id: ap_object_id })
       save!
 
       { status: :ok, body: { success: true, foothold: foothold_for_client(foothold_id), first: first
@@ -420,6 +426,9 @@ module BreakEscape
 
     IMPLANT_NO_ACTION = 'No such implant here'.freeze
     IMPLANT_NOT_READY = 'The device did not take.'.freeze
+    # S5a: a session-shaped device needs someone signed in at the PC's own keyboard; a live
+    # foothold, relay, `from` or technique session there is not at that console.
+    IMPLANT_NEEDS_CONSOLE = 'Nobody is signed in at this keyboard.'.freeze
     # The server's copy of the client's USB refusal lines (pc-policy.js), so a blocked
     # implant shows the same authored line.
     USB_REFUSAL_LINES = { 'storage_blocked' => 'USB storage is disabled on this PC.',
@@ -493,9 +502,15 @@ module BreakEscape
       device_copy = nil
       if shape == 'session'
         session = access_sessions[pc_id]
+        return implant_not_ready unless session.is_a?(Hash)
+        # S5a: a live session that is not the keyboard's (a foothold, relay, `from` or technique
+        # session) answers needs_console, only where a session is live (session_access not nil);
+        # a locked or expired one keeps the quiet not_ready.
+        return implant_needs_console if (session['foothold'].present? || remote_route_session?(session)) &&
+                                        !session_access(pc_id).nil?
         # A non-foothold session only: a claim or a keyboard sign-in, never a live
         # remote-through-foothold session (testing via alone is wrong, 5.5).
-        return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+        return implant_not_ready unless session['foothold'].blank?
         # Keyring K2 (plan 3.8): a relay or `from` session also has a blank foothold, but a
         # shared screen or a session opened from another desktop never takes a plant.
         return implant_not_ready if remote_route_session?(session)
@@ -506,10 +521,18 @@ module BreakEscape
 
         # The USB hook (5.5): the PC's policy must not refuse the device's usbClass. Reuses
         # AccessWork.plant_refused?, the table pc-policy.js uses, never a parallel method.
-        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+        # S5a: an unlocked admin session at this keyboard overrides the policy (keyboard_admin?).
+        admin = keyboard_admin?(pc_id)
+        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry, admin: admin)
           usb = BreakEscape::AccessWork.usb_policy_for(scenario_data, info[:object])
           message = USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES['blocked']
           return { status: :unprocessable_entity, body: { success: false, reason: 'usb_refused', error: message } }
+        end
+
+        if admin && BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+          write_log_row!('usb_install_overridden', as: ops_account_as(session['id']),
+                                                   where: { kind: 'pc', id: pc_id.to_s },
+                                                   detail: { 'device' => entry['usbClass'].to_s })
         end
 
         device_copy = entry.deep_dup
@@ -634,6 +657,10 @@ module BreakEscape
 
     def implant_no_action
       { status: :not_found, body: { success: false, reason: 'no_action', error: IMPLANT_NO_ACTION } }
+    end
+
+    def implant_needs_console
+      { status: :unprocessable_entity, body: { success: false, reason: 'needs_console', error: IMPLANT_NEEDS_CONSOLE } }
     end
 
     def implant_not_ready
@@ -767,7 +794,7 @@ module BreakEscape
         # A foothold whose own network is down (an outage, 5.2) lists none of its rows: they
         # would only be refused, and the hosts leave every view while the network is down
         own = network_footholds[id]['network']
-        foothold_for_client(id).merge(place).merge('hosts' => network_up?(own) ? network_rows(own) : [],
+        foothold_for_client(id).merge(place).merge('hosts' => network_up?(own) ? network_rows(own, id) : [],
                                       'networks' => network_blocks(id))
       end
       { status: :ok, body: { footholds: footholds } }
@@ -801,7 +828,7 @@ module BreakEscape
       live_hosts = session_hosts.reject { |h| host_service_off?(h[:pc]) }
       blocks = reach.to_a.sort.map do |net|
         { 'id' => net, 'name' => network_name(net), 'via' => (net == own ? nil : via_for(net, live_hosts, reach)),
-          'hosts' => network_rows(net), 'route' => 'up' }
+          'hosts' => network_rows(net, foothold_id), 'route' => 'up' }.merge(ops_block_fields(net))
       end
       blocks + down_blocks(foothold_id, reach, session_hosts)
     end
@@ -817,13 +844,13 @@ module BreakEscape
         # A down block advertises no action the server would refuse: no sign-in, no session
         # It names the account a session is kept for, as a powered-down row does (heldAs).
         rows = session_hosts.select { |h| h[:net] == net }.map do |h|
-          full = host_row(h[:pc])
+          full = host_row(h[:pc], foothold_id)
           held_as = full.dig('session', 'displayName') || full['heldAs']
           row = full.except('remoteSignIn', 'session', 'responding', 'heldAs')
           held_as.present? ? row.merge('heldAs' => held_as) : row
         end
         { 'id' => net, 'name' => network_name(net), 'via' => via_for(net, session_hosts, structural),
-          'hosts' => rows, 'route' => 'down' }
+          'hosts' => rows, 'route' => 'down' }.merge(ops_block_fields(net, with_ops: false))
       end
     end
 
@@ -870,8 +897,14 @@ module BreakEscape
     end
 
     # The rows of a network's view: each sign-in host, then each resource, each sorted by id.
-    def network_rows(network_id)
-      hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object]) }
+    # foothold_id: the foothold the view is built for. Optional, unused for now (S3 reads it).
+    def network_rows(network_id, foothold_id = nil)
+      # An unswept discovery network lists only the PCs the player holds a session on (5.2): the
+      # rest is told by the sweep. Sign-in itself is not gated by this.
+      return ops_held_session_rows(network_id, foothold_id) unless ops_network_listing?(network_id)
+
+      hosts = NetworkModel.sign_in_objects_on(network_id, scenario_data).map { |entry| host_row(entry[:object], foothold_id) }
+      hosts += ops_device_rows(network_id)
       # A resource whose own offWhen holds is withheld while down (5.2), as a resource on a
       # down network is: its row leaves the view until the global clears.
       resources = NetworkModel.resources_on(network_id, scenario_data).reject { |_id, resource| resource_down?(resource) }
@@ -1033,22 +1066,30 @@ module BreakEscape
           return 'not_responding'
         end
       elsif foothold_id.present?
-        return 'not_responding' if host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && host_service_off?(pc)
+        if host_reachable_through?(foothold_id, pc) && host_service_off?(pc) &&
+           (!remote_blocked?(pc) || technique_session_through?(access_sessions[pc['id'].to_s], foothold_id))
+          return 'not_responding'
+        end
       elsif login_pc_reachable?(info) && !NetworkModel.headless?(pc) && host_service_off?(pc)
         return 'off'
       end
       'unreachable'
     end
 
-    def host_row(pc)
+    # foothold_id: the foothold of the view being built; a technique session through it is listed on a
+    # host that blocks remote sign-in too (plan 5.4, `openHere`).
+    def host_row(pc, foothold_id = nil)
       row = { 'id' => pc['id'], 'kind' => 'pc', 'name' => pc['name'], 'host' => host_label(pc),
               'sprite' => pc['sprite'].presence || 'pc_desktop', 'headless' => NetworkModel.headless?(pc) }
+      # Discovery's fields (address by the host's own network; scanned and services once scanned)
+      ops_add_host_fields!(row, pc['id'], object_network(pc), NetworkModel.services_of(pc))
       remote = !remote_blocked?(pc)
       session = access_sessions[pc['id'].to_s]
+      open_here = !remote && technique_session_through?(session, foothold_id)
       held = nil
       # A claimed session is physical and not offered over the network (4.3); a relay session
       # is the holder's shared screen and never listed either (keyring K2, plan 3.8)
-      if remote && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session) &&
+      if (remote || open_here) && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session) &&
          !credential_session_expired?(session) # K5 (plan 10)
         npc = scenario_room_npc(session['id'])
         if npc && self.class.account_holder?(npc)
@@ -1060,6 +1101,8 @@ module BreakEscape
           # UI slice 6: a locked session is still held but refused until the password is
           # entered again; the view marks it Locked rather than offering Open.
           held['locked'] = true if session_locked?(session)
+          held['access'] = 'admin' if client_access_level(pc['id']) == 'admin'
+          held['openHere'] = true if open_here
         end
       end
       # A host whose service is off offers nothing: no sign-in and no session to open (5.2).
@@ -1507,7 +1550,8 @@ module BreakEscape
         credentials_declared? && session.is_a?(Hash) && session['from'].to_s == route[:from] &&
           !relay_session?(session) && session_route_up?(pc['id']) && !remote_blocked?(pc)
       elsif route && route[:foothold].present?
-        host_reachable_through?(route[:foothold], pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
+        host_reachable_through?(route[:foothold], pc) && !host_service_off?(pc) &&
+          (!remote_blocked?(pc) || technique_session_through?(session, route[:foothold])) &&
           !(session.is_a?(Hash) && session['via'] == 'claim') && !remote_route_session?(session)
       else
         return false if relay_session?(session)
@@ -1545,6 +1589,13 @@ module BreakEscape
       relay_session?(session) || (session.is_a?(Hash) && session['from'].present?)
     end
 
+    # A technique session at this PC that came through this very foothold (plan 5.4): the one
+    # exception to `remote: "blocked"` on the foothold route. Reads the server's own record only.
+    def technique_session_through?(session, foothold_id)
+      session.is_a?(Hash) && session['via'] == 'technique' && foothold_id.present? &&
+        session['foothold'].to_s == foothold_id.to_s
+    end
+
     # Whether a credential has been ended (plan 7.1). endedCredentials is written only by the
     # server (the 7.1 sync merge and bootstrap writer, a later run); read here without a default.
     def ended_credential?(cred_id)
@@ -1559,6 +1610,8 @@ module BreakEscape
       # Keyring K2 (plan 3.8): a credential session stays remote at the target's keyboard, so
       # a saved-connection session still ends on unplug (or, K4, with its `from` source)
       return if session['via'] == 'credential'
+      # Network ops S3 (plan 5.4): a technique session is never settled, so it keeps its foothold
+      return if session['via'] == 'technique'
 
       player_state['sessions'][pc_id.to_s] = session.except('foothold', 'from')
       save!
@@ -1578,29 +1631,31 @@ module BreakEscape
     # the list admits the session's identity). A resource with no network is reached by
     # nothing.
     def resource_admits_player?(resource)
-      return false unless resource.is_a?(Hash)
+      !resource_admitting(resource).nil?
+    end
+
+    # Ops log L3: what admits the player to a resource: the PC id (a String) of the
+    # first admitting session in sign-in-list order, else :foothold when only a held foothold does, else nil. A session is
+    # named before a foothold, so the share row names an account whenever one admits it.
+    def resource_admitting(resource)
+      return nil unless resource.is_a?(Hash)
       # A listed-only share has nothing to serve, so GET /container answers "not found"
-      return false if NetworkModel.listed_only_share?(resource)
+      return nil if NetworkModel.listed_only_share?(resource)
       # A resource whose own offWhen holds is off (5.2): not served, like one on a down
       # network. network_up? below also refuses a resource on a down network (player_reach).
-      return false if resource_down?(resource)
+      return nil if resource_down?(resource)
 
       network = resource['network']
-      return false unless NetworkModel.present_string?(network)
-      # An open share (no access list) is reached by any held foothold whose player_reach
-      # includes the resource's network (its own, or a linked network through a pivot).
-      if resource['access'].nil? && network_footholds.keys.any? { |fid| player_reach(fid).include?(network) }
-        return true
-      end
+      return nil unless NetworkModel.present_string?(network)
 
       # A session the player holds at a host whose network reaches the resource's network,
       # whose identity the list admits, opens it from that desktop. An access-listed share
       # maps across the pivot walk over up links (the member-of-staff model); an open share
       # is reached from a session only on its own network, never across a link (m3): a linked
-      # open share needs a foothold that pivots to it (the branch above), like every other
+      # open share needs a foothold that pivots to it (the branch below), like every other
       # resource on a linked network.
       open_share = resource['access'].nil?
-      access_sessions.any? do |pc_id, session|
+      session_pc = sessions_oldest_first.find do |pc_id, session|
         next false unless session.is_a?(Hash)
         # UI slice 6: a locked session maps no shares until the password is entered again.
         next false if session_locked?(session)
@@ -1621,7 +1676,12 @@ module BreakEscape
 
         reaches = open_share ? host_net == network : networks_reachable_from(host_net).include?(network)
         reaches && resource_acl_admits?(resource, npc)
-      end
+      end&.first
+      return session_pc if session_pc
+
+      # An open share (no access list) is reached by any held foothold whose player_reach
+      # includes the resource's network (its own, or a linked network through a pivot).
+      :foothold if resource['access'].nil? && network_footholds.keys.any? { |fid| player_reach(fid).include?(network) }
     end
 
     # The file shares a session at this PC maps on its desktop (4.5): every file_share on

@@ -23,7 +23,9 @@ a `hosts` key, a service `name`, a weakness or decoy `id` and a technique id are
 most 40 characters, so each fits a log row (section 13). Ids that existed before this plan and
 also appear in a row (a network id, a sign-in host's object id, a foothold's object id) keep
 their pattern, and the validator refuses one longer than 40 characters in a scenario that
-declares `logSources`. A finding id is built, not authored: three
+declares `logSources`. A foothold id in a row is built from its object's id with a prefix
+(`jack_`, `wifi_` or `implant_`), so in such a scenario the validator also refuses a jack, a
+Wi-Fi network or an implantable PC whose built foothold id is longer than 40 characters. A finding id is built, not authored: three
 authored ids joined by dots, so it has its own pattern and can be long. It is never typed and
 never put in a log row; the alias stands in for it in both places.
 
@@ -375,7 +377,7 @@ realism skin plan, section 4.2, and served as section 5.2 says.
     "summary": "Devices often ship with a published account that nobody changes.",
     "worksOn": { "class": "default_creds" } },
   "shareserve_3x": { "name": "ShareServe 3.x service flaw",
-    "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["3.0", "3.1"] } }
+    "worksOn": { "class": "unpatched", "product": "Brackley ShareServe", "versions": ["3.1"] } }
 }
 ```
 
@@ -1547,7 +1549,8 @@ come from the log rows plan's stage L1a; that plan's stages L1a and L1b are both
    The test at `:568-583`, which asserts a remote password copy is displaced on
    `npc_borrowed_session`, inverts its assertion: the copy is kept and nothing is sent. The
    Rails borrow test (`npc_workaround_h_test.rb:148-159`) uses a keyboard session and stays as
-   it is. The network tests most at risk are
+   it is. `test/js/test-bridge-access.test.mjs` gains `compromiseMarks` in its pinned key list of the
+   bridge's access block (the new read-only reader of section 5.4). The network tests most at risk are
    `network_remote_signin_test.rb`, `network_remote_tiles_test.rb`, `network_pivot_test.rb`,
    `network_outages_test.rb`, `network_host_service_off_test.rb`, `network_no_exposure_test.rb`,
    `keyring_route_test.rb` and `lab_physical_pentest_network_test.rb`.

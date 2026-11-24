@@ -1,0 +1,137 @@
+/* Ops log viewer (OpsLogMinigame, scene "ops-log"). Pixel look: 2px borders, square corners, flat.
+   Sits inside the shared console window; no row is tinted. */
+.ol-wrapper {
+    box-sizing: border-box;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: #12121e;
+    color: #d0d0e0;
+    font-size: 16px;
+    overflow: hidden;
+}
+
+.ol-caption {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    border-bottom: 2px solid #444466;
+    color: #9999cc;
+    letter-spacing: 0.04em;
+    overflow-wrap: anywhere;
+}
+.ol-caption:empty { display: none; }
+
+.ol-filters {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 6px 8px;
+    background: #0d0d1a;
+    border-bottom: 2px solid #444466;
+}
+.ol-filters:empty { display: none; }
+
+.ol-filter { display: flex; align-items: center; gap: 6px; }
+.ol-filter-label { color: #7777aa; }
+.ol-filter-input {
+    font-size: 16px;
+    background: #151530;
+    color: #ccccee;
+    border: 2px solid #445566;
+    border-radius: 0;
+    padding: 2px 4px;
+    max-width: 180px;
+    min-width: 0;
+}
+.ol-filter-input:focus, .ol-btn:focus, .ol-row:focus { outline: 2px solid #88aacc; outline-offset: -2px; }
+
+.ol-table-wrap { flex: 1; min-height: 0; overflow: auto; background: #0e0e1c; }
+
+.ol-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 16px; min-width: 760px; }
+.ol-th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #111128;
+    color: #9999cc;
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 2px solid #333355;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.ol-th[data-col="time"] { width: 15%; }
+.ol-th[data-col="event"] { width: 12%; }
+.ol-th[data-col="as"] { width: 17%; }
+.ol-th[data-col="where"] { width: 17%; }
+.ol-th[data-col="result"] { width: 12%; }
+
+.ol-cell {
+    padding: 3px 6px;
+    border-bottom: 2px solid #1a1a2e;
+    color: #b0b0cc;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    vertical-align: top;
+}
+.ol-row { cursor: pointer; }
+.ol-row:hover .ol-cell { background: #1a1a32; }
+.ol-row-selected .ol-cell { background: #1e2244; }
+.ol-message { cursor: default; }
+.ol-message-cell { text-align: center; color: #9999cc; padding: 14px 6px; letter-spacing: 0.08em; }
+
+.ol-detail {
+    flex-shrink: 0;
+    max-height: 30%;
+    overflow-y: auto;
+    background: #111122;
+    border-top: 2px solid #444466;
+    padding: 6px 10px;
+}
+.ol-hidden { display: none; }
+.ol-detail-head { color: #fff; border-bottom: 2px solid #333355; padding-bottom: 3px; margin-bottom: 5px; letter-spacing: 0.05em; }
+.ol-detail-grid { display: grid; grid-template-columns: minmax(70px, 110px) minmax(0, 1fr); gap: 2px 8px; }
+.ol-detail-label { color: #7777aa; }
+.ol-detail-value { color: #ccccee; overflow-wrap: anywhere; word-break: break-word; }
+
+/* The flag control (L2b). A row is marked only after a right flag (checked in the browser). */
+.ol-flag { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; padding-top: 6px; border-top: 2px solid #333355; }
+.ol-flag-note { color: #ccccee; letter-spacing: 0.04em; }
+.ol-flag-wrong { color: #ddaa88; }
+.ol-flag-done { color: #88ccaa; }
+.ol-btn[disabled] { opacity: 0.5; cursor: default; }
+.ol-row.ol-row-flagged .ol-cell, .ol-row.ol-row-flagged:hover .ol-cell {
+    background: repeating-linear-gradient(135deg, #1a3a2e 0, #1a3a2e 4px, #12281f 4px, #12281f 8px);
+    color: #aaeecc;
+    border-bottom: 2px solid #44bb88;
+}
+.ol-row-flagged .ol-cell:first-child { border-left: 6px solid #44bb88; }
+.ol-row-flagged.ol-row-selected .ol-cell { border-top: 2px solid #88ffcc; }
+
+.ol-status {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #0d0d1a;
+    border-top: 2px solid #444466;
+    color: #7777aa;
+}
+.ol-btn {
+    font-size: 16px;
+    background: #151530;
+    border: 2px solid #445566;
+    border-radius: 0;
+    color: #88aacc;
+    cursor: pointer;
+    padding: 3px 8px;
+    letter-spacing: 0.03em;
+}
+.ol-btn:hover { background: #1e2240; border-color: #6688aa; color: #ccddee; }
+
+/* Narrow screens: the table keeps a minimum width and scrolls sideways inside its frame (as log-filter's tables do), so no column vanishes and no word is cut. */

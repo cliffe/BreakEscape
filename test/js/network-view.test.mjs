@@ -33,7 +33,9 @@ copy('utils/remote-host-text.js');
 copy('utils/sync-before-fetch.js');
 copy('systems/network-links.js');
 copy('minigames/framework/base-minigame.js');
+copy('minigames/network-view/ops-model.js');
 copy('minigames/network-view/network-view-minigame.js');
+copy('utils/compromise-bolt.js');
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

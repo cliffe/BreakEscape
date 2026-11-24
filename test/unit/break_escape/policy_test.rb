@@ -121,8 +121,8 @@ module BreakEscape
 
     # Physical pentest devices (plan slices E0 to B3, plant hiding): every device action is show?,
     # so each one is checked per role. A later edit that narrows or widens one fails here.
-    DEVICE_ACTIONS = %i[network_plant? network_unplug? network_join? network_implant?
-                        capture_secrets? keyring? wear? pin_dust? inventory?].freeze
+    DEVICE_ACTIONS = %i[network_plant? network_unplug? network_join? network_implant? network_scan? network_check? network_confirm? network_technique?
+                        capture_secrets? keyring? wear? pin_dust? inventory? log_rows?].freeze
 
     test "device actions: owner allowed, other user and nil user denied" do
       DEVICE_ACTIONS.each do |action|

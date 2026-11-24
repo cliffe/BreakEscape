@@ -68,9 +68,11 @@ function classOf(item) {
  * accepts and refusal null; or, when every matching item is refused, item null and the refusal
  * line (and `usbClass` of the first refused item). With no items: { item: null, refusal: null }.
  */
-export function plantRefusal(heldItems, objectData, scenario) {
+export function plantRefusal(heldItems, objectData, scenario, { admin = false } = {}) {
     const list = Array.isArray(heldItems) ? heldItems.filter(Boolean) : [];
     if (!list.length) return { item: null, refusal: null };
+    // The server decides the level; only a strict true overrides the policy.
+    if (admin === true) return { item: list[0], refusal: null };
     const usb = usbPolicyFor(objectData, scenario);
     if (!usb) return { item: list[0], refusal: null };
     const ok = list.find(it => !usbRefused(usb, classOf(it)));
@@ -78,6 +80,37 @@ export function plantRefusal(heldItems, objectData, scenario) {
     return { item: null, refusal: USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES.blocked, usbClass: classOf(list[0]), refusedItem: list[0] };
 }
 
-const pcPolicy = Object.freeze({ effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, USB_REFUSAL_LINES });
+/**
+ * The PC a session-shaped device is judged at: the pc of the first grant_foothold with needsSession in
+ * the object triggerOnInteract, walked depth-first in list order into confirm_action onConfirm lists.
+ * A grant with a condition counts (the walk ignores conditions). None: null. A grant with no usable pc (not a non-empty string) is skipped, as the validator
+ * warning (c) does. Mirrors the server session_grant_pc.
+ */
+function grantPcIn(actions) {
+    if (!Array.isArray(actions)) return null;
+    for (const action of actions) {
+        if (!action || typeof action !== "object") continue;
+        if (action.type === "grant_foothold" && action.needsSession && typeof action.pc === "string" && action.pc.trim()) {
+            return action.pc;
+        }
+        if (action.type === "confirm_action") {
+            const found = grantPcIn(action.onConfirm);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+export function sessionGrantPc(objectData) {
+    if (!objectData || typeof objectData !== "object") return null;
+    return grantPcIn(objectData.triggerOnInteract);
+}
+
+/** Whether the object policy refuses this item (a gated remove): the same test the plant uses. */
+export function gatedRemove(item, objectData, scenario) {
+    return usbRefused(usbPolicyFor(objectData, scenario), classOf(item));
+}
+
+const pcPolicy = Object.freeze({ effectivePolicy, usbGoverned, usbRefused, usbPolicyFor, plantRefusal, sessionGrantPc, gatedRemove, USB_REFUSAL_LINES });
 if (typeof window !== "undefined") window.pcPolicy = pcPolicy;
 export default pcPolicy;

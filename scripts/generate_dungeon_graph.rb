@@ -671,6 +671,7 @@ if NETWORKS.any?
       down_at_start = cond.is_a?(String) ? nm.truthy?(globals_g[cond]) : cond.all? { |k, v| globals_g[k.to_s] == v }
       label += ' (down at start)' if down_at_start
     end
+    label += '<br/>(sweep to list)' if nm.discovery?(scenario, net_id)
     add_node("net_#{nid(net_id)}", label, 'room')
   end
   room_node = lambda do |room_id|
@@ -765,12 +766,21 @@ if NETWORKS.any?
   share_host = lambda do |h|
     !nm.headless?(h[:object]) || (foothold_reach.include?(h[:network]) && !remote_blocked.call(h[:object]))
   end
+  weak_owner = {} # weakness node id => finding id (a collision check)
+  weak_needs = [] # [weakness node, its authored needs]: drawn after the credential block
+  weak_drawn = [] # [weakness node, its nm.weaknesses record]: cards and grants are drawn after the credential block
   NETWORKS.each_key do |net_id|
     hosts = nm.sign_in_objects_on(net_id, scenario)
     shares = nm.resources_on(net_id, scenario)
-    next if hosts.empty? && shares.empty?
+    # N13: a `hosts` device is a container hanging from its network; it has no lock and nothing opens from it.
+    devices = nm.hosts_on(net_id, scenario).select { |rec| rec[:kind] == 'device' }
+    next if hosts.empty? && shares.empty? && devices.empty?
 
     network = net_node.call(net_id)
+    devices.each do |rec|
+      node = add_node("host_#{nid(rec[:id])}", "#{safe_text.call(rec[:object]['name'], rec[:id])}<br/>(device)", 'container')
+      add_edge(network, node, label: 'exposes')
+    end
     hosts.each do |entry|
       lock = access_lock_node({ kind: 'login', lock: entry[:object], room: entry[:room_id] }, rooms)
       # A headless host is reached only over the network: drop its room's edge.
@@ -808,6 +818,42 @@ if NETWORKS.any?
         end
       else
         add_edge(network, node, label: 'exposes')
+      end
+    end
+    # N14 (S2, plan 9.3): a weakness is a lock hanging from its host (a device) or from the
+    # network (a sign-in host: its own `lock_<pcId>` means "signed in there"). Decoys gate
+    # nothing and are not drawn. Cards, needs edges and grants are S3.
+    nm.weaknesses(scenario).select { |w| w[:host][:network] == net_id }.each do |w|
+      svc = w[:service]
+      entry = w[:entry]
+      host_name = safe_text.call(w[:host][:object]['name'], w[:host_id])
+      svc_name = safe_text.call(svc['label'], w[:service_name])
+      label = "#{host_name}<br/>#{svc_name}"
+      label += " :#{svc['port']}" if svc['port'].is_a?(Integer)
+      label += "<br/>#{safe_text.call(entry['class'], '')} / #{safe_text.call(entry['severity'], '')}"
+      fixed = entry['fixedIf']
+      fixed_text = fixed.is_a?(String) ? fixed.strip : (fixed.is_a?(Hash) ? fixed.map { |k, v| "#{k}=#{v}" }.join(' &amp; ') : '')
+      label += "<br/>fixed if #{safe_text.call(fixed_text, '')}" unless fixed_text.empty?
+      label += '<br/>(report only)' unless entry.key?('grants')
+      # nid folds dots, underscores and case together, so two finding ids can give one node id
+      # (sam.web_a.b and sam_web.a.b). A second claimant gets a counter and a warning, never the
+      # first one's node.
+      base_id = "weak_#{nid(w[:finding_id])}"
+      node_id = base_id
+      count = 1
+      while weak_owner.key?(node_id) && weak_owner[node_id] != w[:finding_id]
+        count += 1
+        node_id = "#{base_id}_#{count}"
+      end
+      warn "graph: finding ids collide on #{base_id}; #{w[:finding_id]} is drawn as #{node_id}" if node_id != base_id
+      weak_owner[node_id] = w[:finding_id]
+      node = add_node(node_id, label, 'lock')
+      weak_needs << [node, entry['needs']] if entry['needs'].is_a?(Hash)
+      weak_drawn << [node, w]
+      if w[:host][:kind] == 'device'
+        add_edge("host_#{nid(w[:host_id])}", node)
+      else
+        add_edge(network, node, label: safe_text.call(w[:service_name], w[:service_name]))
       end
     end
   end
@@ -1281,6 +1327,54 @@ rooms.each do |room_id, room|
 end
 
 # ---------------------------------------------------------------------------
+# Ops log sources (OPS_LOG_ROWS_PLAN.md section 9, stage L2b). A log source is neither a lock nor a
+# key, so it adds no gating edge: each source is one `note` node, labelled with its title and events,
+# with a dashed, undirected edge to each ops_log_terminal that reads it. A reader is an item node
+# hung from the room or lock that holds it, as any other object is; its anomaly and flag actions add
+# no edge of their own (only puzzle_graph_unlocks does, through walk_objects). A scenario with no
+# `logSources` draws as before.
+# ---------------------------------------------------------------------------
+LOG_SOURCES = scenario['logSources'].is_a?(Hash) ? scenario['logSources'].select { |id, src| !id.to_s.start_with?('_') && src.is_a?(Hash) } : {}
+unless LOG_SOURCES.empty?
+  log_node = ->(source_id) { "log_#{nid(source_id)}" }
+  LOG_SOURCES.each do |source_id, source|
+    events = Array(source['events']).select { |e| e.is_a?(String) }.join(', ')
+    title  = source['title'].is_a?(String) && !source['title'].strip.empty? ? source['title'] : source_id
+    add_node(log_node.call(source_id), "#{title}<br/>#{events}", 'note')
+  end
+  readers_seen = Set.new
+  add_reader = lambda do |obj, parent|
+    obj_id = obj['id'] || nid((obj['name'] || obj['type']).to_s)
+    reader = "reader_#{nid(obj_id)}"
+    next unless readers_seen.add?(reader)
+
+    name = obj['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+    add_node(reader, "#{name}<br/>(log reader)", 'item')
+    from = obj['locked'] ? "lock_#{obj_id}" : parent
+    if from
+      add_node(from, room_label(from, rooms[from]), 'room') if rooms.key?(from) && !$nodes.key?(from)
+      add_edge(from, reader)
+    end
+    source_id = obj.dig('minigameData', 'logSource')
+    next unless source_id.is_a?(String) && LOG_SOURCES.key?(source_id)
+
+    add_edge(log_node.call(source_id), reader, dashed: true, undirected: true)
+    $edges.last[:log] = true if $edges.last && $edges.last[:to] == reader
+  end
+  find_readers = lambda do |node, parent|
+    case node
+    when Array then node.each { |value| find_readers.call(value, parent) }
+    when Hash
+      add_reader.call(node, parent) if node['type'] == 'ops_log_terminal'
+      inner = node['locked'] ? "lock_#{node['id'] || nid((node['name'] || node['type']).to_s)}" : parent
+      node.each { |key, value| find_readers.call(value, inner) if value.is_a?(Array) || value.is_a?(Hash) }
+    end
+  end
+  rooms.each { |room_id, room| find_readers.call(room['objects'], room_id) }
+  %w[accountProfiles resources].each { |key| find_readers.call(scenario[key], nil) }
+end
+
+# ---------------------------------------------------------------------------
 # puzzle_graph_links — explicit cross-object edges resolved after all nodes exist
 # Use this to connect nodes whose IDs aren't yet known at walk_objects processing
 # time (e.g. action nodes from later rooms, aim nodes, NPC nodes).
@@ -1648,8 +1742,8 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
   when 'session'
     cred_sess = "lock_#{cred_proof['session']}"
     add_edge(cred_sess, cred_node) if $nodes.key?(cred_sess)
-  when 'planted', 'dropped'
-    # A capture proof; the capture and social sections already show how the secret is earned.
+  when 'planted', 'dropped', 'technique_card'
+    # A capture proof, or (technique_card) the weakness that grants it: its edge is the grant edge below; the capture and social sections already show how the secret is earned.
   end
 
   BreakEscape::CredentialModel.pcs_accepting(scenario, cid).each do |cred_pc|
@@ -1659,6 +1753,128 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
     end
     add_edge(cred_node, cred_pc_lock)
   end
+end
+
+# N15 (S3, plan 9.3): technique cards. `tech_<techniqueId>` is a key node (the registry entry's name) with an edge
+# to every weakness it matches (NetworkModel.technique_matches?); each carrying item is a source node drawn as a
+# held-credential source is (`cred_src_<itemId>`, shared with a `held` proof or an `item` need on the same item).
+# Drawn only when the scenario has weaknesses and a `techniques` registry.
+(weak_drawn || []).tap do |drawn|
+  next if drawn.empty?
+
+  tech_nm = BreakEscape::NetworkModel
+  techs = tech_nm.techniques(scenario)
+  carriers = tech_nm.technique_items(scenario).group_by { |rec| rec[:item]['technique_card'].to_s }
+  tech_owner = {} # technique node id => registry id (a collision check, as the weakness nodes have)
+  techs.each do |tech_id, tech|
+    # nid folds case and punctuation, so two registry ids can give one node id (release-notes and
+    # release_notes): the second claimant gets a counter and a warning, never the first one's node.
+    base_id = "tech_#{nid(tech_id)}"
+    tech_node_id = base_id
+    count = 1
+    while tech_owner.key?(tech_node_id) && tech_owner[tech_node_id] != tech_id
+      count += 1
+      tech_node_id = "#{base_id}_#{count}"
+    end
+    warn "graph: technique ids collide on #{base_id}; #{tech_id} is drawn as #{tech_node_id}" if tech_node_id != base_id
+    tech_owner[tech_node_id] = tech_id
+    tech_node = add_node(tech_node_id, scrub_label((tech['name'].is_a?(String) && !tech['name'].strip.empty? ? tech['name'] : tech_id).to_s), 'key')
+    (carriers[tech_id] || []).each do |rec|
+      item = rec[:item]
+      next unless item['id'].is_a?(String) && !item['id'].empty?
+
+      src = add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item')
+      add_edge(src, tech_node) unless $edges.any? { |e| e[:from] == src && e[:to] == tech_node }
+    end
+    drawn.each do |weak_node, w|
+      next unless tech_nm.technique_matches?(tech, w[:service], w[:entry])
+
+      add_edge(tech_node, weak_node) unless $edges.any? { |e| e[:from] == tech_node && e[:to] == weak_node }
+    end
+  end
+
+  # Grants: a session grant ends at the host's sign-in lock (the lock already takes a second way in from a
+  # credential), a credential grant at `cred_<id>`. An `access: admin` session grant also gains an edge to `admin@<pcId>` (S5a, below).
+  drawn.each do |weak_node, w|
+    grants = w[:entry]['grants']
+    next unless grants.is_a?(Hash)
+
+    if grants['session'].is_a?(Hash) && w[:host][:kind] != 'device'
+      lock = "lock_#{w[:host_id]}"
+      if $nodes.key?(lock) && $edges.none? { |e| e[:from] == weak_node && e[:to] == lock }
+        add_edge(weak_node, lock, label: 'grants session')
+      end
+    end
+    cred = grants['credential']
+    cred_node = cred.is_a?(String) ? "cred_#{nid(cred)}" : nil
+    add_edge(weak_node, cred_node) if cred_node && $nodes.key?(cred_node) && $edges.none? { |e| e[:from] == weak_node && e[:to] == cred_node }
+  end
+end
+
+# S5a (privilege plan 9, dungeon graph): `admin@<pcId>` is "an administrator session at this sign-in PC". It has
+# an edge from each `creds.admin` account the PC admits (from that account's sign-in node, as the habit edges
+# are drawn) and from each weakness on the PC's host whose session grant has `access: "admin"` (that weakness
+# keeps its `grants session` edge to the lock). A scenario with neither draws no such node. Labels name the PC,
+# never a password. No hash-record or "collect" edges (S5b).
+admin_pcs = {} # pc id => { pc:, from: [node ids] }
+admin_rec_for = lambda do |lock_entry|
+  pc = lock_entry[:lock]
+  next nil unless lock_entry[:kind] == 'login' && pc.is_a?(Hash) && pc['id'].is_a?(String) && !pc['id'].empty?
+
+  admin_pcs[pc['id']] ||= { pc: pc, from: [] }
+end
+BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+  npc = account[:npc]
+  next unless npc['creds'].is_a?(Hash) && npc['creds']['admin'] == true
+
+  account[:opens].each do |lock_entry|
+    next unless (rec = admin_rec_for.call(lock_entry))
+
+    signin_node = "signin_#{nid(npc['id'])}"
+    unless $nodes.key?(signin_node)
+      add_node(signin_node, "#{npc['displayName'] || npc['id']} sign-in<br/>(#{npc['creds']['username']})", 'key')
+      add_node(account[:room], room_label(account[:room], rooms[account[:room]]), 'room')
+      add_edge(account[:room], signin_node)
+    end
+    rec[:from] << signin_node
+  end
+end
+(weak_drawn || []).each do |weak_node, w|
+  grant = w[:entry]['grants'].is_a?(Hash) ? w[:entry]['grants']['session'] : nil
+  next unless grant.is_a?(Hash) && grant['access'] == 'admin' && w[:host][:kind] != 'device'
+
+  lock_entry = BreakEscape::AccessIdentities.locks(scenario).find { |l| l[:kind] == 'login' && l[:lock]['id'] == w[:host_id] }
+  next unless lock_entry && (rec = admin_rec_for.call(lock_entry))
+
+  rec[:from] << weak_node
+end
+admin_pcs.each do |pc_id, rec|
+  next if rec[:from].empty?
+
+  admin_id = "admin@#{pc_id}"
+  pc_label = rec[:pc]['name'].is_a?(String) && !rec[:pc]['name'].strip.empty? ? rec[:pc]['name'] : pc_id
+  add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
+  rec[:from].uniq.each { |from| add_edge(from, admin_id, label: 'administrator') }
+end
+
+# N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
+# because the credential nodes exist only now. `needs.credential` from `cred_<id>`; `needs.item` from the
+# item's existing node (a granted item or a held-credential source), nothing when the item has none: a
+# need adds no node of its own. `itemType`, `global` and `session` have no node and draw nothing.
+weak_host_lock = (weak_drawn || []).to_h { |node, w| [node, w[:host][:kind] == 'device' ? nil : "lock_#{w[:host_id]}"] }
+(weak_needs || []).each do |weak_node, needs|
+  cred = needs['credential']
+  edge_from = cred.is_a?(String) && $nodes.key?("cred_#{nid(cred)}") ? "cred_#{nid(cred)}" : nil
+  add_edge(edge_from, weak_node) if edge_from && $edges.none? { |e| e[:from] == edge_from && e[:to] == weak_node }
+  # N15: a session need (a step up) is an edge from this host's sign-in lock, when the host has one.
+  if needs['session'].is_a?(String) && (host_lock = weak_host_lock[weak_node]) && $nodes.key?(host_lock)
+    add_edge(host_lock, weak_node) if $edges.none? { |e| e[:from] == host_lock && e[:to] == weak_node }
+  end
+  item = needs['item']
+  next unless item.is_a?(String)
+
+  item_from = %W[grant_#{nid(item)} cred_src_#{nid(item)}].find { |id| $nodes.key?(id) }
+  add_edge(item_from, weak_node) if item_from && $edges.none? { |e| e[:from] == item_from && e[:to] == weak_node }
 end
 
 # ---------------------------------------------------------------------------
@@ -1795,7 +2011,21 @@ critical_set = Set.new(critical_path)
 # Every label passes through scrub_label and every id through hide_id here, so no diagram
 # prints a Wi-Fi key; the skeleton (skeleton_mermaid) is drawn with hide: false.
 def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, hide: true)
-  hid = hide ? method(:hide_id) : ->(id) { id }
+  # An `@` in a Mermaid id is read as shape syntax by newer Mermaid (`id@{...}`): `admin@<pc>` is drawn `admin_at_<pc>`.
+  # A mapped id that another node already holds (a room really called `admin_at_<pc>`) gets `_` added until it is free.
+  taken = Set.new((nodes.keys + [start_node]).compact.map { |k| (hide ? hide_id(k) : k).to_s }.reject { |k| k.include?('@') })
+  mapped = {}
+  hid = lambda do |id|
+    out = hide ? hide_id(id) : id
+    next out unless out.to_s.include?('@')
+
+    mapped[out.to_s] ||= begin
+      cand = out.to_s.gsub('@', '_at_')
+      cand += '_' while taken.include?(cand)
+      taken << cand
+      cand
+    end
+  end
   # Ensure the start room is present as a node even if it has no puzzle elements
   if start_node && !nodes.key?(start_node)
     label = start_node.tr('_', ' ').split.map(&:capitalize).join(' ')
@@ -1815,6 +2045,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
   lines << '  classDef aim_gate  fill:#111111,stroke:#44cc44,color:#44cc44'
   lines << '  classDef container fill:#1a2d1a,stroke:#60b060,color:#a0e0a0'
   lines << '  classDef npc       fill:#2d1f0d,stroke:#d0a050,color:#ffe0a0'
+  lines << '  classDef note      fill:#161a2d,stroke:#7788bb,color:#c0c8ee' if nodes.any? { |_id, n| n[:klass].to_s == 'note' }
   lines << '  classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88'
   lines << '  classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa'
   lines << ''
@@ -1838,6 +2069,7 @@ def emit_mermaid_diagram(nodes, edges, critical_set: Set.new, start_node: nil, h
     when 'aim'                 then "{{\"#{lbl}\"}}"
     when 'container'           then "[[\"#{lbl}\"]]"
     when 'npc'                 then "(\"#{lbl}\")"
+    when 'note'                then "[(\"#{lbl}\")]"
     else                            "(\"#{lbl}\")"
     end
     lines << "  #{hid.call(id)}#{shape}"
@@ -2031,11 +2263,14 @@ path_labels = critical_path.map { |id|
 # other graph keeps its legend byte for byte.
 net_labels = $edges.map { |e| e[:label] }.to_set
 net_notes = []
-net_notes << '<code>-.-</code> link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share' if $edges.any? { |e| e[:undirected] }
+net_notes << '<code>-.-</code> link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share' if $edges.any? { |e| e[:undirected] && !e[:log] }
+net_notes << '<code>-.-</code> log: a log source (a note) and a reader that shows it; it gates nothing' if $edges.any? { |e| e[:log] }
 net_notes << '<b>+</b> then <code>pivot</code>: the network reached and a session at that host open the linked network' if net_labels.include?('pivot')
 if (net_labels & Set['held', 'dropped', 'session at PC']).any?
   net_notes << '<code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs'
 end
+net_notes << '<b>weak_</b> node: a weakness a check can find on a host or device, hung from it or from its network' if $nodes.keys.any? { |id| id.start_with?('weak_') }
+net_notes << '<b>tech_</b> node: a technique card, drawn to each weakness it matches; a weakness may grant a session (to the host sign-in) or a credential' if $nodes.keys.any? { |id| id.start_with?('tech_') }
 net_legend_html = net_notes.map { |n| %(\n          <div class="edge-row">#{n}</div>) }.join
 net_legend_md = net_notes.map { |n| "\n  Network edges: #{n.gsub(%r{</?code>}, '`').gsub(%r{</?b>}, '')}." }.join
 # Scrubbed before the subtitle cuts it, so the cut never leaves part of a key.
