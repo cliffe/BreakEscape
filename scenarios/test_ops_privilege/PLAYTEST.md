@@ -61,7 +61,7 @@ for f in sys.argv[1:]:
 ' $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
 ```
 
-Then give every KEYBOARD line to the check, with the PC you signed in at (`bay_pc` or `store_pc`; the beats say where), after the game id and before the files. Example for a run with Uma's and Adel's keyboard sign-ins at `bay_pc`:
+Then give every KEYBOARD line to the check, with the PC you signed in at (`bay_pc` or `store_pc`; the beats say where), after the game id and before the files. `n` counts EVERY successful sign-in answer of that account in the log, remote and relay ones included: in a run where Adel signs in at the keyboard, remotely with the token and again at the keyboard, the keyboard ones are `adel#1` and `adel#3`, not 1 and 2 (the printout above shows which). Name every keyboard sign-in, an ordinary account's too, at the PC it was really at. Example for a run with Uma's and Adel's keyboard sign-ins at `bay_pc`:
 
 ```bash
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> \
@@ -69,8 +69,8 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
   $S/responses-<game_id>.jsonl [$S/responses-<game_id>-2.jsonl ...]
 ```
 
-Each entry is credited from its own row onward and for its own account only (`--signin <account>@<pc>@<row time>` names the row by its `t` instead). A wrong PC named is a finding at the next answer for the real PC. The check also takes an earned step back at a sign-out, a lock, a later sign-in at that PC, a refused desktop, and a reload that no longer holds the session.
-It cannot see a token running out between requests.
+Each entry is credited from its own row onward and for its own account only (`--signin <account>@<pc>@<row time>` names the row by its `t` instead). The check refuses (exit 2, with a message) an entry that names a PC the account is not admitted at, an unknown PC or account, a badly formed number or a repeated entry, and also an entry that matched no row (a typo, or a sign-in that did not happen): all are errors, never silence. Naming an ordinary account's sign-in at the wrong PC that does admit it is not caught on the spot: the step is taken back at the named PC only, and at the next desktop answer for the real PC. So name each sign-in where it was. The check also takes an earned step back at a sign-out, a lock, a later sign-in at that PC, a refused desktop, a reload or desktop answer or `GET /network` host row that no longer shows the session as the administrator's, and when a token's `expiresInS` has run out since its sign-in row. When you check after every beat, give only the entries for rows already in the files.
+It cannot see a power cut or a dropped route between requests, unless a desktop answer, a `GET /network` host row or a reload comes before the leaking request.
 
 ## Layout
 
@@ -161,8 +161,9 @@ Sign out any remote session at `bay_pc`, unplug the drop box (view's Unplug) if 
 `interact` `bay_breaker` (hint "The bay PC has gone quiet."), then `{"cmd":"sync"}`, then open `bay_pc` again.
 - Browser: the toast "This PC is off." and no desktop; the taskbar marker for that session is gone.
 - Server: `--access` reads `level none` for `bay_pc`.
-Then `interact` `bay_breaker_on` (hint "The bay PC hums again."), `{"cmd":"sync"}`, and sign in again as Adel at the keyboard (the old session may have ended with the power; type the password).
-- Browser: the desktop opens and the "Administrator" marker is back. (That the marker returns for a SURVIVING session after power-on, without a new sign-in, is the node test `test/js/pc-sessions-admin.test.mjs` ("a locked entry never gains the level; a technique entry gets it back after not_responding") and the Rails test "the bay power switch ends the level" which sets the global back and reads `admin` again.)
+Then `interact` `bay_breaker_on` (hint "The bay PC hums again."), `{"cmd":"sync"}`, and open `bay_pc` again. The session does NOT end with the power (the server keeps the record at level none while the PC is off, and the client keeps its entry): the desktop opens at once with the "Administrator" marker and no sign-in screen. There is therefore no sign-in row to name, so the check needs `--resume`:
+- Browser: the desktop opens with the marker and no sign-in; `GET container/bay_pc` answers 200 with `access: "admin"`.
+- Leak check: the scanner took the step back at the 403 of the first half. Note the `t` of that one 200 `GET container/bay_pc` row (after the 403 `off`), and give `--resume adel@bay_pc@<that row's t>` (account, PC, the row's time, exactly as in the capture file, for example `--resume adel@bay_pc@2026-11-24T00:20:11.482Z`). It is accepted only for ONE 200 desktop row after a 403 `off` or `not_responding` at that PC, whose session is the account held when the 403 came, with no other end (a sign-in, lock, sign-out, reload without the session) in between; it restores the step from that row only. A 200 answer never restores the step by itself, so without the `--resume` the check reports that row (four profile items and an `access`): that is the power-cut leak the scanner must not wave through. A resume that matches no row, or whose conditions fail, is an error (exit 2).
 - Server: `--access` reads `level admin` for `bay_pc` again.
 
 ### 9. The step up from a typed user session

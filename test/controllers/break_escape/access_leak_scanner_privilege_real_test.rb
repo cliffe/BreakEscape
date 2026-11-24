@@ -180,11 +180,17 @@ module BreakEscape
       end
     end
 
+    # The two capture fixtures predate the scenario's later edits (R3-B3): row 1 has the policy key `records`, `olu_folder` is still
+    # a `zip_archive`, and the run has no `container/olu_folder` request, no ADMIN_READ row and no power-on. They still prove the
+    # unnamed-sign-in case on a real capture (and, with the two session-end rules, that no rule reports a leak in a correct run).
+    # A fresh capture of the replayed playtest will be added after the replay.
     BROWSER_SIGNINS = %w[uma@bay_pc#1 adel@bay_pc#1 adel@bay_pc#2 adel@bay_pc#5].freeze
 
     test 'the real browser capture reports nothing when each untagged keyboard sign-in is named, and its false alarms are all the sign-ins' do
       run = browser_run
-      assert_empty AccessLeakScanner.new(scenario).scan(run, signins: BROWSER_SIGNINS).map { |f| [f.source, f.line, f.rule, f.owner] }
+      real = AccessLeakScanner.new(scenario)
+      assert_empty real.scan(run, signins: BROWSER_SIGNINS).map { |f| [f.source, f.line, f.rule, f.owner] }
+      assert_empty real.unused_entries, 'every entry matched a row; the token deadline and the host-row rules report nothing in this run'
       bare = AccessLeakScanner.new(scenario).scan(run)
       assert_equal %w[ops_string profile_admin_read], bare.map(&:rule).uniq.sort, 'unnamed sign-ins earn nothing: fail closed'
       assert_equal [17, 10], [bare.count { |f| f.rule == 'profile_admin_read' }, bare.count { |f| f.rule == 'ops_string' }]
@@ -386,6 +392,173 @@ module BreakEscape
       found = AccessLeakScanner.new(data).scan(lines([desk]))
       assert_includes owners(found), %w[ops_string ops:key:via]
       assert_includes owners(found), %w[ops_string ops:key:access]
+    end
+
+    # ---- R3 fix pass: C1 (a named sign-in), C3 (a bootstrap without access), B1 (--resume), the deadline and host-row rules ----
+
+    def at(row, time)
+      copy = deep(row)
+      copy['t'] = time
+      copy
+    end
+
+    def found_after(rows, from, **options)
+      scan(rows, **options).select { |f| f.line > from }.map { |f| [f.rule, f.owner] }.uniq.sort
+    end
+
+    # Uma's second keyboard sign-in (a copy of her real answer) at a time of its own, so an entry can name it by the row time.
+    def uma_again(time)
+      at(deep(@marks[:uma_signin]), time)
+    end
+
+    test 'R3-C1: a sign-in named at a PC that does not admit the account is refused with a clear message' do
+      run_game
+      data = scenario
+      data['rooms'].each_value { |room| Array(room['objects']).each { |o| o['access'] = { 'people' => %w[olu adel] } if o['id'] == 'store_pc' } }
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      rows = @log.first(index + 1) + [uma_again('2026-01-01T09:00:01.000Z'), deep(@marks[:admin_folder])]
+      error = assert_raises(ArgumentError) do
+        AccessLeakScanner.new(data).scan(lines(rows), signins: @signins.first(2) + ['uma@store_pc@2026-01-01T09:00:01.000Z'])
+      end
+      assert_match(/store_pc does not admit uma/, error.message)
+      assert_includes owners(AccessLeakScanner.new(data).scan(lines(rows), signins: @signins.first(2) + ['uma@bay_pc@2026-01-01T09:00:01.000Z'])), %w[profile_admin_read item:olu_budget],
+                      'named at the PC it really was: the step goes and the folder read is reported'
+    end
+
+    test 'R3-C1: an ordinary sign-in named at the other PC leaves the step at the PC it displaced until a desktop answer shows who holds it' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      later = uma_again('2026-01-01T09:00:01.000Z')
+      desk = at(@marks[:uma_desktop], '2026-01-01T09:00:02.000Z')
+      entry = ['uma@store_pc@2026-01-01T09:00:01.000Z']
+      # the client asks for the desktop straight after a sign-in: it shows Uma at the bay PC, and the step is gone
+      assert_includes found_after(base + [later, desk, deep(@marks[:admin_folder])], base.length + 2, signins: @signins.first(2) + entry), %w[profile_admin_read item:olu_budget]
+      # with no desktop row between, the trust given to a named entry is the documented limit
+      assert_empty found_after(base + [later, deep(@marks[:admin_folder])], base.length + 1, signins: @signins.first(2) + entry)
+    end
+
+    test 'R3-C1: an unnamed ordinary sign-in takes the step back at every PC that admits the account' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      found = found_after(base + [uma_again('2026-01-01T09:00:01.000Z'), deep(@marks[:admin_folder])], base.length + 1)
+      assert_includes found, %w[profile_admin_read item:olu_budget]
+    end
+
+    test 'R3-C3: a bootstrap entry for the same account, unlocked, without access admin takes the step back' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      boot = synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'password' } } })
+      found = found_after(base + [boot, deep(@marks[:admin_folder]), deep(@marks[:admin_desktop])], base.length + 1)
+      assert_includes found, %w[profile_admin_read item:olu_budget]
+      assert_includes found, %w[ops_string ops:key:access]
+      held = synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'password', 'access' => 'admin' } } })
+      assert_empty found_after(base + [held, deep(@marks[:admin_folder]), deep(@marks[:admin_desktop])], base.length + 1), 'still admin: clear'
+    end
+
+    # A power cut: the 403 comes, then the surviving session's desktop opens with the marker (no sign-in row).
+    def power_cut_rows(end_between: nil)
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      refused = synthetic('GET', 'container/bay_pc', 403, { 'error' => 'refused', 'reason' => 'off' }).merge('t' => '2026-01-01T09:00:01.000Z')
+      back = at(@marks[:admin_desktop], '2026-01-01T09:00:09.000Z')
+      rows = @log.first(index + 1) + [refused] + [end_between].compact + [back, deep(@marks[:admin_folder])]
+      [rows, index + 3 + [end_between].compact.length]
+    end
+
+    test 'R3-B1: a 200 desktop answer after the power came back does not restore the step by itself' do
+      rows, desk_at = power_cut_rows
+      found = found_after(rows, desk_at - 1, signins: @signins.first(2))
+      assert_includes found, %w[profile_admin_read item:olu_budget]
+      assert_includes found, %w[ops_string ops:key:access]
+    end
+
+    test 'R3-B1: --resume names that one desktop row after the 403 and clears it, and what follows' do
+      rows, desk_at = power_cut_rows
+      scanner = AccessLeakScanner.new(scenario)
+      assert_empty scanner.scan(lines(rows), signins: @signins.first(2), resumes: ['adel@bay_pc@2026-01-01T09:00:09.000Z']).select { |f| f.line >= desk_at }
+      assert_empty scanner.unused_entries
+    end
+
+    test 'R3-B1: a resume of another account, another PC, a row before the 403 or after a real end does not clear the row' do
+      [['uma@bay_pc@2026-01-01T09:00:09.000Z', nil],
+       ['adel@store_pc@2026-01-01T09:00:09.000Z', nil],
+       ['adel@bay_pc@2026-01-01T09:00:08.000Z', nil],
+       ['adel@bay_pc@2026-01-01T09:00:09.000Z', synthetic('GET', 'scenario', 200, { 'sessions' => {} })],
+       ['adel@bay_pc@2026-01-01T09:00:09.000Z', synthetic('POST', 'lock_session', 200, { 'success' => true, 'pcId' => 'bay_pc', 'locked' => true })]].each do |entry, between|
+        rows, desk_at = power_cut_rows(end_between: between)
+        scanner = AccessLeakScanner.new(scenario)
+        found = scanner.scan(lines(rows), signins: @signins.first(2), resumes: [entry]).select { |f| f.line >= desk_at }.map { |f| [f.rule, f.owner] }
+        assert_includes found, %w[profile_admin_read item:olu_budget], entry
+        assert_equal ["#{entry} (--resume)"], scanner.unused_entries, entry
+      end
+    end
+
+    test 'R3-B1: a resume row that is the row before the 403 (the time of the earlier desktop answer) is an unused entry' do
+      rows, = power_cut_rows
+      scanner = AccessLeakScanner.new(scenario)
+      scanner.scan(lines(rows), signins: @signins.first(2), resumes: ["adel@bay_pc@#{@marks[:admin_desktop]['t']}"])
+      assert_equal 1, scanner.unused_entries.length
+    end
+
+    # The token deadline: a credential sign-in with `expiresInS`, its row time plus that is the last second of the admin step.
+    def token_rows(folder_at)
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_signin]) }
+      token = deep(@marks[:admin_signin])
+      token['body'].merge!('via' => 'credential', 'kind' => 'token', 'expiresInS' => 60)
+      token['t'] = '2026-01-01T10:00:00.000Z'
+      rows = @log.first(index) + [token, at(@marks[:admin_folder], folder_at)]
+      [rows, index + 1]
+    end
+
+    test 'R3 check 2: the admin step from a token is gone after the token deadline, and held before it' do
+      rows, from = token_rows('2026-01-01T10:00:30.000Z')
+      assert_empty found_after(rows, from, signins: @signins.first(2))
+      lapsed, from = token_rows('2026-01-01T10:01:30.000Z')
+      assert_includes found_after(lapsed, from, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget]
+    end
+
+    test 'R3 check 2: a desktop answer or a host row that shows no admin session for the held account takes the step back' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      folder_row = deep(@marks[:admin_folder])
+      desk = deep(@marks[:admin_desktop])
+      without_access = deep(desk)
+      without_access['body']['session'].delete('access')
+      other = deep(desk)
+      other['body']['session']['npcId'] = 'uma'
+      no_session = deep(desk)
+      no_session['body'].delete('session')
+      [without_access, other, no_session].each do |answer|
+        assert_includes found_after(base + [answer, deep(folder_row)], base.length + 1), %w[profile_admin_read item:olu_budget]
+      end
+      host = lambda do |session|
+        entry = { 'id' => 'bay_pc', 'kind' => 'pc', 'name' => 'Bay desk PC', 'host' => 'BAY01', 'sprite' => 'pc_desktop' }
+        entry['session'] = session if session
+        synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }] })
+      end
+      assert_includes found_after(base + [host.call(nil), deep(folder_row)], base.length + 1), %w[profile_admin_read item:olu_budget]
+      assert_includes found_after(base + [host.call({ 'username' => 'adelwick', 'via' => 'password' }), deep(folder_row)], base.length + 1), %w[profile_admin_read item:olu_budget]
+      assert_empty found_after(base + [host.call({ 'username' => 'adelwick', 'via' => 'password', 'access' => 'admin' }), deep(folder_row)], base.length + 1)
+    end
+
+    test 'R3-C2: entries are parsed strictly and an entry that matched no row is reported' do
+      run_game
+      ['adel@bay_pc#1x', 'adel@bay_pc#0', 'adel@bay_pc#abc', 'adel@nowhere#1', 'nobody@bay_pc#1'].each do |entry|
+        assert_raises(ArgumentError, entry) { scan(@log, signins: [entry]) }
+      end
+      assert_raises(ArgumentError) { scan(@log, signins: ['adel@bay_pc#1', 'adel@bay_pc#1']) }
+      assert_raises(ArgumentError) { scan(@log, signins: [], resumes: ['adel@bay_pc']) }
+      scanner = AccessLeakScanner.new(scenario)
+      scanner.scan(lines(@log), signins: @signins + ['adel@bay_pc#9', 'adel@bay_pc@2030-01-01T00:00:00Z'])
+      assert_equal ['adel@bay_pc#9 (--signin)', 'adel@bay_pc@2030-01-01T00:00:00Z (--signin)'], scanner.unused_entries
+      all = AccessLeakScanner.new(scenario)
+      all.scan(lines(@log), signins: @signins)
+      assert_empty all.unused_entries
     end
   end
 end

@@ -5,9 +5,16 @@
 #
 # A keyboard sign-in answer does not say which PC it was at, and the capture holds no request body. Where more than one PC
 # admits the account the sign-in earns nothing; name the PC of ONE sign-in with `--signin <account id>@<pc id>#<n>`
-# (the account's n-th successful sign-in answer in the log, counting from 1 over all the files given) or
+# (n counts EVERY successful POST /login answer of that account in the log, from 1, over all the files given: remote and relay
+# sign-ins too, so in the shipped test_ops_privilege capture Adel's keyboard sign-ins are 1, 2 and 5) or
 # `--signin <account id>@<pc id>@<row time>` (the row's `t`), repeatable. It is credited from that row only, for that
-# account only. Put the options after the game id and before the files; a bare `--` ends them.
+# account only. NAME EVERY keyboard sign-in, an ordinary account's too, at the PC it was really at: an ordinary account's sign-in
+# named at a PC that does not admit it is refused (exit 2), but one named at the other admitting PC takes the step back only
+# there. An administrator session that went on after the PC lost power (the session survives the power: the desktop opens with
+# no sign-in) is named by `--resume <account id>@<pc id>@<row time>`: ONE 200 desktop row after a 403 `off` or `not_responding`
+# at that PC, whose session is the account held when the 403 came, with no other end in between. A 200 answer never restores
+# the step by itself. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# an error (exit 2), never silence. Put the options before the game id. When checking after every beat, give only the entries for rows already in the files.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
@@ -50,19 +57,25 @@
 require_relative 'lib/access_leak_scanner'
 
 args = ARGV.dup
+usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
+        '[--resume <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
+        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too)'
 signins = []
-while (i = args.index('--signin'))
-  value = args[i + 1]
-  if value.nil? || value.start_with?('--')
-    warn 'usage: --signin <account id>@<pc id>#<n>'
-    exit 2
+resumes = []
+['--signin', '--resume'].each do |option|
+  while (i = args.index(option))
+    value = args[i + 1]
+    if value.nil? || value.start_with?('--')
+      warn usage
+      exit 2
+    end
+    (option == '--signin' ? signins : resumes) << value
+    args.slice!(i, 2)
   end
-  signins << value
-  args.slice!(i, 2)
 end
 game_id, *files = args
 if game_id.nil? || files.empty?
-  warn 'usage: access-leak-check.rb <game_id> <responses.jsonl> [more.jsonl ...]'
+  warn usage
   exit 2
 end
 missing = files.reject { |f| File.file?(f) }
@@ -110,9 +123,14 @@ if game_problem
 end
 
 begin
-  findings = scanner.scan(lines, signins: signins)
+  findings = scanner.scan(lines, signins: signins, resumes: resumes)
 rescue ArgumentError => e
   warn e.message
+  exit 2
+end
+unused = scanner.unused_entries
+unless unused.empty?
+  warn "entries that matched no row (a typo, a sign-in that did not happen at that PC, a resume whose conditions did not hold): #{unused.join(', ')}"
   exit 2
 end
 counts = scanner.counts
