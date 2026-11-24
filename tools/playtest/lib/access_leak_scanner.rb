@@ -1014,7 +1014,10 @@ class AccessLeakScanner
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
-      crack: method == 'POST' && path.end_with?('/crack'),
+      # S7 crack rules: the exact game route (the older rules above keep their own looser matching)
+      crack: method == 'POST' && path.match?(%r{/games/\d+/crack\z}),
+      crack_keyring_route: method == 'GET' && path.match?(%r{/games/\d+/keyring\z}),
+      crack_keyring: method == 'GET' && row['status'].is_a?(Integer) && row['status'] == 200 && path.match?(%r{/games/\d+/keyring\z}),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
@@ -1048,7 +1051,7 @@ class AccessLeakScanner
     # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
     # registry-sourced entry is never exempted, so a password on one is still flagged.
     keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
-    cracked_paths = ctx[:keyring] ? crack_password_paths(body) : nil
+    cracked_paths = ctx[:crack_keyring] ? crack_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
@@ -3512,7 +3515,7 @@ class AccessLeakScanner
   # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none), and only if the
   # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
   def note_crack_earned(body, ctx, row)
-    return unless ctx[:crack] && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
+    return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
 
     @crack_running_credits += 1 if body['status'] == 'running'
     accounts = crack_cracked_accounts(body)
@@ -3674,7 +3677,7 @@ class AccessLeakScanner
   # crackFacts: the top-level list of a keyring answer that lists a hash row; known fact ids, bare, no repeats,
   # and (given the game) earned.
   def crack_facts_ok?(body, hash, json_path, ctx)
-    return false unless ctx[:keyring] && json_path == '$' && hash.equal?(body)
+    return false unless ctx[:crack_keyring] && json_path == '$' && hash.equal?(body)
 
     entries = keyring_entries_in(body)
     list = hash['crackFacts']
@@ -3691,7 +3694,8 @@ class AccessLeakScanner
   def scan_crack_answer(body, ctx, row, add)
     return unless ctx[:crack]
 
-    http = row['status'].to_i
+    http = row['status']
+    return add.call('crack_answer', 'crack:answer', '$') unless http.is_a?(Integer)
     return unless http == 200 || (body.is_a?(Hash) && (body.key?('success') || body.key?('reason')))
 
     ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http))
@@ -3700,7 +3704,7 @@ class AccessLeakScanner
 
   def scan_crack_rows(body, ctx, add)
     elements = {}
-    entries = ctx[:keyring] ? keyring_entries_in(body) : nil
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
     entries&.each_with_index { |e, i| elements["$.entries[#{i}]"] = e }
     walk_hashes(body, '$') do |hash, json_path|
       next unless hash['kind'] == 'hash'
@@ -3734,10 +3738,10 @@ class AccessLeakScanner
 
   # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
   def scan_crack_waits(body, ctx, add)
-    return unless ctx[:keyring] && body.is_a?(Hash) && body.key?('readyInSeconds')
+    return unless ctx[:crack_keyring_route] && body.is_a?(Hash) && body.key?('readyInSeconds')
 
     waits = body['readyInSeconds']
-    ok = waits.is_a?(Hash) && waits.all? do |id, v|
+    ok = ctx[:crack_keyring] && waits.is_a?(Hash) && waits.all? do |id, v|
       @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, CRACK_MAX_WAIT)
     end
     add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
@@ -3745,7 +3749,7 @@ class AccessLeakScanner
 
   # A `source: "cracked"` hash anywhere: only an earned, well formed entry of a GET /keyring answer passes.
   def scan_crack_entries(body, ctx, add)
-    entries = ctx[:keyring] ? keyring_entries_in(body) : nil
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
     walk_hashes(body, '$') do |hash, json_path|
       next unless hash['source'] == 'cracked'
 

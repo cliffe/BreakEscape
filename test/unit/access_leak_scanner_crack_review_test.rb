@@ -178,4 +178,33 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     assert_empty scan([running, cracked_answer('dana'), keyring([hash_row('dana_hash', 'dana', status: 'cracked'), own_entry('dana')])], game: full_game)
     assert_empty scan([keyring([hash_row('eli_hash', 'eli', status: 'cracked')])], game: full_game(held_other: ['eli']))
   end
+
+  # R1-L4: routes and statuses are matched exactly for the two crack uses
+  test 'R1-L4 a cracked answer only at a game crack route' do
+    ok = [running, cracked_answer('dana'), keyring([own_entry('dana')])]
+    assert_empty scan(ok, game: full_game)
+    ['/evil/crack', "#{BASE}/x/crack", "#{BASE}/crack/x", '/break_escape/games/crack'].each do |path|
+      rows = [running, post_crack(cracked_answer('dana')['body'], path: path), keyring([own_entry('dana')])]
+      assert_includes rules(rows, game: full_game), 'crack_unearned', path
+    end
+    odd = ['200abc', '200', 200.0, nil].map do |st|
+      [running, post_crack(cracked_answer('dana')['body'], status: st), keyring([own_entry('dana')])]
+    end
+    odd.each { |rows| assert_includes rules(rows, game: full_game), 'crack_unearned', rows[1]['status'].inspect }
+  end
+
+  test 'R1-L4 a keyring answer only at a game keyring route with status 200' do
+    earned = [running, cracked_answer('dana')]
+    ['/evil/keyring', "#{BASE}/x/keyring", "#{BASE}/keyring/x"].each do |path|
+      found = rules(earned + [keyring([own_entry('dana')], path: path)], game: full_game)
+      assert_includes found, 'crack_unearned', path
+      assert_includes found, 'password', path
+    end
+    [500, '200abc', nil].each do |st|
+      found = rules(earned + [keyring([own_entry('dana')], status: st)], game: full_game)
+      assert_includes found, 'crack_unearned', st.inspect
+      assert_includes found, 'password', st.inspect
+    end
+    assert_includes rules([keyring([hash_row('dana_hash', 'dana')], path: '/evil/keyring')]), 'crack_row'
+  end
 end
