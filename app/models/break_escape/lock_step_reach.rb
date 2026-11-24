@@ -46,7 +46,30 @@ module BreakEscape
       %w[room nested].include?(carried_step_chains.dig(chain.first, 'home'))
     end
 
+    # True when a gated object (the object itself, or a container above it on `path`) sits in a
+    # room the player has not opened: such a thing is refused as an invented id is, so a
+    # hand-built request neither opens it nor tells it from one that does not exist. Only a
+    # lock authored in a room counts; a carried one is judged by carried_step_reachable?.
+    def step_room_unreached?(object, path)
+      return false if second_step_ids.empty?
+
+      gated = (Array(path) + [object]).find do |o|
+        o.is_a?(Hash) && o['id'].is_a?(String) && second_step_ids.include?(o['id'])
+      end
+      return false unless gated
+
+      home = step_object_homes[gated['id']]
+      home.present? && !room_unlocked?(home)
+    end
+
     private
+
+    # { gated object id => the room it is authored in } for the objects listed in a room
+    def step_object_homes
+      @step_object_homes ||= BreakEscape::LockStepModel.each_lock_step(scenario_data).each_with_object({}) do |e, homes|
+        homes[e[:id]] ||= e[:room] if e[:kind] == :object && e[:id] && e[:home] == :room
+      end
+    end
 
     def carried_step_lockish?(item)
       return false unless item.is_a?(Hash)

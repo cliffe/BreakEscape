@@ -69,5 +69,49 @@ module BreakEscape
       assert_equal 200, status
       assert_equal 'WORDS-safe_memo', body['contents'][0]['text']
     end
+
+    # ---- a gated lock in a room the player has not opened (scanner review owner point 3, and R1-SERVER5) ----
+
+    def invented_unlock
+      unlock('object', 'nothing_here', '8888', 'pin')
+    end
+
+    test 'a gated safe in an unopened room is refused as an invented id is, and does not open by hand' do
+      same = invented_unlock
+      assert_equal [422, INVALID], same
+      assert_equal same, unlock('object', 'vaultsafe', '8888', 'pin'), 'right PIN'
+      assert_equal same, unlock('object', 'Vault safe', '8888', 'pin'), 'by its name'
+      assert_equal same, unlock('object', 'vaultsafe', '8888', 'unlocked'), 'unlocked'
+      invented = container('nothing_here')
+      real = container('vaultsafe')
+      assert_equal 404, invented.first
+      assert_equal invented.first, real.first
+      assert_equal JSON.generate(invented.last).gsub('nothing_here', 'X'), JSON.generate(real.last).gsub('vaultsafe', 'X')
+      assert_not_includes Array(game_state['unlockedObjects']), 'vaultsafe'
+      assert_equal({}, game_state['lockSteps'] || {})
+      assert_nothing_leaked('WORDS-vault_memo', 'vault_memo')
+    end
+
+    test 'once the room is opened by its own door the same safe gates and opens as ever' do
+      assert_equal 200, unlock('door', 'vault', '0000', 'pin').first
+      status, gate = unlock('object', 'vaultsafe', '8888', 'pin')
+      assert_equal [200, true], [status, gate['secondStep']]
+      3.times { |i| later(3) if i.positive?; mfa('prompt', 'object:vaultsafe') }
+      status, body = unlock('object', 'vaultsafe', '8888', 'pin')
+      assert_equal 200, status
+      assert_equal 'WORDS-vault_memo', body['contents'][0]['text']
+    end
+
+    test 'every /mfa action names a gated id in an unopened room exactly as it names an invented one' do
+      %w[prompt approve].each do |route|
+        assert_equal mfa(route, 'object:nothing_here'), mfa(route, 'object:vaultsafe'), route
+      end
+      assert_equal [404, NOT_FOUND], mfa('verify', 'object:vaultsafe', code: '123456')
+      assert_equal [404, NOT_FOUND], mfa('prompt', 'object:vaultsafe')
+      assert_equal [404, NOT_FOUND], mfa('approve', 'object:vaultsafe', number: 1)
+      # the room reached: the same ids now answer expired (a real lock, no step begun)
+      unlock('door', 'vault', '0000', 'pin')
+      assert_equal [422, expired_for('object:vaultsafe')], mfa('prompt', 'object:vaultsafe')
+    end
   end
 end

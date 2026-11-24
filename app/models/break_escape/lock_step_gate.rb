@@ -211,7 +211,8 @@ module BreakEscape
       if target[:subject][:kind] == 'object'
         found = resolve_unlock_target(target[:subject][:id])
         return nil unless found && found[:object]['id'] == target[:subject][:id]
-        return nil if behind_closed_step?(found[:path]) || !carried_step_reachable?(found[:object], found[:path])
+        return nil if behind_closed_step?(found[:path]) || !carried_step_reachable?(found[:object], found[:path]) ||
+                    step_room_unreached?(found[:object], found[:path])
 
         target = target.merge(object: found[:object])
       end

@@ -42,11 +42,13 @@ module BreakEscape
     end
 
     # True when the resolved target must be refused as an invented id is: it sits below a closed
-    # gated container (Rule C) or is a carried object that has left the player (Rule D).
+    # gated container (Rule C), is a carried object that has left the player (Rule D) or is a gated
+    # thing in a room the player has not opened.
     def lock_step_scope_refused?(resolved)
       return false unless resolved
 
-      @game.behind_closed_step?(resolved[:path]) || !@game.carried_step_reachable?(resolved[:object], resolved[:path])
+      @game.behind_closed_step?(resolved[:path]) || !@game.carried_step_reachable?(resolved[:object], resolved[:path]) ||
+        @game.step_room_unreached?(resolved[:object], resolved[:path])
     end
 
     # Rule B for a gated target, else today's test (used for the rfid `alreadyOpen` flag)

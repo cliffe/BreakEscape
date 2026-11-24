@@ -5077,8 +5077,9 @@ module BreakEscape
         resolved_object = resolved.is_a?(Hash) ? resolved[:object] : nil
         if resolved_object
           resolved_path = resolved[:path]
-          if behind_closed_step?(resolved_path) || !carried_step_reachable?(resolved_object, resolved_path)
-            Rails.logger.warn "[BreakEscape] Refused unlock of #{target_id}: behind a closed step or out of reach"
+          if behind_closed_step?(resolved_path) || !carried_step_reachable?(resolved_object, resolved_path) ||
+             step_room_unreached?(resolved_object, resolved_path)
+            Rails.logger.warn "[BreakEscape] Refused unlock of #{target_id}: behind a closed step, out of reach or in an unopened room"
             return false
           end
         end
