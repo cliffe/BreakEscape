@@ -28,6 +28,8 @@ import NPCBarkSystem from './systems/npc-barks.js';
 import NPCLazyLoader from './systems/npc-lazy-loader.js';
 import { installPhoneRinger } from './minigames/phone-chat/phone-ringer-dom.js';
 import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game state
+// A lock's second step (S8c): configures lock-step.js and the pane, sets window.lockStep
+import { wireLockStep } from './systems/lock-step-wiring.js';
 
 // Import Objectives System
 import { getObjectivesManager } from './systems/objectives-manager.js';
@@ -163,6 +165,9 @@ function initializeGame() {
     // window.submitSECapture / window.mirrorSECapture, before any game code captures.
     installCaptureClient(window.stateSync);
     window.stateSync.start();
+    // Second step on a lock (S8c): needs window.stateSync, window.mfaClient (pc-sessions.js) and
+    // window.ApiClient, all in place by here; ApiClient.unlock hands a gate answer to window.lockStep.run
+    wireLockStep(window);
     
     console.log('✅ NPC systems initialized');
     
