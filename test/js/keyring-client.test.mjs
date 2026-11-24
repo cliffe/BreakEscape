@@ -1344,7 +1344,7 @@ test('K-lock: a locked credential session (sessionHeld false) signs in again by 
 
 // ── S7: hash rows and cracked passwords ──────────────────────────────────────────────────────
 
-const HASH = { id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'ABCDEFGHJKLMNPQRSTUVWXYZ', salted: true, status: 'ready', account: { username: 'dana', displayName: 'Dana Roe', npcId: 'dana' } };
+const HASH = { id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', salted: true, status: 'ready', account: { username: 'dana', displayName: 'Dana Roe', npcId: 'dana' } };
 const HASH_RUNNING = { ...HASH, status: 'running', readyInSeconds: 40 };
 const CRACKED_PW = { id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked', account: HASH.account, password: 'pw' };
 

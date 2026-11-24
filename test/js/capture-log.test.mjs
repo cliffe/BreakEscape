@@ -809,7 +809,7 @@ test('when /capture_secrets keeps failing the row says Could not load, not bulle
 // ---- S7 review R1-C5: the answer the device hands the row builder carries the keyring's crack clock ----
 test('R1-C5: keyringAnswer() passes the real keyring crackSecondsLeft through', () => {
     window.keyring = new Keyring();
-    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'ABCDEFGH', status: 'running', readyInSeconds: 60,
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', status: 'running', readyInSeconds: 60,
         account: { npcId: 'dana', username: 'dana.k' } };
     window.keyring.remember(Keyring.cacheKey(null), { rev: 'r1', entries: [hash], captures: {} });
     const a = log.keyringAnswer();
@@ -820,7 +820,7 @@ test('R1-C5: keyringAnswer() passes the real keyring crackSecondsLeft through', 
 
 test('R1-C15: a hash record has its own Hashes section, not the Sign-ins one', async () => {
     reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
-    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'ABCDEFGH', status: 'ready',
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', status: 'ready',
         account: { npcId: 'dana', username: 'dana.k', displayName: 'Dana K' } };
     stubKeyring({ ...K3D_ANSWER, entries: [...K3D_ANSWER.entries, hash] });
     api.get = async () => ({ secrets: {} });

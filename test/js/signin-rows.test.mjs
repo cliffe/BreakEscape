@@ -423,7 +423,7 @@ test('the DOM row carries the loading state on its secret node', () => {
 // ---- S7: hash rows and cracked passwords ------------------------------------------------------
 
 const hashEntry = (extra = {}) => ({
-    id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'ABCDEFGHJKLMNPQRSTUVWXYZ', salted: true, status: 'ready',
+    id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', salted: true, status: 'ready',
     account: { npcId: 'dana', username: 'dana', displayName: 'Dana Roe' }, ...extra
 });
 const crackedPw = (extra = {}) => ({
@@ -437,13 +437,13 @@ test('S7: a hash row lists username, token in fours and status, never a password
     assert.deepEqual(signins.map((r) => r.key), ['account:ian', 'hash:dana_hash'], 'the hash group is last');
     const h = signins[1];
     assert.equal(h.group, 'hash');
-    assert.equal(h.token, 'ABCD EFGH JKLM NPQR STUV WXYZ');
+    assert.equal(h.token, 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q');
     assert.equal(h.salted, true);
     assert.equal(h.use, 'Ready');
     assert.doesNotMatch(rowText([h]), /password/i);
     const row = domOf(h);
     assert.match(row.textContent, /dana/);
-    assert.match(row.textContent, /ABCD EFGH JKLM NPQR STUV WXYZ/);
+    assert.match(row.textContent, /N4L9-E9K3-8PBA-TNMH-9EP6-K66Q/);
     assert.match(row.textContent, /Salted/);
     assert.match(row.textContent, /Ready/);
 });

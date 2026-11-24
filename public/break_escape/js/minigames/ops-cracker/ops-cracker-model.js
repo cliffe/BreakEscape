@@ -25,9 +25,9 @@ export const KNOWN_STATUSES = Object.freeze(['ready', 'running', 'needMoreFacts'
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
-/** The token in groups of four (a display nicety; the characters are the server's). */
+/** The token as the server sends it (already in dashed groups of four; shown as is). */
 export function groupToken(token) {
-    return isStr(token) ? token.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ') : '';
+    return isStr(token) ? token.trim() : '';
 }
 
 /** "1 fact still missing" / "N facts still missing". */

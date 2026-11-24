@@ -267,10 +267,9 @@ export const CRACK_OPEN_BUTTON_TEXT = 'Open';
 export const CRACK_FINISH_BUTTON_TEXT = 'Finish';
 export const HASH_SALTED_TEXT = 'Salted';
 export const HASH_READY_TO_FINISH_TEXT = 'Ready to finish';
-/** A hash token in groups of four. */
+/** A hash token as the server sends it (already in dashed groups of four; shown as is). */
 export function hashTokenText(token) {
-    const t = typeof token === 'string' ? token : '';
-    return (t.match(/.{1,4}/g) || []).join(' ');
+    return typeof token === 'string' ? token.trim() : '';
 }
 /** A hash row's status words: ready, running (with a countdown), infeasible, cracked. */
 export function hashStatusText(status, secondsLeft = null) {

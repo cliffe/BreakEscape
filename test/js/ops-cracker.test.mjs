@@ -32,7 +32,7 @@ const { refusalText } = await imp('minigames/network-view/ops-model.js');
 const { Keyring } = await imp('systems/keyring.js');
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
-const ROW = { id: 'h1', kind: 'hash', source: 'registry', token: 'ABCDEFGHJKLMNPQRSTUVWXYZ', salted: false, status: 'ready',
+const ROW = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', salted: false, status: 'ready',
     account: { npcId: 'dana', username: 'dana.k', displayName: 'Dana K' } };
 const FACTS = { pet: { label: 'Her dog is called Biscuit' }, year: { label: 'Born in 1990' } };
 const fresh = (over = {}) => M.initialState({ row: ROW, crackFacts: ['pet', 'year'], intelFacts: FACTS, ...over });
@@ -56,7 +56,7 @@ test('the model renders each status', () => {
     assert.ok(view(run, 30000).progress > 0.49 && view(run, 30000).progress < 0.51);
     assert.match(view(run, 60000).message, /Ready to finish/);
     assert.equal(view(run, 60000).crackLabel, 'Finish');
-    assert.equal(view(s).token, 'ABCD EFGH JKLM NPQR STUV WXYZ');
+    assert.equal(view(s).token, 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q');
     assert.equal(view(M.initialState({ row: { ...ROW, salted: true } })).salted, true);
     assert.equal(view(s).title, 'Dana K');
 });
@@ -142,7 +142,7 @@ const chip = (h, id) => h.querySelector(`[data-fact="${id}"]`);
 test('the scene posts the picked ids and draws the answer', async () => {
     const { m, host, calls } = open({ answers: [{ success: true, status: 'needMoreFacts', missingCount: 1 }] });
     assert.match(host.textContent, /Dana K/);
-    assert.match(host.textContent, /ABCD EFGH/);
+    assert.match(host.textContent, /N4L9-E9K3/);
     assert.equal(host.querySelectorAll('.ops-cracker-chip').length, 2, 'chips come from the real keyring');
     assert.equal(host.querySelector('.ops-cracker-go').disabled, false, 'no pick is needed');
     chip(host, 'pet').click();
