@@ -304,7 +304,12 @@ export class ApiClient {
         return null;
       }
 
-      return await response.blob();
+      const blob = await response.blob();
+      // A clip with its speaker's voice FX already in it (tools/voice_fx/bake.py): the
+      // TTSManager plays it without the run-time FX, so the FX is not applied twice
+      const baked = response.headers.get('X-Voice-FX-Baked');
+      if (baked) blob.voiceFxBaked = baked;
+      return blob;
     } catch (error) {
       console.warn('[TTS] Request failed:', error.message);
       return null;

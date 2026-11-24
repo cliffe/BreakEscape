@@ -689,6 +689,43 @@ module BreakEscape
       assert_equal "audio/mpeg", response.media_type
     end
 
+    # Baked voice FX (tools/voice_fx/bake.py): the sidecar marker names the preset
+    # and the exact file it made; the header lets the client skip the run-time FX.
+    def write_sidecar(mp3_path, voice_fx)
+      data = { "text" => VOICE_TEXT, "npc" => "intercom_1", "voice" => "Aoede" }
+      data["voice_fx"] = voice_fx if voice_fx
+      File.write(mp3_path.sub_ext(".json"), JSON.generate(data))
+    end
+
+    test "tts says X-Voice-FX-Baked for a clip its sidecar records as baked" do
+      path = write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Aoede", nil, nil))
+      write_sidecar(path, { "preset" => "entropy-comms", "baked_md5" => Digest::MD5.file(path).hexdigest })
+
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+
+      assert_response :success
+      assert_equal "entropy-comms", response.headers["X-Voice-FX-Baked"]
+    end
+
+    test "tts sends no X-Voice-FX-Baked for a clean clip, or one changed since its bake" do
+      path = write_clip(TtsService.new.cache_key_for(VOICE_TEXT, "Aoede", nil, nil))
+      write_sidecar(path, nil)
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+      assert_response :success
+      assert_nil response.headers["X-Voice-FX-Baked"]
+
+      write_sidecar(path, { "preset" => "entropy-comms", "baked_md5" => "0" * 32 })
+      post_with_generate_forbidden("intercom_1", VOICE_TEXT)
+      assert_response :success
+      assert_nil response.headers["X-Voice-FX-Baked"]
+    end
+
+    test "baked_voice_fx refuses a preset name that is not a plain slug" do
+      path = write_clip("deadbeef")
+      write_sidecar(path, { "preset" => "x\r\nSet-Cookie: a=b", "baked_md5" => Digest::MD5.file(path).hexdigest })
+      assert_nil TtsService.baked_voice_fx(path)
+    end
+
     test "tts prefers the current voice config over the saved scenario_data voice" do
       current = { "name" => "Puck", "style" => "Calm and slow.", "language" => "en-GB" }
       stub_current_voices("intercom_1" => current)

@@ -795,7 +795,7 @@ module BreakEscape
         plain_clip && File.exist?(plain_clip) ? plain_clip : legacy_tts_clip(tts_service, text, [voice_config, snapshot_voice], scenario_name)
       end
       mp3_path ||= stand_in.call unless delivery && tts_service.enabled?
-      return send_file(mp3_path, type: 'audio/mpeg', disposition: 'inline') if mp3_path
+      return send_tts_clip(mp3_path) if mp3_path
 
       # A cap on cache misses (paid generations) per game; cache hits above are
       # not counted. A server without a key counts its misses too: it answers
@@ -803,7 +803,7 @@ module BreakEscape
       unless TtsGenerationLimit.allow?(@game.id)
         Rails.logger.warn "[TTS] Generation limit reached for game #{@game.id} (#{npc_id})"
         fallback = delivery && stand_in.call
-        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+        return send_tts_clip(fallback) if fallback
 
         response.set_header('Retry-After', TtsGenerationLimit.retry_after(@game.id).to_s)
         return render json: { error: 'Too many voice clips generated for this game; audio is unavailable for now' },
@@ -826,7 +826,7 @@ module BreakEscape
         # A tagged line plays its untagged clip instead, if there is one.
         Rails.logger.warn "[TTS] Quota exhausted for #{npc_id}: #{e.message}"
         fallback = delivery && stand_in.call
-        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+        return send_tts_clip(fallback) if fallback
 
         response.set_header('Retry-After', e.retry_after.to_s) if e.retry_after
         return render json: {
@@ -836,7 +836,7 @@ module BreakEscape
       end
       unless mp3_path && File.exist?(mp3_path)
         fallback = delivery && tts_service.enabled? && stand_in.call
-        return send_file(fallback, type: 'audio/mpeg', disposition: 'inline') if fallback
+        return send_tts_clip(fallback) if fallback
 
         if tts_service.enabled?
           return render_error('TTS generation failed', :internal_server_error)
@@ -845,7 +845,7 @@ module BreakEscape
         end
       end
 
-      send_file mp3_path, type: 'audio/mpeg', disposition: 'inline'
+      send_tts_clip(mp3_path)
     end
 
     # PUT /games/:id/sync_state
@@ -3780,6 +3780,15 @@ module BreakEscape
 
     # A clip from the previous TTS model, tried under the current voice and then
     # under the voice the game started with.
+    # Serve a voice clip. A clip with a voice FX baked in (tools/voice_fx/bake.py)
+    # says so in X-Voice-FX-Baked, so the client skips that speaker's run-time FX
+    # for it; clean clips (new lines, stand-ins) still get the run-time FX.
+    def send_tts_clip(path)
+      baked = TtsService.baked_voice_fx(path)
+      response.set_header('X-Voice-FX-Baked', baked) if baked
+      send_file(path, type: 'audio/mpeg', disposition: 'inline')
+    end
+
     def legacy_tts_clip(tts_service, text, voice_configs, scenario_name)
       voice_configs.uniq.each do |config|
         path = tts_service.legacy_cached_path(text, config['name'], config['style'], config['language'],
