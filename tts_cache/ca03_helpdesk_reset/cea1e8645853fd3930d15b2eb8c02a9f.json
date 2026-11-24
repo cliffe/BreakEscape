@@ -1,13 +1,13 @@
 {
-  "key": "5f85d9343ce5712cfc67edba714746bf",
+  "key": "cea1e8645853fd3930d15b2eb8c02a9f",
   "npc": "leila_servicedesk",
-  "text": "Right, one moment.",
-  "voice": "Sulafat",
+  "text": "A callback on the number we hold is how I confirm it's really you.",
+  "voice": "Laomedeia",
   "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca03_helpdesk_reset",
   "source": "generate",
   "generated": "2026-11-24",
-  "recorded_at": "2026-11-24T09:38:51Z"
+  "recorded_at": "2026-11-24T10:09:11Z"
 }

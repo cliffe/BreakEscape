@@ -1,13 +1,13 @@
 {
-  "key": "c716628e431095eb6727638c40fa40a9",
+  "key": "426b4087a8f6147e9f11c20a2e00a7a3",
   "npc": "leila_servicedesk",
-  "text": "Sorry to hear that. Bear with me and I'll pull up your record.",
-  "voice": "Sulafat",
+  "text": "I can't skip those, I'm afraid. They protect your account.",
+  "voice": "Laomedeia",
   "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca03_helpdesk_reset",
   "source": "generate",
   "generated": "2026-11-24",
-  "recorded_at": "2026-11-24T09:38:29Z"
+  "recorded_at": "2026-11-24T10:09:14Z"
 }

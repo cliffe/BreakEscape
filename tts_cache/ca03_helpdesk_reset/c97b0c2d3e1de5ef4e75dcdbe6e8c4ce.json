@@ -1,13 +1,13 @@
 {
-  "key": "43457711df7008108a600ede228d4e20",
+  "key": "c97b0c2d3e1de5ef4e75dcdbe6e8c4ce",
   "npc": "leila_servicedesk",
-  "text": "I'm going to stop there. I'll need to verify you before I do anything else.",
-  "voice": "Sulafat",
+  "text": "IT service desk, Leila speaking. How can I help?",
+  "voice": "Laomedeia",
   "style": "Quayholt's IT service desk agent, late 20s, British Arab. Speak with a consistent London (South-East English) accent throughout — do not shift to any other accent. Mid pitch, warm and efficient; brisk but friendly, a little busy mid-morning yet polite and helpful, never short with the caller.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "ca03_helpdesk_reset",
   "source": "generate",
   "generated": "2026-11-24",
-  "recorded_at": "2026-11-24T09:38:21Z"
+  "recorded_at": "2026-11-24T10:08:41Z"
 }
