@@ -134,6 +134,7 @@ module BreakEscape
       # NPC's fill never changes what another NPC's expansion reads.
       plans = entries.filter_map do |entry|
         npc = entry[:npc]
+        next if AccessIdentities.account_only?(npc) # S5c: no person, no habits
         next if npc.key?('habits') && !npc['habits'].is_a?(Hash)
 
         habits = expanded(npc, scenario)

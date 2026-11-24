@@ -332,5 +332,32 @@ module BreakEscape
 
       room_objects(scenario).any? { |e| e[:object].key?('access') || login_pc?(e[:object]) }
     end
+
+    # S5c: an account with no person behind it. Such an NPC entry is an account holder only.
+    def account_only?(npc)
+      npc.is_a?(Hash) && npc['accountOnly'] == true
+    end
+
+    # S5c: does the account's kind allow it at this PC? Kinds only narrow admission; the
+    # access list is judged separately. No kind admits; local needs the PC's id in localTo;
+    # domain needs the PC's domain to equal creds.domain (an absent PC domain never matches).
+    # Any junk value refuses.
+    def account_kind_admits?(pc, npc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      return true unless creds.is_a?(Hash) && creds.key?('accountKind')
+
+      pc = {} unless pc.is_a?(Hash)
+      case creds['accountKind']
+      when 'local'
+        pc_id = pc['id']
+        local_to = creds['localTo']
+        pc_id.is_a?(String) && !pc_id.empty? && local_to.is_a?(Array) && local_to.include?(pc_id)
+      when 'domain'
+        domain = creds['domain']
+        domain.is_a?(String) && !domain.empty? && pc['domain'].is_a?(String) && pc['domain'] == domain
+      else
+        false
+      end
+    end
   end
 end
