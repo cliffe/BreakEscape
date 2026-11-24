@@ -282,3 +282,4 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - (21:12) CA0 rendering ca01/ca12/ca15 (3 shapes each) from ~21:10 for ~1 h 30: no render, encode or capture from me until CA0 says it is done.
 - (22:12) CA0 done at 22:11; CA0 doing catalogue preview cuts next (told to go ahead). Ask CA0 before any render of mine.
 - (23:22) CA0 capture block (display 147, :3456, dry runs :3457), about 1.5 h. No render, encode or capture from me until CA0 says it has ended.
+- (23:27) Owner via AC0: weekly quota low. Scripted takes/re-takes, frame and loudness checks, lint, lookups and digests go to Grok or Haiku; Sonnet/Opus only for judgement, review and writing. Don't slow down.
