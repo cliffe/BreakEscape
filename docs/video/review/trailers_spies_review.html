@@ -66,7 +66,8 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m02v5" aria-selected="true" data-cut="m02v5">m02 · v5</button>
+    <button class="tab" role="tab" id="tab-m07v1" aria-selected="true" data-cut="m07v1">m07 · v1</button>
+    <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5</button>
     <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
     <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3</button>
     <button class="tab" role="tab" id="tab-m05v4" aria-selected="false" data-cut="m05v4">m05 · v4</button>
@@ -98,6 +99,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m07v1: {
+    doc: "feedback/m07_trailer_v1",
+    title: "m07 Architect's Gambit · 60 s trailer · v1 (first cut)",
+    videoLabel: "16:9",
+    video: "/_blob/0970a277eba26a59c912f6261163ae87",
+    videos: [["9:16", "/_blob/58cbad67af005b2a08ea0b6cc1f6be07", "p916"], ["1:1", "/_blob/6eb9f74f88abc7ca8031e325f23d7550", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−13.9 LUFS, true peak under −1 dB", "music: Shadow Tide from 0.05 s", "34 shots"],
+    changedLabel: "What this cut is",
+    changed: ["First cut. Hook and stakes: Netherton's \"We are faced with an impossible decision, Agent.\" and \"Eight point four million people, Agent.\" (your round-2 lines).", "Hollis challenges you at the checkpoint, then Gwen's dry \"At least the water is cold.\" from the ops-floor exchange.", "\"Withheld Caller\" card, the ring with no caller ID, and the Architect: \"Don't look for the trace. It isn't there.\"", "Elena's line, then Real Hacking with m07's own console footage (the nmap scan), the armed clock and \"Down into the Dark\" with Park's line.", "Ending: the Architect's \"Four fires tonight, and only one of you. I set them so you'd have to choose.\" as a tight crop on his text."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The Architect's call is the game's green text view, not a portrait, so the ending close-up is a crop on his words.", "No walk down the generator hall: both takes dropped too many frames.", "9:16 shows the game's \"Space, Enter or click to skip\" hint under the Architect's first line for about 3 s.", "Music window and crescendo order were chosen by analysis and take availability, not by ear. Not watched end to end by me: contact sheets, loudness and frames at every changed crop checked."],
+    srt: "1\n00:00:05,830 --> 00:00:09,340\nDirector Magnus Netherton: We are faced with an impossible decision, Agent.\n\n2\n00:00:11,420 --> 00:00:13,880\nDirector Magnus Netherton: Eight point four million people, Agent.\n\n3\n00:00:14,037 --> 00:00:17,947\nRay Hollis: So you're lost, or you're the other thing.\n\n4\n00:00:18,183 --> 00:00:19,883\nGwen Pritchard: At least the water is cold.\n\n5\n00:00:23,173 --> 00:00:26,083\nThe Architect: Don't look for the trace. It isn't there.\n\n6\n00:00:26,343 --> 00:00:29,863\nElena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.\n\n7\n00:00:38,247 --> 00:00:41,157\nThomas Park: Four minutes and I'd have been out. Four.\n\n8\n00:00:45,430 --> 00:00:48,640\nThe Architect: Four fires tonight, and only one of you.\n\n9\n00:00:49,340 --> 00:00:51,940\nThe Architect: I set them so you'd have to choose.",
+    questions: [{k:"music", t:"Music: Shadow Tide from its quiet intro (0.05 s)", o:[["ok", "Keep", "", 1], ["alt", "Try the window that ends on a drop (92.1 s)", "Loud from the start"]]}, {k:"ring", t:"The incoming-call ring shown on its own for 1.3 s", o:[["ok", "Keep", "", 1], ["cut", "Cut it", "Gives the time to the call"]]}, {k:"hollis", t:"Hollis: second sentence only (\"So you're lost, or you're the other thing.\")", o:[["ok", "Keep", "", 1], ["both", "Add \"Building's evacuating.\"", "Costs Gwen's line"]]}, {k:"gwen", t:"Gwen's \"At least the water is cold.\" as the one light beat", o:[["ok", "Keep", "", 1], ["cut", "Cut it", "Back to a silent ops-floor walk"]]}, {k:"order", t:"Crescendo face order (by take availability, not story order)", o:[["ok", "Fine as is", "", 1], ["story", "Re-order to story order", ""]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
   m02v5: {
     doc: "feedback/m02_trailer_v5",
     title: "m02 Ransomed Trust · 60 s trailer · v5 (owner notes)",
@@ -546,7 +561,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m02v5";
+let current = "m07v1";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round

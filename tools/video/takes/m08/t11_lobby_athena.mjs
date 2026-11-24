@@ -5,11 +5,10 @@
 import { sleep, clearScreen } from '../lib/lib.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 import { npcPos } from './_c8.mjs';
-export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(1500); console.error('SETUP', JSON.stringify((await bridge.getState()).player)); }
+export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(1500); const p = (await bridge.getState()).player; if (p.y < 225) await keyLegs(bridge, [['down', 225]], 145, () => {}); await sleep(800); console.error('SETUP', JSON.stringify((await bridge.getState()).player)); }
+// v2 (24 Nov): the first run walked AWAY from her (down). Setup now walks down to y 225 off camera; the take walks straight up toward her and holds 1.5 s (a 3.8 s take dropped 1.69%).
 export default async (page, bridge, mark) => {
-  await sleep(1000); const p = (await bridge.getState()).player; const a = await npcPos(page, 'receptionist_ai');
-  mark('walk-start', { player: p, athena: a });
-  const dx = a.x - p.x, dy = a.y - p.y; const legs = [];
-  if (Math.abs(dx) >= Math.abs(dy)) legs.push([dx > 0 ? 'right' : 'left', a.x - Math.sign(dx) * 120]); else legs.push([dy > 0 ? 'down' : 'up', a.y - Math.sign(dy) * 120]);
-  await keyLegs(bridge, legs, 145, mark); mark('walk-end', { player: (await bridge.getState()).player }); await sleep(1000);
+  await sleep(1200); const p = (await bridge.getState()).player;
+  mark('walk-start', { player: p });
+  await keyLegs(bridge, [['up', 150]], 145, mark); mark('walk-end', { player: (await bridge.getState()).player }); await sleep(1500);
 };

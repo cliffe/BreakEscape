@@ -13,6 +13,8 @@ export default async (page, bridge, mark) => {
     open = !!(await bridge.getState()).dialogue;
     if (!open && Date.now() - t0 > 8000) {
       const s = await bridge.getState(); const h = await page.evaluate(() => { const n = window.npcManager.getNPC('ray_hollis'); return n && n._sprite && { x: n._sprite.x, y: n._sprite.y }; });
+      mark('pulse', { h, p: { x: s.player.x, y: s.player.y } });
+      if (h && Math.hypot(h.x - s.player.x, h.y - s.player.y) <= 110 && Date.now() - t0 > 14000) { mark('interact'); await bridge.interact('ray_hollis', { timeoutMs: 8000 }).catch(() => {}); await sleep(1500); continue; }
       if (h && Math.hypot(h.x - s.player.x, h.y - s.player.y) > 110) await bridge.walk(Math.abs(h.x - s.player.x) > Math.abs(h.y - s.player.y) ? (h.x > s.player.x ? 'right' : 'left') : (h.y > s.player.y ? 'down' : 'up'), 400);
     }
     await sleep(200);
