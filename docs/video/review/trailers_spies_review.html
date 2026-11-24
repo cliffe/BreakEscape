@@ -71,12 +71,12 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   <nav class="tabs" role="tablist" aria-label="Current round per mission">
     <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
-    <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4</button>
+    <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4 · final</button>
     <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
-    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
+    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5 · final</button>
     <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2 · final</button>
-    <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2</button>
-    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1</button>
+    <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2 · final</button>
+    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1 · final</button>
   </nav>
   <details class="earlier" id="earlier">
     <summary>Earlier rounds (17)</summary>
@@ -129,59 +129,63 @@ const CUTS = {
   },
   m08v1: {
     doc: "feedback/m08_trailer_v1",
-    title: "m08 The Mole · 60 s trailer · v1",
+    title: "m08 The Mole · 60 s trailer · v1 · final",
     videoLabel: "16:9",
     video: "/_blob/6d538e8064408f84ae77317e3756f80d",
     videos: [["9:16", "/_blob/8cb8ba38f97ce713ea605904c824a289", "p916"], ["1:1", "/_blob/613e89e121a86ecc3c7b518f790dac1c", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.9 dB", "music: Shadowline Protocol from 109.4 s", "31 shots"],
-    changedLabel: "First round",
-    changed: ["ATHENA opens on the leak and Netherton's three names; then the three suspects (Nightshade, Vector, Phantom) each get a line.", "Cards: \"Mission 8 / The Mole\", \"Interview / Suspects\", \"Real / Hacking\", \"Before They / Vanish\".", "Real Hacking is a shell landing on the target (whoami), not the nmap scan, so no neighbouring trailer repeats it.", "Netherton closes: \"There is a mole in SAFETYNET\" (your round-1 pick: the existing line)."],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (the drop under ATHENA is fine; whoami shell and Shadowline Protocol kept). Exported to hacktivity-videos; no questions left on this tab.", "ATHENA opens on the leak and Netherton's three names; then the three suspects (Nightshade, Vector, Phantom) each get a line.", "Cards: \"Mission 8 / The Mole\", \"Interview / Suspects\", \"Real / Hacking\", \"Before They / Vanish\".", "Real Hacking is a shell landing on the target (whoami), not the nmap scan, so no neighbouring trailer repeats it.", "Netherton closes: \"There is a mole in SAFETYNET\" (your round-1 pick: the existing line)."],
     standinLabel: "Stand-in and compromises",
     standin: ["The track's drop lands at about 0:12.9, inside ATHENA's \"Director Netherton has three names\". It may crowd her line; see the question.", "The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, crescendo, ending, console readability, loudness and captions checked in all three aspects."],
     srt: "1\n00:00:06,950 --> 00:00:09,500\nATHENA: The leak came from inside this building.\n\n2\n00:00:12,363 --> 00:00:14,283\nATHENA: Director Netherton has three names,\n\n3\n00:00:14,783 --> 00:00:17,263\nATHENA: and one of them got two of your colleagues killed.\n\n4\n00:00:18,700 --> 00:00:21,200\nAgent 0x47 'Nightshade': There you are. I wondered when they'd send you.\n\n5\n00:00:22,567 --> 00:00:27,517\nAgent 0x23 'Vector': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.\n\n6\n00:00:27,783 --> 00:00:31,253\nAgent 0x88 'Phantom': Accuse me properly, or get out of my way and let one of us catch him.\n\n7\n00:00:44,000 --> 00:00:46,120\nDirector Magnus Netherton: There is a mole in SAFETYNET.\n\n8\n00:00:47,017 --> 00:00:51,917\nDirector Magnus Netherton: I am reasonably certain they are within a hundred metres of where you are standing.\n",
-    questions: [{k:"drop", t:"The music's drop at 0:12.9 falls inside ATHENA's line about Netherton's three names. Does it crowd her?", o:[["ok", "Fine as is", "The hit lifts the reveal", 1], ["move", "Move the drop off her line", "Shift the window or trim her lead-in"]]}, {k:"console", t:"Console shot: a shell landing (whoami)", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"music", t:"Shadowline Protocol for m08", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m03v4: {
     doc: "feedback/m03_trailer_v4",
-    title: "m03 Ghost in the Machine · 60 s trailer · v4 (console beat)",
+    title: "m03 Ghost in the Machine · 60 s trailer · v4 (console beat) · final",
     videoLabel: "16:9",
     video: "/_blob/a5f472f66699cdf983683c94d90d9ace",
     videos: [["9:16", "/_blob/c7423a7d087f21029ca96917986e72f5", "p916"], ["1:1", "/_blob/ec7dec17625e4bfb2fbbc689870d1306", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Shadow Code 1 from 51.6 s", "34 shots"],
-    changedLabel: "What changed since v3",
-    changed: ["Your note 7 (vary the console beats): Real Hacking is no longer the nmap scan. It is m03's attack script starting up in Metasploit: the module chosen and its target and port set (no secret values). Nothing else changed."],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (Metasploit setup console kept). Exported to hacktivity-videos; no questions left on this tab.", "Your note 7 (vary the console beats): Real Hacking is no longer the nmap scan. It is m03's attack script starting up in Metasploit: the module chosen and its target and port set (no secret values). Nothing else changed."],
     standinLabel: "Stand-in and compromises",
     standin: ["In 9:16 and 1:1 the left-anchored crop cuts off the module name; 16:9 shows it (the module-name question is on the m07 v2 tab).", "Not watched end to end by me: the console shot in all three aspects, loudness and captions checked."],
     srt: "1\n00:00:04,800 --> 00:00:08,550\nAgent HaX: Every life St. Catherine's lost, it lost to something Zero Day sold.\n\n2\n00:00:12,043 --> 00:00:15,883\nZainab Hussain: Hiya. Here to see Sterling? Good luck.\n\n3\n00:00:16,113 --> 00:00:21,293\nVictoria Sterling: We find it, we price it, and we find the somebody.\n\n4\n00:00:31,600 --> 00:00:34,970\nFfion Rees: Is Ms. Sterling expecting you this late?\n\n5\n00:00:37,067 --> 00:00:40,107\nTerry Mott: Picks. Right. We're done talking.\n\n6\n00:00:46,800 --> 00:00:48,290\nVictoria Sterling: I sleep perfectly.\n\n7\n00:00:48,783 --> 00:00:51,833\nVictoria Sterling: That's the part people like you can never forgive.\n",
-    questions: [{k:"console", t:"Console shot: the Metasploit module chosen and set up", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m05v5: {
     doc: "feedback/m05_trailer_v5",
-    title: "m05 Insider Trading · 60 s trailer · v5 (owner notes)",
+    title: "m05 Insider Trading · 60 s trailer · v5 (owner notes) · final",
     videoLabel: "16:9",
     video: "/_blob/1898a071cd4a93f0ee0327d30e49141d",
     videos: [["9:16", "/_blob/9968b879d276ab0747a16345d52fe55c", "p916"], ["1:1", "/_blob/99f6bfd253e4861480bdcee24d069d87", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
-    changedLabel: "What changed since v4",
-    changed: ["Your 0:40 note: the \"999 ROLLOUT\" screen covered the lobby's north door. Fixed in the room data (landed on main; it also cleared a camera off a door in the m05 server hallway and a sanitiser in m02), and the two night-corridor shots re-filmed.", "Real Hacking is no longer the nmap scan: the attack script is read, showing the Metasploit module name and its settings (variables only, no values)."],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (door fixed, script read kept). Exported to hacktivity-videos; no questions left on this tab.", "Your 0:40 note: the \"999 ROLLOUT\" screen covered the lobby's north door. Fixed in the room data (landed on main; it also cleared a camera off a door in the m05 server hallway and a sanitiser in m02), and the two night-corridor shots re-filmed.", "Real Hacking is no longer the nmap scan: the attack script is read, showing the Metasploit module name and its settings (variables only, no values)."],
     standinLabel: "Stand-in and compromises",
     standin: ["Not watched end to end by me: loudness, captions and the changed shots in all three aspects checked."],
     srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.\n",
-    questions: [{k:"door", t:"Lobby door at 0:39-0:42 now clear", o:[["ok", "Fixed", "", 1], ["fix", "Still wrong", "Say what"]]}, {k:"console", t:"Console shot: the attack script with the module name", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m07v2: {
     doc: "feedback/m07_trailer_v2",
-    title: "m07 Architect's Gambit · 60 s trailer · v2 (owner notes)",
+    title: "m07 Architect's Gambit · 60 s trailer · v2 (owner notes) · final",
     videoLabel: "16:9",
     video: "/_blob/e9cf23a73c5f5916d1d1ba8f764bfb7c",
     videos: [["9:16", "/_blob/d33625c284d2556e47f8d7a9b13a5c3e", "p916"], ["1:1", "/_blob/3d768cf34380cbadceaa0fb80c2bc5a8", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−13.9 LUFS, true peak −1.5 dB", "music: Shadow Tide from 0.05 s", "34 shots"],
-    changedLabel: "What changed since v1",
-    changed: ["Crescendo faces are still frames now (Mercer, Elena, Park, Hollis, Netherton), each on a closed or near-closed mouth. A new renderer option; frame diffs confirm nothing moves.", "The Architect's call and his ending lines carry Ghost's two-layer voice (same recipe), level-matched. The same voice is now baked into the game for him and Ghost (landed on main).", "Hollis re-filmed with new mouth shapes made the Netherton way: PixelLab edits of his rest frame, masked to the mouth. Only the mouth moves.", "Real Hacking is no longer the nmap scan: it is m07's attack script being read (cat s5sudo.sh). See the question below."],
+    noVerdict: true,
+    changedLabel: "What changed since the last round",
+    changed: ["Final: you approved this cut on 24 Nov (whole script kept as is, module names fine, still faces, Hollis and the Architect's voice right). Exported to hacktivity-videos; no questions left on this tab.", "Crescendo faces are still frames now (Mercer, Elena, Park, Hollis, Netherton), each on a closed or near-closed mouth. A new renderer option; frame diffs confirm nothing moves.", "The Architect's call and his ending lines carry Ghost's two-layer voice (same recipe), level-matched. The same voice is now baked into the game for him and Ghost (landed on main).", "Hollis re-filmed with new mouth shapes made the Netherton way: PixelLab edits of his rest frame, masked to the mouth. Only the mouth moves.", "Real Hacking is no longer the nmap scan: it is m07's attack script being read (cat s5sudo.sh). See the question below."],
     standinLabel: "Stand-in and compromises",
     standin: ["The console shot comes from the older full-solution take (the current one shows an account name and a flag in its first output frame).", "Elena's frozen frame is near-closed: she is mid-line in every nearby frame.", "Not watched end to end by me: loudness, captions, frozen-frame diffs and the changed shots in all three aspects checked."],
     srt: "1\n00:00:05,830 --> 00:00:09,340\nDirector Magnus Netherton: We are faced with an impossible decision, Agent.\n\n2\n00:00:11,420 --> 00:00:13,880\nDirector Magnus Netherton: Eight point four million people, Agent.\n\n3\n00:00:14,037 --> 00:00:17,947\nRay Hollis: So you're lost, or you're the other thing.\n\n4\n00:00:18,183 --> 00:00:19,883\nGwen Pritchard: At least the water is cold.\n\n5\n00:00:23,173 --> 00:00:26,083\nThe Architect: Don't look for the trace. It isn't there.\n\n6\n00:00:26,343 --> 00:00:29,863\nElena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.\n\n7\n00:00:38,247 --> 00:00:41,157\nThomas Park: Four minutes and I'd have been out. Four.\n\n8\n00:00:45,430 --> 00:00:48,640\nThe Architect: Four fires tonight, and only one of you.\n\n9\n00:00:49,340 --> 00:00:51,940\nThe Architect: I set them so you'd have to choose.\n",
-    questions: [{k:"console", t:"The console shot shows m07's whole attack script if paused: the target, the NFS share, the port range, the nc step that recovers the password, then ssh and the sudo awk breakout (no secret values). OK in a trailer?", o:[["crop", "Crop to the first few lines (cat, target, NFS mount)", "Still reads as real hacking, gives less away", 1], ["ok", "Keep as is", "1.8 s on screen; only readable when paused"], ["nmap", "Back to the nmap scan", "Repeats the neighbours"]]}, {k:"modules", t:"m03, m05 and m09's console shots name the Metasploit module used (e.g. distcc_exec). OK?", o:[["ok", "Fine", "In genre; still needs skill to use", 1], ["hide", "Crop the module names out", ""]]}, {k:"freeze", t:"Still crescendo faces", o:[["ok", "Right", "", 1], ["fix", "Not quite", "Say which"]]}, {k:"hollis", t:"Hollis's mouth now", o:[["ok", "Fixed", "", 1], ["fix", "Still glitchy", "Say what you see"]]}, {k:"architect", t:"The Architect's voice", o:[["ok", "Right", "", 1], ["fix", "Change", "Say how"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m01v12: {
     doc: "feedback/m01_trailer_v12",
