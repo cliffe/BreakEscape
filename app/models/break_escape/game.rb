@@ -2555,6 +2555,11 @@ module BreakEscape
       # revealSecret flag are not secret and stay.
       strip_capture_secrets!(filtered)
 
+      # S8c R1: a headless record (social.characters.*.emailRecord, a mail contact's emailRecord)
+      # keeps only the shipped habits, as a room NPC does: approvesPrompts and promptPatience
+      # decide whether a lock's owner approves a prompt and never reach the browser.
+      withhold_headless_habits!(filtered)
+
       # A declared grant's contents (a timer's give_item, a triggerOnInteract reward) are
       # served from the held item, never shipped. GamesController#filter_requires_recursive
       # strips them again as a second line of defence.
@@ -7783,6 +7788,24 @@ module BreakEscape
         npc['hasFeed'] = true
       else
         npc.delete('hasFeed')
+      end
+    end
+
+    # Every emailRecord under social (characters and mail contacts) is cut to SHIPPED_HABIT_KEYS, the
+    # same allow-list withhold_npc_secrets! applies to a room NPC. Edits the Hash it is given.
+    def withhold_headless_habits!(data)
+      social = data['social']
+      return unless social.is_a?(Hash)
+
+      records = []
+      social['characters'].each_value { |c| records << c['emailRecord'] if c.is_a?(Hash) } if social['characters'].is_a?(Hash)
+      Array(social.dig('mailClient', 'contacts')).each { |c| records << c['emailRecord'] if c.is_a?(Hash) }
+      records.each do |record|
+        next unless record.is_a?(Hash) && record.key?('habits')
+
+        habits = record['habits']
+        kept = habits.is_a?(Hash) ? habits.slice(*SHIPPED_HABIT_KEYS) : {}
+        kept.empty? ? record.delete('habits') : record['habits'] = kept
       end
     end
 

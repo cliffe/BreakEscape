@@ -113,5 +113,31 @@ module BreakEscape
       unlock('door', 'vault', '0000', 'pin')
       assert_equal [422, expired_for('object:vaultsafe')], mfa('prompt', 'object:vaultsafe')
     end
+
+    # ---- GET scenario never serves a prompt habit, whatever kind of NPC record carries it ----
+
+    HABITS = { 'approvesPrompts' => 'always', 'promptPatience' => 4, 'screen' => 'locks' }.freeze
+
+    test 'no served answer carries approvesPrompts or promptPatience, for a room NPC, a headless character or a mail contact' do
+      data = scenario
+      data['rooms']['hall']['npcs'] << { 'id' => 'ward', 'displayName' => 'Ward', 'npcType' => 'person', 'habits' => HABITS.dup }
+      data['rooms']['hall']['npcs'].first['habits'] = HABITS.dup
+      data['social'] = {
+        'characters' => { 'ghost' => { 'channels' => { 'email' => 'ghost_mail' },
+                                       'emailRecord' => { 'habits' => HABITS.dup, 'itemsHeld' => [] } } },
+        'mailClient' => { 'contacts' => [{ 'name' => 'Pat', 'npc' => 'pat_mail',
+                                           'emailRecord' => { 'habits' => HABITS.dup } }] }
+      }
+      build_step_game(data, 'encounteredNPCs' => %w[amy ward])
+      [bootstrap, room('hall'), room('vault')].each do |status, body|
+        text = JSON.generate(body)
+        assert_not_includes text, 'approvesPrompts', status.to_s
+        assert_not_includes text, 'promptPatience', status.to_s
+      end
+      # the screen habit is not secret and still ships for a headless record
+      social = bootstrap.last['social']
+      assert_equal 'locks', social.dig('characters', 'ghost', 'emailRecord', 'habits', 'screen')
+      assert_equal 'locks', social.dig('mailClient', 'contacts', 0, 'emailRecord', 'habits', 'screen')
+    end
   end
 end
