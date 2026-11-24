@@ -372,5 +372,22 @@ test('S7 R2-7: a fact earned while the scene is open (intel_collected) re-reads 
         window.eventDispatcher.emit('intel_collected', { id: 'pet', fact: 'pet' });
         await settle();
         assert.equal(kr.refreshes, before + 1, 'no listener left behind');
+        window.eventDispatcher.emit('npc_posted:dana', { npcId: 'dana', postId: 'dana_post_1' });
+        await settle();
+        assert.equal(kr.refreshes, before + 1, 'npc_posted listener removed too');
+    } finally { window.eventDispatcher = prev; }
+});
+
+test('S7 R3-1: a feed post served while the scene is open (npc_posted) re-reads the keyring', async () => {
+    const { default: Dispatcher } = await import(pathToFileURL(join(here, '../../public/break_escape/js/systems/npc-events.js')));
+    const prev = window.eventDispatcher;
+    window.eventDispatcher = new Dispatcher();
+    try {
+        const { m, kr } = open({});
+        const before = kr.refreshes;
+        window.eventDispatcher.emit('npc_posted:dana', { npcId: 'dana', postId: 'dana_post_1' });
+        await settle();
+        assert.equal(kr.refreshes, before + 1);
+        m.cleanup();
     } finally { window.eventDispatcher = prev; }
 });

@@ -122,6 +122,8 @@ export class OpsCrackerMinigame extends SocialOverlayScene {
             this._intelListener = () => { if (!this._closed) this._refreshKeyring(); };
             this._intelDispatcher = d;
             d.on('intel_collected', this._intelListener);
+            // a feed post served meanwhile earns its fact on the server; the client says only npc_posted
+            d.on('npc_posted:*', this._intelListener);
         }
     }
 
@@ -134,7 +136,10 @@ export class OpsCrackerMinigame extends SocialOverlayScene {
 
     cleanup() {
         this._closed = true;
-        if (this._intelDispatcher && this._intelListener) this._intelDispatcher.off?.('intel_collected', this._intelListener);
+        if (this._intelDispatcher && this._intelListener) {
+            this._intelDispatcher.off?.('intel_collected', this._intelListener);
+            this._intelDispatcher.off?.('npc_posted:*', this._intelListener);
+        }
         this._intelListener = null; this._intelDispatcher = null;
         if (this._timer) { clearInterval(this._timer); this._timer = null; }
         super.cleanup();
