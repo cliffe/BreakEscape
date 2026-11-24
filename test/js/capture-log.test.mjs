@@ -805,3 +805,15 @@ test('when /capture_secrets keeps failing the row says Could not load, not bulle
     log.CaptureLogMinigame.secretRetryMs = 1500;
     closeDevice();
 });
+
+// ---- S7 review R1-C5: the answer the device hands the row builder carries the keyring's crack clock ----
+test('R1-C5: keyringAnswer() passes the real keyring crackSecondsLeft through', () => {
+    window.keyring = new Keyring();
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'ABCDEFGH', status: 'running', readyInSeconds: 60,
+        account: { npcId: 'dana', username: 'dana.k' } };
+    window.keyring.remember(Keyring.cacheKey(null), { rev: 'r1', entries: [hash], captures: {} });
+    const a = log.keyringAnswer();
+    assert.equal(typeof a.crackSecondsLeft, 'function');
+    assert.equal(a.crackSecondsLeft('h1'), window.keyring.crackSecondsLeft('h1'));
+    assert.ok(a.crackSecondsLeft('h1') <= 60 && a.crackSecondsLeft('h1') > 55);
+});

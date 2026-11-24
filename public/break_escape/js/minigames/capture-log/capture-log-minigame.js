@@ -81,7 +81,8 @@ export function keyringAnswer() {
         captures: answer.captures && typeof answer.captures === 'object' ? answer.captures : {},
         firstSeen: k.firstSeen,
         foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined,
-        tokenSecondsLeft: typeof k.tokenSecondsLeft === 'function' ? (id) => k.tokenSecondsLeft(id) : undefined
+        tokenSecondsLeft: typeof k.tokenSecondsLeft === 'function' ? (id) => k.tokenSecondsLeft(id) : undefined,
+        crackSecondsLeft: typeof k.crackSecondsLeft === 'function' ? (id) => k.crackSecondsLeft(id) : undefined
     };
 }
 
