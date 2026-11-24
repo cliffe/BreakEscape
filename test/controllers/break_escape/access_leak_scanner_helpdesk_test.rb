@@ -56,11 +56,13 @@ module BreakEscape
     end
 
     def grant_pw(over = {}, at = nil)
-      row('POST', 'helpdesk/request', shape('helpdesk.granted_password', { 'body.password' => HANA_PW, 'body.lockoutPcIds' => ['code_pc1'] }.merge(over)), at: at)
+      row('POST', 'helpdesk/request', shape('helpdesk.granted_password', { 'body.password' => HANA_PW, 'body.lockoutPcIds' => ['code_pc1'],
+                                                                           'body.npcId' => 'hana', 'body.deskId' => 'it_desk' }.merge(over)), at: at)
     end
 
-    def grant_mfa(at = nil)
-      row('POST', 'helpdesk/request', shape('helpdesk.granted_mfa'), at: at)
+    # A second-step grant answer, which now names its account and its desk
+    def grant_mfa(at = nil, npc: 'hana', desk: 'it_desk')
+      row('POST', 'helpdesk/request', shape('helpdesk.granted_mfa', { 'body.npcId' => npc, 'body.deskId' => desk }), at: at)
     end
 
     def refusal(name = 'helpdesk.refused', over = {}, at = nil)
@@ -124,7 +126,7 @@ module BreakEscape
     # The honest run: a password grant, the keyring entry, a second-step grant for hana and one for nia, then every own form.
     def honest_run
       [grant_pw, keyring([reset_entry('hana', HANA_PW)]), grant_mfa, own_device('hana'), take('hana_device'), unenrolled, login_own_code,
-       grant_mfa, login_own_push, phone_own]
+       grant_mfa(npc: 'nia'), login_own_push, phone_own]
     end
 
     # ---- every shape in the fixture, and the clean run ----
@@ -269,9 +271,9 @@ module BreakEscape
     test 'a desk with a callback rule covers an account only while the run holds its phone' do
       callback = scenario { |d| d['helpdesks']['it_desk'].merge!('verify' => 'callback'); d['helpdesks']['it_desk'].delete('questions') }
       assert_includes rules(scan([grant_mfa, own_device('nia')], callback)), 'helpdesk_grant'
-      held = [take('nia_phone'), grant_mfa, own_device('nia')]
+      held = [take('nia_phone'), grant_mfa(npc: 'nia'), own_device('nia')]
       assert_empty helpdesk_only(scan(held, callback))
-      gone = [grant_mfa, own_device('nia')]
+      gone = [grant_mfa(npc: 'nia'), own_device('nia')]
       assert_includes owners(scan(gone, callback)), 'helpdesk:own:device'
     end
 
@@ -321,7 +323,7 @@ module BreakEscape
       assert_includes owners(scan([grant_mfa, own_device('cal')])), 'helpdesk:own:device'
       two = [grant_mfa, own_device('hana'), own_device('nia')]
       assert_includes owners(scan(two)), 'helpdesk:own:device'
-      assert_empty scan([grant_mfa, grant_mfa, own_device('hana'), own_device('nia')])
+      assert_empty scan([grant_mfa, grant_mfa(npc: 'nia'), own_device('hana'), own_device('nia')])
       stopped = [refusal('helpdesk.refused_last', {}, 100), grant_mfa(120), own_device('hana')]
       assert_includes owners(scan(stopped)), 'helpdesk:own:device'
     end
@@ -366,13 +368,13 @@ module BreakEscape
     end
 
     test 'the own phone list and its number choices are allowed for an earned account at an open step and nowhere else' do
-      run = [grant_mfa, login_own_push, phone_own]
+      run = [grant_mfa(npc: 'nia'), login_own_push, phone_own]
       assert_empty scan(run)
-      assert_includes owners(scan([grant_mfa, phone_own])), 'helpdesk:own:phone'
-      assert_includes owners(scan([grant_mfa, login_own_push, phone_own(numbers: [31, 62, 70])])), 'helpdesk:own:phone'
-      assert_includes owners(scan([grant_mfa, login_own_push, phone_own(user: 'someone')])), 'helpdesk:own:phone'
-      assert_includes owners(scan([grant_mfa, login_own_push, phone_own(query: 'own=1&x=1')])), 'helpdesk:own:phone'
-      assert_includes owners(scan([grant_mfa, login_own_push, phone_own(query: 'own=2')])), 'helpdesk:own:phone'
+      assert_includes owners(scan([grant_mfa(npc: 'nia'), phone_own])), 'helpdesk:own:phone'
+      assert_includes owners(scan([grant_mfa(npc: 'nia'), login_own_push, phone_own(numbers: [31, 62, 70])])), 'helpdesk:own:phone'
+      assert_includes owners(scan([grant_mfa(npc: 'nia'), login_own_push, phone_own(user: 'someone')])), 'helpdesk:own:phone'
+      assert_includes owners(scan([grant_mfa(npc: 'nia'), login_own_push, phone_own(query: 'own=1&x=1')])), 'helpdesk:own:phone'
+      assert_includes owners(scan([grant_mfa(npc: 'nia'), login_own_push, phone_own(query: 'own=2')])), 'helpdesk:own:phone'
       no_phone = row('GET', 'mfa/phone', shape('phone.no_phone'), query: 'own=1')
       assert_empty helpdesk_only(scan([no_phone]))
       other = no_phone.merge('body' => { 'success' => false, 'error' => 'no such phone', 'code' => '123456' })
@@ -380,7 +382,7 @@ module BreakEscape
     end
 
     test 'the number choices without an own query are still the second-step rule alone' do
-      found = scan([grant_mfa, login_own_push, phone_own(query: 'npc_id=nia')])
+      found = scan([grant_mfa(npc: 'nia'), login_own_push, phone_own(query: 'npc_id=nia')])
       assert_includes rules(found), 'mfa_secret'
     end
 

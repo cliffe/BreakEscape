@@ -59,7 +59,6 @@ module HelpdeskLeakRules
   HD_ACCOUNT_KEYS = %w[displayName npcId username].freeze
   HD_OWN_NAME = 'My phone'
   HD_NO_PHONE = { 'success' => false, 'error' => 'no such phone' }.freeze
-  HD_TRIES_MAX = 9
   HD_ID = /\A[A-Za-z0-9_.\-]{1,120}\z/.freeze
 
   # ---- the module functions the verify-run printing block calls (no scanner state) ----------------------------------
@@ -130,8 +129,12 @@ module HelpdeskLeakRules
     end
     @hd_active = !@hd_desks.empty? || !@hd_reset_pw.empty? || !@hd_recovery.empty?
     @hd_earned_pw = Set.new    # npc ids whose reset password a credited grant answer carried
-    @hd_mfa_rows = []          # per credited second-step grant answer: the Set of accounts it could be for
-    @hd_own_accounts = Set.new # accounts an own-phone form has been allowed for
+    @hd_mfa_earned = Set.new   # npc ids a credited second-step grant answer named (by its npcId, with its deskId judged at the grant)
+    @hd_own_steps = {}         # pc id => npc id of an own-phone step an allowed `ownPhone` answer opened and nothing has closed
+    @hd_own_listed = Set.new   # [pc id, npc id] an allowed own-phone list showed
+    @hd_close_after = []       # own steps to close before the next row (a row never closes the step it is judged against)
+    @hd_mfa_reset_possible = @hd_desks.values.any? { |d| d['resets'].include?('mfa') }
+    @hd_max_tries = [@hd_desks.values.map { |d| d['maxTries'].to_i }.max.to_i, 1].max
     @hd_stop_until = nil       # the time (seconds) the latest stop seen runs to
     @hd_stop_unknown = false   # a stop was seen on a row with no readable time
     @hd_row_time = nil
@@ -232,22 +235,24 @@ module HelpdeskLeakRules
     when 200
       return nil unless body['granted'] == true
 
+      return nil unless body['npcId'].is_a?(String) && body['deskId'].is_a?(String)
+
       if body['what'] == 'password'
         pcs = body['lockoutPcIds']
-        keys == %w[granted lockoutPcIds password what] && body['password'].is_a?(String) && !body['password'].empty? &&
+        keys == %w[deskId granted lockoutPcIds npcId password what] && body['password'].is_a?(String) && !body['password'].empty? &&
           pcs.is_a?(Array) && pcs.all? { |pc| pc.is_a?(String) && @priv_pcs.key?(pc) } ? :granted_password : nil
       elsif body['what'] == 'mfa'
-        keys == %w[granted what] ? :granted_mfa : nil
+        keys == %w[deskId granted npcId what] ? :granted_mfa : nil
       end
     when 422
       case body['reason']
       when 'refused'
         left = body['triesLeft']
-        return nil unless keys == %w[reason triesLeft] && left.is_a?(Integer) && left.between?(0, HD_TRIES_MAX - 1)
+        return nil unless keys == %w[reason triesLeft] && left.is_a?(Integer) && left.between?(0, @hd_max_tries - 1)
 
         left.zero? ? :refused_last : :refused
       when 'blocked'
-        keys == %w[reason retryIn] && body['retryIn'].is_a?(Integer) && body['retryIn'].between?(0, BreakEscape::HelpdeskModel::DESK_STOP_SECONDS) ? :blocked : nil
+        keys == %w[reason retryIn] && body['retryIn'].is_a?(Integer) && body['retryIn'].between?(1, BreakEscape::HelpdeskModel::DESK_STOP_SECONDS) ? :blocked : nil
       when 'unavailable' then keys == %w[reason] ? :unavailable : nil
       end
     when 404 then keys == %w[reason] && body['reason'] == 'not_found' ? :not_found : nil
@@ -274,29 +279,28 @@ module HelpdeskLeakRules
     earned[:password_path] = '$.password'
   end
 
-  # The accounts a grant answer is credited for, or nil.
+  # The accounts a grant answer is credited for, or nil: the answer names an account (npcId) and a desk (deskId) of the
+  # scenario, that desk covers the account for `what` (a callback desk only while the run holds the account's phone at this
+  # row), and for a password the value is the one reset password that account owns.
   def hd_grant_credit(shape, body, info)
     return nil unless info[:status] == 200 && info[:method] == 'POST' && info[:strict]
     return nil if hd_stopped?(@hd_row_time)
 
+    npc = @hd_accounts[body['npcId']]
+    desk = @hd_desks[body['deskId']]
+    what = shape == :granted_password ? 'password' : 'mfa'
+    return nil unless npc && desk && hd_desk_covers?(desk, npc, what)
+
     if shape == :granted_password
       owners = @hd_reset_pw[body['password']]
-      return nil unless owners && owners.size == 1
-
-      hd_desk_covers?(@hd_accounts[owners.first], 'password') ? [owners.first] : nil
-    else
-      ids = @hd_accounts.select { |_id, npc| BreakEscape::MfaModel.enrolled?(npc) && hd_desk_covers?(npc, 'mfa') }.keys
-      ids.empty? ? nil : ids
+      return nil unless owners == [npc['id']]
     end
+    [npc['id']]
   end
 
-  # Some desk could grant `what` for this account NPC, and a `callback` desk only while the run holds the account's phone.
-  def hd_desk_covers?(npc, what)
-    return false unless npc
-
-    @hd_desks.values.any? do |desk|
-      BreakEscape::HelpdeskModel.covers?(desk, npc, what) && (desk['verify'] != 'callback' || mfa_phone_taken?(npc['id']))
-    end
+  # The desk could grant `what` for this account NPC, and a `callback` desk only while the run holds the account's phone.
+  def hd_desk_covers?(desk, npc, what)
+    BreakEscape::HelpdeskModel.covers?(desk, npc, what) && (desk['verify'] != 'callback' || mfa_phone_taken?(npc['id']))
   end
 
   def hd_stopped?(time)
@@ -312,7 +316,7 @@ module HelpdeskLeakRules
 
     case hd_request_shape(info[:status], body)
     when :granted_password then @hd_earned_pw.merge(earned[:accounts]) if earned[:kind]
-    when :granted_mfa then @hd_mfa_rows << Set.new(earned[:accounts]) if earned[:kind]
+    when :granted_mfa then @hd_mfa_earned.merge(earned[:accounts]) if earned[:kind]
     when :blocked then hd_note_stop(body['retryIn'])
     when :refused_last then hd_note_stop(BreakEscape::HelpdeskModel::DESK_STOP_SECONDS)
     end
@@ -396,12 +400,10 @@ module HelpdeskLeakRules
     id = mfa_query_value(minfo, 'npc_id')
     return false unless id && body.keys.sort == HD_OWN_DEVICE_KEYS
 
-    ok = body['deviceId'] == "own:#{id}" && body['npcId'] == id && body['displayName'] == HD_OWN_NAME &&
+    body['deviceId'] == "own:#{id}" && body['npcId'] == id && body['displayName'] == HD_OWN_NAME &&
          body['code'].is_a?(String) && body['code'].match?(/\A\d{6}\z/) &&
          body['secondsLeft'].is_a?(Integer) && (1..BreakEscape::MfaModel::STEP_SECONDS).cover?(body['secondsLeft']) &&
          [true, false].include?(body['used']) && hd_account_earned?(id)
-    @hd_own_accounts << id if ok
-    ok
   end
 
   # The answer for a held device whose owner a desk re-enrolled: no code, `enrolled: false`.
@@ -416,9 +418,7 @@ module HelpdeskLeakRules
 
     npc = mfa_npc(owner)
     shown = npc ? (npc['displayName'] || npc['id']) : owner
-    ok = body['deviceId'] == id && body['npcId'] == owner && body['displayName'] == shown && hd_account_earned?(owner)
-    @hd_own_accounts << owner if ok
-    ok
+    body['deviceId'] == id && body['npcId'] == owner && body['displayName'] == shown && hd_account_earned?(owner)
   end
 
   # The 200 POST login answer of a re-enrolled account's second step: the usual mfaRequired shape plus `ownPhone: true`.
@@ -426,16 +426,14 @@ module HelpdeskLeakRules
     return false unless body['ownPhone'] == true
 
     plain = body.reject { |k, _| k == 'ownPhone' }
-    ok = mfa_required_answer_ok?(plain, minfo, row) && hd_account_earned?(body['npcId'])
-    @hd_own_accounts << body['npcId'] if ok
-    ok
+    mfa_required_answer_ok?(plain, minfo, row) && hd_account_earned?(body['npcId'])
   end
 
   # The entries of a 200 GET mfa/phone?own=1 answer (nil unless the whole answer is in shape for earned accounts).
   def hd_own_phone_entries(body, minfo)
     return nil unless minfo[:method] == 'GET' && minfo[:route] == 'mfa/phone' && minfo[:ok]
     return nil unless mfa_query_value(minfo, 'own') == '1' && body.keys == ['requests'] && body['requests'].is_a?(Array)
-    return nil if @hd_mfa_rows.empty?
+    return nil if @hd_mfa_earned.empty?
 
     owners = body['requests'].map do |entry|
       name = entry.is_a?(Hash) ? entry['username'] : nil
@@ -446,7 +444,7 @@ module HelpdeskLeakRules
     return nil unless body['requests'].each_with_index.all? { |entry, i| mfa_phone_entry_ok?(entry, owners[i], @hd_accounts[owners[i]]) }
     return nil unless owners.all? { |owner| hd_account_earned?(owner) }
 
-    @hd_own_accounts.merge(owners)
+    body['requests'].each_with_index { |entry, i| @hd_own_listed << [entry['pcId'], owners[i]] }
     body['requests']
   end
 
@@ -465,31 +463,11 @@ module HelpdeskLeakRules
     true
   end
 
-  # An account an own-phone form may be for: it asks a second step, a desk covers its second-step reset, and the credited
-  # grant rows can be matched one to each account allowed so far (and this one).
+  # An account an own-phone form may be for: it asks a second step and a credited grant answer named it (the cover was judged
+  # at that row, and is not asked again: handing a borrowed phone back changes nothing).
   def hd_account_earned?(npc_id)
     npc = npc_id.is_a?(String) ? @hd_accounts[npc_id] : nil
-    return false unless npc && BreakEscape::MfaModel.enrolled?(npc) && hd_desk_covers?(npc, 'mfa')
-
-    hd_rows_match?(@hd_own_accounts | [npc_id])
-  end
-
-  # Each account in the set gets its own credited grant row it could be for (augmenting paths).
-  def hd_rows_match?(accounts)
-    owner = {}
-    try = lambda do |account, seen|
-      @hd_mfa_rows.each_index do |i|
-        next if seen.include?(i) || !@hd_mfa_rows[i].include?(account)
-
-        seen << i
-        next unless owner[i].nil? || try.call(owner[i], seen)
-
-        owner[i] = account
-        return true
-      end
-      false
-    end
-    accounts.all? { |account| try.call(account, Set.new) }
+    !npc.nil? && BreakEscape::MfaModel.enrolled?(npc) && @hd_mfa_earned.include?(npc_id)
   end
 
   # The body the second-step rules are shown: the allowed own-phone secrets taken out of a copy.
