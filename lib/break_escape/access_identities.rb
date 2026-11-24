@@ -55,6 +55,21 @@ module BreakEscape
       value.to_s.strip.downcase[0, 64]
     end
 
+    # The loginLockouts key: "<pcId>|<normalised username>"
+    def lockout_key(pc_id, username)
+      "#{pc_id}|#{normalise_username(username)}"
+    end
+
+    # [pc_id, username] for a well-formed lockout key, nil otherwise (split at the first pipe)
+    def lockout_key_parts(key)
+      return nil unless key.is_a?(String)
+
+      pc_id, sep, username = key.partition('|')
+      return nil if sep.empty? || pc_id.empty?
+
+      [pc_id, username]
+    end
+
     # Authored role(s) plus the implicit `staff` of an NPC with creds or a card, unless
     # "staff": false.
     def identity_roles(npc)
