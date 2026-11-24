@@ -442,6 +442,10 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
       assert_empty realism_skin_real_ids(text, []), text
     end
     assert_not_empty realism_skin_real_ids('zdi_99', [])
+    # R3-3: a capital letter alone does not hide a path from the two ordinary first words
+    ['Post/area/thing/probe_one', 'POST/AREA/THING/PROBE_ONE', 'Scanner/area/thing/probe_one'].each do |text|
+      assert_not_empty realism_skin_real_ids(text, []), text
+    end
     assert_not_empty realism_skin_real_ids('uses exploit/area/thing/probe', [])
   end
 

@@ -147,7 +147,7 @@ def realism_skin_real_ids(text, nick_patterns, advisory_only: false)
       parts = frag.split('/', -1)
       next if parts.length < 3 || parts.any?(&:empty?)
       # `post` and `scanner` are ordinary words: a capitalised sign (`Post/Parcels/Deliveries`) is not a module path
-      next if %w[post scanner].include?(parts.first.downcase) && frag =~ /[A-Z]/
+      next if %w[post scanner].include?(parts.first.downcase) && parts.all? { |x| x =~ /\A[A-Z][A-Za-z]*\z/ }
 
       out << frag unless frag =~ REALISM_SKIN_DEFAULT_FORM
     end
