@@ -388,7 +388,7 @@
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
+   "placeholder": false,
    "placeholder_note": "old-trailer Kali footage from this mission only: Hydra brute-forcing SSH, then the shell (original 19.533-20.800 s, 60 fps, slowed to 2.0 s; password mosaicked) until in-game VM capture exists",
    "source": {
     "type": "clip",
@@ -424,7 +424,7 @@
     "keypad_partial": null,
     "note": "m01 Hydra/SSH terminal; cracked password mosaicked; login name and lab IP visible by earlier decision"
    },
-   "note": " v9: 16:9 crop zoom 1.25 cy .48 cuts the Kali post-it (bottom left, y .89 to 1.0) out of frame; check the frame."
+   "note": "v9: 16:9 crop zoom 1.25 cy .48 cuts the Kali post-it (bottom left, y .89 to 1.0) out of frame; check the frame. Owner 24 Nov: keep Hydra as final (not a stand-in)."
   },
   {
    "id": "m_cyberchef",
