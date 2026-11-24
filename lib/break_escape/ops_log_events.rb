@@ -58,15 +58,17 @@ module BreakEscape
       'net_wifi_join' => { label: 'NET_WIFI_JOIN', places: %w[ap], results: %w[ok] },
       'share_folder_opened' => { label: 'SHARE_OPEN', places: %w[share], results: %w[ok], detail: { 'folder' => { id: 'object' } } },
       # Ops core S8a: the second step of a sign-in (multi-factor). No code, number or secret is ever a detail value;
-      # a repeat merges into the earlier row.
-      'mfa_challenge' => { label: 'MFA', places: %w[pc], results: %w[ok], detail: { 'route' => %w[keyboard foothold from] } },
-      'mfa_code_ok' => { label: 'MFA', places: %w[pc], results: %w[ok] },
-      'mfa_code_wrong' => { label: 'MFA', places: %w[pc], results: %w[fail] },
-      'mfa_code_locked' => { label: 'MFA', places: %w[pc], results: %w[locked] },
-      'mfa_expired' => { label: 'MFA', places: %w[pc], results: %w[expired] },
-      'mfa_prompt_sent' => { label: 'MFA', places: %w[pc], results: %w[ok] },
-      'mfa_prompt_approved' => { label: 'MFA', places: %w[pc], results: %w[ok], detail: { 'approver' => %w[owner held_phone own_phone] } },
-      'mfa_prompt_denied' => { label: 'MFA', places: %w[pc], results: %w[denied] }
+      # a repeat merges into the earlier row. S8c widens the places to an object or a door (a lock's second step); `method` names the first
+      # factor of a lock.
+      'mfa_challenge' => { label: 'MFA', places: %w[pc object door], results: %w[ok], detail: { 'route' => %w[keyboard foothold from],
+                                                                                'method' => %w[key lockpick rfid biometric bluetooth ble pin password combination cryptex npc] } },
+      'mfa_code_ok' => { label: 'MFA', places: %w[pc object door], results: %w[ok] },
+      'mfa_code_wrong' => { label: 'MFA', places: %w[pc object door], results: %w[fail] },
+      'mfa_code_locked' => { label: 'MFA', places: %w[pc object door], results: %w[locked] },
+      'mfa_expired' => { label: 'MFA', places: %w[pc object door], results: %w[expired] },
+      'mfa_prompt_sent' => { label: 'MFA', places: %w[pc object door], results: %w[ok] },
+      'mfa_prompt_approved' => { label: 'MFA', places: %w[pc object door], results: %w[ok], detail: { 'approver' => %w[owner held_phone own_phone] } },
+      'mfa_prompt_denied' => { label: 'MFA', places: %w[pc object door], results: %w[denied] }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
