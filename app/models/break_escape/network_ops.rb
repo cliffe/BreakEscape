@@ -382,13 +382,16 @@ module BreakEscape
     # server R1 M1). Live is what every other reader of a held session means: not a relay record
     # (relay_session?, the account holder's own screen) and not an expired token session
     # (credential_session_expired?, the one expiry predicate). The level is the record's own
-    # `access` (client_access_level) until S5a points it at session_access.
+    # `access`, worked out by session_access (S5a): a session whose route is down or whose account is
+    # gone has no level and meets nothing; a `user` need is met by any other live session; an
+    # `admin` need only by an admin one (session_admin?).
     def ops_need_session(host_id, level)
       pc = host_id.is_a?(String) ? find_login_pc(host_id)&.dig(:object) : nil
       session = pc ? access_sessions[host_id] : nil
       met = session.is_a?(Hash) && !relay_session?(session) && !credential_session_expired?(session) &&
             !session_locked?(session) &&
-            (level == 'user' || (level == 'admin' && client_access_level(host_id) == 'admin'))
+            !session_access(host_id).nil? &&
+            (level == 'user' || (level == 'admin' && session_admin?(host_id)))
       { 'kind' => 'session', 'label' => pc ? host_label(pc).to_s : '', 'met' => met }
     end
 
@@ -600,7 +603,8 @@ module BreakEscape
     def ops_technique_repeat_answer(grant, repeat, foothold_id, record, number, technique_id)
       detail = { 'finding' => "f#{number}", 'technique' => technique_id, 'grant' => grant[:kind] }
       if grant[:kind] == 'session'
-        detail['access'] = client_access_level(record[:id])
+        stored = access_sessions[record[:id]]
+        detail['access'] = stored.is_a?(Hash) && stored['access'] == 'admin' ? 'admin' : 'user'
         row = write_log_row!('technique_used', as: ops_account_as(repeat['id']), where: ops_where(record), detail: detail, save_limit: true)
         body = { success: true, already: true, grant: 'session',
                  session: login_session_answer(repeat, 'technique', pc_id: record[:id], foothold: foothold_id) }

@@ -646,6 +646,8 @@ module BreakEscape
       elsif located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
       elsif located && located[:scope]
+        # S5a R1 F3: the row is written only in the scoped branch (a sign-in PC object authored in a profile never reaches it)
+        record_admin_profile_read(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       end
 
@@ -1449,6 +1451,15 @@ module BreakEscape
           # A plant (engine plan section 6): the client names the object the device was used
           # on, and the server records it when that object takes the item, before removing.
           used_on = params[:used_on] || params[:usedOn]
+          # A lapsed admin override (token expired, foothold unplugged, route dropped) refuses
+          # the plant before anything is removed or recorded; the item stays in the tray (S5a).
+          if used_on.present?
+            usb_line = @game.plant_policy_refusal(item['id'], used_on)
+            if usb_line
+              return render json: { success: false, reason: 'usb_refused', error: usb_line },
+                            status: :unprocessable_entity
+            end
+          end
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
           render json: { success: true }
@@ -3255,6 +3266,29 @@ module BreakEscape
       return :unreachable if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
 
       nil
+    end
+
+    # S5a: an admin session reading a folder inside another account's profile leaves one
+    # admin_profile_read row (per PC, profile and account). Called only after the reach check
+    # has passed, never from GET /log_rows. Saves only when the row was stored (`once` answers
+    # nil for a repeat), so a repeating client causes no further saves. The row holds an
+    # account name, a PC id and a profile id: no secret.
+    def record_admin_profile_read(located)
+      scope = located && located[:scope]
+      return unless scope.is_a?(Hash) && scope[:type] == 'profile'
+      # A profile id a row cannot store (over 40 characters) leaves no row: the helper would
+      # raise in test and development, and the read itself must not fail for it.
+      return unless scope[:id].to_s.match?(BreakEscape::OpsLogEvents::ID_PATTERN)
+
+      reader = @game.admin_profile_reader(scope[:id])
+      return unless reader
+
+      username = reader[:npc].is_a?(Hash) ? reader[:npc].dig('creds', 'username') : nil
+      row = @game.write_log_row!('admin_profile_read',
+                                 as: username.present? ? { account: username } : nil,
+                                 where: { kind: 'pc', id: reader[:pc_id].to_s },
+                                 detail: { 'profile' => scope[:id].to_s }, once: true)
+      @game.save! if row&.stored?
     end
 
     # GET /container's three refusals, rendered as they always were.

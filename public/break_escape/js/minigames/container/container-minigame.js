@@ -1075,6 +1075,7 @@ export class ContainerMinigame extends MinigameScene {
                 // host's own service is off, 9.3b plan 5.2) it keeps it
                 const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.exitReason = reason;
                 this.complete(false);
                 return null;
@@ -1086,6 +1087,7 @@ export class ContainerMinigame extends MinigameScene {
                 // says the line itself (landed); with none the line is said here.
                 const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.exitReason = reason;
                 this.complete(false);
                 if (!window.networkLinks?.trip) {
@@ -1098,6 +1100,7 @@ export class ContainerMinigame extends MinigameScene {
             }
             if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
                 // A powered-off PC is not an end: the relay is kept for when it comes back (R1 m1)
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.complete(false);
                 window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
@@ -1116,6 +1119,7 @@ export class ContainerMinigame extends MinigameScene {
             if (response.status === 403 && refusal?.reason === 'off') {
                 // At the keyboard of a switched-off PC (q72): the session is kept for when it
                 // comes back on, and no sign-in screen opens
+                window.pcSessions?.noteDesktopRefused?.(pcId, refusal?.reason);
                 this.complete(false);
                 window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;

@@ -46,6 +46,9 @@ module BreakEscape
                             detail: { 'finding' => { alias: 'finding' }, 'technique' => { id: 'technique' },
                                       'grant' => %w[session credential], 'access' => %w[user admin] },
                             save_limit: { 'ok' => 10 } },
+      # Privilege (S5a): an admin session reads an owner's profile; an admin session overrides the USB policy.
+      'admin_profile_read' => { label: 'ADMIN_READ', places: %w[pc], results: %w[ok], detail: { 'profile' => { id: 'profile' } } },
+      'usb_install_overridden' => { label: 'USB_OVERRIDE', places: %w[pc], results: %w[ok], detail: { 'device' => %w[storage hid] } },
       # Ops log L3: a jack plugged or unplugged, an access point joined, a share folder opened
       # (OPS_LOG_ROWS_PLAN.md 13.8). No identity on the network rows; the folder row names no file.
       # `merge: false` (L3 R2-1): the link rows never merge into an earlier row, so a plant after an unplug
@@ -118,8 +121,8 @@ module BreakEscape
         name: ->(game, id) { OpsLogEvents.device_named(game, id) },
         room: ->(_game, _id) { nil }
       },
-      # A service by its name, which is its id on its host (ops core S2). Never its label: a name is
-      # unique only on its host, a lookup is given no place, and the row's `where` names the host.
+      # A service by its name, which is its id on its host (ops core S2). Its authored label shows only when every host
+      # that declares a service of that name gives it the same label (service_named); else the name.
       'service' => {
         name: ->(game, id) { OpsLogEvents.service_named(game, id) },
         room: ->(_game, _id) { nil }
@@ -127,6 +130,11 @@ module BreakEscape
       # A technique card registry entry by its id, shown by its name (ops core S3).
       'technique' => {
         name: ->(game, id) { OpsLogEvents.technique_named(game, id) },
+        room: ->(_game, _id) { nil }
+      },
+      # An account profile id (S5a), shown by the display name of the one account it is for, else the kind word.
+      'profile' => {
+        name: ->(game, id) { OpsLogEvents.profile_named(game, id) },
         room: ->(_game, _id) { nil }
       },
       # A file share by its record id, shown by its name (ops log L3). A share has no room.
@@ -215,15 +223,23 @@ module BreakEscape
       entry && (entry['name'] || id.to_s)
     end
 
-    # The service's name when some host of the scenario declares a service of that name, else nil.
+    # The service's authored label (the words its tile shows) when every host that declares a
+    # service of that name gives it the same label; else its name (the kind word shows). nil when no
+    # host declares one. A lookup is given no place, so a name two hosts label differently is not
+    # guessed at.
     def service_named(game, id)
       data = game.scenario_data
+      found = []
       NetworkModel.networks(data).each_key do |net|
         NetworkModel.hosts_on(net, data).each do |rec|
-          return id.to_s if rec[:services].any? { |svc| svc['name'] == id.to_s }
+          rec[:services].each { |svc| found << svc if svc['name'] == id.to_s }
         end
       end
-      nil
+      return nil if found.empty?
+
+      labels = found.map { |svc| svc['label'] }.uniq
+      label = labels.first
+      labels.size == 1 && label.is_a?(String) && !label.empty? ? label : id.to_s
     end
 
     def share_named(game, id)
@@ -236,6 +252,45 @@ module BreakEscape
     def technique_named(game, id)
       entry = NetworkModel.techniques(game.scenario_data)[id.to_s]
       entry && (entry['name'].is_a?(String) && !entry['name'].empty? ? entry['name'] : id.to_s)
+    end
+
+    # nil when the scenario holds no such profile. A profile has no authored name; the desktop
+    # shows an account's files under the account's tile, so the name is the display name of the one
+    # account the profile is for (as the sign-in tile shows it). The kind word shows (the id comes
+    # back) when no account, several accounts, or an account with no displayName is admitted.
+    # This is the lookup that decides whether the profile exists (a row's check); what a reader shows
+    # is profile_shown_name.
+    def profile_named(game, id)
+      profiles = game.scenario_data.is_a?(Hash) ? game.scenario_data['accountProfiles'] : nil
+      profile = profiles.is_a?(Hash) ? profiles[id.to_s] : nil
+      return nil unless profile.is_a?(Hash)
+
+      owner = profile_owner(game, profile)
+      name = owner && owner['displayName']
+      name.is_a?(String) && !name.empty? ? name : id.to_s
+    end
+
+    def profile_owner(game, profile)
+      owners = BreakEscape::Game.scenario_room_npcs(game.scenario_data).select do |npc|
+        BreakEscape::Game.account_holder?(npc) && BreakEscape::Game.acl_admits?(profile['for'], npc)
+      end
+      owners.size == 1 ? owners.first : nil
+    end
+
+    # What a log reader's profile cell shows (R4-8): the owner's display name only when the PC the row names shows that
+    # account's tile to anyone at its sign-in screen (its `loginPicker` lists everyone, the PC admits the account, it is not
+    # headless and its remote screen is "tiles"); at a PC whose picker is "known" or false, a headless one, one whose remote
+    # screen is "typed", or a row that names no PC, the kind word, so the cell never gives a name the game has not shown
+    # there. nil when the profile does not exist.
+    def profile_shown_name(game, id, where)
+      named = profile_named(game, id)
+      return named if named.nil? || named == id.to_s
+
+      pc = where.is_a?(Hash) && where['kind'] == 'pc' && where['id'].is_a?(String) ? game.find_login_pc(where['id'])&.dig(:object) : nil
+      owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
+      picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
+      shown = pc && !BreakEscape::NetworkModel.headless?(pc) && game.remote_screen(pc) == 'tiles'
+      owner && shown && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)

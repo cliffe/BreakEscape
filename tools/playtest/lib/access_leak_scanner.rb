@@ -3,6 +3,7 @@
 require 'json'
 require 'set'
 require 'cgi'
+require 'time'
 require 'uri'
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
@@ -161,6 +162,40 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # not leave exactly one finding, nothing is earned (fail closed) and `ops_steps: ["granted:credential:<id>", ...]`
 # names the step. A new session at a host takes the earlier foothold and admin step for that host back.
 #
+# Ops privilege S5a unit 16 (OPS_PRIVILEGE_ACCOUNTS_PLAN.md), steps earned PER PC like the S3 ones. `access: "admin"` on a
+# session answer, a mirror entry or a host row is earned a second way: a successful sign-in answer (POST /login, typed or
+# keyring) for an account the scenario marks `creds.admin: true` and that PC admits earns `admin:<pc id>`. The PC is named by
+# the answer's `host` label (a remote sign-in; a label that names no PC earns nothing and never falls through to a guess), else by
+# the one PC that admits the account. A browser capture holds neither the request body nor a PC id in a keyboard sign-in
+# answer (no recorder tags it), so where more than one PC admits the account nothing is earned (fail closed) and
+# `scan(lines, signins: ["<account id>@<pc id>#<n>"])` (`access-leak-check.rb --signin`) names the PC of ONE sign-in: the
+# account's n-th successful POST /login answer in the log (or `<account id>@<pc id>@<row time>`, the row's `t`), credited from
+# that row only and for that account only. `ops_steps` cannot name an admin session.
+# Session ends take the step and the account back (R2-C2): a later sign-in at that PC, a successful POST /lock_session (no
+# `pcId` ends every PC), a PC in an answer's `endedPcIds` (a displacing grant, claim or hand-back that names it), a 403 desktop
+# answer (off, not_responding, expired, no_session), a bootstrap whose `sessions` map lacks the PC or holds it locked, for
+# another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (every PC: the answer does
+# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--logout`) names that one
+# row's PC and the run holds that account there: it then ends that PC only; an entry that does not hold is unused, exit 2). Also, from data already in the log (R3 check 2): a token sign-in's `expiresInS` plus its row time is a deadline
+# after which the step and account are gone; a `GET /network` host row of a sign-in PC with no `session` (step and account) or a
+# `session` without `access: "admin"` (step), and a 200 desktop answer with no session, another account's, or no admin access, take
+# it back. A 200 answer never RESTORES a step. The one way back after a power cut (the session survives it: the desktop opens with
+# no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`), ONE 200 desktop row after a 403 `off` or
+# `not_responding` at that PC, or after ONE answer that showed the held account's session at that PC without `access: "admin"` (a
+# bootstrap, a `GET /network` host row of that username, a 200 desktop row: what an off PC shows; a real client sends no request while
+# the PC is off, so no 403 exists), whose session is the account held then, with no other end in between (R3-B1). Entries that
+# match nothing are in `unused_entries`. A named sign-in of an account at a PC that does not admit it raises ArgumentError (R3-C1).
+# Not shown by any answer, so not tracked: a token running out or a power cut with no network view, desktop or bootstrap answer
+# before the leaking request, and a hand-back that names no PC in `endedPcIds`. The ADMIN_READ rule counts one
+# earned read per profile and PC, so two admin accounts reading one profile at one PC earn one (a false alarm, fail closed).
+# Structural rules (rule `ops_string`): the key `admin` inside any NPC record or
+# `creds` object is a leak wherever it appears (`ops:key:admin`); an item of an account profile in a GET /container answer is
+# a leak (rule `profile_admin_read`) unless the session held there is of an account the profile's `for` admits, or `admin:<pc>`
+# is earned at a PC whose OWNER the profile admits (a folder answer names no PC: any such session will do); an ADMIN_READ row
+# in a /log_rows answer is a leak (rule `log_row`, owner `log:admin_read:<pc id>`) unless a successful admin read of a profile
+# at that PC earned `admin_read:<profile id>@<pc id>` earlier in the run (one earned read per row). These rules run only in a scenario that has an admin account
+# or an admin session grant (the keyboard-desktop owner fallback in `ops_session_owner` too), so a log of an older scenario is judged as before.
+#
 # Ops log reader L2a R2 S6 (OPS_LOG_ROWS_PLAN.md section 7 and 11, `scan_log_rows`): rule `log_row`, for
 # a GET .../log_rows answer. The IDENTITY cell of a SIGN_IN row is the player's own typed text and is
 # not judged by any rule. Findings: a key the answer or a row may not carry (a row has exactly id,
@@ -311,6 +346,14 @@ class AccessLeakScanner
     @ops_supplied = Set.new  # the steps the caller named in `ops_steps` (a held card by technique id)
     @ops_answer_pc = nil     # the host the technique answer being judged granted a session at
     @ops_host_by_label = {}  # a sign-in PC's label (`host` on a session answer) => its host id, when the label is unique
+    @priv_active = false     # the scenario has an admin account or an admin session grant (S5a): the privilege rules run
+    @priv_npcs = {}          # NPC id => NPC record (the accounts' ACL answers)
+    @priv_admins = Set.new   # ids of the NPCs whose creds.admin is the literal true
+    @priv_pcs = {}           # sign-in PC id => its object
+    @priv_profiles = {}      # profile id => its `for` list
+    @priv_folder_profile = {} # a folder id inside a profile => that profile's id
+    @priv_signin_pc = nil    # the PC the sign-in answer being judged resolved to
+    @ops_session_accounts = {} # PC id => the NPC id of the session the run's own answers last put there
     @ops_notes = []          # one line each for a `never` string the collector had to drop (shown by the leak check)
     @share_items = {}        # item_id => { strings:, resource:, ancestors: }
     @share_item_pairs = Set.new # [resource_id, item_id] for every item of every share, whether or not it holds a string
@@ -362,6 +405,7 @@ class AccessLeakScanner
     collect_items
     collect_network_secrets
     collect_ops_secrets
+    collect_privilege
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
@@ -410,16 +454,42 @@ class AccessLeakScanner
   # lost answer was tagged for another NPC. Filled by scan.
   attr_reader :feed_ruled_out
 
+  # Entries (`signins:` and `resumes:`) that matched no row, as the strings the tester gave. Filled by scan; the leak check
+  # exits 2 when it is not empty (R3-C2): a typo must not look like a leak, and an entry that did nothing must not pass.
+  def unused_entries
+    unused = []
+    (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) }
+    (@priv_resumes || {}).each_key { |key| unused << "#{key.join('@')} (--resume)" unless @priv_used.include?([:resume, key]) }
+    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) }
+    unused
+  end
+
   # Whether a readable /feed_post answer's npcId tag disagreed with the NPC its body names, so
   # every tag in the log was ignored. Filled by scan.
   attr_reader :feed_tags_ignored
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
-  def scan(lines, ops_steps: nil)
+  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil)
     findings = []
     seen = Set.new
     @ops_supplied = Set.new(Array(ops_steps).map(&:to_s))
+    # an admin session is earned only by a sign-in row, never by a step named for the whole run (R2-C1)
+    if @ops_supplied.any? { |step| step.start_with?('admin:') }
+      raise ArgumentError, 'ops_steps cannot name an admin session: use signins: ["<account>@<pc id>#<n>"] for one sign-in row'
+    end
+    @priv_named = parse_priv_signins(signins)
+    @priv_resumes = parse_priv_resumes(resumes)
+    @priv_logouts = parse_priv_logouts(logouts)
+    @priv_logout_count = 0
+    @priv_used = Set.new
+    @priv_signin_counts = Hash.new(0)
+    @priv_deadlines = {}
+    @priv_resumable = {}
+    @priv_kinds = {}          # pc => [via, relay] of the session that earned the held admin step (R4-2)
+    @priv_logout_pending = {} # pc => account a named --logout ended, until an answer lists that PC's session state (R4-5)
+    @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
+    @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
@@ -445,6 +515,7 @@ class AccessLeakScanner
         findings << Finding.new(rule: rule, owner: owner, route: ctx[:route], source: source, line: line_no,
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
+      note_privilege_before(body, ctx, row)
       scan_passwords(body, ctx, legit, add)
       scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
@@ -463,6 +534,8 @@ class AccessLeakScanner
       scan_ops_techniques(body, ctx, add)
       scan_ops_technique_answer(body, ctx, add)
       scan_ops_session_keys(body, ctx, add)
+      scan_privilege_keys(body, add)
+      scan_privilege_log_rows(body, ctx, add)
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -498,6 +571,7 @@ class AccessLeakScanner
     'signin_content' => 'sign-in PC content outside its own container response',
     'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
+    'profile_admin_read' => 'an account profile\'s content in a container answer when the session there is not of an account the profile admits and no admin session was earned at a PC whose owner it admits',
     'locked_content' => 'locked container content in a response that marks it locked',
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
@@ -908,6 +982,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
+      logout: method == 'POST' && path.end_with?('/logout'),
+      lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
@@ -1685,6 +1761,9 @@ class AccessLeakScanner
     hits.each do |item_id, paths|
       info = scoped[item_id]
       if allowed_login_route?(info, ctx[:container]) || folder_unlock_answer?(info, ctx, paths)
+        if info[:scope] == :profile && (ctx[:container] || ctx[:unlock]) && !priv_profile_read_earned?(info[:profile], ctx[:container])
+          add.call('profile_admin_read', "item:#{item_id}", safe_path(paths.first))
+        end
         legit << item_id
         next
       end
@@ -2181,8 +2260,12 @@ class AccessLeakScanner
   # block (`id` and `name` together) and each row it shows, and `held` for a row with a session.
   def note_ops_steps(body, ctx, row = {})
     @ops_answer_pc = nil
+    @priv_signin_pc = nil
+    note_privilege_ends(body, ctx, row)
+    note_privilege_read(body, ctx, row)
     return unless body.is_a?(Hash)
 
+    note_privilege_signin(body, ctx, row)
     note_ops_technique_steps(body, ctx, row)
     if ctx[:ops_scan] && body['success'] == true
       @ops_earned << "sweep:#{body['network']['id']}" if body['network'].is_a?(Hash) && body['network']['swept'] == true
@@ -2505,9 +2588,16 @@ class AccessLeakScanner
     pc = found[:host_id]
     @ops_answer_pc = pc
     @ops_earned << "session:#{pc}"
+    @ops_session_accounts[pc] = session['npcId'].to_s
+    # R4-6: a new session is not the one an earlier downgrade or deadline was about
+    @priv_resumable.delete(pc)
+    @priv_deadlines.delete(pc)
+    @priv_logout_pending.delete(pc)
+    @priv_kinds[pc] = priv_kind_of(session)
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
     @ops_earned << "admin:#{pc}" if session['access'] == 'admin'
+    @priv_kinds.delete(pc) unless session['access'] == 'admin'
   end
 
   def ops_granted_finding(body, row)
@@ -2629,6 +2719,8 @@ class AccessLeakScanner
       level = hash['access']
       scalar = !level.is_a?(Hash) && !level.is_a?(Array)
       add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
+      # R4-2a: the server never gives a claim or a relay session admin, wherever the answer shows one
+      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || hash['relay'] == true)
     end
   end
 
@@ -2641,7 +2733,12 @@ class AccessLeakScanner
     by_label = label.is_a?(String) && (hash.key?('via') || hash.key?('access')) ? @ops_host_by_label[label] : nil
     return by_label if by_label
 
-    ctx[:ops_technique] ? @ops_answer_pc : nil
+    return @ops_answer_pc if ctx[:ops_technique]
+    return @priv_signin_pc if ctx[:login]
+
+    # a keyboard desktop's answer (GET /container/<pc id>) carries the session's level and no host label; a label that
+    # names no PC still fails closed
+    @priv_active && @priv_pcs.key?(ctx[:container].to_s) && !hash.key?('host') ? ctx[:container].to_s : nil
   end
 
   # Host label => the one PC id that carries it. Built over every sign-in object, networked or not, and every
@@ -2675,6 +2772,534 @@ class AccessLeakScanner
         add.call('ops_string', 'ops:key:openHere', '$.footholds') if hash.key?('openHere') && !own
         add.call('ops_string', 'ops:host_row', '$.footholds') if !own && hash['session'].is_a?(Hash) && hash['remoteSignIn'] == false
       end
+    end
+  end
+
+  # ---- ops privilege S5a: admin sessions, the owner's profile, the admin-read row (unit 16) ----------
+
+  # The facts the privilege rules need, read from the scenario alone. The rules run only when the scenario has an
+  # account marked `creds.admin: true` or a technique grant at `access: "admin"` (an older scenario's log is judged as before).
+  def collect_privilege
+    BreakEscape::Game.scenario_room_npcs(@data).each do |npc|
+      next unless npc.is_a?(Hash) && npc['id'].is_a?(String)
+
+      @priv_npcs[npc['id']] = npc
+      @priv_admins << npc['id'] if npc['creds'].is_a?(Hash) && npc['creds']['admin'] == true
+    end
+    @login_pcs.each { |id| @priv_pcs[id] = @object_by_id[id] if @object_by_id[id].is_a?(Hash) }
+    profiles = @data['accountProfiles'].is_a?(Hash) ? @data['accountProfiles'] : {}
+    profiles.each do |profile_id, profile|
+      next unless profile.is_a?(Hash)
+
+      @priv_profiles[profile_id.to_s] = profile['for']
+      note_priv_folders(profile['contents'], profile_id.to_s)
+    end
+    @priv_active = !@priv_admins.empty? || @ops_grant_findings.any? { |f| f[:kind] == 'session' && f[:access] == 'admin' }
+  end
+
+  def note_priv_folders(list, profile_id)
+    Array(list).each do |item|
+      next unless item.is_a?(Hash) && item['contents'].is_a?(Array)
+
+      @priv_folder_profile[item['id'].to_s] = profile_id if item['id']
+      note_priv_folders(item['contents'], profile_id)
+    end
+  end
+
+  def priv_acl_admits?(acl, npc_id)
+    npc = @priv_npcs[npc_id.to_s]
+    npc ? BreakEscape::AccessIdentities.acl_admits?(acl, npc) : false
+  end
+
+  # The PC owner's NPC id, as Game#login_pc_owner reads it (the explicit `owner` only).
+  def priv_owner(pc_id)
+    owner = @priv_pcs[pc_id.to_s]&.dig('owner')
+    owner.is_a?(String) && @priv_npcs.key?(owner) ? owner : nil
+  end
+
+  # The PCs that could be the one a sign-in answer is about: the recorder's `login` tag if a log has one, the answer's host
+  # label (a remote sign-in), the caller's `signins:` entry for THIS sign-in row (account, PC, and the row's order among that
+  # account's sign-ins or its time), else the one PC that admits the account. Returns [pcs, exact]: exact only for one named
+  # PC. A host label that names no PC never falls through to a guess (R2-C5): nothing is earned. The browser capture holds
+  # neither the request body nor a PC id in a keyboard sign-in answer, so with more than one admitting PC and no entry
+  # nothing is earned (fail closed).
+  def priv_signin_candidates(body, row)
+    npc_id = body['npcId'].to_s
+    npc = @priv_npcs[npc_id]
+    admitting = @priv_pcs.select { |_, pc| npc && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }.keys
+    tag = row['login'].is_a?(Hash) ? row['login']['pcId'] : nil
+    return [[tag], true] if tag.is_a?(String) && @priv_pcs.key?(tag)
+
+    label = body['host']
+    if label.is_a?(String)
+      by_label = @ops_host_by_label[label]
+      return by_label && @priv_pcs.key?(by_label) ? [[by_label], true] : [admitting, false]
+    end
+
+    key = [[npc_id, :n, @priv_signin_counts[npc_id]], (row['t'].is_a?(String) ? [npc_id, :t, row['t']] : nil)].compact.find { |k| @priv_named.key?(k) }
+    if key
+      named = @priv_named[key]
+      # R3-C1: a PC that does not admit the account cannot be where it signed in: refuse, never take it on trust
+      unless admitting.include?(named)
+        raise ArgumentError, "sign-in entry #{priv_entry_text(key, named)}: #{named} does not admit #{npc_id} (it admits: #{admitting.join(', ').then { |l| l.empty? ? 'no PC' : l }})"
+      end
+
+      @priv_used << [:signin, key]
+      @priv_last_named = named
+      return [[named], true]
+    end
+
+    [admitting, admitting.size == 1]
+  end
+
+  # `signins:` entries, "<account id>@<pc id>#<n>" (the account's n-th successful POST /login answer in the log, counting from
+  # 1 over EVERY successful answer of the account, remote and relay ones included, across every file) or
+  # "<account id>@<pc id>@<row time>" (the row's `t`). Each credits that ONE row, that account and that PC. Strict (R3-C2): n is a
+  # plain positive number, the account and the PC are ones of the scenario, and no two entries share a key.
+  def parse_priv_signins(list)
+    named = {}
+    Array(list).each do |entry|
+      account, pc, kind, key = entry.to_s.match(/\A([^@#\s]+)@([^@#\s]+)([#@])(\S+)\z/)&.captures
+      raise ArgumentError, "bad sign-in entry #{entry.inspect}: use <account id>@<pc id>#<n> or <account id>@<pc id>@<row time>" unless account
+      raise ArgumentError, "bad sign-in entry #{entry.inspect}: n must be a whole number from 1 (no trailing text)" if kind == '#' && !key.match?(/\A[1-9]\d*\z/)
+
+      check_priv_entry_names(entry, account, pc)
+      full = [account, kind == '#' ? :n : :t, kind == '#' ? key.to_i : key]
+      raise ArgumentError, "sign-in entry #{entry.inspect} is given twice (or names the same row as an earlier entry)" if named.key?(full)
+
+      named[full] = pc
+    end
+    named
+  end
+
+  # `resumes:` entries, "<account id>@<pc id>@<row time>" (R3-B1): ONE 200 desktop answer of that PC after a 403 `off` or
+  # `not_responding` there, whose session is the account held when the 403 came, with no other end in between. It restores the
+  # admin step (and the account) from that row only.
+  def parse_priv_resumes(list)
+    named = {}
+    Array(list).each do |entry|
+      account, pc, time = entry.to_s.match(/\A([^@#\s]+)@([^@#\s]+)@(\S+)\z/)&.captures
+      raise ArgumentError, "bad resume entry #{entry.inspect}: use <account id>@<pc id>@<row time>" unless account
+
+      check_priv_entry_names(entry, account, pc)
+      raise ArgumentError, "resume entry #{entry.inspect} is given twice" if named.key?([account, pc, time])
+
+      named[[account, pc, time]] = true
+    end
+    named
+  end
+
+  # `logouts:` entries (`--logout`), "<account id>@<pc id>#<n>" (the n-th successful POST /logout answer in the log) or
+  # "<account id>@<pc id>@<row time>": a logout answer does not say which PC it was at (the capture holds no request body), so
+  # unnamed it ends every PC. A named one ends that PC only, and only if the run holds that account at that PC when the row
+  # comes; otherwise the entry is unused (exit 2) and the row ends every PC as before.
+  def parse_priv_logouts(list)
+    named = {}
+    Array(list).each do |entry|
+      account, pc, kind, key = entry.to_s.match(/\A([^@#\s]+)@([^@#\s]+)([#@])(\S+)\z/)&.captures
+      raise ArgumentError, "bad logout entry #{entry.inspect}: use <account id>@<pc id>#<n> or <account id>@<pc id>@<row time>" unless account
+      raise ArgumentError, "bad logout entry #{entry.inspect}: n must be a whole number from 1 (no trailing text)" if kind == '#' && !key.match?(/\A[1-9]\d*\z/)
+
+      check_priv_entry_names(entry, account, pc)
+      full = [account, kind == '#' ? :n : :t, kind == '#' ? key.to_i : key]
+      raise ArgumentError, "logout entry #{entry.inspect} is given twice (or names the same row as an earlier entry)" if named.key?(full)
+
+      named[full] = pc
+    end
+    named
+  end
+
+  def priv_logout_text(key, pc)
+    account, kind, value = key
+    "#{account}@#{pc}#{kind == :n ? '#' : '@'}#{value} (--logout)"
+  end
+
+  # The PCs a successful POST /logout row ends: the one a `--logout` entry names for THIS row if the run holds that account
+  # there, else every PC (fail closed).
+  def priv_logout_pcs(row)
+    @priv_logout_count += 1
+    @priv_logouts.each do |key, pc|
+      account, kind, value = key
+      this_row = kind == :n ? value == @priv_logout_count : value == row['t']
+      next unless this_row && @ops_session_accounts[pc] == account && !@priv_used.include?([:logout, key])
+
+      @priv_used << [:logout, key]
+      @priv_logout_pending[pc] = account
+      return [pc]
+    end
+    @priv_pcs.keys
+  end
+
+  def check_priv_entry_names(entry, account, pc)
+    raise ArgumentError, "entry #{entry.inspect}: #{account} is not an account of this scenario" unless @priv_npcs.key?(account)
+    raise ArgumentError, "entry #{entry.inspect}: #{pc} is not a sign-in PC of this scenario (#{@priv_pcs.keys.join(', ')})" unless @priv_pcs.key?(pc)
+  end
+
+  def priv_entry_text(key, pc)
+    account, kind, value = key
+    "#{account}@#{pc}#{kind == :n ? '#' : '@'}#{value} (--signin)"
+  end
+
+  # A successful sign-in answer (typed or keyring) puts that account at that PC and takes any earlier admin step at the
+  # PC back; it earns `admin:<pc>` only for an account marked creds.admin, at a PC that admits it, as a password or
+  # credential session that is not a relay, and only when the PC is known for certain.
+  def note_privilege_signin(body, ctx, row)
+    return unless @priv_active && ctx[:login] && body['success'] == true && body['npcId'].is_a?(String)
+
+    @priv_signin_counts[body['npcId']] += 1
+    @priv_last_named = nil
+    pcs, exact = priv_signin_candidates(body, row)
+    @priv_signin_pc = pcs.first if exact
+    # R4-7: a named keyboard sign-in is checked against the desktop answer that follows it
+    @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:account] == body['npcId']
+    @priv_signin_pending = { account: body['npcId'], pc: @priv_last_named } if @priv_last_named && body['via'] == 'password' && !body['remote']
+    pcs.each do |pc|
+      @ops_earned.delete("admin:#{pc}")
+      @priv_deadlines.delete(pc)
+      @priv_resumable.delete(pc)
+      @priv_kinds.delete(pc)
+      @priv_logout_pending.delete(pc)
+      exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
+    end
+    return unless exact && @priv_admins.include?(body['npcId']) && %w[password credential].include?(body['via']) && body['relay'] != true
+
+    npc = @priv_npcs[body['npcId']]
+    return unless BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[pcs.first], npc)
+
+    @ops_earned << "admin:#{pcs.first}"
+    @priv_kinds[pcs.first] = priv_kind_of(body)
+    # a token's deadline is the answer's row time plus `expiresInS` (R3 check 2, rule 1): the step is gone after it
+    seconds = body['expiresInS']
+    at = priv_row_time(row)
+    @priv_deadlines[pcs.first] = at + seconds if body['kind'] == 'token' && seconds.is_a?(Numeric) && seconds.positive? && at
+  end
+
+  def priv_row_time(row)
+    row['t'].is_a?(String) ? Time.iso8601(row['t']) : nil
+  rescue ArgumentError
+    nil
+  end
+
+  # A session of a PC ends: take back its admin step and the account the run holds there. What the capture can show (R2-C2): a
+  # successful POST /lock_session (its answer names `pcId`); a PC id in an answer's `endedPcIds` (a later sign-in, a grant or an
+  # NPC's hand-back that displaced a session); a desktop answer (GET /container/<pc id>) refusing with 403; and a bootstrap's
+  # `sessions` map (a PC absent or `locked` loses its step, a PC holding another account's session ends it; the account shown is never assigned, R5-3). A
+  # successful POST /logout answer does not say which PC, so it ends every PC (fail closed). Not shown by any answer: a token
+  # running out, a power cut or a dropped route between requests, and a hand-back that names no PC in `endedPcIds`.
+  def note_privilege_ends(body, ctx, row)
+    return unless @priv_active && body.is_a?(Hash)
+
+    status = row['status'].to_i
+    ok = status == 200 && body['success'] == true
+    end_priv_session(priv_logout_pcs(row)) if ok && ctx[:logout]
+    # a lock answer that names no PC ends every PC (fail closed)
+    end_priv_session(body['pcId'].is_a?(String) ? [body['pcId']] : @priv_pcs.keys) if ok && ctx[:lock_session] && body['locked'] == true
+    end_priv_session(Array(body['endedPcIds'])) if status == 200
+    if ctx[:container] && status == 403
+      pc = ctx[:container]
+      remember_priv_resumable(pc) if @priv_pcs.key?(pc) && %w[off not_responding].include?(body['reason'])
+      end_priv_session([pc], keep_resumable: true)
+    end
+  end
+
+  # What an answer itself shows about a session, applied BEFORE the answer is judged, so that a desktop answer that serves a
+  # profile to a session that is not admin (or a token that lapsed) is reported on that row, not on the next: the token
+  # deadline, a 200 desktop answer, a `GET /network` host row, a bootstrap's `sessions` map. See note_privilege_ends for the rest.
+  def note_privilege_before(body, ctx, row)
+    return unless @priv_active && body.is_a?(Hash)
+
+    check_priv_named(body, ctx, row)
+    note_priv_deadlines(row)
+    note_priv_desktop(body, ctx, row) if ctx[:container] && row['status'].to_i == 200
+    note_priv_host_rows(body) if ctx[:network_view]
+    note_privilege_bootstrap(body) if ctx[:scenario] && body['sessions'].is_a?(Hash)
+  end
+
+  # R3 check 2, rule 1: a token sign-in's admin step is gone after its deadline, whatever the server says since.
+  def note_priv_deadlines(row)
+    at = priv_row_time(row)
+    return unless at
+
+    @priv_deadlines.select { |_, deadline| at > deadline }.each_key { |pc| end_priv_session([pc]) }
+  end
+
+  # What a resume may restore: the account held at the PC when the session went quiet, whether it held the admin step, the
+  # kind of session that earned it and its token deadline. Dropped by any other end (end_priv_session without keep_resumable).
+  def remember_priv_resumable(pc)
+    account = @ops_session_accounts[pc]
+    return unless account
+
+    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc] }
+  end
+
+  # What kind of session an answer shows (R4-2): its `via` and whether it is a relay. A host row never lists a relay.
+  def priv_kind_of(hash)
+    [hash['via'].to_s, hash['relay'] == true]
+  end
+
+  # The step is gone for good and nothing of it may be resumed (the session became another kind, or another session replaced it).
+  def lose_priv_step(pc)
+    @ops_earned.delete("admin:#{pc}")
+    @priv_deadlines.delete(pc)
+    @priv_kinds.delete(pc)
+    @priv_resumable.delete(pc)
+  end
+
+  # R4-2: an answer shows the held account's session as another kind than the one that earned the step (a claim, a relay, a
+  # technique session): the step is lost, not suspended.
+  def check_priv_kind(pc, session)
+    kind = @priv_kinds[pc]
+    lose_priv_step(pc) if kind && priv_kind_of(session) != kind
+  end
+
+  # A 200 desktop answer (GET /container/<pc id>): its session shows no session, or another account than the one held, or no
+  # `access: "admin"`, and the step is taken back (R3 check 2, rule 2; R3-C1). It never restores a step by itself; only a
+  # `resumes:` entry naming this row does, and only after a 403 `off` or `not_responding` with no other end since (R3-B1).
+  def note_priv_desktop(body, ctx, row)
+    pc = ctx[:container]
+    return unless @priv_pcs.key?(pc)
+
+    session = body['session']
+    held = @ops_session_accounts[pc]
+    earlier = @priv_resumable[pc]
+    if !session.is_a?(Hash) || session['locked'] == true
+      end_priv_session([pc])
+    elsif held && session['npcId'].is_a?(String) && session['npcId'] != held
+      end_priv_session([pc]) # R5-3: ends only
+    elsif session['access'] != 'admin'
+      downgrade_priv_step(pc, keep: false, session: session)
+    else
+      check_priv_kind(pc, session)
+    end
+    # only a record that was there BEFORE this row can be resumed by it (the row that shows the downgrade makes its own)
+    apply_priv_resume(pc, session, row, earlier) if earlier && @priv_resumable[pc].equal?(earlier)
+  end
+
+  # The session at a PC is shown without `access: "admin"` (an off PC lists its session and leaves `access` out): the step and
+  # token deadline go. If the step was held, the account and step are kept as what a `--resume` may restore (a real client
+  # sends no request while the PC is off, so there is no 403). An answer that repeats it (each PC is listed twice in a network
+  # answer, and a poll repeats the answer) leaves the record as it is (`keep`), since nothing ended in between; a step that was
+  # not held and has no record leaves nothing to restore.
+  def downgrade_priv_step(pc, keep: true, session: nil, shown: nil)
+    saved = @priv_resumable[pc]
+    kind = @priv_kinds[pc] || (saved && saved[:step] ? saved[:kind] : nil)
+    # R5-2: the same account shown as another kind (a claim, a relay) means the session was replaced: nothing to resume
+    return lose_priv_step(pc) if session.is_a?(Hash) && kind && priv_kind_of(session) != kind
+
+    if @ops_earned.include?("admin:#{pc}") && @ops_session_accounts[pc]
+      remember_priv_resumable(pc)
+    elsif !(keep && saved && saved[:account] == (shown || @ops_session_accounts[pc]))
+      # R5-1: a record is kept only by a repeat of the same held account's shape; another account's row drops it
+      @priv_resumable.delete(pc)
+    end
+    @ops_earned.delete("admin:#{pc}")
+    @priv_deadlines.delete(pc)
+    @priv_kinds.delete(pc)
+  end
+
+  # A resume restores the step only when every one of these holds (R4 check 3): the row is not past the token deadline of the
+  # session being resumed (R4-1), its session is the same account and the same kind as the one that earned the step (R4-2), and
+  # nothing ended or replaced the session in between (the record is dropped by any other end).
+  def apply_priv_resume(pc, session, row, saved = @priv_resumable[pc])
+    return unless saved && session.is_a?(Hash) && row['t'].is_a?(String)
+
+    key = [saved[:account], pc, row['t']]
+    return unless @priv_resumes.key?(key) && session['npcId'] == saved[:account]
+
+    at = priv_row_time(row)
+    return if saved[:deadline] && (at.nil? || at > saved[:deadline])
+    return if saved[:step] && saved[:kind] && priv_kind_of(session) != saved[:kind]
+
+    @priv_used << [:resume, key]
+    @priv_resumable.delete(pc)
+    @ops_session_accounts[pc] = saved[:account]
+    return unless saved[:step] && session['access'] == 'admin'
+
+    @ops_earned << "admin:#{pc}"
+    @priv_kinds[pc] = saved[:kind] if saved[:kind]
+    @priv_deadlines[pc] = saved[:deadline] if saved[:deadline]
+  end
+
+  # The account a host row's session belongs to: the held account when the username is its own, else the one NPC with that
+  # username, else nil (R5-1: only used to decide whether a resume record is kept).
+  def priv_host_row_account(held, session)
+    return held if held && @priv_npcs.dig(held, 'creds', 'username') == session['username']
+
+    owners = @priv_npcs.select { |_, npc| npc['creds'].is_a?(Hash) && npc['creds']['username'] == session['username'] }.keys
+    owners.size == 1 ? owners.first : nil
+  end
+
+  # A `GET /network` host row of a sign-in PC (R3 check 2, rule 2; R4-3, R4-4), judged as the desktop and the bootstrap are:
+  # no `session` takes the step and the account back, unless the row is the one an off PC sends (`responding: false` and
+  # `heldAs` the held account's display name, no `session`), which is a power cut and suspends the step; a locked session or
+  # another account's username (judged by username) ends it; a session that is another kind loses it; one without
+  # `access: "admin"` takes the step back.
+  def note_priv_host_rows(body)
+    ops_each_hash(body) do |hash|
+      pc = hash['id']
+      next unless hash['kind'] == 'pc' && pc.is_a?(String) && @priv_pcs.key?(pc)
+
+      held = @ops_session_accounts[pc]
+      session = hash['session']
+      if !session.is_a?(Hash)
+        shown = held && (@priv_npcs.dig(held, 'displayName') || held)
+        hash['responding'] == false && hash['heldAs'].is_a?(String) && hash['heldAs'] == shown ? downgrade_priv_step(pc) : end_priv_session([pc])
+      elsif session['locked'] == true
+        end_priv_session([pc])
+      elsif held && (username = @priv_npcs.dig(held, 'creds', 'username')).is_a?(String) && session['username'] != username
+        end_priv_session([pc]) # R5-3: ends only; the account shown is never assigned
+      elsif session['access'] != 'admin'
+        downgrade_priv_step(pc, session: session, shown: priv_host_row_account(held, session))
+      else
+        check_priv_kind(pc, session)
+      end
+    end
+  end
+
+  # R4-5 and R4-7: a name the tester gave is not taken on trust once an answer shows otherwise.
+  # A named logout (the account at that PC): the next answer that lists that PC's session state must not show that account's
+  # session; if it does, the logout was not at that PC (exit 2). A named keyboard sign-in: the desktop answer right after it
+  # shows the PC it was at; if that is another PC, where the run does not hold the account, the name is wrong (exit 2). Where no
+  # such answer follows, the name stands.
+  def check_priv_named(body, ctx, row)
+    return unless row['status'].to_i == 200
+
+    check_priv_logout_pending(body, ctx)
+    check_priv_signin_pending(body, ctx)
+  end
+
+  def check_priv_logout_pending(body, ctx)
+    @priv_logout_pending.keys.each do |pc|
+      account = @priv_logout_pending[pc]
+      npc = @priv_npcs[account]
+      shown = nil # nil: this answer does not list the PC's session state; true or false: it does
+      if ctx[:container] == pc
+        shown = body['session'].is_a?(Hash) && body['session']['npcId'] == account
+      elsif ctx[:scenario] && body['sessions'].is_a?(Hash)
+        held = body['sessions'][pc]
+        shown = held.is_a?(Hash) && held['npcId'] == account
+      elsif ctx[:network_view]
+        ops_each_hash(body) do |hash|
+          next unless hash['kind'] == 'pc' && hash['id'] == pc
+
+          shown = true if hash['session'].is_a?(Hash) ? hash['session']['username'] == npc.dig('creds', 'username') : hash['heldAs'] == (npc['displayName'] || account)
+          shown = false if shown.nil?
+        end
+      end
+      next if shown.nil?
+
+      raise ArgumentError, "logout entry #{account}@#{pc}: the next answer that lists #{pc}'s session still shows #{account} there, so the sign-out was not at #{pc}" if shown
+
+      @priv_logout_pending.delete(pc)
+    end
+  end
+
+  def check_priv_signin_pending(body, ctx)
+    pending = @priv_signin_pending
+    return unless pending && ctx[:container] && @priv_pcs.key?(ctx[:container])
+
+    session = body['session']
+    return unless session.is_a?(Hash) && session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
+
+    shown = ctx[:container]
+    if shown == pending[:pc]
+      @priv_signin_pending = nil
+    elsif @ops_session_accounts[shown] != pending[:account]
+      raise ArgumentError, "sign-in entry #{pending[:account]}@#{pending[:pc]}: the desktop that followed it is #{shown}, where the run holds no session of #{pending[:account]}, so the sign-in was not at #{pending[:pc]}"
+    end
+  end
+
+  def end_priv_session(pcs, keep_resumable: false)
+    pcs.each do |pc|
+      next unless pc.is_a?(String) && @priv_pcs.key?(pc)
+
+      @ops_earned.delete("admin:#{pc}")
+      @ops_session_accounts.delete(pc)
+      @priv_deadlines.delete(pc)
+      @priv_kinds.delete(pc)
+      @priv_resumable.delete(pc) unless keep_resumable
+      @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:pc] == pc
+    end
+  end
+
+  def note_privilege_bootstrap(body)
+    @priv_pcs.each_key do |pc|
+      held = body['sessions'][pc]
+      if !held.is_a?(Hash) || held['locked'] == true
+        end_priv_session([pc])
+      elsif @ops_session_accounts[pc] && held['npcId'] && held['npcId'] != @ops_session_accounts[pc]
+        end_priv_session([pc]) # R5-3: ends only
+      elsif held['access'] != 'admin'
+        # R3-C3: present but not admin (an off PC or a downed route lists the session and leaves `access` out): the step goes
+        downgrade_priv_step(pc, session: held, shown: held['npcId'])
+      else
+        check_priv_kind(pc, held)
+      end
+    end
+  end
+
+  # A successful read of a folder inside an account profile, by an admin session, earns `admin_read:<profile id>@<pc id>` for
+  # each PC where `admin:<pc>` is earned and the PC's owner is admitted by the profile: the server writes its audit row
+  # only then (no live session of an account the profile admits, an admin session at a PC whose owner it admits). A folder
+  # answer names no PC, so every such PC is credited.
+  def note_privilege_read(body, ctx, row)
+    return unless @priv_active && ctx[:container] && row['status'].to_i == 200 && body.is_a?(Hash) && body['contents'].is_a?(Array)
+
+    profile = @priv_folder_profile[ctx[:container]]
+    return unless profile
+
+    acl = @priv_profiles[profile]
+    return if @ops_session_accounts.values.any? { |id| priv_acl_admits?(acl, id) }
+
+    @priv_pcs.each_key { |pc| @ops_earned << "admin_read:#{profile}@#{pc}" if priv_admin_opens?(acl, pc) }
+  end
+
+  # Is `admin:<pc>` earned at a PC (the given one, or any) whose owner the list admits?
+  def priv_admin_opens?(acl, pc_id)
+    (pc_id ? [pc_id] : @priv_pcs.keys).any? do |pc|
+      @ops_earned.include?("admin:#{pc}") && (owner = priv_owner(pc)) && priv_acl_admits?(acl, owner)
+    end
+  end
+
+  # May this container answer hold the profile's items? `container` is a PC id (the desktop) or a folder id.
+  def priv_profile_read_earned?(profile_id, container)
+    return true unless @priv_active
+
+    acl = @priv_profiles[profile_id.to_s]
+    return false if acl.nil?
+
+    pc = @priv_pcs.key?(container.to_s) ? container.to_s : nil
+    own = pc ? [@ops_session_accounts[pc]].compact : @ops_session_accounts.values
+    own.any? { |id| priv_acl_admits?(acl, id) } || priv_admin_opens?(acl, pc)
+  end
+
+  # The key `admin` inside an NPC record or a `creds` object (creds.admin never leaves the server).
+  def scan_privilege_keys(body, add)
+    return unless @priv_active
+
+    walk_records(body, '$', false) { |rec, path| add.call('ops_string', 'ops:key:admin', safe_path("#{path}.admin")) if rec.key?('admin') }
+    walk_hashes(body, '$') do |hash, path|
+      creds = hash['creds']
+      add.call('ops_string', 'ops:key:admin', safe_path("#{path}.creds.admin")) if creds.is_a?(Hash) && creds.key?('admin')
+    end
+  end
+
+  # An ADMIN_READ row of a /log_rows answer needs an earned admin read at the PC its `where` names (the browser's row
+  # names the PC and the account, and shows only the word `profile` for the profile, never its id): one earned
+  # `admin_read:<profile>@<pc>` per row. A row whose `where` names no PC of the scenario, or more rows for a PC than
+  # earned reads, is judged unearned (fail closed).
+  def scan_privilege_log_rows(body, ctx, add)
+    return unless @priv_active && ctx[:log_rows] && body.is_a?(Hash)
+
+    seen = Hash.new(0)
+    Array(body['rows']).each_with_index do |row, i|
+      next unless row.is_a?(Hash) && row['event'] == 'ADMIN_READ'
+
+      pcs = @priv_pcs.select { |_, pc| pc['name'] == row['where'] }.keys
+      pc = pcs.size == 1 ? pcs.first : nil
+      seen[pc] += 1
+      earned = pc ? @ops_earned.count { |step| step.match?(/\Aadmin_read:.+@#{Regexp.escape(pc)}\z/) } : 0
+      add.call('log_row', "log:admin_read:#{pc || 'unknown'}", "$.rows[#{i}]") if seen[pc] > earned
     end
   end
 

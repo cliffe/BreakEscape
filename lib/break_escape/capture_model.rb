@@ -396,6 +396,32 @@ module BreakEscape
       kinds.length == 1 ? kinds.first : nil
     end
 
+    # The `pc` of the first `grant_foothold` action with `needsSession` in an object's
+    # triggerOnInteract, at any depth of confirm_action onConfirm lists, depth-first in list order;
+    # nil when there is none. A grant with a `condition` still counts (S5a).
+    def session_grant_pc(obj)
+      return nil unless obj.is_a?(Hash)
+
+      session_grant_pc_in(obj['triggerOnInteract'])
+    end
+
+    def session_grant_pc_in(actions)
+      return nil unless actions.is_a?(Array)
+
+      actions.each do |action|
+        next unless action.is_a?(Hash)
+
+        if action['type'] == 'grant_foothold' && action['needsSession']
+          # a grant naming no PC is malformed and skipped, as the validator's walk and the client's do
+          return action['pc'] if action['pc'].is_a?(String) && !action['pc'].strip.empty?
+        elsif action['type'] == 'confirm_action'
+          found = session_grant_pc_in(action['onConfirm'])
+          return found if found
+        end
+      end
+      nil
+    end
+
     # Whether a remove_item action list (at any depth of confirm_action onConfirm) names the item.
     def removes_item?(actions, names)
       return false unless actions.is_a?(Array)

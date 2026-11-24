@@ -10,6 +10,9 @@ import { collectFingerprint, handleBiometricScan } from './biometrics.js';
 import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
+// Namespace import: harnesses stub apply-actions.js with applyActions only, and the gated
+// plant's helpers (sendGatedRemove and the two in-flight sets) are read tolerantly.
+import * as applyActionsModule from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { requiresItemHint } from './requires-item-hint.js';
 // Namespace import: test harnesses stub this module with requiresItemHint only, and a
@@ -1088,14 +1091,27 @@ export function handleObjectInteraction(sprite) {
         // so the kit is "left" on the target. Generic engine primitive; no import needed.
         const req = sprite.scenarioData.requiresItem;
         if (req) {
+            // One request at a time (privilege plan, one request at a time): an object whose
+            // gated plant is awaiting its answer does nothing on a further interact.
+            const plantObjectId = sprite.scenarioData.id || sprite.objectId || null;
+            if (plantObjectId && applyActionsModule.plantsInFlight?.has(plantObjectId)) {
+                console.log('[Interaction] plant already in flight for:', plantObjectId);
+                return;
+            }
             const wanted = Array.isArray(req) ? req : [req];
+            const inFlightItems = applyActionsModule.itemsInFlight;
             const matching = (window.inventory?.items || []).filter(it => {
                 const d = it?.scenarioData || {};
+                // An item a gated plant is spending is not offered to another object
+                if (d.id && inFlightItems?.has(d.id)) return false;
                 return wanted.includes(d.type) || wanted.includes(d.id) || wanted.includes(d.name);
             });
             // The USB policy (access slice 9.2 U, plan 7): the first matching item the object's
             // policy accepts; refused only when every matching item is refused
-            const plant = plantRefusal(matching, sprite.scenarioData, window.gameScenario);
+            // The fourth argument is the strict boolean of the session mirror (S5a): an admin
+            // session lets the stick through; the server judges again on the remove.
+            const plantAdmin = window.pcSessions?.plantAdmin?.(sprite.scenarioData) === true;
+            const plant = plantRefusal(matching, sprite.scenarioData, window.gameScenario, { admin: plantAdmin });
             if (plant.refusal) {
                 const objectId = sprite.scenarioData.id || sprite.objectId || null;
                 window.gameAlert?.(plant.refusal, 'warning', '', hintToastMs(plant.refusal));
@@ -1119,22 +1135,47 @@ export function handleObjectInteraction(sprite) {
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
-            applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
-            if (sprite.scenarioData.consumesItem) {
-                try {
-                    window.removeFromInventory?.(held);
-                    const id = held?.scenarioData?.id;
-                    // used_on names this object, so the server records the plant (capture
-                    // proofs, engine plan section 6); awaited with one retry in apply-actions.js
-                    if (id) window.sendInventoryRemove?.(id, { usedOn: sprite.scenarioData.id || null });
-                } catch (err) {
+            // A gated plant (the policy refuses this item without admin): the server judges the
+            // remove, so it is sent first and awaited (below); every other plant is as before.
+            const heldId = held?.scenarioData?.id;
+            const plantId = sprite.scenarioData.id || null;
+            const gatedPlant = !!(sprite.scenarioData.consumesItem && heldId && plantId
+                && typeof applyActionsModule.sendGatedRemove === 'function'
+                && window.pcPolicy?.gatedRemove?.(held, sprite.scenarioData, window.gameScenario) === true);
+            if (!gatedPlant) {
+                applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null, objectData: sprite.scenarioData });
+                if (sprite.scenarioData.consumesItem) {
+                    try {
+                        window.removeFromInventory?.(held);
+                        const id = held?.scenarioData?.id;
+                        // used_on names this object, so the server records the plant (capture
+                        // proofs, engine plan section 6); awaited with one retry in apply-actions.js
+                        if (id) window.sendInventoryRemove?.(id, { usedOn: sprite.scenarioData.id || null });
+                    } catch (err) {
+                        console.warn('[Interaction] Could not consume kit item:', err);
+                    }
+                }
+                return;
+            }
+            // The item leaves the tray and the actions fire only on success; a refusal keeps the
+            // item and shows its line, through the helper apply-actions.js shares.
+            applyActionsModule.sendGatedRemove(heldId, plantId, {}).then(ok => {
+                if (!ok) return;
+                try { window.removeFromInventory?.(held); } catch (err) {
                     console.warn('[Interaction] Could not consume kit item:', err);
                 }
-            }
+                applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: plantId, objectData: sprite.scenarioData });
+            }).catch(err => console.warn('[Interaction] gated plant follow-up failed:', err));
+            return;
+        }
+        // No requiresItem: a list holding a gated remove_item still takes one request at a time
+        const plainId = sprite.scenarioData.id || sprite.objectId || null;
+        if (plainId && applyActionsModule.plantsInFlight?.has(plainId)) {
+            console.log('[Interaction] plant already in flight for:', plainId);
             return;
         }
         console.log('[Interaction] triggerOnInteract firing for:', sprite.scenarioData.name || sprite.objectId);
-        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null });
+        applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact', objectId: sprite.scenarioData.id || null, objectData: sprite.scenarioData });
         return;
     }
 

@@ -86,9 +86,33 @@ test('m2: a repeat grant of the same technique copy fires no sign-out and no sec
     const out = s.noteTechniqueSession('pc1', { ...TECH });
     assert.equal(out.via, 'technique');
     assert.deepEqual(events, []);
-    // a different access level is a change and is recorded
+    // a real step up at the same copy (not `already`) is a new grant: a sign-in fires, as before the fix round (R2-A1)
     s.noteTechniqueSession('pc1', { ...TECH, access: undefined });
     assert.equal(named('pc_signed_in').length, 1);
+    assert.equal(s.get('pc1').access, undefined);
+});
+
+test('R2-A1: a step up from a technique user session to admin is not a repeat: sign-in event, endedPcIds honoured', async () => {
+    const s = setup();
+    s._replace('gone', { npcId: 'a', username: 'a', displayName: 'A', via: 'password', remote: true, footholdId: 'f1', host: 'G' });
+    s.noteTechniqueSession('pc1', { ...TECH, access: undefined });
+    events.length = 0;
+    s.noteTechniqueSession('pc1', { ...TECH, access: 'admin' }, ['gone'], null, false);
+    await settle();
+    assert.equal(s.get('pc1').access, 'admin');
+    assert.equal(named('pc_signed_in').length, 1);
+    assert.equal(s.has('gone'), false, 'the answer\'s endedPcIds are dropped');
+});
+
+test('C1-3: a repeat grant at the same level (already: true) sets access in place and fires nothing, even after the level was dropped', async () => {
+    const s = setup();
+    s.noteTechniqueSession('pc1', { ...TECH, access: 'admin' });
+    delete s.sessions.get('pc1').access;
+    events.length = 0;
+    s.noteTechniqueSession('pc1', { ...TECH, access: 'admin' }, ['other'], null, true);
+    await settle();
+    assert.equal(s.get('pc1').access, 'admin');
+    assert.deepEqual(events, []);
 });
 
 test('m3: a credential sign-in and a claim copy the access level the server sent', async () => {

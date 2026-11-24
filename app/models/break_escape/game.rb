@@ -3293,6 +3293,51 @@ module BreakEscape
       scenario_room_npc(session['id'])
     end
 
+    # The level of the session held at a PC, 'user' or 'admin', or nil when it holds nothing
+    # right now (OPS_PRIVILEGE_ACCOUNTS_PLAN S5a). Worked out on every read and never stored,
+    # except that a technique record carries the `access` the core's step up wrote. The steps
+    # run in this order: a relay record is `via: "credential"`, so step 5 comes before step 7.
+    def session_access(pc_id)
+      session = access_sessions[pc_id.to_s]
+      return nil unless session.is_a?(Hash)
+      return nil if credential_session_expired?(session)
+
+      npc = session_identity(pc_id)
+      return nil unless npc
+      return nil unless session_route_up?(pc_id)
+      return 'user' if relay_session?(session) || session['via'] == 'claim'
+
+      case session['via']
+      when 'technique'
+        session['access'] == 'admin' ? 'admin' : 'user'
+      when 'password', 'credential'
+        pc = find_login_pc(pc_id)&.dig(:object)
+        pc && account_admin_at?(npc, pc) ? 'admin' : 'user'
+      else
+        'user'
+      end
+    end
+
+    # The account is marked `creds.admin: true` (the literal true, nothing truthy) and the PC's
+    # access list admits it.
+    def account_admin_at?(npc, pc)
+      creds = npc.is_a?(Hash) ? npc['creds'] : nil
+      creds.is_a?(Hash) && creds['admin'] == true && pc_admits_account?(pc, npc)
+    end
+
+    def session_admin?(pc_id)
+      session_access(pc_id) == 'admin'
+    end
+
+    # An admin session at this PC's own keyboard: no foothold, not a relay or `from` session.
+    def keyboard_admin?(pc_id)
+      # session_admin? true means the record is a Hash, so the reads below are nil-safe (S5a R1 F1)
+      return false unless session_admin?(pc_id)
+
+      session = access_sessions[pc_id.to_s]
+      session['foothold'].blank? && !remote_route_session?(session)
+    end
+
     # Whether the held session at a PC is locked (UI slice 6), read from the server's own
     # record. Used by the admit predicates that test for a held session Hash directly rather
     # than through session_identity (the login_pc scope, a mapped share).
@@ -3327,7 +3372,8 @@ module BreakEscape
 
         sessions_oldest_first.map(&:first).find do |pc_id|
           npc = session_identity(pc_id)
-          npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)
+          (npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)) ||
+            admin_session_opens_profile?(pc_id, scope[:id])
         end
       when 'resource'
         # Slice 9.3a, 4.5: a held foothold or session reaches it and is allowed
@@ -3366,7 +3412,9 @@ module BreakEscape
         scope[:id].to_s == pc_id.to_s
       when 'profile'
         profile = account_profiles[scope[:id]]
-        profile ? self.class.acl_admits?(profile['for'], npc) : false
+        return false unless profile
+
+        self.class.acl_admits?(profile['for'], npc) || admin_session_opens_profile?(pc_id, scope[:id])
       when 'resource'
         # A share mapped on this PC's desktop (slice 9.3a, 4.5)
         share_mapped_at?(scope[:id], pc_id)
@@ -3401,12 +3449,59 @@ module BreakEscape
       by_role + by_person
     end
 
+    # The profiles an admin session at this PC opens besides its own: those whose `for` admits
+    # an account that uses the PC, as [profile_id, profile] pairs in `accountProfiles` order.
+    # Under S5a that is the PC's owner alone; empty when it has none.
+    def admin_profiles_at(pc)
+      present = admin_present_accounts(pc)
+      return [] if present.empty?
+
+      account_profiles.select do |_profile_id, profile|
+        present.any? { |npc| self.class.acl_admits?(profile['for'], npc) }
+      end.to_a
+    end
+
+    # Does the admin session at this PC open this profile (never another PC's owner's)?
+    def admin_session_opens_profile?(pc_id, profile_id)
+      return false unless session_admin?(pc_id)
+
+      pc = find_login_pc(pc_id)&.dig(:object)
+      pc ? admin_profiles_at(pc).any? { |id, _profile| id == profile_id } : false
+    end
+
+    # For the log row of an admin read of a profile: nil when some live session's own identity
+    # is admitted by the profile (an ordinary read), else { pc_id:, npc: } for the first PC, in
+    # session order, whose admin session opens it; nil when none does.
+    def admin_profile_reader(profile_id)
+      profile = account_profiles[profile_id]
+      return nil unless profile
+
+      own = access_sessions.keys.any? do |pc_id|
+        npc = session_identity(pc_id)
+        npc && self.class.acl_admits?(profile['for'], npc) && session_route_up?(pc_id)
+      end
+      return nil if own
+
+      pc_id = sessions_oldest_first.map(&:first).find { |id| admin_session_opens_profile?(id, profile_id) }
+      pc_id ? { pc_id: pc_id, npc: session_identity(pc_id) } : nil
+    end
+
     # What a session at a sign-in PC shows (section 5.3): the PC's own contents, then each
     # admitted profile's. Unfiltered scenario items; the controller filters them.
     def login_desktop_contents(pc, npc)
       contents = Array(pc['contents']).select { |item| item.is_a?(Hash) }
-      admitted_profiles(npc).each do |_profile_id, profile|
+      admitted = admitted_profiles(npc)
+      admitted.each do |_profile_id, profile|
         contents += Array(profile['contents']).select { |item| item.is_a?(Hash) }
+      end
+      # An admin session also opens the profiles of the accounts that use this PC (S5a), once each
+      if session_admin?(pc['id'])
+        admitted_ids = admitted.map(&:first)
+        admin_profiles_at(pc).each do |profile_id, profile|
+          next if admitted_ids.include?(profile_id)
+
+          contents += Array(profile['contents']).select { |item| item.is_a?(Hash) }
+        end
       end
       # Then a folder for each share mapped for this session (slice 9.3a, 4.5)
       contents + mapped_share_stubs(pc, npc)
@@ -3446,6 +3541,13 @@ module BreakEscape
       return true if pc['access'].nil?
 
       self.class.acl_admits?(pc['access'], npc)
+    end
+
+    # The accounts present on a PC for an admin session's profile reach. S5a: its owner only
+    # (a seam so S5b can widen it); reads nothing but `owner`.
+    def admin_present_accounts(pc)
+      owner = login_pc_owner(pc)
+      owner ? [owner] : []
     end
 
     # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
@@ -4690,11 +4792,10 @@ module BreakEscape
       answer.merge('remote' => true, 'footholdId' => foothold, 'host' => pc ? host_label(pc) : pc_id.to_s)
     end
 
-    # The level the client is told for a session at a PC (OPS_CORE_PLAN.md 0): 'admin' or 'user'.
-    # Reads the stored key for now; S5a points it at session_access(pc_id).
+    # The level the client is told for a session at a PC (OPS_CORE_PLAN.md 0): 'admin', 'user',
+    # or nil when the session holds nothing now. Callers only ever test for 'admin'.
     def client_access_level(pc_id)
-      session = access_sessions[pc_id.to_s]
-      session.is_a?(Hash) && session['access'] == 'admin' ? 'admin' : 'user'
+      session_access(pc_id)
     end
 
     # Each sign-in PC in a filtered room carries its account tiles (5.3), read from the

@@ -358,7 +358,7 @@ test('a session grant records the session, hands over to the desktop through thi
     const v = view();
     useBtn().click();
     await settle();
-    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], null]]);
+    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], null, false]]);
     assert.deepEqual(opened, [['desk_pc', 'jack_a']]);
     assert.equal(v.exitReason, 'handover');
     assert.deepEqual(named('network_technique_used'), [{ findingId: 'desk_pc.web.factory_login', techniqueId: 'factory_defaults', grant: 'session' }]);
@@ -569,7 +569,7 @@ test('m7: a session grant on a host with no row in the stored view when the answ
     await pick('f1', 'factory_defaults');
     useBtn().click();
     await settle();
-    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], ['t_pc']]]);
+    assert.deepEqual(noted, [['desk_pc', session, ['other_pc'], ['t_pc'], false]]);
     assert.deepEqual(opened, [['desk_pc', 'jack_a']], 'the desktop opens through the session\'s own foothold');
 });
 
@@ -584,7 +584,7 @@ test('m1: a grant that ended token sessions passes tokenExpiredPcIds on to the s
     await pick('f1', 'factory_defaults');
     useBtn().click();
     await settle();
-    assert.deepEqual(noted, [['desk_pc', session, ['a', 'b'], ['b']]]);
+    assert.deepEqual(noted, [['desk_pc', session, ['a', 'b'], ['b'], false]]);
 });
 
 test('m4: a drop the guard turns away (the pair is already pending) still redraws with the new pick', async () => {

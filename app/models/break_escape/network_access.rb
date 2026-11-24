@@ -426,6 +426,9 @@ module BreakEscape
 
     IMPLANT_NO_ACTION = 'No such implant here'.freeze
     IMPLANT_NOT_READY = 'The device did not take.'.freeze
+    # S5a: a session-shaped device needs someone signed in at the PC's own keyboard; a live
+    # foothold, relay, `from` or technique session there is not at that console.
+    IMPLANT_NEEDS_CONSOLE = 'Nobody is signed in at this keyboard.'.freeze
     # The server's copy of the client's USB refusal lines (pc-policy.js), so a blocked
     # implant shows the same authored line.
     USB_REFUSAL_LINES = { 'storage_blocked' => 'USB storage is disabled on this PC.',
@@ -499,9 +502,15 @@ module BreakEscape
       device_copy = nil
       if shape == 'session'
         session = access_sessions[pc_id]
+        return implant_not_ready unless session.is_a?(Hash)
+        # S5a: a live session that is not the keyboard's (a foothold, relay, `from` or technique
+        # session) answers needs_console, only where a session is live (session_access not nil);
+        # a locked or expired one keeps the quiet not_ready.
+        return implant_needs_console if (session['foothold'].present? || remote_route_session?(session)) &&
+                                        !session_access(pc_id).nil?
         # A non-foothold session only: a claim or a keyboard sign-in, never a live
         # remote-through-foothold session (testing via alone is wrong, 5.5).
-        return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+        return implant_not_ready unless session['foothold'].blank?
         # Keyring K2 (plan 3.8): a relay or `from` session also has a blank foothold, but a
         # shared screen or a session opened from another desktop never takes a plant.
         return implant_not_ready if remote_route_session?(session)
@@ -512,10 +521,18 @@ module BreakEscape
 
         # The USB hook (5.5): the PC's policy must not refuse the device's usbClass. Reuses
         # AccessWork.plant_refused?, the table pc-policy.js uses, never a parallel method.
-        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+        # S5a: an unlocked admin session at this keyboard overrides the policy (keyboard_admin?).
+        admin = keyboard_admin?(pc_id)
+        if BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry, admin: admin)
           usb = BreakEscape::AccessWork.usb_policy_for(scenario_data, info[:object])
           message = USB_REFUSAL_LINES[usb] || USB_REFUSAL_LINES['blocked']
           return { status: :unprocessable_entity, body: { success: false, reason: 'usb_refused', error: message } }
+        end
+
+        if admin && BreakEscape::AccessWork.plant_refused?(scenario_data, info[:object], entry)
+          write_log_row!('usb_install_overridden', as: ops_account_as(session['id']),
+                                                   where: { kind: 'pc', id: pc_id.to_s },
+                                                   detail: { 'device' => entry['usbClass'].to_s })
         end
 
         device_copy = entry.deep_dup
@@ -640,6 +657,10 @@ module BreakEscape
 
     def implant_no_action
       { status: :not_found, body: { success: false, reason: 'no_action', error: IMPLANT_NO_ACTION } }
+    end
+
+    def implant_needs_console
+      { status: :unprocessable_entity, body: { success: false, reason: 'needs_console', error: IMPLANT_NEEDS_CONSOLE } }
     end
 
     def implant_not_ready

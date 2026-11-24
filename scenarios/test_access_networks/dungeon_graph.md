@@ -11,12 +11,12 @@ A test floor for networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, slice 9.3a). Twelve b
 | Metric | Value |
 |---|---|
 | Story aims | 1 |
-| Total tasks | 24 (0 optional) |
+| Total tasks | 25 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 15 |
+| Physical locks | 19 |
 | AND-gate convergences | 0 |
 | Rooms | 12 |
-| Puzzle graph nodes / edges | 46 / 81 |
+| Puzzle graph nodes / edges | 52 / 101 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -78,7 +78,11 @@ flowchart TD
   finance_office("Finance office")
   lock_lobby_vault["Lobby vault<br/>PIN lock"]
   lock_sv_fs02["Server file host<br/>Sign-in"]
+  lock_bench_pc["Bench PC<br/>Sign-in"]
+  lock_bench_logs["Bench logs<br/>PIN lock"]
   lock_sam_pc["Sam's PC<br/>Sign-in"]
+  lock_it_pc["IT bench PC<br/>Sign-in"]
+  lock_ops_pc["Ops desk PC<br/>Sign-in"]
   lock_lena_pc["Lena's PC<br/>Sign-in"]
   lock_kiosk_pc["Reception kiosk<br/>Sign-in"]
   lock_door_box["Door controller<br/>Sign-in"]
@@ -106,17 +110,19 @@ flowchart TD
   wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
   clue_wifi_note{"Reception Wi-Fi card"}
   wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
-  implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  implant_sam_pc["Implant: sam_pc<br/>(implant)"]
   desk_room("Desks")
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
-  implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
+  implant_kiosk_pc["Implant: kiosk_pc<br/>(implant)"]
   kiosk_room("Kiosk")
-  implant_door_box["USB foothold: door controller<br/>(implant)"]
+  implant_door_box["Implant: door_box<br/>(implant)"]
   store("Store")
   device_kit_stick{"Spare USB stick<br/>(implant device)"}
   pivot_door_box((" + "))
+  pivot_it_pc((" + "))
   pivot_kiosk_pc((" + "))
   pivot_lena_pc((" + "))
+  pivot_ops_pc((" + "))
   pivot_sam_pc((" + "))
   pivot_sv_fs02((" + "))
   server_room("Server room")
@@ -124,19 +130,30 @@ flowchart TD
   door_finance_office --> finance_office
   lobby --> lock_lobby_vault
   server_room --> lock_sv_fs02
+  workshop --> lock_bench_pc
+  lock_bench_pc --> lock_bench_logs
   desk_room --> lock_sam_pc
+  desk_room --> lock_it_pc
+  desk_room --> lock_ops_pc
   finance_office --> lock_lena_pc
   kiosk_room --> lock_kiosk_pc
   lobby --> signin_sam
+  signin_sam --> lock_bench_pc
   signin_sam --> lock_sam_pc
+  signin_sam --> lock_ops_pc
   signin_sam --> lock_kiosk_pc
   lobby --> signin_lena
+  signin_lena --> lock_bench_pc
   signin_lena --> lock_sam_pc
+  signin_lena --> lock_ops_pc
   signin_lena --> lock_lena_pc
   signin_lena --> lock_kiosk_pc
   lobby --> signin_ian
   signin_ian --> lock_sv_fs02
+  signin_ian --> lock_bench_pc
   signin_ian --> lock_sam_pc
+  signin_ian --> lock_it_pc
+  signin_ian --> lock_ops_pc
   signin_ian --> lock_kiosk_pc
   signin_ian --> lock_door_box
   lobby --> device_kit_dropbox
@@ -149,12 +166,15 @@ flowchart TD
   device_kit_dropbox --> jack_bench_port
   jack_bench_port --> net_workshop_lan
   net_office_lan -->|exposes| lock_door_box
+  net_office_lan -->|exposes| lock_it_pc
   net_office_lan -->|exposes| lock_kiosk_pc
   net_office_lan -->|exposes| lock_lena_pc
+  net_office_lan -->|exposes| lock_ops_pc
   net_office_lan -->|exposes| lock_sam_pc
   signin_lena --> resource_ledger_archive
   net_office_lan -->|exposes| resource_print_queue
   net_office_lan -->|exposes| resource_scanned_inbox
+  net_workshop_lan -->|exposes| lock_bench_pc
   net_workshop_lan -->|exposes| resource_bench_notes
   net_server_net -->|exposes| lock_sv_fs02
   signin_ian --> resource_backup_vault
@@ -184,12 +204,18 @@ flowchart TD
   net_office_lan --> pivot_door_box
   lock_door_box --> pivot_door_box
   pivot_door_box -->|pivot| net_server_net
+  net_office_lan --> pivot_it_pc
+  lock_it_pc --> pivot_it_pc
+  pivot_it_pc -->|pivot| net_server_net
   net_office_lan --> pivot_kiosk_pc
   lock_kiosk_pc --> pivot_kiosk_pc
   pivot_kiosk_pc -->|pivot| net_server_net
   net_office_lan --> pivot_lena_pc
   lock_lena_pc --> pivot_lena_pc
   pivot_lena_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_ops_pc
+  lock_ops_pc --> pivot_ops_pc
+  pivot_ops_pc -->|pivot| net_server_net
   net_office_lan --> pivot_sam_pc
   lock_sam_pc --> pivot_sam_pc
   pivot_sam_pc -->|pivot| net_server_net
@@ -203,12 +229,12 @@ flowchart TD
   desk_room --> kiosk_room
   desk_room --> store
 
-  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
+  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_bench_pc,lock_bench_logs,lock_sam_pc,lock_it_pc,lock_ops_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
   class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,kiosk_room,store,server_room room
   class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
   class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
   class clue_wifi_note item
-  class pivot_door_box,pivot_kiosk_pc,pivot_lena_pc,pivot_sam_pc,pivot_sv_fs02 gate
+  class pivot_door_box,pivot_it_pc,pivot_kiosk_pc,pivot_lena_pc,pivot_ops_pc,pivot_sam_pc,pivot_sv_fs02 gate
   class node_start start
 ```
 
@@ -269,7 +295,11 @@ flowchart TD
   finance_office("Finance office")
   lock_lobby_vault["Lobby vault<br/>PIN lock"]
   lock_sv_fs02["Server file host<br/>Sign-in"]
+  lock_bench_pc["Bench PC<br/>Sign-in"]
+  lock_bench_logs["Bench logs<br/>PIN lock"]
   lock_sam_pc["Sam's PC<br/>Sign-in"]
+  lock_it_pc["IT bench PC<br/>Sign-in"]
+  lock_ops_pc["Ops desk PC<br/>Sign-in"]
   lock_lena_pc["Lena's PC<br/>Sign-in"]
   lock_kiosk_pc["Reception kiosk<br/>Sign-in"]
   lock_door_box["Door controller<br/>Sign-in"]
@@ -297,17 +327,19 @@ flowchart TD
   wifikey_guest_wifi{"Wi-Fi key<br/>(Harbour-Guest)"}
   clue_wifi_note{"Reception Wi-Fi card"}
   wifiap_guest_ap2["Guest access point (lift lobby)<br/>Wi-Fi access point"]
-  implant_sam_pc["BadUSB: Sam's desk<br/>(implant)"]
+  implant_sam_pc["Implant: sam_pc<br/>(implant)"]
   desk_room("Desks")
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
-  implant_kiosk_pc["BadUSB: kiosk<br/>(implant)"]
+  implant_kiosk_pc["Implant: kiosk_pc<br/>(implant)"]
   kiosk_room("Kiosk")
-  implant_door_box["USB foothold: door controller<br/>(implant)"]
+  implant_door_box["Implant: door_box<br/>(implant)"]
   store("Store")
   device_kit_stick{"Spare USB stick<br/>(implant device)"}
   pivot_door_box((" + "))
+  pivot_it_pc((" + "))
   pivot_kiosk_pc((" + "))
   pivot_lena_pc((" + "))
+  pivot_ops_pc((" + "))
   pivot_sam_pc((" + "))
   pivot_sv_fs02((" + "))
   server_room("Server room")
@@ -316,19 +348,30 @@ flowchart TD
   door_finance_office --> finance_office
   lobby --> lock_lobby_vault
   server_room --> lock_sv_fs02
+  workshop --> lock_bench_pc
+  lock_bench_pc --> lock_bench_logs
   desk_room --> lock_sam_pc
+  desk_room --> lock_it_pc
+  desk_room --> lock_ops_pc
   finance_office --> lock_lena_pc
   kiosk_room --> lock_kiosk_pc
   lobby --> signin_sam
+  signin_sam --> lock_bench_pc
   signin_sam --> lock_sam_pc
+  signin_sam --> lock_ops_pc
   signin_sam --> lock_kiosk_pc
   lobby --> signin_lena
+  signin_lena --> lock_bench_pc
   signin_lena --> lock_sam_pc
+  signin_lena --> lock_ops_pc
   signin_lena --> lock_lena_pc
   signin_lena --> lock_kiosk_pc
   lobby --> signin_ian
   signin_ian --> lock_sv_fs02
+  signin_ian --> lock_bench_pc
   signin_ian --> lock_sam_pc
+  signin_ian --> lock_it_pc
+  signin_ian --> lock_ops_pc
   signin_ian --> lock_kiosk_pc
   signin_ian --> lock_door_box
   lobby --> device_kit_dropbox
@@ -341,12 +384,15 @@ flowchart TD
   device_kit_dropbox --> jack_bench_port
   jack_bench_port --> net_workshop_lan
   net_office_lan -->|exposes| lock_door_box
+  net_office_lan -->|exposes| lock_it_pc
   net_office_lan -->|exposes| lock_kiosk_pc
   net_office_lan -->|exposes| lock_lena_pc
+  net_office_lan -->|exposes| lock_ops_pc
   net_office_lan -->|exposes| lock_sam_pc
   signin_lena --> resource_ledger_archive
   net_office_lan -->|exposes| resource_print_queue
   net_office_lan -->|exposes| resource_scanned_inbox
+  net_workshop_lan -->|exposes| lock_bench_pc
   net_workshop_lan -->|exposes| resource_bench_notes
   net_server_net -->|exposes| lock_sv_fs02
   signin_ian --> resource_backup_vault
@@ -376,12 +422,18 @@ flowchart TD
   net_office_lan --> pivot_door_box
   lock_door_box --> pivot_door_box
   pivot_door_box -->|pivot| net_server_net
+  net_office_lan --> pivot_it_pc
+  lock_it_pc --> pivot_it_pc
+  pivot_it_pc -->|pivot| net_server_net
   net_office_lan --> pivot_kiosk_pc
   lock_kiosk_pc --> pivot_kiosk_pc
   pivot_kiosk_pc -->|pivot| net_server_net
   net_office_lan --> pivot_lena_pc
   lock_lena_pc --> pivot_lena_pc
   pivot_lena_pc -->|pivot| net_server_net
+  net_office_lan --> pivot_ops_pc
+  lock_ops_pc --> pivot_ops_pc
+  pivot_ops_pc -->|pivot| net_server_net
   net_office_lan --> pivot_sam_pc
   lock_sam_pc --> pivot_sam_pc
   pivot_sam_pc -->|pivot| net_server_net
@@ -396,12 +448,12 @@ flowchart TD
   desk_room --> store
   lock_lobby_vault -.-> aim_network_beats
 
-  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_sam_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
+  class door_finance_office,lock_lobby_vault,lock_sv_fs02,lock_bench_pc,lock_bench_logs,lock_sam_pc,lock_it_pc,lock_ops_pc,lock_lena_pc,lock_kiosk_pc,lock_door_box,jack_comms_port,jack_secure_port,jack_bench_port,wifiap_guest_ap,wifiap_guest_ap2,implant_sam_pc,implant_kiosk_pc,implant_door_box lock
   class finance_office,lobby,comms_room,net_office_lan,workshop,net_workshop_lan,net_server_net,net_guest_wifi,desk_room,kiosk_room,store,server_room room
   class signin_sam,signin_lena,signin_ian,device_kit_dropbox,wifikey_guest_wifi,device_kit_badusb,device_kit_stick key
   class resource_ledger_archive,resource_print_queue,resource_scanned_inbox,resource_bench_notes,resource_backup_vault,resource_guest_notice container
   class clue_wifi_note item
-  class pivot_door_box,pivot_kiosk_pc,pivot_lena_pc,pivot_sam_pc,pivot_sv_fs02 gate
+  class pivot_door_box,pivot_it_pc,pivot_kiosk_pc,pivot_lena_pc,pivot_ops_pc,pivot_sam_pc,pivot_sv_fs02 gate
   class aim_network_beats aim
   class node_start start
 ```
@@ -494,38 +546,47 @@ flowchart TD
   rc_wifi_note_6{"Reception Wi-Fi card"}
   rc_lobby_vault_7[["Lobby vault"]]
   rc_vault_prize_8{"Vault receipt"}
-  rc_sign_lobby_9{"Sign: Start here"}
-  rc_sign_p8_10{"Sign: P8 The vault"}
-  rc_sign_p12_11{"Sign: P12 Reload"}
-  rc_npc_sam_okafor_12("Sam Okafor")
-  rc_npc_lena_fox_13("Lena Fox")
-  rc_npc_ian_shaw_14("Ian Shaw")
-  rc_comms_port_15{"Spare wall port"}
-  rc_sign_p2_16{"Sign: P2 Plant"}
-  rc_sign_p3_17{"Sign: P3 See"}
-  rc_sign_p10_18{"Sign: P10 Unplug"}
-  rc_secure_port_19{"Locked switch port"}
-  rc_sign_n10_20{"Sign: N10 Port security"}
-  rc_sv_fs02_21{"Server file host"}
-  rc_sign_n2_22{"Sign: N1 to N4 The pivot"}
-  rc_server_breaker_23{"Server rack breaker"}
-  rc_server_power_24{"Server rack power"}
-  rc_sign_n5_25{"Sign: N5 to N7 Outages"}
-  rc_bench_port_26{"Bench switch"}
-  rc_sign_p11_27{"Sign: P11 The other network"}
-  rc_sam_pc_28{"Sam's PC"}
-  rc_sign_p1_29{"Sign: P1 An open share at the keyboard"}
-  rc_sign_p9_30{"Sign: P9 Sit down at it"}
-  rc_sam_dock_31{"USB socket by Sam's PC"}
-  rc_lena_pc_32{"Lena's PC"}
-  rc_sign_p5_33{"Sign: P5 and P6 Remote sign-in"}
-  rc_kiosk_pc_34{"Reception kiosk"}
-  rc_kiosk_dock_35{"Kiosk USB socket"}
-  rc_sign_p7_36{"Sign: P7 Remote sign-in off"}
-  rc_door_box_37[["Door controller"]]
-  rc_door_codes_38{"Door codes"}
-  rc_sign_p8_store_39{"Sign: P8 A host with no screen"}
-  rc_door_dock_40{"Door controller USB port"}
+  rc_capture_note_lena_9{"Capture card: Lena"}
+  rc_capture_note_ian_10{"Capture card: Ian"}
+  rc_sign_lobby_11{"Sign: Start here"}
+  rc_sign_p8_12{"Sign: P8 The vault"}
+  rc_sign_p12_13{"Sign: P12 Reload"}
+  rc_npc_sam_okafor_14("Sam Okafor")
+  rc_npc_lena_fox_15("Lena Fox")
+  rc_npc_ian_shaw_16("Ian Shaw")
+  rc_comms_port_17{"Spare wall port"}
+  rc_sign_p2_18{"Sign: P2 Plant"}
+  rc_sign_p3_19{"Sign: P3 See"}
+  rc_sign_p10_20{"Sign: P10 Unplug"}
+  rc_secure_port_21{"Locked switch port"}
+  rc_sign_n10_22{"Sign: N10 Port security"}
+  rc_sv_fs02_23{"Server file host"}
+  rc_sign_n2_24{"Sign: N1 to N4 The pivot"}
+  rc_server_breaker_25{"Server rack breaker"}
+  rc_server_power_26{"Server rack power"}
+  rc_sign_n5_27{"Sign: N5 to N7 Outages"}
+  rc_bench_port_28{"Bench switch"}
+  rc_sign_p11_29{"Sign: P11 The other network"}
+  rc_bench_pc_30[["Bench PC"]]
+  rc_bench_logs_31[["Bench logs"]]
+  rc_bench_log_32{"bench_log.txt"}
+  rc_bench_power_33{"Bench PC power"}
+  rc_sign_n14_34{"Sign: N14 A host that is switched off"}
+  rc_sam_pc_35{"Sam's PC"}
+  rc_sign_p1_36{"Sign: P1 An open share at the keyboard"}
+  rc_sign_p9_37{"Sign: P9 Sit down at it"}
+  rc_sam_dock_38{"USB socket by Sam's PC"}
+  rc_it_pc_39{"IT bench PC"}
+  rc_ops_pc_40{"Ops desk PC"}
+  rc_lena_pc_41{"Lena's PC"}
+  rc_sign_p5_42{"Sign: P5 and P6 Remote sign-in"}
+  rc_kiosk_pc_43{"Reception kiosk"}
+  rc_kiosk_dock_44{"Kiosk USB socket"}
+  rc_sign_p7_45{"Sign: P7 Remote sign-in off"}
+  rc_door_box_46[["Door controller"]]
+  rc_door_codes_47{"Door codes"}
+  rc_sign_p8_store_48{"Sign: P8 A host with no screen"}
+  rc_door_dock_49{"Door controller USB port"}
 
   lobby --> comms_room
   lobby --> desk_room
@@ -542,43 +603,52 @@ flowchart TD
   lobby --> rc_wifi_note_6
   lobby --> rc_lobby_vault_7
   rc_lobby_vault_7 --> rc_vault_prize_8
-  lobby --> rc_sign_lobby_9
-  lobby --> rc_sign_p8_10
-  lobby --> rc_sign_p12_11
-  lobby --> rc_npc_sam_okafor_12
-  lobby --> rc_npc_lena_fox_13
-  lobby --> rc_npc_ian_shaw_14
-  comms_room --> rc_comms_port_15
-  comms_room --> rc_sign_p2_16
-  comms_room --> rc_sign_p3_17
-  comms_room --> rc_sign_p10_18
-  comms_room --> rc_secure_port_19
-  comms_room --> rc_sign_n10_20
-  server_room --> rc_sv_fs02_21
-  server_room --> rc_sign_n2_22
-  server_room --> rc_server_breaker_23
-  server_room --> rc_server_power_24
-  server_room --> rc_sign_n5_25
-  workshop --> rc_bench_port_26
-  workshop --> rc_sign_p11_27
-  desk_room --> rc_sam_pc_28
-  desk_room --> rc_sign_p1_29
-  desk_room --> rc_sign_p9_30
-  desk_room --> rc_sam_dock_31
-  finance_office --> rc_lena_pc_32
-  finance_office --> rc_sign_p5_33
-  kiosk_room --> rc_kiosk_pc_34
-  kiosk_room --> rc_kiosk_dock_35
-  kiosk_room --> rc_sign_p7_36
-  store --> rc_door_box_37
-  rc_door_box_37 --> rc_door_codes_38
-  store --> rc_sign_p8_store_39
-  store --> rc_door_dock_40
+  lobby --> rc_capture_note_lena_9
+  lobby --> rc_capture_note_ian_10
+  lobby --> rc_sign_lobby_11
+  lobby --> rc_sign_p8_12
+  lobby --> rc_sign_p12_13
+  lobby --> rc_npc_sam_okafor_14
+  lobby --> rc_npc_lena_fox_15
+  lobby --> rc_npc_ian_shaw_16
+  comms_room --> rc_comms_port_17
+  comms_room --> rc_sign_p2_18
+  comms_room --> rc_sign_p3_19
+  comms_room --> rc_sign_p10_20
+  comms_room --> rc_secure_port_21
+  comms_room --> rc_sign_n10_22
+  server_room --> rc_sv_fs02_23
+  server_room --> rc_sign_n2_24
+  server_room --> rc_server_breaker_25
+  server_room --> rc_server_power_26
+  server_room --> rc_sign_n5_27
+  workshop --> rc_bench_port_28
+  workshop --> rc_sign_p11_29
+  workshop --> rc_bench_pc_30
+  rc_bench_pc_30 --> rc_bench_logs_31
+  rc_bench_logs_31 --> rc_bench_log_32
+  workshop --> rc_bench_power_33
+  workshop --> rc_sign_n14_34
+  desk_room --> rc_sam_pc_35
+  desk_room --> rc_sign_p1_36
+  desk_room --> rc_sign_p9_37
+  desk_room --> rc_sam_dock_38
+  desk_room --> rc_it_pc_39
+  desk_room --> rc_ops_pc_40
+  finance_office --> rc_lena_pc_41
+  finance_office --> rc_sign_p5_42
+  kiosk_room --> rc_kiosk_pc_43
+  kiosk_room --> rc_kiosk_dock_44
+  kiosk_room --> rc_sign_p7_45
+  store --> rc_door_box_46
+  rc_door_box_46 --> rc_door_codes_47
+  store --> rc_sign_p8_store_48
+  store --> rc_door_dock_49
 
   class lobby,comms_room,server_room,workshop,desk_room,kiosk_room,store room
   class finance_office lock
-  class rc_kit_dropbox_1,rc_kit_badusb_2,rc_kit_stick_3,rc_guest_ap_4,rc_guest_ap2_5,rc_wifi_note_6,rc_vault_prize_8,rc_sign_lobby_9,rc_sign_p8_10,rc_sign_p12_11,rc_comms_port_15,rc_sign_p2_16,rc_sign_p3_17,rc_sign_p10_18,rc_secure_port_19,rc_sign_n10_20,rc_sv_fs02_21,rc_sign_n2_22,rc_server_breaker_23,rc_server_power_24,rc_sign_n5_25,rc_bench_port_26,rc_sign_p11_27,rc_sam_pc_28,rc_sign_p1_29,rc_sign_p9_30,rc_sam_dock_31,rc_lena_pc_32,rc_sign_p5_33,rc_kiosk_pc_34,rc_kiosk_dock_35,rc_sign_p7_36,rc_door_codes_38,rc_sign_p8_store_39,rc_door_dock_40 item
-  class rc_lobby_vault_7,rc_door_box_37 container
-  class rc_npc_sam_okafor_12,rc_npc_lena_fox_13,rc_npc_ian_shaw_14 npc
+  class rc_kit_dropbox_1,rc_kit_badusb_2,rc_kit_stick_3,rc_guest_ap_4,rc_guest_ap2_5,rc_wifi_note_6,rc_vault_prize_8,rc_capture_note_lena_9,rc_capture_note_ian_10,rc_sign_lobby_11,rc_sign_p8_12,rc_sign_p12_13,rc_comms_port_17,rc_sign_p2_18,rc_sign_p3_19,rc_sign_p10_20,rc_secure_port_21,rc_sign_n10_22,rc_sv_fs02_23,rc_sign_n2_24,rc_server_breaker_25,rc_server_power_26,rc_sign_n5_27,rc_bench_port_28,rc_sign_p11_29,rc_bench_log_32,rc_bench_power_33,rc_sign_n14_34,rc_sam_pc_35,rc_sign_p1_36,rc_sign_p9_37,rc_sam_dock_38,rc_it_pc_39,rc_ops_pc_40,rc_lena_pc_41,rc_sign_p5_42,rc_kiosk_pc_43,rc_kiosk_dock_44,rc_sign_p7_45,rc_door_codes_47,rc_sign_p8_store_48,rc_door_dock_49 item
+  class rc_lobby_vault_7,rc_bench_pc_30,rc_bench_logs_31,rc_door_box_46 container
+  class rc_npc_sam_okafor_14,rc_npc_lena_fox_15,rc_npc_ian_shaw_16 npc
   class node_start start
 ```

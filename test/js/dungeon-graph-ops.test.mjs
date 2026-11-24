@@ -81,7 +81,7 @@ test('a technique card is a key node, fed by one source node per carrying item, 
 
 test('a session grant ends at the host lock and a credential grant at cred_<id>; a session need comes from the host lock', { skip }, () => {
     assert.deepEqual(out('weak_vault01_archive_old_release'), ['lock_vault01']);
-    assert.deepEqual(out('weak_vault01_archive_old_release_admin'), ['lock_vault01']);
+    assert.deepEqual(out('weak_vault01_archive_old_release_admin'), ['admin@vault01', 'lock_vault01']);
     assert.deepEqual(out('weak_files01_files_open_share'), ['lock_files01']);
     assert.deepEqual(out('weak_desk01_remote_desk_shipped_login'), ['lock_desk01']);
     assert.ok(has('weak_vault01_archive_old_release', 'lock_vault01', 'grants session'));

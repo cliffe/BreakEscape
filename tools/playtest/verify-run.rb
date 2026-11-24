@@ -78,9 +78,19 @@ ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures log
 # words, dots and underscores, nothing longer than the log's foothold ids allow; anything else is left out.
 OPS_ID = /\A[A-Za-z0-9_.\-]{1,120}\z/.freeze
 
+# S5a (privilege plan): the level the server works out NOW for a session, from the game's own `session_access`: `admin`,
+# `user`, or `none` (locked, expired, route down, PC off, account gone, or no game to ask), or `error` when asking raised (never the same word as a
+# locked session). A word only, never stored.
+def computed_level(game, pc_id)
+  level = game.respond_to?(:session_access) ? game.session_access(pc_id) : nil
+  %w[admin user].include?(level) ? level : 'none'
+rescue StandardError
+  'error'
+end
+
 # The access model keys, one line each. Sign-in details are never in player_state, so
 # nothing here is secret: NPC ids, PC ids, card ids, item ids and typed usernames.
-def access_section(ps)
+def access_section(ps, game = nil)
   hash = ->(v) { v.is_a?(Hash) ? v : {} }
   list = ->(v) { v.is_a?(Array) ? v : [] }
   sessions = hash.call(ps['sessions']).map do |pc, s|
@@ -89,7 +99,7 @@ def access_section(ps)
     # Ops core S3 (plan 11.4): a technique session's level and the finding that granted it (ids and words only)
     level = %w[user admin].include?(s['access']) ? ", access #{s['access']}" : ''
     granted = s['technique'].is_a?(String) && s['technique'].match?(OPS_ID) ? ", granted by #{s['technique']}" : ''
-    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote}#{level}#{granted})"
+    "#{pc} = #{s['id'] || '?'} (#{s['via'] || '?'}#{remote}#{level}#{granted}), level #{computed_level(game, pc)}"
   end
   footholds = hash.call(ps['footholds']).sort_by { |_, f| f.is_a?(Hash) ? f['seq'].to_i : 0 }.map do |id, f|
     f = {} unless f.is_a?(Hash)
@@ -329,7 +339,7 @@ end
 
 if access_only
   puts "game            #{g.id}  (mission #{g.mission_id})"
-  puts access_section(ps)
+  puts access_section(ps, g)
   puts habits_section(g)
   if log_path
     abort "no such log: #{log_path}" unless File.file?(log_path)
@@ -357,7 +367,7 @@ puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
-  puts access_section(ps)
+  puts access_section(ps, g)
   puts habits_section(g)
 else
   puts 'access model    nothing recorded (no sessions, sign-ins, card copies, copied files, failed sign-ins or footholds)'

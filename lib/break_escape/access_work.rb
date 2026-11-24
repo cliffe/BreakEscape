@@ -1194,8 +1194,12 @@ module BreakEscape
       USB_VALUES.include?(v) ? v : 'allowed'
     end
 
-    # Whether the object's policy refuses a held item (its usbClass); an item with no class never is
-    def plant_refused?(data, obj, item)
+    # Whether the object's policy refuses a held item (its usbClass); an item with no class never is.
+    # `admin: true` (exactly true, S5a) is the player-side override of an admin session: nothing is
+    # refused. The NPC-side readers and the validators never pass it.
+    def plant_refused?(data, obj, item, admin: false)
+      return false if admin == true
+
       usb = usb_policy_for(data, obj)
       cls = item.is_a?(Hash) ? item['usbClass'] : nil
       return false unless usb && USB_CLASSES.include?(cls)

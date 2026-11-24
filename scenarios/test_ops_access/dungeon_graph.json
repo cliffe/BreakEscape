@@ -223,6 +223,12 @@
       "label": "Field note: reviewing settings",
       "kind": "item",
       "optional": false
+    },
+    {
+      "id": "admin@vault01",
+      "label": "Vault server<br/>Administrator session",
+      "kind": "key",
+      "optional": false
     }
   ],
   "edges": [
@@ -542,6 +548,12 @@
       "to": "lock_vault01",
       "soft": false,
       "label": "grants session"
+    },
+    {
+      "from": "weak_vault01_archive_old_release_admin",
+      "to": "admin@vault01",
+      "soft": false,
+      "label": "administrator"
     },
     {
       "from": "lock_vault01",

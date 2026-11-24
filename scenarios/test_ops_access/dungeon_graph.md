@@ -16,7 +16,7 @@ A test floor for the ops core's third stage (OPS_CORE_PLAN.md, S3). A lobby with
 | Physical locks | 12 |
 | AND-gate convergences | 0 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 37 / 60 |
+| Puzzle graph nodes / edges | 38 / 61 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -114,6 +114,7 @@ flowchart TD
   cred_src_card_older{"Field note: storage updates (earlier)"}
   tech_config_review{"Configuration review"}
   cred_src_card_config{"Field note: reviewing settings"}
+  admin_at_vault01{"Vault server<br/>Administrator session"}
 
   back_office --> lock_desk01
   lobby --> signin_ian
@@ -174,10 +175,11 @@ flowchart TD
   weak_printer01_admin_page_factory_login --> cred_print_admin
   weak_vault01_archive_old_release -->|grants session| lock_vault01
   weak_vault01_archive_old_release_admin -->|grants session| lock_vault01
+  weak_vault01_archive_old_release_admin -->|administrator| admin_at_vault01
   lock_vault01 --> weak_vault01_archive_old_release_admin
 
   class lock_files01,lock_vault01,lock_desk01,jack_office_port,jack_annex_port,weak_desk01_remote_desk_shipped_login,weak_files01_backup_backup_list,weak_files01_files_open_share,weak_printer01_admin_page_factory_login,weak_vault01_archive_old_release,weak_vault01_archive_old_release_admin,implant_desk01 lock
-  class signin_ian,device_kit_dropbox,device_kit_dropbox_2,device_desk_implant,cred_print_admin,tech_factory_accounts,tech_release_notes,tech_older_release_notes,tech_config_review key
+  class signin_ian,device_kit_dropbox,device_kit_dropbox_2,device_desk_implant,cred_print_admin,tech_factory_accounts,tech_release_notes,tech_older_release_notes,tech_config_review,admin_at_vault01 key
   class lobby,net_office_lan,net_plant_lan,back_office,comms_room,supply_room room
   class host_printer01,host_pumpctl01 container
   class pivot_desk01,pivot_files01,pivot_vault01 gate
@@ -277,6 +279,7 @@ flowchart TD
   cred_src_card_older{"Field note: storage updates (earlier)"}
   tech_config_review{"Configuration review"}
   cred_src_card_config{"Field note: reviewing settings"}
+  admin_at_vault01{"Vault server<br/>Administrator session"}
   aim_access_beats{{"Use the field notes"}}
 
   back_office --> lock_desk01
@@ -338,10 +341,11 @@ flowchart TD
   weak_printer01_admin_page_factory_login --> cred_print_admin
   weak_vault01_archive_old_release -->|grants session| lock_vault01
   weak_vault01_archive_old_release_admin -->|grants session| lock_vault01
+  weak_vault01_archive_old_release_admin -->|administrator| admin_at_vault01
   lock_vault01 --> weak_vault01_archive_old_release_admin
 
   class lock_files01,lock_vault01,lock_desk01,jack_office_port,jack_annex_port,weak_desk01_remote_desk_shipped_login,weak_files01_backup_backup_list,weak_files01_files_open_share,weak_printer01_admin_page_factory_login,weak_vault01_archive_old_release,weak_vault01_archive_old_release_admin,implant_desk01 lock
-  class signin_ian,device_kit_dropbox,device_kit_dropbox_2,device_desk_implant,cred_print_admin,tech_factory_accounts,tech_release_notes,tech_older_release_notes,tech_config_review key
+  class signin_ian,device_kit_dropbox,device_kit_dropbox_2,device_desk_implant,cred_print_admin,tech_factory_accounts,tech_release_notes,tech_older_release_notes,tech_config_review,admin_at_vault01 key
   class lobby,net_office_lan,net_plant_lan,back_office,comms_room,supply_room room
   class host_printer01,host_pumpctl01 container
   class pivot_desk01,pivot_files01,pivot_vault01 gate

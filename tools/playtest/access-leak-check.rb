@@ -3,6 +3,24 @@
 #
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <responses.jsonl> [more.jsonl ...]
 #
+# A keyboard sign-in answer does not say which PC it was at, and the capture holds no request body. Where more than one PC
+# admits the account the sign-in earns nothing; name the PC of ONE sign-in with `--signin <account id>@<pc id>#<n>`
+# (n counts EVERY successful POST /login answer of that account in the log, from 1, over all the files given: remote and relay
+# sign-ins too, so in the shipped test_ops_privilege capture Adel's keyboard sign-ins are 1, 2 and 5) or
+# `--signin <account id>@<pc id>@<row time>` (the row's `t`), repeatable. It is credited from that row only, for that
+# account only. NAME EVERY keyboard sign-in, an ordinary account's too, at the PC it was really at: an ordinary account's sign-in
+# named at a PC that does not admit it is refused (exit 2), but one named at the other admitting PC takes the step back only
+# there. An administrator session that went on after the PC lost power (the session survives the power: the desktop opens with
+# no sign-in) is named by `--resume <account id>@<pc id>@<row time>`: ONE 200 desktop row after a 403 `off` or `not_responding`
+# at that PC, whose session is the account held when the 403 came, with no other end in between. A 200 answer never restores
+# the step by itself. `--logout <account id>@<pc id>#<n>` (or `@<row time>`) names the PC of ONE successful sign-out answer (the answer names none, so
+# unnamed it ends every PC): it ends that PC only, if the run holds that account there. `--resume` also holds after a row that showed the
+# session at that PC without admin or as an off PC's host row (`responding: false` and `heldAs`), not only after a 403, and only
+# for the same kind of session, a row not past the token's deadline, and no other end in between. A `--logout` or `--signin`
+# name that the next answers refute (the next answer listing that PC's session still shows the account; the desktop right after
+# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# an error (exit 2), never silence. Put the options after the game id and before the files. When checking after every beat, give only the entries for rows already in the files.
+#
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
 # game's own scenario data on the server, so the tester never sees them, and no output line
@@ -43,9 +61,27 @@
 # overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
-game_id, *files = ARGV
+args = ARGV.dup
+usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
+        '[--resume <account id>@<pc id>@<row time>]... [--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
+        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too)'
+signins = []
+resumes = []
+logouts = []
+['--signin', '--resume', '--logout'].each do |option|
+  while (i = args.index(option))
+    value = args[i + 1]
+    if value.nil? || value.start_with?('--')
+      warn usage
+      exit 2
+    end
+    { '--signin' => signins, '--resume' => resumes, '--logout' => logouts }[option] << value
+    args.slice!(i, 2)
+  end
+end
+game_id, *files = args
 if game_id.nil? || files.empty?
-  warn 'usage: access-leak-check.rb <game_id> <responses.jsonl> [more.jsonl ...]'
+  warn usage
   exit 2
 end
 missing = files.reject { |f| File.file?(f) }
@@ -92,7 +128,17 @@ if game_problem
   exit 2
 end
 
-findings = scanner.scan(lines)
+begin
+  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts)
+rescue ArgumentError => e
+  warn e.message
+  exit 2
+end
+unused = scanner.unused_entries
+unless unused.empty?
+  warn "entries that matched no row (a typo, a sign-in that did not happen at that PC, a resume whose conditions did not hold, a logout of an account not held at that PC): #{unused.join(', ')}"
+  exit 2
+end
 counts = scanner.counts
 
 puts "access leak check: game #{game.id} (mission #{game.mission_id}), #{lines.length} responses from #{files.length} file(s)"

@@ -483,7 +483,7 @@ end
 # inside rooms and resources. Objective, task and message ids are not stored in a row.
 def log_stored_id_names(data)
   names = Set.new
-  %w[rooms networks resources].each { |key| names.merge(data[key].keys.map(&:to_s)) if data[key].is_a?(Hash) }
+  %w[rooms networks resources accountProfiles].each { |key| names.merge(data[key].keys.map(&:to_s)) if data[key].is_a?(Hash) }
   walk = lambda do |node|
     case node
     when Hash

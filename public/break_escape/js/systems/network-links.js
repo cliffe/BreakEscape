@@ -28,6 +28,7 @@
  *   network_joined            (ap id)       { apId, footholdId, networkId }   (slice 9.3b W)
  *   network_device_planted    (jack id)     { jackId, footholdId, networkId, deviceId }
  *   network_device_refused    (jack id)     { jackId, reason }       reason: no_device | port_security
+ *                             (pc id)       { pcId, reason }         reason: usb_refused | needs_console (an implant refused)
  *   network_device_unplugged  (jack id)     { jackId, footholdId, endedPcIds }
  *   network_foothold_dropped  { footholdId, sourceId }  a foothold the server no longer holds (404 or left out of GET /network)
  *   network_view_closed       (foothold id) { footholdId, reason }   reason: closed |
@@ -491,6 +492,13 @@ export class NetworkLinks {
                     toast(b.error || 'That device was refused.', 'info', 4000);
                     this._emit('network_device_refused', { pcId, reason: 'usb_refused' }, pcId);
                     return { action: 'refused', reason: 'usb_refused' };
+                }
+                // The PC has a remote (foothold, relay or from) session only: nobody is at the
+                // keyboard to take the device. Never the quiet not_ready path, never retried.
+                if (err?.status === 422 && b.reason === 'needs_console') {
+                    toast(b.error || 'Nobody is signed in at this keyboard.', 'info', 4000);
+                    this._emit('network_device_refused', { pcId, reason: 'needs_console' }, pcId);
+                    return { action: 'refused', reason: 'needs_console' };
                 }
                 // A dropped device's timer can fire before the drop's own save has reached the
                 // server (review I R3 m2): not_ready then means "not yet", and the timer is saved

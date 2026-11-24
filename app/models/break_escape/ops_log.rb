@@ -439,7 +439,7 @@ module BreakEscape
         as: ops_log_client_as(row, hide_holder: hide_holder),
         where: ops_log_client_where(row['where']),
         result: ops_log_client_result(row),
-        detail: ops_log_client_detail(definition, row['detail'])
+        detail: ops_log_client_detail(definition, row['detail'], row['where'])
       }
     end
 
@@ -454,7 +454,7 @@ module BreakEscape
         as: ops_log_client_seed_as(row['as']),
         where: ops_log_client_where(row['where']),
         result: row['result'].upcase,
-        detail: ops_log_client_detail(definition, row['detail'])
+        detail: ops_log_client_detail(definition, row['detail'], row['where'])
       }
     end
 
@@ -513,7 +513,7 @@ module BreakEscape
       text
     end
 
-    def ops_log_client_detail(definition, detail)
+    def ops_log_client_detail(definition, detail, where = nil)
       return '' unless definition && detail.is_a?(Hash)
 
       rules = definition[:detail] || {}
@@ -521,8 +521,16 @@ module BreakEscape
         rule = rules[key.to_s]
         next if rule.nil? || (rule.is_a?(Hash) && rule[:show] == false)
 
-        shown = rule.is_a?(Hash) && rule.key?(:id) ? ops_log_client_thing(rule[:id], value.to_s) : value.to_s
-        "#{key}: #{shown}"
+        shown = if rule.is_a?(Hash) && rule[:id] == 'profile'
+                  name = OpsLogEvents.profile_shown_name(self, value.to_s, where)
+                  name.nil? ? '-' : (name == value.to_s ? rule[:id] : name)
+        elsif rule.is_a?(Hash) && rule.key?(:id)
+                  ops_log_client_thing(rule[:id], value.to_s)
+        else
+                  value.to_s
+        end
+        # a name that is just the kind word reads once ("profile"), never "profile: profile"
+        shown == key.to_s ? shown : "#{key}: #{shown}"
       end
       parts.join(', ')
     end
