@@ -7,8 +7,20 @@
 # It sets TAG (the game id at the end of the --url value, taken before anything else is
 # changed), and SESSION_ARGS (the arguments to hand to the harness: --net-skin removed, and
 # net_skin=<value> added to the URL, after "?" or "&" as the URL needs). The skin only
-# changes the URL the browser opens; the server never reads it. A value other than gui or
-# cli is an error (return 2, message on stderr).
+# changes the URL the browser opens; the server never reads it. With no --net-skin the URL
+# gets net_skin=gui (the Panels view) unless it already carries a net_skin= value;
+# --net-skin default adds nothing, so the page follows the stored pick and the scenario
+# default. A value other than gui, cli or default is an error (return 2, message on stderr).
+
+# _session_args_add URL VALUE EXPLICIT: URL with net_skin=VALUE added. Without an explicit
+# option, a URL that already has a net_skin= value is left as it is.
+_session_args_add() {
+  local u=$1
+  if [ "$3" != 1 ]; then
+    case "$u" in *[?\&]net_skin=*) printf '%s' "$u"; return;; esac
+  fi
+  case "$u" in *\?*) printf '%s' "$u&net_skin=$2";; *) printf '%s' "$u?net_skin=$2";; esac
+}
 
 session_args_parse() {
   TAG=
@@ -42,20 +54,23 @@ session_args_parse() {
 
   if [ "$have_skin" = 1 ]; then
     case "$skin" in
-      gui|cli) ;;
-      *) echo "bad --net-skin value '$skin': use gui or cli" >&2; return 2;;
+      gui|cli|default) ;;
+      *) echo "bad --net-skin value '$skin': use gui, cli or default" >&2; return 2;;
     esac
+  else
+    skin=gui
   fi
+  # The value to add to the URL; empty means leave the URL alone.
+  local add=$skin
+  [ "$skin" = default ] && add=
 
   # Add net_skin=<value> to the URL handed on.
   prev=
   for a in "${rest[@]+"${rest[@]}"}"; do
-    if [ "$have_skin" = 1 ] && [ "$prev" = --url ]; then
-      case "$a" in *\?*) a="$a&net_skin=$skin";; *) a="$a?net_skin=$skin";; esac
-    elif [ "$have_skin" = 1 ]; then
-      case "$a" in --url=*)
-        case "$a" in *\?*) a="$a&net_skin=$skin";; *) a="$a?net_skin=$skin";; esac;;
-      esac
+    if [ -n "$add" ] && [ "$prev" = --url ]; then
+      a=$(_session_args_add "$a" "$add" "$have_skin")
+    elif [ -n "$add" ]; then
+      case "$a" in --url=*) a="--url=$(_session_args_add "${a#--url=}" "$add" "$have_skin")";; esac
     fi
     SESSION_ARGS+=("$a")
     prev=$a
