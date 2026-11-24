@@ -1,0 +1,508 @@
+{
+  "scenario_brief": "TEST: Ops crack\n\nA test floor for hash records and the offline cracker (S7, feature A21). A lobby with a drop box, a wall port, a cabinet, a notes pad, a public terminal and a flag station; a bay with two staff desks; a store room with a front desk panel and three more accounts. Collect stored records for the accounts, earn what you know about their owners, and crack them one by one. Nothing to solve.",
+  "endGoal": "Test only: collect stored records and crack the ones that can be cracked.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_crack",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Office network", "discovery": "scan" }
+  },
+
+  "hosts": {
+    "desk_panel": {
+      "name": "Front desk panel",
+      "network": "office_lan",
+      "sprite": "network_rack1",
+      "services": [
+        {
+          "name": "admin_page", "label": "Admin page", "port": 80, "product": "Tallowmere DeskPanel", "version": "1.3",
+          "weaknesses": [
+            {
+              "id": "factory_login", "class": "default_creds", "severity": "high",
+              "summary": "The admin page still takes the account it shipped with.",
+              "grants": { "credential": "deskadmin_hash" }
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "resources": {
+    "shared_drive": {
+      "kind": "file_share",
+      "name": "Office-Shared",
+      "host": "OFC-FS01",
+      "network": "office_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "dana_file",
+          "name": "dana_record.dat",
+          "takeable": true,
+          "readable": false,
+          "credential": "dana_hash",
+          "observations": "A stored account record. It is not readable as it stands."
+        },
+        {
+          "type": "text_file",
+          "id": "farah_file",
+          "name": "farah_record.dat",
+          "takeable": true,
+          "readable": false,
+          "credential": "farah_hash",
+          "observations": "A stored account record. It is not readable as it stands."
+        },
+        {
+          "type": "text_file",
+          "id": "sparedesk_file",
+          "name": "sparedesk_record.dat",
+          "takeable": true,
+          "readable": false,
+          "credential": "sparedesk_hash",
+          "observations": "A stored account record. It is not readable as it stands."
+        }
+      ]
+    }
+  },
+
+  "policies": {
+    "lax": { "autoLockMin": null, "maxAttempts": null, "usb": "allowed", "social": "allowed" }
+  },
+
+  "techniques": {
+    "factory_accounts": {
+      "name": "Factory accounts",
+      "summary": "Devices often ship with a published account that nobody changes.",
+      "worksOn": { "class": "default_creds" }
+    }
+  },
+
+  "credentials": {
+    "dana_hash": {
+      "kind": "hash",
+      "account": "dana",
+      "label": "Stored record: Dana",
+      "crackSeconds": 10,
+      "proof": { "held": "dana_file" },
+      "crack": { "difficulty": "hard", "facts": ["dana_pet", "dana_town", "dana_year"] }
+    },
+    "farah_hash": {
+      "kind": "hash",
+      "account": "farah",
+      "label": "Stored record: Farah",
+      "proof": { "held": "farah_file" },
+      "crack": { "difficulty": "medium" }
+    },
+    "deskadmin_hash": {
+      "kind": "hash",
+      "account": "deskadmin",
+      "label": "Stored record: desk admin",
+      "proof": { "technique_card": "desk_panel.admin_page.factory_login" },
+      "crack": { "password": "common", "difficulty": "easy" }
+    },
+    "sparedesk_hash": {
+      "kind": "hash",
+      "account": "sparedesk",
+      "label": "Stored record: spare desk",
+      "proof": { "held": "sparedesk_file" },
+      "crack": { "password": "common" }
+    },
+    "eli_hash": {
+      "kind": "hash",
+      "account": "eli",
+      "label": "Stored record: Eli",
+      "proof": { "held": "eli_hash_file" }
+    }
+  },
+
+  "accountProfiles": {
+    "eli_files": {
+      "for": { "people": ["eli"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "eli_notes",
+          "name": "Eli notes.txt",
+          "takeable": false,
+          "readable": true,
+          "text": "Eli's list: renew the van insurance, ask facilities about the lift.",
+          "observations": "Eli's own list."
+        },
+        {
+          "type": "folder",
+          "id": "eli_folder",
+          "name": "Eli archive",
+          "takeable": false,
+          "locked": false,
+          "observations": "A folder of Eli's older files.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "eli_hash_file",
+              "name": "eli_record.dat",
+              "takeable": true,
+              "readable": false,
+              "credential": "eli_hash",
+              "observations": "A stored account record. It is not readable as it stands."
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "social": {
+    "intelFacts": {
+      "dana_pet": {
+        "label": "Dana's cat",
+        "subject": "dana",
+        "source": "desk_notes",
+        "text": "Dana has a cat called Juniper."
+      },
+      "dana_town": {
+        "label": "Dana's home town",
+        "subject": "dana",
+        "source": "dana_post_1",
+        "text": "Dana grew up in Ashby."
+      },
+      "dana_year": {
+        "label": "Dana's start year",
+        "subject": "dana",
+        "source": "records_station",
+        "text": "Dana joined the firm in 2003."
+      }
+    },
+    "people": [
+      { "id": "dana", "forms": { "first": "Dana", "full": "Dana Reyes" } }
+    ],
+    "osint": {
+      "sites": [
+        {
+          "id": "friendface",
+          "type": "social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "profiles": [
+            {
+              "person": "dana",
+              "name": "Dana Reyes",
+              "bio": "Finance. Tea.",
+              "posts": [
+                { "id": "dana_authored", "text": "Quarter end again. Send tea." }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+
+  "logSources": {
+    "crack_audit": {
+      "title": "Office audit",
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_used", "share_folder_opened", "admin_profile_read", "signin_ok", "signin_fail"]
+    }
+  },
+
+  "globalVariables": {
+    "se_osint_state": {},
+    "se_intel_dana_pet": false,
+    "se_intel_dana_town": false,
+    "se_intel_dana_year": false,
+    "audit_seen": false
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "crack_beats",
+      "title": "Collect and crack the stored records",
+      "description": "Test only. Nothing here ticks by itself.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "c1_started", "title": "Open the shared drive", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "bay", "east": "store" },
+      "objects": [
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops crack test. Take the drop box and plug it into the wall port to reach the office network and its shared drive. The bay is north, the store room east. The notes pad here, the public terminal and the flag station each tell you something about a person; the reader terminal shows what the office systems recorded.",
+          "observations": "A sign on a stand by the front desk."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "ops_log_terminal",
+          "id": "audit_log_pc",
+          "name": "Audit log terminal",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the office audit log.",
+          "minigameData": { "logSource": "crack_audit" }
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "lobby_cabinet",
+          "name": "Cabinet by the front door",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cabinet of notes the front desk keeps.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_factory",
+              "name": "Field note: shipped accounts",
+              "technique_card": "factory_accounts",
+              "takeable": true,
+              "observations": "A folded note about accounts that come with a device."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "desk_notes",
+          "name": "Reception notes",
+          "position": { "x": 3, "y": 6 },
+          "takeable": true,
+          "readable": true,
+          "revealsFacts": ["dana_pet"],
+          "text": "Reception notes: Dana from finance has put photos of her cat Juniper on every screensaver in the bay again. Please ask her to stop.",
+          "observations": "A pad of notes the reception desk keeps."
+        },
+        {
+          "type": "notes1",
+          "id": "it_poster",
+          "name": "IT poster",
+          "position": { "x": 2, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "IT reminder: a pet, a home town and a year, put together, is not a password. Several of you are using exactly that.",
+          "observations": "An IT poster pinned to the wall."
+        },
+        {
+          "type": "osint-workstation",
+          "id": "friendface_terminal",
+          "name": "Friendface terminal",
+          "position": { "x": 7, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A public terminal open on Friendface.",
+          "minigameData": { "siteIds": ["friendface"] }
+        },
+        {
+          "type": "flag-station",
+          "id": "records_station",
+          "name": "Flag Submission Terminal",
+          "position": { "x": 6, "y": 6 },
+          "takeable": false,
+          "observations": "Submit a flag here.",
+          "acceptsVms": ["records_vm"],
+          "flags": <%= flags_for_vm('records_vm', ['flag{crack_floor_year}']) %>,
+          "flagRewards": [
+            { "type": "grant_fact", "fact": "dana_year", "label": "Dana's start year" }
+          ]
+        }
+      ]
+    },
+
+    "bay": {
+      "type": "room_office",
+      "door_sign": "Bay",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "dana_pc",
+          "name": "Finance desk PC",
+          "host": "FIN01",
+          "sprite": "pc_desktop",
+          "owner": "dana",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "policy": "lax",
+          "affordance": { "satisfies": "work", "useSeconds": 5 },
+          "observations": "A desk PC in the bay."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "dana",
+          "displayName": "Dana Reyes",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_ops_crack/ink/dana.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "finance",
+          "creds": { "username": "dreyes", "password": "JuniperAshby2003" },
+          "habits": { "password": "guessable", "passwordPattern": "it_poster" },
+          "needsHome": "dana_pc",
+          "needsDeferMin": 0.5,
+          "needs": {
+            "social_media": { "decayPerMin": 60, "urgentAt": 40, "initial": 50 }
+          },
+          "feed": {
+            "site": "friendface",
+            "person": "dana",
+            "posts": [
+              { "id": "dana_post_1", "text": "Back in Ashby for the weekend, nothing has changed, not even the chip shop.", "fact": "dana_town", "date": "Monday" }
+            ]
+          },
+          "itemsHeld": [
+            {
+              "type": "phone_friendface",
+              "id": "dana_phone",
+              "name": "Dana's phone",
+              "takeable": true,
+              "owner": "dana",
+              "observations": "Dana's mobile, open on Friendface."
+            }
+          ]
+        },
+        {
+          "id": "farah",
+          "displayName": "Farah Nkemelu",
+          "npcType": "person",
+          "position": { "x": 8, "y": 6 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_crack/ink/farah.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "fnkemelu", "password": "JuniperAshby2003" },
+          "habits": { "password": "reused" }
+        }
+      ]
+    },
+
+    "store": {
+      "type": "room_servers",
+      "door_sign": "Store room",
+      "connections": { "west": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "eli_pc",
+          "name": "Store desk PC",
+          "host": "STO01",
+          "sprite": "pc_desktop",
+          "owner": "eli",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "observations": "A desk PC in the store room."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "eli",
+          "displayName": "Eli Brandt",
+          "npcType": "person",
+          "position": { "x": 3, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_crack/ink/eli.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "ebrandt", "password": "Tq7-orchid-kelp-N2vX" },
+          "habits": { "password": "strong" },
+          "needsHome": "eli_pc",
+          "needsDeferMin": 0.5,
+          "needs": {
+            "social_media": { "decayPerMin": 30, "urgentAt": 40, "initial": 80 }
+          }
+        },
+        {
+          "id": "deskadmin",
+          "displayName": "Front desk administrator",
+          "npcType": "person",
+          "position": { "x": 8, "y": 4 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_ops_crack/ink/deskadmin.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "fdadmin", "password": "Welcome-Desk-1", "admin": true }
+        },
+        {
+          "id": "sparedesk",
+          "displayName": "Spare desk login",
+          "npcType": "person",
+          "position": { "x": 8, "y": 6 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_crack/ink/sparedesk.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "spare", "password": "Welcome-Desk-1" }
+        }
+      ]
+    }
+  }
+}
