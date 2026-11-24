@@ -111,5 +111,19 @@ module BreakEscape
     test 'revealsFacts is a forgeable item field' do
       assert_includes ItemIdentity::FORGEABLE_ITEM_FIELDS, 'revealsFacts'
     end
+
+    test 'R2-3: a grant_fact in the hash form of flagRewards is withheld from the bootstrap until earned' do
+      game = build_game('rooms' => { 'office' => { 'objects' => [
+        { 'id' => 'station', 'type' => 'flag-station',
+          'flagRewards' => { 'flag{x}' => { 'type' => 'grant_fact', 'fact' => 'pet_name' } } }
+      ] } })
+      filtered = { 'social' => { 'intelFacts' => FACTS.deep_dup } }
+      game.withhold_unearned_facts!(filtered)
+      assert_equal %w[birthday], filtered['social']['intelFacts'].keys
+      game.stamp_earned_facts!(%w[pet_name])
+      filtered = { 'social' => { 'intelFacts' => FACTS.deep_dup } }
+      game.withhold_unearned_facts!(filtered)
+      assert_equal %w[birthday pet_name].sort, filtered['social']['intelFacts'].keys.sort
+    end
   end
 end

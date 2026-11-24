@@ -80,6 +80,9 @@ module BreakEscape
       walk = lambda do |node, key|
         case node
         when Hash
+          if key == 'flagRewards' # the hash form { "<flag>": { type: grant_fact, ... } }
+            node.each_value { |r| ids << r['fact'] if r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String) }
+          end
           node.each { |k, v| walk.call(v, k) }
         when Array
           if key == 'revealsFacts'
