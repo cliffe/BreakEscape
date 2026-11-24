@@ -6,6 +6,7 @@ require 'cgi'
 require 'time'
 require 'uri'
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
+require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
 
@@ -301,6 +302,21 @@ class AccessLeakScanner
     nil
   end
 
+  # R2-L9: the recorder writes no `login` tag (the PC a request body named) on any row, so a capture that holds one was
+  # edited by hand, and a tag placed a sign-in without a name or a desktop to check it. A row with one is refused, returning
+  # the first such row; remove this check only when the recorder writes the tag (tools/playtest/lib/access_leak_scanner.rb
+  # still honours it, which is what the scanner's own tests rely on).
+  def self.hand_tag_problem(files)
+    files.each do |label, rows|
+      Array(rows).each_with_index do |row, i|
+        next unless row.is_a?(Hash) && row.key?('login')
+
+        return "#{label} row #{i + 1} holds a `login` tag: the recorder writes none, so it was added by hand and would place a sign-in the capture does not show"
+      end
+    end
+    nil
+  end
+
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from
@@ -458,9 +474,9 @@ class AccessLeakScanner
   # exits 2 when it is not empty (R3-C2): a typo must not look like a leak, and an entry that did nothing must not pass.
   def unused_entries
     unused = []
-    (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) }
+    (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) || @mfa_used&.include?([:signin, key]) }
     (@priv_resumes || {}).each_key { |key| unused << "#{key.join('@')} (--resume)" unless @priv_used.include?([:resume, key]) }
-    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) }
+    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) || @mfa_used&.include?([:logout, key]) }
     unused
   end
 
@@ -493,6 +509,7 @@ class AccessLeakScanner
     @ops_earned = @ops_supplied | @ops_start_steps
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
+    mfa_begin_scan # S8a: the second-step rules' own state
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -503,7 +520,11 @@ class AccessLeakScanner
       elsif row.key?('body') then row['body']
       else row['bodyText']
       end
-      next if body.nil?
+      @mfa_row_ref = "#{source}:#{line_no}"
+      if body.nil?
+        mfa_note_bodyless(row)
+        next
+      end
 
       ctx = response_context(row).merge(index: index)
       body = log_rows_without_typed(body) if ctx[:log_rows]
@@ -546,7 +567,9 @@ class AccessLeakScanner
       scan_credentials(body, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      scan_mfa(body, row, add)
     end
+    mfa_finish_scan
     findings
   end
 
@@ -564,6 +587,13 @@ class AccessLeakScanner
     secret_values.each { |v| out = out.gsub(v, '[withheld]') if v.length >= 3 }
     out
   end
+
+  # S8a (feature A22): the second-step rules' text, kept apart so a merge of other rules touches no line of these
+  MFA_RULE_TEXT = {
+    'mfa_secret' => 'a one-time code, match number, number choices, device secret or habit key outside the one answer the server gives ' \
+                    'the holder of the device or phone (GET mfa/device, GET mfa/phone), in the shape the controller sends, or a second-step answer of a shape the controller never sends',
+    'mfa_session' => 'a session answer at a PC that asks for a second step, when that step was not passed in the run (and the account is not exempt, the way in is not a token, invite, claim or technique, and the session is not the account\'s own locked one)'
+  }.freeze
 
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
@@ -595,7 +625,9 @@ class AccessLeakScanner
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
-    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
+    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
+    'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
+    'mfa_session' => MFA_RULE_TEXT['mfa_session']
   }.freeze
 
   private
@@ -982,6 +1014,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
+      status: row['status'],
+      mfa_verify_strict: method == 'POST' && path.match?(%r{/games/[^/]+/mfa/verify\z}),
       logout: method == 'POST' && path.end_with?('/logout'),
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
@@ -1655,7 +1689,7 @@ class AccessLeakScanner
         value.each do |pc|
           add.call('lockout_unrecorded', "npc:#{m[1]}/#{pc}", safe_path(path)) unless Array(lockout_records[m[1]]).include?(pc.to_s)
         end
-      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login]
+      elsif [true, false].include?(value) && !ctx[:npc_frustration] && !ctx[:login] && !mfa_verify_lockout_proved?(body, hash, json_path, ctx)
         # Review R1 m4: a lockout answer belongs to a check answer or a sign-in answer only
         add.call('lockout_list', 'lockedOut', safe_path(path))
       elsif value == true && ctx[:npc_frustration] && @game
@@ -1676,6 +1710,30 @@ class AccessLeakScanner
 
       add.call('lockout_list', 'lockout_key', safe_path("#{json_path}.[lockout key]"))
     end
+  end
+
+  # S8a playtest 3: the lock a run's own wrong second-step codes reach. `POST mfa/verify` answers 422 with the four-key body
+  # a `login` lockout answer has (Game#login_locked_out_answer) only when the failure count of the step's account at the
+  # step's PC reaches `maxAttempts`. Credited only when the capture shows exactly one open code step (the answer names no
+  # PC or account) and exactly `maxAttempts` less one wrong-code answers for that account at that PC since its last pass.
+  # A lock reached through wrong passwords too (their answers name no PC), no open step, two open steps, another body,
+  # route, verb or status stays a finding.
+  MFA_VERIFY_LOCK_KEYS = %w[attemptsLeft lockedOut message success].freeze
+
+  def mfa_verify_lockout_proved?(body, hash, json_path, ctx)
+    return false unless @game && ctx[:mfa_verify_strict] && ctx[:status] == 422 && json_path == '$' && hash.equal?(body)
+    return false unless hash.keys.sort == MFA_VERIFY_LOCK_KEYS
+    return false unless hash['success'] == false && hash['lockedOut'] == true && hash['attemptsLeft'] == 0 && hash['message'] == BreakEscape::Game::LOGIN_LOCKED_OUT
+
+    open = (@mfa_pending || {}).select { |_pc, rec| rec[:kind] == 'code' }
+    return false unless open.size == 1
+
+    pc, rec = open.first
+    pair = [pc, rec[:npc]]
+    return false if (@mfa_wrong_unknown || Set.new).include?(pair) || !@priv_pcs.key?(pc)
+
+    max = @game.login_max_attempts(@priv_pcs[pc])
+    max && (@mfa_wrong || {})[pair].to_i == max - 1
   end
 
   # Review R1 M1: GET /scenario's top-level lockoutPcs, PC ids where the game holds a lockout
@@ -2044,6 +2102,7 @@ class AccessLeakScanner
     # An item id is read with its share, as a pair; an id held by more than one share cannot be told
     # apart by the request, so it opens none of them
     holders = @share_item_pairs.select { |_resource, item_id| item_id == id }.map(&:first).uniq
+    holders = holders.select { |rid| resources[rid].is_a?(Hash) && resources[rid]['kind'] == 'file_share' }
     @shares_opened << holders.first if holders.length == 1
   end
 
@@ -3427,5 +3486,748 @@ class AccessLeakScanner
 
   def safe_path(json_path)
     redact(json_path)
+  end
+
+  # ---- multi-factor sign-in, S8a (feature A22, unit 23) -------------------------------------------------------------
+  #
+  # Every rule here is structural and fails closed: a value is allowed only in the exact answer the server gives for a
+  # thing the run earned, and where the proof is missing, ambiguous or malformed the value is a finding.
+  #
+  # mfa_secret
+  #   - the keys approvesPrompts, promptPatience, mfaPending, mfaAccounts, mfaPrompts anywhere, and `mfa` inside a `creds`
+  #     object;
+  #   - a `code` key (only in a scenario that authors a code device; one whose value is not six digits, however spaced, is an
+  #     authored field and not a code, except at the root of an mfa/device answer) anywhere but the root of a 200 GET mfa/device?item_id= answer whose item the run took
+  #     (a 200 POST /inventory add answer tagged with that item id, or a start item, and not removed since), whose keys are exactly deviceId, displayName,
+  #     npcId, code, secondsLeft and used, whose deviceId is the item asked for, whose npcId is that device's authored owner,
+  #     whose code is six digits and whose secondsLeft is 1 to 60;
+  #   - a `numbers` key (only where a policy asks for number matching) anywhere but an entry of the `requests` list of a 200 GET mfa/phone?npc_id= answer whose phone
+  #     (type phone_friendface, authored owner = that npc_id) the run took, for a PC where an earlier `mfaRequired` answer
+  #     opened a step for that owner, with exactly three different whole numbers 10 to 99 (only for number matching), and
+  #     an entry whose other keys are exactly pcId, host, username and n, each matching the scenario;
+  #   - a `number` key (the one right number) in a hash of a sign-in or mfa answer or one that holds `mfaRequired` or `mfa`,
+  #     except the root of the 200 POST login answer { success: false, mfaRequired: true, mfa: 'push_number_match', pcId,
+  #     npcId, number } for a PC and account the scenario makes a number-matching step;
+  #   - an `mfaRequired` answer of any other shape or route, or for a PC and account that owe no such step.
+  # mfa_session
+  #   - a session answer (POST login success, a pass answer of POST mfa/verify, mfa/prompt or mfa/approve, a session in the
+  #     bootstrap `sessions`) for an account at a PC that asks it for a second step, when the step was not passed in the run:
+  #     a pass answer needs one open step for that account (named by an earlier `mfaRequired` answer, narrowed by the answer's
+  #     host label), the route that matches its kind (verify for a code, prompt with approvedBy owner for push, approve
+  #     with approvedBy player and a taken phone for push and number matching) and a status of 200. A login success needs
+  #     the PC to be named (the row's `login` tag or the answer's host label) or every PC that could be it to be free of a
+  #     step; an unnamed answer that could be at a PC that owes a step is a finding. The way in is exempt only when the
+  #     answer says it was a claim, a token or an assist invite (relay) the scenario's registry holds for that account at a PC the
+  #     answer could be about (a technique session only in the bootstrap `sessions`; `relay: true` alone, a saved connection
+  #     and a technique answer on a sign-in are not exempt); an account with creds.mfa false is exempt. An account's own locked
+  #     session is unlocked with no step (as the server does) once per lock, after a pass answer earned that session and a 200
+  #     lock_session answer locked it. Every successful sign-in answer, a logout and an `endedPcIds` entry take the earned
+  #     session back. A sign-in answer the capture cannot place at a PC (the recorder writes no `login` tag) is named
+  #     like the privilege rules' ones: `--signin <account>@<pc>#<n>` (or `@<row time>`) names the PC of ONE sign-in success,
+  #     `--logout` that of ONE sign-out; the PC must admit the account, a name is used by one row only, a name that a later
+  #     answer refutes, that no desktop row confirms or that matches no row exits 2, and a named sign-in at a step PC still needs the step or a real unlock.
+  #     (`--resume` has nothing to restore here: no answer ends an earned session by a power cut.)
+  MFA_NEVER_KEYS = %w[approvesPrompts promptPatience mfaPending mfaAccounts mfaPrompts].freeze
+  MFA_DEVICE_KEYS = %w[code deviceId displayName npcId secondsLeft used].freeze
+  MFA_PHONE_ENTRY_KEYS = %w[host n pcId username].freeze
+  MFA_REQUIRED_KEYS = %w[mfa mfaRequired npcId pcId success].freeze
+  MFA_NUMBER_RANGE = (10..99).freeze
+  MFA_EXEMPT_KINDS = %w[token assist_invite].freeze
+  MFA_PUSH_KINDS = %w[push push_number_match].freeze
+  MFA_ROUTE_NAMES = 'mfa/[a-z]+|login|inventory|lock_session|logout|scenario'
+
+  def mfa_begin_scan
+    @mfa_wrong = Hash.new(0)  # [PC id, account id] => wrong-code answers since the last pass (counted with exactly one open code step)
+    @mfa_wrong_unknown = Set.new # [PC id, account id] pairs a wrong-code answer could belong to, with two code steps open
+    @mfa_pending = {}     # PC id => { npc:, kind:, number: }, opened by an `mfaRequired` answer, closed by a pass answer
+    @mfa_held = {}        # PC id => account id, a session a second step earned in this run
+    @mfa_locked = Set.new # PC ids whose earned session a 200 lock_session answer locked (used up by the one unlock)
+    @mfa_at = {}          # PC id => account id the run holds there: a sign-in placed at that PC or a passed step
+    @mfa_passed = Set.new # R3-5: [PC id, account id] of every step a pass answer closed in the run, never undone
+    @mfa_placed = {}      # R3-2: PC id => account id a confirmed name placed there; only a sign-out or sign-in the scanner can place ends it
+    @mfa_logout_placed = false
+    @mfa_taken = Set.new  # item ids a 200 POST /inventory add answer took (a remove row gives back), and the start items
+    @mfa_phone_owners = Set.new # accounts whose phone the run ever took (their owner never approves after)
+    @mfa_signin_counts = Hash.new(0)
+    @mfa_logout_count = 0
+    @mfa_used = Set.new   # [:signin | :logout, key] of the --signin and --logout entries these rules used
+    @mfa_confirm = nil    # R2-L1: the one `--signin` name a sign-in used, until a desktop row confirms it
+    @mfa_row_strict = false
+    @mfa_logout_pending = {}
+    @mfa_row_pcs = nil
+    @mfa_row_clear = nil
+    @mfa_unlocked_pc = nil
+    Array(@data['startItemsInInventory']).each { |i| @mfa_taken << i['id'] if i.is_a?(Hash) && i['id'].is_a?(String) }
+    authored = BreakEscape::MfaModel.each_authored_item(@data).map { |e| e[:item] }.select { |i| i['id'].is_a?(String) }
+    @mfa_devices = authored.select { |i| i['type'] == BreakEscape::MfaModel::CODE_DEVICE }.to_h { |i| [i['id'], i] }
+    @mfa_phones = authored.select { |i| i['type'] == 'phone_friendface' }.to_h { |i| [i['id'], i] }
+    @mfa_taken.each { |id| @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id] }
+    # the session rules run only for a scenario in which some PC asks some account for a second step
+    @mfa_active = @priv_pcs.keys.product(@priv_npcs.keys).any? { |pc, npc| mfa_kind_at(pc, npc) != 'none' }
+    # a second-step code exists only where a code device is authored, the three choices only where a policy matches numbers
+    @mfa_borrow_authored = mfa_workaround_authored?(@data, 'borrow_session')
+    @mfa_code_possible = !@mfa_devices.empty?
+    @mfa_authored_codes = Set.new(mfa_collect_codes(@data))
+    policies = @data['policies']
+    @mfa_numbers_possible = policies.is_a?(Hash) && policies.values.any? { |p| BreakEscape::MfaModel.kind(p) == 'push_number_match' }
+  end
+
+  # One response row: judges it, then lets it earn what it proves (so a row never proves itself).
+  def scan_mfa(body, row, add)
+    info = mfa_route(row)
+    @mfa_row_pcs = @mfa_row_clear = @mfa_unlocked_pc = @mfa_token_pc = nil
+    mfa_confirm_step(body, info) if @mfa_active
+    return unless body.is_a?(Hash) || body.is_a?(Array)
+
+    if @mfa_active && body.is_a?(Hash)
+      mfa_check_named(body, info)
+      mfa_place_signin(body, info, row)
+    end
+    device = mfa_device_answer_ok?(body, info)
+    phone = mfa_phone_entries_ok(body, info)
+    required = mfa_required_answer_ok?(body, info, row)
+    mfa_judge_keys(body, info, device, phone, required, add)
+    mfa_judge_required(body, required, add)
+    mfa_judge_sessions(body, info, row, add) if @mfa_active
+    mfa_note_row(body, info, row, required)
+  end
+
+  # The strict route is the one the server answers; the loose one (an optional `.json` and a trailing slash) is judged but
+  # earns nothing. A path and a query field that disagree name no query.
+  def mfa_route(row)
+    full = row['path'].to_s
+    path, inline = full.split('?', 2)
+    path = path.to_s
+    query = if row['query'].is_a?(String) then inline.nil? || inline == row['query'] ? row['query'] : 'conflict'
+    else inline.to_s
+    end
+    route = path[%r{/games/[^/]+/(#{MFA_ROUTE_NAMES})\z}, 1]
+    loose = route ? nil : path[%r{/games/[^/]+/(#{MFA_ROUTE_NAMES})(?:\.json)?/?\z}, 1]
+    { method: row['method'].to_s.upcase, path: path, query: query, ok: row['status'].is_a?(Integer) && row['status'] == 200,
+      route: route, loose: loose, container: path[%r{/games/[^/]+/container/([^/]+)\z}, 1] }
+  end
+
+  def mfa_route_name(info)
+    info[:route] || info[:loose]
+  end
+
+  # The PC a recorder's `login` tag names on this row (the request's own word), or nil.
+  def mfa_row_pc_tag(row)
+    tag = row['login'].is_a?(Hash) ? row['login']['pcId'] : nil
+    tag.is_a?(String) && @priv_pcs.key?(tag) ? tag : nil
+  end
+
+  # The value of a query's only parameter, or nil (a second parameter, a bad escape: nothing is earned).
+  def mfa_query_value(info, name)
+    pairs = URI.decode_www_form(info[:query].to_s)
+    pairs.size == 1 && pairs.first.first == name && !pairs.first.last.empty? ? pairs.first.last : nil
+  rescue ArgumentError
+    nil
+  end
+
+  def mfa_walk(node, path = '$', parent_key = nil, &block)
+    case node
+    when Array then node.each_with_index { |v, i| mfa_walk(v, "#{path}[#{i}]", parent_key, &block) }
+    when Hash
+      yield node, path, parent_key
+      node.each { |k, v| mfa_walk(v, "#{path}.#{k}", k, &block) }
+    end
+  end
+
+  def mfa_npc(id)
+    id.is_a?(String) ? @priv_npcs[id] : nil
+  end
+
+  # The step kind an account owes at a PC, or 'none': as Game#mfa_step_for reads the scenario (and the PC admits the account).
+  def mfa_kind_at(pc_id, npc_id)
+    pc = pc_id.is_a?(String) ? @priv_pcs[pc_id] : nil
+    npc = mfa_npc(npc_id)
+    return 'none' unless pc && npc && BreakEscape::MfaModel.enrolled?(npc)
+    return 'none' unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
+
+    kind = BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc))
+    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil?
+
+    kind
+  end
+
+  def mfa_host_label(pc)
+    label = pc['host'].is_a?(String) && !pc['host'].empty? ? pc['host'] : pc['name']
+    label.is_a?(String) ? label : nil
+  end
+
+  def mfa_phone_taken?(owner)
+    @mfa_phones.values.any? { |p| p['owner'] == owner && @mfa_taken.include?(p['id']) }
+  end
+
+  # The 200 GET mfa/device answer a held, taken device gives, in the shape Game#mfa_device_answer sends.
+  def mfa_device_answer_ok?(body, info)
+    return false unless info[:method] == 'GET' && info[:route] == 'mfa/device' && info[:ok] && body.is_a?(Hash)
+
+    id = mfa_query_value(info, 'item_id')
+    device = id && @mfa_devices[id]
+    return false unless device && @mfa_taken.include?(id) && body.keys.sort == MFA_DEVICE_KEYS
+
+    owner = device['owner']
+    npc = mfa_npc(owner)
+    shown = npc ? (npc['displayName'] || npc['id']) : owner
+    body['deviceId'] == id && owner.is_a?(String) && body['npcId'] == owner && body['displayName'] == shown &&
+      body['code'].is_a?(String) && body['code'].match?(/\A\d{6}\z/) &&
+      body['secondsLeft'].is_a?(Integer) && (1..BreakEscape::MfaModel::STEP_SECONDS).cover?(body['secondsLeft']) &&
+      [true, false].include?(body['used'])
+  end
+
+  # The entries (by identity) of a 200 GET mfa/phone answer that may carry `numbers`; none unless the whole answer is in shape.
+  def mfa_phone_entries_ok(body, info)
+    return [] unless info[:method] == 'GET' && info[:route] == 'mfa/phone' && info[:ok] && body.is_a?(Hash)
+    return [] unless body.keys == ['requests'] && body['requests'].is_a?(Array)
+
+    owner = mfa_query_value(info, 'npc_id')
+    npc = mfa_npc(owner)
+    return [] unless npc && npc['creds'].is_a?(Hash) && mfa_phone_taken?(owner)
+
+    body['requests'].all? { |e| mfa_phone_entry_ok?(e, owner, npc) } ? body['requests'] : []
+  end
+
+  def mfa_phone_entry_ok?(entry, owner, npc)
+    return false unless entry.is_a?(Hash)
+
+    keys = entry.keys.sort
+    return false unless keys == MFA_PHONE_ENTRY_KEYS || keys == (MFA_PHONE_ENTRY_KEYS + ['numbers']).sort
+
+    pc = entry['pcId'].is_a?(String) ? @priv_pcs[entry['pcId']] : nil
+    kind = mfa_kind_at(entry['pcId'], owner)
+    open = pc ? @mfa_pending[entry['pcId']] : nil
+    return false unless open && open[:npc] == owner && open[:kind] == kind && MFA_PUSH_KINDS.include?(kind)
+    return false unless entry['host'] == mfa_host_label(pc) && entry['username'] == npc['creds']['username']
+    return false unless entry['n'].is_a?(Integer) && entry['n'].between?(0, BreakEscape::MfaModel::MAX_PROMPTS)
+    return !entry.key?('numbers') unless kind == 'push_number_match'
+
+    nums = entry['numbers']
+    # R1-L10: the choices hold the number the sign-in showed
+    nums.is_a?(Array) && nums.size == 3 && nums.uniq.size == 3 && nums.all? { |n| n.is_a?(Integer) && MFA_NUMBER_RANGE.cover?(n) } &&
+      nums.include?(open[:number])
+  end
+
+  # The 200 POST login answer of an opened second step, in the shape Game#issue_mfa_challenge! sends: the root of body, for the
+  # PC the row's tag names when it has one.
+  def mfa_required_answer_ok?(body, info, row = {})
+    return false unless body.is_a?(Hash) && body['mfaRequired'] == true
+    return false unless info[:method] == 'POST' && info[:route] == 'login' && info[:ok]
+
+    tag = mfa_row_pc_tag(row)
+    return false if tag && tag != body['pcId']
+
+    kind = mfa_kind_at(body['pcId'], body['npcId'])
+    return false if kind == 'none' || body['success'] != false || body['mfa'] != kind
+
+    expected = MFA_REQUIRED_KEYS + (kind == 'push_number_match' ? ['number'] : [])
+    return false unless body.keys.sort == expected.sort
+
+    kind != 'push_number_match' || (body['number'].is_a?(Integer) && MFA_NUMBER_RANGE.cover?(body['number']))
+  end
+
+  # R2-L7: inside a scenario that has a code device, a `code` value passes only when it is one the scenario authors (a
+  # warranty's "W-03") and is not six digits however spaced; every other value under a `code` key is a finding.
+  def mfa_authored_code?(value)
+    return false unless value.is_a?(String) || value.is_a?(Integer)
+
+    @mfa_authored_codes.include?(value) && !value.to_s.delete(" \t-").match?(/\d{6}/)
+  end
+
+  def mfa_collect_codes(node, found = [])
+    case node
+    when Hash then node.each { |k, v| k == 'code' && (v.is_a?(String) || v.is_a?(Integer)) ? found << v : mfa_collect_codes(v, found) }
+    when Array then node.each { |v| mfa_collect_codes(v, found) }
+    end
+    found
+  end
+
+  def mfa_judge_keys(body, info, device, phone, required, add)
+    in_mfa_route = mfa_route_name(info).to_s.start_with?('mfa/') || mfa_route_name(info) == 'login'
+    mfa_walk(body) do |hash, path, parent_key|
+      hash.each_key do |key|
+        at = safe_path("#{path}.#{key}")
+        if MFA_NEVER_KEYS.include?(key)
+          add.call('mfa_secret', "mfa:key:#{key}", at)
+        elsif key == 'mfa' && parent_key == 'creds'
+          add.call('mfa_secret', 'mfa:key:creds.mfa', at)
+        elsif key == 'code' && @mfa_code_possible && !(device && hash.equal?(body)) &&
+              ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || !mfa_authored_code?(hash[key]))
+          add.call('mfa_secret', 'mfa:key:code', at)
+        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) }
+          add.call('mfa_secret', 'mfa:key:numbers', at)
+        elsif key == 'number' && (in_mfa_route || hash.key?('mfaRequired') || hash.key?('mfa')) && !(required && hash.equal?(body))
+          add.call('mfa_secret', 'mfa:key:number', at)
+        end
+      end
+    end
+  end
+
+  def mfa_judge_required(body, required, add)
+    mfa_walk(body) do |hash, path, _parent|
+      next unless hash.key?('mfaRequired')
+      next if required && hash.equal?(body)
+
+      add.call('mfa_secret', 'mfa:answer:mfaRequired', safe_path("#{path}.mfaRequired"))
+    end
+  end
+
+  # ---- sessions ----
+
+  # A way in the server gives at a step PC without the step: the claim (an unlocked screen, never judged by a password), a
+  # token (a session a foothold proof opened) and a relay session of an assist invite, the last two only when the scenario's
+  # registry holds a credential of that kind for that account at a PC the answer could be about. `relay: true` on its own, a
+  # saved connection and a technique answer on a sign-in are not (the server refuses a saved connection at a step PC).
+  def mfa_exempt_credential?(hash, npc, pcs)
+    kind = hash['kind']
+    return false unless npc && hash['via'] == 'credential' && MFA_EXEMPT_KINDS.include?(kind)
+    return false if kind == 'assist_invite' && hash['relay'] != true
+
+    BreakEscape::CredentialModel.registry(@data).each_value.any? do |entry|
+      entry['kind'] == kind && BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc &&
+        pcs.include?(entry['connectsTo'].to_s)
+    end
+  end
+
+  # R2-L4: a claim is the server's answer for the owner of a PC (an unlocked screen the owner left), or for a guest an NPC's
+  # borrow left there. So it is exempt only for an account that owns a PC the answer could be about, or when the scenario
+  # authors a borrow_session workaround at all; any other account's `via: claim` is its own word.
+  def mfa_claim_exempt?(hash, npc, pcs)
+    return false unless npc && hash['via'] == 'claim'
+
+    @mfa_borrow_authored || pcs.any? { |pc| @priv_pcs[pc].is_a?(Hash) && @priv_pcs[pc]['owner'] == npc }
+  end
+
+  def mfa_workaround_authored?(node, kind)
+    case node
+    when Hash then node['do'] == kind || node.each_value.any? { |v| mfa_workaround_authored?(v, kind) }
+    when Array then node.any? { |v| mfa_workaround_authored?(v, kind) }
+    else false
+    end
+  end
+
+  def mfa_session_hash?(hash)
+    hash['npcId'].is_a?(String) && hash.key?('via')
+  end
+
+  # The PCs that owe the account (or, when it cannot be read, any account) a step.
+  def mfa_owing_pcs(pcs, npc)
+    accounts = mfa_npc(npc) ? [npc] : @priv_npcs.keys
+    pcs.select { |pc| accounts.any? { |account| mfa_kind_at(pc, account) != 'none' } }
+  end
+
+  def mfa_judge_sessions(body, info, row, add)
+    return unless body.is_a?(Hash)
+
+    # R1-L4, R2-L3: a session-shaped success answer is judged whatever its method or route; the sign-in, the three pass routes
+    # and the bootstrap have their own judgement, every other answer is judged as one the scanner cannot place
+    case mfa_route_name(info)
+    when 'login'
+      if info[:method] == 'POST' && body['success'] == true then mfa_judge_login(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve' then mfa_judge_pass(body, info, row, add) if body['success'] == true
+    when 'scenario'
+      if info[:method] == 'GET' then mfa_judge_bootstrap(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
+    else
+      mfa_judge_unplaced(body, row, add)
+      mfa_judge_desktop_session(body, info, add)
+      # a session nested under `session` (the shape of a technique answer); a desktop's own `session` is judged only above
+      nested = body['session']
+      mfa_judge_unplaced(nested.merge('success' => true), row, add) if !info[:container] && nested.is_a?(Hash) && nested['npcId'].is_a?(String) && nested.key?('via')
+    end
+  end
+
+  # R3-5: a desktop showing a keyboard password session at a PC that asks the account for a step, for an account that never
+  # passed a step there in the run (a sign-out does not undo "ever passed"), is a session no step earned.
+  def mfa_judge_desktop_session(body, info, add)
+    pc = info[:container]
+    session = body['session']
+    return unless info[:ok] && info[:method] == 'GET' && @priv_pcs.key?(pc) && session.is_a?(Hash)
+
+    npc = session['npcId']
+    return unless npc.is_a?(String) && mfa_npc(npc) && session['via'] == 'password' && !session['remote']
+    return if mfa_kind_at(pc, npc) == 'none' || @mfa_passed.include?([pc, npc])
+
+    add.call('mfa_session', "mfa:session:#{npc}", '$.session')
+  end
+
+  # Placing a sign-in success on the PCs it could be about, once per row: the row's `login` tag, else the answer's host
+  # label, else the caller's `--signin` entry for THIS row (account, PC, and the row's order among that account's sign-ins or
+  # its time), else every PC. A named PC must admit the account (else ArgumentError), and is used by ONE row only.
+  def mfa_place_signin(body, info, row)
+    return unless body['success'] == true && info[:method] == 'POST' && mfa_route_name(info) == 'login'
+
+    npc = body['npcId'].is_a?(String) ? body['npcId'] : nil
+    @mfa_signin_counts[npc] += 1 if npc
+    # R2-L6: only the answer the server gives (the strict route, status 200) uses a name up or writes down where the run sits
+    @mfa_row_strict = !info[:route].nil? && info[:ok]
+    tag = mfa_row_pc_tag(row)
+    label = body['host']
+    if tag
+      @mfa_row_pcs = @mfa_row_clear = [tag]
+    elsif label.is_a?(String)
+      @mfa_row_pcs = @mfa_row_clear = [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
+    elsif @mfa_row_strict && (named = mfa_named_signin(npc, row, body))
+      @mfa_row_pcs = @mfa_row_clear = [named]
+    else
+      @mfa_row_pcs = @priv_pcs.keys
+      @mfa_row_clear = npc && mfa_npc(npc) ? mfa_admitting_pcs(npc) : @priv_pcs.keys
+    end
+  end
+
+  def mfa_admitting_pcs(npc_id)
+    npc = @priv_npcs[npc_id]
+    @priv_pcs.select { |_, pc| npc && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }.keys
+  end
+
+  def mfa_named_signin(npc, row, body)
+    return nil unless npc
+
+    key = [[npc, :n, @mfa_signin_counts[npc]], (row['t'].is_a?(String) ? [npc, :t, row['t']] : nil)].compact
+                                                                                                      .find { |k| @priv_named.key?(k) && !@mfa_used.include?([:signin, k]) }
+    return nil unless key
+
+    named = @priv_named[key]
+    admitting = mfa_admitting_pcs(npc)
+    unless admitting.include?(named)
+      raise ArgumentError, "sign-in entry #{priv_entry_text(key, named)}: #{named} does not admit #{npc} (it admits: #{admitting.join(', ').then { |l| l.empty? ? 'no PC' : l }})"
+    end
+
+    @mfa_used << [:signin, key]
+    mfa_arm_confirm(key, named, npc, body)
+    named
+  end
+
+  # R2-L1, R2-L2: a `--signin` name is only a claim. It stands only when the first desktop row of a PC that follows this
+  # sign-in answer is the named PC, showing the named account signed in by a keyboard password there. Armed here, resolved
+  # by `mfa_confirm_step`; a name the capture never confirms ends the scan with an error that names it.
+  def mfa_arm_confirm(key, pc, npc, body)
+    @mfa_confirm = nil if @mfa_confirm && mfa_unconfirmed!("another name was armed (#{@mfa_row_ref}) before a desktop row followed it")
+    @mfa_confirm = { account: npc, pc: pc, text: priv_entry_text(key, pc), ref: @mfa_row_ref,
+                     prior: @mfa_at[pc] == npc || @mfa_placed[pc] == npc, locked: @mfa_locked.include?(pc) }
+    return if body['via'] == 'password' && !body['remote']
+
+    mfa_unconfirmed!("the sign-in answer is not a keyboard password sign-in (via #{body['via'].inspect}#{body['remote'] ? ', remote' : ''}), so no desktop can confirm it")
+  end
+
+  def mfa_unconfirmed!(why)
+    pending = @mfa_confirm
+    @mfa_confirm = nil
+    raise ArgumentError, "sign-in entry #{pending[:text]}: named, unconfirmed (the sign-in answer is at #{pending[:ref]}): #{why}. " \
+                         'Give the capture up to the desktop of the PC that followed the sign-in'
+  end
+
+  # What a row does to the name waiting for its desktop: the first desktop row of a PC confirms or refutes it; the same
+  # account signing in again, a pass for it, any sign-out, or the scan ending first leaves it unconfirmed.
+  def mfa_confirm_step(body, info)
+    pending = @mfa_confirm
+    return unless pending
+
+    if info[:container] && @priv_pcs.key?(info[:container])
+      mfa_unconfirmed!("the first row on a desktop path that followed it is not a GET (#{info[:method]})") unless info[:method] == 'GET'
+      mfa_confirm_desktop(pending, body, info)
+    elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
+      mfa_unconfirmed!('a sign-out came before any desktop row')
+    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+      mfa_unconfirmed!("another sign-in or step passed (#{body['npcId'].inspect}) before any desktop row")
+    end
+  end
+
+  def mfa_confirm_desktop(pending, body, info)
+    shown = info[:container]
+    session = body.is_a?(Hash) ? body['session'] : nil
+    mfa_unconfirmed!("the first desktop row after it has status #{info[:ok] ? 200 : 'other than 200'} and is unreadable or shows no session") unless info[:ok] && session.is_a?(Hash)
+    mfa_unconfirmed!("the first desktop that followed is #{shown}, not #{pending[:pc]}") unless shown == pending[:pc]
+    mfa_unconfirmed!("the desktop of #{shown} shows a relayed session, which the server never sends for a keyboard sign-in") if session['relay']
+    unless session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
+      mfa_unconfirmed!("the desktop of #{shown} shows #{session['npcId'].inspect} (via #{session['via'].inspect}), not #{pending[:account]} signed in by a password")
+    end
+    if pending[:prior] && !pending[:locked] && mfa_kind_at(shown, pending[:account]) == 'none'
+      mfa_unconfirmed!("the run already held #{pending[:account]} at #{shown} before this sign-in, so the desktop cannot be told from the earlier session's")
+    end
+    @mfa_placed[shown] = pending[:account]
+    @mfa_confirm = nil
+  end
+
+  # A row with no readable body (the recorder lost it): it cannot confirm a name, and a sign-in or step answer among them
+  # cannot be placed, so every session the run earned is taken back.
+  def mfa_note_bodyless(row)
+    return unless @mfa_active
+
+    info = mfa_route(row)
+    mfa_confirm_step(nil, info)
+    return unless info[:method] == 'POST' && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+
+    mfa_end_pcs(@priv_pcs.keys)
+  end
+
+  def mfa_finish_scan
+    return unless @mfa_active
+
+    mfa_unconfirmed!('the capture ends before a desktop row followed it') if @mfa_confirm
+    pc, account = @mfa_logout_pending.first
+    return unless pc
+
+    raise ArgumentError, "logout entry #{account}@#{pc}: named, unconfirmed: no later answer listed #{pc}'s session. Give the capture up to an answer that lists it"
+  end
+
+  # A name the tester gave is not taken on trust once a later answer shows otherwise (the privilege rules' R4-5 and R4-7).
+  def mfa_check_named(body, info)
+    return unless info[:ok]
+
+    @mfa_logout_pending.keys.each do |pc|
+      account = @mfa_logout_pending[pc]
+      shown = nil
+      if info[:container] == pc
+        shown = body['session'].is_a?(Hash) && body['session']['npcId'] == account
+      elsif info[:route] == 'scenario' && info[:method] == 'GET' && body['sessions'].is_a?(Hash)
+        held = body['sessions'][pc]
+        shown = held.is_a?(Hash) && held['npcId'] == account
+      end
+      next if shown.nil?
+      raise ArgumentError, "logout entry #{account}@#{pc}: the next answer that lists #{pc}'s session still shows #{account} there, so the sign-out was not at #{pc}" if shown
+
+      @mfa_logout_pending.delete(pc)
+    end
+  end
+
+  # One session-shaped Hash judged for the PCs it could be about. `mode` :login (an unlock is allowed once a lock marked the
+  # earned session), :bootstrap (a session the run earned at that PC, or a technique one) or :other (an answer the scanner
+  # cannot place: as a bootstrap session, with no earned credit).
+  def mfa_judge_session_hash(hash, pcs, mode, add, json_path)
+    npc = hash['npcId'].is_a?(String) && mfa_npc(hash['npcId']) ? hash['npcId'] : nil
+    owing = mfa_owing_pcs(pcs, npc)
+    return if owing.empty? && !pcs.empty?
+    return if mfa_claim_exempt?(hash, npc, pcs)
+
+    if mfa_exempt_credential?(hash, npc, pcs)
+      # R2-L8: a token session over a foothold is the account's own session at that PC (the server unlocks it with no step
+      # after a lock), so a token sign-in placed at exactly one PC that owes the step is held like a passed step
+      @mfa_token_pc = pcs.first if mode == :login && hash['kind'] == 'token' && pcs.size == 1 && owing.include?(pcs.first)
+      return
+    end
+    return if mode != :login && hash['via'] == 'technique'
+
+    if npc && owing.size == 1
+      return if mode == :bootstrap && @mfa_held[owing.first] == npc
+      return (@mfa_unlocked_pc = owing.first) if mode == :login && @mfa_held[owing.first] == npc && @mfa_locked.include?(owing.first)
+    end
+    add.call('mfa_session', "mfa:session:#{npc || 'unknown'}", json_path)
+  end
+
+  def mfa_judge_login(body, add)
+    mfa_judge_session_hash(body, @mfa_row_pcs || @priv_pcs.keys, :login, add, '$')
+  end
+
+  # A session-shaped success answer on a path that is none of the routes the scanner reads.
+  def mfa_judge_unplaced(body, row, add)
+    return unless body['success'] == true && body['npcId'].is_a?(String) && body.key?('via')
+
+    label = body['host']
+    tag = mfa_row_pc_tag(row)
+    pcs = if tag then [tag]
+    elsif label.is_a?(String) then [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
+    else @priv_pcs.keys
+    end
+    mfa_judge_session_hash(body, pcs, :other, add, '$')
+  end
+
+  # The one PC whose open step this pass answer closes, or nil when the answer or the proof is not in shape.
+  def mfa_pass_pc(body, info, row = {})
+    npc = body['npcId']
+    return nil unless info[:route].to_s.start_with?('mfa/') && mfa_session_hash?(body) && mfa_npc(npc) && info[:ok] && info[:method] == 'POST' && body['via'] == 'password'
+
+    route = info[:route].split('/').last
+    open = @mfa_pending.select { |_pc, rec| rec[:npc] == npc }
+    label = body['host']
+    open = open.select { |pc, _| @ops_host_by_label[label] == pc } if label.is_a?(String)
+    tag = mfa_row_pc_tag(row)
+    open = open.select { |pc, _| pc == tag } if tag
+    return nil unless open.size == 1
+
+    pc, rec = open.first
+    good =
+      case route
+      when 'verify' then rec[:kind] == 'code' && !body.key?('approvedBy')
+      when 'prompt' then rec[:kind] == 'push' && body['approvedBy'] == 'owner' && mfa_owner_may_approve?(npc)
+      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && body['approvedBy'] == 'player' && mfa_phone_taken?(npc)
+      end
+    good ? pc : nil
+  end
+
+  # The owner approves only an account whose habit is not `never`, and never once the run has taken the owner's phone (the
+  # server answers waiting or nobody).
+  def mfa_owner_may_approve?(npc_id)
+    BreakEscape::MfaModel.prompt_habit(@priv_npcs[npc_id], @data) != 'never' && !@mfa_phone_owners.include?(npc_id)
+  end
+
+  def mfa_judge_pass(body, info, row, add)
+    return if mfa_pass_pc(body, info, row)
+
+    add.call('mfa_session', "mfa:session:#{body['npcId'].is_a?(String) ? body['npcId'] : 'unknown'}", '$')
+  end
+
+  def mfa_judge_bootstrap(body, add)
+    sessions = body['sessions']
+    return unless sessions.is_a?(Hash)
+
+    sessions.each do |pc, held|
+      next unless held.is_a?(Hash)
+
+      mfa_judge_session_hash(held, [pc.to_s], :bootstrap, add, safe_path("$.sessions.#{pc}"))
+    end
+  end
+
+  # What a row proves for the rows after it.
+  def mfa_note_row(body, info, row, required)
+    if info[:ok] && body.is_a?(Hash) && body['endedPcIds'].is_a?(Array)
+      mfa_end_pcs(body['endedPcIds'])
+      mfa_unplace(body['endedPcIds'])
+    end
+    case mfa_route_name(info)
+    when 'inventory' then mfa_note_inventory(body, info, row)
+    when 'login'
+      @mfa_pending[body['pcId']] = { npc: body['npcId'], kind: body['mfa'], number: body['number'] } if required
+      mfa_note_signin(body) if @mfa_row_pcs
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      return unless body.is_a?(Hash)
+
+      # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
+      # a pass answer on the strict route earns
+      mfa_count_wrong_code(body, info, row)
+      if body['success'] == true
+        pc = mfa_pass_pc(body, info, row)
+        return unless pc
+
+        @mfa_wrong.delete([pc, body['npcId']])
+        @mfa_wrong_unknown.delete([pc, body['npcId']])
+        @mfa_pending.delete(pc)
+        @mfa_passed << [pc, body['npcId']]
+        @mfa_held[pc] = @mfa_at[pc] = body['npcId']
+        @mfa_locked.delete(pc)
+      elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
+        # R1-L6, R1-L11: the answer names no PC, so it closes every open step of the kind the route handles (that PC alone
+        # when the row's tag names one)
+        kinds = mfa_route_name(info) == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
+        tag = mfa_row_pc_tag(row)
+        @mfa_pending.delete_if { |pc, rec| kinds.include?(rec[:kind]) && (tag.nil? || pc == tag) }
+      end
+    when 'lock_session'
+      @mfa_locked << body['pcId'] if info[:route] && info[:ok] && body.is_a?(Hash) && body['success'] == true && body['locked'] == true && body['pcId'].is_a?(String)
+    when 'logout' then mfa_note_logout(body, info, row)
+    when nil then mfa_note_foreign_session(body, info)
+    end
+  end
+
+  # A wrong-code answer (422 on the strict route, `mfaIncorrect` with an `attemptsLeft`: the expiring one counts too) belongs to
+  # the one open code step; with two open the pairs are unknown, and stay so until a pass answer for the pair.
+  def mfa_count_wrong_code(body, info, row)
+    return unless info[:route] == 'mfa/verify' && info[:method] == 'POST' && row['status'] == 422 && body['mfaIncorrect'] == true && body['attemptsLeft'].is_a?(Integer)
+
+    tag = mfa_row_pc_tag(row)
+    open = @mfa_pending.select { |pc, rec| rec[:kind] == 'code' && (tag.nil? || pc == tag) }
+    if open.size == 1
+      pc, rec = open.first
+      @mfa_wrong[[pc, rec[:npc]]] += 1
+    else
+      @mfa_pending.each { |pc, rec| @mfa_wrong_unknown << [pc, rec[:npc]] if rec[:kind] == 'code' }
+    end
+  end
+
+  # R2-L5: a 200 answer on a route these rules do not read (a technique answer) that holds a `session` replaces the session at
+  # the PC its host label names (at every PC when the label names none): the earned session and its lock are taken back.
+  def mfa_note_foreign_session(body, info)
+    session = body.is_a?(Hash) ? body['session'] : nil
+    return unless info[:ok] && !info[:container] && session.is_a?(Hash)
+
+    label = session['host']
+    pc = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    mfa_end_pcs(@priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys)
+  end
+
+  # R3-2: what a confirmed name placed is ended only by an answer that names the PC, never by an unnamed sign-out.
+  def mfa_unplace(pcs)
+    Array(pcs).each { |pc| @mfa_placed.delete(pc) if pc.is_a?(String) }
+  end
+
+  def mfa_end_pcs(pcs)
+    Array(pcs).each do |pc|
+      next unless pc.is_a?(String)
+
+      @mfa_held.delete(pc)
+      @mfa_locked.delete(pc)
+      @mfa_at.delete(pc)
+    end
+  end
+
+  # Any successful sign-in answer replaces the session at the PC it names (every PC it could be when unnamed): the earned
+  # session and its lock go, except the one unlock, which uses the lock mark up and leaves the account's session held.
+  def mfa_note_signin(body)
+    pcs = @mfa_row_clear || []
+    npc = body['npcId']
+    pcs.each do |pc|
+      if pc == @mfa_unlocked_pc
+        @mfa_locked.delete(pc)
+        @mfa_passed << [pc, npc] if @mfa_row_strict && npc.is_a?(String) # R4-L1: the unlock is the account's own session, held and locked
+      else
+        @mfa_held.delete(pc)
+        @mfa_locked.delete(pc)
+        @mfa_at.delete(pc)
+      end
+    end
+    mfa_unplace(pcs) if pcs.size == 1 && @mfa_placed[pcs.first] != npc
+    @mfa_held[@mfa_token_pc] = npc if @mfa_row_strict && @mfa_token_pc && pcs.include?(@mfa_token_pc) && npc.is_a?(String)
+    @mfa_at[pcs.first] = npc if @mfa_row_strict && @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
+  end
+
+  def mfa_note_inventory(body, info, row)
+    return unless info[:route] && info[:ok]
+
+    inv = row['inv']
+    action = inv.is_a?(Hash) ? inv['action'] : nil
+    id = inv.is_a?(Hash) && inv['itemId'].is_a?(String) ? inv['itemId'] : nil
+    if action == 'add' && id
+      return unless body.is_a?(Hash) && body['success'] == true
+
+      @mfa_taken << id
+      @mfa_phone_owners << @mfa_phones[id]['owner'] if @mfa_phones[id]
+    elsif action == 'remove' && id
+      @mfa_taken.delete(id)
+    elsif !inv.is_a?(Hash) || action == 'remove'
+      # R1-L5: a remove row the recorder could not read (or one naming no item) takes every device and phone back
+      @mfa_taken.subtract(@mfa_devices.keys + @mfa_phones.keys)
+    end
+  end
+
+  # R1-L9: a logout takes the earned sessions back: the row's tag names one PC, a `--logout` entry names the PC of ONE
+  # successful sign-out (the run holding that account there), else every PC.
+  def mfa_note_logout(body, info, row)
+    ok = info[:ok] && body.is_a?(Hash) && body['success'] == true
+    pcs = ok ? mfa_logout_pcs(row) : @priv_pcs.keys
+    mfa_end_pcs(pcs)
+    mfa_unplace(pcs) if ok && @mfa_logout_placed
+  end
+
+  def mfa_logout_pcs(row)
+    @mfa_logout_count += 1
+    @mfa_logout_placed = true
+    tag = mfa_row_pc_tag(row)
+    return [tag] if tag
+
+    @priv_logouts.each do |key, pc|
+      account, kind, value = key
+      this_row = kind == :n ? value == @mfa_logout_count : value == row['t']
+      next unless this_row && @mfa_at[pc] == account && !@mfa_used.include?([:logout, key])
+
+      @mfa_used << [:logout, key]
+      @mfa_logout_pending[pc] = account
+      return [pc]
+    end
+    @mfa_logout_placed = false
+    @priv_pcs.keys
   end
 end

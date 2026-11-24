@@ -250,7 +250,8 @@ test('a refused desktop reports its reason to pcSessions on every branch that ke
 test('with the real mirror: off and not_responding clear access, another reason does not', async () => {
     const Cls = await containerClass();
     const { PcSessions } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')
-        .split("'../utils/sync-before-fetch.js'").join(`'${dataUrl('export async function syncBeforeFetch() {}')}'`)));
+        .split("'../utils/sync-before-fetch.js'").join(`'${dataUrl('export async function syncBeforeFetch() {}')}'`)
+        .split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`)));
     window.eventDispatcher = { emit() {} };
     const run = async (reason, extra) => {
         const sessions = new PcSessions();

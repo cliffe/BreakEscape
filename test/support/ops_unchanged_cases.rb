@@ -2,6 +2,7 @@
 # Each case builds the fixture minus "expected"; the capture run plays it on the code as it stands
 # and writes the answers and state beside it. To add a fixture, add a case here.
 require_relative 'access_model_scenario'
+require_relative 'access_social_scenario'
 require_relative 'ops_golden'
 
 module OpsUnchangedCases
@@ -15,6 +16,7 @@ module OpsUnchangedCases
     { 'log_unlock_refusals' => log_unlock_refusals, 'log_container_cases' => log_container_cases }
       .merge(core_network_cases)
       .merge(privilege_cases)
+      .merge(mfa_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -418,5 +420,236 @@ module OpsUnchangedCases
        step('bootstrap_after', 'GET', 'scenario')],
       'npcFrustration' => { 'omar' => handed }
     )
+  end
+
+  # ---- Multi-factor sign-in plan (S8a), unit 01: golden answers for the sign-in paths the second step edits ----
+  #
+  # One fixture per case, "mfa_<name>", captured from `ops-mfa` BEFORE any S8a engine edit (a first
+  # capture, not a re-record). The privilege_* and core_* fixtures already pin typed sign-in, lock,
+  # unlock, Switch user, keyring sign-in through an implant, and typed sign-in over a jack foothold
+  # with a right password. These add: the bootstrap of three scenarios no core_ or privilege_ case
+  # bootstraps (signin, ca03_helpdesk_reset, habits); lockout; the `from` route, a wrong password and a
+  # saved connection, a foothold and a token over a foothold; the Friendface phone rule; and what the
+  # bootstrap, rooms and desktops show of test_access_habits after expand! (the stored scenario is not
+  # in the replay's state, so the routes that read it are what pin it).
+  def mfa_cases
+    {
+      'mfa_bootstrap_test_access_signin' => mfa_bootstrap_case('test_access_signin'),
+      'mfa_bootstrap_test_access_keyring' => mfa_bootstrap_case('test_access_keyring'),
+      'mfa_bootstrap_ca03_helpdesk_reset' => mfa_bootstrap_case('ca03_helpdesk_reset'),
+      'mfa_test_access_signin_lockout' => mfa_signin_lockout_case,
+      'mfa_test_access_keyring_routes' => mfa_keyring_routes_case,
+      'mfa_phone_rule' => mfa_phone_rule_case,
+      'mfa_phone_rule_stored_drop' => mfa_phone_rule_stored_drop_case,
+      'mfa_test_access_habits_expanded' => mfa_habits_case
+    }
+  end
+
+  def mfa_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "mfa_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  def mfa_find_object(scenario, id)
+    found = nil
+    walk = lambda do |node|
+      case node
+      when Hash
+        found ||= node if node['id'] == id && node['type']
+        node.each_value { |v| walk.call(v) }
+      when Array then node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(scenario['rooms'])
+    found&.deep_dup
+  end
+
+  # The bootstrap, every room, GET /keyring, GET /login_accounts at each sign-in PC and the bootstrap again.
+  def mfa_bootstrap_case(name)
+    scenario = core_render(name)
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    steps << step('keyring_plain', 'GET', 'keyring')
+    core_login_pcs(scenario).each { |pc| steps << step("accounts_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    mfa_base("bootstrap_#{name}", "S8a unit 01: the bootstrap, rooms, keyring and sign-in accounts of #{name}, before any S8a engine edit.",
+             scenario, steps)
+  end
+
+  # Wrong passwords up to the lockout at lockout_pc (policy maxAttempts 5), the locked-out answer for a
+  # wrong and for the right password, an invented username, then another account and another PC still signing in.
+  def mfa_signin_lockout_case
+    sam = %w[sokafor Marmalade-82]
+    ian = %w[ishaw Patchday!2026]
+    mfa_base(
+      'test_access_signin_lockout', 'S8a unit 01: wrong passwords to a lockout, the locked-out answers and a right password after it, before any S8a engine edit.',
+      core_render('test_access_signin'),
+      [step('bootstrap', 'GET', 'scenario'),
+       login('sam_wrong_1', sam[0], 'nope', 'lockout_pc'),
+       login('sam_wrong_2', sam[0], 'nope', 'lockout_pc'),
+       login('invented_wrong_1', 'nobody', 'nope', 'lockout_pc'),
+       login('sam_wrong_3', sam[0], 'nope', 'lockout_pc'),
+       login('sam_wrong_4', sam[0], 'nope', 'lockout_pc'),
+       login('sam_wrong_5', sam[0], 'nope', 'lockout_pc'),
+       login('sam_locked_out_wrong', sam[0], 'nope', 'lockout_pc'),
+       login('sam_locked_out_right', sam[0], sam[1], 'lockout_pc'),
+       login('sam_locked_out_case_variant', sam[0].upcase, sam[1], 'lockout_pc'),
+       login('invented_wrong_2', 'nobody', 'nope', 'lockout_pc'),
+       login('invented_wrong_3', 'nobody', 'nope', 'lockout_pc'),
+       login('invented_wrong_4', 'nobody', 'nope', 'lockout_pc'),
+       login('invented_wrong_5', 'nobody', 'nope', 'lockout_pc'),
+       login('invented_locked_out', 'nobody', 'nope', 'lockout_pc'),
+       login('ian_signs_in_lockout_pc', ian[0], ian[1], 'lockout_pc'),
+       container_step('desktop_lockout_pc_ian', 'lockout_pc'),
+       login('sam_signs_in_hot_desk', sam[0], sam[1], 'hot_desk'),
+       container_step('desktop_hot_desk_sam', 'hot_desk'),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # Typed sign-in and saved connections over a foothold and over `from`, wrong and right, plus the
+  # refusals of a `from` that is not held. Everything the keyring case does not pin.
+  def mfa_keyring_routes_case
+    scenario = core_render('test_access_keyring')
+    foothold = 'jack_comms_port'
+    held = %w[kit_dropbox lena_rdp_file ops_rdp_file].map { |id| mfa_find_object(scenario, id) }
+    mfa_base(
+      'test_access_keyring_routes', 'S8a unit 01: typed and saved-connection sign-in over a foothold and over `from`, before any S8a engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       login('foothold_lena_wrong', 'lfox', 'nope', 'lena_pc').tap { |s| s['params']['foothold'] = foothold },
+       login('foothold_lena_wrong_2', 'lfox', 'nope', 'lena_pc').tap { |s| s['params']['foothold'] = foothold },
+       login('foothold_lena_right', 'lfox', 'Ledger-Lena-9', 'lena_pc').tap { |s| s['params']['foothold'] = foothold },
+       container_step('desktop_lena_pc_foothold', 'lena_pc').tap { |s| s['params'] = { 'foothold' => foothold } },
+       logout_step('sign_out_lena_pc_1', 'lena_pc'),
+       step('foothold_saved_lena_rdp', 'POST', 'login', { 'pc_id' => 'lena_pc', 'credential' => 'lena_rdp', 'foothold' => foothold }),
+       logout_step('sign_out_lena_pc_2', 'lena_pc'),
+       step('foothold_token_lena', 'POST', 'login', { 'pc_id' => 'lena_pc', 'credential' => 'lena_token', 'foothold' => foothold }),
+       step('foothold_ops_rdp_kind_refused', 'POST', 'login', { 'pc_id' => 'ops_pc', 'credential' => 'ops_rdp', 'foothold' => foothold }),
+       step('unplug_comms_port', 'POST', 'network/unplug', { 'jack_id' => 'comms_port' }),
+       login('from_not_held', 'ishaw', 'Patchday!2026', 'ops_pc').tap { |s| s['params']['from'] = 'lena_pc' },
+       login('lena_signs_in_typed', 'lfox', 'Ledger-Lena-9', 'lena_pc'),
+       login('from_unknown_pc', 'ishaw', 'Patchday!2026', 'ops_pc').tap { |s| s['params']['from'] = 'no_such_pc' },
+       login('from_wrong_password', 'ishaw', 'nope', 'ops_pc').tap { |s| s['params']['from'] = 'lena_pc' },
+       login('from_wrong_password_2', 'ishaw', 'nope', 'ops_pc').tap { |s| s['params']['from'] = 'lena_pc' },
+       login('from_right_password', 'ishaw', 'Patchday!2026', 'ops_pc').tap { |s| s['params']['from'] = 'lena_pc' },
+       container_step('desktop_ops_pc_from', 'ops_pc').tap { |s| s['params'] = { 'from' => 'lena_pc' } },
+       logout_step('sign_out_ops_pc_4', 'ops_pc'),
+       step('from_saved_ops_rdp', 'POST', 'login', { 'pc_id' => 'ops_pc', 'credential' => 'ops_rdp', 'from' => 'lena_pc' }),
+       login('from_remote_blocked_jake_pc', 'jbrooks', 'Vault-Jake-4', 'jake_pc').tap { |s| s['params']['from'] = 'lena_pc' },
+       step('from_saved_not_held_proof', 'POST', 'login', { 'pc_id' => 'ops_pc', 'credential' => 'lena_rdp_gift', 'from' => 'lena_pc' }),
+       logout_step('sign_out_lena_pc', 'lena_pc'),
+       step('from_source_ended', 'POST', 'login', { 'pc_id' => 'ops_pc', 'credential' => 'ops_rdp', 'from' => 'lena_pc' }),
+       step('keyring_after', 'GET', 'keyring'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  PHONE_JAKE = { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone", 'takeable' => true, 'owner' => 'jake' }.freeze
+  PHONE_LENA = { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone", 'takeable' => true, 'owner' => 'lena' }.freeze
+  PHONE_LENA_SENT = { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone", 'x' => 64, 'y' => 96 }.freeze
+  PHONE_STATE = { 'currentRoom' => 'office', 'unlockedRooms' => %w[lobby office], 'encounteredNPCs' => %w[jake lena omar nia] }.freeze
+
+  # The social fixture as test/controllers/break_escape/friendface_phone_test.rb builds it: Jake's story
+  # offers his phone, Lena's does not.
+  def mfa_phone_scenario
+    data = AccessSocialScenario.scenario
+    jake = data['rooms']['office']['npcs'].find { |n| n['id'] == 'jake' }
+    jake['itemsHeld'] = [PHONE_JAKE.deep_dup]
+    jake['eventMappings'] = [{ 'eventPattern' => 'global_variable_changed:lend_phone', 'action' => 'give_item:phone_friendface' }]
+    lena = data['rooms']['office']['npcs'].find { |n| n['id'] == 'lena' }
+    lena['itemsHeld'] = [PHONE_LENA.deep_dup]
+    data
+  end
+
+  def phone_add(id, item, extra = {})
+    step(id, 'POST', 'inventory', { 'action_type' => 'add', 'item' => item }.merge(extra))
+  end
+
+  def phone_room_add(id, item, npc_id = nil, source_type = nil)
+    step(id, 'POST', 'update_room',
+         { 'roomId' => 'office', 'actionType' => 'add_object', 'sourceNpcId' => npc_id, 'sourceType' => source_type, 'data' => item }.compact)
+  end
+
+  def phone_knock_out(id, npc_id)
+    step(id, 'POST', 'update_room', { 'roomId' => 'office', 'actionType' => 'update_npc_state',
+                                       'data' => { 'npcId' => npc_id, 'stateChanges' => { 'isKO' => true, 'currentHP' => 0 } } })
+  end
+
+  def mfa_phone_base(name, description, steps, player_state)
+    {
+      'name' => "mfa_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => mfa_phone_scenario, 'playerState' => PHONE_STATE.deep_dup.merge(player_state), 'steps' => steps
+    }
+  end
+
+  # Direct add offered and not offered, a room add with no source, an NPC drop with and without a
+  # knock-out record, a pickup of a stored NPC drop, and the room bootstrap showing who holds a phone.
+  def mfa_phone_rule_case
+    sent = PHONE_LENA_SENT.deep_dup
+    mfa_phone_base(
+      'phone_rule', 'S8a unit 01: the Friendface phone rule (direct add, room add, KO drop, pickup) through the real routes, before any S8a engine edit.',
+      [step('bootstrap', 'GET', 'scenario'),
+       phone_add('add_lena_not_offered', { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, 'source_npc_id' => 'lena'),
+       phone_add('add_phone_no_source', { 'type' => 'phone_friendface', 'id' => 'minted', 'name' => 'Minted' }),
+       phone_add('add_phone_forged_owner', { 'type' => 'phone_friendface', 'id' => 'forged', 'name' => 'Forged', 'owner' => 'lena' }),
+       phone_room_add('room_add_no_source', { 'type' => 'phone_friendface', 'id' => 'minted', 'name' => 'Minted', 'takeable' => true }),
+       phone_room_add('room_add_lena_not_ko', sent, 'lena'),
+       phone_add('add_jake_offered', { 'type' => 'phone_friendface', 'id' => 'jake_phone', 'name' => "Jake's phone" }, 'source_npc_id' => 'jake'),
+       step('room_office_after_jake', 'GET', 'room/office'),
+       phone_knock_out('knock_out_lena', 'lena'),
+       phone_room_add('room_add_lena_ko_drop', sent, 'lena', 'npc_defeated'),
+       phone_room_add('room_add_lena_ko_drop_again', sent, 'lena', 'npc_defeated'),
+       step('room_office_with_drop', 'GET', 'room/office'),
+       phone_add('pickup_lena_drop', { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, 'source_npc_id' => 'lena'),
+       step('room_office_after_pickup', 'GET', 'room/office'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      {}
+    )
+  end
+
+  # A stored NPC drop of a phone the NPC never offered (a save made before the check): the pickup is
+  # refused until a knock-out record exists, then allowed. And a start with the phone already held.
+  def mfa_phone_rule_stored_drop_case
+    stored = PHONE_LENA.merge('x' => 64, 'y' => 96)
+    mfa_phone_base(
+      'phone_rule_stored_drop', 'S8a unit 01: pickup of a stored NPC phone drop, refused then allowed after a knock-out record, before any S8a engine edit.',
+      [step('bootstrap', 'GET', 'scenario'),
+       phone_add('pickup_stored_unoffered', { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }),
+       phone_add('pickup_stored_unoffered_sourced', { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }, 'source_npc_id' => 'lena'),
+       phone_knock_out('knock_out_lena', 'lena'),
+       phone_add('pickup_stored_after_knock_out', { 'type' => 'phone_friendface', 'id' => 'lena_phone', 'name' => "Lena's phone" }),
+       step('room_office_after', 'GET', 'room/office'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'room_states' => { 'office' => { 'objects_added' => [stored], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} } }
+    )
+  end
+
+  # test_access_habits after expand!: the stored scenario is read through the bootstrap, every room,
+  # and a sign-in then the desktop at each PC whose owner has a known account (expanded habits set the PC's lock behaviour).
+  def mfa_habits_case
+    scenario = core_render('test_access_habits')
+    people = core_people(scenario)
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    core_login_pcs(scenario).each do |pc|
+      steps << container_step("desktop_#{pc['id']}_before", pc['id'])
+      account = core_account_for(pc, people)
+      next unless account
+
+      steps << login("signin_#{pc['id']}", account[0], account[1], pc['id'])
+      steps << container_step("desktop_#{pc['id']}_after", pc['id'])
+    end
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    mfa_base('test_access_habits_expanded', 'S8a unit 01: the expanded habits of test_access_habits as the bootstrap, rooms and desktops show them, before any S8a engine edit.',
+             scenario, steps)
   end
 end

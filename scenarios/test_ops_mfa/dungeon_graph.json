@@ -1,0 +1,392 @@
+{
+  "scenario": "test_ops_mfa",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_code_pc1",
+      "label": "Accounts PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_code_pc2",
+      "label": "Ledger PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_push_pc",
+      "label": "Orders PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_match_pc",
+      "label": "Stock PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_plain_pc",
+      "label": "Shipping PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_hana",
+      "label": "Hana Quill sign-in<br/>(hquill)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "floor",
+      "label": "Floor",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_ines",
+      "label": "Ines Brandt sign-in<br/>(ibrandt)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_svc_sync",
+      "label": "Sync service sign-in<br/>(svc_sync)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_cal",
+      "label": "Cal Moss sign-in<br/>(cmoss)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "store",
+      "label": "Store room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_dev",
+      "label": "Dev Kapoor sign-in<br/>(dkapoor)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "signin_nia",
+      "label": "Nia Faraday sign-in<br/>(nfaraday)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "jack_office_port",
+      "label": "Office wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Office network<br/>Network<br/>(sweep to list)",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_mfa_audit",
+      "label": "Sign-in audit<br/>signin_ok, signin_fail, signin_lockout, signin_refused, session_end, session_lock, mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_hana_saved",
+      "label": "Hana Quill saved connection<br/>(hquill)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_hana_saved_file",
+      "label": "Accounts PC.rdp",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_hana_token",
+      "label": "Hana Quill token<br/>(hquill)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_hana_device",
+      "label": "Code device",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_src_ines_device",
+      "label": "Code device",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "mfa_approve_push_pc_cal",
+      "label": "owner approves (pestered)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_dev_phone",
+      "label": "Dev's phone",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_src_nia_phone",
+      "label": "Nia's phone",
+      "kind": "item",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "floor",
+      "to": "lock_code_pc1",
+      "soft": false
+    },
+    {
+      "from": "floor",
+      "to": "lock_code_pc2",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "lock_push_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "lock_match_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "lock_plain_pc",
+      "soft": false
+    },
+    {
+      "from": "floor",
+      "to": "signin_hana",
+      "soft": false
+    },
+    {
+      "from": "signin_hana",
+      "to": "lock_code_pc1",
+      "soft": false
+    },
+    {
+      "from": "signin_hana",
+      "to": "lock_code_pc2",
+      "soft": false
+    },
+    {
+      "from": "signin_hana",
+      "to": "lock_plain_pc",
+      "soft": false
+    },
+    {
+      "from": "floor",
+      "to": "signin_ines",
+      "soft": false
+    },
+    {
+      "from": "signin_ines",
+      "to": "lock_code_pc2",
+      "soft": false
+    },
+    {
+      "from": "floor",
+      "to": "signin_svc_sync",
+      "soft": false
+    },
+    {
+      "from": "signin_svc_sync",
+      "to": "lock_code_pc2",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_cal",
+      "soft": false
+    },
+    {
+      "from": "signin_cal",
+      "to": "lock_push_pc",
+      "soft": false
+    },
+    {
+      "from": "signin_cal",
+      "to": "lock_plain_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_dev",
+      "soft": false
+    },
+    {
+      "from": "signin_dev",
+      "to": "lock_push_pc",
+      "soft": false
+    },
+    {
+      "from": "store",
+      "to": "signin_nia",
+      "soft": false
+    },
+    {
+      "from": "signin_nia",
+      "to": "lock_match_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_office_port",
+      "soft": false
+    },
+    {
+      "from": "jack_office_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_code_pc1",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_code_pc2",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_match_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_plain_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_push_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "lobby",
+      "to": "floor",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "store",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_mfa_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "cred_src_hana_saved_file",
+      "to": "cred_hana_saved",
+      "soft": false
+    },
+    {
+      "from": "cred_hana_saved",
+      "to": "lock_code_pc1",
+      "soft": false
+    },
+    {
+      "from": "cred_hana_token",
+      "to": "lock_code_pc1",
+      "soft": false
+    },
+    {
+      "from": "cred_src_hana_device",
+      "to": "lock_code_pc1",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_hana_device",
+      "to": "lock_code_pc2",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_ines_device",
+      "to": "lock_code_pc2",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "mfa_approve_push_pc_cal",
+      "to": "lock_push_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_dev_phone",
+      "to": "lock_push_pc",
+      "soft": false,
+      "label": "second step"
+    },
+    {
+      "from": "cred_src_nia_phone",
+      "to": "lock_match_pc",
+      "soft": false,
+      "label": "second step"
+    }
+  ]
+}

@@ -53,7 +53,9 @@
  *                      or auto_locked) is sending POST /logout; its pc_signed_out follows the
  *                      answer (q44: the workstation layer keeps a guest recorded meanwhile)
  *   pc_signin_failed   { pcId, reason, attemptsLeft }  reason: wrong | not_permitted | locked_out |
- *                                                      remote_blocked
+ *                                                      remote_blocked | type_to_sign_in (with why) |
+ *                                                      mfa_wrong_code | mfa_code_locked | mfa_cancelled | mfa_expired
+ *                                                      (S8a; a second step still owed is no failure: signIn answers reason mfa_required)
  *   pc_signin_shown    { pcId, usernames, usernameList, reason? } the sign-in screen opened with
  *                      these tiles; reason (when the caller knows it) is why: signin (no owner,
  *                      or an owner not present with no away record), locked (the owner is
@@ -89,6 +91,7 @@
  * Exposed as window.pcSessions; window.__test.access.sessions() reads list().
  */
 import { syncBeforeFetch } from '../utils/sync-before-fetch.js';
+import * as mfaClient from './mfa-client.js';
 
 // A refused or lost remote sign-in after the globals sync ran out of time may only be the
 // server working from older globals: say so, in the error the player already sees (review R1 n3)
@@ -152,6 +155,8 @@ function npcName(npcId) {
  */
 export function credentialRefusalReason(b = {}) {
     if (b.remoteBlocked) return 'remote_blocked';
+    // Multi-factor sign-in (S8a): the server asks for the typed password instead of a saved credential
+    if (b.typeToSignIn) return 'type_to_sign_in';
     if (b.wrongPc) return 'wrong_pc';
     if (b.kindRefused) return 'kind_refused';
     if (b.notPermitted) return 'not_permitted';
@@ -160,6 +165,22 @@ export function credentialRefusalReason(b = {}) {
     // Keyring K5: a session token that has run out (POST /login's 422 { expired: true })
     if (b.expired) return 'expired';
     return 'no_longer_works';
+}
+
+/** The line for a type_to_sign_in refusal (S8a), by the server's `why`; shown as a notice, not an error. */
+export function typeToSignInMessage(why) {
+    return why === 'password_changed'
+        ? 'This password has been changed. Type the new one to sign in.'
+        : 'This PC asks for a second step. Type the password to sign in.';
+}
+
+/**
+ * The player-visible pc_signin_failed reason for a refused second step (S8a): wrong code, code
+ * locked, cancelled or expired. A stale code, a waiting push or a transport error is none (null).
+ * One home for the rule: mfa-client's failureReason.
+ */
+export function secondStepFailureReason(detail) {
+    return mfaClient.failureReason({ ok: false, reason: detail?.reason });
 }
 
 function apiClient() {
@@ -302,6 +323,7 @@ export class PcSessions {
      * gets its own listeners.
      */
     listen() {
+        this._wireMfa();
         this.hookSyncAnswer();
         const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
         if (!dispatcher || typeof dispatcher.on !== 'function' || this._listening === dispatcher) return false;
@@ -636,9 +658,23 @@ export class PcSessions {
                 ...(syncLate ? { syncLate: true, syncNote: SYNC_LATE_NOTE } : {})
             };
         }
+        // A first step that passed but asks for a second one is not an error and not a failed
+        // sign-in (S8a): no pc_signin_failed; the screen takes the pending record from here
+        if (body && body.mfaRequired === true) {
+            const pending = mfaClient.noteRequired(`pc:${pcId}`, body, foothold ? `foothold:${foothold}` : (from ? `from:${from}` : ''));
+            return { ok: false, reason: 'mfa_required', mfa: pending ? { ...pending } : {} };
+        }
         if (!body || body.success === false || !body.npcId) {
             return { ok: false, reason: 'error', error: true, status: null, message: body?.message || 'Sign-in failed' };
         }
+        return this._recordPasswordSession(pcId, body);
+    }
+
+    /**
+     * The session answer of a password sign-in, held and announced (pc_signed_in, ended sessions
+     * dropped). The one path for signIn and completeSecondStep.
+     */
+    _recordPasswordSession(pcId, body) {
         const session = {
             npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: body.via || 'password',
             ...pictureFields(body),
@@ -648,6 +684,53 @@ export class PcSessions {
         this._replace(pcId, session);
         this._dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds);
         return { ok: true, session: publicSession(pcId, session) };
+    }
+
+    /**
+     * A second step passed (S8a): `body` is the server's session answer. Does everything signIn
+     * does with a session answer: the mirror write, ended sessions dropped, tokenExpiredPcIds,
+     * pc_signed_in. Resolves like signIn: { ok: true, session } or { ok: false, reason: 'error' }.
+     * mfa-client calls it (configured as onSession) when a PC subject's step passes.
+     */
+    completeSecondStep(pcId, body) {
+        if (!pcId || !body || body.success === false || !body.npcId) {
+            return { ok: false, reason: 'error', error: true, status: null, message: body?.message || 'Sign-in failed' };
+        }
+        return this._recordPasswordSession(pcId, body);
+    }
+
+    /**
+     * Wire mfa-client to this mirror (S8a): the request function, the emitter, and the session
+     * sink (completeSecondStep). Called from listen(); the last mirror to listen owns the client.
+     * A refused second step (mfa_failed for a PC) emits pc_signin_failed with its reason; a stale
+     * code emits nothing because mfa-client sends no mfa_failed for it.
+     */
+    _wireMfa() {
+        mfaClient.configure({
+            request: (method, path, payload) => {
+                const api = apiClient();
+                if (!api) return Promise.reject(Object.assign(new Error('No api client'), { status: null, body: {} }));
+                if (method === 'GET') {
+                    const q = new URLSearchParams();
+                    for (const [k, v] of Object.entries(payload || {})) if (v != null) q.set(k, String(v));
+                    const qs = q.toString();
+                    return api.get(`/${path}${qs ? `?${qs}` : ''}`);
+                }
+                return api.post(`/${path}`, payload || {});
+            },
+            onSession: (pcId, body) => this.completeSecondStep(pcId, body),
+            emit: (name, detail) => {
+                const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
+                if (dispatcher && typeof dispatcher.emit === 'function') {
+                    try { dispatcher.emit(name, detail); } catch (e) { console.warn(`[pc-sessions] ${name} listeners threw`, e); }
+                }
+                if (name === 'mfa_failed' && detail?.pcId) {
+                    const reason = secondStepFailureReason(detail);
+                    if (reason) this._emit('pc_signin_failed', { pcId: detail.pcId, reason, attemptsLeft: null });
+                }
+            },
+            now: () => Date.now()
+        });
     }
 
     /**
@@ -719,12 +802,15 @@ export class PcSessions {
             if (err?.status === 422) {
                 const reason = credentialRefusalReason(b);
                 const attemptsLeft = Number.isFinite(b.attemptsLeft) ? b.attemptsLeft : null;
-                this._emit('pc_signin_failed', { pcId, reason, attemptsLeft, credential: credentialId });
+                const typeToSignIn = reason === 'type_to_sign_in';
+                const why = typeToSignIn && typeof b.typeToSignIn === 'string' ? b.typeToSignIn : null;
+                this._emit('pc_signin_failed', { pcId, reason, attemptsLeft, credential: credentialId, ...(typeToSignIn ? { why } : {}) });
                 return {
                     ok: false,
                     reason,
-                    message: b.message || 'Incorrect username or password',
+                    message: typeToSignIn ? typeToSignInMessage(why) : (b.message || 'Incorrect username or password'),
                     attemptsLeft,
+                    ...(typeToSignIn ? { why, notice: true } : {}),
                     ...(reason === 'kind_refused' && typeof b.kindRefused === 'string' ? { kind: b.kindRefused } : {})
                 };
             }
@@ -1166,6 +1252,8 @@ export const pcSessions = new PcSessions();
 export const sessionAdmin = (pcId) => pcSessions.sessionAdmin(pcId);
 export const keyboardAdmin = (pcId) => pcSessions.keyboardAdmin(pcId);
 export const plantAdmin = (objectData) => pcSessions.plantAdmin(objectData);
-if (typeof window !== 'undefined') window.pcSessions = pcSessions;
+if (typeof window !== 'undefined') { window.pcSessions = pcSessions; window.mfaClient = mfaClient; }
+
+export { mfaClient };
 
 export default pcSessions;

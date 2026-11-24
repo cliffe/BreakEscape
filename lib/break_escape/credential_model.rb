@@ -20,7 +20,7 @@ module BreakEscape
     # is refused by the validator. K5 built `token` (section 10); phase 3 builds hash.
     KINDS = {
       'password'         => { built: true,  connects: false },
-      'saved_connection' => { built: true,  connects: true, routes: %w[foothold from], honours_lockout: true },
+      'saved_connection' => { built: true,  connects: true, routes: %w[foothold from], honours_lockout: true, password: true },
       'assist_invite'    => { built: true,  connects: true, routes: %w[relay],         honours_lockout: false },
       'token'            => { built: true,  connects: true, routes: %w[proof_foothold], honours_lockout: false },
       'hash'             => { built: false } # phase 3

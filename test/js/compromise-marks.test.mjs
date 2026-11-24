@@ -19,7 +19,7 @@ process.on('exit', () => rmSync(dir, { recursive: true, force: true }));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); };
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
-for (const rel of ['systems/compromise-marks.js', 'utils/compromise-bolt.js', 'systems/pc-sessions.js', 'utils/sync-before-fetch.js',
+for (const rel of ['systems/compromise-marks.js', 'utils/compromise-bolt.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'utils/sync-before-fetch.js',
     'systems/network-links.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'utils/remote-host-text.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
