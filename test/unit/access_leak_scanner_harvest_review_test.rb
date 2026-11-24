@@ -141,4 +141,46 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     nameless['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }['creds'].delete('username')
     assert_includes rules(scan([admin_signin, collect([crow('jake', 'hot_jake', 'username' => 'x')])], scenario: nameless)), 'harvest_unearned'
   end
+
+  # ---- R1-L8: a credited row's values are the scenario's ----
+
+  test 'R1-L8: a credited row carrying another account\'s name or username, or any picture text, is flagged' do
+    assert_empty scan([admin_signin, collect([crow('jake', 'hot_jake')])])
+    swapped = [crow('jake', 'hot_jake', 'displayName' => 'Sam Ortiz'), crow('jake', 'hot_jake', 'username' => 'sortiz'),
+               crow('jake', 'hot_jake', 'avatar' => 'localTo it_pc; harvestedAccounts'), crow('jake', 'hot_jake', 'portrait' => 'anything at all')]
+    swapped.each { |bad| assert_includes rules(scan([admin_signin, collect([bad])])), 'harvest_row', bad.to_s }
+  end
+
+  test 'R1-L8: the portrait is the server\'s own talk portrait for the account' do
+    scenario = data
+    scenario['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }['spriteSheet'] = 'male_office_worker'
+    portrait = BreakEscape::Game.npc_talk_portrait(scenario['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' })
+    assert portrait.is_a?(String)
+    assert_empty scan([admin_signin, collect([crow('jake', 'hot_jake', 'portrait' => portrait)])], scenario: scenario)
+    assert_includes rules(scan([admin_signin, collect([crow('jake', 'hot_jake', 'portrait' => 'x.png')])], scenario: scenario)), 'harvest_row'
+    assert_includes rules(scan([admin_signin, collect([crow('jake', 'hot_jake')])], scenario: scenario)), 'harvest_row'
+  end
+
+  # ---- R1-L7: the borrow is proved by the capture's order, with the game's record as a floor ----
+
+  def borrow_done(pc = 'profile_pc', extra = {})
+    row({ 'pcId' => pc, 'guest' => true }.merge(extra), path: 'npc_workaround', method: 'POST')
+  end
+
+  test 'R1-L7: a borrow-gated row needs an earlier accepted borrow done answer for its PC' do
+    game = FakeGame.new(cached_at: ['profile_pc|sam'])
+    sam = collect([crow('sam', 'hot_sam')])
+    assert_includes rules(scan([admin_signin, sam], game: game)), 'harvest_unearned'
+    assert_empty scan([admin_signin, borrow_done, sam], game: game)
+    assert_includes rules(scan([admin_signin, sam, borrow_done], game: game)), 'harvest_unearned'
+    assert_includes rules(scan([admin_signin, borrow_done('it_pc'), sam], game: game)), 'harvest_unearned'
+    # a writes_down answer, a dropped hand-over, a refused answer and a text body prove nothing
+    [row({ 'pcId' => 'profile_pc', 'hasPostit' => true }, path: 'npc_workaround', method: 'POST'),
+     row({ 'dropped' => true }, path: 'npc_workaround', method: 'POST'),
+     row({ 'pcId' => 'profile_pc', 'guest' => true }, path: 'npc_workaround', method: 'POST', status: 422)].each do |not_a_done|
+      assert_includes rules(scan([admin_signin, not_a_done, sam], game: game)), 'harvest_unearned', not_a_done['body'].to_s
+    end
+    # and the floor holds: the order proof alone is not enough
+    assert_includes rules(scan([admin_signin, borrow_done, sam], game: FakeGame.new)), 'harvest_unearned'
+  end
 end

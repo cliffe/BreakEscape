@@ -4915,6 +4915,8 @@ class AccessLeakScanner
     @hv_served_hashes = Set.new # hash record ids a credited collect row named
     @hv_name_earned = Set.new   # account-only ids whose display name has been earned
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
+    @hv_borrow_seen = Set.new   # PC ids a 200 POST /npc_workaround borrow "done" answer named so far (R1-L7)
+    @hv_portraits = {}          # account id => the portrait a credited row of it showed first (R1-L8)
   end
 
   # A scan needs these readers on the game it was given: the borrow record, and the game's own admin-at-PC check.
@@ -4927,6 +4929,7 @@ class AccessLeakScanner
   end
 
   def scan_harvest(body, ctx, row, add)
+    note_harvest_borrow(body, ctx, row)
     scan_harvest_keys(body, ctx, add)
     judge_harvest_answer(body, ctx, row, add) if ctx[:harvest]
     note_harvest_keyring(body, add)
@@ -5001,12 +5004,29 @@ class AccessLeakScanner
       add.call('harvest_unearned', "account:#{npc}", path)
       return
     end
+    unless harvest_row_matches_npc?(entry)
+      add.call('harvest_row', "values:#{npc}", path)
+      return
+    end
     @hv_served_hashes << entry['hashId'] if entry['hashId']
     return unless @hv_account_only.key?(npc)
 
     @hv_name_earned << npc
     @hv_user_earned << npc
     add.call('harvest_row', "account:#{npc}", path) unless entry['portrait'].nil? && entry['avatar'].nil?
+  end
+
+  # R1-L8: the values of a credited row are the account's own, as the server builds them (`harvested_rows`): the display
+  # name (or the id), the username, the avatar string or nil, the talk portrait; an account-only account shows neither picture.
+  def harvest_row_matches_npc?(entry)
+    npc = @priv_npcs[entry['npcId']]
+    return false unless npc
+
+    only = @hv_account_only.key?(entry['npcId'])
+    avatar = only || !npc['avatar'].is_a?(String) ? nil : npc['avatar']
+    portrait = only ? nil : BreakEscape::Game.npc_talk_portrait(npc)
+    entry['displayName'] == (npc['displayName'] || npc['id']) && entry['username'] == npc.dig('creds', 'username') &&
+      entry['avatar'] == avatar && entry['portrait'] == portrait
   end
 
   def harvest_row_values_ok?(entry)
@@ -5026,7 +5046,18 @@ class AccessLeakScanner
     @hv_candidates[npc].any? { |declared, after| declared == pc && (after.nil? || harvest_borrowed?(pc, npc)) }
   end
 
+  # R1-L7: a borrow-gated account is credited at a PC only after a 200 borrow "done" answer named that PC earlier in the
+  # scan (the capture's order proof), AND the game's own record holds the pair (the floor: the answer does not name the
+  # borrower, so the end state says which borrower it was).
+  def note_harvest_borrow(body, ctx, row)
+    return unless ctx[:npc_workaround] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
+    return unless body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId']) && [true, false].include?(body['guest']) && !body.key?('hasPostit')
+
+    @hv_borrow_seen << body['pcId']
+  end
+
   def harvest_borrowed?(pc_id, npc_id)
+    return false unless @hv_borrow_seen.include?(pc_id)
     return false unless @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash)
 
     at = @game.player_state['cachedAt']

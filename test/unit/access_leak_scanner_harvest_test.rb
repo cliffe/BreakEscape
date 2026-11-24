@@ -55,8 +55,11 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
         path: 'login', method: 'POST', extra: { 'login' => { 'pcId' => pc } })
   end
 
+  # a row as the server builds it: the account's own display name, username and avatar (R1-L8 ties a credited row to them)
   def collect_row(npc, hash_id, extra = {})
-    { 'npcId' => npc, 'displayName' => npc.capitalize, 'username' => "u_#{npc}", 'portrait' => nil, 'avatar' => nil, 'hashId' => hash_id }.merge(extra)
+    n = data['rooms']['finance']['npcs'].find { |x| x['id'] == npc }
+    { 'npcId' => npc, 'displayName' => n ? (n['displayName'] || npc) : npc, 'username' => n&.dig('creds', 'username') || "u_#{npc}",
+      'portrait' => nil, 'avatar' => n && n['avatar'].is_a?(String) ? n['avatar'] : nil, 'hashId' => hash_id }.merge(extra)
   end
 
   def collect(rows, held: nil, status: 200, pc: 'profile_pc', extra: {})
@@ -114,6 +117,10 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     rows = [admin_signin, collect([collect_row('sam', 'hot_sam')])]
     assert_includes rules(scan(rows)), 'harvest_unearned'
     assert_includes rules(scan(rows, game: FakeGame.new)), 'harvest_unearned'
+    # R1-L7: the game's record is a floor; the capture must also hold the accepted borrow "done" answer for that PC first
+    assert_includes rules(scan(rows, game: FakeGame.new(cached_at: ['profile_pc|sam']))), 'harvest_unearned'
+    done = row({ 'pcId' => 'profile_pc', 'guest' => true }, path: 'npc_workaround', method: 'POST')
+    rows = [admin_signin, done, collect([collect_row('sam', 'hot_sam')])]
     assert_empty scan(rows, game: FakeGame.new(cached_at: ['profile_pc|sam']))
     assert_includes rules(scan(rows, game: FakeGame.new(cached_at: ['it_pc|sam']))), 'harvest_unearned'
   end
