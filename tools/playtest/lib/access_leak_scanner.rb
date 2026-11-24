@@ -5,6 +5,7 @@ require 'set'
 require 'cgi'
 require 'time'
 require 'uri'
+require_relative '../../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
 require_relative '../../../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
@@ -57,6 +58,15 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # Pages (engine plan section 6): a row with a "dom" key instead of a body is the text of a
 # page the tester read (the capture log device, a captures terminal), labelled by its "label".
 # It is checked for passwords like a /capture_secrets answer, since that is all such a page shows.
+#
+# Award facts (S7 review R2-L1, rule `fact_unearned`): the entry, label or text of an intel fact an item (revealsFacts) or a
+# flag reward (grant_fact) awards is a finding anywhere until a 200 answer grants it, in the server's own place and shape:
+# the top-level `facts` of an inventory answer (item facts), a grant_fact reward's `entry`, a give_item reward's `facts`.
+# After the grant the bootstrap's social.intelFacts may hold it, and its text or label may appear in any string. An entry
+# anywhere else is a finding even when earned. Given a game, a fact it has not earned (earned_fact_ids at the end of the
+# run) is a finding at every place; without a game the scanner cannot tell earned from unearned, so only the place, the
+# shape and the order are judged (a grant is taken from the answer itself). Feed facts keep the feed rules. Limit: the
+# earned set is read once, at the end of the run.
 #
 # Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6) adds two exceptions and one finding:
 #
@@ -429,6 +439,7 @@ class AccessLeakScanner
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
+    collect_facts
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -513,6 +524,8 @@ class AccessLeakScanner
     @ops_earned = @ops_supplied | @ops_start_steps
     @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
     @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
+    @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
+    @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
@@ -568,6 +581,7 @@ class AccessLeakScanner
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
       scan_crack(body, ctx, row, add)
+      scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
     end
@@ -623,6 +637,7 @@ class AccessLeakScanner
     'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
     'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
     'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
+    'fact_unearned' => "an intel fact's entry, label or text before the answer that grants it (the entry only in the bootstrap's social.intelFacts after the grant, the top-level facts of an inventory answer, the entry of a grant_fact reward or the facts of a give_item reward, in the server's own shape), or any entry of a fact the game has not earned",
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
   }.freeze
 
@@ -3808,6 +3823,116 @@ class AccessLeakScanner
 
       add.call('crack_unearned', "crack:entry:#{hash['id'].is_a?(String) ? hash['id'] : '?'}", safe_path(json_path))
     end
+  end
+
+
+  # ---- award facts (S7 review R2-L1) ---------------------------------------------------------------
+
+  # The facts an item (revealsFacts) or a flag reward (grant_fact) awards are withheld from the bootstrap until earned
+  # (EarnedFacts#withhold_unearned_facts!) and sent with the answer that earns them: the inventory answer's top-level
+  # `facts`, a grant_fact reward's `entry`, a give_item reward's `facts`. A reload then holds the entry in the bootstrap's
+  # social.intelFacts. Feed facts keep their own rules (scan_feed) and are left out here, so nothing is reported twice.
+  # Given a game, a fact it has not earned is a finding wherever its entry, label or text sits; without one the scanner
+  # cannot tell earned from unearned, so only the place, the shape and the order are judged.
+  def collect_facts
+    @fact_entries = {} # id => { entry: the server's entry (notes stripped), text:, label: }
+    @fact_item_ids = Set.new
+    @fact_grant_ids = Set.new
+    @fact_start_ids = Set.new
+    facts = @data.dig('social', 'intelFacts')
+    return unless facts.is_a?(Hash)
+
+    walk = lambda do |node, key|
+      case node
+      when Hash then node.each { |k, v| walk.call(v, k) }
+      when Array
+        node.each { |f| @fact_item_ids << f if key == 'revealsFacts' && f.is_a?(String) && !f.empty? }
+        node.each { |r| @fact_grant_ids << r['fact'] if key == 'flagRewards' && r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String) }
+        node.each { |v| walk.call(v, key) }
+      end
+    end
+    walk.call(@data.except('social'), nil)
+    Array(@data['startItemsInInventory']).each do |item|
+      next unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      Array(data['revealsFacts']).grep(String).each { |f| @fact_start_ids << f }
+    end
+    feed = Set.new(BreakEscape::AccessWork.feed_facts(@data)) | @feed_fact_ids
+    (@fact_item_ids | @fact_grant_ids).each do |id|
+      next if feed.include?(id) || !facts[id].is_a?(Hash)
+
+      entry = Marshal.load(Marshal.dump(facts[id]))
+      BreakEscape::AuthorNotes.strip_notes!(entry, BreakEscape::ScenarioSchema.at('#/definitions/socialIntelFact'))
+      @fact_entries[id] = { entry: entry, text: entry['text'], label: entry['label'] }
+    end
+    @fact_start_ids &= @fact_entries.keys.to_set
+  end
+
+  # { json path of an entry the server sends in this answer => fact id } for the three places that carry one, and the
+  # bootstrap's own, each only for the exact entry the scenario holds and only on a 200 answer.
+  def fact_places(body, ctx, row)
+    places = {}
+    return places unless body.is_a?(Hash) && row['status'].is_a?(Integer) && row['status'] == 200
+
+    route = ctx[:route]
+    if route.start_with?('POST ') && route.end_with?('/inventory') && body['facts'].is_a?(Hash)
+      body['facts'].each { |id, e| places["$.facts.#{id}"] = [id, :item] if fact_entry_ok?(id, e, @fact_item_ids) }
+    end
+    if route.start_with?('POST ') && (route.end_with?('/flags') || route.end_with?('/unlock')) && body['rewards'].is_a?(Array)
+      body['rewards'].each_with_index do |r, i|
+        next unless r.is_a?(Hash)
+
+        id = r['fact']
+        places["$.rewards[#{i}].entry"] = [id, :grant] if r['type'] == 'grant_fact' && id.is_a?(String) && fact_entry_ok?(id, r['entry'], @fact_grant_ids)
+        next unless r['type'] == 'give_item' && r['facts'].is_a?(Hash)
+
+        r['facts'].each { |fid, e| places["$.rewards[#{i}].facts.#{fid}"] = [fid, :item] if fact_entry_ok?(fid, e, @fact_item_ids) }
+      end
+    end
+    if ctx[:scenario] && body.dig('social', 'intelFacts').is_a?(Hash)
+      body['social']['intelFacts'].each do |id, e|
+        places["$.social.intelFacts.#{id}"] = [id, :bootstrap] if @fact_granted.include?(id) && fact_entry_ok?(id, e, @fact_entries.keys)
+      end
+    end
+    places
+  end
+
+  def fact_entry_ok?(id, entry, sources)
+    known = @fact_entries[id]
+    id.is_a?(String) && known && sources.include?(id) && fact_earned_by_game?(id) && entry == known[:entry]
+  end
+
+  def fact_earned_by_game?(id)
+    @fact_game_earned.nil? || @fact_game_earned.include?(id)
+  end
+
+  def scan_facts(body, ctx, row, add)
+    return if @fact_entries.empty?
+
+    places = fact_places(body, ctx, row)
+    granted_now = places.values.reject { |_id, kind| kind == :bootstrap }.map(&:first).to_set
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @fact_entries.key?(k) && v.is_a?(Hash) && (v.key?('label') || v.key?('text'))
+
+        path = "#{json_path}.#{k}"
+        add.call('fact_unearned', "fact:#{k}", safe_path(path)) unless places.key?(path)
+      end
+    end
+    each_string(body) do |str, json_path, _owner|
+      next if places.keys.any? { |p| json_path == p || json_path.start_with?("#{p}.") || json_path.start_with?("#{p}[") }
+
+      @fact_entries.each do |id, f|
+        hit = (f[:text].is_a?(String) && content_match?(str, [f[:text]])) ||
+              (f[:label].is_a?(String) && !f[:label].empty? && str.strip == f[:label] && !@public_strings.include?(f[:label]))
+        next unless hit
+        next if fact_earned_by_game?(id) && (@fact_granted.include?(id) || granted_now.include?(id))
+
+        add.call('fact_unearned', "fact:#{id}", safe_path(json_path))
+      end
+    end
+    @fact_granted.merge(granted_now)
   end
 
   def safe_path(json_path)

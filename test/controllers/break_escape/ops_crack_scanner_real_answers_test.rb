@@ -100,6 +100,13 @@ module BreakEscape
       rows = deep(captured)
       rows[last_keyring]['body']['crack'] = { 'password' => 'strong' }
       out << ['a recipe key in the keyring answer', 'crack_key', rows]
+
+      # R2-L1: an item fact's entry put into the very first answer (the bootstrap), before the take that earns it
+      rows = deep(captured)
+      entry = scenario.dig('social', 'intelFacts', 'dana_pet')
+      rows.unshift({ 'method' => 'GET', 'path' => rows.first['path'].sub(%r{/games/(\d+)/.*\z}, '/games/\\1/scenario'), 'status' => 200,
+                     'body' => { 'social' => { 'intelFacts' => { 'dana_pet' => entry } } } })
+      out << ['an unearned fact entry in the bootstrap', 'fact_unearned', rows]
       out
     end
   end
