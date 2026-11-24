@@ -67,7 +67,7 @@
    "seat": {
     "seat": "full",
     "chip": "MERRIN & SALLOW",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -110,7 +110,7 @@
    "ca": {
     "title": "Social media and oversharing",
     "company": "Merrin & Sallow Architects",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "duration": 5.4
   },
@@ -140,7 +140,7 @@
    "seat": {
     "seat": "full",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -207,7 +207,7 @@
    "seat": {
     "seat": "attack",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -253,7 +253,7 @@
    "seat": {
     "seat": "attack",
     "chip": "MESSAGE BUILDER",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -299,7 +299,7 @@
    "seat": {
     "seat": "attack",
     "chip": "THE SEND",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -345,7 +345,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -402,7 +402,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -489,7 +489,7 @@
    "seat": {
     "seat": "defend",
     "chip": "POST OR NOT?",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -535,7 +535,7 @@
    "seat": {
     "seat": "defend",
     "chip": "TIGHTEN THE SETTINGS",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -581,7 +581,7 @@
    "seat": {
     "seat": "defend",
     "chip": "MESSAGES AND REQUESTS",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -629,7 +629,7 @@
    "seat": {
     "seat": "full",
     "chip": "THE TEAM",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {

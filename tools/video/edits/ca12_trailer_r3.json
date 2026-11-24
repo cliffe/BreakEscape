@@ -93,7 +93,7 @@
    "ca": {
     "title": "Visitors and tailgating",
     "company": "Merrin & Sallow Architects",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "duration": 5.3667
   },
@@ -188,7 +188,7 @@
    "seat": {
     "seat": "attack",
     "chip": "OPEN-SOURCE RESEARCH",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -234,7 +234,7 @@
    "seat": {
     "seat": "attack",
     "chip": "COVER STORY",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -280,7 +280,7 @@
    "seat": {
     "seat": "attack",
     "chip": "FRONT DESK",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -360,7 +360,7 @@
    "seat": {
     "seat": "attack",
     "chip": "FRONT DESK",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -419,7 +419,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -467,7 +467,7 @@
    "seat": {
     "seat": "defend",
     "chip": "YOUR TURN",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -547,7 +547,7 @@
    "seat": {
     "seat": "defend",
     "chip": "VISITOR QUEUE",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -596,7 +596,7 @@
    "seat": {
     "seat": "defend",
     "chip": "VISITOR QUEUE",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
@@ -647,7 +647,7 @@
    "seat": {
     "seat": "defend",
     "chip": "THE TEAM",
-    "stripe": "#8a5a2b"
+    "stripe": "#6b4c9a"
    },
    "framing": {
     "16:9": {
