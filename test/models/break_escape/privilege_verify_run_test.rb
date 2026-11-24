@@ -60,6 +60,25 @@ module BreakEscape
       assert_includes session_line(out, 'bay_pc'), 'level none'
     end
 
+    # lets a test make `session_access` raise for one run (a flag, so the prepend is harmless to other tests)
+    module RaisingSessionAccess
+      def session_access(*)
+        raise 'boom' if Thread.current[:raise_session_access]
+
+        super
+      end
+    end
+    Game.prepend(RaisingSessionAccess)
+
+    test 'a raise inside the level work prints level error, not the word of a locked session' do
+      hold('bay_pc' => { 'id' => 'adel', 'via' => 'password' })
+      Thread.current[:raise_session_access] = true
+      out = run_script
+      assert_includes session_line(out, 'bay_pc'), 'level error'
+    ensure
+      Thread.current[:raise_session_access] = nil
+    end
+
     test 'a level word is one of three words and carries no password' do
       hold('bay_pc' => { 'id' => 'adel', 'via' => 'password' })
       out = run_script

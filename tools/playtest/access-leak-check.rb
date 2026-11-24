@@ -3,6 +3,12 @@
 #
 #   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <responses.jsonl> [more.jsonl ...]
 #
+# A keyboard sign-in answer does not say which PC it was at, and the capture holds no request body. Where more than one PC
+# admits the account the sign-in earns nothing; name the PC of ONE sign-in with `--signin <account id>@<pc id>#<n>`
+# (the account's n-th successful sign-in answer in the log, counting from 1 over all the files given) or
+# `--signin <account id>@<pc id>@<row time>` (the row's `t`), repeatable. It is credited from that row only, for that
+# account only. Put the options after the game id and before the files; a bare `--` ends them.
+#
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
 # game's own scenario data on the server, so the tester never sees them, and no output line
@@ -43,7 +49,18 @@
 # overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
-game_id, *files = ARGV
+args = ARGV.dup
+signins = []
+while (i = args.index('--signin'))
+  value = args[i + 1]
+  if value.nil? || value.start_with?('--')
+    warn 'usage: --signin <account id>@<pc id>#<n>'
+    exit 2
+  end
+  signins << value
+  args.slice!(i, 2)
+end
+game_id, *files = args
 if game_id.nil? || files.empty?
   warn 'usage: access-leak-check.rb <game_id> <responses.jsonl> [more.jsonl ...]'
   exit 2
@@ -92,7 +109,12 @@ if game_problem
   exit 2
 end
 
-findings = scanner.scan(lines)
+begin
+  findings = scanner.scan(lines, signins: signins)
+rescue ArgumentError => e
+  warn e.message
+  exit 2
+end
 counts = scanner.counts
 
 puts "access leak check: game #{game.id} (mission #{game.mission_id}), #{lines.length} responses from #{files.length} file(s)"

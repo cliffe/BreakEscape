@@ -79,12 +79,13 @@ ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures log
 OPS_ID = /\A[A-Za-z0-9_.\-]{1,120}\z/.freeze
 
 # S5a (privilege plan): the level the server works out NOW for a session, from the game's own `session_access`: `admin`,
-# `user`, or `none` (locked, expired, route down, PC off, account gone, or no game to ask). A word only, never stored.
+# `user`, or `none` (locked, expired, route down, PC off, account gone, or no game to ask), or `error` when asking raised (never the same word as a
+# locked session). A word only, never stored.
 def computed_level(game, pc_id)
   level = game.respond_to?(:session_access) ? game.session_access(pc_id) : nil
   %w[admin user].include?(level) ? level : 'none'
 rescue StandardError
-  'none'
+  'error'
 end
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
