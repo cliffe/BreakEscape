@@ -259,6 +259,8 @@ function resolveVerb(token, prompt, { allowNmap = false } = {}) {
         ...verbs.filter(v => t !== '' && v.startsWith(t)),
         ...Object.keys(aliases).filter(a => t !== '' && a.startsWith(t)).map(a => aliases[a])
     ]);
+    // A move that ends the trip needs its whole verb: a short form is refused, not run.
+    if (pre.length === 1 && (pre[0] === 'unplug' || pre[0] === 'exit')) return { msg: message(fill(T.UNKNOWN, { verb: pre[0] })) };
     if (pre.length === 1) return { verb: pre[0] };
     if (pre.length > 1) return { msg: message(fill(T.COULD_BE, { ids: pre.join(', ') })) };
     let best = verbs[0];

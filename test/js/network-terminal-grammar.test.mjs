@@ -579,3 +579,23 @@ test('R1-C3: two findings with one authored module path, and two services on one
         sameOffer(p(line, dual, dOffers), offer);
     }
 });
+
+test('a short form of a move that ends the trip is refused at both prompts; whole verbs resolve as before', () => {
+    const view = viewOf('planted_box');
+    const offers = offersFor(view, 'jack_a');
+    assert.ok(offers.some(o => o.action === 'unplug'), 'an unplug offer is present');
+    const unplug = offers.find(o => o.action === 'unplug');
+    const exitLocal = (r) => { assert.equal(r.kind, 'local', JSON.stringify(r)); assert.equal(r.name, 'exit'); };
+    for (const mode of [SHELL, MSF]) {
+        for (const [line, verb] of [['un', 'unplug'], ['unplu', 'unplug'], ['ex', 'exit'], ['q', 'exit'], ['qui', 'exit']]) {
+            const r = p(line, view, offers, mode);
+            // In the msf prompt `un` also fits unset and `ex` also fits exploit: several verbs answer Could be as before.
+            if (mode === MSF && (line === 'ex' || line === 'un')) { assert.match(msg(r), /^Could be: /); continue; }
+            assert.equal(msg(r), `Unknown command. Did you mean ${verb}?`, `${mode.prompt} ${line}`);
+            assert.match(msg(p(`${line}; look`, view, offers, mode)), /Did you mean/);
+        }
+        for (const line of ['unplug', 'UNPLUG', '  unplug  ']) sameOffer(p(line, view, offers, mode), unplug);
+        for (const line of ['exit', 'quit', 'EXIT', '  quit  ']) exitLocal(p(line, view, offers, mode));
+    }
+    assert.equal(G.complete('un', offers, view, SHELL).completed, 'unplug ');
+});
