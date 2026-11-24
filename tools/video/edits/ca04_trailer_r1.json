@@ -404,8 +404,8 @@
    },
    "source": {
     "file": "t03_thandiwe_flip.trimmed.mkv",
-    "in": 15.7,
-    "out": 22.8
+    "in": 9.398,
+    "out": 16.498
    },
    "audio": {
     "gain_db": 0,
@@ -591,8 +591,8 @@
    },
    "source": {
     "file": "t06_thandiwe_end.trimmed.mkv",
-    "in": 16.8,
-    "out": 22.9
+    "in": 22.116,
+    "out": 28.216
    },
    "audio": {
     "gain_db": 0,
