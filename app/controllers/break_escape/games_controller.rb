@@ -4,6 +4,10 @@ module BreakEscape
   class GamesController < ApplicationController
     helper PlayerPreferencesHelper
 
+    # --- S8c unit 14: second step on any lock (one block; helpers in lock_step_requests.rb) ---
+    include BreakEscape::LockStepRequests
+    # --- end S8c unit 14 ---
+
     # Phaser.js creates blob-URL web workers (physics, audio) and uses eval
     # internally. Fonts are loaded via direct <link> tags (no JS loader) so
     # no CDN script allowlist is needed beyond self/https.
@@ -636,6 +640,9 @@ module BreakEscape
       # Access model (section 6): a sign-in PC is opened by a session, never by
       # unlockedObjects, and a folder under a sign-in PC or in a profile needs a session
       # that admits it, with it and every container above it unlocked.
+      # S8c unit 14: below a closed step, or a gated object not open, is refused as an invented id
+      return render_error("Container not found: #{container_id}", :not_found) if lock_step_container_refused?(container_id)
+
       located = @game.login_scope_of(container_id)
       refusal = container_reach_refusal(located)
       return render_container_refusal(refusal, container_id, located) if refusal
@@ -1204,14 +1211,19 @@ module BreakEscape
       # must not say which of the sent cards the list admits, or a request per copy would
       # sort the player's copies after the first yes (UX slice 3b R1 m1)
       # Ops log L1b: every rfid request answers it, a card list or not
-      already_open = method == 'rfid' &&
-                     (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
+      # S8c unit 14: resolved once when any object carries a step; a gated target is open by Rule B
+      resolved = lock_step_resolve(target_type, target_id)
+      already_open = method == 'rfid' && lock_step_already_open?(target_type, target_id, resolved)
       # Ops log L1b: an rfid lock in force and not open, judged before the unlock changes it
       rfid_in_force = method == 'rfid' && !already_open && !@game.ops_rfid_lock_in_force(target_type, target_id).nil?
 
-      is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
+      is_valid = resolved ? @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids, resolved: resolved)
+                          : @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
       unless is_valid
+        # S8c unit 14: Rule C or D refuses as an invented id does, before any row or feedback
+        return render_lock_step_refusal if lock_step_scope_refused?(resolved)
+
         # Ops log L1b: a refused rfid post at an rfid lock in force; saves only when the row stored
         if rfid_in_force
           badge = @game.write_badge_swipe_denied!(target_type, target_id)
@@ -1266,6 +1278,9 @@ module BreakEscape
                       status: :forbidden
       end
 
+      # S8c unit 14: the gate, before the transaction (nothing is written for a refusal)
+      return if lock_step_gate_rendered?(target_type, target_id, method, resolved)
+
       # Use transaction to ensure atomic update
       flag_not_recorded = false
       ActiveRecord::Base.transaction(requires_new: true) do
@@ -1288,6 +1303,7 @@ module BreakEscape
             # unlock_room! adds the room, then credit viaCredential on the server possession result
             # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
             # Chunk A interim where a credential unlock left the room in both lists.
+            lock_step_clear_door_record(target_id) # S8c unit 14: a gated door's record goes with the open
             credit_credential = @game.split_gated_door?(target_id) && !@game.room_unlocked?(target_id)
             room_data = serve_opened_room(target_id)
             @game.credit_via_credential!(target_id, method, card_ids) if credit_credential
@@ -1308,10 +1324,10 @@ module BreakEscape
           # Object/container unlock
           # Ops log L1b: the granted swipe, before unlock_object! saves it
           @game.write_badge_swipe_ok!(target_type, target_id, card_ids) if rfid_in_force
-          @game.unlock_object!(target_id)
+          lock_step_open_object!(resolved, method, target_id) # S8c unit 14: record_step_open! for a gated object
 
           # Find the unlocked object and return its contents if it's a container
-          object_data = find_object_in_scenario(target_id)
+          object_data = resolved ? resolved[:object] : find_object_in_scenario(target_id)
           response = {
             success: true,
             type: 'object'
@@ -1421,6 +1437,10 @@ module BreakEscape
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
+          # S8c unit 14: an item below a closed step, or out of reach, reads as an invented item
+          if validation_error.nil? && lock_step_take_refused?(@collectible_item)
+            validation_error = "Item not found in scenario: #{item['type']}"
+          end
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
             return render json: { success: false, message: validation_error },
@@ -1586,10 +1606,12 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
+      # S8c unit 14: the lock form (target_type and target_id) is dispatched here
+      form = mfa_form
+      return mfa_lock_verify if form == :lock
+      return render_mfa_generic unless form == :pc
+
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
-        return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
-      end
 
       result = with_game_lock { @game.verify_sign_in_code!(pc_id, params[:code].is_a?(String) ? params[:code] : '') }
       render json: result[:body], status: result[:status]
@@ -1603,10 +1625,12 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
+      # S8c unit 14: the lock form (target_type and target_id) is dispatched here
+      form = mfa_form
+      return mfa_lock_prompt if form == :lock
+      return render_mfa_generic unless form == :pc
+
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
-        return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
-      end
 
       result = with_game_lock { @game.prompt_sign_in!(pc_id) }
       render json: result[:body], status: result[:status]
@@ -1620,6 +1644,8 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
+      return mfa_lock_phone if mfa_lock_phone_named? # S8c unit 14
+
       npc_id = params[:npc_id]
       answer = npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:own) ? @game.mfa_phone_answer(npc_id) : :no_phone
       if answer == :no_phone
@@ -1636,10 +1662,12 @@ module BreakEscape
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
+      # S8c unit 14: the lock form (target_type and target_id) is dispatched here
+      form = mfa_form
+      return mfa_lock_approve if form == :lock
+      return render_mfa_generic unless form == :pc
+
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
-        return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
-      end
 
       number = params[:number]
       number = Integer(number, 10) if number.is_a?(String) && number.match?(/\A\d{1,3}\z/)
