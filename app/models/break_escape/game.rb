@@ -3561,10 +3561,19 @@ module BreakEscape
     end
 
     # A PC's access list admits the account; no access list admits every account (5.2).
+    # S5c: one definition, CredentialModel's (the kind first, then the access list); proved equal
+    # on every shipped scenario by pc_admits_account_test.rb before this delegated.
     def pc_admits_account?(pc, npc)
-      return true if pc['access'].nil?
+      CredentialModel.pc_admits_account?(pc, npc)
+    end
 
-      self.class.acl_admits?(pc['access'], npc)
+    # S5c: the kind ('local' or 'domain') of an account that the PC's KIND refuses, else nil. The
+    # kind detail of a signin_refused row is written only when the kind did the refusing.
+    def refusing_account_kind(pc, npc)
+      return nil if AccessIdentities.account_kind_admits?(pc, npc)
+
+      kind = npc['creds']['accountKind']
+      %w[local domain].include?(kind) ? kind : nil
     end
 
     # The accounts present on a PC for an admin session's profile reach: its owner, then (S5b) the
@@ -3662,8 +3671,10 @@ module BreakEscape
       if secret.is_a?(String) && !secret.empty? && password.to_s == secret
         unless pc_admits_account?(pc, npc)
           # Ops log L1b: a right password the PC does not admit; saves only when the row stored
+          kind = refusing_account_kind(pc, npc) # S5c
           r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
                                                 where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
+                                                detail: kind ? { 'kind' => kind } : nil,
                                                 save_limit: true)
           save! if r&.stored?
           return { status: :unprocessable_entity,
@@ -4102,7 +4113,8 @@ module BreakEscape
 
       encountered = Array(player_state['encounteredNPCs'])
       account_npcs.select do |npc|
-        pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
+        !AccessIdentities.account_only?(npc) && # S5c: no tile for an account with no person behind it
+          pc_admits_account?(pc, npc) && (picker != 'known' || encountered.include?(npc['id']))
       end.map do |npc|
         {
           'username' => npc['creds']['username'],
