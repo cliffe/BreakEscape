@@ -21,6 +21,11 @@
 # a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
 # an error (exit 2), never silence. Put the options after the game id and before the files. When checking after every beat, give only the entries for rows already in the files.
 #
+# In a scenario whose PCs ask for a second step (multi-factor sign-in, S8a) the same `--signin` and `--logout` entries place the
+# sign-in or sign-out the capture cannot place (the recorder writes no PC for it). An honest run of test_ops_mfa's playtest needs
+# `--signin hana@code_pc1#1 --signin cal@plain_pc#1`. A named sign-in at a PC that asks for the step is still judged: it needs the step
+# passed first, or the one unlock of a locked session; naming a PC earns nothing. `--resume` has nothing to restore there.
+#
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
 # game's own scenario data on the server, so the tester never sees them, and no output line

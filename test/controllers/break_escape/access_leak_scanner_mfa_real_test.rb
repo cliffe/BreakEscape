@@ -431,9 +431,9 @@ module BreakEscape
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body']['kind'] = 'saved_connection' }
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body']['via'] = 'password' }
       assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body']['relay'] = false; r['body']['via'] = 'unknown' }
-      %w[claim technique].each do |via|
-        assert_equal [], mfa(scan(doctored(:token) { |r| r['body'] = r['body'].merge('via' => via).except('kind', 'label', 'expiresInS', 'route') }))
-      end
+      # the claim is the one answer of POST login that skips the step; the server never answers a sign-in as a technique (S8a R1-L3)
+      assert_equal [], mfa(scan(doctored(:token) { |r| r['body'] = r['body'].merge('via' => 'claim').except('kind', 'label', 'expiresInS', 'route') }))
+      assert_found ['mfa_session', 'mfa:session:hana'], doctored(:token) { |r| r['body'] = r['body'].merge('via' => 'technique').except('kind', 'label', 'expiresInS', 'route') }
       assert_equal [], mfa(scan(doctored(:token) { |r| r['body'] = r['body'].merge('relay' => true) }))
       # a body that says the account is unenrolled exempts nothing, and a host label names the PC as the tag does
       rows = doctored(:unlock) { |r| r['body']['mfa'] = false; r.delete('login'); r['body']['host'] = 'ACC01' }
