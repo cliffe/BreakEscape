@@ -82,8 +82,7 @@ scenario file is edited; shipped scenarios play and validate as before, but for 
   the focus and nothing was sent. Add: the same refetch from Panels keeps the switch and a press still reaches
   the Terminal; typed `show` and `unplug` still work on that view; a second `mount` of a body with no ops block
   gives Panels with no switch. The tests at `:60` and `:347` pass untouched.
-- Done: these, `network-view.test.mjs`, `network-view-ops.test.mjs`, `network-skin-unchanged.test.mjs` and
-  `network-view-panels-same.test.mjs` pass.
+- Done: these and the `network-view`, `network-view-ops`, `network-skin-unchanged`, `network-view-panels-same` tests pass.
 
 **B2. The whole verb for a move that ends the trip**
 - Files: `NV/terminal-grammar.js`, `test/js/network-terminal-grammar.test.mjs`.
@@ -135,8 +134,8 @@ scenario file is edited; shipped scenarios play and validate as before, but for 
   with one from a documentation range. Keep each sentence's meaning. Copy no nickname into the commit message,
   the test or your reply.
 - Tests: one new test: neither file matches a pattern of
-  `realism_skin_nickname_patterns(realism_word_list(REALISM_NICKNAMES_PATH))`; a failure names file and line only.
-- Done: the separation test file passes.
+  `realism_skin_nickname_patterns(realism_word_list(REALISM_NICKNAMES_PATH))`; a failure names file and line
+  only. Done: the separation test file passes.
 
 **B7. Validator warning: a container a player cannot open**
 - Files: `scripts/validate_scenario.rb` (one new function `check_unopenable_containers(json_data)` and one
@@ -171,7 +170,7 @@ scenario file is edited; shipped scenarios play and validate as before, but for 
 - Tests: no option gives `?net_skin=gui`, or `&net_skin=gui` after a query, in the `--url X` and `--url=X` forms;
   a URL with `net_skin=cli` is handed on unchanged; `--net-skin default` hands the URL on unchanged and removes
   the option; the tag is equal in every case; the bad-value test still passes; the test at `:27` is rewritten.
-- Done: the test file passes; `bash -n` is clean on both scripts.
+  Done: the test file passes; `bash -n` is clean on both scripts.
 
 ### Wave 2 (two units, after wave 1 has landed)
 
@@ -211,10 +210,10 @@ scenario file is edited; shipped scenarios play and validate as before, but for 
 - **B1.** In an ops scenario, plug the device into a jack, open the view, press the switch to Terminal. When the
   view's last ops network is lost (an open network with services goes down, or the linked network's session
   ends), the Terminal, its log and the switch stay; before, Panels replaced them without a word.
-- **B2.** In the Terminal type `un` and press Enter: `Unknown command. Did you mean unplug?`, the device stays
-  in. Type `unplug`: the device comes out and the view closes. `ex` is refused the same way; `exit` closes.
-- **B3.** In the Terminal type `show`, scan a host, and in the framework console type `search`: the columns line
-  up, on a desktop and at a phone width (390 px), where a wide table scrolls sideways.
+- **B2.** In the Terminal type `un`, Enter: `Unknown command. Did you mean unplug?` and the device stays in. Type
+  `unplug`: the device comes out and the view closes. `ex` is refused the same way; `exit` closes the view.
+- **B3.** In the Terminal type `show`, scan a host, then `msfconsole` and `search`: the columns line up on a
+  desktop and at a phone width (390 px), where a wide table scrolls sideways.
 
 ## Playtest outline (after wave 2; Sonnet; own keyless server on 3400-3499, own games from `new-game.rb`)
 
