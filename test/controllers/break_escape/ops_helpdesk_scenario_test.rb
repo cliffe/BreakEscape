@@ -538,6 +538,8 @@ module BreakEscape
       ask_row(UGO[0], 'password', WRONG)
       ask_row(UGO[0], 'password', WRONG, :refused_last)
       ask_row(UGO[0], 'password', WRONG, :blocked)
+      # the audit rows through the lobby's reader terminal, the route a player uses (the scanner's log-row rules read them)
+      get_row('log_rows', { object_id: 'audit_log_pc' }, :audit)
       get_row('scenario', {}, :boot_end)
       @log
     end
@@ -570,6 +572,7 @@ module BreakEscape
       assert_equal 'npc_id=vera', @marks[:own_device]['query']
       assert_equal 'own=1', @marks[:own_phone]['query']
       assert_equal 'own=1', @marks[:own_approve]['query'], 'the approve row carries own=1 in its query, as the client sends it'
+      assert_equal 200, @marks[:audit]['status']
       assert_includes @marks[:boot0]['body'].keys, 'helpdeskForms'
       assert_equal %w[desk id name type], @marks[:front_desktop]['body']['contents'].find { |i| i['id'] == 'front_form' }.keys.sort
       write_capture if ENV['CAPTURE']

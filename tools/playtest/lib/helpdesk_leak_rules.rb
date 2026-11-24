@@ -43,8 +43,9 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
 # refusals last. (2) A desk NPC being met, a typed answer being right and the typed username cannot be checked; only that the
 # named desk could have granted the named account. (3) A code's value is never checked. (4) An earlier stop, grant or phone
-# before the first captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}` or as a hash holding
-# the id as a value beside the answer, not inside an array. (6) The main scanner is touched in six places: the require, the
+# before the first captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}`, as a hash holding
+# the id as a value beside the answer, as `{<question id>: [<answer>, ...]}` and as an array (nested ones flattened) holding the id
+# beside the answer; one split across two keys or two arrays is not (no id and answer in one place). (6) The main scanner is touched in six places: the require, the
 # include, `helpdesk_begin_scan`, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at`
 # (`hd_reenrolled?`) and the approve clause of `mfa_pass_pc` (`hd_own_approval?`); S8c merges keep both.
 module HelpdeskLeakRules
@@ -181,10 +182,15 @@ module HelpdeskLeakRules
 
   def hd_walk_keys(body, minfo, flags, add)
     root_forms = body.is_a?(Hash) && minfo[:method] == 'GET' && minfo[:route] == 'scenario' && minfo[:ok]
+    add.call('helpdesk_secret', 'helpdesk:recovery:pair', '$') if body.is_a?(Array) && hd_recovery_in_array?(body)
     mfa_walk(body) do |hash, path, _parent|
       add.call('helpdesk_secret', 'helpdesk:recovery:pair', safe_path(path)) if hd_recovery_pair?(hash)
       hash.each do |key, value|
         at = safe_path("#{path}.#{key}")
+        if value.is_a?(Array) && hd_recovery_in_array?(value, key)
+          # an answer (or a question id beside one) inside an array: `{staff_no: ['40612']}`, `['staff_no', '40612']`
+          add.call('helpdesk_secret', 'helpdesk:recovery:array', at)
+        end
         if HD_NEVER_KEYS.include?(key)
           add.call('helpdesk_secret', "helpdesk:key:#{key}", at)
         elsif key == 'helpdeskForms'
@@ -217,6 +223,23 @@ module HelpdeskLeakRules
       next false unless qid.is_a?(String) && @hd_recovery.key?(qid)
 
       hash.values.any? { |v| !v.equal?(qid) && v.is_a?(String) && @hd_recovery[qid].include?(BreakEscape::HelpdeskModel.normalise_answer(v)) }
+    end
+  end
+
+  # The strings of an array, nested arrays flattened (a hash inside is judged by the walk itself).
+  def hd_array_strings(array)
+    array.flat_map { |v| v.is_a?(Array) ? hd_array_strings(v) : [v] }.grep(String)
+  end
+
+  # A recovery answer inside an array: under a key that is a desk question id, any string of the array is an authored answer to
+  # it; or the array holds a question id and, beside it, an authored answer to that id.
+  def hd_recovery_in_array?(array, key = nil)
+    strings = hd_array_strings(array)
+    norms = strings.map { |v| BreakEscape::HelpdeskModel.normalise_answer(v) }
+    return true if key.is_a?(String) && @hd_recovery.key?(key) && norms.any? { |n| @hd_recovery[key].include?(n) }
+
+    strings.each_with_index.any? do |qid, i|
+      @hd_recovery.key?(qid) && norms.each_with_index.any? { |n, j| j != i && @hd_recovery[qid].include?(n) }
     end
   end
 
