@@ -1,0 +1,5 @@
+[head]Starting Nmap against lab_net
+[head]Nmap scan report for [head]print01
+[ok]Host is up.
+[note]  Name: [-]Second floor printer
+[-]Nmap done: 1 host up
