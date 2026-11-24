@@ -5,6 +5,7 @@ require 'set'
 require 'cgi'
 require 'time'
 require 'uri'
+require_relative '../../../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
@@ -511,6 +512,7 @@ class AccessLeakScanner
     @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
     @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
+    @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
@@ -3468,52 +3470,128 @@ class AccessLeakScanner
   CRACK_REFUSALS = { 'bad_request' => 400, 'not_found' => 404, 'no_recipe' => 422, 'fact_not_held' => 422 }.freeze
   CRACK_MAX_WAIT = 600
 
-  # Hash records of the scenario by account (NPC id), and each NPC's own password. Read once.
+  CRACK_GRANTING_CLASSES = %w[common guessable reused].freeze
+
+  # Hash records of the scenario (with the class and grade the server resolves for each), and each NPC's own password.
+  # Read once.
   def collect_crack
     @crack_hash_accounts = Set.new
     @crack_hash_ids = Set.new
+    @crack_records = []
     BreakEscape::CredentialModel.registry(@data).each do |id, entry|
       next unless entry['kind'] == 'hash'
 
       @crack_hash_ids << id.to_s
       @crack_hash_accounts << entry['account'] if entry['account'].is_a?(String)
+      npc = BreakEscape::CredentialModel.account_npc(@data, entry['account'])
+      @crack_records << { id: id.to_s, entry: entry, account: entry['account'], npc: npc, klass: crack_record_class(entry, npc),
+                          resolved: npc ? BreakEscape::CrackDifficulty.resolve(entry, npc) : nil }
     end
     @crack_npc_password = {}
     @passwords.each { |password, owners| owners.each { |id| @crack_npc_password[id] = password } }
+    waits = @crack_records.filter_map { |r| r[:resolved] && r[:resolved][:salted] ? r[:resolved][:crack_seconds] : nil }
+    @crack_max_wait = [waits.max || 0, CRACK_MAX_WAIT].min
+    facts = @crack_records.select { |r| r[:klass] == 'guessable' }.map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    @crack_max_facts = [facts.max || 0, 4].min
   end
 
-  # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none).
-  def note_crack_earned(body, ctx, row)
-    return unless ctx[:crack] && row['status'].to_i == 200
+  # OpsCracking#crack_class: crack.password, else the NPC's habits.password, for an NPC with a password and a grade that
+  # resolves; nil otherwise.
+  def crack_record_class(entry, npc)
+    return nil unless entry.is_a?(Hash) && npc.is_a?(Hash)
+    return nil unless BreakEscape::CredentialModel.present_string?(npc.dig('creds', 'password'))
+    return nil unless BreakEscape::CrackDifficulty.resolve(entry, npc)
 
+    crack = entry['crack']
+    written = crack.is_a?(Hash) ? crack['password'] : nil
+    habits = npc['habits']
+    klass = written || (habits.is_a?(Hash) ? habits['password'] : nil)
+    %w[strong guessable reused common].include?(klass) ? klass : nil
+  end
+
+  # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none), and only if the
+  # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
+  def note_crack_earned(body, ctx, row)
+    return unless ctx[:crack] && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
+
+    @crack_running_credits += 1 if body['status'] == 'running'
     accounts = crack_cracked_accounts(body)
     @crack_earned.merge(accounts) if accounts
   end
 
-  # The accounts a cracked answer grants, or nil unless the whole answer is well formed and every account is one the
-  # scenario can crack: it has a password and a hash record, and (given the game) a record whose proof holds now.
+  # The accounts a cracked answer grants, or nil unless the whole answer is well formed and the server could have given it.
   def crack_cracked_accounts(body)
-    return nil unless body.is_a?(Hash) && crack_answer_shape_ok?(body) && body['status'] == 'cracked' && body.key?('accountId')
+    return nil unless body['status'] == 'cracked' && body.key?('accountId')
 
     account = body['accountId']
-    ids = body['credentialIds']
-    accounts = ids.map { |cid| cid.delete_suffix('.cracked') }
+    accounts = body['credentialIds'].map { |cid| cid.delete_suffix('.cracked') }
     return nil unless accounts.include?(account) && accounts.uniq.length == accounts.length
 
-    password = @crack_npc_password[account]
-    ok = accounts.all? do |a|
-      @crack_npc_password[a] && @crack_npc_password[a] == password && crack_hash_record_held?(a)
-    end
-    ok ? accounts : nil
+    crack_grant(account, accounts) ? accounts : nil
   end
 
-  def crack_hash_record_held?(npc_id)
-    return false unless @crack_hash_accounts.include?(npc_id)
+  # OpsCracking#run_crack! and #crack_grant!: a record of the named account that is held, has a class that can be cracked
+  # (never strong), has its recipe met as far as the game shows (all the facts of a guessable record earned; a reused
+  # record's equal-password account already held), and either is unsalted (a direct hit grants at once) or follows a
+  # running answer (a salted hit is granted only by a post after a stored run). More than one account is a batch: only an
+  # unsalted direct hit batches, only to accounts with an equal password and a held unsalted record of their own.
+  def crack_grant(account, accounts)
+    candidates = crack_held_records(account).select { |r| crack_recipe_met?(r) }
+    return false if candidates.empty?
+
+    if accounts.length > 1
+      password = @crack_npc_password[account]
+      return false unless candidates.any? { |r| !r[:resolved][:salted] }
+
+      return (accounts - [account]).all? do |other|
+        @crack_npc_password[other] == password && crack_held_records(other).any? { |r| !r[:resolved][:salted] }
+      end
+    end
+    return true if candidates.any? { |r| !r[:resolved][:salted] }
+    return false if @crack_running_credits < 1
+
+    @crack_running_credits -= 1
+    true
+  end
+
+  def crack_held_records(npc_id)
+    return [] unless @crack_npc_password[npc_id]
+
+    @crack_records.select do |r|
+      r[:account] == npc_id && r[:resolved] && crack_record_held?(r)
+    end
+  end
+
+  def crack_record_held?(record)
     return true unless @game.respond_to?(:credential_proof_holds?)
 
-    BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
-      entry['kind'] == 'hash' && entry['account'] == npc_id && @game.credential_proof_holds?(id, entry)
+    @game.credential_proof_holds?(record[:id], record[:entry])
+  end
+
+  def crack_recipe_met?(record)
+    return false unless CRACK_GRANTING_CLASSES.include?(record[:klass])
+
+    case record[:klass]
+    when 'guessable'
+      return true unless @game.respond_to?(:earned_fact_ids)
+
+      (Array(record[:entry].dig('crack', 'facts')).map(&:to_s) - Array(@game.earned_fact_ids).map(&:to_s)).empty?
+    when 'reused'
+      password = @crack_npc_password[record[:account]]
+      @crack_npc_password.any? do |other, pw|
+        other != record[:account] && pw == password && (@crack_earned.include?(other) || crack_held_elsewhere?(other))
+      end
+    else true
     end
+  end
+
+  # The game holds this account's password by a route other than a crack (a capture, a registry password entry).
+  def crack_held_elsewhere?(npc_id)
+    return false unless @game.respond_to?(:password_held_for?) && @game.respond_to?(:player_state)
+
+    state = @game.player_state
+    cracked = state.is_a?(Hash) ? Array(state['crackedAccounts']) : []
+    @game.password_held_for?(npc_id) && !cracked.include?(npc_id)
   end
 
   # The exact keys and value ranges of each 200 answer of POST /crack.
@@ -3643,8 +3721,15 @@ class AccessLeakScanner
     account = row['account']
     return false unless account.is_a?(Hash) && (account.keys - CRACK_ACCOUNT_KEYS).empty? && account['npcId'].is_a?(String)
 
+    return false if row['status'] == 'cracked' && !crack_account_granted?(account['npcId'])
+
     wait = row['readyInSeconds']
     row['status'] == 'running' ? wait.is_a?(Integer) && wait.between?(0, CRACK_MAX_WAIT) : !row.key?('readyInSeconds')
+  end
+
+  # A row may say cracked only for an account a cracked answer granted in this scan, or one the game holds by another route.
+  def crack_account_granted?(npc_id)
+    @crack_earned.include?(npc_id) || crack_held_elsewhere?(npc_id)
   end
 
   # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.

@@ -164,7 +164,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       [{ 'success' => true, 'status' => 'needMoreFacts', 'missingCount' => 1 }, 200],
       [{ 'success' => true, 'status' => 'cracked' }, 200]
     ].each do |body, http|
-      found = hits([post_crack(body, status: http), keyring([dana_entry])])
+      found = hits([running_answer, post_crack(body, status: http), keyring([dana_entry])])
       assert_includes found.map { |f| f[1] }, 'crack_unearned', body.inspect
       assert_includes found.map { |f| f[1] }, 'password', body.inspect
     end
@@ -191,14 +191,14 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       good.except('credentialIds')
     ]
     forged.each do |body|
-      assert_includes rules([post_crack(body), keyring([dana_entry])]), 'crack_unearned', body.inspect
+      assert_includes rules([running_answer, post_crack(body), keyring([dana_entry])]), 'crack_unearned', body.inspect
     end
     # a good body at another status, on another route or on another method earns nothing either
-    assert_includes rules([post_crack(good, status: 500), keyring([dana_entry])]), 'crack_unearned'
+    assert_includes rules([running_answer, post_crack(good, status: 500), keyring([dana_entry])]), 'crack_unearned'
     other = { 'method' => 'POST', 'path' => "#{BASE}/unlock", 'status' => 200, 'body' => good }
-    assert_includes rules([other, keyring([dana_entry])]), 'crack_unearned'
+    assert_includes rules([running_answer, other, keyring([dana_entry])]), 'crack_unearned'
     other = { 'method' => 'GET', 'path' => "#{BASE}/crack", 'status' => 200, 'body' => good }
-    assert_includes rules([other, keyring([dana_entry])]), 'crack_unearned'
+    assert_includes rules([running_answer, other, keyring([dana_entry])]), 'crack_unearned'
   end
 
   test 'near miss: a cracked answer for a record whose proof does not hold in the game earns nothing' do
