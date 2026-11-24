@@ -251,7 +251,7 @@ test('with the real mirror: off and not_responding clear access, another reason 
     const Cls = await containerClass();
     const { PcSessions } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')
         .split("'../utils/sync-before-fetch.js'").join(`'${dataUrl('export async function syncBeforeFetch() {}')}'`)
-        .split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`)));
+        .split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
     window.eventDispatcher = { emit() {} };
     const run = async (reason, extra) => {
         const sessions = new PcSessions();

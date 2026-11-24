@@ -44,6 +44,7 @@ copy('minigames/framework/base-minigame.js');
 copy('minigames/container/container-minigame.js');
 copy('systems/pc-sessions.js');
 copy('systems/mfa-client.js');
+copy('systems/helpdesk-client.js');
 copy('utils/sync-before-fetch.js');
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
