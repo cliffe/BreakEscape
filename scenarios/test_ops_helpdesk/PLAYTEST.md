@@ -90,11 +90,13 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 
 ### 9. Over a PC
 1. Front Office: click "Note: Sam's login" and read it. Click "Front PC", click the Sam tile, type the password, Sign in.
-2. On the desktop click the "IT request form" icon.
-- See: the request form opens over the PC.
-3. Type Wim's username, choose "Second step", type Wim's staff number and his line manager from beat 4. Send.
+2. On the desktop click the "IT request form" icon (it has no picture of its own, so it shows the plain document icon with the name under it).
+- See: the "IT request form" window opens over the PC.
+3. In "Username" type Wim's username, under "Ask for" choose "A sign-in approval reset", fill "Staff number" and "Line manager" with Wim's staff number and his line manager from beat 4. Click "Send".
 - See: "Sign-in approvals now come to your phone."
-- Server: reset second step yes for Wim; `ACCT_MFA` row.
+- Server: reset second step yes for Wim; `ACCT_MFA` row; the request names `front_pc`.
+4. Click the close "×" (its label is "Close").
+- See: the Front PC desktop is back, with the "IT request form" icon still there.
 
 ### 10. My phone, push
 1. Service Desk: click "Operations PC", click the Wim tile, type his password (note), Sign in.
