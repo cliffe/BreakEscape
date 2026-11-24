@@ -102,7 +102,7 @@ const GENERATORS = ['cli-gen/defaults.js', 'cli-gen/scanner-output.js', 'cli-gen
 const TERMINAL_ALLOWED = Object.freeze({
     'cli-gen/defaults.js': ['../ops-model.js'],
     'cli-gen/scanner-output.js': ['../ops-model.js', '../view-texts.js', './defaults.js'],
-    'cli-gen/framework-console.js': ['../ops-model.js', '../view-texts.js', './defaults.js'],
+    'cli-gen/framework-console.js': ['../ops-model.js', '../view-texts.js', './defaults.js', '../terminal-grammar.js'],
     'cli-gen/registry.js': ['./scanner-output.js', './framework-console.js'],
     'terminal-grammar.js': ['./ops-model.js', './view-texts.js', './view-controls.js', './cli-gen/defaults.js'],
     'terminal-format.js': ['./ops-model.js', './view-texts.js', './view-controls.js', './terminal-grammar.js',

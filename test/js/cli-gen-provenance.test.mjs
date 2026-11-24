@@ -209,6 +209,8 @@ function marked() {
     const f = host.findings.find(x => x.service === svc.name);
     f.cli = { title: 'MARK_TITLE', module: 'training/mark/module_path', script: 'mark-script', advisories: ['TRN-0000-9999'], output: ['MARK_OUTPUT'] };
     v.networks[0].cli = { range: '10.9.8.0/24' };
+    // the own block repeats the top-level rows: give it the marked copy, since the module list reads the block first
+    for (const n of v.networks) if (n.id === v.network?.id) n.hosts = clone(v.hosts);
     return { v, host, svc, f };
 }
 
@@ -228,7 +230,7 @@ test('a field shows only where it is printed', () => {
     assert.deepEqual(kinds('TRN-0000-9999'), ['check', 'listing']);
     assert.deepEqual(kinds('training/mark/module_path'), ['listing']);
     assert.ok(seen('MARK_TITLE').every(c => ['check', 'listing'].includes(c.kind)));
-    assert.deepEqual(seen('MARK_BANNER').map(c => c.label), [host.id]);
+    assert.deepEqual([...new Set(seen('MARK_BANNER').map(c => c.label))], [host.id]);
     assert.deepEqual([...new Set(seen('MARK_OUTPUT').map(c => c.label))], [`${host.id}:${svc.name}`]);
     assert.ok(f.cli.title);
 });

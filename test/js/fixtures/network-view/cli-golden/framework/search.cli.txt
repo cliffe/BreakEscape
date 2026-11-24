@@ -1,2 +1,2 @@
 [head|#  ][head|Name                       ][head|Alias  ][head|Description]
-1  training/web/sample_check  f2     Sample check on web
+2  training/web/sample_check  f2     Sample check on web

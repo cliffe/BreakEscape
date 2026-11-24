@@ -12,6 +12,7 @@ import {
     isFixed, FIXED_TEXT, statusWord, techniqueList, sessionWho, accessTag, useResultText, refusalLine
 } from '../ops-model.js';
 import { REQUEST_FAILED_TEXT } from '../view-texts.js';
+import { modulesOf } from '../terminal-grammar.js';
 import { findingCli, serviceCli, hostTarget } from './defaults.js';
 
 export const id = 'framework-console';
@@ -58,26 +59,20 @@ function allRows(view) {
     return out.filter(r => r && typeof r === 'object');
 }
 
-/** The modules of a view, one per listed finding in the view's finding order: `{ finding, row, service, cli, host, port, path }`. */
+/** The modules of a view, in the one order and numbering `use <number>` also uses (`modulesOf`): `{ number, finding, row, service, cli, host, port, path, serviceWord }`. */
 export function moduleList(view) {
-    const seen = new Set();
-    const out = [];
-    for (const row of allRows(view)) {
-        const services = rowServices(row);
-        for (const finding of rowFindings(row)) {
-            if (seen.has(finding.id)) continue;
-            seen.add(finding.id);
-            const service = services.find(s => s.name === finding.service) || null;
-            const raw = Array.isArray(row.services) ? row.services.find(s => s && s.name === finding.service) : null;
-            const cli = findingCli(finding, service || raw || { name: finding.service });
-            out.push({
-                finding, row, service, cli,
-                serviceWord: serviceCli(raw || service || { name: finding.service }).service,
-                host: hostTarget(row), port: service?.port ?? raw?.port ?? null, path: cli.module
-            });
-        }
-    }
-    return out;
+    return modulesOf(view).map(m => {
+        const row = m.row;
+        const finding = m.finding;
+        const service = rowServices(row).find(s => s.name === finding.service) || null;
+        const raw = Array.isArray(row.services) ? row.services.find(s => s && s.name === finding.service) : null;
+        const cli = findingCli(finding, service || raw || { name: finding.service });
+        return {
+            number: m.number, finding, row, service, cli,
+            serviceWord: serviceCli(raw || service || { name: finding.service }).service,
+            host: hostTarget(row), port: service?.port ?? raw?.port ?? null, path: cli.module
+        };
+    });
 }
 
 /** The module for a finding id or alias, or null. */
@@ -105,7 +100,7 @@ export function search(view, word = '') {
         m.path, m.cli.title, m.finding.alias, m.row.id, m.row.address, m.finding.service, m.serviceWord
     ].some(v => str(v).toLowerCase().includes(w)));
     if (!hits.length) return [note(NO_MODULES_TEXT)];
-    return table(SEARCH_HEAD, hits.map((m, i) => [i + 1, m.path, m.finding.alias ?? '', m.cli.title]));
+    return table(SEARCH_HEAD, hits.map(m => [m.number, m.path, m.finding.alias ?? '', m.cli.title]));
 }
 
 export function info(view, mode) {

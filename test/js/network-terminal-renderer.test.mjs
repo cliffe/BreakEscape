@@ -397,3 +397,41 @@ test('the renderer source names no HTML-writing call, eval, request or storage',
     assert.doesNotMatch(src, /fetch\(|ApiClient|networkLinks|window\.open|window\.start|localStorage|window\.location/);
     assert.doesNotMatch(src, /eventDispatcher|\.emit\(|\._emit\(/);
 });
+
+test('search numbers and use numbers are one list: use <shown number> picks that hit, then check and run name its finding', async () => {
+    const FW = await load('cli-gen/framework-console.js');
+    const GR = await load('terminal-grammar.js');
+    const view = viewOf('techniques');
+    // the filtered hit is not the first module of the whole list
+    const all = GR.modulesOf(view);
+    const target = all.find(m => m.alias === 'f10');
+    assert.ok(target && target.number > 1, 'the fixture has a later finding to search for');
+    for (const row of view.hosts) for (const f of row.findings || []) if (f.alias === 'f10') f.status = 'unconfirmed';
+    const t = setup(view);
+    t.enter('msfconsole');
+    t.enter('search f10');
+    const shown = t.logText().filter(l => /f10/.test(l) && !/search/.test(l));
+    assert.equal(shown.length, 1, 'one hit ' + JSON.stringify(t.logText()));
+    assert.match(shown[0], new RegExp(`^${target.number}\\s`), 'the hit carries the number use counts');
+    t.enter(`use ${target.number}`);
+    assert.equal(t.r.testState().mode.module, target.findingId);
+    t.enter('check');
+    assert.equal(t.calls.length, 1);
+    assert.equal(t.calls[0][0].action, 'confirm');
+    assert.equal(t.calls[0][0].ids.findingId, target.findingId);
+    for (const row of t.view.hosts) for (const f of row.findings || []) if (f.alias === 'f10') f.status = 'confirmed';
+    t.draw();
+    t.enter('set TECHNIQUE phish');
+    t.enter('run');
+    const last = t.calls[t.calls.length - 1][0];
+    assert.equal(last.action, 'use');
+    assert.equal(last.ids.findingId, target.findingId);
+
+    // both lists keep one order even with another block placed before the own one
+    const v2 = clone(view);
+    const extra = clone(v2.networks[0]);
+    extra.id = 'other_net';
+    extra.hosts = extra.hosts.map(h => ({ ...h, id: `${h.id}_o`, findings: (h.findings || []).map(f => ({ ...f, id: `${f.id}_o`, alias: `${f.alias}o`, hostId: `${h.id}_o` })) }));
+    v2.networks = [extra, ...v2.networks];
+    assert.deepEqual(FW.moduleList(v2).map(m => [m.number, m.finding.id]), GR.modulesOf(v2).map(m => [m.number, m.findingId]));
+});

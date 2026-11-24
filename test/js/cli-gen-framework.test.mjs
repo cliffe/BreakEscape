@@ -118,7 +118,7 @@ test('every fixed string is listed, pure and safe', () => {
     assert.doesNotMatch(src, /\b(window|document|localStorage|Date|Math\.random|innerHTML|outerHTML|eval|setTimeout|setInterval)\b/);
     assert.doesNotMatch(src.replace(/^import[\s\S]*?;\n/gm, ''), /simulated/i);
     const imports = [...src.matchAll(/from '([^']+)'/g)].map(m => m[1]).sort();
-    assert.deepEqual(imports, ['../ops-model.js', '../view-texts.js', './defaults.js']);
+    assert.deepEqual(imports, ['../ops-model.js', '../terminal-grammar.js', '../view-texts.js', './defaults.js']);
     for (const t of F.TEMPLATES) assert.equal(typeof t, 'string');
 });
 
@@ -206,7 +206,7 @@ test('authored fixtures: a decoy and a weakness with entries of equal form read 
         const flat = (f) => (text) => {
             let out = text;
             for (const t of [...AU.entryTexts(f), f.summary].sort((x, y) => y.length - x.length)) out = out.split(t).join('TEXT');
-            return out.replace(new RegExp(`\\b${f.alias}\\b`, 'g'), 'fX').replace(/[ ]+/g, ' ');
+            return out.replace(new RegExp(`\\b${f.alias}\\b`, 'g'), 'fX').replace(/^\d+ /gm, 'N ').replace(/[ ]+/g, ' ');
         };
         const lines = (f) => {
             const m = (technique) => ({ prompt: 'msf', module: f.id, technique });
