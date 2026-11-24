@@ -505,7 +505,7 @@ test('S7: hostile strings in a hash row are drawn as text, never as markup', () 
 });
 
 test('S7 R2-6: when a running row counts down to 0 its button changes from Open to Finish with the status', () => {
-    const realSet = globalThis.setInterval, realNow = Date.now;
+    const realSet = globalThis.setInterval, realClear = globalThis.clearInterval, realNow = Date.now;
     let tick = null, now = 1_000_000;
     globalThis.setInterval = (fn) => { tick = fn; return { unref() {} }; };
     globalThis.clearInterval = () => {};
@@ -518,5 +518,5 @@ test('S7 R2-6: when a running row counts down to 0 its button changes from Open 
         now += 3000; tick();
         assert.equal(row.querySelector('.signin-hash-status').textContent, 'Ready to finish');
         assert.equal(button.textContent, 'Finish');
-    } finally { globalThis.setInterval = realSet; Date.now = realNow; }
+    } finally { globalThis.setInterval = realSet; globalThis.clearInterval = realClear; Date.now = realNow; }
 });
