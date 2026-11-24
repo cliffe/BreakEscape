@@ -188,7 +188,7 @@ What holds, in short:
 ### R1-S8 (minor): public address forms the scenario text rules miss
 
 - File: `scripts/realism_text_rules.rb:137-141`.
-- The dotted-quad test is anchored to a whole stripped token. `Seen at 8.8.8.8/24`, `addr=8.8.8.8` and a
+- The dotted-quad test is anchored to a whole stripped token. `Seen at 203.0.113.9/24`, `addr=203.0.113.9` and a
   short-form IPv6 address (`2606:4700::1111`) pass in a banner. The catalog has its own any-quad rule
   (`validate_realism_catalog.rb:203`), so this is a scenario-only gap.
 - Smallest fix: scan the whole string for `\d{1,3}(\.\d{1,3}){3}` and test each match against the private
@@ -265,14 +265,14 @@ What holds, in short:
   (`OPS_REALISM_SKIN_PLAN.md:1777`) and the brief asks for it (unit 20). The list is what lets a machine
   refuse those names in ids and scenario text.
 - Is every entry only a nickname? Yes: 17 lines, one bare name each, no id, no year, no product, no
-  detail. Two of them (`wannacry`, `notpetya`) are names of malware and not of a vulnerability; the
+  detail. Two of them (two listed nicknames) are names of malware and not of a vulnerability; the
   header says "vulnerability nicknames". That is harmless.
 - Who reads it? `scripts/validate_realism_catalog.rb:30` (the path), `scripts/validate_realism_skin.rb:248`
   and `test/unit/realism_separation_test.rb:16`. Nothing under `app/`, `lib/`, `public/` or `tools/` reads
   it and no route serves `scripts/`.
 - Points: (1) the header (`:1-3`) says only the catalog validator uses it, for ids; the skin validator
   and the separation test use it for all scenario text. (2) A two-word name written as one word passes
-  both validators: the list has `dirtycow` and `dirty_cow` but only `dirty_pipe`. Either add the joined
+  both validators: the list has a joined and a split form of one nickname but only the split form of another. Either add the joined
   form or make the separator optional in `realism_skin_nickname_patterns` (`validate_realism_skin.rb:104`).
   (3) The brief says docs hold no nickname; the diff's docs hold none. The plan itself quotes one in an
   example (`OPS_REALISM_SKIN_PLAN.md:1332`); that file is outside this diff and is noted for the owner.
