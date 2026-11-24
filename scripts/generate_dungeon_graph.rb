@@ -27,6 +27,7 @@ require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/mfa_model'
 require_relative '../lib/break_escape/lock_step_model'
+require_relative 'validate_access_work'
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1946,7 +1947,14 @@ BreakEscape::LockStepModel.each_lock_step(scenario).each do |entry|
     add_edge(npc_room, npc_node)
   end
 
-  never = BreakEscape::LockStepModel.lock_step_never_passes?(scenario, lockable)
+  # The same story-file block as scripts/validate_lock_step.rb, so the graph and the validator agree on what
+  # ink hands over; falls back to the scenario folder's own ink/ when the repo-relative path is missing.
+  never = BreakEscape::LockStepModel.lock_step_never_passes?(scenario, lockable) do |story_path|
+    ValidateAccessWork.story_file(story_path) ||
+      [File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s)),
+       File.join(File.dirname(SCENARIO_FILE), 'ink', File.basename(story_path.to_s).sub(/\.json\z/, '.ink'))]
+        .find { |f| File.file?(f) }
+  end
   label = never ? 'never passes' : "second step: #{entry[:step]['kind']}"
   next if $edges.any? { |e| e[:from] == npc_node && e[:to] == lock_node && e[:label] == label }
 

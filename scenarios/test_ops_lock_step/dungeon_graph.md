@@ -103,14 +103,14 @@ flowchart TD
   office --> npc_moira_hale
   npc_moira_hale -->|second step: push| lock_moira_pc
   office --> npc_gordon_pike
-  npc_gordon_pike -.->|never passes| lock_audit_zip
+  npc_gordon_pike -->|second step: push_number_match| lock_audit_zip
   npc_moira_hale -->|second step: push| lock_moira_locker
   office --> npc_priya_nair
-  npc_priya_nair -.->|never passes| lock_priya_safe
+  npc_priya_nair -->|second step: code| lock_priya_safe
   office --> npc_dana_reeve
   npc_dana_reeve -.->|never passes| lock_dana_cabinet
   office --> lock_gordon_briefcase
-  npc_gordon_pike -.->|never passes| lock_gordon_briefcase
+  npc_gordon_pike -->|second step: push| lock_gordon_briefcase
   npc_moira_hale -->|second step: push| door_records_room
   npc_moira_hale -->|second step: push| door_plant_room
 
@@ -207,14 +207,14 @@ flowchart TD
   office --> npc_moira_hale
   npc_moira_hale -->|second step: push| lock_moira_pc
   office --> npc_gordon_pike
-  npc_gordon_pike -.->|never passes| lock_audit_zip
+  npc_gordon_pike -->|second step: push_number_match| lock_audit_zip
   npc_moira_hale -->|second step: push| lock_moira_locker
   office --> npc_priya_nair
-  npc_priya_nair -.->|never passes| lock_priya_safe
+  npc_priya_nair -->|second step: code| lock_priya_safe
   office --> npc_dana_reeve
   npc_dana_reeve -.->|never passes| lock_dana_cabinet
   office --> lock_gordon_briefcase
-  npc_gordon_pike -.->|never passes| lock_gordon_briefcase
+  npc_gordon_pike -->|second step: push| lock_gordon_briefcase
   npc_moira_hale -->|second step: push| door_records_room
   npc_moira_hale -->|second step: push| door_plant_room
 

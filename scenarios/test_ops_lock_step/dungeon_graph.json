@@ -171,8 +171,8 @@
     {
       "from": "npc_gordon_pike",
       "to": "lock_audit_zip",
-      "soft": true,
-      "label": "never passes"
+      "soft": false,
+      "label": "second step: push_number_match"
     },
     {
       "from": "npc_moira_hale",
@@ -188,8 +188,8 @@
     {
       "from": "npc_priya_nair",
       "to": "lock_priya_safe",
-      "soft": true,
-      "label": "never passes"
+      "soft": false,
+      "label": "second step: code"
     },
     {
       "from": "office",
@@ -210,8 +210,8 @@
     {
       "from": "npc_gordon_pike",
       "to": "lock_gordon_briefcase",
-      "soft": true,
-      "label": "never passes"
+      "soft": false,
+      "label": "second step: push"
     },
     {
       "from": "npc_moira_hale",
