@@ -52,7 +52,7 @@ export async function run(page, bridge, mark, { narrow = false } = {}) {
   const steps = [[/Morning|it's Gordon/i, 1], [/manager/i, 2], [/staff reference/i, 3]];
   for (const [re, i] of steps) {
     const t = await pickChoice(page, re); if (!t) throw new Error('call choice ' + i + ' not found'); mark('pick:' + i, { t });
-    await waitCallLine(page, mark, 'pick' + i); await sleep(900); mark('frame:after-pick-' + i); if (i === 1) await dump(page, 'call_after1');
+    await waitCallLine(page, mark, 'pick' + i); await sleep(3000); // 3 s quiet gap: the trailer puts a narrator line here mark('frame:after-pick-' + i); if (i === 1) await dump(page, 'call_after1');
   }
   await dump(page, 'call_after3');
   const g1 = (await bridge.getState()).globals || {}; mark('globals-before-ask', { influence: g1.leila_influence, wary: g1.leila_wary, refusing: g1.leila_refusing });
