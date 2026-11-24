@@ -604,7 +604,6 @@ class AccessLeakScanner
       scan_privilege_keys(body, add)
       scan_privilege_log_rows(body, ctx, add)
       scan_harvest(body, ctx, row, add) # S5b, S5c
-      note_admin_ever # S5bc unit 23
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -3482,24 +3481,104 @@ class AccessLeakScanner
     scan_admin_act_log_rows(body, add)
   end
 
-  # S5bc unit 23: a CRED_COLLECT or USB_OVERRIDE row is written only for an admin session at the PC its `where` names. The
-  # capture must have shown an admin session there (keyboard step or proved relay) on some earlier row, or at this one; a row
-  # whose `where` names no PC of the scenario (or two) is judged unearned (fail closed). Limit: the row's time and the session
-  # that wrote it are not in the answer, so a session long over still earns the row.
+  # S5bc review R2-L2: a CRED_COLLECT or USB_OVERRIDE row is written only by the act it names, so each row (and each repeat of a
+  # merged `OK xN` row) must be matched by one recorded act in the capture, earlier than the answer that shows it:
+  # - CRED_COLLECT: a credited collect answer (a 200 whose `harvested` rows were all credited) at that PC under that account,
+  #   with `count: N` equal to the rows it added (`@hv_acts[[:collect, pc, account, N]]`);
+  # - USB_OVERRIDE: a 200 `{ "success": true }` POST /inventory answer whose `inv` tag is a remove of a storage or HID device
+  #   the PC's policy would have refused, used on an object whose plant PC held an admin session then
+  #   (`@hv_acts[[:plant, pc, account, device]]`); a row with no tag, or another tag, earns nothing.
+  # A row whose `where` names no PC of the scenario (or two), an unreadable `result` or `detail`, or an account the capture does not
+  # show is unearned (fail closed). Each answer counts its own rows (a log answer is a snapshot, so a later one repeats the earlier).
+  # Limit: a collect or plant recorded in an earlier capture file is not known, so its row is flagged.
   ADMIN_ACT_EVENTS = %w[CRED_COLLECT USB_OVERRIDE].freeze
 
   def scan_admin_act_log_rows(body, add)
+    used = Hash.new(0)
     Array(body['rows']).each_with_index do |row, i|
       next unless row.is_a?(Hash) && ADMIN_ACT_EVENTS.include?(row['event'])
 
       pcs = @priv_pcs.select { |_, pc| pc['name'] == row['where'] }.keys
       pc = pcs.size == 1 ? pcs.first : nil
-      add.call('log_row', "log:#{row['event'].downcase}:#{pc || 'unknown'}", "$.rows[#{i}]") unless pc && (@hv_admin_ever.include?(pc) || harvest_pc_admin?(pc))
+      key = pc ? admin_act_key(row, pc) : nil
+      repeats = admin_act_repeats(row['result'])
+      ok = !key.nil? && !repeats.nil?
+      if ok
+        used[key] += repeats
+        ok = used[key] <= @hv_acts[key]
+      end
+      add.call('log_row', "log:#{row['event'].downcase}:#{pc || 'unknown'}", "$.rows[#{i}]") unless ok
     end
   end
 
-  def note_admin_ever
-    @priv_pcs.each_key { |pc| @hv_admin_ever << pc if harvest_pc_admin?(pc) }
+  def admin_act_repeats(result)
+    return nil unless result.is_a?(String)
+
+    match = result.match(/\AOK(?: x(\d+))?\z/)
+    match ? (match[1] ? match[1].to_i : 1) : nil
+  end
+
+  def admin_act_key(row, pc)
+    account = row['as']
+    return nil unless account.is_a?(String)
+
+    account = account.strip.downcase
+    if row['event'] == 'CRED_COLLECT'
+      count = row['detail'].is_a?(String) ? row['detail'].match(/\Acount: ([1-9]\d*)\z/) : nil
+      count ? [:collect, pc, account, count[1].to_i] : nil
+    else
+      device = row['detail'].is_a?(String) ? row['detail'].match(/\Adevice: (storage|hid)\z/) : nil
+      device ? [:plant, pc, account, device[1]] : nil
+    end
+  end
+
+  # The username of the account the capture holds at the PC now (keyboard step or proved relay), lower case, else nil.
+  def admin_act_account(pc)
+    id = @hv_relay[pc] || @ops_session_accounts[pc]
+    name = id && @priv_npcs[id]&.dig('creds', 'username')
+    name.is_a?(String) ? name.strip.downcase : nil
+  end
+
+  def note_admin_collect(pc, count)
+    account = admin_act_account(pc)
+    @hv_acts[[:collect, pc, account, count]] += 1 if account && count.positive?
+  end
+
+  # A 200 `{ "success": true }` POST /inventory answer tagged as a remove of a device on an object whose plant PC holds an admin
+  # session now (a needsSession grant takes only the keyboard step, as the server's keyboard_or_session_admin? does).
+  def note_usb_plant(body, row)
+    return unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
+    return unless row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body.keys == ['success'] && body['success'] == true
+
+    inv = row['inv']
+    return unless inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
+
+    obj = scenario_object(inv['usedOn'])
+    item = scenario_item(inv['itemId'])
+    return unless obj && item && %w[storage hid].include?(item['usbClass']) && BreakEscape::AccessWork.plant_refused?(@data, obj, item)
+
+    grant = BreakEscape::CaptureModel.session_grant_pc(obj)
+    pc = grant.presence || (@priv_pcs.key?(obj['id'].to_s) ? obj['id'].to_s : BreakEscape::CaptureModel.port_pc(obj))
+    return unless pc && @priv_pcs.key?(pc)
+    return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
+
+    account = admin_act_account(pc)
+    @hv_acts[[:plant, pc, account, item['usbClass']]] += 1 if account
+  end
+
+  def scenario_object(id)
+    Array(@data['rooms'].is_a?(Hash) ? @data['rooms'].values : []).each do |room|
+      found = Array(room.is_a?(Hash) ? room['objects'] : nil).find { |o| o.is_a?(Hash) && o['id'].to_s == id }
+      return found if found
+    end
+    nil
+  end
+
+  # The first hash of the scenario that carries this id and a usbClass (a held or placed device).
+  def scenario_item(id)
+    found = nil
+    walk_hashes(@data, '$') { |hash, _| found ||= hash if hash['id'].to_s == id && hash['usbClass'].is_a?(String) }
+    found
   end
 
   # ---- ops log reader L2a: GET /log_rows (OPS_LOG_ROWS_PLAN.md section 7) --------------------
@@ -4981,7 +5060,7 @@ class AccessLeakScanner
     @hv_served_hashes = Set.new # hash record ids a credited collect row named
     @hv_name_earned = Set.new   # account-only ids whose display name has been earned
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
-    @hv_admin_ever = Set.new    # PC ids where an admin session (keyboard step or proved relay) was earned at the end of some row
+    @hv_acts = Hash.new(0)      # R2-L2: [:collect, pc, account, count] / [:plant, pc, account, device] => acts the capture shows so far
     @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
     @hv_relay_signed = {}       # R2-L1: PC id => account id of a proved relay SIGN-IN answer still standing (a desktop keeps the mark only on it)
     @hv_relay_pending = Set.new # R2-L1: [account id, label] of a proved relay sign-in whose label two PCs share (its desktop takes it)
@@ -5002,6 +5081,7 @@ class AccessLeakScanner
 
   def scan_harvest(body, ctx, row, add)
     note_harvest_borrow(body, ctx, row)
+    note_usb_plant(body, row)
     scan_harvest_keys(body, ctx, add)
     judge_harvest_answer(body, ctx, row, add) if ctx[:harvest]
     note_harvest_keyring(body, add)
@@ -5036,6 +5116,13 @@ class AccessLeakScanner
   def judge_harvest_answer(body, ctx, row, add)
     return unless body.is_a?(Hash) || body.is_a?(Array)
 
+    failed = false
+    outer = add
+    add = lambda do |*args|
+      failed = true
+      outer.call(*args)
+    end
+
     status = row['status']
     unless status.is_a?(Integer) && status == 200
       add.call('harvest_row', 'refusal', '$') unless status.is_a?(Integer) && harvest_refusal_ok?(status, body)
@@ -5063,6 +5150,8 @@ class AccessLeakScanner
     # R1-L12: the server builds `harvested` as a subset of `held`
     held_ids = lists['held'].filter_map { |entry| entry['npcId'] if entry.is_a?(Hash) }
     add.call('harvest_row', 'list:subset', '$.harvested') unless lists['harvested'].all? { |entry| entry.is_a?(Hash) && held_ids.include?(entry['npcId']) }
+    # R2-L2: a collect whose rows were all credited is the act a CRED_COLLECT row shows
+    note_admin_collect(pc, lists['harvested'].size) unless failed || lists['harvested'].empty?
   end
 
   def judge_harvest_row(entry, path, pc, add)

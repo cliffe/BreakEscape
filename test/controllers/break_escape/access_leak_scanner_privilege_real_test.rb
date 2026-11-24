@@ -1075,6 +1075,12 @@ module BreakEscape
       end
       row = { 't' => (BEATS_START + @rows.length).utc.iso8601(3), 'method' => method.to_s.upcase, 'path' => request.path,
               'status' => response.status, 'body' => body }
+      # the recorder tags every POST /inventory row with `inv` (response-capture.js): action, item id, used-on object
+      if method == :post && row['path'].end_with?('/inventory')
+        sent = options[:params] || {}
+        item = sent[:item].is_a?(Hash) ? sent[:item] : {}
+        row['inv'] = { 'action' => sent[:action_type], 'itemId' => item[:id], 'usedOn' => sent[:used_on] }
+      end
       @rows << row
       return unless row['path'].end_with?('/login') && row['status'] == 200 && body.is_a?(Hash) && body['success'] && body['npcId']
 
@@ -1344,6 +1350,69 @@ module BreakEscape
       found = reported(rows.first(47) + [boot, rows[47], rows[48]])
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
+    end
+
+    # R2-L2: CRED_COLLECT and USB_OVERRIDE log rows are tied to credited collect answers (count, account, PC) and to the
+    # recorder's `inv` tag on POST /inventory, and not to a session that was shown some time before.
+    def log_answer_rows(rows, *entries)
+      deep(rows[42]).tap { |row| row['body']['rows'] = entries.map { |e| { 'id' => SecureRandom.hex(5), 'elapsedMs' => 0, 'result' => 'OK', 'as' => 'adelwick' }.merge(e) } }
+    end
+
+    def collect_entry(where, detail, extra = {})
+      { 'event' => 'CRED_COLLECT', 'where' => where, 'detail' => detail }.merge(extra)
+    end
+
+    def stick_entry(extra = {})
+      { 'event' => 'USB_OVERRIDE', 'where' => 'Bay desk PC', 'detail' => 'device: storage' }.merge(extra)
+    end
+
+    test 'R2-L2 (G3a): an admin signed in, no collect ever, a CRED_COLLECT row is reported' do
+      rows = run_real
+      found = reported(rows.first(5) + [log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 8'))])
+      assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
+    end
+
+    test 'R2-L2 (G3b): an admin signed in, no stick ever planted, a USB_OVERRIDE row is reported' do
+      rows = run_real
+      found = reported(rows.first(5) + [log_answer_rows(rows, stick_entry)])
+      assert_flagged found, 'log_row', 'log:usb_override:bay_pc'
+    end
+
+    test 'R2-L2 (G3c): the real run, a CRED_COLLECT row with another count, or more repeats than collects, is reported' do
+      rows = run_real
+      assert_empty reported(rows)
+      flagged = ->(edit_row) { assert_flagged reported(edit(rows, 43) { |r| edit_row.call(r['body']['rows'].find { |x| x['where'] == 'Bay desk PC' && x['event'] == 'CRED_COLLECT' }) }), 'log_row', 'log:cred_collect:bay_pc' }
+      flagged.call(->(x) { x['detail'] = 'count: 7' })
+      flagged.call(->(x) { x['result'] = 'OK x9' })
+      flagged.call(->(x) { x['result'] = 'OK x2' })
+      flagged.call(->(x) { x['detail'] = 'count: two' })
+      flagged.call(->(x) { x['result'] = 'FAILED' })
+    end
+
+    test 'R2-L2 (G3d): the real run, a CRED_COLLECT row as another account is reported' do
+      rows = run_real
+      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['as'] = 'omarsh' })
+      assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
+    end
+
+    test 'R2-L2 (G3e): the admin session ended, a log answer with both rows, and no collect or stick made, is reported' do
+      rows = run_real
+      logout = rows.index { |r| r['path'].end_with?('/logout') } + 1
+      found = reported(rows.first(5) + [rows[logout - 1], log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 2'), stick_entry)])
+      assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
+      assert_flagged found, 'log_row', 'log:usb_override:bay_pc'
+    end
+
+    test 'R2-L2: the real stick row is earned by the tagged plant: the plant row without its tag, or naming another object, or another device, is reported' do
+      rows = run_real
+      plant = rows.index { |r| r['path'].end_with?('/inventory') && r['inv'] && r['inv']['action'] == 'remove' && r['status'] == 200 && r['body'] == { 'success' => true } && r['body'].size == 1 && r['t'] < rows[42]['t'] && rows.index(r) > 39 } + 1
+      assert_equal 42, plant
+      assert_flagged reported(edit(rows, 42) { |r| r['inv'] = nil }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, 42) { |r| r.delete('inv') }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, 42) { |r| r['inv']['usedOn'] = 'store_pc' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, 42) { |r| r['inv']['action'] = 'add' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['detail'] = 'device: hid' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }), 'log_row', 'log:usb_override:bay_pc'
     end
 
     # ---- re-checks the scanner fixer listed ----
