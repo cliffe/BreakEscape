@@ -1,0 +1,20 @@
+# Well-known vulnerability nicknames the catalog validator refuses as (part of) a catalog id. A deny
+# list of names only: one per line, lower case, words joined by _ (matched as whole words, also inside
+# an id). Lines starting # are notes. Keep it short and distinctive; add on a real slip.
+heartbleed
+shellshock
+eternalblue
+bluekeep
+log4shell
+spring4shell
+printnightmare
+zerologon
+proxylogon
+proxyshell
+sambacry
+badlock
+dirtycow
+dirty_cow
+dirty_pipe
+wannacry
+notpetya

@@ -1,0 +1,35 @@
+{
+  "_": "Invented training entries for scenarios/test_ops_skin. Products are invented and every advisory id uses the year 0000, which is never assigned. Three entries of one form: one advisory, two output lines, a four-segment auxiliary module.",
+  "entries": {
+    "filehold_update_lag": {
+      "title": "FileHold service behind its published updates",
+      "module": "auxiliary/scanner/filehold/update_lag_check",
+      "script": "filehold-update-lag",
+      "advisories": ["CVE-0000-24117"],
+      "output": [
+        "State: behind the published fixes for this release line.",
+        "Disclosed: 0000-03-14."
+      ]
+    },
+    "filehold_release_line": {
+      "title": "FileHold reports an older release line",
+      "module": "auxiliary/scanner/filehold/release_line_check",
+      "script": "filehold-release-line",
+      "advisories": ["CVE-0000-24118"],
+      "output": [
+        "State: release line reported as older than current.",
+        "Disclosed: 0000-05-02."
+      ]
+    },
+    "filehold_link_setting": {
+      "title": "FileHold link setting left open",
+      "module": "auxiliary/scanner/filehold/link_setting_check",
+      "script": "filehold-link-setting",
+      "advisories": ["CVE-0000-24119"],
+      "output": [
+        "State: a link setting is open beyond its intended scope.",
+        "Disclosed: 0000-08-21."
+      ]
+    }
+  }
+}

@@ -1,0 +1,187 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+require 'json'
+require 'tmpdir'
+require 'fileutils'
+require 'open3'
+require_relative '../../scripts/validate_realism_catalog'
+
+# The realism catalog validator and the text rules (S6 unit 20), over the committed catalog and the
+# invented fixtures under test/fixtures/realism_catalog/catalog_faults/.
+class ValidateRealismCatalogTest < ActiveSupport::TestCase
+  ROOT = File.expand_path('../..', __dir__)
+  FAULTS = File.join(ROOT, 'test/fixtures/realism_catalog/catalog_faults')
+  EXPECTED = JSON.parse(File.read(File.join(FAULTS, 'EXPECTED.json')))
+  SCRIPT = File.join(ROOT, 'scripts/validate_realism_catalog.rb')
+  NO_SCENARIOS = File.join(FAULTS, 'no_scenarios_here')
+
+  def run_check(name, index: nil)
+    dir = File.join(FAULTS, name)
+    opts = { scenarios_dir: NO_SCENARIOS }
+    idx = File.join(dir, 'index.md')
+    opts[:index_path] = index || (File.exist?(idx) ? idx : File.join(dir, 'no_index.md'))
+    %w[nicknames products].each do |kind|
+      path = File.join(dir, "#{kind}.txt")
+      opts[:"#{kind}_path"] = path if File.exist?(path)
+    end
+    opts[:nicknames_path] ||= File.join(dir, 'none.txt')
+    check_realism_catalog(dir, **opts)
+  end
+
+  def errors(problems)
+    problems.select { |p| p.level == :error }
+  end
+
+  def fixture_strings(dir)
+    out = []
+    Dir.glob(File.join(dir, '*.json')).each do |f|
+      realism_quiet_parse(File.read(f))['entries'].to_h.each_value do |e|
+        next unless e.is_a?(Hash)
+
+        out << e['title'] << e['module'] << e['script'] << Array(e['advisories']) << Array(e['output'])
+      end
+    end
+    out.flatten.compact.select { |s| s.length >= 6 }
+  end
+
+  test 'every file of the real catalog folder passes' do
+    problems = check_realism_catalog
+    assert_empty errors(problems).map(&:to_s)
+  end
+
+  test 'the committed index equals what the validator would write and holds no catalog string' do
+    text = File.read(REALISM_INDEX_PATH)
+    assert_equal realism_index_for, text, 'rerun scripts/validate_realism_catalog.rb'
+    Dir.glob(File.join(REALISM_CATALOG_DIR, '*.json')).each do |f|
+      JSON.parse(File.read(f))['entries'].each_value do |e|
+        ([e['title'], e['module'], e['script']] + Array(e['advisories']) + Array(e['output'])).each do |s|
+          assert_not_includes text, s
+        end
+      end
+    end
+  end
+
+  test 'the training fixtures are of one form and use only invented advisory ids' do
+    data = JSON.parse(File.read(File.join(REALISM_CATALOG_DIR, 'training_fixtures.json')))['entries']
+    assert_equal 3, data.length
+    assert_equal 1, data.values.map { |e| realism_form(e) }.uniq.length
+    data.each_value do |e|
+      e['advisories'].each { |a| assert_match(/\ACVE-0000-\d+\z/, a) }
+    end
+  end
+
+  test 'only test scenarios link entries of the training fixtures' do
+    ids = JSON.parse(File.read(File.join(REALISM_CATALOG_DIR, 'training_fixtures.json')))['entries'].keys
+    links = realism_scenario_links(REALISM_SCENARIOS_DIR)
+    ids.each do |id|
+      links[id].each { |name| assert_match(/\Atest_/, name, "#{id} linked from a non-test scenario") }
+    end
+  end
+
+  EXPECTED.each do |name, (rule, field)|
+    test "fault #{name} is reported with its rule and field" do
+      problems = errors(run_check(name))
+      hit = problems.find { |p| p.rule == rule && p.field == field }
+      assert hit, "expected #{rule} on #{field} in #{name}, got #{problems.map(&:to_s)}"
+      strings = fixture_strings(File.join(FAULTS, name))
+      problems.each do |p|
+        message = p.to_s
+        assert_includes message, p.file
+        assert_includes message, p.rule
+        strings.each { |s| assert_not_includes message, s }
+      end
+    end
+  end
+
+  Dir.children(FAULTS).grep(/\Apass_/).each do |name|
+    test "passing fixture #{name} has no error" do
+      assert_empty errors(run_check(name)).map(&:to_s)
+    end
+  end
+
+  %w[index_missing_id index_form_changed].each do |name|
+    test "the command line leaves the index unchanged for #{name}" do
+      Dir.mktmpdir do |tmp|
+        index = File.join(tmp, 'index.md')
+        FileUtils.cp(File.join(FAULTS, name, 'index.md'), index)
+        before = File.binread(index)
+        out, status = Open3.capture2e('ruby', SCRIPT, '--dir', File.join(FAULTS, name), '--index', index,
+                                      '--scenarios', NO_SCENARIOS, chdir: ROOT)
+        assert_not status.success?, out
+        assert_equal before, File.binread(index)
+      end
+    end
+  end
+
+  test 'the command line writes the index for an added id' do
+    Dir.mktmpdir do |tmp|
+      index = File.join(tmp, 'index.md')
+      FileUtils.cp(File.join(FAULTS, 'pass_added_id', 'index.md'), index)
+      out, status = Open3.capture2e('ruby', SCRIPT, '--dir', File.join(FAULTS, 'pass_added_id'), '--index', index,
+                                    '--scenarios', NO_SCENARIOS, chdir: ROOT)
+      assert status.success?, out
+      text = File.read(index)
+      assert_includes text, 'added_note'
+      assert_includes text, 'sample_note'
+    end
+  end
+
+  test 'a message never quotes a catalog string even for a bad id' do
+    Dir.mktmpdir do |tmp|
+      File.write(File.join(tmp, 'a.json'), JSON.generate('entries' => { 'Bad Id!' => { 'title' => 't', 'module' => 'auxiliary/a/b', 'script' => 'x' } }))
+      problems = check_realism_catalog(tmp, index_path: File.join(tmp, 'none.md'), scenarios_dir: NO_SCENARIOS)
+      assert errors(problems).any? { |p| p.rule == 'id_form' }
+      problems.each { |p| assert_not_includes p.to_s, 'Bad Id' }
+    end
+  end
+
+  test 'a parse error is named by file' do
+    Dir.mktmpdir do |tmp|
+      File.write(File.join(tmp, 'broken.json'), '{ not json')
+      problems = check_realism_catalog(tmp, index_path: File.join(tmp, 'none.md'), scenarios_dir: NO_SCENARIOS)
+      assert(problems.any? { |p| p.rule == 'parse_error' && p.file == 'broken.json' })
+    end
+  end
+
+  # ---- the text rules -------------------------------------------------------------------------
+
+  def rules(text, kind: :prose)
+    RealismTextRules.errors(text, kind: kind).map(&:rule)
+  end
+
+  test 'text rules pass the ordinary look-alikes' do
+    [
+      'SMB/CIFS', 'TCP/IP', 'HTTP/1.1', 'Guest/anonymous access enabled', 'Anonymous login: allowed',
+      'Read/Write/Execute', 'timeout=30', 'SSH host key: RSA', 'Weak TLS 1.0 enabled',
+      'Reachable at 10.1.2.3:445', 'Name host01.local', 'Disclosed: 0000-03-14.'
+    ].each { |text| assert_empty rules(text), text }
+  end
+
+  test 'text rules refuse each bad form' do
+    {
+      "caf\u00e9" => 'characters', "tab\there" => 'characters', 'back\\slash' => 'backslash',
+      'a %41 b' => 'percent_escape', 'v 0x41414141' => 'hex_literal', 'a <b>' => 'angle_bracket',
+      'a ; b' => 'shell_metacharacter', 'run --now' => 'flag', 'id 0123456789abcdef' => 'encoded_blob',
+      'blob QWxhZGRpbjpvcGVuU2VzYW1lMTI=' => 'encoded_blob', 'see /etc/x' => 'path', 'see ../x' => 'path',
+      'see C:/x' => 'path', 'see a/b/' => 'path', 'see etc/a/b' => 'path', 'user:pass' => 'credential',
+      'admin/admin' => 'credential', 'password=abc' => 'credential', 'user=bob' => 'credential',
+      'host 8.8.8.8' => 'host', 'at http://x' => 'host', 'at www.x' => 'host', 'at quill.example.org' => 'host',
+      'a Decoy b' => 'telltale', 'not vulnerable' => 'telltale', 'it is patched' => 'telltale'
+    }.each { |text, rule| assert_includes rules(text), rule, text }
+  end
+
+  test 'text rules for a module or script join telltale words by underscore or hyphen and refuse equal segments' do
+    assert_includes rules('auxiliary/x/fake_thing', kind: :module), 'telltale'
+    assert_includes rules('fake-thing', kind: :script), 'telltale'
+    assert_includes rules('auxiliary/a/a/b', kind: :module), 'credential'
+    assert_empty rules('auxiliary/a/b/c', kind: :module)
+  end
+
+  test 'weaker telltale words are warnings and a scenario check returns the fragment' do
+    found = RealismTextRules.check('a real thing', kind: :prose, scenario: true)
+    assert_equal [:warning], found.map(&:level)
+    assert_equal 'real', found.first.fragment
+    assert_nil RealismTextRules.check('a real thing').first.fragment
+  end
+end

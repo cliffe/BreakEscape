@@ -1,0 +1,15 @@
+{
+  "entries": {
+    "sample_note": {
+      "title": "Quillmark gateway sample note",
+      "module": "auxiliary/gather/quillmark/sample_note",
+      "script": "quillmark-sample",
+      "advisories": [
+        "CVE-0000-11111"
+      ],
+      "output": [
+        "State: tag 0123456789abcdef0123."
+      ]
+    }
+  }
+}

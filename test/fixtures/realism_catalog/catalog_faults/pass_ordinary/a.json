@@ -1,0 +1,28 @@
+{
+  "entries": {
+    "sample_note": {
+      "title": "Quillmark gateway sample note",
+      "module": "auxiliary/gather/quillmark/sample_note",
+      "script": "quillmark-sample",
+      "advisories": [
+        "CVE-0000-11111"
+      ],
+      "output": [
+        "State: sample state line.",
+        "Disclosed: 0000-01-01."
+      ]
+    },
+    "other_note": {
+      "title": "Quillmark gateway other note",
+      "module": "auxiliary/gather/quillmark/note_2",
+      "script": "quillmark-other",
+      "advisories": [
+        "MS00-001",
+        "ZDI-00-0001"
+      ],
+      "output": [
+        "State: other state line."
+      ]
+    }
+  }
+}
