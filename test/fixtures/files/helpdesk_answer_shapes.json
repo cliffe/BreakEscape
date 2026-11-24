@@ -10,43 +10,43 @@
     "status": 200,
     "body": { "granted": true, "what": "mfa" },
     "vary": [],
-    "guess": ["body: whether a repeat grant of mfa also carries lockoutPcIds (brief says the repeat carries 'the current lockoutPcIds' without saying for which `what`)"]
+    "guess": []
   },
   "helpdesk.refused": {
     "status": 422,
     "body": { "reason": "refused", "triesLeft": 2 },
     "vary": ["body.triesLeft"],
-    "guess": ["body: no `success: false` key (brief says reason and triesLeft and nothing else)"]
+    "guess": []
   },
   "helpdesk.refused_last": {
     "status": 422,
     "body": { "reason": "refused", "triesLeft": 0 },
     "vary": [],
-    "guess": ["body: no `success: false` key"]
+    "guess": []
   },
   "helpdesk.blocked": {
     "status": 422,
     "body": { "reason": "blocked", "retryIn": 240 },
     "vary": ["body.retryIn"],
-    "guess": ["body: no `success: false` key"]
+    "guess": []
   },
   "helpdesk.unavailable": {
     "status": 422,
     "body": { "reason": "unavailable" },
     "vary": [],
-    "guess": ["body: the key is `reason` (the brief names only the status and the word)"]
+    "guess": []
   },
   "helpdesk.not_found": {
     "status": 404,
     "body": { "reason": "not_found" },
     "vary": [],
-    "guess": ["body: the key is `reason`"]
+    "guess": []
   },
   "helpdesk.bad_request": {
     "status": 400,
     "body": { "reason": "bad_request" },
     "vary": [],
-    "guess": ["body: the key is `reason`"]
+    "guess": []
   },
   "bootstrap.helpdesk_forms": {
     "status": 200,
@@ -72,7 +72,7 @@
       "password": "Tern-Harbour-41"
     },
     "vary": ["body.id", "body.account.npcId", "body.account.username", "body.account.displayName", "body.password"],
-    "guess": ["body.how: the value (a captured entry says 'recorded'; unit 12 chooses the reset word)"]
+    "guess": []
   },
   "keyring.password_changed": {
     "status": 422,
@@ -96,13 +96,13 @@
     "status": 200,
     "body": { "deviceId": "own:vera", "displayName": "My phone", "npcId": "vera", "code": "482916", "secondsLeft": 17, "used": false },
     "vary": ["body.deviceId", "body.npcId", "body.code", "body.secondsLeft"],
-    "guess": ["body.used: present on every own-phone answer (brief writes `used?`)"]
+    "guess": []
   },
   "device.own_used": {
     "status": 200,
     "body": { "deviceId": "own:vera", "displayName": "My phone", "npcId": "vera", "code": "482916", "secondsLeft": 9, "used": true },
     "vary": ["body.deviceId", "body.npcId", "body.code", "body.secondsLeft"],
-    "guess": ["body.used"]
+    "guess": []
   },
   "device.unenrolled": {
     "status": 200,
@@ -144,7 +144,7 @@
     "status": 200,
     "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "approvedBy": "player" },
     "vary": ["body.npcId", "body.username", "body.displayName"],
-    "guess": ["body: optional portrait, avatar and access keys (login_session_answer adds them when the NPC has them; the test scenario's NPCs are assumed to have none)"]
+    "guess": []
   },
   "approve.cancelled": {
     "status": 422,
@@ -156,6 +156,6 @@
     "status": 200,
     "body": { "success": true, "npcId": "vera", "username": "v.mbeki", "displayName": "Vera Mbeki", "via": "password" },
     "vary": ["body.npcId", "body.username", "body.displayName"],
-    "guess": ["body: optional portrait, avatar and access keys, as for approve.own_passed"]
+    "guess": []
   }
 }
