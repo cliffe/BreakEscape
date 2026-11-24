@@ -22,13 +22,13 @@ module BreakEscape
     end
 
     def scenario
-      moira = { 'id' => 'moira', 'displayName' => 'Moira', 'habits' => { 'approvesPrompts' => 'always' } }
+      moira = { 'id' => 'moira', 'displayName' => 'Moira', 'habits' => { 'approvesPrompts' => 'always' }, 'unlockable' => ['records_room'] }
       priya = { 'id' => 'priya', 'displayName' => 'Priya', 'habits' => { 'approvesPrompts' => 'always' } }
-      locker = { 'id' => 'moira_locker', 'type' => 'safe', 'locked' => true, 'secondStep' => { 'kind' => 'push', 'owner' => 'moira' },
+      locker = { 'id' => 'moira_locker', 'name' => "Moira's locker", 'type' => 'safe', 'locked' => true, 'secondStep' => { 'kind' => 'push', 'owner' => 'moira' },
                  'contents' => [deep(MEMO)] }
       cabinet = { 'id' => 'moira_cabinet', 'type' => 'safe', 'locked' => true, 'secondStep' => { 'kind' => 'code', 'owner' => 'moira' },
                   'contents' => [{ 'id' => 'cabinet_file', 'type' => 'notes', 'name' => 'Cabinet file' }] }
-      safe = { 'id' => 'priya_safe', 'type' => 'safe', 'locked' => true, 'secondStep' => { 'kind' => 'push_number_match', 'owner' => 'priya' },
+      safe = { 'id' => 'priya_safe', 'name' => "Priya's safe", 'type' => 'safe', 'locked' => true, 'secondStep' => { 'kind' => 'push_number_match', 'owner' => 'priya' },
                'contents' => [{ 'id' => 'safe_note', 'type' => 'notes', 'name' => 'Safe note' }] }
       { 'startRoom' => 'hall',
         'rooms' => {
@@ -47,6 +47,7 @@ module BreakEscape
     def start
       @clock = Time.utc(2026, 1, 1)
       @rows = []
+      @echo = nil
     end
 
     def tick(seconds = 1)
@@ -55,7 +56,13 @@ module BreakEscape
     end
 
     # One recorded answer: the fixture's body and status, on the route the fixture names.
-    def answer(name, query: nil, seconds: 1, status: nil)
+    # R1-L4: every lock-form answer of POST mfa/verify, prompt and approve names its lock at the root (targetType, targetId).
+    # The fixture's bodies are adopted as they are and the two keys are added: the lock of the last gate answer, or `echo:` (a
+    # [type, id] pair); `echo: false` leaves the answer as the fixture has it (no echo). The 403/404 `error` answers and the
+    # generic 422 `message` carry none.
+    LOCK_ROUTES = %w[mfa/verify mfa/prompt mfa/approve].freeze
+
+    def answer(name, query: nil, seconds: 1, status: nil, echo: true)
       fx = ANSWERS.fetch(name)
       route = { 'any /mfa/*' => 'GET /mfa/phone', 'POST /mfa/verify | /mfa/prompt | /mfa/approve' => 'POST /mfa/verify' }.fetch(fx['route'], fx['route'])
       path = ROUTE_PATHS.fetch(route)
@@ -64,6 +71,19 @@ module BreakEscape
               'status' => status || fx['status'], 'body' => deep(fx['body']) }
       row['query'] = query if query
       yield row['body'] if block_given?
+      body = row['body']
+      if body['secondStep'] == true
+        @echo = [body['targetType'], body['targetId']]
+      elsif LOCK_ROUTES.include?(path) && !body.key?('error') && body.keys.sort != %w[message success]
+        if echo
+          type, id = echo.is_a?(Array) ? echo : (@echo || %w[object moira_locker])
+          body['targetType'] = type
+          body['targetId'] = id
+        else
+          body.delete('targetType')
+          body.delete('targetId')
+        end
+      end
       @rows << row
       row
     end
@@ -250,12 +270,17 @@ module BreakEscape
       assert_clean
     end
 
-    test 'a pass that two open gates could take is reported, never guessed' do
+    test 'a pass with two gates open is placed by its own echo (R1-L4), and with no echo it is reported, never guessed' do
       start
       answer('gate_push')
       answer('gate_door_npc')
       answer('prompt_passed')
-      assert_equal [['lock_step_answer', 'lockstep:pass:ambiguous']], lock(scan)
+      assert_equal [], lock(scan)
+      start
+      answer('gate_push')
+      answer('gate_door_npc')
+      answer('prompt_passed', echo: false)
+      assert_equal [['lock_step_answer', 'lockstep:pass:no-echo']], lock(scan)
     end
 
     test 'a pass on the route of the other kind of lock is reported' do

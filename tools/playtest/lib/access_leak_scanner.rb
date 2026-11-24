@@ -526,6 +526,7 @@ class AccessLeakScanner
       @mfa_row_ref = "#{source}:#{line_no}"
       if body.nil?
         mfa_note_bodyless(row)
+        ls_note_bodyless(row) # S8c lock second step: a lost answer may have been a cancel or an expiry
         next
       end
 
@@ -3759,7 +3760,7 @@ class AccessLeakScanner
         elsif key == 'code' && @mfa_code_possible && !(device && hash.equal?(body)) &&
               ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || !mfa_authored_code?(hash[key]))
           add.call('mfa_secret', 'mfa:key:code', at)
-        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) }
+        elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) } && !ls_placed?(hash)
           add.call('mfa_secret', 'mfa:key:numbers', at)
         elsif key == 'number' && (in_mfa_route || hash.key?('mfaRequired') || hash.key?('mfa')) && !(required && hash.equal?(body))
           add.call('mfa_secret', 'mfa:key:number', at)
@@ -3831,7 +3832,9 @@ class AccessLeakScanner
       if info[:method] == 'POST' && body['success'] == true then mfa_judge_login(body, add)
       else mfa_judge_unplaced(body, row, add)
       end
-    when 'mfa/verify', 'mfa/prompt', 'mfa/approve' then mfa_judge_pass(body, info, row, add) if body['success'] == true
+    when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      # S8c: a pass the lock rules placed is a lock's, not a PC's session
+      mfa_judge_pass(body, info, row, add) if body['success'] == true && !ls_placed?(body)
     when 'scenario'
       if info[:method] == 'GET' then mfa_judge_bootstrap(body, add)
       else mfa_judge_unplaced(body, row, add)
@@ -3936,7 +3939,7 @@ class AccessLeakScanner
       mfa_confirm_desktop(pending, body, info)
     elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
       mfa_unconfirmed!('a sign-out came before any desktop row')
-    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info)) && !ls_placed?(body)
       mfa_unconfirmed!("another sign-in or step passed (#{body['npcId'].inspect}) before any desktop row")
     end
   end
@@ -4099,6 +4102,7 @@ class AccessLeakScanner
       mfa_note_signin(body) if @mfa_row_pcs
     when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
       return unless body.is_a?(Hash)
+      return if ls_lock_form?(body) # S8c: an answer naming a lock earns, counts and closes nothing for a PC step
 
       # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
       # a pass answer on the strict route earns
