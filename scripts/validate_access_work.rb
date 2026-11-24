@@ -1518,6 +1518,9 @@ module ValidateAccessWork
   end
 
   def awareness_level(json_data, npc)
+    # S5c: an account-only NPC has no person behind it, so it has no awareness level.
+    return [nil, true] if defined?(BreakEscape::AccessIdentities) && BreakEscape::AccessIdentities.account_only?(npc)
+
     if defined?(BreakEscape::NpcHabits) && BreakEscape::NpcHabits.respond_to?(:level_of)
       [BreakEscape::NpcHabits.level_of(npc, json_data), true]
     else

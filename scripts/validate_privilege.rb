@@ -10,8 +10,8 @@
 #       admin session, when the PC's owner is admitted by one of the two profiles;
 #   (b) a remove_item that is not the first action of its list on a USB-governed object;
 #   (c) one object whose needsSession grants name two different PCs.
-# Errors: a field of a later stage (S5c) is not built yet, so it fails loudly. S5b adds the cached
-# accounts checks (privilege_cached_accounts).
+# S5b adds the cached accounts checks (privilege_cached_accounts); S5c adds the account kind and
+# account-only checks (privilege_account_kinds).
 # A scenario with no `creds.admin` account and no admin grant gets no line from this file.
 require 'json'
 require 'set'
@@ -21,9 +21,6 @@ require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/cached_accounts'
 require_relative '../lib/break_escape/access_work' unless defined?(BreakEscape::AccessWork)
 
-# Field => stage, by where the field sits.
-PRIVILEGE_NOT_BUILT_S5C_CREDS = %w[accountKind localTo domain].freeze
-
 def check_privilege(json_data)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -31,9 +28,9 @@ def check_privilege(json_data)
   err = ->(msg) { issues << "❌ ERROR: privilege: #{msg}" }
   warn = ->(msg) { issues << "⚠️ WARNING: privilege: #{msg}" }
   info = ->(msg) { issues << "ℹ️ INFO: privilege: #{msg}" }
-  privilege_not_built(json_data, err)
   privilege_cached_accounts(json_data, err, warn, info) # S5b
   privilege_port_of(json_data, err, warn) # S5 ruling A
+  privilege_account_kinds(json_data, err, warn, info) # S5c
   privilege_admin_profile_collisions(json_data, warn)
   privilege_object_warnings(json_data, warn)
   issues
@@ -41,37 +38,6 @@ end
 
 def privilege_present?(value)
   BreakEscape::CredentialModel.present_string?(value)
-end
-
-# Fields of later stages: one fixed line each, an error, because a field that does nothing is too
-# quiet for a warning.
-def privilege_not_built(json_data, err)
-  ai = BreakEscape::AccessIdentities
-  line = ->(field, stage) { "\"#{field}\" is not built yet (privilege plan stage #{stage})" }
-
-  # S5c: a domain on a sign-in PC. (S5b's cachedAccounts and harvested guards are lifted: see
-  # privilege_cached_accounts.)
-  ai.room_objects(json_data).each do |entry|
-    obj = entry[:object]
-    err.call("#{entry[:path]}: #{line.call('domain', 'S5c')}") if ai.login_pc?(obj) && obj.key?('domain')
-  end
-
-  # S5c: account kinds on creds, and accountOnly on an NPC (the NPC schema is open).
-  npcs = ai.room_npcs(json_data).map { |e| [e[:npc], e[:path]] }
-  %w[npcs phoneNPCs].each do |key|
-    next unless json_data[key].is_a?(Array)
-
-    json_data[key].each_with_index { |npc, i| npcs << [npc, "#{key}[#{i}]"] if npc.is_a?(Hash) }
-  end
-  npcs.each do |npc, path|
-    creds = npc['creds']
-    if creds.is_a?(Hash)
-      PRIVILEGE_NOT_BUILT_S5C_CREDS.each do |field|
-        err.call("#{path}: creds.#{line.call(field, 'S5c')}") if creds.key?(field)
-      end
-    end
-    err.call("#{path}: #{line.call('accountOnly', 'S5c')}") if npc.key?('accountOnly')
-  end
 end
 
 # The accounts that can hold an admin session at a PC: a `creds.admin: true` account the PC's
@@ -352,5 +318,198 @@ def privilege_port_of(json_data, err, warn)
 
     warn.call("#{where}: the port's USB policy ('#{mine}') differs from the policy of '#{port[0, 60]}' ('#{theirs}'). " \
               "The stick is judged by the port's own policy.")
+  end
+end
+
+# ---- S5c: account kinds and account-only accounts ---------------------------------------------
+# Every message below needs `creds.accountKind`, `localTo`, `creds.domain`, a PC `domain` or an
+# `accountOnly` key to be present, so a scenario with none gets no line from this part.
+PRIVILEGE_DOMAIN_PATTERN = /\A[A-Za-z0-9.-]{1,32}\z/
+PRIVILEGE_ACCOUNT_ONLY_KEYS = %w[id displayName npcType creds role staff accountOnly].freeze
+
+def privilege_account_kinds(json_data, err, warn, info)
+  ai = BreakEscape::AccessIdentities
+  cm = BreakEscape::CredentialModel
+  pcs = ai.sign_in_pcs(json_data).to_h { |e| [e[:object]['id'].to_s, e[:object]] }
+  pc_domains = privilege_pc_domains(json_data, err)
+  npcs = privilege_all_npcs(json_data)
+  used_domains = Set.new
+
+  npcs.each do |npc, path|
+    creds = npc['creds']
+    next unless creds.is_a?(Hash)
+
+    where = "#{path} (#{npc['id'] || '?'})"
+    used_domains.merge(privilege_check_kind(npc, where, pcs, pc_domains, err, warn, info))
+  end
+
+  # An owner whose account kind refuses its own PC could never sign in at it.
+  pcs.each_value do |pc|
+    owner = cm.account_npc(json_data, ai.owner_id(pc))
+    next unless owner && !ai.account_kind_admits?(pc, owner)
+
+    err.call("sign-in PC '#{pc['id'].to_s[0, 60]}': its owner '#{owner['id'].to_s[0, 60]}' has an account kind that refuses this PC, so the owner could never sign in at it")
+  end
+
+  # A borrower at a PC whose account kind refuses that PC could never use the borrowed session.
+  npcs.each do |npc, path|
+    next unless cm.account_npc(json_data, npc['id'])
+
+    BreakEscape::AccessWork.workarounds(json_data, npc).each do |w|
+      next unless w['do'] == 'borrow_session'
+
+      pc = pcs[w['pc'].to_s]
+      next unless pc && !ai.account_kind_admits?(pc, npc)
+
+      err.call("#{path} (#{npc['id']}): its borrow_session at PC '#{w['pc'].to_s[0, 60]}' needs an account that the account kind refuses there")
+    end
+  end
+
+  pc_domains.each do |pc_id, dom|
+    next if used_domains.include?(dom)
+
+    warn.call("sign-in PC '#{pc_id[0, 60]}': domain '#{dom[0, 40]}' is used by no account's creds.domain")
+  end
+
+  privilege_account_only(json_data, npcs, err)
+end
+
+# Every sign-in PC's authored domain, as { pc id => domain }; a bad one is an error and left out.
+def privilege_pc_domains(json_data, err)
+  ai = BreakEscape::AccessIdentities
+  out = {}
+  ai.room_objects(json_data).each do |entry|
+    obj = entry[:object]
+    next unless obj.key?('domain')
+
+    where = "#{entry[:path]} (#{obj['id'] || obj['name'] || '?'})"
+    dom = obj['domain']
+    unless ai.login_pc?(obj)
+      err.call("#{where}: domain is only for a sign-in PC (a sign-in PC has lockType \"login\")")
+      next
+    end
+    unless dom.is_a?(String) && dom.match?(PRIVILEGE_DOMAIN_PATTERN)
+      err.call("#{where}: domain must be 1 to 32 letters, digits, dots or hyphens")
+      next
+    end
+    out[obj['id'].to_s] = dom
+  end
+  out
+end
+
+# Room NPCs and phone NPCs, as [npc, path].
+def privilege_all_npcs(json_data)
+  npcs = BreakEscape::AccessIdentities.room_npcs(json_data).map { |e| [e[:npc], e[:path]] }
+  %w[npcs phoneNPCs].each do |key|
+    next unless json_data[key].is_a?(Array)
+
+    json_data[key].each_with_index { |npc, i| npcs << [npc, "#{key}[#{i}]"] if npc.is_a?(Hash) }
+  end
+  npcs
+end
+
+# The kind fields of one account. Returns the domains this account uses.
+def privilege_check_kind(npc, where, pcs, pc_domains, err, warn, info)
+  creds = npc['creds']
+  used = []
+  return used unless creds.key?('accountKind') || creds.key?('localTo') || creds.key?('domain')
+
+  kind = creds['accountKind']
+  if creds.key?('accountKind') && !%w[local domain].include?(kind)
+    err.call("#{where}: creds.accountKind must be \"local\" or \"domain\"")
+    return used
+  end
+
+  if creds.key?('domain')
+    dom = creds['domain']
+    if !dom.is_a?(String) || !dom.match?(PRIVILEGE_DOMAIN_PATTERN)
+      err.call("#{where}: creds.domain must be 1 to 32 letters, digits, dots or hyphens")
+    elsif kind != 'domain'
+      warn.call("#{where}: creds.domain does nothing without accountKind \"domain\"")
+    end
+  end
+  warn.call("#{where}: creds.localTo does nothing without accountKind \"local\"") if creds.key?('localTo') && kind != 'local'
+
+  case kind
+  when 'local'
+    privilege_check_local(npc, where, pcs, err, info)
+  when 'domain'
+    dom = creds['domain']
+    if !dom.is_a?(String) || dom.empty?
+      err.call("#{where}: a domain account needs creds.domain")
+    elsif dom.match?(PRIVILEGE_DOMAIN_PATTERN)
+      used << dom
+      err.call("#{where}: creds.domain '#{dom[0, 40]}' is the domain of no sign-in PC") unless pc_domains.value?(dom)
+    end
+  end
+  used
+end
+
+def privilege_check_local(npc, where, pcs, err, info)
+  creds = npc['creds']
+  list = creds['localTo']
+  unless list.is_a?(Array) && !list.empty? && list.all? { |id| id.is_a?(String) }
+    err.call("#{where}: a local account needs creds.localTo, a list of sign-in PC ids")
+    return
+  end
+  list.each do |id|
+    unless pcs.key?(id)
+      err.call("#{where}: creds.localTo names '#{id[0, 60]}', which is not a sign-in PC")
+      next
+    end
+    acl = pcs[id]['access']
+    next if acl.nil? || BreakEscape::AccessIdentities.acl_admits?(acl, npc)
+
+    err.call("#{where}: creds.localTo names '#{id[0, 60]}', but that PC's access list refuses the account, so it could never sign in there")
+  end
+  info.call("#{where}: a shared local administrator (it opens #{list.uniq.length} PCs once cracked)") if creds['admin'] == true && list.uniq.length > 1
+end
+
+# accountOnly: an account with no person behind it.
+def privilege_account_only(json_data, npcs, err)
+  ai = BreakEscape::AccessIdentities
+  aw = BreakEscape::AccessWork
+  only = {}
+  npcs.each do |npc, path|
+    next unless npc.key?('accountOnly')
+
+    where = "#{path} (#{npc['id'] || '?'})"
+    unless [true, false].include?(npc['accountOnly'])
+      err.call("#{where}: accountOnly must be true or false")
+      next
+    end
+    next unless npc['accountOnly'] == true
+
+    only[npc['id'].to_s] = npc
+    creds = npc['creds']
+    err.call("#{where}: an account-only NPC needs creds.username") unless creds.is_a?(Hash) && privilege_present?(creds['username'])
+    unless [true, false].include?(npc['staff'])
+      err.call("#{where}: an account-only NPC needs staff set to true or false (an NPC with creds is staff unless it says false)")
+    end
+    npc.each_key do |key|
+      next if PRIVILEGE_ACCOUNT_ONLY_KEYS.include?(key) || key.to_s.start_with?('_')
+
+      err.call("#{where}: an account-only NPC may not carry '#{key.to_s[0, 40]}'; it has no person, position or story")
+    end
+    err.call("#{where}: an account-only NPC cannot have workarounds (it is not a person who acts)") if aw.workarounds(json_data, npc).any?
+  end
+  return if only.empty?
+
+  ai.sign_in_pcs(json_data).each do |entry|
+    pc = entry[:object]
+    owner = ai.owner_id(pc)
+    err.call("sign-in PC '#{pc['id'].to_s[0, 60]}': its owner '#{owner.to_s[0, 60]}' is an account-only NPC; an owner is a person who sits at the PC") if owner && only.key?(owner)
+    Array(pc['cachedAccounts']).each do |item|
+      next unless item.is_a?(Hash) && item['after'] == 'borrow' && only.key?(item['npc'].to_s)
+
+      err.call("sign-in PC '#{pc['id'].to_s[0, 60]}': cachedAccounts names account-only '#{item['npc'].to_s[0, 60]}' after \"borrow\"; nobody borrows for it")
+    end
+  end
+  npcs.each do |npc, path|
+    aw.workarounds(json_data, npc).each do |w|
+      next unless w['do'] == 'share_login' && only.key?(w['with'].to_s)
+
+      err.call("#{path} (#{npc['id']}): share_login names account-only '#{w['with'].to_s[0, 60]}' as the colleague; it is not a person who can be asked")
+    end
   end
 end
