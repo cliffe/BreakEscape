@@ -19,12 +19,14 @@ module BreakEscape
     end
 
     # { npcId => { 'password' => true?, 'mfa' => true?, 'typed' => true? } }
+    # Writes on first use: for writers only; readers use the view (account_resets_view).
     def account_resets
       player_state['accountResets'] = {} unless player_state['accountResets'].is_a?(Hash)
       player_state['accountResets']
     end
 
     # { "<deskId>|<normalised username>" => { 'n' =>, 'seq' =>, 'stoppedAt' =>? } }
+    # Writes on first use: for writers only; readers use the view (helpdesk_tries_view).
     def helpdesk_tries
       player_state['helpdeskTries'] = {} unless player_state['helpdeskTries'].is_a?(Hash)
       player_state['helpdeskTries']
@@ -32,7 +34,7 @@ module BreakEscape
 
     # Whether a desk has done this reset (`password` or `mfa`) for the account
     def account_reset?(npc_id, what)
-      entry = account_resets[npc_id.to_s]
+      entry = account_resets_view[npc_id.to_s]
       entry.is_a?(Hash) && entry[what.to_s] == true
     end
 
@@ -61,7 +63,7 @@ module BreakEscape
     # A typed sign-in with the new password has happened: a saved connection made before the reset
     # no longer opens. A no-op for an account whose password no desk reset. The caller saves.
     def note_typed_sign_in!(npc_id)
-      entry = account_resets[npc_id.to_s]
+      entry = account_resets_view[npc_id.to_s]
       entry['typed'] = true if entry.is_a?(Hash) && entry['password'] == true
     end
 
@@ -82,7 +84,7 @@ module BreakEscape
       key = HelpdeskModel.tries_key(desk_id, typed)
       now = mfa_now
       lift_helpdesk_stop!(key, now)
-      entry = helpdesk_tries[key]
+      entry = helpdesk_tries_view[key]
       if entry.is_a?(Hash) && entry['stoppedAt'].is_a?(Integer)
         retry_in = entry['stoppedAt'] + HelpdeskModel::DESK_STOP_SECONDS - now
         # Past ten stored rows the log call stores nothing, so there is nothing to save
@@ -125,6 +127,19 @@ module BreakEscape
 
     private
 
+    # Non-writing readers: the stored Hash, or a frozen empty one. Never touch player_state.
+    EMPTY_STATE = {}.freeze
+
+    def account_resets_view
+      stored = player_state['accountResets']
+      stored.is_a?(Hash) ? stored : EMPTY_STATE
+    end
+
+    def helpdesk_tries_view
+      stored = player_state['helpdeskTries']
+      stored.is_a?(Hash) ? stored : EMPTY_STATE
+    end
+
     def helpdesk_refusal(status, reason)
       { status: status, body: { reason: reason } }
     end
@@ -148,7 +163,7 @@ module BreakEscape
 
     # A stop older than the stop length is lifted (entry deleted, count back to 0)
     def lift_helpdesk_stop!(key, now)
-      entry = helpdesk_tries[key]
+      entry = helpdesk_tries_view[key]
       return unless entry.is_a?(Hash) && entry['stoppedAt'].is_a?(Integer)
 
       helpdesk_tries.delete(key) if now - entry['stoppedAt'] >= HelpdeskModel::DESK_STOP_SECONDS

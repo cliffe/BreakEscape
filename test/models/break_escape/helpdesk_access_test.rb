@@ -282,6 +282,47 @@ module BreakEscape
       refute @game.account_reset?('sam', 'password')
     end
 
+    # --- reading never writes ---------------------------------------------------------------------
+
+    test 'every public reader leaves a game with no helpdesk state unchanged' do
+      game = build
+      before = Marshal.load(Marshal.dump(game.player_state))
+      sam = game.scenario_room_npc('sam')
+      game.save!
+      readers = {
+        account_reset: -> { game.account_reset?('sam', 'password') },
+        effective_password: -> { game.effective_password(sam) },
+        lockout_keys: -> { game.login_lockout_keys_for(sam) },
+        note_typed: -> { game.note_typed_sign_in!('sam') },
+        forms: -> { game.helpdesk_forms_for_client },
+        keyring: -> { game.helpdesk_keyring_entries }
+      }
+      readers.each do |name, call|
+        call.call
+        assert_equal before, game.player_state, "#{name} changed player_state"
+        refute game.changed?, "#{name} marked the game changed"
+      end
+    end
+
+    test 'refused-before-counting requests create no state keys' do
+      game = build
+      before = Marshal.load(Marshal.dump(game.player_state))
+      ask(game: game, desk_id: 'nope')
+      ask(game: game, what: 'bogus')
+      assert_equal before, game.reload.player_state
+    end
+
+    test 'non-Hash state under the keys is treated as empty by readers and does not raise' do
+      game = build(state: { 'accountResets' => 'forged', 'helpdeskTries' => [1] })
+      before = Marshal.load(Marshal.dump(game.player_state))
+      sam = game.scenario_room_npc('sam')
+      refute game.account_reset?('sam', 'password')
+      assert_equal NS::SAM_PASSWORD, game.effective_password(sam)
+      assert_nil game.note_typed_sign_in!('sam')
+      assert_empty game.helpdesk_keyring_entries
+      assert_equal before, game.player_state
+    end
+
     # --- hostile input and what never leaves ------------------------------------------------------
 
     test 'a hostile username and answers are cut, cleaned, echoed nowhere and stored only as the normalised key' do
