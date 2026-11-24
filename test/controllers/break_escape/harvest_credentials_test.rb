@@ -100,7 +100,8 @@ module BreakEscape
       body = collect
       assert_response :success
       assert_equal 'no-store', response.headers['Cache-Control']
-      assert_equal %w[harvested held keyringRev success], body.keys.sort
+      assert_equal %w[harvested held keyringRev pcId success], body.keys.sort
+      assert_equal 'profile_pc', body['pcId']
       assert_equal true, body['success']
       assert_equal %w[jake dana], body['harvested'].map { |r| r['npcId'] }
       assert_equal body['harvested'], body['held']

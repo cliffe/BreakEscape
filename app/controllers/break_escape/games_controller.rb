@@ -2115,7 +2115,7 @@ module BreakEscape
               if result.nil?
                 refusal = :not_reachable
               else
-                answer = { success: true,
+                answer = { success: true, pcId: pc_id,
                            harvested: @game.harvested_rows(pc_id, result[:added]),
                            held: @game.harvested_rows(pc_id, result[:held]),
                            keyringRev: @game.keyring_for_client(stamp: true)[:rev] }
