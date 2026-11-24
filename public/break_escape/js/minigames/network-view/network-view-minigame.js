@@ -126,11 +126,13 @@ export const REFETCH_IDLE_MS = 15000;
 const LOG_TRIPS = new Map();
 
 /**
- * Whether the view is one the switch and the Terminal are for: a block carries `ops: true`, or the view
- * offers a Sweep (a discovery block not yet swept, which the server marks `ops` only after the sweep).
+ * Whether the view is one the switch and the Terminal are for: a block carries `ops: true` or `swept: true`, or the
+ * view offers a Sweep (a discovery block not yet swept, which the server marks `ops` only after the sweep).
  */
 export function viewHasOps(view) {
-    if ((Array.isArray(view?.networks) ? view.networks : []).some(b => b && typeof b === 'object' && b.ops === true)) return true;
+    // `swept` is served only for a discovery network (an ops-layer block): once swept, the view stays one the
+    // Terminal is for even when no host there declares services (the server then sends no `ops` flag)
+    if ((Array.isArray(view?.networks) ? view.networks : []).some(b => b && typeof b === 'object' && (b.ops === true || b.swept === true))) return true;
     try { return offers(view, {}).some(o => o.action === 'sweep'); } catch (e) { return false; }
 }
 

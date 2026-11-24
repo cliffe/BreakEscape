@@ -250,7 +250,8 @@ test('a refetch that leaves no ops block removes the switch and falls back to Pa
     const body = opsBody();
     const h = await mount(body, { params: { skin: 'cli' } });
     assert.ok(switchBtn(h));
-    for (const b of body.footholds[0].networks) delete b.ops;
+    // `swept` is served only for a discovery network, itself part of the ops layer: a view with neither has none
+    for (const b of body.footholds[0].networks) { delete b.ops; delete b.swept; }
     await h.view().refetch({ sync: false });
     await settle();
     assert.equal(switchBtn(h), null);
@@ -320,6 +321,26 @@ test('before the first sweep (no block marked ops yet) the Terminal is there, wi
     await settle(2);
     assert.equal(h.view().getTestState().skin, 'cli');
     assert.ok(q(h, '.network-term'));
+    h.end();
+});
+
+test('R2-9: a sweep that lists hosts with no services leaves the player in the Terminal, log kept', async () => {
+    const body = clone(loadFixture('discovery_unswept'));
+    const h = await mount(body, { params: { skin: 'cli' }, hold: true });
+    q(h, '[data-network-id] [data-action="sweep"]').click();
+    await settle(2);
+    const net = body.footholds[0].networks[0];
+    net.swept = true;
+    net.hosts = [
+        { id: 'quiet01', kind: 'pc', name: 'Quiet one', host: 'QUIET01', sprite: 'pc_desktop', headless: true, remoteSignIn: false },
+        { id: 'quiet02', kind: 'pc', name: 'Quiet two', host: 'QUIET02', sprite: 'pc_desktop', headless: true, remoteSignIn: false }
+    ];
+    await h.release({ success: true, network: { id: net.id, swept: true, hosts: net.hosts } });
+    await settle(4);
+    assert.equal(h.view().getTestState().skin, 'cli', 'still the Terminal');
+    assert.ok(q(h, '.network-term'));
+    assert.ok(switchBtn(h), 'the switch is still there');
+    assert.ok(lines(h).length > 1, 'the log is kept');
     h.end();
 });
 
@@ -419,5 +440,22 @@ test('R1-C17: a sign-in that opens nothing leaves no echo line', async () => {
     await settle();
     assert.equal(done, false);
     assert.equal(lines(h).length, before, JSON.stringify(lines(h).slice(before)));
+    h.end();
+});
+
+test('E7: a typed sign-in the grammar refuses prints its echo and the row sentence, and sends nothing (the brief: a typed line that does not resolve logs echo and reply)', async () => {
+    const body = opsBody();
+    for (const r of body.footholds[0].hosts) if (r.kind === 'pc') r.remoteSignIn = false;
+    const h = await mount(body, { params: { skin: 'cli' } });
+    const row = [...h.view().allRows()].find(r => r.kind === 'pc' && r.remoteSignIn === false);
+    assert.ok(row, 'a host with remote sign-in off');
+    const input = q(h, '.network-term-input');
+    const before = lines(h).length;
+    input.value = `signin ${row.id}`;
+    input.form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+    const added = lines(h).slice(before);
+    assert.ok(added[0].startsWith('$') && added[0].includes(`signin ${row.id}`), JSON.stringify(added));
+    assert.ok(added.length >= 2, 'the reply follows the echo');
     h.end();
 });
