@@ -10,6 +10,6 @@ export default async (page, bridge, mark) => {
   const r = await bridge.interact('phantom_locker', { timeoutMs: 20000, approach: false });
   const w = await bridge.waitForMinigame('lockpicking', { timeoutMs: 10000 }).catch(() => null);
   if (!w || w.ok === false) throw new Error('lockpicking did not open (caught?) ' + JSON.stringify(r).slice(0, 200));
-  mark('minigame-open'); await sleep(1800); await pickLock(page, bridge, mark); await sleep(500); await closeAll(page, bridge); await sleep(900);
+  mark('minigame-open'); await sleep(1800); await pickLock(page, bridge, mark); await sleep(500); mark('pick-done'); for (let i = 0; i < 3; i++) { await closeAll(page, bridge); await sleep(700); } /* v2: opening the lock opens the container (contents) which blocked the chat; cut before contents */
   await faceFlash(page, bridge, mark, 'background_agent', 1800); await sleep(600);
 };
