@@ -3121,6 +3121,7 @@ export class PasswordMinigame extends MinigameScene {
         this.params.suspended = true;
         this.params.mfaPhoneOpened = true;
         delete this.params.mfaPhoneDenied;
+        delete this.params.mfaPhoneLocked;
         // The phone's own result tells this screen, on its return, whether the request was refused
         const parentParams = this.params;
         window.startAuthenticatorLive({
@@ -3128,6 +3129,7 @@ export class PasswordMinigame extends MinigameScene {
             returnTo: { sceneType: 'password', params: {} },
             onComplete: (success, result) => {
                 if (result && Number(result.denied) > 0) parentParams.mfaPhoneDenied = true;
+                if (result && result.ended === 'locked_out') parentParams.mfaPhoneLocked = true;
             }
         });
         if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
@@ -3142,7 +3144,9 @@ export class PasswordMinigame extends MinigameScene {
         const client = this.mfaClientRef();
         if (!client || !this.signIn?.pcId) return false;
         const key = this.mfaSubject();
-        const done = typeof client.takeCompleted === 'function' ? client.takeCompleted(key) : null;
+        // R3-9: a completed step begun over another way in is left for the screen with that way in
+        const waiting = typeof client.peekCompleted === 'function' ? client.peekCompleted(key) : null;
+        const done = waiting && (waiting.route || '') !== this.secondStepRoute() ? null : (typeof client.takeCompleted === 'function' ? client.takeCompleted(key) : null);
         if (done) {
             const held = window.pcSessions?.get?.(this.signIn.pcId);
             const session = held && held.npcId === done.npcId ? held : { username: done.username, displayName: done.displayName };
@@ -3155,8 +3159,11 @@ export class PasswordMinigame extends MinigameScene {
             // Back from the owner's phone with the request gone: it was refused, or it ran out
             if (this.params.mfaPhoneOpened) {
                 const denied = this.params.mfaPhoneDenied === true;
+                const locked = this.params.mfaPhoneLocked === true;
                 delete this.params.mfaPhoneOpened;
                 delete this.params.mfaPhoneDenied;
+                delete this.params.mfaPhoneLocked;
+                if (locked) { this.signInLockedOut({ ok: false, reason: 'locked_out', message: 'This account is locked on this PC' }); return true; }
                 this.showPasswordPane({ message: denied ? 'Request cancelled.' : 'That sign-in timed out. Sign in again.' });
                 return true;
             }
@@ -3281,5 +3288,34 @@ export class PasswordMinigame extends MinigameScene {
             this._fallbackCloseHandler = (e) => { if (e.key === 'Escape') this.closeByPlayer(); };
             document.addEventListener('keydown', this._fallbackCloseHandler);
         }
+        this.addLockedBackButton();
+    }
+
+    /**
+     * The way back from a locked-account screen, as the second-step panes have: "Use a different account" returns to the
+     * account choice. Only where the screen has a choice to go back to (clearSignInChoice's own guards).
+     */
+    addLockedBackButton() {
+        const mode = this.gameContainer?.querySelector?.('.signin-mode');
+        const remote = !!this.signIn?.remote;
+        if (!mode || !this.signInState || (this.signInPane && this.signInPane !== 'password') || (!remote && this.signIn?.picker === false) || (remote && !this.signInTilesOffered())) return;
+        const inMonitor = !!this.pcMonitor;
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.id = 'signin-locked-back';
+        back.className = `signin-second-back${inMonitor ? ' pc-os-btn' : ''}`;
+        back.textContent = 'Use a different account';
+        mode.appendChild(back);
+        this.addEventListener(back, 'click', () => {
+            // cleanup() took every listener of the screen, so build it again (the way a fresh open does) with no account chosen
+            const st = this.signInState;
+            st.selected = null;
+            st.other = false;
+            st.otherPicked = false;
+            this.gameData.password = '';
+            this.gameResult = null;
+            this.initSignIn();
+            this.gameContainer.querySelector('.signin-tile')?.focus?.();
+        });
     }
 }

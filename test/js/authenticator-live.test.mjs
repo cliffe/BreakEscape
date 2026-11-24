@@ -138,5 +138,6 @@ test('R2-7: a locked_out or gone answer to a tap closes the phone, the card does
         await scene.tapApprove('pc:desk');
         await tick();
         assert.equal(closed, 1, reason);
+        assert.equal(scene.gameResult.ended, reason, 'R3-10: the result says why it closed');
     }
 });

@@ -163,15 +163,17 @@ export function codeFor(pending) {
 }
 
 function passed(parsed, body, { keep }) {
+    // R3-9: the way in the step began over stays with the completed answer, so only a screen with that way in takes it up
+    const route = (pendingBySubject.get(parsed.key) || {}).route || '';
     pendingBySubject.delete(parsed.key);
     const npcId = (body && body.npcId) || '';
     // The code just used must not be offered again for the next sign-in
     if (lastRead && lastRead.npcId === npcId) lastRead = null;
     if (parsed.kind === 'pc') {
-        if (keep) completedBySubject.set(parsed.key, body);
+        if (keep) completedBySubject.set(parsed.key, { ...body, route });
         if (cfg.onSession) cfg.onSession(parsed.id, body);
     } else {
-        completedBySubject.set(parsed.key, body);
+        completedBySubject.set(parsed.key, { ...body, route });
     }
     return npcId;
 }
@@ -279,6 +281,11 @@ export function approve(subject, { number, deny } = {}) {
     if (number != null) extra.number = number;
     if (deny) extra.deny = true;
     return post('mfa/approve', subject, extra, { keep: true });
+}
+
+/** The completed answer a child scene left, left in place. Null when there is none. */
+export function peekCompleted(subject) {
+    return completedBySubject.get(subjectKey(subject)) || null;
 }
 
 /** The completed answer a child scene left, handed out once. Null when there is none. */

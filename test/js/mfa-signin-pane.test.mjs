@@ -220,12 +220,12 @@ test('each typeToSignIn reason shows its own line as a notice, with no reject so
 
 // ── a new instance resumes from the client ─────────────────────────────────
 
-function reopen(log, tiles = TILES) {
+function reopen(log, tiles = TILES, extra = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: 'Hot desk PC', lockable: { scenarioData: { id: 'hot_desk' } }, type: 'item',
         signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles, current: null },
-        showPostit: false
+        showPostit: false, ...extra
     });
     window.MinigameFramework.currentMinigame = mg;
     mg.init();
@@ -282,6 +282,34 @@ test('a reopened screen with a completed answer accepts the session', async () =
     assert.equal(again.gameResult.success, true);
     assert.equal(again.gameResult.signIn.displayName, 'Sam Okafor');
     assert.equal(mfa.takeCompleted('pc:hot_desk'), null, 'taken once');
+});
+
+test('R3-9 a completed step begun over a foothold is not taken by the keyboard screen', async () => {
+    const { log } = rig();
+    mfa.noteRequired('pc:hot_desk', { mfa: 'push', npcId: 'sam' }, 'foothold:jack');
+    mfa.configure({
+        request: async () => ({ success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', approvedBy: 'owner' }),
+        onSession: (pcId, body) => { log.held = { pcId, npcId: body.npcId }; },
+        emit: () => {}, now: () => 1000
+    });
+    await mfa.approve('pc:hot_desk', {});
+    const again = reopen(log);
+    assert.equal(again.gameResult, null, 'the keyboard screen signs nobody in');
+    assert.equal(mfa.peekCompleted('pc:hot_desk').route, 'foothold:jack', 'the answer waits for its own screen');
+    // the keyboard route takes its own
+    mfa.takeCompleted('pc:hot_desk');
+    mfa.noteRequired('pc:hot_desk', { mfa: 'push', npcId: 'sam' });
+    await mfa.approve('pc:hot_desk', {});
+    assert.equal(reopen(log).gameResult.success, true);
+});
+
+test('R3-10 back from the phone after a lockout the screen says the account is locked, not that the sign-in timed out', () => {
+    const { log } = rig();
+    const lockedOut = reopen(log, TILES, { mfaPhoneOpened: true, mfaPhoneLocked: true });
+    assert.equal(lockedOut.signInMessageEl.textContent, 'This account is locked on this PC.');
+    assert.equal(lockedOut.gameResult.reason, 'locked_out');
+    const gone = reopen(log, TILES, { mfaPhoneOpened: true });
+    assert.equal(gone.signInMessageEl.textContent, 'That sign-in timed out. Sign in again.');
 });
 
 test('with nothing pending a new screen opens on the password pane', () => {
