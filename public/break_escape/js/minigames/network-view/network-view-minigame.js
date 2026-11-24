@@ -41,6 +41,17 @@
  *                 open and is mapped on no desktop. The server sends observations only for a
  *                 resource with no contents (3.4)
  *
+ * skins (S6)  a view with a block marked `ops: true` can draw as Panels (`gui`, the renderer above)
+ *               or as the Terminal (`cli`, network-view-terminal.js). The starter works the starting
+ *               skin out (skin-choice.js) and hands it to the scene as `params.skin`; a scene given
+ *               none is Panels only, with no switch. The switch (a button marked `data-skin-switch`,
+ *               labelled with the OTHER skin's name) sits in the window's title bar in both skins and
+ *               is drawn only while the view holds an ops block; a refetch that leaves none falls
+ *               back to Panels. Pressing it sends nothing: one renderer is unmounted, the other
+ *               mounted on the same rows and the same pending set. The scene's hooks write every
+ *               sent move and its answer into the foothold's log (terminal-format.js) in either
+ *               skin, so the log is complete in any order of switches; the log ends with the trip.
+ *
  * ops (S1)     a network block the server marks `swept: false` offers Sweep (data-action
  *               "sweep", the block carries data-network-id); inside a block marked `ops`, a host
  *               or device row not yet scanned offers Scan (data-action "scan"), and a scanned
@@ -79,10 +90,14 @@ import {
     parseUseTarget, refusalLine, sessionWho, unplugNoticeText
 } from './ops-model.js';
 import {
-    NO_FINDINGS_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText
+    NO_FINDINGS_TEXT, CREDENTIAL_GRANT_TEXT, sessionGrantText, SKIN_LABELS
 } from './view-texts.js';
 import { offers, hostAction, resourceAction, downState, shareLockable, LOCAL_ACTIONS } from './view-controls.js';
 import { PanelsRenderer } from './network-view-panels.js';
+import { TerminalRenderer } from './network-view-terminal.js';
+import { logFor, dropLog, recordSent, recordResult } from './terminal-format.js';
+import { commandFor } from './terminal-grammar.js';
+import { SKINS, chooseSkin, readPick, readUrlValue, rememberPress, pressed } from './skin-choice.js';
 
 export { pendingKey };
 
@@ -107,6 +122,14 @@ export const REFETCH_MS = 5000;
 export const REFETCH_IDLE_AFTER = 3;
 export const POINTER_HOLD_MAX_MS = 3000;
 export const REFETCH_IDLE_MS = 15000;
+// Which trip each foothold's log belongs to, so a log left by an earlier trip never opens a new one
+const LOG_TRIPS = new Map();
+
+/** Whether any block of a view carries `ops: true`: the view the switch and the Terminal are for. */
+export function viewHasOps(view) {
+    return (Array.isArray(view?.networks) ? view.networks : []).some(b => b && typeof b === 'object' && b.ops === true);
+}
+
 export const OPS_ACTIONS = Object.freeze(['sweep', 'scan', 'check', 'confirm', 'use']);
 
 // The kinds of row: the name shown under a row, its icon, and the heading of its group. Handed to
@@ -207,11 +230,35 @@ export class NetworkViewMinigame extends MinigameScene {
         // `selectedTechnique` below read them.
         this.lastGrant = null;
         // The skin: Panels draws from rows and offers and hands a chosen offer back through ctx.perform
-        this.renderer = new PanelsRenderer({ labels: KIND_LABELS, icons: KIND_ICONS, groups: KIND_GROUPS });
+        this.renderer = this.newPanels();
+        this.mounted = 'gui';
+        // The skin the player wants (the starter's choice, then each press of the switch). A scene
+        // handed none is Panels only and draws no switch.
+        this.skinCapable = SKINS.includes(params?.skin);
+        this.skin = this.skinCapable ? params.skin : 'gui';
+        this._logChecked = false;
+        this.onSent = (offer, echo) => this.logSent(offer, echo);
+        this.onEnded = (offer, answer) => this.logEnded(offer, answer);
     }
 
-    get selectedFinding() { return this.renderer.selectedFinding; }
-    get selectedTechnique() { return this.renderer.selectedTechnique; }
+    newPanels() { return new PanelsRenderer({ labels: KIND_LABELS, icons: KIND_ICONS, groups: KIND_GROUPS }); }
+
+    get selectedFinding() { return this.renderer.selectedFinding ?? null; }
+    get selectedTechnique() { return this.renderer.selectedTechnique ?? null; }
+
+    /** What a renderer may ask of the scene. `defer`: the request comes from inside the renderer's own handler. */
+    rendererCtx({ defer = false } = {}) {
+        const later = (fn) => (defer ? Promise.resolve().then(fn) : fn());
+        return {
+            perform: (offer, echo) => this.dispatch(offer, echo),
+            requestClose: () => { later(() => this.complete(false)); },
+            requestSkin: (name) => {
+                if (!this.canSwitch(name)) return false;
+                later(() => this.pressSkin(name));
+                return true;
+            }
+        };
+    }
 
     links() { return window.networkLinks || null; }
 
@@ -229,11 +276,7 @@ export class NetworkViewMinigame extends MinigameScene {
         if (this.container?.classList) this.container.classList.add('network-view-minigame');
         this.buildFrame();
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
-        this.renderer.mount(this.gameContainer, {
-            perform: (offer, echo) => this.dispatch(offer, echo),
-            requestClose: () => this.complete(false),
-            requestSkin: () => false
-        });
+        this.renderer.mount(this.gameContainer, this.rendererCtx());
         // Unplug is there from the start: it does not wait for the link to answer
         this.showHeader();
         this.bindDelegates();
@@ -320,6 +363,8 @@ export class NetworkViewMinigame extends MinigameScene {
     updateScrollCue() {
         const game = this.gameContainer;
         if (!game || !this.moreElement) return false;
+        // The Terminal's log scrolls itself
+        if (this.mounted === 'cli') { this.moreElement.hidden = true; return false; }
         const more = (game.scrollHeight - game.clientHeight - game.scrollTop) > 2;
         this.moreElement.hidden = !more;
         return more;
@@ -480,6 +525,7 @@ export class NetworkViewMinigame extends MinigameScene {
                 if (this.noticeKey && !this.noticeTargetListed()) { this.notice = null; this.noticeKey = null; }
                 // The renderer keeps the list's scroll and the focused control across the draw
                 this.render();
+                if (this.mounted === 'cli') this.renderer.noteChange(this.sceneState());
                 this.emitViewed();
             } else {
                 this._unchanged++;
@@ -575,13 +621,117 @@ export class NetworkViewMinigame extends MinigameScene {
             stale: this.stale,
             status: this.statusLine(),
             hint: this.unplugHint(),
-            lastGrant: this.lastGrant
+            lastGrant: this.lastGrant,
+            footholdId: this.footholdId
         };
     }
 
-    /** Every offer open right now, for the renderer: the pending set and the jack this view was opened at. */
+    /**
+     * Every offer open right now, for the renderer: the pending set and the jack this view was opened
+     * at. A view with an ops block carries the Terminal line of each offer (`command`).
+     */
     currentOffers() {
-        return offers(this.view, { pending: this.pending, unplugJack: this.unplugJack });
+        const list = offers(this.view, { pending: this.pending, unplugJack: this.unplugJack });
+        if (!viewHasOps(this.view)) return list;
+        return list.map(o => {
+            let command = null;
+            try { command = commandFor(o, this.view); } catch (e) { command = null; }
+            return { ...o, command: typeof command === 'string' ? command : null };
+        });
+    }
+
+    // ----- the two skins -----
+
+    hasOps() { return viewHasOps(this.view); }
+
+    canSwitch(name) { return this.skinCapable && SKINS.includes(name) && this.hasOps(); }
+
+    /** The foothold's log, made when asked, for a view with an ops block (else null). */
+    opsLog(create = false) {
+        if (!this.hasOps()) return null;
+        const key = this.footholdId || this.view?.id;
+        if (typeof key !== 'string' || !key) return null;
+        if (!this._logChecked) {
+            // A log from another trip (a different trip number) is not this trip's
+            this._logChecked = true;
+            const seq = this.links()?.trip?.seq;
+            if (seq !== undefined && LOG_TRIPS.has(key) && LOG_TRIPS.get(key) !== seq) dropLog(key);
+            if (seq !== undefined) LOG_TRIPS.set(key, seq);
+        }
+        return logFor(key, { create });
+    }
+
+    logSent(offer, echo) {
+        const log = this.opsLog(true);
+        if (log) recordSent(log, offer, echo, this.view);
+    }
+
+    logEnded(offer, answer) {
+        const log = this.opsLog(true);
+        if (log) recordResult(log, offer, answer, this.view);
+    }
+
+    /** The Terminal draws the log lines the scene just wrote itself (a row's own moves). */
+    resyncTerminal() {
+        if (this.mounted === 'cli') this._safely('terminal', () => this.renderer.render(this.view, this.currentOffers(), this.sceneState()));
+    }
+
+    /** Mount the renderer the view should have now, and the switch only while the view has an ops block. */
+    syncSkin() {
+        const ops = this.hasOps();
+        if (ops) this.opsLog(true);
+        this.drawSwitch(ops && this.skinCapable);
+        const want = ops && this.skinCapable ? this.skin : 'gui';
+        if (want === this.mounted || !this.gameContainer) return;
+        this.renderer.unmount();
+        if (want === 'cli') {
+            // Panels' header lines (status, message, stale, hint, Unplug) are not the Terminal's
+            if (this.headerElement) this.headerElement.textContent = '';
+            if (this.headerStrip) this.headerStrip.hidden = true;
+            this.renderer = new TerminalRenderer();
+            this.renderer.mount(this.gameContainer, this.rendererCtx({ defer: true }));
+        } else {
+            this.renderer = this.newPanels();
+            this.renderer.mount(this.gameContainer, this.rendererCtx());
+        }
+        this.mounted = want;
+    }
+
+    /** The switch: one button in the window's title bar, labelled with the other skin's name. */
+    drawSwitch(show) {
+        const host = this.container?.querySelector?.('.console-titlebar') || this.frameElement || null;
+        const found = this.container?.querySelector?.('[data-skin-switch]') || null;
+        if (!show || !host) { if (found) found.remove(); this.skinSwitch = null; return; }
+        const other = this.skin === 'cli' ? 'gui' : 'cli';
+        let btn = found;
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'minigame-button network-view-skin-switch';
+            this.addEventListener(btn, 'click', (e) => {
+                e.preventDefault?.();
+                this.pressSkin(btn.getAttribute('data-skin-switch'));
+            });
+            const close = host.querySelector?.('.minigame-close-button');
+            if (close) host.insertBefore(btn, close); else host.appendChild(btn);
+        }
+        btn.setAttribute('data-skin-switch', other);
+        if (btn.textContent !== SKIN_LABELS[other]) btn.textContent = SKIN_LABELS[other];
+        this.skinSwitch = btn;
+    }
+
+    /** A press of the switch (or a `panels` line): remember it, swap the renderer. Sends nothing, ends nothing. */
+    pressSkin(name) {
+        if (!this.canSwitch(name) || this._reported || this._ending) return false;
+        try {
+            const url = typeof window !== 'undefined' ? readUrlValue(window.location?.search) : null;
+            let storage = null;
+            try { storage = window.localStorage; } catch (e) { storage = null; }
+            rememberPress(name, { urlValue: url, storage });
+        } catch (e) { console.warn('[network-view] remembering the skin threw', e); }
+        this.skin = name;
+        if (this.status === 'ready' && this.view) this.render();
+        return true;
     }
 
     /** Draw the view again (the renderer keeps its own scroll, focus and picks). */
@@ -594,6 +744,7 @@ export class NetworkViewMinigame extends MinigameScene {
         const title = v.name || 'Your link';
         const linkDown = downState(v);
         this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, viewSubtitle(v) || '');
+        this.syncSkin();
         this.renderer.render(this.view, this.currentOffers(), this.sceneState());
     }
 
@@ -801,6 +952,8 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         this.showNotice(action === 'use' ? refusalLine(answer) : refusalText(answer ? answer.reason : 'no_answer'),
             action === 'scan' ? target : (hostId || null), key);
+        // A request with no reply is said on its row too (and a refusal redraws the Terminal's log)
+        if (!this._reported && !this._ending) this.renderer.showResult(offer, answer, this.sceneState());
     }
 
     /** What a session grant leaves in the Techniques panel: the host, the account and the access level. */
@@ -841,7 +994,15 @@ export class NetworkViewMinigame extends MinigameScene {
         }
         const row = this.allRows().find(r => r.id === offer?.target);
         if (!row) return false;
-        return this.act(row, action);
+        // Not guarded, so the scene writes these moves into the log itself
+        const live = this.gameState?.isActive && this.status === 'ready';
+        if (live) this.logSent(offer, echo);
+        const done = this.act(row, action);
+        if (live) {
+            if (action === 'observe' && done) this.logEnded(offer, undefined);
+            this.resyncTerminal();
+        }
+        return done;
     }
 
     /** The host row an ops offer is about: a scan's target, a check's host, a confirm's finding's host. */
@@ -984,6 +1145,11 @@ export class NetworkViewMinigame extends MinigameScene {
     cleanup() {
         this.stopRefetchTimer();
         this.renderer.unmount();
+        // The trip goes on through a handover (a sign-in, a share), so its log stays; any other ending closes it
+        if (this.exitReason !== 'handover') {
+            const key = this.footholdId || this.view?.id;
+            if (typeof key === 'string' && key) { dropLog(key); LOG_TRIPS.delete(key); }
+        }
         super.cleanup();
         if (this._reported) return;
         this._reported = true;
@@ -1017,7 +1183,10 @@ export class NetworkViewMinigame extends MinigameScene {
         const out = {};
         if (offersCheck(r)) {
             const checks = {};
-            for (const s of rowServices(r)) checks[s.name] = `[data-host-id="${r.id}"] [data-service="${s.name}"] [data-action="check"]`;
+            // In the Terminal one wrapper holds the row's and the service's attributes
+            for (const s of rowServices(r)) checks[s.name] = this.mounted === 'cli'
+                ? `[data-host-id="${r.id}"][data-service="${s.name}"] [data-action="check"]`
+                : `[data-host-id="${r.id}"] [data-service="${s.name}"] [data-action="check"]`;
             if (Object.keys(checks).length) out.checks = checks;
         }
         const findings = rowFindings(r);
@@ -1027,9 +1196,11 @@ export class NetworkViewMinigame extends MinigameScene {
                 severity: f.severity ?? null, summary: findingSummary(f), status: f.status ?? null,
                 fixed: isFixed(f), needs: findingNeeds(f), reason: falseReason(f) || null,
                 // The alias is a select control only while a card is held (drawn above); with none it is a plain chip
-                ...(techniqueList(this.view).length ? { select: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="select-finding"]` } : {}),
+                ...(this.mounted === 'gui' && techniqueList(this.view).length ? { select: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="select-finding"]` } : {}),
                 selected: this.selectedFinding === f.id,
-                ...(offersConfirm(r, f) ? { confirm: `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="confirm"]` } : {})
+                ...(offersConfirm(r, f) ? { confirm: this.mounted === 'cli'
+                    ? `[data-host-id="${r.id}"][data-finding="${f.alias}"] [data-action="confirm"]`
+                    : `[data-host-id="${r.id}"] [data-finding="${f.alias}"] [data-action="confirm"]` } : {})
             }));
         }
         return out;
@@ -1077,6 +1248,7 @@ export class NetworkViewMinigame extends MinigameScene {
             ...(this.pending.size ? { pending: [...this.pending] } : {}),
             ...this.ownOpsState(),
             ...this.renderer.testState(),
+            ...(this.hasOps() ? { skin: this.mounted } : {}),
             rows: this.rows().map(r => this.rowState(r, this.ownOpsBlock(), hostAction(r))),
             networks: this.networkBlocks().map(b => ({
                 id: b.id, name: b.name || null, route: b.route || 'up', via: b.via?.hostId ?? null,
@@ -1085,6 +1257,22 @@ export class NetworkViewMinigame extends MinigameScene {
             }))
         };
     }
+}
+
+/**
+ * The skin a view opens in, for a view that has an ops block (the scene falls back to Panels for any
+ * other): a press of the switch on this page, `?net_skin=`, the stored pick, the scenario's default.
+ */
+export function startingSkin() {
+    let storage = null;
+    try { storage = window.localStorage; } catch (e) { storage = null; }
+    return chooseSkin({
+        hasOps: true,
+        pressed: pressed(),
+        urlValue: readUrlValue(window.location?.search),
+        stored: readPick(storage),
+        scenarioDefault: window.gameScenario?.networkView?.defaultSkin
+    });
 }
 
 /**
@@ -1103,7 +1291,8 @@ export function startNetworkViewMinigame(footholdId, { message = null, unplugJac
         title: name || 'Network link',
         footholdId,
         message,
-        unplugJack
+        unplugJack,
+        skin: startingSkin()
     });
 }
 

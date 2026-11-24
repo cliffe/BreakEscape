@@ -114,6 +114,14 @@
     font-size: 16px;
 }
 
+/* The skin switch sits in the window's title bar, left of the X, in both skins */
+.console-titlebar > .network-view-skin-switch {
+    flex: none;
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 16px;
+}
+
 /* A refused Unplug says why next to the button (fix round 1, m2) */
 .network-view-unplug-notice {
     margin: 4px 0 0 0;

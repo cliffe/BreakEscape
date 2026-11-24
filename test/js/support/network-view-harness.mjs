@@ -50,7 +50,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 // The compromise bolt draws on a canvas: a stand-in context, as the scene's own tests use
 window.HTMLCanvasElement.prototype.getContext = function () { return { fillStyle: '', fillRect() {} }; };
-const imp = (rel) => import(pathToFileURL(join(dir, rel)));
+export const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 export const scene = await imp('minigames/network-view/network-view-minigame.js');
 export const model = await imp('minigames/network-view/ops-model.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
@@ -129,9 +129,11 @@ const attrKey = (btn) => {
  * Mounts the real scene on a fixture view answer and returns a handle.
  * `unplug`: the view is opened at its jack, so the header has Unplug. `hold`: every move the view
  * sends waits for `release(answerOrError)`. The handle records `calls` (API requests), `opened`
- * (the screens a row opens), `toasts` and `events` (each as plain data).
+ * (the screens a row opens), `toasts` and `events` (each as plain data). `params`: more scene params (for
+ * example `{ skin: 'cli' }`, which the real starter works out); `starter`: open through the scene's own
+ * `startNetworkViewMinigame`.
  */
-export async function mount(body, { unplug = false, hold = false, footholdId = null } = {}) {
+export async function mount(body, { unplug = false, hold = false, footholdId = null, params = {}, starter = false } = {}) {
     window.MinigameFramework?.endMinigame?.(false, null);
     const h = { calls: [], opened: [], toasts: [], events: [], held: [], hold };
     const entry = (footholdId ? body.footholds.find(f => f.id === footholdId) : null) || body.footholds[0];
@@ -167,7 +169,9 @@ export async function mount(body, { unplug = false, hold = false, footholdId = n
     const jack = unplug ? (foothold.sourceId || 'port_a') : null;
     window.startNetworkViewMinigame = (id, { unplugJack = null } = {}) =>
         window.MinigameFramework.startMinigame('network-view', null,
-            { title: 'Link', footholdId: id, unplugJack, refetchMs: 1e9, refetchIdleMs: 1e9 });
+            { title: 'Link', footholdId: id, unplugJack, refetchMs: 1e9, refetchIdleMs: 1e9, ...params });
+    // `starter`: the scene's own starter (it works the skin out), not the stand-in above
+    if (starter) window.startNetworkViewMinigame = scene.startNetworkViewMinigame;
     const links = new NetworkLinks();
     window.networkLinks = links;
     links.load([foothold], foothold.sourceId ? [foothold.sourceId] : []);

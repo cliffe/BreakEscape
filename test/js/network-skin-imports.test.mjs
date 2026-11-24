@@ -92,3 +92,72 @@ test('the Panels renderer lists the drag events it listens for, in order', async
     const { DRAG_EVENTS } = await load('network-view-panels.js');
     assert.deepEqual(DRAG_EVENTS, ['dragstart', 'dragend', 'dragover', 'drop']);
 });
+
+// ---------------------------------------------------------------------------------------------
+// The Terminal side (Ops S6 unit 15): what the Terminal renderer, the grammar, the format module and the
+// generators may import and name
+// ---------------------------------------------------------------------------------------------
+
+const GENERATORS = ['cli-gen/defaults.js', 'cli-gen/scanner-output.js', 'cli-gen/framework-console.js', 'cli-gen/registry.js'];
+const TERMINAL_ALLOWED = Object.freeze({
+    'cli-gen/defaults.js': ['../ops-model.js'],
+    'cli-gen/scanner-output.js': ['../ops-model.js', '../view-texts.js', './defaults.js'],
+    'cli-gen/framework-console.js': ['../ops-model.js', '../view-texts.js', './defaults.js'],
+    'cli-gen/registry.js': ['./scanner-output.js', './framework-console.js'],
+    'terminal-grammar.js': ['./ops-model.js', './view-texts.js', './view-controls.js', './cli-gen/defaults.js'],
+    'terminal-format.js': ['./ops-model.js', './view-texts.js', './view-controls.js', './terminal-grammar.js',
+        './cli-gen/registry.js', './cli-gen/scanner-output.js', './cli-gen/framework-console.js'],
+    'network-view-terminal.js': ['./ops-model.js', './view-texts.js', './view-controls.js', './terminal-grammar.js',
+        './terminal-format.js', './cli-gen/framework-console.js']
+});
+
+// Code with its comments taken out, so a name in a comment is not a use
+const code = (name) => read(name).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/([^:'"`])\/\/.*$/gm, '$1');
+
+for (const [name, allowed] of Object.entries(TERMINAL_ALLOWED)) {
+    test(`${name}: imports only ${allowed.join(', ')}`, () => {
+        const found = importsOf(read(name));
+        for (const f of found) assert.ok(allowed.includes(f), `${name} imports ${f}`);
+        assert.doesNotMatch(read(name), /\bimport\s*\(/, 'no dynamic import');
+    });
+
+    test(`${name}: reaches no server, link registry, opener or storage`, () => {
+        const src = code(name);
+        assert.doesNotMatch(src, /fetch\(/);
+        assert.doesNotMatch(src, /ApiClient|APIClient/);
+        assert.doesNotMatch(src, /networkLinks/);
+        assert.doesNotMatch(src, /window\.open|window\.start/);
+        assert.doesNotMatch(src, /localStorage|window\.location/);
+    });
+}
+
+for (const name of Object.keys(TERMINAL_ALLOWED).concat(['network-view-terminal.js'])) {
+    test(`${name}: names none of the unsafe drawing calls`, () => {
+        const src = code(name);
+        assert.doesNotMatch(src, /\b(?:innerHTML|outerHTML|insertAdjacentHTML)\b/);
+        assert.doesNotMatch(src, /document\.write/);
+        assert.doesNotMatch(src, /\beval\s*\(/);
+        assert.doesNotMatch(src, /new\s+Function\b/);
+        assert.doesNotMatch(src, /\bset(?:Timeout|Interval)\s*\(\s*['"`]/);
+    });
+}
+
+for (const name of GENERATORS) {
+    test(`${name}: pure (no clock, no randomness, no storage, no DOM)`, () => {
+        const src = code(name);
+        assert.doesNotMatch(src, /\bDate\b/);
+        assert.doesNotMatch(src, /performance\.now/);
+        assert.doesNotMatch(src, /Math\.random/);
+        assert.doesNotMatch(src, /\bcrypto\b/);
+        assert.doesNotMatch(src, /localStorage/);
+        assert.doesNotMatch(src, /\bdocument\b/);
+        assert.doesNotMatch(src, /\bwindow\b/);
+    });
+}
+
+test('the scene imports the Terminal side and nothing new outside the folder', () => {
+    const found = importsOf(read('network-view-minigame.js'));
+    const wanted = ['./skin-choice.js', './network-view-terminal.js', './terminal-format.js', './terminal-grammar.js'];
+    for (const w of wanted) assert.ok(found.includes(w), `the scene imports ${w}`);
+    for (const f of found) assert.ok(f.startsWith('./') || ['../framework/base-minigame.js', '../../utils/escape-html.js', '../../utils/more-below.js'].includes(f), f);
+});
