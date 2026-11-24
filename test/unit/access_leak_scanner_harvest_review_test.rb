@@ -1,0 +1,144 @@
+require 'test_helper'
+require_relative '../support/cached_accounts_fixture'
+require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
+
+# Ops S5bc fix: one test per capture of the S5bc scanner review R1 (docs/agents/ops_core_build/reviews/S5bc_scanner_R1.md),
+# each built from the reviewer's scratch probes. Where the review shows an honest answer wrongly flagged, the clean case is
+# here with the nearest case that must still be flagged (one per missing proof).
+class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
+  BASE = '/break_escape/games/1'.freeze
+
+  # The game readers the scanner reads. `proof` is what credential_proof_holds? answers.
+  class FakeGame
+    attr_reader :player_state
+
+    def initialize(cached_at: [], proof: true)
+      @player_state = { 'cachedAt' => cached_at }
+      @proof = proof
+    end
+
+    def credential_proof_holds?(*)
+      @proof
+    end
+
+    def earned_fact_ids
+      []
+    end
+
+    def crack_token(*)
+      'ABCD-EFGH-JKLM-NPQR-STUV-WXYZ'
+    end
+
+    def password_held_for?(*)
+      false
+    end
+
+    private
+
+    def account_admin_at?(npc, pc)
+      creds = npc['creds']
+      creds.is_a?(Hash) && creds['admin'] == true && BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
+    end
+  end
+
+  def data
+    CachedAccountsFixture.scenario
+  end
+
+  def row(body, path:, method: 'GET', status: 200, extra: {})
+    { 'method' => method, 'path' => "#{BASE}/#{path}", 'status' => status, 'body' => body }.merge(extra)
+  end
+
+  def admin_signin(pc = 'profile_pc', npc = 'dana')
+    row({ 'success' => true, 'npcId' => npc, 'username' => 'x', 'displayName' => 'x', 'via' => 'password' },
+        path: 'login', method: 'POST', extra: { 'login' => { 'pcId' => pc } })
+  end
+
+  def crow(npc, hash_id, extra = {})
+    scenario_npc = data['rooms']['finance']['npcs'].find { |n| n['id'] == npc }
+    { 'npcId' => npc, 'displayName' => scenario_npc ? scenario_npc['displayName'] : npc, 'username' => scenario_npc&.dig('creds', 'username'),
+      'portrait' => nil, 'avatar' => scenario_npc&.dig('avatar'), 'hashId' => hash_id }.merge(extra)
+  end
+
+  def collect(rows, held: nil, status: 200, pc: 'profile_pc', extra: {})
+    row({ 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 3 }.merge(extra),
+        path: 'harvest_credentials', method: 'POST', status: status)
+  end
+
+  def refusal(body, status)
+    row(body, path: 'harvest_credentials', method: 'POST', status: status)
+  end
+
+  def scan(rows, scenario: data, game: nil, **options)
+    AccessLeakScanner.new(scenario, game: game).scan(rows.each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }, **options)
+  end
+
+  def rules(findings)
+    findings.map(&:rule).uniq.sort
+  end
+
+  def hits(findings)
+    findings.map { |f| [f.rule, f.owner] }.uniq.sort
+  end
+
+  # ---- R1-L6, R1-L11, R1-L12: the collect answer is judged against a closed list ----
+
+  test 'R1-L6: each refusal is exactly the server answer; rows under another key, an array, an extra key are flagged' do
+    ok = [{ 'success' => false, 'reason' => 'bad_request' }, 400], [{ 'success' => false, 'reason' => 'not_reachable' }, 403],
+         [{ 'success' => false, 'reason' => 'locked' }, 422], [{ 'success' => false, 'reason' => 'not_admin' }, 422],
+         [{ 'error' => 'Container not found: x' }, 404]
+    ok.each { |body, status| assert_empty scan([admin_signin, refusal(body, status)]), body.to_s }
+    bad = [
+      [{ 'success' => false, 'reason' => 'not_admin', 'accounts' => [crow('gary', 'hot_dana')] }, 422],
+      [[crow('gary', 'hot_dana')], 200],
+      [{ 'success' => false, 'reason' => 'not_admin', 'pc' => 'profile_pc', 'cached' => 3 }, 403],
+      [{ 'success' => false, 'reason' => 'not_admin' }, 403],
+      [{ 'success' => false, 'reason' => 'locked' }, 400],
+      [{ 'error' => 3 }, 404],
+      [{ 'error' => 'x', 'reason' => 'locked' }, 404],
+      [{ 'success' => false, 'reason' => 'weird' }, 422],
+      [{ 'success' => false, 'reason' => 'not_admin' }, 500]
+    ]
+    bad.each { |body, status| assert_includes rules(scan([admin_signin, refusal(body, status)])), 'harvest_row', "#{status} #{body}" }
+  end
+
+  test 'R1-L11: a 200 collect answer needs an admin session at the PC it names, even with no rows' do
+    assert_equal [%w[harvest_unearned answer]], hits(scan([collect([])]))
+    assert_empty scan([admin_signin, collect([])])
+    # an admin session at another PC does not do, and neither does a PC that is no sign-in PC or no String
+    assert_includes rules(scan([admin_signin('it_pc'), collect([])])), 'harvest_unearned'
+    ['nope', nil, 3].each { |pc| assert_includes rules(scan([admin_signin, collect([], pc: pc)])), 'harvest_row', pc.inspect }
+    # a missing pcId is not the server's shape
+    no_pc = collect([])
+    no_pc['body'].delete('pcId')
+    assert_includes rules(scan([admin_signin, no_pc])), 'harvest_row'
+  end
+
+  test 'R1-L11: a row is credited at the PC the answer names, not at any PC that declares the account' do
+    scenario = data
+    scenario['rooms']['finance']['objects'].find { |o| o['id'] == 'it_pc' }['cachedAccounts'] = [{ 'npc' => 'jake' }]
+    scenario['credentials']['it_jake'] = { 'kind' => 'hash', 'account' => 'jake', 'proof' => { 'harvested' => 'it_pc' }, 'crack' => { 'password' => 'reused' } }
+    scenario['rooms']['finance']['npcs'].find { |n| n['id'] == 'dana' }['creds']['admin'] = true
+    # admin at it_pc only, answer names profile_pc: flagged; naming it_pc with its own hash: clean
+    assert_includes rules(scan([admin_signin('it_pc'), collect([crow('jake', 'hot_jake')], pc: 'profile_pc')], scenario: scenario)), 'harvest_unearned'
+    assert_empty scan([admin_signin('it_pc'), collect([crow('jake', 'it_jake')], pc: 'it_pc')], scenario: scenario)
+  end
+
+  test 'R1-L12: held holds every harvested row, and an account appears once in a list' do
+    jake = crow('jake', 'hot_jake')
+    dana = crow('dana', 'hot_dana')
+    assert_includes rules(scan([admin_signin, collect([jake], held: [])])), 'harvest_row'
+    assert_includes rules(scan([admin_signin, collect([jake], held: [dana])])), 'harvest_row'
+    assert_includes rules(scan([admin_signin, collect([], held: [jake, jake])])), 'harvest_row'
+    assert_empty scan([admin_signin, collect([jake], held: [jake, dana])])
+  end
+
+  test 'R1-L12: a declared candidate that is no NPC, or has no username, is not a candidate' do
+    scenario = data
+    scenario['rooms']['finance']['objects'].find { |o| o['id'] == 'profile_pc' }['cachedAccounts'] << { 'npc' => 'ghost' }
+    assert_includes rules(scan([admin_signin, collect([crow('ghost', nil, 'username' => 'g')])], scenario: scenario)), 'harvest_unearned'
+    nameless = data
+    nameless['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }['creds'].delete('username')
+    assert_includes rules(scan([admin_signin, collect([crow('jake', 'hot_jake', 'username' => 'x')])], scenario: nameless)), 'harvest_unearned'
+  end
+end

@@ -4879,14 +4879,17 @@ class AccessLeakScanner
   # - a keyring hash row is the registry entry's id, and its account's name and username come with it;
   # - a relay admin is shown with `via: credential`, `kind: assist_invite`, `relay: true` and a unique `host` label.
   HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
-  HARVEST_ANSWER_KEYS = %w[success harvested held keyringRev].freeze
+  HARVEST_ANSWER_KEYS = %w[success pcId harvested held keyringRev].freeze
   HARVEST_ROW_KEYS = %w[npcId displayName username portrait avatar hashId].freeze
   GAME_METHODS_HARVEST = %i[player_state].freeze
 
   def collect_harvest
     @hv_candidates = Hash.new { |h, k| h[k] = [] } # npc id => [[pc id, after]]
     @priv_pcs.each do |pc_id, pc|
-      BreakEscape::CachedAccounts.candidates(pc).each { |c| @hv_candidates[c['npc']] << [pc_id, c['after']] }
+      BreakEscape::CachedAccounts.candidates(pc).each do |c|
+        npc = @priv_npcs[c['npc']] # R1-L12: only an NPC of the scenario that holds a username is an account
+        @hv_candidates[c['npc']] << [pc_id, c['after']] if npc && npc.dig('creds', 'username').is_a?(String) && !npc.dig('creds', 'username').empty?
+      end
     end
     @hv_hash_ids = Set.new # registry hash records whose proof is harvested
     @hv_hash_account = {}  # every registry hash record id => its account id
@@ -4940,33 +4943,61 @@ class AccessLeakScanner
     end
   end
 
-  def judge_harvest_answer(body, ctx, row, add)
-    ok = row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
-    unless ok
-      # a refusal or a lost answer carries no rows
-      walk_hashes(body, '$') { |hash, path| add.call('harvest_row', 'refusal', safe_path(path)) if hash.key?('harvested') || hash.key?('held') }
-      return
-    end
-    add.call('harvest_row', 'answer', '$') unless body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(Integer)
-    %w[harvested held].each do |list|
-      rows = body[list]
-      unless rows.is_a?(Array)
-        add.call('harvest_row', "answer:#{list}", safe_path("$.#{list}")) if body.key?(list)
-        next
-      end
-      rows.each_with_index { |entry, i| judge_harvest_row(entry, safe_path("$.#{list}[#{i}]"), add) }
-    end
+  # R1-L6: every answer of the route is judged against the server's closed list. A 200 is the collect itself (judged below);
+  # a refusal is exactly its own body. A body that is not parsed (text) is not judged.
+  HARVEST_REFUSALS = {
+    400 => [{ 'success' => false, 'reason' => 'bad_request' }],
+    403 => [{ 'success' => false, 'reason' => 'not_reachable' }],
+    422 => [{ 'success' => false, 'reason' => 'locked' }, { 'success' => false, 'reason' => 'not_admin' }]
+  }.freeze
+
+  def harvest_refusal_ok?(status, body)
+    return false unless body.is_a?(Hash)
+    return body.keys == ['error'] && body['error'].is_a?(String) if status == 404
+
+    Array(HARVEST_REFUSALS[status]).include?(body)
   end
 
-  def judge_harvest_row(entry, path, add)
+  def judge_harvest_answer(body, ctx, row, add)
+    return unless body.is_a?(Hash) || body.is_a?(Array)
+
+    status = row['status']
+    unless status.is_a?(Integer) && status == 200
+      add.call('harvest_row', 'refusal', '$') unless status.is_a?(Integer) && harvest_refusal_ok?(status, body)
+      return
+    end
+    unless body.is_a?(Hash) && body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(Integer) &&
+           body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId'])
+      add.call('harvest_row', 'answer', '$')
+      return
+    end
+    pc = body['pcId']
+    # R1-L11: a collect 200 is credited only when the capture shows an admin session at the PC it names, rows or no rows
+    # (a row is flagged on its own, so the answer is named only when it holds none)
+    add.call('harvest_unearned', 'answer', '$') if !harvest_pc_admin?(pc) && body['harvested'].blank? && body['held'].blank?
+    lists = %w[harvested held].to_h do |list|
+      rows = body[list]
+      add.call('harvest_row', "answer:#{list}", safe_path("$.#{list}")) unless rows.is_a?(Array)
+      [list, rows.is_a?(Array) ? rows : []]
+    end
+    lists.each do |list, rows|
+      rows.each_with_index { |entry, i| judge_harvest_row(entry, safe_path("$.#{list}[#{i}]"), pc, add) }
+      ids = rows.filter_map { |entry| entry['npcId'] if entry.is_a?(Hash) }
+      add.call('harvest_row', "list:#{list}", safe_path("$.#{list}")) if ids.uniq.size != ids.size
+    end
+    # R1-L12: the server builds `harvested` as a subset of `held`
+    held_ids = lists['held'].filter_map { |entry| entry['npcId'] if entry.is_a?(Hash) }
+    add.call('harvest_row', 'list:subset', '$.harvested') unless lists['harvested'].all? { |entry| entry.is_a?(Hash) && held_ids.include?(entry['npcId']) }
+  end
+
+  def judge_harvest_row(entry, path, pc, add)
     unless entry.is_a?(Hash) && entry.keys.sort == HARVEST_ROW_KEYS.sort && harvest_row_values_ok?(entry)
       add.call('harvest_row', 'row', path)
       return
     end
     npc = entry['npcId']
-    pcs = harvest_credited_pcs(npc)
-    expected = pcs.map { |pc| BreakEscape::CachedAccounts.hash_record_id(@data, pc, npc) }.uniq
-    unless !pcs.empty? && expected.include?(entry['hashId'])
+    record = harvest_credited?(npc, pc) ? BreakEscape::CachedAccounts.hash_record_id(@data, pc, npc) : :none
+    unless record != :none && record == entry['hashId']
       add.call('harvest_unearned', "account:#{npc}", path)
       return
     end
@@ -4982,13 +5013,17 @@ class AccessLeakScanner
     %w[npcId displayName username].all? { |k| entry[k].is_a?(String) } && %w[portrait avatar hashId].all? { |k| entry[k].nil? || entry[k].is_a?(String) }
   end
 
-  # The sign-in PCs that declare the account, hold an admin step now, and (for a borrow-gated account) have the borrow recorded.
-  def harvest_credited_pcs(npc)
-    return [] unless npc.is_a?(String)
+  # Is an admin session earned at this PC now (the S5a step)?
+  def harvest_pc_admin?(pc)
+    @ops_earned.include?("admin:#{pc}")
+  end
 
-    @hv_candidates[npc].select do |pc, after|
-      @ops_earned.include?("admin:#{pc}") && (after.nil? || harvest_borrowed?(pc, npc))
-    end.map(&:first)
+  # The PC declares the account (a start candidate, or a borrow candidate whose borrow is recorded), and an admin session is
+  # earned there now.
+  def harvest_credited?(npc, pc)
+    return false unless npc.is_a?(String) && pc.is_a?(String) && harvest_pc_admin?(pc)
+
+    @hv_candidates[npc].any? { |declared, after| declared == pc && (after.nil? || harvest_borrowed?(pc, npc)) }
   end
 
   def harvest_borrowed?(pc_id, npc_id)

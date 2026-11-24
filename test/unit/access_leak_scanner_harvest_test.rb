@@ -3,8 +3,9 @@ require_relative '../support/cached_accounts_fixture'
 require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 # Ops S5bc unit 15: the leak scanner's cached-account, account-only and relay-admin rules. One capture per rule that must be
-# flagged, and its nearest clean twin. The recorder keeps no request body and no PC id, so the collect is credited only by an
-# earlier admin sign-in row (tagged with `login.pcId`, as the recorder tags it) at a PC that declares the account.
+# flagged, and its nearest clean twin. The recorder keeps no request body, so the collect's PC is the `pcId` the server's 200
+# answer names (R1-L11). The admin sign-in rows here carry a `login.pcId` tag for brevity: the recorder does NOT write that
+# tag (R1-L17), so a real run earns the step by one PC admitting the account or by a `--signin` entry; see the review test.
 class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
   BASE = '/break_escape/games/1'.freeze
 
@@ -58,8 +59,8 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     { 'npcId' => npc, 'displayName' => npc.capitalize, 'username' => "u_#{npc}", 'portrait' => nil, 'avatar' => nil, 'hashId' => hash_id }.merge(extra)
   end
 
-  def collect(rows, held: nil, status: 200, extra: {})
-    body = { 'success' => true, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 3 }.merge(extra)
+  def collect(rows, held: nil, status: 200, pc: 'profile_pc', extra: {})
+    body = { 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 3 }.merge(extra)
     row(body, path: 'harvest_credentials', method: 'POST', status: status)
   end
 
