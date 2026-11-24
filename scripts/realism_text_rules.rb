@@ -35,9 +35,15 @@ module RealismTextRules
 
   # Words that make a line read as a step or a request (R1-S4). The list cannot be complete: a human review of
   # every new catalog entry is still required (docs/ACCESS_AND_NETWORKS.md, N16).
-  INSTRUCTION_VERBS = %w[send request post get put delete run type enter set supply craft inject upload execute trigger bypass overflow].freeze
+  INSTRUCTION_VERBS = %w[send request post get put delete run type enter set supply craft inject upload execute trigger bypass overflow use submit open append log visit call].freeze
+  # A verb reads as a step only when an article, a pronoun, `to`, `in` or a number word follows it (R2-5): `Run the check`,
+  # `Post to the form`, `Log in with`; not `Run level 3 reached`, `Upload limit 20 MB`, `Delete protection on`.
+  STEP_NEXT = '(?:(?:a|an|the|this|that|these|those|it|them|to|in|one|two|three|four|five|six|ten|any|some|your|my|our|their)\\b|\\S*[/?=]\\S*|\\S+\\.[A-Za-z]{2,4}\\b)'
+  STEP_LEAD = '(?:please|first|next|now|then|you\s+can|you\s+should)'
   INSTRUCTION_WORDS = %w[payload payloads shellcode].freeze
-  SENSITIVE_DIRS = %w[etc proc root var tmp bin sbin usr dev sys boot opt].freeze
+  SENSITIVE_DIRS = %w[etc proc root var tmp bin sbin usr sys].freeze
+  # Ordinary words too (`Dev/test build`, `Boot/recovery mode`): a request form only when the right side has a dot
+  SOFT_DIRS = %w[dev opt boot].freeze
 
   module_function
 
@@ -115,24 +121,27 @@ module RealismTextRules
     return unless prose
 
     verbs = INSTRUCTION_VERBS.join('|')
-    m = s.match(/\A(?:[A-Za-z][A-Za-z ]{0,20}:\s*)?(#{verbs})(?![\w:-])\s+\S/i) ||
-        s.match(/(?:\A|[,;.]\s*|\s)then\s+(#{verbs})(?![\w:-])/i)
+    m = s.match(/\A(?:[A-Za-z][A-Za-z ]{0,20}:\s*)?(?:#{STEP_LEAD},?\s+)?(#{verbs})(?![\w:-])\s+#{STEP_NEXT}/i) ||
+        s.match(/(?:\A|[,;.]\s*|\s)#{STEP_LEAD},?\s+(#{verbs})(?![\w:-])\s+#{STEP_NEXT}/i)
     add.call('instruction', m[1]) if m
     m = s.match(/(?<![A-Za-z0-9])(#{INSTRUCTION_WORDS.join('|')})(?![A-Za-z0-9])/i)
     add.call('instruction', m[1]) if m
     tokens.each do |raw|
       t = strip(raw)
-      next unless t.include?('/') || t.include?('?')
+      next unless t.include?('/') || t.include?('?') || t.include?('=')
 
-      if t =~ /\?[A-Za-z0-9_]+=/
+      if t =~ /\?[A-Za-z0-9_]+=/ || t =~ /\A(?:id|uid|pid|page|file|cmd|name)=\d+\z/i
         add.call('request_form', t)
         next
       end
       parts = t.split('/', -1)
       next unless parts.length == 2 && parts.none?(&:empty?)
 
-      if parts.last =~ /\A[A-Za-z0-9_-]+\.[A-Za-z][A-Za-z0-9]{0,4}\z/ || parts.last.include?('?') ||
-         (SENSITIVE_DIRS.include?(parts.first.downcase) && parts.last =~ /\A[A-Za-z0-9_.-]+\z/)
+      # A file name has a letter before the dot and a two-letter-or-longer extension (`1.x` and `v2.x` are versions)
+      if parts.last =~ /\A[A-Za-z0-9_-]*[A-Za-z][A-Za-z0-9_-]*\.[A-Za-z][A-Za-z0-9]{1,4}\z/ || parts.last.include?('?') ||
+         %w[api cgi-bin admin].include?(parts.first.downcase) ||
+         (SENSITIVE_DIRS.include?(parts.first.downcase) && parts.last =~ /\A[A-Za-z0-9_.-]+\z/) ||
+         (SOFT_DIRS.include?(parts.first.downcase) && parts.last =~ /\A[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+\z/)
         add.call('request_form', t)
       end
     end

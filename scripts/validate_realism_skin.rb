@@ -28,8 +28,10 @@ REALISM_SKIN_ADVISORY = [
   /(?<![A-Za-z0-9])can[-_]\d{4}[-_]\d+/i,
   /(?<![A-Za-z0-9])ms\d\d[-_]\d{3}/i,
   /(?<![A-Za-z0-9])kb\d{6,7}/i,
-  /(?<![A-Za-z0-9])(?:rhsa|dsa|usn|ghsa|zdi)[-_]/i
+  /(?<![A-Za-z0-9])(?:(?:rhsa|dsa|usn|zdi)[-_]\d|ghsa[-_][a-z0-9]{4})/i
 ].freeze
+# A prefix alone, for a generated default (`usn-<class>`): there a bare scheme prefix is the fault, not an ordinary word
+REALISM_SKIN_ADVISORY_PREFIX = /(?<![A-Za-z0-9])(?:rhsa|dsa|usn|ghsa|zdi)[-_]/i.freeze
 REALISM_SKIN_FRAMEWORK_FIRST = %w[exploit auxiliary post payload payloads encoder nop evasion scanner].freeze
 # A framework module path anywhere in a string: case-insensitive, glued to a label or not, but not the tail of a
 # longer word or path (a letter, digit, underscore or slash before it).
@@ -114,6 +116,8 @@ end
 
 # Every string value of the scenario with its path, in document order; keys that start with an underscore
 # (comments) are skipped. Used to read the whole of an ops scenario for real identifiers.
+SKIN_NAME_KEYS = %w[image sprite src icon background].freeze
+
 def realism_skin_all_strings(node, path = '', out = [])
   case node
   when String then out << [path, node]
@@ -121,6 +125,8 @@ def realism_skin_all_strings(node, path = '', out = [])
   when Hash
     node.each do |k, v|
       next if k.to_s.start_with?('_')
+      # a file reference is a name, not text a player reads (an id or a type is still read: both can show in the Terminal)
+      next if v.is_a?(String) && SKIN_NAME_KEYS.include?(k.to_s)
 
       realism_skin_all_strings(v, path.empty? ? k.to_s : "#{path}/#{k}", out)
     end
@@ -133,12 +139,15 @@ def realism_skin_real_ids(text, nick_patterns, advisory_only: false)
   s = text.to_s
   out = []
   REALISM_SKIN_ADVISORY.each { |re| (m = s.match(re)) && out << m[0] }
+  (m = s.match(REALISM_SKIN_ADVISORY_PREFIX)) && out << m[0] if advisory_only
   nick_patterns.each { |re| (m = s.match(re)) && out << m[0] }
   unless advisory_only
     s.scan(REALISM_SKIN_PATH) do
       frag = Regexp.last_match[0].sub(/[.\-]+\z/, '')
       parts = frag.split('/', -1)
       next if parts.length < 3 || parts.any?(&:empty?)
+      # `post` and `scanner` are ordinary words: a capitalised sign (`Post/Parcels/Deliveries`) is not a module path
+      next if %w[post scanner].include?(parts.first.downcase) && frag =~ /[A-Z]/
 
       out << frag unless frag =~ REALISM_SKIN_DEFAULT_FORM
     end

@@ -435,6 +435,16 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
     refute_errors s
   end
 
+  test 'ordinary signs and names are not read as real identifiers (R2-7)' do
+    # ordinary words that start like an advisory scheme's prefix (built from parts: they are not advisory ids)
+    ordinary = [%w[dsa keycard].join('_'), %w[id dsa].join('_') + '-backup', ['USN', 'journal on'].join('-')]
+    ['Scanner/Printer/Copier room', 'Post/Parcels/Deliveries', *ordinary].each do |text|
+      assert_empty realism_skin_real_ids(text, []), text
+    end
+    assert_not_empty realism_skin_real_ids('zdi_99', [])
+    assert_not_empty realism_skin_real_ids('uses exploit/area/thing/probe', [])
+  end
+
   test 'a service word that only matches once joined into its default script is an error' do
     s = unlinked
     svc(s)['name'] = 'usn'
