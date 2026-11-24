@@ -47,3 +47,8 @@ export const COMPROMISED_TEXT = 'Compromised';
 export const NEEDS_HEADING = 'Needs';
 export const SWEEP_HINT_TEXT = 'Nothing is listed here yet. Sweep to see what answers.';
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
+
+// Terminal skin (Ops S6 unit 06): shared texts both skins may use
+export const SCAN_BAR_TEXT = 'Scanning';
+export const REQUEST_FAILED_TEXT = 'No reply came back. Nothing finished.';
+export const SKIN_LABELS = Object.freeze({ gui: 'Panels', cli: 'Terminal' });
