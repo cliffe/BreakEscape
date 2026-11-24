@@ -171,6 +171,18 @@ module BreakEscape
       assert_equal before, game.reload.player_state.slice(*STATE_KEYS)
     end
 
+    test 'a post during a wait answers running whatever it picks (R1-S3)' do
+      game = build_game
+      earn(game, 'pet', 'year')
+      travel_to Time.zone.local(2026, 11, 24, 12, 0, 0) do
+        assert_equal 'running', crack(game, 'sam_hash', %w[pet year])['status']
+        body = crack(game, 'sam_hash', %w[nope])
+        assert_response :success
+        assert_equal 'running', body['status']
+        assert_equal %w[readyInSeconds status success], body.keys.sort
+      end
+    end
+
     test 'fact_not_held is 422, compared exactly, and no_recipe comes before it' do
       game = build_game
       body = crack(game, 'gus_hash', ['pet'])

@@ -155,6 +155,27 @@ class ValidateCrackingTest < ActiveSupport::TestCase
     assert_empty errors(s), errors(s).join("\n")
   end
 
+  test 'a hash proof is held or technique_card and nothing else (R1-S6)' do
+    s = base
+    assert_empty errors(s), errors(s).join("\n")
+    rec(s)['proof'] = { 'session' => 'x' }
+    assert_error(s, 'proof must be `held`')
+    rec(s)['proof'] = { 'foothold' => 'jack_x' }
+    assert_error(s, 'proof must be `held`')
+    rec(s)['proof'] = { 'technique_card' => 'x.y.z' }
+    refute(errors(s).any? { |e| e.include?('proof must be `held`') })
+  end
+
+  test 'more than 64 hash records or stampable facts is an error (R1-S10)' do
+    s = base
+    65.times { |i| s['credentials']["h#{i}"] = { 'kind' => 'hash', 'account' => 'eli', 'proof' => { 'held' => 'share_file' }, 'crack' => { 'password' => 'common' } } }
+    assert_error(s, 'hash records')
+    t = base
+    t['startItemsInInventory'] << { 'type' => 'notes', 'id' => 'many', 'name' => 'Many', 'takeable' => true,
+                                    'revealsFacts' => (0..64).map { |i| "f#{i}" } }
+    assert_error(t, 'stampable facts')
+  end
+
   test 'an untakeable loose object and an untaken NPC item are not sources' do
     s = base
     rec(s)['crack']['facts'] = ['year']

@@ -131,6 +131,9 @@ module BreakEscape
       entry, npc = found
       return nil if password_held_for?(npc['id'])
       return :no_recipe unless crack_class(entry, npc)
+      # R1-S3: a post during a wait reads no pick (run_crack! answers running), so a pick that is
+      # not held cannot refuse it
+      return nil if crack_started_for(hash_id)
 
       earned = earned_fact_ids
       return :fact_not_held unless Array(facts).all? { |f| f.is_a?(String) && earned.include?(f) }

@@ -12,6 +12,7 @@ require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/access_work'
 
+OPS_CRACK_CAP = 64
 CRACK_CLASSES = %w[strong guessable reused common].freeze
 CRACK_FACT_PREFIX = 'se_intel_'
 CRACK_SECONDS_RANGE = (10..600).freeze
@@ -228,11 +229,24 @@ def check_cracking(json_data)
   accounts = cm.room_npcs(json_data).select { |n| BreakEscape::AccessIdentities.account?(n) }
   object_ids = crack_object_ids(json_data)
 
+  # R1-S10: the server keeps at most 64 earned facts and 64 cracked accounts, and drops the rest quietly
+  stampable = item_fact_ids | grant_fact_ids
+  if stampable.size > OPS_CRACK_CAP
+    err.call("this scenario has #{stampable.size} distinct stampable facts (revealsFacts and grant_fact); the server keeps at most #{OPS_CRACK_CAP} earned facts")
+  end
+  if hashes.size > OPS_CRACK_CAP
+    err.call("this scenario has #{hashes.size} hash records; the server keeps at most #{OPS_CRACK_CAP} cracked accounts")
+  end
+
   hashes.each do |id, entry|
     label = "credential '#{id.to_s[0, 64]}'"
     npc = cm.account_npc(json_data, entry['account'])
     err.call("#{label} account '#{entry['account'].to_s[0, 60]}' is not an account holder") unless npc
     err.call("#{label} is a hash and must not set connectsTo (a hash never signs in)") if entry.key?('connectsTo')
+    proof = entry['proof'].is_a?(Hash) ? entry['proof'] : {}
+    unless %w[held technique_card].any? { |k| cm.present_string?(proof[k]) }
+      err.call("#{label} proof must be `held` (a hash file the player holds) or `technique_card`; no other proof kind lists a hash row")
+    end
 
     crack = entry['crack'].is_a?(Hash) ? entry['crack'] : {}
     habits = npc && npc['habits'].is_a?(Hash) ? npc['habits'] : {}
