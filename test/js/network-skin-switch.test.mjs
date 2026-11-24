@@ -456,6 +456,8 @@ test('E7: a typed sign-in the grammar refuses prints its echo and the row senten
     await settle();
     const added = lines(h).slice(before);
     assert.ok(added[0].startsWith('$') && added[0].includes(`signin ${row.id}`), JSON.stringify(added));
-    assert.ok(added.length >= 2, 'the reply follows the echo');
+    assert.equal(added.length, 2, JSON.stringify(added));
+    assert.equal(added[1], 'There is nothing more to find out here.', 'the reply is the refusal sentence the model gives');
+    assert.deepEqual(h.record().calls, [], 'no request');
     h.end();
 });
