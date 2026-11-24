@@ -448,8 +448,8 @@
    },
    "source": {
     "file": "t13_lorna_flip.trimmed.mkv",
-    "in": 2.5,
-    "out": 8.6
+    "in": 2.44,
+    "out": 8.54
    },
    "audio": {
     "gain_db": 0,
@@ -462,7 +462,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Lorna L1 after the call (cached voice); no menu, chat closes after the line | CA: spoilers not an issue (owner r3)"
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca12.md): 2.5-8.6 -> 2.44-8.54 | Lorna L1 after the call (cached voice); no menu, chat closes after the line | CA: spoilers not an issue (owner r3)"
    },
    "seat": {
     "seat": "defend",
@@ -628,8 +628,8 @@
    },
    "source": {
     "file": "t14_lorna_noblame.trimmed.mkv",
-    "in": 11.2,
-    "out": 15.1
+    "in": 16.32,
+    "out": 20.22
    },
    "audio": {
     "gain_db": 0,
@@ -642,7 +642,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Lorna L5 after the defend set (cached voice); no verdicts, chat closes before the menu | CA: spoilers not an issue (owner r3)"
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca12.md): 11.2-15.1 -> 16.32-20.22 | Lorna L5 after the defend set (cached voice); no verdicts, chat closes before the menu | CA: spoilers not an issue (owner r3)"
    },
    "seat": {
     "seat": "defend",
