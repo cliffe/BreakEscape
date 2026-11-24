@@ -60,6 +60,11 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
                  'credentialIds' => ids || ["#{account}.cracked"] })
   end
 
+  # A salted record is granted only by a post after a stored run, so a running answer comes first (R1-L3).
+  def running_answer
+    post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 10 })
+  end
+
   def acct(npc, user)
     { 'npcId' => npc, 'username' => user, 'displayName' => npc.capitalize }
   end
@@ -91,7 +96,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       keyring([hash_row('dana_hash', 'dana', status: 'cracked'), dana_entry])
     ]
     assert_empty hits(rows)
-    assert_empty hits(rows, game: GameStub.new(nil, %w[dana_pet]))
+    assert_empty hits(rows, game: GameStub.new(nil, %w[dana_pet dana_town dana_year]))
   end
 
   test 'refusals, nomatch, infeasible and an already held answer have the route shapes and pass' do
@@ -111,7 +116,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
   # ---- the earned password ------------------------------------------------------------------------
 
   test 'earned: a cracked entry carries its own password after a cracked answer that named the account' do
-    assert_empty hits([cracked_answer('dana'), keyring([dana_entry])])
+    assert_empty hits([running_answer, cracked_answer('dana'), keyring([dana_entry])])
   end
 
   test 'earned: an unsalted crack names every account with an equal password, and each entry may carry it' do
@@ -121,7 +126,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
   end
 
   test 'earned: the password stays allowed on later keyring answers of the run' do
-    assert_empty hits([cracked_answer, keyring([dana_entry]), keyring([dana_entry])])
+    assert_empty hits([running_answer, cracked_answer, keyring([dana_entry]), keyring([dana_entry])])
   end
 
   test 'near miss: the entry before the crack answer is a finding, and the password too' do
@@ -198,9 +203,9 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
 
   test 'near miss: a cracked answer for a record whose proof does not hold in the game earns nothing' do
     game = GameStub.new(%w[farah_hash], [])
-    assert_includes rules([cracked_answer('dana'), keyring([dana_entry])], game: game), 'crack_unearned'
-    game = GameStub.new(%w[dana_hash], [])
-    assert_empty hits([cracked_answer('dana'), keyring([hash_row('dana_hash', 'dana', status: 'cracked'), dana_entry])], game: game)
+    assert_includes rules([running_answer, cracked_answer('dana'), keyring([dana_entry])], game: game), 'crack_unearned'
+    game = GameStub.new(%w[dana_hash], %w[dana_pet dana_town dana_year])
+    assert_empty hits([running_answer, cracked_answer('dana'), keyring([hash_row('dana_hash', 'dana', status: 'cracked'), dana_entry])], game: game)
   end
 
   test 'near miss: the entry is not the server row (extra key, wrong id, kind, account, password, source elsewhere)' do

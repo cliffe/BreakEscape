@@ -31,7 +31,7 @@ import {
 import { captureBannerText, capturesReveal, loadCaptureSecrets } from './capture-rows.js';
 import { buildSignInRow } from './signin-rows.js';
 import {
-    SIGNINS_HEADING, CAPTURES_HEADING, SIGNINS_BANNER_TEXT, CAPTURES_ROWS_BANNER_TEXT
+    SIGNINS_HEADING, CAPTURES_HEADING, HASHES_HEADING, HASHES_BANNER_TEXT, SIGNINS_BANNER_TEXT, CAPTURES_ROWS_BANNER_TEXT
 } from '../../utils/remote-host-text.js';
 
 export const SCENE_TYPE = 'capture-log';
@@ -58,7 +58,7 @@ export function sessionsSource() {
     }
 }
 
-const EMPTY_SECTIONS = () => ({ signins: [], captures: [], sessions: [], findings: [] });
+const EMPTY_SECTIONS = () => ({ signins: [], hashes: [], captures: [], sessions: [], findings: [] });
 
 /** The page's keyring (systems/keyring.js sets window.keyring), or null before it loads. */
 function keyringRef() {
@@ -395,6 +395,7 @@ export class CaptureLogMinigame extends MinigameScene {
         const signInRow = (r) => buildSignInRow(r).row;
         appendSection('signins', SIGNINS_HEADING, sections.signins, signInRow,
             reveal ? SIGNINS_BANNER_TEXT : captureBannerText(false));
+        appendSection('hashes', HASHES_HEADING, sections.hashes, signInRow, HASHES_BANNER_TEXT);
         appendSection('captures', CAPTURES_HEADING, sections.captures, signInRow, CAPTURES_ROWS_BANNER_TEXT);
         appendSection('sessions', 'Sessions', sections.sessions, (row) => this.sessionRow(row));
         appendSection('findings', 'Findings', sections.findings, (row) => this.itemRow(row, null, () => this.openItem(row.item)));
@@ -477,6 +478,7 @@ export class CaptureLogMinigame extends MinigameScene {
             captureLog: {
                 holderId: this.holderId,
                 signins: signInSummary(sections.signins),
+                hashes: signInSummary(sections.hashes || []),
                 captures: signInSummary(sections.captures),
                 sessions: summary(sections.sessions),
                 findings: summary(sections.findings),

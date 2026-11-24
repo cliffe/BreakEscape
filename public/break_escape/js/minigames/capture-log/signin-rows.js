@@ -22,7 +22,7 @@ import { captureList, capturesReveal, displaySecret, maskSecret, SECRET_LOADING_
 import {
     rowKindName, SOURCE_TAG_TEXT, typeItFromLine, alsoInLine, connectFromInventoryLine,
     useOnSignInScreenLine, endedAssistMessage, expiredLine, moreNotesLine, footholdLine,
-    findingLine, pinLine, tokenUseLine, hashTokenText, hashStatusText, CRACK_BUTTON_TEXT, HASH_SALTED_TEXT
+    findingLine, pinLine, tokenUseLine, hashTokenText, hashStatusText, CRACK_BUTTON_TEXT, CRACK_OPEN_BUTTON_TEXT, CRACK_FINISH_BUTTON_TEXT, HASH_SALTED_TEXT
 } from '../../utils/remote-host-text.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -357,7 +357,8 @@ function buildHashRow(r, row) {
         timer.unref?.();
     }
     if (r.canCrack) {
-        const button = el('button', 'signin-crack', CRACK_BUTTON_TEXT);
+        const button = el('button', 'signin-crack', r.status !== 'running' ? CRACK_BUTTON_TEXT
+            : (Number.isFinite(r.secondsLeft) && r.secondsLeft > 0 ? CRACK_OPEN_BUTTON_TEXT : CRACK_FINISH_BUTTON_TEXT));
         button.type = 'button';
         button.addEventListener('click', (e) => {
             e.preventDefault?.(); e.stopPropagation?.();

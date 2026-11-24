@@ -263,6 +263,8 @@ export const SOURCE_TAG_TEXT = Object.freeze({
 
 // S7: a hash record's row in the Sign-ins list. The words only; the server's status decides which.
 export const CRACK_BUTTON_TEXT = 'Crack';
+export const CRACK_OPEN_BUTTON_TEXT = 'Open';
+export const CRACK_FINISH_BUTTON_TEXT = 'Finish';
 export const HASH_SALTED_TEXT = 'Salted';
 export const HASH_READY_TO_FINISH_TEXT = 'Ready to finish';
 /** A hash token in groups of four. */
@@ -282,6 +284,8 @@ export function hashStatusText(status, secondsLeft = null) {
 
 export const SIGNINS_HEADING = 'Sign-ins';
 export const CAPTURES_HEADING = 'Captures';
+export const HASHES_HEADING = 'Hashes';
+export const HASHES_BANNER_TEXT = 'Hash records. A hash cannot sign in until it is cracked; open one to try.';
 export const SIGNINS_BANNER_TEXT = 'Sign-ins captured or found. Shown in full here, masked in the report.';
 export const CAPTURES_ROWS_BANNER_TEXT = 'PINs, footholds and findings this engagement has recorded.';
 

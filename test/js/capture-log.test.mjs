@@ -817,3 +817,20 @@ test('R1-C5: keyringAnswer() passes the real keyring crackSecondsLeft through', 
     assert.equal(a.crackSecondsLeft('h1'), window.keyring.crackSecondsLeft('h1'));
     assert.ok(a.crackSecondsLeft('h1') <= 60 && a.crackSecondsLeft('h1') > 55);
 });
+
+test('R1-C15: a hash record has its own Hashes section, not the Sign-ins one', async () => {
+    reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'ABCDEFGH', status: 'ready',
+        account: { npcId: 'dana', username: 'dana.k', displayName: 'Dana K' } };
+    stubKeyring({ ...K3D_ANSWER, entries: [...K3D_ANSWER.entries, hash] });
+    api.get = async () => ({ secrets: {} });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.ok(headings().includes('Hashes'));
+    const root = device().root;
+    assert.ok(root.querySelector('[data-section="hashes"] [data-key="hash:h1"]'));
+    assert.equal(root.querySelector('[data-section="signins"] [data-key="hash:h1"]'), null);
+    assert.ok(headings().indexOf('Hashes') > headings().indexOf('Sign-ins'));
+    while (MF.currentMinigame) MF.endMinigame(false, null);
+});

@@ -458,6 +458,9 @@ test('S7: the Crack button shows for ready and running only, and starts the crac
     const run = (extra) => domOf(build({ captures: [], keyring: { entries: [hashEntry(extra)], captures: {} } }).signins[0]);
     assert.ok(run({ status: 'ready' }).querySelector('button.signin-crack'));
     assert.ok(run({ status: 'running', readyInSeconds: 5 }).querySelector('button.signin-crack'));
+    assert.equal(run({ status: 'ready' }).querySelector('button.signin-crack').textContent, 'Crack');
+    assert.equal(run({ status: 'running', readyInSeconds: 5 }).querySelector('button.signin-crack').textContent, 'Open', 'a running row does not say Crack again');
+    assert.equal(run({ status: 'running', readyInSeconds: 0 }).querySelector('button.signin-crack').textContent, 'Finish');
     assert.equal(run({ status: 'infeasible' }).querySelector('button'), null);
     assert.equal(run({ status: 'cracked' }).querySelector('button'), null);
     const started = [];

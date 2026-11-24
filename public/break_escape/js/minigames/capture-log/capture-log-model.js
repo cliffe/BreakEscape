@@ -81,12 +81,14 @@ function opensContents(d) {
 export function buildSections({ holder, items, globals, sessionsSource = null, keyring = null, secrets = null, secretsState = null, social = {} }) {
     const hd = dataOf(holder);
     const holds = isObj(hd.holds) ? hd.holds : {};
-    const out = { signins: [], captures: [], sessions: [], findings: [] };
+    const out = { signins: [], hashes: [], captures: [], sessions: [], findings: [] };
 
     if (holds.captures === true) {
         const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, secretsState, keyring, social,
             linkNames: linkNames(items) });
-        out.signins = rows.signins;
+        // hash records get a section of their own: a hash is not a sign-in (R1-C15)
+        out.signins = rows.signins.filter((r) => r.group !== 'hash');
+        out.hashes = rows.signins.filter((r) => r.group === 'hash');
         out.captures = rows.captures;
     }
     if (holds.items !== true) return out;
@@ -133,7 +135,7 @@ export function buildSections({ holder, items, globals, sessionsSource = null, k
     return out;
 }
 
-const SECTION_NAMES = ['signins', 'captures', 'sessions', 'findings'];
+const SECTION_NAMES = ['signins', 'hashes', 'captures', 'sessions', 'findings'];
 
 /** Every row in the sections, in section order. */
 export function allRows(sections) {
