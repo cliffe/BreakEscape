@@ -977,6 +977,8 @@ export async function addToInventory(sprite) {
             if (/^action_item_/.test(sprite.objectId || '')) {
                 receiveRewardNote(sprite.scenarioData);
             }
+            // The server stamped a notes item's facts on its add too (S7)
+            grantRevealedFacts(sprite.scenarioData);
             return { ok: true, reason: 'added' };
         }
 
@@ -1125,10 +1127,33 @@ export async function addToInventory(sprite) {
             console.log('Crypto workstation added to inventory - modal function available');
         }
         
+        // An item that reveals intel facts (S7): grant each on the client so the intel board
+        // agrees with the server, which stamped the same ids when it accepted the add. Goes
+        // through window.applyActions so this module takes no static import. The grant is
+        // flip-only, so a restore on reload (the fact is already in the saved globals) says
+        // and changes nothing.
+        grantRevealedFacts(sprite.scenarioData);
+
         return { ok: true, reason: 'added' };
     } catch (error) {
         console.error('Error adding to inventory:', error);
         return { ok: false, reason: 'error', message: error.message };
+    }
+}
+
+// Grant the intel facts an item reveals (its `revealsFacts` ids), once each.
+function grantRevealedFacts(data) {
+    const ids = Array.isArray(data?.revealsFacts) ? data.revealsFacts : [];
+    if (!ids.length || typeof window.applyActions !== 'function') return;
+    const seen = new Set();
+    for (const id of ids) {
+        if (typeof id !== 'string' || !id || seen.has(id)) continue;
+        seen.add(id);
+        try {
+            window.applyActions([{ type: 'grant_fact', fact: id }], { source: 'item' });
+        } catch (e) {
+            console.warn('[inventory] grant_fact failed:', e);
+        }
     }
 }
 
