@@ -4125,6 +4125,7 @@ class AccessLeakScanner
     pcs.each do |pc|
       if pc == @mfa_unlocked_pc
         @mfa_locked.delete(pc)
+        @mfa_passed << [pc, npc] if @mfa_row_strict && npc.is_a?(String) # R4-L1: the unlock is the account's own session, held and locked
       else
         @mfa_held.delete(pc)
         @mfa_locked.delete(pc)

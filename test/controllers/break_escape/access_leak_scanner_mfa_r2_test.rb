@@ -221,6 +221,32 @@ module BreakEscape
       assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows([token, lock, unlock, unlock]).first)
     end
 
+    test 'R4-L1 the desktop after an honest unlock of a locked token session is clean; near misses are reported' do
+      base = '/break_escape/games/86'
+      token = lambda do |npc, user|
+        { 'method' => 'POST', 'path' => "#{base}/login", 'status' => 200,
+          'body' => { 'success' => true, 'npcId' => npc, 'username' => user, 'via' => 'credential', 'kind' => 'token',
+                      'remote' => true, 'footholdId' => 'jack_office_port', 'host' => 'ACC01',
+                      'route' => { 'foothold' => 'jack_office_port' } } }
+      end
+      lock = rows(100).first
+      unlock = rows(107).first
+      desktop = rows(108).first
+      logout = { 'method' => 'POST', 'path' => "#{base}/logout", 'status' => 200, 'body' => { 'success' => true } }
+      hana = token.call('hana', 'hquill')
+      names = %w[hana@code_pc1#2]
+      assert_equal [], found(scan_rows([hana, lock, unlock, desktop], signins: names).first)
+      session = ['mfa_session', 'mfa:session:hana']
+      # no token session held there before the unlock
+      assert_includes found(scan_rows([unlock, desktop], signins: names).first), session
+      # a token session of another account
+      assert_includes found(scan_rows([token.call('cal', 'cwren'), lock, unlock, desktop], signins: names).first), session
+      # the token session ended by a logout before the unlock
+      assert_includes found(scan_rows([hana, lock, logout, unlock, desktop], signins: names).first), session
+      # one unlock only
+      assert_includes found(scan_rows([hana, lock, unlock, unlock, desktop]).first), session
+    end
+
     # ---- R2-L7: every `code` value in a scenario with a code device is a finding unless the scenario authors it -------------
 
     test 'R2-L7 a code value passes only when authored and not six digits' do
