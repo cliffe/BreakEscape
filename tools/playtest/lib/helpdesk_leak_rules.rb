@@ -62,6 +62,7 @@ module HelpdeskLeakRules
   HD_OWN_DEVICE_KEYS = %w[code deviceId displayName npcId secondsLeft used].freeze
   HD_UNENROLLED_KEYS = %w[deviceId displayName enrolled npcId].freeze
   HD_KEYRING_RESET_KEYS = %w[account how id kind label password source].freeze
+  HD_KEYRING_SCOPE_KEYS = %w[accepted forThisPc].freeze
   HD_ACCOUNT_KEYS = %w[displayName npcId username].freeze
   HD_OWN_NAME = 'My phone'
   HD_NO_PHONE = { 'success' => false, 'error' => 'no such phone' }.freeze
@@ -144,6 +145,12 @@ module HelpdeskLeakRules
     @hd_stop_until = nil       # the time (seconds) the latest stop seen runs to
     @hd_stop_unknown = false   # a stop was seen on a row with no readable time
     @hd_row_time = nil
+    # R1-SCANNER3: a scenario whose only second step is one a re-enrolment creates still gets the session rules. This only turns
+    # checking ON: before a grant every PC still owes nothing (`mfa_kind_at` answers `none`).
+    @mfa_active ||= @hd_mfa_reset_possible && @priv_pcs.any? do |_id, pc|
+      BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc)) == 'code' &&
+        @hd_accounts.any? { |_nid, npc| BreakEscape::MfaModel.enrolled?(npc) && BreakEscape::CredentialModel.pc_admits_account?(pc, npc) }
+    end
   end
 
   # One response row. Judges it, then lets it earn what it proves (so a row never proves itself). Answers the body the
@@ -361,11 +368,22 @@ module HelpdeskLeakRules
     return unless info[:desk_path] && info[:strict] && info[:method] == 'POST'
 
     case hd_request_shape(info[:status], body)
-    when :granted_password then @hd_earned_pw.merge(earned[:accounts]) if earned[:kind]
+    when :granted_password
+      if earned[:kind]
+        @hd_earned_pw.merge(earned[:accounts])
+        hd_drop_steps(earned[:accounts])
+      end
     when :granted_mfa then @hd_mfa_earned.merge(earned[:accounts]) if earned[:kind]
     when :blocked then hd_note_stop(body['retryIn'])
     when :refused_last then hd_note_stop(BreakEscape::HelpdeskModel::DESK_STOP_SECONDS)
     end
+  end
+
+  # A password grant drops the account's pending second steps on the server, so a pass for it needs a new step. Only a credited
+  # grant drops (an uncredited one is a finding of its own); dropping only ever takes allowances away.
+  def hd_drop_steps(accounts)
+    @mfa_pending.delete_if { |_pc, rec| accounts.include?(rec[:npc]) }
+    @hd_own_steps.delete_if { |_pc, npc| accounts.include?(npc) }
   end
 
   def hd_note_stop(seconds)
@@ -386,12 +404,13 @@ module HelpdeskLeakRules
     allowed = {}
     return allowed unless body.is_a?(Hash) && body['entries'].is_a?(Array)
 
+    scope = hd_keyring_scope(row)
     strict = row['method'].to_s.upcase == 'GET' && row['status'] == 200 && row['path'].to_s.split('?', 2).first.to_s.match?(%r{/games/[^/]+/keyring\z})
     body['entries'].each_with_index do |entry, i|
       next unless entry.is_a?(Hash) && (entry['source'] == 'helpdesk' || entry['id'].to_s.end_with?('.reset'))
 
       npc_id = entry['id'].to_s.delete_suffix('.reset')
-      if strict && hd_reset_entry_ok?(entry, npc_id)
+      if strict && hd_reset_entry_ok?(entry, npc_id, scope)
         allowed["$.entries[#{i}].password"] = entry['password']
       else
         add.call('helpdesk_secret', "helpdesk:keyring:#{npc_id}", safe_path("$.entries[#{i}]"))
@@ -400,9 +419,27 @@ module HelpdeskLeakRules
     allowed
   end
 
-  def hd_reset_entry_ok?(entry, npc_id)
+  # The server scopes every entry of `GET keyring?pc_id=<a sign-in PC>` with `forThisPc` and `accepted` (credential_keyring.rb
+  # keyring_scope_to_pc). Answers: nil when the query names no such PC (an entry then takes no scope keys), else { accepts: }
+  # for that PC's policy. A pc_id twice, or one that is not a sign-in PC of the scenario, gives no scope.
+  def hd_keyring_scope(row)
+    pairs = URI.decode_www_form(row['query'].to_s)
+    ids = pairs.select { |k, _| k == 'pc_id' }.map(&:last)
+    return nil unless ids.size == 1
+
+    pc = BreakEscape::CredentialModel.sign_in_pc(@data, ids.first)
+    return nil unless pc
+
+    { accepts: BreakEscape::CredentialModel.accepts?(BreakEscape::CredentialModel.policy_for(@data, pc), 'password') }
+  rescue ArgumentError
+    nil
+  end
+
+  def hd_reset_entry_ok?(entry, npc_id, scope = nil)
     npc = @hd_accounts[npc_id]
-    return false unless npc && entry['id'] == "#{npc_id}.reset" && @hd_earned_pw.include?(npc_id) && entry.keys.sort == HD_KEYRING_RESET_KEYS
+    keys = scope ? (HD_KEYRING_RESET_KEYS + HD_KEYRING_SCOPE_KEYS).sort : HD_KEYRING_RESET_KEYS
+    return false unless npc && entry['id'] == "#{npc_id}.reset" && @hd_earned_pw.include?(npc_id) && entry.keys.sort == keys
+    return false if scope && !(entry['forThisPc'] == true && entry['accepted'] == scope[:accepts])
 
     account = entry['account']
     owners = @hd_reset_pw[npc['creds']['resetPassword']]
@@ -515,24 +552,29 @@ module HelpdeskLeakRules
       return
     end
     hd_note_own_close(body, minfo, route)
-    return unless %w[mfa/prompt mfa/approve].include?(route) && body['success'] == true && @hd_own_steps.value?(body['npcId'])
+    return unless %w[mfa/prompt mfa/approve].include?(route) && body['success'] == true && hd_reenrolled?(body['npcId'])
     return if route == 'mfa/approve' && body['approvedBy'] == 'own_phone'
 
     add.call('helpdesk_secret', 'helpdesk:own:pass', '$')
   end
 
-  # A pass, a cancel, an expiry, a lockout or an ended PC closes the step: the record goes before the next row.
+  # The record closes exactly what the second-step rule closes on the same row (R1-SCANNER1), so the two never disagree about an
+  # open step: a pass closes the one PC `mfa_pass_pc` names (nothing when the pass is not proved); a cancel, an expiry or a
+  # lockout closes the own steps whose pending step is of the kind the route handles (that PC alone when the row's tag names
+  # one). An ended PC closes nothing: the server ends a session there, not a pending step, and `@mfa_pending` keeps it too.
   def hd_note_own_close(body, minfo, route)
-    if minfo[:ok] && body['endedPcIds'].is_a?(Array)
-      @hd_close_after.concat(body['endedPcIds'].select { |pc| pc.is_a?(String) })
-    end
     return unless %w[mfa/verify mfa/prompt mfa/approve].include?(route)
 
     if body['success'] == true
-      @hd_close_after.concat(@hd_own_steps.select { |_pc, npc| npc == body['npcId'] }.keys)
+      pc = mfa_pass_pc(body, minfo, @hd_row || {})
+      @hd_close_after << pc if pc
     elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
+      kinds = route == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
       tag = hd_row_tag
-      @hd_close_after.concat(@hd_own_steps.keys.select { |pc| tag.nil? || pc == tag })
+      @hd_close_after.concat(@hd_own_steps.keys.select do |pc|
+        rec = @mfa_pending[pc]
+        (rec.nil? || kinds.include?(rec[:kind])) && (tag.nil? || pc == tag)
+      end)
     end
   end
 
