@@ -80,7 +80,11 @@ class RealismSeparationTest < ActiveSupport::TestCase
     %w[CVE-0000-11111 cve-9999-1 MS31-901 ms99-999 kb9999999 zdi_99 ZDI-00-0001 GHSA-xxxx RHSA-9999].each do |ok|
       assert_empty uninvented_ids(ok), ok
     end
-    ['MS' + '00-001', 'CVE-' + '2014-0160', 'kb' + '1234567', %w[ZDI 14-001].join('-')].each do |bad|
+    # Realistic shapes computed at run time from numbers no scheme has issued (a century ahead, a gap year),
+    # so no real advisory id is written here, whole or in parts.
+    far = Time.now.year + 100
+    gap = 45
+    ["CVE-#{far}-4242", "MS#{gap}-123", "ZDI-#{gap}-123", "kb#{8_000_000 + 4242}"].each do |bad|
       assert_equal [bad], uninvented_ids(bad), bad
     end
   end
