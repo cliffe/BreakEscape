@@ -363,9 +363,10 @@ end
 
 # Everything a player can read, lower-cased with inner spaces collapsed to match normalise_answer
 def helpdesk_readable_text(json_data, scenario_dir)
+  hm = BreakEscape::HelpdeskModel
   clues = BreakEscape::NpcHabits::Clues
   all = clues.readable_texts(json_data, scenario_dir) + clues.set_member_texts(json_data)
-  all.map { |e| e[:text].to_s.scrub('').gsub(/\s+/, ' ').downcase }
+  all.map { |e| hm.normalise_text(e[:text]) }
 end
 
 def helpdesk_info(json_data, desks, accounts, hm, info)

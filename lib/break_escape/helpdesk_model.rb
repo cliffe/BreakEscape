@@ -45,6 +45,14 @@ module BreakEscape
       text.scrub('').strip.gsub(/\s+/, ' ').downcase[0, ANSWER_MAX]
     end
 
+    # A text being searched for an answer: scrubbed, inner whitespace collapsed, downcased, and NOT cut
+    # (only an answer is cut to ANSWER_MAX; the text it is looked for in is as long as it is).
+    def normalise_text(text)
+      return '' unless text.is_a?(String)
+
+      text.scrub('').strip.gsub(/\s+/, ' ').downcase
+    end
+
     # Control characters out, first 64 code points. The caller applies `normalise_username`.
     def clean_username(text)
       return '' unless text.is_a?(String)

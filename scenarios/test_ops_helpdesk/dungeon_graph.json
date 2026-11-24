@@ -117,6 +117,18 @@
       "optional": false
     },
     {
+      "id": "clue_staff_file",
+      "label": "Staff file",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "clue_social_osint_friendface",
+      "label": "note",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "desk_it_desk_tess_password",
       "label": "Ria Vance<br/>resets password",
       "kind": "key",
@@ -291,6 +303,28 @@
       "soft": false
     },
     {
+      "from": "records",
+      "to": "clue_staff_file",
+      "soft": false
+    },
+    {
+      "from": "clue_staff_file",
+      "to": "desk_it_desk_wim_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "service_desk",
+      "to": "clue_social_osint_friendface",
+      "soft": false
+    },
+    {
+      "from": "clue_social_osint_friendface",
+      "to": "desk_it_desk_wim_mfa",
+      "soft": false,
+      "label": "answer"
+    },
+    {
       "from": "desk_it_desk_wim_mfa",
       "to": "lock_ops_pc",
       "soft": false,
@@ -300,6 +334,18 @@
       "from": "service_desk",
       "to": "desk_it_desk_tess_password",
       "soft": false
+    },
+    {
+      "from": "clue_staff_file",
+      "to": "desk_it_desk_tess_password",
+      "soft": false,
+      "label": "answer"
+    },
+    {
+      "from": "clue_social_osint_friendface",
+      "to": "desk_it_desk_tess_password",
+      "soft": false,
+      "label": "answer"
     },
     {
       "from": "desk_it_desk_tess_password",

@@ -35,13 +35,13 @@ const RESET = 'Reset-Pass-Quince-9';
 const STAFF = 'S-48213';
 const MANAGER = 'Odalys Ferreira';
 
-function scenario({ desk = {}, mfa = 'code', phone = false, withNote = true, noDesk = false, noResetPassword = false } = {}) {
+function scenario({ desk = {}, mfa = 'code', phone = false, withNote = true, noDesk = false, noResetPassword = false, noteText = null } = {}) {
     const objects = [
         { id: 'desk_pc', type: 'pc', name: 'Desk PC', lockType: 'login', locked: true, host: 'DESK01' },
         { id: 'kemi_token', type: 'code_device', name: 'Kemi token', owner: 'kemi' }
     ];
     if (phone) objects.push({ id: 'kemi_phone', type: 'phone_friendface', name: 'Kemi phone', owner: 'kemi' });
-    if (withNote) objects.push({ id: 'staff_list', type: 'notes', name: 'Staff list', observations: `Kemi A, staff number ${STAFF}` });
+    if (withNote) objects.push({ id: 'staff_list', type: 'notes', name: 'Staff list', observations: noteText ?? `Kemi A, staff number ${STAFF}` });
     const kemi = {
         id: 'kemi', npcType: 'person', displayName: 'Kemi',
         creds: { username: 'kemi.a', password: PASS, ...(noResetPassword ? {} : { resetPassword: RESET }),
@@ -91,6 +91,15 @@ test('questions: the grant hangs from the readable home of the answer', { skip }
     const n = grant(g, 'password');
     const clues = into(g, n.id).filter(e => e.label === 'answer');
     assert.ok(clues.length >= 1, 'an answer edge');
+    assert.match(g.nodes[clues[0].from].label, /Staff list/);
+});
+
+test('questions: an answer past the 64th character of its text still draws its answer edge', { skip }, () => {
+    const filler = 'Records staff file. New starters on file are listed below with their numbers; ';
+    assert.ok(filler.length > 64);
+    const g = graph(scenario({ noteText: `${filler}Kemi A, staff number ${STAFF}; manager ${MANAGER}.` }));
+    const clues = into(g, grant(g, 'password').id).filter(e => e.label === 'answer');
+    assert.ok(clues.length >= 1, 'an answer edge for text far past 64 characters');
     assert.match(g.nodes[clues[0].from].label, /Staff list/);
 });
 

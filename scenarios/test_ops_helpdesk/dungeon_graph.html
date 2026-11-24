@@ -145,7 +145,7 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">4</td></tr>
       <tr><th>Rooms</th><td class="val">4</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">25 / 38</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">27 / 44</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -194,6 +194,8 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   cred_src_tess_saved_file{"Records PC.rdp"}
   cred_src_vera_device{"Code device"}
   desk_it_desk_wim_mfa{"Ria Vance<br/>resets second step"}
+  clue_staff_file{"Staff file"}
+  clue_social_osint_friendface{"note"}
   desk_it_desk_tess_password{"Ria Vance<br/>resets password"}
   desk_it_desk_ugo_password{"Ria Vance<br/>resets password"}
   desk_it_desk_vera_mfa{"Ria Vance<br/>resets second step"}
@@ -227,8 +229,14 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   cred_tess_saved --> lock_records_pc
   cred_src_vera_device -->|second step| lock_vault_pc
   service_desk --> desk_it_desk_wim_mfa
+  records --> clue_staff_file
+  clue_staff_file -->|answer| desk_it_desk_wim_mfa
+  service_desk --> clue_social_osint_friendface
+  clue_social_osint_friendface -->|answer| desk_it_desk_wim_mfa
   desk_it_desk_wim_mfa -->|second step| lock_ops_pc
   service_desk --> desk_it_desk_tess_password
+  clue_staff_file -->|answer| desk_it_desk_tess_password
+  clue_social_osint_friendface -->|answer| desk_it_desk_tess_password
   desk_it_desk_tess_password -->|password reset| lock_records_pc
   service_desk --> desk_it_desk_ugo_password
   desk_it_desk_ugo_password -->|password reset| lock_records_pc
@@ -244,7 +252,7 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   class signin_sam,signin_wim,signin_tess,signin_ugo,signin_vera,cred_tess_saved,desk_it_desk_wim_mfa,desk_it_desk_tess_password,desk_it_desk_ugo_password,desk_it_desk_vera_mfa,desk_id_desk_wim_mfa,desk_id_desk_vera_mfa key
   class front_office,service_desk,records,net_office_lan room
   class log_helpdesk_audit note
-  class reader_audit_log_pc,cred_src_tess_saved_file,cred_src_vera_device,cred_src_vera_phone item
+  class reader_audit_log_pc,cred_src_tess_saved_file,cred_src_vera_device,clue_staff_file,clue_social_osint_friendface,cred_src_vera_phone item
   class node_start start`,
       story:      `flowchart TD
 
@@ -307,6 +315,8 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   cred_src_tess_saved_file{"Records PC.rdp"}
   cred_src_vera_device{"Code device"}
   desk_it_desk_wim_mfa{"Ria Vance<br/>resets second step"}
+  clue_staff_file{"Staff file"}
+  clue_social_osint_friendface{"note"}
   desk_it_desk_tess_password{"Ria Vance<br/>resets password"}
   desk_it_desk_ugo_password{"Ria Vance<br/>resets password"}
   desk_it_desk_vera_mfa{"Ria Vance<br/>resets second step"}
@@ -341,8 +351,14 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   cred_tess_saved --> lock_records_pc
   cred_src_vera_device -->|second step| lock_vault_pc
   service_desk --> desk_it_desk_wim_mfa
+  records --> clue_staff_file
+  clue_staff_file -->|answer| desk_it_desk_wim_mfa
+  service_desk --> clue_social_osint_friendface
+  clue_social_osint_friendface -->|answer| desk_it_desk_wim_mfa
   desk_it_desk_wim_mfa -->|second step| lock_ops_pc
   service_desk --> desk_it_desk_tess_password
+  clue_staff_file -->|answer| desk_it_desk_tess_password
+  clue_social_osint_friendface -->|answer| desk_it_desk_tess_password
   desk_it_desk_tess_password -->|password reset| lock_records_pc
   service_desk --> desk_it_desk_ugo_password
   desk_it_desk_ugo_password -->|password reset| lock_records_pc
@@ -358,7 +374,7 @@ A test floor for helpdesk recovery (OPS_MFA_HELPDESK_PLAN.md, S8b). A front offi
   class signin_sam,signin_wim,signin_tess,signin_ugo,signin_vera,cred_tess_saved,desk_it_desk_wim_mfa,desk_it_desk_tess_password,desk_it_desk_ugo_password,desk_it_desk_vera_mfa,desk_id_desk_wim_mfa,desk_id_desk_vera_mfa key
   class front_office,service_desk,records,net_office_lan room
   class log_helpdesk_audit note
-  class reader_audit_log_pc,cred_src_tess_saved_file,cred_src_vera_device,cred_src_vera_phone item
+  class reader_audit_log_pc,cred_src_tess_saved_file,cred_src_vera_device,clue_staff_file,clue_social_osint_friendface,cred_src_vera_phone item
   class aim_helpdesk_beats aim
   class node_start start`,
       rooms:      `flowchart TD

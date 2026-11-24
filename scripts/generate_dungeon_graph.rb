@@ -1951,13 +1951,14 @@ unless BreakEscape::HelpdeskModel.desks(scenario).empty?
         end
         case desk['verify']
         when 'questions'
-          desk_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE))
+          desk_texts ||= BreakEscape::NpcHabits::Clues.readable_texts(scenario, File.dirname(SCENARIO_FILE)) +
+                         BreakEscape::NpcHabits::Clues.set_member_texts(scenario)
           recovery = npc['creds']['recovery'].is_a?(Hash) ? npc['creds']['recovery'] : {}
           Array(desk['questions']).each do |qid|
             want = hm_graph.normalise_answer(recovery[qid])
             next if want.empty?
 
-            desk_texts.select { |t| t[:text].is_a?(String) && hm_graph.normalise_answer(t[:text]).include?(want) }
+            desk_texts.select { |t| t[:text].is_a?(String) && hm_graph.normalise_text(t[:text]).include?(want) }
                       .uniq { |t| t[:path] }.each do |t|
               source = t[:room] ? t : t.merge(room: account[:room], locks: [])
               clue = clue_node_for.call(source, scrub_label((t[:name] || 'note').to_s))
