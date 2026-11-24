@@ -468,7 +468,11 @@ export class TerminalRenderer {
             // A Tab that adds nothing with several matches left lists them, as a shell does
             if (this.input.value === before && Array.isArray(out.matches) && out.matches.length > 1) {
                 const log = this._log(true);
-                if (log) { appendLine(log, [span(out.matches.join('  '), 'note')]); this._syncLog(); }
+                const text = out.matches.join('  ');
+                // A held Tab key repeats: the same matches line is not written twice running
+                const last = log?.lines?.[log.lines.length - 1];
+                const again = last && last.map(s => s.text).join('') === cleanText(text);
+                if (log && !again) { appendLine(log, [span(text, 'note')]); this._syncLog(); }
             }
             this._tabAttr();
         }

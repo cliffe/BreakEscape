@@ -481,3 +481,14 @@ test('R1-C13: a Tab that adds nothing, with several matches, lists them as one n
     t.type('swee'); t.key('Tab');
     assert.equal(t.logText().length, n);
 });
+
+test('R2-8: a held Tab key does not grow the log: the same matches line is written once', () => {
+    const t = setup(viewOf('swept_hosts'));
+    t.type('s');
+    t.key('Tab');
+    t.type(t.input.value);
+    t.key('Tab');
+    const after = t.logText().length;
+    for (let i = 0; i < 1000; i++) t.key('Tab');
+    assert.equal(t.logText().length, after);
+});

@@ -38,6 +38,8 @@ const SET_TEXT = 'TECHNIQUE => <value>';
 const UNSET_TEXT = 'Unsetting TECHNIQUE...';
 
 const HOST_HEAD = ['HOST', 'NAME', 'STATUS'];
+// The host table when some row of the run carries an address (served display text, as in the sweep report)
+const HOST_ADDR_HEAD = ['HOST', 'NAME', 'ADDRESS', 'STATUS'];
 const RESOURCE_HEAD = ['RESOURCE', 'KIND', 'HOST', 'STATUS'];
 const SERVICE_HEAD = ['SERVICE', 'PORT', 'PRODUCT', 'VERSION'];
 const TECHNIQUE_HEAD = ['TECHNIQUE', 'WORKS ON'];
@@ -65,7 +67,7 @@ const FRAMEWORK_INFO_LABELS = Object.freeze([
 export const TERMINAL_ONLY_TEXT = Object.freeze([
     OPENING_TEXT, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL, SET_TEXT, UNSET_TEXT, ALREADY_LISTED_TEXT,
     '$', 'msf >', 'msf (<module>) >',
-    ...HOST_HEAD, ...RESOURCE_HEAD, ...SERVICE_HEAD, ...TECHNIQUE_HEAD,
+    ...HOST_HEAD, ...HOST_ADDR_HEAD, ...RESOURCE_HEAD, ...SERVICE_HEAD, ...TECHNIQUE_HEAD,
     ...scanner.TEMPLATES, ...framework.TEMPLATES, ...FRAMEWORK_INFO_LABELS, ...GRAMMAR_TEXT
 ]);
 
@@ -75,6 +77,8 @@ export const TERMINAL_ONLY_TEXT = Object.freeze([
 
 const CLASSES = Object.freeze(['prompt', 'head', 'ok', 'bad', 'note']);
 export const LOG_CAP = 300;
+// The newest command is kept whole past LOG_CAP, but never past this: the oldest lines go whatever they are
+export const LOG_HARD_CAP = LOG_CAP * 4;
 const CONTROL_CHARS = /[\u0000-\u001F\u007F-\u009F\u2028\u2029\u202A-\u202E\u2066-\u2069]/g;
 const REPLACEMENT = '\uFFFD';
 
@@ -126,6 +130,7 @@ export function appendLine(log, spans) {
     if (line[0] && line[0].cls === 'prompt') log.lastEcho = line;
     // Whole commands: the cap never cuts into the newest command, so its echo and its output stay together
     while (log.lines.length > LOG_CAP && log.lines[0] !== log.lastEcho) log.lines.shift();
+    while (log.lines.length > LOG_HARD_CAP) log.lines.shift();
     return true;
 }
 
@@ -311,11 +316,17 @@ function hostStatus(row, ds) {
     return joinSpans(list);
 }
 
-function hostCells(row, down) {
+function hostCells(row, down, withAddress = false) {
     const ds = downState(row, { inDownBlock: down });
     const label = row.kind === 'pc' || down ? (row.host || row.id) : (row.name || row.id);
     const name = row.kind === 'pc' || down ? (row.name || '') : '';
-    return [str(label), name, hostStatus(row, ds)];
+    return withAddress ? [str(label), name, str(row.address ?? ''), hostStatus(row, ds)] : [str(label), name, hostStatus(row, ds)];
+}
+
+/** The range a block serves (`cli.range`), as a note span led by a space, or no span. */
+function rangeSpan(block) {
+    const range = str(block?.cli?.range ?? '');
+    return range ? [span(` (${range})`, 'note')] : [];
 }
 
 function resourceCells(row, labels) {
@@ -338,7 +349,8 @@ function rowLines(rows, down, kinds) {
         const run = ordered.slice(i, j);
         out.push([span(group, 'head')]);
         if (down || isHostRow(run[0])) {
-            out.push(...tableLines(HOST_HEAD, run.map(r => hostCells(r, down)), '  '));
+            const withAddress = !down && run.some(r => str(r.address ?? '') !== '');
+            out.push(...tableLines(withAddress ? HOST_ADDR_HEAD : HOST_HEAD, run.map(r => hostCells(r, down, withAddress)), '  '));
             for (const r of run) if (!down) out.push(...serviceLines(r));
         } else {
             out.push(...tableLines(RESOURCE_HEAD, run.map(r => resourceCells(r, kinds.labels)), '  '));
@@ -355,9 +367,9 @@ function blockHeading(block) {
         return joinSpans([span(name, 'head'), tag ? span(tag, 'bad') : null]);
     }
     const via = block.via;
-    if (!via) return [span(name, 'head')];
+    if (!via) return [span(name, 'head'), ...rangeSpan(block)];
     return [
-        span(name, 'head'), span(', through ', 'note'), span(str(via.host || via.hostId || '')),
+        span(name, 'head'), ...rangeSpan(block), span(', through ', 'note'), span(str(via.host || via.hostId || '')),
         ...(via.locked ? [span(` (${HOST_LOCKED_LABEL})`, 'bad')] : [])
     ];
 }
@@ -404,7 +416,7 @@ export function formatListing(view, scene = {}) {
     const rows = plainRows(v.hosts);
     if (v.responding !== false && !(rows.length === 0 && ownDownBlock(v))) {
         const ownOps = ownOpsBlock(v);
-        out.push([span(OWN_HEADING, 'head')]);
+        out.push([span(OWN_HEADING, 'head'), ...rangeSpan(ownOps)]);
         if (rows.length) out.push(...rowLines(rows, false, kinds));
         else out.push(note(offersSweep(ownOps) ? SWEEP_HINT_TEXT : NOTHING_ANSWERS_TEXT));
     }

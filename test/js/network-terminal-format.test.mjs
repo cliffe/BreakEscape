@@ -378,6 +378,14 @@ test('R1-C14: the cap never cuts into the newest command: its echo stays above i
     assert.ok(log.lines.some(l => l.map(s => s.text).join('') === '$ help'));
 });
 
+test('R2-8: past a hard ceiling the oldest lines go, whatever they are', () => {
+    const log = fresh();
+    FMT.appendLine(log, [{ text: '$ ', cls: 'prompt' }, { text: 'show' }]);
+    for (let i = 0; i < FMT.LOG_HARD_CAP * 2; i++) FMT.appendLine(log, [{ text: `matches ${i}` }]);
+    assert.ok(log.lines.length <= FMT.LOG_HARD_CAP, String(log.lines.length));
+    assert.equal(log.lines[log.lines.length - 1].map(s => s.text).join(''), `matches ${FMT.LOG_HARD_CAP * 2 - 1}`);
+});
+
 test('R1-C17: an echo recognises the prompt as the grammar reads it: any case, any spacing, a path with a bracket', () => {
     for (const [typed, mark, rest] of [['MSF> check', 'MSF>', 'check'], ['msf  > check', 'msf  >', 'check'], ['msf (a)b) > check', 'msf (a)b) >', 'check'], ['$ show', '$', 'show']]) {
         const log = fresh();
@@ -389,4 +397,51 @@ test('R1-C17: an echo recognises the prompt as the grammar reads it: any case, a
     const log = fresh();
     FMT.recordSent(log, { action: 'open', ids: {} }, 'open x', null);
     assert.deepEqual(log.lines[log.lines.length - 1].map(s => s.text), ['$ ', 'open x']);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Ranges and addresses (K3e): the view is shaped as the server sent it for the guest network
+// (playtest capture of GET network after a session on files01: a device row with no `host`, `cli.range` on the block)
+// ---------------------------------------------------------------------------------------------
+
+const served = {
+    id: 'jack_office_port',
+    name: 'Drop box: Lobby',
+    network: { id: 'office_lan', name: 'Office network' },
+    hosts: [
+        { id: 'files01', kind: 'pc', name: 'File server', host: 'FILES01', sprite: 'pc_desktop', headless: true, address: '10.20.0.10', scanned: true, remoteSignIn: true },
+        { id: 'records01', kind: 'pc', name: 'Records server', host: 'RECORDS01', sprite: 'pc_desktop', headless: true, remoteSignIn: false }
+    ],
+    networks: [
+        {
+            id: 'guest_lan', name: 'Guest network', via: { hostId: 'files01', host: 'FILES01', displayName: 'Ian Okafor' },
+            hosts: [{ id: 'guest_cam01', kind: 'device', name: 'Guest lounge camera', sprite: 'cctv_camera1', address: '10.40.0.4' }],
+            route: 'up', cli: { range: '10.40.0.0/28' }, ops: true
+        },
+        {
+            id: 'office_lan', name: 'Office network', via: null, route: 'up', cli: { range: '10.20.0.0/24' }, ops: true,
+            hosts: [
+                { id: 'files01', kind: 'pc', name: 'File server', host: 'FILES01', address: '10.20.0.10', scanned: true, remoteSignIn: true },
+                { id: 'records01', kind: 'pc', name: 'Records server', host: 'RECORDS01', remoteSignIn: false }
+            ]
+        }
+    ]
+};
+
+test('show: a linked network lists its range and its hosts addresses, as the own network does', () => {
+    const lines = text(FMT.formatListing(served));
+    const all = lines.join('\n');
+    assert.ok(lines.includes('Reachable (10.20.0.0/24)'), all);
+    assert.ok(lines.some(l => l.startsWith('Guest network (10.40.0.0/28), through FILES01')), all);
+    assert.ok(lines.some(l => l.includes('FILES01') && l.includes('10.20.0.10')), all);
+    assert.ok(lines.some(l => l.includes('Guest lounge camera') && l.includes('10.40.0.4')), all);
+    assert.ok(lines.some(l => l.includes('ADDRESS')), 'the table names its column');
+});
+
+test('show: with no address or range served the listing is the old one', () => {
+    const plain = clone(served);
+    for (const b of plain.networks) { delete b.cli; for (const r of b.hosts) delete r.address; }
+    for (const r of plain.hosts) delete r.address;
+    const all = flat(FMT.formatListing(plain));
+    assert.ok(!all.includes('ADDRESS') && !all.includes('10.'), all);
 });
