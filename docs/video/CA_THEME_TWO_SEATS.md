@@ -22,7 +22,7 @@ The base is the in-game `aw-*` skin (`public/break_escape/css/awareness-skin.css
 | `ca-attack-tint` | `#f3e4df` | attacker card ground |
 | `ca-defend` | `#2f5f8a` (blue) | defender seat label and border |
 | `ca-defend-tint` | `#e1eaf2` | defender card ground |
-| company stripe | from the episode's `brand.accent` (Merrin & Sallow `#8a5a2b`) | a 6 px stripe on the seat label, so each company is recognisable |
+| company stripe | purple `#6b4c9a` on every episode (owner, 24 Nov 2026: purple looks better than the Merrin & Sallow brown `#8a5a2b`; was the episode's `brand.accent`) | the bar under the open card's title box and a 6 px stripe on the seat label |
 
 Checked 22 Nov against `public/break_escape/css/awareness-skin.css`: `ca-surface`, `ca-ink`, `ca-line` and `ca-mark` match `--aw-surface`, `--aw-ink`, `--aw-line` and `--aw-accent` exactly. Note the game overrides `--aw-accent` per company from `brand.accent` (Merrin & Sallow shows brown `#8a5a2b` on the kiosk), so in-game panels are brown, not `ca-mark` green. The attack and defend colours have no game token (the skin has only `--aw-warn: #8a5a00`); they are this spec's own. The feature map artifact was not opened (not reachable from here), so its `atk` and `def` hexes remain unchecked.
 
