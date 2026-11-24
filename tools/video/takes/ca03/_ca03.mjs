@@ -19,4 +19,15 @@ export function watchTts2(page, mark) {
   page.on('response', on);
   return { log, stop() { page.off('response', on); } };
 }
-export const addCss = (page, css) => page.addStyleTag({ content: css });
+// Voiced call (3538b7dfa): waits for Leila's next line to start (up to startMs) and then to end, marking voice_start:<tag> and
+// voice_end:<tag>, so a take never cuts a line short. Reads the phone-chat minigame's PhoneCallVoice (`_callVoice.active`).
+const callVoiceActive = (page) => page.evaluate(() => { const mg = window.MinigameFramework && window.MinigameFramework.currentMinigame; return !!(mg && mg._callVoice && mg._callVoice.active); }).catch(() => false);
+export async function waitCallLine(page, mark, tag, { startMs = 6000, maxMs = 20000 } = {}) {
+  const t0 = Date.now(); let started = false;
+  while (Date.now() - t0 < startMs) { if (await callVoiceActive(page)) { started = true; break; } await sleep(50); }
+  if (!started) { mark('voice_none:' + tag); return false; }
+  mark('voice_start:' + tag);
+  while (Date.now() - t0 < maxMs) { if (!(await callVoiceActive(page))) break; await sleep(50); }
+  mark('voice_end:' + tag); return true;
+}
+export const addCss =(page, css) => page.addStyleTag({ content: css });

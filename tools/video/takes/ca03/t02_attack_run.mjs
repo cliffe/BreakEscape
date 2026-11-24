@@ -7,7 +7,7 @@
 // Hides (CSS, injected when the panel exists): the call's technique/tell lines, the authenticator outcome panel and banner, the flip body. See takes_ca03.md for the measured classes.
 // Marks: kiosk-open, start_click, browser_open, note:<id>, ff_page, browser_closed, prepare_open, blank:<n>, filled, call_open, pick:<n>, influence:<n> (frames), ask_pick, landed, ... then prompts/flip marks.
 import fs from 'node:fs';
-import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, mouseClick, waitVisible, waitEl, addCss, narrowPanel } from './_ca03.mjs';
+import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, mouseClick, waitVisible, waitEl, addCss, narrowPanel, waitCallLine } from './_ca03.mjs';
 
 export async function setup(page, bridge) { await prepare(page, bridge); await sleep(300); }
 
@@ -46,16 +46,18 @@ export async function run(page, bridge, mark, { narrow = false } = {}) {
   if (stage === 'prepare') return;
   // The call is the phone frame (.phone-messages-container, 400 px wide: no narrowed variant needed). Hidden: the technique/tell bubbles (.message-bubble.system.pretext-tell) and the meter's "Last change: +10 who" line (.ib-infl-change, names the technique).
   await addCss(page, '.pretext-tell, .ib-infl-change { visibility: hidden !important; }');
-  await pressButton(page, /Make the call/); await sleep(2500); mark('call_open'); mark('frame:call-open'); await dump(page, 'call0');
+  // Leila is voiced now (3538b7dfa): every wait after a pick is "her line ends + a hold", never a fixed sleep.
+  await pressButton(page, /Make the call/); mark('call_click'); await sleep(600); mark('call_open'); mark('frame:call-open');
+  await waitCallLine(page, mark, 'open'); await sleep(900); await dump(page, 'call0');
   const steps = [[/Morning|it's Gordon/i, 1], [/manager/i, 2], [/staff reference/i, 3]];
   for (const [re, i] of steps) {
     const t = await pickChoice(page, re); if (!t) throw new Error('call choice ' + i + ' not found'); mark('pick:' + i, { t });
-    await sleep(2800); mark('frame:after-pick-' + i); if (i === 1) await dump(page, 'call_after1');
+    await waitCallLine(page, mark, 'pick' + i); await sleep(900); mark('frame:after-pick-' + i); if (i === 1) await dump(page, 'call_after1');
   }
   await dump(page, 'call_after3');
   const g1 = (await bridge.getState()).globals || {}; mark('globals-before-ask', { influence: g1.leila_influence, wary: g1.leila_wary, refusing: g1.leila_refusing });
   const ask = await pickChoice(page, /reset my password|reset now|Can you reset/i); if (!ask) throw new Error('ask choice not found'); mark('ask_pick', { ask });
-  await sleep(1500); mark('frame:ask-1_5s'); await sleep(2500); mark('landed'); mark('frame:landed'); await dump(page, 'landed');
+  await sleep(1500); mark('frame:ask-1_5s'); await waitCallLine(page, mark, 'ask'); await sleep(1500); mark('landed'); mark('frame:landed'); await dump(page, 'landed');
   const g = (await bridge.getState()).globals || {}; mark('globals-after-ask', { granted: g.leila_reset_granted, influence: g.leila_influence });
   if (!g.leila_reset_granted) throw new Error('reset not granted; the prompt stage will not open');
   if (stage === 'call') return;
