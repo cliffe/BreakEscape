@@ -66,7 +66,8 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m07v1" aria-selected="true" data-cut="m07v1">m07 · v1</button>
+    <button class="tab" role="tab" id="tab-m01v12" aria-selected="true" data-cut="m01v12">m01 · v12</button>
+    <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
     <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
     <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
@@ -99,6 +100,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m01v12: {
+    doc: "feedback/m01_trailer_v12",
+    title: "m01 First Contact · 60 s trailer · v12 (new card)",
+    videoLabel: "16:9",
+    video: "/_blob/1d6d7895d9a5145fc6fa4c28ccd572a1",
+    videos: [["9:16", "/_blob/cb65f9bf4bf94bed3e08c2d4807cd206", "p916"], ["1:1", "/_blob/bd659afe3767e9f52b6fbbce5704d22b", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.1 LUFS, true peak −1.5 dB", "music: Midnight Cipher Chase from 109.0 s", "31 shots"],
+    changedLabel: "What changed since v11",
+    changed: ["Your card: \"Stay in Character\" is now \"Uncover the Plan. / Stop It.\" (checked in all three crops).", "Nothing else changed."],
+    standinLabel: "Coming next",
+    standin: ["v13 moves m01 to Emerald Trigger, re-cut to its beat (your note 6), and swaps in the new console beat; m08 moves to Shadowline Protocol. This tab is only the card."],
+    srt: "1\n00:00:04,800 --> 00:00:08,520\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,930 --> 00:00:49,290\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,023 --> 00:00:51,683\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"card", t:"\"Uncover the Plan. / Stop It.\"", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say what"]]}]
+  },
   m07v1: {
     doc: "feedback/m07_trailer_v1",
     title: "m07 Architect's Gambit · 60 s trailer · v1 (first cut)",
@@ -564,7 +579,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m07v1";
+let current = "m01v12";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round
