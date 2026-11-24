@@ -2,14 +2,14 @@
 
 Feature scenario for the second sign-in step. One run in one game, about 40 minutes. Each beat is one click-level step per line, then what the browser shows and what `verify-run.rb` prints.
 The scenario is for testing, not play: it names no code, number or password on any sign. Passwords are on the notes in the rooms; the six digits are only ever read from the code device on screen.
-The run never computes a code, never types a forged or hand-built request, and waits only where a beat says so: once in beat 4 (up to 60 seconds) and 3 seconds between sends in beats 10, 11 and 14.
+The run never computes a code, never types a forged or hand-built request, and waits only where a beat says so: in beat 4 (up to a minute for the device to show a new code, twice) and 3 seconds between sends in beats 10, 11 and 14.
 
 **Three things that hold all through the run.**
 - The X on a PC screen closes the desktop and keeps the session. Only Start > Sign out ends a session (Start > Lock locks it). Wherever a beat says "sign out", it means Start > Sign out on the open desktop; if a desktop is left open, reopening that PC shows it at once and the password and the second step are skipped.
-- A reload puts the player in the Lobby at the start point (inventory and pending steps are kept), so walk back to the room you were in.
+- A reload puts the player in the Lobby at the start point (the inventory and the server's record of a pending step are kept; no pane reopens by itself, you click the PC again). A pending step is dropped after five minutes: beats 2 to 3, 5, 8 to 9 and 14 to 15 leave one pending, so do not leave them longer than that, so walk back to the room you were in.
 - The desks in the Store room (and Nia) are reached from the south side; from the north the walk stops behind the desk row.
 
-**Not played in the browser (Rails tests):** the plan's F2 (the device route before the device is held, a crafted inventory add), a forged sync body, every hostile case, the exact-second expiry of a pending step, lockout after the fifth wrong code and the thirtieth wrong code in total, and the refusal of a code after the drop box is unplugged (beat 8 step 4). They are `test/controllers/break_escape/mfa_device_gate_test.rb`, `mfa_code_test.rb`, `mfa_push_test.rb`, `mfa_keyring_test.rb`, `ops_mfa_no_exposure_test.rb`. Every beat below is also played through the real routes by `ops_mfa_scenario_test.rb`.
+**Not played in the browser (Rails tests):** the plan's F2 (the device route before the device is held, a crafted inventory add), a forged sync body, every hostile case, the exact-second expiry of a pending step, the step ending after the fifth wrong code and the thirtieth wrong code in total, and the refusal of a code after the drop box is unplugged (beat 8 step 4). They are `test/controllers/break_escape/mfa_device_gate_test.rb`, `mfa_code_test.rb`, `mfa_push_test.rb`, `mfa_keyring_test.rb`, `ops_mfa_no_exposure_test.rb`. Every beat below is also played through the real routes by `ops_mfa_scenario_test.rb`.
 
 ## Setup
 
@@ -32,7 +32,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.rb <game_id> <capture files, oldest first> --signin hana@code_pc1#1 --signin cal@plain_pc#1
 ```
 
-The leak check needs the two `--signin` names for an honest run. The recorder does not tag a sign-in with its PC, and Hana and Cal are admitted at more than one PC, so the two sign-ins that need placing are named (Hana's first sign-in is at the Accounts PC, Cal's first is at the Shipping PC with no second step); a name is checked against the rows that follow, so a wrong name is an error, not a pass. Without them the check reports beat 7's unlock and the Shipping PC desktop as sessions that skipped a step. A reload keeps the same capture file; give every capture file of the game if the run was split.
+The leak check needs the two `--signin` names for an honest run. Expected: exit 0 and "no leaks found" with the two names; exit 1 with two `mfa_session` findings (beat 7's unlock and the Shipping PC desktop) with no names; exit 2 naming the entry when a name is wrong or the capture stops before the desktop row that follows the sign-in. Give the names only once their rows are in the files. The recorder does not tag a sign-in with its PC, and Hana and Cal are admitted at more than one PC, so the two sign-ins that need placing are named (Hana's first sign-in is at the Accounts PC, Cal's first is at the Shipping PC with no second step); a name is checked against the rows that follow, so a wrong name is an error, not a pass. Without them the check reports beat 7's unlock and the Shipping PC desktop as sessions that skipped a step. A reload keeps the same capture file; give every capture file of the game if the run was split.
 
 **Read the log** (any time): in the lobby, click "Audit log terminal". Rows read `MFA` (challenge, code, prompt, expired) and `SIGN_IN`. No row shows a code or a number. Close it with the X.
 
@@ -67,10 +67,10 @@ The leak check needs the two `--signin` names for an honest run. The recorder do
 5. Click Start > Sign out. (The screen's X would only close the desktop and keep the session.)
 
 ### 4. One code, one use
-1. Click "Ledger PC". Click the Hana tile, type her password, click "Use Code device", close it, click Verify. (A code not yet used at Ledger passes: this is the first use there. If the window has already moved on since beat 3 that is also a first use.) Click Start > Sign out.
-2. Click "Ledger PC" again at once, Hana tile, password, "Use Code device". The device still shows the same digits, now marked used ("Wait for the next code"). Close it: the field stays empty, because a used code is not filled in. Type the six digits the device showed, click Verify, all within the same minute.
+1. Wait until the device shows a new code: a code's use is kept per account, not per PC, so the code used in beat 3 reads as used at Ledger too until the minute changes. Click "Ledger PC". Click the Hana tile, type her password, click "Use Code device" (if it says "Wait for the next code", close it and wait, then open it again), close it, click Verify. The new code is a first use and passes. Click Start > Sign out.
+2. Click "Ledger PC" again at once, Hana tile, password, "Use Code device". The device still shows the same digits, now marked used ("Wait for the next code"). Close it: the field stays empty, because a used code is not filled in. Type the six digits the device showed, click Verify. Start this step as soon as the device shows a new code, so it is still the same minute (a code's window is the clock minute, not 60 seconds from its first use).
 - See: "That code has been used. Wait for the next one." The tries left do not change.
-3. Click "Use Code device" and watch the bar drain to empty (the one wait, at most 60 seconds); the digits change. Close it (the new digits fill the field), click Verify.
+3. Click "Use Code device" and watch the bar drain to empty (the second wait, at most a minute); the digits change. Close it (the new digits fill the field), click Verify.
 - See: the desktop opens. Click Start > Sign out.
 
 ### 5. Drop it
@@ -110,7 +110,7 @@ Played by clicks as far as the Unplug. After that the network view will not open
 How the token is earned: the keyring entry `hana_token` is proved by the foothold `jack_office_port`, that is, by taking the Network drop box from the Lobby and planting it at the Office wall port (beat 8 step 1). The player does it by clicks and nothing else is needed; the clock (30 minutes) starts at the first plant, so beat 9 has to come within 30 minutes of beat 8. The token option therefore already shows on Hana's tile in beat 8.
 1. Plant the drop box again (Lobby, "Office wall port", "Plug it in") and open the network view. Click the sign-in control at "Accounts PC": the pending code pane returns first ("Remote sign-in through Drop box: Lobby"). Click "Use a different account", click the Hana tile: "Session token" and "Connect with / Accounts PC sign-in token" are offered. Click it.
 - See: signed in at once, no pane ("Remote session through Drop box: Lobby, with a session token, about 29 min left"). Click Start > Sign out.
-2. In the Lobby click "Cabinet by the front door", take "Accounts PC.rdp".
+2. In the Lobby click "Cabinet by the front door", take "Accounts PC.rdp". (After the drop box was planted the inventory also lists a netlink item for it: that is the plant, not an item to use.)
 3. In the network view open the sign-in control at "Accounts PC", click the Hana tile ("Saved connection, Session token"), click "Connect with / Accounts PC saved connection".
 - See: the notice "This PC asks for a second step. Type the password to sign in." No session.
 4. Type the password, click Sign in.
@@ -156,7 +156,7 @@ How the token is earned: the keyring entry `hana_token` is proved by the foothol
 - See: never approved.
 
 ### 15. Number matching, with the phone
-1. Knock Nia Faraday out: walk to her from the south and punch (F). Click her fallen body and take "Nia's phone". Taking it opens the OSINT "Browser" minigame at once; close it.
+1. Knock Nia Faraday out: walk to her from the south and punch (F). Her body itself cannot be clicked (it is out of reach); click "Nia's phone" lying near it and take it. Her hits cost you health, so punch until she falls (about six presses) and no more. Taking the phone opens the OSINT "Browser" minigame at once; close it.
 2. Click "Stock PC": the pending request is still there ("Second step for Nia Faraday", the number, "Check Nia Faraday's phone"). Click it. The phone shows "Choose the number shown on the sign-in screen." and three numbers, with Deny. The sign-in screen's number is not visible while the phone is open: note it first (the pane says so once the phone is held).
 3. Tap a number that is not the one on the sign-in screen.
 - See: the phone says "That number did not match. The request was cancelled." Close it: the password pane with "Request cancelled."
@@ -167,5 +167,5 @@ How the token is earned: the keyring entry `hana_token` is proved by the foothol
 ### The PC with no second step
 1. Click "Shipping PC", Cal tile, his password: the desktop opens with no pane. Click Start > Sign out.
 2. Five wrong passwords for Cal.
-- See: "Incorrect username or password. 4 attempts left." down to "1 attempt left.", then "This account is locked on this PC." (Nothing here ever shows a pane.)
+- See: "Incorrect username or password. 4 attempts left." down to "1 attempt left.", then "This account is locked on this PC." (The Shipping PC locks after five wrong passwords; the Orders PC allows eight, so its "attempts left" count starts from 8.) The locked screen has "Use a different account", which returns to the account choice. (Nothing here ever shows a pane.)
 - Server: `signin_fail` five times, then `signin_lockout`. Run the three checks in Setup.
