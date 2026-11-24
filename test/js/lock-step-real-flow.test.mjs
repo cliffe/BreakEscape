@@ -332,3 +332,19 @@ test('Send again is greyed right after a request and enabled when the wait timer
     waits[waits.length - 1].fn();
     assert.equal(again().disabled, false, 'works again after the gap');
 });
+
+// S8c: the open answer of a gated lock names its lock (targetType, targetId); the client reads past both
+test('an open answer that carries targetType and targetId opens the object as before, and the keys are not applied to it', async () => {
+    assert.equal(loadAnswer('open_object').body.targetType, 'object', 'the fixture carries the keys');
+    assert.equal(loadAnswer('open_door').body.targetId, 'records_room');
+    bootPage(S);
+    net.reset(pushRoutes());
+    const locker = sprite('moira_locker');
+    window.handleUnlock(locker, 'item');
+    await settle();
+    await typePin();
+    await settle(20);
+    assert.equal(locker.scenarioData.locked, false);
+    assert.equal('targetId' in locker.scenarioData, false);
+    assert.equal('targetType' in locker.scenarioData, false);
+});
