@@ -181,6 +181,20 @@ module BreakEscape
       assert_nil @g.npc_step_opener_for('vault')
     end
 
+    # R1-SERVER8: the gate names the opener it is given (the NPC whose `npc` factor passed), once
+    test 'a door gate names the opener it is given, notes that grant, and a repeat writes nothing more' do
+      body = @g.lock_step_gate('door', 'cell', 'npc', opener: 'gordon')
+      assert_equal %w[bob gordon], [body[:npcId], body[:opener]]
+      assert_equal 'gordon', @g.reload.player_state['npcStepGrants']['door:cell']
+      before = Marshal.load(Marshal.dump(@g.player_state))
+      later(5)
+      assert_equal body, @g.lock_step_gate('door', 'cell', 'npc', opener: 'gordon')
+      assert_equal before, @g.player_state, 'a repeat gate on the live record saves no grant'
+      # no opener given: the owner opens, as before
+      other = @g.lock_step_gate('door', 'vault', 'npc')
+      assert_equal 'amy', other[:opener]
+    end
+
     test 'a repeat against a live record answers the same and writes nothing' do
       first = gate('safe')
       @g.save!

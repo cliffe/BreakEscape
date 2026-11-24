@@ -19,7 +19,7 @@ module BreakEscape
     # again with no write and no row; otherwise the step is issued, a mfa_challenge row written,
     # and for an `npc` first factor at a door the opener noted. Never answers for a lock that has
     # passed or is open.
-    def lock_step_gate(target_type, target_id, method, resolved: nil)
+    def lock_step_gate(target_type, target_id, method, resolved: nil, opener: nil)
       target = lock_step_gate_target(target_type, target_id, resolved)
       return nil unless target
       return nil if lock_step_open?(target)
@@ -34,17 +34,20 @@ module BreakEscape
 
       owner = target[:step]['owner'].to_s
       kind = target[:step]['kind']
+      # The NPC that opened the door by the `npc` factor (the request's attempt, the caller has
+      # judged it); the step's owner when the caller names none. The grant and the answer name it.
+      opener_id = opener.to_s.empty? ? owner : opener.to_s
       fresh = !(record.is_a?(Hash) && record['kind'] == kind)
       # A step with no owner can never pass: answer the gate, keep no record (every action then 404s)
       if fresh && !owner.empty?
         record = issue_second_step!(map, target[:key], owner, kind, 'npcId' => owner)
         write_log_row!('mfa_challenge', as: { npc: owner }, where: lock_step_where(target),
                                         detail: GATE_METHODS.include?(method.to_s) ? { 'method' => method.to_s } : nil)
-        note_npc_step_grant!(target[:subject][:id], owner) if target[:subject][:kind] == 'door' && method.to_s == 'npc'
+        note_npc_step_grant!(target[:subject][:id], opener_id) if target[:subject][:kind] == 'door' && method.to_s == 'npc'
         save!
       end
 
-      lock_step_gate_body(target, record, owner, kind, method)
+      lock_step_gate_body(target, record, owner, kind, method, opener_id)
     end
 
     # POST the typed code for a lock's pending `code` step. [body, status] or :not_found / :no_device.
@@ -267,14 +270,14 @@ module BreakEscape
     end
 
     # Section 4.3's gate body. `number` only for number matching; `opener` only for a door
-    # opened by an NPC (the owner).
-    def lock_step_gate_body(target, record, owner, kind, method)
+    # opened by an NPC (the NPC that opened it).
+    def lock_step_gate_body(target, record, owner, kind, method, opener_id = owner)
       body = { success: false, secondStep: true, kind: kind, targetType: target[:subject][:kind],
                targetId: target[:subject][:id], npcId: owner }
       if kind == 'push_number_match' && record.is_a?(Hash)
         body[:number] = second_step_numbers(target[:subject], record, npc_id: owner)[:right]
       end
-      body[:opener] = owner if target[:subject][:kind] == 'door' && method.to_s == 'npc'
+      body[:opener] = opener_id if target[:subject][:kind] == 'door' && method.to_s == 'npc'
       body
     end
   end

@@ -76,9 +76,9 @@ module BreakEscape
       info = lock_step_info(target_type, target_id, resolved)
       return false unless info
 
-      gate = @game.lock_step_gate(target_type, target_id, method, resolved: resolved)
+      opener = target_type == 'door' && method == 'npc' ? params[:attempt].to_s : nil
+      gate = @game.lock_step_gate(target_type, target_id, method, resolved: resolved, opener: opener)
       if gate
-        lock_step_name_opener!(gate, target_type, target_id, method)
         response.headers['Cache-Control'] = 'no-store'
         render json: gate
         return true
@@ -87,19 +87,6 @@ module BreakEscape
 
       render_lock_step_refusal
       true
-    end
-
-    # At a door opened by an NPC the gate names the OWNER as `opener`, but the opener is the NPC
-    # that opened the door (the request's attempt, already validated as one that may open it): the
-    # client posts it again to retry. Corrected here; the grant is noted for that NPC.
-    def lock_step_name_opener!(gate, target_type, target_id, method)
-      return unless target_type == 'door' && method == 'npc' && gate.key?(:opener)
-
-      opener = params[:attempt].to_s
-      return if opener.empty? || opener == gate[:opener]
-
-      gate[:opener] = opener
-      @game.note_npc_step_grant!(target_id, opener)
     end
 
     # The open answer of a GATED lock names the lock it opened (the request's own canonical
