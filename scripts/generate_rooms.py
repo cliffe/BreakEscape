@@ -2267,7 +2267,7 @@ def room_hospital_waiting_1x1gu():
         ("no_smoking_sign1", 118.0, 48.0),
         # side-wall posters below the doors
         ("chart2", 12.0, 142.0),
-        ("chart", 135.0, 140.0),
+        ("chart", 135.0, 150.0),
         # a back-to-back seating block in the middle, below the door walkway:
         # a row facing the back wall's notices (chair_north, seen from behind)
         # with a row facing south tucked against its back. Open walkways of
@@ -2279,7 +2279,7 @@ def room_hospital_waiting_1x1gu():
         ("hospital_chair_south", 72.0, 152.0),
         ("hospital_chair_south", 88.0, 152.0),
         ("water_cooler1", 110.0, 158.0),  # lower right, off the paths, above the bottom row
-        ("sanitiser_dispenser1", 133.0, 120.0),  # east side wall, under the door row
+        ("sanitiser_dispenser1", 133.0, 124.0),  # east side wall, under the door row (top y 97, clear of y 64-96)
         ("pedal_bin1", 36.0, 156.0),  # lower left, by the seats
     ]:
         items.append(make_obj("objects", sprite, x, y, oid))
@@ -4133,10 +4133,10 @@ def room_qdc_lobby():
     Slots: notes3 on the counter (Building Directory).
     """
     r = _Uni()
-    r.item("qdc_poster_ready1", 80.0, 50.0)
-    r.item("qdc_logo_sign1", 122.0, 34.0)            # over the counter
-    r.item("cctv_camera1", 204.0, 30.0)
-    r.item("qdc_dispatch_screen1", 232.0, 56.0)      # the 999 rollout, the firm's proudest contract
+    r.item("qdc_poster_ready1", 66.0, 50.0)
+    r.item("qdc_logo_sign1", 94.0, 34.0)             # over the counter
+    r.item("cctv_camera1", 176.0, 30.0)
+    r.item("qdc_dispatch_screen1", 204.0, 56.0)      # the 999 rollout, the firm's proudest contract
     desk = r.table("reception_counter1", 104.0, 112.0, kind="objects")   # x 104-214
     r.on(desk, "notes3", 0.22, 0.30, layer="conditional_table_items")
     r.on(desk, "pc11", 0.52, 0.24)
@@ -4194,14 +4194,14 @@ def room_qdc_server_hall():
     beside the N door, the floor under it clear.
     """
     r = _Uni()
-    r.item("cable_tray1", 40.0, 26.0)                # x 40-190, clear of the sign and camera
+    r.item("cable_tray1", 32.0, 26.0)                # x 32-182, then the camera, then the sign: all clear of the N door (x 256-288)
     r.solid("server_rack1", 100.0, 86.0, depth=8)
     r.solid("ups_cabinet1", 134.0, 86.0, depth=8)
     r.solid("supply_boxes1", 172.0, 88.0, depth=8)
-    r.item("restricted_sign1", 192.0, 24.0)
+    r.item("restricted_sign1", 208.0, 24.0)
     r.item("fire_extinguisher1", 204.0, 90.0)
     r.item("qdc_it_notice1", 228.0, 54.0)            # IT's notice, taped by the door (cycle 2: its own sprite)
-    r.item("cctv_camera1", 248.0, 30.0)
+    r.item("cctv_camera1", 184.0, 30.0)
     r.item("aes_tool_trolley1", 104.0, 126.0)        # under the rack, out of the W-door mouth (c5 R3)
     return r.build("room_qdc_server_hall", "10x6_hall")
 

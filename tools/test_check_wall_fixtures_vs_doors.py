@@ -39,15 +39,23 @@ class OverlapRules(unittest.TestCase):
         f = fx(14, 28, 70, 90, side="west")
         self.assertEqual(self.check([("east", 80, "")], [f]), [])
 
+    def test_synthetic_camera_over_right_corner_door_is_caught(self):
+        f = fx(248, 271, 12, 30)
+        self.assertEqual(len(self.check([("north", 272, "")], [f])), 1)
+
 
 class RealMaps(unittest.TestCase):
     def test_m05_lobby_north_door_left_corner_has_no_overlap(self):
         self.assertEqual(c.check_map_against_doors("room_qdc_lobby", [("north", 48, "")]), [])
 
-    def test_known_overlap_is_caught_in_a_real_map(self):
-        # server_hall camera at x 248-271 against a north door at the right corner
+    def test_m05_lobby_clear_at_both_corners(self):
+        for x in (48, 272):
+            self.assertEqual(c.check_map_against_doors("room_qdc_lobby", [("north", x, "")]), [])
+
+    def test_server_hall_camera_clear_of_right_corner_door(self):
+        # the camera moved to x 184-207, well left of a north door at x 256-288
         msgs = c.check_map_against_doors("room_qdc_server_hall", [("north", 272, "")])
-        self.assertTrue(any("cctv_camera" in m for m in msgs), msgs)
+        self.assertFalse(any("cctv_camera" in m for m in msgs), msgs)
 
 
 if __name__ == "__main__":
