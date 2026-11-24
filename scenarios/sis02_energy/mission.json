@@ -1,6 +1,6 @@
 {
   "display_name": "Albion Battery Hall: Code Red",
-  "description": "Saturday morning at a 200 MWh battery storage site on the Trent. Overnight, an attacker falsified sensor data and quietly raised the safety system's trip points. Players arrive to find a normal-looking SCADA display hiding a battery hall heading for thermal runaway. They must trust an old dial over a perfect screen, decide when to press a hardwired emergency shutdown, choose how far to cut the attacker off, and decide what to tell the regulator and a neighbour, then talk it through with the NCSC.",
+  "description": "Saturday morning at a 200 MWh battery storage site on the Trent, and something is wrong. Players lead the response: work out what to trust, decide when to act and how far to cut the attacker off, and decide what to tell the regulator and a neighbour, then talk it through with the NCSC.",
   "difficulty_level": 1,
   "endingCheck": false,
   "secgen_scenario": null,

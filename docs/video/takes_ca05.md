@@ -48,3 +48,11 @@ Recorded 23 Nov 2026 on display 147 and a keyless server on :3456 (worktree b-ca
 The shared raw files `t05_pages_list.markers.json`, `.take.json`, `.record.*` and `.newgame.log` belong to the list-only run (the second one); the default run's trimmed marks are in `t05_pages_list.default.trimmed.markers.json`.
 
 Retime for the edit: swap each shot's in/out for these marks and audio onsets, then drop `placeholder`. Bark 2 speech 11.65 to 17.42 in t07 is 5.8 s, so the office end line fits a window ending near 17.5, not at the bubble end 18.59.
+
+## Re-recorded 23 Nov (Niamh visemes)
+
+Niamh's viseme sheet was regenerated in 9584d3bb8 (mouth now opens; face about 2.5x bigger). t04_niamh_flip re-recorded on display 147, keyless server :3456, `BE_SPRITE=female_office_worker_v2`, defend seed as above. Old take files kept in `~/video-takes-local/ca05/takes/old_niamh_v1/`.
+
+| take | file | length | check | marks (trimmed s) | notes |
+|---|---|---|---|---|---|
+| t04_niamh_flip | t04_niamh_flip.trimmed.mkv | 18.30 | pass, drop 0.16 %, fullFrame true | player-sprite 0.44, portrait up 9.06, n1_start 9.38, n1_end 16.48, chat-closed 17.03, end 17.83. **Speech (silencedetect -35 dB, d 0.08): onset 9.593; pause 11.372 to 11.906; speech ends 16.095.** | First line is N1, mouth opens (teeth visible). Edit: in 11.71 (pause end - 0.2), out 16.31 (end + 0.215), duration 4.6 kept; caption line end 4.39. Framing as ca03 (16:9 cx 0.62 cy 0.355 zoom 1.5; 9:16 cx 0.67 cy 0.377 zoom 1.4; 1:1 cx 0.667 cy 0.377 zoom 1.4). |

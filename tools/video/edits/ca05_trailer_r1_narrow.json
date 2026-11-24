@@ -372,8 +372,8 @@
    },
    "source": {
     "file": "t04_niamh_flip.trimmed.mkv",
-    "in": 12.03,
-    "out": 16.63
+    "in": 11.71,
+    "out": 16.31
    },
    "audio": {
     "gain_db": 0,
@@ -386,7 +386,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t04 Niamh N1: portrait up 10.92 (on screen from about 9.0), speech 9.92-16.43 with a pause 11.71-12.23; in 12.03 sits in that pause so no word is cut and the picture is after the portrait swap; plays 'Now take the other seat...' to 16.43, out 16.63 is before n1_end 16.87 and chat-closed 17.40; no menu | CA: spoilers not an issue (owner), no masks"
+    "note": "RE-RECORDED 23 Nov (Niamh visemes, new bust framing). t04 Niamh N1: portrait up 9.06-10.6, speech 9.593-16.095 (silencedetect -35 dB d 0.08) with a pause 11.372-11.906; in 11.71 = pause end - 0.2 so no word is cut and the picture is after the portrait swap; plays 'Now take the other seat...' to 16.095, out 16.31 = speech end + 0.215, before n1_end 16.48 and chat-closed 17.03; mouth opens (teeth visible); old art and timings in takes/old_niamh_v1; no menu | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "defend",
@@ -395,25 +395,25 @@
    },
    "framing": {
     "16:9": {
-     "cx": 0.6,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.62,
+     "cy": 0.355,
+     "zoom": 1.5
     },
     "9:16": {
-     "cx": 0.72,
-     "cy": 0.42,
-     "zoom": 1.2
+     "cx": 0.67,
+     "cy": 0.377,
+     "zoom": 1.4
     },
     "1:1": {
-     "cx": 0.72,
-     "cy": 0.42,
-     "zoom": 1.2
+     "cx": 0.667,
+     "cy": 0.377,
+     "zoom": 1.4
     }
    },
    "lines": [
     {
      "start": 0.2,
-     "end": 4.4,
+     "end": 4.39,
      "speaker": "Niamh",
      "text": "Now take the other seat and check the pages that land behind links like yours."
     }
@@ -585,7 +585,7 @@
    "end": 9.571,
    "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
    "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v1.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
@@ -593,21 +593,21 @@
    "end": 13.519,
    "text": "A copied sign-in page looks just like the real one.",
    "caption": "A copied sign-in page\nlooks just like the real one.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v1b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
    "start": 13.769,
    "end": 16.529,
    "text": "This episode: fake sign-in pages.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v1c.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
    "start": 16.967,
    "end": 19.367,
    "text": "First, you play the attacker.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v2.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
@@ -615,7 +615,7 @@
    "end": 22.511,
    "text": "The company's own news gives you a reason.",
    "caption": "The company's own news\ngives you a reason.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v3.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
@@ -623,7 +623,7 @@
    "end": 25.895,
    "text": "Build the page from ready-made parts.",
    "caption": "Build the page from\nready-made parts.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v4.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
@@ -631,28 +631,28 @@
    "end": 28.113,
    "text": "Choose the address it would live at.",
    "caption": "Choose the address\nit would live at.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v4b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
    "start": 30.567,
    "end": 32.583,
    "text": "Email the link to Hana.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v5.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v8a",
    "start": 42.167,
    "end": 44.927,
    "text": "Five pages, each behind a link.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v8a.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8a.mp3"
   },
   {
    "id": "v8b",
    "start": 45.177,
    "end": 46.905,
    "text": "Every one has a padlock.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v8b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v8b.mp3"
   },
   {
    "id": "v10",
@@ -660,14 +660,14 @@
    "end": 50.611,
    "text": "A page can look right and live somewhere else.",
    "caption": "A page can look right\nand live somewhere else.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v10.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v10b",
    "start": 50.861,
    "end": 52.541,
    "text": "Then a colleague asks.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v10b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v10b.mp3"
   },
   {
    "id": "v11",
@@ -675,7 +675,7 @@
    "end": 64.468,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
-   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat/trim/v11.mp3"
+   "file": "/home/cliffe/video-takes-local/ca05/vo/Sulafat_v2/trim/v11.mp3"
   }
  ]
 }

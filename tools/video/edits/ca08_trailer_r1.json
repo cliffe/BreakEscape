@@ -48,8 +48,8 @@
    },
    "source": {
     "file": "t01_niamh_hook.trimmed.mkv",
-    "in": 3.88,
-    "out": 6.68
+    "in": 3.12,
+    "out": 5.92
    },
    "audio": {
     "gain_db": 0,
@@ -62,32 +62,32 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t01 H1: portrait and bar up from about 3.3, mark h1-audio-start 3.88 = in (silencedetect onset 4.03); sentence 1 ends 6.50 (silence 6.50-6.92), out 6.68 = 0.18 s after the last word, 'Proper pain when it happens.' never heard; game bar (whole line plus Skip) framed out, sentence 1 burned as caption; Niamh in her real portrait, no 'playtest' portrait | CA: spoilers not an issue (owner), no masks"
+    "note": "RE-RECORDED 23 Nov (Niamh visemes, new bust framing). t01 H1: portrait up from about 3.1, speech onset 3.272 (silencedetect -35 dB d 0.08), in 3.12 = onset - 0.15; sentence 1 ends 5.716 (silence 5.716-6.156), out 5.92 = 0.2 s after the last word, 'Proper pain when it happens.' never heard; mouth opens (teeth visible); game bar (whole line plus Skip) framed out, sentence 1 burned as caption; old art and timings in takes/old_niamh_v1; Niamh in her real portrait, no 'playtest' portrait | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "full"
    },
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.62,
+     "cy": 0.355,
+     "zoom": 1.5
     },
     "9:16": {
-     "cx": 0.76,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.67,
+     "cy": 0.377,
+     "zoom": 1.4
     },
     "1:1": {
-     "cx": 0.74,
-     "cy": 0.4,
-     "zoom": 1.25
+     "cx": 0.667,
+     "cy": 0.377,
+     "zoom": 1.4
     }
    },
    "lines": [
     {
      "start": 0.1,
-     "end": 2.62,
+     "end": 2.6,
      "speaker": "Niamh",
      "text": "Half the floor was locked out of a system earlier."
     }
@@ -644,7 +644,7 @@
    "end": 7.704,
    "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
    "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v1.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
@@ -652,21 +652,21 @@
    "end": 10.932,
    "text": "Someone has clicked. What happens next?",
    "caption": "Someone has clicked.\nWhat happens next?",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v1b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
    "start": 11.182,
    "end": 13.39,
    "text": "This episode: after the click.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v1c.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
    "start": 13.767,
    "end": 16.167,
    "text": "First, you play the attacker.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v2.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
@@ -674,7 +674,7 @@
    "end": 20.343,
    "text": "The company's site lists the IT service desk's address.",
    "caption": "The company's site lists\nthe IT service desk's address.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v3.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
@@ -682,7 +682,7 @@
    "end": 23.879,
    "text": "Write it as the IT service desk.",
    "caption": "Write it as the\nIT service desk.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v4.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
@@ -690,21 +690,21 @@
    "end": 27.511,
    "text": "Mention the sign-in change staff were told about.",
    "caption": "Mention the sign-in change\nstaff were told about.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v4b.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
    "start": 28.067,
    "end": 28.931,
    "text": "Send it.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v5.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
    "start": 29.181,
    "end": 30.429,
    "text": "Ayaan signs in.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v6.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v8",
@@ -712,14 +712,14 @@
    "end": 46.706,
    "text": "Six things turn up in his inbox.",
    "caption": "Six things turn up\nin his inbox.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v8.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
    "start": 47.034,
    "end": 48.426,
    "text": "Some are ordinary.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v9.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
@@ -727,7 +727,7 @@
    "end": 52.402,
    "text": "Which ones say someone else is using his account?",
    "caption": "Which ones say someone else\nis using his account?",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v10.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
@@ -735,7 +735,7 @@
    "end": 67.035,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
-   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat/trim/v11.mp3"
+   "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v11.mp3"
   }
  ]
 }
