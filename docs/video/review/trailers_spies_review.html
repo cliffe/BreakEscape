@@ -69,6 +69,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m07v2" aria-selected="true" data-cut="m07v2">m07 · v2</button>
     <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
     <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
+    <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1</button>
     <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
     <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
@@ -116,6 +117,20 @@ const CUTS = {
     standin: ["The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, Derek's cut, loudness and captions checked in all three aspects."],
     srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,090 --> 00:00:49,450\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,190 --> 00:00:51,850\nDerek Lawson: That's optimisation.\n",
     questions: [{k:"music", t:"Emerald Trigger on m01", o:[["ok", "Keep", "", 1], ["back", "Back to Midnight Cipher Chase (v12)", ""]]}, {k:"cuts", t:"Cards and Derek's cut on the beat", o:[["ok", "Right", "", 1], ["fix", "Off", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m08v1: {
+    doc: "feedback/m08_trailer_v1",
+    title: "m08 The Mole · 60 s trailer · v1",
+    videoLabel: "16:9",
+    video: "/_blob/6d538e8064408f84ae77317e3756f80d",
+    videos: [["9:16", "/_blob/8cb8ba38f97ce713ea605904c824a289", "p916"], ["1:1", "/_blob/613e89e121a86ecc3c7b518f790dac1c", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.9 dB", "music: Shadowline Protocol from 109.4 s", "31 shots"],
+    changedLabel: "First round",
+    changed: ["ATHENA opens on the leak and Netherton's three names; then the three suspects (Nightshade, Vector, Phantom) each get a line.", "Cards: \"Mission 8 / The Mole\", \"Interview / Suspects\", \"Real / Hacking\", \"Before They / Vanish\".", "Real Hacking is a shell landing on the target (whoami), not the nmap scan, so no neighbouring trailer repeats it.", "Netherton closes: \"There is a mole in SAFETYNET\" (your round-1 pick: the existing line)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The track's drop lands at about 0:12.9, inside ATHENA's \"Director Netherton has three names\". It may crowd her line; see the question.", "The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, crescendo, ending, console readability, loudness and captions checked in all three aspects."],
+    srt: "1\n00:00:06,950 --> 00:00:09,500\nATHENA: The leak came from inside this building.\n\n2\n00:00:12,363 --> 00:00:14,283\nATHENA: Director Netherton has three names,\n\n3\n00:00:14,783 --> 00:00:17,263\nATHENA: and one of them got two of your colleagues killed.\n\n4\n00:00:18,700 --> 00:00:21,200\nAgent 0x47 'Nightshade': There you are. I wondered when they'd send you.\n\n5\n00:00:22,567 --> 00:00:27,517\nAgent 0x23 'Vector': Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.\n\n6\n00:00:27,783 --> 00:00:31,253\nAgent 0x88 'Phantom': Accuse me properly, or get out of my way and let one of us catch him.\n\n7\n00:00:44,000 --> 00:00:46,120\nDirector Magnus Netherton: There is a mole in SAFETYNET.\n\n8\n00:00:47,017 --> 00:00:51,917\nDirector Magnus Netherton: I am reasonably certain they are within a hundred metres of where you are standing.\n",
+    questions: [{k:"drop", t:"The music's drop at 0:12.9 falls inside ATHENA's line about Netherton's three names. Does it crowd her?", o:[["ok", "Fine as is", "The hit lifts the reveal", 1], ["move", "Move the drop off her line", "Shift the window or trim her lead-in"]]}, {k:"console", t:"Console shot: a shell landing (whoami)", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"music", t:"Shadowline Protocol for m08", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
   },
   m05v5: {
     doc: "feedback/m05_trailer_v5",
