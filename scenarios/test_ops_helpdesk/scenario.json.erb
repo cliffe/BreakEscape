@@ -203,13 +203,22 @@
   },
   "startItemsInInventory": [
     {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true, "items": false },
+      "observations": "Your engagement device: every sign-in you have captured or found, and the PINs, footholds and findings you record."
+    },
+    {
       "type": "text_file",
       "id": "tess_saved_file",
       "name": "Records PC.rdp",
       "takeable": true,
       "readable": true,
       "credential": "tess_saved",
-      "text": "A saved connection to the records PC. Use it from the sign-in screen.",
+      "text": "A saved connection to the records PC. Open it from your inventory and choose Connect.",
       "observations": "A saved connection file you were given."
     },
     {

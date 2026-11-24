@@ -344,6 +344,8 @@ export class Keyring {
     /** A registry password shows only once its file was opened here, or it was in the first answer. */
     foundVisible(entry) {
         if (!entry || entry.kind !== 'password' || entry.source === 'capture') return true;
+        // A desk's reset password: handed over by the server on the grant, no file to open (S8b R1-CLIENT3)
+        if (entry.source === 'helpdesk') return true;
         if (this.firstAnswerIds?.has(entry.id)) return true;
         return typeof entry.foundIn === 'string' && this.opened.has(entry.foundIn);
     }
@@ -677,6 +679,8 @@ export class Keyring {
         const reason = result?.reason;
         if (reason === 'remote_blocked') return toast(t.remoteOffMessage(host), 'remote_blocked');
         if (reason === 'not_permitted') return toast(t.remoteNotPermittedMessage(host), 'not_permitted');
+        // The server answered: type the password. A notice with the line the sign-in screen uses (S8b R1-CLIENT2)
+        if (reason === 'type_to_sign_in') return toast(result.message || t.CONNECT_FAILED_TEXT, 'type_to_sign_in', 'info');
         if (entry.kind === 'saved_connection' && (reason === 'kind_refused' || reason === 'locked_out')) {
             // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
             w.openCredentialSignIn?.({
@@ -785,7 +789,8 @@ export class Keyring {
 export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite', 'token'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
-    return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);
+    // A desk's reset is shown by the form that was just answered: no find toast
+    return entry.source !== 'capture' && entry.source !== 'helpdesk' && FIND_KINDS.includes(entry.kind);
 }
 
 /** The held capture log that lists captures (type capture_log, holds.captures), or null. */

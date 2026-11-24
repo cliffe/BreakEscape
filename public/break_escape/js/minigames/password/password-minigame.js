@@ -414,7 +414,7 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         }
         if (!tile.kinds.includes(kind)) tile.kinds.push(kind);
         if (!tile.targetId && e.account.npcId) tile.targetId = e.account.npcId;
-        if (kind === 'captured') {
+        if (kind === 'captured' || kind === 'reset') {
             if (typeof e.password === 'string' && e.password) tile.keyPassword = e.password;
         } else if (kind === 'in_file') {
             if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
@@ -440,7 +440,7 @@ export function credentialLabel(e, kind) {
 /** The tag kind of a keyring entry (8.5): captured, in_file, or the entry's own kind. */
 export function keyringTagKind(entry) {
     if (!entry || typeof entry !== 'object') return null;
-    if (entry.kind === 'password') return entry.source === 'capture' ? 'captured' : 'in_file';
+    if (entry.kind === 'password') return entry.source === 'capture' ? 'captured' : (entry.source === 'helpdesk' ? 'reset' : 'in_file');
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 

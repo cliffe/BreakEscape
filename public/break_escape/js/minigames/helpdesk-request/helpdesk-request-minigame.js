@@ -24,7 +24,7 @@ export const TEXT = Object.freeze({
     mfa: 'A sign-in approval reset',
     send: 'Send',
     grantedPassword: 'Password reset. New password:',
-    passwordNote: 'It is in your sign-ins.',
+    passwordNote: 'It is saved as "Reset" under Sign-ins in your capture log, and on the sign-in screen.',
     grantedMfa: 'Sign-in approvals now come to your phone.',
     refused: 'The desk could not verify you. Tries left: {n}.',
     blocked: 'The desk is not taking requests for that account. Try again in {n} {minutes}.',
@@ -197,6 +197,8 @@ export class HelpdeskRequestMinigame extends SocialOverlayScene {
 
         this._sending = true;
         if (this.sendButton) this.sendButton.disabled = true;
+        // Held until the desk answers, so a granted password is never dropped unseen (S8b R1-CLIENT4)
+        this.closeButton?.setAttribute?.('aria-disabled', 'true');
         let out = null;
         try {
             out = await client.send(request);
@@ -205,6 +207,7 @@ export class HelpdeskRequestMinigame extends SocialOverlayScene {
         }
         this._sending = false;
         if (this.sendButton) this.sendButton.disabled = false;
+        this.closeButton?.removeAttribute?.('aria-disabled');
         if (this._closed) return;
         const result = isObj(out) && typeof out.result === 'string' ? out.result : 'error';
         this._showResult(result, isObj(out?.body) ? out.body : {});
@@ -224,6 +227,12 @@ export class HelpdeskRequestMinigame extends SocialOverlayScene {
         if (result === 'granted') {
             for (const q of this.form?.questions || []) this.answerEls[q.id].value = '';
         }
+    }
+
+    // Close and Escape wait for the answer of a send in flight
+    requestClose() {
+        if (this._sending) return;
+        super.requestClose();
     }
 
     // Close is a normal exit; the result carries no typed text and never the password.

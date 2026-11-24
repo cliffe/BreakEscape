@@ -170,7 +170,7 @@ test('the password is shown only for the granted password answer', async () => {
     await settle();
     assert.equal(lineOf(c), 'Password reset. New password:');
     assert.equal(c.querySelector('.hr-password').textContent, answer('helpdesk.granted_password').body.password);
-    assert.equal(c.querySelector('.hr-note').textContent, 'It is in your sign-ins.');
+    assert.equal(c.querySelector('.hr-note').textContent, 'It is saved as "Reset" under Sign-ins in your capture log, and on the sign-in screen.');
     const st = scene.getTestState();
     assert.equal(st.helpdeskRequest.passwordShown, true);
     assert.ok(!JSON.stringify(st).includes(answer('helpdesk.granted_password').body.password), 'not in the test state');
@@ -275,4 +275,37 @@ test('the scene is on the framework list, shows its own Close and has its css li
     assert.match(view, /css\/helpdesk-request-minigame\.css/);
     const { container: c } = open(fakeClient({}));
     assert.ok(c.querySelector('.se-overlay-close'));
+});
+
+// R1-CLIENT4: Close and Escape while a send is in flight do nothing; the answer is then shown.
+test('Close and Escape during an in-flight send are held, and the granted answer is shown (R1-CLIENT4)', async () => {
+    let release;
+    const late = new Promise((r) => { release = r; });
+    const granted = answer('helpdesk.granted_password');
+    const results = [];
+    const client = fakeClient({ reply: async () => { await late; return { result: 'granted', body: granted.body }; } });
+    window.helpdeskClient = client;
+    document.body.innerHTML = '';
+    await FW.startMinigame('helpdesk-request', null, { deskId: 'it_desk', disableClose: true, requiresKeyboardInput: true, onComplete: (ok, r) => results.push([ok, r]) });
+    const scene = FW.currentMinigame;
+    const c = scene.container;
+    type(c, '.hr-username input, input[name="username"], input', 'sam');
+    c.querySelector('form').dispatchEvent(new window.Event('submit', { cancelable: true }));
+    assert.equal(client.sent.length, 1);
+    const close = c.querySelector('[aria-label="Close"]');
+    assert.ok(close);
+    assert.equal(close.getAttribute('aria-disabled'), 'true', 'the close control says it is waiting');
+    close.click();
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    scene.requestClose();
+    assert.equal(results.length, 0, 'not closed while sending');
+    assert.equal(FW.currentMinigame, scene);
+    release();
+    await settle(); await settle();
+    assert.equal(c.querySelector('.hr-password')?.textContent, granted.body.password, 'the password is shown');
+    assert.equal(close.hasAttribute('aria-disabled'), false);
+    scene.requestClose();
+    assert.equal(results.length, 1);
+    assert.equal(results[0][0], true);
+    delete window.helpdeskClient;
 });

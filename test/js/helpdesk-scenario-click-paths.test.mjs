@@ -95,6 +95,20 @@ test('the locked account: strict PC, saved connection in the starting inventory,
   assert.equal(item.credential, 'tess_saved');
   assert.ok(obj('note_tess').text.includes(npc('tess').creds.password));
   assert.ok(npc('tess').creds.resetPassword && npc('ugo').creds.resetPassword);
+  // The saved connection has no foothold: its only route is `from` a PC the player is signed in at,
+  // so the Front PC and the Records PC must share a network (R1-CLIENT1)
+  const net = (id) => sc.rooms[obj(id).room].network;
+  assert.ok(net('front_pc'));
+  assert.equal(net('front_pc'), net('records_pc'));
+  assert.ok(Object.keys(sc.credentials.tess_saved).every((k) => !['foothold', 'routes'].includes(k)));
+});
+
+test('the sign-ins list can be opened: a capture log is in the starting inventory, and the saved file says Connect (R1-CLIENT3)', () => {
+  const log = sc.startItemsInInventory.find((i) => i.type === 'capture_log');
+  assert.ok(log, 'a capture log');
+  assert.equal(log.holds.captures, true);
+  const file = sc.startItemsInInventory.find((i) => i.id === 'tess_saved_file');
+  assert.ok(/Connect/.test(file.text) && !/sign-in screen/.test(file.text));
 });
 
 test('find the answers: Tess and Wim answers are on the staff file and the team post, Ugo and Vera nowhere', () => {

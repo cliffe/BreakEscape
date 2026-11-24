@@ -57,7 +57,9 @@ export const TAG_TEXT = Object.freeze({
     in_file: Object.freeze({ tag: 'In file', full: 'Password in a file', group: 'key' }),
     saved_connection: Object.freeze({ tag: 'Saved', full: 'Saved connection', group: 'plug' }),
     assist_invite: Object.freeze({ tag: 'Assist', full: 'Remote assist', group: 'plug' }),
-    token: Object.freeze({ tag: 'Token', full: 'Session token', group: 'plug' })
+    token: Object.freeze({ tag: 'Token', full: 'Session token', group: 'plug' }),
+    // S8b: a password the help desk reset and issued; shown in full, like a captured one
+    reset: Object.freeze({ tag: 'Reset', full: 'Reset password', group: 'key' })
 });
 
 /**
@@ -182,7 +184,7 @@ export const captureLogPasswordFoundMessage = ({ label, displayName } = {}) =>
  */
 // The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
 export function findLine(entry, { captureLog = false } = {}) {
-    if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
+    if (!entry || typeof entry !== 'object' || entry.source === 'capture' || entry.source === 'helpdesk') return null;
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo, kind: entry.kind };
     if (captureLog) {
         if (entry.kind === 'password') return captureLogPasswordFoundMessage(fields);
@@ -252,7 +254,7 @@ export const rowKindName = (kind) => TAG_TEXT[kind]?.full || CAPTURE_TAG_TEXT[ki
 
 /** A credential row's outline source tag, by the capture's `source` or the entry's `how`. */
 export const SOURCE_TAG_TEXT = Object.freeze({
-    phished: 'Phished', recorded: 'Recorded', found: 'Found', given: 'Given'
+    phished: 'Phished', recorded: 'Recorded', found: 'Found', given: 'Given', issued: 'Issued'
 });
 
 export const SIGNINS_HEADING = 'Sign-ins';

@@ -37,7 +37,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - Front Office (start): "Front PC" (Sam; its desktop holds "IT request form"), "Note: Sam's login", "Audit log terminal", "Sign: Start here", Sam Okoro, Omar Stack (the identity desk, `id_desk`). Doors: north to the Service Desk, east to Records.
 - Service Desk: "Operations PC" (push; Wim only), "Note: Wim's login", Ria Vance (the IT desk, `it_desk`), Wim Duarte (high awareness, no phone).
 - Records: "Records PC" (three tries then locked; Tess and Ugo), "Vault PC" (code; Vera), notes with each login, "Staff file", a loose "Code device" (Vera's), Tess Ama, Ugo Reyes, Vera Holt.
-- You start with: "Records PC.rdp" (Tess's saved connection), "Your phone" (one contact, the IT service line) and "Your feed phone" (the Friendface feed).
+- You start with: "Capture log" (the Sign-ins list), "Records PC.rdp" (Tess's saved connection; opened with Connect from the inventory), "Your phone" (one contact, the IT service line) and "Your feed phone" (the Friendface feed).
 
 ## Beats
 
@@ -46,7 +46,7 @@ The order matters to the leak scanner: a desk stop (beat 14) stops credit for ev
 ### 1. Lock the account
 1. Walk east to Records. Click "Note: Tess's login" and read it.
 2. Click "Records PC". Click the Tess tile, type a wrong password, click Sign in. Repeat twice more.
-- See: a refusal on the first two, "Locked out" on the third.
+- See: a refusal on the first two, "This account is locked on this PC" on the third.
 - Server: a lockout held for Tess at `records_pc`; `--ops-log` prints three `SIGN_IN` fails and a lockout.
 3. Click the X on the sign-in screen.
 
@@ -58,27 +58,32 @@ The order matters to the leak scanner: a desk stop (beat 14) stops credit for ev
 ### 3. The reset
 1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "A password reset", Tess's staff number and her line manager from beat 2. Send.
 - See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." The bark "Next, please." shows.
-- Open the keyring (K): a "Reset" sign-in for Tess.
+- The form note says where it is kept: under Sign-ins in your capture log, and on the sign-in screen. Open the inventory, click "Capture log": under Sign-ins a "Reset" row for Tess shows the new password, with no reload.
 - Server: reset password yes for Tess; the lockout at `records_pc` gone; typed no. `ACCT_RESET` row.
 
+### 3b. Sign in at the Front PC
+The saved connection has no foothold: its only route is from a PC you are signed in at, so sign in at the Front PC first.
+1. Front Office: click "Note: Sam's login" and read it. Click "Front PC", click the Sam tile, type the password, Sign in. Click the X (it keeps the session).
+- See: back on the room, session held at the Front PC.
+
 ### 4. The saved connection is stale
-1. Records: click "Records PC". On the sign-in screen choose Tess's saved connection ("Records PC saved connection").
-- See: "This password has been changed. Type the new one to sign in." No session.
+1. Open the inventory, click "Records PC.rdp", choose "Connect".
+- See: a notice titled "Records PC.rdp": "This password has been changed. Type the new one to sign in." (not an error). No desktop opens and no session starts.
 
 ### 5. Old out, new in
-1. Same screen: click the Tess tile, type the OLD password (from her note), Sign in.
+1. Records: click "Records PC". Click the Tess tile (it has a "Reset" tag and fills the new password: clear the field), type the OLD password (from her note), Sign in.
 - See: refused; one attempt counted.
 2. Type the new password from beat 3, Sign in.
 - See: signed in at the once-locked PC. Server: typed yes.
-3. Start > Sign out. Choose the saved connection again.
-- See: it now signs in.
+3. Start > Sign out. Open the inventory, click "Records PC.rdp", choose "Connect".
+- See: it now signs in: the Records PC desktop opens from the Front PC.
 
 ### 6. Asking twice is harmless
 1. Service Desk: Ria, "Ask for an account reset", the same request as beat 3. Send.
 - See: the same granted form. Server: state unchanged (no second `ACCT_RESET` row).
 
 ### 7. Over a PC
-1. Front Office: click "Note: Sam's login" and read it. Click "Front PC", click the Sam tile, type the password, Sign in.
+1. Front Office: click "Front PC" (the session from beat 3b is held, so the desktop opens). If it asks, click the Sam tile, type the password, Sign in.
 2. On the desktop click the "IT request form" icon (it has no picture of its own, so it shows the plain document icon with the name under it).
 - See: the "IT request form" window opens over the PC.
 3. In "Username" type Wim's username, under "Ask for" choose "A sign-in approval reset", fill "Staff number" and "Line manager" with Wim's staff number and his line manager from beat 2. Click "Send".

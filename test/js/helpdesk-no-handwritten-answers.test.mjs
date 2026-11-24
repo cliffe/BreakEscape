@@ -11,7 +11,8 @@ import { dirname, join } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FILES = [
   'helpdesk-request', 'helpdesk-client', 'mfa-client-own', 'own-phone-scenes', 'mfa-signin-my-phone',
-  'helpdesk-ink-tag', 'helpdesk-pretext-open', 'helpdesk-desktop-form'
+  'helpdesk-ink-tag', 'helpdesk-pretext-open', 'helpdesk-desktop-form',
+  'helpdesk-client-wiring', 'helpdesk-keyring-connect'
 ].map((n) => `${n}.test.mjs`);
 const KEYS = ['granted', 'triesLeft', 'retryIn', 'lockoutPcIds', 'ownPhone', 'enrolled', 'typeToSignIn', 'mfaRequired', 'promptsSent'];
 

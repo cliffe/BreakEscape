@@ -176,7 +176,7 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             if (!isStr(npcId)) continue;
             const row = accountRow(npcId);
             row.password = e;
-            pushOnce(row.kinds, 'in_file');
+            pushOnce(row.kinds, e.source === 'helpdesk' ? 'reset' : 'in_file');
             pushOnce(row.sources, sourceTagOfHow(e.how));
             row.order = Math.min(row.order, gainedAt(e));
             continue;
@@ -239,6 +239,11 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             const notes = caps.map((c) => c.note).filter(isStr);
             row.lines.push(...notes.slice(0, MAX_ROW_NOTES));
             if (notes.length > MAX_ROW_NOTES) row.lines.push(moreNotesLine(notes.length - MAX_ROW_NOTES));
+        } else if (row.password && row.password.source === 'helpdesk' && isStr(row.password.password)) {
+            // A desk's reset: the server handed the value over with the grant, so it is shown (S8b)
+            row.value = row.password.password;
+            row.valueState = null;
+            row.use = row.value;
         } else if (row.password) {
             // A password in a file alone: never the value
             row.use = typeItFromLine(row.password.label);

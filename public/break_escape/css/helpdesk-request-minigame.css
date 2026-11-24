@@ -43,5 +43,5 @@
 .hr-result { flex: none; padding: 8px 16px 14px; border-top: 2px solid var(--hr-line); }
 .hr-result:empty { display: none; }
 .hr-result-line, .hr-note, .hr-password { margin: 0 0 6px; max-width: 60ch; overflow-wrap: anywhere; }
-.hr-password { color: var(--hr-accent); font-size: 20px; user-select: all; }
+.hr-password { color: var(--hr-accent); font-size: 24px; user-select: all; }
 .hr-note { color: var(--hr-dim); }
