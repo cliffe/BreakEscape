@@ -57,6 +57,10 @@
 # have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
+# Hash records and the cracker (S7): a cracked password may appear only on the `<npc>.cracked` entry of a GET /keyring answer that
+# follows a 200 POST /crack answer which named that account, so give every capture file of the game, oldest first, as for the
+# ops steps above. The rules are in the scanner header (`crack_key`, `crack_row`, `crack_answer`, `crack_unearned`).
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error, files whose first timed rows are not oldest first,
 # overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'

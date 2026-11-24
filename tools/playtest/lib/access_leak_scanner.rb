@@ -207,6 +207,24 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # R4-1 and R4-2: a stored-only key is found as a word before `:` or `=` in a detail string, and the
 # hidden detail keys of the registry join the hand list.
 #
+# Ops S7 (hash records and the offline cracker, `scan_crack`), rules `crack_key`, `crack_row`, `crack_answer` and
+# `crack_unearned`, all structural and failing closed (a proof that is missing, ambiguous or malformed is a finding):
+# - keys the browser never gets, wherever they sit: crack, passwordPattern, passwordDifficulty, earnedFacts, crackRuns,
+#   crackStarted, crackedAccounts; `facts` on a credential-shaped hash; `difficulty` on any hash that is not a lock
+#   (a door or object lock, the one public use of the word, is told by its own lockType, locked, keyPins, requires or
+#   dustable); `crackFacts` only as the top-level list of a GET /keyring answer that lists a hash row, of ids that name an
+#   intel fact, none `se_intel_` prefixed, and (given the game) all in its earned set;
+# - a `kind: "hash"` hash only as an element of a GET /keyring answer's entries, with the keys of the server's row, a
+#   registry source, a status word, `readyInSeconds` only on running, the token shape and the account block, and never a
+#   password, routes or connectsTo; a keyring answer's `readyInSeconds` map holds whole seconds for registry hash ids;
+# - every POST /crack answer has exactly the keys of its status (a running answer carries nothing but the wait: no
+#   account, no credential id, no miss or hit word) and the refusal codes of the route with their HTTP status;
+# - a `source: "cracked"` keyring entry, and the password on it, only in a GET /keyring answer after a 200 POST /crack
+#   answer of the exact shape `{ success: true, status: "cracked", accountId, credentialIds }` named that account (the
+#   account itself, or, in the same answer, another account with an equal password and a hash record of its own), the
+#   entry being `<npc>.cracked` with the keys of the server's row and that account's own password. The password is
+#   allowed at that one path and nowhere else. The earned set starts empty each scan and grows only from such answers.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -391,6 +409,7 @@ class AccessLeakScanner
     @feed_posters = Set.new
     @reaction_items = 0
     collect_passwords
+    collect_crack
     collect_capture_secrets
     @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
       id = e[:object]['id']
@@ -491,6 +510,7 @@ class AccessLeakScanner
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
     @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
+    @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
@@ -516,6 +536,7 @@ class AccessLeakScanner
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
       note_privilege_before(body, ctx, row)
+      note_crack_earned(body, ctx, row)
       scan_passwords(body, ctx, legit, add)
       scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
@@ -544,6 +565,7 @@ class AccessLeakScanner
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
+      scan_crack(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
     end
@@ -595,6 +617,10 @@ class AccessLeakScanner
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
+    'crack_key' => 'a key the browser never gets from the cracker (the recipe, the difficulty, the earned-fact and cracking state) or a misplaced or unearned crackFacts',
+    'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
+    'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
+    'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
   }.freeze
 
@@ -986,6 +1012,7 @@ class AccessLeakScanner
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
+      crack: method == 'POST' && path.end_with?('/crack'),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
@@ -1019,12 +1046,14 @@ class AccessLeakScanner
     # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
     # registry-sourced entry is never exempted, so a password on one is still flagged.
     keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
+    cracked_paths = ctx[:keyring] ? crack_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if keyring_capture_paths && owners.include?(keyring_capture_paths[json_path])
+        next if cracked_paths && owners.include?(cracked_paths[json_path])
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -3424,6 +3453,222 @@ class AccessLeakScanner
   def content_match?(str, strings)
     s = str.strip
     strings.any? { |secret| s == secret || (secret.length >= 20 && s.include?(secret)) }
+  end
+
+  # ---- hash records and the cracker (S7) ----------------------------------------------------------
+
+  CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
+  # The one public use of `difficulty`: a lock on a door or an object (room data ships it on purpose).
+  CRACK_LOCK_FIELDS = %w[lockType locked keyPins requires dustable].freeze
+  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted].freeze
+  CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
+  CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
+  CRACK_ENTRY_KEYS = %w[id kind source account label password gainedAt forThisPc accepted].freeze
+  CRACK_TOKEN = /\A(?:[A-HJ-NP-Z2-9]{4}-){5}[A-HJ-NP-Z2-9]{4}\z/.freeze
+  CRACK_REFUSALS = { 'bad_request' => 400, 'not_found' => 404, 'no_recipe' => 422, 'fact_not_held' => 422 }.freeze
+  CRACK_MAX_WAIT = 600
+
+  # Hash records of the scenario by account (NPC id), and each NPC's own password. Read once.
+  def collect_crack
+    @crack_hash_accounts = Set.new
+    @crack_hash_ids = Set.new
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      next unless entry['kind'] == 'hash'
+
+      @crack_hash_ids << id.to_s
+      @crack_hash_accounts << entry['account'] if entry['account'].is_a?(String)
+    end
+    @crack_npc_password = {}
+    @passwords.each { |password, owners| owners.each { |id| @crack_npc_password[id] = password } }
+  end
+
+  # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none).
+  def note_crack_earned(body, ctx, row)
+    return unless ctx[:crack] && row['status'].to_i == 200
+
+    accounts = crack_cracked_accounts(body)
+    @crack_earned.merge(accounts) if accounts
+  end
+
+  # The accounts a cracked answer grants, or nil unless the whole answer is well formed and every account is one the
+  # scenario can crack: it has a password and a hash record, and (given the game) a record whose proof holds now.
+  def crack_cracked_accounts(body)
+    return nil unless body.is_a?(Hash) && crack_answer_shape_ok?(body) && body['status'] == 'cracked' && body.key?('accountId')
+
+    account = body['accountId']
+    ids = body['credentialIds']
+    accounts = ids.map { |cid| cid.delete_suffix('.cracked') }
+    return nil unless accounts.include?(account) && accounts.uniq.length == accounts.length
+
+    password = @crack_npc_password[account]
+    ok = accounts.all? do |a|
+      @crack_npc_password[a] && @crack_npc_password[a] == password && crack_hash_record_held?(a)
+    end
+    ok ? accounts : nil
+  end
+
+  def crack_hash_record_held?(npc_id)
+    return false unless @crack_hash_accounts.include?(npc_id)
+    return true unless @game.respond_to?(:credential_proof_holds?)
+
+    BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
+      entry['kind'] == 'hash' && entry['account'] == npc_id && @game.credential_proof_holds?(id, entry)
+    end
+  end
+
+  # The exact keys and value ranges of each 200 answer of POST /crack.
+  def crack_answer_shape_ok?(body)
+    return false unless body['success'] == true
+
+    keys = body.keys.sort
+    int = ->(v, range) { v.is_a?(Integer) && range.cover?(v) }
+    case body['status']
+    when 'cracked'
+      return keys == %w[status success] unless body.key?('accountId') || body.key?('credentialIds')
+
+      keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
+        body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
+        body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
+    when 'running' then keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..CRACK_MAX_WAIT)
+    when 'nomatch' then keys == %w[status success] || (keys == %w[runs status success] && int.call(body['runs'], 1..2))
+    when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2
+    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..4)
+    else false
+    end
+  end
+
+  def crack_refusal_shape_ok?(body, http)
+    body['success'] == false && body.keys.sort == %w[reason success] && CRACK_REFUSALS[body['reason']] == http
+  end
+
+  # { JSON path => npc id } for the `password` of each cracked keyring entry that passes the full check, so
+  # scan_passwords can let that NPC's own value through there, and only there.
+  def crack_password_paths(body)
+    entries = keyring_entries_in(body)
+    return {} if entries.nil?
+
+    paths = {}
+    entries.each_with_index do |entry, i|
+      npc_id = crack_entry_account(entry)
+      paths["$.entries[#{i}].password"] = npc_id if npc_id
+    end
+    paths
+  end
+
+  # The account of a well formed, earned cracked entry (the server's row, its own password), else nil.
+  def crack_entry_account(entry)
+    return nil unless entry.is_a?(Hash) && entry['source'] == 'cracked'
+    return nil unless (entry.keys - CRACK_ENTRY_KEYS).empty? && entry['kind'] == 'password'
+
+    id = entry['id']
+    return nil unless id.is_a?(String) && id.end_with?('.cracked')
+
+    npc_id = id.delete_suffix('.cracked')
+    account = entry['account']
+    return nil unless @crack_earned.include?(npc_id) && account.is_a?(Hash) && account['npcId'] == npc_id
+    return nil unless (account.keys - CRACK_ACCOUNT_KEYS).empty?
+
+    password = entry['password']
+    password.is_a?(String) && password == @crack_npc_password[npc_id] ? npc_id : nil
+  end
+
+  def scan_crack(body, ctx, row, add)
+    scan_crack_keys(body, ctx, add)
+    scan_crack_answer(body, ctx, row, add)
+    scan_crack_rows(body, ctx, add)
+    scan_crack_entries(body, ctx, add)
+  end
+
+  def scan_crack_keys(body, ctx, add)
+    each_key_path(body) do |key, json_path|
+      add.call('crack_key', "crack:key:#{key}", safe_path(json_path)) if CRACK_NEVER_KEYS.include?(key.to_s)
+    end
+    walk_hashes(body, '$') do |hash, json_path|
+      if hash.key?('difficulty') && !((hash.keys & CRACK_LOCK_FIELDS).any? && hash['kind'] != 'hash')
+        add.call('crack_key', 'crack:key:difficulty', safe_path("#{json_path}.difficulty"))
+      end
+      credential_shaped = hash['kind'].is_a?(String) || hash['account'].is_a?(Hash) || hash.key?('proof')
+      add.call('crack_key', 'crack:key:facts', safe_path("#{json_path}.facts")) if hash.key?('facts') && credential_shaped
+      add.call('crack_key', 'crack:key:crackFacts', safe_path("#{json_path}.crackFacts")) if hash.key?('crackFacts') && !crack_facts_ok?(body, hash, json_path, ctx)
+    end
+  end
+
+  # crackFacts: the top-level list of a keyring answer that lists a hash row; known fact ids, bare, no repeats,
+  # and (given the game) earned.
+  def crack_facts_ok?(body, hash, json_path, ctx)
+    return false unless ctx[:keyring] && json_path == '$' && hash.equal?(body)
+
+    entries = keyring_entries_in(body)
+    list = hash['crackFacts']
+    return false unless entries && entries.any? { |e| e.is_a?(Hash) && e['kind'] == 'hash' }
+    return false unless list.is_a?(Array) && list.all? { |f| f.is_a?(String) } && list.uniq.length == list.length
+
+    known = @data.dig('social', 'intelFacts')
+    return false unless known.is_a?(Hash) && list.all? { |f| !f.start_with?('se_intel_') && known.key?(f) }
+    return true unless @game.respond_to?(:earned_fact_ids)
+
+    (list - Array(@game.earned_fact_ids)).empty?
+  end
+
+  def scan_crack_answer(body, ctx, row, add)
+    return unless ctx[:crack]
+
+    http = row['status'].to_i
+    return unless http == 200 || (body.is_a?(Hash) && (body.key?('success') || body.key?('reason')))
+
+    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http))
+    add.call('crack_answer', 'crack:answer', '$') unless ok
+  end
+
+  def scan_crack_rows(body, ctx, add)
+    elements = {}
+    entries = ctx[:keyring] ? keyring_entries_in(body) : nil
+    entries&.each_with_index { |e, i| elements["$.entries[#{i}]"] = e }
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['kind'] == 'hash'
+
+      %w[password routes connectsTo].each do |key|
+        add.call('crack_row', "crack:row:#{key}", safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      add.call('crack_row', 'crack:row', safe_path(json_path)) unless elements[json_path].equal?(hash) && crack_row_ok?(hash)
+    end
+    scan_crack_waits(body, ctx, add)
+  end
+
+  def crack_row_ok?(row)
+    return false unless (row.keys - CRACK_ROW_KEYS).empty? && row['source'] == 'registry' && row['id'].is_a?(String)
+    return false unless @crack_hash_ids.include?(row['id']) && CRACK_ROW_STATUSES.include?(row['status'])
+    return false unless row['token'].is_a?(String) && row['token'].match?(CRACK_TOKEN) && [true, false].include?(row['salted'])
+
+    account = row['account']
+    return false unless account.is_a?(Hash) && (account.keys - CRACK_ACCOUNT_KEYS).empty? && account['npcId'].is_a?(String)
+
+    wait = row['readyInSeconds']
+    row['status'] == 'running' ? wait.is_a?(Integer) && wait.between?(0, CRACK_MAX_WAIT) : !row.key?('readyInSeconds')
+  end
+
+  # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
+  def scan_crack_waits(body, ctx, add)
+    return unless ctx[:keyring] && body.is_a?(Hash) && body.key?('readyInSeconds')
+
+    waits = body['readyInSeconds']
+    ok = waits.is_a?(Hash) && waits.all? do |id, v|
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, CRACK_MAX_WAIT)
+    end
+    add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
+  end
+
+  # A `source: "cracked"` hash anywhere: only an earned, well formed entry of a GET /keyring answer passes.
+  def scan_crack_entries(body, ctx, add)
+    entries = ctx[:keyring] ? keyring_entries_in(body) : nil
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['source'] == 'cracked'
+
+      listed = entries&.each_with_index&.any? { |e, i| e.equal?(hash) && json_path == "$.entries[#{i}]" }
+      next if listed && crack_entry_account(hash)
+
+      add.call('crack_unearned', "crack:entry:#{hash['id'].is_a?(String) ? hash['id'] : '?'}", safe_path(json_path))
+    end
   end
 
   def safe_path(json_path)

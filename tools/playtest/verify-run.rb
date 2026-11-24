@@ -72,7 +72,8 @@ g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
 ACCESS_KEYS = %w[sessions signedInPcs serverClones copiedItems loginFailures loginLockouts footholds
-                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed].freeze
+                 gainedFootholds npcFrustration guestSessions sharedLogins feedRevealed opsDiscovered opsFindings opsUsed
+                 crackedAccounts crackStarted crackRuns].freeze
 
 # A finding id as printed on the opsFindings and opsUsed lines and a session's `granted by`: author-chosen
 # words, dots and underscores, nothing longer than the log's foothold ids allow; anything else is left out.
@@ -86,6 +87,33 @@ def computed_level(game, pc_id)
   %w[admin user].include?(level) ? level : 'none'
 rescue StandardError
   'error'
+end
+
+# S7 (hash records and the cracker): one item per hash record as `<record id> <status word>` (ready, running Ns,
+# infeasible, cracked, or `not listed` when the record's proof does not hold or its grade does not resolve), then one
+# `cracked <account id>` per account in the server's crackedAccounts. Ids and words only: never a token, a password or
+# a recipe. nil when the scenario has no hash record and the game has no cracking state.
+def crack_items(ps, game)
+  records = begin
+    BreakEscape::CredentialModel.registry(game.scenario_data).select { |_, e| e['kind'] == 'hash' }.keys
+  rescue StandardError
+    []
+  end
+  cracked = ps['crackedAccounts'].is_a?(Array) ? ps['crackedAccounts'].select { |a| a.is_a?(String) && a.match?(OPS_ID) } : []
+  return nil if records.empty? && cracked.empty? && !(ps['crackStarted'].is_a?(Hash) && !ps['crackStarted'].empty?)
+
+  rows = begin
+    game.keyring_for_client[:entries].select { |e| e.is_a?(Hash) && e['kind'] == 'hash' }.to_h { |e| [e['id'], e] }
+  rescue StandardError
+    {}
+  end
+  items = records.select { |id| id.match?(OPS_ID) }.map do |id|
+    row = rows[id]
+    word = row ? row['status'].to_s : 'not listed'
+    wait = row && row['status'] == 'running' && row['readyInSeconds'].is_a?(Integer) ? " #{row['readyInSeconds']}s" : ''
+    "#{id} #{word.match?(/\A[a-z ]{1,16}\z/) ? word : '?'}#{wait}"
+  end
+  items + cracked.map { |a| "cracked #{a}" }
 end
 
 # The access model keys, one line each. Sign-in details are never in player_state, so
@@ -179,6 +207,8 @@ def access_section(ps, game = nil)
       "#{id} #{e['shown'].length} [#{ids.join(' ')}]"
     end]
   ]
+  crack = game ? crack_items(ps, game) : nil
+  rows << ['crack', crack] if crack
   lines = ['access model']
   rows.each do |name, items|
     lines << "  #{name.ljust(15)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
