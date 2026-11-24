@@ -6,16 +6,20 @@
 import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {}); await page.evaluate(() => { try { window.__test.throttleFps(20); } catch (_) {} });
-  await bridge.moveToNear('ops_cooler', { timeoutMs: 20000 }).catch(() => {}); await sleep(800);
+  await sleep(800);
 }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   const set = await page.evaluate(() => { const s = window.npcNeedsSystem; const out = {}; for (const id of ['adaeze_okafor', 'gwen_pritchard']) { const st = s && s.states.get(id); if (st) { st.levels.thirst = 20; out[id] = true; } } return out; });
   mark('needs-set', set);
-  const a = await vw.waitForLine(/muster board still has us missing/i, 240000);
-  if (!a) { mark('end-timeout'); throw new Error('exchange never played (both at cooler? voiced?)'); }
-  mark('adaeze-done', { durMs: a.durMs });
-  const g = await vw.waitForLine(/cross us off/i, 15000);
-  if (g) mark('gwen-done', { durMs: g.durMs });
+  // The voice watcher does not see these lines (exchange voices bypass it), so read the needs log instead: exchange_started, then exchange_heard complete.
+  const seen = (ev) => page.evaluate((ev) => (window.npcNeedsSystem?.log || []).some(e => e.ev === ev && e.knot === 'ex_last_two'), ev);
+  const t0 = Date.now(); let started = false, heard = false;
+  while (Date.now() - t0 < 120000) {
+    if (!started && await seen('exchange_started')) { started = true; mark('exchange-started'); }
+    if (started && await seen('exchange_heard')) { heard = true; mark('exchange-heard'); break; }
+    await sleep(250);
+  }
+  if (!heard) { mark('end-timeout', { started }); throw new Error('exchange never completed (started=' + started + ')'); }
   await sleep(1500); await vw.stop(); mark('linger-end');
 };

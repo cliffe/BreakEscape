@@ -134,3 +134,16 @@ Frame review (contact sheets, full-res where noted), no PIN, code or flag value 
 - t20b_server_closeups: run (avatar lucia_moreno, flags as t20).
 - t12_ops_exchange: debug as in the table, at most about 15 calls, else fallback face shot of Adaeze and Gwen.
 - Avatar: read selected_sprite after the last take; it must be female_hacker_hood_v2 (read vivian_ashby mid-take, restored by run-take at the end).
+
+## Session 4 (24 Nov): finishing
+Avatar before: female_hacker_hood_v2. Windows are trimmed-clock seconds. No "playtest" portrait appears in any window below; no PIN, code or flag value seen.
+
+| id | result | usable window and notes |
+|---|---|---|
+| t19c_ops_pc (vivian_ashby) | FAIL gate (drop 1.02%), A/V -78/-83 ms (constant-offset corrected, residual 2/-3), 7.7 s | usable, gate waived (drops <=1.7%, check the window in the edit). Content as t19b: room 0 to 1.9, then the "Abandoned Operator Workstation" notes panel (read-only grid view text, no codes) 2.0 to 6.2. Suggested window 2.0 to 6.0. Marks: pc-open 3.58 (clock offset in the markers file), pc-held 6.18. |
+| t23c_gen_key (marcus_hale) | PASS, drop 0.61%, A/V -95/-150 ms (corrected, residual 27/-28), 14.4 s | key mode about 4.2, key selected ("Plant Maintenance Key") 5.7, key turn 7.2, door open 12.9. Suggested window 3.0 to 13.5. Supersedes t23b. |
+| t29c_walk_genhall (marcus_hale) | FAIL gate (drop 1.68%), A/V -103/-110 ms (corrected), 3.9 s | usable, gate waived (drops <=1.7%, check the window in the edit). Straight walk down the generator hall from spawn, no ATS plate legible. Suggested window 0.0 to 3.8 (walk-end 2.4). |
+| t20b_server_closeups (lucia_moreno) | PASS, drop 0.52%, A/V -82/-87 ms, 17.2 s | no cabling note. SCADA panel (empty field, "Enter password" box) 5.1 to 7.9; flag station (empty field, "No flags submitted yet", "ENTROPY's backup host" tag) 12.6 to 15.75. Suggested windows 4.8 to 8.0 and 12.4 to 15.8. Walk-between shots 0 to 4.5 and 8 to 12 show the room only. |
+| t12_ops_exchange (lucia_moreno) | PASS (3rd run), drop 0.27%, A/V -93/-90 ms, 34.3 s | The exchange does play: both staff walk to ops_cooler at thirst 20, `exchange_started` ex_last_two at 9.0, `exchange_heard` complete at 32.6 (game log events). Four voiced lines with speech bubbles over the room (wide shot, player at (160,160) idle, no portraits): "The muster board still has us missing." 9.0 to 11.3, "Somebody ought to cross us off." 13.8 to 16.0, "And the coffee machine is still broken." about 18.7 to 21.6, "Still broken, still nobody's job." 23.7 to 26.3, "At least the water is cold." 28.5 to 30.2. Suggested window 8.8 to 30.5. Both staff are small in frame (edit zooms). |
+
+t12 cause: nothing was wrong with the trigger. Earlier failures were the script waiting on `watchVoice`, which never sees exchange lines; the script now polls `window.npcNeedsSystem.log` for `exchange_started` / `exchange_heard` (ev/knot fields) and the player stays at spawn, not at the cooler. Run 1 with debug snapshots (thirst set to 20) showed both NPCs `urgent`, `job_start` ops_cooler, `using`, then `exchange_started` about 8 to 9 s into the take. Gwen was not seated at start in this entry state (`seated` false), so no release was needed. The 400 ms Mission Brief/tutorial overlays were not on screen in this take.
