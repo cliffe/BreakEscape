@@ -284,6 +284,47 @@ test('the binding opens the form once per ask: a replay of the same turn does no
     assert.deepEqual(opened, ['it_desk']);
 });
 
+test('R3-CORE4: a refused form, then a granted one in the same call, marks only the newest ask as sent', async () => {
+    setUp('test_ops_helpdesk', 'it_line');
+    const post = window.ApiClient.post;
+    await reachAsk('it_line_call', 'it_line');
+    const send = async (form, a) => {
+        const n = posts.length;
+        window.ApiClient.post = async (path, payload) => {
+            posts.push({ path, payload });
+            if (a.status === 200) return a.body;
+            throw Object.assign(new Error('refused'), { status: a.status, body: a.body });
+        };
+        form.container.querySelector('.hr-username input').value = 'v.holt';
+        form.container.querySelector('.hr-send').click();
+        await until(() => posts.length === n + 1, 'the post');
+        await until(() => lineOf(form.container) !== 'Sending your request...', 'the answer line');
+    };
+    const closeForm = async (form) => {
+        form.container.querySelector('.se-overlay-close').click();
+        await until(() => FW.currentMinigame?._sceneType === 'phone-chat', 'the call comes back');
+    };
+    try {
+        askButton().click();
+        await until(() => FW.currentMinigame?._sceneType === 'helpdesk-request', 'the first form', 600);
+        let form = FW.currentMinigame;
+        await send(form, answer('helpdesk.refused'));
+        await closeForm(form);
+        await until(() => askButton(), 'the ask offered again');
+        askButton().click();
+        await until(() => FW.currentMinigame?._sceneType === 'helpdesk-request', 'the second form', 600);
+        form = FW.currentMinigame;
+        await send(form, answer('helpdesk.granted_mfa'));
+        await closeForm(form);
+        const asks = window.gameState.globalVariables.pretext_it_line_call_state.log.filter((r) => r.kind === 'ask');
+        assert.equal(asks.length, 2);
+        assert.deepEqual(asks.map((r) => r.sent), [false, true], 'only the ask whose form was put through is marked');
+    } finally {
+        window.ApiClient.post = post;
+        endAll();
+    }
+});
+
 // The phone's contact list reaches the card only for a contact whose NPC carries the callId
 // (phone-chat openJudgedContact). The scenario's it_line NPC carries "it_line_call".
 test('the shipped scenario: the phone contact "IT service line" opens the preparation card, not a plain chat', async () => {

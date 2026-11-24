@@ -366,14 +366,23 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
  * The callback's own check of the call decides: it returns 'stop' to drop the listener.
  * A listener that sees the call closed drops itself on the next answer.
  */
+// One listener per desk: an ask whose form ended in a refusal leaves its listener behind, so a
+// later ask drops it before it listens, and only the newest ask is marked when the desk grants.
+const helpdeskListeners = new Map();
 function watchHelpdeskDefault(deskId, onGranted) {
     const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
     if (typeof d?.on !== 'function') return;
     const name = `helpdesk_answered:${deskId}`;
+    const previous = helpdeskListeners.get(name);
+    if (previous && typeof previous.d.off === 'function') previous.d.off(name, previous.fn);
     const fn = (detail) => {
         if (detail?.result !== 'granted') return;
-        if (onGranted() === 'stop' && typeof d.off === 'function') d.off(name, fn);
+        if (onGranted() === 'stop') {
+            if (typeof d.off === 'function') d.off(name, fn);
+            if (helpdeskListeners.get(name)?.fn === fn) helpdeskListeners.delete(name);
+        }
     };
+    helpdeskListeners.set(name, { d, fn });
     d.on(name, fn);
 }
 

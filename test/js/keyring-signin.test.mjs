@@ -960,3 +960,17 @@ test('S7 R2-2: a cracked password has its own tag, no file line, and its own tea
     assert.equal(alerts[0][0], teach);
     assert.doesNotMatch(alerts[0][0], /files/);
 });
+
+test('R3-CORE3: signing in with the reset password of a cracked account teaches no "cracked" lesson', async () => {
+    setup();
+    const JAKE_RESET = { id: 'dana.reset', kind: 'password', source: 'helpdesk', label: 'Reset', account: JAKE, how: 'issued', password: 'Tern-Harbour-41', accepted: true };
+    const mg = openRemote();
+    answerRemote(mg, { keyring: [JAKE_CRACKED, JAKE_RESET] });
+    const chosen = mg.signInTileFor('jjones');
+    assert.ok(chosen.kinds.includes('cracked') && chosen.kinds.includes('reset'), 'the tile carries both kinds');
+    tileFor('jjones').click();
+    q('#password-field').value = 'Tern-Harbour-41';
+    q('#submit-password').click();
+    await settle();
+    assert.equal(alerts.length, 0, 'the desk password is not a cracked one: no lesson');
+});

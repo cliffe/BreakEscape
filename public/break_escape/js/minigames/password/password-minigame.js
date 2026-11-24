@@ -2719,8 +2719,11 @@ export class PasswordMinigame extends MinigameScene {
         }
         if (result.ok) {
             // A typed sign-in to an account with a password found in a file teaches that kind (8.1)
+            // (not when the sign-in used the desk's reset password: that one was issued, not found)
             const chosen = st.other ? null : this.signInTileFor(username);
-            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
+            const usedReset = !!chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('reset');
+            if (usedReset) { /* no lesson */ }
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
             else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.teachAfter('cracked', result.session);
             this.signInAccepted(result.session);
             return;
@@ -2731,7 +2734,8 @@ export class PasswordMinigame extends MinigameScene {
             this.params.mfaAccount = { username, displayName: chosen?.displayName || null };
             this.mfaClientRef()?.noteAccount?.(this.mfaSubject(), this.params.mfaAccount);
             // The lesson noted at the first step is taught once the second step passes
-            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
+            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('reset')) delete this.params.mfaTeach;
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
             else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.params.mfaTeach = 'cracked';
             else delete this.params.mfaTeach;
             this.passwordField.value = '';
