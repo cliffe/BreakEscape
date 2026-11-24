@@ -653,6 +653,11 @@ export class PasswordMinigame extends MinigameScene {
         // screen (the user's UX notes on unlock-44 and unlock-53). The controls row is made
         // only when it has something to hold (Add to Notepad).
         this.params = { ...this.params, showCancel: false };
+        // A screen reopened after its code-device child carries the wrapper the old instance put on
+        // onComplete (second step, S8a): this instance is live again, so its own onComplete is the original
+        if (typeof this.params.onComplete === 'function' && this.params.onComplete._mfaOriginal !== undefined) {
+            this.params.onComplete = this.params.onComplete._mfaOriginal;
+        }
         // Call parent init to set up basic UI structure
         super.init();
         // A computer's own screens (sign-in, a PC's password) sit in the one PC monitor frame
@@ -1654,6 +1659,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${tiles}${inMonitor ? `
                         <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
                         <div class="signin-card" id="signin-card">` : ''}
+                        <div class="signin-second" id="signin-second" hidden></div>
                         <div class="signin-form" id="signin-form">
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
@@ -1758,6 +1764,7 @@ export class PasswordMinigame extends MinigameScene {
         }, () => {});
         this.bindKeyboardReveal([this.usernameField, this.passwordField]);
         this.renderSignInForm();
+        this.resumeSecondStep();
     }
 
     /**
@@ -2311,6 +2318,8 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     renderSignInForm({ quiet = false } = {}) {
+        // A second-step pane owns the screen: a late account answer must not redraw the password form over it
+        if (this.signInPane && this.signInPane !== 'password') return;
         const st = this.signInState;
         const chosen = st.other || st.selected !== null;
         const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
@@ -2579,6 +2588,11 @@ export class PasswordMinigame extends MinigameScene {
             this.setSignInMessage(signInErrorMessage(result, this.signIn.remote ? { remote: true, host: this.signInHost() } : undefined), 'error');
             return;
         }
+        if (result.reason === 'type_to_sign_in') {
+            // The PC asks for a second step, or the password changed: a notice with its own line, not a refusal
+            this.setSignInMessage(result.message || '', 'info');
+            return;
+        }
         if (window.playUISound) window.playUISound('reject');
         if (result.reason === 'kind_refused' || result.reason === 'expired') {
             // The PC's policy refused it, or (K5) the token ran out: grey the button now, with
@@ -2637,7 +2651,7 @@ export class PasswordMinigame extends MinigameScene {
         const card = this.gameContainer?.querySelector?.('#signin-card');
         if (!card) return;
         const form = this.gameContainer.querySelector('#signin-form');
-        const formShown = !!form && form.style.display !== 'none';
+        const formShown = (!!form && form.style.display !== 'none') || (!!this.signInPane && this.signInPane !== 'password');
         const text = this.signInMessageEl?.textContent || '';
         const promptOnly = !formShown && text === SIGNIN_PROMPT && this.signInMessageEl?.dataset.kind !== 'error';
         card.hidden = !formShown && (!text || promptOnly);
@@ -2703,6 +2717,20 @@ export class PasswordMinigame extends MinigameScene {
             this.signInAccepted(result.session);
             return;
         }
+        if (result.reason === 'mfa_required') {
+            // The password was right and a second step is owed: no error line and no reject sound
+            const chosen = st.other ? null : this.signInTileFor(username);
+            this.params.mfaAccount = { username, displayName: chosen?.displayName || null };
+            // The lesson noted at the first step is taught once the second step passes
+            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
+            else delete this.params.mfaTeach;
+            this.passwordField.value = '';
+            this.gameData.password = '';
+            if (!this.showSecondStep(result.mfa || {})) {
+                this.setSignInMessage('This account needs a second step that this screen cannot show.', 'error');
+            }
+            return;
+        }
         if (result.reason === 'locked_out') {
             this.signInLockedOut(result);
             return;
@@ -2721,6 +2749,251 @@ export class PasswordMinigame extends MinigameScene {
         this.passwordField.focus?.();
     }
 
+    // ── Second step (S8a) ────────────────────────────────────────────────────
+    // After a right password on a PC that asks for more, the screen swaps to a second pane in the
+    // same monitor frame. showSecondStep picks the pane by the kind the server named; a new kind adds
+    // a case there and a builder passed to mountSecondPane, and nothing else moves.
+
+    mfaSubject() {
+        return `pc:${this.signIn.pcId}`;
+    }
+
+    mfaClientRef() {
+        const c = typeof window !== 'undefined' ? window.mfaClient : null;
+        return c && typeof c.verify === 'function' ? c : null;
+    }
+
+    /** The pane for a pending second step; false when this screen has none for its kind. */
+    showSecondStep(pending, { fill = false } = {}) {
+        if (!this.mfaClientRef()) return false;
+        if (pending && pending.kind === 'code') return this.showCodePane(pending, { fill });
+        return false;
+    }
+
+    /** Put a pane in the second-step slot and hide the password form and the tiles. */
+    mountSecondPane(name, build) {
+        const host = this.gameContainer?.querySelector?.('#signin-second');
+        if (!host) return false;
+        host.replaceChildren();
+        build(host);
+        host.hidden = false;
+        host.dataset.pane = name;
+        this.signInPane = name;
+        this.gameContainer.querySelector('.signin-mode')?.classList.add('signin-second-step');
+        this.setSignInMessage('');
+        return true;
+    }
+
+    /** Back to the password pane, with an optional line (the second step ended, or the player stepped back). */
+    showPasswordPane({ message = '', kind = 'error' } = {}) {
+        const host = this.gameContainer?.querySelector?.('#signin-second');
+        if (host) { host.replaceChildren(); host.hidden = true; delete host.dataset.pane; }
+        this.signInPane = 'password';
+        this.gameContainer?.querySelector?.('.signin-mode')?.classList.remove('signin-second-step');
+        this.setSignInMessage('');
+        this.renderSignInForm();
+        if (message) this.setSignInMessage(message, kind);
+    }
+
+    /** The account's name for the pane: what was typed at the first step, else its tile, else a plain word. */
+    secondStepAccountName(pending) {
+        const own = this.params.mfaAccount;
+        if (own && (own.displayName || own.username)) return own.displayName || own.username;
+        const tile = pending?.npcId ? this.signInState.tiles.find(t => t.targetId === pending.npcId) : null;
+        return tile ? (tile.displayName || tile.username) : 'this account';
+    }
+
+    /** An inventory item that is a code device of the pending account's owner, or null. */
+    heldCodeDevice(npcId) {
+        const items = typeof window !== 'undefined' ? window.inventory?.items : null;
+        if (!npcId || !Array.isArray(items)) return null;
+        for (const it of items) {
+            const d = it && it.scenarioData ? it.scenarioData : it;
+            if (d && d.type === 'code_device' && d.owner === npcId && d.id != null) {
+                return { id: d.id, name: typeof d.name === 'string' && d.name ? d.name : 'code device' };
+            }
+        }
+        return null;
+    }
+
+    showCodePane(pending, { fill = false } = {}) {
+        const client = this.mfaClientRef();
+        const device = this.heldCodeDevice(pending.npcId);
+        const made = this.mountSecondPane('code', (host) => {
+            const mk = (tag, cls, text) => {
+                const n = document.createElement(tag);
+                if (cls) n.className = cls;
+                if (text != null) n.textContent = text;
+                return n;
+            };
+            const inMonitor = !!this.pcMonitor;
+            host.appendChild(mk('div', 'signin-second-title', `Second step for ${this.secondStepAccountName(pending)}`));
+            host.appendChild(mk('div', 'signin-second-help', 'Enter the six-digit code from the code device.'));
+            const row = mk('div', 'signin-field-row signin-code-row');
+            const label = mk('label', null, 'Code:');
+            label.htmlFor = 'signin-code';
+            const field = mk('input', 'password-field signin-code-field');
+            field.type = 'text';
+            field.id = 'signin-code';
+            field.inputMode = 'numeric';
+            field.maxLength = 6;
+            field.autocomplete = 'off';
+            field.spellcheck = false;
+            field.placeholder = '000000';
+            field.setAttribute('aria-label', 'Six-digit code');
+            row.append(label, field);
+            host.appendChild(row);
+            const actions = mk('div', 'signin-second-actions');
+            const verify = mk('button', `submit-btn${inMonitor ? ' pc-os-btn' : ''}`, 'Verify');
+            verify.type = 'button';
+            verify.id = 'signin-verify';
+            actions.appendChild(verify);
+            if (device) {
+                const use = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Use ${device.name}`);
+                use.type = 'button';
+                use.id = 'signin-use-device';
+                actions.appendChild(use);
+                this.addEventListener(use, 'click', () => this.useCodeDevice(device));
+            }
+            const back = mk('button', `signin-second-back${inMonitor ? ' pc-os-btn' : ''}`, 'Use a different account');
+            back.type = 'button';
+            back.id = 'signin-second-back';
+            actions.appendChild(back);
+            host.appendChild(actions);
+            this.codeField = field;
+            this.addEventListener(field, 'input', () => {
+                const digits = field.value.replace(/\D/g, '').slice(0, 6);
+                if (digits !== field.value) field.value = digits;
+            });
+            this.addEventListener(field, 'keydown', (event) => {
+                if (!this.gameState.isActive) return;
+                if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); this.closeByPlayer(); return; }
+                if (event.key === 'Enter') { event.preventDefault(); this.submitCode(); }
+            });
+            this.addEventListener(verify, 'click', () => this.submitCode());
+            this.addEventListener(back, 'click', () => {
+                client.clear(this.mfaSubject());
+                this.showPasswordPane();
+            });
+        });
+        if (!made) return false;
+        // A code read from this account's device is filled in, never sent for the player
+        if (fill) {
+            const code = client.codeFor(pending);
+            if (code && this.codeField) this.codeField.value = code;
+        }
+        this.codeField?.focus?.();
+        return true;
+    }
+
+    /** Open the held code device over this screen; the screen comes back as a new instance on its second pane. */
+    useCodeDevice(device) {
+        if (!this.gameState.isActive || typeof window.startCodeDevice !== 'function') return;
+        const client = this.mfaClientRef();
+        const key = this.mfaSubject();
+        const original = this.params.onComplete;
+        // A child forced shut releases this screen once, as (false, { aborted, viaChild }): a quiet
+        // close, with the completed-answer note cleared and nothing else (no toast, no sound, no event)
+        const wrapped = (success, result) => {
+            if (result && result.aborted === true && result.viaChild === true) {
+                try { client?.takeCompleted?.(key); } catch (e) { /* nothing to clear */ }
+            }
+            if (typeof original === 'function') return original(success, result);
+            return undefined;
+        };
+        wrapped._mfaOriginal = original;
+        this.params.onComplete = wrapped;
+        this.params.suspended = true;
+        window.startCodeDevice({ itemId: device.id, returnTo: { sceneType: 'password', params: {} } });
+        // The child did not start: this screen is still the running one, so give it back as it was
+        if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+            this.params.suspended = false;
+            this.params.onComplete = original;
+        }
+    }
+
+    /** A new instance asks MfaClient first: a completed second step, a pending one, else the password pane. */
+    resumeSecondStep() {
+        const client = this.mfaClientRef();
+        if (!client || !this.signIn?.pcId) return false;
+        const key = this.mfaSubject();
+        const done = typeof client.takeCompleted === 'function' ? client.takeCompleted(key) : null;
+        if (done) {
+            const held = window.pcSessions?.get?.(this.signIn.pcId);
+            const session = held && held.npcId === done.npcId ? held : { username: done.username, displayName: done.displayName };
+            if (this.params.mfaTeach) this.teachAfter(this.params.mfaTeach, session);
+            this.signInAccepted(session);
+            return true;
+        }
+        const pending = client.pendingFor(key);
+        if (!pending) return false;
+        return this.showSecondStep(pending, { fill: true });
+    }
+
+    async submitCode() {
+        if (!this.gameState.isActive || this._signingIn) return;
+        const client = this.mfaClientRef();
+        const code = (this.codeField?.value || '').trim();
+        if (!client) { this.setSignInMessage('Sign-in is not available.', 'error'); return; }
+        if (!/^\d{6}$/.test(code)) { this.setSignInMessage('Enter the six-digit code.', 'error'); return; }
+        this.setSignInMessage('Checking...');
+        this._signingIn = true;
+        let result;
+        try {
+            result = await client.verify(this.mfaSubject(), code);
+        } finally {
+            this._signingIn = false;
+        }
+        if (!this.gameState.isActive) return;
+        if (result.ok && result.passed) {
+            const body = result.body || {};
+            const held = window.pcSessions?.get?.(this.signIn.pcId);
+            const session = held && held.npcId === body.npcId ? held : { username: body.username, displayName: body.displayName };
+            // The lesson noted at the first step is taught now, once the second step has passed
+            if (this.params.mfaTeach) this.teachAfter(this.params.mfaTeach, session);
+            this.signInAccepted(session);
+            return;
+        }
+        const refuse = () => { if (window.playUISound) window.playUISound('reject'); };
+        switch (result.reason) {
+            case 'wrong':
+                refuse();
+                this.setSignInMessage(signInRefusalMessage({
+                    reason: 'wrong', message: 'Incorrect code', attemptsLeft: result.attemptsLeft
+                }), 'error');
+                break;
+            case 'stale':
+                refuse();
+                this.setSignInMessage(result.stale === 'used'
+                    ? 'That code has been used. Wait for the next one.'
+                    : 'That code has expired.', 'error');
+                break;
+            case 'locked': {
+                const wait = Number.isFinite(result.retryIn) && result.retryIn > 0
+                    ? ` Try again in ${result.retryIn >= 90 ? `${Math.ceil(result.retryIn / 60)} minutes` : `${Math.ceil(result.retryIn)} seconds`}.`
+                    : ' Try again later.';
+                this.signInLockedOut({ ok: false, reason: 'locked_out' }, { line: `Too many wrong codes.${wait}` });
+                return;
+            }
+            case 'expired':
+            case 'cancelled':
+                // The second step has ended on the server: the password pane, to start again
+                refuse();
+                this.showPasswordPane({ message: result.reason === 'cancelled'
+                    ? 'That sign-in was cancelled. Sign in again.'
+                    : 'That sign-in timed out. Sign in again.' });
+                return;
+            default:
+                if (result.reason === 'error') {
+                    this.setSignInMessage(signInErrorMessage({ status: result.status, serverReason: null }), 'error');
+                } else {
+                    refuse();
+                    this.setSignInMessage('That did not work. Try again.', 'error');
+                }
+        }
+        if (this.codeField) { this.codeField.value = ''; this.codeField.focus?.(); }
+    }
+
     signInAccepted(session) {
         this.cleanup();
         if (window.playUISound) window.playUISound('confirm');
@@ -2736,10 +3009,10 @@ export class PasswordMinigame extends MinigameScene {
      * reason (and any wait it names) can be read at any pace; it closed itself after 2.5 s
      * (code review R1 m2). The X and Esc close it (there is no Cancel button).
      */
-    signInLockedOut(result) {
+    signInLockedOut(result, { line = null } = {}) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
-        const message = signInRefusalMessage(result, this.signIn?.remote ? { remote: true, host: this.signInHost() } : undefined);
+        const message = line || signInRefusalMessage(result, this.signIn?.remote ? { remote: true, host: this.signInHost() } : undefined);
         this.setSignInMessage(message, 'error');
         this.gameResult = { success: false, reason: 'locked_out' };
         this.gameContainer?.querySelectorAll('.signin-mode input, .signin-mode button').forEach(el => { el.disabled = true; });
