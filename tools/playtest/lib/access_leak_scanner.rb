@@ -3463,8 +3463,7 @@ class AccessLeakScanner
   # ---- hash records and the cracker (S7) ----------------------------------------------------------
 
   CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
-  # The one public use of `difficulty`: a lock on a door or an object (room data ships it on purpose).
-  CRACK_LOCK_FIELDS = %w[lockType locked keyPins requires dustable].freeze
+  CRACK_CREDENTIAL_KEYS = %w[kind account token source proof].freeze
   CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted].freeze
   CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
   CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
@@ -3665,14 +3664,19 @@ class AccessLeakScanner
     each_key_path(body) do |key, json_path|
       add.call('crack_key', "crack:key:#{key}", safe_path(json_path)) if CRACK_NEVER_KEYS.include?(key.to_s)
     end
+    recipe_route = ctx[:keyring] || ctx[:crack] || ctx[:crack_keyring_route]
     walk_hashes(body, '$') do |hash, json_path|
-      if hash.key?('difficulty') && !((hash.keys & CRACK_LOCK_FIELDS).any? && hash['kind'] != 'hash')
-        add.call('crack_key', 'crack:key:difficulty', safe_path("#{json_path}.difficulty"))
-      end
+      add.call('crack_key', 'crack:key:difficulty', safe_path("#{json_path}.difficulty")) if hash.key?('difficulty') && !crack_lock_difficulty?(hash, recipe_route)
       credential_shaped = hash['kind'].is_a?(String) || hash['account'].is_a?(Hash) || hash.key?('proof')
-      add.call('crack_key', 'crack:key:facts', safe_path("#{json_path}.facts")) if hash.key?('facts') && credential_shaped
+      add.call('crack_key', 'crack:key:facts', safe_path("#{json_path}.facts")) if hash.key?('facts') && (credential_shaped || recipe_route)
       add.call('crack_key', 'crack:key:crackFacts', safe_path("#{json_path}.crackFacts")) if hash.key?('crackFacts') && !crack_facts_ok?(body, hash, json_path, ctx)
     end
+  end
+
+  # The one public use of `difficulty`: a door or object lock, told by a string lockType and none of a credential's keys,
+  # and never on the keyring or crack routes (every shipped lock with a difficulty has a string lockType).
+  def crack_lock_difficulty?(hash, recipe_route)
+    !recipe_route && hash['lockType'].is_a?(String) && (hash.keys & CRACK_CREDENTIAL_KEYS).empty?
   end
 
   # crackFacts: the top-level list of a keyring answer that lists a hash row; known fact ids, bare, no repeats,
@@ -3776,13 +3780,19 @@ class AccessLeakScanner
     @crack_earned.include?(npc_id) || crack_held_elsewhere?(npc_id)
   end
 
+  def crack_wait_record_held?(id)
+    record = @crack_records.find { |r| r[:id] == id }
+    !record.nil? && !record[:resolved].nil? && crack_record_held?(record)
+  end
+
   # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
   def scan_crack_waits(body, ctx, add)
     return unless ctx[:crack_keyring_route] && body.is_a?(Hash) && body.key?('readyInSeconds')
 
     waits = body['readyInSeconds']
-    ok = ctx[:crack_keyring] && waits.is_a?(Hash) && waits.all? do |id, v|
-      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, @crack_max_wait)
+    # The server sends the map only on its `unchanged` answer (no entries), and only for rows it lists: proof holds.
+    ok = ctx[:crack_keyring] && body['unchanged'] == true && !body.key?('entries') && waits.is_a?(Hash) && waits.all? do |id, v|
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, @crack_max_wait) && crack_wait_record_held?(id.to_s)
     end
     add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
   end

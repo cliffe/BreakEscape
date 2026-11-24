@@ -302,4 +302,50 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     typed = own_entry('dana').merge('gainedAt' => 5, 'forThisPc' => false, 'accepted' => true)
     assert_empty scan([running, cracked_answer('dana'), keyring([typed])], game: full_game)
   end
+
+  # ---- R1-L9: the wait map ------------------------------------------------------------------------------
+
+  test 'R1-L9: a wait map only on an unchanged answer with no entries, for records whose proof holds' do
+    unchanged = lambda do |waits, extra = {}|
+      { 'method' => 'GET', 'path' => "#{BASE}/keyring", 'status' => 200, 'body' => { 'rev' => 'a', 'unchanged' => true, 'readyInSeconds' => waits }.merge(extra) }
+    end
+    assert_empty scan([unchanged.call({ 'dana_hash' => 3 })], game: full_game)
+    assert_empty scan([unchanged.call({ 'dana_hash' => 3 })])
+    full = keyring([hash_row('eli_hash', 'eli', salted: false)], 'readyInSeconds' => { 'eli_hash' => 5 })
+    assert_includes rules([full], game: full_game), 'crack_row'
+    assert_includes rules([unchanged.call({ 'eli_hash' => 5 }, 'entries' => [])], game: full_game), 'crack_row'
+    assert_includes rules([unchanged.call({ 'dana_hash' => 3 }, 'unchanged' => false)], game: full_game), 'crack_row'
+    assert_includes rules([unchanged.call({ 'eli_hash' => 3 })], game: full_game(held: %w[dana_hash])), 'crack_row'
+    assert_includes rules([unchanged.call({ 'dana_hash' => 61 })]), 'crack_row'
+  end
+
+  # ---- R1-L11: difficulty and facts -----------------------------------------------------------------------
+
+  test 'R1-L11: difficulty only on a lock (string lockType, no credential keys) and not on the keyring or crack routes' do
+    get = ->(path, body) { { 'method' => 'GET', 'path' => "#{BASE}/#{path}", 'status' => 200, 'body' => body } }
+    bad = [
+      get.call('keyring', { 'entries' => [{ 'kind' => 'password', 'source' => 'capture', 'locked' => false, 'difficulty' => 'hard' }] }),
+      get.call('room/lobby', { 'npcs' => [{ 'id' => 'dana', 'dustable' => false, 'difficulty' => 'hard' }] }),
+      get.call('room/lobby', { 'o' => { 'requires' => 'k', 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'keyPins' => [1], 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'locked' => true, 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'lockType' => 1, 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'lockType' => 'key', 'kind' => 'password', 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'lockType' => 'key', 'account' => {}, 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'lockType' => 'key', 'token' => 'x', 'difficulty' => 'hard' } }),
+      get.call('room/lobby', { 'o' => { 'lockType' => 'key', 'proof' => {}, 'difficulty' => 'hard' } }),
+      get.call('keyring', { 'entries' => [], 'door' => { 'lockType' => 'key', 'locked' => true, 'difficulty' => 'hard' } }),
+      post_crack({ 'success' => true, 'door' => { 'lockType' => 'key', 'difficulty' => 'hard' } })
+    ]
+    bad.each { |r| assert_includes rules([r]), 'crack_key', r.inspect }
+    assert_empty scan([get.call('room/lobby', { 'door' => { 'locked' => true, 'lockType' => 'key', 'difficulty' => 'medium' } })])
+  end
+
+  test 'R1-L11: a facts key on a keyring or crack answer is a finding, a facts list on another route is not' do
+    recipe = keyring([hash_row('dana_hash', 'dana')], 'recipe' => { 'facts' => FACTS, 'class' => 'guessable' })
+    assert_includes rules([recipe]), 'crack_key'
+    assert_includes rules([post_crack({ 'success' => true, 'status' => 'nomatch', 'facts' => [] })]), 'crack_key'
+    plain = { 'method' => 'GET', 'path' => "#{BASE}/scenario", 'status' => 200, 'body' => { 'list' => { 'facts' => [1] } } }
+    assert_empty scan([plain])
+  end
 end
