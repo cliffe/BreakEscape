@@ -1,0 +1,156 @@
+{
+  "gate_push": {
+    "route": "POST /unlock",
+    "status": 200,
+    "body": { "success": false, "secondStep": true, "kind": "push", "targetType": "object", "targetId": "moira_locker", "npcId": "moira" },
+    "varies": []
+  },
+  "gate_number": {
+    "route": "POST /unlock",
+    "status": 200,
+    "body": { "success": false, "secondStep": true, "kind": "push_number_match", "targetType": "object", "targetId": "priya_safe", "npcId": "priya", "number": 47 },
+    "varies": ["number"]
+  },
+  "gate_code": {
+    "route": "POST /unlock",
+    "status": 200,
+    "body": { "success": false, "secondStep": true, "kind": "code", "targetType": "object", "targetId": "moira_locker", "npcId": "moira" },
+    "varies": []
+  },
+  "gate_door_npc": {
+    "route": "POST /unlock",
+    "status": 200,
+    "body": { "success": false, "secondStep": true, "kind": "push", "targetType": "door", "targetId": "records_room", "npcId": "moira", "opener": "moira" },
+    "varies": []
+  },
+  "open_object": {
+    "route": "POST /unlock",
+    "status": 200,
+    "from": "test/controllers/break_escape/unlock_response_filter_test.rb: 'opening the outer safe lists the inner box without its password or contents' and games_controller.rb#unlock (object branch: success, type, hasContents, contents)",
+    "body": { "success": true, "type": "object", "hasContents": true, "contents": [ { "id": "locker_memo", "type": "notes", "name": "Locker memo", "takeable": true } ] },
+    "varies": ["contents"]
+  },
+  "open_door": {
+    "route": "POST /unlock",
+    "status": 200,
+    "from": "test/controllers/break_escape/combination_cryptex_unlock_test.rb: 'a combination door opens with the right dials and not with wrong ones' and games_controller.rb#unlock (door branch: success, type, roomData)",
+    "body": { "success": true, "type": "door", "roomData": { "type": "room_office", "connections": {}, "objects": [] } },
+    "varies": ["roomData"]
+  },
+  "first_factor_wrong": {
+    "route": "POST /unlock",
+    "status": 422,
+    "from": "test/controllers/break_escape/network_shares_test.rb:193 (today's refusal, { success: false, message: 'Invalid attempt' })",
+    "body": { "success": false, "message": "Invalid attempt" },
+    "varies": []
+  },
+  "verify_passed": {
+    "route": "POST /mfa/verify",
+    "status": 200,
+    "body": { "success": true, "stepPassed": true },
+    "varies": []
+  },
+  "verify_wrong": {
+    "route": "POST /mfa/verify",
+    "status": 422,
+    "body": { "success": false, "mfaIncorrect": true },
+    "varies": []
+  },
+  "verify_stale_used": {
+    "route": "POST /mfa/verify",
+    "status": 422,
+    "body": { "success": false, "stale": "used" },
+    "varies": []
+  },
+  "verify_stale_expired": {
+    "route": "POST /mfa/verify",
+    "status": 422,
+    "body": { "success": false, "stale": "expired" },
+    "varies": []
+  },
+  "verify_dropped": {
+    "route": "POST /mfa/verify",
+    "status": 422,
+    "body": { "success": false, "expired": true },
+    "varies": []
+  },
+  "verify_closed": {
+    "route": "POST /mfa/verify",
+    "status": 422,
+    "body": { "success": false, "codeLocked": true, "retryIn": 240 },
+    "varies": ["retryIn"]
+  },
+  "prompt_waiting": {
+    "route": "POST /mfa/prompt",
+    "status": 200,
+    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "own_phone" },
+    "varies": ["promptsSent", "waiting"]
+  },
+  "prompt_passed": {
+    "route": "POST /mfa/prompt",
+    "status": 200,
+    "body": { "success": true, "stepPassed": true, "approvedBy": "owner" },
+    "varies": []
+  },
+  "prompt_too_soon": {
+    "route": "POST /mfa/prompt",
+    "status": 422,
+    "body": { "success": false, "tooSoon": true, "retryAfterS": 2 },
+    "varies": ["retryAfterS"]
+  },
+  "prompt_expired": {
+    "route": "POST /mfa/prompt",
+    "status": 422,
+    "body": { "success": false, "expired": true },
+    "varies": []
+  },
+  "approve_passed": {
+    "route": "POST /mfa/approve",
+    "status": 200,
+    "body": { "success": true, "stepPassed": true, "approvedBy": "player" },
+    "varies": []
+  },
+  "approve_cancelled": {
+    "route": "POST /mfa/approve",
+    "status": 422,
+    "body": { "success": false, "cancelled": true },
+    "varies": []
+  },
+  "phone_one_request": {
+    "route": "GET /mfa/phone",
+    "status": 200,
+    "body": { "requests": [ { "targetType": "object", "targetId": "moira_locker", "name": "Moira's locker", "n": 1 } ] },
+    "varies": ["requests.0.n"]
+  },
+  "phone_number_request": {
+    "route": "GET /mfa/phone",
+    "status": 200,
+    "body": { "requests": [ { "targetType": "object", "targetId": "priya_safe", "name": "Priya's safe", "n": 1, "numbers": [31, 47, 82] } ] },
+    "varies": ["requests.0.n", "requests.0.numbers"]
+  },
+  "not_found": {
+    "route": "any /mfa/*",
+    "status": 404,
+    "body": { "success": false, "error": "not found" },
+    "varies": []
+  },
+  "no_phone": {
+    "route": "GET /mfa/phone",
+    "status": 403,
+    "body": { "success": false, "error": "no such phone" },
+    "varies": []
+  },
+  "no_device": {
+    "route": "GET /mfa/device",
+    "status": 403,
+    "body": { "success": false, "error": "no such device" },
+    "varies": []
+  },
+  "generic_refusal": {
+    "route": "POST /mfa/verify | /mfa/prompt | /mfa/approve",
+    "status": 422,
+    "from": "games_controller.rb#mfa_verify guard (the generic 422 the PC form uses)",
+    "body": { "success": false, "message": "Incorrect username or password" },
+    "varies": []
+  }
+}
