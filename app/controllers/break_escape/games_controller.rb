@@ -2,6 +2,10 @@ require 'open3'
 
 module BreakEscape
   class GamesController < ApplicationController
+    # S8b unit 13 (helpdesk): the request route lives in the concern. Included before the
+    # set_format_header re-prepend below so that callback stays first.
+    include BreakEscape::HelpdeskActions
+
     helper PlayerPreferencesHelper
 
     # Phaser.js creates blob-URL web workers (physics, audio) and uses eval
@@ -27,7 +31,8 @@ module BreakEscape
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :mfa_device, :mfa_verify, :mfa_prompt, :mfa_phone, :mfa_approve, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
                                         :log_rows,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send,
+                                        :helpdesk_request] # S8b unit 13
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
