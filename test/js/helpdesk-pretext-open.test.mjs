@@ -247,14 +247,26 @@ test('the binding opens the form once per ask: a replay of the same turn does no
 });
 
 // The phone's contact list reaches the card only for a contact whose NPC carries the callId
-// (phone-chat openJudgedContact), or for a phone item whose minigameData names it. The scenario as
-// authored (unit 15) has neither, so the path "click the contact" lands in a plain chat. Reported to
-// the orchestrator; this test turns green when the scenario is fixed.
-test('the shipped scenario reaches the preparation card from the phone (npc.callId or the phone item\'s minigameData.callId)', { todo: 'scenario gap: it_line has no callId' }, () => {
-    const sc = scenarioOf('test_ops_helpdesk');
-    const npc = Object.values(sc.rooms).flatMap((r) => r.npcs || []).find((n) => n.id === 'it_line');
-    const phone = sc.startItemsInInventory.find((i) => i.type === 'phone' && i.npcIds?.includes('it_line'));
-    assert.ok(npc.callId === 'it_line_call' || phone.minigameData?.callId === 'it_line_call');
+// (phone-chat openJudgedContact). The scenario's it_line NPC carries "it_line_call".
+test('the shipped scenario: the phone contact "IT service line" opens the preparation card, not a plain chat', async () => {
+    const { npc } = setUp('test_ops_helpdesk', 'it_line');
+    assert.equal(npc.callId, 'it_line_call');
+    await import(url('systems/interactions.js'));
+    assert.equal(typeof window.startPretextCall, 'function', 'the real starter is installed');
+    document.body.innerHTML = '';
+    window.inventory = { items: [] }; // the badge refresh reads the inventory
+    FW.startMinigame('phone-chat', null, { phoneId: 'player_phone', npcIds: ['it_line'], requiresKeyboardInput: true });
+    await until(() => document.querySelector('.contact-item'), 'the contact list');
+    const row = document.querySelector('.contact-item[data-npc-id="it_line"]');
+    assert.ok(row, 'the IT service line contact is listed');
+    assert.match(textOf(row), /IT service line/);
+    row.click();
+    await until(() => FW.currentMinigame?._sceneType === 'pretext-prep', 'the preparation card');
+    const card = FW.currentMinigame;
+    assert.equal(card.container.querySelector('.pretext-title').textContent, 'Prepare the call');
+    assert.equal(card.container.querySelector('.pretext-who').textContent, 'Calling: IT service line');
+    assert.equal(card.beginButton.textContent, 'Make the call');
+    endAll();
 });
 
 test.after(() => { try { uninstallSocialInfluence(); } catch (e) { /* none */ } });
