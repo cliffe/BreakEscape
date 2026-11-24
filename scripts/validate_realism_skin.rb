@@ -31,6 +31,11 @@ REALISM_SKIN_ADVISORY = [
   /(?<![A-Za-z0-9])(?:rhsa|dsa|usn|ghsa|zdi)[-_]/i
 ].freeze
 REALISM_SKIN_FRAMEWORK_FIRST = %w[exploit auxiliary post payload payloads encoder nop evasion scanner].freeze
+# A framework module path anywhere in a string: case-insensitive, glued to a label or not, but not the tail of a
+# longer word or path (a letter, digit, underscore or slash before it).
+REALISM_SKIN_PATH = %r{(?<![A-Za-z0-9_/])(?:#{REALISM_SKIN_FRAMEWORK_FIRST.join('|')})(?:/[A-Za-z0-9_.-]+){2,}}i.freeze
+# The one form that is not a real path: the default module of a finding (auxiliary/scanner/<word>/<class>_f<n>).
+REALISM_SKIN_DEFAULT_FORM = %r{\Aauxiliary/scanner/[a-z0-9_]+/[a-z_]+_f\d+\z}.freeze
 
 # The plain form that passes, per text rule (RealismTextRules rule names).
 REALISM_SKIN_PLAIN = {
@@ -105,6 +110,22 @@ def realism_skin_nickname_patterns(nicknames)
   end.compact
 end
 
+# Every string value of the scenario with its path, in document order; keys that start with an underscore
+# (comments) are skipped. Used to read the whole of an ops scenario for real identifiers.
+def realism_skin_all_strings(node, path = '', out = [])
+  case node
+  when String then out << [path, node]
+  when Array then node.each_with_index { |v, i| realism_skin_all_strings(v, "#{path}[#{i}]", out) }
+  when Hash
+    node.each do |k, v|
+      next if k.to_s.start_with?('_')
+
+      realism_skin_all_strings(v, path.empty? ? k.to_s : "#{path}/#{k}", out)
+    end
+  end
+  out
+end
+
 # Real-identifier fragments in a string: advisory forms, nicknames and (unless advisory_only) framework paths.
 def realism_skin_real_ids(text, nick_patterns, advisory_only: false)
   s = text.to_s
@@ -112,12 +133,12 @@ def realism_skin_real_ids(text, nick_patterns, advisory_only: false)
   REALISM_SKIN_ADVISORY.each { |re| (m = s.match(re)) && out << m[0] }
   nick_patterns.each { |re| (m = s.match(re)) && out << m[0] }
   unless advisory_only
-    s.split(/\s+/).each do |raw|
-      t = RealismTextRules.strip(raw)
-      next unless t == t.downcase && t.include?('/')
+    s.scan(REALISM_SKIN_PATH) do
+      frag = Regexp.last_match[0].sub(/[.\-]+\z/, '')
+      parts = frag.split('/', -1)
+      next if parts.length < 3 || parts.any?(&:empty?)
 
-      parts = t.split('/', -1)
-      out << t if parts.length >= 3 && parts.none?(&:empty?) && REALISM_SKIN_FRAMEWORK_FIRST.include?(parts.first)
+      out << frag unless frag =~ REALISM_SKIN_DEFAULT_FORM
     end
   end
   out.uniq
@@ -391,7 +412,14 @@ def check_realism_skin(json_data, catalog_dir: REALISM_CATALOG_DIR, index_path: 
   # ---- Real identifiers in the scenario's other text (ops scenarios only) ----
   linked = findings.select { |f| f[:entry]['realism'].is_a?(String) }
   if uses_services
-    realism_skin_texts(json_data, carriers, findings).each do |where, text, _category|
+    named = realism_skin_texts(json_data, carriers, findings)
+    named.each { |where, text, _category| real_id_issues.call(where, text) }
+    # then every other string of the scenario: technique and item names, signs, notes, file text, NPC names
+    seen = named.map { |_where, text, _category| text }.to_set
+    realism_skin_all_strings(json_data).each do |where, text|
+      next if seen.include?(text)
+
+      seen << text
       real_id_issues.call(where, text)
     end
     linked.each { |f| real_id_issues.call("finding '#{f[:finding_id]}' realism id", f[:entry]['realism']) }

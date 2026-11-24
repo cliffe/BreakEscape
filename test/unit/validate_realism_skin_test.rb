@@ -120,7 +120,7 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
   # ---- ranges and addresses ----
 
   test 'a range outside the private ranges is an error and a private one passes' do
-    s = mut { |m| m['networks']['office']['cli']['range'] = '8.8.8.0/24' }
+    s = mut { |m| m['networks']['office']['cli']['range'] = '203.0.113.0/24' }
     assert_error s, 'outside the three private ranges'
     s = mut { |m| m['networks']['office']['cli']['range'] = '172.32.0.0/24' }
     assert_error s, 'outside the three private ranges'
@@ -291,7 +291,7 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
     {
       '/etc/quill/conf' => 'path', 'See ~/notes for 2.1' => 'path', 'Files in var/log/app' => 'path',
       'Quillbox 2.1 user:pass' => 'credential', 'Login admin/admin works' => 'credential',
-      'password=hunter2xyz' => 'credential', 'Quillbox 2.1 at 8.8.8.8' => 'host',
+      'password=hunter2xyz' => 'credential', 'Quillbox 2.1 at 203.0.113.9' => 'host',
       'Quillbox 2.1 at quill.example.org' => 'host', 'Quillbox 2.1 http://quill' => 'host'
     }.each do |text, rule|
       s = mut { |m| banner!(m, text) }
@@ -355,7 +355,7 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
     assert_error s, "finding 'filesrv.storage.w_one' summary holds 'cve_9999_4242'"
     s = mut { |m| m['objectives'] = [{ 'title' => 'Read CVE-9999-1' }] }
     assert_error s, "objectives[0]/title holds 'CVE-9999-1'"
-    s = mut { |m| m['hosts']['filesrv']['name'] = 'File server' ; m['scenario_brief'] = 'Mentions kb1234567 once.' }
+    s = mut { |m| m['hosts']['filesrv']['name'] = 'File server' ; m['scenario_brief'] = 'Mentions kb9999999 once.' }
     assert_error s, 'scenario_brief holds'
   end
 
@@ -370,6 +370,48 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
     s = mut { |m| m['hosts']['filesrv']['name'] = 'Use auxiliary/scanner/quill/check_it today' }
     assert_error s, "host 'filesrv' name holds 'auxiliary/scanner/quill/check_it'"
     s = mut { |m| m['hosts']['filesrv']['name'] = 'Files/Scans/Reports and exploit/area only' }
+    refute_errors s
+  end
+
+  # Built at run time, so no file holds a whole real-form id or path.
+  def made_path(first = 'exploit', *rest)
+    [first, *(rest.empty? ? %w[area thing probe] : rest)].join('/')
+  end
+
+  test 'a path form glued to a label, capitalised, or after punctuation is an error' do
+    path = made_path
+    ["See module:#{path} for it.", "Text #{path.capitalize} here", "Text #{path.upcase} here", "(#{path})", "see\n#{path}\n"].each do |text|
+      s = mut { |m| m['hosts']['filesrv']['name'] = text }
+      assert(errors(s).any? { |e| e.include?("host 'filesrv' name holds") }, text)
+    end
+    s = mut { |m| svc(m)['weaknesses'][0]['summary'] = "See module:#{path} for it." }
+    assert(errors(s).any? { |e| e.include?("finding 'filesrv.storage.w_one' summary holds") })
+    %w[Files/Scans/Reports my_exploit/a/b a/exploit/b/c].each do |text|
+      s = mut { |m| m['hosts']['filesrv']['name'] = "Look at #{text}" }
+      refute_errors s
+    end
+  end
+
+  test 'technique, item, card, sign, note and file text and NPC names are read for real identifiers' do
+    adv = %w[CVE 9999 12345].join('-')
+    path = made_path
+    cases = {
+      'technique name' => ->(m) { m['techniques'] = { 'tq' => { 'name' => "Read #{adv} first.", 'summary' => 'x' } } },
+      'technique summary' => ->(m) { m['techniques'] = { 'tq' => { 'name' => 'Note', 'summary' => "Needs #{path}" } } },
+      'item name' => ->(m) { m['rooms'] = { 'r' => { 'objects' => [{ 'id' => 'o1', 'type' => 'notes4', 'name' => "Card #{adv}" }] } } },
+      'sign text' => ->(m) { m['rooms'] = { 'r' => { 'objects' => [{ 'id' => 'o1', 'type' => 'notes4', 'name' => 'Sign', 'text' => "Read #{adv} first." }] } } },
+      'file text in a share' => ->(m) { m['rooms'] = { 'r' => { 'objects' => [{ 'id' => 'o1', 'type' => 'pc', 'files' => [{ 'name' => 'a.txt', 'text' => "module:#{path}" }] }] } } },
+      'npc name' => ->(m) { m['rooms'] = { 'r' => { 'npcs' => [{ 'id' => 'n1', 'displayName' => "Pat #{adv}" }] } } }
+    }
+    cases.each do |name, edit|
+      s = mut { |m| edit.call(m) }
+      assert(errors(s).any? { |e| e.include?('holds') && e.include?('real advisory id') }, "#{name} is not read")
+    end
+  end
+
+  test 'a comment key and an underscore key are not read, and a scenario with no services is not read' do
+    adv = %w[CVE 9999 12345].join('-')
+    s = mut { |m| m['_comment'] = "see #{adv}"; m['rooms'] = { 'r' => { 'objects' => [{ 'id' => 'o1', '_note' => adv }] } } }
     refute_errors s
   end
 
@@ -400,8 +442,8 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
   test 'a scenario with no services is not read for real identifiers' do
     s = { 'scenario_brief' => 'Mentions CVE-9999-12345 and auxiliary/scanner/a/b.',
           'objectives' => [{ 'title' => 'Read ms99-999' }],
-          'rooms' => { 'r' => { 'objects' => [{ 'id' => 'mail', 'type' => 'email', 'content' => 'See kb1234567.' }] } },
-          'networks' => { 'office' => { 'name' => 'Office kb1234567' } } }
+          'rooms' => { 'r' => { 'objects' => [{ 'id' => 'mail', 'type' => 'email', 'content' => 'See kb9999999.' }] } },
+          'networks' => { 'office' => { 'name' => 'Office kb9999999' } } }
     refute_errors s
     assert_empty realism_skin_ink_wording(["Ian: The CVE-9999-12345 note.", 'Ian: Nothing more.'], 'x.ink')
   end

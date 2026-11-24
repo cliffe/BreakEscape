@@ -60,6 +60,11 @@ class RealismSeparationTest < ActiveSupport::TestCase
     assert_not_empty real_fragments('uses exploit/spare/world/probe')
     assert_not_empty real_fragments("the #{File.readlines(REALISM_NICKNAMES_PATH).reject { |l| l.start_with?('#') || l.strip.empty? }.first.strip.tr('_', ' ')} issue")
     assert_empty real_fragments('auxiliary/scanner/storage/unpatched_f1')
+    path = %w[exploit area thing probe].join('/')
+    assert_not_empty real_fragments("module:#{path}"), 'glued to a label'
+    assert_not_empty real_fragments(%("text":"module:#{path}")), 'inside JSON with no space after the colon'
+    assert_not_empty real_fragments(path.capitalize), 'capitalised'
+    assert_not_empty real_fragments(path.upcase), 'upper case'
   end
 
   # Test fixtures and the realism tests may hold an advisory-shaped string only when it is plainly invented:
@@ -67,7 +72,7 @@ class RealismSeparationTest < ActiveSupport::TestCase
   INVENTED_ID = /\A(cve|can)[-_](0000|9999)[-_]\d+\z|\Ams(31[-_]\d{3}|\d\d[-_]999)\z|\Akb(0000000|9999999)\z|\A(rhsa|dsa|usn)[-_]9999|\A(ghsa|zdi)[-_](00|99|x)/i.freeze
 
   def uninvented_ids(text)
-    text.scan(/(?<![A-Za-z0-9])(?:(?:cve|can)[-_]\d{4}[-_]\d+|ms\d\d[-_]\d{3}|kb\d{6,7}|(?:rhsa|dsa|usn|ghsa|zdi)[-_][A-Za-z0-9_-]*)/i)
+    text.scan(/(?<![A-Za-z0-9])(?:(?:cve|can)[-_]\d{4}[-_]\d+|ms\d\d[-_]\d{3}|kb\d{6,7}|(?:rhsa|dsa|usn|ghsa|zdi)[-_][A-Za-z0-9][A-Za-z0-9_-]*)/i)
         .reject { |tok| tok =~ INVENTED_ID }
   end
 
@@ -75,7 +80,7 @@ class RealismSeparationTest < ActiveSupport::TestCase
     %w[CVE-0000-11111 cve-9999-1 MS31-901 ms99-999 kb9999999 zdi_99 ZDI-00-0001 GHSA-xxxx RHSA-9999].each do |ok|
       assert_empty uninvented_ids(ok), ok
     end
-    ['MS' + '00-001', 'CVE-' + '2014-0160', 'kb' + '1234567', 'ZDI-' + '14-001'].each do |bad|
+    ['MS' + '00-001', 'CVE-' + '2014-0160', 'kb' + '1234567', %w[ZDI 14-001].join('-')].each do |bad|
       assert_equal [bad], uninvented_ids(bad), bad
     end
   end
