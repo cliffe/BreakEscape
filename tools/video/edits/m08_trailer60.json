@@ -1,0 +1,1383 @@
+{
+ "mission": "m08",
+ "id": "m08_trailer60_v1",
+ "title": "SAFETYNET: Licence to Hack, m08 The Mole 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v1 (2026-11-24): first cut, not rendered. Music Emerald Trigger from 0.775 s (downbeat): quiet open, one loud bar in the title, lifts at 9.6 (Mission 8 card), 17.6 (Interview card), 22.4 (Vector), 38.4 (Before They Vanish card); the close cut lands on the 46.79 hit; steady to the end, fade-out 2 s. Compromises: Be Quiet / Be Quick card dropped (owner question 3: drop first); the archives, strike, PIN-pad and RFID-panel crops run above 2x (3.05x to 4.6x) because those rooms and panels are smaller than a 2x window; the Netherton ending close-up is a 3x crop of his conversation portrait; no t27 ops walk and no t26 phone (panel needs 5x in 16:9).",
+ "music": {
+  "track": "SpyAction/Emerald Trigger.mp3",
+  "analysis": "emerald_trigger_60.json",
+  "start": 0.775,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Emerald Trigger window 75.972 (analysis best: loud from the first bar)",
+   "Hybrid Attack 1 window 0.045 (quiet to 6.0, lifts 6.0/12.9/18.0, hits 23.8/32.9; strongest hits early)",
+   "Noir Shadowline Protocol (owner-questions placeholder; outside the SpyAction/SpyAgro set the edit was cut to; not analysed)"
+  ]
+ },
+ "beat": {
+  "bpm": 150.01,
+  "period": 0.4,
+  "offset": 0,
+  "note": "window times (start 0.775): bars every 1.6 s from 0; bar rms x100: 6 1 3 at 0-4.8 (title), one loud bar 4.8 (20), lift 9.6 (11, Mission 8 card), small lift 17.6 (10, Interview card), big lift 22.4 (14, Vector), 25.6-33.6 at 13-16, lifts 35.2 (19) and 38.4 (18, Vanish card), 40-59 steady 14-19, no natural end. Hits 26.98 (0.88), 29.49, 35.19, 43.19, 46.79 (close cut), 47.19, 47.99. Not judged by ear. Frame-aligned, snap false."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "who the mole is stays hidden: each suspect gets one line only, none of them the accusation outcome; Phantom's 'catch him' fits all three suspects (all men); nothing after mole_identified",
+  "'playtest' player-portrait frames kept out: t13 12-14.5",
+  "t16 from 10.1 (Badge Audit text panel), t17 from 15.8 (locker contents), t20 before 14.0 (cloner UID unblurred) never used",
+  "Nightshade's locker (go-bag) never filmed; the sticky note in the break room is in no crop (t17 crops are the lockpick box and a portrait)",
+  "pad digits are wrong digits, ENTER never pressed; no PIN, password, code or UID in any frame or note",
+  "no interrogation suite, no debrief, no outcome menu, no ending"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_athena",
+   "type": "gameplay",
+   "duration": 3.6,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_athena_hook.trimmed.mkv",
+    "in": 6.25,
+    "out": 9.85
+   },
+   "note": "hook: voice 7.20-9.75 (seg.py at -32 dB; a one-frame click at 5.90 is before the in); 6.25-7.20 silent ATHENA portrait. The bar shows the whole hook+stakes line on every frame, so every aspect is UI-free (bar off) and 9:16/1:1 caption the kept words. Frames 6.25, 7.1, 9.9 viewed (no player name)",
+   "framing": {
+    "16:9": {
+     "cx": 0.61,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "hook line, no suspect named"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "ATHENA",
+     "text": "The leak came from inside this building.",
+     "start": 0.95,
+     "end": 3.5
+    }
+   ]
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 8",
+    "The Mole"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "lobby_athena",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_lobby_athena.trimmed.mkv",
+    "in": 3.0,
+    "out": 4.0
+   },
+   "note": "lobby, player in front of ATHENA's hologram at the desk; camera settled from 3.0 (room x 480-1439, y 132-1079 measured at 3.0-4.0). 16:9 2.05x, 9:16 1.2x, 1:1 2x, all inside the room. Frames 2.6, 2.9, 4.0 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 2.05
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.56,
+     "zoom": 1.2
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room only"
+   }
+  },
+  {
+   "id": "stakes_athena",
+   "type": "gameplay",
+   "duration": 5.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_athena_hook.trimmed.mkv",
+    "in": 10.25,
+    "out": 15.4167
+   },
+   "note": "stakes: 'Director Netherton has three names,' 10.38-12.30, 'and one of them got two of your colleagues killed.' 12.80-15.28. UI-free in every aspect (bar shows the whole line). Frames 10.3 and 15.4 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.61,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "stakes figure (two dead), no suspect named"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "ATHENA",
+     "text": "Director Netherton has three names,",
+     "start": 0.13,
+     "end": 2.05
+    },
+    {
+     "speaker": "ATHENA",
+     "text": "and one of them got two of your colleagues killed.",
+     "start": 2.55,
+     "end": 5.03
+    }
+   ]
+  },
+  {
+   "id": "card_interview",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Interview",
+    "Suspects"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "nightshade",
+   "type": "gameplay",
+   "duration": 2.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_nightshade.trimmed.mkv",
+    "in": 31.9,
+    "out": 34.7
+   },
+   "note": "suspect interview opener (m08_suspect_nightshade.ink:46), voice 32.00-34.50; the bar shows only this line, so 16:9 keeps it. Frames 31.9 and 34.7 viewed (no player name)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "suspect opener, no accusation, no evidence"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent 0x47 'Nightshade'",
+     "text": "There you are. I wondered when they'd send you.",
+     "start": 0.1,
+     "end": 2.6
+    }
+   ]
+  },
+  {
+   "id": "archives_lights",
+   "type": "gameplay",
+   "duration": 1.0667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_archives_pickup.trimmed.mkv",
+    "in": 5.8,
+    "out": 6.8667
+   },
+   "note": "security archives motion lights strike (dark 5.8, lit by 6.5; frames 5.8 and 6.6 viewed at full res). Room x 885-1485, y 475-838 measured: 3.25x/3.05x/3.05x keep every window inside it (HUD and the ops floor above stay out). The Badge Audit text panel opens at 10.1: out 6.87",
+   "framing": {
+    "16:9": {
+     "cx": 0.6172,
+     "cy": 0.608,
+     "zoom": 3.25
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.608,
+     "zoom": 3.05
+    },
+    "1:1": {
+     "cx": 0.6172,
+     "cy": 0.608,
+     "zoom": 3.05
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room and lights only; out long before the audit panel"
+   }
+  },
+  {
+   "id": "vector",
+   "type": "gameplay",
+   "duration": 5.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_vector_audit.trimmed.mkv",
+    "in": 19.3,
+    "out": 24.4667
+   },
+   "note": "voice 19.40-24.35 (whole line); 'playtest' choice echo at 12-14.5 stays out. Bar shows only his line, 16:9 keeps it. Starts on the 22.4 s music lift. Frames 19.3 and 24.45 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.67,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.67,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "suspect alibi line, not the door-audit evidence"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent 0x23 'Vector'",
+     "text": "Eight minutes. I went in for a hardware token from the token cabinet, and I came out again.",
+     "start": 0.1,
+     "end": 5.05
+    }
+   ]
+  },
+  {
+   "id": "phantom",
+   "type": "gameplay",
+   "duration": 3.7667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_phantom_accuse.trimmed.mkv",
+    "in": 22.2,
+    "out": 25.9667
+   },
+   "note": "second sentence only, voice 22.35-25.82 ('I've been hunting this leak...' 18.75-21.52 dropped). Bar shows both sentences, so UI-free in every aspect. 'him': all three suspects are men (scenario.json.erb genders for Vector, Phantom, Nightshade), so the pronoun does not narrow the mole. Frames 22.2 and 25.95 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.61,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.71,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.71,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "suspect reacts to an accusation; pronoun fits all three suspects; no outcome"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent 0x88 'Phantom'",
+     "text": "Accuse me properly, or get out of my way and let one of us catch him.",
+     "start": 0.15,
+     "end": 3.62
+    }
+   ]
+  },
+  {
+   "id": "phantom_strike",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_phantom_accuse.trimmed.mkv",
+    "in": 28.4,
+    "out": 29.4
+   },
+   "note": "the player's strike on Phantom after a wrong accusation: damage numbers, Phantom closing in. Room x 602-1241, y 324-707 measured at 28.4-29.4 (camera still): 3.05x/2.9x/2.9x inside the room; HUD, the red influence label and the HaX toast (top right) stay outside. Muted. Frames 28.4 and 29.4 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.4807,
+     "cy": 0.4773,
+     "zoom": 3.05
+    },
+    "9:16": {
+     "cx": 0.48,
+     "cy": 0.4773,
+     "zoom": 2.9
+    },
+    "1:1": {
+     "cx": 0.48,
+     "cy": 0.4773,
+     "zoom": 2.9
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "fight with a suspect after a wrong accusation; no KO, no identity"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "server_lights",
+   "type": "gameplay",
+   "duration": 1.4,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t24_server_walk_flag.trimmed.mkv",
+    "in": 3.8,
+    "out": 5.2
+   },
+   "note": "player at the server-room door, motion lights fade up 3.7 to 5.2, camera still from 3.8. Crop on the server room x 950-1790, y 400-920: above the Junior Analyst bark bar (y 924 down, x 880-1500). 2.3x/2.1x/2.1x. Frames 3.7, 4.0, 4.3, 5.2 viewed (crop) and 3.6, 4.4 whole",
+   "framing": {
+    "16:9": {
+     "cx": 0.7135,
+     "cy": 0.61,
+     "zoom": 2.3
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.61,
+     "zoom": 2.1
+    },
+    "1:1": {
+     "cx": 0.7135,
+     "cy": 0.61,
+     "zoom": 2.1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room and racks only; no launcher, no flag station"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m08_console_recon_clip.mp4",
+    "in": 0.4,
+    "out": 2.2
+   },
+   "note": "m08 console recon (1920x1080, 2.6 s): nmap -Pn -sV on two ports, then the report with two open services and their versions. Frames 0.4 and 2.15 viewed. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m08/clips",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "placeholder": false,
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "terminal scan output only, no credential or flag"
+   }
+  },
+  {
+   "id": "cyberchef",
+   "type": "gameplay",
+   "duration": 1.7333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23_cyberchef.trimmed.mkv",
+    "in": 8.2,
+    "out": 9.9333
+   },
+   "note": "Crypto Workstation (CyberChef): ROT13 recipe, input and the decoded neutral test sentence in the output pane (panes mark 8.16). The window fills the frame (x 50-1890, y 30-1060): 2x in every aspect, on the recipe edge, input and output. Frames 8.2 and 9.9 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.615,
+     "cy": 0.39,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.63,
+     "cy": 0.39,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "neutral test sentence, no code"
+   }
+  },
+  {
+   "id": "card_vanish",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before They",
+    "Vanish"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.5333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_locker_pick.trimmed.mkv",
+    "in": 6.0,
+    "out": 6.5333
+   },
+   "note": "Phantom's locker lockpick, first pin set at 6.0 (frame 6.2 viewed); box x 559-1359, y 238-840; out long before the contents at 15.8",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2.45
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.499,
+     "zoom": 1.85
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "cr_offduty",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_locker_pick.trimmed.mkv",
+    "in": 20.5,
+    "out": 21.0
+   },
+   "note": "Off-Duty Agent face, narration bar cropped off (frame 21.0 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.68,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_badge_pad",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_lobby_pad_notice.trimmed.mkv",
+    "in": 7.4,
+    "out": 7.9
+   },
+   "note": "Visitor Badge Printer PIN pad, three wrong digits (no ENTER; frame 7.5 viewed); pad x 660-1259, y 22-1057",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.29,
+     "zoom": 3.25
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three wrong digits, not the code",
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_posture",
+   "type": "gameplay",
+   "duration": 0.4667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_lobby_pad_notice.trimmed.mkv",
+    "in": 14.0,
+    "out": 14.4667
+   },
+   "note": "Security Alert Board, 'SECURITY POSTURE: LEVEL RED' (frame 14.5 viewed); panel x 440-1481, y 178-905",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.501,
+     "zoom": 1.55
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "notice text, no code"
+   }
+  },
+  {
+   "id": "cr_julian",
+   "type": "gameplay",
+   "duration": 0.4667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_ops_faces.trimmed.mkv",
+    "in": 10.2,
+    "out": 10.6667
+   },
+   "note": "Julian Sallow face, bar cropped off (frame 10.5 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_key",
+   "type": "gameplay",
+   "duration": 0.4667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_locker_key.trimmed.mkv",
+    "in": 6.5,
+    "out": 6.9667
+   },
+   "note": "Vector's locker key lock, key going in, pins turning (frame 6.6 viewed); box x 559-1359, y 266-868",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.45
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.525,
+     "zoom": 1.85
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "cr_cloner",
+   "type": "gameplay",
+   "duration": 0.4333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_director_closeups.trimmed.mkv",
+    "in": 20.0,
+    "out": 20.4333
+   },
+   "note": "RFID cloner Darkside attack, progress bar (frame 20.0 viewed); the UID row is unblurred only before 14.0. Panel x 762-1180, y 247-812",
+   "framing": {
+    "16:9": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 4.65
+    },
+    "9:16": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 1.95
+    },
+    "1:1": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 2.65
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "attack progress, no card data"
+   }
+  },
+  {
+   "id": "cr_agnieszka",
+   "type": "gameplay",
+   "duration": 0.4333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_ops_faces.trimmed.mkv",
+    "in": 15.2,
+    "out": 15.6333
+   },
+   "note": "Agnieszka Duda face, bar cropped off (frame 15.5 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.695,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.695,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.695,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_safe_pad",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_director_closeups.trimmed.mkv",
+    "in": 7.4,
+    "out": 7.8
+   },
+   "note": "Director's Safe PIN pad, three wrong digits (no ENTER; frame 7.5 viewed); same pad geometry as the badge pad",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.29,
+     "zoom": 3.25
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.4,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three wrong digits, not the code",
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_analyst",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_ops_faces.trimmed.mkv",
+    "in": 4.8,
+    "out": 5.2
+   },
+   "note": "Junior Analyst face, bar cropped off (frame 5.0 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.69,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.32,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.69,
+     "cy": 0.26,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_access",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_rfid_reader.trimmed.mkv",
+    "in": 9.3,
+    "out": 9.7
+   },
+   "note": "RFID reader 'Access Granted' tick (frame 9.3 viewed; 9.2-10.3); same panel geometry as the cloner",
+   "framing": {
+    "16:9": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 4.65
+    },
+    "9:16": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 1.95
+    },
+    "1:1": {
+     "cx": 0.506,
+     "cy": 0.49,
+     "zoom": 2.65
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "access granted, no card data"
+   }
+  },
+  {
+   "id": "cr_standdown",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_ops_closeups.trimmed.mkv",
+    "in": 13.6,
+    "out": 14.0
+   },
+   "note": "Operations Status Board, every team 'STAND DOWN' (frame 14.5 viewed); same board geometry",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.501,
+     "zoom": 1.55
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "board text, no code"
+   }
+  },
+  {
+   "id": "ending_wide",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_netherton_ending.trimmed.mkv",
+    "in": 62.15,
+    "out": 63.65
+   },
+   "note": "J-cut pre 1.7 (audio from 60.45; voice 60.55-62.67) under the crescendo, picture in on 'SAFETYNET'. Bar shows the whole line, so UI-free in every aspect. 3-frame hit on the cut in the silence 62.67-63.90. Frames 62.15 and 63.65 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.61,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.405,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.69,
+     "cy": 0.39,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.7,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "mission premise line, no suspect named"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "There is a mole in SAFETYNET.",
+     "start": -1.6,
+     "end": 0.52
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "ending_close",
+   "type": "gameplay",
+   "duration": 5.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_netherton_ending.trimmed.mkv",
+    "in": 63.65,
+    "out": 68.85
+   },
+   "note": "hard cut in the silence to a 3x face crop (bar off), on the 46.79 s music hit; voice 63.90-68.80; out 68.85 (frame viewed, still the portrait)",
+   "framing": {
+    "16:9": {
+     "cx": 0.69,
+     "cy": 0.2,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.3,
+     "zoom": 1.8
+    },
+    "1:1": {
+     "cx": 0.69,
+     "cy": 0.25,
+     "zoom": 2.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "premise line, no suspect named, no outcome"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "I am reasonably certain they are within a hundred metres of where you are standing.",
+     "start": 0.25,
+     "end": 5.15
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}
