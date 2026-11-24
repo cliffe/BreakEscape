@@ -35,11 +35,11 @@ module RealismTextRules
 
   # Words that make a line read as a step or a request (R1-S4). The list cannot be complete: a human review of
   # every new catalog entry is still required (docs/ACCESS_AND_NETWORKS.md, N16).
-  INSTRUCTION_VERBS = %w[send request post get put delete run type enter set supply craft inject upload execute trigger bypass overflow use submit open append log visit call].freeze
-  # A verb reads as a step only when an article, a pronoun, `to`, `in` or a number word follows it (R2-5): `Run the check`,
-  # `Post to the form`, `Log in with`; not `Run level 3 reached`, `Upload limit 20 MB`, `Delete protection on`.
-  STEP_NEXT = '(?:(?:a|an|the|this|that|these|those|it|them|to|in|one|two|three|four|five|six|ten|any|some|your|my|our|their)\\b|\\S*[/?=]\\S*|\\S+\\.[A-Za-z]{2,4}\\b)'
-  STEP_LEAD = '(?:please|first|next|now|then|you\s+can|you\s+should)'
+  INSTRUCTION_VERBS = %w[send request post get put delete run type enter set supply craft inject upload execute trigger bypass overflow use submit open append log visit call try leave give browse go].freeze
+  # A verb reads as a step when any word follows it, unless that word is a state noun (R3-1): `Run level 3 reached`,
+  # `Upload limit 20 MB`, `Delete protection on` pass; `Send long name`, `Run check twice`, `Type 2 device` do not.
+  STEP_NEXT = '(?!(?:level|queue|limit|protection|permission|warnings|pending|mode|count|size|key)\\b)\\S'
+  STEP_LEAD = '(?:please|first|next|now|then|just|simply|must|can|you\s+can|you\s+should|you\s+must)'
   INSTRUCTION_WORDS = %w[payload payloads shellcode].freeze
   SENSITIVE_DIRS = %w[etc proc root var tmp bin sbin usr sys].freeze
   # Ordinary words too (`Dev/test build`, `Boot/recovery mode`): a request form only when the right side has a dot

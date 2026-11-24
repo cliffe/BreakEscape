@@ -406,7 +406,23 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       'Use a blank session on the admin page' => 'instruction', 'Submit a long name to the form' => 'instruction',
       'Open the admin page with no session' => 'instruction', 'Append two dots to the name' => 'instruction',
       'Log in with a blank password' => 'instruction', 'api/login takes a long name' => 'request_form',
-      'cgi-bin/status shows it' => 'request_form', 'id=1 shows error' => 'request_form'
+      'cgi-bin/status shows it' => 'request_form', 'id=1 shows error' => 'request_form',
+      # R3-1: steps written without an article
+      'Send oversized name field' => 'instruction', 'Send 300 characters in the name' => 'instruction',
+      'Run check twice' => 'instruction', 'Request admin page with blank session' => 'instruction',
+      'Enter 300 letters as name' => 'instruction', 'Upload large file' => 'instruction',
+      'Set name longer than 64' => 'instruction', 'Type admin as user' => 'instruction',
+      'Supply empty token' => 'instruction', 'Bypass login with blank name' => 'instruction',
+      'Overflow name field' => 'instruction', 'Inject long name' => 'instruction',
+      'Trigger fault with long name' => 'instruction', 'Then send long name' => 'instruction',
+      'State: send long name' => 'instruction', 'Delete session cookie' => 'instruction',
+      'Put long name in field' => 'instruction', 'Post long name to form' => 'instruction',
+      'Craft long name' => 'instruction', 'Execute check as guest' => 'instruction',
+      'Use blank password' => 'instruction', 'Submit long name twice' => 'instruction',
+      'Visit admin page' => 'instruction', 'Open admin page with no session' => 'instruction',
+      'Append dots to name' => 'instruction', 'Type 2 device' => 'instruction', 'Set 3 of 5 loaded' => 'instruction',
+      'Try a blank password' => 'instruction', 'Leave the password blank' => 'instruction',
+      'Just send a long name' => 'instruction', 'You must send a long name' => 'instruction'
     }.each do |text, rule|
       assert_includes rules(text), rule, text
     end
@@ -418,8 +434,7 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
      'TCP/IP', 'HTTP/1.1', 'Users/groups listed', 'Release line 2.4.x is behind', 'FileHold 3.2 ready, e.g. for guests',
      'Server time 14:02', 'Server time 14:02:30',
      # R2-5: honest state lines the first rules refused
-     'Run level 3 reached', 'Request queue is long', 'Upload limit 20 MB', 'State: upload limit is 20 MB', 'Type 2 device',
-     'Set 3 of 5 loaded', 'Send queue empty', 'Delete protection on', 'Status: delete pending', 'Execute permission: off',
+     'Run level 3 reached', 'Request queue is long', 'Upload limit 20 MB', 'State: upload limit is 20 MB', 'Send queue empty', 'Delete protection on', 'Status: delete pending', 'Execute permission: off',
      'Trigger warnings: none', 'Quillbox/1.x ready', 'HTTP/1.x only', 'SMB/v2.x enabled', 'Opt/out recorded',
      'Boot/recovery mode'].each { |text| assert_empty rules(text), text }
   end
