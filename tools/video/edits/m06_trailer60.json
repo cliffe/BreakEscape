@@ -1,6 +1,6 @@
 {
  "mission": "m06",
- "id": "m06_trailer60_v1",
+ "id": "m06_trailer60_v2",
  "title": "SAFETYNET: Licence to Hack, m06 Follow the Money 60 s trailer",
  "fps": 30,
  "length": 60,
@@ -226,7 +226,7 @@
     "in": 1.6,
     "out": 2.4333
    },
-   "note": "player crosses the security checkpoint past the guard's cone; the room drifts with the camera (x 0.26-0.75 at 1.6 to 0.36-0.86 at 2.3), crop centred on the drift. Length set so the tracing card lands on the beat at 29.57",
+   "note": "player crosses the security checkpoint past the guard's cone; the room drifts with the camera (x 0.26-0.75 at 1.6 to 0.36-0.86 at 2.3), crop centred on the drift. Length set so the tracing card lands on the beat at 29.57 v2: 9:16 at 2x (was 0.9, sat small).",
    "framing": {
     "16:9": {
      "cx": 0.56,
@@ -236,7 +236,7 @@
     "9:16": {
      "cx": 0.56,
      "cy": 0.58,
-     "zoom": 0.9
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.56,
@@ -412,7 +412,7 @@
     "in": 12.9,
     "out": 16.4
    },
-   "note": "tracer board: deposit picked 14.0, green match 16.4 (Matched 1/3); slot labels mosaicked in the take; board spans x 0.17-0.83: 9:16 zooms out to fit (0.75); 1:1 cannot go below 1.0, so the board edges (x <0.22, >0.78) are cropped there",
+   "note": "tracer board: deposit picked 14.0, green match 16.4 (Matched 1/3); slot labels mosaicked in the take; board spans x 0.17-0.83: 9:16 zooms out to fit (0.75); 1:1 cannot go below 1.0, so the board edges (x <0.22, >0.78) are cropped there v2: 9:16 and 1:1 centred on the deposit column and the matched outflow (x 0.37-0.81), left column off.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -420,12 +420,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.59,
      "cy": 0.5,
-     "zoom": 0.75
+     "zoom": 0.7
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.59,
      "cy": 0.5,
      "zoom": 1.0
     }
