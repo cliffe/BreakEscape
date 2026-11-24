@@ -2,7 +2,7 @@ require 'test_helper'
 
 module BreakEscape
   # S8c unit 17: the NPC grant on a gated door.
-  class LockStepDoorsTest < ActiveSupport::TestCase
+  class LockStepDoorsModelTest < ActiveSupport::TestCase
     def scenario(gated: true)
       vault = { 'type' => 'room_office', 'locked' => true, 'lockType' => 'pin', 'requires' => '9999' }
       vault['secondStep'] = { 'kind' => 'push', 'owner' => 'amy' } if gated
