@@ -333,9 +333,11 @@ Core N13, N14, N15 (S1 to S3), the log plan L1a, L1b, L2a, L2b and L3, the post-
 
 | Stage | Branch | Worktree | Ports | Round now | Open findings |
 |---|---|---|---|---|---|
-| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | `/data/be-ops-logs` | not recorded in the sources: take them from the stage brief or ask | scanner R2 and client R1 reviewed; R2-L1 and R2-L2 fixed (`df61c632b`, `beb18da47`) | scanner R2 had 2 majors (both fixed, unconfirmed) and 6 minors; client R1 had 3 majors and 8 minors: check that each has a fix commit before the delta round. Beat 16 (a borrow) is not reachable by clicking; the relay step-up card was not checked |
-| S8b (helpdesk, H1 and H2) | `ops-helpdesk` | `/data/be-ops-build` | not recorded: as above | R3 done, playtest 2 done; R3 core fixes `a56f443ae` unconfirmed | core R3 had 1 major (fixed, unconfirmed) and 3 minors; scanner R3 has 3 minors open (the `;` form of an owner named twice among them); the audit log showing four FAIL rows for three failed sign-ins has not been looked at |
-| S8c (second-step locks, G1 to G4) | `ops-lock2` | `/data/be-ops-skin` | not recorded: as above | R2 done (server 0B 0M 8m, client 0B 1M 7m, scanner 0B 2M 3m); client R2 fixes in (`341406b26`, `2980e7105`) | scanner majors open: the room half of the lock-below-a-closed-container rule is not done, and gated room NPCs raise a new false alarm; the server minors are open; then the delta round |
+| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | `/data/be-ops-logs` | 3014-3016 | scanner R2 and client R1 reviewed; R2-L1 and R2-L2 fixed (`df61c632b`, `beb18da47`) | scanner R2 had 2 majors (both fixed, unconfirmed) and 6 minors; client R1 had 3 majors and 8 minors: check that each has a fix commit before the delta round. Beat 16 (a borrow) is not reachable by clicking; the relay step-up card was not checked |
+| S8b (helpdesk, H1 and H2) | `ops-helpdesk` | `/data/be-ops-build` | 3011-3013 | R3 done, playtest 2 done; R3 core fixes `a56f443ae` unconfirmed | core R3 had 1 major (fixed, unconfirmed) and 3 minors; scanner R3 has 3 minors open (the `;` form of an owner named twice among them); the audit log's fourth FAIL row is explained (beat 5's old-password refusal merged into beat 1's row by the ops log), PLAYTEST says so |
+| S8c (second-step locks, G1 to G4) | `ops-lock2` | `/data/be-ops-skin` | 3017-3018 | R2 done (server 0B 0M 8m, client 0B 1M 7m, scanner 0B 2M 3m); client R2 fixes in (`341406b26`, `2980e7105`) | scanner majors open: the room half of the lock-below-a-closed-container rule is not done, and gated room NPCs raise a new false alarm; the server minors are open; then the delta round |
+
+Train tree: `/data/be-ops-core` (detached), port 3021. Follow-up tree `/data/be-ops-follow`: ports 3022-3024. Never 3000, 3001, 3002, 3085, 3086.
 
 Each needs: finish the open fixes, a delta review, a Haiku playtest, merge main in, a train, landing as below.
 
@@ -365,17 +367,25 @@ Opus 5.5 for planning, design and first reviews. Sonnet for fixers, clear builds
 
 ### Decisions taken by the orchestrator on reviewers' owner questions (the owner may overturn any)
 
-- S5bc scanner: a proved typed sign-in success earns that account's username; the server adds `pcId` to the collect answer.
-- S5a open question O1 (relay session stepping up to admin): builders build "no".
-- S5bc ruling A: a governed USB port can name its PC, and an admin session there lets a stick be planted that the policy would refuse.
-- S8c G4 (refusing a hand-built request for a carried container that has left the player): in force for gated scenarios only; inert elsewhere, so shipped scenarios are unchanged.
-- S8c scanner: a prompt or approve refusal accepts any push-kind gate (departure from the reviewer's wording, judged sound in R2).
-- S8c: a takeable room object that has left the player stays in reach (documented and pinned).
-- S8a scanner: a sign-out then sign-in at one PC with no reload cannot be cleared by entries until the recorder tags the PC (the follow-up Track C is the fix).
+The owner's own answers (decisions form, 2026-11-24) include: S5A-1 an admin session at a governed PC can override the USB policy through its port (`portOf`, built in S5bc unit 11); S5A-2 a relayed session has the relayed account's rights (unit 02); S5A-3 a validator warning for unopenable containers (follow-up Track B). The orchestrator then decided:
+
+- S8c: a carried locked container gets an "Unlock" entry in the inventory tray menu (rather than making the briefcase not droppable).
+- S8c: the answer that opens a gated lock names it (`targetType`, `targetId`), for gated locks only.
+- S8c: G4 (refusing a hand-built request for a carried container that has left the player) is in force for gated scenarios only; inert elsewhere, so shipped scenarios are unchanged.
+- S8c: a pane that passes on its first answer says nothing extra; the lock opening is the feedback.
+- S8c scanner: the open of a locked room with no objects and no NPCs is not judged (nothing in it to protect); a prompt or approve refusal accepts any push-kind gate (judged sound in R2).
+- S8c and S8b scanners: telling a cancelled PC step from a cancelled lock step, and the stop rule's dependence on playtest order, wait for the recorder tags (Track C) and the later scanner hardening stage.
+- S8b: the reset password appears at once as a "Reset" entry in the capture log's Sign-ins list and fills on the sign-in screen.
+- S8b: unknown usernames behave exactly as real accounts; try entries lapse after five quiet minutes, a live entry is never dropped, the cap is per desk, and a full desk judges nobody (R3-CORE1).
+- S8b: sticky notes and overheard logins keep giving the old password after a reset; it is refused at sign-in. An account's old cracked entry stays listed after a reset and is refused likewise.
+- S8b: a form send that gets no answer times out after 15 seconds; Close and Send work again.
+- S8b scanner: the helpdesk rules may only make the S8a rules stricter (turn checking on, mark pairs unknown), never excuse an answer.
+- S5bc scanner: a proved typed sign-in success earns that account's username; nothing else does. The server adds `pcId` to the collect answer.
+- S8a scanner: a sign-out then sign-in at one PC with no reload cannot be cleared by entries until the recorder tags the PC (Track C, then the hardening stage).
 
 ### Recorded limits each stage will land with
 
-- S5b/S5c: two borrowers at one PC share the done proof; a relay admin is proved by its desktop row alone; admin log rows are earned by any earlier admin session at that PC (no timing); a harvested hash row is flagged when its collect is in an earlier capture file or its body was lost.
+- S5b/S5c: two borrowers at one PC share the done proof; admin log rows are earned by any earlier admin session at that PC (no timing); a harvested hash row is flagged when its collect is in an earlier capture file or its body was lost.
 - S8b: Close is held until the desk answers (a request that never answers keeps the form open); the stop rule depends on playtest order.
 - S8c: the test bridge's tray hint still lists only "Drop here" and "Examine", and the carried-item click listener is a pinned copy of two lines of `inventory.js`; the takeable-object limit above.
 - S8a (landed): the sign-out and sign-in scanner limit above.
