@@ -11,10 +11,9 @@ and `.claude/skills/playtest-scenario/SKILL.md`. No other file under `.claude/` 
 ## Decisions (settled; do not reopen)
 
 1. **Train lock.** `tools/playtest/train-check.sh` finds the shared test lock on old and new git; `TESTS_LOCK` still overrides.
-2. **`tools/wt-clean.sh`** is not approved for change. Leave it.
+2. **Not approved, leave alone:** `tools/wt-clean.sh`. **Not now:** the code device sprite.
 3. **Recorder tags.** The recorder writes the PC id on sign-in, sign-out and resume rows and the hash id on crack rows, as tags. No request bodies.
 4. **The leak scanner is not changed.** `tools/playtest/lib/access_leak_scanner.rb` and `tools/playtest/access-leak-check.rb` stay byte for byte as they are. Reading the tags is a later hardening stage.
-5. **Not now:** the code device sprite.
 
 ## What the code does today
 
@@ -93,8 +92,7 @@ environment unless the case sets them):
    newer than the test's start.
 7. The source no longer contains `--path-format`; no output line holds a newline inside a path or starts with `-`.
 8. Dry mode leaves no lock file and starts nothing: the temp folder holds no `summary.txt`.
-Remove the temp folders in `after`. The test must not run a real train, start a server or touch port 3000,
-3001, 3002, 3085 or 3086.
+Remove the temp folders in `after`. The test must not run a real train, start a server or touch a reserved port.
 
 **Stays unchanged:** `test/js/shell-x-check.test.mjs` passes as before; `bash -n tools/playtest/train-check.sh` is clean.
 
@@ -204,8 +202,7 @@ says. Do not add the tag to any command example. Under 12 added lines. UK Englis
   one, stop and report.
 - No scenario, catalogue, validator, server or client game file is edited. `bin/ops-golden-compare` (never
   under flock) must be clean at the end of the wave; the orchestrator runs it once after all four commits.
-- No exploit content. Test ids are plain made-up names (`front_pc`, `hash_a`).
-- Bulk scratch goes under `/data/tmp/scratch/follow-c<unit>/` and is removed at the end.
+- No exploit content; test ids are plain made-up names (`front_pc`, `hash_a`). Bulk scratch goes under `/data/tmp/scratch/follow-c<unit>/` and is removed at the end.
 
 ## Click path
 
