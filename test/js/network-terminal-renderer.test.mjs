@@ -435,3 +435,29 @@ test('search numbers and use numbers are one list: use <shown number> picks that
     v2.networks = [extra, ...v2.networks];
     assert.deepEqual(FW.moduleList(v2).map(m => [m.number, m.finding.id]), GR.modulesOf(v2).map(m => [m.number, m.findingId]));
 });
+
+test('R1-C7: a redraw keeps focus on the quick command that had it; the log is silent until its first fill is drawn', () => {
+    const t = setup(viewOf('swept_hosts'));
+    const btns = t.buttons().filter(b => !b.disabled);
+    assert.ok(btns.length >= 2);
+    const target = btns[btns.length - 1];
+    const want = attrKey(target);
+    target.focus();
+    assert.equal(document.activeElement, target);
+    t.draw();
+    assert.notEqual(document.activeElement, t.input, 'focus did not move to the prompt');
+    assert.equal(attrKey(document.activeElement), want);
+    // a command that is gone: the prompt takes the focus
+    t.buttons().filter(b => !b.disabled)[0].focus();
+    t.view = viewOf('plain');
+    t.draw();
+    assert.ok(document.activeElement === t.input || t.root.contains(document.activeElement));
+    // the first fill comes before the log speaks
+    const fresh = document.createElement('div');
+    document.body.appendChild(fresh);
+    const r = new TerminalRenderer();
+    r.mount(fresh, t.ctx);
+    assert.equal(fresh.querySelector('[role="log"]').getAttribute('aria-live'), 'off');
+    r.render(t.view, [], { footholdId: t.footholdId });
+    assert.equal(fresh.querySelector('[role="log"]').getAttribute('aria-live'), 'polite');
+});

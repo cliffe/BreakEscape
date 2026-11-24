@@ -93,7 +93,7 @@ export class TerminalRenderer {
         root.textContent = '';
         this.wrap = make('div', 'network-term');
         const body = make('div', 'network-term-body');
-        this.logEl = make('div', 'network-term-log pixel-scroll', { role: 'log', 'aria-live': 'polite' });
+        this.logEl = make('div', 'network-term-log pixel-scroll', { role: 'log', 'aria-live': 'off' });
         this.stripEl = make('div', 'network-term-strip');
         this.toggle = make('button', 'minigame-button network-term-fold', { type: 'button', 'aria-expanded': 'true', 'aria-controls': `${this._id}-list` });
         this.toggle.textContent = STRIP_LABEL;
@@ -155,11 +155,29 @@ export class TerminalRenderer {
         if (scene) this.scene = scene;
         if (!this.root || !this.wrap) return;
         if (this.useStep && !techniqueList(this.view).some(t => t.id === this.useStep)) this.useStep = null;
-        const hadFocus = !!this.listEl.contains(this.root.ownerDocument.activeElement);
+        const active = this.root.ownerDocument.activeElement;
+        const hadFocus = !!this.listEl.contains(active);
+        const focusKey = hadFocus ? this._focusKey(active) : null;
         this._drawStrip();
         this._drawMark();
         this._syncLog();
-        if (hadFocus) this.focusPrompt();
+        // The first fill is silent: the lines already on screen are not read out again after a switch or a return
+        if (this.logEl.getAttribute('aria-live') !== 'polite') this.logEl.setAttribute('aria-live', 'polite');
+        if (hadFocus) {
+            // keep a keyboard user on the command they were on, when the redraw still has it
+            const again = focusKey ? [...this.listEl.querySelectorAll('button')].find(b => !b.disabled && this._focusKey(b) === focusKey) : null;
+            if (again && again.focus) { again.focus(); this._soft(this.input); } else this.focusPrompt();
+        }
+    }
+
+    /** What names a quick command across a redraw: its action and the Panels row attributes of its wrapper. */
+    _focusKey(el) {
+        const btn = el?.closest?.('button');
+        if (!btn) return null;
+        const wrap = btn.closest('.network-term-cmd');
+        const own = btn.hasAttribute('data-unplug') ? 'unplug' : (btn.getAttribute('data-action') || (btn.classList.contains('network-term-back') ? 'back' : ''));
+        const attrs = wrap ? [...wrap.attributes].filter(a => a.name.startsWith('data-')).map(a => `${a.name}=${a.value}`).sort() : [];
+        return [own, ...attrs].join('|');
     }
 
     showResult(offer, answer, scene) {

@@ -738,8 +738,14 @@ export class NetworkViewMinigame extends MinigameScene {
             try { storage = window.localStorage; } catch (e) { storage = null; }
             rememberPress(name, { urlValue: url, storage });
         } catch (e) { console.warn('[network-view] remembering the skin threw', e); }
+        const was = this.mounted;
         this.skin = name;
         if (this.status === 'ready' && this.view) this.render();
+        // A switch made from the Terminal's prompt removed the focused input: the switch takes the focus
+        if (was === 'cli' && this.mounted === 'gui') {
+            const ae = document.activeElement;
+            if (!ae || ae === document.body || !this.container?.contains?.(ae)) this.skinSwitch?.focus?.();
+        }
         return true;
     }
 

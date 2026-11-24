@@ -342,3 +342,15 @@ test('R1-C5: a ; line with local output and a move writes its echo first, once',
     assert.ok(t.record().calls.length >= 1, 'the move was sent');
     t.end();
 });
+
+test('R1-C7: a typed panels line leaves the focus on the switch, not on the page body', async () => {
+    const h = await mount(opsBody(), { params: { skin: 'cli' } });
+    const input = q(h, '.network-term-input');
+    input.focus();
+    input.value = 'panels';
+    input.form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+    assert.equal(h.view().getTestState().skin, 'gui');
+    assert.equal(document.activeElement, switchBtn(h));
+    h.end();
+});
