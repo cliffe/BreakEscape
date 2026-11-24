@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Rebuild anjali_rao_visemes.png (+ .json): before_sheet.png with teeth, small_open,
-medium_open and wide_open replaced by the picked PixelLab inpaint candidates,
+medium_open and round replaced by the picked PixelLab inpaint candidates,
 pasted onto rest inside MASK only, and only where rest is opaque. round and blink
-are kept from before_sheet.png.
+come from before_sheet.png (wide_open = its round frame).
 Usage: python3 apply_visemes.py [out.png]   (default: the game sheet; also writes the .json beside it)"""
 import sys, json, pathlib
 from PIL import Image
@@ -11,14 +11,17 @@ HERE = pathlib.Path(__file__).parent
 GAME = HERE.parents[2].parent / 'public/break_escape/assets/characters/anjali_rao_visemes.png'
 MASK = (52, 25, 70, 37)  # x0,y0,x1,y1 inclusive (19x13)
 PICKS = {'teeth': 'teeth_s12', 'small_open': 'small_s23',
-         'medium_open': 'med_s32', 'wide_open': 'wide_s43'}
+         'medium_open': 'med_s32', 'round': 'wide_s42'}
+# frames copied from another slot of before_sheet.png (owner, 24 Nov: wide_s43 too wide; the old round frame becomes wide_open)
+FROM_BEFORE = {'wide_open': 'round'}
 ORDER = ['rest', 'teeth', 'round', 'small_open', 'medium_open', 'wide_open', 'blink']
 SOURCE = ('pixellab /inpaint-image-pro-flash on the rest frame, rectangle mask x52-70 y25-37 (128px), '
           'one generation per call; picks pasted onto rest inside the mask, opaque pixels only: '
           + ', '.join(f'{k}:{v}' for k, v in PICKS.items())
-          + '; round and blink kept from the earlier sheet (round: talk-frame lower face; blink: inpaint i01, eyes mask)')
+          + '; wide_open is the earlier sheet\'s round frame (talk-frame lower face, owner pick 24 Nov); blink kept from the earlier sheet (inpaint i01, eyes mask)')
 sheet = np.array(Image.open(HERE / 'before_sheet.png').convert('RGBA'))
 rest = sheet[:, :128].copy()
+before = sheet.copy()
 x0, y0, x1, y1 = MASK
 m = np.zeros(rest.shape[:2], bool); m[y0:y1+1, x0:x1+1] = True
 for name, cand in PICKS.items():
@@ -28,6 +31,9 @@ for name, cand in PICKS.items():
     out[sel] = c[sel]
     i = ORDER.index(name)
     sheet[:, i*128:(i+1)*128] = out
+for name, src in FROM_BEFORE.items():
+    i, j = ORDER.index(name), ORDER.index(src)
+    sheet[:, i*128:(i+1)*128] = before[:, j*128:(j+1)*128]
 dest = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else GAME
 Image.fromarray(sheet).save(dest)
 meta = json.load(open(HERE / 'before_sheet.json'))

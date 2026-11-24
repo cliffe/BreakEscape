@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /inpaint-image-pro-flash on the rest frame, rectangle mask x52-70 y25-37 (128px), one generation per call; picks pasted onto rest inside the mask, opaque pixels only: teeth:teeth_s12, small_open:small_s23, medium_open:med_s32, wide_open:wide_s43; round and blink kept from the earlier sheet (round: talk-frame lower face; blink: inpaint i01, eyes mask)"
+  "source": "pixellab /inpaint-image-pro-flash on the rest frame, rectangle mask x52-70 y25-37 (128px), one generation per call; picks pasted onto rest inside the mask, opaque pixels only: teeth:teeth_s12, small_open:small_s23, medium_open:med_s32, round:wide_s42; wide_open is the earlier sheet's round frame (talk-frame lower face, owner pick 24 Nov); blink kept from the earlier sheet (inpaint i01, eyes mask)"
 }

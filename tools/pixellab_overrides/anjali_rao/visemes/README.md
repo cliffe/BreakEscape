@@ -19,3 +19,6 @@ teeth `teeth_s12`, small_open `small_s23`, medium_open `med_s32`, wide_open `wid
 - medium: "relaxed ah, twice the height of closed lips, upper teeth visible" (31); "about three pixels tall" (32, picked).
 - wide: "wide ah, tall open mouth" (41, rejected: mouth ran down to the chin); "oh, about four pixels tall" (42); "ah, five pixels tall, as wide as the lips" (43, picked).
 No candidate had off-palette (bluish) pixels.
+
+## Owner change, 24 Nov
+wide_s43 was too wide. `round` is now candidate `wide_s42`, and `wide_open` is the earlier sheet's round frame (kept, darker). No new generations. apply_visemes.py: PICKS round=wide_s42, FROM_BEFORE wide_open=round. Out-of-mask check is 0 for every mouth frame.
