@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ghost_voice_fx.sh: Ghost's trailer voice for the m02 60 s trailer (owner's recipe, 2026-11-24).
 #
-# The game bakes its own 'voice-distortion' FX into t17_ghost_call (dry voice plus an octave layer,
-# tts-manager.js). For the trailer the Money line is rebuilt from the clean TTS clip instead:
+# The game's Ghost voice FX is baked into tts_cache (bake.py) and, in t17_ghost_call, was the run-time
+# 'voice-distortion' (dry voice plus an octave layer, tts-manager.js). For the trailer the Money line is rebuilt from the clean TTS clip instead:
 #   main voice  : rubberband pitch MAIN_ST semitones (MAIN_FORMANT: preserved or shifted)
 #   sub layer   : -12 semitones with the formant moved SUB_FORMANT semitones, SUB_DB under the main
 #                 (asetrate moves pitch and formant together by SUB_FORMANT, then rubberband with
@@ -23,8 +23,16 @@
 # Defaults are the chosen chain (variant B). Runs under nice -n 19.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd); repo=$(cd "$here/../../../.." && pwd)
-CLEAN=${CLEAN:-$repo/tts_cache/m02_ransomed_trust/ca91a93fd21bd742409fc49bce44296e.mp3}
-[ -f "$CLEAN" ] || CLEAN=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/tts_cache/m02_ransomed_trust/ca91a93fd21bd742409fc49bce44296e.mp3
+# The game bakes the FX into tts_cache/<scenario>/<key>.mp3 (tools/voice_fx/bake.py); the clean take is
+# kept in clean/. Always read clean/, or the voice is processed twice. A clip with no clean/ copy is
+# still unbaked (pre-bake checkout), so the top-level file is the clean take then.
+key=ca91a93fd21bd742409fc49bce44296e
+for d in "$repo" /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape; do
+  c=$d/tts_cache/m02_ransomed_trust
+  if [ -f "$c/clean/$key.mp3" ]; then CLEAN=${CLEAN:-$c/clean/$key.mp3}; break; fi
+done
+CLEAN=${CLEAN:-$repo/tts_cache/m02_ransomed_trust/$key.mp3}
+[ -f "$CLEAN" ] || CLEAN=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/tts_cache/m02_ransomed_trust/$key.mp3
 MAIN_ST=${MAIN_ST:--2.5}; MAIN_FORMANT=${MAIN_FORMANT:-preserved}
 SUB_FORMANT=${SUB_FORMANT:--3}; SUB_DB=${SUB_DB:--12}
 DRIVE_WET=${DRIVE_WET:-0.20}; DRIVE_DB=${DRIVE_DB:-14}; CRUSH_WET=${CRUSH_WET:-0}; CRUSH_BITS=${CRUSH_BITS:-7}

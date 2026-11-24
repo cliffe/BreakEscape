@@ -9,5 +9,13 @@
   "scenario": "m07_architects_gambit",
   "source": "generate",
   "generated": "2026-11-13",
-  "recorded_at": "2026-11-13T00:18:06Z"
+  "recorded_at": "2026-11-13T00:18:06Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/7b89562385762b9a354d427bf149c3f8.mp3",
+    "clean_md5": "3ee5aa3b94cfe8eab651ac52dba7731d",
+    "baked_md5": "e9635e6f7976b246a552952a98df0b27",
+    "baked": "2026-11-24"
+  }
 }

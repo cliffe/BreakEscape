@@ -1,10 +1,10 @@
 {
  "mission": "m07",
- "id": "m07_trailer60_v1",
+ "id": "m07_trailer60_v2",
  "title": "SAFETYNET: Licence to Hack, m07 Architect's Gambit 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-24): first cut. Music Shadow Tide from 0.05 s (downbeat): quiet intro to 20.9 s, lifts at 4.19 / 10.46 (Mission 7 card) / 20.92 (strong hit 20.72), steady to the end, fade-out 2 s. Ops floor: Gwen's 'At least the water is cold.' from the Adaeze/Gwen exchange (t12) takes the old walk slot plus the dropped Hollis torch shot, so later cuts are unchanged. SCADA panel from t20b. Elena, Park and Mercer are face flashes from line takes; no walk down the generator hall (t29c dropped 1.7% of frames, unused); t19c unused (notes panel); the Architect call is a green terminal view, so the ending 'close-up' is a 4x crop on the text lines, not a portrait.",
+ "status": "v2 (2026-11-24): Architect lines (call_trace, ending_wide, ending_close) use the FX take t13c_architect_call_fx at gain 2.7 (call_ring stays on the original). Crescendo face flashes cr_mercer, cr_elena, cr_park, cr_hollis, cr_netherton are frozen on closed-mouth frames. Console beat to be swapped in later; hollis line to be retaken after new visemes. v1 (2026-11-24): first cut. Music Shadow Tide from 0.05 s (downbeat): quiet intro to 20.9 s, lifts at 4.19 / 10.46 (Mission 7 card) / 20.92 (strong hit 20.72), steady to the end, fade-out 2 s. Ops floor: Gwen's 'At least the water is cold.' from the Adaeze/Gwen exchange (t12) takes the old walk slot plus the dropped Hollis torch shot, so later cuts are unchanged. SCADA panel from t20b. Elena, Park and Mercer are face flashes from line takes; no walk down the generator hall (t29c dropped 1.7% of frames, unused); t19c unused (notes panel); the Architect call is a green terminal view, so the ending 'close-up' is a 4x crop on the text lines, not a portrait.",
  "music": {
   "track": "SpyAction/Shadow Tide.mp3",
   "analysis": "shadow_tide_60.json",
@@ -410,11 +410,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t13c_architect_call.trimmed.mkv",
+    "file": "t13c_architect_call_fx.trimmed.mkv",
     "in": 15.7,
     "out": 18.9
    },
-   "note": "green terminal call screen, text typed by 14.99 so only the first line is on it; voice 15.84-18.75 ('Don't look for the trace.' to 17.46, 'It isn't there.' 17.93-18.75). Frames 16.5 and 18.8 viewed",
+   "note": "green terminal call screen, text typed by 14.99 so only the first line is on it; voice 15.84-18.75 ('Don't look for the trace.' to 17.46, 'It isn't there.' 17.93-18.75). Frames 16.5 and 18.8 viewed. v2: Architect voice FX take (t13c_architect_call_fx, tools/video/takes/m07/architect_voice_fx.sh); gain 2.7 evens the 0.7 dB M-max loss of the FX version",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -433,7 +433,7 @@
     }
    },
    "audio": {
-    "gain_db": 2.0,
+    "gain_db": 2.7,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.0,
@@ -909,10 +909,10 @@
    },
    "source": {
     "file": "t25_mercer_face.trimmed.mkv",
-    "in": 2.6,
-    "out": 2.9667
+    "in": 3.0,
+    "out": 3.3667
    },
-   "note": "Mercer face (bust 2.1-4.6, narrator bar cropped off, frame 3.3 viewed)",
+   "note": "Mercer face (bust 2.1-4.6, narrator bar cropped off, frame 3.3 viewed). v2: frozen on 3.0 s (closed mouth, eyes open, bust settled after its zoom-in)",
    "framing": {
     "16:9": {
      "cx": 0.72,
@@ -940,7 +940,9 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "portrait only"
-   }
+   },
+   "freeze": true,
+   "freezeAt": 3.0
   },
   {
    "id": "cr_cloner",
@@ -995,10 +997,10 @@
    },
    "source": {
     "file": "t14_elena.trimmed.mkv",
-    "in": 47.0,
-    "out": 47.3333
+    "in": 47.4,
+    "out": 47.7333
    },
-   "note": "Elena face, bar cropped off",
+   "note": "Elena face, bar cropped off. v2: frozen on 47.4 s (lips together, eyes open (she is mid-line in every nearby frame; this is the closest to closed))",
    "framing": {
     "16:9": {
      "cx": 0.72,
@@ -1026,7 +1028,9 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "portrait only"
-   }
+   },
+   "freeze": true,
+   "freezeAt": 47.4
   },
   {
    "id": "cr_reader",
@@ -1081,10 +1085,10 @@
    },
    "source": {
     "file": "t15_park.trimmed.mkv",
-    "in": 8.0,
-    "out": 8.3333
+    "in": 8.2,
+    "out": 8.5333
    },
-   "note": "Park face, bar cropped off",
+   "note": "Park face, bar cropped off. v2: frozen on 8.2 s (mouth closed, eyes open)",
    "framing": {
     "16:9": {
      "cx": 0.75,
@@ -1112,7 +1116,9 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "portrait only"
-   }
+   },
+   "freeze": true,
+   "freezeAt": 8.2
   },
   {
    "id": "cr_key",
@@ -1170,7 +1176,7 @@
     "in": 21.0,
     "out": 21.3333
    },
-   "note": "Hollis face mid-line, bar cropped off (t11b 21.0 is inside his voiced line, no 'playtest' frame)",
+   "note": "Hollis face mid-line, bar cropped off (t11b 21.0 is inside his voiced line, no 'playtest' frame). v2: frozen on 21.0 s (mouth closed, eyes open. Line to be retaken after his visemes are redone; refreeze then)",
    "framing": {
     "16:9": {
      "cx": 0.7,
@@ -1198,7 +1204,9 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "portrait only"
-   }
+   },
+   "freeze": true,
+   "freezeAt": 21.0
   },
   {
    "id": "cr_scada",
@@ -1253,10 +1261,10 @@
    },
    "source": {
     "file": "t10_briefing.trimmed.mkv",
-    "in": 14.0,
-    "out": 14.3333
+    "in": 14.2,
+    "out": 14.5333
    },
-   "note": "Netherton face, bar cropped off",
+   "note": "Netherton face, bar cropped off. v2: frozen on 14.2 s (mouth closed, eyes open)",
    "framing": {
     "16:9": {
      "cx": 0.68,
@@ -1284,7 +1292,9 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "portrait only"
-   }
+   },
+   "freeze": true,
+   "freezeAt": 14.2
   },
   {
    "id": "cr_vault",
@@ -1424,11 +1434,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t13c_architect_call.trimmed.mkv",
+    "file": "t13c_architect_call_fx.trimmed.mkv",
     "in": 40.0,
     "out": 41.0
    },
-   "note": "J-cut pre 2.55 (audio from 37.45; voice starts 37.53) under the crescendo; first sentence ends 40.74. Call screen wide on the terminal; 3-frame hit on the cut at the silence 40.74-41.44",
+   "note": "J-cut pre 2.55 (audio from 37.45; voice starts 37.53) under the crescendo; first sentence ends 40.74. Call screen wide on the terminal; 3-frame hit on the cut at the silence 40.74-41.44. v2: Architect voice FX take (t13c_architect_call_fx, tools/video/takes/m07/architect_voice_fx.sh); gain 2.7 evens the 0.7 dB M-max loss of the FX version",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1447,7 +1457,7 @@
     }
    },
    "audio": {
-    "gain_db": 2.0,
+    "gain_db": 2.7,
     "dialogue": true,
     "duck_music": true,
     "pre": 2.55,
@@ -1491,11 +1501,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t13c_architect_call.trimmed.mkv",
+    "file": "t13c_architect_call_fx.trimmed.mkv",
     "in": 41.0,
     "out": 44.1
    },
-   "note": "hard cut in the silence to a 4x crop on the text lines (header and button off); 'I set them so you'd have to choose.' 41.44-44.04; out 44.1 before the reply menu (44.25)",
+   "note": "hard cut in the silence to a 4x crop on the text lines (header and button off); 'I set them so you'd have to choose.' 41.44-44.04; out 44.1 before the reply menu (44.25). v2: Architect voice FX take (t13c_architect_call_fx, tools/video/takes/m07/architect_voice_fx.sh); gain 2.7 evens the 0.7 dB M-max loss of the FX version",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1514,7 +1524,7 @@
     }
    },
    "audio": {
-    "gain_db": 2.0,
+    "gain_db": 2.7,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.0,

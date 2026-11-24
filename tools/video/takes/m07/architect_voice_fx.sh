@@ -22,12 +22,15 @@
 #   ending take line (37.24 + 7.1 s):   I -19.9 LUFS, sample peak -8.1 dBFS, M max -15.5
 #
 # Usage: architect_voice_fx.sh [takes_dir]     (default ~/video-takes-local/m07/takes)
-# Audio-only encode, picture stream copy; runs under nice -n 19. Never touches tts_cache or game audio.
+# Audio-only encode, picture stream copy; runs under nice -n 19. Reads tts_cache clean/ only; never writes tts_cache or game audio.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd); repo=$(cd "$here/../../../.." && pwd)
 ghost=$repo/tools/video/takes/m02/ghost_voice_fx.sh
+# Read the clean/ takes: the game's own mp3s in tts_cache/<scenario>/ are baked with the same FX
+# (tools/voice_fx/bake.py), and processing them again would double it. No clean/ yet = pre-bake checkout.
 cache=$repo/tts_cache/m07_architects_gambit
 [ -d "$cache" ] || cache=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/tts_cache/m07_architects_gambit
+[ -d "$cache/clean" ] && cache=$cache/clean
 TRACE_CLIP=${TRACE_CLIP:-$cache/1a24b995d6d8e6611ae6fb530b39137d.mp3}   # "Don't look for the trace. It isn't there."
 FIRES_CLIP=${FIRES_CLIP:-$cache/410f1532c29f0d5ecc815ff2fc661dd1.mp3}   # "Four fires tonight, ..." (#delivery tagged)
 TRACE_AT=${TRACE_AT:-15.600}; FIRES_AT=${FIRES_AT:-37.242}

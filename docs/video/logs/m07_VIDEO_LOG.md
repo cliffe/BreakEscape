@@ -44,3 +44,20 @@ SpyAction "Shadow Tide", window start 0.05 s (a downbeat), 114.69 BPM, bar 2.092
 ## 24 Nov 2026: v1 rendered and published (review page v22, tab m07 · v1)
 
 Rendered 16:9, 9:16 and 1:1: 60.00 s each, -13.93 LUFS, TP -1.49 dB (no trim needed). First render's contact sheets showed the clock crop centred outside the room (black beside it, 9:16 cut the PNW 147 board) and the 16:9 ops-floor crop catching black left of the room; both re-centred from measured source coordinates (ca30c86fe) and re-rendered. Frames at 19.0, 34.9 and 47.0 checked in every aspect after the fix. "PNW 147" is the substation count, not a code. Known and left: 9:16 shows the game's skip hint under the Architect's first line for about 3 s. Page: https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea, feedback doc `feedback/m07_trailer_v1`, five owner questions (music window, ring shot, Hollis's line, Gwen's line, crescendo order). Not watched end to end.
+
+## 24 Nov 2026: v2 edit (id `m07_trailer60_v2`, not rendered yet)
+
+- **Architect FX.** `call_trace`, `ending_wide` and `ending_close` now read `t13c_architect_call_fx.trimmed.mkv` (built by `tools/video/takes/m07/architect_voice_fx.sh`, the m02 ghost voice FX, variant B). Only the Architect's two lines are replaced; the ring and "I've read your file" are untouched. The FX version is about 0.7 dB short on momentary max (call_trace M max -15.03 to -15.74, ending -15.53 to -16.28, integrated unchanged), so `gain_db` goes 2.0 to 2.7. `call_ring` stays on the original take.
+- **Frozen face flashes** (new `freeze`/`freezeAt`, commit 683445b44). Each frame was picked by eye from full-resolution crops at the shot's crop, mouth closed or neutral, eyes open. Audio on these shots is muted, so moving `source.in` to the frozen second is harmless.
+
+| shot | take | freezeAt | why |
+|---|---|---|---|
+| cr_mercer | t25_mercer_face | 3.0 | mouth closed; the bust has finished its zoom-in (2.6 is mid-zoom) |
+| cr_elena | t14_elena | 47.4 | lips together; she is mid-line in every nearby frame, this is the closest to closed |
+| cr_park | t15_park | 8.2 | mouth closed (8.0 was open) |
+| cr_hollis | t11b_hollis | 21.0 | mouth closed. His line is to be retaken after his visemes are redone; refreeze then |
+| cr_netherton | t10_briefing | 14.2 | mouth closed (14.0 was mid-word) |
+
+  `hollis_challenge` is unchanged. No frame shows a PIN, password, code or flag.
+- **Console beat.** The real-hacking nmap clip is still the v1 one; it will be swapped for the varied console beat later (plan: commit 86ec2a9a1).
+- **Lint.** 34 shots, 60.00 s, 0 errors, 1 warning (`real_hacking` clip without `placeholder: true`, as in v1: it is final footage).
