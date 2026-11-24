@@ -7,15 +7,20 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # Ops S8b unit 17 (feature A23, helpdesk recovery): the leak scanner's helpdesk rules, kept in this file so the main scanner
 # takes only seven changed lines (a require, an include, the `helpdesk_begin_scan` call, the `scan_helpdesk` call just before
 # `scan_mfa`, the rule text table entry, the `mfa_kind_at` clause and the approve clause of `mfa_pass_pc`: see the end of this
-# header). This file also writes two pieces of the second-step rules' state, only ever in the stricter direction: it turns
-# `@mfa_active` ON (a scenario whose only second step is one a re-enrolment creates) and takes steps out of `@mfa_pending` (a
-# credited password grant drops that account's pending steps, as the server does). Included into AccessLeakScanner; it reads the scanner's own state
-# (`@data`, `@priv_npcs`, `@priv_pcs`, `@mfa_*`) and reuses the second-step rules' helpers (`mfa_route`, `mfa_query_value`,
+# header). This file also writes three pieces of the second-step rules' state, each only in the stricter direction (it never
+# clears a count or a mark that excuses an answer): it turns `@mfa_active` ON (a scenario whose only second step is one a
+# re-enrolment creates); it takes steps out of `@mfa_pending` (a credited FIRST password grant drops that account's pending
+# steps, as the server does; a repeat grant drops nothing); and it adds to `@mfa_wrong_unknown` each pair of that account that
+# has a wrong-code count (the server clears the count at that grant, the scanner cannot without excusing a lock answer, so it
+# stops crediting a lock for that pair). Included into AccessLeakScanner; it reads the scanner's own state (`@data`,
+# `@priv_npcs`, `@priv_pcs`, `@mfa_*`, including `@mfa_devices`, `@mfa_taken`, `@mfa_code_possible`) and reuses the second-step
+# rules' helpers (`mfa_route`, `mfa_route_name`, `mfa_npc`, `mfa_query_value`, `mfa_row_pc_tag`, `mfa_pass_pc`,
 # `mfa_required_answer_ok?`, `mfa_phone_entry_ok?`, `mfa_phone_taken?`, `mfa_walk`, `capture_time`, `contains_password?`).
 #
 # Every rule is structural and fails closed: a value is allowed only in the exact answer the server gives for a thing the run
 # earned, and where the proof is missing, ambiguous or malformed the value is a finding. Nothing here is ever loosened to let
-# a run pass, and no existing rule is touched. The rules are inert for a scenario with no `helpdesks`, no `resetPassword`
+# a run pass. Two existing rules were given a clause (`mfa_kind_at`, `mfa_pass_pc`: see the end of this header) and the state
+# writes above are the only other change to them. The rules are inert for a scenario with no `helpdesks`, no `resetPassword`
 # and no `recovery`.
 #
 # helpdesk_secret
@@ -26,11 +31,13 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 #     300, triesLeft below the largest maxTries), or is on another verb or a loose path;
 #   - an account's `resetPassword` VALUE anywhere, except `password` of a credited 200 grant answer for the one account
 #     whose value it is, and (after that grant) the `password` of the GET keyring entry `<npcId>.reset` of that account (label
-#     `Reset`, how `issued`, the account's display name);
+#     `Reset`, how `issued`, the account's display name): exactly the plain key set or, only when the query names one sign-in
+#     PC (`pc_id`), exactly that set plus `forThisPc` true and `accepted` the policy's answer for a password (the server adds
+#     both when that PC's screen is openable from the request and neither when it is not; the capture cannot show which);
 #   - the own-phone forms (a deviceId `own:<npc>`, an `enrolled: false` device answer, `ownPhone: true`, a GET mfa/phone with
 #     an `own` query), unless the answer is exactly the SHAPES shape for an account a credited second-step grant NAMED;
-#   - a plain `mfaRequired` for such an account, a pass for it while its own-phone step is open other than `approvedBy:
-#     own_phone` (the hook in `mfa_pass_pc` credits that one with proof), the old held device's code or old phone's list for
+#   - a plain `mfaRequired` for such an account, a pass for it on a push route other than `approvedBy: own_phone` (always a
+#     finding, whether or not an own-phone step is open; the hook in `mfa_pass_pc` credits that one with proof), the old held device's code or old phone's list for
 #     it, and, where no code device is authored, any six-digit code that is not an earned own-device answer.
 # helpdesk_grant
 #   - a `granted` answer that is not credited (see `hd_grant_credit`).
@@ -44,20 +51,23 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 #
 # LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out, because
 # a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
-# refusals last. (2) A desk NPC being met, a typed answer being right and the typed username cannot be checked; only that the
-# named desk could have granted the named account. (3) A code's value is never checked. (4) An earlier stop, grant or phone
-# before the first captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}`, as a hash holding
-# the id as a value beside the answer, as `{<question id>: [<answer>, ...]}` and as an array (nested ones flattened) holding the id
-# beside the answer; one split across two keys or two arrays is not (no id and answer in one place). (6) A recovery answer one level below its
-# question id, at any depth, is caught (`{staff_no: {value: ...}}`); an answer split across two keys or two places is not.
-# (7) A reset password is caught as a value and as a hash key; a code's value is never checked (limit 3). (8) The stop rule
-# depends on playtest ORDER (limit 1): a refusal row is `{reason, triesLeft}` or `{reason, retryIn}` on a path with no query,
-# and nothing in it names the desk or the username, so refusals must stay last in every scripted run until the recorder gives
-# the scanner the missing fact. Two ways, both leaving every answer for an unknown username identical to one for a real
-# account: (a) the client sends `desk_id` and `username` in the URL query of `POST helpdesk/request` (as it sends `own=1`),
-# so the scanner holds a stop against `desk|normalised username` (cost: a typed username in URLs and server logs); or (b) one
-# opaque key on `refused` with `triesLeft: 0`, on `blocked` and on `granted`, such as a short keyed hash of
-# `HelpdeskModel.tries_key` (cost: a refusal then carries more than the reason and the count). The recorder change is a later stage.
+# refusals last. The stop rule therefore depends on playtest ORDER (a refusal row is `{reason, triesLeft}` or `{reason, retryIn}`
+# on a path with no query and nothing in it names the desk or the username). Two ways to close it, both leaving every answer for
+# an unknown username identical to one for a real account: (a) the client sends `desk_id` and `username` in the URL query of
+# `POST helpdesk/request` (as it sends `own=1`), so the scanner holds a stop against `desk|normalised username` (cost: a typed
+# username in URLs and server logs); or (b) one opaque key on `refused` with `triesLeft: 0`, on `blocked` and on `granted`, such
+# as a short keyed hash of `HelpdeskModel.tries_key` (cost: a refusal then carries more than the reason and the count). The
+# recorder change is a later stage.
+# (2) A desk NPC being met, a typed answer being right and the typed username cannot be checked; only that the named desk could
+# have granted the named account. (3) A code's value is never checked. (4) An earlier stop, grant or phone before the first
+# captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}`, as a hash holding the id as a value
+# beside the answer, as `{<question id>: [<answer>, ...]}`, as an array (nested ones flattened) holding the id beside the answer,
+# and one level or more below its question id (`{staff_no: {value: ...}}`); one split across two keys or two places is not, and
+# an answer served as a JSON number is not (`{"staff_no": {"value": 40612}}` is clean). (6) A reset password is caught as a
+# value and as a hash key. (7) The scanner cannot tell whether a `pc_id` keyring screen was openable, so both honest forms of
+# the reset entry (plain, scoped) are accepted; nothing else is. (8) After a credited first password grant the server clears the
+# account's wrong-code count; the scanner cannot clear its own, so a lock answer for an account that had wrong codes before its
+# grant is reported even when honest (the stricter side: a lock the server could not give is reported too).
 #
 # The main scanner is touched in seven places (S8c merges keep all of them): the require, the include, the `helpdesk_begin_scan`
 # call, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at` (`hd_reenrolled?`) and the approve
@@ -403,8 +413,9 @@ module HelpdeskLeakRules
     case hd_request_shape(info[:status], body)
     when :granted_password
       if earned[:kind]
+        fresh = earned[:accounts].reject { |id| @hd_earned_pw.include?(id) }
         @hd_earned_pw.merge(earned[:accounts])
-        hd_drop_steps(earned[:accounts])
+        hd_drop_steps(fresh)
       end
     when :granted_mfa then @hd_mfa_earned.merge(earned[:accounts]) if earned[:kind]
     when :blocked then hd_note_stop(body['retryIn'])
@@ -412,11 +423,16 @@ module HelpdeskLeakRules
     end
   end
 
-  # A password grant drops the account's pending second steps on the server, so a pass for it needs a new step. Only a credited
-  # grant drops (an uncredited one is a finding of its own); dropping only ever takes allowances away.
+  # A FIRST password grant for an account drops its pending second steps on the server (a repeat grant is answered before that
+  # and drops nothing), so a pass for it needs a new step. Only a credited grant drops (an uncredited one is a finding of its
+  # own). The server also clears the account's wrong-code count; the scanner cannot clear its own count without letting a lock
+  # answer be credited, so it marks each pair of that account that has a count as unknown (the lock rule then reports a lock
+  # at that pair until a pass answer for it): a write that only adds findings. Dropping a step takes the pass allowances away; it
+  # can also leave one open code step where two were open, which the server does too.
   def hd_drop_steps(accounts)
     @mfa_pending.delete_if { |_pc, rec| accounts.include?(rec[:npc]) }
     @hd_own_steps.delete_if { |_pc, npc| accounts.include?(npc) }
+    @mfa_wrong.each { |(pc, npc), n| @mfa_wrong_unknown << [pc, npc] if n.to_i.positive? && accounts.include?(npc) }
   end
 
   def hd_note_stop(seconds)
@@ -452,9 +468,9 @@ module HelpdeskLeakRules
     allowed
   end
 
-  # The server scopes every entry of `GET keyring?pc_id=<a sign-in PC>` with `forThisPc` and `accepted` (credential_keyring.rb
-  # keyring_scope_to_pc). Answers: nil when the query names no such PC (an entry then takes no scope keys), else { accepts: }
-  # for that PC's policy. A pc_id twice, or one that is not a sign-in PC of the scenario, gives no scope.
+  # The server scopes the entries of `GET keyring?pc_id=<a sign-in PC>` with `forThisPc` and `accepted` (credential_keyring.rb
+  # keyring_scope_to_pc) only when that PC's screen is openable from the request. Answers: nil when the query names no such PC
+  # (an entry then takes no scope keys), else { accepts: } for that PC's policy (the entry may then be scoped or plain). A pc_id twice, or one that is not a sign-in PC of the scenario, gives no scope.
   def hd_keyring_scope(row)
     pairs = URI.decode_www_form(row['query'].to_s)
     ids = pairs.select { |k, _| k == 'pc_id' }.map(&:last)
@@ -468,11 +484,21 @@ module HelpdeskLeakRules
     nil
   end
 
+  # Exactly the plain key set, or (only when the query names a sign-in PC) exactly the plain set plus both scope keys with the
+  # values the server computes. The server leaves the scope keys out when that PC's screen is not openable from the request
+  # (a refused `from` route, a foothold that does not reach), and the capture cannot show which, so both forms are honest; one
+  # scope key alone, a third key or a wrong value is neither.
+  def hd_reset_entry_keys_ok?(entry, scope)
+    keys = entry.keys.sort
+    return true if keys == HD_KEYRING_RESET_KEYS
+    return false unless scope && keys == (HD_KEYRING_RESET_KEYS + HD_KEYRING_SCOPE_KEYS).sort
+
+    entry['forThisPc'] == true && entry['accepted'] == scope[:accepts]
+  end
+
   def hd_reset_entry_ok?(entry, npc_id, scope = nil)
     npc = @hd_accounts[npc_id]
-    keys = scope ? (HD_KEYRING_RESET_KEYS + HD_KEYRING_SCOPE_KEYS).sort : HD_KEYRING_RESET_KEYS
-    return false unless npc && entry['id'] == "#{npc_id}.reset" && @hd_earned_pw.include?(npc_id) && entry.keys.sort == keys
-    return false if scope && !(entry['forThisPc'] == true && entry['accepted'] == scope[:accepts])
+    return false unless npc && entry['id'] == "#{npc_id}.reset" && @hd_earned_pw.include?(npc_id) && hd_reset_entry_keys_ok?(entry, scope)
 
     account = entry['account']
     owners = @hd_reset_pw[npc['creds']['resetPassword']]
@@ -653,12 +679,11 @@ module HelpdeskLeakRules
 
     case minfo[:route]
     when 'mfa/device'
-      item = hd_query_value(minfo, 'item_id')
-      owner = item && @mfa_devices[item] ? @mfa_devices[item]['owner'] : body['npcId']
-      add.call('helpdesk_secret', 'helpdesk:old:code', '$.code') if item && body.key?('code') && hd_reenrolled?(owner)
+      owners = hd_query_values(minfo, 'item_id').map { |item| @mfa_devices[item] ? @mfa_devices[item]['owner'] : body['npcId'] }
+      add.call('helpdesk_secret', 'helpdesk:old:code', '$.code') if body.key?('code') && owners.any? { |owner| hd_reenrolled?(owner) }
     when 'mfa/phone'
-      owner = hd_query_value(minfo, 'npc_id')
-      add.call('helpdesk_secret', 'helpdesk:old:phone', '$.requests') if owner && body.key?('requests') && hd_reenrolled?(owner)
+      owners = hd_query_values(minfo, 'npc_id')
+      add.call('helpdesk_secret', 'helpdesk:old:phone', '$.requests') if body.key?('requests') && owners.any? { |owner| hd_reenrolled?(owner) }
     end
   end
 
@@ -671,13 +696,13 @@ module HelpdeskLeakRules
     add.call('helpdesk_secret', 'helpdesk:own:phone', '$')
   end
 
-  # The value of a query parameter, whatever other parameters the query has (the first one with that name). For rules that only
-  # report: `mfa_query_value` answers nil for a second parameter, which would let the extra parameter hide the rule.
-  def hd_query_value(minfo, name)
-    pair = URI.decode_www_form(minfo[:query].to_s).find { |key, value| key == name && !value.empty? }
-    pair&.last
+  # Every non-empty value of a query parameter, whatever other parameters the query has (Rails reads the last of a repeated
+  # name, so a rule that only reports judges all of them). `mfa_query_value` answers nil for a second parameter, which would let
+  # the extra parameter hide the rule.
+  def hd_query_values(minfo, name)
+    URI.decode_www_form(minfo[:query].to_s).select { |key, value| key == name && !value.empty? }.map(&:last)
   rescue ArgumentError
-    nil
+    []
   end
 
   def hd_query_names?(minfo, name)

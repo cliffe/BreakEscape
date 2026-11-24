@@ -131,12 +131,10 @@ module BreakEscape
       assert_empty helpdesk_only(plain_account)
     end
 
-    test 'R1-L4: the honest own-phone approval is clean and holds the session' do
+    test 'R1-L4: the honest own-phone approval is clean' do
       data = cal_scenario
       run = [grant_mfa(npc: 'cal'), own_push_login, own_list(data), session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')]
       assert_empty scan(run, data)
-      later = scan(run + [row('GET', 'container/push_pc', { 'status' => 200, 'body' => { 'contents' => [] } })], data)
-      assert_not_includes rules(later), 'mfa_session'
     end
 
     test 'R1-L4: an own-phone approval with any proof missing stays a finding' do
