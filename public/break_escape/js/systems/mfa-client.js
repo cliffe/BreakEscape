@@ -223,6 +223,12 @@ function refusalResult(parsed, err) {
         failed(parsed, npcId, 'locked_out');
         return { ok: false, reason: 'locked_out', status, body: b, message: typeof b.message === 'string' ? b.message : null };
     }
+    // A lock's refusal that carries the generic message and no flag is the server's generic 422 (an approve
+    // with no number on a number lock, say): the server keeps the step, so the pending record stays and the
+    // caller may try again (S8c R1-CLIENT8). A PC's stays as it was.
+    if (parsed.kind !== 'pc' && typeof b.message === 'string' && b.message) {
+        return { ok: false, reason: 'error', status, body: b, message: b.message };
+    }
     // A bare refusal (the record has gone, the account is no longer permitted, the route is closed):
     // the second step cannot go on, so the pending record goes too
     pendingBySubject.delete(parsed.key);

@@ -181,10 +181,29 @@ test('approve 403 no such phone is no_phone for a lock', async () => {
     assert.equal((await M.approve('object:safe', { number: 1 })).reason, 'no_phone');
 });
 
-test('generic refusal on a lock is gone and never pc_signin_failed', async () => {
-    const { events } = setup(() => answer('generic_refusal'));
+test('a bare refusal on a lock (no flag, no message) is gone and never pc_signin_failed', async () => {
+    const { events } = setup(() => { try { answer('generic_refusal'); } catch (e) { delete e.body.message; throw e; } });
     M.noteRequired('door:d', { kind: 'code', npcId: 'n' });
     const r = await M.verify('door:d', '1');
     assert.equal(r.reason, 'gone');
     assert.equal(events.some(e => e.name === 'pc_signin_failed'), false);
+});
+
+// S8c R1-CLIENT8: the server's generic 422 carries a message (the PC form's). On a lock it is an approve
+// with no number, which the server keeps: the pending record stays and the result is an error, not "gone"
+test('a lock refusal with a message and no flag is an error and keeps the pending record', async () => {
+    const { events } = setup(() => answer('generic_refusal'));
+    M.noteRequired('object:safe', { kind: 'push_number_match', npcId: 'priya' });
+    const r = await M.approve('object:safe', {});
+    assert.equal(r.reason, 'error');
+    assert.equal(r.ok, false);
+    assert.equal(M.pendingFor('object:safe').npcId, 'priya');
+    assert.equal(events.some(e => e.name === 'pc_signin_failed'), false);
+});
+
+test('a PC refusal with a message and no flag is still gone, as before', async () => {
+    setup(() => answer('generic_refusal'));
+    M.noteRequired('pc:p1', { kind: 'code', npcId: 'n' });
+    const r = await M.verify('pc:p1', '1');
+    assert.equal(r.reason, 'gone');
 });

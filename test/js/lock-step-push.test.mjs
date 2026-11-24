@@ -83,7 +83,8 @@ test('too soon holds Send again for the server wait', async () => {
     await tick();
     assert.equal(timers[0].ms, loadAnswer('prompt_too_soon').body.retryAfterS * 1000);
     assert.equal(handle.getTestState().sendAgainDisabled, true);
-    assert.match(handle.getTestState().message, /Wait a moment/);
+    // a first request: nothing was sent yet, so the wait is the status line (S8c R1-CLIENT7)
+    assert.match(handle.getTestState().status, /Wait a moment/);
 });
 
 test('prompt_passed settles passed; prompt_expired settles expired; once only', async () => {
@@ -191,4 +192,39 @@ test('destroy ends the part: a late answer settles nothing', async () => {
     handle.destroy();
     await tick();
     assert.deepEqual(settled, []);
+});
+
+// S8c R1-CLIENT7: a first request refused as too soon must not read "A request was sent" over "Requests sent: 0"
+test('a first request refused as too soon says so in the status line and draws no count', async () => {
+    const { handle } = setup({ 'mfa/prompt': ['prompt_too_soon'] }, { phone: false });
+    await tick();
+    const st = handle.getTestState();
+    assert.doesNotMatch(st.status, /was sent/);
+    assert.match(st.status, /Wait a moment before sending another request\./);
+    assert.equal(st.countLine, '');
+    assert.equal(st.count, 0);
+});
+
+test('before any answer the count line is empty; a waiting answer draws it and restores the sent line', async () => {
+    const { handle, timers, host } = setup({ 'mfa/prompt': ['prompt_too_soon', 'prompt_waiting'] }, { phone: false });
+    assert.equal(handle.getTestState().countLine, '');
+    await tick();
+    timers[0].fn();
+    byText(host, 'Send again').click();
+    await tick();
+    const st = handle.getTestState();
+    assert.match(st.status, /A request was sent to Moira's phone\./);
+    assert.match(st.countLine, /^Requests sent: [1-9]/);
+});
+
+// S8c R1-CLIENT8: a number-match card has no Approve (the server's numbers and Deny only)
+test('a number-match card draws the numbers and Deny, never Approve', async () => {
+    const { host } = setup({ 'mfa/prompt': ['prompt_waiting'], 'mfa/phone': ['phone_number_request'] }, { ctx: { kind: 'push_number_match', subject: 'object:priya_safe' } });
+    await tick();
+    byText(host, "Check Moira's phone").click();
+    await tick();
+    const labels = buttons(host).map((b) => b.textContent);
+    assert.ok(labels.includes('Deny'));
+    assert.ok(labels.includes('31') && labels.includes('82'), 'the server numbers are drawn');
+    assert.equal(labels.includes('Approve'), false);
 });

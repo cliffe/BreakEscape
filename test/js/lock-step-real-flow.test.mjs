@@ -294,7 +294,7 @@ test('expired: a code verified after the record is gone (verify_dropped) closes 
 
 test('a lock answer needs no message key: a bare refusal ends the step and no server wording reaches the screen', async () => {
     const log = bootPage(S);
-    net.reset({ '/unlock': ['gate_push'], '/mfa/prompt': ['generic_refusal'] });
+    net.reset({ '/unlock': ['gate_push'], '/mfa/prompt': [{ name: 'generic_refusal', patch: (b) => { delete b.message; } }] });
     window.handleUnlock(sprite('moira_locker'), 'item');
     await settle();
     await typePin();

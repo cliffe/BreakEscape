@@ -62,7 +62,9 @@ export function mountPush(host, ctx = {}, settle = () => {}) {
     let card = null; // { name, numbers? }
 
     const root = mk('div', 'lock-step-push');
-    const status = mk('div', 'lock-step-push-status', `A request was sent to ${owner}'s phone.`);
+    const sentLine = `A request was sent to ${owner}'s phone.`;
+    const waitLine = 'Wait a moment before sending another request.';
+    const status = mk('div', 'lock-step-push-status', sentLine);
     status.setAttribute('role', 'status');
     const numberEl = mk('div', 'lock-step-push-number');
     numberEl.hidden = true;
@@ -91,8 +93,8 @@ export function mountPush(host, ctx = {}, settle = () => {}) {
     }
 
     const setMessage = (text) => { msgEl.textContent = text || ''; };
+    // Drawn only once an answer has given a count: never "Requests sent: 0" (S8c R1-CLIENT7)
     const drawCount = () => { countEl.textContent = `Requests sent: ${sent}`; };
-    drawCount();
 
     function finish(outcome) {
         if (settled || dead) return;
@@ -145,12 +147,15 @@ export function mountPush(host, ctx = {}, settle = () => {}) {
             const n = Number(result.body && result.body.promptsSent);
             sent = Number.isFinite(n) && n >= 0 ? n : sent + 1;
             drawCount();
+            status.textContent = sentLine;
             holdAgain(DEFAULT_WAIT_S);
             return;
         }
         if (result.reason === 'too_soon') {
             holdAgain(result.retryAfterS);
-            setMessage('Wait a moment before sending another request.');
+            // With no request answered yet nothing was sent: the status line says the wait, not "sent"
+            if (sent === 0 && !countEl.textContent) { status.textContent = waitLine; setMessage(''); }
+            else setMessage(waitLine);
             return;
         }
         again.disabled = false;
