@@ -3117,7 +3117,7 @@ class AccessLeakScanner
     @priv_signin_pending = { account: body['npcId'], pc: @priv_last_named } if @priv_last_named && body['via'] == 'password' && !body['remote']
     pcs.each do |pc|
       @ops_earned.delete("admin:#{pc}")
-      @hv_relay.delete(pc)
+      drop_relay_mark(pc)
       @priv_deadlines.delete(pc)
       @priv_resumable.delete(pc)
       @priv_kinds.delete(pc)
@@ -3223,7 +3223,7 @@ class AccessLeakScanner
     return unless @priv_pcs.key?(pc)
 
     session = body['session']
-    @hv_relay.delete(pc) unless keep_relay_mark?(pc, session) # S5b, S5c
+    drop_relay_mark(pc) unless keep_relay_mark?(pc, session) # S5b, S5c
     held = @ops_session_accounts[pc]
     earlier = @priv_resumable[pc]
     if !session.is_a?(Hash) || session['locked'] == true
@@ -3378,7 +3378,7 @@ class AccessLeakScanner
       next unless pc.is_a?(String) && @priv_pcs.key?(pc)
 
       @ops_earned.delete("admin:#{pc}")
-      @hv_relay.delete(pc)
+      drop_relay_mark(pc)
       @ops_session_accounts.delete(pc)
       @priv_deadlines.delete(pc)
       @priv_kinds.delete(pc)
@@ -4983,6 +4983,9 @@ class AccessLeakScanner
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
     @hv_admin_ever = Set.new    # PC ids where an admin session (keyboard step or proved relay) was earned at the end of some row
     @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
+    @hv_relay_signed = {}       # R2-L1: PC id => account id of a proved relay SIGN-IN answer still standing (a desktop keeps the mark only on it)
+    @hv_relay_pending = Set.new # R2-L1: [account id, label] of a proved relay sign-in whose label two PCs share (its desktop takes it)
+    @hv_invite_listed = Set.new # R2-L1: registry ids of assist invites a 200 GET /keyring listed with the proof held (never taken back)
     @hv_body = nil
     @hv_borrow_seen = Set.new   # PC ids a 200 POST /npc_workaround borrow "done" answer named so far (R1-L7)
   end
@@ -5237,9 +5240,14 @@ class AccessLeakScanner
     invited = BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
       entry.is_a?(Hash) && entry['kind'] == 'assist_invite' && entry['connectsTo'].to_s == pc_id &&
         BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc['id'] &&
-        @game.send(:credential_proof_holds?, id, entry) == true
+        @hv_invite_listed.include?(id.to_s) && @game.send(:credential_proof_holds?, id, entry) == true
     end
-    invited && @game.send(:account_admin_at?, npc, pc) == true ? pc_id : nil
+    return nil unless invited && @game.send(:account_admin_at?, npc, pc) == true
+    # R2-L1: a desktop answer proves nothing by itself: a relay sign-in of this account at this PC must stand earlier
+    # (or be pending under the label the PCs share)
+    return nil if ctx[:container] && !(@hv_relay_signed[pc_id] == npc['id'] || @hv_relay_pending.include?([npc['id'], hash['host']]))
+
+    pc_id
   end
 
   # R1-L4, R1-L14: the relay sign-in answer names its PC by a label no other PC shares; a desktop answer names it by the
@@ -5262,14 +5270,73 @@ class AccessLeakScanner
   # admin step is (end_priv_session), by a later sign-in that could be about the PC, by a desktop answer of the PC that does not show
   # the same relay admin, and by a bootstrap.
   def note_relay_mark(body, ctx)
-    @hv_relay.clear if ctx[:scenario]
+    if ctx[:scenario]
+      @hv_relay.clear
+      @hv_relay_signed.clear
+      @hv_relay_pending.clear
+    end
     return unless body.is_a?(Hash)
 
+    note_invite_listed(body, ctx)
     session = ctx[:login] ? body : (ctx[:container] ? body['session'] : nil)
     return unless session.is_a?(Hash) && session['relay'] == true && session['access'] == 'admin'
 
     pc = relay_admin_pc(session, ctx)
-    @hv_relay[pc] = session['npcId'] if pc
+    if pc
+      @hv_relay[pc] = session['npcId']
+      if ctx[:login]
+        @hv_relay_signed[pc] = session['npcId']
+      else # the desktop that took a pending sign-in (shared label) now stands on it
+        @hv_relay_signed[pc] = session['npcId']
+        @hv_relay_pending.delete([session['npcId'], session['host']])
+      end
+    elsif ctx[:login] && hash_relay_label_shared?(session['host']) && session['npcId'].is_a?(String)
+      @hv_relay_pending << [session['npcId'], session['host']] if relay_invite_listed?(session['npcId'], nil) && relay_admin_shape?(session, ctx)
+    end
+  end
+
+  # R2-L1: the mark and the sign-in it stands on go together, wherever the mark is taken back.
+  def drop_relay_mark(pc)
+    @hv_relay.delete(pc)
+    @hv_relay_signed.delete(pc)
+  end
+
+  # R2-L1: a 200 GET /keyring that lists an assist invite whose proof the game holds proves the player held the invite then.
+  def note_invite_listed(body, ctx)
+    return unless ctx[:crack_keyring]
+
+    held = credential_proof_held_ids
+    return if held.nil?
+
+    Array(keyring_entries_in(body)).each do |entry|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry' && entry['kind'] == 'assist_invite'
+
+      id = entry['id'].to_s
+      @hv_invite_listed << id if held.include?(id)
+    end
+  end
+
+  # A sign-in label that more than one PC carries (the sign-in answer names no PC then).
+  def hash_relay_label_shared?(label)
+    return false unless label.is_a?(String)
+
+    @priv_pcs.count { |_, pc| (pc['host'].presence || pc['name']) == label } > 1
+  end
+
+  # An invite of the account (for the PC, or any PC when nil) listed earlier by the keyring with the proof held.
+  def relay_invite_listed?(npc_id, pc_id)
+    BreakEscape::CredentialModel.registry(@data).any? do |id, entry|
+      entry.is_a?(Hash) && entry['kind'] == 'assist_invite' && (pc_id.nil? || entry['connectsTo'].to_s == pc_id) &&
+        BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc_id && @hv_invite_listed.include?(id.to_s)
+    end
+  end
+
+  # The shape and scenario checks of a relay admin session that do not need its PC: the invite's proof, `creds.admin`.
+  def relay_admin_shape?(hash, ctx)
+    return false unless hash.is_a?(Hash) && hash['via'] == 'credential' && hash['kind'] == 'assist_invite' && hash['npcId'].is_a?(String)
+    return false unless @game.respond_to?(:account_admin_at?, true) && @game.respond_to?(:credential_proof_holds?, true)
+
+    ctx[:status].is_a?(Integer) && ctx[:status] == 200 && RELAY_FORBIDDEN_KEYS.none? { |key| hash[key] } && @priv_npcs[hash['npcId']]&.dig('creds', 'admin') == true
   end
 
   # a desktop answer of the PC: the mark stays only when it shows the same relay admin

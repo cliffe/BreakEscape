@@ -255,12 +255,19 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     row({ 'session' => session }, path: 'container/profile_pc')
   end
 
+  # R2-L1: the keyring answer that lists the invite and the relay sign-in come before a desktop answer shows a relay admin
+  def relay_prelude
+    [row({ 'rev' => 'abc123', 'entries' => [{ 'id' => 'invite', 'source' => 'registry', 'kind' => 'assist_invite', 'label' => 'x' }] }, path: 'keyring'),
+     row({ 'success' => true, 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'credential', 'kind' => 'assist_invite',
+           'relay' => true, 'host' => 'Hot desk', 'access' => 'admin' }, path: 'login', method: 'POST')]
+  end
+
   def access_hits(findings)
     findings.select { |f| f.owner == 'ops:key:access' }
   end
 
   test 'a relay admin with an invite, an admin account, an admitting PC and a game is clean' do
-    assert_empty scan([relay_row], scenario: relay_scenario, game: FakeGame.new)
+    assert_empty scan(relay_prelude + [relay_row], scenario: relay_scenario, game: FakeGame.new)
   end
 
   test 'a relay admin is flagged in each missing-proof case' do

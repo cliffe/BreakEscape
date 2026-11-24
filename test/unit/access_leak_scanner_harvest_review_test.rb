@@ -198,6 +198,11 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
       'relay' => true, 'host' => host, 'access' => 'admin' }.merge(extra)
   end
 
+  # R2-L1: the keyring answer that lists the invite (the proof of holding it), which must come before a relay sign-in
+  def invite_listed
+    row({ 'rev' => 'abc123', 'entries' => [{ 'id' => 'invite', 'source' => 'registry', 'kind' => 'assist_invite', 'label' => 'x' }] }, path: 'keyring')
+  end
+
   def relay_login(**kw)
     row(relay_session(**kw).merge('success' => true), path: 'login', method: 'POST')
   end
@@ -213,8 +218,8 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
   test 'R1-L4: a relay admin is allowed only in the relay sign-in answer and that PC\'s own desktop answer' do
     game = FakeGame.new
     scenario = relay_scenario
-    assert_empty access_hits(scan([relay_login], scenario: scenario, game: game))
-    assert_empty access_hits(scan([relay_desktop], scenario: scenario, game: game))
+    assert_empty access_hits(scan([invite_listed, relay_login], scenario: scenario, game: game))
+    assert_empty access_hits(scan([invite_listed, relay_login, relay_desktop], scenario: scenario, game: game))
     # the bootstrap sessions map, a network host row, any other route, another PC's desktop answer
     [row({ 'sessions' => { 'profile_pc' => relay_session } }, path: 'scenario'),
      row({ 'hosts' => [{ 'id' => 'profile_pc', 'kind' => 'pc', 'name' => 'Hot desk', 'session' => relay_session }] }, path: 'network'),
@@ -225,18 +230,18 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     end
     # a relay is never remote, foothold, onward or locked
     { 'remote' => true, 'footholdId' => 'fh1', 'fromPcId' => 'it_pc', 'locked' => true }.each do |key, value|
-      assert_equal 1, access_hits(scan([relay_desktop(extra: { key => value })], scenario: scenario, game: game)).length, key
-      assert_equal 1, access_hits(scan([relay_login(extra: { key => value })], scenario: scenario, game: game)).length, key
+      assert_equal 1, access_hits(scan([invite_listed, relay_login, relay_desktop(extra: { key => value })], scenario: scenario, game: game)).length, key
+      assert_equal 1, access_hits(scan([invite_listed, relay_login(extra: { key => value })], scenario: scenario, game: game)).length, key
     end
     # a refused answer is no relay session
-    assert_equal 1, access_hits(scan([relay_login.merge('status' => 403)], scenario: scenario, game: game)).length
+    assert_equal 1, access_hits(scan([invite_listed, relay_login.merge('status' => 403)], scenario: scenario, game: game)).length
   end
 
   test 'R1-L5: the invite\'s proof must hold in the game' do
     scenario = relay_scenario
-    assert_empty access_hits(scan([relay_desktop], scenario: scenario, game: FakeGame.new(proof: true)))
-    assert_equal 1, access_hits(scan([relay_desktop], scenario: scenario, game: FakeGame.new(proof: false))).length
-    assert_equal 1, access_hits(scan([relay_desktop], scenario: scenario, game: FakeGame.new(proof: nil))).length
+    assert_empty access_hits(scan([invite_listed, relay_login, relay_desktop], scenario: scenario, game: FakeGame.new(proof: true)))
+    assert_equal 2, access_hits(scan([invite_listed, relay_login, relay_desktop], scenario: scenario, game: FakeGame.new(proof: false))).length
+    assert_equal 2, access_hits(scan([invite_listed, relay_login, relay_desktop], scenario: scenario, game: FakeGame.new(proof: nil))).length
     bare = FakeGame.new
     bare.singleton_class.send(:undef_method, :credential_proof_holds?)
     assert_raises(ArgumentError) { AccessLeakScanner.new(scenario, game: bare) }
@@ -246,32 +251,38 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     scenario = relay_scenario
     scenario['rooms']['finance']['objects'].find { |o| o['id'] == 'it_pc' }['name'] = 'Hot desk'
     game = FakeGame.new
-    assert_empty access_hits(scan([relay_desktop], scenario: scenario, game: game))
-    assert_equal 1, access_hits(scan([relay_login], scenario: scenario, game: game)).length
+    # the sign-in answer names no PC when two share the label: it is flagged, and the desktop that follows it (which names its PC) takes it
+    assert_equal 1, access_hits(scan([invite_listed, relay_login], scenario: scenario, game: game)).length
+    assert_equal 1, access_hits(scan([invite_listed, relay_login, relay_desktop], scenario: scenario, game: game)).length
+    # R2-L1: a desktop answer with no relay sign-in before it proves nothing, whatever the label
+    assert_equal 1, access_hits(scan([invite_listed, relay_desktop], scenario: scenario, game: game)).length
     # a desktop answer whose label is another PC's is not this PC's relay
-    assert_equal 1, access_hits(scan([relay_desktop(host: 'IT PC')], scenario: scenario, game: game)).length
+    assert_equal 2, access_hits(scan([invite_listed, relay_login, relay_desktop(host: 'IT PC')], scenario: scenario, game: game)).length
   end
 
   test 'R1-L1: an honest relay administrator collect is clean, from the sign-in answer or the desktop answer' do
     game = FakeGame.new
     scenario = relay_scenario
     collect_jake = collect([crow('jake', 'hot_jake')])
-    assert_empty scan([relay_login, collect_jake], scenario: scenario, game: game)
-    assert_empty scan([relay_desktop, collect_jake], scenario: scenario, game: game)
-    assert_empty scan([relay_login, collect_jake, row({ 'rev' => 2, 'entries' => [] }, path: 'keyring')], scenario: scenario, game: game)
+    assert_empty scan([invite_listed, relay_login, collect_jake], scenario: scenario, game: game)
+    assert_empty scan([invite_listed, relay_login, relay_desktop, collect_jake], scenario: scenario, game: game)
+    assert_empty scan([invite_listed, relay_login, collect_jake, row({ 'rev' => 'abc124', 'entries' => [] }, path: 'keyring')], scenario: scenario, game: game)
+    # R2-L1: the desktop alone, or a sign-in before the keyring row that lists the invite, earns no collect
+    assert_includes rules(scan([invite_listed, relay_desktop, collect_jake], scenario: scenario, game: game)), 'harvest_unearned'
+    assert_includes rules(scan([relay_login, invite_listed, collect_jake], scenario: scenario, game: game)), 'harvest_unearned'
   end
 
   test 'R1-L1: the relay collect is flagged in each missing-proof case' do
     game = FakeGame.new
     collect_jake = collect([crow('jake', 'hot_jake')])
     unearned = ->(rows, scenario, g = game) { assert_includes rules(scan(rows, scenario: scenario, game: g)), 'harvest_unearned' }
-    unearned.call([relay_login, collect_jake], relay_scenario(invite: false))
-    unearned.call([relay_login, collect_jake], relay_scenario(admin: false))
-    unearned.call([relay_login, collect_jake], relay_scenario, FakeGame.new(proof: false))
-    unearned.call([relay_login, collect_jake], relay_scenario, nil)
-    unearned.call([relay_login, collect_jake], relay_scenario(pc: 'it_pc'))
+    unearned.call([invite_listed, relay_login, collect_jake], relay_scenario(invite: false))
+    unearned.call([invite_listed, relay_login, collect_jake], relay_scenario(admin: false))
+    unearned.call([invite_listed, relay_login, collect_jake], relay_scenario, FakeGame.new(proof: false))
+    unearned.call([invite_listed, relay_login, collect_jake], relay_scenario, nil)
+    unearned.call([invite_listed, relay_login, collect_jake], relay_scenario(pc: 'it_pc'))
     # the relay is not at the PC the answer names
-    unearned.call([relay_login, collect([crow('jake', 'hot_jake')], pc: 'it_pc')], relay_scenario)
+    unearned.call([invite_listed, relay_login, collect([crow('jake', 'hot_jake')], pc: 'it_pc')], relay_scenario)
     # a disconnect, a lock, a logout and a bootstrap each take the mark back
     scenario = relay_scenario
     ended = row({ 'success' => true, 'endedPcIds' => ['profile_pc'] }, path: 'network/technique', method: 'POST')
@@ -281,15 +292,15 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     off = row({ 'session' => nil }, path: 'container/profile_pc')
     typed_user = row({ 'session' => { 'npcId' => 'jake', 'username' => 'x', 'displayName' => 'x', 'via' => 'password' } }, path: 'container/profile_pc')
     [ended, lock, logout, boot, off, typed_user].each do |between|
-      unearned.call([relay_login, between, collect_jake], scenario)
+      unearned.call([invite_listed, relay_login, between, collect_jake], scenario)
     end
     # a later typed sign-in at that PC by another account ends it as well
-    unearned.call([relay_login, admin_signin('profile_pc', 'jake'), collect_jake], scenario)
+    unearned.call([invite_listed, relay_login, admin_signin('profile_pc', 'jake'), collect_jake], scenario)
   end
 
   test 'R1-L1: a relay earns no admin step: a keyboard-shaped admin desktop after it is still flagged' do
     kb = row({ 'session' => { 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'password', 'access' => 'admin' } }, path: 'container/profile_pc')
-    assert_equal 1, access_hits(scan([relay_login, kb], scenario: relay_scenario, game: FakeGame.new)).length
+    assert_equal 1, access_hits(scan([invite_listed, relay_login, kb], scenario: relay_scenario, game: FakeGame.new)).length
   end
 
   # ---- account-only accounts: R1-L2, R1-L9, R1-L10, R1-L13 ----
@@ -421,9 +432,9 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     scenario = relay_scenario
     relay = relay_session
     read = ->(items) { row({ 'session' => relay, 'contents' => items }, path: 'container/profile_pc') }
-    assert_empty scan([relay_login, read.call([JAKE_ITEM])], scenario: scenario, game: game)
-    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([relay_login, read.call([SAM_ITEM])], scenario: scenario, game: game))
+    assert_empty scan([invite_listed, relay_login, read.call([JAKE_ITEM])], scenario: scenario, game: game)
+    assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([invite_listed, relay_login, read.call([SAM_ITEM])], scenario: scenario, game: game))
     without = relay_scenario(invite: false)
-    assert_includes rules(scan([relay_login, read.call([JAKE_ITEM])], scenario: without, game: game)), 'profile_admin_read'
+    assert_includes rules(scan([invite_listed, relay_login, read.call([JAKE_ITEM])], scenario: without, game: game)), 'profile_admin_read'
   end
 end

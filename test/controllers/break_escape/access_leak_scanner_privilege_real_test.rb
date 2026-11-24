@@ -1293,6 +1293,59 @@ module BreakEscape
       assert_flagged found, 'log_row'
     end
 
+    # ---- Ops S5bc fix, scanner review R2 (docs/agents/ops_core_build/reviews/S5bc_scanner_R2.md) ----
+
+    # R2-L1: a relay administrator needs an earlier keyring row that lists the invite AND an earlier relay sign-in, in capture order.
+    test 'R2-L1 (G1): the relay sign-in taken out: the desktop alone proves no relay administrator, so its collect is unearned' do
+      rows = run_real
+      found = reported(without(rows, 47))
+      assert_flagged found, 'ops_string', 'ops:key:access'
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'R2-L1 (G1b): a relay desktop and collect with no relay sign-in, before the invite is held, are reported' do
+      rows = run_real
+      forged = rows.first(35) + [rows[47], rows[48]]
+      found = reported(forged)
+      assert_flagged found, 'ops_string', 'ops:key:access'
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'R2-L1 (H1b): a relay desktop and collect where no admin was ever at hot_desk are reported' do
+      rows = run_real
+      found = reported(rows.first(13) + [rows[47], rows[48]])
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'R2-L1 (G2): the real relay sign-in, desktop and collect moved before the invite item and the keyring row that lists it are reported' do
+      rows = run_real
+      assert_empty reported(rows)
+      moved = rows.first(44) + rows[46..48] + rows[44..45] + rows[49..]
+      found = reported(moved)
+      assert_flagged found, 'ops_string', 'ops:key:access'
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'R2-L1: the relay sign-in taken out, the relay administrator collect is unearned (tamper 5 as the review asks)' do
+      rows = run_real
+      assert_flagged reported(without(rows, 47)), 'harvest_unearned'
+    end
+
+    test 'R2-L1: the keyring row that lists the invite taken out leaves the relay sign-in and collect unearned' do
+      rows = run_real
+      found = reported(without(rows, 46))
+      assert_flagged found, 'ops_string', 'ops:key:access'
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'R2-L1: a bootstrap between the relay sign-in and a second desktop answer takes the proof back' do
+      rows = run_real
+      boot = { 't' => rows[47]['t'], 'method' => 'GET', 'path' => '/break_escape/games/190019/scenario', 'status' => 200, 'body' => { 'sessions' => {} } }
+      found = reported(rows.first(47) + [boot, rows[47], rows[48]])
+      assert_flagged found, 'ops_string', 'ops:key:access'
+      assert_flagged found, 'harvest_unearned'
+    end
+
     # ---- re-checks the scanner fixer listed ----
 
     def with_account_only(data)
