@@ -53,7 +53,7 @@ function world() {
         summary: text(`summary_${alias}`), status, needs: [], ...extra
     });
     const rows = [
-        { id: 'pc_a', kind: 'pc', name: text('pcA'), host: text('hostA'), sprite: 'pc_desktop', headless: false, remoteSignIn: true },
+        { id: 'pc_a', kind: 'pc', name: text('pcA'), host: text('hostA'), sprite: 'pc_desktop', headless: false, remoteSignIn: true, address: '10.20.0.7' },
         { id: 'pc_b', kind: 'pc', name: text('pcB'), host: text('hostB'), sprite: 'pc_desktop', headless: false, remoteSignIn: true,
             session: { displayName: text('whoB'), username: text('userB'), access: 'admin', via: 'technique' } },
         { id: 'pc_c', kind: 'pc', name: text('pcC'), host: text('hostC'), sprite: 'pc_desktop', headless: false, remoteSignIn: true,
@@ -82,7 +82,7 @@ function world() {
         network: { id: 'lab_net', name: text('networkName') },
         hosts: rows,
         networks: [
-            { id: 'lab_net', name: text('blockName'), route: 'up', via: null, hosts: rows, swept: true, ops: true },
+            { id: 'lab_net', name: text('blockName'), route: 'up', via: null, hosts: rows, swept: true, ops: true, cli: { range: '10.20.0.0/24' } },
             { id: 'far_net', name: text('farName'), route: 'up', via: { hostId: 'pc_b', host: text('viaHost'), locked: true }, hosts: far, swept: false, ops: true },
             { id: 'dead_net', name: text('deadName'), route: 'down', hosts: [{ id: 'dead_pc', kind: 'pc', name: text('deadPc'), host: text('deadHost') }] }
         ]
@@ -283,7 +283,7 @@ const FRAGMENT_WORDS = new Set(FRAGMENTS.flatMap(wordsOf));
  * a control title word, a fixed Terminal template word, a default of cli-gen/defaults.js, or a number.
  * Returns the problems, each a string.
  */
-function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, modules = new Set(), ports = [], hostCount = 0 }, panelsAllRaw = panelsRaw, counted = false) {
+function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, modules = new Set(), ports = [], hostCount = 0, served = new Set() }, panelsAllRaw = panelsRaw, counted = false) {
     const problems = [];
     // "<kind> on <host>": the Terminal has the kind and the host as two columns, and the host is a piece of its own in Panels
     const fold = (list) => list.map(p => {
@@ -321,10 +321,15 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, 
         ...[...titles].flatMap(wordsOf), ...FRAGMENT_WORDS, ...defaults]);
     const allowedNumbers = new Set([...panelsAll.flatMap(wordsOf), ...ports, ...Array.from({ length: hostCount + 1 }, (_, i) => String(i))]);
     const allowedWord = (w) => (/^\d+$/.test(w) ? allowedNumbers.has(w) || allowedWords.has(w) : allowedWords.has(w));
+    // A four-part number is drawn only when the server sent it (as an address, or inside a range)
+    const servedNumbers = new Set([...served].flatMap(v => v.match(/\d+\.\d+\.\d+\.\d+/g) || []));
+    const drawn = [...terminal.elements, ...terminal.lines.map(l => l.join(' '))].flatMap(t => collapse(t).match(/\d+\.\d+\.\d+\.\d+/g) || []);
+    for (const a of drawn) if (!servedNumbers.has(a)) problems.push(`${label}: Terminal draws an address that was not served: ${a}`);
     const idKeys = new Set([...ids].map(key));
     const allKeys = new Set(panelsAll.map(key));
     const allowed = (p) => {
         const k = key(p);
+        if ([...served].some(v => p === v || p === `(${v})`)) return true;
         if (idKeys.has(k) || modules.has(p) || commands.has(p) || titles.has(p) || TEMPLATE_RES.some(re => re.test(p)) || panelsKeys.has(k) || allKeys.has(k)) return true;
         return TERMINAL_LAYOUTS.some(re => re.test(p)) && wordsOf(p).every(allowedWord);
     };
@@ -365,9 +370,14 @@ function context(h) {
             if (f.cli?.module) modules.add(String(f.cli.module));
         }
     }
+    // Addresses and ranges the server sent (the Terminal draws them only when served; Panels draw none)
+    const served = new Set();
+    for (const r of view.allRows()) if (r.address) served.add(String(r.address));
+    for (const b of [view.ownOpsBlock?.(), ...(view.networkBlocks?.() || [])].filter(Boolean)) if (b.cli?.range) served.add(String(b.cli.range));
+    for (const v of served) wordsOf(v).forEach(x => defaults.add(x));
     const ports = new Set();
     for (const r of view.allRows()) for (const sv of r.services || []) if (sv.port !== undefined) ports.add(String(sv.port));
-    return { ids, ports, hostCount: view.allRows().length, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults, modules };
+    return { served, ids, ports, hostCount: view.allRows().length, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults, modules };
 }
 
 // ---------------------------------------------------------------------------------------------
