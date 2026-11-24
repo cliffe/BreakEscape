@@ -12,6 +12,8 @@ module BreakEscape
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
+    include MfaAccess
+    include MfaSignIn
     include Wearables
     include PinDust
 
@@ -3645,6 +3647,12 @@ module BreakEscape
           save! if r&.stored?
           return { status: :unprocessable_entity,
                    body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
+        end
+
+        # Multi-factor sign-in (S8a): a right password owes a second step when the policy asks for one
+        step = mfa_step_for(pc, npc)
+        unless step == 'none'
+          return issue_mfa_challenge!(pc, npc, step, foothold: foothold, from: from, from_given: from_given)
         end
 
         login_failures.delete(key)
