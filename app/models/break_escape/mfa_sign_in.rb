@@ -87,11 +87,12 @@ module BreakEscape
       return :no_device unless held_code_device(owner)
 
       npc = scenario_room_npc(owner)
-      window = mfa_now / MfaModel::STEP_SECONDS
+      now = mfa_now
+      window = now / MfaModel::STEP_SECONDS
       used = mfa_account_for(owner)['used']
       { deviceId: device['id'], displayName: (npc && (npc['displayName'] || npc['id'])) || owner, npcId: owner,
-        code: code_device_code(device['id']),
-        secondsLeft: MfaModel::STEP_SECONDS - (mfa_now % MfaModel::STEP_SECONDS),
+        code: code_device_code(device['id'], window),
+        secondsLeft: MfaModel::STEP_SECONDS - (now % MfaModel::STEP_SECONDS),
         used: !used.nil? && used.to_i >= window }
     end
 
@@ -203,11 +204,11 @@ module BreakEscape
       mine = mfa_pending_map.select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
       npc = account_npcs.find { |n| n['id'].to_s == npc_id.to_s }
       username = npc && npc['creds'].is_a?(Hash) ? npc['creds']['username'] : nil
-      requests = second_step_requests([mine], npc_id: npc_id).filter_map do |entry|
-        info = find_login_pc(entry['key'])
+      requests = second_step_requests([{ kind: 'pc', map: mine }], npc_id: npc_id).filter_map do |entry|
+        info = find_login_pc(entry['id'])
         next unless info
 
-        row = { pcId: entry['key'], host: host_label(info[:object]), username: username, n: entry['n'] }
+        row = { pcId: entry['id'], host: host_label(info[:object]), username: username, n: entry['n'] }
         row[:numbers] = entry['numbers'] if entry['numbers']
         row
       end
@@ -278,8 +279,7 @@ module BreakEscape
       record = issue_second_step!(mfa_pending_map, pc['id'].to_s, npc['id'], kind, extra)
       body = { success: false, mfaRequired: true, mfa: kind, pcId: pc['id'], npcId: npc['id'] }
       if kind == 'push_number_match'
-        number = MfaModel.numbers(mfa_key, id, pc['id'].to_s, npc['id'].to_s, record['nonce'])[:right]
-        OpsLog.note_issued_secret(number)
+        number = second_step_numbers({ kind: 'pc', id: pc['id'].to_s }, record, npc_id: npc['id'].to_s)[:right]
         body[:number] = number
       end
       write_log_row!('mfa_challenge', as: { account: npc['creds']['username'] }, where: { kind: 'pc', id: pc['id'].to_s },

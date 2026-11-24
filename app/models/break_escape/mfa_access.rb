@@ -11,9 +11,11 @@ module BreakEscape
 
     CODE_FORMAT = /\A\d{6}\z/.freeze
 
-    # The server's wall clock, through one seam (unit 13 moves it to MfaSignIn)
-    def mfa_now
-      Time.current.to_i
+    # The one key a subject has wherever it is keyed by kind and id together (numbers, request
+    # keys): "<kind>:<id>". A door `x` and a PC `x` never share one. A record map's own key stays
+    # the bare id.
+    def mfa_subject_key(subject)
+      "#{subject[:kind]}:#{subject[:id]}"
     end
 
     # Drops records older than PENDING_SECONDS, except one marked passed. Run on every read and
@@ -39,8 +41,8 @@ module BreakEscape
     end
 
     # The model's code for the current window (noted as an issued secret)
-    def code_device_code(device_id)
-      mfa_code_for_window(device_id, mfa_window)
+    def code_device_code(device_id, window = mfa_window)
+      mfa_code_for_window(device_id, window)
     end
 
     # :passed, [:stale, 'used' | 'expired'], :wrong, :expired (the fifth wrong try; the record is
@@ -62,7 +64,7 @@ module BreakEscape
       return :expired unless record.is_a?(Hash) && subject.is_a?(Hash) && record['kind'] == 'code'
       return :malformed unless typed.is_a?(String) && typed.match?(CODE_FORMAT)
 
-      window = mfa_window
+      window = now / MfaModel::STEP_SECONDS
       codes = (window - 3..window).to_h { |w| [w, mfa_code_for_window(device_id, w)] }
       used = account['used']
       state, reason = MfaModel.code_state(typed, codes, used, window)
@@ -115,8 +117,8 @@ module BreakEscape
 
     # The three numbers of a number-matching attempt, in display order: { right:, wrong:, choices: }.
     # All three are noted as issued secrets.
-    def second_step_numbers(subject_key, pending, npc_id:)
-      numbers = MfaModel.numbers(mfa_key, id, subject_key, npc_id, pending['nonce'])
+    def second_step_numbers(subject, pending, npc_id:)
+      numbers = MfaModel.numbers(mfa_key, id, mfa_subject_key(subject), npc_id, pending['nonce'])
       numbers[:choices].each { |n| OpsLog.note_issued_secret(n.to_s) }
       numbers
     end
@@ -131,7 +133,7 @@ module BreakEscape
       return :no_phone unless push_record?(record, subject) && phone
 
       right = record['kind'] != 'push_number_match' ||
-              (!number.nil? && number.to_s == second_step_numbers(key, record, npc_id: npc_id)[:right].to_s)
+              (!number.nil? && number.to_s == second_step_numbers(subject, record, npc_id: npc_id)[:right].to_s)
       if deny || !right
         map.delete(key)
         return :cancelled
@@ -140,17 +142,23 @@ module BreakEscape
       :passed
     end
 
-    # The waiting push requests for an owner across the given record maps, one per key, with the
-    # prompt count and, for number matching, the three numbers in model order (none marked).
-    def second_step_requests(maps, npc_id:)
+    # The waiting push requests for an owner across the given record sets, one per subject. Each
+    # set is `{ kind:, map: }` (the subject kind and the map holding its records, keyed by the
+    # bare id). An entry is { 'key' => "<kind>:<id>", 'subject' => kind, 'id', 'kind' (the step
+    # kind), 'n' } and, for number matching, 'numbers' in model order (none marked).
+    def second_step_requests(sets, npc_id:)
       seen = {}
-      Array(maps).each do |map|
+      Array(sets).each do |set|
+        map = set[:map]
         tidy_pending!(map)
-        map.each do |key, rec|
+        map.each do |id, rec|
+          subject = { kind: set[:kind].to_s, id: id.to_s }
+          key = mfa_subject_key(subject)
           next if seen.key?(key) || !rec.is_a?(Hash) || rec['passed'] == true || !PUSH_KINDS.include?(rec['kind'])
 
-          entry = { 'key' => key, 'kind' => rec['kind'], 'n' => rec['n'].to_i }
-          entry['numbers'] = second_step_numbers(key, rec, npc_id: npc_id)[:choices] if rec['kind'] == 'push_number_match'
+          entry = { 'key' => key, 'subject' => subject[:kind], 'id' => subject[:id], 'kind' => rec['kind'],
+                    'n' => rec['n'].to_i }
+          entry['numbers'] = second_step_numbers(subject, rec, npc_id: npc_id)[:choices] if rec['kind'] == 'push_number_match'
           seen[key] = entry
         end
       end

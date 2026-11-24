@@ -313,7 +313,7 @@ module BreakEscape
       game = build(policy: { 'mfa' => 'push_number_match' })
       res = first_step(game)
       assert_equal 'push_number_match', res[:body][:mfa]
-      numbers = MfaModel.numbers(game.send(:mfa_key), game.id, 'sam_pc', 'sam', game.player_state['mfaPending']['sam_pc']['nonce'])
+      numbers = MfaModel.numbers(game.send(:mfa_key), game.id, 'pc:sam_pc', 'sam', game.player_state['mfaPending']['sam_pc']['nonce'])
       assert_equal numbers[:right], res[:body][:number]
       assert_not_includes game.player_state['mfaPending']['sam_pc'].to_json, numbers[:wrong].first.to_s if numbers[:wrong].first.to_s.size > 2
       assert_nil game.player_state['sessions']['sam_pc']

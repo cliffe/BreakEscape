@@ -7,6 +7,7 @@ module BreakEscape
   # S8a unit 14: the subject functions of the second sign-in step, push and approve.
   class MfaAccessSubjectTest < ActiveSupport::TestCase
     KS = KeyringLoginScenario
+    PC_B = { kind: 'pc', id: 'pc:b' }.freeze
     T0 = Time.zone.at(1_800_000_000)
     PC = { kind: 'pc', id: 'jake_pc' }.freeze
     OTHER = { kind: 'test_only', id: 'x1' }.freeze
@@ -147,51 +148,59 @@ module BreakEscape
     test 'numbers are stable within an attempt and differ for the next' do
       build
       rec = issue('push_number_match')
-      a = @game.second_step_numbers('pc:a', rec, npc_id: 'ann')
-      assert_equal a, @game.second_step_numbers('pc:a', rec, npc_id: 'ann')
+      a = @game.second_step_numbers(PC, rec, npc_id: 'ann')
+      assert_equal a, @game.second_step_numbers(PC, rec, npc_id: 'ann')
       assert_equal 3, a[:choices].uniq.size
       assert_includes a[:choices], a[:right]
       rec2 = issue('push_number_match')
-      refute_equal a[:choices], @game.second_step_numbers('pc:a', rec2, npc_id: 'ann')[:choices]
+      refute_equal a[:choices], @game.second_step_numbers(PC, rec2, npc_id: 'ann')[:choices]
     end
 
     test 'approve: needs the held phone, deny and a wrong number cancel, the right number passes' do
       build
       rec = issue('push_number_match')
-      right = @game.second_step_numbers('pc:a', rec, npc_id: 'ann')
+      right = @game.second_step_numbers(PC, rec, npc_id: 'ann')
       assert_equal :no_phone, @game.approve_second_step(@map, 'pc:a', PC, npc_id: 'ann', number: right[:right])
       hold_phone
       assert_equal :cancelled, @game.approve_second_step(@map, 'pc:a', PC, npc_id: 'ann', number: right[:wrong][0])
       assert_nil @map['pc:a']
       assert_nil @game.player_state['mfaAccounts']['ann']['wrong']
       rec = issue('push_number_match')
-      right = @game.second_step_numbers('pc:a', rec, npc_id: 'ann')[:right]
+      right = @game.second_step_numbers(PC, rec, npc_id: 'ann')[:right]
       assert_equal :cancelled, @game.approve_second_step(@map, 'pc:a', PC, npc_id: 'ann', number: right, deny: true)
       rec = issue('push_number_match')
-      right = @game.second_step_numbers('pc:a', rec, npc_id: 'ann')[:right]
+      right = @game.second_step_numbers(PC, rec, npc_id: 'ann')[:right]
       assert_equal :passed, @game.approve_second_step(@map, 'pc:a', PC, npc_id: 'ann', number: right)
       assert @map['pc:a']
     end
 
-    test 'requests list waiting pushes once per key, numbers unmarked, in model order' do
+    test 'requests list waiting pushes once per subject, numbers unmarked, in model order' do
       build
       issue('push', 'pc:a')
       issue('push_number_match', 'pc:b')
       @game.issue_second_step!(@map, 'pc:c', 'ann', 'code')
       other = { 'pc:a' => { 'kind' => 'push', 'n' => 9, 'at' => T0.to_i } }
-      list = @game.second_step_requests([@map, other], npc_id: 'ann')
-      assert_equal %w[pc:a pc:b], list.map { |r| r['key'] }
+      list = @game.second_step_requests([{ kind: 'pc', map: @map }, { kind: 'pc', map: other }], npc_id: 'ann')
+      assert_equal %w[pc:pc:a pc:pc:b], list.map { |r| r['key'] }
+      assert_equal %w[pc:a pc:b], list.map { |r| r['id'] }
       assert_equal 0, list[0]['n']
       assert_nil list[0]['numbers']
-      assert_equal @game.second_step_numbers('pc:b', @map['pc:b'], npc_id: 'ann')[:choices], list[1]['numbers']
+      assert_equal @game.second_step_numbers(PC_B, @map['pc:b'], npc_id: 'ann')[:choices], list[1]['numbers']
     end
 
-    test 'another subject kind: passed leaves the record, numbers differ, shared per-owner entries move' do
+    test 'another subject kind: passed leaves the record, numbers and request keys differ, shared per-owner entries move' do
       build({ 'approvesPrompts' => 'always' })
-      rec = issue('push_number_match', 'x1')
-      pc_numbers = @game.second_step_numbers('pc:x1', rec, npc_id: 'ann')
-      assert_equal @game.second_step_numbers('x1', rec, npc_id: 'ann'), @game.second_step_numbers('x1', rec, npc_id: 'ann')
-      refute_equal pc_numbers[:choices], @game.second_step_numbers('x1', rec, npc_id: 'ann')[:choices]
+      pc_rec = issue('push_number_match', 'x1')
+      door = { kind: 'door', id: 'x1' }
+      door_map = { 'x1' => pc_rec.merge('nonce' => pc_rec['nonce']) }
+      pc_numbers = @game.second_step_numbers({ kind: 'pc', id: 'x1' }, pc_rec, npc_id: 'ann')
+      assert_equal pc_numbers, @game.second_step_numbers({ kind: 'pc', id: 'x1' }, pc_rec, npc_id: 'ann')
+      refute_equal pc_numbers[:choices], @game.second_step_numbers(door, pc_rec, npc_id: 'ann')[:choices]
+      list = @game.second_step_requests([{ kind: 'pc', map: @map }, { kind: 'door', map: door_map }], npc_id: 'ann')
+      assert_equal %w[door:x1 pc:x1], list.map { |r| r['key'] }.sort
+      assert_equal 2, list.size
+      assert_equal pc_numbers[:choices], list.find { |r| r['key'] == 'pc:x1' }['numbers']
+      refute_equal pc_numbers[:choices], list.find { |r| r['key'] == 'door:x1' }['numbers']
       issue('push', 'x1')
       assert_equal 2, @game.player_state['mfaAccounts']['ann']['started']
       assert_equal :passed, send_prompt(key: 'x1', subject: OTHER)
