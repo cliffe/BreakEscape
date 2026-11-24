@@ -105,13 +105,17 @@ export async function processGameActionTags(tags, ui, options = {}) {
                             if (unlockResult.success) {
                                 if (ui) ui.showNotification(`🔓 Door unlocked: ${getRoomDisplayName(param)}`, 'success');
                                 console.log('✅ Door unlock successful:', unlockResult);
+                            } else if (unlockResult.secondStepCancelled) {
+                                // The second step was cancelled: nothing to show
+                                console.log('Door second step cancelled:', unlockResult.roomId);
                             } else {
-                                const errorMsg = `⚠️ Failed to unlock: ${getRoomDisplayName(param)} - ${unlockResult.error || 'Unknown error'}`;
+                                const errorMsg = `⚠️ Failed to unlock:${getRoomDisplayName(param)} - ${unlockResult.error || 'Unknown error'}`;
                                 if (ui) ui.showNotification(errorMsg, 'warning');
                                 console.warn('⚠️ Door unlock failed:', unlockResult);
                             }
                         }).catch(error => {
-                            const errorMsg = `⚠️ Door unlock error: ${error.message}`;
+                            if (error?.body?.reason === 'second_step_cancelled') return;
+                            const errorMsg = `⚠️ Door unlock error:${error.message}`;
                             if (ui) ui.showNotification(errorMsg, 'error');
                             console.error('⚠️ Door unlock exception:', error);
                         });

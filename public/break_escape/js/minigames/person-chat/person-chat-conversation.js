@@ -483,6 +483,8 @@ export default class PersonChatConversation {
                 window.gameAlert('Failed to unlock door', 'error', 'Error', 3000);
             }
         } catch (error) {
+            // A cancelled second step shows nothing (S8c)
+            if (error?.body?.reason === 'second_step_cancelled') return;
             console.error('NPC unlock error:', error);
             window.gameAlert('Failed to unlock door', 'error', 'Error', 3000);
         }
