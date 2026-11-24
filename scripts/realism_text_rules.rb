@@ -33,6 +33,12 @@ module RealismTextRules
   TELLTALE = ['decoy', 'fake', 'false', 'bait', 'patched', 'not\s+vulnerable'].freeze
   WEAK_TELLTALE = %w[real true fixed safe].freeze
 
+  # Words that make a line read as a step or a request (R1-S4). The list cannot be complete: a human review of
+  # every new catalog entry is still required (docs/ACCESS_AND_NETWORKS.md, N16).
+  INSTRUCTION_VERBS = %w[send request post get put delete run type enter set supply craft inject upload execute trigger bypass overflow].freeze
+  INSTRUCTION_WORDS = %w[payload payloads shellcode].freeze
+  SENSITIVE_DIRS = %w[etc proc root var tmp bin sbin usr dev sys boot opt].freeze
+
   module_function
 
   # The findings for one string.
@@ -56,7 +62,7 @@ module RealismTextRules
     m = s.match(/[;|&`]|\$\(/)
     add.call('shell_metacharacter', m[0]) if m
     tokens = s.split(/\s+/).reject(&:empty?)
-    flag = tokens.find { |t| t =~ /\A--?[A-Za-z]/ }
+    flag = tokens.find { |t| strip(t) =~ /\A--?[A-Za-z]/ }
     add.call('flag', flag) if flag
     m = s.match(/\h{16,}/)
     if m
@@ -66,6 +72,7 @@ module RealismTextRules
       add.call('encoded_blob', b) if b
     end
     path_rules(tokens, prose, add)
+    step_rules(s, tokens, prose, add)
     credential_rules(s, tokens, kind, add)
     host_rules(s, tokens, add)
     telltale_rules(s, kind, add)
@@ -103,12 +110,40 @@ module RealismTextRules
     end
   end
 
+  # A line that tells someone what to do, or a request written as a request (R1-S4).
+  def step_rules(s, tokens, prose, add)
+    return unless prose
+
+    verbs = INSTRUCTION_VERBS.join('|')
+    m = s.match(/\A(?:[A-Za-z][A-Za-z ]{0,20}:\s*)?(#{verbs})(?![\w:-])\s+\S/i) ||
+        s.match(/(?:\A|[,;.]\s*|\s)then\s+(#{verbs})(?![\w:-])/i)
+    add.call('instruction', m[1]) if m
+    m = s.match(/(?<![A-Za-z0-9])(#{INSTRUCTION_WORDS.join('|')})(?![A-Za-z0-9])/i)
+    add.call('instruction', m[1]) if m
+    tokens.each do |raw|
+      t = strip(raw)
+      next unless t.include?('/') || t.include?('?')
+
+      if t =~ /\?[A-Za-z0-9_]+=/
+        add.call('request_form', t)
+        next
+      end
+      parts = t.split('/', -1)
+      next unless parts.length == 2 && parts.none?(&:empty?)
+
+      if parts.last =~ /\A[A-Za-z0-9_-]+\.[A-Za-z][A-Za-z0-9]{0,4}\z/ || parts.last.include?('?') ||
+         (SENSITIVE_DIRS.include?(parts.first.downcase) && parts.last =~ /\A[A-Za-z0-9_.-]+\z/)
+        add.call('request_form', t)
+      end
+    end
+  end
+
   def credential_rules(s, tokens, kind, add)
     tokens.each do |raw|
       t = strip(raw)
       next if t.empty?
 
-      if t =~ /\A[^:\s]+(:[^:\s]+)+\z/ && t !~ PRIVATE_V4_PORT && t !~ %r{://}
+      if t =~ /\A[^:\s]+(:[^:\s]+)+\z/ && t !~ PRIVATE_V4_PORT && t !~ %r{://} && t !~ /\A\d{1,2}:\d{2}(:\d{2})?\z/
         add.call('credential', t)
         next
       end
@@ -142,8 +177,12 @@ module RealismTextRules
       end
       next unless t =~ /\A[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+\z/
 
-      last = t.split('.').last
-      add.call('host', t) if last =~ /\A[A-Za-z]+\z/ && !ALLOWED_TLDS.include?(last.downcase)
+      parts = t.split('.')
+      last = parts.last
+      # a name needs a last part of two or more letters after a part that holds a letter (not 2.4.x or e.g)
+      next unless parts[0...-1].any? { |p| p =~ /[A-Za-z]/ }
+
+      add.call('host', t) if last =~ /\A[A-Za-z]{2,}\z/ && !ALLOWED_TLDS.include?(last.downcase)
     end
   end
 

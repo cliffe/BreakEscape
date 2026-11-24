@@ -165,6 +165,19 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
     end
   end
 
+  test 'a scenario that links entries but cannot be read stops the index being written' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      scen = File.join(tmp, 'scen', 'broken_one')
+      FileUtils.mkdir_p(scen)
+      File.write(File.join(scen, 'scenario.json'), '{ "realism": ')
+      before = File.binread(index)
+      problems = check_realism_catalog(dir, index_path: index, scenarios_dir: File.join(tmp, 'scen'), write_index: true)
+      assert(errors(problems).any? { |p| p.rule == 'scenario_unreadable' && p.id == 'broken_one' })
+      assert_equal before, File.binread(index)
+    end
+  end
+
   test 'a hand-edited row that can no longer be read is an error, not a skipped row' do
     Dir.mktmpdir do |tmp|
       dir, index = copy_catalog(tmp)
@@ -258,6 +271,33 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
 
   def rules(text, kind: :prose)
     RealismTextRules.errors(text, kind: kind).map(&:rule)
+  end
+
+  test 'text rules refuse a line that reads as a step or a request form' do
+    {
+      'State: send an oversized name field to the sign-in form to trigger it.' => 'instruction',
+      'Run the check twice, then request the admin page with a blank session.' => 'instruction',
+      'Check it twice, then send the long name.' => 'instruction',
+      'Type the long name into the box' => 'instruction',
+      'The shellcode is large' => 'instruction',
+      'A payload of 400 bytes' => 'instruction',
+      'GET cgi-bin/status.php returns the build' => 'instruction',
+      'Request index.php?id=1 shows the error' => 'instruction',
+      'POST to api/login with a long name' => 'instruction',
+      'The page cgi-bin/status.php shows the build' => 'request_form',
+      'Seen at status/page?name=x here' => 'request_form',
+      'Options (-sV) give more' => 'flag',
+      'etc/shadow readable' => 'request_form'
+    }.each do |text, rule|
+      assert_includes rules(text), rule, text
+    end
+  end
+
+  test 'text rules pass honest state, version and date lines' do
+    ['State: update lag of two releases.', 'State: release line is behind.', 'Disclosed: 0000-01-01.', 'Type: file share',
+     'Settings are shared', 'Getting older', 'Posted notice is stale', 'Update service is running, then restarts',
+     'TCP/IP', 'HTTP/1.1', 'Users/groups listed', 'Release line 2.4.x is behind', 'FileHold 3.2 ready, e.g. for guests',
+     'Server time 14:02', 'Server time 14:02:30'].each { |text| assert_empty rules(text), text }
   end
 
   test 'text rules pass the ordinary look-alikes' do
