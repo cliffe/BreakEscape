@@ -894,6 +894,9 @@ export async function addToInventory(sprite) {
                     return { ok: false, reason: 'rejected', message: result.message };
                 }
 
+                // The entries of the facts this add earned (R1-S1): in before the facts are granted
+                mergeEarnedFactEntries(result.facts);
+
                 // Server accepted - continue with local inventory update
                 console.log('Server validated item collection:', result);
             } catch (error) {
@@ -958,6 +961,8 @@ export async function addToInventory(sprite) {
         
         // Special handling for keys - group them together
         if (sprite.scenarioData.type === 'key') {
+            // The server stamps a key's facts on its add too (S7, R1-C17)
+            grantRevealedFacts(sprite.scenarioData);
             // addKeyToInventory is synchronous and returns a bare boolean.
             return addKeyToInventory(sprite)
                 ? { ok: true, reason: 'added' }
@@ -1138,6 +1143,22 @@ export async function addToInventory(sprite) {
     } catch (error) {
         console.error('Error adding to inventory:', error);
         return { ok: false, reason: 'error', message: error.message };
+    }
+}
+
+// The server withholds the entry of a fact the player has not earned (R1-S1) and sends it as the
+// fact is earned. Merge each into the live social.intelFacts before the grant, as a feed fact is.
+// An id already listed is left as it is.
+function mergeEarnedFactEntries(map) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return;
+    const sc = window.gameScenario;
+    if (!sc || typeof sc !== 'object') return;
+    for (const [id, entry] of Object.entries(map)) {
+        if (!id || id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        if (!sc.social || typeof sc.social !== 'object') sc.social = {};
+        if (!sc.social.intelFacts || typeof sc.social.intelFacts !== 'object') sc.social.intelFacts = {};
+        if (!Object.prototype.hasOwnProperty.call(sc.social.intelFacts, id)) sc.social.intelFacts[id] = entry;
     }
 }
 

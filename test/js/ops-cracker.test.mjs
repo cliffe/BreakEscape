@@ -347,3 +347,13 @@ test('R1-C21: hostile display name, username and token stay text', () => {
     assert.equal(host.querySelectorAll('img').length, 0);
     m.cleanup();
 });
+
+test('R1-S1: an earned fact merged after the scene opened, or carried by a reload bootstrap, shows with its words', () => {
+    const live = { pet: { label: 'Her dog is called Biscuit' } };
+    const { m, host } = open({ intel: live, facts: ['pet', 'year'] });
+    assert.match(chip(host, 'year').textContent, /^year$/, 'unlisted so far: the bare id');
+    live.year = { label: 'Born in 1990' };       // the server's entry, merged as the fact is earned
+    m._readKeyring(); m._render();
+    assert.equal(chip(host, 'year').textContent, 'Born in 1990');
+    m.cleanup();
+});
