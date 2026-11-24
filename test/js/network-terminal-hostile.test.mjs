@@ -417,3 +417,31 @@ test('the checks themselves find a tag, an attribute, a control character and an
     assert.equal(run({ lines: 4 }), 1);
     assert.equal(run({ logShape: false }), 1);
 });
+
+test('R1-C6: the prompt (Tab completion, a picked technique) and the framework mark hold no control character', async () => {
+    const w = world(hostile);
+    // A technique whose id is hostile: picking it writes `use <id> on ` into the prompt
+    w.body.techniques[HOSTILE] = clone(w.body.techniques.t1);
+    const h = await mount(clone(w.body), { unplug: true, hold: true, params: { skin: 'cli' } });
+    try {
+        const root = h.view().container;
+        const input = root.querySelector('.network-term-input');
+        const mark = () => root.querySelector('.network-term-mark').textContent;
+        await submit(h, 'msfconsole');
+        await submit(h, 'use f1');
+        assert.ok(mark().length > 'msf >'.length, `the mark names the module: ${JSON.stringify(mark())}`);
+        assert.ok(!CONTROL.test(mark()), `control character in the mark: ${JSON.stringify(mark())}`);
+        // Tab on a prefix of the hostile module path
+        input.value = 'use <img';
+        input.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+        assert.ok(input.value.startsWith('use <img'), JSON.stringify(input.value));
+        assert.ok(!CONTROL.test(input.value), `control character in the prompt after Tab: ${JSON.stringify(input.value)}`);
+        // A picked technique
+        const pick = [...root.querySelectorAll('[data-action="select-technique"]')].find(b => b.closest('[data-technique]')?.getAttribute('data-technique') === HOSTILE);
+        if (pick) {
+            pick.click();
+            assert.ok(!CONTROL.test(input.value), `control character in the prompt after a pick: ${JSON.stringify(input.value)}`);
+        }
+        assert.ok(!CONTROL.test(root.querySelector('.network-term-mark').textContent));
+    } finally { h.end(); }
+});

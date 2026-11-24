@@ -389,7 +389,7 @@ export class TerminalRenderer {
 
     _pickTechnique(id) {
         this.useStep = id;
-        this.input.value = `use ${id} on `;
+        this.input.value = cleanText(`use ${id} on `);
         this._tabAttr();
         this._drawStrip();
         this.focusPrompt();
@@ -445,7 +445,7 @@ export class TerminalRenderer {
         if (e.key === 'Tab' && this.input.value !== '' && !e.shiftKey) {
             e.preventDefault();
             const out = complete(this.input.value, this.offers, this.view, this.mode);
-            this.input.value = out.completed;
+            this.input.value = cleanText(out.completed);
             this._tabAttr();
         }
     }
