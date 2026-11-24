@@ -64,6 +64,7 @@ require 'json'
 require_relative '../../lib/break_escape/access_identities'
 require_relative '../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative 'lib/flag_redaction'
+require_relative 'lib/helpdesk_leak_rules'
 
 count_tasks_flag = !ARGV.delete('--tasks').nil?
 show_flags = !ARGV.delete('--show-flags').nil?
@@ -187,6 +188,7 @@ def access_section(ps, game = nil)
     end]
   ]
   rows.concat(mfa_rows(ps, game))
+  rows.concat(HelpdeskLeakRules.verify_rows(ps, game))
   lines = ['access model']
   rows.each do |name, items|
     lines << "  #{name.ljust(15)} #{items.length}#{items.empty? ? '' : ": #{items.join('; ')}"}"
@@ -415,7 +417,7 @@ puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
-if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? } || mfa_shown?(ps, g)
+if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? } || mfa_shown?(ps, g) || HelpdeskLeakRules.shown?(ps, g)
   puts access_section(ps, g)
   puts habits_section(g)
 else

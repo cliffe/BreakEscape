@@ -9,6 +9,7 @@ require_relative '../../../lib/break_escape/credential_model' unless defined?(Br
 require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
+require_relative 'helpdesk_leak_rules'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -241,6 +242,7 @@ class AccessLeakScanner
   CAPTURE_PAGE_LABEL = /(?<![[:alnum:]])captures?(?![[:alnum:]])/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
+  include HelpdeskLeakRules # S8b: the helpdesk rules, in their own file
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
@@ -510,6 +512,7 @@ class AccessLeakScanner
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     mfa_begin_scan # S8a: the second-step rules' own state
+    helpdesk_begin_scan # S8b: the helpdesk rules' own state
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -567,6 +570,7 @@ class AccessLeakScanner
       scan_credentials(body, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      body = scan_helpdesk(body, row, add) # S8b: judges the row, answers the body the second-step rules see
       scan_mfa(body, row, add)
     end
     mfa_finish_scan
@@ -626,6 +630,7 @@ class AccessLeakScanner
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
+    **HelpdeskLeakRules::RULE_TEXT,
     'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
     'mfa_session' => MFA_RULE_TEXT['mfa_session']
   }.freeze
