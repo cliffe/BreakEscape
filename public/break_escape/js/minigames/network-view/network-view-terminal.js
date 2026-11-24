@@ -462,8 +462,14 @@ export class TerminalRenderer {
         if (e.key === 'ArrowDown') { e.preventDefault(); this._walk(1); return; }
         if (e.key === 'Tab' && this.input.value !== '' && !e.shiftKey) {
             e.preventDefault();
-            const out = complete(this.input.value, this.offers, this.view, this.mode);
+            const before = this.input.value;
+            const out = complete(before, this.offers, this.view, this.mode);
             this.input.value = cleanText(out.completed);
+            // A Tab that adds nothing with several matches left lists them, as a shell does
+            if (this.input.value === before && Array.isArray(out.matches) && out.matches.length > 1) {
+                const log = this._log(true);
+                if (log) { appendLine(log, [span(out.matches.join('  '), 'note')]); this._syncLog(); }
+            }
             this._tabAttr();
         }
     }

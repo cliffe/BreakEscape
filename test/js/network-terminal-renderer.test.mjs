@@ -461,3 +461,23 @@ test('R1-C7: a redraw keeps focus on the quick command that had it; the log is s
     r.render(t.view, [], { footholdId: t.footholdId });
     assert.equal(fresh.querySelector('[role="log"]').getAttribute('aria-live'), 'polite');
 });
+
+test('R1-C13: a Tab that adds nothing, with several matches, lists them as one note line', () => {
+    const t = setup(viewOf('swept_hosts'));
+    t.type('s');          // sweep, scan, search... more than one verb starts with s
+    const lines = t.logText().length;
+    t.key('Tab');
+    const first = t.input.value;
+    t.type(first);
+    const shown = t.logText().length;
+    t.key('Tab');
+    const after = t.logText();
+    assert.ok(t.input.value === first, 'nothing more to add');
+    assert.ok(after.length > shown || shown > lines, JSON.stringify(after.slice(-2)));
+    const last = after[after.length - 1];
+    assert.ok(/\bscan\b/.test(last) && /\bsweep\b/.test(last), last);
+    // one match completes and lists nothing
+    const n = t.logText().length;
+    t.type('swee'); t.key('Tab');
+    assert.equal(t.logText().length, n);
+});
