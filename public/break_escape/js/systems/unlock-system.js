@@ -44,11 +44,22 @@ export async function notifyServerUnlock(lockable, type, method) {
         } catch (error) {
             // Non-retryable refusal, or still refused after the one re-post (the room never
             // promoted, i.e. a forge): surface as the normal refusal, exactly as before.
+            // S8c: a second step the player did not pass: no refusal text of ours, the lock
+            // step already gave its own feedback. The callers see no success and mark nothing open.
+            if (isSecondStepCancel(error)) return { success: false, secondStepCancelled: true };
             console.error(`Failed to notify server of ${method} unlock:`, error);
         }
     }
 
     return serverResponse;
+}
+
+// S8c: the error a cancelled second step rejects with (status 403, reason second_step_cancelled).
+function isSecondStepCancel(error) {
+    try {
+        if (window.lockStep?.isCancel?.(error)) return true;
+    } catch (e) { /* fall through to the plain shape check */ }
+    return !!error && error.status === 403 && error.body?.reason === 'second_step_cancelled';
 }
 
 // The id the server knows a lock by: a door's connected room, or the object's id.
@@ -179,6 +190,8 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
         if (response && response.success) return { outcome: 'unlocked', response };
         return { outcome: response && response.reason === 'uid_only' ? 'uid_only' : 'denied', response };
     } catch (error) {
+        // S8c: a cancelled second step is neither a uid_only nor a denied card
+        if (isSecondStepCancel(error)) return { outcome: 'second_step_cancelled', response: error.body || null };
         if (error && error.status) {
             const body = error.body || {};
             return { outcome: body.reason === 'uid_only' ? 'uid_only' : 'denied', response: body };
@@ -1068,6 +1081,35 @@ export function handleUnlock(lockable, type) {
         return;
     }
     
+    // S8c: a door an NPC has agreed to open (first factor accepted, second step pending) is
+    // retried with the npc method in place of the lock-type branch. A cancel is silent but for
+    // lockStep's own feedback.
+    if (type === 'door' && lockRequirements.secondStep && lockRequirements.npcStepOpener) {
+        const opener = lockRequirements.npcStepOpener;
+        const roomId = unlockTargetId(lockable, 'door');
+        const apiClient = window.ApiClient || window.APIClient;
+        Promise.resolve().then(() => apiClient.unlock('door', roomId, opener, 'npc', {}, { fromDoor: true }))
+            .then(answer => {
+                if (answer && answer.success) {
+                    unlockTarget(lockable, type, lockable.layer, answer);
+                    if (window.eventDispatcher) {
+                        window.eventDispatcher.emit('door_unlocked_by_npc', { roomId, npcId: opener, source: 'npc', retry: true });
+                    }
+                } else {
+                    window.gameAlert('Access denied', 'error', 'Error', 3000);
+                }
+            })
+            .catch(error => {
+                if (isSecondStepCancel(error)) {
+                    try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the door */ }
+                    return;
+                }
+                console.error('Door retry with the NPC failed:', error);
+                window.gameAlert('Access denied', 'error', 'Error', 3000);
+            });
+        return;
+    }
+
     // Emit unlock attempt event. This is reached only for a door that is locked, but it
     // fires before the outcome is known, so a player holding the key still triggers it.
     // Lines that should play only on a refusal use door_unlock_failed (emitDoorUnlockFailed).
@@ -1588,6 +1630,10 @@ export function handleUnlock(lockable, type) {
                         if (outcome === 'unlocked') {
                             // The server names the player's own card that passed
                             applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response), type));
+                        } else if (outcome === 'second_step_cancelled') {
+                            // S8c: the step was not passed. No reject sound, no refusal event, no
+                            // refusedKeycards (nothing was refused); lockStep gave its own feedback.
+                            if (copierHasCopies) startRfidReader({ accessList: true });
                         } else if (outcome !== 'error' && copierHasCopies) {
                             // The badges did not open it: the reader buzzes, the refusal is
                             // reported as at any refused door (no toast, the copier says it),
@@ -1642,7 +1688,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 keyPins: props.keyPins,  // Include keyPins for scenario-based locks
                 difficulty: props.difficulty,
                 access: props.access ?? null,  // rfid access list (access model 4.1)
-                acceptsUIDOnly: props.acceptsUIDOnly ?? null
+                acceptsUIDOnly: props.acceptsUIDOnly ?? null,
+                secondStep: props.secondStep ?? null,  // S8c
+                npcStepOpener: props.npcStepOpener ?? null
             };
         }
     }
@@ -1689,7 +1737,9 @@ export function getLockRequirementsForDoor(doorSprite) {
                 difficulty: roomData?.difficulty,
                 locked: roomData?.locked,
                 access: roomData?.access ?? null,
-                acceptsUIDOnly: roomData?.acceptsUIDOnly ?? null
+                acceptsUIDOnly: roomData?.acceptsUIDOnly ?? null,
+                secondStep: roomData?.secondStep ?? null,  // S8c
+                npcStepOpener: roomData?.npcStepOpener ?? null
             });
         }
     });
@@ -1707,7 +1757,9 @@ export function getLockRequirementsForDoor(doorSprite) {
             keyPins: targetRoom.keyPins,  // Include keyPins from scenario
             difficulty: targetRoom.difficulty,
             access: targetRoom.access,
-            acceptsUIDOnly: targetRoom.acceptsUIDOnly
+            acceptsUIDOnly: targetRoom.acceptsUIDOnly,
+            secondStep: targetRoom.secondStep,  // S8c
+            npcStepOpener: targetRoom.npcStepOpener
         };
     }
     
@@ -1724,7 +1776,8 @@ export function getLockRequirementsForItem(item) {
         keyPins: item.scenarioData.keyPins,  // Include keyPins for scenario-based locks
         difficulty: item.scenarioData.difficulty,
         access: item.scenarioData.access ?? null,  // rfid access list (access model 4.1)
-        acceptsUIDOnly: item.scenarioData.acceptsUIDOnly ?? null
+        acceptsUIDOnly: item.scenarioData.acceptsUIDOnly ?? null,
+        secondStep: item.scenarioData.secondStep ?? null  // S8c
     };
 }
 
@@ -1732,6 +1785,8 @@ export function getLockRequirementsForItem(item) {
 // container minigame is not launched (a late access-list yes, when the player may be
 // elsewhere or in another minigame: UX slice 3b R1 M1).
 export function unlockTarget(lockable, type, layer, serverResponse, { autoOpen = true } = {}) {
+    // S8c: a cancelled second step opens nothing and says nothing (no item_unlocked, no door_unlocked)
+    if (serverResponse && serverResponse.secondStepCancelled) return;
     console.log('🔓 unlockTarget called:', { type, lockable, serverResponse });
 
     if (type === 'door') {
