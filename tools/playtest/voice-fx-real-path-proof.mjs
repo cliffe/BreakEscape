@@ -63,6 +63,7 @@ await page.evaluate(async () => {
     const a = this.audio; const rec = { npc, text, ended: false, played: false, maxTime: 0 };
     window.__audio.push(rec);
     if (a && !a.__proofHooked) { a.__proofHooked = true; a.addEventListener('playing', () => { rec.played = true; }); a.addEventListener('ended', () => { rec.ended = true; console.log('[TTSPROOF] audio ended'); }); a.addEventListener('timeupdate', () => { rec.maxTime = Math.max(rec.maxTime, a.currentTime); }); }
+    window.__fxlog.push({ ev: 'play', npc });
     const r = await play.call(this, npc, text, o);
     console.log('[TTSPROOF] play resolved ms=' + r + ' activeProfile=' + !!this._activeFXProfile);
     window.__fxlog.push({ ev: 'played', npc, ms: r, activeProfileAfterSet: !!this._activeFXProfile });
@@ -86,8 +87,15 @@ await page.evaluate(() => window.MinigameFramework?.currentMinigame && window.__
 await page.waitForTimeout(800);
 console.log('globals before:', JSON.stringify(await page.evaluate(() => ({ m: window.gameState?.globalVariables?.restore_manifest_obtained, o: window.gameState?.globalVariables?.ghost_offer_made }))));
 // THE GAME'S OWN TRIGGER: use the recovery console
-const ir = await page.evaluate(id => window.__test.interact(id), objId);
-console.log('interact:', JSON.stringify(ir).slice(0, 300));
+if (process.env.PROOF_TRIGGER === 'room') {
+  // m07 style: a mapping on room_entered rings a withheld call; answer the banner as a player would
+  await page.evaluate(() => { setInterval(() => { document.querySelector('.incoming-call button[class*="answer" i], .incoming-call .answer, .incoming-call [class*="accept" i]')?.click(); }, 300); });
+  const er = await page.evaluate(r => window.__test.enterRoom(r), process.env.PROOF_ROOM);
+  console.log('enterRoom:', JSON.stringify(er).slice(0, 200));
+} else {
+  const ir = await page.evaluate(id => window.__test.interact(id), objId);
+  console.log('interact:', JSON.stringify(ir).slice(0, 300));
+}
 // Ghost's call plays; wait for the first line to be fetched and finish
 await page.waitForFunction(() => (window.__audio || []).some(a => a.ended), null, { timeout: 60000 }).catch(() => console.log('no audio ended within 60s'));
 await page.waitForTimeout(1500);
@@ -108,12 +116,19 @@ for (const c of ghostCalls) {
   if (!a) pass = false;
 }
 if (!ghostCalls.length) { console.log('(a) FAIL: no POST /tts for ' + speaker); pass = false; }
-// pair each play with the profile calls that followed it (play sets the profile, then null when baked)
-const seq = fxlog.map(e => e.ev === 'setProfile' ? (e.profile ? 'P' : 'null') : e.ev).join(',');
-console.log('fx sequence:', seq);
-const bOk = ghostCalls.length > 0 && fxlog.filter(e => e.ev === 'played').every(e => !e.activeProfileAfterSet) && fxlog.some(e => e.ev === 'setProfile' && e.profile === null);
-console.log('(b)', bOk ? 'PASS' : 'FAIL', '(no active run-time profile after play of a baked clip)');
-const cOk = audio.some(a => a.played && a.maxTime > 0);
-console.log('(c)', cOk ? 'PASS' : 'FAIL', JSON.stringify(audio.map(a => ({ played: a.played, ended: a.ended, maxTime: a.maxTime }))));
+// the speaker's own play(): the run-time profile was set (P) and then dropped (null) before the clip ran, none left active
+const seq = [], mine = [];
+let cur = null;
+for (const e of fxlog) {
+  if (e.ev === 'play') { cur = e.npc === speaker ? [] : null; continue; }
+  if (e.ev === 'setProfile' && cur) cur.push(e.profile ? 'P' : 'null');
+  if (e.ev === 'played' && e.npc === speaker && cur) { seq.push(cur.join(',')); mine.push(!e.activeProfileAfterSet); cur = null; }
+}
+console.log(speaker + ' profile calls per play():', JSON.stringify(seq));
+const bOk = seq.length > 0 && seq.every(x => x.endsWith('null')) && mine.every(Boolean);
+console.log('(b)', bOk ? 'PASS' : 'FAIL', '(run-time voice-distortion dropped for the baked clip, none active after)');
+const sp = audio.filter(a => a.npc === speaker);
+const cOk = sp.some(a => a.played && a.maxTime > 0);
+console.log('(c)', cOk ? 'PASS' : 'FAIL', JSON.stringify(sp.map(a => ({ played: a.played, ended: a.ended, maxTime: a.maxTime }))));
 await browser.close();
 process.exit(pass && bOk && cOk ? 0 : 1);
