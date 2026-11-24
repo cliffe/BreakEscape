@@ -363,3 +363,17 @@ test('the format module is pure and draws no HTML', () => {
         assert.ok(!src.includes(word), word);
     }
 });
+
+test('R1-C14: the cap never cuts into the newest command: its echo stays above its output', () => {
+    const log = fresh();
+    for (let i = 0; i < 50; i++) FMT.appendLine(log, [{ text: `old ${i}` }]);
+    FMT.appendLine(log, [{ text: '$ ', cls: 'prompt' }, { text: 'show' }]);
+    for (let i = 0; i < FMT.LOG_CAP + 120; i++) FMT.appendLine(log, [{ text: `device ${i}` }]);
+    assert.equal(log.lines[0].map(s => s.text).join(''), '$ show', 'the echo is the first line left');
+    assert.equal(log.lines.length, FMT.LOG_CAP + 121);
+    // the next command's echo lets the old one go
+    FMT.appendLine(log, [{ text: '$ ', cls: 'prompt' }, { text: 'help' }]);
+    for (let i = 0; i < 5; i++) FMT.appendLine(log, [{ text: `h ${i}` }]);
+    assert.equal(log.lines.length, FMT.LOG_CAP);
+    assert.ok(log.lines.some(l => l.map(s => s.text).join('') === '$ help'));
+});

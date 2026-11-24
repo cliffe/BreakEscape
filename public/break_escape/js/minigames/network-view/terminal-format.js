@@ -120,8 +120,12 @@ function cleanSpan(s) {
 /** Add one line (an array of spans) to a log: cleaned, and the oldest lines dropped past the cap. */
 export function appendLine(log, spans) {
     if (!alive(log) || !Array.isArray(spans)) return false;
-    log.lines.push(spans.map(cleanSpan));
-    while (log.lines.length > LOG_CAP) log.lines.shift();
+    const line = spans.map(cleanSpan);
+    log.lines.push(line);
+    // An echo (a line that starts with the prompt mark) is where the newest command begins
+    if (line[0] && line[0].cls === 'prompt') log.lastEcho = line;
+    // Whole commands: the cap never cuts into the newest command, so its echo and its output stay together
+    while (log.lines.length > LOG_CAP && log.lines[0] !== log.lastEcho) log.lines.shift();
     return true;
 }
 

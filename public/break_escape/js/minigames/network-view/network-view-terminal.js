@@ -506,7 +506,9 @@ export class TerminalRenderer {
     _echo(text) {
         let mark = '$';
         try { mark = promptMark(this.mode, this.view || {}); } catch (e) { /* the shell mark stands */ }
-        return PROMPT_AT_START.test(text) ? [span(text)] : [span(`${mark} `, 'prompt'), span(text)];
+        const at = PROMPT_AT_START.exec(text);
+        if (at) return [span(`${at[1]} `, 'prompt'), span(text.slice(at[0].length))];
+        return [span(`${mark} `, 'prompt'), span(text)];
     }
 
     /** Enter: an empty prompt does nothing; otherwise the line is read and acted on. */
