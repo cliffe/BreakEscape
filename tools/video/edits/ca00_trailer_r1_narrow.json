@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca00_trailer_script.md (round 2). Hook and montage reused from ca12 takes. Music chosen in this edit (D331 landed): PeaceFolk Quietly Cinematic, window from 16.636 s."
  },
  "fps": 30,
- "length": 70.7,
+ "length": 65.4,
  "music": {
   "track": "PeaceFolk/Quietly Cinematic.mp3",
   "analysis": "quietly_cinematic_75.json",
   "start": 16.636,
-  "length": 70.7,
+  "length": 65.4,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -464,51 +464,6 @@
    }
   },
   {
-   "id": "real",
-   "type": "gameplay",
-   "duration": 5.3,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t03b_brief_cards_narrow.trimmed.mkv",
-    "in": 19.69,
-    "out": 24.99
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Card 3 'Nothing real is asked for' (card3 mark 19.49 + 0.2; card 4 at 26.77); no answers | CA: spoilers not an issue (owner), no masks | narrow take t03b (marks within 0.2 s of t03: card1 3.04, card2 10.29, card3 19.55, card4 26.84, card6 36.37, card7 43.66)"
-   },
-   "seat": {
-    "seat": "full",
-    "chip": "THE BRIEF"
-   },
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.5
-    },
-    "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.3
-    }
-   }
-  },
-  {
    "id": "room",
    "type": "gameplay",
    "duration": 3.5,
@@ -697,8 +652,8 @@
    },
    "source": {
     "file": "t05_anjali_end.trimmed.mkv",
-    "in": 8.9,
-    "out": 15.5
+    "in": 3.513,
+    "out": 10.113
    },
    "audio": {
     "gain_db": 0,
@@ -782,7 +737,7 @@
  "vo": [
   {
    "id": "v1",
-   "start": 2.3,
+   "start": 2.22,
    "end": 7.004,
    "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
    "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
@@ -849,49 +804,41 @@
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
-   "id": "v9",
-   "start": 33.4,
-   "end": 37.864,
-   "text": "Nothing real is asked for. Sign-in pages here capture nothing.",
-   "caption": "Nothing real is asked for.\nSign-in pages here\ncapture nothing.",
-   "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v9.mp3"
-  },
-  {
    "id": "v10",
-   "start": 38.7,
-   "end": 41.388,
+   "start": 33.4,
+   "end": 36.088,
    "text": "Every episode is set in a working office.",
    "caption": "Every episode is set\nin a working office.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 42.2,
-   "end": 47.288,
+   "start": 36.9,
+   "end": 41.988,
    "text": "It records your choices and timings, never anything you type.",
    "caption": "It records your choices\nand timings, never\nanything you type.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v11.mp3"
   },
   {
    "id": "v12",
-   "start": 47.8,
-   "end": 51.664,
+   "start": 42.5,
+   "end": 46.364,
    "text": "One habit: check it yourself, by a route you trust.",
    "caption": "One habit: check it yourself,\nby a route you trust.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v12.mp3"
   },
   {
    "id": "v13",
-   "start": 53.3,
-   "end": 57.308,
+   "start": 48.0,
+   "end": 52.008,
    "text": "Report when unsure. A quick report is never blamed.",
    "caption": "Report when unsure.\nA quick report is never blamed.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v13.mp3"
   },
   {
    "id": "v14",
-   "start": 65.4,
-   "end": 70.368,
+   "start": 60.1,
+   "end": 65.068,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v14.mp3"
