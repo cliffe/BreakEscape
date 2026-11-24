@@ -9,6 +9,7 @@ require_relative '../../../lib/break_escape/credential_model' unless defined?(Br
 require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
+require_relative 'lock_step_leak_rules' # S8c lock second step
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -218,6 +219,8 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 #   findings = scanner.scan(lines)   # lines: [[source_label, line_no, parsed_hash], ...]
 #   scanner.report_lines(findings)
 class AccessLeakScanner
+  include LockStepLeakRules # S8c lock second step: scan_lock_steps and its ls_ helpers
+
   # Item fields whose strings are an item's content (its name and its text).
   CONTENT_FIELDS = %w[name text content].freeze
   # Keys under which the scenario nests further items, NPCs or objects.
@@ -567,6 +570,7 @@ class AccessLeakScanner
       scan_credentials(body, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      scan_lock_steps(body, row, add) # S8c lock second step
       scan_mfa(body, row, add)
     end
     mfa_finish_scan
@@ -628,7 +632,7 @@ class AccessLeakScanner
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
     'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
     'mfa_session' => MFA_RULE_TEXT['mfa_session']
-  }.freeze
+  }.merge(LockStepLeakRules::LOCK_STEP_RULE_TEXT).freeze # S8c lock second step
 
   private
 
