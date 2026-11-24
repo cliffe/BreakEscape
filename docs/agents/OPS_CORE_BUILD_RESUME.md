@@ -321,6 +321,65 @@ hash merged; merge (not rebase) into main, push, then merge main back into `ops-
   retaken, not yet published.
 
 
+## Update 2026-11-24 (read this first; the sections above are history)
+
+### Landed on main (all pushed; gem 1.0.18 in both repos)
+
+Core N13, N14, N15 (S1 to S3), the log plan L1a, L1b, L2a, L2b and L3, the post-landing tidy of S2 and S3, then S5a
+(privilege and accounts, merge `7adc7062c`), S6 (`ops-skin`), S8a (`ops-mfa`) and S7 (`ops-crack`, last fixes
+`cb7ba4466`). The gem bump to 1.0.18 is `2d9e963c8`. Main is the base of the follow-up branch.
+
+### Open stage branches (not yet landed)
+
+| Stage | Branch | Worktree | Ports | Round now | Open findings |
+|---|---|---|---|---|---|
+| S5b and S5c (cached accounts, collect, domains) | `ops-priv2` | `/data/be-ops-logs` | not recorded in the sources: take them from the stage brief or ask | scanner R2 and client R1 reviewed; R2-L1 and R2-L2 fixed (`df61c632b`, `beb18da47`) | scanner R2 had 2 majors (both fixed, unconfirmed) and 6 minors; client R1 had 3 majors and 8 minors: check that each has a fix commit before the delta round. Beat 16 (a borrow) is not reachable by clicking; the relay step-up card was not checked |
+| S8b (helpdesk, H1 and H2) | `ops-helpdesk` | `/data/be-ops-build` | not recorded: as above | R3 done, playtest 2 done; R3 core fixes `a56f443ae` unconfirmed | core R3 had 1 major (fixed, unconfirmed) and 3 minors; scanner R3 has 3 minors open (the `;` form of an owner named twice among them); the audit log showing four FAIL rows for three failed sign-ins has not been looked at |
+| S8c (second-step locks, G1 to G4) | `ops-lock2` | `/data/be-ops-skin` | not recorded: as above | R2 done (server 0B 0M 8m, client 0B 1M 7m, scanner 0B 2M 3m); client R2 fixes in (`341406b26`, `2980e7105`) | scanner majors open: the room half of the lock-below-a-closed-container rule is not done, and gated room NPCs raise a new false alarm; the server minors are open; then the delta round |
+
+Each needs: finish the open fixes, a delta review, a Haiku playtest, merge main in, a train, landing as below.
+
+### Follow-up tracks (worktree `/data/be-ops-follow`, branch `ops-follow1`, from main `2d9e963c8`)
+
+The owner's decisions are in the scratchpad file `FOLLOWUP_DECISIONS.md`; they are settled, do not reopen.
+- Track A (S7 cracker): a cracked password fills on the sign-in screen; the cracker also opens from a hash file and the "Hash collected" toast; keep the auto-finish but make its words truthful.
+- Track B (S6 view and validator): Terminal available for the life of the view; one span per cell; the whole verb shown for the move that ends a trip; playtest tools default to the Panels view; catalog rules (a script must not mirror an advisory id, advisories frozen once a shipped scenario links them, wider telltale words, tidy nicknames in docs); a validator warning for a container a player cannot open. Real advisory ids and module paths live only in `config/break_escape/realism_catalog/*.json` (append-only).
+- Track C (tooling): fix `tools/playtest/train-check.sh` lock detection so it works on old and new git (keep `TESTS_LOCK` as an override); the recorder writes PC tags on sign-in, sign-out and resume rows and hash ids on crack rows (the owner approved editing the recorder under `.claude/skills/playtest-scenario/` for this).
+- Held back on purpose: the scanner hardening that reads those tags (a later stage, after the recorder tags, because three stages still change the scanner on other branches; this track must not touch `access_leak_scanner.rb`); the `tools/wt-clean.sh` fix (not approved); the code device sprite (needs the art pipeline and the owner's pick).
+
+### Landing procedure now
+
+1. Merge main into the stage branch (merge, never rebase).
+2. Train the merged hash with `TESTS_LOCK=/home/deploy/BreakEscape/tmp/tests.lock` set explicitly (the script cannot find it on this machine's git). It must end green apart from the known JS baseline files.
+3. In `/home/deploy/BreakEscape`: `git merge --ff-only` the trained hash, then push.
+4. Bump the gem in both repos (`bump-version` skill) and push.
+Never wrap `bin/ops-golden-compare` in `flock`. One train at a time.
+
+### Disk rules
+
+The root volume is nearly full (it has filled once and cut off two builders). Bulk scratch (anything over about 20 MB: captures, screenshots, run output) goes under `/data/tmp/scratch/<unit>/`, deleted afterwards. Never copy or clone the repository. Empty `test/dummy/log/*.log` before a train. Builder rules are in `BUILDER_RULES.md` (scratchpad): explicit-path commits, no amend, no `git add -A`, tests on the shared lock.
+
+### Model routing (AGENTS.md "Choosing a model")
+
+Opus 5.5 for planning, design and first reviews. Sonnet for fixers, clear builds and delta reviews from round 4 or after a clean Opus round; a delta that touches what the server serves, access checks or secrets goes to Opus. Haiku for scripted playtests and retrieval. Every builder gets the 150k-token handover line. Never send a message to a builder running inside a workflow: it starts a second copy. A finished agent that sends its report twice is stopped.
+
+### Decisions taken by the orchestrator on reviewers' owner questions (the owner may overturn any)
+
+- S5bc scanner: a proved typed sign-in success earns that account's username; the server adds `pcId` to the collect answer.
+- S5a open question O1 (relay session stepping up to admin): builders build "no".
+- S5bc ruling A: a governed USB port can name its PC, and an admin session there lets a stick be planted that the policy would refuse.
+- S8c G4 (refusing a hand-built request for a carried container that has left the player): in force for gated scenarios only; inert elsewhere, so shipped scenarios are unchanged.
+- S8c scanner: a prompt or approve refusal accepts any push-kind gate (departure from the reviewer's wording, judged sound in R2).
+- S8c: a takeable room object that has left the player stays in reach (documented and pinned).
+- S8a scanner: a sign-out then sign-in at one PC with no reload cannot be cleared by entries until the recorder tags the PC (the follow-up Track C is the fix).
+
+### Recorded limits each stage will land with
+
+- S5b/S5c: two borrowers at one PC share the done proof; a relay admin is proved by its desktop row alone; admin log rows are earned by any earlier admin session at that PC (no timing); a harvested hash row is flagged when its collect is in an earlier capture file or its body was lost.
+- S8b: Close is held until the desk answers (a request that never answers keeps the form open); the stop rule depends on playtest order.
+- S8c: the test bridge's tray hint still lists only "Drop here" and "Examine", and the carried-item click listener is a pinned copy of two lines of `inventory.js`; the takeable-object limit above.
+- S8a (landed): the sign-out and sign-in scanner limit above.
+
 ## Waiting on the user
 
 - Nothing yet. Later: card art for `technique_card.png`; the final screenshot review.
