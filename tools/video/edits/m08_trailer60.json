@@ -4,26 +4,27 @@
  "title": "SAFETYNET: Licence to Hack, m08 The Mole 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-24): first cut, not rendered. Music Emerald Trigger from 0.775 s (downbeat): quiet open, one loud bar in the title, lifts at 9.6 (Mission 8 card), 17.6 (Interview card), 22.4 (Vector), 38.4 (Before They Vanish card); the close cut lands on the 46.79 hit; steady to the end, fade-out 2 s. Compromises: Be Quiet / Be Quick card dropped (owner question 3: drop first); the archives, strike, PIN-pad and RFID-panel crops run above 2x (3.05x to 4.6x) because those rooms and panels are smaller than a 2x window; the Netherton ending close-up is a 3x crop of his conversation portrait; no t27 ops walk and no t26 phone (panel needs 5x in 16:9).",
+ "status": "v1 music change (2026-11-24, owner question 1 changes: music is now Shadowline Protocol, Emerald Trigger moved to m01): not rendered. Music Noir/Shadowline Protocol from 109.406 s (a downbeat; 124.05 BPM, bar 1.935 s). Quiet open (bar rms 6-10) under the title and hook, lift 9.67 = Mission 8 card, drop at 12.87 (the track's strongest onset) falls under Athena's stakes line (ducked -10 dB: voice mean about -15 dB against music about -21 dB at the drop; only the 0.1 s onset peak is near the voice; ducking kept), Interview card on the 17.41 bar, Vanish card on the 38.69 lift (rms 28), close cut on the 46.75 onset, the track's own ending lands at 60.0 (last loud hit 59.7-60.1) under the CTA. Cards and cuts re-fitted by frames (hook +2, lobby +2, real_hacking +5, ending_wide -9 frames, ending_close +1). Compromises unchanged: Be Quiet / Be Quick card dropped (owner question 3: drop first); the archives, strike, PIN-pad and RFID-panel crops run above 2x (3.05x to 4.6x) because those rooms and panels are smaller than a 2x window; the Netherton ending close-up is a 3x crop of his conversation portrait; no t27 ops walk and no t26 phone (panel needs 5x in 16:9).",
  "music": {
-  "track": "SpyAction/Emerald Trigger.mp3",
-  "analysis": "emerald_trigger_60.json",
-  "start": 0.775,
+  "track": "Noir/Shadowline Protocol.mp3",
+  "analysis": "shadowline_protocol_60.json",
+  "start": 109.406,
   "length": 60,
   "gain_db": 0,
   "fade_in": 0,
-  "fade_out": 2.0,
+  "fade_out": 0,
   "alternatives": [
-   "Emerald Trigger window 75.972 (analysis best: loud from the first bar)",
-   "Hybrid Attack 1 window 0.045 (quiet to 6.0, lifts 6.0/12.9/18.0, hits 23.8/32.9; strongest hits early)",
-   "Noir Shadowline Protocol (owner-questions placeholder; outside the SpyAction/SpyAgro set the edit was cut to; not analysed)"
+   "Emerald Trigger window 0.775 (v1's first choice; now m01's track from 85.571)",
+   "Shadowline Protocol window 105.536 (quiet 0-13.5, drop 16.74 = Interview card; no natural end, 2 s fade)",
+   "Shadowline Protocol window 82.317 (analysis best: very quiet to 38, drop 39.96/40.61 = Vanish card; first half barely moves)",
+   "Hybrid Attack 1 window 0.045"
   ]
  },
  "beat": {
-  "bpm": 150.01,
-  "period": 0.4,
+  "bpm": 124.05,
+  "period": 0.4837,
   "offset": 0,
-  "note": "window times (start 0.775): bars every 1.6 s from 0; bar rms x100: 6 1 3 at 0-4.8 (title), one loud bar 4.8 (20), lift 9.6 (11, Mission 8 card), small lift 17.6 (10, Interview card), big lift 22.4 (14, Vector), 25.6-33.6 at 13-16, lifts 35.2 (19) and 38.4 (18, Vanish card), 40-59 steady 14-19, no natural end. Hits 26.98 (0.88), 29.49, 35.19, 43.19, 46.79 (close cut), 47.19, 47.99. Not judged by ear. Frame-aligned, snap false."
+  "note": "window times (start 109.406 = a downbeat): bars every 1.935 s from 0; bar rms x100: 6 7 8 7 10 at 0-9.7 (quiet), lift 9.67 (13, Mission 8 card), 11.1-12.8 near silence, drop 12.87 (onset 1.0, strongest in the track) and 13.52 (0.66) under the stakes line, 15.48-17.41 at 20 (Interview card 17.41), 23.22 (30), 27.08 (25), 38.69 (28, Vanish card), 54.17 (29), 58.04 (26); onsets after 13.5 are flat 0.2-0.34 (43.85, 45.78, 46.75, 47.40 are the crescendo/close hits); the track ends on its own at 60.0 (silence from 60.2), so fade_out 0. Grid is 0.4837 s, not frame-exact: snap false, every boundary frame-aligned. Not judged by ear."
  },
  "duck": {
   "db": -10,
@@ -73,7 +74,7 @@
   {
    "id": "hook_athena",
    "type": "gameplay",
-   "duration": 3.6,
+   "duration": 3.6667,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -81,9 +82,9 @@
    "source": {
     "file": "t10_athena_hook.trimmed.mkv",
     "in": 6.25,
-    "out": 9.85
+    "out": 9.9167
    },
-   "note": "hook: voice 7.20-9.75 (seg.py at -32 dB; a one-frame click at 5.90 is before the in); 6.25-7.20 silent ATHENA portrait. The bar shows the whole hook+stakes line on every frame, so every aspect is UI-free (bar off) and 9:16/1:1 caption the kept words. Frames 6.25, 7.1, 9.9 viewed (no player name)",
+   "note": "hook: voice 7.20-9.75 (seg.py at -32 dB; a one-frame click at 5.90 is before the in); 6.25-7.20 silent ATHENA portrait. The bar shows the whole hook+stakes line on every frame, so every aspect is UI-free (bar off) and 9:16/1:1 caption the kept words. Frames 6.25, 7.1, 9.9 viewed (no player name); v2 music: out 9.85->9.9167 (silent portrait, line ends 9.75) so the Mission 8 card lands on the 9.67 lift",
    "framing": {
     "16:9": {
      "cx": 0.61,
@@ -155,7 +156,7 @@
   {
    "id": "lobby_athena",
    "type": "gameplay",
-   "duration": 1.0,
+   "duration": 1.0667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -163,9 +164,9 @@
    "source": {
     "file": "t11_lobby_athena.trimmed.mkv",
     "in": 3.0,
-    "out": 4.0
+    "out": 4.0667
    },
-   "note": "lobby, player in front of ATHENA's hologram at the desk; camera settled from 3.0 (room x 480-1439, y 132-1079 measured at 3.0-4.0). 16:9 2.05x, 9:16 1.2x, 1:1 2x, all inside the room. Frames 2.6, 2.9, 4.0 viewed",
+   "note": "lobby, player in front of ATHENA's hologram at the desk; camera settled from 3.0 (room x 480-1439, y 132-1079 measured at 3.0-4.0). 16:9 2.05x, 9:16 1.2x, 1:1 2x, all inside the room. Frames 2.6, 2.9, 4.0 viewed; v2 music: out 4.0->4.0667 (frame 4.0667 not viewed, camera settled; take is 5.04 s)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -619,18 +620,18 @@
   {
    "id": "real_hacking",
    "type": "gameplay",
-   "duration": 1.8,
+   "duration": 1.9667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "type": "clip",
-    "file": "m08_console_recon_clip.mp4",
+    "file": "m08_console_shell_clip.mp4",
     "in": 0.4,
-    "out": 2.2
+    "out": 2.3667
    },
-   "note": "m08 console recon (1920x1080, 2.6 s): nmap -Pn -sV on two ports, then the report with two open services and their versions. Frames 0.4 and 2.15 viewed. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m08/clips; v1 r2: m08's clip text spans the full 1920 px, so 9:16 and 1:1 are anchored at the left edge (x 0-1080): whole command and the start of each result line; shrinking below 1x is not allowed",
+   "note": "m08 shell landing (vm_console_full_RAW_s946 142.0-144.6; crop x0-784 y376-708 at 2.4x nearest on #21242D): session opened, sessions -l, then uid/whoami www-data lands at clip 1.3 s. Every frame checked: no flag, password or secret; window ends ~41 s before the password (CONSOLE_CLIPS.md, 6e64989fa). Replaces the nmap recon (owner note 7).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -658,7 +659,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "terminal scan output only, no credential or flag"
+    "note": "msf session and www-data id only; no flag, password or credential"
    }
   },
   {
@@ -1244,7 +1245,7 @@
   {
    "id": "ending_wide",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 1.1667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1252,9 +1253,9 @@
    "source": {
     "file": "t15_netherton_ending.trimmed.mkv",
     "in": 62.15,
-    "out": 63.65
+    "out": 63.3167
    },
-   "note": "J-cut pre 1.7 (audio from 60.45; voice 60.55-62.67) under the crescendo, picture in on 'SAFETYNET'. Bar shows the whole line, so UI-free in every aspect. 3-frame hit on the cut in the silence 62.67-63.90. Frames 62.15 and 63.65 viewed",
+   "note": "J-cut pre 1.7 (audio from 60.45; voice 60.55-62.67) under the crescendo, picture in on 'SAFETYNET'. Bar shows the whole line, so UI-free in every aspect. 3-frame hit on the cut in the silence 62.67-63.90. v2 music: out 63.65->63.3167 (the line ends 62.67; the rest was silence). Frames 62.15 and 63.65 viewed",
    "framing": {
     "16:9": {
      "cx": 0.61,
@@ -1311,17 +1312,17 @@
   {
    "id": "ending_close",
    "type": "gameplay",
-   "duration": 5.2,
+   "duration": 5.2333,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t15_netherton_ending.trimmed.mkv",
-    "in": 63.65,
+    "in": 63.6167,
     "out": 68.85
    },
-   "note": "hard cut in the silence to a 3x face crop (bar off), on the 46.79 s music hit; voice 63.90-68.80; out 68.85 (frame viewed, still the portrait)",
+   "note": "hard cut in the silence to a 3x face crop (bar off), on the 46.75 s Shadowline onset (cut at 46.7667; in 63.65->63.6167, out 68.85 unchanged, voice now 0.28 s in); voice 63.90-68.80; out 68.85 (frame viewed, still the portrait)",
    "framing": {
     "16:9": {
      "cx": 0.69,

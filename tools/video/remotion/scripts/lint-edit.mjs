@@ -6,7 +6,7 @@ import fs from 'node:fs'; import path from 'node:path'; import { spawnSync } fro
 import { fileURLToPath } from 'node:url';
 import { takesDirFor } from './mission.mjs';
 import { loadEdit } from './load-edit.mjs';
-import { buildTimeline, framingAt, visibleRect, ASPECTS, JOIN_FRAMES, CA_ONLY_JOINS, CA_BANNED_JOINS, isCardLike, sourceRef } from '../src/timeline.js';
+import { buildTimeline, framingAt, visibleRect, ASPECTS, JOIN_FRAMES, CA_ONLY_JOINS, CA_BANNED_JOINS, isCardLike, sourceRef, freezeSec } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../../..');
 const args = process.argv.slice(2); const final = args.includes('--final');
@@ -147,6 +147,7 @@ tl.shots.forEach((s, i) => {
     else if (s.style) W(id, `unknown card style ${s.style}`);
     if (s.style !== 'ca' && s.kind !== 'logo' && s.kind !== 'logo_end' && !(s.text?.length)) E(id, 'card needs text[]');
     if (s.source) W(id, 'card has a source (ignored)');
+    if (s.freeze || s.freezeAt != null) W(id, 'freeze/freezeAt is for gameplay shots (ignored on a card)');
   } else {
     const src = s.source;
     if (!src?.file) E(id, 'gameplay shot needs source.file');
@@ -157,6 +158,21 @@ tl.shots.forEach((s, i) => {
       const isClip = src.type === 'clip';
       if (!(isClip ? clipFiles : takeFiles).has(src.file)) (final ? E : W)(id, `${isClip ? 'clip' : 'take'} file not found yet (${src.file}): placeholder pattern will render`);
       if (isClip && s.placeholder !== true) W(id, 'clip source without placeholder: true (set it unless the clip is final footage)');
+      // freeze / freezeAt: the held frame must be a frame of the take (and should sit in the shot's own window)
+      if (s.freeze != null && typeof s.freeze !== 'boolean') E(id, `freeze must be true or false, got ${JSON.stringify(s.freeze)}`);
+      if (s.freezeAt != null && !(typeof s.freezeAt === 'number' && Number.isFinite(s.freezeAt))) E(id, `freezeAt must be a number (source seconds), got ${JSON.stringify(s.freezeAt)}`);
+      else if (s.freezeAt != null && s.freeze === false) E(id, 'freezeAt with freeze: false (drop one of them)');
+      const fz = freezeSec(s, fps);
+      if (fz != null) {
+        if (fz < 0) E(id, `frozen frame ${fz.toFixed(3)} s is before the start of the ${isClip ? 'clip' : 'take'}`);
+        const fdir = isClip ? clipDirs.find((d) => fs.existsSync(path.join(d, src.file))) : takesDir;
+        const ff = fdir && path.join(fdir, src.file);
+        if (ff && fs.existsSync(ff)) {
+          const d = Number(spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', ff], { encoding: 'utf8' }).stdout.trim());
+          if (d > 0 && fz > d - 1 / fps + 1e-6) E(id, `frozen frame ${fz.toFixed(3)} s is past the last frame of ${src.file} (${d.toFixed(3)} s)`);
+        }
+        if (fz < src.in - 1e-6 || fz >= src.out - 1e-6) W(id, `frozen frame ${fz.toFixed(3)} s is outside source.in-out (${src.in}-${src.out}); the audio still plays from source.in`);
+      }
     }
     if (s.placeholder === true) { placeholders.push(`${id}${src?.type === 'clip' ? ` (clip ${src.file} ${src.in}-${src.out})` : src?.file ? ` (take ${src.file})` : ' (no footage yet)'}${s.placeholder_note ? ': ' + s.placeholder_note : ''}`); if (final) E(id, 'placeholder shot (--final)'); }
     if (!s.audio || typeof s.audio.gain_db !== 'number') E(id, 'audio.gain_db missing');

@@ -102,6 +102,10 @@ class TTSManager {
                 audioUrl = URL.createObjectURL(blob);
             }
 
+            // A clip with the voice FX baked in (X-Voice-FX-Baked) plays clean through the graph;
+            // the speaker's run-time profile stays for its unbaked clips (new lines, stand-ins)
+            if (blob && blob.voiceFxBaked) this._setActiveFXProfile(null);
+
             this.audio.src = audioUrl;
             this._hasSrc = true;
             this._alignLipSync(blob, audioUrl, text); // async; portraits use text timing until it lands
@@ -599,6 +603,8 @@ TTSManager.VOICE_FX_PRESETS = {
     // drive and a band limit with a faint metallic edge. Deliberately masked but still
     // intelligible. Used for Ghost (ENTROPY), m07 and lab_tesseract_trials. The highpass sits low
     // enough to keep the sub-octave; the lowpass follows the drive so it trims the drive's grit.
+    // Ghost (m02, m10) and the Architect (m07) now have the trailer's chain baked into their
+    // clips (tools/voice_fx/bake.py); this preset only covers their clips that are not baked.
     'voice-distortion': {
         pitchShift: { semitones: -12, mix: 0.65, dry: 0.75 },
         highpass: 80, drive: 3, lowpass: 3200, lowpassAfterDrive: true,

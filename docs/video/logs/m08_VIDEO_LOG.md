@@ -1,5 +1,17 @@
 # m08 The Mole video log
 
+## 24 Nov 2026: music change to Shadowline Protocol (same id `m08_trailer60_v1`, not rendered)
+
+Owner question 1 changes: music is now Noir "Shadowline Protocol" and Emerald Trigger moved to m01. Lint: 0 errors, 1 expected warning (console clip), 31 shots, 60.00 s. Crops from 60f6af051 unchanged.
+
+- Window: track 109.406 s (a downbeat, 124.05 BPM, bar 1.935 s; analysis `tools/video/edits/music/shadowline_protocol_60.json`). The track's own ending lands at 60.0 (last loud hit 59.7-60.1, silence after), so `fade_out` is 0.
+- Mission 8 card on the 9.67 lift (bar rms 13 after 5-10). Interview card on the 17.41 bar (rms 20). Before They Vanish card on the 38.69 lift (rms 28). The ending close cut on the 46.75 onset (46.7667).
+- The drop (12.87, the track's strongest onset, then 13.52) falls under Athena's stakes line, which starts at 12.36. Ducking kept at -10 dB. Measured: voice mean about -15 dB (with +2 dB gain), music mean about -21 dB after the duck, so the voice sits about 6 dB above the drop; only the 0.1 s onset peak (about -11 dB ducked) is near the voice peaks. The line should stay clear; confirm by ear on the first render.
+- Frame fits: hook +2 frames (out 9.85 to 9.9167, silent portrait), lobby +2 (out 4.0 to 4.0667), real_hacking +5 (out 2.2 to 2.3667, the clip is 2.6 s), ending_wide -9 (out 63.65 to 63.3167, the line ends 62.67), ending_close +1 (in 63.65 to 63.6167). No spoken line cut. The new times are 9.67, 12.23 (stakes), 17.4, 38.7, 40.2 (crescendo), 45.6 (ending wide), 46.77 (close), 52.0 (CTA).
+- After 13.5 the track has flat onsets (0.2 to 0.34), so the montage cards sit on bar lifts, not hits.
+- Alternatives left in the music block: Emerald Trigger 0.775, Shadowline 105.536 (drop 16.74 on the Interview card, no natural end) and 82.317.
+- Open question 1 above is answered by this change.
+
 ## 24 Nov 2026: 60 s trailer edit v1 (`tools/video/edits/m08_trailer60.json`, id `m08_trailer60_v1`)
 
 Not rendered. Lint with `BE_CLIPS_DIR=$HOME/video-takes-local/m08/clips ... --takes-dir $HOME/video-takes-local/m08/takes`: 0 errors, 1 expected warning (console clip without `placeholder: true`), 31 shots, 60.00 s. Built from a generator in the scratchpad (`edit-m08/build.py`, m07's shape). Snap false throughout. 16:9 has no burned captions; 9:16 and 1:1 caption every dialogue shot.
