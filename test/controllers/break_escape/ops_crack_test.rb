@@ -258,25 +258,26 @@ module BreakEscape
     # A two-thread race cannot run here (a transactional test's rows are invisible to a second
     # connection), so this proves the lock is TAKEN around the route's check and run: it fails if
     # with_lock is removed from #crack. That the row lock serialises two posts is Postgres's, by reading.
-    module LockProbe
-      class << self
-        attr_accessor :calls
-      end
-
-      def with_lock(*args, **kwargs, &block)
-        LockProbe.calls&.push(:with_lock)
-        super
-      end
-    end
-    Game.prepend(LockProbe)
-
+    # The probe wraps Game#with_lock for this one test and puts back what was there. It must not
+    # prepend a module to Game: games_controller_test.rb aliases with_lock for its own spy, and an
+    # alias taken through a prepended module calls back into that spy without end.
     test 'POST /crack takes the game row lock' do
       game = build_game
-      LockProbe.calls = []
+      calls = []
+      owned = Game.instance_methods(false).include?(:with_lock)
+      original = Game.instance_method(:with_lock)
+      Game.send(:define_method, :with_lock) do |*args, **kwargs, &block|
+        calls << :with_lock
+        original.bind(self).call(*args, **kwargs, &block)
+      end
       crack(game, 'cal_hash')
-      assert_includes LockProbe.calls, :with_lock
+      assert_includes calls, :with_lock
     ensure
-      LockProbe.calls = nil
+      if owned
+        Game.send(:define_method, :with_lock, original)
+      elsif Game.instance_methods(false).include?(:with_lock)
+        Game.send(:remove_method, :with_lock)
+      end
     end
 
     test 'POST /crack leaves the log rows unchanged' do
