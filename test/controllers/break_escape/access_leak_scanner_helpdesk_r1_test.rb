@@ -135,19 +135,21 @@ module BreakEscape
       data = cal_scenario
       run = [grant_mfa(npc: 'cal'), own_push_login, own_list(data), session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')]
       assert_empty scan(run, data)
+      with_query = run.dup
+      with_query[-1] = session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')
+      assert_empty scan(with_query, data), 'the client sends own in the body; a query, if the row has one, may be own=1'
       later = scan(run + [row('GET', 'container/push_pc', { 'status' => 200, 'body' => { 'contents' => [] } })], data)
       assert_not_includes rules(later), 'mfa_session'
     end
 
     test 'R1-L4: an own-phone approval with any proof missing stays a finding' do
       data = cal_scenario
-      approve = ->(query = 'own=1', npc = 'cal') { session_pass('mfa/approve', npc, data, { 'approvedBy' => 'own_phone' }, query: query) }
+      approve = ->(query = nil, npc = 'cal') { session_pass('mfa/approve', npc, data, { 'approvedBy' => 'own_phone' }, query: query) }
       cases = {
         'no grant' => [own_push_login, own_list(data), approve.call],
         'no step' => [grant_mfa(npc: 'cal'), own_list(data), approve.call],
         'no list' => [grant_mfa(npc: 'cal'), own_push_login, approve.call],
         'grant for another account' => [grant_mfa(npc: 'hana'), own_push_login, own_list(data), approve.call],
-        'no own query' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call(nil)],
         'own=2' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call('own=2')],
         'a second parameter' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data), approve.call('own=1&x=1')],
         'the step closed by a cancel' => [grant_mfa(npc: 'cal'), own_push_login, own_list(data),
@@ -238,6 +240,21 @@ module BreakEscape
       pair = row('GET', 'room/lobby', { 'status' => 200, 'body' => { 'hints' => [{ 'id' => 'staff_no', 'answer' => '40612' }] } })
       assert_includes helpdesk_owners(scan([pair])), 'helpdesk:recovery:pair'
       assert_empty helpdesk_only(scan([row('GET', 'room/lobby', { 'status' => 200, 'body' => { 'hints' => [{ 'id' => 'staff_no', 'label' => 'Staff number' }] } })]))
+    end
+
+    # ---- the real played run (unit 23's capture, in the order PLAYTEST.md plays it) ----
+
+    test 'the real capture of the played test_ops_helpdesk run reports nothing' do
+      data = JSON.parse(ScenarioBinding.render(File.read(File.expand_path('../../../scenarios/test_ops_helpdesk/scenario.json.erb', __dir__))))
+      path = File.expand_path('../../fixtures/files/ops_helpdesk_real_capture_rows.jsonl', __dir__)
+      lines = File.readlines(path).each_with_index.map { |l, i| ['capture.jsonl', i + 1, JSON.parse(l)] }
+      found = AccessLeakScanner.new(data).scan(lines)
+      assert_empty found, found.map { |f| [f.rule, f.owner, f.line, f.json_path].inspect }.join("\n")
+      # the same run with the desk's stop first would not be clean: the stop rule is untouched (R1-L1)
+      stop = lines.select { |l| l[2]['path'].to_s.end_with?('helpdesk/request') && l[2]['status'] == 422 }
+      assert_not_empty stop
+      early = stop + lines.reject { |l| stop.include?(l) }
+      assert_not_empty AccessLeakScanner.new(data).scan(early.each_with_index.map { |(src, _n, r), i| [src, i + 1, r.merge('t' => (Time.utc(2026, 1, 1) + i).iso8601(3))] })
     end
   end
 end

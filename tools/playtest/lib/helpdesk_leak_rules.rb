@@ -517,13 +517,19 @@ module HelpdeskLeakRules
     @hd_row && mfa_row_pc_tag(@hd_row)
   end
 
-  # The hook `mfa_pass_pc` asks for an approval answer: `approvedBy` is `own_phone`, the row asked `own=1` and nothing else, the
+  # The hook `mfa_pass_pc` asks for an approval answer: `approvedBy` is `own_phone`, the row carries no query or exactly `own=1`, the
   # open step at that PC was opened by an allowed `ownPhone` answer for this account, an allowed own-phone list showed the
   # account's request at that PC, and a credited grant named the account. A pure question: it changes nothing.
   def hd_own_approval?(body, info, pc, npc)
     return false unless @hd_active && body.is_a?(Hash) && body['approvedBy'] == 'own_phone'
 
-    mfa_query_value(info, 'own') == '1' && @hd_own_steps[pc] == npc && @hd_own_listed.include?([pc, npc]) && hd_account_earned?(npc)
+    hd_own_query_ok?(info) && @hd_own_steps[pc] == npc && @hd_own_listed.include?([pc, npc]) && hd_account_earned?(npc)
+  end
+
+  # The client sends `own: 1` of an approval in the JSON body, which the recorder does not keep: a row with no query is fine
+  # (the server answers `own_phone` only to an own request); a row WITH a query must be exactly `own=1`.
+  def hd_own_query_ok?(info)
+    info[:query].to_s.empty? || mfa_query_value(info, 'own') == '1'
   end
 
   # Whether a credited grant re-enrolled the account (the hook in `mfa_kind_at`: such an account owes a code step without an
