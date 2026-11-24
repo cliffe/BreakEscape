@@ -546,6 +546,142 @@ module BreakEscape
       assert_empty found_after(base + [host.call({ 'username' => 'adelwick', 'via' => 'password', 'access' => 'admin' }), deep(folder_row)], base.length + 1)
     end
 
+    # ---- Ops S5a fix: the second real browser run (game 72, four capture files), --logout, and --resume after a downgrade ----
+
+    RUN72_FILES = %w[ops_privilege_run72_1.jsonl ops_privilege_run72_2.jsonl ops_privilege_run72_3.jsonl ops_privilege_run72_4.jsonl].freeze
+    # Sign-ins in order (every successful POST /login): uma#1 bay, adel#1 bay, adel#2 bay (lock-screen unlock), adel#3 and #4 remote at
+    # BAY01 (their host label names the PC), adel#5 bay, uma#2 and #3 remote at RECS01. The fifth successful POST /logout answer
+    # (row 141 of the first file, "Records PC: Signed out") was at store_pc, where the technique session of adel was held; the
+    # answer names no PC, and the bay desk's admin session went on (the resumed captures open it with no sign-in).
+    RUN72_SIGNINS = %w[uma@bay_pc#1 adel@bay_pc#1 adel@bay_pc#2 adel@bay_pc#5].freeze
+    RUN72_LOGOUT = 'adel@store_pc#5'.freeze
+
+    def run72
+      RUN72_FILES.flat_map do |name|
+        File.foreach(File.expand_path("../../fixtures/files/#{name}", __dir__)).with_index(1).map { |text, no| [name, no, JSON.parse(text)] }
+      end
+    end
+
+    test 'Ops S5a fix: the second real browser run reports nothing with every keyboard sign-in and the one store logout named' do
+      scanner = AccessLeakScanner.new(scenario)
+      assert_empty scanner.scan(run72, signins: RUN72_SIGNINS, logouts: [RUN72_LOGOUT]).map { |f| [f.source, f.line, f.rule, f.owner] }
+      assert_empty scanner.unused_entries
+    end
+
+    test 'Ops S5a fix: the same run without the logout named gives 38 findings (a logout names no PC, so it ends every PC), and with nothing named 112' do
+      signed = AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS)
+      assert_equal({ 'ops_string' => 20, 'profile_admin_read' => 18 }, signed.group_by(&:rule).transform_values(&:length))
+      bare = AccessLeakScanner.new(scenario).scan(run72)
+      assert_equal 112, bare.length
+    end
+
+    test 'Ops S5a fix: the logout entry names a PC and an account: a wrong account, another PC or a wrong number is unused and the row ends every PC' do
+      ['uma@store_pc#5', 'adel@store_pc#4', 'adel@store_pc#6', 'adel@store_pc@2026-01-01T00:00:00Z'].each do |entry|
+        scanner = AccessLeakScanner.new(scenario)
+        found = scanner.scan(run72, signins: RUN72_SIGNINS, logouts: [entry])
+        assert_equal 38, found.length, entry
+        assert_equal ["#{entry} (--logout)"], scanner.unused_entries, entry
+      end
+      by_time = AccessLeakScanner.new(scenario)
+      time = run72[140][2]['t']
+      assert_empty by_time.scan(run72, signins: RUN72_SIGNINS, logouts: ["adel@store_pc@#{time}"])
+    end
+
+    test 'Ops S5a fix: --logout entries are parsed strictly' do
+      ['adel@store_pc#0', 'adel@store_pc#1x', 'adel@nowhere#1', 'nobody@store_pc#1', 'adel@store_pc'].each do |entry|
+        assert_raises(ArgumentError, entry) { AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS, logouts: [entry]) }
+      end
+      assert_raises(ArgumentError) { AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS, logouts: [RUN72_LOGOUT, RUN72_LOGOUT]) }
+    end
+
+    # Admin at bay_pc (Adel), Uma remote at store_pc, then one logout (the second successful one), then Adel's folder read again.
+    def logout_rows(between: [])
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      uma = synthetic('POST', 'login', 200, { 'success' => true, 'npcId' => 'uma', 'via' => 'password', 'host' => 'RECS01', 'remote' => true })
+      uma['t'] = '2026-01-01T09:00:01.000Z'
+      out = synthetic('POST', 'logout', 200, { 'success' => true, 'endedPcIds' => [] }).merge('t' => '2026-01-01T09:00:05.000Z')
+      rows = @log.first(index + 1) + [uma] + between + [out, deep(@marks[:admin_folder])]
+      [rows, rows.length - 1]
+    end
+
+    test 'Ops S5a fix: a named logout ends that PC only; the injected leaks (other PC, other account, before the row, after an end) are still reported' do
+      rows, from = logout_rows
+      base = { signins: @signins.first(2) }
+      assert_includes found_after(rows, from - 1, **base), %w[profile_admin_read item:olu_budget] # unnamed: ends every PC
+      assert_empty found_after(rows, from - 1, **base, logouts: ['uma@store_pc#2']), 'the named store logout leaves the bay admin step'
+      assert_includes found_after(rows, from - 1, **base, logouts: ['uma@bay_pc#2']), %w[profile_admin_read item:olu_budget] # other PC: Uma is not held at the bay desk
+      assert_includes found_after(rows, from - 1, **base, logouts: ['adel@store_pc#2']), %w[profile_admin_read item:olu_budget] # other account
+      assert_includes found_after(rows, from - 1, **base, logouts: ['uma@store_pc#1']), %w[profile_admin_read item:olu_budget] # the earlier logout row
+      lock = synthetic('POST', 'lock_session', 200, { 'success' => true, 'pcId' => 'bay_pc', 'locked' => true }).merge('t' => '2026-01-01T09:00:02.000Z')
+      ended, from_ended = logout_rows(between: [lock])
+      assert_includes found_after(ended, from_ended - 1, **base, logouts: ['uma@store_pc#2']), %w[profile_admin_read item:olu_budget] # after an end
+      scanner = AccessLeakScanner.new(scenario)
+      scanner.scan(lines(rows), **base, logouts: ['uma@bay_pc#2'])
+      assert_equal ['uma@bay_pc#2 (--logout)'], scanner.unused_entries
+    end
+
+    # The session is shown without access (an off PC lists it so), then the desktop opens again with the marker, no sign-in, no 403.
+    def downgrade_rows(first_answer, end_between: nil)
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      shown = first_answer.merge('t' => '2026-01-01T09:00:01.000Z')
+      back = at(@marks[:admin_desktop], '2026-01-01T09:00:09.000Z')
+      rows = @log.first(index + 1) + [shown] + [end_between].compact + [back, deep(@marks[:admin_folder])]
+      [rows, index + 3 + [end_between].compact.length]
+    end
+
+    def off_boot
+      synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'password' } } })
+    end
+
+    def off_host
+      entry = { 'id' => 'bay_pc', 'kind' => 'pc', 'name' => 'Bay desk PC', 'host' => 'BAY01', 'sprite' => 'pc_desktop',
+                'session' => { 'username' => 'adelwick', 'via' => 'password', 'remote' => false } }
+      synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }] })
+    end
+
+    test 'Ops S5a fix: --resume after a bootstrap or a network row that showed the held session without access restores that one desktop row' do
+      time = '2026-01-01T09:00:09.000Z'
+      [-> { off_boot }, -> { off_host }].each do |shown|
+        rows, desk_at = downgrade_rows(shown.call)
+        assert_includes found_after(rows, desk_at - 1, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget]
+        scanner = AccessLeakScanner.new(scenario)
+        assert_empty scanner.scan(lines(rows), signins: @signins.first(2), resumes: ["adel@bay_pc@#{time}"]).select { |f| f.line >= desk_at }
+        assert_empty scanner.unused_entries
+      end
+    end
+
+    test 'Ops S5a fix: a resume after a downgrade is refused for another PC, another account, a row before the downgrade, a row that is the downgrade, or after an end' do
+      time = '2026-01-01T09:00:09.000Z'
+      lock = synthetic('POST', 'lock_session', 200, { 'success' => true, 'pcId' => 'bay_pc', 'locked' => true }).merge('t' => '2026-01-01T09:00:02.000Z')
+      [["adel@store_pc@#{time}", nil], ["uma@bay_pc@#{time}", nil], ['adel@bay_pc@2026-01-01T09:00:00.500Z', nil],
+       ["adel@bay_pc@#{time}", lock]].each do |entry, between|
+        rows, desk_at = downgrade_rows(off_host, end_between: between)
+        scanner = AccessLeakScanner.new(scenario)
+        found = scanner.scan(lines(rows), signins: @signins.first(2), resumes: [entry]).select { |f| f.line >= desk_at }.map { |f| [f.rule, f.owner] }
+        assert_includes found, %w[profile_admin_read item:olu_budget], entry
+        assert_equal ["#{entry} (--resume)"], scanner.unused_entries, entry
+      end
+      # a 200 desktop row that shows no access at 09:00:01 and is itself named: it is the downgrade, not a return
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      bare = at(@marks[:admin_desktop], '2026-01-01T09:00:01.000Z')
+      bare['body']['session'].delete('access')
+      scanner = AccessLeakScanner.new(scenario)
+      found = scanner.scan(lines(@log.first(index + 1) + [bare, deep(@marks[:admin_folder])]), signins: @signins.first(2), resumes: ['adel@bay_pc@2026-01-01T09:00:01.000Z'])
+      assert_includes found.map { |f| [f.rule, f.owner] }, %w[profile_admin_read item:olu_budget]
+      assert_equal ['adel@bay_pc@2026-01-01T09:00:01.000Z (--resume)'], scanner.unused_entries
+    end
+
+    test 'Ops S5a fix: a network row of another account without access does not leave a step to resume' do
+      rows, desk_at = downgrade_rows(off_host.tap { |r| r['body']['footholds'][0]['hosts'][0]['session']['username'] = 'umaquay' })
+      scanner = AccessLeakScanner.new(scenario)
+      found = scanner.scan(lines(rows), signins: @signins.first(2), resumes: ['adel@bay_pc@2026-01-01T09:00:09.000Z']).select { |f| f.line >= desk_at }
+      assert_includes found.map { |f| [f.rule, f.owner] }, %w[profile_admin_read item:olu_budget]
+      assert_equal 1, scanner.unused_entries.length
+    end
+
     test 'R3-C2: entries are parsed strictly and an entry that matched no row is reported' do
       run_game
       ['adel@bay_pc#1x', 'adel@bay_pc#0', 'adel@bay_pc#abc', 'adel@nowhere#1', 'nobody@bay_pc#1'].each do |entry|

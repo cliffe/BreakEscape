@@ -175,12 +175,15 @@ require_relative '../../../lib/break_escape/realism_catalog' unless defined?(Bre
 # `pcId` ends every PC), a PC in an answer's `endedPcIds` (a displacing grant, claim or hand-back that names it), a 403 desktop
 # answer (off, not_responding, expired, no_session), a bootstrap whose `sessions` map lacks the PC or holds it locked, for
 # another account, or WITHOUT `access: "admin"` (the step only; R3-C3), and a successful POST /logout (every PC: the answer does
-# not say which). Also, from data already in the log (R3 check 2): a token sign-in's `expiresInS` plus its row time is a deadline
+# not say which, unless a `logouts: ["<account id>@<pc id>#<n>" | "<account id>@<pc id>@<row time>"]` entry (`--logout`) names that one
+# row's PC and the run holds that account there: it then ends that PC only; an entry that does not hold is unused, exit 2). Also, from data already in the log (R3 check 2): a token sign-in's `expiresInS` plus its row time is a deadline
 # after which the step and account are gone; a `GET /network` host row of a sign-in PC with no `session` (step and account) or a
 # `session` without `access: "admin"` (step), and a 200 desktop answer with no session, another account's, or no admin access, take
 # it back. A 200 answer never RESTORES a step. The one way back after a power cut (the session survives it: the desktop opens with
 # no sign-in) is `resumes: ["<account id>@<pc id>@<row time>"]` (`--resume`), ONE 200 desktop row after a 403 `off` or
-# `not_responding` at that PC, whose session is the account held at the 403, with no other end in between (R3-B1). Entries that
+# `not_responding` at that PC, or after ONE answer that showed the held account's session at that PC without `access: "admin"` (a
+# bootstrap, a `GET /network` host row of that username, a 200 desktop row: what an off PC shows; a real client sends no request while
+# the PC is off, so no 403 exists), whose session is the account held then, with no other end in between (R3-B1). Entries that
 # match nothing are in `unused_entries`. A named sign-in of an account at a PC that does not admit it raises ArgumentError (R3-C1).
 # Not shown by any answer, so not tracked: a token running out or a power cut with no network view, desktop or bootstrap answer
 # before the leaking request, and a hand-back that names no PC in `endedPcIds`. The ADMIN_READ rule counts one
@@ -457,6 +460,7 @@ class AccessLeakScanner
     unused = []
     (@priv_named || {}).each { |key, pc| unused << priv_entry_text(key, pc) unless @priv_used.include?([:signin, key]) }
     (@priv_resumes || {}).each_key { |key| unused << "#{key.join('@')} (--resume)" unless @priv_used.include?([:resume, key]) }
+    (@priv_logouts || {}).each { |key, pc| unused << priv_logout_text(key, pc) unless @priv_used.include?([:logout, key]) }
     unused
   end
 
@@ -466,7 +470,7 @@ class AccessLeakScanner
 
   # lines: [[source, line_no, hash]]. Returns findings, deduplicated per response line, rule
   # and owner (the first JSON path is kept).
-  def scan(lines, ops_steps: nil, signins: nil, resumes: nil)
+  def scan(lines, ops_steps: nil, signins: nil, resumes: nil, logouts: nil)
     findings = []
     seen = Set.new
     @ops_supplied = Set.new(Array(ops_steps).map(&:to_s))
@@ -476,6 +480,8 @@ class AccessLeakScanner
     end
     @priv_named = parse_priv_signins(signins)
     @priv_resumes = parse_priv_resumes(resumes)
+    @priv_logouts = parse_priv_logouts(logouts)
+    @priv_logout_count = 0
     @priv_used = Set.new
     @priv_signin_counts = Hash.new(0)
     @priv_deadlines = {}
@@ -2870,6 +2876,46 @@ class AccessLeakScanner
     named
   end
 
+  # `logouts:` entries (`--logout`), "<account id>@<pc id>#<n>" (the n-th successful POST /logout answer in the log) or
+  # "<account id>@<pc id>@<row time>": a logout answer does not say which PC it was at (the capture holds no request body), so
+  # unnamed it ends every PC. A named one ends that PC only, and only if the run holds that account at that PC when the row
+  # comes; otherwise the entry is unused (exit 2) and the row ends every PC as before.
+  def parse_priv_logouts(list)
+    named = {}
+    Array(list).each do |entry|
+      account, pc, kind, key = entry.to_s.match(/\A([^@#\s]+)@([^@#\s]+)([#@])(\S+)\z/)&.captures
+      raise ArgumentError, "bad logout entry #{entry.inspect}: use <account id>@<pc id>#<n> or <account id>@<pc id>@<row time>" unless account
+      raise ArgumentError, "bad logout entry #{entry.inspect}: n must be a whole number from 1 (no trailing text)" if kind == '#' && !key.match?(/\A[1-9]\d*\z/)
+
+      check_priv_entry_names(entry, account, pc)
+      full = [account, kind == '#' ? :n : :t, kind == '#' ? key.to_i : key]
+      raise ArgumentError, "logout entry #{entry.inspect} is given twice (or names the same row as an earlier entry)" if named.key?(full)
+
+      named[full] = pc
+    end
+    named
+  end
+
+  def priv_logout_text(key, pc)
+    account, kind, value = key
+    "#{account}@#{pc}#{kind == :n ? '#' : '@'}#{value} (--logout)"
+  end
+
+  # The PCs a successful POST /logout row ends: the one a `--logout` entry names for THIS row if the run holds that account
+  # there, else every PC (fail closed).
+  def priv_logout_pcs(row)
+    @priv_logout_count += 1
+    @priv_logouts.each do |key, pc|
+      account, kind, value = key
+      this_row = kind == :n ? value == @priv_logout_count : value == row['t']
+      next unless this_row && @ops_session_accounts[pc] == account && !@priv_used.include?([:logout, key])
+
+      @priv_used << [:logout, key]
+      return [pc]
+    end
+    @priv_pcs.keys
+  end
+
   def check_priv_entry_names(entry, account, pc)
     raise ArgumentError, "entry #{entry.inspect}: #{account} is not an account of this scenario" unless @priv_npcs.key?(account)
     raise ArgumentError, "entry #{entry.inspect}: #{pc} is not a sign-in PC of this scenario (#{@priv_pcs.keys.join(', ')})" unless @priv_pcs.key?(pc)
@@ -2924,7 +2970,7 @@ class AccessLeakScanner
 
     status = row['status'].to_i
     ok = status == 200 && body['success'] == true
-    end_priv_session(ctx[:logout] ? @priv_pcs.keys : []) if ok
+    end_priv_session(priv_logout_pcs(row)) if ok && ctx[:logout]
     # a lock answer that names no PC ends every PC (fail closed)
     end_priv_session(body['pcId'].is_a?(String) ? [body['pcId']] : @priv_pcs.keys) if ok && ctx[:lock_session] && body['locked'] == true
     end_priv_session(Array(body['endedPcIds'])) if status == 200
@@ -2971,21 +3017,34 @@ class AccessLeakScanner
 
     session = body['session']
     held = @ops_session_accounts[pc]
+    earlier = @priv_resumable[pc]
     if !session.is_a?(Hash)
       end_priv_session([pc])
     elsif held && session['npcId'].is_a?(String) && session['npcId'] != held
       end_priv_session([pc])
       @ops_session_accounts[pc] = session['npcId']
     elsif session['access'] != 'admin'
-      @ops_earned.delete("admin:#{pc}")
-      @priv_deadlines.delete(pc)
-      @priv_resumable.delete(pc)
+      downgrade_priv_step(pc)
     end
-    apply_priv_resume(pc, session, row)
+    # only a record that was there BEFORE this row can be resumed by it (the row that shows the downgrade makes its own)
+    apply_priv_resume(pc, session, row, earlier) if earlier && @priv_resumable[pc].equal?(earlier)
   end
 
-  def apply_priv_resume(pc, session, row)
-    saved = @priv_resumable[pc]
+  # The session at a PC is shown without `access: "admin"` (an off PC lists its session and leaves `access` out): the step and
+  # token deadline go. If the step was held, the account and step are kept as what a `--resume` may restore (a real capture
+  # holds no 403 when the client sends no request while the PC is off); a step that was not held leaves nothing to restore.
+  def downgrade_priv_step(pc, username: nil)
+    same = username.nil? || username == @priv_npcs.dig(@ops_session_accounts[pc], 'creds', 'username')
+    if same && @ops_earned.include?("admin:#{pc}") && @ops_session_accounts[pc]
+      remember_priv_resumable(pc)
+    else
+      @priv_resumable.delete(pc)
+    end
+    @ops_earned.delete("admin:#{pc}")
+    @priv_deadlines.delete(pc)
+  end
+
+  def apply_priv_resume(pc, session, row, saved = @priv_resumable[pc])
     return unless saved && session.is_a?(Hash) && row['t'].is_a?(String)
 
     key = [saved[:account], pc, row['t']]
@@ -3010,9 +3069,7 @@ class AccessLeakScanner
       if !hash['session'].is_a?(Hash)
         end_priv_session([pc])
       elsif hash['session']['access'] != 'admin'
-        @ops_earned.delete("admin:#{pc}")
-        @priv_deadlines.delete(pc)
-        @priv_resumable.delete(pc)
+        downgrade_priv_step(pc, username: hash['session']['username'])
       end
     end
   end
@@ -3038,9 +3095,7 @@ class AccessLeakScanner
         @ops_session_accounts[pc] = held['npcId']
       elsif held['access'] != 'admin'
         # R3-C3: present but not admin (an off PC or a downed route lists the session and leaves `access` out): the step goes
-        @ops_earned.delete("admin:#{pc}")
-        @priv_deadlines.delete(pc)
-        @priv_resumable.delete(pc)
+        downgrade_priv_step(pc)
       end
     end
   end

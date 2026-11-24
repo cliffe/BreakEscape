@@ -13,7 +13,9 @@
 # there. An administrator session that went on after the PC lost power (the session survives the power: the desktop opens with
 # no sign-in) is named by `--resume <account id>@<pc id>@<row time>`: ONE 200 desktop row after a 403 `off` or `not_responding`
 # at that PC, whose session is the account held when the 403 came, with no other end in between. A 200 answer never restores
-# the step by itself. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# the step by itself. `--logout <account id>@<pc id>#<n>` (or `@<row time>`) names the PC of ONE successful sign-out answer (the answer names none, so
+# unnamed it ends every PC): it ends that PC only, if the run holds that account there. `--resume` also holds after a row that showed the
+# session at that PC without admin (an off PC), not only after a 403. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
 # an error (exit 2), never silence. Put the options before the game id. When checking after every beat, give only the entries for rows already in the files.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
@@ -58,18 +60,19 @@ require_relative 'lib/access_leak_scanner'
 
 args = ARGV.dup
 usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
-        '[--resume <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
+        '[--resume <account id>@<pc id>@<row time>]... [--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
         '(n counts every successful POST /login answer of the account in the log, remote and relay ones too)'
 signins = []
 resumes = []
-['--signin', '--resume'].each do |option|
+logouts = []
+['--signin', '--resume', '--logout'].each do |option|
   while (i = args.index(option))
     value = args[i + 1]
     if value.nil? || value.start_with?('--')
       warn usage
       exit 2
     end
-    (option == '--signin' ? signins : resumes) << value
+    { '--signin' => signins, '--resume' => resumes, '--logout' => logouts }[option] << value
     args.slice!(i, 2)
   end
 end
@@ -123,14 +126,14 @@ if game_problem
 end
 
 begin
-  findings = scanner.scan(lines, signins: signins, resumes: resumes)
+  findings = scanner.scan(lines, signins: signins, resumes: resumes, logouts: logouts)
 rescue ArgumentError => e
   warn e.message
   exit 2
 end
 unused = scanner.unused_entries
 unless unused.empty?
-  warn "entries that matched no row (a typo, a sign-in that did not happen at that PC, a resume whose conditions did not hold): #{unused.join(', ')}"
+  warn "entries that matched no row (a typo, a sign-in that did not happen at that PC, a resume whose conditions did not hold, a logout of an account not held at that PC): #{unused.join(', ')}"
   exit 2
 end
 counts = scanner.counts
