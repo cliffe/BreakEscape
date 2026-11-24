@@ -93,7 +93,10 @@ module BreakEscape
       end
 
       npc = typed.empty? ? nil : account_for_username(typed)
-      if npc && helpdesk_covers_request?(desk, npc, what, answers)
+      # The rule is judged for every name, account or not, and the result discarded for a non-account:
+      # there is no branch on "is this an account" before the rule has run
+      covered = helpdesk_covers_request?(desk, npc || { 'id' => typed, 'creds' => {} }, what, answers)
+      if npc && covered
         grant_helpdesk!(desk_id, desk, npc, typed, what, key)
       else
         refuse_helpdesk!(desk_id, desk, typed, what, key, now)
@@ -169,19 +172,21 @@ module BreakEscape
       helpdesk_tries.delete(key) if now - entry['stoppedAt'] >= HelpdeskModel::DESK_STOP_SECONDS
     end
 
-    # The rule, and (for a password) the account having something to issue
+    # The rule, and (for a password) the account having something to issue. The rule is always
+    # evaluated first, so a name with no account does the same work as one with an account.
     def helpdesk_covers_request?(desk, npc, what, answers)
-      creds = npc['creds']
-      return false if what == 'password' && !(creds['resetPassword'].is_a?(String) && !creds['resetPassword'].empty?)
-
-      case desk['verify']
-      when 'none' then true
-      when 'callback' then !held_friendface_phone(npc['id']).nil?
-      else
-        given = answers.is_a?(Hash) ? answers : {}
-        recovery = creds['recovery'].is_a?(Hash) ? creds['recovery'] : {}
-        HelpdeskModel.rule_met?(desk, recovery, given)
-      end
+      creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}
+      met =
+        case desk['verify']
+        when 'none' then true
+        when 'callback' then !held_friendface_phone(npc['id']).nil?
+        else
+          given = answers.is_a?(Hash) ? answers : {}
+          recovery = creds['recovery'].is_a?(Hash) ? creds['recovery'] : {}
+          HelpdeskModel.rule_met?(desk, recovery, given)
+        end
+      issues = what != 'password' || (creds['resetPassword'].is_a?(String) && !creds['resetPassword'].empty?)
+      met && issues
     end
 
     def refuse_helpdesk!(desk_id, desk, typed, what, key, now)
@@ -190,9 +195,11 @@ module BreakEscape
       if entry.is_a?(Hash)
         entry['n'] = entry['n'].to_i + 1
       else
+        retry_in = make_room_for_helpdesk_try!(tries, now)
+        return helpdesk_blocked_by_cap!(desk_id, typed, what, retry_in) if retry_in
+
         seq = tries.values.map { |e| e.is_a?(Hash) ? e['seq'].to_i : 0 }.max.to_i + 1
         entry = tries[key] = { 'n' => 1, 'seq' => seq }
-        trim_non_account_helpdesk_tries!
       end
       left = [desk['maxTries'] - entry['n'], 0].max
       entry['stoppedAt'] = now if left.zero?
@@ -201,19 +208,27 @@ module BreakEscape
       { status: :unprocessable_entity, body: { reason: 'refused', triesLeft: left } }
     end
 
-    # Entries for usernames that are not accounts are capped; the oldest (smallest seq) is dropped
-    def trim_non_account_helpdesk_tries!
-      tries = helpdesk_tries
-      usernames = account_usernames
-      loop do
-        extra = tries.reject { |k, _| usernames.include?(k.partition('|').last) }
-        break if extra.size <= HelpdeskModel::TRIES_CAP
-
-        oldest = extra.min_by { |_k, e| e.is_a?(Hash) ? e['seq'].to_i : 0 }&.first
-        break unless oldest
-
-        tries.delete(oldest)
+    # The tries table holds at most TRIES_CAP names, accounts and others alike, so a refusal never
+    # tells one from the other. Room is made by dropping stops that have run out, then the oldest
+    # name that is not stopped; a stopped name is never dropped (junk names cannot lift a stop).
+    # Answers nil when there is room, else the seconds until the soonest stop ends: every held
+    # name is stopped, and a new name is answered as stopped, account or not.
+    def make_room_for_helpdesk_try!(tries, now)
+      tries.delete_if do |_k, e|
+        e.is_a?(Hash) && e['stoppedAt'].is_a?(Integer) && now - e['stoppedAt'] >= HelpdeskModel::DESK_STOP_SECONDS
       end
+      while tries.size >= HelpdeskModel::TRIES_CAP
+        loose = tries.reject { |_k, e| e.is_a?(Hash) && e['stoppedAt'].is_a?(Integer) }
+        return tries.values.map { |e| e['stoppedAt'].to_i + HelpdeskModel::DESK_STOP_SECONDS - now }.min if loose.empty?
+
+        tries.delete(loose.min_by { |_k, e| e.is_a?(Hash) ? e['seq'].to_i : 0 }.first)
+      end
+      nil
+    end
+
+    def helpdesk_blocked_by_cap!(desk_id, typed, what, retry_in)
+      save! if log_helpdesk_request(desk_id, typed, what, 'blocked')&.stored?
+      { status: :unprocessable_entity, body: { reason: 'blocked', retryIn: retry_in } }
     end
 
     def grant_helpdesk!(desk_id, desk, npc, typed, what, key)
@@ -231,6 +246,7 @@ module BreakEscape
           login_lockouts.delete(k)
         end
         body = helpdesk_grant_body(npc, what, desk_id)
+        drop_pending_second_steps!(npc_id)
       else
         account = mfa_account_for(npc_id)
         account['wrong'] = 0
@@ -243,6 +259,15 @@ module BreakEscape
                      detail: { agent: desk['npc'] })
       save!
       { status: :ok, body: body }
+    end
+
+    # A step begun on the old password cannot finish on the new one: every pending second-step
+    # record of this account goes. Reads the map only when it is already stored (creates no key).
+    def drop_pending_second_steps!(npc_id)
+      pending = player_state['mfaPending']
+      return unless pending.is_a?(Hash)
+
+      pending.delete_if { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
     end
 
     # npcId is the account NPC's id (never the typed username) and deskId the key the request was

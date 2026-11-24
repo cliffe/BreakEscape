@@ -132,7 +132,7 @@ module BreakEscape
     # pc subject the old phone is no longer its second factor: an approval is accepted only through
     # the own-phone form, and one through a held old phone is refused as :no_phone with nothing
     # changed. Any other account is judged as before, whatever `own_form` says.
-    def approve_second_step(map, key, subject, npc_id:, number: nil, deny: false, reenrolled: false, own_form: true)
+    def approve_second_step(map, key, subject, npc_id:, number: nil, deny: false, reenrolled: false, own_form: false)
       tidy_pending!(map)
       record = map[key]
       own_pc = reenrolled && subject.is_a?(Hash) && subject[:kind] == 'pc'

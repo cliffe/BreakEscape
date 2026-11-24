@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'minitest/mock'
 require_relative '../../support/keyring_login_scenario'
 require_relative '../../support/helpdesk_answer_shapes'
 
@@ -169,14 +170,52 @@ module BreakEscape
       assert_equal :ok, ask(user: 'lfox', answers: { 'staff_no' => 'B-2210', 'manager' => 'Kofi Adair' })[:status]
     end
 
-    test 'the tries cap for non-account usernames drops the oldest and keeps account keys' do
+    test 'the tries cap holds 200 names, accounts and others alike, dropping the oldest that is not stopped' do
       ask(answers: WRONG)
-      (HelpdeskModel::TRIES_CAP + 5).times { |i| ask(user: "ghost#{i}") }
+      (HelpdeskModel::TRIES_CAP + 5).times { |i| ask(user: "ghost#{i}", answers: WRONG) }
       keys = @game.helpdesk_tries.keys
-      assert_equal HelpdeskModel::TRIES_CAP + 1, keys.size
-      assert_includes keys, 'it_desk|sokafor'
+      assert_equal HelpdeskModel::TRIES_CAP, keys.size
+      refute_includes keys, 'it_desk|sokafor'
       refute_includes keys, 'it_desk|ghost0'
       assert_includes keys, "it_desk|ghost#{HelpdeskModel::TRIES_CAP + 4}"
+    end
+
+    test 'a stopped name is never dropped by the cap; a stop that has run out is' do
+      3.times { ask(answers: WRONG) }
+      (HelpdeskModel::TRIES_CAP + 5).times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      assert_equal 'blocked', ask(answers: WRONG)[:body][:reason]
+      travel_to T0 + HelpdeskModel::DESK_STOP_SECONDS + 1
+      assert_equal 'refused', ask(user: 'newcomer', answers: WRONG)[:body][:reason]
+      refute_includes @game.helpdesk_tries.keys, 'it_desk|sokafor'
+    end
+
+    # R1-SERVER4: the rule is evaluated for every name, account or not
+    test 'the rule runs once for an account and once for a name that is not one' do
+      calls = []
+      real = HelpdeskModel.method(:rule_met?)
+      HelpdeskModel.stub(:rule_met?, ->(*args) { calls << args.last; real.call(*args) }) do
+        ask(user: 'sokafor', answers: WRONG)
+        ask(user: 'nobody', answers: WRONG)
+      end
+      assert_equal [WRONG, WRONG], calls
+    end
+
+    test 'the callback rule looks for a phone for an account and for a name that is not one' do
+      game = build(desk_overrides: { 'verify' => 'callback', 'questions' => [] })
+      asked = []
+      game.define_singleton_method(:held_friendface_phone) { |id| asked << id; nil }
+      ask(game: game, user: 'sokafor')
+      ask(game: game, user: 'nobody')
+      assert_equal %w[sam nobody], asked
+    end
+
+    test 'R1-SERVER5: approve_second_step does not take an own-phone approval unless the caller says so' do
+      params = Game.instance_method(:approve_second_step).parameters
+      assert_includes params, %i[key own_form]
+      map = { 'sam_pc' => { 'id' => 'sam_pc', 'kind' => 'push', 'at' => T0.to_i, 'n' => 0, 'tries' => 0 } }
+      res = @game.send(:approve_second_step, map, 'sam_pc', { kind: 'pc', id: 'sam_pc' }, npc_id: 'sam', reenrolled: true)
+      assert_equal :no_phone, res
+      assert map.key?('sam_pc')
     end
 
     # --- the rules ------------------------------------------------------------------------------

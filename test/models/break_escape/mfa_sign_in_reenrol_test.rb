@@ -344,5 +344,20 @@ module BreakEscape
       @game.verify_sign_in_code!('sam_pc', own_code)
       assert_nil @game.account_resets['sam']['typed']
     end
+
+    test 'R1-SERVER6: reading the own phone and the own device writes nothing, even in memory' do
+      @game.save!
+      before = @game.reload.player_state.deep_dup
+      @game.mfa_own_device_answer('sam')
+      assert_equal before, @game.player_state
+      @game.mfa_own_phone_answer
+      assert_equal before, @game.player_state
+      assert_nil @game.player_state['mfaAccounts']&.dig('sam')
+    end
+
+    test 'R1-SERVER6: a used window still reads as used without creating an entry' do
+      @game.player_state['mfaAccounts'] = { 'sam' => { 'used' => (T0.to_i / MfaModel::STEP_SECONDS) + 5 } }
+      assert_equal true, @game.mfa_own_device_answer('sam')[:used]
+    end
   end
 end

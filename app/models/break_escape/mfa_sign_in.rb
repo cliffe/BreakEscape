@@ -105,7 +105,9 @@ module BreakEscape
 
       now = mfa_now
       window = now / MfaModel::STEP_SECONDS
-      used = mfa_account_for(npc_id)['used']
+      accounts = player_state['mfaAccounts']
+      stored = accounts.is_a?(Hash) ? accounts[npc_id.to_s] : nil
+      used = stored.is_a?(Hash) ? stored['used'] : nil
       { deviceId: "own:#{npc_id}", displayName: 'My phone', npcId: npc_id,
         code: code_device_code("own:#{npc_id}", window),
         secondsLeft: MfaModel::STEP_SECONDS - (now % MfaModel::STEP_SECONDS),
@@ -244,7 +246,7 @@ module BreakEscape
     def mfa_own_phone_answer
       return :no_phone unless resets_recorded?
 
-      ids = account_resets.select { |_id, entry| entry.is_a?(Hash) && entry['mfa'] == true }.keys
+      ids = player_state['accountResets'].select { |_id, entry| entry.is_a?(Hash) && entry['mfa'] == true }.keys
       return :no_phone if ids.empty?
 
       { requests: ids.flat_map { |id| phone_request_rows(id) } }
