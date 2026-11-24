@@ -42,7 +42,7 @@ const view = (s, now = 0) => M.viewOf(s, now, refusalText);
 
 test('the model renders each status', () => {
     let s = fresh();
-    assert.match(view(s).message, /Pick what you have learned/);
+    assert.match(view(s).message, /Pick the facts you think this password was built from/);
     assert.equal(M.STATUS_TEXT.ready_to_finish, 'Ready to finish. Press Finish to see the result.');
     const ans = (a, now = 0, seq = 1) => M.acceptAnswer(s, seq, { success: true, ...a }, now);
     assert.equal(view(ans({ status: 'nomatch' })).message, 'No match');

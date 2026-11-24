@@ -22,7 +22,7 @@ function el(tag, cls, text) {
 export function captureBannerText(reveal) {
     return reveal
         ? 'Passwords and PINs this engagement has recorded, shown in full here and masked in the report.'
-        : 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record it.';
+        : 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record captured passwords (a password you cracked yourself is shown).';
 }
 
 /**

@@ -39,7 +39,7 @@ Give the leak check every capture file of the game, one by one, oldest first.
 1. **Start.** Open the capture log: the Hashes section is not listed (no hash held). `verify-run.rb`: nothing held.
 2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected"; a hash row in the log's Hashes section with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
 3. **Missing facts.** Open the cracker for Dana (Crack button on the row): no chips, and Crack can still be pressed with nothing picked. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
-4. **Earn the rest.** Wait for Dana's post on the terminal (about 30 s after the room loads); submit the flag at the station. Three chips; the intel board shows the same facts.
+4. **Earn the rest.** Walk into the bay and wait for Dana's post on the terminal (about 30 s after the bay loads); read the flag text on the lobby sign and submit it at the station. Three chips in the cracker. There is no intel board in this scenario: the facts show only as chips in the cracker.
 5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then "No match". The capture shows `running` with no hint of the verdict.
 6. **The right pick.** Pick all three: the wait, then "Cracked" with the password; the row reads Cracked and a password row sits beside it.
 7. **Reuse.** Take Farah's file and Crack with no pick: a 60 s wait, then Cracked (Dana's equal password is held). Reload during the wait: the countdown resumes from the server's time.
