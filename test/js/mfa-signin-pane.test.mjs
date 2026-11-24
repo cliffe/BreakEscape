@@ -181,6 +181,26 @@ test('codeLocked shows the wait and ends the screen\'s form', async () => {
     assert.equal(mg.codeField.disabled, true);
 });
 
+test('a lockout from wrong codes leaves one live "Use a different account" that returns to the tiles', async () => {
+    // the answer is capture row 63 of game 129, byte for byte
+    const { mg } = rig({ verify: [{ status: 422, body: { success: false, message: 'This account is locked on this PC', lockedOut: true, attemptsLeft: 0 } }] });
+    await firstStep(mg);
+    typeCode(mg, '111111');
+    await mg.submitCode();
+    assert.equal(mg.signInMessageEl.textContent, 'This account is locked on this PC.');
+    assert.equal(mg.gameResult.reason, 'locked_out');
+    const backs = [...document.querySelectorAll('.signin-mode button')].filter((b) => b.textContent === 'Use a different account');
+    assert.equal(backs.length, 1);
+    assert.equal(backs[0].disabled, false);
+    backs[0].click();
+    assert.equal(mg.signInPane, 'password');
+    assert.equal($('#signin-second').hidden, true);
+    assert.equal(mg.gameResult, null);
+    assert.ok(document.querySelectorAll('.signin-tile').length >= TILES.length);
+    mg.selectSignInTile(1);
+    assert.equal(mg.passwordField.disabled, false);
+});
+
 test('an ended second step falls back to the password pane with a line', async () => {
     const { mg, log } = rig({ verify: [{ status: 422, body: { success: false, expired: true } }] });
     await firstStep(mg);

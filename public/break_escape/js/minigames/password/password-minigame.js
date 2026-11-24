@@ -3298,7 +3298,9 @@ export class PasswordMinigame extends MinigameScene {
     addLockedBackButton() {
         const mode = this.gameContainer?.querySelector?.('.signin-mode');
         const remote = !!this.signIn?.remote;
-        if (!mode || !this.signInState || (this.signInPane && this.signInPane !== 'password') || (!remote && this.signIn?.picker === false) || (remote && !this.signInTilesOffered())) return;
+        if (!mode || !this.signInState || (!remote && this.signIn?.picker === false) || (remote && !this.signInTilesOffered())) return;
+        // a second-step pane's own back button was disabled with the rest of the form: the new one replaces it
+        this.gameContainer.querySelector('#signin-second-back')?.remove();
         const inMonitor = !!this.pcMonitor;
         const back = document.createElement('button');
         back.type = 'button';
@@ -3314,6 +3316,7 @@ export class PasswordMinigame extends MinigameScene {
             st.otherPicked = false;
             this.gameData.password = '';
             this.gameResult = null;
+            this.signInPane = 'password';
             this.initSignIn();
             this.gameContainer.querySelector('.signin-tile')?.focus?.();
         });
