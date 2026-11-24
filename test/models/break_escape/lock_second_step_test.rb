@@ -283,5 +283,40 @@ module BreakEscape
         'rooms' => { 'hall' => { 'type' => 'room_office', 'objects' => [object],
                                  'npcs' => [{ 'id' => 'amy' }] } } }
     end
+
+    # Rule A, "one writer": every place in app/ and lib/ that writes player_state['unlockedObjects']
+    # (an assignment, `<<`, `+=`, `|=`, push, concat and the like, but not a bare `||= []`
+    # initialiser) must be one of the two intended methods. A third writer fails this test.
+    WRITER_PATTERN = /\[['"]unlockedObjects['"]\]\s*(?:<<|\+=|\|\|=(?!\s*\[\]\s*$)|\|=|-=|(?<![=!<>~])=(?![=~>])|\.(?:push|append|concat|unshift|insert|replace|prepend)\b)|['"]unlockedObjects['"]\s*=>/
+
+    test 'only unlock_object! and record_step_open! write player_state unlockedObjects' do
+      root = BreakEscape::Engine.root
+      found = []
+      Dir[root.join('{app,lib}/**/*.rb')].sort.each do |file|
+        method = nil
+        File.foreach(file).with_index(1) do |line, _n|
+          method = Regexp.last_match(1) if line =~ /^\s*def\s+(?:self\.)?([\w!?=]+)/
+          next if line.strip.start_with?('#')
+
+          found << [file.sub("#{root}/", ''), method] if line.match?(WRITER_PATTERN)
+        end
+      end
+      assert_equal [['app/models/break_escape/game.rb', 'unlock_object!'],
+                    ['app/models/break_escape/lock_second_step.rb', 'record_step_open!']],
+                   found.uniq.sort
+    end
+
+    test 'the writer pattern sees every form of write' do
+      [%q(player_state['unlockedObjects'] << id), %q(player_state['unlockedObjects'] += [id]),
+       %q(player_state['unlockedObjects'] = [id]), %q(player_state['unlockedObjects'].push(id)),
+       %q(player_state['unlockedObjects'].concat(ids)), %q(player_state['unlockedObjects'] |= [id]),
+       %q(player_state['unlockedObjects'] ||= [id]), %q(state.merge('unlockedObjects' => [id]))].each do |line|
+        assert_match WRITER_PATTERN, line
+      end
+      [%q(player_state['unlockedObjects'] ||= []), %q(player_state['unlockedObjects'].include?(id)),
+       %q(Array(player_state['unlockedObjects']) == [])].each do |line|
+        assert_no_match WRITER_PATTERN, line
+      end
+    end
   end
 end
