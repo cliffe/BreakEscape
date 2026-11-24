@@ -423,7 +423,16 @@ class ValidateRealismSkinTest < ActiveSupport::TestCase
       assert_error s, 'holds', nicknames_path: path
       s = mut { |m| m['hosts']['filesrv']['name'] = 'a quillstormy box' }
       refute_errors s, nicknames_path: path
+      s = mut { |m| m['hosts']['filesrv']['name'] = 'the quillflood box' }
+      assert_error s, 'holds', nicknames_path: path
     end
+  end
+
+  test 'a banner with the vendor word left off is still compared with the service version' do
+    s = mut { |m| svc(m)['product'] = 'Tarnwick Quillbox'; banner!(m, 'Quillbox 9.9 ready') }
+    assert(errors(s).any? { |e| e.include?('9.9') }, errors(s).join("\n"))
+    s = mut { |m| svc(m)['product'] = 'Tarnwick Quillbox'; banner!(m, 'Quillbox 2.1 ready') }
+    refute_errors s
   end
 
   test 'a service word that only matches once joined into its default script is an error' do

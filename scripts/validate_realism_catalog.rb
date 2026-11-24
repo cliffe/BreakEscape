@@ -19,7 +19,12 @@ require 'optparse'
 require 'securerandom'
 require 'digest'
 require 'erb'
-require 'json-schema'
+begin
+  require 'json-schema'
+rescue LoadError
+  warn 'ERROR: json-schema gem is required for validation. Install it with: gem install json-schema (or add gem "json-schema" to the Gemfile, then bundle install)'
+  exit 1
+end
 JSON::Validator.use_multi_json = false if JSON::Validator.respond_to?(:use_multi_json=)
 require_relative 'realism_text_rules'
 require_relative '../lib/break_escape/scenario_binding'
@@ -283,7 +288,8 @@ def realism_read_index(path)
   [rows, unreadable]
 end
 
-def realism_scenario_links(scenarios_dir)
+# `unreadable`, when given, collects the names of scenarios that hold a realism link but could not be read.
+def realism_scenario_links(scenarios_dir, unreadable = nil)
   links = Hash.new { |h, k| h[k] = [] }
   return links unless scenarios_dir && Dir.exist?(scenarios_dir)
 
@@ -291,10 +297,11 @@ def realism_scenario_links(scenarios_dir)
     text = File.read(path)
     next unless text.include?('"realism"')
 
-    json = path.end_with?('.erb') ? BreakEscape::ScenarioBinding.render(text, {}) : text
     name = File.basename(File.dirname(path))
+    json = path.end_with?('.erb') ? BreakEscape::ScenarioBinding.render(text, {}) : text
     realism_collect_links(JSON.parse(json)) { |id| links[id] << name unless links[id].include?(name) }
   rescue StandardError
+    unreadable << name if unreadable && name
     next
   end
   links
@@ -388,7 +395,11 @@ def check_realism_catalog(dir = REALISM_CATALOG_DIR, index_path: REALISM_INDEX_P
   end
 
   if write_index && problems.none? { |p| p.level == :error } && index_path && (read || first_index || map.empty?)
-    File.write(index_path, realism_index_text(map, files, realism_scenario_links(scenarios_dir)))
+    unreadable = []
+    links = realism_scenario_links(scenarios_dir, unreadable)
+    # A scenario that links entries but cannot be read would show as unlinked: do not write that index.
+    unreadable.each { |name| realism_problem(problems, 'scenarios', name, '(scenario)', 'scenario_unreadable') }
+    File.write(index_path, realism_index_text(map, files, links)) if unreadable.empty?
   end
   problems
 end

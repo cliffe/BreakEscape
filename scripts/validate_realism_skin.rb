@@ -51,6 +51,8 @@ REALISM_SKIN_PLAIN = {
   'credential' => 'write a label, a colon and a space, then words (for example "Anonymous login: allowed")',
   'host' => 'use a private address (10.x, 172.16 to 172.31, 192.168.x) or a name ending in .local',
   'telltale' => 'say what the service reports, never whether the finding is real or not',
+  'instruction' => 'say what the scanner reports (a state, a version, a date), never what someone should do',
+  'request_form' => 'say what the service reports in words, not a request, a file name with a path or a query string',
   'weak_telltale' => 'prefer a word that does not suggest whether the finding is real'
 }.freeze
 
@@ -106,7 +108,7 @@ def realism_skin_nickname_patterns(nicknames)
     words = n.split(/[\s_-]+/).reject(&:empty?).map { |w| Regexp.escape(w) }
     next nil if words.empty?
 
-    /(?<![A-Za-z0-9])#{words.join('[\s_-]+')}(?![A-Za-z0-9])/i
+    /(?<![A-Za-z0-9])#{words.join('[\s_-]*')}(?![A-Za-z0-9])/i
   end.compact
 end
 
@@ -147,7 +149,10 @@ end
 def realism_skin_version_clash(text, product, version)
   return nil unless product.is_a?(String) && !product.empty? && version.is_a?(String) && !version.empty?
 
-  m = text.to_s.match(/(?<![A-Za-z0-9])#{Regexp.escape(product)}\s+v?(\d[\w.]*)/i)
+  names = [product]
+  names << product.split.last if product.split.length >= 2 # a banner often drops the vendor word
+  m = nil
+  names.each { |n| m ||= text.to_s.match(/(?<![A-Za-z0-9])#{Regexp.escape(n)}\s+v?(\d[\w.]*)/i) }
   return nil unless m
 
   found = m[1].sub(/\.+\z/, '')
@@ -445,7 +450,7 @@ def check_realism_skin(json_data, catalog_dir: REALISM_CATALOG_DIR, index_path: 
       warn.call(realism_skin_wording_message("'#{where}'", pair)) if pair
     end
   else
-    warn.call("'networkView' is set but no host declares services, so the network view never offers the Terminal") if json_data.key?('networkView')
+    warn.call("'networkView' is set but no host declares services, so the Terminal appears only while a sweep is on offer and has nothing to show after it") if json_data.key?('networkView')
     nets.each do |net_id, net|
       warn.call("'networks/#{net_id}/cli' is set but no host declares services; the Terminal reads it only for hosts with services") if net['cli'].is_a?(Hash)
     end
