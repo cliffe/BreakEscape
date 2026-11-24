@@ -71,7 +71,7 @@ module BreakEscape
 
     def reset_entry(npc, pw, over = {})
       shape('keyring.reset_entry', { 'body.id' => "#{npc}.reset", 'body.account.npcId' => npc, 'body.account.username' => npc_of(scenario, npc)['creds']['username'],
-                                     'body.account.displayName' => npc, 'body.password' => pw }.merge(over))['body']
+                                     'body.account.displayName' => npc_of(scenario, npc)['displayName'] || npc, 'body.password' => pw }.merge(over))['body']
     end
 
     def keyring(entries, at = nil)

@@ -17,31 +17,36 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 #
 # helpdesk_secret
 #   - the keys recovery, resetPassword, helpdesks, accountResets, helpdeskTries, minCorrect, maxTries anywhere; a hash that
-#     carries a desk question id beside an account's authored recovery answer for it;
-#   - `helpdeskForms`: only at the root of a 200 GET scenario answer, and each entry exactly npc, resets, questionLabels for a
-#     desk of the scenario (every other key is its own finding);
-#   - an answer on POST helpdesk/request that is not one of the SHAPES entries (status, exact keys, value types), or is on
-#     another verb or a loose path;
+#     carries a desk question id beside an account's authored recovery answer for it (as a key, or as a value);
+#   - `helpdeskForms`: only at the root of a 200 GET scenario answer, each entry exactly what HelpdeskModel.forms builds;
+#   - an answer on POST helpdesk/request that is not one of the SHAPES entries (status, exact keys, value types, retryIn 1 to
+#     300, triesLeft below the largest maxTries), or is on another verb or a loose path;
 #   - an account's `resetPassword` VALUE anywhere, except `password` of a credited 200 grant answer for the one account
-#     whose value it is, and (after that grant) the `password` of the GET keyring entry `<npcId>.reset` of that account;
+#     whose value it is, and (after that grant) the `password` of the GET keyring entry `<npcId>.reset` of that account (label
+#     `Reset`, how `issued`, the account's display name);
 #   - the own-phone forms (a deviceId `own:<npc>`, an `enrolled: false` device answer, `ownPhone: true`, a GET mfa/phone with
-#     an `own` query), unless the answer is exactly the SHAPES shape for an account some earned mfa grant covers.
+#     an `own` query), unless the answer is exactly the SHAPES shape for an account a credited second-step grant NAMED;
+#   - a plain `mfaRequired` for such an account, a pass for it while its own-phone step is open other than `approvedBy:
+#     own_phone` (the hook in `mfa_pass_pc` credits that one with proof), the old held device's code or old phone's list for
+#     it, and, where no code device is authored, any six-digit code that is not an earned own-device answer.
 # helpdesk_grant
 #   - a `granted` answer that is not credited (see `hd_grant_credit`).
 #
 # A grant is credited only when: the route is the strict POST helpdesk/request, the status is 200, the body is exactly the
-# SHAPES entry (`granted` the boolean true), the desk has not stopped (a `blocked` answer's retryIn, or the stop a refusal
-# with triesLeft 0 starts, is still running at the row's time; a row with no readable time while any stop was seen counts as
-# stopped), and some desk of the scenario covers the account: `what` is in its resets, the `questions` rule has an authored
-# answer for each question, a `callback` desk only while the run holds the account's phone. A password grant names its
-# account by the value it carries (a value two accounts share earns neither). A second-step grant names no account.
+# SHAPES entry (`granted` the boolean true, plus `npcId` and `deskId`), the desk has not stopped (a `blocked` answer's retryIn, or
+# the stop a refusal with triesLeft 0 starts, is still running at the row's time; a row with no readable time while any stop was
+# seen counts as stopped), `npcId` is an account and `deskId` a desk of the scenario, that desk covers the account for `what`
+# (a `callback` desk only while the run holds the account's phone at that row), and for a password the value is the one the
+# account alone owns. A repeat grant names the same account again and adds nothing.
 #
-# THE LIMIT (the recorder keeps no request bodies): an answer cannot say which desk, which username or which `what` was asked.
-# So (1) a second-step grant is tied to a SET of accounts it could be for, and an own-phone form for an account needs its own
-# grant row (a matching of accounts to grant rows), no more; a repeat grant answer counts as another row. (2) A stop on any
-# desk or username stops every grant until it runs out, so a grant for another account inside that time is not credited.
-# (3) A desk NPC being met, a typed answer being right and the typed username cannot be checked; only that the scenario's
-# desks could have granted it.
+# LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out, because
+# a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
+# refusals last. (2) A desk NPC being met, a typed answer being right and the typed username cannot be checked; only that the
+# named desk could have granted the named account. (3) A code's value is never checked. (4) An earlier stop, grant or phone
+# before the first captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}` or as a hash holding
+# the id as a value beside the answer, not inside an array. (6) The main scanner is touched in six places: the require, the
+# include, `helpdesk_begin_scan`, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at`
+# (`hd_reenrolled?`) and the approve clause of `mfa_pass_pc` (`hd_own_approval?`); S8c merges keep both.
 module HelpdeskLeakRules
   RULE_TEXT = {
     'helpdesk_secret' => 'a recovery answer or key, a helpdesk setting (helpdesks, accountResets, helpdeskTries, minCorrect, maxTries, a form key beyond ' \
@@ -177,6 +182,7 @@ module HelpdeskLeakRules
   def hd_walk_keys(body, minfo, flags, add)
     root_forms = body.is_a?(Hash) && minfo[:method] == 'GET' && minfo[:route] == 'scenario' && minfo[:ok]
     mfa_walk(body) do |hash, path, _parent|
+      add.call('helpdesk_secret', 'helpdesk:recovery:pair', safe_path(path)) if hd_recovery_pair?(hash)
       hash.each do |key, value|
         at = safe_path("#{path}.#{key}")
         if HD_NEVER_KEYS.include?(key)
@@ -205,6 +211,15 @@ module HelpdeskLeakRules
     end
   end
 
+  # R1-L12: a hash holding a desk question id as a VALUE beside an authored answer to it (`{id: 'staff_no', answer: '40612'}`).
+  def hd_recovery_pair?(hash)
+    hash.values.any? do |qid|
+      next false unless qid.is_a?(String) && @hd_recovery.key?(qid)
+
+      hash.values.any? { |v| !v.equal?(qid) && v.is_a?(String) && @hd_recovery[qid].include?(BreakEscape::HelpdeskModel.normalise_answer(v)) }
+    end
+  end
+
   # helpdeskForms at the root of the bootstrap: a Hash of the scenario's desk ids, each exactly npc, resets, questionLabels
   # (each wrong key is a finding of its own).
   def hd_judge_forms(forms, at, add)
@@ -226,11 +241,9 @@ module HelpdeskLeakRules
     end
   end
 
+  # The entry is exactly what the server builds for that desk (R1-L8): its npc, its resets, its labels cut as the server cuts them.
   def hd_form_ok?(desk, form)
-    labels = form['questionLabels']
-    form.keys.sort == HD_FORM_KEYS && form['npc'] == desk['npc'] && form['resets'].is_a?(Array) &&
-      form['resets'].all? { |r| desk['resets'].include?(r) } && labels.is_a?(Hash) &&
-      labels.all? { |qid, label| desk['questions'].include?(qid) && label.is_a?(String) }
+    form == BreakEscape::HelpdeskModel.forms(@data)[@hd_desks.key(desk)]
   end
 
   # ---- POST helpdesk/request -------------------------------------------------------------------------------------
@@ -370,9 +383,10 @@ module HelpdeskLeakRules
 
     account = entry['account']
     owners = @hd_reset_pw[npc['creds']['resetPassword']]
-    entry['source'] == 'helpdesk' && entry['kind'] == 'password' && entry['label'].is_a?(String) && entry['how'].is_a?(String) &&
+    entry['source'] == 'helpdesk' && entry['kind'] == 'password' && entry['label'] == 'Reset' && entry['how'] == 'issued' &&
       owners == [npc_id] && entry['password'] == npc['creds']['resetPassword'] &&
-      account.is_a?(Hash) && account.keys.sort == HD_ACCOUNT_KEYS && account['npcId'] == npc_id && account['username'] == npc['creds']['username']
+      account.is_a?(Hash) && account.keys.sort == HD_ACCOUNT_KEYS && account['npcId'] == npc_id && account['username'] == npc['creds']['username'] &&
+      account['displayName'] == (npc['displayName'] || npc['id'])
   end
 
   def hd_judge_passwords(body, allowed, add)

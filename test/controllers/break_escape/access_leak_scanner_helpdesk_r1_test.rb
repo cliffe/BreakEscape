@@ -203,5 +203,41 @@ module BreakEscape
       phone = row('GET', 'mfa/phone', { 'status' => 200, 'body' => { 'requests' => [] } }, query: 'npc_id=hana')
       assert_includes helpdesk_owners(scan([grant_mfa, take('hana_phone'), phone], data)), 'helpdesk:old:phone'
     end
+
+    # ---- the minors, probe P6 ----
+
+    test 'R1-L7 P6a: the keyring reset entry takes only the label, how and display name the server sends' do
+      [{ 'body.label' => 'staff no 40612, manager Pia Hart' }, { 'body.how' => 'two of two right' }, { 'body.account.displayName' => { 'x' => 'y' } },
+       { 'body.account.displayName' => 'Somebody Else' }].each do |over|
+        found = scan([grant_pw, keyring([reset_entry('hana', HANA_PW, over)])])
+        assert_includes owners(found), 'helpdesk:reset:hana', over.inspect
+        assert_includes owners(found), 'helpdesk:keyring:hana', over.inspect
+      end
+    end
+
+    test 'R1-L8 P6b: a form entry is exactly what the server builds, no other label and no fewer resets' do
+      forms = shape('bootstrap.helpdesk_forms')['body']
+      [->(f) { f['it_desk']['questionLabels']['staff_no'] = 'needs 2 of 2; verify questions' }, ->(f) { f['it_desk']['resets'] = ['mfa'] },
+       ->(f) { f['it_desk']['npc'] = 'wim' }, ->(f) { f['it_desk']['questionLabels'].delete('manager') }].each_with_index do |change, i|
+        bad = Marshal.load(Marshal.dump(forms))
+        change.call(bad)
+        assert_includes owners(scan([row('GET', 'scenario', { 'status' => 200, 'body' => { 'helpdeskForms' => bad } })])), 'helpdesk:form:shape', i.to_s
+      end
+    end
+
+    test 'R1-L9 P6c: retryIn 0, retryIn past the stop, and triesLeft past the largest maxTries less one are findings' do
+      assert_includes owners(scan([refusal('helpdesk.blocked', { 'body.retryIn' => 0 })])), 'helpdesk:answer'
+      assert_includes owners(scan([refusal('helpdesk.blocked', { 'body.retryIn' => 301 })])), 'helpdesk:answer'
+      assert_includes owners(scan([refusal('helpdesk.refused', { 'body.triesLeft' => 3 })])), 'helpdesk:answer'
+      assert_includes owners(scan([refusal('helpdesk.refused', { 'body.triesLeft' => 8 })])), 'helpdesk:answer'
+      assert_empty helpdesk_only(scan([refusal('helpdesk.blocked', { 'body.retryIn' => 300 }), refusal('helpdesk.blocked', { 'body.retryIn' => 1 }),
+                                       refusal('helpdesk.refused', { 'body.triesLeft' => 2 })]))
+    end
+
+    test 'R1-L12 P6d: a question id as a value beside its authored answer is a finding, a label beside it is not' do
+      pair = row('GET', 'room/lobby', { 'status' => 200, 'body' => { 'hints' => [{ 'id' => 'staff_no', 'answer' => '40612' }] } })
+      assert_includes helpdesk_owners(scan([pair])), 'helpdesk:recovery:pair'
+      assert_empty helpdesk_only(scan([row('GET', 'room/lobby', { 'status' => 200, 'body' => { 'hints' => [{ 'id' => 'staff_no', 'label' => 'Staff number' }] } })]))
+    end
   end
 end
