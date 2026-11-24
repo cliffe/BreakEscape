@@ -118,7 +118,7 @@ test('phone({ own: true }) with no re-enrolled account is no_phone; the held pho
 
 test('an approval on an ownPhone note emits mfa_approved by own_phone', async () => {
     const { events, calls } = setup(() => serve('approve.own_passed'));
-    M.noteRequired('pc:ops_pc', { success: false, mfaRequired: true, mfa: 'push', pcId: 'ops_pc', npcId: 'wim', ownPhone: true });
+    M.noteRequired('pc:ops_pc', answer('login.mfa_required_own_push').body);
     const res = await M.approve('pc:ops_pc', {});
     assert.equal(res.passed, true);
     assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc' });
@@ -129,7 +129,8 @@ test('an approval on an ownPhone note emits mfa_approved by own_phone', async ()
 
 test('an approval on a note without ownPhone keeps the server by', async () => {
     const { events } = setup(() => serve('approve.own_passed'));
-    M.noteRequired('pc:ops_pc', { mfa: 'push', npcId: 'wim' });
+    const plain = answer('login.mfa_required_own_push').body; delete plain.ownPhone;
+    M.noteRequired('pc:ops_pc', plain);
     await M.approve('pc:ops_pc', {});
     assert.equal(events.find(e => e.name === 'mfa_approved').detail.by, 'player');
 });
