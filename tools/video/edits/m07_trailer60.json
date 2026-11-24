@@ -292,17 +292,17 @@
    "note": "Adaeze/Gwen exchange at ops_cooler, last line only (voice 28.5-30.2, bubble over the room, no portraits). Takes the 1.0 s of the dropped hollis_torch shot so later cuts stay put. Wall board shows the outage clock and 8.41M served only. Frame 29.4 viewed",
    "framing": {
     "16:9": {
-     "cx": 0.375,
+     "cx": 0.5,
      "cy": 0.65,
      "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.375,
+     "cx": 0.392,
      "cy": 0.55,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.375,
+     "cx": 0.392,
      "cy": 0.65,
      "zoom": 2.0
     }
@@ -645,21 +645,21 @@
     "in": 2.5,
     "out": 4.0
    },
-   "note": "SCADA room: red 'SEQUENCE ARMED / CLOCK RUNNING' display, Mercer standing right (hold 1.9-5.9; frame 3.5 viewed). Room is small in frame: 3x crop on the display. Full-res crop not checked",
+   "note": "SCADA room: red 'SEQUENCE ARMED / CLOCK RUNNING' display, Mercer standing right (hold 1.9-5.9; frame 3.5 viewed). Room is small in frame: 3x crop on the display. Full-res crop not checked; v1 r2: re-centred inside the room (old crop showed black outside the room and cut the PNW board in 9:16); source frame 3.0 measured: display (683,345), room x480-1440 y252-828",
    "framing": {
     "16:9": {
-     "cx": 0.36,
-     "cy": 0.34,
-     "zoom": 3
+     "cx": 0.469,
+     "cy": 0.435,
+     "zoom": 2.5
     },
     "9:16": {
-     "cx": 0.36,
-     "cy": 0.34,
-     "zoom": 1.6
+     "cx": 0.356,
+     "cy": 0.486,
+     "zoom": 2.0
     },
     "1:1": {
-     "cx": 0.36,
-     "cy": 0.34,
+     "cx": 0.417,
+     "cy": 0.486,
      "zoom": 2.0
     }
    },
@@ -1345,18 +1345,18 @@
    "note": "armed display again, tight",
    "framing": {
     "16:9": {
-     "cx": 0.36,
-     "cy": 0.34,
-     "zoom": 3
+     "cx": 0.417,
+     "cy": 0.4,
+     "zoom": 3.0
     },
     "9:16": {
-     "cx": 0.36,
-     "cy": 0.34,
-     "zoom": 1.6
+     "cx": 0.356,
+     "cy": 0.486,
+     "zoom": 2.0
     },
     "1:1": {
-     "cx": 0.36,
-     "cy": 0.34,
+     "cx": 0.417,
+     "cy": 0.486,
      "zoom": 2.0
     }
    },
