@@ -11,6 +11,9 @@ export default async (page, bridge, mark) => {
   const D = await doorId(bridge, 'front_desk', 'staff_passage');
   await bridge.moveToNear(D, { timeoutMs: 25000 }); await sleep(700); mark('walk-start', (await bridge.getState()).player);
   const r = await bridge.interact(D, { timeoutMs: 20000 }); mark('door-open', { ok: r && r.ok, D }); await sleep(700);
-  await keyLegs(bridge, [['up', (await bridge.getState()).player.y - 110]], 105, mark);
+  // first run: keyLegs up stopped at the wall beside the doorway (never left front_desk). Walk to a point beyond the doorway instead.
+  const dd = ((await bridge.getState()).nearby || []).find(n => n.id === D) || {}; mark('door-pos', { x: dd.x, y: dd.y });
+  if (dd.x != null) { await bridge.moveTo(dd.x, dd.y - 90, { timeoutMs: 20000 }).catch(() => {}); }
+  for (let i = 0; i < 20 && (await bridge.getState()).currentRoom !== 'staff_passage'; i++) await sleep(250);
   const ok = await lights.waitOn(6000); mark('lights-seen', { ok }); await lights.drain(); await sleep(2200); mark('walk-end', (await bridge.getState()).player); await lights.drain(); await sleep(1500); mark('linger-end');
 };

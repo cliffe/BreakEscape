@@ -67,11 +67,11 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
     <button class="tab" role="tab" id="tab-m07v1" aria-selected="true" data-cut="m07v1">m07 · v1</button>
-    <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5</button>
+    <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
     <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
-    <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3</button>
+    <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
     <button class="tab" role="tab" id="tab-m05v4" aria-selected="false" data-cut="m05v4">m05 · v4</button>
-    <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2</button>
+    <button class="tab" role="tab" id="tab-m06v2" aria-selected="false" data-cut="m06v2">m06 · v2 · final</button>
     <button class="tab" role="tab" id="tab-m06v1" aria-selected="false" data-cut="m06v1">m06 · v1</button>
     <button class="tab" role="tab" id="tab-m05v3" aria-selected="false" data-cut="m05v3">m05 · v3</button>
     <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
@@ -115,17 +115,18 @@ const CUTS = {
   },
   m02v5: {
     doc: "feedback/m02_trailer_v5",
-    title: "m02 Ransomed Trust · 60 s trailer · v5 (owner notes)",
+    title: "m02 Ransomed Trust · 60 s trailer · v5 · final",
     videoLabel: "16:9",
     video: "/_blob/38b556b1de66c37974ca87aeb9d86cbd",
     videos: [["9:16", "/_blob/28c8338d9d67f985a3f09562062d3e75", "p916"], ["1:1", "/_blob/1b6747d182bd816bd4550b643faee7cf", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Steel Shadows in E Minor from 50.2 s", "34 shots"],
+    noVerdict: true,
     changedLabel: "What changed since the last round",
-    changed: ["Crescendo crops made consistent: every flash shows the game's pixels at 2× in every aspect, subject centred (3× for three faces in 9:16, 4× for CyberChef, so the subtitle bar and the sticky note stay clear).", "Ghost's Money line rebuilt with your recipe: main voice −2.5 st, a −12 st sub layer (formant −3) 12 dB under it, 20% saturation, 12% slow chorus, one 55 ms slapback. Money tail kept as before.", "Fixed a leak from v4: the 9:16 and 1:1 cuts showed CyberChef's decoded output. All CyberChef shots now show the encoded input only (checked frame by frame).", "Real console footage (m02's own nmap clip) as before."],
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Crescendo crops made consistent: every flash shows the game's pixels at 2× in every aspect, subject centred (3× for three faces in 9:16, 4× for CyberChef, so the subtitle bar and the sticky note stay clear).", "Ghost's Money line rebuilt with your recipe: main voice −2.5 st, a −12 st sub layer (formant −3) 12 dB under it, 20% saturation, 12% slow chorus, one 55 ms slapback. Money tail kept as before.", "Fixed a leak from v4: the 9:16 and 1:1 cuts showed CyberChef's decoded output. All CyberChef shots now show the encoded input only (checked frame by frame).", "Real console footage (m02's own nmap clip) as before."],
     standinLabel: "Stand-in and compromises",
     standin: ["Ghost's voice chain was chosen by measurement (darkness and an intelligibility score), not by ear; two other variants (clearer, darker) are ready if this one is wrong.", "9:16 shows a narrower slice of the wide ransom and recovery panels, so some of their text is cut."],
     srt: "1\n00:00:05,250 --> 00:00:09,030\nAgent HaX: If they refuse and you're too slow, people die on the ward.\n\n2\n00:00:11,267 --> 00:00:16,667\nBernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.\n\n3\n00:00:31,850 --> 00:00:35,350\nVal Okonkwo: So. Who are you and who says you're allowed?\n\n4\n00:00:47,990 --> 00:00:52,770\nGhost: Money is simply a means to hasten your inevitable end.",
-    questions: [{k:"ghost", t:"Ghost's voice: right?", o:[["ok", "Right", "", 1], ["clear", "Too muffled: try the clearer variant", ""], ["dark", "Not menacing enough: try the darker variant", ""]]}, {k:"crops", t:"Crescendo crops now consistent", o:[["ok", "Fixed", "", 1], ["fix", "Still uneven", "Say which flash"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m01v11: {
     doc: "feedback/m01_trailer_v11",
@@ -143,17 +144,18 @@ const CUTS = {
   },
   m04v3: {
     doc: "feedback/m04_trailer_v3",
-    title: "m04 Critical Failure · 60 s trailer · v3 (owner notes)",
+    title: "m04 Critical Failure · 60 s trailer · v3 · final",
     videoLabel: "16:9",
     video: "/_blob/165addddfd33c8f748263958c76b65fe",
     videos: [["9:16", "/_blob/19671e164ef3211f628d1215375faea5", "p916"], ["1:1", "/_blob/b766f893d2be19a91b25b80c7db0a811", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Shadow Protocol (Remastered) from 26.6 s", "37 shots"],
+    noVerdict: true,
     changedLabel: "What changed since the last round",
-    changed: ["Netherton re-filmed with new mouth shapes made the way you asked: PixelLab edits of his rest frame, masked to the mouth. Frame diffs show nothing else moves.", "Ending is Voltage: \"I didn't bring a bomb, agent. I brought a maintenance schedule.\"", "Real Hacking is now m04's own console footage: the nmap scan from the rebuilt release (set 958), clean recon take, no masking needed."],
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Netherton re-filmed with new mouth shapes made the way you asked: PixelLab edits of his rest frame, masked to the mouth. Frame diffs show nothing else moves.", "Ending is Voltage: \"I didn't bring a bomb, agent. I brought a maintenance schedule.\"", "Real Hacking is now m04's own console footage: the nmap scan from the rebuilt release (set 958), clean recon take, no masking needed."],
     standinLabel: "Stand-in and compromises",
     standin: ["The scan shows service versions (as m03 shipped), which you approved."],
     srt: "1\n00:00:04,900 --> 00:00:10,340\nDirector Magnus Netherton: ENTROPY used to steal. Now they break the things people can't live without.\n\n2\n00:00:13,590 --> 00:00:18,730\nAgent 0x47 'Nightshade': If they reach the safety interlocks, this stops being a hack and starts being a body count.\n\n3\n00:00:20,067 --> 00:00:21,277\nSecurity Guard: Regulator, is it.\n\n4\n00:00:44,433 --> 00:00:47,203\nVoltage: Look at my hand. Then look at the clock.\n\n5\n00:00:47,433 --> 00:00:49,423\nVoltage: I didn't bring a bomb, agent.\n\n6\n00:00:49,843 --> 00:00:51,313\nVoltage: I brought a maintenance schedule.",
-    questions: [{k:"netherton", t:"Netherton's mouth now", o:[["ok", "Fixed", "", 1], ["fix", "Still glitchy", "Say what you see"]]}, {k:"ending", t:"Voltage's ending", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m05v4: {
     doc: "feedback/m05_trailer_v4",
@@ -171,17 +173,18 @@ const CUTS = {
   },
   m06v2: {
     doc: "feedback/m06_trailer_v2",
-    title: "m06 Follow the Money · 60 s trailer · v2",
+    title: "m06 Follow the Money · 60 s trailer · v2 · final",
     videoLabel: "16:9",
     video: "/_blob/aa8bc6e05c01da6f7f3de3bb52ce52b7",
     videos: [["9:16", "/_blob/33a554323e6b84fd14a3222ed6c58519", "p916"], ["1:1", "/_blob/f0f4520fff3f4a4c10f0414de253a080", "p11"]],
     stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak under −1 dB", "music: Shadow Cipher from 116.6 s", "30 shots"],
+    noVerdict: true,
     changedLabel: "What changed since the last round",
-    changed: ["Real Hacking is m06's own console footage: a full-port scan from the s960 recon take.", "Netherton re-filmed with the new PixelLab mouth-only shapes.", "9:16 and 1:1: the tracer is centred on the deposit and the matched payout; the checkpoint walk fills the 9:16 frame at 2×.", "If you have v1 answers, they still apply; this round only fixes the known v1 gaps."],
+    changed: ["Final: you approved this cut on 24 Nov. It is exported to hacktivity-videos (full renders, captions and manifest); no questions left on this tab.", "Real Hacking is m06's own console footage: a full-port scan from the s960 recon take.", "Netherton re-filmed with the new PixelLab mouth-only shapes.", "9:16 and 1:1: the tracer is centred on the deposit and the matched payout; the checkpoint walk fills the 9:16 frame at 2×.", "If you have v1 answers, they still apply; this round only fixes the known v1 gaps."],
     standinLabel: "Stand-in and compromises",
     standin: ["The console clip's scan results arrive in the last half of its shot."],
     srt: "1\n00:00:04,570 --> 00:00:10,300\nDirector Magnus Netherton: Every cell we have hit is being paid by someone. Tonight we chase the money.\n\n2\n00:00:12,070 --> 00:00:18,130\nAgent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know.\n\n3\n00:00:19,137 --> 00:00:24,557\nDr Irina Volkova: Satoshi is paranoid about doors and careless about passwords.\n\n4\n00:00:24,697 --> 00:00:29,437\nPriya Raghavan: You can't see through Monero. You don't need to. Watch what goes in and what comes out.\n\n5\n00:00:40,787 --> 00:00:41,187\nKemal Aydin: No.\n\n6\n00:00:41,477 --> 00:00:43,397\nKemal Aydin: Then come and move me.\n\n7\n00:00:47,567 --> 00:00:49,587\nSatoshi Nakamoto II: Murder's what they call it when you lose.\n\n8\n00:00:50,200 --> 00:00:51,510\nSatoshi Nakamoto II: The winners get statues.",
-    questions: [{k:"tracer", t:"Tracer framing in 9:16 and 1:1", o:[["ok", "Reads well", "", 1], ["fix", "Not quite", "Say what"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+    questions: []
   },
   m06v1: {
     doc: "feedback/m06_trailer_v1",
