@@ -9,6 +9,10 @@
 //     and account join (the client never normalises an address);
 //   - GET /keyring's registry entries (implicit capture entries add no row);
 //   - GET /capture_secrets's { targetId: secret } map for a captured value.
+// A hash record (S7) is a row of its own in a group of its own (group 'hash', listed after the
+// rest): key `hash:<id>`, the account's username, the token in groups of four, a Salted marker,
+// the status words, and a Crack button for a ready or running one. It never holds a password;
+// once cracked the account's password row (source "cracked", value attached) shows beside it.
 // Row keys: `account:<npcId>` (every source of that account's password), `capture:<targetId>`
 // (a capture that names no account), `cred:<id>` (a connecting-kind registry entry). A row also
 // carries `seenKeys`: its key plus each of its captures' old `capture:<targetId>` keys, so an
@@ -18,7 +22,7 @@ import { captureList, capturesReveal, displaySecret, maskSecret, SECRET_LOADING_
 import {
     rowKindName, SOURCE_TAG_TEXT, typeItFromLine, alsoInLine, connectFromInventoryLine,
     useOnSignInScreenLine, endedAssistMessage, expiredLine, moreNotesLine, footholdLine,
-    findingLine, pinLine, tokenUseLine
+    findingLine, pinLine, tokenUseLine, hashTokenText, hashStatusText, CRACK_BUTTON_TEXT, HASH_SALTED_TEXT
 } from '../../utils/remote-host-text.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -176,9 +180,23 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             if (!isStr(npcId)) continue;
             const row = accountRow(npcId);
             row.password = e;
-            pushOnce(row.kinds, 'in_file');
-            pushOnce(row.sources, sourceTagOfHow(e.how));
+            pushOnce(row.kinds, e.source === 'cracked' ? 'cracked' : 'in_file');
+            pushOnce(row.sources, e.source === 'cracked' ? SOURCE_TAG_TEXT.cracked : sourceTagOfHow(e.how));
             row.order = Math.min(row.order, gainedAt(e));
+            continue;
+        }
+        if (e.kind === 'hash') {
+            const key = `hash:${e.id}`;
+            const status = ['ready', 'running', 'infeasible', 'cracked'].includes(e.status) ? e.status : 'ready';
+            let secs = null;
+            if (status === 'running') {
+                const live = typeof keyring?.crackSecondsLeft === 'function' ? keyring.crackSecondsLeft(e.id) : null;
+                secs = Number.isFinite(live) ? live : (Number.isFinite(e.readyInSeconds) ? Math.max(0, e.readyInSeconds) : 0);
+            }
+            byKey.set(key, { key, type: 'credential', group: 'hash', kinds: ['hash'], sources: [], captures: [], seenKeys: [key],
+                order: gainedAt(e), entry: e, hashId: e.id, title: who, subtitle: e.account?.username || null, label: e.label || null,
+                token: hashTokenText(e.token), salted: e.salted === true, status, secondsLeft: secs,
+                canCrack: status === 'ready' || status === 'running', use: hashStatusText(status, secs) });
             continue;
         }
         if (!CONNECTING_KINDS.includes(e.kind)) continue;
@@ -216,6 +234,7 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
     // 3. the account rows' text: the oldest capture gives role, address and note
     for (const row of byKey.values()) {
         if (!row.key.startsWith('account:') && !(row.type === 'credential' && row.captures.length && !row.entry)) continue;
+        if (row.group === 'hash') continue;
         const caps = row.captures;
         const first = caps[0] || null;
         const named = isStr(row.npcId) ? entries.find((e) => e.account?.npcId === row.npcId && (e.account.displayName || e.account.username)) : null;
@@ -235,17 +254,28 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             row.valueState = got.valueState;
             row.valueTargetId = valueTargetId;
             row.use = row.value;
+            // A cracked password always shows in full: the player earned it, and this row has to type it
+            if (row.password?.source === 'cracked' && isStr(row.password.password)) {
+                row.value = row.password.password;
+                row.valueState = null;
+                row.valueTargetId = null;
+                row.use = row.value;
+            }
             if (row.password) row.lines.push(alsoInLine(row.password.label));
             const notes = caps.map((c) => c.note).filter(isStr);
             row.lines.push(...notes.slice(0, MAX_ROW_NOTES));
             if (notes.length > MAX_ROW_NOTES) row.lines.push(moreNotesLine(notes.length - MAX_ROW_NOTES));
+        } else if (row.password?.source === 'cracked' && isStr(row.password.password)) {
+            row.value = row.password.password;
+            row.valueState = null;
+            row.use = row.value;
         } else if (row.password) {
             // A password in a file alone: never the value
             row.use = typeItFromLine(row.password.label);
         }
     }
 
-    const rows = [...byKey.values()].sort((a, b) => (a.order - b.order) || a.key.localeCompare(b.key));
+    const rows = [...byKey.values()].sort((a, b) => ((a.group === 'hash') - (b.group === 'hash')) || (a.order - b.order) || a.key.localeCompare(b.key));
     const signins = rows.filter((r) => r.type === 'credential');
     const capturesOut = rows.filter((r) => r.type === 'capture');
     return { signins, captures: capturesOut };
@@ -267,6 +297,7 @@ function el(tag, cls, text) {
 export function buildSignInRow(r) {
     const row = el('li', 'signin-row');
     row.dataset.rowType = r.type;
+    if (r.group === 'hash') return buildHashRow(r, row);
     if (r.greyed) row.classList.add('signin-row-greyed');
     if (r.timed) row.dataset.timed = 'true';
     const tags = el('div', 'signin-row-tags');
@@ -291,4 +322,48 @@ export function buildSignInRow(r) {
     }
     for (const line of r.lines || []) row.appendChild(el('div', 'signin-line', line));
     return { row, secretNode };
+}
+
+/** A hash row's <li> (S7): username, token, Salted marker, status, and Crack for a ready or running one. */
+function buildHashRow(r, row) {
+    row.classList.add('signin-row-hash');
+    row.dataset.hashId = r.hashId;
+    row.dataset.status = r.status;
+    const tags = el('div', 'signin-row-tags');
+    const kind = el('span', 'signin-row-tag signin-row-tag-kind', rowKindName('hash'));
+    kind.dataset.kind = 'hash';
+    tags.appendChild(kind);
+    if (r.salted) {
+        const salt = el('span', 'signin-row-tag signin-row-tag-source signin-hash-salted', HASH_SALTED_TEXT);
+        tags.appendChild(salt);
+    }
+    row.appendChild(tags);
+    if (r.title) row.appendChild(el('div', 'signin-row-title', r.title));
+    if (r.subtitle && r.subtitle !== r.title) row.appendChild(el('div', 'signin-subtitle', r.subtitle));
+    if (r.token) row.appendChild(el('div', 'signin-hash-token', r.token));
+    const status = el('div', 'signin-use signin-hash-status', r.use);
+    row.appendChild(status);
+    if (r.status === 'running' && Number.isFinite(r.secondsLeft) && r.secondsLeft > 0) {
+        // Counts down on this page's clock from the served wait; at 0 it reads "Ready to finish"
+        const endsAt = Date.now() + r.secondsLeft * 1000;
+        let wasAttached = false;
+        const timer = setInterval(() => {
+            if (row.isConnected) wasAttached = true;
+            else if (wasAttached) { clearInterval(timer); return; }
+            const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+            status.textContent = hashStatusText('running', left);
+            if (left <= 0) clearInterval(timer);
+        }, 1000);
+        timer.unref?.();
+    }
+    if (r.canCrack) {
+        const button = el('button', 'signin-crack', CRACK_BUTTON_TEXT);
+        button.type = 'button';
+        button.addEventListener('click', (e) => {
+            e.preventDefault?.(); e.stopPropagation?.();
+            try { window.MinigameFramework?.startMinigame?.('ops-cracker', null, { hashId: r.hashId }); } catch (err) { /* the scene could not open */ }
+        });
+        row.appendChild(button);
+    }
+    return { row, secretNode: null };
 }
