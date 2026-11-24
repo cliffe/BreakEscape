@@ -11,9 +11,9 @@ import {
     findFinding, rowFindings, rowServices, findingLabel, findingSummary, falseReason, findingNeeds, needLine,
     isFixed, FIXED_TEXT, statusWord, techniqueList, sessionWho, accessTag, useResultText, refusalLine
 } from '../ops-model.js';
-import { REQUEST_FAILED_TEXT } from '../view-texts.js';
+import { REQUEST_FAILED_TEXT, HOST_LOCKED_LABEL } from '../view-texts.js';
 import { modulesOf } from '../terminal-grammar.js';
-import { findingCli, serviceCli, hostTarget } from './defaults.js';
+import { findingCli, serviceCli, hostTarget, sessionShown } from './defaults.js';
 
 export const id = 'framework-console';
 
@@ -141,9 +141,13 @@ export function showOptions(view, mode) {
 export function sessions(view) {
     const rows = [];
     for (const row of allRows(view)) {
-        if (!row.session || typeof row.session !== 'object') continue;
+        // Panels name the account only on an open row; a locked one shows the badge, a hidden one nothing
+        const shown = sessionShown(row);
+        if (!shown) continue;
         if (rows.some(r => r.id === row.id)) continue;
-        rows.push({ id: row.id, host: hostTarget(row), who: sessionWho(row.session), tag: accessTag(row.session) });
+        rows.push(shown === 'open'
+            ? { id: row.id, host: hostTarget(row), who: sessionWho(row.session), tag: accessTag(row.session) }
+            : { id: row.id, host: hostTarget(row), who: HOST_LOCKED_LABEL, tag: '' });
     }
     if (!rows.length) return [note(NO_SESSIONS_TEXT)];
     return table(SESSIONS_HEAD, rows.map(r => [r.host, r.who, r.tag]));

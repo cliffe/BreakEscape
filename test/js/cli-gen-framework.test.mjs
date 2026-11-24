@@ -229,3 +229,16 @@ test('authored fixtures: a decoy and a weakness with entries of equal form read 
         assert.ok(ans);
     }
 });
+
+test('R1-C11: sessions names the account only where Panels do: a locked session reads Locked', () => {
+    const v = viewOf('technique_session');
+    const text = (view) => show(F.sessions(view));
+    const open = JSON.parse(JSON.stringify(v));
+    const rows = [...open.hosts, ...(open.networks || []).flatMap(n => n.hosts || [])].filter(r => r.session);
+    assert.ok(rows.length, 'the fixture holds a session');
+    const who = rows[0].session.displayName || rows[0].session.username;
+    assert.ok(text(open).includes(who));
+    for (const r of rows) { r.kind = 'pc'; r.session.locked = true; }
+    assert.ok(!text(open).includes(who), text(open));
+    assert.ok(text(open).includes('Locked'));
+});

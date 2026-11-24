@@ -166,13 +166,22 @@ test('the sweep row status mirrors downState for rows of an up network', () => {
 
 test('a kept session and an account with the admin tag are their own spans', () => {
     const v = load('host_states');
-    const row = { ...v.hosts[2], heldAs: 'Sam', session: { username: 'sam', displayName: 'Sam', access: 'admin' } };
+    const kept = { ...v.hosts[2], heldAs: 'Sam', session: { username: 'sam', displayName: 'Sam', access: 'admin' } };
+    const keptOut = gen.result(sweepOffer('lab_net'), { success: true, network: { id: 'lab_net', hosts: [kept] } }, v).map(l => l.map(s => s.text).join(''));
+    assert.ok(keptOut.includes(`  Status: ${texts.sessionKeptText('Sam')}`));
+    // R1-C11: a row Panels show as powered down names no account
+    assert.ok(!keptOut.some(l => l.startsWith('  Account:')));
+    const row = { ...v.hosts[2], kind: 'pc', responding: true, remoteSignIn: true, session: { username: 'sam', displayName: 'Sam', access: 'admin' } };
     const out = gen.result(sweepOffer('lab_net'), { success: true, network: { id: 'lab_net', hosts: [row] } }, v);
     const flat = out.map(l => l.map(s => s.text).join(''));
-    assert.ok(flat.includes(`  Status: ${texts.sessionKeptText('Sam')}`));
     assert.ok(flat.includes('  Account: Sam admin'));
     const acct = out.find(l => l[0].text === '  Account: ');
     assert.deepEqual(acct.map(s => s.text), ['  Account: ', 'Sam', ' admin']);
+    // R1-C11: a locked session shows Locked and never the name, as Panels do
+    const locked = { ...row, session: { ...row.session, locked: true } };
+    const lockedOut = gen.result(sweepOffer('lab_net'), { success: true, network: { id: 'lab_net', hosts: [locked] } }, v).map(l => l.map(s => s.text).join(''));
+    assert.ok(lockedOut.includes('  Status: Locked'));
+    assert.ok(!lockedOut.some(l => l.includes('Sam')));
 });
 
 test('a served finding cli supplies the script, title, advisories and output', () => {

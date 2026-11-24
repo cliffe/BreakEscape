@@ -53,3 +53,15 @@ export function rangeSize(cidr) {
     const prefix = Number(m[1]);
     return prefix >= 0 && prefix <= 32 ? 2 ** (32 - prefix) : 0;
 }
+
+/**
+ * Whether Panels name the account of a row's session: 'open' (the Open button names it), 'locked' (the Locked badge,
+ * no name) or null (no session shown). Mirrors `hostAction` in view-controls.js, which a generator may not import.
+ */
+export function sessionShown(row) {
+    if (row?.kind !== 'pc' || !row.session || typeof row.session !== 'object') return null;
+    if (row.responding === false) return null;
+    if (row.remoteSignIn === false && row.session.openHere !== true) return null;
+    if (row.session.via === 'claim') return null;
+    return row.session.locked ? 'locked' : 'open';
+}

@@ -3,5 +3,5 @@
 [ok|Host is up.]
 [note|  Name: ]Desk PC
 [note|  Hostname: ]LAB-01
-[note|  Account: ]Sam
+[note|  Status: ]Locked
 Nmap done: 1 host up

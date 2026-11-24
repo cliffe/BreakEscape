@@ -15,9 +15,9 @@ import {
     accessTag, sessionWho
 } from '../ops-model.js';
 import {
-    REQUEST_FAILED_TEXT, NO_FINDINGS_TEXT, POWERED_DOWN_TAG, REMOTE_OFF_TEXT, sessionKeptText
+    REQUEST_FAILED_TEXT, NO_FINDINGS_TEXT, POWERED_DOWN_TAG, REMOTE_OFF_TEXT, HOST_LOCKED_LABEL, sessionKeptText
 } from '../view-texts.js';
-import { serviceCli, findingCli, rangeSize } from './defaults.js';
+import { serviceCli, findingCli, rangeSize, sessionShown } from './defaults.js';
 
 export const id = 'scanner';
 
@@ -169,10 +169,14 @@ function sweepResult(offer, answer, view) {
         if (present(row.host) && row.host !== row.id && row.host !== row.name) out.push(line(span('  Hostname: ', 'note'), span(row.host)));
         for (const text of status.texts) out.push(line(span('  Status: ', 'note'), span(text)));
         if (status.kept) out.push(line(span('  Status: ', 'note'), span(status.kept)));
-        const who = row.session && typeof row.session === 'object' ? sessionWho(row.session) : '';
+        // Panels name the account only on an open row; a locked one shows the badge and no name
+        const shown = sessionShown(row);
+        const who = shown === 'open' ? sessionWho(row.session) : '';
         if (who) {
             const tag = accessTag(row.session);
             out.push(line(span('  Account: ', 'note'), span(who), tag ? span(` ${tag}`, 'ok') : null));
+        } else if (shown === 'locked') {
+            out.push(line(span('  Status: ', 'note'), span(HOST_LOCKED_LABEL)));
         }
     }
     const size = rangeSize(range);
