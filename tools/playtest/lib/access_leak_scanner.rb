@@ -4102,7 +4102,7 @@ class AccessLeakScanner
       mfa_note_signin(body) if @mfa_row_pcs
     when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
       return unless body.is_a?(Hash)
-      return if ls_lock_form?(body) # S8c: an answer naming a lock earns, counts and closes nothing for a PC step
+      return if ls_placed?(body) # S8c (R1-SCANNER1): an answer the lock rules placed earns, counts and closes nothing for a PC step
 
       # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
       # a pass answer on the strict route earns

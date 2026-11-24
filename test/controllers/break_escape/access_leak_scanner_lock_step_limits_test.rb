@@ -1,4 +1,5 @@
 require 'test_helper'
+require_relative '../../support/lock_step_scanner_rows'
 require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 module BreakEscape
@@ -8,93 +9,80 @@ module BreakEscape
   #  - an open answer says `type`: object for an object lock, door for a door (unlock answers, games_controller#unlock);
   #  - every shipped scenario builds the scanner's state: the id-less ArgumentError is raised for a gated lock with no id only.
   class AccessLeakScannerLockStepLimitsTest < ActiveSupport::TestCase
-    BASE = '/break_escape/games/1'.freeze
-    MFA_SCENARIO = File.expand_path('../../../scenarios/test_ops_mfa/scenario.json.erb', __dir__)
+    include LockStepScannerRows
 
-    def note(id)
-      { 'id' => id, 'type' => 'notes', 'name' => id }
-    end
-
+    # R1-SCANNER11: every lock answer below is read from the shared answers (answers.json) through `answer(name)`; only the PC form's
+    # own answers (login, a PC's refusal with its `message`) are written here.
     def mixed
-      data = JSON.parse(ScenarioBinding.render(File.read(MFA_SCENARIO)))
+      data = mfa_data
       room = data['rooms'].values.find { |r| r.is_a?(Hash) && r['objects'].is_a?(Array) }
       room['objects'] << { 'id' => 'gordon_locker', 'name' => 'Locker', 'type' => 'safe', 'locked' => true,
                            'secondStep' => { 'kind' => 'code', 'owner' => 'gordon' }, 'contents' => [note('locker_memo')] }
       room['objects'] << { 'id' => 'gordon_fob', 'type' => 'code_device', 'owner' => 'gordon', 'name' => 'Code device' }
+      room['objects'] << { 'id' => 'gordon_box', 'name' => 'Box', 'type' => 'safe', 'locked' => true,
+                           'secondStep' => { 'kind' => 'push', 'owner' => 'gordon' }, 'contents' => [note('box_memo')] }
       room['npcs'] = Array(room['npcs']) + [{ 'id' => 'gordon', 'displayName' => 'Gordon', 'habits' => { 'approvesPrompts' => 'always' } }]
       data
     end
 
-    def start
-      @clock = Time.utc(2026, 1, 1)
-      @rows = []
-    end
-
-    def raw(method, path, body, status: 200, query: nil)
-      @clock += 1
-      row = { 't' => @clock.iso8601(3), 'method' => method, 'path' => "#{BASE}/#{path}", 'status' => status, 'body' => body }
-      row['query'] = query if query
-      @rows << row
-    end
-
     def scan(data)
-      AccessLeakScanner.new(data).scan(@rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] })
+      scan_rows(@rows, data)
     end
 
     def pc_code_step(data)
-      s = AccessLeakScanner.new(data)
-      pcs = s.instance_variable_get(:@priv_pcs).keys
-      npcs = s.instance_variable_get(:@priv_npcs).keys
-      pcs.product(npcs).map { |pc, n| [pc, n, s.send(:mfa_kind_at, pc, n)] }.find { |x| x.last == 'code' }
+      pc_steps(data).find { |x| x.last == 'code' }
     end
 
-    def code_lock_run(refusal)
+    def gate_gordon_locker
+      answer('gate_code') { |b| b['targetId'] = 'gordon_locker'; b['npcId'] = 'gordon' }
+    end
+
+    def code_lock_run(name, **opts)
       data = mixed
       step = pc_code_step(data)
       start
-      raw('POST', 'login', { 'success' => false, 'mfaRequired' => true, 'mfa' => 'code', 'pcId' => step[0], 'npcId' => step[1] })
-      raw('POST', 'inventory', { 'success' => true }).tap { @rows.last['inv'] = { 'action' => 'add', 'itemId' => 'gordon_fob', 'usedOn' => nil } }
-      raw('POST', 'unlock', { 'success' => false, 'secondStep' => true, 'kind' => 'code', 'targetType' => 'object', 'targetId' => 'gordon_locker', 'npcId' => 'gordon' })
-      raw('POST', 'mfa/verify', refusal, status: 422)
+      pc_required(step)
+      gate_gordon_locker
+      answer(name, **opts)
       data
     end
 
     test 'a lock refusal with its echo dropped is no longer read as the PC\'s when a PC step is open' do
-      [{ 'success' => false, 'mfaIncorrect' => true }, { 'success' => false, 'expired' => true },
-       { 'success' => false, 'stale' => 'used' }, { 'success' => false, 'codeLocked' => true, 'retryIn' => 60 }].each do |body|
-        data = code_lock_run(body)
-        assert(scan(data).any? { |f| f.rule == 'lock_step_answer' && f.owner.start_with?('lockstep:refusal') }, body.keys.inspect)
+      %w[verify_wrong verify_dropped verify_stale_used verify_closed].each do |name|
+        data = code_lock_run(name, echo: false)
+        assert(scan(data).any? { |f| f.rule == 'lock_step_answer' && f.owner.start_with?('lockstep:refusal') }, name)
       end
     end
 
     test 'the PC\'s own refusals, which carry their message, and the lock\'s with its echo stay clean' do
       message = BreakEscape::Game::LOGIN_INCORRECT
       [{ 'success' => false, 'message' => message, 'mfaIncorrect' => true }, { 'success' => false, 'message' => message, 'expired' => true }].each do |body|
-        data = code_lock_run(body)
+        data = mixed
+        start
+        pc_required(pc_code_step(data))
+        gate_gordon_locker
+        raw('POST', 'mfa/verify', body, status: 422)
         assert_equal [], scan(data).select { |f| f.rule == 'lock_step_answer' }, body.keys.inspect
       end
-      data = code_lock_run({ 'success' => false, 'mfaIncorrect' => true, 'targetType' => 'object', 'targetId' => 'gordon_locker' })
-      assert_equal [], scan(data).select { |f| f.rule.start_with?('lock_step_') }
+      data = code_lock_run('verify_wrong')
+      assert_equal [], lock_findings(scan(data))
     end
 
     test 'an open answer of the wrong type for its lock is reported' do
       data = mixed
-      step = %w[unlock]
       [['object', 'door'], ['object', nil], ['object', 'object']].each do |(_want, got)|
         start
-        raw('POST', 'inventory', { 'success' => true })
-        @rows.last['inv'] = { 'action' => 'add', 'itemId' => 'gordon_fob', 'usedOn' => nil }
-        raw('POST', step.first, { 'success' => false, 'secondStep' => true, 'kind' => 'code', 'targetType' => 'object', 'targetId' => 'gordon_locker', 'npcId' => 'gordon' })
-        raw('GET', 'mfa/device', { 'deviceId' => 'gordon_fob', 'displayName' => 'Gordon', 'npcId' => 'gordon', 'code' => '482913', 'secondsLeft' => 40, 'used' => false }, query: 'item_id=gordon_fob')
-        raw('POST', 'mfa/verify', { 'success' => true, 'stepPassed' => true, 'targetType' => 'object', 'targetId' => 'gordon_locker' })
-        open = { 'success' => true, 'hasContents' => true, 'contents' => [{ 'id' => 'locker_memo' }] }
-        open['type'] = got if got
-        raw('POST', 'unlock', open)
-        found = scan(data).select { |f| f.rule.start_with?('lock_step_') }.map(&:owner)
+        answer('gate_push') { |b| b['targetId'] = 'gordon_box'; b['npcId'] = 'gordon' }
+        answer('prompt_passed')
+        answer('open_object') do |b|
+          b['contents'] = [note('box_memo')]
+          got ? b['type'] = got : b.delete('type')
+        end
+        found = lock_findings(scan(data)).map(&:last)
         if got == 'object'
           assert_equal [], found
         else
-          assert_includes found, 'lockstep:open:type:object:gordon_locker', got.inspect
+          assert_includes found, 'lockstep:open:type:object:gordon_box', got.inspect
         end
       end
     end

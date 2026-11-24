@@ -70,7 +70,7 @@ module BreakEscape
       body = row['body']
       if body['secondStep'] == true
         @echo = [body['targetType'], body['targetId']]
-      elsif LOCK_ROUTES.include?(path) && !body.key?('error') && body.keys.sort != %w[message success]
+      elsif (LOCK_ROUTES.include?(path) || name.start_with?('open_')) && !body.key?('error') && body.keys.sort != %w[message success]
         if echo
           type, id = echo.is_a?(Array) ? echo : (@echo || %w[object moira_locker])
           body['targetType'] = type
@@ -237,7 +237,7 @@ module BreakEscape
       answer('gate_push') { |b| b['targetId'] = 'moira_desk' }
       answer('approve_cancelled', echo: %w[object moira_desk])
       answer('approve_passed', echo: %w[object moira_locker])
-      open_object('locker_memo')
+      answer('open_object', echo: %w[object moira_locker]) { |b| b['contents'] = [note('locker_memo')] } # the open names the lock it opens
       assert_equal [], lock(scan)
       start
       take('moira_phone')
@@ -409,7 +409,7 @@ module BreakEscape
 
     test 'R1-L7 a gated room that authors no objects flags an id-less roomData of an ungated door (the safe direction, kept)' do
       start
-      answer('open_door')
+      answer('open_door', echo: %w[door records_room])
       assert_equal [['lock_step_content', 'lockstep:open:door:records_room']], lock(scan(@rows, data: scenario(empty_gated_room: true)))
     end
 
@@ -515,7 +515,8 @@ module BreakEscape
       answer('gate_push')
       answer('prompt_passed')
       answer('open_object') { |b| b['contents'] = [{ 'id' => 'locker_memo' }]; b['elsewhere'] = { 'contents' => [{ 'id' => 'deep_note' }] } }
-      assert_equal [['lock_step_content', 'lockstep:content:object:moira_locker']], lock(scan)
+      # the open's own key list (R1-SCANNER9) reports the extra key as well as the content under it
+      assert_equal [['lock_step_answer', 'lockstep:open:key:object:moira_locker'], ['lock_step_content', 'lockstep:content:object:moira_locker']], lock(scan)
       start
       answer('gate_push')
       answer('prompt_passed')

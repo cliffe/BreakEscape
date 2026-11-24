@@ -74,7 +74,7 @@ module BreakEscape
       body = row['body']
       if body['secondStep'] == true
         @echo = [body['targetType'], body['targetId']]
-      elsif LOCK_ROUTES.include?(path) && !body.key?('error') && body.keys.sort != %w[message success]
+      elsif (LOCK_ROUTES.include?(path) || name.start_with?('open_')) && !body.key?('error') && body.keys.sort != %w[message success]
         if echo
           type, id = echo.is_a?(Array) ? echo : (@echo || %w[object moira_locker])
           body['targetType'] = type
@@ -247,7 +247,7 @@ module BreakEscape
       start
       answer('gate_push')
       answer('prompt_passed')
-      answer('open_door')
+      answer('open_door', echo: %w[door records_room]) # R1 scanner fixes: an open names its lock, here another one than the passed
       assert_equal [['lock_step_content', 'lockstep:open:door:records_room']], lock(scan)
     end
 
@@ -585,7 +585,8 @@ module BreakEscape
       %w[verify_wrong verify_stale_used verify_stale_expired verify_dropped verify_closed prompt_waiting prompt_too_soon prompt_expired
          approve_cancelled generic_refusal].each do |name|
         start
-        answer('gate_push')
+        # R1-SCANNER10: a refusal needs a live gate of a kind its route serves (verify: a code lock; prompt and approve: a push lock)
+        name.start_with?('verify') ? answer('gate_code') { |b| b['targetId'] = 'moira_cabinet' } : answer('gate_push')
         answer(name)
         assert_equal [], lock(scan), name
       end

@@ -19,9 +19,22 @@ require_relative '../../../lib/break_escape/lock_step_model' unless defined?(Bre
 # The recorder writes no request body for POST /unlock or POST /mfa/*. A lock-form answer of POST mfa/verify, prompt or approve
 # (a pass, a cancel, an expiry, a refusal) names its lock at the root with `targetType` and `targetId` (the server echoes the
 # request's own); it is placed to that lock's gate by that echo, and an answer of those routes in lock form with no echo is a
-# finding (R1-L4). An open answer (it names nothing) is placed to the ONE passed lock whose authored contents or room it carries;
-# two candidates, or none, is a finding. A lock-form answer is judged only by these rules and the hashes placed here are handed to
-# the PC rules through @ls_placed, which never credits, closes or flags them (R1-L5).
+# finding (R1-L4). An open answer (200 POST unlock) of a gated lock names its lock the same way (R1 scanner round: the server echoes
+# `targetType` and `targetId` on it): it is placed to that lock's pass by the echo, and an open that carries a gated lock's contents or
+# room data and names none (or names another lock than the one whose content it carries) is a finding. A lock-form answer is judged only
+# by these rules and the hashes placed here are handed to the PC rules through @ls_placed, which never credits, closes or flags them
+# (R1-L5, R1-SCANNER1: a PC answer that carries one of the two keys in a scenario with no lock step is still the PC rules' own).
+#
+# Limits that remain, stated exactly:
+#   - `pcId` is not on the PC form's cancel and waiting-prompt answers (NOT decided for this stage): in a scenario with both PC steps and
+#     lock steps, a PC push step open, an echo-less cancel on mfa/approve or waiting prompt on mfa/prompt reads as the PC's, because it
+#     is the same bytes as a lock's with its echo dropped (R1-SCANNER8 narrowed it to a PC step of a kind that route serves);
+#   - an open of a lock whose answer carries no contents and no room data (an empty gated lock) cannot be told, without its echo, from
+#     the open of an ordinary lock: an echo-less one is not reported;
+#   - a lock inside a gated ROOM that has not opened is not hidden from the gate and echo rules: the server answers for such a lock today
+#     (R1-SCANNER4's room half waits for the owner's decision); a lock inside a closed gated CONTAINER is (R1-SCANNER4);
+#   - the NPCs of a gated room are watched by their ids only inside room data (`roomData`, `room`, `rooms.<id>`), and the items they
+#     hold by id anywhere (R1-SCANNER5).
 #
 # Rules (the answers' shapes are those of test/fixtures/files/lock_step/answers.json):
 #   lock_step_content
@@ -30,7 +43,7 @@ require_relative '../../../lib/break_escape/lock_step_model' unless defined?(Bre
 #       answer, unless the lock has the full proof earlier in the capture: a gate answer, a pass answer, then the
 #       200 POST unlock answer with `success: true` that carries the contents or room data (which itself is
 #       allowed only for that proof);
-#     - a 200 POST unlock open that carries a gated lock's contents or room data with no pass before it.
+#     - a 200 POST unlock open that carries a gated lock's contents or room data with no pass before it, or that names no lock.
 #   lock_step_secret
 #     - the keys lockSteps, npcStepGrants, mfaPrompts, mfaAccounts anywhere;
 #     - (in a scenario that has a gated lock) `numbers` outside the one entry of a 200 GET mfa/phone answer whose
@@ -68,9 +81,13 @@ module LockStepLeakRules
     'mfa/verify' => [%w[mfaIncorrect success], %w[stale success], %w[expired success], %w[codeLocked retryIn success], %w[message success]],
     'mfa/prompt' => [%w[approved promptsSent success], %w[approved promptsSent success waiting], %w[retryAfterS success tooSoon],
                      %w[expired success], %w[message success]],
-    'mfa/approve' => [%w[cancelled success], %w[message success]]
+    'mfa/approve' => [%w[cancelled success], %w[expired success], %w[message success]]
   }.freeze
   LS_ERROR_SHAPE = %w[error success].freeze
+  # R1-SCANNER9: every key the 200 answer of POST /unlock that opens a gated lock can carry (games_controller#unlock): the echo, the
+  # rfid card answer (cardId, viaCopy), the server writes (add_server_writes_to_answer!), and what each type serves
+  LS_OPEN_KEYS = %w[success type targetType targetId alreadyOpen cardId viaCopy serverGlobals serverCompletedTasks serverMissionConcluded].freeze
+  LS_OPEN_KEYS_BY_TYPE = { 'door' => %w[roomData], 'object' => %w[hasContents contents rewards completedTasks updatedTasks] }.freeze
   # everything a PC's second step answers with on a refusal (S8a); with a PC step open too, a refusal may use these
   LS_PC_REFUSAL_KEYS = %w[success message mfaIncorrect attemptsLeft stale expired codeLocked retryIn lockedOut tooSoon retryAfterS
                           cancelled approved promptsSent waiting error].freeze
@@ -116,7 +133,7 @@ module LockStepLeakRules
     return if @ls_bound.equal?(@mfa_pending)
 
     @ls_bound = @mfa_pending
-    @ls_locks = {}   # "object:<id>" | "door:<room>" => { type:, id:, kind:, owner:, name:, contents_ids:, room_ids: }
+    @ls_locks = {}   # "object:<id>" | "door:<room>" => { type:, id:, kind:, owner:, name:, contents_ids:, room_ids:, npc_ids: }
     @ls_games = {}   # game id => { gates:, passed:, opened: }
     @ls_placed = []
     ls_select_game(nil)
@@ -126,21 +143,46 @@ module LockStepLeakRules
       lockable = entry[:lockable]
       step = entry[:step]
       list = type == 'door' ? lockable['objects'] : ls_children(lockable)
+      # R1-SCANNER5: a gated room's NPCs, and what they hold, are part of what the room gives up
+      npcs = type == 'door' ? Array(lockable['npcs']).select { |n| n.is_a?(Hash) } : []
+      held = npcs.flat_map { |n| Array(n['itemsHeld']) }
       # R1-L7: ids are authored, and the rules watch content by them; an item without one could not be watched
       raise ArgumentError, "lock step #{type}:#{id || 'with no id'}: a gated lock needs an id" if id.nil?
-      raise ArgumentError, "lock step #{type}:#{id}: every entry of its #{type == 'door' ? 'objects' : 'contents'} (and every item inside) needs an id" unless ls_all_ids?(list)
+      raise ArgumentError, "lock step #{type}:#{id}: every entry of its #{type == 'door' ? 'objects' : 'contents'} (and every item inside) needs an id" unless ls_all_ids?(list) && ls_all_ids?(held)
 
       key = "#{type}:#{id}"
       if (known = @ls_locks[key])
         known[:contents_ids].merge(ls_ids(list)) # R1-L14: a second lock of the same id keeps both lists watched
-        known[:room_ids].merge(ls_ids(list)) if type == 'door'
+        known[:room_ids].merge(ls_ids(list) + ls_ids(held)) if type == 'door'
+        known[:npc_ids].merge(ls_npc_ids(npcs))
         next
       end
       @ls_locks[key] = { type: type, id: id, kind: step['kind'], owner: step['owner'], name: ls_lock_name(type, id, lockable),
-                         contents_ids: ls_ids(list).to_set, room_ids: type == 'door' ? ls_ids(list).to_set : Set.new }
+                         contents_ids: ls_ids(list).to_set, room_ids: type == 'door' ? (ls_ids(list) + ls_ids(held)).to_set : Set.new,
+                         npc_ids: ls_npc_ids(npcs).to_set }
     end
     @ls_active = !@ls_locks.empty?
-    ls_collect_door_routes if @ls_active
+    return unless @ls_active
+
+    ls_collect_door_routes
+    @ls_known_ids = Set.new # every id the scenario's rooms author (objects, NPCs, what they hold), for R1-SCANNER5
+    rooms = @data['rooms'].is_a?(Hash) ? @data['rooms'] : {}
+    rooms.each_value do |room|
+      @ls_known_ids.merge(ls_ids(room['objects']) + ls_ids(room['npcs'])) if room.is_a?(Hash)
+    end
+  end
+
+  def ls_npc_ids(npcs)
+    npcs.map { |n| n['id'] }.select { |v| v.is_a?(String) && !v.empty? }
+  end
+
+  # R1-SCANNER4: true for a lock authored inside another object lock that has not been opened (a lock below a closed gated
+  # container). The server never gates it, never answers for it and answers 404 with no echo for every action (Rule C).
+  def ls_below_closed?(key)
+    lock = @ls_locks[key]
+    return false unless lock && lock[:type] == 'object'
+
+    @ls_locks.any? { |k, l| k != key && l[:type] == 'object' && !@ls_opened.include?(k) && l[:contents_ids].include?(lock[:id]) }
   end
 
   # The doors the scenario itself authors a way past the step for: a `prop_door` workaround of a room NPC, and an `unlock_door`
@@ -274,7 +316,7 @@ module LockStepLeakRules
     ls_judge_pass(root, info, now, add, judged, reported, earn)
     ls_judge_phone(body, info, now, add, judged)
     ls_judge_refusal(root, info, row, add, judged, reported)
-    open_key, open_reported = ls_judge_open(root, info, unlock, add)
+    open_key, open_reported = ls_judge_open(root, info, unlock, add, judged)
     prop_key = open_key.nil? && open_reported.empty? ? ls_judge_prop_door(root, info) : nil
     ls_judge_contents(body, info, open_key || prop_key, open_reported, add)
     ls_judge_secrets(body, info, add, judged)
@@ -323,6 +365,10 @@ module LockStepLeakRules
     return unless root && (root['secondStep'] == true)
 
     key = ls_gate_key(root, info, unlock)
+    if key && ls_below_closed?(key)
+      add.call('lock_step_answer', "lockstep:gate:below:#{key}", '$')
+      return
+    end
     # a gate for a lock that already passed or opened is not an answer the server gives
     if key.nil? || @ls_passed.include?(key) || @ls_opened.include?(key)
       add.call('lock_step_answer', "lockstep:gate:#{key || 'unplaced'}", '$')
@@ -369,7 +415,7 @@ module LockStepLeakRules
     return [] unless !LS_APPROVED_BY.key?(route) || body['approvedBy'] == LS_APPROVED_BY[route]
 
     key = ls_echo_key(body)
-    gate = key.is_a?(String) ? @ls_gates[key] : nil
+    gate = key.is_a?(String) && !ls_below_closed?(key) ? @ls_gates[key] : nil
     return [] unless gate && LS_ROUTE_KINDS[route].include?(gate[:kind]) && ls_fresh?(gate, now)
 
     ok =
@@ -426,6 +472,7 @@ module LockStepLeakRules
     key = "#{query['target_type']}:#{query['target_id']}"
     lock = @ls_locks[key]
     gate = @ls_gates[key]
+    return false if ls_below_closed?(key)
     return false unless lock && gate && ls_fresh?(gate, now) && LS_PUSH_KINDS.include?(lock[:kind]) && gate[:kind] == lock[:kind]
     return false unless lock[:owner] == query['npc_id'] && mfa_phone_taken?(query['npc_id'])
     return false unless entry['targetType'] == query['target_type'] && entry['targetId'] == query['target_id']
@@ -451,15 +498,17 @@ module LockStepLeakRules
 
     route = mfa_route_name(info)
     placed = (info[:method] == 'POST' && LS_REFUSAL_SHAPES.key?(route)) || (info[:method] == 'GET' && %w[mfa/phone mfa/device].include?(route))
-    # a PC's pass answer, and the 200 answers of the phone and the device, are judged elsewhere
-    return unless placed && root['success'] != true && !root.key?('requests') && !root.key?('deviceId')
+    # a PC's pass answer is judged elsewhere, and so are the 200 answers of the phone and the device (R1-SCANNER3: only a GET of
+    # those two routes, for its own key; a refusal of any other route or status that carries one of the keys is judged here)
+    own_answer = info[:method] == 'GET' && info[:ok] && ((route == 'mfa/phone' && root.key?('requests')) || (route == 'mfa/device' && root.key?('deviceId')))
+    return unless placed && root['success'] != true && !own_answer
 
     echo = ls_echo_key(root)
     shape = root.reject { |k, _v| %w[targetType targetId].include?(k) }
     if echo.nil?
-      return if ls_pc_owns?(root)
+      return if ls_pc_owns?(root, info)
       return if ls_unnamed_shape?(shape) && ls_refusal_ok?(route, info, shape, row)
-    elsif echo != :bad && ls_refusal_ok?(route, info, shape, row)
+    elsif echo != :bad && !ls_below_closed?(echo) && ls_refusal_ok?(route, info, shape, row) && ls_refusal_gate_ok?(route, shape, echo, ls_time(row))
       judged << root
       return
     end
@@ -467,11 +516,28 @@ module LockStepLeakRules
     add.call('lock_step_answer', "lockstep:refusal:#{route}", '$')
   end
 
+  # R1-SCANNER10: the server answers anything but `expired` and the generic `message` only against a live record of the right
+  # kind (with none it answers `expired`, and on the wrong route 404): the lock's gate, of a kind its route serves, still fresh.
+  def ls_refusal_gate_ok?(route, shape, echo, now)
+    return true if [%w[expired success], %w[message success]].include?(shape.keys.sort)
+
+    gate = @ls_gates[echo]
+    # a prompt is sent for a number lock too (the real run: the owner is asked, and the number is answered on the phone), so the
+    # refusals of prompt and approve are those of any push kind; only a pass keeps the narrower LS_ROUTE_KINDS
+    kinds = route.to_s == 'mfa/verify' ? LS_ROUTE_KINDS['verify'] : LS_PUSH_KINDS
+    !gate.nil? && !kinds.nil? && kinds.include?(gate[:kind]) && ls_fresh?(gate, now) ? true : false
+  end
+
   # With a PC step open the answer may be that PC's (it has no echo, the lock's always has): the PC rules judge it.
   # An answer a PC's form sends with its `message` (mfaIncorrect, stale, expired, codeLocked, tooSoon) and which has none is the
   # lock's with its echo dropped, so it is not the PC's (only the shapes of both forms alike, a cancel and a waiting prompt, can be).
-  def ls_pc_owns?(root)
+  # R1-SCANNER8: and only a PC step of a kind this route serves can have given it (a code step answers on verify; a push step on
+  # prompt and approve).
+  def ls_pc_owns?(root, info)
     return false if @mfa_pending.empty? || !root.keys.all? { |k| LS_PC_REFUSAL_KEYS.include?(k) }
+
+    served = info[:route].to_s == 'mfa/verify' ? %w[code] : LS_PUSH_KINDS
+    return false unless @mfa_pending.values.any? { |rec| served.include?(rec[:kind]) }
 
     root.key?('message') || (root.keys & LS_PC_MESSAGE_KEYS).empty?
   end
@@ -511,7 +577,8 @@ module LockStepLeakRules
   # ---- opens, and contents and room data ---------------------------------------------------------------------------
 
   # Which gated locks an answer's contents or roomData could belong to, by the ids it carries.
-  def ls_content_owners(hash)
+  # `loose` (R1-SCANNER5): room data that lists no id of any room of the scenario belongs to every shut gated door
+  def ls_content_owners(hash, loose: true)
     owners = Set.new
     if hash['contents'].is_a?(Array)
       ids = hash['contents'].filter_map { |e| e['id'] if e.is_a?(Hash) && e['id'].is_a?(String) }
@@ -519,12 +586,13 @@ module LockStepLeakRules
       [hash['id'], hash['container_id']].each { |id| owners << "object:#{id}" if id.is_a?(String) && @ls_locks.key?("object:#{id}") }
     end
     if hash['roomData'].is_a?(Hash)
-      objects = hash['roomData']['objects']
-      ids = objects.is_a?(Array) ? objects.filter_map { |e| e['id'] if e.is_a?(Hash) && e['id'].is_a?(String) } : []
+      # the ids it lists: its objects and what is in them, its NPCs and what they hold
+      ids = ls_ids(hash['roomData']['objects']) + ls_ids(hash['roomData']['npcs'])
+      unknown = loose && (ids.to_set & @ls_known_ids).empty?
       @ls_locks.each do |key, l|
         next unless l[:type] == 'door'
 
-        owners << key if (ids.empty? && l[:room_ids].empty?) || !(l[:room_ids] & ids).empty?
+        owners << key if unknown || !((l[:room_ids] | l[:npc_ids]) & ids).empty?
       end
     end
     owners.to_a
@@ -543,39 +611,59 @@ module LockStepLeakRules
   def ls_room_owners(hash, path)
     owners = []
     parts = path.sub(/\A\$/, '').split('.')
-    if hash['objects'].is_a?(Array) && !hash['objects'].empty? && parts.size >= 2 && parts[-2] == 'rooms'
+    if (hash['objects'].is_a?(Array) && !hash['objects'].empty? || hash['npcs'].is_a?(Array) && !hash['npcs'].empty?) && parts.size >= 2 && parts[-2] == 'rooms'
       owners << "door:#{parts[-1]}" if @ls_locks.key?("door:#{parts[-1]}")
     end
     room = hash['room_id']
     if room.is_a?(String) && @ls_locks.key?("door:#{room}")
       listed = false
-      mfa_walk(hash) { |h, _p, _k| listed ||= h['objects'].is_a?(Array) && !h['objects'].empty? }
+      mfa_walk(hash) { |h, _p, _k| listed ||= (h['objects'].is_a?(Array) && !h['objects'].empty?) || (h['npcs'].is_a?(Array) && !h['npcs'].empty?) }
       owners << "door:#{room}" if listed
     end
     owners
   end
 
-  # The lock key a 200 POST unlock open (`success: true`) with contents or room data is for, when it has its proof; nil when it
-  # carries none of a gated lock's content or is not an open. A finding when the proof is missing or ambiguous.
-  def ls_judge_open(root, info, unlock, add)
+  # The lock key a 200 POST unlock open (`success: true`) of a gated lock is for, when it has its proof; nil when it is no open of
+  # a gated lock. The open names its lock at the root (`targetType`, `targetId`, as the three /mfa routes do); an open that carries
+  # a gated lock's contents or room data and names none is a finding, as is one that names another lock than the one whose content
+  # it carries. Returns [key or nil, locks it has made findings of].
+  def ls_judge_open(root, info, unlock, add, judged)
     return [nil, []] unless root && unlock && info[:ok] && root['success'] == true
 
-    candidates = ls_content_owners(root)
-    return [nil, []] if candidates.empty?
+    echo = ls_echo_key(root)
+    candidates = ls_content_owners(root, loose: false)
+    return [nil, []] if echo.nil? && candidates.empty?
 
-    passed = candidates.select { |k| @ls_passed.include?(k) }
-    placed = passed.size == 1 ? passed.first : (passed.empty? && candidates.all? { |k| @ls_opened.include?(k) } ? candidates.first : nil)
-    if placed
-      # the open answer says what it opened: an object lock's is `type: object`, a door's `type: door`, and a door's room data is
-      # never a contents list (the server's two shapes, games_controller#unlock)
-      return [placed, []] if root['type'] == @ls_locks[placed][:type]
-
-      add.call('lock_step_answer', "lockstep:open:type:#{placed}", '$')
-      return [nil, [placed]]
+    if echo.nil?
+      add.call('lock_step_answer', 'lockstep:open:no-echo', '$')
+      return [nil, candidates]
+    end
+    if echo == :bad
+      add.call('lock_step_answer', 'lockstep:open:echo', '$')
+      return [nil, candidates]
     end
 
-    add.call('lock_step_content', "lockstep:open:#{passed.empty? ? candidates.min : 'ambiguous'}", '$')
-    [nil, candidates] # the open is the finding; its own contents are not reported a second time
+    judged << root
+    unless @ls_passed.include?(echo) || @ls_opened.include?(echo)
+      add.call('lock_step_content', "lockstep:open:#{echo}", '$') # a gate and no pass, or no gate
+      return [nil, [echo] | candidates]
+    end
+    others = candidates - [echo] - @ls_opened.to_a
+    unless others.empty?
+      add.call('lock_step_content', "lockstep:content:#{others.min}", '$') # another lock's content, carried by this lock's open
+      return [nil, [echo] | candidates]
+    end
+    # the open says what it opened: an object lock's is `type: object`, a door's `type: door`
+    unless root['type'] == @ls_locks[echo][:type]
+      add.call('lock_step_answer', "lockstep:open:type:#{echo}", '$')
+      return [nil, [echo]]
+    end
+    # R1-SCANNER9: and holds only the keys games_controller#unlock can send for that type
+    unless (root.keys - LS_OPEN_KEYS - LS_OPEN_KEYS_BY_TYPE[@ls_locks[echo][:type]] - LS_STATE_KEYS).empty? # a state key is the secret rule's
+      add.call('lock_step_answer', "lockstep:open:key:#{echo}", '$')
+      return [nil, [echo]]
+    end
+    [echo, []]
   end
 
   def ls_judge_contents(body, info, open_key, open_reported, add)
@@ -588,7 +676,8 @@ module LockStepLeakRules
       %w[contents roomData].each { |k| mfa_walk(body[k]) { |h, _p, _k| excused << h } if body[k].is_a?(Hash) || body[k].is_a?(Array) }
     end
     mfa_walk(body) do |hash, path, _parent|
-      owners = ls_content_owners(hash) | ls_id_owners(hash) | ls_room_owners(hash, path)
+      placed_open = (open_key || !open_reported.empty?) && excused.any? { |h| h.equal?(hash) } # R1-SCANNER5: the placed open's own room data names its lock by the echo
+      owners = ls_content_owners(hash, loose: !placed_open) | ls_id_owners(hash) | ls_room_owners(hash, path)
       owners |= ["object:#{info[:container]}"] if info[:container] && hash.equal?(body) && hash.key?('contents') && @ls_locks.key?("object:#{info[:container]}")
       owners.each do |key|
         next if @ls_opened.include?(key)
@@ -688,7 +777,7 @@ module LockStepLeakRules
     echo = ls_echo_key(root)
     if echo.is_a?(String)
       @ls_gates.delete(echo)
-    elsif !(echo.nil? && ls_pc_owns?(root))
+    elsif !(echo.nil? && ls_pc_owns?(root, info))
       kinds = LS_ROUTE_KINDS[info[:route].sub('mfa/', '')]
       @ls_gates.delete_if { |_k, g| kinds.include?(g[:kind]) }
     end

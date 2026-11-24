@@ -139,8 +139,8 @@ module BreakEscape
     def ghost_run(owner_id: 'ghost_mail', approved_by: 'owner')
       raw('POST', 'unlock', { 'success' => false, 'secondStep' => true, 'kind' => 'push', 'targetType' => 'object', 'targetId' => "#{owner_id == 'nobody' ? 'nobody' : 'ghost'}_box", 'npcId' => owner_id })
       raw('POST', 'mfa/prompt', { 'success' => true, 'stepPassed' => true, 'approvedBy' => approved_by, 'targetType' => 'object', 'targetId' => "#{owner_id == 'nobody' ? 'nobody' : 'ghost'}_box" })
-      raw('POST', 'unlock', { 'success' => true, 'type' => 'object', 'hasContents' => true,
-                              'contents' => [{ 'id' => "#{owner_id == 'nobody' ? 'nobody' : 'ghost'}_memo" }] })
+      raw('POST', 'unlock', { 'success' => true, 'type' => 'object', 'targetType' => 'object', 'targetId' => "#{owner_id == 'nobody' ? 'nobody' : 'ghost'}_box",
+                              'hasContents' => true, 'contents' => [{ 'id' => "#{owner_id == 'nobody' ? 'nobody' : 'ghost'}_memo" }] })
     end
 
     test 'a headless record that owns a lock approves a prompt, as the server lets it' do
