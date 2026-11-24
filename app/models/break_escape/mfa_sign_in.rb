@@ -135,7 +135,120 @@ module BreakEscape
       end
     end
 
+    # POST a push request for a pending second step at a PC (push kinds). The route is re-judged,
+    # then MfaAccess sends the prompt. Returns { status:, body: }.
+    def prompt_sign_in!(pc_id)
+      ctx = push_step_context(pc_id)
+      return ctx[:refusal] if ctx[:refusal]
+
+      pc = ctx[:pc]
+      npc = ctx[:npc]
+      map = ctx[:map]
+      pending = ctx[:pending]
+      key = pc['id'].to_s
+      capped = pending['n'].to_i >= MfaModel::MAX_PROMPTS
+      result = send_second_step_prompt(map, key, { kind: 'pc', id: key }, npc_id: npc['id'],
+                                                                           reenrolled: mfa_reenrolled?(npc['id']))
+      as = { account: npc['creds']['username'] }
+      where = { kind: 'pc', id: key }
+      if result.is_a?(Array) && result.first == :too_soon
+        return { status: :unprocessable_entity,
+                 body: { success: false, message: Game::LOGIN_INCORRECT, tooSoon: true, retryAfterS: result.last } }
+      end
+      if result == :expired
+        write_log_row!('mfa_expired', as: as, where: where, result: 'expired') if capped
+        save!
+        return { status: :unprocessable_entity, body: { success: false, message: Game::LOGIN_INCORRECT, expired: true } }
+      end
+
+      write_log_row!('mfa_prompt_sent', as: as, where: where)
+      return mfa_push_passed!(pc, npc, map, pending, approver: 'owner', approved_by: 'owner') if result == :passed
+
+      body = { success: false, approved: false, promptsSent: pending['n'].to_i }
+      body[:waiting] = result.last if result.is_a?(Array) && result.first == :waiting
+      save!
+      { status: :ok, body: body }
+    end
+
+    # POST the player's answer to a push on the owner's phone: a number (number matching) or a
+    # deny. The route is re-judged. :no_phone unless the player holds the phone.
+    def approve_sign_in!(pc_id, number: nil, deny: false)
+      ctx = push_step_context(pc_id)
+      return ctx[:refusal] if ctx[:refusal]
+
+      pc = ctx[:pc]
+      npc = ctx[:npc]
+      key = pc['id'].to_s
+      result = approve_second_step(ctx[:map], key, { kind: 'pc', id: key }, npc_id: npc['id'], number: number,
+                                                                            deny: deny == true,
+                                                                            reenrolled: mfa_reenrolled?(npc['id']))
+      case result
+      when :no_phone then :no_phone
+      when :cancelled
+        write_log_row!('mfa_prompt_denied', as: { account: npc['creds']['username'] }, where: { kind: 'pc', id: key },
+                                            result: 'denied')
+        save!
+        { status: :unprocessable_entity, body: { success: false, cancelled: true } }
+      else
+        approver = held_friendface_phone(npc['id']) ? 'held_phone' : 'own_phone'
+        mfa_push_passed!(pc, npc, ctx[:map], ctx[:pending], approver: approver, approved_by: 'player')
+      end
+    end
+
+    # GET /mfa/phone: :no_phone unless the player holds the phone of `npc_id`, else the waiting
+    # push requests of this owner's accounts at sign-in PCs.
+    def mfa_phone_answer(npc_id)
+      return :no_phone unless held_friendface_phone(npc_id)
+
+      mine = mfa_pending_map.select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
+      npc = account_npcs.find { |n| n['id'].to_s == npc_id.to_s }
+      username = npc && npc['creds'].is_a?(Hash) ? npc['creds']['username'] : nil
+      requests = second_step_requests([mine], npc_id: npc_id).filter_map do |entry|
+        info = find_login_pc(entry['key'])
+        next unless info
+
+        row = { pcId: entry['key'], host: host_label(info[:object]), username: username, n: entry['n'] }
+        row[:numbers] = entry['numbers'] if entry['numbers']
+        row
+      end
+      { requests: requests }
+    end
+
     private
+
+    # The PC, its live push record and its account, or a refusal (the first step judged again)
+    def push_step_context(pc_id)
+      info = find_login_pc(pc_id)
+      return { refusal: { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } } unless info
+
+      pc = info[:object]
+      map = mfa_pending_map
+      tidy_pending!(map)
+      pending = map[pc['id'].to_s]
+      unless pending.is_a?(Hash) && MfaAccess::PUSH_KINDS.include?(pending['kind']) && pending['passed'] != true
+        return { refusal: credential_login_refusal }
+      end
+
+      refusal = second_step_refusal(pc, pending)
+      return { refusal: refusal } if refusal
+
+      { pc: pc, map: map, pending: pending, npc: mfa_pending_account(pending) }
+    end
+
+    # The push is approved: end the pending step and open the session as a code pass does
+    def mfa_push_passed!(pc, npc, map, pending, approver:, approved_by:)
+      key = AccessIdentities.lockout_key(pc['id'], npc['creds']['username'])
+      map.delete(pc['id'].to_s)
+      login_failures.delete(key)
+      foothold = pending['foothold'].presence&.to_s
+      from = pending['fromGiven'] == true ? pending['from'] : nil
+      ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
+      write_log_row!('mfa_prompt_approved', as: { account: npc['creds']['username'] },
+                                            where: { kind: 'pc', id: pc['id'].to_s }, detail: { 'approver' => approver })
+      save!
+      answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended).merge(approvedBy: approved_by) }
+    end
 
     # Whether any policy of the scenario declares a second-step kind
     def mfa_declared?
@@ -161,7 +274,7 @@ module BreakEscape
       record = issue_second_step!(mfa_pending_map, pc['id'].to_s, npc['id'], kind, extra)
       body = { success: false, mfaRequired: true, mfa: kind, pcId: pc['id'], npcId: npc['id'] }
       if kind == 'push_number_match'
-        number = MfaModel.numbers(mfa_key, id, "pc:#{pc['id']}", npc['id'].to_s, record['nonce'])[:right]
+        number = MfaModel.numbers(mfa_key, id, pc['id'].to_s, npc['id'].to_s, record['nonce'])[:right]
         OpsLog.note_issued_secret(number)
         body[:number] = number
       end
