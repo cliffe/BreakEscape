@@ -213,6 +213,8 @@ export class NetworkViewMinigame extends MinigameScene {
         // The sentence a sweep or scan with no reply keeps on its row in Panels; the Terminal's `show` draws it
         this.rowNotice = '';
         this.view = null;
+        // Once this view has had an ops block it keeps the Terminal and the switch until it closes (a view opened afresh works it out again)
+        this._hadOps = false;
         this.status = 'loading';
         this.exitReason = 'close';
         this.notice = null;
@@ -641,7 +643,7 @@ export class NetworkViewMinigame extends MinigameScene {
      */
     currentOffers() {
         const list = offers(this.view, { pending: this.pending, unplugJack: this.unplugJack });
-        if (!viewHasOps(this.view)) return list;
+        if (!this.hasOps()) return list;
         return list.map(o => {
             let command = null;
             try { command = commandFor(o, this.view); } catch (e) { command = null; }
@@ -651,7 +653,11 @@ export class NetworkViewMinigame extends MinigameScene {
 
     // ----- the two skins -----
 
-    hasOps() { return viewHasOps(this.view); }
+    hasOps() {
+        if (this._hadOps) return true;
+        if (viewHasOps(this.view)) this._hadOps = true;
+        return this._hadOps;
+    }
 
     canSwitch(name) { return this.skinCapable && SKINS.includes(name) && this.hasOps(); }
 

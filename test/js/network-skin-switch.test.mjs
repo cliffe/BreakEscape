@@ -246,17 +246,75 @@ test('Panels\' header lines come back when Panels is mounted again; the Terminal
     h.end();
 });
 
-test('a refetch that leaves no ops block removes the switch and falls back to Panels', async () => {
+const dropOps = (body) => { for (const b of body.footholds[0].networks) { delete b.ops; delete b.swept; } };
+// the refetch itself is the one 'network' call; anything else is a move
+const moves = (h) => h.calls.filter(c => c[0] !== 'network');
+const typeLine = async (h, text) => {
+    const input = q(h, '.network-term-input');
+    input.value = text;
+    input.form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+};
+
+test('B1: a refetch that leaves no ops block keeps the Terminal, its log and the switch for the life of the view', async () => {
     const body = opsBody();
     const h = await mount(body, { params: { skin: 'cli' } });
     assert.ok(switchBtn(h));
+    const before = lines(h).slice();
     // `swept` is served only for a discovery network, itself part of the ops layer: a view with neither has none
-    for (const b of body.footholds[0].networks) { delete b.ops; delete b.swept; }
+    dropOps(body);
     await h.view().refetch({ sync: false });
     await settle();
+    assert.ok(switchBtn(h), 'the switch stays');
+    assert.ok(q(h, '.network-term'), 'the Terminal stays mounted');
+    assert.equal(h.view().getTestState().skin, 'cli');
+    assert.deepEqual(lines(h).slice(0, before.length), before, 'the log keeps its lines');
+    assert.equal(document.activeElement, q(h, '.network-term-input'), 'the prompt has the focus');
+    assert.deepEqual(moves(h), [], 'nothing was sent');
+    h.end();
+});
+
+test('B1: the same refetch from Panels keeps the switch and a press still reaches the Terminal', async () => {
+    const body = opsBody();
+    const h = await mount(body, { params: { skin: 'gui' } });
+    dropOps(body);
+    await h.view().refetch({ sync: false });
+    await settle();
+    assert.ok(switchBtn(h), 'the switch stays');
+    assert.equal(h.view().getTestState().skin, 'gui');
+    switchBtn(h).click();
+    await settle();
+    assert.equal(h.view().getTestState().skin, 'cli');
+    assert.ok(q(h, '.network-term'));
+    assert.deepEqual(moves(h), []);
+    h.end();
+});
+
+test('B1: typed show and unplug still work on a view that has lost its ops block', async () => {
+    const body = opsBody();
+    const h = await mount(body, { unplug: true, params: { skin: 'cli' } });
+    dropOps(body);
+    await h.view().refetch({ sync: false });
+    await settle();
+    const n = lines(h).length;
+    await typeLine(h, 'show');
+    assert.ok(lines(h).length > n, 'show wrote lines');
+    assert.deepEqual(moves(h), [], 'show sends nothing');
+    await typeLine(h, 'unplug');
+    assert.equal(moves(h).length, 1, 'unplug was sent');
+    h.end();
+});
+
+test('B1: a view opened afresh with no ops block is Panels with no switch', async () => {
+    const body = opsBody();
+    const first = await mount(body, { params: { skin: 'cli' } });
+    dropOps(body);
+    await first.view().refetch({ sync: false });
+    await settle();
+    first.end();
+    const h = await mount(noOpsBody(), { params: { skin: 'cli' } });
     assert.equal(switchBtn(h), null);
     assert.equal(q(h, '.network-term'), null);
-    assert.ok(q(h, '[data-host-id]'));
     assert.ok(!('skin' in h.view().getTestState()));
     h.end();
 });
