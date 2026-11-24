@@ -42,7 +42,57 @@ module BreakEscape
       added
     end
 
+    # S7 review R1-S1: deletes from the bootstrap's social.intelFacts every fact that an item's
+    # revealsFacts or a flag reward's grant_fact can award and that the player has not earned, as
+    # withhold_feed_facts! does for feed facts. An earned fact keeps its entry, so a reload still
+    # has its text. The block itself stays (an object), never deleted.
+    def withhold_unearned_facts!(filtered)
+      social = filtered['social']
+      return unless social.is_a?(Hash) && social['intelFacts'].is_a?(Hash)
+
+      earned = earned_fact_ids
+      (award_source_fact_ids - earned).each { |f| social['intelFacts'].delete(f) }
+    end
+
+    # The author-note-free entries (id => entry) of the given fact ids that the player has earned,
+    # for the answer that earns them (an inventory add, a flag submission): the browser reads the
+    # entry's label and text from social.intelFacts, which the bootstrap no longer holds for them.
+    def earned_fact_entries(ids)
+      facts = scenario_data.is_a?(Hash) ? scenario_data.dig('social', 'intelFacts') : nil
+      return {} unless facts.is_a?(Hash)
+
+      held = earned_fact_ids
+      Array(ids).grep(String).uniq.each_with_object({}) do |id, out|
+        next unless held.include?(id) && facts[id].is_a?(Hash)
+
+        entry = facts[id].deep_dup
+        BreakEscape::AuthorNotes.strip_notes!(entry, BreakEscape::ScenarioSchema.at('#/definitions/socialIntelFact'))
+        out[id] = entry
+      end
+    end
+
     private
+
+    # Every fact id named by any revealsFacts or by a flagRewards grant_fact, anywhere in the
+    # scenario (rooms, NPC holdings, stations, containers, start items).
+    def award_source_fact_ids
+      ids = Set.new
+      walk = lambda do |node, key|
+        case node
+        when Hash
+          node.each { |k, v| walk.call(v, k) }
+        when Array
+          if key == 'revealsFacts'
+            node.each { |f| ids << f if f.is_a?(String) && !f.empty? }
+          elsif key == 'flagRewards'
+            node.each { |r| ids << r['fact'] if r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String) }
+          end
+          node.each { |v| walk.call(v, key) }
+        end
+      end
+      walk.call(scenario_data.except('social'), nil) if scenario_data.is_a?(Hash)
+      ids.to_a
+    end
 
     # The stamp add_inventory_item!(item, fact_source: true) uses. Reads the STORED copy
     # (item['scenarioData'] || item), never a definition looked up by id. Never for a notepad or a

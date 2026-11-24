@@ -45,7 +45,7 @@ module BreakEscape
     def scenario
       {
         'startRoom' => 'office',
-        'social' => { 'intelFacts' => %w[pet year town club lake].to_h { |f| [f, { 'label' => f.capitalize }] } },
+        'social' => { 'intelFacts' => %w[pet year town club lake].to_h { |f| [f, { 'label' => f.capitalize, 'text' => "The #{f} text." }] } },
         'flags' => { 'target_vm' => { 'flag_1' => FLAG_ONE, 'flag_2' => FLAG_TWO, 'flag_3' => FLAG_THREE } },
         'timers' => [{ 'id' => 'grant_timer', 'startOnGlobal' => 'go', 'delayMs' => 300,
                        'actions' => [{ 'type' => 'give_item', 'item' => note('granted_note', %w[pet]) }] }],
@@ -378,6 +378,52 @@ module BreakEscape
       game = build_game
       post inventory_game_url(game), params: { action_type: 'add', item: note('vault_note', %w[club]), source_npc_id: 'sam' }, as: :json
       refute_includes earned(game), 'club'
+    end
+
+    # ---- R1-S1: no fact the player has not earned in the bootstrap -------------------------------
+
+    def bootstrap_facts(game)
+      get scenario_game_url(game), as: :json
+      assert_response :success, response.body
+      response.parsed_body.dig('social', 'intelFacts')
+    end
+
+    test 'the bootstrap holds no entry for an unearned item or flag-reward fact' do
+      game = build_game
+      facts = bootstrap_facts(game)
+      assert_equal({}, facts)
+      %w[pet year town club lake].each { |f| refute_includes response.body, "The #{f} text." }
+    end
+
+    test 'an earned fact keeps its entry in the bootstrap and an unearned one stays out' do
+      game = build_game
+      earn(game, 'pet', 'lake')
+      facts = bootstrap_facts(game)
+      assert_equal %w[lake pet], facts.keys.sort
+      assert_equal 'The pet text.', facts['pet']['text']
+    end
+
+    test 'a start item fact is earned from the start, so its entry ships' do
+      game = build_game(start_facts: %w[lake])
+      assert_equal %w[lake], bootstrap_facts(game).keys
+    end
+
+    test 'the take that earns a fact answers with its entry' do
+      game = build_game
+      post inventory_game_url(game), params: { action_type: 'add', item: note('pet_note') }, as: :json
+      assert_equal 'The pet text.', response.parsed_body.dig('facts', 'pet', 'text')
+      post inventory_game_url(game), params: { action_type: 'add', item: note('plain_note') }, as: :json
+      assert_nil response.parsed_body['facts']
+    end
+
+    test 'the flag that earns a fact answers with its entry, in the reward' do
+      game = build_game
+      post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station' }, as: :json
+      reward = response.parsed_body['rewards'].find { |r| r['type'] == 'grant_fact' }
+      assert_equal 'The club text.', reward.dig('entry', 'text')
+      post flags_game_url(game), params: { flag: FLAG_TWO, stationId: 'station' }, as: :json
+      give = response.parsed_body['rewards'].find { |r| r['type'] == 'give_item' }
+      assert_equal 'The town text.', give.dig('facts', 'town', 'text')
     end
 
     # ---- nothing secret goes out ---------------------------------------------------------------

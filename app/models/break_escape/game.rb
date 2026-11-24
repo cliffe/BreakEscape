@@ -2528,6 +2528,8 @@ module BreakEscape
 
       # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
       withhold_feed_facts!(filtered)
+      # S7 review R1-S1: and an item's or a flag reward's fact until it is earned
+      withhold_unearned_facts!(filtered)
 
       # Strip every authored capture secret from the bootstrap: a landing page's capture (the
       # phished portal password), an NPC's usePayload, a mapping's addCapture and an

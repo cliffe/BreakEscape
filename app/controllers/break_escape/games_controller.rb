@@ -1417,7 +1417,10 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, already: true }
+            # R1-S1: a fact earned by a give_item reward arrives here as a held item; its entry is
+            # served for the ids the player has earned (earned_fact_entries reads only those)
+            held_entries = @game.earned_fact_entries(stored_item_fact_ids(item.to_unsafe_h))
+            return render json: held_entries.empty? ? { success: true, already: true } : { success: true, already: true, facts: held_entries }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1435,7 +1438,8 @@ module BreakEscape
           # Store the server's copy, never the client's fields (M6): the key and
           # lockpick checks read opens_lock, scenarioData and type from it.
           # S7: a take or an NPC give stamps the facts the stored copy reveals; a declared grant does not
-          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h),
+          stored_item = canonical_inventory_item(item.to_unsafe_h)
+          @game.add_inventory_item!(stored_item,
                                     fact_source: !(@collectible_location.is_a?(Hash) && @collectible_location[:type] == 'grant'))
           # Remember what an NPC has handed over, so a reload does not restore it
           # to that NPC's itemsHeld (a later KO would drop a duplicate).
@@ -1447,7 +1451,10 @@ module BreakEscape
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
           # No client reads the inventory echo from this answer (sync deltas P2); the
           # tray is reconciled by PUT /sync_state and the network delta answers.
-          render json: { success: true }
+          # R1-S1: the entries of the facts this take earned (the bootstrap withholds an unearned
+          # fact's entry); nothing is added when the item reveals none.
+          earned_entries = @game.earned_fact_entries(stored_item_fact_ids(stored_item))
+          render json: earned_entries.empty? ? { success: true } : { success: true, facts: earned_entries }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -3544,6 +3551,14 @@ module BreakEscape
       [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
     ).freeze
 
+    # The revealsFacts ids of an item's stored copy (the same level the stamp reads).
+    def stored_item_fact_ids(item)
+      return [] unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      Array(data['revealsFacts']).grep(String)
+    end
+
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the
     # client received it, so nothing in the client's hash can add a lock
@@ -4207,7 +4222,9 @@ module BreakEscape
           # S7: the server has just accepted the flag, so the fact is earned. Stamped in memory;
           # the save below writes it. The reward is forwarded as set_global is.
           @game.stamp_earned_facts!([reward['fact']])
-          results << reward
+          # R1-S1: the bootstrap withholds the fact's entry until it is earned, so it rides here
+          entry = @game.earned_fact_entries([reward['fact']])[reward['fact']]
+          results << (entry ? reward.merge('entry' => entry) : reward)
 
         when 'set_global', 'unlock_object', 'hint'
           # Client-side-only rewards — forward as-is so processRewardEvents() can handle them
@@ -4248,7 +4265,11 @@ module BreakEscape
       # Add to player inventory
       @game.add_inventory_item!(item, fact_source: true)
 
-      { type: 'give_item', item: item, success: true }
+      result = { type: 'give_item', item: item, success: true }
+      # R1-S1: entries of the facts the item earned (the bootstrap withholds them until earned)
+      earned_entries = @game.earned_fact_entries(stored_item_fact_ids(item))
+      result[:facts] = earned_entries unless earned_entries.empty?
+      result
     end
 
     def process_door_unlock_reward(reward, flag_key)
