@@ -40,3 +40,7 @@ SpyAction "Shadow Tide", window start 0.05 s (a downbeat), 114.69 BPM, bar 2.092
 2. Ring widget shown for 1.3 s on its own: recommend keep (it names the mechanic the card sets up); drop it first if time is needed.
 3. Hollis: second sentence only ("So you're lost, or you're the other thing."). Recommend keep; the first sentence ("Building's evacuating.") is cut for time.
 4. Face-flash order in the crescendo is by take availability, not story order. Recommend re-order after the first render.
+
+## 24 Nov 2026: v1 rendered and published (review page v22, tab m07 · v1)
+
+Rendered 16:9, 9:16 and 1:1: 60.00 s each, -13.93 LUFS, TP -1.49 dB (no trim needed). First render's contact sheets showed the clock crop centred outside the room (black beside it, 9:16 cut the PNW 147 board) and the 16:9 ops-floor crop catching black left of the room; both re-centred from measured source coordinates (ca30c86fe) and re-rendered. Frames at 19.0, 34.9 and 47.0 checked in every aspect after the fix. "PNW 147" is the substation count, not a code. Known and left: 9:16 shows the game's skip hint under the Architect's first line for about 3 s. Page: https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea, feedback doc `feedback/m07_trailer_v1`, five owner questions (music window, ring shot, Hollis's line, Gwen's line, crescendo order). Not watched end to end.
