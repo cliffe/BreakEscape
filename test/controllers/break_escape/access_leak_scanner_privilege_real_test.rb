@@ -194,8 +194,10 @@ module BreakEscape
       bare = AccessLeakScanner.new(scenario).scan(run)
       assert_equal %w[ops_string profile_admin_read], bare.map(&:rule).uniq.sort, 'unnamed sign-ins earn nothing: fail closed'
       assert_equal [17, 10], [bare.count { |f| f.rule == 'profile_admin_read' }, bare.count { |f| f.rule == 'ops_string' }]
-      wrong = AccessLeakScanner.new(scenario).scan(run, signins: BROWSER_SIGNINS.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e })
-      refute_empty wrong, 'the wrong PC named is still a finding'
+      error = assert_raises(ArgumentError, 'R4-7: the wrong PC named is refuted by the desktop that follows it') do
+        AccessLeakScanner.new(scenario).scan(run, signins: BROWSER_SIGNINS.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e })
+      end
+      assert_match(/desktop that followed it is bay_pc/, error.message)
     end
 
     test 'a malformed signin entry is refused' do
@@ -215,11 +217,14 @@ module BreakEscape
       assert_includes owners(scan(rows, signins: others + ['adel@bay_pc#2'])), %w[ops_string ops:key:access], 'another sign-in of the account credits nothing here'
     end
 
-    test 'the wrong PC named is still a finding: the later admin reads at the PC it really was are reported' do
+    test 'R4-7: the wrong PC named is an error (exit 2) once the desktop that follows the sign-in shows where it was' do
       run_game
       index = @log.index { |r| r.equal?(@marks[:admin_folder]) }
-      found = scan(@log.first(index + 1), signins: @signins.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e })
-      assert_includes owners(found), %w[profile_admin_read item:olu_budget]
+      error = assert_raises(ArgumentError) { scan(@log.first(index + 1), signins: @signins.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e }) }
+      assert_match(/sign-in entry adel@store_pc.*desktop that followed it is bay_pc/, error.message)
+      # no desktop row follows: the name stands (the documented remainder)
+      row = @marks[:admin_signin]
+      assert_nothing_raised { scan(@log.first(@log.index { |r| r.equal?(row) } + 1), signins: @signins.map { |e| e == 'adel@bay_pc#1' ? 'adel@store_pc#1' : e }) }
     end
 
     test 'another account sign-in is not credited by an entry for the administrator' do
@@ -432,9 +437,9 @@ module BreakEscape
       later = uma_again('2026-01-01T09:00:01.000Z')
       desk = at(@marks[:uma_desktop], '2026-01-01T09:00:02.000Z')
       entry = ['uma@store_pc@2026-01-01T09:00:01.000Z']
-      # the client asks for the desktop straight after a sign-in: it shows Uma at the bay PC, and the step is gone
-      assert_includes found_after(base + [later, desk, deep(@marks[:admin_folder])], base.length + 2, signins: @signins.first(2) + entry), %w[profile_admin_read item:olu_budget]
-      # with no desktop row between, the trust given to a named entry is the documented limit
+      # the client asks for the desktop straight after a sign-in: it shows Uma at the bay PC, so the name is refuted (R4-7)
+      assert_raises(ArgumentError) { found_after(base + [later, desk, deep(@marks[:admin_folder])], base.length + 2, signins: @signins.first(2) + entry) }
+      # with no desktop row between, the name stands
       assert_empty found_after(base + [later, deep(@marks[:admin_folder])], base.length + 1, signins: @signins.first(2) + entry)
     end
 
@@ -635,15 +640,24 @@ module BreakEscape
       synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'password' } } })
     end
 
+    # A host row as the server sends it when the PC's service is off (R4-4): no `session`, `responding: false`, `heldAs` the
+    # held account's display name; a network answer lists each PC twice (here two footholds).
     def off_host
       entry = { 'id' => 'bay_pc', 'kind' => 'pc', 'name' => 'Bay desk PC', 'host' => 'BAY01', 'sprite' => 'pc_desktop',
-                'session' => { 'username' => 'adelwick', 'via' => 'password', 'remote' => false } }
-      synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }] })
+                'responding' => false, 'heldAs' => 'Adel Wick' }
+      synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }, { 'id' => 'g', 'hosts' => [deep(entry)] }] })
+    end
+
+    # The row of a session shown without `access` (a downed route lists it so), a different shape from the off PC's.
+    def route_down_host(session = {})
+      entry = { 'id' => 'bay_pc', 'kind' => 'pc', 'name' => 'Bay desk PC', 'host' => 'BAY01', 'sprite' => 'pc_desktop', 'remoteSignIn' => true,
+                'session' => { 'username' => 'adelwick', 'displayName' => 'Adel Wick', 'via' => 'password', 'remote' => false }.merge(session) }
+      synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }, { 'id' => 'g', 'hosts' => [deep(entry)] }] })
     end
 
     test 'Ops S5a fix: --resume after a bootstrap or a network row that showed the held session without access restores that one desktop row' do
       time = '2026-01-01T09:00:09.000Z'
-      [-> { off_boot }, -> { off_host }].each do |shown|
+      [-> { off_boot }, -> { off_host }, -> { route_down_host }].each do |shown|
         rows, desk_at = downgrade_rows(shown.call)
         assert_includes found_after(rows, desk_at - 1, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget]
         scanner = AccessLeakScanner.new(scenario)
@@ -675,11 +689,172 @@ module BreakEscape
     end
 
     test 'Ops S5a fix: a network row of another account without access does not leave a step to resume' do
-      rows, desk_at = downgrade_rows(off_host.tap { |r| r['body']['footholds'][0]['hosts'][0]['session']['username'] = 'umaquay' })
+      rows, desk_at = downgrade_rows(route_down_host('username' => 'umaquay'))
       scanner = AccessLeakScanner.new(scenario)
       found = scanner.scan(lines(rows), signins: @signins.first(2), resumes: ['adel@bay_pc@2026-01-01T09:00:09.000Z']).select { |f| f.line >= desk_at }
       assert_includes found.map { |f| [f.rule, f.owner] }, %w[profile_admin_read item:olu_budget]
       assert_equal 1, scanner.unused_entries.length
+    end
+
+    # ---- Ops S5a fix, R4 pass ----
+
+    def refused_off(time)
+      synthetic('GET', 'container/bay_pc', 403, { 'error' => 'refused', 'reason' => 'off' }).merge('t' => time)
+    end
+
+    # A credential (token) sign-in of the administrator, its desktop, a gap row, then the same desktop at `late` with a session of
+    # `via`; the token's deadline is 10:01:00.
+    def token_resume_rows(gap, late, via: 'credential', relay: nil)
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_signin]) }
+      token = deep(@marks[:admin_signin])
+      token['body'].merge!('via' => 'credential', 'kind' => 'token', 'expiresInS' => 60)
+      token['t'] = '2026-01-01T10:00:00.000Z'
+      first = at(@marks[:admin_desktop], '2026-01-01T10:00:02.000Z')
+      first['body']['session']['via'] = 'credential'
+      back = at(@marks[:admin_desktop], late)
+      back['body']['session']['via'] = via
+      back['body']['session']['relay'] = relay unless relay.nil?
+      rows = @log.first(index) + [token, first, gap, back, at(@marks[:admin_folder], late)]
+      [rows, index + 4]
+    end
+
+    def resume_findings(rows, from, entry)
+      scanner = AccessLeakScanner.new(scenario)
+      found = scanner.scan(lines(rows), signins: @signins.first(2), resumes: [entry]).select { |f| f.line >= from }.map { |f| [f.rule, f.owner] }.uniq
+      [found, scanner.unused_entries]
+    end
+
+    test 'R4-1: a resume is refused when the named row is past the token deadline of the session being resumed' do
+      late = '2026-01-01T10:01:40.000Z'
+      gaps = [refused_off('2026-01-01T10:00:05.000Z'),
+              synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'credential' } } }).merge('t' => '2026-01-01T10:00:05.000Z')]
+      gaps.each do |gap|
+        rows, from = token_resume_rows(gap, late)
+        found, unused = resume_findings(rows, from, "adel@bay_pc@#{late}")
+        assert_includes found, %w[profile_admin_read item:olu_budget], gap['path']
+        assert_includes found, %w[ops_string ops:key:access], gap['path']
+        assert_equal ["adel@bay_pc@#{late} (--resume)"], unused
+        # control: the same rows before the deadline are restored
+        rows, from = token_resume_rows(gap, '2026-01-01T10:00:30.000Z')
+        found, unused = resume_findings(rows, from, 'adel@bay_pc@2026-01-01T10:00:30.000Z')
+        assert_empty found, gap['path']
+        assert_empty unused
+      end
+    end
+
+    test 'R4-2: a session shown as admin with via claim or as a relay is a finding wherever it appears' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      [{ 'via' => 'claim' }, { 'relay' => true }].each do |change|
+        row = deep(@marks[:admin_desktop])
+        row['body']['session'].merge!(change)
+        assert_includes found_after(base + [row], base.length, signins: @signins.first(2)), %w[ops_string ops:key:access], change.to_s
+        boot = synthetic('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => { 'npcId' => 'adel', 'via' => 'password', 'access' => 'admin' }.merge(change) } })
+        assert_includes found_after(base + [boot], base.length, signins: @signins.first(2)), %w[ops_string ops:key:access], change.to_s
+      end
+    end
+
+    test 'R4-2: a session that became a claim or relay kind loses the admin step, and a resume of another kind is refused' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      [{ 'via' => 'claim' }, { 'relay' => true }].each do |change|
+        row = at(@marks[:admin_desktop], '2026-01-01T09:00:01.000Z')
+        row['body']['session'].delete('access')
+        row['body']['session'].merge!(change)
+        assert_includes found_after(base + [row, deep(@marks[:admin_folder])], base.length + 1, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget], change.to_s
+        # the desktop answer still says admin on that kind: judged as the step lost, the folder read follows
+        kind_only = at(@marks[:admin_desktop], '2026-01-01T09:00:01.000Z')
+        kind_only['body']['session'].merge!(change)
+        assert_includes found_after(base + [kind_only, deep(@marks[:admin_folder])], base.length + 1, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget], change.to_s
+        # a resume (after the 403) whose row is that kind is refused
+        rows, desk_at = power_cut_rows
+        back = rows.reverse.find { |r| r['path'].end_with?('container/bay_pc') && r['status'] == 200 }
+        back['body']['session'].merge!(change)
+        found, unused = resume_findings(rows, desk_at, "adel@bay_pc@#{back['t']}")
+        assert_includes found, %w[profile_admin_read item:olu_budget], change.to_s
+        assert_equal 1, unused.length, change.to_s
+      end
+    end
+
+    test 'R4-3: a network host row that shows another account as admin at a PC where it has not earned it is a finding, and the step is taken back' do
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      base = @log.first(index + 1)
+      other = route_down_host('username' => 'umaquay', 'access' => 'admin')
+      found = found_after(base + [other, deep(@marks[:admin_folder])], base.length, signins: @signins.first(2))
+      assert_includes found, %w[ops_string ops:key:access]
+      assert_includes found_after(base + [other, deep(@marks[:admin_folder])], base.length + 1, signins: @signins.first(2)), %w[profile_admin_read item:olu_budget]
+      # the same after a keyboard sign-in of Uma named at the store PC
+      desk = at(@marks[:uma_desktop], '2026-01-01T09:00:02.000Z')
+      desk['path'] = desk['path'].sub('bay_pc', 'store_pc')
+      assert_includes found_after(base + [uma_again('2026-01-01T09:00:01.000Z'), desk, other], base.length + 2, signins: @signins.first(2) + ['uma@store_pc@2026-01-01T09:00:01.000Z']), %w[ops_string ops:key:access]
+      # the same account as admin: clear
+      assert_empty found_after(base + [route_down_host('access' => 'admin'), deep(@marks[:admin_folder])], base.length, signins: @signins.first(2))
+    end
+
+    test 'R4-4: --resume works on the host row an off PC really sends, listed twice, and on two downgrade answers in a row' do
+      time = '2026-01-01T09:00:09.000Z'
+      rows, desk_at = downgrade_rows(off_host)
+      assert_empty resume_findings(rows, desk_at, "adel@bay_pc@#{time}")[0]
+      # another account's name in heldAs is not a power cut: the account is ended, nothing to resume
+      stranger = off_host.tap { |r| r['body']['footholds'].each { |f| f['hosts'][0]['heldAs'] = 'Uma Quayle' } }
+      rows, desk_at = downgrade_rows(stranger)
+      found, unused = resume_findings(rows, desk_at, "adel@bay_pc@#{time}")
+      assert_includes found, %w[profile_admin_read item:olu_budget]
+      assert_equal 1, unused.length
+      # two bootstraps without access in a row
+      run_game
+      index = @log.index { |r| r.equal?(@marks[:admin_desktop]) }
+      second = off_boot.merge('t' => '2026-01-01T09:00:02.000Z')
+      rows = @log.first(index + 1) + [off_boot.merge('t' => '2026-01-01T09:00:01.000Z'), second, at(@marks[:admin_desktop], time), deep(@marks[:admin_folder])]
+      found, unused = resume_findings(rows, index + 4, "adel@bay_pc@#{time}")
+      assert_empty found
+      assert_empty unused
+    end
+
+    def after_logout_rows(*after)
+      rows, from = logout_rows
+      [rows.first(from) + after + [rows.last], from]
+    end
+
+    def listed_store(session)
+      entry = { 'id' => 'store_pc', 'kind' => 'pc', 'name' => 'Records PC', 'host' => 'RECS01', 'sprite' => 'pc_desktop' }
+      entry['session'] = session if session
+      synthetic('GET', 'network', 200, { 'footholds' => [{ 'id' => 'f', 'hosts' => [entry] }] }).merge('t' => '2026-01-01T09:00:06.000Z')
+    end
+
+    test 'R4-5: a named logout whose next listing of that PC still shows the account is an error; a listing without it settles' do
+      run_game
+      base = { signins: @signins.first(2), logouts: ['uma@store_pc#2'] }
+      rows, = after_logout_rows(listed_store(nil))
+      assert_nothing_raised { scan(rows, **base) }
+      rows, = after_logout_rows(listed_store('username' => 'umaquay', 'via' => 'technique'))
+      error = assert_raises(ArgumentError) { scan(rows, **base) }
+      assert_match(/logout entry uma@store_pc.*still shows uma/, error.message)
+      held = synthetic('GET', 'scenario', 200, { 'sessions' => { 'store_pc' => { 'npcId' => 'uma', 'via' => 'password' } } }).merge('t' => '2026-01-01T09:00:06.000Z')
+      rows, = after_logout_rows(held)
+      assert_raises(ArgumentError) { scan(rows, **base) }
+      # a listing of another PC does not settle or refute it
+      rows, = after_logout_rows(listed_store(nil).tap { |r| r['body']['footholds'][0]['hosts'][0]['id'] = 'bay_pc' })
+      assert_nothing_raised { scan(rows, **base) }
+    end
+
+    test 'R4-5: on the real run the logout named at the bay PC is refuted by the network answer that follows' do
+      error = assert_raises(ArgumentError) { AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS, logouts: ['adel@bay_pc#5']) }
+      assert_match(/logout entry adel@bay_pc.*still shows adel/, error.message)
+    end
+
+    test 'R4-6: a technique grant at a PC drops the resumable record and the deadline of the session it replaces' do
+      scanner = AccessLeakScanner.new(scenario)
+      scanner.scan([], signins: [])
+      scanner.instance_variable_set(:@priv_resumable, { 'bay_pc' => { account: 'adel', step: true, deadline: nil, kind: ['password', false] } })
+      scanner.instance_variable_set(:@priv_deadlines, { 'bay_pc' => Time.utc(2026, 1, 1) })
+      scanner.send(:note_ops_session_grant, { host_id: 'bay_pc' }, { 'npcId' => 'uma', 'via' => 'technique', 'footholdId' => 'f' })
+      assert_empty scanner.instance_variable_get(:@priv_resumable)
+      assert_empty scanner.instance_variable_get(:@priv_deadlines)
     end
 
     test 'R3-C2: entries are parsed strictly and an entry that matched no row is reported' do

@@ -486,6 +486,10 @@ class AccessLeakScanner
     @priv_signin_counts = Hash.new(0)
     @priv_deadlines = {}
     @priv_resumable = {}
+    @priv_kinds = {}          # pc => [via, relay] of the session that earned the held admin step (R4-2)
+    @priv_logout_pending = {} # pc => account a named --logout ended, until an answer lists that PC's session state (R4-5)
+    @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
+    @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
@@ -2585,9 +2589,15 @@ class AccessLeakScanner
     @ops_answer_pc = pc
     @ops_earned << "session:#{pc}"
     @ops_session_accounts[pc] = session['npcId'].to_s
+    # R4-6: a new session is not the one an earlier downgrade or deadline was about
+    @priv_resumable.delete(pc)
+    @priv_deadlines.delete(pc)
+    @priv_logout_pending.delete(pc)
+    @priv_kinds[pc] = priv_kind_of(session)
     @ops_earned.delete_if { |step| step.start_with?("through:#{pc}:") || step == "admin:#{pc}" }
     @ops_earned << "through:#{pc}:#{session['footholdId']}" if session['footholdId'].is_a?(String)
     @ops_earned << "admin:#{pc}" if session['access'] == 'admin'
+    @priv_kinds.delete(pc) unless session['access'] == 'admin'
   end
 
   def ops_granted_finding(body, row)
@@ -2709,6 +2719,8 @@ class AccessLeakScanner
       level = hash['access']
       scalar = !level.is_a?(Hash) && !level.is_a?(Array)
       add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
+      # R4-2a: the server never gives a claim or a relay session admin, wherever the answer shows one
+      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || hash['relay'] == true)
     end
   end
 
@@ -2833,6 +2845,7 @@ class AccessLeakScanner
       end
 
       @priv_used << [:signin, key]
+      @priv_last_named = named
       return [[named], true]
     end
 
@@ -2911,6 +2924,7 @@ class AccessLeakScanner
       next unless this_row && @ops_session_accounts[pc] == account && !@priv_used.include?([:logout, key])
 
       @priv_used << [:logout, key]
+      @priv_logout_pending[pc] = account
       return [pc]
     end
     @priv_pcs.keys
@@ -2933,12 +2947,18 @@ class AccessLeakScanner
     return unless @priv_active && ctx[:login] && body['success'] == true && body['npcId'].is_a?(String)
 
     @priv_signin_counts[body['npcId']] += 1
+    @priv_last_named = nil
     pcs, exact = priv_signin_candidates(body, row)
     @priv_signin_pc = pcs.first if exact
+    # R4-7: a named keyboard sign-in is checked against the desktop answer that follows it
+    @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:account] == body['npcId']
+    @priv_signin_pending = { account: body['npcId'], pc: @priv_last_named } if @priv_last_named && body['via'] == 'password' && !body['remote']
     pcs.each do |pc|
       @ops_earned.delete("admin:#{pc}")
       @priv_deadlines.delete(pc)
       @priv_resumable.delete(pc)
+      @priv_kinds.delete(pc)
+      @priv_logout_pending.delete(pc)
       exact ? @ops_session_accounts[pc] = body['npcId'] : @ops_session_accounts.delete(pc)
     end
     return unless exact && @priv_admins.include?(body['npcId']) && %w[password credential].include?(body['via']) && body['relay'] != true
@@ -2947,6 +2967,7 @@ class AccessLeakScanner
     return unless BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[pcs.first], npc)
 
     @ops_earned << "admin:#{pcs.first}"
+    @priv_kinds[pcs.first] = priv_kind_of(body)
     # a token's deadline is the answer's row time plus `expiresInS` (R3 check 2, rule 1): the step is gone after it
     seconds = body['expiresInS']
     at = priv_row_time(row)
@@ -2987,6 +3008,7 @@ class AccessLeakScanner
   def note_privilege_before(body, ctx, row)
     return unless @priv_active && body.is_a?(Hash)
 
+    check_priv_named(body, ctx, row)
     note_priv_deadlines(row)
     note_priv_desktop(body, ctx, row) if ctx[:container] && row['status'].to_i == 200
     note_priv_host_rows(body) if ctx[:network_view]
@@ -3001,11 +3023,33 @@ class AccessLeakScanner
     @priv_deadlines.select { |_, deadline| at > deadline }.each_key { |pc| end_priv_session([pc]) }
   end
 
-  # What a resume may restore: the account held at the PC when a 403 `off` or `not_responding` came, whether it held the admin
-  # step, and its token deadline. Dropped by any other end (end_priv_session without keep_resumable).
+  # What a resume may restore: the account held at the PC when the session went quiet, whether it held the admin step, the
+  # kind of session that earned it and its token deadline. Dropped by any other end (end_priv_session without keep_resumable).
   def remember_priv_resumable(pc)
     account = @ops_session_accounts[pc]
-    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc] } if account
+    return unless account
+
+    @priv_resumable[pc] = { account: account, step: @ops_earned.include?("admin:#{pc}"), deadline: @priv_deadlines[pc], kind: @priv_kinds[pc] }
+  end
+
+  # What kind of session an answer shows (R4-2): its `via` and whether it is a relay. A host row never lists a relay.
+  def priv_kind_of(hash)
+    [hash['via'].to_s, hash['relay'] == true]
+  end
+
+  # The step is gone for good and nothing of it may be resumed (the session became another kind, or another session replaced it).
+  def lose_priv_step(pc)
+    @ops_earned.delete("admin:#{pc}")
+    @priv_deadlines.delete(pc)
+    @priv_kinds.delete(pc)
+    @priv_resumable.delete(pc)
+  end
+
+  # R4-2: an answer shows the held account's session as another kind than the one that earned the step (a claim, a relay, a
+  # technique session): the step is lost, not suspended.
+  def check_priv_kind(pc, session)
+    kind = @priv_kinds[pc]
+    lose_priv_step(pc) if kind && priv_kind_of(session) != kind
   end
 
   # A 200 desktop answer (GET /container/<pc id>): its session shows no session, or another account than the one held, or no
@@ -3018,37 +3062,48 @@ class AccessLeakScanner
     session = body['session']
     held = @ops_session_accounts[pc]
     earlier = @priv_resumable[pc]
-    if !session.is_a?(Hash)
+    if !session.is_a?(Hash) || session['locked'] == true
       end_priv_session([pc])
     elsif held && session['npcId'].is_a?(String) && session['npcId'] != held
       end_priv_session([pc])
       @ops_session_accounts[pc] = session['npcId']
     elsif session['access'] != 'admin'
-      downgrade_priv_step(pc)
+      downgrade_priv_step(pc, keep: false)
+    else
+      check_priv_kind(pc, session)
     end
     # only a record that was there BEFORE this row can be resumed by it (the row that shows the downgrade makes its own)
     apply_priv_resume(pc, session, row, earlier) if earlier && @priv_resumable[pc].equal?(earlier)
   end
 
   # The session at a PC is shown without `access: "admin"` (an off PC lists its session and leaves `access` out): the step and
-  # token deadline go. If the step was held, the account and step are kept as what a `--resume` may restore (a real capture
-  # holds no 403 when the client sends no request while the PC is off); a step that was not held leaves nothing to restore.
-  def downgrade_priv_step(pc, username: nil)
-    same = username.nil? || username == @priv_npcs.dig(@ops_session_accounts[pc], 'creds', 'username')
-    if same && @ops_earned.include?("admin:#{pc}") && @ops_session_accounts[pc]
+  # token deadline go. If the step was held, the account and step are kept as what a `--resume` may restore (a real client
+  # sends no request while the PC is off, so there is no 403). An answer that repeats it (each PC is listed twice in a network
+  # answer, and a poll repeats the answer) leaves the record as it is (`keep`), since nothing ended in between; a step that was
+  # not held and has no record leaves nothing to restore.
+  def downgrade_priv_step(pc, keep: true)
+    if @ops_earned.include?("admin:#{pc}") && @ops_session_accounts[pc]
       remember_priv_resumable(pc)
-    else
+    elsif !(keep && @priv_resumable[pc])
       @priv_resumable.delete(pc)
     end
     @ops_earned.delete("admin:#{pc}")
     @priv_deadlines.delete(pc)
+    @priv_kinds.delete(pc)
   end
 
+  # A resume restores the step only when every one of these holds (R4 check 3): the row is not past the token deadline of the
+  # session being resumed (R4-1), its session is the same account and the same kind as the one that earned the step (R4-2), and
+  # nothing ended or replaced the session in between (the record is dropped by any other end).
   def apply_priv_resume(pc, session, row, saved = @priv_resumable[pc])
     return unless saved && session.is_a?(Hash) && row['t'].is_a?(String)
 
     key = [saved[:account], pc, row['t']]
     return unless @priv_resumes.key?(key) && session['npcId'] == saved[:account]
+
+    at = priv_row_time(row)
+    return if saved[:deadline] && (at.nil? || at > saved[:deadline])
+    return if saved[:step] && saved[:kind] && priv_kind_of(session) != saved[:kind]
 
     @priv_used << [:resume, key]
     @priv_resumable.delete(pc)
@@ -3056,21 +3111,89 @@ class AccessLeakScanner
     return unless saved[:step] && session['access'] == 'admin'
 
     @ops_earned << "admin:#{pc}"
+    @priv_kinds[pc] = saved[:kind] if saved[:kind]
     @priv_deadlines[pc] = saved[:deadline] if saved[:deadline]
   end
 
-  # A `GET /network` host row of a sign-in PC (R3 check 2, rule 2): no `session` takes the step and the account back; a
-  # `session` without `access: "admin"` takes the step back.
+  # A `GET /network` host row of a sign-in PC (R3 check 2, rule 2; R4-3, R4-4), judged as the desktop and the bootstrap are:
+  # no `session` takes the step and the account back, unless the row is the one an off PC sends (`responding: false` and
+  # `heldAs` the held account's display name, no `session`), which is a power cut and suspends the step; a locked session or
+  # another account's username (judged by username) ends it; a session that is another kind loses it; one without
+  # `access: "admin"` takes the step back.
   def note_priv_host_rows(body)
     ops_each_hash(body) do |hash|
       pc = hash['id']
       next unless hash['kind'] == 'pc' && pc.is_a?(String) && @priv_pcs.key?(pc)
 
-      if !hash['session'].is_a?(Hash)
+      held = @ops_session_accounts[pc]
+      session = hash['session']
+      if !session.is_a?(Hash)
+        shown = held && (@priv_npcs.dig(held, 'displayName') || held)
+        hash['responding'] == false && hash['heldAs'].is_a?(String) && hash['heldAs'] == shown ? downgrade_priv_step(pc) : end_priv_session([pc])
+      elsif session['locked'] == true
         end_priv_session([pc])
-      elsif hash['session']['access'] != 'admin'
-        downgrade_priv_step(pc, username: hash['session']['username'])
+      elsif held && (username = @priv_npcs.dig(held, 'creds', 'username')).is_a?(String) && session['username'] != username
+        end_priv_session([pc])
+        owners = @priv_npcs.select { |_, npc| npc['creds'].is_a?(Hash) && npc['creds']['username'] == session['username'] }.keys
+        @ops_session_accounts[pc] = owners.first if owners.size == 1
+      elsif session['access'] != 'admin'
+        downgrade_priv_step(pc)
+      else
+        check_priv_kind(pc, session)
       end
+    end
+  end
+
+  # R4-5 and R4-7: a name the tester gave is not taken on trust once an answer shows otherwise.
+  # A named logout (the account at that PC): the next answer that lists that PC's session state must not show that account's
+  # session; if it does, the logout was not at that PC (exit 2). A named keyboard sign-in: the desktop answer right after it
+  # shows the PC it was at; if that is another PC, where the run does not hold the account, the name is wrong (exit 2). Where no
+  # such answer follows, the name stands.
+  def check_priv_named(body, ctx, row)
+    return unless row['status'].to_i == 200
+
+    check_priv_logout_pending(body, ctx)
+    check_priv_signin_pending(body, ctx)
+  end
+
+  def check_priv_logout_pending(body, ctx)
+    @priv_logout_pending.keys.each do |pc|
+      account = @priv_logout_pending[pc]
+      npc = @priv_npcs[account]
+      shown = nil # nil: this answer does not list the PC's session state; true or false: it does
+      if ctx[:container] == pc
+        shown = body['session'].is_a?(Hash) && body['session']['npcId'] == account
+      elsif ctx[:scenario] && body['sessions'].is_a?(Hash)
+        held = body['sessions'][pc]
+        shown = held.is_a?(Hash) && held['npcId'] == account
+      elsif ctx[:network_view]
+        ops_each_hash(body) do |hash|
+          next unless hash['kind'] == 'pc' && hash['id'] == pc
+
+          shown = true if hash['session'].is_a?(Hash) ? hash['session']['username'] == npc.dig('creds', 'username') : hash['heldAs'] == (npc['displayName'] || account)
+          shown = false if shown.nil?
+        end
+      end
+      next if shown.nil?
+
+      raise ArgumentError, "logout entry #{account}@#{pc}: the next answer that lists #{pc}'s session still shows #{account} there, so the sign-out was not at #{pc}" if shown
+
+      @priv_logout_pending.delete(pc)
+    end
+  end
+
+  def check_priv_signin_pending(body, ctx)
+    pending = @priv_signin_pending
+    return unless pending && ctx[:container] && @priv_pcs.key?(ctx[:container])
+
+    session = body['session']
+    return unless session.is_a?(Hash) && session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
+
+    shown = ctx[:container]
+    if shown == pending[:pc]
+      @priv_signin_pending = nil
+    elsif @ops_session_accounts[shown] != pending[:account]
+      raise ArgumentError, "sign-in entry #{pending[:account]}@#{pending[:pc]}: the desktop that followed it is #{shown}, where the run holds no session of #{pending[:account]}, so the sign-in was not at #{pending[:pc]}"
     end
   end
 
@@ -3081,7 +3204,9 @@ class AccessLeakScanner
       @ops_earned.delete("admin:#{pc}")
       @ops_session_accounts.delete(pc)
       @priv_deadlines.delete(pc)
+      @priv_kinds.delete(pc)
       @priv_resumable.delete(pc) unless keep_resumable
+      @priv_signin_pending = nil if @priv_signin_pending && @priv_signin_pending[:pc] == pc
     end
   end
 
@@ -3096,6 +3221,8 @@ class AccessLeakScanner
       elsif held['access'] != 'admin'
         # R3-C3: present but not admin (an off PC or a downed route lists the session and leaves `access` out): the step goes
         downgrade_priv_step(pc)
+      else
+        check_priv_kind(pc, held)
       end
     end
   end

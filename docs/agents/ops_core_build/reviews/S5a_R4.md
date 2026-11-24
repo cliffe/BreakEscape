@@ -157,3 +157,20 @@ Fix first (small, scanner and tests only), then land. The diagnosis is right and
 - R4-1: one comparison in `apply_priv_resume` plus a test.
 - R4-3: the username comparison in `note_priv_host_rows` plus a test.
 R4-2, R4-6 (and the idempotence part of R4-4) are a few lines in the same functions and make `--resume` sound by the rule under check 3; R4-5 and R4-7 are the two cross-checks that stop a wrong name being taken on trust. R4-8 needs an orchestrator ruling (gate the name, or document it).
+
+## Outcomes (fix pass, "Ops S5a fix:")
+
+| Finding | Outcome |
+|---|---|
+| R4-1 (major) | Fixed: `apply_priv_resume` refuses a row past the saved deadline; test `R4-1` (403 gap and bootstrap gap, plus an in-time control) fails on the old scanner. |
+| R4-2 | Fixed: kind kept with the step and the record; a resume of another kind refused; a claim or relay session loses the step; `access: admin` on claim or relay is a finding. Tests `R4-2` (two). |
+| R4-3 (major) | Fixed: host rows judged by username; another account ends the step. Test `R4-3`. |
+| R4-4 | Rule made to work on the real shape (`responding: false` + `heldAs`, listed twice; repeated downgrade answers keep the record); test uses that shape; PLAYTEST corrected. |
+| R4-5 | Fixed: a named logout refuted by the next listing of that PC is exit 2; no listing, the name stands. Tests (synthetic, and the real run with `adel@bay_pc#5`). |
+| R4-6 | Fixed: a grant drops the record and the deadline. Unit test calls `note_ops_session_grant` directly (no shipped scenario grants at a PC with a record). |
+| R4-7 | Fixed: the desktop after a named sign-in refutes a wrong PC (exit 2); three existing tests that named a wrong PC now expect the error. |
+| R4-8 | Gated: `profile_shown_name`; test for picker `known` and `false` beside the `accounts` case. A18 sentence added. |
+| R4-9 | Comment reworded. |
+| R4-10 | One placement ("after the game id and before the files") in the script and PLAYTEST; line 175 rewritten. |
+
+Real captures: 0 findings with the five named entries, 38 with sign-ins only, 112 unnamed (unchanged).

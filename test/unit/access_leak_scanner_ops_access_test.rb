@@ -96,7 +96,7 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
   end
 
   def host_session(extra = {})
-    { 'username' => 'sam', 'displayName' => 'Sam', 'via' => 'technique', 'remote' => true }.merge(extra)
+    { 'username' => 'sokafor', 'displayName' => 'Sam', 'via' => 'technique', 'remote' => true }.merge(extra)
   end
 
   test 'the collector tags a held technique card strings card, a granted credential grant, and an uncarried registry id never' do
@@ -334,7 +334,7 @@ class AccessLeakScannerOpsAccessTest < ActiveSupport::TestCase
   test 'N-13-2: a session at one host does not clear another host row, its admin level or its openHere' do
     scenario = pivot_scenario
     sv_row = { 'id' => 'sv_fs02', 'kind' => 'pc', 'name' => 'FS02', 'host' => 'FS02', 'remoteSignIn' => false,
-               'session' => host_session('access' => 'admin', 'openHere' => true) }
+               'session' => host_session('username' => 'ishaw', 'access' => 'admin', 'openHere' => true) }
     sam_row = pc_row(session: host_session('access' => 'admin', 'openHere' => true), blocked: true)
     admin_grant = grant_answer(access: 'admin')
     both = view(hosts: [sam_row, sv_row])

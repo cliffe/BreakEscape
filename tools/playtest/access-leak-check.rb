@@ -15,8 +15,11 @@
 # at that PC, whose session is the account held when the 403 came, with no other end in between. A 200 answer never restores
 # the step by itself. `--logout <account id>@<pc id>#<n>` (or `@<row time>`) names the PC of ONE successful sign-out answer (the answer names none, so
 # unnamed it ends every PC): it ends that PC only, if the run holds that account there. `--resume` also holds after a row that showed the
-# session at that PC without admin (an off PC), not only after a 403. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
-# an error (exit 2), never silence. Put the options before the game id. When checking after every beat, give only the entries for rows already in the files.
+# session at that PC without admin or as an off PC's host row (`responding: false` and `heldAs`), not only after a 403, and only
+# for the same kind of session, a row not past the token's deadline, and no other end in between. A `--logout` or `--signin`
+# name that the next answers refute (the next answer listing that PC's session still shows the account; the desktop right after
+# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# an error (exit 2), never silence. Put the options after the game id and before the files. When checking after every beat, give only the entries for rows already in the files.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
