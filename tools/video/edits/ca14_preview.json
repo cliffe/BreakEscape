@@ -7,7 +7,7 @@
  "preview_for": "ca14_social_media",
  "source_edit": "ca14_trailer_r1",
  "fps": 30,
- "length": 20.6,
+ "length": 20.55,
  "music": {
   "none": true
  },
@@ -28,16 +28,53 @@
  },
  "shots": [
   {
-   "id": "research",
+   "id": "hook",
    "type": "gameplay",
-   "duration": 4.4,
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_lorna_photo.trimmed.mkv",
+    "in": 6.21,
+    "out": 10.21
+   },
+   "audio": {
+    "gain_db": -60
+   },
+   "seat": "full",
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.47,
+     "zoom": 1.6
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": false,
+    "1:1": false
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "PREVIEW from ca14_trailer_r1/hook: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t07 L1 bark: speech 6.51-9.224 (silencedetect -35 dB d 0.08, no pause inside, 11 words); in 6.21 = onset - 0.3 (silence from 0.94), out 10.21 inside silence 9.224-12.007, before the L2 bubble at 11.50; world bubble shows (bubble up from 5.96), room beat after Look up (kiosk panel ends 4.22); picture 4.0 s, inside the 5.0 s cold-open limit; Lorna about x 0.30 y 0.58 of the frame, player at the kiosk about x 0.5 y 0.36 (contact sheet), check the 9:16 and 1:1 crop on the render | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 5.0,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t03_attack_run.trimmed.mkv",
-    "in": 14.9,
-    "out": 19.3
+    "in": 8.4,
+    "out": 13.4
    },
    "audio": {
     "gain_db": -60
@@ -61,20 +98,20 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca14_trailer_r1/research: 0.00 s in, 4.40 s (inside the trailer shot; same spoiler judgement) | t03 pin-leave 15.35, pin-system 17.82 (2.5 s apart), noted-lines 17.91; out 19.3 before browser-closed (20.46; the contact sheet shows the Write panel by 20.0, so the mark runs late); both posts pinned in shot | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca14_trailer_r1/topic: 0.00 s in, 5.00 s (inside the trailer shot; same spoiler judgement) | t03 profile-up 8.30 (contact sheet shows the profile by 8.0, the People list before it); in 8.4 after the mark, out 14.9 before the leave-post highlight (thumbnail 15.0) and pin-leave 15.35; nothing pinned; v1b/v1c over it; Brief and Look-around rule text (1-5.5 s) not in | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
-   "id": "build",
+   "id": "research",
    "type": "gameplay",
-   "duration": 5.0,
+   "duration": 4.0,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t03_attack_run.trimmed.mkv",
-    "in": 30.5,
-    "out": 35.5
+    "in": 14.9,
+    "out": 18.9
    },
    "audio": {
     "gain_db": -60
@@ -83,8 +120,8 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.435,
-     "zoom": 1.15
+     "cy": 0.5,
+     "zoom": 1.2
     }
    },
    "caption": {
@@ -98,57 +135,20 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca14_trailer_r1/build: 1.00 s in, 5.00 s (inside the trailer shot; same spoiler judgement) | t03 slot-when 31.07 (redflags:0 31.09), slot-system 34.80 so v4b 'new finance system' lands on the second slot; To Yasmin set 25.45, pretext-set 27.21 before the window; Red flags reasons and hint hidden by CSS, counter 1 then 0; pretext select shows the template's first words (the message, not an answer); 16:9 crop of the mail client 960x900 | CA: spoilers not an issue (owner), no masks"
-   }
-  },
-  {
-   "id": "lands",
-   "type": "gameplay",
-   "duration": 2.2,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t03_attack_run.trimmed.mkv",
-    "in": 36.5,
-    "out": 38.7
-   },
-   "audio": {
-    "gain_db": -60
-   },
-   "seat": "full",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.435,
-     "zoom": 1.15
-    }
-   },
-   "caption": {
-    "16:9": false,
-    "9:16": false,
-    "1:1": false
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "PREVIEW from ca14_trailer_r1/lands: 0.00 s in, 2.20 s (inside the trailer shot; same spoiler judgement) | t03 send 38.71; picture ends on the click (last frame 38.67): the 'It landed. They acted on it.' panel (38.76 to mail-closed 45.82) is treated as a debrief and is NOT shown (brief); v5 over it, v6 'It landed.' is carried onto the flip page | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca14_trailer_r1/research: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t03 pin-leave 15.35, pin-system 17.82 (2.5 s apart), noted-lines 17.91; out 19.3 before browser-closed (20.46; the contact sheet shows the Write panel by 20.0, so the mark runs late); both posts pinned in shot | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
    "id": "drill",
    "type": "gameplay",
-   "duration": 4.5,
+   "duration": 4.0,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t08_post_tweak_hold.trimmed.mkv",
     "in": 7.1,
-    "out": 11.6
+    "out": 11.1
    },
    "audio": {
     "gain_db": -60
@@ -172,20 +172,20 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca14_trailer_r1/drill: 0.00 s in, 4.50 s (inside the trailer shot; same spoiler judgement) | t08 card1 6.97 (Brief and intro rule text 1-6.8 s not in); hover-done 13.40; hovers Post, Tweak, Hold in turn, no pick; reasons hidden, bins read 'Nothing here yet'; drill frame 656x356 in a 720 container | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca14_trailer_r1/drill: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t08 card1 6.97 (Brief and intro rule text 1-6.8 s not in); hover-done 13.40; hovers Post, Tweak, Hold in turn, no pick; reasons hidden, bins read 'Nothing here yet'; drill frame 656x356 in a 720 container | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
-   "id": "privacy",
+   "id": "lorna_end",
    "type": "gameplay",
-   "duration": 4.5,
+   "duration": 3.55,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t09_privacy_panel.trimmed.mkv",
-    "in": 6.8,
-    "out": 11.3
+    "file": "t11_lorna_end.trimmed.mkv",
+    "in": 13.15,
+    "out": 16.7
    },
    "audio": {
     "gain_db": -60
@@ -194,8 +194,8 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.15
+     "cy": 0.4,
+     "zoom": 1.25
     }
    },
    "caption": {
@@ -209,7 +209,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca14_trailer_r1/privacy: 0.00 s in, 4.50 s (inside the trailer shot; same spoiler judgement) | t09 panel-open 4.38 (launch-panel rule text 1-3.9 s not in), hover-switch 8.45, flick 8.89, tight-state 10.15, take end 12.47; facts, counter and 'Why it matters' lines hidden; five switches whole | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca14_trailer_r1/lorna_end: 0.00 s in, 3.55 s (inside the trailer shot; same spoiler judgement) | t11 chat L2: portrait up 12.83 (black frame about 12.7), the cut bark audio ends 12.533, chat speech 13.4535-15.1073 then 15.502-16.2975 (pause 0.394 s measured at -35 dB d 0.08, used for the caption split); in 13.15 = onset - 0.3 inside silence 12.533-13.4535 so the cut bark is not heard; out 16.70 inside silence from 16.2975, before chat-closed 17.13; menu never shown; game chat bar cropped out in every aspect; Lorna about x 0.70 | CA: spoilers not an issue (owner), no masks"
    }
   }
  ],

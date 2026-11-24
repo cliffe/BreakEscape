@@ -7,7 +7,7 @@
  "preview_for": "ca03_helpdesk_reset",
  "source_edit": "ca03_trailer_r1",
  "fps": 30,
- "length": 20.88,
+ "length": 20.64,
  "music": {
   "none": true
  },
@@ -28,16 +28,16 @@
  },
  "shots": [
   {
-   "id": "research",
+   "id": "hook",
    "type": "gameplay",
-   "duration": 4.0,
+   "duration": 4.26,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t02_attack_run.trimmed.mkv",
-    "in": 6.88,
-    "out": 10.88
+    "file": "t01_niamh_hook.trimmed.mkv",
+    "in": 2.99,
+    "out": 7.25
    },
    "audio": {
     "gain_db": -60
@@ -45,9 +45,9 @@
    "seat": "full",
    "framing": {
     "16:9": {
-     "cx": 0.503,
-     "cy": 0.5,
-     "zoom": 1.25
+     "cx": 0.62,
+     "cy": 0.355,
+     "zoom": 1.5
     }
    },
    "caption": {
@@ -61,20 +61,20 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/research: 0.50 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | VOICED RETAKE 24 Nov. t02: note:blk_claims_head 6.700; in = head note - 0.32, 5.0 s (rule as r1) | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca03_trailer_r1/hook: 0.00 s in, 4.26 s (inside the trailer shot; same spoiler judgement) | RE-RECORDED 23 Nov (Niamh visemes, new bust framing). t01 H1: speech onset 3.286 (silencedetect -35 dB d 0.08), sentence 1 ends 7.123 (pause 7.123 to 7.303; mid-sentence pause 4.863-4.988 not used), in 2.99 = onset - 0.3, out 7.25 = 0.127 after the last word and 0.053 before the next sound; Niamh portrait up from about 3.0 (old art and timings: takes/old_niamh_v1); mouth opens (teeth visible); bar with the text cropped out in every aspect (16:9 zoom 1.5, cy 0.355; 9:16 and 1:1 zoom 1.4, cy 0.377, face in the centre third); no cue or debrief panel | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
-   "id": "build",
+   "id": "topic",
    "type": "gameplay",
-   "duration": 4.0,
+   "duration": 5.0,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t02_attack_run.trimmed.mkv",
-    "in": 24.133,
-    "out": 28.133
+    "file": "t04_service_queue.trimmed.mkv",
+    "in": 9.0,
+    "out": 14.0
    },
    "audio": {
     "gain_db": -60
@@ -83,8 +83,8 @@
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
+     "cy": 0.28,
+     "zoom": 1.8
     }
    },
    "caption": {
@@ -98,7 +98,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/build: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | VOICED RETAKE 24 Nov. t02: filled 27.847, call_click 28.866; out = call_a in (continuous source), so the Make the call click lands in call_a | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca03_trailer_r1/topic: 0.00 s in, 5.00 s (inside the trailer shot; same spoiler judgement) | t04: list from 6.20 (rules intro before it, not in), card1 opens 11.37; in = card - 2.37 so v1b sits over the list as the card opens and v1c over the first Gordon McLeish card; out before card2 (18.35); transcript hidden by CSS, verdict hints hidden, nothing pressed; frame-check the buttons edge on the render | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
@@ -139,53 +139,16 @@
    }
   },
   {
-   "id": "queue_a",
-   "type": "gameplay",
-   "duration": 4.0,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t04_service_queue.trimmed.mkv",
-    "in": 6.3,
-    "out": 10.3
-   },
-   "audio": {
-    "gain_db": -60
-   },
-   "seat": "full",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.28,
-     "zoom": 1.8
-    }
-   },
-   "caption": {
-    "16:9": false,
-    "9:16": false,
-    "1:1": false
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/queue_a: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t04: list clean from 6.20 (rules intro before it); in 6.3, out 10.5 is 0.87 s before card1_open; '0 of 4 sorted', three calls and one sign-in prompt; nothing opened or pressed | CA: spoilers not an issue (owner), no masks"
-   }
-  },
-  {
    "id": "queue_b",
    "type": "gameplay",
-   "duration": 5.0,
+   "duration": 3.5,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04_service_queue.trimmed.mkv",
     "in": 17.4,
-    "out": 22.4
+    "out": 20.9
    },
    "audio": {
     "gain_db": -60
@@ -209,7 +172,44 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/queue_b: 0.00 s in, 5.00 s (inside the trailer shot; same spoiler judgement) | t04: card2_open 18.35 (second Gordon McLeish call, same four facts); in = card2 - 0.95, out before buttons_view 23.65 starts the sweep; transcript hidden, nothing pressed; v11a over the card, v11b after it | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca03_trailer_r1/queue_b: 0.00 s in, 3.50 s (inside the trailer shot; same spoiler judgement) | t04: card2_open 18.35 (second Gordon McLeish call, same four facts); in = card2 - 0.95, out before buttons_view 23.65 starts the sweep; transcript hidden, nothing pressed; v11a over the card, v11b after it | CA: spoilers not an issue (owner), no masks"
+   }
+  },
+  {
+   "id": "office",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_step_away.trimmed.mkv",
+    "in": 6.64,
+    "out": 10.64
+   },
+   "audio": {
+    "gain_db": -60
+   },
+   "seat": "full",
+   "framing": {
+    "16:9": {
+     "cx": 0.57,
+     "cy": 0.5,
+     "zoom": 2.0
+    }
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": false,
+    "1:1": false
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "PREVIEW from ca03_trailer_r1/office: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t05 E1: Anjali onset 6.937, pauses 8.453-8.656, 10.300-10.760, sentence 1 ends 12.322 (pause 12.322-12.698, silencedetect -35 dB d 0.08), 'Darren, is it doing this to everyone?' 12.698-14.629. NOTE the brief's 'sentence 1 ends 10.32' is the comma break after 'sign-in screen,', not the sentence end ('asking for everything again.' runs 10.911-12.322); in 6.64 = onset - 0.3 (cut on audio, the 6.37 bubble mark is early), out 12.47 = end + 0.15 inside the pause; room clean from 5.0; Darren muted and his bubble hidden (mute log: 0 visible samples, peak 0), his audio would start 11.09; world bark so the bubble shows; Anjali's bubble at about x 0.52-0.75, y 0.5 of the frame (contact sheet read, room is small, check the crop in every aspect on the render) | CA: spoilers not an issue (owner), no masks"
    }
   }
  ],
