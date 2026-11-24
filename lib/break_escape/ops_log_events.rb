@@ -66,7 +66,12 @@ module BreakEscape
       'mfa_expired' => { label: 'MFA', places: %w[pc], results: %w[expired] },
       'mfa_prompt_sent' => { label: 'MFA', places: %w[pc], results: %w[ok] },
       'mfa_prompt_approved' => { label: 'MFA', places: %w[pc], results: %w[ok], detail: { 'approver' => %w[owner held_phone own_phone] } },
-      'mfa_prompt_denied' => { label: 'MFA', places: %w[pc], results: %w[denied] }
+      'mfa_prompt_denied' => { label: 'MFA', places: %w[pc], results: %w[denied] },
+      # S8b helpdesk: a request to a desk, and the two things a desk can do. No typed answer is ever a detail value.
+      'helpdesk_request' => { label: 'HELPDESK', places: %w[desk], results: %w[granted refused blocked],
+                              save_limit: { 'blocked' => 10 }, detail: { 'what' => %w[password mfa] } },
+      'account_password_reset' => { label: 'ACCT_RESET', places: %w[desk], results: %w[ok], detail: { 'agent' => { id: 'npc' } } },
+      'account_mfa_reenrolled' => { label: 'ACCT_MFA', places: %w[desk], results: %w[ok], detail: { 'agent' => { id: 'npc' } } }
     }.freeze
 
     # Shared result words (13.5); an event's own list may use any lowercase word of 2 to 16 letters.
@@ -157,6 +162,11 @@ module BreakEscape
       'foothold' => {
         name: ->(game, id) { OpsLogEvents.foothold_name(game, id) },
         room: ->(_game, _id) { nil }
+      },
+      # A helpdesk by its scenario id, shown by its NPC's name, else the id (S8b). A desk has no room.
+      'desk' => {
+        name: ->(game, id) { OpsLogEvents.desk_named(game, id) },
+        room: ->(_game, _id) { nil }
       }
     }.freeze
 
@@ -193,6 +203,14 @@ module BreakEscape
       game.account_npcs.find do |npc|
         game.class.normalise_username(npc['creds']['username']) == wanted
       end
+    end
+
+    def desk_named(game, id)
+      desks = game.scenario_data.is_a?(Hash) ? game.scenario_data['helpdesks'] : nil
+      desk = desks.is_a?(Hash) ? desks[id.to_s] : nil
+      return nil unless desk.is_a?(Hash)
+
+      npc_named(game, desk['npc']) || id.to_s
     end
 
     def npc_named(game, id)
