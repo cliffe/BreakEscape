@@ -1,0 +1,336 @@
+# frozen_string_literal: true
+
+# Hash records and the offline cracker (S7 unit 09, feature A21). One entry point, check_cracking,
+# called by scripts/validate_scenario.rb after check_credentials. Game abstraction only: it reads
+# the recipe a hash record carries (crack.password, crack.facts, crack.difficulty,
+# crack.passwordPattern) and the sources of the facts it names, and never prints a password.
+# Docs: docs/agents/ops_core_build/S7_BUILD_BRIEF.md, section 4.
+require 'set'
+require_relative '../lib/break_escape/crack_difficulty'
+require_relative '../lib/break_escape/credential_model'
+require_relative '../lib/break_escape/declared_grants'
+require_relative '../lib/break_escape/access_identities'
+require_relative '../lib/break_escape/access_work'
+
+CRACK_CLASSES = %w[strong guessable reused common].freeze
+CRACK_FACT_PREFIX = 'se_intel_'
+CRACK_SECONDS_RANGE = (10..600).freeze
+
+# Every item-shaped Hash (a string type) that carries revealsFacts, with its key chain and ancestors.
+def crack_reveal_items(data)
+  out = []
+  walk = lambda do |node, chain, ancestors|
+    case node
+    when Hash
+      out << { item: node, chain: chain, ancestors: ancestors } if node.key?('revealsFacts') && node['type'].is_a?(String)
+      node.each { |k, v| walk.call(v, chain + [k.to_s], ancestors + [node]) }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, chain + [i], ancestors + [node]) }
+    end
+  end
+  walk.call(data, [], [])
+  out
+end
+
+# Every Hash that has the key, anywhere, with its ancestors.
+def crack_hashes_with(data, key)
+  out = []
+  walk = lambda do |node, ancestors|
+    case node
+    when Hash
+      out << { node: node, ancestors: ancestors } if node.key?(key)
+      node.each_value { |v| walk.call(v, ancestors + [node]) }
+    when Array
+      node.each { |v| walk.call(v, ancestors + [node]) }
+    end
+  end
+  walk.call(data, [])
+  out
+end
+
+# Whether this revealsFacts item is somewhere the server sees the player get it.
+def crack_item_is_source?(entry, data)
+  item = entry[:item]
+  chain = entry[:chain]
+  return true if chain.include?('startItemsInInventory')
+
+  rooms_at = chain.index('rooms')
+  held_at = chain.rindex('itemsHeld')
+  if held_at
+    owner = entry[:ancestors].reverse.find { |a| a.is_a?(Hash) && a['itemsHeld'].is_a?(Array) }
+    return false unless owner
+
+    if owner['flagRewards'].is_a?(Array)
+      return owner['flagRewards'].any? do |r|
+        r.is_a?(Hash) && r['type'] == 'give_item' &&
+          (r['item_name'].to_s == item['name'].to_s && !item['name'].to_s.empty?)
+      end
+    end
+    return rooms_at ? item['takeable'] == true : false
+  end
+  if chain.include?('flagRewards')
+    return entry[:ancestors].any? { |a| a.is_a?(Hash) && a['type'] == 'give_item' && a['item'].equal?(item) }
+  end
+  return false unless rooms_at && chain[rooms_at + 2] == 'objects'
+
+  # rooms.<id>.objects[i](.contents[j]...)*. A container's contents are served as it is opened;
+  # a room object, a share file or a PC file counts when takeable.
+  rest = chain[(rooms_at + 4)..] || []
+  return item['takeable'] == true if rest.empty?
+  return true if rest.all? { |k| k == 'contents' || k.is_a?(Integer) }
+
+  item['takeable'] == true
+end
+
+def crack_object_ids(data)
+  ids = Set.new
+  walk = lambda do |node|
+    case node
+    when Hash
+      ids << node['id'].to_s if node['id'].is_a?(String) && (node.key?('type') || node.key?('name'))
+      node.each_value { |v| walk.call(v) }
+    when Array
+      node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(data['rooms'])
+  ids
+end
+
+def crack_object_text?(data, object_id)
+  found = nil
+  walk = lambda do |node|
+    case node
+    when Hash
+      found = node if found.nil? && node['id'].to_s == object_id && (node.key?('type') || node.key?('name'))
+      node.each_value { |v| walk.call(v) } if found.nil?
+    when Array
+      node.each { |v| walk.call(v) } if found.nil?
+    end
+  end
+  walk.call(data['rooms'])
+  return true unless found
+
+  %w[readable text observations contents description].any? do |k|
+    v = found[k]
+    v.is_a?(String) ? !v.strip.empty? : (v.is_a?(Array) || v.is_a?(Hash)) && !v.empty?
+  end
+end
+
+# Capture secrets anywhere in the scenario: a hash with a string secret and a targetId or address.
+def crack_capture_secrets(data)
+  secrets = []
+  walk = lambda do |node|
+    case node
+    when Hash
+      secrets << node['secret'] if node['secret'].is_a?(String) && !node['secret'].empty? && (node.key?('targetId') || node.key?('address'))
+      node.each_value { |v| walk.call(v) }
+    when Array
+      node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(data)
+  secrets
+end
+
+# Bare fact ids the scenario's feed posts give, each with one leading se_intel_ removed.
+def crack_feed_fact_ids(data)
+  BreakEscape::CredentialModel.room_npcs(data).flat_map do |npc|
+    BreakEscape::AccessWork.feed_posts(npc).filter_map do |post|
+      post['fact'].delete_prefix(CRACK_FACT_PREFIX) if post['fact'].is_a?(String) && !post['fact'].empty?
+    end
+  end.to_set
+end
+
+def check_cracking(json_data)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  cm = BreakEscape::CredentialModel
+  cd = BreakEscape::CrackDifficulty
+  err  = ->(msg) { issues << "❌ ERROR: cracking: #{msg}" }
+  warn = ->(msg) { issues << "⚠️ WARNING: cracking: #{msg}" }
+
+  social = json_data['social'].is_a?(Hash) ? json_data['social'] : {}
+  fact_ids = social['intelFacts'].is_a?(Hash) ? social['intelFacts'].keys.map(&:to_s).to_set : Set.new
+  bad_fact = lambda do |id|
+    return "is not a string" unless id.is_a?(String)
+    return "carries the #{CRACK_FACT_PREFIX} prefix; name the bare social.intelFacts id" if id.start_with?(CRACK_FACT_PREFIX)
+    return "is not a social.intelFacts id" unless fact_ids.include?(id)
+
+    nil
+  end
+
+  # ---- items: revealsFacts ----------------------------------------------------------------
+  declared = BreakEscape::DeclaredGrants.for(json_data).map { |g| g['item'] }
+  reveal_entries = crack_reveal_items(json_data)
+  item_ids = Hash.new(0)
+  reveal_entries.each do |e|
+    item = e[:item]
+    label = "item '#{item['id'].to_s[0, 60]}'"
+    facts = item['revealsFacts']
+    err.call("#{label}: revealsFacts must be a list of fact ids") unless facts.is_a?(Array)
+    err.call("an item with revealsFacts has no id (a fact's source must be an item the server can name)") if !item['id'].is_a?(String) || item['id'].empty?
+    if declared.any? { |d| d.equal?(item) } || e[:ancestors].any? { |a| declared.any? { |d| d.equal?(a) } }
+      err.call("#{label}: a timer or object action hands this item over, so the server cannot see the player earn its facts")
+    end
+    type = item['type'].to_s
+    if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(type) || BreakEscape::DeclaredGrants::DECOR_CUPS.include?(type)
+      err.call("#{label}: revealsFacts on a notepad or decor cup has no effect (the client builds these)")
+    end
+    Array(facts).each do |f|
+      problem = bad_fact.call(f)
+      err.call("#{label}: revealsFacts entry #{f.to_s[0, 60].inspect} #{problem}") if problem
+    end
+  end
+  # Two definitions with one id where either carries revealsFacts.
+  with_reveals = reveal_entries.map { |e| e[:item]['id'] }.grep(String).reject(&:empty?).to_set
+  unless with_reveals.empty?
+    counts = Hash.new(0)
+    walk = lambda do |node|
+      case node
+      when Hash
+        counts[node['id']] += 1 if node['id'].is_a?(String) && node['type'].is_a?(String) && with_reveals.include?(node['id'])
+        node.each_value { |v| walk.call(v) }
+      when Array
+        node.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(json_data)
+    counts.each { |id, n| err.call("item id '#{id[0, 60]}' is defined #{n} times and carries revealsFacts; the server reads the stored copy, so give each its own id") if n > 1 }
+  end
+
+  # ---- grant_fact flag rewards ------------------------------------------------------------
+  grant_fact_ids = Set.new
+  crack_hashes_with(json_data, 'flagRewards').each do |h|
+    Array(h[:node]['flagRewards']).each do |r|
+      next unless r.is_a?(Hash) && r['type'] == 'grant_fact'
+
+      problem = bad_fact.call(r['fact'])
+      if problem
+        err.call("grant_fact flag reward fact #{r['fact'].to_s[0, 60].inspect} #{problem}")
+      else
+        grant_fact_ids << r['fact']
+      end
+    end
+  end
+
+  # ---- fact sources -----------------------------------------------------------------------
+  item_fact_ids = reveal_entries.select { |e| crack_item_is_source?(e, json_data) && !declared.any? { |d| d.equal?(e[:item]) } }
+                                .flat_map { |e| Array(e[:item]['revealsFacts']).grep(String) }.to_set
+  feed_fact_ids = crack_feed_fact_ids(json_data)
+  server_sources = item_fact_ids | feed_fact_ids | grant_fact_ids
+
+  # ---- hash records -----------------------------------------------------------------------
+  creds = json_data['credentials'].is_a?(Hash) ? json_data['credentials'] : {}
+  hashes = creds.select { |_id, e| e.is_a?(Hash) && e['kind'] == 'hash' }
+  capture_secrets = crack_capture_secrets(json_data)
+  reveal_secret = social['captures'].is_a?(Hash) && social['captures']['revealSecret'] == true
+  accounts = cm.room_npcs(json_data).select { |n| BreakEscape::AccessIdentities.account?(n) }
+  object_ids = crack_object_ids(json_data)
+
+  hashes.each do |id, entry|
+    label = "credential '#{id.to_s[0, 64]}'"
+    npc = cm.account_npc(json_data, entry['account'])
+    err.call("#{label} account '#{entry['account'].to_s[0, 60]}' is not an account holder") unless npc
+    err.call("#{label} is a hash and must not set connectsTo (a hash never signs in)") if entry.key?('connectsTo')
+
+    crack = entry['crack'].is_a?(Hash) ? entry['crack'] : {}
+    habits = npc && npc['habits'].is_a?(Hash) ? npc['habits'] : {}
+    written = crack['password']
+    habit_class = habits['password']
+    klass = written || habit_class
+    password = npc && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
+
+    # Difficulty: an unknown grade from either place.
+    resolved = cd.resolve(entry, npc)
+    if resolved.nil?
+      err.call("#{label} has an unknown difficulty grade (crack.difficulty or the account's habits.passwordDifficulty); the grades are #{cd::GRADES.join(', ')}")
+    end
+    grade = [crack['difficulty'], habits['passwordDifficulty']].find { |g| cd::GRADES.include?(g) }
+
+    # Class.
+    if npc
+      if klass.nil?
+        err.call("#{label} has no password class: set crack.password or give the account a habits.password")
+      elsif !CRACK_CLASSES.include?(klass)
+        err.call("#{label} password class #{klass.to_s[0, 40].inspect} is not one of #{CRACK_CLASSES.join(', ')}")
+        klass = nil
+      end
+      err.call("#{label} account '#{npc['id'].to_s[0, 60]}' has no creds.password, so there is nothing to crack") unless cm.present_string?(password)
+    end
+    warn.call("#{label} class '#{written}' differs from the account's habit '#{habit_class}'; the record wins, so the habit's clue text and the cracker disagree") if written && habit_class && written != habit_class
+
+    # Facts.
+    facts = crack['facts']
+    if klass == 'guessable'
+      if !facts.is_a?(Array) || facts.empty? || facts.length > 4
+        err.call("#{label} is guessable and must set crack.facts: 1 to 4 bare social.intelFacts ids")
+      else
+        err.call("#{label} crack.facts repeats an id") if facts.uniq.length != facts.length
+        facts.each do |f|
+          problem = bad_fact.call(f)
+          if problem
+            err.call("#{label} crack.facts entry #{f.to_s[0, 60].inspect} #{problem}")
+          elsif !server_sources.include?(f)
+            err.call("#{label}: fact `#{f}` must come from an item the server sees the player get (a takeable item, a share or container file, a takeable NPC held item, a flag reward item or a start item), a feed post or a `grant_fact` flag reward")
+          end
+        end
+        band = grade && cd.fact_band(grade)
+        count = facts.uniq.length
+        if band && !band.cover?(count)
+          expected = band.min == band.max ? band.min.to_s : "#{band.min} or #{band.max}"
+          warn.call("#{label}: difficulty `#{grade}` expects #{expected} facts; this recipe has #{count}")
+        end
+      end
+    elsif crack.key?('facts')
+      err.call("#{label} sets crack.facts but its class is #{klass.nil? ? 'unresolved' : "'#{klass}'"}; facts belong to a guessable recipe only")
+    end
+
+    # Grade on a strong password.
+    warn.call("#{label}: difficulty has no effect on a strong password; it is a dead end at every grade") if klass == 'strong' && grade
+
+    # Salted and crackSeconds.
+    if entry.key?('crackSeconds')
+      cs = entry['crackSeconds']
+      if !cs.is_a?(Integer) || !CRACK_SECONDS_RANGE.cover?(cs)
+        err.call("#{label} crackSeconds must be a whole number of seconds from #{CRACK_SECONDS_RANGE.min} to #{CRACK_SECONDS_RANGE.max}")
+      elsif resolved && !resolved[:salted]
+        err.call("#{label} sets crackSeconds but the record is not salted (salted resolves to false); only a salted record waits")
+      end
+    end
+
+    # Pattern.
+    if crack.key?('passwordPattern')
+      pid = crack['passwordPattern']
+      if klass && klass != 'guessable'
+        warn.call("#{label} sets crack.passwordPattern on a '#{klass}' password; a pattern clue belongs to a guessable one")
+      end
+      if !pid.is_a?(String) || !object_ids.include?(pid)
+        err.call("#{label} crack.passwordPattern #{pid.to_s[0, 60].inspect} names no object")
+      elsif !crack_object_text?(json_data, pid)
+        warn.call("#{label} crack.passwordPattern '#{pid}' names an object with no readable text, so it backs nothing")
+      end
+    end
+
+    # Reused and capture overlap warnings.
+    next unless cm.present_string?(password)
+
+    if klass == 'reused'
+      others = accounts.reject { |a| a['id'] == (npc && npc['id']) }.any? { |a| a['creds'].is_a?(Hash) && a['creds']['password'] == password }
+      warn.call("#{label} is a reused password but no other account, registry password entry or capture target holds an equal password") unless others || capture_secrets.include?(password)
+    end
+    warn.call("#{label} account password equals a capture target's secret while social.captures.revealSecret is not true; the cracker would hand over what the capture hides") if capture_secrets.include?(password) && !reveal_secret
+  end
+
+  # ---- policies: accepts hash --------------------------------------------------------------
+  if json_data['policies'].is_a?(Hash)
+    json_data['policies'].each do |pname, policy|
+      next unless policy.is_a?(Hash) && policy['accepts'].is_a?(Array) && policy['accepts'].include?('hash')
+
+      err.call("policy '#{pname.to_s[0, 60]}' accepts 'hash'; a hash never signs in")
+    end
+  end
+
+  issues
+end
