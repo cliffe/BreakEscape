@@ -2151,7 +2151,7 @@ export class PasswordMinigame extends MinigameScene {
                 portrait: t.portrait,
                 avatar: t.avatar,
                 kinds: t.kinds,
-                password: t.capture?.password || t.keyPassword || null,
+                password: (Array.isArray(t.kinds) && t.kinds.includes('reset') ? t.keyPassword : null) || t.capture?.password || t.keyPassword || null,
                 credentials: t.credentials || [],
                 found: t.found || [],
                 targetId: t.targetId,

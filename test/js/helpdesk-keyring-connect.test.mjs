@@ -180,6 +180,23 @@ test('the sign-ins list shows the Reset row with the new password (R1-CLIENT3)',
     assert.equal(text.rowKindName('reset'), 'Reset password');
 });
 
+test('an account captured and then reset shows the reset password, not the dead captured one (R2-CLIENT1)', async () => {
+    setup();
+    const entry = reset();
+    const captured = { id: 'old.password', kind: 'password', source: 'capture', account: entry.account, label: 'Captured', how: 'recorded', password: 'DeadOldPass-1' };
+    const capRow = { targetId: entry.account.npcId, kind: 'credential', at: 1, username: entry.account.username };
+    const { signins } = buildSignInRows({
+        captures: [capRow], secrets: { [capRow.targetId]: 'DeadOldPass-1' }, social: { captures: { revealSecret: true } },
+        keyring: { entries: [captured, entry], captures: { [capRow.targetId]: { tag: 'password', source: 'phished', account: entry.account.npcId } }, foundVisible: () => true }
+    });
+    assert.equal(signins.length, 1);
+    assert.equal(signins[0].value, entry.password);
+    assert.equal(signins[0].use, entry.password);
+    assert.ok(signins[0].kinds.includes('reset'));
+    const tiles = mergeKeyboardTiles({ picker: 'accounts', tiles: [{ username: entry.account.username, displayName: 'Vera' }], keyring: [captured, entry] });
+    assert.equal(tiles[0].keyPassword, entry.password, 'the later reset wins on the tile');
+});
+
 test('the sign-in tile carries the Reset tag and fills the new password', () => {
     const entry = reset();
     assert.equal(keyringTagKind(entry), 'reset');

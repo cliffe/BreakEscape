@@ -222,7 +222,17 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
         row.title = named?.account?.displayName || first?.roleLabel || named?.account?.username || null;
         row.subtitle = first?.address || named?.account?.username || null;
         row.lines = [];
-        if (caps.length) {
+        const issued = row.password && row.password.source === 'helpdesk' && isStr(row.password.password);
+        if (issued) {
+            // A desk's reset: the server handed the value over with the grant, so it is shown (S8b).
+            // It comes before a captured value, which the reset made old (R2-CLIENT1).
+            row.value = row.password.password;
+            row.valueState = null;
+            row.use = row.value;
+            const oldNotes = caps.map((c) => c.note).filter(isStr);
+            row.lines.push(...oldNotes.slice(0, MAX_ROW_NOTES));
+            if (oldNotes.length > MAX_ROW_NOTES) row.lines.push(moreNotesLine(oldNotes.length - MAX_ROW_NOTES));
+        } else if (caps.length) {
             // The value: the one served for the oldest capture that has one; with none, the mask
             let got = null;
             let valueTargetId = first.targetId;
@@ -239,11 +249,6 @@ export function buildSignInRows({ captures, secrets = null, secretsState = null,
             const notes = caps.map((c) => c.note).filter(isStr);
             row.lines.push(...notes.slice(0, MAX_ROW_NOTES));
             if (notes.length > MAX_ROW_NOTES) row.lines.push(moreNotesLine(notes.length - MAX_ROW_NOTES));
-        } else if (row.password && row.password.source === 'helpdesk' && isStr(row.password.password)) {
-            // A desk's reset: the server handed the value over with the grant, so it is shown (S8b)
-            row.value = row.password.password;
-            row.valueState = null;
-            row.use = row.value;
         } else if (row.password) {
             // A password in a file alone: never the value
             row.use = typeItFromLine(row.password.label);
