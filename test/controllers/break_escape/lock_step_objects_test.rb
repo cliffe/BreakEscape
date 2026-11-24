@@ -331,7 +331,9 @@ module BreakEscape
           "#{File.basename(f)}:#{i + 1}" if line.match?(/\bvalidate_unlock\(/) && !line.match?(/def validate_unlock|#/)
         end
       end
-      assert_equal %w[games_controller.rb:1220 games_controller.rb:1221], callers.sort
+      # the two lines of one call (a ternary), wherever the controller puts them
+      assert_equal %w[games_controller.rb games_controller.rb], callers.map { |c| c.split(':').first }
+      assert_equal 1, callers.map { |c| c.split(':').last.to_i }.each_cons(2).count { |a, b| b == a + 1 }
       assert_includes File.read(File.expand_path('../../../app/controllers/break_escape/games_controller.rb', __dir__)),
                       'resolved: resolved)'
     end
