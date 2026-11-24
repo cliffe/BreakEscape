@@ -177,6 +177,35 @@ test('own authenticator: Approve passes and is named own_phone', async () => {
     assert.equal(s.getTestState().authenticator.live.approved, 1);
 });
 
+test('own authenticator: the approve and deny requests carry own=1 for an own-phone note, no own key for a held phone', async () => {
+    const reqs = answer('phone.own').body.requests;
+    const key = `pc:${reqs[0].pcId}`;
+    const post = (calls) => calls.filter((c) => c.path === 'mfa/approve').map((c) => c.payload);
+    // own-phone note: Approve, then Deny
+    let { calls } = client((method, path) => (path === 'mfa/approve' ? serve('approve.own_passed') : serve('phone.own')));
+    M.noteRequired(key, answer('login.mfa_required_own_push').body);
+    let s = await openPhone();
+    await s.tapApprove(key);
+    M.noteRequired(key, answer('login.mfa_required_own_push').body);
+    await s.tapDeny(key);
+    const own = post(calls);
+    assert.equal(own.length, 2);
+    assert.equal(own[0].own, 1);
+    assert.equal(own[1].own, 1);
+    assert.equal(own[1].deny, true);
+    // held phone: the same note without ownPhone sends no own key at all
+    ({ calls } = client((method, path) => (path === 'mfa/approve' ? serve('approve.own_passed') : serve('phone.own'))));
+    const held = { ...answer('login.mfa_required_own_push').body }; delete held.ownPhone;
+    M.noteRequired(key, held);
+    s = await openPhone();
+    await s.tapApprove(key);
+    M.noteRequired(key, held);
+    await s.tapDeny(key);
+    const sent = post(calls);
+    assert.equal(sent.length, 2);
+    for (const p of sent) assert.equal('own' in p, false);
+});
+
 test('own authenticator: a wrong number cancels the request', async () => {
     client((method, path) => (path === 'mfa/approve' ? serve('approve.cancelled') : serve('phone.own_number_match')));
     const s = await openPhone();

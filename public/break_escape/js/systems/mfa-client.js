@@ -284,9 +284,14 @@ export async function phone({ npcId, own = false } = {}) {
     return { ok: true, requests: Array.isArray(body.requests) ? body.requests : [] };
 }
 
-/** A tap on the held phone: { number } to approve a number match, { deny: true } to refuse. */
+/**
+ * A tap on the phone: { number } to approve a number match, { deny: true } to refuse. For an account a
+ * desk re-enrolled (the pending note has ownPhone) the request carries own=1, as the server requires;
+ * for a held phone there is no `own` key.
+ */
 export function approve(subject, { number, deny } = {}) {
     const extra = {};
+    if ((pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true) extra.own = 1;
     if (number != null) extra.number = number;
     if (deny) extra.deny = true;
     return post('mfa/approve', subject, extra, { keep: true });
