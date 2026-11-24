@@ -198,10 +198,14 @@ module BreakEscape
       assert_includes mfa(scan(rows)), SESSION.call('hana')
       # the claim is the one server answer that skips the step at the keyboard
       rows = lockless.call; un.call(rows)['body']['via'] = 'claim'
+      # the desktop that follows shows the same claim session (R3-5 reads a desktop's keyboard session)
+      rows.each { |r| d = r['body'].is_a?(Hash) ? r['body']['session'] : nil; d['via'] = 'claim' if d.is_a?(Hash) && d['npcId'] == 'hana' }
       assert_equal [], mfa(scan(rows))
       # a bootstrap may still list a technique session
       rows = without(:pass_code, :hana_required, :wrong_code, :lock, :unlock, :token)
       rows.each { |r| s = r['body'].is_a?(Hash) && r['body']['sessions']; s['code_pc1']['via'] = 'technique' if s.is_a?(Hash) && s['code_pc1'] }
+      # the desktop that follows shows the same technique session (R3-5)
+      rows.each { |r| d = r['body'].is_a?(Hash) ? r['body']['session'] : nil; d['via'] = 'technique' if d.is_a?(Hash) && d['npcId'] == 'hana' }
       assert_equal [], mfa(scan(rows))
     end
 

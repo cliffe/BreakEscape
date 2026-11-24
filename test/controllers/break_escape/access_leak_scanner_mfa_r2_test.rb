@@ -86,8 +86,8 @@ module BreakEscape
       list[1]['body']['session']['remote'] = true
       refused(list, %w[cal@plain_pc#1])
       # one name overwritten by the next sign-in before any desktop row, or an account signing in again, or a sign-out
-      refused(rows(278, 107, 108), NAMES, /another name was armed/)
-      refused(rows(278, 278, 279), %w[cal@plain_pc#1], /signed in or passed a step again/)
+      refused(rows(278, 107, 108), NAMES, /another (name was armed|sign-in or step passed)/)
+      refused(rows(278, 278, 279), %w[cal@plain_pc#1], /another sign-in or step passed \("cal"\)/)
       list = rows(278, 279)
       list.insert(1, { 'method' => 'POST', 'path' => '/break_escape/games/86/logout', 'status' => 200, 'body' => { 'success' => true, 'endedPcIds' => [] } })
       refused(list, %w[cal@plain_pc#1], /sign-out came before/)
