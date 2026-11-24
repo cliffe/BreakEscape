@@ -16,6 +16,7 @@ import { startLockpickingMinigame, startKeySelectionMinigame, startPinMinigame, 
 import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
+import { applyBlePairEffects } from '../minigames/ble-scanner/ble-scanner-minigame.js';
 import { catchLockpickInView, anyKeyMightFitLock, lockKeyPinsOf } from './lockpick-catch.js';
 import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
 import { afterContainerUnlock } from '../utils/dispense-on-unlock.js';
@@ -60,6 +61,14 @@ function isSecondStepCancel(error) {
         if (window.lockStep?.isCancel?.(error)) return true;
     } catch (e) { /* fall through to the plain shape check */ }
     return !!error && error.status === 403 && error.body?.reason === 'second_step_cancelled';
+}
+
+// S8c: a lock with a second step. The starters and readers hold back their success wording for it,
+// so the callers here raise it once the final server answer says success. Reads the same three
+// places the starters do: the object's own data, the door's properties, the door's room.
+function lockHasSecondStep(lockable) {
+    return !!(lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+        || window.gameScenario?.rooms?.[lockable?.doorProperties?.connectedRoom]?.secondStep);
 }
 
 // The id the server knows a lock by: a door's connected room, or the object's id.
@@ -1050,7 +1059,7 @@ export function handleUnlock(lockable, type) {
         notifyServerUnlock(lockable, type, 'unlocked').then(serverResponse => {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
-            } else {
+            } else if (!serverResponse?.secondStepCancelled) {  // S8c: a cancelled second step is silent
                 window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
@@ -1071,7 +1080,7 @@ export function handleUnlock(lockable, type) {
         notifyServerUnlock(lockable, type, 'unlocked').then(serverResponse => {
             if (serverResponse && serverResponse.success) {
                 unlockTarget(lockable, type, lockable.layer, serverResponse);
-            } else {
+            } else if (!serverResponse?.secondStepCancelled) {  // S8c: a cancelled second step is silent
                 window.gameAlert('Access denied', 'error', 'Error', lockedHintDuration(lockable, 3000, 'Access denied'));
             }
         }).catch(error => {
@@ -1198,6 +1207,12 @@ export function handleUnlock(lockable, type) {
                 //   'lockpick' → player switched to and completed pick mode
                 const unlockWithServerNotification = async (lockable, type, layer, method = 'key') => {
                     const serverResponse = await notifyServerUnlock(lockable, type, method);
+                    // S8c: on a gated lock the starter held its toast back: raise it on the final success
+                    if (serverResponse?.success && lockHasSecondStep(lockable)) {
+                        window.expectContainerAfterUnlock?.(lockable, type);
+                        window.gameAlert(method === 'lockpick' ? 'Successfully picked the lock!' : 'Successfully unlocked with the correct key!',
+                            'success', 'Unlock Successful', 4000);
+                    }
                     unlockTarget(lockable, type, layer, serverResponse);
                 };
                 startKeySelectionMinigame(lockable, type, playerKeys, requiredKey, unlockWithServerNotification);
@@ -1236,6 +1251,15 @@ export function handleUnlock(lockable, type) {
                         // 'key' when the player switched to key mode and a key opened it
                         const method = outcome?.method === 'key' ? 'key' : 'lockpick';
                         const serverResponse = await notifyServerUnlock(lockable, type, method);
+                        // S8c: on a gated lock the starter held its toast back: raise it on the final success
+                        if (serverResponse?.success && lockHasSecondStep(lockable)) {
+                            window.expectContainerAfterUnlock?.(lockable);
+                            if (method === 'key') {
+                                window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
+                            } else {
+                                window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                            }
+                        }
                         setTimeout(() => {
                             // No toast here: minigame-starters.js already showed the pick or
                             // key success the moment the minigame completed (two toasts before)
@@ -1377,6 +1401,10 @@ export function handleUnlock(lockable, type) {
             // no match / no prints (systems/biometric-lock.js, minigames/biometrics/).
             startFingerprintReader(lockable, type, lockRequirements, () => {
                 notifyServerUnlock(lockable, type, 'biometric').then(serverResponse => {
+                    // S8c: on a gated lock the reader said only "Print accepted.": the unlock toast comes now
+                    if (serverResponse?.success && lockHasSecondStep(lockable)) {
+                        window.gameAlert(`You unlocked the ${type}.`, 'success', 'Biometric Unlock Successful', 5000);
+                    }
                     unlockTarget(lockable, type, lockable.layer, serverResponse);
                 });
             }, refusedWithHint);
@@ -1416,11 +1444,15 @@ export function handleUnlock(lockable, type) {
                 if (requiredDeviceData.signalStrength >= minSignalStrength) {
                     console.log('BLUETOOTH UNLOCK SUCCESS');
                     // Notify server and get room/container data
+                    const bluetoothAlert = () => window.gameAlert(`Successfully connected to ${requiredDeviceData.name} and unlocked the ${type}.`,
+                        'success', 'Bluetooth Unlock Successful', 5000);
+                    // S8c: on a gated lock the alert waits for the final success (a cancel shows none)
+                    const bluetoothGated = lockHasSecondStep(lockable);
                     notifyServerUnlock(lockable, type, 'bluetooth').then(serverResponse => {
+                        if (bluetoothGated && serverResponse?.success) bluetoothAlert();
                         unlockTarget(lockable, type, lockable.layer, serverResponse);
                     });
-                    window.gameAlert(`Successfully connected to ${requiredDeviceData.name} and unlocked the ${type}.`,
-                        'success', 'Bluetooth Unlock Successful', 5000);
+                    if (!bluetoothGated) bluetoothAlert();
                 } else {
                     console.log('BLUETOOTH SIGNAL TOO WEAK', 
                         `Signal: ${requiredDeviceData.signalStrength}dBm < Required: ${minSignalStrength}dBm`);
@@ -1453,7 +1485,11 @@ export function handleUnlock(lockable, type) {
                     type,
                     onComplete: (success) => {
                         if (success) {
+                            const bleGated = lockHasSecondStep(lockable);
                             notifyServerUnlock(lockable, type, 'ble').then(serverResponse => {
+                                // S8c: pairing on a gated BLE object ran neither its task nor its globals:
+                                // they follow the final answer (an ungated one ran them when it paired)
+                                if (bleGated && serverResponse?.success) applyBlePairEffects(lockable.scenarioData);
                                 unlockTarget(lockable, type, lockable.layer, serverResponse);
                             });
                         }
@@ -1556,6 +1592,8 @@ export function handleUnlock(lockable, type) {
                         }
                         // Notify server and get room/container data
                         const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
+                        // S8c: no sound and no "Access Granted" for a step that was not passed
+                        if (serverResponse?.secondStepCancelled || (lockHasSecondStep(lockable) && !serverResponse?.success)) return;
                         setTimeout(() => {
                             playRfidUnlockSound();
                             unlockTarget(lockable, type, lockable.layer, serverResponse);
@@ -1604,6 +1642,8 @@ export function handleUnlock(lockable, type) {
                 
                 // Notify server and unlock
                 notifyServerUnlock(lockable, type, 'rfid').then(serverResponse => {
+                    // S8c: no sound and no "Access Granted" for a step that was not passed
+                    if (serverResponse?.secondStepCancelled || (lockHasSecondStep(lockable) && !serverResponse?.success)) return;
                     playRfidUnlockSound();
                     unlockTarget(lockable, type, lockable.layer, serverResponse);
                     window.gameAlert(`Door opened with ${cardName}`, 'success', 'Access Granted', 3000);
