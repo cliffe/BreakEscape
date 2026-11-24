@@ -87,6 +87,7 @@ const errorCases = [
     ['in tableItems', sc => { sc.rooms.lobby.objects.push({ id: 'tbl', type: 'table', name: 'Table', tableItems: [
         { id: 'tt', type: 'safe', name: 'Tt', locked: true, lockType: 'pin', requires: '1', secondStep: { kind: 'push', owner: 'omar' } }] }); }, 'tableItems'],
     ['a consumable', sc => { safe(sc).type = 'coffee_mug'; }, 'a consumable'],
+    ['a positive healAmount', sc => { safe(sc).healAmount = 20; }, 'a consumable'],
     ['a droppable grant', sc => { sc.rooms.lobby.objects.push({ id: 'giver', type: 'desk', name: 'Giver', triggerOnInteract: [
         { type: 'give_item', item: { id: 'gi', type: 'safe', name: 'Gi', locked: true, lockType: 'pin', requires: '1', droppable: true, secondStep: { kind: 'push', owner: 'omar' } } }] }); }, 'droppable'],
     ['flag station itemsHeld', sc => { sc.rooms.lobby.objects.push({ id: 'fs', type: 'flag-station', name: 'FS', itemsHeld: [
@@ -151,6 +152,7 @@ const warningCases = [
         Object.assign(inner, { takeable: true, locked: true, lockType: 'pin', requires: '1', secondStep: { kind: 'push', owner: 'omar' } });
         sc.rooms.lobby.objects[1].triggerOnInteract = [{ type: 'remove_item', item: 'note1' }];
     }, 'remove_item'],
+    ['takeable room container with no id', sc => { sc.rooms.lobby.objects.push({ type: 'briefcase', name: 'Bag', takeable: true, locked: true, lockType: 'pin', requires: '1' }); }, 'carried container'],
     ['carried container with no id', sc => { sc.startItemsInInventory = [{ type: 'briefcase', name: 'Case', locked: true, lockType: 'pin', requires: '1' }]; }, 'carried container']
 ];
 for (const [name, mutate, frag] of warningCases) {

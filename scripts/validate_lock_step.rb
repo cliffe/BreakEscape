@@ -228,6 +228,7 @@ end
 
 def lock_step_consumable?(node)
   return true if node['consumable'] == true
+  return true if node['healAmount'].respond_to?(:to_f) && !node['healAmount'].is_a?(String) && node['healAmount'].to_f.positive?
 
   type = node['type'].to_s.downcase
   lock_step_consumable_patterns.any? { |re| re.match?(type) }
@@ -356,13 +357,15 @@ def lock_step_remove_names(json_data)
   names
 end
 
-# A carried container (start inventory, an NPC's itemsHeld, a declared grant) with a lock or
+# A carried container (start inventory, an NPC's itemsHeld, a declared grant, a takeable room object) with a lock or
 # contents and no id: the carried check cannot name it.
 def lock_step_carried_warnings(ctx, warn)
   ctx[:entries].each do |e|
-    next unless e[:kind] == :object && %i[start npc grant].include?(e[:home]) && e[:ancestors].empty?
+    next unless e[:kind] == :object && e[:ancestors].empty?
 
     node = e[:node]
+    # a takeable object listed directly in a room is a carrier too (plan G4)
+    next unless %i[start npc grant].include?(e[:home]) || (e[:home] == :room && node['takeable'] == true)
     next if node['id'].is_a?(String) && !node['id'].empty?
     next unless node['locked'] || (node['contents'].is_a?(Array) && !node['contents'].empty?)
 
