@@ -132,6 +132,16 @@
       },
       "additionalProperties": false
     },
+    "networkView": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "description": "Ops skin K3 (S6 unit 21): how this scenario's network view looks by default. Sent in the bootstrap as authored (it names no host, address or finding). Read by public/break_escape/js/minigames/network-view/skin-choice.js; a player's own choice wins over it.",
+      "properties": {
+        "defaultSkin": { "type": "string", "enum": ["gui", "cli"], "description": "The skin used when the player has not chosen one: gui is Panels, cli is Terminal. Read by skin-choice.js." },
+        "_comment": { "type": "string" }
+      }
+    },
     "gameClock": {
       "type": ["object", "string"],
       "description": "Optional in-game clock: { \"start\": \"Tue 07:30\" } (or just the string). Clock displays (phone, command board, SIEM) then show this start time plus elapsed game time instead of the real wall clock. Elapsed game time resumes after a reload. rate: game minutes per real minute (default 1). anchors: [{ condition, time }] jump the clock forward when the condition first holds.",
@@ -384,6 +394,31 @@
             "required": ["ssid"],
             "additionalProperties": false,
             "patternProperties": { "^_": {} }
+          },
+          "cli": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^_": {} },
+            "description": "Ops skin K3 (S6 unit 21): the Terminal's text for this network. Never sent in the bootstrap (networks are withheld whole). Read by the core's network view builder, which copies it into the view, and by public/break_escape/js/minigames/network-view/cli-gen/.",
+            "properties": {
+              "range": { "type": "string", "maxLength": 18, "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])/([0-9]|[12][0-9]|3[0-2])$", "description": "The address range the sweep prints, an IPv4 CIDR such as 10.0.0.0/24 (a private range). Read by cli-gen/." },
+              "hosts": {
+                "x-id-map": true,
+                "type": "object",
+                "propertyNames": { "minLength": 1, "maxLength": 64 },
+                "description": "Host id to its printed address. Read by cli-gen/.",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "patternProperties": { "^_": {} },
+                  "properties": {
+                    "address": { "type": "string", "pattern": "^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])$", "description": "A dotted IPv4 address, printed by the scanner text." },
+                    "_comment": { "type": "string" }
+                  }
+                }
+              },
+              "_comment": { "type": "string" }
+            }
           },
           "discovery": { "type": "string", "enum": ["open", "scan"], "description": "Ops core S1 (OPS_CORE_PLAN.md 4.1): open (default, and the meaning of an absent key) lists every row as today; scan lists rows only once a sweep has discovered them. Governs the network view only: no sign-in, desktop or share route reads it. Read through NetworkModel.discovery?." },
           "_comment": { "type": "string" }
@@ -5273,6 +5308,18 @@
         "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Display only." },
         "product": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text, an invented product name." },
         "version": { "type": "string", "minLength": 1, "maxLength": 40, "description": "Plain text." },
+        "cli": {
+          "type": "object",
+          "additionalProperties": false,
+          "patternProperties": { "^_": {} },
+          "description": "Ops skin K3 (S6 unit 21): how the Terminal prints this service. Never sent in the bootstrap (services are withheld). Read by cli-gen/ through the core's view builder.",
+          "properties": {
+            "protocol": { "type": "string", "enum": ["tcp", "udp"], "description": "Printed beside the port." },
+            "service": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,23}$", "description": "The service word printed in a scan line." },
+            "banner": { "type": "string", "minLength": 1, "maxLength": 80, "description": "Plain text printed as the service's banner." },
+            "_comment": { "type": "string" }
+          }
+        },
         "weaknesses": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/weakness" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): what is really wrong with this service, found by a check and settled by a confirm. At most 4. Ids are unique across weaknesses and decoys of the service (the validator checks that). Read through NetworkModel.weaknesses; never sent before a check." },
         "decoys": { "type": "array", "maxItems": 4, "items": { "$ref": "#/definitions/decoy" }, "description": "Ops core S2 (OPS_CORE_PLAN.md 4.2): a finding that looks real until the player confirms it, then shows its falseBecause. At most 4. Read through NetworkModel.decoys; never sent before a check." },
         "_comment": { "type": "string" }
@@ -5291,6 +5338,7 @@
         "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Plain text, game design terms: what is wrong, never how to exploit it. With none the view shows a line per class from an engine table." },
         "needs": { "$ref": "#/definitions/opsNeeds" },
         "grants": { "$ref": "#/definitions/opsGrants" },
+        "realism": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,47}$", "description": "Ops skin K3 (S6 unit 21): the id of a realism catalog entry whose advisory and output text the Terminal prints for this finding. Resolved server-side by the core's finding builder; never sent in the bootstrap. No cli property here: the text lives in the catalog." },
         "fixedIf": { "oneOf": [ { "type": "string", "minLength": 1 }, { "x-id-map": true, "type": "object", "minProperties": 1 } ], "description": "A global name or the requireGlobal map, read server-side as offWhen is." },
         "_comment": { "type": "string" }
       },
@@ -5306,6 +5354,7 @@
         "class": { "type": "string", "enum": ["default_creds", "unpatched", "misconfig", "weak_auth", "cleartext"], "description": "As a weakness." },
         "severity": { "type": "string", "enum": ["low", "medium", "high"], "description": "As a weakness." },
         "summary": { "type": "string", "minLength": 1, "maxLength": 200, "description": "As a weakness." },
+        "realism": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,47}$", "description": "Ops skin K3 (S6 unit 21): the id of a realism catalog entry whose advisory and output text the Terminal prints for this finding (a decoy gets the same form). Resolved server-side by the core's finding builder; never sent in the bootstrap. No cli property here: the text lives in the catalog." },
         "falseBecause": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Why it is not real; plain text, shown only after the player confirms the finding." },
         "_comment": { "type": "string" }
       },
