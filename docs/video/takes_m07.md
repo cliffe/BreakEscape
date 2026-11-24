@@ -101,3 +101,36 @@ Risks to check on the first run (round 2):
 - t13 does not ring if `architect_t20_played` is set (the flags above do not set it). A missed or declined ring goes to voicemail (`taunt_t30_vm`), so the take must answer within the ring.
 - The call screen shows only the newest subtitle: the "Four fires" subtitle mark can lag the audio by 0.1 to 0.2 s; align by ear.
 - If the call UI auto-closes right after the line (no menu), `playThrough` ends early; the 7.6 s hold still covers the clip.
+
+## Session 3 (24 Nov, later): reruns and frame review
+Avatar before: female_hacker_hood_v2. Scripts committed: t11b, t19b/c, t23b/c, t26b, t29b/c, t20b (written, not run). Windows are trimmed-clock seconds. Frames with the demo name "playtest" (player portrait in a chat) must stay out of every window.
+
+| id | result | usable window and notes |
+|---|---|---|
+| t11b_hollis (ngozi_adeyemi) | PASS, drop 0.26%, A/V -85/-82 ms, 36.2 s | torch/map 0-14 s; "Building's evacuating..." about 17.0 to 23.9 (menu appears about 24); "Walk away. Right now. I'm asking." about 31.0 to 34.8 (menu 35). "playtest" portrait frames at about 26 and 30: keep out. Interact fallback worked. |
+| t26b_park_fight (mei_lin_chow) | PASS (2nd attempt), drop 0.74%, A/V -78/-77 ms, 22.4 s | line 8.4 to 11.8; menu 12.3 to 15 (skip); "playtest" frame about 15 (keep out); "Right." 16.3 to 17.3; swing narration 17.9 to 19.8. First 7 s show the Mission Brief notes (0) and the "Welcome to Hacktivity Games" tutorial popup (about 2): keep out. First attempt failed because throttleFps(20) in setup stopped the approach (Park at 68 px): throttle now set after the line. No chase on screen, narrator text only. |
+| t19b_ops_pc | FAIL, drop exactly 1.00% | shows a notes panel ("Abandoned Operator Workstation", grid read-only view text, no codes), about 2 to 7 s. t19c rerun was in flight when this session stopped. |
+| t23b_gen_key | FAIL, drop 1.01% | frames fine: key select 3 to 5, key turn 5 to 12 (usable if the gate is waived). t23c rerun in flight. |
+| t29b_walk_genhall | FAIL, drop 1.68% | no door id for the vault in `nearby`, so the script now walks straight down from spawn (fallback). Frames fine: hall, no ATS plate legible. t29c rerun in flight. |
+| t20_server_closeups | PARTIAL | frame review: the SCADA panel (empty field) is usable at about 5.1 to 7.9. The note was opened and `closeAll` never closed it, so the flag-station shot never filmed (the note stayed on screen 12 to 21 s). Note shot excluded by orchestrator anyway. t20b (panel + station only) written, not run. |
+| t12_ops_exchange | NOT FIXED | read-only source check only. Exchange runs only when two NPCs chat at the same object (cooler) with requireGlobal ops_staff_upset=false and ops_staff_gone=false (both default false), player within overhearRadius 360 of the first speaker. Next: log `window.npcNeedsSystem.log` for adaeze/gwen (urgent, use_started, chat) after setting levels.thirst=20; Gwen is `seated` at her console and may need `needsHome` use release. Fallback if it fails: silent face shot of the pair. |
+
+Frame review (contact sheets, full-res where noted), no PIN, code or flag value seen in any window:
+- t14_elena: line 46.3 to 50.4 clean, no name; "playtest" portrait at about 37 to 38 (keep out); menu from 51.
+- t15_park: line 7.3 to 10.6 (marks); notes (0) and tutorial popup (about 2) in the first 5 s, keep out; menu from 11.6.
+- t16_clock: room small in frame; red display and Mercer visible; hold 1.9 to 5.9. Not checked at full res.
+- t17_checkpoint_pads: badge pad 2 to 8 s shows three typed digits (decoys, checked not a prefix of any PIN); cloner on Hollis (name blurred) 10 to 13 s; "Saved Server Zone Badge" toast text at 12 to 13 (shows badge name, no value).
+- t18_rfid_reader: reader and "Access Granted" 2 to 8 s; card name "Server Zone Badge" shown. Emulate accepted.
+- t21/t27/t28: walks end before anything opens; rooms small in frame (edit zooms).
+- t22_gen_lockpick: lockpick 2.6 to 15; last 2 s show the next room dark: cut at about 15.5.
+- t24_vault_pad: pad shows decoy digits, 2 to 8 s; no ATS plate in the first or last frames (full-res check of the first frame not done; generator hall visible only).
+- t25_mercer_face: Mercer bust 2.1 to 4.6, narrator text only, no menu.
+- t30_phone_hax: HUD visible 0 to 1.5 (cut), thread 4 to 10 s. The thread text names the badge station and "with its PIN" (no digits): a mild clue, owner's call.
+- Sidecars: check-take writes `<id>.take.json` for every take that ran through it; nothing extra was written by hand.
+- Face flashes: Netherton (t10), Hollis (t11b), Elena (t14), Park (t15, t26b), Mercer (t25) are covered. Adaeze and Gwen only via t12 (open).
+
+## Not done (end of session 3)
+- t19c, t23c, t29c: reruns were running when I stopped (batch `scratchpad/m07c.sh`); read their `.check.json` in `~/video-takes-local/m07/takes/` and log pass/fail and windows. Whatever drop % they show, if still over 1% accept with a note or retry once (drops look rig-load related, not script-related).
+- t20b_server_closeups: run (avatar lucia_moreno, flags as t20).
+- t12_ops_exchange: debug as in the table, at most about 15 calls, else fallback face shot of Adaeze and Gwen.
+- Avatar: read selected_sprite after the last take; it must be female_hacker_hood_v2 (read vivian_ashby mid-take, restored by run-take at the end).
