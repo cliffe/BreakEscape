@@ -239,5 +239,21 @@ module BreakEscape
       data['rooms'].values.first['sixProbe'] = { 'code' => '123456' }
       assert_includes scan_with.call('123456'), code
     end
+
+    # ---- R2-L9, R1-L12, R1-L13: tags the recorder never writes -----------------------------------------------------------
+
+    test 'R2-L9 a capture holding a login tag is refused' do
+      tagged = rows(95, 97)
+      assert_nil AccessLeakScanner.hand_tag_problem([['capture.jsonl', tagged]])
+      tagged[1]['login'] = { 'pcId' => 'code_pc1' }
+      assert_match(/capture.jsonl row 2 holds a `login` tag/, AccessLeakScanner.hand_tag_problem([['capture.jsonl', tagged]]))
+    end
+
+    test 'R1-L13 two open steps of one account in a browser capture: a pass answer names no PC, so it is reported' do
+      second = rows(95).first
+      second['body'] = second['body'].merge('pcId' => 'code_pc2')
+      assert_equal [], found(scan_rows(rows(95, 97)).first) # one open step: placed
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows([second] + rows(95, 97, 98)).first)
+    end
   end
 end

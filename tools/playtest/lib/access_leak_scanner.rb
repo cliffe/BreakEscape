@@ -302,6 +302,21 @@ class AccessLeakScanner
     nil
   end
 
+  # R2-L9: the recorder writes no `login` tag (the PC a request body named) on any row, so a capture that holds one was
+  # edited by hand, and a tag placed a sign-in without a name or a desktop to check it. A row with one is refused, returning
+  # the first such row; remove this check only when the recorder writes the tag (tools/playtest/lib/access_leak_scanner.rb
+  # still honours it, which is what the scanner's own tests rely on).
+  def self.hand_tag_problem(files)
+    files.each do |label, rows|
+      Array(rows).each_with_index do |row, i|
+        next unless row.is_a?(Hash) && row.key?('login')
+
+        return "#{label} row #{i + 1} holds a `login` tag: the recorder writes none, so it was added by hand and would place a sign-in the capture does not show"
+      end
+    end
+    nil
+  end
+
   attr_reader :passwords, :items
 
   # served_npcs: when given, the NPC ids whose password the server would serve from

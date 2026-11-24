@@ -25,6 +25,11 @@
 # sign-in or sign-out the capture cannot place (the recorder writes no PC for it). An honest run of test_ops_mfa's playtest needs
 # `--signin hana@code_pc1#1 --signin cal@plain_pc#1`. A named sign-in at a PC that asks for the step is still judged: it needs the step
 # passed first, or the one unlock of a locked session; naming a PC earns nothing. `--resume` has nothing to restore there.
+# A name is only a claim (S8a fix R2): it stands only when the first desktop row of a PC after that sign-in is the named PC
+# showing the named account signed in by a keyboard password. A name the capture never confirms (the capture ends first, no desktop
+# row follows, another sign-in or a sign-out comes first, the desktop shows another PC or account) exits 2 and says which and why:
+# give the capture up to the desktop that followed the sign-in. A `--logout` name stands only when a later answer lists that PC's session.
+# A row holding a `login` tag is refused (exit 2): the recorder writes none.
 #
 # The responses file is what playtest-session.js --capture-responses wrote. Several files
 # (a run split across sessions) are read in the order given. The secrets are read from the
@@ -130,6 +135,12 @@ end
 game_problem = AccessLeakScanner.game_mismatch_problem(game.id, per_file)
 if game_problem
   warn "capture files from different games: #{game_problem}"
+  exit 2
+end
+
+tag_problem = AccessLeakScanner.hand_tag_problem(per_file)
+if tag_problem
+  warn "capture files edited by hand: #{tag_problem}"
   exit 2
 end
 
