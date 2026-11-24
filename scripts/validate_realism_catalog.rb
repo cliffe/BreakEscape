@@ -19,6 +19,7 @@ require 'optparse'
 require 'securerandom'
 require 'digest'
 require 'erb'
+require 'open3'
 begin
   require 'json-schema'
 rescue LoadError
@@ -273,13 +274,19 @@ def realism_read_index(path)
 
   rows = {}
   unreadable = []
+  five = false
   File.readlines(path).each_with_index do |line, i|
-    line = line.chomp
+    line = line.chomp.lstrip
     next unless line.start_with?('|')
-    next if line =~ INDEX_HEADER || line =~ INDEX_RULER
+
+    if line =~ INDEX_HEADER
+      five = line.split('|').length > 5 # a five-column file: every row needs its identity cell
+      next
+    end
+    next if line =~ INDEX_RULER
 
     m = line.match(INDEX_ROW)
-    if m && !rows.key?(m[1])
+    if m && !rows.key?(m[1]) && !(five && m[5].nil?)
       rows[m[1]] = { form: m[3], identity: m[5] }
     else
       unreadable << (i + 1)
@@ -339,6 +346,22 @@ def realism_index_text(map, files, links)
   "#{lines.join("\n")}\n"
 end
 
+# Commits (full history) that ever held the index file, or :shallow when the checkout lacks history, or nil
+# when the index is not inside a git work tree (a scratch copy). `--first-index` is allowed only on nil or [].
+def realism_index_history(index_path)
+  dir = File.dirname(File.expand_path(index_path))
+  return nil unless Dir.exist?(dir)
+
+  inside, st = Open3.capture2('git', 'rev-parse', '--is-inside-work-tree', chdir: dir, err: File::NULL)
+  return nil unless st.success? && inside.strip == 'true'
+
+  shallow, = Open3.capture2('git', 'rev-parse', '--is-shallow-repository', chdir: dir, err: File::NULL)
+  return :shallow if shallow.strip == 'true'
+
+  revs, st = Open3.capture2('git', 'log', '--full-history', '--format=%H', '--', File.expand_path(index_path), chdir: dir, err: File::NULL)
+  st.success? ? revs.split : :shallow
+end
+
 # ---- the whole catalog --------------------------------------------------------------------------
 
 # Returns the problems (RealismProblem). Pass `write_index: true` to rewrite the index when there are none.
@@ -371,6 +394,15 @@ def check_realism_catalog(dir = REALISM_CATALOG_DIR, index_path: REALISM_INDEX_P
       map[id] = entry
       files[id] = file
       realism_check_entry(file, id, entry, problems, ctx)
+    end
+  end
+
+  if first_index && index_path
+    history = realism_index_history(index_path)
+    if history == :shallow
+      realism_problem(problems, 'index', '-', '(history)', 'first_index_history_unknown')
+    elsif history && !history.empty?
+      realism_problem(problems, 'index', '-', '(history)', 'first_index_refused')
     end
   end
 

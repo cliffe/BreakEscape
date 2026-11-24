@@ -228,25 +228,137 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
   end
 
   # Every earlier committed version of the index: each id, form and identity in it is still in the index now
-  # (a hand-edited or regenerated index cannot drop or change a row of the history). Skipped without git.
-  test 'every row of every earlier committed index is still in the index' do
-    rel = 'docs/REALISM_CATALOG_INDEX.md'
-    revs, status = Open3.capture2('git', 'log', '--format=%H', '--', rel, chdir: ROOT, err: File::NULL)
-    skip 'no git history here' unless status.success? && !revs.strip.empty?
-    now = realism_read_index(File.join(ROOT, rel)).first
+  # (a hand-edited or regenerated index cannot drop or change a row of the history). It needs full history:
+  # a shallow checkout is an error, not a pass (R2-2). Returns the problems found in the repository at `root`.
+  def index_history_problems(root, rel = 'docs/REALISM_CATALOG_INDEX.md')
+    shallow, = Open3.capture2('git', 'rev-parse', '--is-shallow-repository', chdir: root, err: File::NULL)
+    if shallow.strip == 'true'
+      return ['shallow checkout: the index history is missing; fetch full history (for CI, fetch-depth: 0)']
+    end
+
+    revs, status = Open3.capture2('git', 'log', '--full-history', '--format=%H', '--', rel, chdir: root, err: File::NULL)
+    return ['git log failed'] unless status.success?
+
+    now = realism_read_index(File.join(root, rel))&.first || {}
+    problems = []
     revs.split.each do |rev|
-      text, st = Open3.capture2('git', 'show', "#{rev}:#{rel}", chdir: ROOT, err: File::NULL)
+      text, st = Open3.capture2('git', 'show', "#{rev}:#{rel}", chdir: root, err: File::NULL)
       next unless st.success?
 
       Dir.mktmpdir do |tmp|
         file = File.join(tmp, 'old.md')
         File.write(file, text)
         realism_read_index(file).first.each do |id, row|
-          assert now.key?(id), "#{id} was in the index at #{rev[0, 9]} and is gone"
-          assert_equal row[:form], now[id][:form], "#{id} changed form since #{rev[0, 9]}"
-          assert_equal row[:identity], now[id][:identity], "#{id} changed identity since #{rev[0, 9]}" if row[:identity]
+          problems << "#{id} was in the index at #{rev[0, 9]} and is gone" unless now.key?(id)
+          next unless now.key?(id)
+
+          problems << "#{id} changed form since #{rev[0, 9]}" if row[:form] != now[id][:form]
+          problems << "#{id} changed identity since #{rev[0, 9]}" if row[:identity] && row[:identity] != now[id][:identity]
         end
       end
+    end
+    problems
+  end
+
+  test 'every row of every earlier committed index is still in the index' do
+    _out, status = Open3.capture2('git', 'rev-parse', '--git-dir', chdir: ROOT, err: File::NULL)
+    skip 'not a git work tree' unless status.success?
+    assert_empty index_history_problems(ROOT)
+  end
+
+  def git(dir, *args)
+    out, st = Open3.capture2e('git', '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', *args, chdir: dir)
+    assert st.success?, out
+    out
+  end
+
+  # A scratch repository with two commits that hold an index (the second adds a row).
+  def scratch_repo(tmp)
+    repo = File.join(tmp, 'repo')
+    FileUtils.mkdir_p(File.join(repo, 'docs'))
+    dir, index = copy_catalog(tmp)
+    git(repo, 'init', '-q')
+    FileUtils.cp(index, File.join(repo, 'docs/REALISM_CATALOG_INDEX.md'))
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-q', '-m', 'index one')
+    File.write(File.join(repo, 'other.txt'), 'x')
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-q', '-m', 'second')
+    [repo, dir, index]
+  end
+
+  test 'the history check passes on full history and finds a dropped row' do
+    Dir.mktmpdir do |tmp|
+      repo, = scratch_repo(tmp)
+      assert_empty index_history_problems(repo)
+      path = File.join(repo, 'docs/REALISM_CATALOG_INDEX.md')
+      kept = File.readlines(path).reject { |l| l.start_with?('| sample_note') }
+      File.write(path, kept.join)
+      assert(index_history_problems(repo).any? { |m| m.include?('sample_note') && m.include?('is gone') })
+    end
+  end
+
+  test 'the history check is an error, not a pass, in a shallow checkout' do
+    Dir.mktmpdir do |tmp|
+      repo, = scratch_repo(tmp)
+      clone = File.join(tmp, 'shallow')
+      out, st = Open3.capture2e('git', 'clone', '-q', '--depth', '1', "file://#{repo}", clone)
+      assert st.success?, out
+      problems = index_history_problems(clone)
+      assert(problems.any? { |m| m.include?('shallow checkout') }, problems.inspect)
+    end
+  end
+
+  test '--first-index is refused when an earlier commit held an index, and in a shallow checkout' do
+    Dir.mktmpdir do |tmp|
+      repo, dir, = scratch_repo(tmp)
+      path = File.join(repo, 'docs/REALISM_CATALOG_INDEX.md')
+      File.delete(path)
+      problems = check_realism_catalog(dir, index_path: path, scenarios_dir: NO_SCENARIOS, write_index: true, first_index: true)
+      assert_equal ['first_index_refused'], errors(problems).map(&:rule)
+      assert_not File.exist?(path), 'no index is written'
+      out, status = Open3.capture2e('ruby', SCRIPT, '--dir', dir, '--index', path, '--scenarios', NO_SCENARIOS, '--first-index', chdir: ROOT)
+      assert_not status.success?, out
+      assert_not File.exist?(path)
+
+      git(repo, 'checkout', '-q', '--', 'docs')
+      clone = File.join(tmp, 'shallow')
+      _o, st = Open3.capture2e('git', 'clone', '-q', '--depth', '1', "file://#{repo}", clone)
+      assert st.success?
+      cpath = File.join(clone, 'docs/REALISM_CATALOG_INDEX.md')
+      File.delete(cpath)
+      problems = check_realism_catalog(dir, index_path: cpath, scenarios_dir: NO_SCENARIOS, write_index: true, first_index: true)
+      assert_equal ['first_index_history_unknown'], errors(problems).map(&:rule)
+    end
+  end
+
+  test '--first-index still works where no commit ever held an index' do
+    Dir.mktmpdir do |tmp|
+      repo = File.join(tmp, 'repo')
+      FileUtils.mkdir_p(File.join(repo, 'docs'))
+      git(repo, 'init', '-q')
+      File.write(File.join(repo, 'a.txt'), 'x')
+      git(repo, 'add', '.')
+      git(repo, 'commit', '-q', '-m', 'one')
+      dir, = copy_catalog(tmp)
+      path = File.join(repo, 'docs/REALISM_CATALOG_INDEX.md')
+      problems = check_realism_catalog(dir, index_path: path, scenarios_dir: NO_SCENARIOS, write_index: true, first_index: true)
+      assert_empty errors(problems).map(&:to_s)
+      assert File.exist?(path)
+    end
+  end
+
+  test 'a five-column index row with its identity cell removed, or indented, is unreadable' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      lines = File.readlines(index)
+      i = lines.index { |l| l.start_with?('| sample_note') }
+      File.write(index, lines.dup.tap { |l| l[i] = l[i].sub(/ \| [0-9a-f]{12} \|\s*\z/, " |\n") }.join)
+      assert_includes check_copy(dir, index), 'index_row_unreadable'
+      File.write(index, lines.dup.tap { |l| l[i] = " #{l[i]}" }.join)
+      assert_empty check_copy(dir, index), 'an indented but intact row is read'
+      File.write(index, lines.dup.tap { |l| l.delete_at(i) }.then { |l| l.insert(i, " | gone_note | f.json | advisories 1, output 1, a/1 | - | 0123456789ab |\n") }.join)
+      assert_includes check_copy(dir, index), 'index_id_missing'
     end
   end
 
@@ -287,7 +399,14 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       'The page cgi-bin/status.php shows the build' => 'request_form',
       'Seen at status/page?name=x here' => 'request_form',
       'Options (-sV) give more' => 'flag',
-      'etc/shadow readable' => 'request_form'
+      'etc/shadow readable' => 'request_form',
+      # R2-6: steps the first rules passed
+      'Please send an oversized name field' => 'instruction', 'First send a long name' => 'instruction',
+      'Next, run the check' => 'instruction', 'You can request the admin page blank' => 'instruction',
+      'Use a blank session on the admin page' => 'instruction', 'Submit a long name to the form' => 'instruction',
+      'Open the admin page with no session' => 'instruction', 'Append two dots to the name' => 'instruction',
+      'Log in with a blank password' => 'instruction', 'api/login takes a long name' => 'request_form',
+      'cgi-bin/status shows it' => 'request_form', 'id=1 shows error' => 'request_form'
     }.each do |text, rule|
       assert_includes rules(text), rule, text
     end
@@ -297,7 +416,12 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
     ['State: update lag of two releases.', 'State: release line is behind.', 'Disclosed: 0000-01-01.', 'Type: file share',
      'Settings are shared', 'Getting older', 'Posted notice is stale', 'Update service is running, then restarts',
      'TCP/IP', 'HTTP/1.1', 'Users/groups listed', 'Release line 2.4.x is behind', 'FileHold 3.2 ready, e.g. for guests',
-     'Server time 14:02', 'Server time 14:02:30'].each { |text| assert_empty rules(text), text }
+     'Server time 14:02', 'Server time 14:02:30',
+     # R2-5: honest state lines the first rules refused
+     'Run level 3 reached', 'Request queue is long', 'Upload limit 20 MB', 'State: upload limit is 20 MB', 'Type 2 device',
+     'Set 3 of 5 loaded', 'Send queue empty', 'Delete protection on', 'Status: delete pending', 'Execute permission: off',
+     'Trigger warnings: none', 'Quillbox/1.x ready', 'HTTP/1.x only', 'SMB/v2.x enabled', 'Opt/out recorded',
+     'Boot/recovery mode'].each { |text| assert_empty rules(text), text }
   end
 
   test 'text rules pass the ordinary look-alikes' do
