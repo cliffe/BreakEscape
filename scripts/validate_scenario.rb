@@ -28,6 +28,7 @@ require_relative 'validate_capture_log'
 require_relative 'validate_log_rows'
 require_relative 'validate_network_ops'
 require_relative 'validate_privilege'
+require_relative 'validate_realism_skin'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_plant_hiding'
@@ -1635,6 +1636,7 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
         # Speaker-prefix resolution + ink character hazards.
         issues.concat(check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers))
+        issues.concat(realism_skin_ink_wording(ink_lines, source_ink_path)) if realism_skin_uses_services?(json_data)
       rescue => e
         # Non-fatal — file was already compiled successfully above
       end
@@ -9122,6 +9124,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_log_rows') { check_log_rows(json_data) }
   run.call('check_network_ops') { check_network_ops(json_data) }
   run.call('check_privilege') { check_privilege(json_data) }
+  run.call('check_realism_skin') { check_realism_skin(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
   run.call('check_plant_hiding') { check_plant_hiding(json_data, repo_root) }
