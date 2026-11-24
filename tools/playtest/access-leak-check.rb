@@ -100,7 +100,12 @@ served = BreakEscape::Game.scenario_room_npcs(game.scenario_data || {}).select d
   BreakEscape::Game.account_holder?(npc) &&
     usernames.include?(BreakEscape::Game.normalise_username(npc['creds']['username']))
 end.map { |npc| npc['id'] }
-scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+begin
+  scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+rescue ArgumentError => e
+  warn e.message
+  exit 2
+end
 
 lines = []
 unreadable = 0
