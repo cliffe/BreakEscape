@@ -275,6 +275,15 @@ export async function phone({ npcId } = {}) {
     return { ok: true, requests: Array.isArray(body.requests) ? body.requests : [] };
 }
 
+/** The phone's request for one lock: { subject: 'object:<id>' | 'door:<id>', npcId }. */
+export async function lockPhone(subject, { npcId } = {}) {
+    const parsed = parseKey(subject);
+    const res = await call('GET', 'mfa/phone', { npc_id: npcId, ...subjectFields(parsed) });
+    if (!res.ok) return { ok: false, reason: res.status === 403 ? 'no_phone' : 'error', status: res.status, body: res.body };
+    const body = res.body || {};
+    return { ok: true, requests: Array.isArray(body.requests) ? body.requests : [] };
+}
+
 /** A tap on the held phone: { number } to approve a number match, { deny: true } to refuse. */
 export function approve(subject, { number, deny } = {}) {
     const extra = {};
