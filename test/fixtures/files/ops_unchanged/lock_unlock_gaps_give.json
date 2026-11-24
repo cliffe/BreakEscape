@@ -1,0 +1,1203 @@
+{
+  "name": "lock_unlock_gaps_give",
+  "description": "S8c unit 01: combination and cryptex locks (objects and doors), a locked start item and an NPC-given locked bag, before any S8c engine edit.",
+  "clock": "2026-01-15T12:00:00Z",
+  "scenario": {
+    "scenario_id": "test_unlock_gaps",
+    "scenario_name": "Test: combination, cryptex and NPC-held containers",
+    "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+    "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+    "startRoom": "lobby",
+    "startItemsInInventory": [
+      {
+        "type": "bag1",
+        "id": "test_start_cryptex",
+        "name": "Pocket Cryptex",
+        "takeable": true,
+        "locked": true,
+        "lockType": "cryptex",
+        "requires": "TINDER",
+        "cryptexConfig": {
+          "wheelCount": 6
+        },
+        "contents": [
+          {
+            "type": "notes",
+            "id": "test_start_note",
+            "name": "Pocket Note",
+            "takeable": true,
+            "readable": true,
+            "text": "The pocket cryptex opened."
+          }
+        ]
+      }
+    ],
+    "rooms": {
+      "lobby": {
+        "type": "room_office",
+        "door_sign": "Lobby",
+        "connections": {
+          "north": "vault"
+        },
+        "npcs": [
+          {
+            "id": "test_courier",
+            "displayName": "Courier",
+            "npcType": "person",
+            "position": {
+              "x": 7,
+              "y": 4
+            },
+            "spriteSheet": "female_security_guard_v2",
+            "storyPath": "scenarios/ink/generic-npc.json",
+            "currentKnot": "start",
+            "itemsHeld": [
+              {
+                "type": "bag1",
+                "id": "test_courier_bag",
+                "name": "Courier Bag",
+                "takeable": true,
+                "locked": true,
+                "lockType": "password",
+                "requires": "Satchel42",
+                "contents": [
+                  {
+                    "type": "notes",
+                    "id": "test_delivery_memo",
+                    "name": "Delivery Memo",
+                    "takeable": true,
+                    "readable": true,
+                    "text": "Delivery confirmed."
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "objects": [
+          {
+            "type": "notes",
+            "id": "test_codes_note",
+            "name": "Codes",
+            "position": {
+              "x": 2,
+              "y": 2
+            },
+            "takeable": true,
+            "readable": true,
+            "text": "Pocket cryptex TINDER. Locker 12-30-5. Cryptex CIPHER. Courier bag Satchel42. Vault 7-21-39. Archive KEYS."
+          },
+          {
+            "type": "safe",
+            "id": "test_combo_locker",
+            "name": "Locker",
+            "position": {
+              "x": 4,
+              "y": 2
+            },
+            "locked": true,
+            "lockType": "combination",
+            "requires": "12-30-5",
+            "contents": [
+              {
+                "type": "notes",
+                "id": "test_locker_note",
+                "name": "Locker Note",
+                "takeable": true,
+                "readable": true,
+                "text": "The locker opened."
+              }
+            ]
+          },
+          {
+            "type": "safe",
+            "id": "test_cryptex_box",
+            "name": "Cryptex",
+            "position": {
+              "x": 6,
+              "y": 2
+            },
+            "locked": true,
+            "lockType": "cryptex",
+            "requires": "CIPHER",
+            "cryptexConfig": {
+              "wheelCount": 6
+            },
+            "contents": [
+              {
+                "type": "notes",
+                "id": "test_cryptex_scroll",
+                "name": "Scroll",
+                "takeable": true,
+                "readable": true,
+                "text": "The cryptex opened."
+              }
+            ]
+          }
+        ]
+      },
+      "vault": {
+        "type": "room_office",
+        "door_sign": "Vault",
+        "locked": true,
+        "lockType": "combination",
+        "requires": "7-21-39",
+        "connections": {
+          "south": "lobby",
+          "north": "archive"
+        },
+        "objects": []
+      },
+      "archive": {
+        "type": "room_office",
+        "door_sign": "Archive",
+        "locked": true,
+        "lockType": "cryptex",
+        "requires": "KEYS",
+        "cryptexConfig": {
+          "wheelCount": 4
+        },
+        "connections": {
+          "south": "vault"
+        },
+        "objects": []
+      }
+    }
+  },
+  "playerState": {
+    "currentRoom": "lobby",
+    "unlockedRooms": [
+      "lobby"
+    ],
+    "encounteredNPCs": [
+      "test_courier"
+    ]
+  },
+  "steps": [
+    {
+      "id": "bootstrap",
+      "method": "GET",
+      "path": "scenario"
+    },
+    {
+      "id": "room_lobby",
+      "method": "GET",
+      "path": "room/lobby"
+    },
+    {
+      "id": "start_cryptex_container_locked",
+      "method": "GET",
+      "path": "container/test_start_cryptex"
+    },
+    {
+      "id": "start_cryptex_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_start_cryptex",
+        "method": "cryptex",
+        "attempt": "WRONGO"
+      }
+    },
+    {
+      "id": "start_cryptex_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_start_cryptex",
+        "method": "cryptex",
+        "attempt": "TINDER"
+      }
+    },
+    {
+      "id": "start_cryptex_container_open",
+      "method": "GET",
+      "path": "container/test_start_cryptex"
+    },
+    {
+      "id": "take_start_note",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "notes",
+          "id": "test_start_note",
+          "name": "Pocket Note"
+        }
+      }
+    },
+    {
+      "id": "locker_container_locked",
+      "method": "GET",
+      "path": "container/test_combo_locker"
+    },
+    {
+      "id": "take_locker_note_early",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "notes",
+          "id": "test_locker_note",
+          "name": "Locker Note"
+        }
+      }
+    },
+    {
+      "id": "locker_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_combo_locker",
+        "method": "combination",
+        "attempt": "12-30-6"
+      }
+    },
+    {
+      "id": "locker_wrong_method",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_combo_locker",
+        "method": "pin",
+        "attempt": "12-30-5"
+      }
+    },
+    {
+      "id": "locker_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_combo_locker",
+        "method": "combination",
+        "attempt": "12-30-5"
+      }
+    },
+    {
+      "id": "locker_again",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_combo_locker",
+        "method": "combination",
+        "attempt": "0-0-0"
+      }
+    },
+    {
+      "id": "locker_container_open",
+      "method": "GET",
+      "path": "container/test_combo_locker"
+    },
+    {
+      "id": "take_locker_note",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "notes",
+          "id": "test_locker_note",
+          "name": "Locker Note"
+        }
+      }
+    },
+    {
+      "id": "cryptex_box_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_cryptex_box",
+        "method": "cryptex",
+        "attempt": "NOPE"
+      }
+    },
+    {
+      "id": "cryptex_box_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_cryptex_box",
+        "method": "cryptex",
+        "attempt": "cipher"
+      }
+    },
+    {
+      "id": "cryptex_box_container_open",
+      "method": "GET",
+      "path": "container/test_cryptex_box"
+    },
+    {
+      "id": "courier_bag_container_before_give",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "courier_bag_before_give",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "Satchel42"
+      }
+    },
+    {
+      "id": "give_courier_bag",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "bag1",
+          "id": "test_courier_bag",
+          "name": "Courier Bag"
+        },
+        "source_npc_id": "test_courier"
+      }
+    },
+    {
+      "id": "courier_bag_container_locked",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "courier_bag_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "wrong"
+      }
+    },
+    {
+      "id": "courier_bag_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "object",
+        "targetId": "test_courier_bag",
+        "method": "password",
+        "attempt": "Satchel42"
+      }
+    },
+    {
+      "id": "courier_bag_container_open",
+      "method": "GET",
+      "path": "container/test_courier_bag"
+    },
+    {
+      "id": "take_delivery_memo",
+      "method": "POST",
+      "path": "inventory",
+      "params": {
+        "action_type": "add",
+        "item": {
+          "type": "notes",
+          "id": "test_delivery_memo",
+          "name": "Delivery Memo"
+        }
+      }
+    },
+    {
+      "id": "vault_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "vault",
+        "method": "combination",
+        "attempt": "1-2-3"
+      }
+    },
+    {
+      "id": "vault_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "vault",
+        "method": "combination",
+        "attempt": "7-21-39"
+      }
+    },
+    {
+      "id": "archive_wrong",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "archive",
+        "method": "cryptex",
+        "attempt": "LOCK"
+      }
+    },
+    {
+      "id": "archive_right",
+      "method": "POST",
+      "path": "unlock",
+      "params": {
+        "targetType": "door",
+        "targetId": "archive",
+        "method": "cryptex",
+        "attempt": "keys"
+      }
+    },
+    {
+      "id": "room_vault",
+      "method": "GET",
+      "path": "room/vault"
+    },
+    {
+      "id": "room_archive",
+      "method": "GET",
+      "path": "room/archive"
+    },
+    {
+      "id": "bootstrap_after",
+      "method": "GET",
+      "path": "scenario"
+    }
+  ],
+  "expected": {
+    "answers": [
+      {
+        "id": "bootstrap",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "vault"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {
+                "north": "archive",
+                "south": "lobby"
+              },
+              "locked": true,
+              "lockType": "combination",
+              "door_sign": "Vault"
+            },
+            "archive": {
+              "type": "room_office",
+              "connections": {
+                "south": "vault"
+              },
+              "locked": true,
+              "lockType": "cryptex",
+              "door_sign": "Archive",
+              "cryptexConfig": {
+                "wheelCount": 4
+              }
+            }
+          },
+          "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+          "startRoom": "lobby",
+          "scenario_id": "test_unlock_gaps",
+          "formatVersion": 3,
+          "scenario_name": "Test: combination, cryptex and NPC-held containers",
+          "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+          "characterSprites": [
+            "female_security_guard_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "test_start_cryptex",
+              "name": "Pocket Cryptex",
+              "type": "bag1",
+              "locked": true,
+              "lockType": "cryptex",
+              "takeable": true,
+              "hasContents": true,
+              "cryptexConfig": {
+                "wheelCount": 6
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "room_lobby",
+        "status": 200,
+        "body": {
+          "room_id": "lobby",
+          "room": {
+            "npcs": [
+              {
+                "id": "test_courier",
+                "npcType": "person",
+                "position": {
+                  "x": 7,
+                  "y": 4
+                },
+                "itemsHeld": [
+                  {
+                    "id": "test_courier_bag",
+                    "name": "Courier Bag",
+                    "type": "bag1",
+                    "locked": true,
+                    "lockType": "password",
+                    "takeable": true,
+                    "hasContents": true
+                  }
+                ],
+                "storyPath": "scenarios/ink/generic-npc.json",
+                "currentKnot": "start",
+                "displayName": "Courier",
+                "spriteSheet": "female_security_guard_v2"
+              }
+            ],
+            "type": "room_office",
+            "objects": [
+              {
+                "id": "test_codes_note",
+                "name": "Codes",
+                "text": "Pocket cryptex TINDER. Locker 12-30-5. Cryptex CIPHER. Courier bag Satchel42. Vault 7-21-39. Archive KEYS.",
+                "type": "notes",
+                "position": {
+                  "x": 2,
+                  "y": 2
+                },
+                "readable": true,
+                "takeable": true
+              },
+              {
+                "id": "test_combo_locker",
+                "name": "Locker",
+                "type": "safe",
+                "locked": true,
+                "lockType": "combination",
+                "position": {
+                  "x": 4,
+                  "y": 2
+                },
+                "hasContents": true
+              },
+              {
+                "id": "test_cryptex_box",
+                "name": "Cryptex",
+                "type": "safe",
+                "locked": true,
+                "lockType": "cryptex",
+                "position": {
+                  "x": 6,
+                  "y": 2
+                },
+                "cryptexConfig": {
+                  "wheelCount": 6
+                },
+                "hasContents": true
+              }
+            ],
+            "door_sign": "Lobby",
+            "connections": {
+              "north": "vault"
+            }
+          }
+        }
+      },
+      {
+        "id": "start_cryptex_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: test_start_cryptex"
+        }
+      },
+      {
+        "id": "start_cryptex_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "start_cryptex_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_start_note",
+              "name": "Pocket Note",
+              "text": "The pocket cryptex opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "start_cryptex_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "test_start_cryptex",
+          "contents": [
+            {
+              "id": "test_start_note",
+              "name": "Pocket Note",
+              "text": "The pocket cryptex opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "take_start_note",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Item not found in scenario: notes"
+        }
+      },
+      {
+        "id": "locker_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: test_combo_locker"
+        }
+      },
+      {
+        "id": "take_locker_note_early",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Container not unlocked: test_combo_locker"
+        }
+      },
+      {
+        "id": "locker_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "locker_wrong_method",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "locker_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_locker_note",
+              "name": "Locker Note",
+              "text": "The locker opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "locker_again",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_locker_note",
+              "name": "Locker Note",
+              "text": "The locker opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "locker_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "test_combo_locker",
+          "contents": [
+            {
+              "id": "test_locker_note",
+              "name": "Locker Note",
+              "text": "The locker opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "take_locker_note",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "cryptex_box_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "cryptex_box_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_cryptex_scroll",
+              "name": "Scroll",
+              "text": "The cryptex opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "cryptex_box_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "test_cryptex_box",
+          "contents": [
+            {
+              "id": "test_cryptex_scroll",
+              "name": "Scroll",
+              "text": "The cryptex opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "courier_bag_container_before_give",
+        "status": 404,
+        "body": {
+          "error": "Container not found: test_courier_bag"
+        }
+      },
+      {
+        "id": "courier_bag_before_give",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "give_courier_bag",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "courier_bag_container_locked",
+        "status": 403,
+        "body": {
+          "error": "Container not unlocked: test_courier_bag"
+        }
+      },
+      {
+        "id": "courier_bag_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "courier_bag_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "object",
+          "hasContents": true,
+          "contents": [
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "courier_bag_container_open",
+        "status": 200,
+        "body": {
+          "container_id": "test_courier_bag",
+          "contents": [
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      },
+      {
+        "id": "take_delivery_memo",
+        "status": 200,
+        "body": {
+          "success": true
+        }
+      },
+      {
+        "id": "vault_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "vault_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_office",
+            "locked": true,
+            "objects": [],
+            "lockType": "combination",
+            "door_sign": "Vault",
+            "connections": {
+              "north": "archive",
+              "south": "lobby"
+            }
+          }
+        }
+      },
+      {
+        "id": "archive_wrong",
+        "status": 422,
+        "body": {
+          "success": false,
+          "message": "Invalid attempt"
+        }
+      },
+      {
+        "id": "archive_right",
+        "status": 200,
+        "body": {
+          "success": true,
+          "type": "door",
+          "roomData": {
+            "type": "room_office",
+            "locked": true,
+            "objects": [],
+            "lockType": "cryptex",
+            "door_sign": "Archive",
+            "connections": {
+              "south": "vault"
+            },
+            "cryptexConfig": {
+              "wheelCount": 4
+            }
+          }
+        }
+      },
+      {
+        "id": "room_vault",
+        "status": 200,
+        "body": {
+          "room_id": "vault",
+          "room": {
+            "type": "room_office",
+            "locked": true,
+            "objects": [],
+            "lockType": "combination",
+            "door_sign": "Vault",
+            "connections": {
+              "north": "archive",
+              "south": "lobby"
+            }
+          }
+        }
+      },
+      {
+        "id": "room_archive",
+        "status": 200,
+        "body": {
+          "room_id": "archive",
+          "room": {
+            "type": "room_office",
+            "locked": true,
+            "objects": [],
+            "lockType": "cryptex",
+            "door_sign": "Archive",
+            "connections": {
+              "south": "vault"
+            },
+            "cryptexConfig": {
+              "wheelCount": 4
+            }
+          }
+        }
+      },
+      {
+        "id": "bootstrap_after",
+        "status": 200,
+        "body": {
+          "rooms": {
+            "lobby": {
+              "type": "room_office",
+              "connections": {
+                "north": "vault"
+              },
+              "door_sign": "Lobby",
+              "hasPresentNpc": true,
+              "locked": false
+            },
+            "vault": {
+              "type": "room_office",
+              "connections": {
+                "north": "archive",
+                "south": "lobby"
+              },
+              "locked": false,
+              "lockType": "combination",
+              "door_sign": "Vault"
+            },
+            "archive": {
+              "type": "room_office",
+              "connections": {
+                "south": "vault"
+              },
+              "locked": false,
+              "lockType": "cryptex",
+              "door_sign": "Archive",
+              "cryptexConfig": {
+                "wheelCount": 4
+              }
+            }
+          },
+          "endGoal": "Check combination and cryptex locks (objects and doors), a dropped NPC-held container and a locked start item.",
+          "startRoom": "lobby",
+          "scenario_id": "test_unlock_gaps",
+          "formatVersion": 3,
+          "scenario_name": "Test: combination, cryptex and NPC-held containers",
+          "scenario_brief": "Engine check (unlock gaps build). Every answer is on the Codes note in the lobby; read it first.\n\n0. Open the Pocket Cryptex you start with (in your tray).\n1. Read the Codes note.\n2. Open the Locker (three dials).\n3. Open the Cryptex.\n4. Punch the Courier until he is knocked out, then open the Courier Bag he drops.\n5. Open the Vault door.\n6. Open the Archive door, north of the Vault: it is a 4-wheel cryptex.",
+          "characterSprites": [
+            "female_security_guard_v2"
+          ],
+          "savedCurrentRoom": "lobby",
+          "sessions": {},
+          "signedInPcs": [],
+          "sessionLockingSupported": false,
+          "credentialsDeclared": false,
+          "footholds": [],
+          "gainedFootholds": [],
+          "npcFrustration": {},
+          "feedPosts": {},
+          "lockoutPcs": [],
+          "playerInventory": [
+            {
+              "id": "test_start_cryptex",
+              "name": "Pocket Cryptex",
+              "type": "bag1",
+              "locked": true,
+              "lockType": "cryptex",
+              "takeable": true,
+              "hasContents": true,
+              "cryptexConfig": {
+                "wheelCount": 6
+              }
+            },
+            {
+              "id": "test_locker_note",
+              "name": "Locker Note",
+              "text": "The locker opened.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            },
+            {
+              "id": "test_courier_bag",
+              "name": "Courier Bag",
+              "type": "bag1",
+              "locked": true,
+              "lockType": "password",
+              "takeable": true,
+              "hasContents": true
+            },
+            {
+              "id": "test_delivery_memo",
+              "name": "Delivery Memo",
+              "text": "Delivery confirmed.",
+              "type": "notes",
+              "readable": true,
+              "takeable": true
+            }
+          ]
+        }
+      }
+    ],
+    "state": {
+      "notes": [],
+      "health": 100,
+      "opsUsed": [],
+      "sessions": {},
+      "footholds": {},
+      "inventory": [
+        {
+          "id": "test_start_cryptex",
+          "name": "Pocket Cryptex",
+          "type": "bag1",
+          "locked": true,
+          "lockType": "cryptex",
+          "takeable": true,
+          "hasContents": true,
+          "cryptexConfig": {
+            "wheelCount": 6
+          }
+        },
+        {
+          "id": "test_locker_note",
+          "name": "Locker Note",
+          "text": "The locker opened.",
+          "type": "notes",
+          "readable": true,
+          "takeable": true
+        },
+        {
+          "id": "test_courier_bag",
+          "name": "Courier Bag",
+          "type": "bag1",
+          "locked": true,
+          "lockType": "password",
+          "takeable": true,
+          "hasContents": true
+        },
+        {
+          "id": "test_delivery_memo",
+          "name": "Delivery Memo",
+          "text": "Delivery confirmed.",
+          "type": "notes",
+          "readable": true,
+          "takeable": true
+        }
+      ],
+      "pinDusted": {},
+      "mfaPending": {},
+      "mfaPrompts": {},
+      "copiedItems": [],
+      "currentRoom": "lobby",
+      "mfaAccounts": {},
+      "opsFindings": {},
+      "room_states": {},
+      "signedInPcs": [],
+      "droppedItems": [],
+      "feedRevealed": {},
+      "plantedItems": [],
+      "sePhishSends": {},
+      "serverClones": {},
+      "sharedLogins": [],
+      "guestSessions": {},
+      "keyringGained": {},
+      "loginFailures": {},
+      "loginLockouts": [],
+      "opsDiscovered": {},
+      "unlockedRooms": [
+        "lobby",
+        "vault",
+        "archive"
+      ],
+      "npcFrustration": {},
+      "pending_events": [],
+      "seLandingPages": {},
+      "credentialClock": {},
+      "encounteredNPCs": [
+        "test_courier"
+      ],
+      "gainedFootholds": [],
+      "globalVariables": {},
+      "guestSessionsAt": {},
+      "npc_given_items": {
+        "test_courier": [
+          {
+            "id": "test_courier_bag",
+            "name": "Courier Bag",
+            "type": "bag1"
+          }
+        ]
+      },
+      "submitted_flags": [],
+      "unlockedObjects": [
+        "test_start_cryptex",
+        "test_combo_locker",
+        "test_cryptex_box",
+        "test_courier_bag"
+      ],
+      "wearableGlobals": [],
+      "biometricSamples": [],
+      "biometricUnlocks": [],
+      "bluetoothDevices": [],
+      "endedCredentials": [],
+      "serverCompletedOnly": [],
+      "serverCreditGlobals": [],
+      "credentialEndGlobals": {},
+      "flag_rewards_claimed": []
+    }
+  }
+}
