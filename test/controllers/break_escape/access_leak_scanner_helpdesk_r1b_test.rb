@@ -127,5 +127,60 @@ module BreakEscape
       data['helpdesks']['it_desk']['resets'] = %w[password]
       assert_empty scan([grant_pw] + code_session_rows(data), data)
     end
+    # ---- R1-SCANNER4: a recovery answer one level below its question id ----
+
+    def lobby(body)
+      row('GET', 'room/lobby', { 'status' => 200, 'body' => body })
+    end
+
+    test 'R1-SCANNER4: an authored answer anywhere below its question id is a finding, a label or another value is not' do
+      [{ 'staff_no' => { 'value' => '40612' } }, { 'staff_no' => [{ 'v' => '40612' }] }, { 'staff_no' => { 'a' => { 'b' => ['x', { 'c' => ' 40612 ' }] } } },
+       { 'manager' => { 'name' => 'pia hart' } }].each do |extra|
+        assert_includes helpdesk_owners(scan([lobby('extra' => extra)])), "helpdesk:recovery:#{extra.keys.first}", extra.inspect
+      end
+      [{ 'staff_no' => { 'value' => 'Staff number' } }, { 'staff_no' => [{ 'v' => '99999' }] }, { 'other' => { 'value' => '40612' } },
+       { 'staff_no' => { 'value' => 40612 } }].each do |extra|
+        assert_empty helpdesk_only(scan([lobby('extra' => extra)])), extra.inspect
+      end
+    end
+
+    # ---- R1-SCANNER5: the old phone's list and old device's code with a second query parameter ----
+
+    test 'R1-SCANNER5: the old phone list and old device code of a re-enrolled account are findings whatever other parameters the query has' do
+      data = scenario
+      list = { 'requests' => [{ 'pcId' => 'code_pc1', 'host' => 'x', 'username' => 'u', 'n' => 1 }] }
+      device = { 'deviceId' => 'hana_device', 'displayName' => npc_of(data, 'hana')['displayName'] || 'hana', 'npcId' => 'hana', 'code' => '111222', 'secondsLeft' => 5, 'used' => false }
+      ['npc_id=hana', 'npc_id=hana&x=1', 'x=1&npc_id=hana'].each do |q|
+        found = scan([grant_mfa, row('GET', 'mfa/phone', { 'status' => 200, 'body' => list }, query: q)], data)
+        assert_includes helpdesk_owners(found), 'helpdesk:old:phone', q
+      end
+      ['item_id=hana_device', 'item_id=hana_device&x=1'].each do |q|
+        found = scan([grant_mfa, own_device('hana'), take('hana_device'), row('GET', 'mfa/device', { 'status' => 200, 'body' => device }, query: q)], data)
+        assert_includes helpdesk_owners(found), 'helpdesk:old:code', q
+      end
+      assert_empty helpdesk_only(scan([row('GET', 'mfa/phone', { 'status' => 200, 'body' => list }, query: 'npc_id=hana&x=1')], data))
+    end
+
+    # ---- R1-SCANNER6: the honest approval holds the session (the desktop row carries the session) ----
+
+    test 'R1-SCANNER6: the session an own-phone approval earned is held at the desktop, and is not held without the approval' do
+      data = cal_scenario
+      cal = npc_of(data, 'cal')
+      session = { 'npcId' => 'cal', 'username' => cal['creds']['username'], 'displayName' => cal['displayName'] || 'cal', 'via' => 'password' }
+      desktop = row('GET', 'container/push_pc', { 'status' => 200, 'body' => { 'container_id' => 'push_pc', 'contents' => [], 'session' => session } })
+      honest = [grant_mfa(npc: 'cal'), own_push_login, own_list(data), session_pass('mfa/approve', 'cal', data, { 'approvedBy' => 'own_phone' }, query: 'own=1')]
+      assert_empty scan(honest + [desktop], data)
+      assert_includes rules(scan([grant_mfa(npc: 'cal'), own_push_login, desktop], data)), 'mfa_session'
+    end
+
+    # ---- R1-SCANNER8: a reset password as a hash key ----
+
+    test 'R1-SCANNER8: a reset password used as a key is a finding, before and after the grant that earned it' do
+      body = { HANA_PW => true }
+      assert_includes helpdesk_owners(scan([lobby(body)])), 'helpdesk:reset:hana'
+      assert_includes helpdesk_owners(scan([grant_pw, lobby('a' => [{ "x #{HANA_PW}" => 1 }])])), 'helpdesk:reset:hana'
+      assert_empty helpdesk_only(scan([lobby('Some-Other-Key' => true)]))
+      assert_empty scan([lobby(body)]).select { |f| f.json_path.include?(HANA_PW) }, 'the reported path never carries the password'
+    end
   end
 end

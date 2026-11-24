@@ -5,8 +5,11 @@ require 'uri'
 require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(BreakEscape::HelpdeskModel)
 
 # Ops S8b unit 17 (feature A23, helpdesk recovery): the leak scanner's helpdesk rules, kept in this file so the main scanner
-# takes only a handful of one-line hooks (a require, an include, `helpdesk_begin_scan`, one `scan_helpdesk` call just before
-# `scan_mfa`, one entry in the rule text table). Included into AccessLeakScanner; it reads the scanner's own state
+# takes only seven changed lines (a require, an include, the `helpdesk_begin_scan` call, the `scan_helpdesk` call just before
+# `scan_mfa`, the rule text table entry, the `mfa_kind_at` clause and the approve clause of `mfa_pass_pc`: see the end of this
+# header). This file also writes two pieces of the second-step rules' state, only ever in the stricter direction: it turns
+# `@mfa_active` ON (a scenario whose only second step is one a re-enrolment creates) and takes steps out of `@mfa_pending` (a
+# credited password grant drops that account's pending steps, as the server does). Included into AccessLeakScanner; it reads the scanner's own state
 # (`@data`, `@priv_npcs`, `@priv_pcs`, `@mfa_*`) and reuses the second-step rules' helpers (`mfa_route`, `mfa_query_value`,
 # `mfa_required_answer_ok?`, `mfa_phone_entry_ok?`, `mfa_phone_taken?`, `mfa_walk`, `capture_time`, `contains_password?`).
 #
@@ -45,9 +48,20 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # named desk could have granted the named account. (3) A code's value is never checked. (4) An earlier stop, grant or phone
 # before the first captured row is unknown. (5) A recovery answer is caught as `{<question id>: <answer>}`, as a hash holding
 # the id as a value beside the answer, as `{<question id>: [<answer>, ...]}` and as an array (nested ones flattened) holding the id
-# beside the answer; one split across two keys or two arrays is not (no id and answer in one place). (6) The main scanner is touched in six places: the require, the
-# include, `helpdesk_begin_scan`, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at`
-# (`hd_reenrolled?`) and the approve clause of `mfa_pass_pc` (`hd_own_approval?`); S8c merges keep both.
+# beside the answer; one split across two keys or two arrays is not (no id and answer in one place). (6) A recovery answer one level below its
+# question id, at any depth, is caught (`{staff_no: {value: ...}}`); an answer split across two keys or two places is not.
+# (7) A reset password is caught as a value and as a hash key; a code's value is never checked (limit 3). (8) The stop rule
+# depends on playtest ORDER (limit 1): a refusal row is `{reason, triesLeft}` or `{reason, retryIn}` on a path with no query,
+# and nothing in it names the desk or the username, so refusals must stay last in every scripted run until the recorder gives
+# the scanner the missing fact. Two ways, both leaving every answer for an unknown username identical to one for a real
+# account: (a) the client sends `desk_id` and `username` in the URL query of `POST helpdesk/request` (as it sends `own=1`),
+# so the scanner holds a stop against `desk|normalised username` (cost: a typed username in URLs and server logs); or (b) one
+# opaque key on `refused` with `triesLeft: 0`, on `blocked` and on `granted`, such as a short keyed hash of
+# `HelpdeskModel.tries_key` (cost: a refusal then carries more than the reason and the count). The recorder change is a later stage.
+#
+# The main scanner is touched in seven places (S8c merges keep all of them): the require, the include, the `helpdesk_begin_scan`
+# call, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at` (`hd_reenrolled?`) and the approve
+# clause of `mfa_pass_pc` (`hd_own_approval?`).
 module HelpdeskLeakRules
   RULE_TEXT = {
     'helpdesk_secret' => 'a recovery answer or key, a helpdesk setting (helpdesks, accountResets, helpdeskTries, minCorrect, maxTries, a form key beyond ' \
@@ -197,6 +211,9 @@ module HelpdeskLeakRules
         if value.is_a?(Array) && hd_recovery_in_array?(value, key)
           # an answer (or a question id beside one) inside an array: `{staff_no: ['40612']}`, `['staff_no', '40612']`
           add.call('helpdesk_secret', 'helpdesk:recovery:array', at)
+        elsif (value.is_a?(Hash) || value.is_a?(Array)) && hd_recovery_below?(key, value)
+          # R1-SCANNER4: under a question id, an authored answer to it at any depth: `{staff_no: {value: '40612'}}`
+          add.call('helpdesk_secret', "helpdesk:recovery:#{key}", at)
         end
         if HD_NEVER_KEYS.include?(key)
           add.call('helpdesk_secret', "helpdesk:key:#{key}", at)
@@ -231,6 +248,22 @@ module HelpdeskLeakRules
 
       hash.values.any? { |v| !v.equal?(qid) && v.is_a?(String) && @hd_recovery[qid].include?(BreakEscape::HelpdeskModel.normalise_answer(v)) }
     end
+  end
+
+  # Every string anywhere inside a hash or an array.
+  def hd_deep_strings(node)
+    case node
+    when String then [node]
+    when Array then node.flat_map { |v| hd_deep_strings(v) }
+    when Hash then node.values.flat_map { |v| hd_deep_strings(v) }
+    else []
+    end
+  end
+
+  # An authored answer to question `qid` among the strings below `node`.
+  def hd_recovery_below?(qid, node)
+    answers = @hd_recovery[qid.to_s]
+    !answers.nil? && hd_deep_strings(node).any? { |v| answers.include?(BreakEscape::HelpdeskModel.normalise_answer(v)) }
   end
 
   # The strings of an array, nested arrays flattened (a hash inside is judged by the walk itself).
@@ -460,6 +493,16 @@ module HelpdeskLeakRules
         add.call('helpdesk_secret', "helpdesk:reset:#{ids.sort.join(',')}", safe_path(path))
       end
     end
+    # R1-SCANNER8: a reset password used as a hash KEY is a finding wherever it is (a key is never an allowed place)
+    mfa_walk(body) do |hash, path, _parent|
+      hash.each_key do |key|
+        next unless key.is_a?(String)
+
+        @hd_reset_pw.each do |pw, ids|
+          add.call('helpdesk_secret', "helpdesk:reset:#{ids.sort.join(',')}", safe_path("#{path}.<key>")) if contains_password?(key, pw)
+        end
+      end
+    end
   end
 
   # ---- the own-phone forms ---------------------------------------------------------------------------------------
@@ -610,11 +653,11 @@ module HelpdeskLeakRules
 
     case minfo[:route]
     when 'mfa/device'
-      item = mfa_query_value(minfo, 'item_id')
+      item = hd_query_value(minfo, 'item_id')
       owner = item && @mfa_devices[item] ? @mfa_devices[item]['owner'] : body['npcId']
       add.call('helpdesk_secret', 'helpdesk:old:code', '$.code') if item && body.key?('code') && hd_reenrolled?(owner)
     when 'mfa/phone'
-      owner = mfa_query_value(minfo, 'npc_id')
+      owner = hd_query_value(minfo, 'npc_id')
       add.call('helpdesk_secret', 'helpdesk:old:phone', '$.requests') if owner && body.key?('requests') && hd_reenrolled?(owner)
     end
   end
@@ -626,6 +669,15 @@ module HelpdeskLeakRules
     return if minfo[:method] == 'GET' && row['status'] == 403 && body == HD_NO_PHONE
 
     add.call('helpdesk_secret', 'helpdesk:own:phone', '$')
+  end
+
+  # The value of a query parameter, whatever other parameters the query has (the first one with that name). For rules that only
+  # report: `mfa_query_value` answers nil for a second parameter, which would let the extra parameter hide the rule.
+  def hd_query_value(minfo, name)
+    pair = URI.decode_www_form(minfo[:query].to_s).find { |key, value| key == name && !value.empty? }
+    pair&.last
+  rescue ArgumentError
+    nil
   end
 
   def hd_query_names?(minfo, name)
