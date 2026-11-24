@@ -1,0 +1,1557 @@
+{
+ "mission": "m07",
+ "id": "m07_trailer60_v1",
+ "title": "SAFETYNET: Licence to Hack, m07 Architect's Gambit 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v1 (2026-11-24): first cut. Music Shadow Tide from 0.05 s (downbeat): quiet intro to 20.9 s, lifts at 4.19 / 10.46 (Mission 7 card) / 20.92 (strong hit 20.72), steady to the end, fade-out 2 s. Ops floor: Gwen's 'At least the water is cold.' from the Adaeze/Gwen exchange (t12) takes the old walk slot plus the dropped Hollis torch shot, so later cuts are unchanged. SCADA panel from t20b. Elena, Park and Mercer are face flashes from line takes; no walk down the generator hall (t29c dropped 1.7% of frames, unused); t19c unused (notes panel); the Architect call is a green terminal view, so the ending 'close-up' is a 4x crop on the text lines, not a portrait.",
+ "music": {
+  "track": "SpyAction/Shadow Tide.mp3",
+  "analysis": "shadow_tide_60.json",
+  "start": 0.05,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Shadow Tide window 69.103 (analysis best: loud from the start, strong hit at 129.8)",
+   "Shadow Tide window 92.121 (drop at 90.0 then lift, ends on a drop at 152.8)",
+   "Noir Midnight Exit Strategy (not analysed)"
+  ]
+ },
+ "beat": {
+  "bpm": 114.69,
+  "period": 0.5231,
+  "offset": 0,
+  "note": "window times (start 0.05): bars every 2.0924 s from 0; rms 0.07-0.10 to 20.9 s (title, hook, Mission 7 card), lifts 4.19 and 10.46, big lift 20.92 with the strongest hit at 20.72 (inside stakes/Hollis), steady 0.17-0.19 to 60. Not judged by ear. Frame-aligned, snap false."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "who planted the sequence stays hidden: Mercer only as a silent face flash and in the clock room; never his hostile route",
+  "'playtest' player-portrait frames kept out: t11b about 26 and 30, t14 37-38, t26b about 15",
+  "t15 first 5 s (notes, tutorial popup), t26b first 7 s, and every reply menu (t10 7.1-8.5/18.4-19.5, t11b 24+, t13c 44.25+, t14 51+) stay out",
+  "rack_cabling_note (t20) never used; visitor_log, shift_handover_sheet, casualty_projection never filmed",
+  "pad digits are decoys (385, 916): not a prefix of any PIN; ENTER never pressed; password field empty",
+  "t19c, t29c (dropped 1.0-1.7% frames, not marked usable) unused",
+  "no outcome menu, no ending"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hook_netherton",
+   "type": "gameplay",
+   "duration": 3.7,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_briefing.trimmed.mkv",
+    "in": 12.95,
+    "out": 16.65
+   },
+   "note": "hook (owner round 2): voice 12.78-16.29 (silencedetect), narrator ends 12.41; J-cut pre 0.5 (audio from 12.45). Bar shows exactly this line; frames 12.9 and 16.85 viewed (Netherton portrait, no menu, no player name). Next line subtitle starts about 16.95: out 16.65",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.5,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "hook line, no code or outcome"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "We are faced with an impossible decision, Agent.",
+     "start": -0.17,
+     "end": 3.34
+    }
+   ]
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 7",
+    "Architect's",
+    "Gambit"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "stakes_netherton",
+   "type": "gameplay",
+   "duration": 2.7667,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t10_briefing.trimmed.mkv",
+    "in": 30.0,
+    "out": 32.7667
+   },
+   "note": "stakes: voice 30.22-32.68 ('Eight point four million people, Agent.'); 'Go and do the part you can reach.' starts 32.88 so out 32.77. The bar shows both sentences, so 16:9 is UI-free (zoom 1.3, bar off). Frames 30.0 and 32.6 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "stakes figure only (owner-approved number)"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Director Magnus Netherton",
+     "text": "Eight point four million people, Agent.",
+     "start": 0.22,
+     "end": 2.68
+    }
+   ]
+  },
+  {
+   "id": "hollis_challenge",
+   "type": "gameplay",
+   "duration": 4.0667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11b_hollis.trimmed.mkv",
+    "in": 19.4,
+    "out": 23.4667
+   },
+   "note": "second sentence only: voice 19.47-23.38 (first sentence 17.83-19.03 dropped); menu appears about 24; 'playtest' frames 26 and 30 stay out. Bar shows both sentences, so 16:9 UI-free. Frames 19.45 and 23.5 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "guard challenge, no code"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Ray Hollis",
+     "text": "So you're lost, or you're the other thing.",
+     "start": 0.07,
+     "end": 3.98
+    }
+   ]
+  },
+  {
+   "id": "ops_water",
+   "type": "gameplay",
+   "duration": 2.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_ops_exchange.trimmed.mkv",
+    "in": 28.35,
+    "out": 30.55
+   },
+   "note": "Adaeze/Gwen exchange at ops_cooler, last line only (voice 28.5-30.2, bubble over the room, no portraits). Takes the 1.0 s of the dropped hollis_torch shot so later cuts stay put. Wall board shows the outage clock and 8.41M served only. Frame 29.4 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.65,
+     "zoom": 2.0
+    },
+    "9:16": {
+     "cx": 0.392,
+     "cy": 0.55,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.392,
+     "cy": 0.65,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "staff aside, outage clock on the wall board"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Gwen Pritchard",
+     "text": "At least the water is cold.",
+     "start": 0.15,
+     "end": 1.85
+    }
+   ]
+  },
+  {
+   "id": "card_withheld",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Withheld",
+    "Caller"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "call_ring",
+   "type": "gameplay",
+   "duration": 1.3,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t13c_architect_call.trimmed.mkv",
+    "in": 10.3,
+    "out": 11.6
+   },
+   "note": "incoming call widget (no caller ID) cropped tight at the top centre; HaX toasts (x>0.68) and the objectives list (x<0.17) are outside every crop. Frames 10.2 and 11.7 viewed whole; crop edge not checked at full res",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.17,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.2,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.17,
+     "zoom": 2.5
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "call widget only"
+   }
+  },
+  {
+   "id": "call_trace",
+   "type": "gameplay",
+   "duration": 3.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13c_architect_call.trimmed.mkv",
+    "in": 15.7,
+    "out": 18.9
+   },
+   "note": "green terminal call screen, text typed by 14.99 so only the first line is on it; voice 15.84-18.75 ('Don't look for the trace.' to 17.46, 'It isn't there.' 17.93-18.75). Frames 16.5 and 18.8 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.2,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.23,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.2,
+     "zoom": 2.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "villain line, no ending or choice"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Architect",
+     "text": "Don't look for the trace. It isn't there.",
+     "start": 0.14,
+     "end": 3.05
+    }
+   ]
+  },
+  {
+   "id": "elena",
+   "type": "gameplay",
+   "duration": 3.7333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_elena.trimmed.mkv",
+    "in": 46.35,
+    "out": 50.0833
+   },
+   "note": "voice 46.46-49.98 (whole 3 sentences); line 46.3-50.4 clean; 'playtest' portrait at 37-38 and the menu from 51 stay out. UI-free 16:9. Frames 46.4 and 49.9 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "engineer line, no culprit"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Elena Rodriguez",
+     "text": "Forty minutes I've been at it. It's read-only. Of course it is.",
+     "start": 0.11,
+     "end": 3.63
+    }
+   ]
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "walk_vm",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t21_server_walk.trimmed.mkv",
+    "in": 2.5,
+    "out": 3.7
+   },
+   "note": "server room, player walks towards the attack terminal, stops before it opens (marks only; frame 3.0 viewed: walking, no minigame). Not the launcher panel",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no launcher panel"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 1.8,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "m07_console_recon_clip.mp4",
+    "in": 0.4,
+    "out": 2.2
+   },
+   "note": "m07 console recon (vm_console_recon_s945, 30.37-32.97 s; crop x0-340 y0-272 of the 1024x768 console at 3x on #21242D): nmap -Pn -p- -T4, then nine open ports. MAC/vendor line below the crop. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m07/clips",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "placeholder": false,
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "terminal scan output only, no credential or flag"
+   }
+  },
+  {
+   "id": "clock",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_clock.trimmed.mkv",
+    "in": 2.5,
+    "out": 4.0
+   },
+   "note": "SCADA room: red 'SEQUENCE ARMED / CLOCK RUNNING' display, Mercer standing right (hold 1.9-5.9; frame 3.5 viewed). Room is small in frame: 3x crop on the display. Full-res crop not checked; v1 r2: re-centred inside the room (old crop showed black outside the room and cut the PNW board in 9:16); source frame 3.0 measured: display (683,345), room x480-1440 y252-828",
+   "framing": {
+    "16:9": {
+     "cx": 0.469,
+     "cy": 0.435,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.356,
+     "cy": 0.486,
+     "zoom": 2.0
+    },
+    "1:1": {
+     "cx": 0.417,
+     "cy": 0.486,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "armed display, no countdown value or code"
+   }
+  },
+  {
+   "id": "card_dark",
+   "type": "card",
+   "duration": 1.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Down into",
+    "the Dark"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "lockpick",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t22_gen_lockpick.trimmed.mkv",
+    "in": 5.8,
+    "out": 6.8
+   },
+   "note": "generator hall door lockpick, pin one set (frame 6 viewed); title bar top-left cropped by y in 16:9; t22 lines 2.6-15",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 0.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "park",
+   "type": "gameplay",
+   "duration": 3.0667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_park.trimmed.mkv",
+    "in": 7.3,
+    "out": 10.3667
+   },
+   "note": "voice 7.38-10.29; notes popup and tutorial popup (first 5 s) and the menu (from 11.6) stay out. UI-free 16:9. Frames 7.3 and 10.2 viewed",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.4,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.75,
+     "cy": 0.38,
+     "zoom": 1.25
+    },
+    "1:1": {
+     "cx": 0.75,
+     "cy": 0.38,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "technician line, not the planted-sequence suspect"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Thomas Park",
+     "text": "Four minutes and I'd have been out. Four.",
+     "start": 0.08,
+     "end": 2.99
+    }
+   ]
+  },
+  {
+   "id": "park_swing",
+   "type": "gameplay",
+   "duration": 1.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t26b_park_fight.trimmed.mkv",
+    "in": 17.9,
+    "out": 19.1
+   },
+   "note": "swing narration (17.9-19.8; frame 18.5 viewed: 'He comes up off his knees with the crimping tool swinging...'), bar kept in 16:9 and carried by captions elsewhere; no chase on screen; 'playtest' frame about 15 stays out",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.75,
+     "cy": 0.435,
+     "zoom": 1.15
+    },
+    "1:1": {
+     "cx": 0.75,
+     "cy": 0.43,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "narration text, no KO"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "lines": [
+    {
+     "speaker": "",
+     "text": "He comes up off his knees with the crimping tool swinging. This is going to be a fight.",
+     "start": 0.0,
+     "end": 1.2
+    }
+   ]
+  },
+  {
+   "id": "cr_pad",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_checkpoint_pads.trimmed.mkv",
+    "in": 6.9,
+    "out": 7.3
+   },
+   "note": "badge station PIN pad, 385_ (three decoys, not a prefix of any PIN; ENTER never pressed; frame 7.2 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three digits, not the code",
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_mercer",
+   "type": "gameplay",
+   "duration": 0.3667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t25_mercer_face.trimmed.mkv",
+    "in": 2.6,
+    "out": 2.9667
+   },
+   "note": "Mercer face (bust 2.1-4.6, narrator bar cropped off, frame 3.3 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.72,
+     "cy": 0.27,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.33,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.30000000000000004,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_cloner",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_checkpoint_pads.trimmed.mkv",
+    "in": 11.0,
+    "out": 11.5
+   },
+   "note": "RFID cloner panel, data rows blurred in the take (frame 11.2 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.49,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no card data legible"
+   }
+  },
+  {
+   "id": "cr_elena",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_elena.trimmed.mkv",
+    "in": 47.0,
+    "out": 47.3333
+   },
+   "note": "Elena face, bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.72,
+     "cy": 0.22,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.28,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.72,
+     "cy": 0.25,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_reader",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t18_rfid_reader.trimmed.mkv",
+    "in": 5.9,
+    "out": 6.4
+   },
+   "note": "RFID reader emulate panel, 'Server Zone Badge - R. Hollis' (frame 6 viewed)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.7
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card label only"
+   }
+  },
+  {
+   "id": "cr_park",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_park.trimmed.mkv",
+    "in": 8.0,
+    "out": 8.3333
+   },
+   "note": "Park face, bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.75,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.75,
+     "cy": 0.26,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.75,
+     "cy": 0.23,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_key",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t23c_gen_key.trimmed.mkv",
+    "in": 6.8,
+    "out": 7.2
+   },
+   "note": "key lock pins and key (frame 7 viewed); top-left title and top-right button cropped by y",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 0.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.62,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "pins only"
+   }
+  },
+  {
+   "id": "cr_hollis",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11b_hollis.trimmed.mkv",
+    "in": 21.0,
+    "out": 21.3333
+   },
+   "note": "Hollis face mid-line, bar cropped off (t11b 21.0 is inside his voiced line, no 'playtest' frame)",
+   "framing": {
+    "16:9": {
+     "cx": 0.7,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.7,
+     "cy": 0.26,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.7,
+     "cy": 0.23,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_scada",
+   "type": "gameplay",
+   "duration": 0.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20b_server_closeups.trimmed.mkv",
+    "in": 6.3,
+    "out": 6.7
+   },
+   "note": "SCADA control password panel, field EMPTY (t20b frame 6.5 viewed; t20b has no cabling note)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.9
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty field"
+   }
+  },
+  {
+   "id": "cr_netherton",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_briefing.trimmed.mkv",
+    "in": 14.0,
+    "out": 14.3333
+   },
+   "note": "Netherton face, bar cropped off",
+   "framing": {
+    "16:9": {
+     "cx": 0.68,
+     "cy": 0.2,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.26,
+     "zoom": 1.6
+    },
+    "1:1": {
+     "cx": 0.68,
+     "cy": 0.23,
+     "zoom": 1.8
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "portrait only"
+   }
+  },
+  {
+   "id": "cr_vault",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t24_vault_pad.trimmed.mkv",
+    "in": 7.0,
+    "out": 7.5
+   },
+   "note": "vault PIN pad, 916_ (three decoys; ENTER never pressed; frame 7.2 viewed); ATS-1 plate not in frame",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.95
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": "three digits, not the code",
+    "note": "three wrong digits"
+   }
+  },
+  {
+   "id": "cr_clock",
+   "type": "gameplay",
+   "duration": 0.3333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t16_clock.trimmed.mkv",
+    "in": 3.0,
+    "out": 3.3333
+   },
+   "note": "armed display again, tight",
+   "framing": {
+    "16:9": {
+     "cx": 0.417,
+     "cy": 0.4,
+     "zoom": 3.0
+    },
+    "9:16": {
+     "cx": 0.356,
+     "cy": 0.486,
+     "zoom": 2.0
+    },
+    "1:1": {
+     "cx": 0.417,
+     "cy": 0.486,
+     "zoom": 2.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "armed display"
+   }
+  },
+  {
+   "id": "cr_ops",
+   "type": "gameplay",
+   "duration": 0.7333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t28_walk_ops.trimmed.mkv",
+    "in": 2.3,
+    "out": 3.0333
+   },
+   "note": "ops floor, player at the consoles",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "room only"
+   }
+  },
+  {
+   "id": "ending_wide",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13c_architect_call.trimmed.mkv",
+    "in": 40.0,
+    "out": 41.0
+   },
+   "note": "J-cut pre 2.55 (audio from 37.45; voice starts 37.53) under the crescendo; first sentence ends 40.74. Call screen wide on the terminal; 3-frame hit on the cut at the silence 40.74-41.44",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 2.2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.32999999999999996,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 2.2
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 2.55,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "villain line, no outcome menu"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Architect",
+     "text": "Four fires tonight, and only one of you.",
+     "start": -2.47,
+     "end": 0.74
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "ending_close",
+   "type": "gameplay",
+   "duration": 3.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13c_architect_call.trimmed.mkv",
+    "in": 41.0,
+    "out": 44.1
+   },
+   "note": "hard cut in the silence to a 4x crop on the text lines (header and button off); 'I set them so you'd have to choose.' 41.44-44.04; out 44.1 before the reply menu (44.25)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 1.7
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.26,
+     "zoom": 2.6
+    }
+   },
+   "audio": {
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "villain line, no menu"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "The Architect",
+     "text": "I set them so you'd have to choose.",
+     "start": 0.44,
+     "end": 3.04
+    }
+   ],
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}
