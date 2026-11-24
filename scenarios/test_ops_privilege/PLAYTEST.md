@@ -10,10 +10,11 @@ The scenario is for testing, not play. It names no host, product, version, class
 feeding the step up, and "a refused request writes nothing"), `ops_privilege_no_exposure_test.rb` (what no answer holds, a forged sync body),
 `privilege_inventory_remove_test.rb`, `privilege_profile_read_test.rb`, `test/models/break_escape/admin_usb_test.rb`.
 Four things have no browser beat, and why:
-- **A stick the policy refuses, accepted under admin.** The engine lets a remote or keyboard administrator plant such a stick only into a sign-in PC itself or a
-  socket whose grant needs a session; the validator forbids `triggerOnInteract` on a sign-in PC, and one grant per PC and shape means the bay PC's one socket is
-  the keystroke socket. So the stick port (`bay_port`) is refused for everyone (beat 3), and the plan's "plant a second stick under remote admin" (plan beat 5) and
-  "token admin session expires, then a refused plant keeps the stick" (plan beat 8) are made by the Rails tests on a copy of the scenario in which the bay PC takes a stick.
+- **A stick the policy refuses, accepted under admin: no path in a validator-clean scenario today.** An administrator's override is judged at a sign-in PC or at the PC named by a socket's session grant,
+  but a sign-in PC cannot take a stick (the validator forbids `triggerOnInteract` on it) and the bay PC's one socket grant is the keystroke socket's, so a governed stick port names no PC that could judge it.
+  The server and client code for it (the remove check, the remote override, the lapsed-override refusal) is covered by Rails and node tests only: the stick port (`bay_port`) is refused for everyone (beat 3),
+  and the plan's "plant a second stick under remote admin" (plan beat 5) and "token admin session expires, then a refused plant keeps the stick" (plan beat 8) are made by the Rails tests on a copy of the
+  scenario in which the bay PC takes a stick. A later small unit may add a field on a governed port naming the PC that judges it (an open question for the owner, brief O3).
 - **A claim feeding the step up** needs the PC's owner to walk away at a moment the script cannot force; the Rails test sets the claim record by hand.
 - **A token session expiring.** Beat 6 shows it only if the tester waits out the game clock (4 game minutes from the first sign-in); the server answer is read with `verify-run.rb`.
 - **A refused request leaves nothing behind** is read in the Rails test (state before and after); the browser only shows the toast.
@@ -48,7 +49,7 @@ read the stored line only. `--ops-log` prints the `priv_audit` rows and ends wit
 
 ## Layout
 
-- `lobby` (start): the drop box `kit_dropbox`; the wall port `office_port` (network `office_lan`, foothold `jack_office_port`); the cabinet `lobby_cabinet` (not locked) holding the card
+- `lobby` (start): the audit log terminal `audit_log_pc` (reads `priv_audit`); the drop box `kit_dropbox`; the wall port `office_port` (network `office_lan`, foothold `jack_office_port`); the cabinet `lobby_cabinet` (not locked) holding the card
   `card_stale` ("Field note: records updates") and the shared-screen code `assist_code` ("Uma assist code.txt"); the sign `sign_lobby`. Doors: north to `bay`, east to `store`.
 - `bay` (north): `bay_pc` (a desk PC, host label BAY01, owner Olu, USB policy blocked, remote sign-in allowed); `bay_dock` ("USB socket by the bay PC", takes `kit_badusb`, a confirm
   whose grant needs a session at `bay_pc`); `bay_port` ("Stick port on the bay shelf", same policy, takes a USB stick through a confirm whose `remove_item` is first);
@@ -60,7 +61,7 @@ read the stored line only. `--ops-log` prints the `priv_audit` rows and ends wit
 - Credentials: `adel_token` (a saved sign-in token for `bay_pc`, expires 4 game minutes after the foothold is gained; listed by the sign-in control over the foothold) and `uma_assist` (a
   shared-screen code for `store_pc`, from `assist_code`).
 - The log source `priv_audit` takes `admin_profile_read` and `usb_install_overridden` (and the ops events).
-- The one finding (`store_pc.records.stale_build`, id from the screen alias) is the step up; the card `stale_build_notes` fits it.
+- The one finding (`store_pc.records.stale_build`, id from the screen alias) is the step up; the card `field_release_notes` fits it.
 
 ## Harness notes
 
@@ -89,6 +90,12 @@ Read `sign_lobby`. Walk north to `bay`. `interact` `bay_pc`, choose the Uma Quay
 Sign in at `bay_pc` as Adel Wick (password from `note_adel`).
 - Browser: the taskbar shows "Administrator"; the desktop lists "Admin runbook.txt", "Olu notes.txt" and the folder "Olu projects" (and no "Uma to do.txt"); open "Olu projects": "Budget draft.txt" is inside; open it and read it; close the folder and open it again.
 - Server: `sessions.bay_pc` is `via password` for `adel`, `access` shown as `admin` by `--access` (and `level admin`); `--ops-log` shows one `admin_profile_read` row as `adelwick` at `bay_pc` for the profile `olu_files` (a repeat open merged: no second row); the row holds no password and no file text.
+
+### 2b. The audit terminal shows the read
+
+Walk to the lobby and `interact` `audit_log_pc`.
+- Browser: the log reader opens and lists the privilege events so far; one row of kind `ADMIN_READ`, by the account `adelwick`, at `bay_pc`, for the profile `olu_files` (kind words and names only, no raw id, no password, no file text). Close it.
+- Server: opening the reader saves nothing (`GET /log_rows` writes no row); `--ops-log` still shows exactly one `admin_profile_read` row.
 
 ### 3. A stick at the shelf port is refused, for the administrator too
 

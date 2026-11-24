@@ -145,6 +145,29 @@ module BreakEscape
       refute_includes fresh.log_rows_for(AUDIT).to_json, OLU_PASSWORD
     end
 
+    # S5a R1 F11: the lobby's reader terminal shows the audit rows, and reading them writes none.
+    test 'the audit reader shows the admin read row and GET /log_rows saves nothing' do
+      build
+      admin_in
+      folder
+      assert_equal 1, rows('admin_profile_read').size
+      saves = 0
+      sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
+        sql = payload[:sql].to_s
+        saves += 1 if sql.start_with?('UPDATE') && sql.include?('break_escape_games')
+      end
+      begin
+        get game_path('log_rows'), params: { object_id: 'audit_log_pc' }, as: :json
+      ensure
+        ActiveSupport::Notifications.unsubscribe(sub)
+      end
+      assert_response :success, response.body
+      assert_equal 0, saves
+      assert_includes response.body, 'ADMIN_READ'
+      refute_includes response.body, OLU_PASSWORD
+      assert_equal 1, rows('admin_profile_read').size
+    end
+
     test 'the owner opens the same folder as an ordinary read and leaves no audit row' do
       build
       assert sign_in('bay_pc', 'omarsh', OLU_PASSWORD)['success']
@@ -324,7 +347,7 @@ module BreakEscape
       ops_scan(OFFICE, host_id: 'store_pc')
       ops_check(OFFICE, host_id: 'store_pc', service: 'records')
       ops_confirm(OFFICE, FINDING)
-      give('id' => 'card_stale', 'type' => 'technique_card', 'name' => 'Field note: records updates', 'technique_card' => 'stale_build_notes',
+      give('id' => 'card_stale', 'type' => 'technique_card', 'name' => 'Field note: records updates', 'technique_card' => 'field_release_notes',
            'takeable' => true)
     end
 
@@ -377,7 +400,7 @@ module BreakEscape
     test 'a use of the card with no confirmed finding, or a finding that is not there, writes nothing' do
       build
       hold_foothold
-      give('id' => 'card_stale', 'type' => 'technique_card', 'name' => 'Field note: records updates', 'technique_card' => 'stale_build_notes',
+      give('id' => 'card_stale', 'type' => 'technique_card', 'name' => 'Field note: records updates', 'technique_card' => 'field_release_notes',
            'takeable' => true)
       before = state.slice('sessions', 'plantedItems', 'footholds', 'opsUsed')
       body = ops_technique(OFFICE, FINDING, 'card_stale')

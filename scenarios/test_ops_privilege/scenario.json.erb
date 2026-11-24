@@ -17,7 +17,7 @@
   },
 
   "techniques": {
-    "stale_build_notes": {
+    "field_release_notes": {
       "name": "Release notes: records build",
       "summary": "For a service that has fallen behind its published fixes.",
       "worksOn": { "class": "unpatched", "product": "Tallowmere RecordKeep", "versions": ["4.2"] }
@@ -166,6 +166,15 @@
           "observations": "A wall port marked Office."
         },
         {
+          "type": "ops_log_terminal",
+          "id": "audit_log_pc",
+          "name": "Audit log terminal",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "observations": "A terminal showing the building's privilege audit log.",
+          "minigameData": { "logSource": "priv_audit" }
+        },
+        {
           "type": "filing_cabinet_locked1",
           "id": "lobby_cabinet",
           "name": "Cabinet by the front door",
@@ -178,7 +187,7 @@
               "type": "technique_card",
               "id": "card_stale",
               "name": "Field note: records updates",
-              "technique_card": "stale_build_notes",
+              "technique_card": "field_release_notes",
               "takeable": true,
               "observations": "A folded note about an update the records machine missed."
             },

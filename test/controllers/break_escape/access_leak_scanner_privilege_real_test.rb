@@ -20,11 +20,9 @@ module BreakEscape
     OLU = ['omarsh', 'Harbourlight-Olu-08'].freeze
     AUDIT = 'priv_audit'.freeze
 
-    # The real scenario with ONE rename: its card registry key `stale_build_notes` holds the finding's id part `stale_build`,
-    # so the S2 rule (a finding's id part before its check) reports the card item in the lobby room answer. Reported to the
-    # orchestrator as a unit 15 authoring clash; the rename keeps this run about the privilege rules.
+    # The real scenario, as shipped.
     def scenario
-      JSON.parse(ScenarioBinding.render(File.read(SCENARIO_PATH)).gsub('stale_build_notes', 'stale_notes'))
+      JSON.parse(ScenarioBinding.render(File.read(SCENARIO_PATH)))
     end
 
     # One recorded answer, in the browser log's shape; `login` is the recorder's tag naming the PC of a sign-in.
@@ -62,11 +60,11 @@ module BreakEscape
       rec
     end
 
+    # The audit rows through the lobby's reader terminal, the route a player uses.
     def audit_answer
-      client = Game.find(@game.id).log_rows_for_client(AUDIT)
-      row = { 'method' => 'GET', 'path' => game_path('log_rows'), 'status' => 200, 'body' => JSON.parse(client.to_json) }
-      @log << row
-      row
+      get game_path('log_rows'), params: { object_id: 'audit_log_pc' }, as: :json
+      assert_response :success, response.body
+      rec
     end
 
     # The played run. @marks names the rows a test injects into.

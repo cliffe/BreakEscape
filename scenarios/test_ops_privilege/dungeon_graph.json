@@ -93,6 +93,12 @@
       "optional": false
     },
     {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "cred_adel_token",
       "label": "Adel Wick token<br/>(adelwick)",
       "kind": "key",
@@ -111,7 +117,7 @@
       "optional": false
     },
     {
-      "id": "tech_stale_build_notes",
+      "id": "tech_field_release_notes",
       "label": "Release notes: records build",
       "kind": "key",
       "optional": false
@@ -268,6 +274,17 @@
       "soft": false
     },
     {
+      "from": "lobby",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_priv_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
       "from": "cred_adel_token",
       "to": "lock_bay_pc",
       "soft": false
@@ -284,11 +301,11 @@
     },
     {
       "from": "cred_src_card_stale",
-      "to": "tech_stale_build_notes",
+      "to": "tech_field_release_notes",
       "soft": false
     },
     {
-      "from": "tech_stale_build_notes",
+      "from": "tech_field_release_notes",
       "to": "weak_store_pc_records_stale_build",
       "soft": false
     },

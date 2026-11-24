@@ -115,6 +115,7 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
         <div class="edge-row"><span class="edge-solid"></span> Hard dependency (required)</div>
         <div class="edge-row"><span class="edge-dashed"></span> Soft dependency / narrative unlock</div>
         <div class="edge-row"><span class="edge-opt"></span> Optional path</div>
+          <div class="edge-row"><code>-.-</code> log: a log source (a note) and a reader that shows it; it gates nothing</div>
           <div class="edge-row"><code>held</code> / <code>dropped</code> / <code>session at PC</code>: what an implant needs</div>
           <div class="edge-row"><b>weak_</b> node: a weakness a check can find on a host or device, hung from it or from its network</div>
           <div class="edge-row"><b>tech_</b> node: a technique card, drawn to each weakness it matches; a weakness may grant a session (to the host sign-in) or a credential</div>
@@ -147,7 +148,7 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">5</td></tr>
       <tr><th>Rooms</th><td class="val">4</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">22 / 35</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">23 / 37</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -192,10 +193,11 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   implant_bay_pc["Implant: bay_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
   log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden")]
+  reader_audit_log_pc{"Audit log terminal<br/>(log reader)"}
   cred_adel_token{"Adel Wick token<br/>(adelwick)"}
   cred_uma_assist{"Uma Quayle assist invite<br/>(umaquay)"}
   cred_src_assist_code{"Uma assist code.txt"}
-  tech_stale_build_notes{"Release notes: records build"}
+  tech_field_release_notes{"Release notes: records build"}
   cred_src_card_stale{"Field note: records updates"}
   admin_at_bay_pc{"Bay desk PC<br/>Administrator session"}
   admin_at_store_pc{"Records PC<br/>Administrator session"}
@@ -225,11 +227,13 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   implant_bay_pc --> net_office_lan
   lobby --> bay
   lobby --> store
+  lobby --> reader_audit_log_pc
+  log_priv_audit -.- reader_audit_log_pc
   cred_adel_token --> lock_bay_pc
   cred_src_assist_code --> cred_uma_assist
   cred_uma_assist --> lock_store_pc
-  cred_src_card_stale --> tech_stale_build_notes
-  tech_stale_build_notes --> weak_store_pc_records_stale_build
+  cred_src_card_stale --> tech_field_release_notes
+  tech_field_release_notes --> weak_store_pc_records_stale_build
   weak_store_pc_records_stale_build -->|grants session| lock_store_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
@@ -237,10 +241,10 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   lock_store_pc --> weak_store_pc_records_stale_build
 
   class lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
-  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_stale_build_notes,admin_at_bay_pc,admin_at_store_pc key
+  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_field_release_notes,admin_at_bay_pc,admin_at_store_pc key
   class bay,store,lobby,net_office_lan room
   class log_priv_audit note
-  class cred_src_assist_code,cred_src_card_stale item
+  class reader_audit_log_pc,cred_src_assist_code,cred_src_card_stale item
   class node_start start`,
       story:      `flowchart TD
 
@@ -299,10 +303,11 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   implant_bay_pc["Implant: bay_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
   log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden")]
+  reader_audit_log_pc{"Audit log terminal<br/>(log reader)"}
   cred_adel_token{"Adel Wick token<br/>(adelwick)"}
   cred_uma_assist{"Uma Quayle assist invite<br/>(umaquay)"}
   cred_src_assist_code{"Uma assist code.txt"}
-  tech_stale_build_notes{"Release notes: records build"}
+  tech_field_release_notes{"Release notes: records build"}
   cred_src_card_stale{"Field note: records updates"}
   admin_at_bay_pc{"Bay desk PC<br/>Administrator session"}
   admin_at_store_pc{"Records PC<br/>Administrator session"}
@@ -333,11 +338,13 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   implant_bay_pc --> net_office_lan
   lobby --> bay
   lobby --> store
+  lobby --> reader_audit_log_pc
+  log_priv_audit -.- reader_audit_log_pc
   cred_adel_token --> lock_bay_pc
   cred_src_assist_code --> cred_uma_assist
   cred_uma_assist --> lock_store_pc
-  cred_src_card_stale --> tech_stale_build_notes
-  tech_stale_build_notes --> weak_store_pc_records_stale_build
+  cred_src_card_stale --> tech_field_release_notes
+  tech_field_release_notes --> weak_store_pc_records_stale_build
   weak_store_pc_records_stale_build -->|grants session| lock_store_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
@@ -345,10 +352,10 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   lock_store_pc --> weak_store_pc_records_stale_build
 
   class lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
-  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_stale_build_notes,admin_at_bay_pc,admin_at_store_pc key
+  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_field_release_notes,admin_at_bay_pc,admin_at_store_pc key
   class bay,store,lobby,net_office_lan room
   class log_priv_audit note
-  class cred_src_assist_code,cred_src_card_stale item
+  class reader_audit_log_pc,cred_src_assist_code,cred_src_card_stale item
   class aim_privilege_beats aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -405,50 +412,52 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   store("Store room")
   rc_kit_dropbox_1{"Network drop box"}
   rc_office_port_2{"Office wall port"}
-  rc_lobby_cabinet_3[["Cabinet by the front door"]]
-  rc_card_stale_4{"Field note: records updates"}
-  rc_assist_code_5{"Uma assist code.txt"}
-  rc_sign_lobby_6{"Sign: Start here"}
-  rc_bay_pc_7{"Bay desk PC"}
-  rc_bay_dock_8{"USB socket by the bay PC"}
-  rc_bay_port_9{"Stick port on the bay shelf"}
-  rc_bay_breaker_10{"Wall switch: bay power"}
-  rc_kit_badusb_11{"Keystroke injector"}
-  rc_kit_stick_a_12{"Grey USB stick"}
-  rc_kit_stick_b_13{"Blue USB stick"}
-  rc_npc_olu_marsh_14("Olu Marsh")
-  rc_store_pc_15{"Records PC"}
-  rc_note_uma_16{"Note: Uma's login"}
-  rc_note_adel_17{"Note: Adel's login"}
-  rc_npc_uma_quayle_18("Uma Quayle")
-  rc_npc_adel_wick_19("Adel Wick")
+  rc_audit_log_pc_3{"Audit log terminal"}
+  rc_lobby_cabinet_4[["Cabinet by the front door"]]
+  rc_card_stale_5{"Field note: records updates"}
+  rc_assist_code_6{"Uma assist code.txt"}
+  rc_sign_lobby_7{"Sign: Start here"}
+  rc_bay_pc_8{"Bay desk PC"}
+  rc_bay_dock_9{"USB socket by the bay PC"}
+  rc_bay_port_10{"Stick port on the bay shelf"}
+  rc_bay_breaker_11{"Wall switch: bay power"}
+  rc_kit_badusb_12{"Keystroke injector"}
+  rc_kit_stick_a_13{"Grey USB stick"}
+  rc_kit_stick_b_14{"Blue USB stick"}
+  rc_npc_olu_marsh_15("Olu Marsh")
+  rc_store_pc_16{"Records PC"}
+  rc_note_uma_17{"Note: Uma's login"}
+  rc_note_adel_18{"Note: Adel's login"}
+  rc_npc_uma_quayle_19("Uma Quayle")
+  rc_npc_adel_wick_20("Adel Wick")
 
   lobby --> bay
   lobby --> store
   lobby --> rc_kit_dropbox_1
   lobby --> rc_office_port_2
-  lobby --> rc_lobby_cabinet_3
-  rc_lobby_cabinet_3 --> rc_card_stale_4
-  rc_lobby_cabinet_3 --> rc_assist_code_5
-  lobby --> rc_sign_lobby_6
-  bay --> rc_bay_pc_7
-  bay --> rc_bay_dock_8
-  bay --> rc_bay_port_9
-  bay --> rc_bay_breaker_10
-  bay --> rc_kit_badusb_11
-  bay --> rc_kit_stick_a_12
-  bay --> rc_kit_stick_b_13
-  bay --> rc_npc_olu_marsh_14
-  store --> rc_store_pc_15
-  store --> rc_note_uma_16
-  store --> rc_note_adel_17
-  store --> rc_npc_uma_quayle_18
-  store --> rc_npc_adel_wick_19
+  lobby --> rc_audit_log_pc_3
+  lobby --> rc_lobby_cabinet_4
+  rc_lobby_cabinet_4 --> rc_card_stale_5
+  rc_lobby_cabinet_4 --> rc_assist_code_6
+  lobby --> rc_sign_lobby_7
+  bay --> rc_bay_pc_8
+  bay --> rc_bay_dock_9
+  bay --> rc_bay_port_10
+  bay --> rc_bay_breaker_11
+  bay --> rc_kit_badusb_12
+  bay --> rc_kit_stick_a_13
+  bay --> rc_kit_stick_b_14
+  bay --> rc_npc_olu_marsh_15
+  store --> rc_store_pc_16
+  store --> rc_note_uma_17
+  store --> rc_note_adel_18
+  store --> rc_npc_uma_quayle_19
+  store --> rc_npc_adel_wick_20
 
   class lobby,bay,store room
-  class rc_kit_dropbox_1,rc_office_port_2,rc_card_stale_4,rc_assist_code_5,rc_sign_lobby_6,rc_bay_pc_7,rc_bay_dock_8,rc_bay_port_9,rc_bay_breaker_10,rc_kit_badusb_11,rc_kit_stick_a_12,rc_kit_stick_b_13,rc_store_pc_15,rc_note_uma_16,rc_note_adel_17 item
-  class rc_lobby_cabinet_3 container
-  class rc_npc_olu_marsh_14,rc_npc_uma_quayle_18,rc_npc_adel_wick_19 npc
+  class rc_kit_dropbox_1,rc_office_port_2,rc_audit_log_pc_3,rc_card_stale_5,rc_assist_code_6,rc_sign_lobby_7,rc_bay_pc_8,rc_bay_dock_9,rc_bay_port_10,rc_bay_breaker_11,rc_kit_badusb_12,rc_kit_stick_a_13,rc_kit_stick_b_14,rc_store_pc_16,rc_note_uma_17,rc_note_adel_18 item
+  class rc_lobby_cabinet_4 container
+  class rc_npc_olu_marsh_15,rc_npc_uma_quayle_19,rc_npc_adel_wick_20 npc
   class node_start start`
     };
     const rendered = {};
