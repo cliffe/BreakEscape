@@ -198,4 +198,24 @@ class AccessLeakScannerFactTest < ActiveSupport::TestCase
   test 'the rule is in RULE_TEXT' do
     assert AccessLeakScanner::RULE_TEXT.key?('fact_unearned')
   end
+
+  test 'the hash form of flagRewards awards a fact too' do
+    data = JSON.parse(scenario.to_json)
+    holder = nil
+    walk = lambda do |n|
+      case n
+      when Hash then (holder = n if n['flagRewards'].is_a?(Array) && n['flagRewards'].any? { |r| r['fact'] == 'dana_year' }); n.each_value { |v| walk.call(v) }
+      when Array then n.each { |v| walk.call(v) }
+      end
+    end
+    walk.call(data)
+    assert holder, 'the scenario has a flag reward for dana_year'
+    holder['flagRewards'] = { 'flag{x}' => holder['flagRewards'].first }
+    data['social']['intelFacts']['dana_year'] = YEAR
+    lines = [['r.jsonl', 1, bootstrap(['dana_year', YEAR])]]
+    found = AccessLeakScanner.new(data, game: Game.new([])).scan(lines)
+    assert_equal ['fact_unearned'], found.map(&:rule)
+    lines = [['r.jsonl', 1, flag([grant_reward])]]
+    assert_empty AccessLeakScanner.new(data, game: Game.new(ALL)).scan(lines)
+  end
 end

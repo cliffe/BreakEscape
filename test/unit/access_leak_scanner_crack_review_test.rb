@@ -31,6 +31,11 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     def password_held_for?(npc_id)
       Array(held_other).include?(npc_id) || Array(cracked_accounts).include?(npc_id)
     end
+
+    # R2-L5: the scanner needs every method of the checks the scenario can reach, or it stops
+    def crack_token(_id, _entry, _npc)
+      TOKEN
+    end
   end
 
   def full_game(**over)

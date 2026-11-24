@@ -162,4 +162,42 @@ class AccessLeakScannerCrackR2Test < ActiveSupport::TestCase
     assert_includes rules([running, unchanged({ 'dana_hash' => 11 })], game: full_game), 'crack_row'
     assert_includes rules([running, unchanged({ 'eli_hash' => 3 })], game: full_game), 'crack_row'
   end
+
+  # ---- R2-L7: the crack routes are matched from the start of the path -------------------------------------
+
+  test 'R2-L7: the crack and keyring routes under another mount or prefix are not the crack routes' do
+    assert_empty scan([running, cracked_answer('dana'), get_keyring({ 'rev' => 'a', 'entries' => [], 'captures' => {} })], game: full_game)
+    bad = post_crack({ 'success' => true, 'status' => 'cracked', 'accountId' => 'dana', 'credentialIds' => ['dana.cracked'] }, path: '/evil/games/1/crack')
+    entry = { 'id' => 'dana.cracked', 'kind' => 'password', 'source' => 'cracked', 'label' => 'Cracked', 'password' => 'JuniperAshby2003',
+              'account' => { 'npcId' => 'dana', 'username' => 'dreyes', 'displayName' => 'Dana Reyes' } }
+    at_good = get_keyring({ 'rev' => 'a', 'entries' => [entry], 'captures' => {} })
+    found = rules([running, bad, at_good], game: full_game)
+    assert_includes found, 'crack_unearned'
+    found = rules([running, cracked_answer('dana'), get_keyring({ 'rev' => 'a', 'entries' => [entry], 'captures' => {} }, path: '/x/games/1/keyring')], game: full_game)
+    assert_includes found, 'crack_unearned'
+    assert_includes found, 'password'
+    assert_empty scan([running, cracked_answer('dana'), get_keyring({ 'rev' => 'a', 'entries' => [entry], 'captures' => {} })], game: full_game)
+  end
+
+  # ---- R2-L5: a game that lacks a method turns no check off -------------------------------------------------
+
+  test 'R2-L5: a game that lacks one of the methods the checks need is an error, not a skipped check' do
+    %i[credential_proof_holds? earned_fact_ids crack_token password_held_for? player_state].each do |missing|
+      stub = Object.new
+      (%i[credential_proof_holds? earned_fact_ids crack_token password_held_for? player_state] - [missing]).each do |m|
+        stub.define_singleton_method(m) { |*| m == :player_state ? {} : (m == :earned_fact_ids ? [] : true) }
+      end
+      error = assert_raises(ArgumentError, missing.to_s) { AccessLeakScanner.new(scenario, game: stub) }
+      assert_includes error.message, missing.to_s
+    end
+    assert_kind_of AccessLeakScanner, AccessLeakScanner.new(scenario, game: full_game)
+    assert_kind_of AccessLeakScanner, AccessLeakScanner.new(scenario)
+  end
+
+  test 'R2-L5: a private method does not count, and a scenario with no hash record or award fact needs none of them' do
+    stub = Class.new(Game) { private :crack_token }.new(nil, FACTS, [], [])
+    assert_raises(ArgumentError) { AccessLeakScanner.new(scenario, game: stub) }
+    plain = { 'rooms' => {}, 'startRoom' => 'a' }
+    assert_kind_of AccessLeakScanner, AccessLeakScanner.new(plain, game: Object.new)
+  end
 end

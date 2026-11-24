@@ -440,6 +440,7 @@ class AccessLeakScanner
     collect_workarounds
     collect_feeds
     collect_facts
+    require_game_methods
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -1036,9 +1037,9 @@ class AccessLeakScanner
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
       # S7 crack rules: the exact game route (the older rules above keep their own looser matching)
-      crack: method == 'POST' && path.match?(%r{/games/\d+/crack\z}),
-      crack_keyring_route: method == 'GET' && path.match?(%r{/games/\d+/keyring\z}),
-      crack_keyring: method == 'GET' && row['status'].is_a?(Integer) && row['status'] == 200 && path.match?(%r{/games/\d+/keyring\z}),
+      crack: method == 'POST' && path.match?(%r{\A(?:/break_escape)?/games/\d+/crack\z}),
+      crack_keyring_route: method == 'GET' && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
+      crack_keyring: method == 'GET' && row['status'].is_a?(Integer) && row['status'] == 200 && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
@@ -3549,6 +3550,22 @@ class AccessLeakScanner
     @crack_max_facts = [facts.max || 0, 4].min
   end
 
+  GAME_METHODS_CRACK = %i[credential_proof_holds? earned_fact_ids crack_token password_held_for? player_state].freeze
+  GAME_METHODS_FACTS = %i[earned_fact_ids].freeze
+
+  # R2-L5: given a game, the proof, fact, token and held-partner checks need these public methods. A game that lacks one is an
+  # error (the CLI stops and prints no clean result), never a check that quietly passes everything. Only the checks the
+  # scenario can reach are required: hash records need the crack set, award facts the fact set.
+  def require_game_methods
+    return unless @game
+
+    needed = []
+    needed |= GAME_METHODS_CRACK unless @crack_records.empty?
+    needed |= GAME_METHODS_FACTS unless @fact_entries.empty?
+    missing = needed.reject { |m| @game.respond_to?(m) }
+    raise ArgumentError, "the game given to the leak scanner lacks #{missing.join(', ')}: a check would be skipped" unless missing.empty?
+  end
+
   # OpsCracking#crack_class: crack.password, else the NPC's habits.password, for an NPC with a password and a grade that
   # resolves; nil otherwise.
   def crack_record_class(entry, npc)
@@ -3624,7 +3641,7 @@ class AccessLeakScanner
   end
 
   def crack_record_held?(record)
-    return true unless @game.respond_to?(:credential_proof_holds?)
+    return true unless @game
 
     @game.credential_proof_holds?(record[:id], record[:entry])
   end
@@ -3634,7 +3651,7 @@ class AccessLeakScanner
 
     case record[:klass]
     when 'guessable'
-      return true unless @game.respond_to?(:earned_fact_ids)
+      return true unless @game
 
       (Array(record[:entry].dig('crack', 'facts')).map(&:to_s) - Array(@game.earned_fact_ids).map(&:to_s)).empty?
     when 'reused'
@@ -3648,7 +3665,7 @@ class AccessLeakScanner
 
   # The game holds this account's password by a route other than a crack (a capture, a registry password entry).
   def crack_held_elsewhere?(npc_id)
-    return false unless @game.respond_to?(:password_held_for?) && @game.respond_to?(:player_state)
+    return false unless @game
 
     state = @game.player_state
     cracked = state.is_a?(Hash) ? Array(state['crackedAccounts']) : []
@@ -3770,7 +3787,7 @@ class AccessLeakScanner
 
     known = @data.dig('social', 'intelFacts')
     return false unless known.is_a?(Hash) && list.all? { |f| !f.start_with?('se_intel_') && known.key?(f) }
-    return true unless @game.respond_to?(:earned_fact_ids)
+    return true unless @game
 
     (list - Array(@game.earned_fact_ids)).empty?
   end
@@ -3834,7 +3851,7 @@ class AccessLeakScanner
   # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
   def crack_token_ok?(token, record)
     return false unless token.is_a?(String) && token.match?(CRACK_TOKEN)
-    return true unless @game.respond_to?(:crack_token)
+    return true unless @game
 
     token == @game.crack_token(record[:id], record[:entry], record[:npc])
   end
@@ -3914,17 +3931,21 @@ class AccessLeakScanner
     facts = @data.dig('social', 'intelFacts')
     return unless facts.is_a?(Hash)
 
+    grant = lambda do |r|
+      next unless r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String)
+
+      @fact_grant_ids << r['fact']
+      @fact_reward_labels[r['fact']] << r['label'] if r['label'].is_a?(String)
+    end
     walk = lambda do |node, key|
       case node
-      when Hash then node.each { |k, v| walk.call(v, k) }
+      when Hash
+        # the hash form of flagRewards, { "<flag>": { type: grant_fact, ... } }, as EarnedFacts reads it
+        node.each_value { |r| grant.call(r) } if key == 'flagRewards'
+        node.each { |k, v| walk.call(v, k) }
       when Array
         node.each { |f| @fact_item_ids << f if key == 'revealsFacts' && f.is_a?(String) && !f.empty? }
-        node.each do |r|
-          next unless key == 'flagRewards' && r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String)
-
-          @fact_grant_ids << r['fact']
-          @fact_reward_labels[r['fact']] << r['label'] if r['label'].is_a?(String)
-        end
+        node.each { |r| grant.call(r) } if key == 'flagRewards'
         node.each { |v| walk.call(v, key) }
       end
     end

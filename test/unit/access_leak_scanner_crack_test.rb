@@ -27,6 +27,15 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
     def player_state
       {}
     end
+
+    # R2-L5: the scanner needs every method of the checks the scenario can reach, or it stops
+    def crack_token(_id, _entry, _npc)
+      TOKEN
+    end
+
+    def password_held_for?(_npc_id)
+      false
+    end
   end
 
   def scenario
