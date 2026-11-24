@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca03_trailer_script.md and docs/video/takes_ca03.md (recorded 23 Nov, commit 71fb068b1). Model ca07 and ca04 (attack-first). Marks and frame-time windows from the recorded takes; Sulafat VO; PeaceFolk Gently Decaying window from 104.478 s. Hook is Niamh H1 sentence 1, end line is Anjali E1 sentence 1 (Darren muted in the take); no cast line is under VO. Leila is unvoiced (owner question L1)."
  },
  "fps": 30,
- "length": 73.69,
+ "length": 77.59,
  "music": {
   "track": "PeaceFolk/Gently Decaying.mp3",
   "analysis": "gently_decaying_75.json",
   "start": 104.478,
-  "length": 73.69,
+  "length": 77.59,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -112,7 +112,7 @@
     "company": "Quayholt Insurance",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
@@ -190,8 +190,8 @@
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 7.04,
-    "out": 12.04
+    "in": 6.64,
+    "out": 11.64
    },
    "audio": {
     "gain_db": -6
@@ -202,7 +202,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: note:blk_claims_head 7.364 (Our people, Gordon McLeish noted), note:blk_conf_bio 11.013 (Events), staffref frame 11.914; in = head note - 0.32, out after the staff ref frame + 0.26; public facts only; Friendface and the IT-support note not in; v3 over the whole shot; narrow: browser outer shell stays about 1100 px wide around the 560 px page, check the crop | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED RETAKE 24 Nov. t02b: note:blk_claims_head 6.960; in = head note - 0.32, 5.0 s (rule as r1) | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
@@ -236,8 +236,8 @@
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 26.85,
-    "out": 30.85
+    "in": 26.153,
+    "out": 30.153
    },
    "audio": {
     "gain_db": -6
@@ -248,7 +248,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: blank:3 27.295, blank:4 29.74, filled 30.441; out after the fill; the call-open phone and the Make the call click not in; frame-check no tell or Red-flags text on the panel (card shows the pretext only) | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED RETAKE 24 Nov. t02b: filled 29.214, call_click 30.312; out = call_a in (continuous source), so the Make the call click lands in call_a | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
@@ -274,16 +274,78 @@
    }
   },
   {
-   "id": "call",
+   "id": "call_a",
    "type": "gameplay",
-   "duration": 6.0,
+   "duration": 4.52,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 34.1,
-    "out": 40.1
+    "in": 30.153,
+    "out": 34.673
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "VOICED CALL 24 Nov (3538b7dfa, Leila = Laomedeia). t02b: call_click 30.312, greeting onset 31.223 (voice_end:open 34.319 - clip 3.096); in = onset - 1.07 so v5 ends before she answers; out = line end + 0.35 | CA: spoilers not an issue (owner), no masks"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "THE CALL",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    }
+   },
+   "lines": [
+    {
+     "start": 1.07,
+     "end": 4.166,
+     "speaker": "Leila",
+     "text": "IT service desk, Leila speaking. How can I help?"
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
+  },
+  {
+   "id": "call_b",
+   "type": "gameplay",
+   "duration": 3.88,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_attack_narrow.trimmed.mkv",
+    "in": 40.648,
+    "out": 44.528
    },
    "audio": {
     "gain_db": -6
@@ -294,7 +356,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: call_open 34.097, pick:1 34.48, pick:2 37.77; the contact sheet shows the phone from about 31 s so call_open may be late, in-point is call_open; phone .phone-messages-container 400x700 centred, influence bar and the 'Wary at -30 / Refuses at -50 / Reports at -70' text on screen (a mechanic, fine); tell and last-change lines hidden by CSS; out before pick:3; Leila's name must show in the frame, check on the render; call debrief panel not in (appears at 50.25 / 52.7) | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED CALL 24 Nov. t02b: quiet gap voice_end:pick1 40.548 to pick2 onset 44.828; pick:2 43.809 moves the meter under v6; no Leila speech in the shot (gain -6, clicks only) | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
@@ -322,17 +384,19 @@
   {
    "id": "lands",
    "type": "gameplay",
-   "duration": 6.7,
+   "duration": 7.9,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 44.72,
-    "out": 51.42
+    "in": 56.361,
+    "out": 64.261
    },
    "audio": {
-    "gain_db": -6
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
    },
    "spoiler": {
     "reviewed": false,
@@ -340,7 +404,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: ask_pick 44.962, landed 48.963, granted true; in = ask - 0.24, out 51.42 is 1.28 s before the call debrief panel (52.7); the call_closed mark is not used; Leila unvoiced (L1), her payoff line is text only, held 2.4 s or more; if the payoff text is on the game bar below the phone and the 1.4 zoom crops it, widen the framing on the render | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED CALL 24 Nov. t02b: ask_pick 58.461, payoff onset 59.477 (voice_end:ask 63.725 - clip 4.248), granted true; in = ask - 2.1 (v7 over the menu), Leila heard from 3.116 s, out 0.5+ after her line | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
@@ -363,7 +427,21 @@
      "cy": 0.5,
      "zoom": 1.4
     }
-   }
+   },
+   "lines": [
+    {
+     "start": 3.116,
+     "end": 7.364,
+     "speaker": "Leila",
+     "text": "All done. I've reset it and sent a temporary password through."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true
   },
   {
    "id": "prompts",
@@ -374,8 +452,8 @@
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 66.15,
-    "out": 70.65
+    "in": 81.763,
+    "out": 86.263
    },
    "audio": {
     "gain_db": -6
@@ -386,7 +464,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: send_click 61.141, first_card 62.808, more_shown 69.289 ('...and 8 more prompts'), approved 70.964; in = more_shown - 3.15, out = more_shown + 1.35 so the card stack builds to the 'more' line and stops before approved; banner and outcome hidden by CSS; account address clipped by the phone, frame-check; empty dark panel under the stack, frame-check | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED RETAKE 24 Nov. t02b: more_shown 84.913, approved 86.572; in = more_shown - 3.15, out = more_shown + 1.35 (rule as r1) | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "attack",
@@ -420,8 +498,8 @@
    },
    "source": {
     "file": "t02b_attack_narrow.trimmed.mkv",
-    "in": 77.48,
-    "out": 79.98
+    "in": 93.028,
+    "out": 95.528
    },
    "audio": {
     "gain_db": -6
@@ -432,7 +510,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t02b: flip_continue 77.98, heading 'Now you're the one answering' to about 0.1 s after it, then 'Take the calls' with the strip on Defend; stepped frames show no flash; in = Continue - 0.5, out 0.1 before take end | CA: spoilers not an issue (owner), no masks"
+    "note": "VOICED RETAKE 24 Nov. t02b: flip_continue 93.528; in = Continue - 0.5 (rule as r1) | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "defend",
@@ -718,122 +796,122 @@
   {
    "id": "v1",
    "start": 4.38,
-   "end": 9.164,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 9.492,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 9.56,
-   "end": 12.008,
+   "start": 9.86,
+   "end": 12.308,
    "text": "A caller says he's locked out.",
    "caption": "A caller says\nhe's locked out.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 12.258,
-   "end": 14.634,
+   "start": 12.558,
+   "end": 14.934,
    "text": "This episode: help desk resets.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 15.16,
-   "end": 17.56,
+   "start": 15.46,
+   "end": 17.86,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 18.16,
-   "end": 22.288,
+   "start": 18.46,
+   "end": 22.588,
    "text": "Public pages give a name, manager and staff number.",
    "caption": "Public pages give a name,\nmanager and staff number.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 23.16,
-   "end": 25.656,
+   "start": 22.838,
+   "end": 25.334,
    "text": "Plan the call from what you found.",
    "caption": "Plan the call from\nwhat you found.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v5",
-   "start": 27.16,
-   "end": 29.704,
+   "start": 25.584,
+   "end": 28.128,
    "text": "Ring the desk as the locked-out manager.",
    "caption": "Ring the desk as the\nlocked-out manager.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 29.954,
-   "end": 32.738,
+   "start": 31.98,
+   "end": 34.764,
    "text": "The meter shows how wary Leila gets.",
    "caption": "The meter shows how\nwary Leila gets.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v7",
-   "start": 33.16,
-   "end": 35.032,
+   "start": 35.86,
+   "end": 37.732,
    "text": "Now ask her for the reset.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v7.mp3"
   },
   {
    "id": "v8",
-   "start": 39.86,
-   "end": 42.668,
+   "start": 43.76,
+   "end": 46.568,
    "text": "The sign-in still needs his phone. Keep asking.",
    "caption": "The sign-in still needs his phone.\nKeep asking.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
-   "start": 44.86,
-   "end": 46.324,
+   "start": 48.76,
+   "end": 50.224,
    "text": "Now take the calls.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
-   "start": 49.36,
-   "end": 52.36,
+   "start": 53.26,
+   "end": 56.26,
    "text": "Three calls and a sign-in prompt are waiting.",
    "caption": "Three calls and a sign-in\nprompt are waiting.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11a",
-   "start": 53.56,
-   "end": 55.768,
+   "start": 57.46,
+   "end": 59.668,
    "text": "Two callers claim to be Gordon.",
    "caption": "Two callers claim\nto be Gordon.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v11a.mp3"
   },
   {
    "id": "v11b",
-   "start": 56.018,
-   "end": 57.146,
+   "start": 59.918,
+   "end": 61.046,
    "text": "Is either real?",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v11b.mp3"
   },
   {
    "id": "v12",
-   "start": 58.56,
-   "end": 61.224,
+   "start": 62.46,
+   "end": 65.124,
    "text": "Could a stranger know everything this caller knows?",
    "caption": "Could a stranger know everything\nthis caller knows?",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v12.mp3"
   },
   {
    "id": "v13",
-   "start": 68.39,
-   "end": 73.358,
+   "start": 72.29,
+   "end": 77.258,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca03/vo/Sulafat_v2/trim/v13.mp3"

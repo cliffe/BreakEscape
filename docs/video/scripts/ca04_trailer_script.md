@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22) and batch 1 lessons: the trailer stand
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–5.0 | hook | **PLACEHOLDER (owner question).** t02_attack_run, a separate window after the Send: the green It landed panel (about 1 s), then Tomás's on-screen reply held as a burned caption, "Will do, Catherine. I'll get it sorted and drop you a line once it's done. Safe travels.", with the small label "Merrin & Sallow"; no bar, no bubble · **pending take** | — | — (silent; the reply is on-screen text, unvoiced) |
-| 5.0–10.1 | open | Title: Executive impersonation / Merrin & Sallow Architects | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 5.0–10.1 | open | Title: Executive impersonation / Merrin & Sallow Architects | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 10.1–16.9 | topic | t04_pa_inbox run A, 3-9.8 s · tab PA INBOX · the five-row list, '0 of 5 sorted', held; no row opened · **pending take** | **v1b** "An email in the boss's name asks for payment."<br>**v1c** "This episode:\nexecutive impersonation." | — |
 | 16.9–19.9 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 19.9–24.5 | research | t02_attack_run 8-12.6 s · tab OPEN-SOURCE RESEARCH · Merrin & Sallow Events & talks page, Catherine Merrin's heading and the Lisbon Design Forum block, noted (public facts only) · **pending take** | **v3** "The firm's website says Catherine is away this week." | — |

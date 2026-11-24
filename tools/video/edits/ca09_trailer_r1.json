@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca09_trailer_script.md (round 2) and docs/video/takes_ca09.md (recorded 23 Nov, commit 2f0218df8). Model ca01 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quietly Cinematic window from 57.378 s."
  },
  "fps": 30,
- "length": 70.233,
+ "length": 70.533,
  "music": {
   "track": "PeaceFolk/Quietly Cinematic.mp3",
   "analysis": "quietly_cinematic_75.json",
   "start": 57.378,
-  "length": 70.233,
+  "length": 70.533,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -117,7 +117,7 @@
     "company": "Tarrowby Logistics",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.4
+   "duration": 5.7
   },
   {
    "id": "topic",
@@ -690,92 +690,92 @@
   {
    "id": "v1",
    "start": 5.42,
-   "end": 10.204,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 10.532,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 10.6,
-   "end": 15.28,
+   "start": 10.9,
+   "end": 15.58,
    "text": "Colin posts about Pennington Rangers and his dog, Bramble.",
    "caption": "Colin posts about\nPennington Rangers\nand his dog, Bramble.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 15.53,
-   "end": 17.594,
+   "start": 15.83,
+   "end": 17.894,
    "text": "This episode: passwords.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 18.0,
-   "end": 20.4,
+   "start": 18.3,
+   "end": 20.7,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 21.2,
-   "end": 23.912,
+   "start": 21.5,
+   "end": 24.212,
    "text": "His own posts hand you the guesses.",
    "caption": "His own posts hand\nyou the guesses.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 25.2,
-   "end": 30.048,
+   "start": 25.5,
+   "end": 30.348,
    "text": "Turn his team, his dog and the company's founding year into guesses.",
    "caption": "Turn his team, his dog and\nthe company's founding year\ninto guesses.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v5",
-   "start": 30.5,
-   "end": 32.492,
+   "start": 30.8,
+   "end": 32.792,
    "text": "His angling forum was breached.",
    "caption": "His angling forum\nwas breached.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 32.742,
-   "end": 35.118,
+   "start": 33.042,
+   "end": 35.418,
    "text": "The same password opens his work account.",
    "caption": "The same password opens\nhis work account.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v8",
-   "start": 44.633,
-   "end": 51.785,
+   "start": 44.933,
+   "end": 52.085,
    "text": "Eight things to sort: sign-in prompts, a message claiming to be IT, and your own password choices.",
    "caption": "Eight things to sort:\nsign-in prompts, a message\nclaiming to be IT, and your\nown password choices.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
-   "start": 52.035,
-   "end": 53.595,
+   "start": 52.335,
+   "end": 53.895,
    "text": "Did you start this sign-in?",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
-   "start": 54.033,
-   "end": 57.609,
+   "start": 54.333,
+   "end": 57.909,
    "text": "One password per account, kept in a manager.",
    "caption": "One password per account,\nkept in a manager.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 64.933,
-   "end": 69.901,
+   "start": 65.233,
+   "end": 70.201,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca09/vo/Sulafat_v2/trim/v11.mp3"

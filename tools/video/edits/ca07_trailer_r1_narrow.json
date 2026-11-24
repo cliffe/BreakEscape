@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca07_trailer_script.md and docs/video/takes_ca07.md (recorded 23 Nov, commit 89d64db97). Model ca01 and ca04 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Quiet Reflection window from 91.43 s. Hook is G1, end line G2; no cast line is under VO."
  },
  "fps": 30,
- "length": 68.8,
+ "length": 70.0333,
  "music": {
   "track": "PeaceFolk/Quiet Reflection.mp3",
   "analysis": "quiet_reflection_75.json",
   "start": 91.43,
-  "length": 68.8,
+  "length": 70.0333,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -112,19 +112,19 @@
     "company": "Brightwell Foods",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
    "type": "gameplay",
-   "duration": 5.2,
+   "duration": 6.1333,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04b_finance_line_narrow.trimmed.mkv",
     "in": 6.2,
-    "out": 11.4
+    "out": 12.3333
    },
    "audio": {
     "gain_db": -6
@@ -453,7 +453,7 @@
      "zoom": 1.25
     },
     "1:1": {
-     "cx": 0.70,
+     "cx": 0.7,
      "cy": 0.4,
      "zoom": 1.25
     }
@@ -660,106 +660,106 @@
   {
    "id": "v1",
    "start": 2.92,
-   "end": 7.704,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 8.032,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 8.1,
-   "end": 10.332,
-   "text": "A voice you know can be copied.",
-   "caption": "A voice you know\ncan be copied.",
+   "start": 8.4,
+   "end": 11.568,
+   "text": "A voice you know can be faked on a live call.",
+   "caption": "A voice you know can be faked\non a live call.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 10.582,
-   "end": 12.934,
+   "start": 11.815,
+   "end": 14.167,
    "text": "This episode: cloned voices.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 13.3,
-   "end": 15.7,
+   "start": 14.533,
+   "end": 16.933,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 16.3,
-   "end": 19.468,
+   "start": 17.533,
+   "end": 20.701,
    "text": "The website names the chief executive, Ravinder.",
    "caption": "The website names the chief\nexecutive, Ravinder.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v3b",
-   "start": 20.1,
-   "end": 22.38,
+   "start": 21.333,
+   "end": 23.613,
    "text": "His post says he's in Leeds all week.",
    "caption": "His post says he's in\nLeeds all week.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v3b.mp3"
   },
   {
    "id": "v4",
-   "start": 23.0,
-   "end": 27.056,
+   "start": 24.233,
+   "end": 28.289,
    "text": "Write his email to back up a cloned call.",
    "caption": "Write his email to back up\na cloned call.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
-   "start": 27.6,
-   "end": 29.88,
+   "start": 28.833,
+   "end": 31.113,
    "text": "Tie it to a payment already due.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
-   "start": 30.5,
-   "end": 33.068,
+   "start": 31.733,
+   "end": 34.301,
    "text": "Send it to Tom, who releases payments.",
    "caption": "Send it to Tom, who\nreleases payments.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v7",
-   "start": 43.1,
-   "end": 45.38,
+   "start": 44.333,
+   "end": 46.613,
    "text": "Now it's your phone and inbox.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v7.mp3"
   },
   {
    "id": "v8",
-   "start": 46.1,
-   "end": 49.22,
+   "start": 47.333,
+   "end": 50.453,
    "text": "Three voicemails and two emails to sort.",
    "caption": "Three voicemails and two\nemails to sort.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
-   "start": 50.1,
-   "end": 53.412,
+   "start": 51.333,
+   "end": 54.645,
    "text": "Whose voice it is matters less than what it asks.",
    "caption": "Whose voice it is matters\nless than what it asks.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10b",
-   "start": 55.1,
-   "end": 56.78,
+   "start": 56.333,
+   "end": 58.013,
    "text": "Then a colleague asks.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v10b.mp3"
   },
   {
    "id": "v11",
-   "start": 63.5,
-   "end": 68.468,
+   "start": 64.733,
+   "end": 69.701,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca07/vo/Sulafat_v2/trim/v11.mp3"

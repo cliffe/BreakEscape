@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22, as carried by ca01): the trailer stand
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–3.6 | hook | t01_niamh_hook · Niamh H1 after the defend set, not-caught branch (cached, 5.21 s; defend copy 5.14 s): person-chat view, cut after the first sentence at the silence boundary (about 3.1 s of speech), game's bar cropped out and the first sentence burned as the caption; in = line start minus 0.3 s, out = end of sentence plus 0.15 s · **pending take** | — | Niamh: "Half the floor was locked out of a system earlier." |
-| 3.6–8.7 | open | Title: After the click / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 3.6–8.7 | open | Title: After the click / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 8.7–14.7 | topic | t04_ayaan_inbox 1-7 s · tab AYAAN'S INBOX · the "0 of 6 sorted" list, six rows, nothing opened, no pick; heading and the six subjects only · **pending take** | **v1b** "Someone has clicked. What happens next?"<br>**v1c** "This episode: after the click." | — |
 | 14.7–18.2 | red_card | attack card, title only: "You play the attacker" (3.5 s) | **v2** "First, you play the attacker." | — |
 | 18.2–22.5 | research | t02_attack_run 8-12.3 s · tab OPEN-SOURCE RESEARCH · Quayholt "Signing in" page, the service desk block noted, then "Company news" with the single sign-on block noted (public facts only) · **pending take** | **v3** "The company's site lists the IT service desk's address." | — |

@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.95 | hook | t07_darren_prompt, in = line start minus 0.15, out = line end plus 0.1 (line expected about 1.5 s after Look up, so about 1.35-6.3 s) · Darren at his workstation, world bark with the game's own bar · cold open, no tells · **pending take** | — | Darren: "Voicemail's come through by email. Signing in to hear it." (cached, 4.70 s) |
-| 4.95–10.05 | open | Title: Fake sign-in pages / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.95–10.05 | open | Title: Fake sign-in pages / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 10.05–17.35 | topic | t05_pages_list 3-10.3 s · tab PAGES BEHIND LINKS · the five-row list, '0 of 5 sorted' (constant, nothing picked), held · **pending take** | **v1b** "A copied sign-in page looks just like the real one."<br>**v1c** "This episode: fake sign-in pages." | — |
 | 17.35–20.35 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 20.35–24.55 | research | t02_attack_run 8-12.2 s · tab OPEN-SOURCE RESEARCH · Quayholt news page: the single sign-on move noted (public facts only) · **pending take** | **v3** "The company's own news gives you a reason." | — |

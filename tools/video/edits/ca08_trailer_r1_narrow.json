@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca08_trailer_script.md (round 2) and docs/video/takes_ca08.md (recorded 23 Nov, commit fcfaf5e30). Model ca05 (attack-first). Marks-based windows from the recorded takes; Sulafat VO; PeaceFolk Gently Decaying Again window from 6.069 s."
  },
  "fps": 30,
- "length": 67.267,
+ "length": 67.567,
  "music": {
   "track": "PeaceFolk/Gently Decaying Again.mp3",
   "analysis": "gently_decaying_again_75.json",
   "start": 6.069,
-  "length": 67.267,
+  "length": 67.567,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -110,7 +110,7 @@
     "company": "Quayholt Insurance",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "topic",
@@ -641,98 +641,98 @@
   {
    "id": "v1",
    "start": 2.92,
-   "end": 7.704,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 8.032,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 8.1,
-   "end": 10.932,
+   "start": 8.4,
+   "end": 11.232,
    "text": "Someone has clicked. What happens next?",
    "caption": "Someone has clicked.\nWhat happens next?",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v1c",
-   "start": 11.182,
-   "end": 13.39,
+   "start": 11.482,
+   "end": 13.69,
    "text": "This episode: after the click.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v1c.mp3"
   },
   {
    "id": "v2",
-   "start": 13.767,
-   "end": 16.167,
+   "start": 14.067,
+   "end": 16.467,
    "text": "First, you play the attacker.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 16.767,
-   "end": 20.343,
+   "start": 17.067,
+   "end": 20.643,
    "text": "The company's site lists the IT service desk's address.",
    "caption": "The company's site lists\nthe IT service desk's address.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 21.167,
-   "end": 23.879,
+   "start": 21.467,
+   "end": 24.179,
    "text": "Write it as the IT service desk.",
    "caption": "Write it as the\nIT service desk.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v4b",
-   "start": 24.367,
-   "end": 27.511,
+   "start": 24.667,
+   "end": 27.811,
    "text": "Mention the sign-in change staff were told about.",
    "caption": "Mention the sign-in change\nstaff were told about.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v4b.mp3"
   },
   {
    "id": "v5",
-   "start": 28.067,
-   "end": 28.931,
+   "start": 28.367,
+   "end": 29.231,
    "text": "Send it.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 29.181,
-   "end": 30.429,
+   "start": 29.481,
+   "end": 30.729,
    "text": "Ayaan signs in.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v8",
-   "start": 44.234,
-   "end": 46.706,
+   "start": 44.534,
+   "end": 47.006,
    "text": "Six things turn up in his inbox.",
    "caption": "Six things turn up\nin his inbox.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v9",
-   "start": 47.034,
-   "end": 48.426,
+   "start": 47.334,
+   "end": 48.726,
    "text": "Some are ordinary.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v9.mp3"
   },
   {
    "id": "v10",
-   "start": 49.234,
-   "end": 52.402,
+   "start": 49.534,
+   "end": 52.702,
    "text": "Which ones say someone else is using his account?",
    "caption": "Which ones say someone else\nis using his account?",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 62.067,
-   "end": 67.035,
+   "start": 62.367,
+   "end": 67.335,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca08/vo/Sulafat_v2/trim/v11.mp3"

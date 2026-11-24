@@ -9,7 +9,7 @@ Shape: ca00 is onboarding with no attacker to play and no sort of its own, so it
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–2.1 | hook | ca12 `t06_the_call.trimmed.mkv` 15.0-17.1 s (local take, `~/video-takes-local/ca12/takes`) · tab FRONT DESK, Delphine's reply with the influence meter · small label "An episode at Merrin & Sallow" · game's own bar cropped out, burned caption "Go on then, I'll buzz you through." (the bar would show the second sentence, which is not spoken in the cut) · cut lands in the silence after "through" (speech 15.14-16.85, next sentence starts 17.34 by silencedetect, to confirm by ear) · **reuse** | — | Delphine: "Go on then, I'll buzz you through." (cached, first sentence only) |
-| 2.1–7.2 | open | Title: How it works / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 2.1–7.2 | open | Title: How it works / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 7.2–12.2 | welcome | t03_brief_cards 0-5 s · tab BRIEF · Card 1 "Welcome": practice at a company made up for the course, nobody trying to catch you out · **pending take** | **v1b** "Before episode one, a five-minute welcome." | — |
 | 12.2–20.2 | how | t03_brief_cards 8-16 s · Card 2 "How it works", held readable · **pending take** | **v2** "Most episodes start with you playing the attacker."<br>**v3** "Then you take the other seat and defend." | — |
 | 20.2–23.2 | m_research | ca12 t04_osint_note 4.9-7.9 s · tab OPEN-SOURCE RESEARCH · public profile page and a noted detail; no code · label "An episode at Merrin & Sallow" · **reuse** | **v4** "Research the company and its people." | — |
