@@ -247,3 +247,14 @@ test('a phone child forced shut releases the screen once, quietly', async () => 
     assert.deepEqual(world.sounds, []);
     assert.equal(world.events.filter((e) => e.name === 'pc_signin_failed' || e.name === 'mfa_failed').length, 0);
 });
+
+test('R2-8: with the owner\'s phone held, number matching says to note the number first; otherwise it does not', async () => {
+    await toPushPane({ kind: 'push_number_match', items: [SAM_PHONE] });
+    const note = $('.signin-push-number-note');
+    assert.equal(note.hidden, false);
+    assert.equal(note.textContent, 'Note this number before you open the phone.');
+    await toPushPane({ kind: 'push_number_match' });
+    assert.equal($('.signin-push-number-note').hidden, true);
+    await toPushPane({ kind: 'push', items: [SAM_PHONE] });
+    assert.equal($('.signin-push-number-note').hidden, true);
+});

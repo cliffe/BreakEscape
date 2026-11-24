@@ -298,3 +298,31 @@ test('server and author text reaches the pane through textContent', async () => 
     assert.equal($('#signin-second img'), null);
     assert.equal($('#signin-second .signin-second-title').textContent, 'Second step for <img src=x onerror=alert(1)>');
 });
+
+test('R2-2: a step begun over a foothold is not resumed at the keyboard, nor the other way round', async () => {
+    const { mg } = rig();
+    mfa.noteRequired('pc:hot_desk', { mfa: 'code', npcId: 'sam' }, 'foothold:fh1');
+    assert.equal(mfa.pendingFor('pc:hot_desk').route, 'foothold:fh1');
+    assert.equal(mg.resumeSecondStep(), false, 'keyboard screen ignores a foothold step');
+    assert.equal($('#signin-second').hidden !== false, true);
+    mg.signIn.remote = { footholdId: 'fh1' };
+    assert.equal(mg.resumeSecondStep(), true, 'the same foothold resumes it');
+    assert.equal($('#signin-second').dataset.pane, 'code');
+    mg.signIn.remote = { footholdId: 'fh2' };
+    assert.equal(mg.resumeSecondStep(), false, 'another foothold does not');
+    mfa.noteRequired('pc:hot_desk', { mfa: 'code', npcId: 'sam' });
+    assert.equal(mfa.pendingFor('pc:hot_desk').route, undefined);
+    mg.signIn.remote = null;
+    assert.equal(mg.resumeSecondStep(), true, 'a keyboard step resumes at the keyboard');
+});
+
+test('F4: a pane that opens again keeps the account name from the first step', async () => {
+    const { mg } = rig();
+    await firstStep(mg);
+    assert.equal($('#signin-second .signin-second-title').textContent, 'Second step for Sam Okafor');
+    // A new screen instance has no params of its own: the name comes from the held step
+    mg.params.mfaAccount = null;
+    mg.signInState.tiles = [];
+    assert.equal(mg.resumeSecondStep(), true);
+    assert.equal($('#signin-second .signin-second-title').textContent, 'Second step for Sam Okafor');
+});

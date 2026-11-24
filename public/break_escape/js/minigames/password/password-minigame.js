@@ -2722,6 +2722,7 @@ export class PasswordMinigame extends MinigameScene {
             // The password was right and a second step is owed: no error line and no reject sound
             const chosen = st.other ? null : this.signInTileFor(username);
             this.params.mfaAccount = { username, displayName: chosen?.displayName || null };
+            this.mfaClientRef()?.noteAccount?.(this.mfaSubject(), this.params.mfaAccount);
             // The lesson noted at the first step is taught once the second step passes
             if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
             else delete this.params.mfaTeach;
@@ -2757,6 +2758,14 @@ export class PasswordMinigame extends MinigameScene {
 
     mfaSubject() {
         return `pc:${this.signIn.pcId}`;
+    }
+
+    /** The way in this screen signs in by, in the form mfa-client notes it. */
+    secondStepRoute() {
+        const remote = this.signIn?.remote;
+        if (remote?.footholdId) return `foothold:${remote.footholdId}`;
+        if (remote?.fromPcId) return `from:${remote.fromPcId}`;
+        return '';
     }
 
     mfaClientRef() {
@@ -2801,6 +2810,7 @@ export class PasswordMinigame extends MinigameScene {
     secondStepAccountName(pending) {
         const own = this.params.mfaAccount;
         if (own && (own.displayName || own.username)) return own.displayName || own.username;
+        if (pending?.accountName) return pending.accountName;
         const tile = pending?.npcId ? this.signInState.tiles.find(t => t.targetId === pending.npcId) : null;
         return tile ? (tile.displayName || tile.username) : 'this account';
     }
@@ -2952,6 +2962,10 @@ export class PasswordMinigame extends MinigameScene {
             this.pushNumberEl = mk('div', 'signin-push-number');
             this.pushNumberEl.hidden = true;
             host.appendChild(this.pushNumberEl);
+            // The phone replaces this screen while it is open, so the number must be remembered first
+            this.pushNumberNoteEl = mk('div', 'signin-second-help signin-push-number-note', 'Note this number before you open the phone.');
+            this.pushNumberNoteEl.hidden = true;
+            host.appendChild(this.pushNumberNoteEl);
             this.pushCountEl = mk('div', 'signin-second-help signin-push-count');
             host.appendChild(this.pushCountEl);
             const actions = mk('div', 'signin-second-actions');
@@ -2997,7 +3011,9 @@ export class PasswordMinigame extends MinigameScene {
             if (now.number != null && now.number !== '') {
                 this.pushNumberEl.textContent = `Number: ${now.number}`;
                 this.pushNumberEl.hidden = false;
+                if (this.pushNumberNoteEl) this.pushNumberNoteEl.hidden = !this.heldOwnerPhone(now.npcId || pending?.npcId);
             } else {
+                if (this.pushNumberNoteEl) this.pushNumberNoteEl.hidden = true;
                 this.pushNumberEl.textContent = '';
                 this.pushNumberEl.hidden = true;
             }
@@ -3146,6 +3162,8 @@ export class PasswordMinigame extends MinigameScene {
             }
             return false;
         }
+        // A step begun by another way in (a foothold, a source PC, or the keyboard) is not this screen's
+        if ((pending.route || '') !== this.secondStepRoute()) { delete this.params.mfaPhoneOpened; return false; }
         delete this.params.mfaPhoneOpened;
         return this.showSecondStep(pending, { fill: true });
     }

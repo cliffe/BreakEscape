@@ -83,7 +83,7 @@ function emitBoth(name, npcId, detail) {
     if (npcId != null && npcId !== '') cfg.emit(`${name}:${npcId}`, detail);
 }
 
-export function noteRequired(subject, body) {
+export function noteRequired(subject, body, route = '') {
     const parsed = parseKey(subject);
     if (!parsed.key) return null;
     const b = body || {};
@@ -93,6 +93,8 @@ export function noteRequired(subject, body) {
         // A first-step answer always opens a new server record, so the count starts afresh
         n: Number.isFinite(b.promptsSent) ? b.promptsSent : 0
     };
+    // The way in the first step came by (a foothold id, a source PC id, or none at the keyboard)
+    if (typeof route === 'string' && route) entry.route = route;
     if (b.number != null) entry.number = b.number;
     if (b.ownPhone === true) entry.ownPhone = true;
     pendingBySubject.set(parsed.key, entry);
@@ -100,6 +102,14 @@ export function noteRequired(subject, body) {
     completedBySubject.delete(parsed.key);
     emitBoth('mfa_required', entry.npcId, { npcId: entry.npcId, kind: entry.kind, ...subjectDetail(parsed) });
     return entry;
+}
+
+/** The account's name as the screen knew it at the first step, kept for a pane that opens again later. */
+export function noteAccount(subject, account) {
+    const entry = pendingBySubject.get(subjectKey(subject));
+    if (!entry || !account) return;
+    const name = account.displayName || account.username;
+    if (name) entry.accountName = String(name);
 }
 
 export function pendingFor(subject) {

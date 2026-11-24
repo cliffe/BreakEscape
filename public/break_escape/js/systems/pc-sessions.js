@@ -661,7 +661,7 @@ export class PcSessions {
         // A first step that passed but asks for a second one is not an error and not a failed
         // sign-in (S8a): no pc_signin_failed; the screen takes the pending record from here
         if (body && body.mfaRequired === true) {
-            const pending = mfaClient.noteRequired(`pc:${pcId}`, body);
+            const pending = mfaClient.noteRequired(`pc:${pcId}`, body, foothold ? `foothold:${foothold}` : (from ? `from:${from}` : ''));
             return { ok: false, reason: 'mfa_required', mfa: pending ? { ...pending } : {} };
         }
         if (!body || body.success === false || !body.npcId) {
