@@ -604,6 +604,7 @@ class AccessLeakScanner
       scan_privilege_keys(body, add)
       scan_privilege_log_rows(body, ctx, add)
       scan_harvest(body, ctx, row, add) # S5b, S5c
+      note_admin_ever # S5bc unit 23
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -3478,6 +3479,27 @@ class AccessLeakScanner
       earned = pc ? @ops_earned.count { |step| step.match?(/\Aadmin_read:.+@#{Regexp.escape(pc)}\z/) } : 0
       add.call('log_row', "log:admin_read:#{pc || 'unknown'}", "$.rows[#{i}]") if seen[pc] > earned
     end
+    scan_admin_act_log_rows(body, add)
+  end
+
+  # S5bc unit 23: a CRED_COLLECT or USB_OVERRIDE row is written only for an admin session at the PC its `where` names. The
+  # capture must have shown an admin session there (keyboard step or proved relay) on some earlier row, or at this one; a row
+  # whose `where` names no PC of the scenario (or two) is judged unearned (fail closed). Limit: the row's time and the session
+  # that wrote it are not in the answer, so a session long over still earns the row.
+  ADMIN_ACT_EVENTS = %w[CRED_COLLECT USB_OVERRIDE].freeze
+
+  def scan_admin_act_log_rows(body, add)
+    Array(body['rows']).each_with_index do |row, i|
+      next unless row.is_a?(Hash) && ADMIN_ACT_EVENTS.include?(row['event'])
+
+      pcs = @priv_pcs.select { |_, pc| pc['name'] == row['where'] }.keys
+      pc = pcs.size == 1 ? pcs.first : nil
+      add.call('log_row', "log:#{row['event'].downcase}:#{pc || 'unknown'}", "$.rows[#{i}]") unless pc && (@hv_admin_ever.include?(pc) || harvest_pc_admin?(pc))
+    end
+  end
+
+  def note_admin_ever
+    @priv_pcs.each_key { |pc| @hv_admin_ever << pc if harvest_pc_admin?(pc) }
   end
 
   # ---- ops log reader L2a: GET /log_rows (OPS_LOG_ROWS_PLAN.md section 7) --------------------
@@ -4903,6 +4925,8 @@ class AccessLeakScanner
   # the borrower); the game's `cachedAt` floor separates them only by end state.
   HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
   HARVEST_ANSWER_KEYS = %w[success pcId harvested held keyringRev].freeze
+  # The real server's keyring rev is six hex characters (`keyring_rev`); unit 23 found the rule asking for an integer.
+  HARVEST_REV_FORMAT = /\A[0-9a-f]{6}\z/.freeze
   HARVEST_ROW_KEYS = %w[npcId displayName username portrait avatar hashId].freeze
   GAME_METHODS_HARVEST = %i[player_state].freeze
 
@@ -4957,6 +4981,7 @@ class AccessLeakScanner
     @hv_served_hashes = Set.new # hash record ids a credited collect row named
     @hv_name_earned = Set.new   # account-only ids whose display name has been earned
     @hv_user_earned = Set.new   # account-only ids whose username has been earned
+    @hv_admin_ever = Set.new    # PC ids where an admin session (keyboard step or proved relay) was earned at the end of some row
     @hv_relay = {}              # PC id => account id of a proved relay administrator session (R1-L1)
     @hv_body = nil
     @hv_borrow_seen = Set.new   # PC ids a 200 POST /npc_workaround borrow "done" answer named so far (R1-L7)
@@ -5013,7 +5038,7 @@ class AccessLeakScanner
       add.call('harvest_row', 'refusal', '$') unless status.is_a?(Integer) && harvest_refusal_ok?(status, body)
       return
     end
-    unless body.is_a?(Hash) && body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(Integer) &&
+    unless body.is_a?(Hash) && body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(String) && body['keyringRev'].match?(HARVEST_REV_FORMAT) &&
            body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId'])
       add.call('harvest_row', 'answer', '$')
       return

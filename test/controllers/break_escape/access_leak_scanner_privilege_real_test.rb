@@ -1,5 +1,6 @@
 require 'test_helper'
 require_relative '../../support/network_ops_scenario'
+require_relative 'ops_privilege_scenario_test'
 require Rails.root.join('../../tools/playtest/lib/access_leak_scanner').to_s
 
 module BreakEscape
@@ -161,8 +162,11 @@ module BreakEscape
     test 'a label naming no PC does not fall through to the one PC that admits the account' do
       run_game
       data = scenario
+      # Every other sign-in PC (the cached-account PCs of S5b admit Adel too) is closed to her, so bay_pc is the one PC that admits her.
       data['rooms'].each_value do |room|
-        Array(room['objects']).each { |o| o['access'] = { 'people' => %w[uma olu] } if o['id'] == 'store_pc' }
+        Array(room['objects']).each do |o|
+          o['access'] = { 'people' => %w[uma olu] } if o['type'] == 'pc' && o['id'] != 'bay_pc' && o['id'] != 'bay_usb_port'
+        end
       end
       index = @log.index { |r| r.equal?(@marks[:admin_signin]) }
       plain = @log.first(index + 1)
@@ -1039,6 +1043,298 @@ module BreakEscape
       all = AccessLeakScanner.new(scenario)
       all.scan(lines(@log), signins: @signins)
       assert_empty all.unused_entries
+    end
+  end
+
+  # Ops S5bc unit 23 (S5b, ruling A, ruling B): the scanner over the REAL answers of the whole played run of
+  # scenarios/test_ops_privilege (the ten beats of OpsPrivilegeBeats: collects, hash rows, the borrow, the crack, the stick
+  # override, the relay sign-ins), recorded as the browser's log holds them (no request body, no tag), with the game given to
+  # the scanner. The run must report nothing; each tamper test then makes ONE edit to that real run and the edit must be
+  # reported. Every request the beats make is recorded by `get` and `post` of this test class only.
+  class AccessLeakScannerHarvestRealTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include NetworkOpsRequests
+    include OpsPrivilegeBeats
+
+    teardown { travel_back }
+
+    %i[get post].each do |verb|
+      define_method(verb) do |path, **options|
+        result = super(path, **options)
+        record_row(verb, options) if @recording
+        result
+      end
+    end
+
+    # One row in the browser log's shape. The keyboard sign-ins are named to the scanner (`--signin`), as a tester does.
+    def record_row(method, options)
+      body = begin
+        JSON.parse(response.body)
+      rescue JSON::ParserError
+        response.body
+      end
+      row = { 't' => (BEATS_START + @rows.length).utc.iso8601(3), 'method' => method.to_s.upcase, 'path' => request.path,
+              'status' => response.status, 'body' => body }
+      @rows << row
+      return unless row['path'].end_with?('/login') && row['status'] == 200 && body.is_a?(Hash) && body['success'] && body['npcId']
+
+      params = options[:params] || {}
+      @keyboard_pc[row] = params[:pc_id] if params[:username].present? && params[:credential].blank? && params[:claim].blank?
+    end
+
+    # The `--signin` entries a tester would name for these rows: the account's n-th successful sign-in answer, at the PC its
+    # keyboard row was made at (a relay or a claim sign-in names no keyboard PC and is not named).
+    def signins_for(rows)
+      counts = Hash.new(0)
+      rows.filter_map do |row|
+        body = row['body']
+        next unless row['path'].end_with?('/login') && row['status'] == 200 && body.is_a?(Hash) && body['success'] && body['npcId']
+
+        counts[body['npcId']] += 1
+        pc = @keyboard_pc[row]
+        "#{body['npcId']}@#{pc}##{counts[body['npcId']]}" if pc
+      end
+    end
+
+    # The whole run, once; each test gets its own deep copy.
+    def run_real
+      @rows = []
+      @keyboard_pc = {}.compare_by_identity
+      @recording = true
+      play_all_beats
+      @recording = false
+      @game_after = b_game
+      @rows
+    end
+
+    def lines(rows)
+      rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }
+    end
+
+    def deep(value)
+      Marshal.load(Marshal.dump(value))
+    end
+
+    # Rows are the real run's rows, edited; the sign-in entries are recomputed from the rows as a tester would.
+    def scan(rows, game: @game_after, data: beats_scenario, **options)
+      @scanner = AccessLeakScanner.new(data, game: game)
+      @scanner.scan(lines(rows), signins: signins_for(rows), **options)
+    end
+
+    def named(findings)
+      findings.map { |f| [f.line, f.rule, f.owner] }
+    end
+
+    def at_path(rows, tail, nth = 0)
+      rows.select { |r| r['path'].end_with?(tail) }[nth] or raise "no row #{tail}"
+    end
+
+    def collect_rows(rows)
+      rows.select { |r| r['path'].end_with?('/harvest_credentials') && r['status'] == 200 }
+    end
+
+    test 'the whole real run reports nothing, and holds the answers the tamper tests edit' do
+      rows = run_real
+      assert_equal 52, rows.length
+      assert_equal [], named(scan(rows))
+      assert_empty @scanner.unused_entries
+      assert_equal 5, collect_rows(rows).length
+      assert_equal 4, rows.count { |r| r['path'].end_with?('/keyring') && r['status'] == 200 && r['body']['entries'].any? { |e| e['source'] == 'registry' } }
+      assert_equal 'admin', rows[46]['body']['access'], 'the relay sign-in of the administrator'
+    end
+
+    # ---- one edit each, on the real run. Row numbers are the run's own (1-based): 1 Uma signs in at bay_pc, 3 a refused collect,
+    # 5 Adel signs in at bay_pc, 6 and 7 the collects there, 14 the first keyring with hash rows, 21 the hot desk collect before the
+    # borrow, 29 the borrow done answer, 30 the claim, 34 the collect after the borrow, 41 and 42 the stick override, 43 the audit
+    # rows, 47 the relay sign-in of Adel at hot_desk, 49 its collect, 51 Uma's relay at store_pc, 52 her refused collect.
+
+    # The run with row `n` replaced by an edited copy.
+    def edit(rows, n)
+      copy = deep(rows[n - 1])
+      @keyboard_pc[copy] = @keyboard_pc[rows[n - 1]]
+      yield copy
+      rows.dup.tap { |all| all[n - 1] = copy }
+    end
+
+    def without(rows, n)
+      rows.reject.with_index { |_, i| i == n - 1 }
+    end
+
+    def moved_before(rows, n, target)
+      rows.dup.tap { |all| all.insert(target - 1, all.delete_at(n - 1)) }
+    end
+
+    def reported(rows, **options)
+      named(scan(rows, **options)).map { |_, rule, owner| [rule, owner] }.uniq
+    end
+
+    def assert_flagged(findings, rule, owner = nil)
+      assert(findings.any? { |r, o| r == rule && (owner.nil? || o == owner) }, "expected #{rule} #{owner}, got #{findings.inspect}")
+    end
+
+    test 'tamper 1: the administrator sign-in before the first collect is taken out: the collect is unearned' do
+      rows = run_real
+      assert_flagged reported(without(rows, 5)), 'harvest_unearned'
+    end
+
+    test 'tamper 2: the first collect moved before the administrator sign-in is unearned' do
+      rows = run_real
+      assert_flagged reported(moved_before(rows, 6, 5)), 'harvest_unearned'
+    end
+
+    test 'tamper 3: the keyring that lists the harvested hash rows, moved before the collect, is reported' do
+      rows = run_real
+      found = reported(moved_before(rows, 14, 6))
+      assert_flagged found, 'harvest_hash', 'credential:baypc_olu'
+    end
+
+    test 'tamper 4: a relay sign-in of an ordinary account that says admin is reported' do
+      rows = run_real
+      found = reported(edit(rows, 51) { |r| r['body']['access'] = 'admin' })
+      assert_flagged found, 'ops_string', 'ops:key:access'
+    end
+
+    test 'tamper 5: the relay sign-in of the administrator taken out: the desktop that shows the relay administrator reads the profile unearned' do
+      rows = run_real
+      # limit: the relay administrator step is also proved by that PC's desktop answer (invite, creds.admin and the game's own
+      # account_admin_at?), so the collect after it is still credited; the folder read in the desktop is what is reported
+      assert_flagged reported(without(rows, 47)), 'profile_admin_read', 'item:adel_runbook'
+    end
+
+    test 'tamper 6: the relay administrator collect moved before the relay sign-in and its desktop is unearned' do
+      rows = run_real
+      assert_flagged reported(moved_before(rows, 49, 47)), 'harvest_unearned'
+    end
+
+    test 'tamper 7: a collect answer naming another PC than the admin earned is unearned' do
+      rows = run_real
+      found = reported(edit(rows, 21) { |r| r['body']['pcId'] = 'store_pc' })
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'tamper 8: the borrow done answer taken out leaves the borrower row of the later collect unearned' do
+      rows = run_real
+      assert_flagged reported(without(rows, 29)), 'harvest_unearned', 'account:sam'
+    end
+
+    test 'tamper 9: the game that never recorded the borrow (cachedAt empty) flags the borrower row, though the done answer is in the capture' do
+      rows = run_real
+      game = b_game
+      game.player_state = game.player_state.merge('cachedAt' => [])
+      assert_flagged reported(rows, game: game), 'harvest_unearned', 'account:sam'
+      assert_flagged reported(rows, game: nil), 'harvest_unearned', 'account:sam'
+    end
+
+    test 'tamper 10: a password key added to a collect row is reported' do
+      rows = run_real
+      found = reported(edit(rows, 6) { |r| r['body']['harvested'][0]['password'] = 'x' })
+      assert_flagged found, 'harvest_row'
+    end
+
+    test 'tamper 11: a collect row with another account hash id is reported' do
+      rows = run_real
+      found = reported(edit(rows, 6) { |r| r['body']['harvested'][0]['hashId'] = 'baypc_uma' })
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'tamper 12: a claim sign-in that says admin is reported' do
+      rows = run_real
+      found = reported(edit(rows, 30) { |r| r['body']['access'] = 'admin' })
+      assert_flagged found, 'ops_string', 'ops:key:access'
+    end
+
+    test 'tamper 13: a collect refusal that gives rows is reported' do
+      rows = run_real
+      found = reported(edit(rows, 3) { |r| r['body']['harvested'] = deep(rows[5]['body']['harvested']) })
+      assert_flagged found, 'harvest_row', 'refusal'
+    end
+
+    test 'tamper 14: the keyring with the Sam hash row moved before the borrowed collect is reported' do
+      rows = run_real
+      index = rows.index { |r| r['path'].end_with?('/keyring') && r['body']['entries'].any? { |e| e['id'] == 'hotdesk_sam' } }
+      found = reported(moved_before(rows, index + 1, 33))
+      assert_flagged found, 'harvest_hash', 'credential:hotdesk_sam'
+    end
+
+    test 'tamper 15: the collect cachedAccounts list in a sync body is reported (a never-key)' do
+      rows = run_real
+      found = reported(edit(rows, 2) { |r| r['body']['cachedAccounts'] = [{ 'npc' => 'olu' }] })
+      assert_flagged found, 'harvest_key', 'key:cachedAccounts'
+    end
+
+    test 'tamper 16 (the stick audit, ruling A): a USB_OVERRIDE audit row naming a PC where no admin session was ever shown is reported; the real row is clear' do
+      rows = run_real
+      assert_empty reported(rows)
+      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['where'] = 'Records PC' })
+      assert_flagged found, 'log_row', 'log:usb_override:store_pc'
+    end
+
+    test 'tamper 17: a CRED_COLLECT audit row naming a PC where no admin session was ever shown is reported' do
+      rows = run_real
+      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Records PC' })
+      assert_flagged found, 'log_row', 'log:cred_collect:store_pc'
+    end
+
+    test 'tamper 18: a CRED_COLLECT row naming a place that is no PC is reported (fail closed)' do
+      rows = run_real
+      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Nowhere' })
+      assert_flagged found, 'log_row', 'log:cred_collect:unknown'
+    end
+
+    test 'tamper 19: the relay administrator audit row read, with no folder read earned at hot_desk, is reported' do
+      rows = run_real
+      found = reported(edit(rows, 43) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'as' => 'adelwick', 'where' => 'Hot desk PC', 'result' => 'OK', 'detail' => 'profile', 'elapsedMs' => 0, 'id' => 'aaaa' } })
+      assert_flagged found, 'log_row', 'log:admin_read:hot_desk'
+    end
+
+    test 'tamper 16: an administrator audit reading row that no admin read earned is reported' do
+      rows = run_real
+      found = reported(edit(rows, 43) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'detail' => 'profile: olu' } })
+      assert_flagged found, 'log_row'
+    end
+
+    # ---- re-checks the scanner fixer listed ----
+
+    def with_account_only(data)
+      data = deep(data)
+      npc = { 'id' => 'deskadmin', 'displayName' => 'Rota Keeper', 'npcType' => 'person', 'accountOnly' => true,
+              'creds' => { 'username' => 'rotakeeper', 'password' => 'Unused-Account-91', 'accountKind' => 'local', 'localTo' => ['bay_pc'] } }
+      room = data['rooms'].values.find { |r| r['npcs'].is_a?(Array) }
+      room['npcs'] << npc
+      data
+    end
+
+    test 'recheck: the account-only words of an account in this scenario do not clash, the whole real run stays clean, and a typed sign-in answer naming it is reported' do
+      rows = run_real
+      data = with_account_only(beats_scenario)
+      assert_empty named(scan(rows, data: data)), 'the scanner builds, and the honest run is clear'
+      found = reported(edit(rows, 18) { |r| r['body']['username'] = 'rotakeeper' }, data: data)
+      assert_flagged found, 'account_only'
+      found = reported(edit(rows, 18) { |r| r['body']['displayName'] = 'Rota Keeper' }, data: data)
+      assert_flagged found, 'account_only'
+    end
+
+    test 'recheck: an account-only word that is an ordinary answer word refuses the scan' do
+      rows = run_real
+      data = with_account_only(beats_scenario)
+      data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['creds']['username'] = 'admin' if n['id'] == 'deskadmin' } }
+      assert_raises(ArgumentError) { scan(rows, data: data) }
+    end
+
+    test 'recheck: a relay administrator reading a profile folder of an account it does not reach is reported (the S5a rules hold for a relay)' do
+      rows = run_real
+      folder = { 't' => rows.last['t'], 'method' => 'GET', 'path' => '/break_escape/games/190019/container/olu_folder', 'status' => 200,
+                 'body' => { 'container_id' => 'olu_folder', 'contents' => [{ 'id' => 'olu_budget', 'name' => 'Budget draft.txt', 'type' => 'text_file', 'text' => 'Budget draft: the van, the toner and one new chair.' }] } }
+      after_relay = rows.first(49) + [folder]
+      assert_flagged reported(after_relay), 'profile_admin_read', 'item:olu_budget'
+    end
+
+    test 'recheck: a --signin entry naming a PC the account has no such sign-in at, or a relay sign-in, is refused or unused' do
+      rows = run_real
+      assert_raises(ArgumentError) { AccessLeakScanner.new(beats_scenario, game: @game_after).scan(lines(rows), signins: signins_for(rows) + ['adel@nowhere#1']) }
+      scanner = AccessLeakScanner.new(beats_scenario, game: @game_after)
+      scanner.scan(lines(rows), signins: signins_for(rows) + ['adel@hot_desk#6'])
+      assert_equal ['adel@hot_desk#6 (--signin)'], scanner.unused_entries, 'the relay sign-in is the sixth: a keyboard entry for it matches no keyboard row'
     end
   end
 end

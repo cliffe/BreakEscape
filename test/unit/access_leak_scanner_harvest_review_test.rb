@@ -61,7 +61,7 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
   end
 
   def collect(rows, held: nil, status: 200, pc: 'profile_pc', extra: {})
-    row({ 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 3 }.merge(extra),
+    row({ 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 'b86fb2' }.merge(extra),
         path: 'harvest_credentials', method: 'POST', status: status)
   end
 
@@ -318,7 +318,8 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     s = account_only
     assert_empty scan([typed_jake], scenario: s)
     assert_empty scan([typed_jake, row({ 'session' => { 'npcId' => 'jake', 'username' => 'jbrooks', 'displayName' => 'Jake Brooks', 'via' => 'password' } }, path: 'container/it_pc')], scenario: s)
-    assert_empty scan([typed_jake, log_rows(log_row('SIGN_IN', 'jbrooks', 'OK', 'method: password'), log_row('CRED_COLLECT', 'jbrooks', 'OK', 'count: 2'))], scenario: s)
+    # unit 23: a CRED_COLLECT row needs an admin session shown at its PC, so the administrator signs in first
+    assert_empty scan([admin_signin, typed_jake, log_rows(log_row('SIGN_IN', 'jbrooks', 'OK', 'method: password'), log_row('CRED_COLLECT', 'jbrooks', 'OK', 'count: 2'))], scenario: s)
   end
 
   test 'R1-L2: the typed sign-in earns only its own account, and only when it succeeded as a password sign-in' do

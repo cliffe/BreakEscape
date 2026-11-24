@@ -63,7 +63,7 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
   end
 
   def collect(rows, held: nil, status: 200, pc: 'profile_pc', extra: {})
-    body = { 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 3 }.merge(extra)
+    body = { 'success' => true, 'pcId' => pc, 'harvested' => rows, 'held' => held || rows, 'keyringRev' => 'b86fb2' }.merge(extra)
     row(body, path: 'harvest_credentials', method: 'POST', status: status)
   end
 
