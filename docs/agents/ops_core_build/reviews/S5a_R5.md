@@ -282,3 +282,12 @@ listed under check 7. The engine commit `43f48c521` can land as it is.
 - R4-6 was not run on a real grant row (none exists at a PC with a record).
 - The A18 sentence added for R4-8 was not compared word for word with the code.
 - No node test was run: the two commits change no JavaScript.
+
+## Outcomes (fixer, Ops S5a fix)
+
+| Finding | Outcome | Test |
+|---|---|---|
+| R5-1 (major) | fixed: `downgrade_priv_step(shown:)` keeps a resume record only when the row shows the held (or recorded) account; another account's host row or bootstrap drops it, also after a 403 `off`. All check 3 refusals still refuse. | `access_leak_scanner_privilege_real_test.rb` "R5-1" (two tests) |
+| R5-2 (minor) | fixed: a downgrade answer of another kind (claim, relay) loses the step; handover sentence corrected. | "R5-2" |
+| R5-3 (major) | fixed for the host row, and made end-only in the desktop and bootstrap rules too: the committed real-run tests and the four captures give the same results (0 / 38 / 112), so no row depends on the assignment. | "R5-3" (two tests), "R5 check 6" |
+| R5-4 (minor, engine) | fixed: `profile_shown_name` gives the kind word for a headless PC and a `remoteScreen: typed` policy; A18 sentence added. | `privilege_profile_read_test.rb` "R5-4" |

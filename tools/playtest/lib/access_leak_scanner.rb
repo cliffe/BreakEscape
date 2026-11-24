@@ -2983,7 +2983,7 @@ class AccessLeakScanner
   # A session of a PC ends: take back its admin step and the account the run holds there. What the capture can show (R2-C2): a
   # successful POST /lock_session (its answer names `pcId`); a PC id in an answer's `endedPcIds` (a later sign-in, a grant or an
   # NPC's hand-back that displaced a session); a desktop answer (GET /container/<pc id>) refusing with 403; and a bootstrap's
-  # `sessions` map (a PC absent or `locked` loses its step, a PC holding another account's session changes hands). A
+  # `sessions` map (a PC absent or `locked` loses its step, a PC holding another account's session ends it; the account shown is never assigned, R5-3). A
   # successful POST /logout answer does not say which PC, so it ends every PC (fail closed). Not shown by any answer: a token
   # running out, a power cut or a dropped route between requests, and a hand-back that names no PC in `endedPcIds`.
   def note_privilege_ends(body, ctx, row)
@@ -3065,10 +3065,9 @@ class AccessLeakScanner
     if !session.is_a?(Hash) || session['locked'] == true
       end_priv_session([pc])
     elsif held && session['npcId'].is_a?(String) && session['npcId'] != held
-      end_priv_session([pc])
-      @ops_session_accounts[pc] = session['npcId']
+      end_priv_session([pc]) # R5-3: ends only
     elsif session['access'] != 'admin'
-      downgrade_priv_step(pc, keep: false)
+      downgrade_priv_step(pc, keep: false, session: session)
     else
       check_priv_kind(pc, session)
     end
@@ -3081,10 +3080,16 @@ class AccessLeakScanner
   # sends no request while the PC is off, so there is no 403). An answer that repeats it (each PC is listed twice in a network
   # answer, and a poll repeats the answer) leaves the record as it is (`keep`), since nothing ended in between; a step that was
   # not held and has no record leaves nothing to restore.
-  def downgrade_priv_step(pc, keep: true)
+  def downgrade_priv_step(pc, keep: true, session: nil, shown: nil)
+    saved = @priv_resumable[pc]
+    kind = @priv_kinds[pc] || (saved && saved[:step] ? saved[:kind] : nil)
+    # R5-2: the same account shown as another kind (a claim, a relay) means the session was replaced: nothing to resume
+    return lose_priv_step(pc) if session.is_a?(Hash) && kind && priv_kind_of(session) != kind
+
     if @ops_earned.include?("admin:#{pc}") && @ops_session_accounts[pc]
       remember_priv_resumable(pc)
-    elsif !(keep && @priv_resumable[pc])
+    elsif !(keep && saved && saved[:account] == (shown || @ops_session_accounts[pc]))
+      # R5-1: a record is kept only by a repeat of the same held account's shape; another account's row drops it
       @priv_resumable.delete(pc)
     end
     @ops_earned.delete("admin:#{pc}")
@@ -3115,6 +3120,15 @@ class AccessLeakScanner
     @priv_deadlines[pc] = saved[:deadline] if saved[:deadline]
   end
 
+  # The account a host row's session belongs to: the held account when the username is its own, else the one NPC with that
+  # username, else nil (R5-1: only used to decide whether a resume record is kept).
+  def priv_host_row_account(held, session)
+    return held if held && @priv_npcs.dig(held, 'creds', 'username') == session['username']
+
+    owners = @priv_npcs.select { |_, npc| npc['creds'].is_a?(Hash) && npc['creds']['username'] == session['username'] }.keys
+    owners.size == 1 ? owners.first : nil
+  end
+
   # A `GET /network` host row of a sign-in PC (R3 check 2, rule 2; R4-3, R4-4), judged as the desktop and the bootstrap are:
   # no `session` takes the step and the account back, unless the row is the one an off PC sends (`responding: false` and
   # `heldAs` the held account's display name, no `session`), which is a power cut and suspends the step; a locked session or
@@ -3133,11 +3147,9 @@ class AccessLeakScanner
       elsif session['locked'] == true
         end_priv_session([pc])
       elsif held && (username = @priv_npcs.dig(held, 'creds', 'username')).is_a?(String) && session['username'] != username
-        end_priv_session([pc])
-        owners = @priv_npcs.select { |_, npc| npc['creds'].is_a?(Hash) && npc['creds']['username'] == session['username'] }.keys
-        @ops_session_accounts[pc] = owners.first if owners.size == 1
+        end_priv_session([pc]) # R5-3: ends only; the account shown is never assigned
       elsif session['access'] != 'admin'
-        downgrade_priv_step(pc)
+        downgrade_priv_step(pc, session: session, shown: priv_host_row_account(held, session))
       else
         check_priv_kind(pc, session)
       end
@@ -3216,11 +3228,10 @@ class AccessLeakScanner
       if !held.is_a?(Hash) || held['locked'] == true
         end_priv_session([pc])
       elsif @ops_session_accounts[pc] && held['npcId'] && held['npcId'] != @ops_session_accounts[pc]
-        end_priv_session([pc])
-        @ops_session_accounts[pc] = held['npcId']
+        end_priv_session([pc]) # R5-3: ends only
       elsif held['access'] != 'admin'
         # R3-C3: present but not admin (an off PC or a downed route lists the session and leaves `access` out): the step goes
-        downgrade_priv_step(pc)
+        downgrade_priv_step(pc, session: held, shown: held['npcId'])
       else
         check_priv_kind(pc, held)
       end

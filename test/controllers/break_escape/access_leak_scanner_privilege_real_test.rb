@@ -857,6 +857,175 @@ module BreakEscape
       assert_empty scanner.instance_variable_get(:@priv_deadlines)
     end
 
+    # ---- Ops S5a fix, R5 pass: the review's runs (S5a_R5.md checks 1 to 7), on rows 1 to 98 of the real capture ("P98": adel's
+    # keyboard sign-in #5 at row 97, the admin desktop of bay_pc at row 98) with rows injected after it ----
+
+    R5_SIGNINS = RUN72_SIGNINS
+
+    def r5_clock(second)
+      format('2026-11-24T00:39:%06.3fZ', second)
+    end
+
+    def r5_base
+      run72.first(98).map(&:last)
+    end
+
+    def r5_row(method, path, status, body, second)
+      { 't' => r5_clock(second), 'method' => method, 'path' => "/break_escape/games/72/#{path}", 'status' => status, 'body' => body }
+    end
+
+    # Row 98 again (the admin desktop) or row 27 again (the owner's folder), later.
+    def r5_desk(second, &change)
+      row = deep(run72[97].last).merge('t' => r5_clock(second))
+      change&.call(row['body']['session'])
+      row
+    end
+
+    def r5_folder(second)
+      deep(run72[26].last).merge('t' => r5_clock(second))
+    end
+
+    # Row 137 again (GET /network, bay_pc listed twice) with each bay_pc host row changed by the block.
+    def r5_net(second)
+      row = deep(run72[136].last).merge('t' => r5_clock(second))
+      count = 0
+      walk = lambda do |node|
+        case node
+        when Hash
+          if node['id'] == 'bay_pc' && node['kind'] == 'pc'
+            count += 1
+            yield node
+          end
+          node.each_value { |v| walk.call(v) }
+        when Array then node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(row['body'])
+      assert_operator count, :>=, 2
+      row
+    end
+
+    def r5_net_as(second, session)
+      r5_net(second) { |host| host['session'] = deep(session) }
+    end
+
+    def r5_net_off(second)
+      r5_net(second) do |host|
+        host.delete('session')
+        host['responding'] = false
+        host['heldAs'] = 'Adel Wick'
+      end
+    end
+
+    def r5_boot(second, session)
+      r5_row('GET', 'scenario', 200, { 'sessions' => { 'bay_pc' => session } }, second)
+    end
+
+    def r5_off(second)
+      r5_row('GET', 'container/bay_pc', 403, { 'error' => 'refused', 'reason' => 'off' }, second)
+    end
+
+    ADEL_SESSION = { 'username' => 'adelwick', 'displayName' => 'Adel Wick', 'via' => 'password', 'remote' => false }.freeze
+
+    # P98, the gap rows, the desk (second 50) named by a resume, the folder (second 51): the findings on the last two rows and
+    # the unused entries.
+    def r5_resume(*gap, resume: true)
+      rows = r5_base + gap + [r5_desk(50), r5_folder(51)]
+      scanner = AccessLeakScanner.new(scenario)
+      found = scanner.scan(lines(rows), signins: R5_SIGNINS, resumes: resume ? ["adel@bay_pc@#{r5_clock(50)}"] : [])
+      [found.select { |f| f.line > rows.length - 2 }.map { |f| [f.rule, f.owner] }.uniq.sort, scanner.unused_entries]
+    end
+
+    def assert_resume_refused(gap, label = nil)
+      found, unused = r5_resume(*gap)
+      assert_includes found, %w[profile_admin_read item:olu_budget], label
+      assert_equal 1, unused.length, label
+    end
+
+    def assert_resume_taken(gap, label = nil)
+      found, unused = r5_resume(*gap)
+      assert_empty found, label
+      assert_empty unused, label
+    end
+
+    test 'R5-1: after a 403 off, a host row or bootstrap that shows ANOTHER account at the PC drops the resume record; a plain 403 alone resumes' do
+      assert_resume_taken([r5_off(10)], '403 alone')
+      assert_resume_refused([r5_off(10), r5_net_as(11, ADEL_SESSION.merge('username' => 'umaquay'))], 'net of uma')
+      assert_resume_refused([r5_off(10), r5_boot(11, { 'npcId' => 'uma', 'via' => 'password' })], 'boot of uma')
+      assert_resume_refused([r5_off(10), r5_net_as(11, ADEL_SESSION.merge('username' => 'zzz'))], 'net of an unknown username')
+      # not the off shape: a net row with no session, a bootstrap with the PC absent
+      assert_resume_refused([r5_off(10), r5_net(11) { |host| host.delete('session') }], 'net with no session')
+      assert_resume_refused([r5_off(10), r5_boot(11, nil)], 'boot with the PC absent')
+    end
+
+    test 'R5-1: repeated off answers of the same held account keep the record; every end between two of them drops it' do
+      assert_resume_taken([r5_off(10), r5_off(11)], 'two 403s')
+      assert_resume_taken([r5_net_off(10), r5_net_off(11), r5_net_off(12)], 'three off host rows')
+      assert_resume_taken([r5_boot(10, { 'npcId' => 'adel', 'via' => 'password' }), r5_boot(11, { 'npcId' => 'adel', 'via' => 'password' })], 'two bootstraps')
+      lock = r5_row('POST', 'lock_session', 200, { 'success' => true, 'pcId' => 'bay_pc', 'locked' => true }, 12)
+      logout = r5_row('POST', 'logout', 200, { 'success' => true, 'endedPcIds' => [] }, 12)
+      ended = r5_row('POST', 'something', 200, { 'success' => true, 'endedPcIds' => ['bay_pc'] }, 12)
+      uma_login = deep(run72[15].last).merge('t' => r5_clock(12))
+      desk_off = r5_desk(12) { |session| session.delete('access') }
+      ends = {
+        'net of uma' => r5_net_as(12, ADEL_SESSION.merge('username' => 'umaquay')),
+        'net locked' => r5_net_as(12, ADEL_SESSION.merge('locked' => true)),
+        'boot with the PC absent' => r5_boot(12, nil),
+        'boot of uma' => r5_boot(12, { 'npcId' => 'uma', 'via' => 'password' }),
+        'a desktop without access' => desk_off,
+        'lock_session' => lock, 'unnamed logout' => logout, 'endedPcIds' => ended, 'unnamed sign-in of uma' => uma_login
+      }
+      ends.each { |label, end_row| assert_resume_refused([r5_net_off(10), end_row, r5_net_off(13)], label) }
+    end
+
+    test 'R5-3: a host row of another account ends the session and never assigns the held account: its own files are not credited' do
+      folder_findings = lambda do |gap|
+        rows = r5_base + gap + [r5_folder(60)]
+        scanner = AccessLeakScanner.new(scenario)
+        found = scanner.scan(lines(rows), signins: R5_SIGNINS)
+        [found.select { |f| f.line == rows.length }.map { |f| [f.rule, f.owner] }.uniq.sort, found.select { |f| f.line == rows.length - 1 }.map { |f| [f.rule, f.owner] }]
+      end
+      owner_row = ADEL_SESSION.merge('username' => 'omarsh', 'displayName' => 'Olu Marsh')
+      assert_includes folder_findings.call([r5_net_as(55, owner_row)]).first, %w[profile_admin_read item:olu_budget]
+      assert_includes folder_findings.call([r5_net_as(55, owner_row.merge('username' => 'zzz'))]).first, %w[profile_admin_read item:olu_budget]
+      assert_includes folder_findings.call([r5_net(55) { |host| host.delete('session') }]).first, %w[profile_admin_read item:olu_budget]
+      on_folder, on_net = folder_findings.call([r5_net_as(55, owner_row.merge('access' => 'admin'))])
+      assert_includes on_net, %w[ops_string ops:key:access]
+      assert_includes on_folder, %w[profile_admin_read item:olu_budget]
+    end
+
+    test 'R5-3: a desktop answer or a bootstrap that shows another account ends the session and does not assign it either' do
+      folder = lambda do |row|
+        rows = r5_base + [row, r5_folder(60)]
+        AccessLeakScanner.new(scenario).scan(lines(rows), signins: R5_SIGNINS).select { |f| f.line == rows.length }.map { |f| [f.rule, f.owner] }.uniq.sort
+      end
+      assert_includes folder.call(r5_desk(55) { |session| session['npcId'] = 'olu' }), %w[profile_admin_read item:olu_budget]
+      assert_includes folder.call(r5_boot(55, { 'npcId' => 'olu', 'via' => 'password' })), %w[profile_admin_read item:olu_budget]
+    end
+
+    test 'R5-2: a session shown as claim or relay without admin drops the resume record' do
+      adel = { 'npcId' => 'adel' }
+      assert_resume_refused([r5_boot(10, adel.merge('via' => 'claim'))], 'boot claim')
+      assert_resume_refused([r5_boot(10, adel.merge('via' => 'credential', 'relay' => true))], 'boot relay')
+      assert_resume_refused([r5_off(9), r5_boot(10, adel.merge('via' => 'claim'))], 'boot claim after a 403')
+      assert_resume_refused([r5_net_as(10, ADEL_SESSION.merge('via' => 'claim'))], 'host row claim')
+      found, unused = r5_resume(r5_desk(10) { |session| session.delete('access'); session['via'] = 'claim' })
+      assert_includes found, %w[profile_admin_read item:olu_budget]
+      assert_equal 1, unused.length
+      # controls: the same account and kind without access is the ordinary power-cut shape
+      assert_resume_taken([r5_boot(10, adel.merge('via' => 'password'))], 'boot password')
+    end
+
+    test 'R5 check 6: the real captures still give 0 findings with the five named entries, 38 with sign-ins only, 112 with nothing named' do
+      scanner = AccessLeakScanner.new(scenario)
+      assert_empty scanner.scan(run72, signins: RUN72_SIGNINS, logouts: [RUN72_LOGOUT])
+      assert_empty scanner.unused_entries
+      assert_equal 38, AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS).length
+      assert_equal 112, AccessLeakScanner.new(scenario).scan(run72).length
+      error = assert_raises(ArgumentError) { AccessLeakScanner.new(scenario).scan(run72, signins: RUN72_SIGNINS, logouts: ['adel@bay_pc#5']) }
+      assert_match(/still shows adel/, error.message)
+    end
+
     test 'R3-C2: entries are parsed strictly and an entry that matched no row is reported' do
       run_game
       ['adel@bay_pc#1x', 'adel@bay_pc#0', 'adel@bay_pc#abc', 'adel@nowhere#1', 'nobody@bay_pc#1'].each do |entry|
