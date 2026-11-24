@@ -67,6 +67,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
     <button class="tab" role="tab" id="tab-m07v2" aria-selected="true" data-cut="m07v2">m07 · v2</button>
+    <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
     <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
     <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
@@ -101,6 +102,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m05v5: {
+    doc: "feedback/m05_trailer_v5",
+    title: "m05 Insider Trading · 60 s trailer · v5 (owner notes)",
+    videoLabel: "16:9",
+    video: "/_blob/1898a071cd4a93f0ee0327d30e49141d",
+    videos: [["9:16", "/_blob/9968b879d276ab0747a16345d52fe55c", "p916"], ["1:1", "/_blob/99f6bfd253e4861480bdcee24d069d87", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Midnight Double Agent from 48.0 s", "32 shots"],
+    changedLabel: "What changed since v4",
+    changed: ["Your 0:40 note: the \"999 ROLLOUT\" screen covered the lobby's north door. Fixed in the room data (landed on main; it also cleared a camera off a door in the m05 server hallway and a sanitiser in m02), and the two night-corridor shots re-filmed.", "Real Hacking is no longer the nmap scan: the attack script is read, showing the Metasploit module name and its settings (variables only, no values)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Not watched end to end by me: loudness, captions and the changed shots in all three aspects checked."],
+    srt: "1\n00:00:05,120 --> 00:00:10,820\nDirector Magnus Netherton: Someone inside a Home Office contractor is handing ENTROPY the crown jewels.\n\n2\n00:00:12,957 --> 00:00:17,157\nAgent HaX: Every ambulance, fire and police call through it runs six to eleven minutes slower.\n\n3\n00:00:18,387 --> 00:00:22,177\nPatricia Morgan: All vetted. All trusted. One of them shouldn't be.\n\n4\n00:00:25,863 --> 00:00:31,553\nOwen Gallagher: That's Halloran's spare on the server hallway. Odd. She's in that lab all day, but never at night.\n\n5\n00:00:31,900 --> 00:00:34,080\nDr Ruth Halloran: And I hope to God you're wrong about my team.\n\n6\n00:00:34,340 --> 00:00:35,570\nPatricia Morgan: Go on, then. Who?\n\n7\n00:00:39,660 --> 00:00:44,090\nThe Recruiter: Fanaticism is somebody else's department. I just staff the operation.\n\n8\n00:00:46,880 --> 00:00:49,450\nThe Recruiter: Everyone has a price, agent.\n\n9\n00:00:50,120 --> 00:00:51,700\nThe Recruiter: I'm asking what yours is.\n",
+    questions: [{k:"door", t:"Lobby door at 0:39-0:42 now clear", o:[["ok", "Fixed", "", 1], ["fix", "Still wrong", "Say what"]]}, {k:"console", t:"Console shot: the attack script with the module name", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say how"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
   m07v2: {
     doc: "feedback/m07_trailer_v2",
     title: "m07 Architect's Gambit · 60 s trailer · v2 (owner notes)",
