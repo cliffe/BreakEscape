@@ -84,7 +84,105 @@ module BreakEscape
       end
     end
 
+    PUSH_KINDS = %w[push push_number_match].freeze
+
+    # Sends (or repeats) the push prompt for the key. Answers [:too_soon, retry_after], :expired
+    # (no live push record, or the twentieth prompt: the record is dropped), [:waiting, 'own_phone'
+    # | 'held_phone' | 'owner'], :nobody (the owner's phone was taken and is not held, or the owner
+    # is recorded as knocked out: refuse only) or :passed (the owner approves). `npc_id` is the
+    # account's owner. A caller drops the record (pc) or marks it passed (other subjects).
+    def send_second_step_prompt(map, key, subject, npc_id:, reenrolled: false)
+      tidy_pending!(map)
+      record = map[key]
+      return :expired unless push_record?(record, subject)
+
+      now = mfa_now
+      gap = MfaModel::PROMPT_GAP_SECONDS
+      return [:too_soon, gap - (now - record['last'].to_i)] if record['last'].to_i.positive? && now - record['last'].to_i < gap
+
+      if record['n'].to_i >= MfaModel::MAX_PROMPTS
+        map.delete(key)
+        return :expired
+      end
+      record['n'] = record['n'].to_i + 1
+      record['last'] = now
+      return [:waiting, 'own_phone'] if reenrolled && subject[:kind] == 'pc'
+      return [:waiting, 'held_phone'] if held_friendface_phone(npc_id)
+      return :nobody if friendface_phone_taken?(npc_id) || npc_ko_record_present?(npc_id)
+
+      owner_receives_prompt(record, npc_id)
+    end
+
+    # The three numbers of a number-matching attempt, in display order: { right:, wrong:, choices: }.
+    # All three are noted as issued secrets.
+    def second_step_numbers(subject_key, pending, npc_id:)
+      numbers = MfaModel.numbers(mfa_key, id, subject_key, npc_id, pending['nonce'])
+      numbers[:choices].each { |n| OpsLog.note_issued_secret(n.to_s) }
+      numbers
+    end
+
+    # The player, holding the owner's phone (or the re-enrolled own phone for a pc subject),
+    # answers the prompt. :no_phone, :cancelled (deny or a wrong number: the record is dropped,
+    # nothing counted towards a lockout) or :passed.
+    def approve_second_step(map, key, subject, npc_id:, number: nil, deny: false, reenrolled: false)
+      tidy_pending!(map)
+      record = map[key]
+      phone = held_friendface_phone(npc_id) || (reenrolled && subject.is_a?(Hash) && subject[:kind] == 'pc')
+      return :no_phone unless push_record?(record, subject) && phone
+
+      right = record['kind'] != 'push_number_match' ||
+              (!number.nil? && number.to_s == second_step_numbers(key, record, npc_id: npc_id)[:right].to_s)
+      if deny || !right
+        map.delete(key)
+        return :cancelled
+      end
+      mfa_prompts_map[npc_id.to_s] = 0
+      :passed
+    end
+
+    # The waiting push requests for an owner across the given record maps, one per key, with the
+    # prompt count and, for number matching, the three numbers in model order (none marked).
+    def second_step_requests(maps, npc_id:)
+      seen = {}
+      Array(maps).each do |map|
+        tidy_pending!(map)
+        map.each do |key, rec|
+          next if seen.key?(key) || !rec.is_a?(Hash) || rec['passed'] == true || !PUSH_KINDS.include?(rec['kind'])
+
+          entry = { 'key' => key, 'kind' => rec['kind'], 'n' => rec['n'].to_i }
+          entry['numbers'] = second_step_numbers(key, rec, npc_id: npc_id)[:choices] if rec['kind'] == 'push_number_match'
+          seen[key] = entry
+        end
+      end
+      seen.values
+    end
+
     private
+
+    def push_record?(record, subject)
+      record.is_a?(Hash) && subject.is_a?(Hash) && PUSH_KINDS.include?(record['kind'])
+    end
+
+    # Case 5: the owner receives the prompt. The count (kept per owner, across attempts) rises;
+    # number matching never approves; `push` approves for `always`, or for `pestered` at patience.
+    def owner_receives_prompt(record, npc_id)
+      prompts = mfa_prompts_map
+      count = prompts[npc_id.to_s] = prompts[npc_id.to_s].to_i + 1
+      return [:waiting, 'owner'] if record['kind'] == 'push_number_match'
+
+      npc = find_npc_in_scenario(npc_id)
+      habit = MfaModel.prompt_habit(npc, scenario_data)
+      approves = habit == 'always' || (habit == 'pestered' && count >= MfaModel.prompt_patience(npc))
+      return [:waiting, 'owner'] unless approves
+
+      prompts[npc_id.to_s] = 0
+      :passed
+    end
+
+    def mfa_prompts_map
+      player_state['mfaPrompts'] = {} unless player_state['mfaPrompts'].is_a?(Hash)
+      player_state['mfaPrompts']
+    end
 
     def mfa_window
       mfa_now / MfaModel::STEP_SECONDS
