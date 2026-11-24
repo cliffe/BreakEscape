@@ -83,8 +83,8 @@
   "prompt_waiting": {
     "route": "POST /mfa/prompt",
     "status": 200,
-    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "own_phone" },
-    "varies": ["promptsSent", "waiting"]
+    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "owner" },
+    "varies": ["promptsSent"]
   },
   "prompt_passed": {
     "route": "POST /mfa/prompt",
@@ -114,6 +114,12 @@
     "route": "POST /mfa/approve",
     "status": 422,
     "body": { "success": false, "cancelled": true },
+    "varies": []
+  },
+  "approve_expired": {
+    "route": "POST /mfa/approve",
+    "status": 422,
+    "body": { "success": false, "expired": true },
     "varies": []
   },
   "phone_one_request": {
