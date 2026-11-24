@@ -10,6 +10,7 @@ module BreakEscape
     include CaptureProofs
     include CredentialKeyring
     include EarnedFacts
+    include OpsCracking
     include CredentialLogin
     include NpcFrustration
     include SocialFeed

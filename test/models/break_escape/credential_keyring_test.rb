@@ -195,11 +195,14 @@ module BreakEscape
 
     # --- forgery and no leak ------------------------------------------------------------------
 
-    test 'a hash entry is never listed (not built in phase 1); a token is, with no value (K5)' do
-      @game.scenario_data['credentials']['a_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'j' } }
+    test 'a hash entry is a built kind and carries no value or route; a token is listed with no value (K5)' do
+      @game.scenario_data['credentials']['a_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'proof' => { 'foothold' => 'j' } }
       @game.scenario_data['credentials']['a_token'] = { 'kind' => 'token', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'j' } }
       @game.player_state['footholds'] = { 'j' => {} }
-      refute entry('a_hash'), 'a hash is not a built kind'
+      hash_row = entry('a_hash')
+      assert hash_row, 'S7 builds hash'
+      assert_equal 'hash', hash_row['kind']
+      %w[password routes connectsTo].each { |k| refute hash_row.key?(k), k }
       token = entry('a_token')
       assert token, 'K5 builds token'
       assert_equal true, token['expired'], 'a token with no expiresMin fails closed'

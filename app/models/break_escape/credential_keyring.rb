@@ -32,8 +32,8 @@ module BreakEscape
         held.is_a?(Hash) && held.key?(proof['foothold'])
       when 'technique_card'
         # A technique yields a saved connection, never a password (plan 4.3): the kind is read here too,
-        # not only by the validator (S3 server R1 m3). S7 widens it to `hash`.
-        entry['kind'] == 'saved_connection' && technique_finding_used?(proof['technique_card'])
+        # not only by the validator (S3 server R1 m3). S7 widens it to `hash` (a hash, never a password).
+        %w[saved_connection hash].include?(entry['kind']) && technique_finding_used?(proof['technique_card'])
       else
         false
       end
@@ -123,7 +123,12 @@ module BreakEscape
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
       entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
       captures = keyring_captures
-      { rev: keyring_rev(entries, captures), entries: entries, captures: captures }
+      answer = { rev: nil, entries: entries, captures: captures }
+      # S7: the earned fact ids ride only when a hash row is listed, and join the digest then.
+      crack_facts = entries.any? { |e| e['kind'] == 'hash' } ? earned_fact_ids : nil
+      answer[:crackFacts] = crack_facts if crack_facts
+      answer[:rev] = keyring_rev(entries, captures, crack_facts)
+      answer
     end
 
     # { credId => seconds left } for each live token entry of an answer, for the controller's
@@ -277,9 +282,12 @@ module BreakEscape
     # captures map, so an `unchanged` answer never hides a capture's new tag. A token's
     # expiresInS is left out (K5, section 10), so a running token does not change the digest each
     # second; `expired` turning true does.
-    def keyring_rev(entries, captures = {})
-      digested = Array(entries).map { |e| e.is_a?(Hash) && e.key?('expiresInS') ? e.except('expiresInS') : e }
-      Digest::MD5.hexdigest(JSON.generate([digested, captures]))[0, 6]
+    def keyring_rev(entries, captures = {}, crack_facts = nil)
+      digested = Array(entries).map do |e|
+        e.is_a?(Hash) ? e.except('expiresInS', *(e['kind'] == 'hash' ? ['readyInSeconds'] : [])) : e
+      end
+      parts = crack_facts ? [digested, captures, crack_facts] : [digested, captures]
+      Digest::MD5.hexdigest(JSON.generate(parts))[0, 6]
     end
 
     # The Sign-ins list's capture map (K3d, plan 8.7): one entry per capture in the server's own
@@ -363,6 +371,8 @@ module BreakEscape
 
         if kind == 'password'
           registry_password_entry(id, entry, npc)
+        elsif kind == 'hash'
+          hash_keyring_entry(id, entry, npc)
         else
           registry_connecting_entry(id, entry, npc, ended: ended)
         end

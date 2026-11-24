@@ -23,7 +23,7 @@ module BreakEscape
       'saved_connection' => { built: true,  connects: true, routes: %w[foothold from], honours_lockout: true },
       'assist_invite'    => { built: true,  connects: true, routes: %w[relay],         honours_lockout: false },
       'token'            => { built: true,  connects: true, routes: %w[proof_foothold], honours_lockout: false },
-      'hash'             => { built: false } # phase 3
+      'hash'             => { built: true,  connects: false } # S7: a hash record, cracked offline
     }.freeze
 
     # The kinds a PC accepts when its policy names no `accepts` list.
