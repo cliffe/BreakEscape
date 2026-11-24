@@ -92,6 +92,12 @@
     "vary": ["body.pcId", "body.npcId", "body.number"],
     "guess": []
   },
+  "login.mfa_required_own_plain_push": {
+    "status": 200,
+    "body": { "success": false, "mfaRequired": true, "mfa": "push", "pcId": "ops_pc", "npcId": "wim", "ownPhone": true },
+    "vary": ["body.pcId", "body.npcId"],
+    "guess": []
+  },
   "device.own": {
     "status": 200,
     "body": { "deviceId": "own:vera", "displayName": "My phone", "npcId": "vera", "code": "482916", "secondsLeft": 17, "used": false },
@@ -146,10 +152,22 @@
     "vary": ["body.npcId", "body.username", "body.displayName"],
     "guess": []
   },
+  "approve.own_passed_portrait": {
+    "status": 200,
+    "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "portrait": "assets/characters/male_telecom_talk.png", "approvedBy": "own_phone" },
+    "vary": ["body.npcId", "body.username", "body.displayName", "body.portrait"],
+    "guess": []
+  },
   "approve.cancelled": {
     "status": 422,
     "body": { "success": false, "cancelled": true },
     "vary": [],
+    "guess": []
+  },
+  "verify.own_passed_portrait": {
+    "status": 200,
+    "body": { "success": true, "npcId": "vera", "username": "v.mbeki", "displayName": "Vera Mbeki", "via": "password", "portrait": "assets/characters/female_blowse_talk.png" },
+    "vary": ["body.npcId", "body.username", "body.displayName", "body.portrait"],
     "guess": []
   },
   "verify.own_passed": {

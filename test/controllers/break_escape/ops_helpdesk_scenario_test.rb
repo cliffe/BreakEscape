@@ -148,13 +148,11 @@ module BreakEscape
     end
 
     # approve.own_passed and verify.own_passed in a scenario whose NPC has a talk sprite: the real sign-in answer also carries the
-    # NPC's `portrait` (the shared entry's scenario has none), so it is checked to be that path and then taken out of the check.
+    # NPC's `portrait` (checked to be that path), so it is judged against the `_portrait` entry.
     def assert_signed_in_shape(name, status, body, npc_id)
-      body = body.dup
-      portrait = body.delete('portrait')
       want = scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == npc_id }['spriteTalk']
-      assert_equal want, portrait
-      assert_answer_shape(name, Reply.new(status, body))
+      assert_equal want, body['portrait']
+      assert_answer_shape("#{name}_portrait", Reply.new(status, body))
     end
 
     def wim_reenrolled!

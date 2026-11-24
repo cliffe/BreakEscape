@@ -15,6 +15,8 @@ module BreakEscape
     include HelpdeskAnswerShapes
 
     HS = HelpdeskRouteScenario
+    # produced by ops_helpdesk_scenario_test.rb, whose NPCs have a talk sprite (this file's scenario has none)
+    PRODUCED_BY_SCENARIO_TEST = %w[approve.own_passed_portrait verify.own_passed_portrait].freeze
     T0 = Time.zone.at(1_800_000_000)
     OWNED = HelpdeskAnswerShapes.names.grep(/\Ahelpdesk\./).freeze
 
@@ -155,7 +157,7 @@ module BreakEscape
       assert_answer_shape('device.no_device', response)
       # push, re-enrolled
       build_gate('push')
-      sign_in_first
+      assert_answer_shape('login.mfa_required_own_plain_push', Shaped.new(200, sign_in_first))
       post game_path('mfa/prompt'), params: { pc_id: 'sam_pc' }, as: :json
       assert_answer_shape('prompt.waiting_own', response)
       get game_path('mfa/phone'), params: { own: 1 }
@@ -174,7 +176,7 @@ module BreakEscape
       numbers = response.parsed_body['requests'].first['numbers']
       post game_path('mfa/approve'), params: { pc_id: 'sam_pc', own: 1, number: numbers.first + 1000 }, as: :json
       assert_answer_shape('approve.cancelled', response)
-      assert_empty HelpdeskAnswerShapes.unproduced_names - OWNED, 'a fixture entry is produced by no real route'
+      assert_empty HelpdeskAnswerShapes.unproduced_names - OWNED - PRODUCED_BY_SCENARIO_TEST, 'a fixture entry is produced by no real route'
     end
 
     test 'the fixture entries this file owns have no open guesses left' do
