@@ -66,7 +66,8 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Trailer">
-    <button class="tab" role="tab" id="tab-m05v3" aria-selected="true" data-cut="m05v3">m05 · v3</button>
+    <button class="tab" role="tab" id="tab-m06v1" aria-selected="true" data-cut="m06v1">m06 · v1</button>
+    <button class="tab" role="tab" id="tab-m05v3" aria-selected="false" data-cut="m05v3">m05 · v3</button>
     <button class="tab" role="tab" id="tab-m04v2" aria-selected="false" data-cut="m04v2">m04 · v2</button>
     <button class="tab" role="tab" id="tab-m05v2" aria-selected="false" data-cut="m05v2">m05 · v2</button>
     <button class="tab" role="tab" id="tab-m04v1" aria-selected="false" data-cut="m04v1">m04 · v1</button>
@@ -92,6 +93,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m06v1: {
+    doc: "feedback/m06_trailer_v1",
+    title: "m06 Follow the Money · 60 s trailer · v1 (first cut)",
+    videoLabel: "16:9",
+    video: "/_blob/749a3fccdcbfbcbb5741097f0783a23c",
+    videos: [["9:16", "/_blob/b2498f6a4f40ad3f452141abaaea2173", "p916"], ["1:1", "/_blob/54fd562fa10ba76aaa8bf6f123e66b9b", "p11"]],
+    stats: ["60.000 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.5 dB", "music: Shadow Cipher from 116.6 s", "32 shots"],
+    changedLabel: "What this cut is",
+    changed: ["First cut. Hook: Netherton's \"Every cell we have hit is being paid by someone. Tonight we chase the money.\" (re-take t10b, his own art). Stakes: HaX on HashChain Exchange.", "Volkova and Priya set up the tracer; the transaction tracer gets the one new-mechanic card. The desk-phone decoy and the pizza bait are crescendo flashes, not cards (recommended placeholder).", "\"Get Past the Minder\" card, then Kemal Aydin's \"No.\" / \"Then come and move me.\"", "Ending: Satoshi's round-2 line, \"Murder's what they call it when you lose. The winners get statues.\"", "16:9 has no burned captions; the crops keep theirs."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["Real Hacking is still the m02 slate here. m06's own console clip (full-port scan from the s960 recon take) is already in the edit and comes in v2.", "Netherton's mouth shapes in this cut are the older ones; the new PixelLab mouth-only set lands with the next re-take.", "9:16: the tracer panel is cut at its left edge, and the lobby walk sits small with black above and below. Both get reframed in v2.", "Not watched end to end by me: contact sheets and loudness checked."],
+    srt: "1\n00:00:04,570 --> 00:00:10,300\nDirector Magnus Netherton: Every cell we have hit is being paid by someone. Tonight we chase the money.\n\n2\n00:00:12,070 --> 00:00:18,130\nAgent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know.\n\n3\n00:00:19,137 --> 00:00:24,557\nDr Irina Volkova: Satoshi is paranoid about doors and careless about passwords.\n\n4\n00:00:24,697 --> 00:00:29,437\nPriya Raghavan: You can't see through Monero. You don't need to. Watch what goes in and what comes out.\n\n5\n00:00:40,787 --> 00:00:41,187\nKemal Aydin: No.\n\n6\n00:00:41,477 --> 00:00:43,397\nKemal Aydin: Then come and move me.\n\n7\n00:00:47,567 --> 00:00:49,587\nSatoshi Nakamoto II: Murder's what they call it when you lose.\n\n8\n00:00:50,200 --> 00:00:51,510\nSatoshi Nakamoto II: The winners get statues.",
+    questions: [{k:"hook", t:"Netherton's hook and HaX's stakes: right lines?", o:[["ok", "Keep", "", 1], ["fix", "Change", "Say which"]]}, {k:"mechanics", t:"Tracer as the one mechanic card, decoy and pizza as flashes", o:[["ok", "Keep", "", 1], ["card", "Give the desk-phone decoy its own card", "Costs Priya's line"]]}, {k:"music", t:"Music: Shadow Cipher", o:[["ok", "Keep", "", 1], ["alt", "Try Encrypted Shadows", "Calmer"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
   m05v3: {
     doc: "feedback/m05_trailer_v3",
     title: "m05 Insider Trading · 60 s trailer · v3 (owner notes)",
@@ -456,7 +471,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m05v3";
+let current = "m06v1";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round

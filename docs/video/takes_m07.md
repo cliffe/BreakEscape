@@ -55,3 +55,14 @@ Gate: m07's briefing gate is `briefing_played`, as in m01 (timedConversation `sk
 
 ## Orchestrator decision (23 Nov)
 - `rack_cabling_note` (t20) says where the vault code is kept: a puzzle clue. Keep it out of every window; film t20 for the SCADA panel and the flag station only.
+
+## Round-2 lines: which script films them (24 Nov)
+Owner's round-2 lines (docs/video/edits/TRAILER_LINES_ROUND2.md) checked against ink and scripts. The picks file already names these lines; nothing in it is overridden.
+| line | script | state |
+|---|---|---|
+| Netherton hook "We are faced with an impossible decision, Agent." (`m07_opening_briefing.ink:104`, `delegation_intro`, 4.10 s) | t10_briefing: [Understood. Talk to me about the other three.] then target regex `impossible decision`; plays after the narrator's "The line holds..." beat | unchanged, matches |
+| Architect ending "Four fires tonight, and only one of you. I set them so you'd have to choose." (`m07_architect_comms.ink:96`, `taunt_t30`, 7.06 s) | t13_architect_call: `room_entered:operations_floor` ring after 5 s, answered, plays through to the menu after the line | changed: a `.call-subtitle` observer now marks `ending-line-start`, the take throws if that subtitle never appears, and it stays open 7.6 s from the subtitle (`ending-line-end`) |
+Risks to check on the first run (round 2):
+- t13 does not ring if `architect_t20_played` is set (the flags above do not set it). A missed or declined ring goes to voicemail (`taunt_t30_vm`), so the take must answer within the ring.
+- The call screen shows only the newest subtitle: the "Four fires" subtitle mark can lag the audio by 0.1 to 0.2 s; align by ear.
+- If the call UI auto-closes right after the line (no menu), `playThrough` ends early; the 7.6 s hold still covers the clip.

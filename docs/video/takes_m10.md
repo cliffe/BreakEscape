@@ -60,3 +60,14 @@ Shared helper `tools/video/takes/m10/_c10.mjs`: `driveTargets` (detects target l
 - Run every script (serial, rig free) and fill lengths, drop %, A/V offsets, frame notes. Create the two import JSON files (t22 `{"m08_nightshade_arrested": true}`, t24 `{"m02_completed": true}`) in the capture scratch dir.
 - Items from the picks still without a take: the PIN-cracker minigame (the "PIN cracker, no result on screen" slot: its results would show, and it needs a decision on opening it at the records cupboard without reading output), Victoria Sterling's phone chat beyond the contact list (t21 tries it), Pieter Vos and the Minder (only if a cheap state shows them), the Quintero fallback line, and the Gary face on the `gary_consultant` variant (not needed).
 - The real-hacking console clip (vm-console-takes) and the Veo/launch clips are other stages.
+
+## Round-2 lines: which script films them (24 Nov)
+Both lines already in the picks; nothing overridden. No script change was needed (regexes match the new wording, ids and choice texts grep-verified against the ink and scenario).
+| line | script | notes |
+|---|---|---|
+| Tesseract ending "Your service spent decades hoarding the world's weak points. At six, I give them back." (`m10_tesseract.ink:278`, `case`, 8.21 s) | t14_tesseract_core: all four flags and `flag4_heard` seeded as state, `core_greeted`/`tess_warned` seeded; interact tesseract, `core_router` > `case` "All four. Good. Now it's my turn." > [Go on, then.] > target `spent decades hoarding the world.s weak points`, then "City by city. Or you press this" | [Step away from the console first.] also leads to the line (after "No. But I'll keep my hand where you can see it.") |
+| Netherton hook "At six he publishes everything we ever catalogued. Every flaw, with working detail, free, to anyone." (`m10_director_netherton.ink:125`, `briefing_stakes`, 10.82 s) | t10_briefing: first menu [Go on.] (or [What are the two times?]), cold start goes `briefing_facts` > `briefing_name` > [You knew him well, then.] > `briefing_stakes`; target `At six he publishes everything we ever catalogued` | with `m09_completed` set it goes straight to `briefing_stakes` and the HaX "expecting us" target would never play: the take throws, so keep m09 unset |
+Risks to check on the first run (round 2):
+- t14: the seed is not the full S-core seed (no `--submit-flag`/`--complete-task`); `flag4_submitted` set as a global does not fire the `global_variable_changed:flag4_submitted` auto-chat, so open the chat by interaction (as scripted). If `core_router` lands elsewhere (`arrival`, `finish_box`, `flag4_lines`), add the missing seed.
+- t14 never writes a flag value: flags are booleans (`flagN_submitted`) only.
+- t10: the hook arrives with its follow-up lines and menu; the target is detected by voice events before the menu, but the audio is 10.82 s, so keep the J-cut mark by ear.

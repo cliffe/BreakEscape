@@ -8,7 +8,7 @@ export async function setup(page, bridge) { await clearScreen(page, bridge, () =
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   await page.evaluate(() => { window.__subs = []; const seen = new WeakSet(); const scan = () => document.querySelectorAll('.call-subtitle').forEach(n => { if (!seen.has(n)) { seen.add(n); window.__subs.push({ t: performance.timeOrigin + performance.now(), text: n.textContent.trim() }); } }); setInterval(scan, 40); });
-  let nsub = 0; const drain = async () => { const a = await page.evaluate(() => window.__subs.slice()).catch(() => []); for (; nsub < a.length; nsub++) mark('sub:' + a[nsub].text.slice(0, 60), { text: a[nsub].text }, a[nsub].t); };
+  let nsub = 0, fires = 0; const drain = async () => { const a = await page.evaluate(() => window.__subs.slice()).catch(() => []); for (; nsub < a.length; nsub++) { mark('sub:' + a[nsub].text.slice(0, 60), { text: a[nsub].text }, a[nsub].t); if (/Four fires tonight, and only one of you/i.test(a[nsub].text)) { fires = a[nsub].t; mark('ending-line-start', { clipS: 7.06 }, a[nsub].t); } } };
   const timer = setInterval(drain, 200);
   await sleep(1200); mark('walk-start');
   const e = await bridge.enterRoom('operations_floor', { timeoutMs: 45000 }); mark('entered', { ok: e && e.ok });
@@ -19,5 +19,9 @@ export default async (page, bridge, mark) => {
   await sleep(2000);
   await page.evaluate(() => document.querySelector('.incoming-call-answer').click()); mark('answered'); await sleep(1200);
   await playThrough(page, bridge, mark, vw, { steps: [], settleMs: 700, timeoutMs: 120000 });
-  await vw.stop(); await sleep(1500); clearInterval(timer); await drain(); mark('linger-end');
+  await vw.stop(); await sleep(1500); clearInterval(timer); await drain();
+  // round-2 ending line "Four fires tonight..." (7.06 s): its subtitle must have appeared, and the take must stay open for the whole clip
+  if (!fires) throw new Error('ending line subtitle "Four fires tonight" never seen (call did not reach it, or the text changed)');
+  const left = fires + 7600 - Date.now(); if (left > 0) await sleep(left);
+  mark('ending-line-end', { clipS: 7.06 }); mark('linger-end');
 };

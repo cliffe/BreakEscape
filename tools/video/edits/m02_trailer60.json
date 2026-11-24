@@ -1,10 +1,10 @@
 {
  "mission": "m02",
- "id": "m02_trailer60_v4",
+ "id": "m02_trailer60_v5",
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3b (2026-11-20): ghost_reveal muted so Ghost's two lines no longer overlap. v3 (2026-11-20, from the v2 feedback): Bernie's line voiced (J-cut 0.65 s, L-cut 1.55 s over the ward walk that now follows him, gain -3.5 to match HaX); Val approach before her line; ward walk trimmed before the door bump and moved behind Bernie (t22 ward crowd takes its old slot); kitchen walk (t26) muted; Ghost video call at dialogue level, ducked, with the whole Money line (18.4-22.5 in t17) in ghost_close; J/L-cuts on HaX, Bernie, Val, Ghost (new audio.post = L-cut, mix-audio.mjs and make-srt.mjs); m_lights moved after the ward crowd to make room. Kept from v2: music, Reeves flash, ransom line, console beat, avatar rotation. v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
+ "status": "v5 (2026-11-24, owner notes of 2026-11-24): crescendo flashes reframed to one scale, 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), each subject centred; exceptions: 9:16 portraits (Kim, Gary, Reeves) at 3x to keep the subtitle bar out, CyberChef 9:16 at 4x and 1:1 moved up so the decoded output stays off (v4's 9:16 and 1:1 showed it), password 9:16 shifted right off the sticky-note tab. Ghost's Money line: new trailer FX (tools/video/takes/m02/ghost_voice_fx.sh, variant B: main -2.5 st formant preserved, sub-octave -12 st with formant -3 at -12 dB, parallel drive 20% wet, chorus 12% at 0.25 Hz, one 55 ms slapback, darker tone), ghost_close reads t17_ghost_call_fx.trimmed.mkv, gain 6.5; the line's tail and window unchanged. Everything else as v4. Not rendered. v3b (2026-11-20): ghost_reveal muted so Ghost's two lines no longer overlap. v3 (2026-11-20, from the v2 feedback): Bernie's line voiced (J-cut 0.65 s, L-cut 1.55 s over the ward walk that now follows him, gain -3.5 to match HaX); Val approach before her line; ward walk trimmed before the door bump and moved behind Bernie (t22 ward crowd takes its old slot); kitchen walk (t26) muted; Ghost video call at dialogue level, ducked, with the whole Money line (18.4-22.5 in t17) in ghost_close; J/L-cuts on HaX, Bernie, Val, Ghost (new audio.post = L-cut, mix-audio.mjs and make-srt.mjs); m_lights moved after the ward crowd to make room. Kept from v2: music, Reeves flash, ransom line, console beat, avatar rotation. v2 (2026-11-20): 22 re-recorded takes with spy avatars, windows and crops from docs/video/takes_m02.md 'v2 edit windows'; hax_hook J-cut retimed (pre 1.25 s) for the 4.13 s hax_1; ghost terminal window widened to 6.8-12.2 and chair to 0.9-3.9 to fill their slots (t26 is 1.87 s); Real Hacking slot is now the m02 console recon clip (needs BE_CLIPS_DIR=$FOOTAGE_ROOT/m02/clips). Ghost beats silent. Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -819,22 +819,22 @@
     "in": 7.0,
     "out": 7.701
    },
-   "note": "crescendo 1/10: lockpick, lock not yet open",
+   "note": "crescendo 1/10: lockpick, lock not yet open v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
-     "cx": 0.474,
-     "cy": 0.39,
+     "cx": 0.497,
+     "cy": 0.593,
      "zoom": 2
     },
     "9:16": {
      "cx": 0.497,
-     "cy": 0.53,
-     "zoom": 1.3
+     "cy": 0.593,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.58,
-     "zoom": 1.9
+     "cx": 0.497,
+     "cy": 0.593,
+     "zoom": 2
     }
    },
    "audio": {
@@ -862,21 +862,21 @@
     "in": 4.7,
     "out": 5.401
    },
-   "note": "crescendo 2/10: PIN pad, digits 2,5,6",
+   "note": "crescendo 2/10: PIN pad, digits 2,5,6 v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.42,
+     "cy": 0.45,
      "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.444,
+     "cy": 0.45,
      "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.42,
+     "cy": 0.45,
      "zoom": 2
     }
    },
@@ -905,20 +905,20 @@
     "in": 12.6,
     "out": 12.8677
    },
-   "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940)",
+   "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940) v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred. 9:16 at 3x (zoom 1.6875): at 2x the window reaches y 960 and shows the subtitle bar (dark from y 928).",
    "framing": {
     "16:9": {
-     "cx": 0.73,
-     "cy": 0.204,
-     "zoom": 3
+     "cx": 0.66,
+     "cy": 0.25,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.73,
-     "cy": 0.333,
-     "zoom": 1.5
+     "cx": 0.66,
+     "cy": 0.2963,
+     "zoom": 1.6875
     },
     "1:1": {
-     "cx": 0.73,
+     "cx": 0.66,
      "cy": 0.25,
      "zoom": 2
     }
@@ -948,22 +948,22 @@
     "in": 3.0,
     "out": 3.401
    },
-   "note": "crescendo 3/10: ransom title and timer",
+   "note": "crescendo 3/10: ransom title and timer v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.5
+     "cy": 0.53,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 0.7
+     "cy": 0.53,
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.53,
+     "zoom": 2
     }
    },
    "audio": {
@@ -991,22 +991,22 @@
     "in": 3.4,
     "out": 3.7677
    },
-   "note": "crescendo 4/10: backup-recovery source cards; panel top (title) is off frame",
+   "note": "crescendo 4/10: backup-recovery source cards; panel top (title) is off frame v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.25
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.46,
-     "cy": 0.5,
-     "zoom": 0.5625
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.43,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.42,
+     "cy": 0.44,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1034,20 +1034,20 @@
     "in": 3.5,
     "out": 3.701
    },
-   "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940)",
+   "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940) v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred. 9:16 at 3x (zoom 1.6875): at 2x the window reaches y 960 and shows the subtitle bar (dark from y 928).",
    "framing": {
     "16:9": {
-     "cx": 0.725,
-     "cy": 0.204,
-     "zoom": 3
+     "cx": 0.67,
+     "cy": 0.25,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.725,
-     "cy": 0.333,
-     "zoom": 1.5
+     "cx": 0.67,
+     "cy": 0.2963,
+     "zoom": 1.6875
     },
     "1:1": {
-     "cx": 0.725,
+     "cx": 0.67,
      "cy": 0.25,
      "zoom": 2
     }
@@ -1077,22 +1077,22 @@
     "in": 8.0,
     "out": 8.301
    },
-   "note": "crescendo 5/10: CyberChef input pane only; output pane off in every aspect",
+   "note": "crescendo 5/10: CyberChef input pane only; output pane off in every aspect v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred. Output pane (decoded text from y 628) off: 16:9 window y 20-560, 1:1 y 40-580, 9:16 at 4x (zoom 2.25) y 110-590; v4 9:16 and 1:1 showed the decoded output.",
    "framing": {
     "16:9": {
-     "cx": 0.75,
-     "cy": 0.2843,
+     "cx": 0.7344,
+     "cy": 0.2778,
      "zoom": 2
     },
     "9:16": {
-     "cx": 0.56,
-     "cy": 0.4,
-     "zoom": 1.5
+     "cx": 0.573,
+     "cy": 0.324,
+     "zoom": 2.25
     },
     "1:1": {
-     "cx": 0.665,
-     "cy": 0.33,
-     "zoom": 1.6
+     "cx": 0.505,
+     "cy": 0.287,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1120,22 +1120,22 @@
     "in": 5.6,
     "out": 5.901
    },
-   "note": "crescendo 6/10: phone reply choices",
+   "note": "crescendo 6/10: phone reply choices v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
+     "cx": 0.497,
+     "cy": 0.345,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.38,
-     "zoom": 1.3
+     "cx": 0.497,
+     "cy": 0.345,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
+     "cx": 0.497,
+     "cy": 0.345,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1163,22 +1163,22 @@
     "in": 2.0,
     "out": 2.201
    },
-   "note": "crescendo NPC flash: ward crowd, whole frame, no emergency state",
+   "note": "crescendo NPC flash: ward crowd, whole frame, no emergency state v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 1.125
     },
     "1:1": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 2
     }
    },
    "audio": {
@@ -1206,22 +1206,22 @@
     "in": 3.3,
     "out": 3.4677
    },
-   "note": "crescendo 7/10: supply cabinet: first-aid kit, gloves, stock check",
+   "note": "crescendo 7/10: supply cabinet: first-aid kit, gloves, stock check v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 2.4
+     "cy": 0.48,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.497,
-     "cy": 0.5,
-     "zoom": 0.85
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.497,
-     "cy": 0.5,
-     "zoom": 1.5
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1249,22 +1249,22 @@
     "in": 4.8,
     "out": 4.9677
    },
-   "note": "crescendo 8/10: CROP OFF THE POST-IT (monitor bezel x 920-1152, y 502-578): visible y ends at 482 (16:9, 1:1) and 480 (9:16)",
+   "note": "crescendo 8/10: CROP OFF THE POST-IT (monitor bezel x 920-1152, y 502-578): visible y ends at 482 (16:9, 1:1) and 480 (9:16) v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred. The sticky-note tab sits at x 420-730, y 888-935: 16:9 and 1:1 window y 220-760; 9:16 (y 0-960) shifted right to x 735-1275 so the tab is off.",
    "framing": {
     "16:9": {
-     "cx": 0.43,
-     "cy": 0.54,
-     "zoom": 3
+     "cx": 0.5,
+     "cy": 0.4537,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.495,
-     "cy": 0.5,
-     "zoom": 0.9
+     "cx": 0.5234,
+     "cy": 0.4537,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.495,
-     "cy": 0.5,
-     "zoom": 1.5
+     "cx": 0.5,
+     "cy": 0.4537,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1292,22 +1292,22 @@
     "in": 3.0,
     "out": 3.1677
    },
-   "note": "crescendo 9/10: flag station, 'No flags submitted yet' (empty)",
+   "note": "crescendo 9/10: flag station, 'No flags submitted yet' (empty) v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 2.2
+     "cy": 0.44,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.495,
-     "cy": 0.5,
-     "zoom": 1.05
+     "cx": 0.5,
+     "cy": 0.44,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.495,
-     "cy": 0.5,
-     "zoom": 1.8
+     "cx": 0.5,
+     "cy": 0.44,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1335,22 +1335,22 @@
     "in": 2.7,
     "out": 2.8343
    },
-   "note": "crescendo 10/10: the console desk (stands in for the skipped RFID tap)",
+   "note": "crescendo 10/10: the console desk (stands in for the skipped RFID tap) v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred.",
    "framing": {
     "16:9": {
-     "cx": 0.53,
-     "cy": 0.43,
-     "zoom": 1.2
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.53,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.53,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.5,
+     "cy": 0.48,
+     "zoom": 2
     }
    },
    "audio": {
@@ -1378,20 +1378,20 @@
     "in": 13.0,
     "out": 13.101
    },
-   "note": "crescendo Reeves flash, TALK-VIEW portrait (user reversed the obscured call 2026-11-02): t27 14.3-18.1 window, crop x 1100-1650 y 0-940 (no subtitle bar). Non-speaking, 3 frames.",
+   "note": "crescendo Reeves flash, TALK-VIEW portrait (user reversed the obscured call 2026-11-02): t27 14.3-18.1 window, crop x 1100-1650 y 0-940 (no subtitle bar). Non-speaking, 3 frames. v5 framing: 2x source pixels in every aspect (16:9 zoom 2, 9:16 1.125, 1:1 2), subject centred. 9:16 at 3x (zoom 1.6875): at 2x the window reaches y 960 and shows the subtitle bar (dark from y 928).",
    "framing": {
     "16:9": {
-     "cx": 0.69,
-     "cy": 0.204,
-     "zoom": 3
+     "cx": 0.67,
+     "cy": 0.25,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.69,
-     "cy": 0.333,
-     "zoom": 1.5
+     "cx": 0.67,
+     "cy": 0.2963,
+     "zoom": 1.6875
     },
     "1:1": {
-     "cx": 0.69,
+     "cx": 0.67,
      "cy": 0.25,
      "zoom": 2
     }
@@ -1460,11 +1460,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t17_ghost_call.trimmed.mkv",
+    "file": "t17_ghost_call_fx.trimmed.mkv",
     "in": 19.1,
     "out": 23.2
    },
-   "note": "v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below.",
+   "note": "v5: audio from t17_ghost_call_fx.trimmed.mkv, built by tools/video/takes/m02/ghost_voice_fx.sh take (same picture, stream copy; the Money line rebuilt from the clean TTS clip with the owner recipe of 2026-11-24, placed at the clip's own position in t17, 4 ms rubberband latency). Window, pre, post and the line tail unchanged from v4; gain 6 -> 6.5 matches the v4 line's momentary max (-15.1 v4, -15.7 fx at equal integrated level). v3: the whole Money line. Voice in t17 18.4-22.55 (measured, pause 19.0-19.4); picture 19.1-22.43 (the map comes back at about 22.5), audio from 18.4 (pre 0.7 under the reveal's last frames) and 0.25 s past the cut under the closing clip. Alt close 'No name tonight...' kept below.",
    "alt_close": {
     "file": "t17_ghost_call.trimmed.mkv",
     "in": 13.73,
@@ -1489,7 +1489,7 @@
     }
    },
    "audio": {
-    "gain_db": 6,
+    "gain_db": 6.5,
     "dialogue": true,
     "duck_music": true,
     "pre": 0.1,
