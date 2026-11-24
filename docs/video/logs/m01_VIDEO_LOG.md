@@ -18,3 +18,19 @@ Earlier rounds (v1 to v8.5) are logged in `docs/video/TRIAL_LOG.md`. Newest at t
 - Edit: derek_wide t09c 45.66-50.0 (audio pre 2.57 under the crescendo, crop cx .5 cy .4 zoom 1.3), hard cut to derek_close 50.0-52.16 on "That's optimisation". Gains wide +1.5, close +5.5 (the soft last phrase moved only 1.9 dB: dialogue bus compression). "Sixty deaths" is a casualty figure, kept on the user's word.
 - Render `~/video-takes-local/m01/renders/m01_trailer60_v10_16x9.mp4`: 60.000 s, -14.1 LUFS, TP -1.4. Cue peaks: HaX -13.0, Kevin -11.5, Maya -6.1, Sarah -13.8, Derek -10.7 / -13.8 (v9's spread, approved then).
 - Page tab "m01 · v10" replaces v9 (no v9 answers), doc `feedback/m01_trailer_v10`, asset 9b69be9e6b7ee1417429942fedbc2fdc. Asks: Derek cut, his last phrase's level, retiring m01's generic cards, the white CyberChef flash at 45 s, plus v9's open questions.
+
+## v11 (2026-11-24)
+- Owner (v10 review): retire m01's generic cards and rewrite them in m01's own words, as m03 to m06 do.
+- Edit `tools/video/edits/m01_trailer60.json`, id `m01_trailer60_v11`. Only card text changed: same ids, 1.5 s each, same joins (the pinned dissolve on `card_choices` stays), same timings. Derek, the volume, CyberChef, the closet, the toast, the avatars and Kevin's shots are untouched. Lint 0 errors 0 warnings. Not rendered; card stills (16:9 and 9:16) checked: every line fits.
+- Words come from the ink: HaX's brief ("You're going in as an IT contractor", "Stay in character", Maya's anonymous tip), Maya ("Operation Shatter launches Sunday", "Anyone who gets too close gets removed"), Sarah (the manager HR called in who was gone). Operation Shatter and the Sunday launch are told to the player early by Maya and the scout marked the name as no spoiler; no answer, outcome or ending is on any card.
+
+| Card (time) | Was | Now | Alternatives to swap in |
+|---|---|---|---|
+| `card_mission` (3.0 s) | Mission 1 / First Contact | unchanged | mission-specific already |
+| `card_real` (10.0 s) | Real / Hacking | unchanged (house card in every mission, recipe) | `Crack the / SSH Login` (names what the Hydra clip shows); `Audit Their / Servers` (the IT-audit cover) |
+| `card_uncover` (16.5 s, before Kevin, Maya, Sarah) | Uncover / the Mystery | **People Keep / Vanishing** | `Find the / Informant` (HaX's ask: find Maya); `Who Got Too / Close?` (echoes Maya's line that follows) |
+| `card_choices` (30.5 s, before the walks to Sarah, the door, Maya) | Choices with / Consequences | **Stay in / Character** | `Your Cover: / IT Audit`; `Win Over / the Staff` (rapport with Kevin, the Influence toast) |
+| `card_entropy` (35.5 s, before the crescendo and Derek) | And Hold Back / The Entropy! | **Before the / Sunday Launch** | `Stop / Operation / Shatter` (three lines, as m03 to m06 mission cards); `Stop Derek / by Sunday` |
+
+- To swap: change the card's `text[]` in the edit list, keep two lines of about 12 characters (13 fits, as "First Contact" and "Sunday Launch" show), lint.
+- Open: whether `Real / Hacking` should also carry m01 detail (the brief listed it as possibly generic; the recipe keeps it word for word in every mission, so it stays unless the owner says otherwise).
