@@ -684,7 +684,7 @@ class AccessLeakScanner
     'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
     'harvest_key' => 'a cached-account or account-kind key in a response (cachedAccounts, cachedAt, harvestedAccounts, accountKind, localTo, accountOnly, or creds.domain), or a hashId outside a POST /harvest_credentials answer',
     'harvest_row' => 'a POST /harvest_credentials answer that is not exactly the server\'s shape (a refusal with rows, a row with a key, a password or a picture an account-only account has not)',
-    'harvest_unearned' => 'a collect row for an account that no sign-in PC with an admin session earned in the run declares (a borrow-gated account needs the game\'s own record of the borrow), or whose hashId is not that PC\'s hash record',
+    'harvest_unearned' => 'a collect answer or row at a PC with no admin session earned there in the run (a keyboard sign-in, or a proved relay administrator), for an account that PC does not declare (a borrow-gated account needs a borrow "done" answer earlier in the capture and the game\'s own cachedAt record: a game row from before cachedAt reads as no borrow), or whose hashId is not that PC\'s hash record',
     'harvest_hash' => 'a hash row whose proof is harvested listed in a GET /keyring answer before a collect answer named its hashId',
     'account_only' => 'an account-only account\'s room entry, tile, display name or username before the answer that earns it (a typed sign-in for the display name, a credited collect row or its hash row for both)',
     'relay_admin' => 'a relay session shown with admin unless the scenario holds an assist invite for that account at that PC, marks the account creds.admin true, the PC admits it, and the game agrees',
@@ -4872,18 +4872,22 @@ class AccessLeakScanner
 
   # ---- S5b, S5c, ruling B: cached accounts, account-only accounts, relay admin (unit 15) -------------------------------------
   #
-  # What the rules assume of the server (each one is an assumption the review should check):
-  # - the collect answer is exactly `{ success, harvested, held, keyringRev }` on 200, rows exactly `{ npcId, displayName,
-  #   username, portrait, avatar, hashId }`, a hashId is the registry id of the one hash record tying that PC and account;
-  # - the recorder keeps no request body and no PC id for the collect, so the PC is never read: a row is credited only when
-  #   SOME sign-in PC that declares the account in `cachedAccounts` has the S5a `admin:<pc>` step earned at that point of the
-  #   capture (a relay admin earns no step, so a relay admin collect is not credited: fail closed), and a borrow-gated account
-  #   only when the game's own `cachedAt` holds the pair (no game: not credited);
-  # - a collect 200 always needs an admin session at the PC, so every row of either list needs that credit;
-  # - the session answer of a typed sign-in carries an account-only account's display name; its username only comes in a collect
-  #   row or its hash row (a session answer that still carries the username of an account-only account is a finding);
+  # What the rules assume of the server (each one is an assumption the review should check; S5bc review R1 changed several):
+  # - the collect 200 is exactly `{ success, pcId, harvested, held, keyringRev }` (`pcId` is the PC id the request named, not
+  #   secret); rows are exactly `{ npcId, displayName, username, portrait, avatar, hashId }` with the account's own values;
+  #   every refusal is one of the closed list HARVEST_REFUSALS; `harvested` is a subset of `held`, one row per account;
+  # - a row is credited only at the PC `pcId` names, when that PC declares the account, an admin step (the S5a `admin:<pc>`) or
+  #   a proved relay administrator mark is earned there now, and (for a borrow-gated account) a 200 borrow "done" answer named
+  #   that PC earlier in the capture AND the game's own `cachedAt` holds the pair; no game: not credited;
+  # - a proved typed sign-in earns an account-only account's display name and username; a keyring sign-in the name only; a
+  #   collect row or a registry keyring row of the account earns both;
   # - a keyring hash row is the registry entry's id, and its account's name and username come with it;
-  # - a relay admin is shown with `via: credential`, `kind: assist_invite`, `relay: true` and a unique `host` label.
+  # - a relay admin is shown only in the relay sign-in answer or that PC's desktop answer, as `via: credential`, `kind:
+  #   assist_invite`, `relay: true`, `host`, never with `remote`, `footholdId`, `fromPcId` or `locked`.
+  # Known limits, both failing closed (R1-L15): a keyring row of a harvested hash is flagged when its collect is in an earlier
+  # capture file or when the collect answer's body was lost (as S7 does for a cracked entry): the finding is correct for the
+  # capture, do not look for a loosening. Two borrowers at one PC share the "done" proof of that PC (the answer names the PC, not
+  # the borrower); the game's `cachedAt` floor separates them only by end state.
   HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
   HARVEST_ANSWER_KEYS = %w[success pcId harvested held keyringRev].freeze
   HARVEST_ROW_KEYS = %w[npcId displayName username portrait avatar hashId].freeze
@@ -4913,8 +4917,27 @@ class AccessLeakScanner
       @hv_account_only[id] = { name: (npc['displayName'].is_a?(String) ? npc['displayName'] : nil),
                                user: (creds['username'].is_a?(String) ? creds['username'] : nil) }
     end
+    check_account_only_words
     @hv_borrow_used = @hv_candidates.values.flatten(1).any? { |_, after| after == 'borrow' }
     @hv_relay_possible = BreakEscape::CredentialModel.registry(@data).any? { |_, e| e.is_a?(Hash) && e['kind'] == 'assist_invite' }
+  end
+
+  # R1-L9: the account-only rule matches the account's words in every answer, so a scan whose words are ordinary would be noise
+  # (an account-only `admin` flags every `access: "admin"`): refused here, as S7 refuses a game without readers. A display name or
+  # username equal (any case) to another account's, or to a word of the answers the scanner already knows, is refused.
+  HARVEST_ANSWER_WORDS = %w[admin user password credential claim technique registry capture cracked hash ready running local domain].freeze
+
+  def check_account_only_words
+    @hv_account_only.each do |id, words|
+      mine = [words[:name], words[:user]].compact.map(&:downcase)
+      others = @priv_npcs.reject { |other, _| other == id }.flat_map { |_, n| [n['displayName'], n.dig('creds', 'username'), n['id']] }
+                         .select { |w| w.is_a?(String) }.map(&:downcase)
+      clash = mine.find { |w| HARVEST_ANSWER_WORDS.include?(w) || others.include?(w) }
+      next unless clash
+
+      raise ArgumentError, "account-only NPC #{id} has a display name or username that is also another account's or an answer word " \
+                           "(#{HARVEST_ANSWER_WORDS.include?(clash) ? 'answer word' : 'another account'}): the scan would flag honest answers; rename it"
+    end
   end
 
   def harvest_begin_scan
@@ -5083,13 +5106,11 @@ class AccessLeakScanner
       next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry'
 
       id = entry['id'].to_s
-      next unless @hv_hash_account.key?(id)
-
-      if @hv_hash_ids.include?(id) && !@hv_served_hashes.include?(id)
+      if @hv_hash_account.key?(id) && @hv_hash_ids.include?(id) && !@hv_served_hashes.include?(id)
         add.call('harvest_hash', "credential:#{id}", "$.entries[#{i}]")
         next
       end
-      account = @hv_hash_account[id]
+      account = @hv_hash_account.key?(id) ? @hv_hash_account[id] : harvest_row_account(entry)
       if @hv_account_only.key?(account)
         @hv_name_earned << account
         @hv_user_earned << account
@@ -5097,11 +5118,23 @@ class AccessLeakScanner
     end
   end
 
+  # R1-L2: a registry keyring row of any kind whose `account` block is exactly an account-only account's (S7's shape) earns both.
+  def harvest_row_account(entry)
+    block = entry['account']
+    return nil unless block.is_a?(Hash) && block['npcId'].is_a?(String) && @hv_account_only.key?(block['npcId'])
+
+    block == crack_account_block(@priv_npcs[block['npcId']]) ? block['npcId'] : nil
+  end
+
+  # R1-L2 (decided by the owner): a proved typed sign-in success (200, `success: true`, `via: "password"`, not a relay) earns that
+  # account's display name AND username: the server answers so only when the typed username and password both matched, and the
+  # player supplied the username. A keyring sign-in (`via: "credential"`) earns the name only.
   def note_harvest_login(body, ctx, row)
     return unless ctx[:login] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
     return unless @hv_account_only.key?(body['npcId']) && %w[password credential].include?(body['via'])
 
     @hv_name_earned << body['npcId']
+    @hv_user_earned << body['npcId'] if body['via'] == 'password' && body['relay'] != true
   end
 
   def scan_account_only(body, ctx, add)
@@ -5112,23 +5145,30 @@ class AccessLeakScanner
       tiles = hash['loginAccounts']
       list = (tiles.is_a?(Array) ? tiles : []) + (ctx[:login_accounts] && hash.equal?(body) && body['accounts'].is_a?(Array) ? body['accounts'] : [])
       list.each do |tile|
-        next unless tile.is_a?(Hash) && [tile['npcId'], tile['id']].any? { |v| @hv_account_only.key?(v) }
+        next unless tile.is_a?(Hash)
 
-        add.call('account_only', "npc:#{tile['npcId'] || tile['id']}/tile", safe_path("#{path}.loginAccounts"))
+        # R1-L13: a tile is any hash with a string value that is an account-only id, under whatever key
+        id = tile.values.find { |v| v.is_a?(String) && @hv_account_only.key?(v) }
+        add.call('account_only', "npc:#{id}/tile", safe_path("#{path}.loginAccounts")) if id
       end
+      # R1-L13: a JSON key is a string of the answer too
+      hash.each_key { |key| harvest_judge_string(key.to_s, safe_path(path), add) }
     end
-    each_string(body) do |str, path, _owner|
-      @hv_account_only.each do |id, words|
-        add.call('account_only', "npc:#{id}/name", safe_path(path)) if !@hv_name_earned.include?(id) && harvest_word?(str, words[:name])
-        add.call('account_only', "npc:#{id}/username", safe_path(path)) if !@hv_user_earned.include?(id) && harvest_word?(str, words[:user])
-      end
+    each_string(body) { |str, path, _owner| harvest_judge_string(str, safe_path(path), add) }
+  end
+
+  def harvest_judge_string(str, path, add)
+    @hv_account_only.each do |id, words|
+      add.call('account_only', "npc:#{id}/name", path) if !@hv_name_earned.include?(id) && harvest_word?(str, words[:name])
+      # R1-L10: the server shows the username normalised (stripped, lower case) in a log row, so it is matched in any case
+      add.call('account_only', "npc:#{id}/username", path) if !@hv_user_earned.include?(id) && harvest_word?(str, words[:user], ignore_case: true)
     end
   end
 
-  def harvest_word?(str, word)
+  def harvest_word?(str, word, ignore_case: false)
     return false unless word.is_a?(String) && !word.empty?
 
-    str.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(word)}(?![A-Za-z0-9_])/)
+    str.match?(Regexp.new("(?<![A-Za-z0-9_])#{Regexp.escape(word)}(?![A-Za-z0-9_])", ignore_case ? Regexp::IGNORECASE : 0))
   end
 
   # Ruling B (R4-2a split): a relay session of an administrator account at a PC that admits it is admin. Allowed only when

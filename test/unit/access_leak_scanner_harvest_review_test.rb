@@ -291,4 +291,95 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     kb = row({ 'session' => { 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'password', 'access' => 'admin' } }, path: 'container/profile_pc')
     assert_equal 1, access_hits(scan([relay_login, kb], scenario: relay_scenario, game: FakeGame.new)).length
   end
+
+  # ---- account-only accounts: R1-L2, R1-L9, R1-L10, R1-L13 ----
+
+  def account_only(scenario = data, id = 'jake', user: nil, name: nil)
+    npc = scenario['rooms']['finance']['npcs'].find { |n| n['id'] == id }
+    npc['accountOnly'] = true
+    npc['creds']['username'] = user if user
+    npc['displayName'] = name if name
+    scenario
+  end
+
+  def log_rows(*rows)
+    row({ 'rev' => 'a', 'title' => 'Log', 'rows' => rows }, path: 'log_rows')
+  end
+
+  def log_row(event, as, result, detail)
+    { 'id' => 'r1', 'elapsedMs' => 1, 'event' => event, 'as' => as, 'where' => 'Hot desk', 'result' => result, 'detail' => detail }
+  end
+
+  def typed_jake
+    row({ 'success' => true, 'npcId' => 'jake', 'username' => 'jbrooks', 'displayName' => 'Jake Brooks', 'via' => 'password' }, path: 'login', method: 'POST')
+  end
+
+  test 'R1-L2: the server\'s own typed sign-in answer, the desktop after it and the log rows it writes are clean' do
+    s = account_only
+    assert_empty scan([typed_jake], scenario: s)
+    assert_empty scan([typed_jake, row({ 'session' => { 'npcId' => 'jake', 'username' => 'jbrooks', 'displayName' => 'Jake Brooks', 'via' => 'password' } }, path: 'container/it_pc')], scenario: s)
+    assert_empty scan([typed_jake, log_rows(log_row('SIGN_IN', 'jbrooks', 'OK', 'method: password'), log_row('CRED_COLLECT', 'jbrooks', 'OK', 'count: 2'))], scenario: s)
+  end
+
+  test 'R1-L2: the typed sign-in earns only its own account, and only when it succeeded as a password sign-in' do
+    s = account_only
+    other = row({ 'success' => true, 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'password' }, path: 'login', method: 'POST')
+    assert_includes rules(scan([other, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), 'account_only'
+    relay = typed_jake.tap { |r| r['body']['relay'] = true }
+    assert_includes rules(scan([relay, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), 'account_only'
+    refused = typed_jake.merge('status' => 401)
+    assert_includes rules(scan([refused, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), 'account_only'
+    # the typed answer is also the first place the username shows: before it, a username anywhere is flagged
+    assert_includes rules(scan([row({ 'x' => 'jbrooks' }, path: 'room/finance'), typed_jake], scenario: s)), 'account_only'
+  end
+
+  test 'R1-L2: a registry keyring row carrying the account block of an account-only account earns both words' do
+    s = account_only
+    scenario_scanner = AccessLeakScanner.new(s)
+    block = scenario_scanner.send(:crack_account_block, s['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' })
+    entry = { 'id' => 'other', 'kind' => 'hash', 'source' => 'registry', 'account' => block }
+    shown = row({ 'rev' => 2, 'entries' => [entry] }, path: 'keyring')
+    assert_empty scan([shown, row({ 'x' => 'jbrooks Jake Brooks' }, path: 'room/finance')], scenario: s).select { |f| f.rule == 'account_only' }
+    odd = row({ 'rev' => 2, 'entries' => [entry.merge('account' => block.merge('username' => 'zz'))] }, path: 'keyring')
+    assert_includes rules(scan([odd, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), 'account_only'
+  end
+
+  test 'R1-L9: an account-only word that is an ordinary word or another account\'s is refused at construction' do
+    assert_raises(ArgumentError) { AccessLeakScanner.new(account_only(user: 'admin')) }
+    assert_raises(ArgumentError) { AccessLeakScanner.new(account_only(user: 'Password')) }
+    assert_raises(ArgumentError) { AccessLeakScanner.new(account_only(name: 'Local')) }
+    dana = data['rooms']['finance']['npcs'].find { |n| n['id'] == 'dana' }
+    assert_raises(ArgumentError) { AccessLeakScanner.new(account_only(user: dana['creds']['username'].upcase)) }
+    assert_raises(ArgumentError) { AccessLeakScanner.new(account_only(name: dana['displayName'])) }
+    assert_nothing_raised { AccessLeakScanner.new(account_only) }
+    assert_nothing_raised { AccessLeakScanner.new(data) }
+  end
+
+  test 'R1-L10: the username is matched in any case, the display name exactly' do
+    s = account_only(user: 'JBrooks')
+    assert_includes rules(scan([log_rows(log_row('CRED_COLLECT', 'jbrooks', 'OK', '-'))], scenario: s)), 'account_only'
+    assert_includes rules(scan([row({ 'x' => 'JBROOKS' }, path: 'room/finance')], scenario: s)), 'account_only'
+    assert_empty scan([row({ 'x' => 'jake brooks' }, path: 'room/finance')], scenario: s)
+  end
+
+  test 'R1-L13: an account-only tile under any key, and a JSON key naming the account, are flagged' do
+    s = account_only
+    assert_includes hits(scan([row({ 'accounts' => [{ 'npc' => 'jake' }] }, path: 'login_accounts')], scenario: s)), %w[account_only npc:jake/tile]
+    assert_includes hits(scan([row({ 'objects' => [{ 'id' => 'profile_pc', 'loginAccounts' => [{ 'who' => 'jake', 'x' => 1 }] }] }, path: 'room/finance')], scenario: s)), %w[account_only npc:jake/tile]
+    assert_includes rules(scan([row({ 'jbrooks' => 1 }, path: 'room/finance')], scenario: s)), 'account_only'
+    assert_includes rules(scan([row({ 'Jake Brooks' => 1 }, path: 'room/finance')], scenario: s)), 'account_only'
+    assert_empty scan([row({ 'accounts' => [{ 'npc' => 'dana' }] }, path: 'login_accounts')], scenario: s)
+  end
+
+  # ---- R1-L17: an untagged sign-in, as the recorder writes it ----
+
+  test 'R1-L17: an untagged admin sign-in of an account two PCs admit earns the step only with a --signin entry' do
+    scenario = data
+    scenario['rooms']['finance']['objects'].find { |o| o['id'] == 'it_pc' }['access'] = { 'roles' => %w[it staff] }
+    scenario['rooms']['finance']['npcs'].find { |n| n['id'] == 'dana' }['creds']['admin'] = true
+    untagged = row({ 'success' => true, 'npcId' => 'dana', 'username' => 'x', 'displayName' => 'x', 'via' => 'password' }, path: 'login', method: 'POST')
+    rows = [untagged, collect([crow('jake', 'hot_jake')])]
+    assert_includes rules(scan(rows, scenario: scenario)), 'harvest_unearned'
+    assert_empty scan(rows, scenario: scenario, signins: ['dana@profile_pc#1'])
+  end
 end

@@ -219,15 +219,19 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     assert_includes rules(scan([admin_signin, collect([pic])], scenario: s)), 'harvest_row'
   end
 
-  test 'a typed sign-in earns the display name only' do
+  # Decided on R1-L2: a proved typed sign-in (via password) earns the username as well as the display name; a keyring sign-in
+  # (via credential) earns the name only.
+  test 'a typed sign-in earns the display name and username; a keyring sign-in the display name only' do
     s = account_only_scenario
-    login = row({ 'success' => true, 'npcId' => 'jake', 'displayName' => 'Jake Brooks', 'via' => 'password' }, path: 'login', method: 'POST')
-    assert_empty scan([login, row({ 'x' => 'Jake Brooks' }, path: 'room/finance')], scenario: s) - scan([login], scenario: s)
-    after = scan([login, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)
+    typed = row({ 'success' => true, 'npcId' => 'jake', 'displayName' => 'Jake Brooks', 'via' => 'password' }, path: 'login', method: 'POST')
+    keyring_in = row({ 'success' => true, 'npcId' => 'jake', 'displayName' => 'Jake Brooks', 'via' => 'credential' }, path: 'login', method: 'POST')
+    assert_empty scan([typed, row({ 'x' => 'jbrooks, Jake Brooks' }, path: 'room/finance')], scenario: s)
+    after = scan([keyring_in, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)
     assert_includes hits(after), %w[account_only npc:jake/username]
-    refute_includes hits(scan([login, row({ 'x' => 'Jake Brooks' }, path: 'room/finance')], scenario: s)), %w[account_only npc:jake/name]
+    refute_includes hits(scan([keyring_in, row({ 'x' => 'Jake Brooks' }, path: 'room/finance')], scenario: s)), %w[account_only npc:jake/name]
     failed = row({ 'success' => false, 'npcId' => 'jake', 'via' => 'password' }, path: 'login', method: 'POST', status: 401)
     assert_includes hits(scan([failed, row({ 'x' => 'Jake Brooks' }, path: 'room/finance')], scenario: s)), %w[account_only npc:jake/name]
+    assert_includes hits(scan([failed, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), %w[account_only npc:jake/username]
   end
 
   test 'a keyring hash row of an account-only account earns the name and the username' do
