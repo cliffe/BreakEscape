@@ -7,7 +7,7 @@ import { loadAnswer, answerNames } from './helpers/lock-step-answers.mjs';
 const REQUIRED = [
     'gate_push', 'gate_number', 'gate_code', 'gate_door_npc', 'open_object', 'open_door', 'first_factor_wrong',
     'verify_passed', 'verify_wrong', 'verify_stale_used', 'verify_stale_expired', 'verify_dropped', 'verify_closed',
-    'prompt_waiting', 'prompt_passed', 'prompt_too_soon', 'prompt_expired', 'approve_passed', 'approve_cancelled',
+    'prompt_waiting', 'prompt_passed', 'prompt_too_soon', 'prompt_expired', 'approve_passed', 'approve_cancelled', 'approve_expired',
     'phone_one_request', 'phone_number_request', 'not_found', 'no_phone', 'no_device', 'generic_refusal'
 ];
 const STATUS = {

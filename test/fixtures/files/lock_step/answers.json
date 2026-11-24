@@ -47,79 +47,79 @@
   "verify_passed": {
     "route": "POST /mfa/verify",
     "status": 200,
-    "body": { "success": true, "stepPassed": true },
+    "body": { "success": true, "stepPassed": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "verify_wrong": {
     "route": "POST /mfa/verify",
     "status": 422,
-    "body": { "success": false, "mfaIncorrect": true },
+    "body": { "success": false, "mfaIncorrect": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "verify_stale_used": {
     "route": "POST /mfa/verify",
     "status": 422,
-    "body": { "success": false, "stale": "used" },
+    "body": { "success": false, "stale": "used", "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "verify_stale_expired": {
     "route": "POST /mfa/verify",
     "status": 422,
-    "body": { "success": false, "stale": "expired" },
+    "body": { "success": false, "stale": "expired", "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "verify_dropped": {
     "route": "POST /mfa/verify",
     "status": 422,
-    "body": { "success": false, "expired": true },
+    "body": { "success": false, "expired": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "verify_closed": {
     "route": "POST /mfa/verify",
     "status": 422,
-    "body": { "success": false, "codeLocked": true, "retryIn": 240 },
+    "body": { "success": false, "codeLocked": true, "retryIn": 240, "targetType": "object", "targetId": "moira_locker" },
     "varies": ["retryIn"]
   },
   "prompt_waiting": {
     "route": "POST /mfa/prompt",
     "status": 200,
-    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "owner" },
+    "body": { "success": false, "approved": false, "promptsSent": 1, "waiting": "owner", "targetType": "object", "targetId": "moira_locker" },
     "varies": ["promptsSent"]
   },
   "prompt_passed": {
     "route": "POST /mfa/prompt",
     "status": 200,
-    "body": { "success": true, "stepPassed": true, "approvedBy": "owner" },
+    "body": { "success": true, "stepPassed": true, "approvedBy": "owner", "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "prompt_too_soon": {
     "route": "POST /mfa/prompt",
     "status": 422,
-    "body": { "success": false, "tooSoon": true, "retryAfterS": 2 },
+    "body": { "success": false, "tooSoon": true, "retryAfterS": 2, "targetType": "object", "targetId": "moira_locker" },
     "varies": ["retryAfterS"]
   },
   "prompt_expired": {
     "route": "POST /mfa/prompt",
     "status": 422,
-    "body": { "success": false, "expired": true },
+    "body": { "success": false, "expired": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "approve_passed": {
     "route": "POST /mfa/approve",
     "status": 200,
-    "body": { "success": true, "stepPassed": true, "approvedBy": "player" },
+    "body": { "success": true, "stepPassed": true, "approvedBy": "player", "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "approve_cancelled": {
     "route": "POST /mfa/approve",
     "status": 422,
-    "body": { "success": false, "cancelled": true },
+    "body": { "success": false, "cancelled": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "approve_expired": {
     "route": "POST /mfa/approve",
     "status": 422,
-    "body": { "success": false, "expired": true },
+    "body": { "success": false, "expired": true, "targetType": "object", "targetId": "moira_locker" },
     "varies": []
   },
   "phone_one_request": {
