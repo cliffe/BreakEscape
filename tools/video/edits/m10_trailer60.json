@@ -1337,7 +1337,7 @@
    "source": {
     "file": "t24_workshop_faces.trimmed.mkv",
     "in": 10.9,
-    "out": 11.1333
+    "out": 11.1667
    },
    "note": "crescendo cut: face, bar off. Framing is a guess: check in and out frame per aspect.",
    "framing": {
@@ -1423,7 +1423,7 @@
    "source": {
     "file": "t18_workshop_pads.trimmed.mkv",
     "in": 27.5,
-    "out": 27.7667
+    "out": 27.7333
    },
    "note": "crescendo cut: reader, Access Granted. Framing is a guess: check in and out frame per aspect.",
    "framing": {
