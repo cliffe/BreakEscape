@@ -491,14 +491,19 @@ export class PcSessions {
 
     /**
      * Whether a plant at this object is made as an admin (S5a): for an object that needs a
-     * session, keyboardAdmin of the PC its grant names; else sessionAdmin of the object's own id.
+     * session, keyboardAdmin of the PC its grant names; else sessionAdmin of the object's own id, else
+     * (ruling A) sessionAdmin of the PC its portOf names.
      * Reads window.pcPolicy.sessionGrantPc (set by pc-policy.js) so this module imports nothing new.
      */
     plantAdmin(objectData) {
         if (!objectData || typeof objectData !== 'object') return false;
         const pcId = (typeof window !== 'undefined' && window.pcPolicy?.sessionGrantPc?.(objectData)) || null;
         if (pcId) return this.keyboardAdmin(pcId);
-        return typeof objectData.id === 'string' && this.sessionAdmin(objectData.id);
+        if (typeof objectData.id === 'string' && this.sessionAdmin(objectData.id)) return true;
+        // S5 ruling A: a governed USB port names its PC (portOf); any admin session there counts
+        // (a storage stick needs no keyboard), as the server plant_admin_pc reads it after the grant.
+        const portPc = (typeof window !== 'undefined' && window.pcPolicy?.portPc?.(objectData)) || null;
+        return !!portPc && this.sessionAdmin(portPc);
     }
 
     /**
