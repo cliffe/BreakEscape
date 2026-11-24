@@ -6,7 +6,8 @@ import { sleep, clearScreen } from '../lib/lib.mjs';
 import { closeAll } from './_c10.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(1200); }
 export default async (page, bridge, mark) => {
-  await sleep(1000); mark('walk-start', (await bridge.getState()).player);
-  const e = await bridge.enterRoom('power_room', { timeoutMs: 45000 }); mark('entered', { ok: e && e.ok }); await sleep(1500);
+  await sleep(2500); for (let i = 0; i < 3; i++) { await clearScreen(page, bridge, () => {}); await sleep(700); }
+  mark('walk-start', (await bridge.getState()).player);
+  const e = await bridge.enterRoom('power_room', { timeoutMs: 45000 }); mark('entered', { ok: e && e.ok, e: JSON.stringify(e).slice(0, 400) }); await sleep(1500);
   mark('walk-end', (await bridge.getState()).player); await closeAll(page, bridge);
 };

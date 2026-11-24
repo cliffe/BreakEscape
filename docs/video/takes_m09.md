@@ -46,7 +46,7 @@ Helpers: `_c9x.mjs` (door id resolved from the nearby list, `meetNpc`, `openClon
 | t26_cage_sorensen | UI-free overworld shot of Sorensen at the shredder (7 s hold), then the biometric reader on `plan_cabinet` (injected lift, nothing presented) | marcus_hale | same seeds as t18 (`--start-room restricted_cage --unlock restricted_cage --set bin_chosen=true --set hatch_talked=true`) | script written, not yet run |
 | t27_flag_station | empty flag station `drop_terminal` | lucia_moreno (vary if run next to t21) | `--imports=none --start-room reading_room --set briefing_played=true` | script written, not yet run |
 | t28_phone_contacts | phone contact list as the card flash: Gary, Torres, Recruiter, Agent 0x99; Nightshade row and previews hidden by a DOM interval | mei_lin_chow | `--imports=none --start-room loading_dock --set briefing_played=true` | script written, not yet run |
-| t29_phone_gary | Gary's voiced call (rings after a first try at the salvage keypad), subtitle observer, stops at the reply menu, nothing picked | vivian_ashby | `--imports=none --start-room tape_room --unlock tape_room --set briefing_played=true --set m02_gary_protected=true`, `BE_KEEP_RING=1` | script written, not yet run |
+| t29_phone_gary | Gary's voiced call (rings after a first try at the salvage keypad), subtitle observer, stops at the reply menu, nothing picked | vivian_ashby | `--imports=<{"m02_gary_protected": true}> --start-room tape_room --unlock tape_room --set briefing_played=true --set dock_done=true`, `BE_KEEP_RING=1` | **pass on run 3** (24 Nov): see the Run 3 note at the end |
 | t30_walks | env `M09_WALK`: noor, closet, stacks, laptop (four walk shots, one script) | see script header | see script header | script written, not yet run |
 
 Risks to check on the first run (part 2):
@@ -141,3 +141,10 @@ Gotchas: the helper script in the scratchpad (`rt.sh`, `sheet.sh` under the sess
 ## Handover (end of run 3)
 
 Open items: t28 (needs the contacts to exist; run it after a play-state that has them, or drop the shot), t29 (Gary's ring does not fire from opening the salvage password screen; check what else the call mapping needs), t30 noor/stacks (the walk stalls at the door: use `moveTo` to a point beyond the doorway, as t21 does), t30 laptop (start farther from the laptop, then check drop %).
+
+## t29 retake (24 Nov): pass
+Cause of the no-ring: `m02_gary_protected` is an imported global, so `--set` loses to the import default. Fix: an import file `{"m02_gary_protected": true}` passed as `--imports=<file>` (no `--set` for it), plus `--set dock_done=true`, `BE_KEEP_RING=1`, rec flags `""`, avatar vivian_ashby.
+
+| id | result | len | drop % | A/V off (ms) | marks (s) | frame notes and spoiler cut points | suggested window |
+|---|---|---|---|---|---|---|---|
+| t29_phone_gary | pass on run 1 | 40.37 | 0.23 | -78 / -72 | keypad-tried 4.29, ring-seen 5.86 (1.57 s after the keypad opens, as the probe found), answered 7.37, subs 9.20 / 18.32 / 24.80 / 34.98, choices-shown 37.87, linger-end 39.91 | Contact sheet and the menu frame viewed. Full HUD (objectives, hotbar) with the salvage-cage room and a "Password Rejected" toast (about 4-9 s) and an Agent HaX toast at 4-6 s; then the green phone UI with Gary Whitlock's portrait and rolling subtitles. **Spoiler: the call names the cipher type (the 24.8 s line says Vigenere) and the 35 s line points at a chart: use only the reply-menu frames (37.9-39.9 s: "How's the new job?" / "Thanks, Gary.", with the "There'll be a chart near the keypad." line above the menu, which is the mildest hint) or the ring and answer part (5.9-9.0 s, before the first hint). Never the 18-37 s subtitles.** | ring and answer 5.8-9.0; reply menu 37.9-39.9 |

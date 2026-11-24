@@ -13,4 +13,6 @@ export default async (page, bridge, mark) => {
   if (!r || r.ok === false) r = await bridge.setCyberChefInput('Uryyb, jbeyq!', { recipe: 'ROT13' });
   mark('input-set', { ok: r && r.ok, output: r && r.output }); if (!r || r.ok === false) throw new Error('setCyberChefInput failed');
   mark('output-shown'); await sleep(3500); mark('linger-end');
+  // the workstation overlay leaves the game's AudioContext suspended, so the end tone slate was silent (m09 t16 too): resume it before the slate
+  await page.evaluate(async () => { const c = (window.MusicController && window.MusicController.context) || window.__beCtx; if (c && c.state !== 'running') await c.resume(); }); await sleep(400);
 };

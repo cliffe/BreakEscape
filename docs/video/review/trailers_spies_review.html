@@ -78,6 +78,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m07v2" aria-selected="false" data-cut="m07v2">m07 · v2 · final</button>
     <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1 · final</button>
     <button class="tab" role="tab" id="tab-m09v1" aria-selected="false" data-cut="m09v1">m09 · v1</button>
+    <button class="tab" role="tab" id="tab-m10v1" aria-selected="false" data-cut="m10v1">m10 · v1</button>
   </nav>
   <details class="earlier" id="earlier">
     <summary>Earlier rounds (18)</summary>
@@ -142,6 +143,20 @@ const CUTS = {
     standin: ["The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, Derek's cut, loudness and captions checked in all three aspects."],
     srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,090 --> 00:00:49,450\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,190 --> 00:00:51,850\nDerek Lawson: That's optimisation.\n",
     questions: [{k:"music", t:"Emerald Trigger on m01", o:[["ok", "Keep", "", 1], ["back", "Back to Midnight Cipher Chase (v12)", ""]]}, {k:"cuts", t:"Cards and Derek's cut on the beat", o:[["ok", "Right", "", 1], ["fix", "Off", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
+  m10v1: {
+    doc: "feedback/m10_trailer_v1",
+    title: "m10 Full Disclosure · 60 s trailer · v1",
+    videoLabel: "16:9",
+    video: "/_blob/a95278ce18fdf798548a5379c133f853",
+    videos: [["9:16", "/_blob/41d4da93033c8a6ef1c32d16523b33a8", "p916"], ["1:1", "/_blob/8df89124a3635a3449031abdc16f921c", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −1.6 dB", "music: SpyAgro Hybrid Attack 1 from 98.6 s, 1 s fade-out", "44 shots"],
+    changedLabel: "What this first cut does",
+    changed: ["Netherton's hook, first sentence only (\"At six he publishes everything we ever catalogued.\"), then a flash of four team faces.", "Cards: \"Mission 10 / Full Disclosure\", \"WREN Is on / the Team\", \"Disable the / Security\", \"Real / Hacking\", \"It Goes / at Six\".", "Quintero at security, Netherton's \"It puts WREN on this team.\", the power cut, HaX's breaker call, the gallery guard's bark, CyberChef, the release console's clock (times only), the tunnel guard, a 17-cut crescendo, and the Tesseract's ending: \"Your service spent decades hoarding the world's weak points. At six, I give them back.\"", "\"Now it's my turn.\" (the Tesseract, from the ending take) plays as a voice-over across the release clock.", "Real Hacking is m10's console reading the release configuration (no casualty figure, no secret values)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["HaX's call names the breaker (\"Top row. The third breaker from the left\"). She tells every player this in the game, so it is not a deduction the trailer gives away; see the question.", "The voice-over caption is a plain white box with no name, unlike the dialogue boxes.", "CyberChef shows ROT13, as m03's trailer does.", "Fixed after my first check: the face flashes were framed off the faces in every aspect, and the console, the clock and the guard's toast were clipped in 9:16 and 1:1.", "Checked by me: contact sheets in all three aspects, the fixed crops frame by frame, loudness and captions. Not watched end to end."],
+    srt: "1\n00:00:05,000 --> 00:00:09,170\nDirector Magnus Netherton: At six he publishes everything we ever catalogued.\n\n2\n00:00:11,937 --> 00:00:14,077\nQuintero: I don't like doors that know your name.\n\n3\n00:00:14,767 --> 00:00:17,127\nDirector Magnus Netherton: It puts WREN on this team.\n\n4\n00:00:20,010 --> 00:00:22,980\nAgent 0x00 HaX: Top row. The third breaker from the left feeds the shutter.\n\n5\n00:00:24,813 --> 00:00:27,843\nGallery guard: Camera's dead again. I'll go and look.\n\n6\n00:00:34,650 --> 00:00:36,500\nNow it's my turn.\n\n7\n00:00:37,903 --> 00:00:39,703\nTunnel guard: Nobody said let you through armed.\n\n8\n00:00:44,233 --> 00:00:48,673\nTesseract: Your service spent decades hoarding the world's weak points.\n\n9\n00:00:49,467 --> 00:00:51,737\nTesseract: At six, I give them back.\n",
+    questions: [{k:"hook", t:"Hook: Netherton's first sentence only, over the team-face flash", o:[["ok", "Keep", "", 1], ["long", "Use his full line", "Longer open"]]}, {k:"vo", t:"\"Now it's my turn.\" as a voice-over over the release clock", o:[["ok", "Keep", "", 1], ["name", "Keep, but caption it as Tesseract", ""], ["cut", "Drop it", ""]]}, {k:"breaker", t:"HaX's breaker line (she gives it to every player)", o:[["ok", "Keep", "", 1], ["swap", "Use another HaX line", ""]]}, {k:"music", t:"Hybrid Attack 1", o:[["ok", "Keep", "", 1], ["alt", "Try another", "Say which mood"]]}, {k:"pace", t:"Pace: anything too fast or too slow? Which shot would you cut or lengthen?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
   },
   m09v1: {
     doc: "feedback/m09_trailer_v1",
