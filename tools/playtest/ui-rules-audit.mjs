@@ -37,9 +37,9 @@
 // test_access_signin test_ops_skin) with its box planted: the audit loads the page with
 // skip_resume=1, so give --plant "js" (run once in the page before the surfaces, for example a
 // call that plugs the drop box into office_port) unless the page already holds the foothold.
-// The foothold is the id after --ops-view, else the first one held (jack_office_port). With no
-// foothold, or no setSkin in the page, the surface throws on open and is reported as not
-// audited. Without --ops-view the network view is not audited, as before.
+// The foothold is the id after --ops-view, else the first one window.__test.access.footholds()
+// lists (jack_office_port). With no foothold, or no setSkin in the page, the surface throws on open,
+// is reported as not audited, and the run fails even without --strict. Without --ops-view the network view is not audited, as before.
 // Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE picks the browser.
 import { chromium } from 'playwright';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
@@ -56,6 +56,23 @@ const SIZES = opt('sizes', '1400x1000,800x600,915x412,390x844').split(',').map(s
 const PARAMS = opt('params', null) ? JSON.parse(readFileSync(opt('params'), 'utf8')) : {};
 const IS_MAIN = import.meta.url === pathToFileURL(process.argv[1] || '').href;
 if (IS_MAIN && !GID) { console.error('--game is required'); process.exit(2); }
+
+// The code run in the page to open the network view in one skin. The held footholds come from
+// window.__test.access.footholds() (test-bridge/access.js); the skin is switched with
+// window.__test.network.setSkin (test-bridge/network.js).
+export function opsViewOpenCode(id, skin) {
+    return `const held = window.__test.access?.footholds ? await window.__test.access.footholds() : []; const id = ${JSON.stringify(id)} || held[0]?.id; if (!id) throw new Error('no foothold held: the box is not planted'); if (!window.__test.network?.setSkin) throw new Error('no window.__test.network.setSkin'); window.startNetworkViewMinigame(id); await new Promise(r => setTimeout(r, 800)); await window.__test.network.setSkin(${JSON.stringify(skin)});`;
+}
+
+// The two --ops-view surfaces. `required` surfaces that were not audited fail the run even
+// without --strict: the flag was asked for.
+export function opsViewSurfaces(id) {
+    return ['gui', 'cli'].map(skin => ({
+        name: `network-view-${skin}`, root: '.minigame-container', required: true,
+        open: opsViewOpenCode(id, skin),
+        close: 'window.MinigameFramework.forceCloseMinigame?.()'
+    }));
+}
 
 export function audit({ rootSel }) {
     const ALLOWED = ['gnf', 'press start 2p', 'vt323'];
@@ -260,13 +277,7 @@ async function main() {
             try { await page.evaluate(async (js) => (0, eval)(`(async () => { ${js} })()`), opt('plant')); } catch (e) { console.log(`plant failed: ${String(e.message || e).slice(0, 100)}`); }
             await page.waitForTimeout(1500);
         }
-        for (const skin of ['gui', 'cli']) {
-            surfaces.push({
-                name: `network-view-${skin}`, root: '.minigame-container',
-                open: `const held = window.__test.footholds ? window.__test.footholds() : []; const id = ${JSON.stringify(id)} || held[0]?.id; if (!id) throw new Error('no foothold held: the box is not planted'); if (!window.__test.network?.setSkin) throw new Error('no window.__test.network.setSkin'); window.startNetworkViewMinigame(id); await new Promise(r => setTimeout(r, 800)); await window.__test.network.setSkin(${JSON.stringify(skin)});`,
-                close: 'window.MinigameFramework.forceCloseMinigame?.()'
-            });
-        }
+        surfaces.push(...opsViewSurfaces(id));
     }
     if (opt('surfaces', null)) surfaces = surfaces.concat((await import(pathToFileURL(resolve(opt('surfaces'))).href)).default);
 
@@ -323,7 +334,9 @@ async function main() {
             if (!r.open || (r.errors || []).length) unaudited.push(`${name} ${size}${r.open ? ' (error)' : ' (not open)'}`);
         }
     }
+    const requiredMissing = surfaces.filter(x => x.required && unaudited.some(u => u.split(' ')[0] === x.name));
     if (unaudited.length) console.log(`NOT AUDITED ${unaudited.length}: ${[...new Set(unaudited.map(u => u.split(' ')[0]))].join(', ')}`);
+    if (requiredMissing.length && !flag('strict')) { console.log(`FAIL: --ops-view was asked for and ${requiredMissing.map(x => x.name).join(', ')} not audited`); process.exit(1); }
     if (flag('strict') && (fits || unaudited.length)) { console.log(`FAIL: ${fits} fit breach(es), ${unaudited.length} surface-size(s) not audited`); process.exit(1); }
 }
 
