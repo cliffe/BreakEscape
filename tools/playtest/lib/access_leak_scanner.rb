@@ -8,6 +8,7 @@ require 'uri'
 require_relative '../../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
 require_relative '../../../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
+require_relative '../../../lib/break_escape/cached_accounts' unless defined?(BreakEscape::CachedAccounts) # S5b
 require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
@@ -452,6 +453,7 @@ class AccessLeakScanner
     collect_network_secrets
     collect_ops_secrets
     collect_privilege
+    collect_harvest # S5b, S5c
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
@@ -551,6 +553,7 @@ class AccessLeakScanner
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     mfa_begin_scan # S8a: the second-step rules' own state
+    harvest_begin_scan # S5b, S5c
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -599,6 +602,7 @@ class AccessLeakScanner
       scan_ops_session_keys(body, ctx, add)
       scan_privilege_keys(body, add)
       scan_privilege_log_rows(body, ctx, add)
+      scan_harvest(body, ctx, row, add) # S5b, S5c
       scan_ops_foothold_views(body, ctx, add)
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
@@ -677,6 +681,12 @@ class AccessLeakScanner
     'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
     'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
     'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
+    'harvest_key' => 'a cached-account or account-kind key in a response (cachedAccounts, cachedAt, harvestedAccounts, accountKind, localTo, accountOnly, or creds.domain), or a hashId outside a POST /harvest_credentials answer',
+    'harvest_row' => 'a POST /harvest_credentials answer that is not exactly the server\'s shape (a refusal with rows, a row with a key, a password or a picture an account-only account has not)',
+    'harvest_unearned' => 'a collect row for an account that no sign-in PC with an admin session earned in the run declares (a borrow-gated account needs the game\'s own record of the borrow), or whose hashId is not that PC\'s hash record',
+    'harvest_hash' => 'a hash row whose proof is harvested listed in a GET /keyring answer before a collect answer named its hashId',
+    'account_only' => 'an account-only account\'s room entry, tile, display name or username before the answer that earns it (a typed sign-in for the display name, a credited collect row or its hash row for both)',
+    'relay_admin' => 'a relay session shown with admin unless the scenario holds an assist invite for that account at that PC, marks the account creds.admin true, the PC admits it, and the game agrees',
     'fact_unearned' => "an intel fact's entry, label or text before the answer that grants it (the entry only in the bootstrap's social.intelFacts after the grant, the top-level facts of an inventory answer, the entry of a grant_fact reward or the facts of a give_item reward, in the server's own shape), or any entry of a fact the game has not earned"
   }.freeze
 
@@ -1081,6 +1091,7 @@ class AccessLeakScanner
       inventory_add: ops_inventory_add_id(row, method, path),
       network_view: method == 'GET' && path.end_with?('/network'),
       log_rows: method == 'GET' && path.end_with?('/log_rows'),
+      harvest: method == 'POST' && path.match?(%r{\A(?:/break_escape)?/games/\d+/harvest_credentials\z}), # S5b
       log_rows_ok: method == 'GET' && path.end_with?('/log_rows') && row['status'].is_a?(Integer) && row['status'] == 200
     }
   end
@@ -2862,9 +2873,12 @@ class AccessLeakScanner
 
       level = hash['access']
       scalar = !level.is_a?(Hash) && !level.is_a?(Array)
-      add.call('ops_string', 'ops:key:access', '$') if scalar && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
-      # R4-2a: the server never gives a claim or a relay session admin, wherever the answer shows one
-      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || hash['relay'] == true)
+      # S5 ruling B: a relay session has the relayed account's rights, so admin on a relay is allowed when (and only when)
+      # relay_admin_proved? holds; it earns no step (a relay never feeds a step up), so it is not judged against `admin:<pc>`
+      relay_proved = level == 'admin' && hash['relay'] == true && relay_admin_proved?(hash, ctx)
+      add.call('ops_string', 'ops:key:access', '$') if scalar && !relay_proved && (level != 'admin' || owner.nil? || !@ops_earned.include?("admin:#{owner}"))
+      # R4-2a: the server never gives a claim admin, and a relay admin only as relay_admin_proved? says, wherever the answer shows one
+      add.call('ops_string', 'ops:key:access', '$') if level == 'admin' && (hash['via'] == 'claim' || (hash['relay'] == true && !relay_proved))
     end
   end
 
@@ -3616,6 +3630,8 @@ class AccessLeakScanner
   # scenario can reach are required: hash records need the crack set, award facts the fact set.
   def require_game_methods
     return unless @game
+
+    require_harvest_game_methods # S5b, S5c
 
     needed = []
     needed |= GAME_METHODS_CRACK unless @crack_records.empty?
@@ -4847,4 +4863,220 @@ class AccessLeakScanner
     @mfa_logout_placed = false
     @priv_pcs.keys
   end
+
+  # ---- S5b, S5c, ruling B: cached accounts, account-only accounts, relay admin (unit 15) -------------------------------------
+  #
+  # What the rules assume of the server (each one is an assumption the review should check):
+  # - the collect answer is exactly `{ success, harvested, held, keyringRev }` on 200, rows exactly `{ npcId, displayName,
+  #   username, portrait, avatar, hashId }`, a hashId is the registry id of the one hash record tying that PC and account;
+  # - the recorder keeps no request body and no PC id for the collect, so the PC is never read: a row is credited only when
+  #   SOME sign-in PC that declares the account in `cachedAccounts` has the S5a `admin:<pc>` step earned at that point of the
+  #   capture (a relay admin earns no step, so a relay admin collect is not credited: fail closed), and a borrow-gated account
+  #   only when the game's own `cachedAt` holds the pair (no game: not credited);
+  # - a collect 200 always needs an admin session at the PC, so every row of either list needs that credit;
+  # - the session answer of a typed sign-in carries an account-only account's display name; its username only comes in a collect
+  #   row or its hash row (a session answer that still carries the username of an account-only account is a finding);
+  # - a keyring hash row is the registry entry's id, and its account's name and username come with it;
+  # - a relay admin is shown with `via: credential`, `kind: assist_invite`, `relay: true` and a unique `host` label.
+  HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
+  HARVEST_ANSWER_KEYS = %w[success harvested held keyringRev].freeze
+  HARVEST_ROW_KEYS = %w[npcId displayName username portrait avatar hashId].freeze
+  GAME_METHODS_HARVEST = %i[player_state].freeze
+
+  def collect_harvest
+    @hv_candidates = Hash.new { |h, k| h[k] = [] } # npc id => [[pc id, after]]
+    @priv_pcs.each do |pc_id, pc|
+      BreakEscape::CachedAccounts.candidates(pc).each { |c| @hv_candidates[c['npc']] << [pc_id, c['after']] }
+    end
+    @hv_hash_ids = Set.new # registry hash records whose proof is harvested
+    @hv_hash_account = {}  # every registry hash record id => its account id
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      next unless entry.is_a?(Hash) && entry['kind'] == 'hash'
+
+      @hv_hash_account[id.to_s] = entry['account']
+      @hv_hash_ids << id.to_s if BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'harvested'
+    end
+    @hv_account_only = {}  # account-only npc id => { name:, user: }
+    @priv_npcs.each do |id, npc|
+      next unless BreakEscape::AccessIdentities.account_only?(npc)
+
+      creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}
+      @hv_account_only[id] = { name: (npc['displayName'].is_a?(String) ? npc['displayName'] : nil),
+                               user: (creds['username'].is_a?(String) ? creds['username'] : nil) }
+    end
+    @hv_borrow_used = @hv_candidates.values.flatten(1).any? { |_, after| after == 'borrow' }
+    @hv_relay_possible = BreakEscape::CredentialModel.registry(@data).any? { |_, e| e.is_a?(Hash) && e['kind'] == 'assist_invite' }
+  end
+
+  def harvest_begin_scan
+    @hv_served_hashes = Set.new # hash record ids a credited collect row named
+    @hv_name_earned = Set.new   # account-only ids whose display name has been earned
+    @hv_user_earned = Set.new   # account-only ids whose username has been earned
+  end
+
+  # A scan needs these readers on the game it was given: the borrow record, and the game's own admin-at-PC check.
+  def require_harvest_game_methods
+    needed = @hv_borrow_used ? GAME_METHODS_HARVEST.reject { |m| @game.respond_to?(m) } : []
+    needed << :account_admin_at? if @hv_relay_possible && !@game.respond_to?(:account_admin_at?, true)
+    return if needed.empty?
+
+    raise ArgumentError, "the game given to the leak scanner lacks #{needed.join(', ')}: a check would be skipped"
+  end
+
+  def scan_harvest(body, ctx, row, add)
+    scan_harvest_keys(body, ctx, add)
+    judge_harvest_answer(body, ctx, row, add) if ctx[:harvest]
+    note_harvest_keyring(body, add)
+    note_harvest_login(body, ctx, row)
+    scan_account_only(body, ctx, add) unless @hv_account_only.empty?
+  end
+
+  # The never-list keys, anywhere. `domain` is shown on a PC object; only `creds.domain` is withheld.
+  def scan_harvest_keys(body, ctx, add)
+    walk_hashes(body, '$') do |hash, path|
+      HARVEST_NEVER_KEYS.each { |key| add.call('harvest_key', "key:#{key}", safe_path("#{path}.#{key}")) if hash.key?(key) }
+      add.call('harvest_key', 'key:creds.domain', safe_path("#{path}.creds.domain")) if hash['creds'].is_a?(Hash) && hash['creds'].key?('domain')
+      add.call('harvest_key', 'key:hashId', safe_path("#{path}.hashId")) if hash.key?('hashId') && !ctx[:harvest]
+    end
+  end
+
+  def judge_harvest_answer(body, ctx, row, add)
+    ok = row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash)
+    unless ok
+      # a refusal or a lost answer carries no rows
+      walk_hashes(body, '$') { |hash, path| add.call('harvest_row', 'refusal', safe_path(path)) if hash.key?('harvested') || hash.key?('held') }
+      return
+    end
+    add.call('harvest_row', 'answer', '$') unless body.keys.sort == HARVEST_ANSWER_KEYS.sort && body['success'] == true && body['keyringRev'].is_a?(Integer)
+    %w[harvested held].each do |list|
+      rows = body[list]
+      unless rows.is_a?(Array)
+        add.call('harvest_row', "answer:#{list}", safe_path("$.#{list}")) if body.key?(list)
+        next
+      end
+      rows.each_with_index { |entry, i| judge_harvest_row(entry, safe_path("$.#{list}[#{i}]"), add) }
+    end
+  end
+
+  def judge_harvest_row(entry, path, add)
+    unless entry.is_a?(Hash) && entry.keys.sort == HARVEST_ROW_KEYS.sort && harvest_row_values_ok?(entry)
+      add.call('harvest_row', 'row', path)
+      return
+    end
+    npc = entry['npcId']
+    pcs = harvest_credited_pcs(npc)
+    expected = pcs.map { |pc| BreakEscape::CachedAccounts.hash_record_id(@data, pc, npc) }.uniq
+    unless !pcs.empty? && expected.include?(entry['hashId'])
+      add.call('harvest_unearned', "account:#{npc}", path)
+      return
+    end
+    @hv_served_hashes << entry['hashId'] if entry['hashId']
+    return unless @hv_account_only.key?(npc)
+
+    @hv_name_earned << npc
+    @hv_user_earned << npc
+    add.call('harvest_row', "account:#{npc}", path) unless entry['portrait'].nil? && entry['avatar'].nil?
+  end
+
+  def harvest_row_values_ok?(entry)
+    %w[npcId displayName username].all? { |k| entry[k].is_a?(String) } && %w[portrait avatar hashId].all? { |k| entry[k].nil? || entry[k].is_a?(String) }
+  end
+
+  # The sign-in PCs that declare the account, hold an admin step now, and (for a borrow-gated account) have the borrow recorded.
+  def harvest_credited_pcs(npc)
+    return [] unless npc.is_a?(String)
+
+    @hv_candidates[npc].select do |pc, after|
+      @ops_earned.include?("admin:#{pc}") && (after.nil? || harvest_borrowed?(pc, npc))
+    end.map(&:first)
+  end
+
+  def harvest_borrowed?(pc_id, npc_id)
+    return false unless @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash)
+
+    at = @game.player_state['cachedAt']
+    pair = BreakEscape::CachedAccounts.pair(pc_id, npc_id)
+    at.is_a?(Array) && !pair.nil? && at.include?(pair)
+  end
+
+  # A keyring hash row of a harvested record before a credited collect named it is a finding; one of an account-only account
+  # earns that account's name and username (the registry row is judged by the older rules).
+  def note_harvest_keyring(body, add)
+    entries = keyring_entries_in(body)
+    return if entries.nil?
+
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry'
+
+      id = entry['id'].to_s
+      next unless @hv_hash_account.key?(id)
+
+      if @hv_hash_ids.include?(id) && !@hv_served_hashes.include?(id)
+        add.call('harvest_hash', "credential:#{id}", "$.entries[#{i}]")
+        next
+      end
+      account = @hv_hash_account[id]
+      if @hv_account_only.key?(account)
+        @hv_name_earned << account
+        @hv_user_earned << account
+      end
+    end
+  end
+
+  def note_harvest_login(body, ctx, row)
+    return unless ctx[:login] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+    return unless @hv_account_only.key?(body['npcId']) && %w[password credential].include?(body['via'])
+
+    @hv_name_earned << body['npcId']
+  end
+
+  def scan_account_only(body, ctx, add)
+    walk_records(body, '$', false) do |rec, path|
+      add.call('account_only', "npc:#{rec['id']}/entry", safe_path(path)) if @hv_account_only.key?(rec['id'])
+    end
+    walk_hashes(body, '$') do |hash, path|
+      tiles = hash['loginAccounts']
+      list = (tiles.is_a?(Array) ? tiles : []) + (ctx[:login_accounts] && hash.equal?(body) && body['accounts'].is_a?(Array) ? body['accounts'] : [])
+      list.each do |tile|
+        next unless tile.is_a?(Hash) && [tile['npcId'], tile['id']].any? { |v| @hv_account_only.key?(v) }
+
+        add.call('account_only', "npc:#{tile['npcId'] || tile['id']}/tile", safe_path("#{path}.loginAccounts"))
+      end
+    end
+    each_string(body) do |str, path, _owner|
+      @hv_account_only.each do |id, words|
+        add.call('account_only', "npc:#{id}/name", safe_path(path)) if !@hv_name_earned.include?(id) && harvest_word?(str, words[:name])
+        add.call('account_only', "npc:#{id}/username", safe_path(path)) if !@hv_user_earned.include?(id) && harvest_word?(str, words[:user])
+      end
+    end
+  end
+
+  def harvest_word?(str, word)
+    return false unless word.is_a?(String) && !word.empty?
+
+    str.match?(/(?<![A-Za-z0-9_])#{Regexp.escape(word)}(?![A-Za-z0-9_])/)
+  end
+
+  # Ruling B (R4-2a split): a relay session of an administrator account at a PC that admits it is admin. Allowed only when
+  # the answer is an assist invite's relay session, its PC resolves for certain (a unique host label, or the desktop answer's
+  # own PC id), the scenario's registry holds an assist invite for that account connecting to that PC, the scenario marks the
+  # account `creds.admin: true`, the PC admits it, and the GAME's own account_admin_at? agrees. With no game to read, any
+  # doubt about the PC, or a missing piece, it is not allowed.
+  def relay_admin_proved?(hash, ctx)
+    return false unless hash['via'] == 'credential' && hash['kind'] == 'assist_invite' && hash['npcId'].is_a?(String)
+    return false unless @game.respond_to?(:account_admin_at?, true)
+
+    pc_id = ops_session_owner(hash, ctx)
+    pc = pc_id && @priv_pcs[pc_id]
+    npc = @priv_npcs[hash['npcId']]
+    return false unless pc && npc && npc.dig('creds', 'admin') == true
+    return false unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
+
+    invited = BreakEscape::CredentialModel.registry(@data).each_value.any? do |entry|
+      entry.is_a?(Hash) && entry['kind'] == 'assist_invite' && entry['connectsTo'].to_s == pc_id &&
+        BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') == npc['id']
+    end
+    invited && @game.send(:account_admin_at?, npc, pc) == true
+  end
+
 end
