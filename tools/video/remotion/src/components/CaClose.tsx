@@ -31,10 +31,11 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const wmLines = stacked ? wmParts : [wmParts.join(' ')];
   const wmLead = Math.round(textFont * 1.3);
   // logo (owner, 23 Nov): the Hacktivity Cyber Aware logo SVG replaces a HACKTIVITY wordmark beside the squares; shot.ca.logo: false keeps the text
+  // light logo: wordmark in Hacktivity nav purple #503883 (owner pick, 24 Nov; plum read too pale on white)
   // ground (owner mock-up 23 Nov): 'dark' puts the whole card on a dark ground with the dark-ground logo; default light
   const dark = cfg.ground === 'dark';
   const P = dark ? { surface: '#15171c', ink: '#ece8e3', line: '#3a3f48', frame: '#2a2e36' } : { surface: CA.surface, ink: CA.ink, line: CA.line, frame: CA.ink };
-  const logo: string | null = cfg.logo === false ? null : (cfg.logo ?? (wmParts.includes('HACKTIVITY') ? (dark ? 'brand/hacktivity-cyber-aware-logo.svg' : 'brand/hacktivity-cyber-aware-logo-light.svg') : null));
+  const logo: string | null = cfg.logo === false ? null : (cfg.logo ?? (wmParts.includes('HACKTIVITY') ? (dark ? 'brand/hacktivity-cyber-aware-logo.svg' : 'brand/hacktivity-cyber-aware-logo-light-nav.svg') : null));
   const LOGO_RATIO = 41.199428 / 10.919; // the SVG's viewBox
   const logoH = logo ? Math.round(stacked ? Math.min(gw * 0.9, (w * 0.8) / LOGO_RATIO) : gw * 0.72) : 0;
   const logoW = Math.round(logoH * LOGO_RATIO);
