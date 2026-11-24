@@ -18,7 +18,7 @@ const put = (rel, text) => { mkdirSync(dirname(join(dir, rel)), { recursive: tru
 const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js',
-    'utils/sync-before-fetch.js', 'systems/pc-sessions.js']) copy(rel);
+    'utils/sync-before-fetch.js', 'systems/pc-sessions.js', 'systems/mfa-client.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;

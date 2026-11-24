@@ -44,7 +44,7 @@ put('systems/inventory.js',
     'export function removeFromInventory() {}\n' +
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
 for (const rel of ['minigames/container/container-item-image.js', 'minigames/framework/base-minigame.js',
-    'minigames/container/container-minigame.js', 'systems/pc-sessions.js',
+    'minigames/container/container-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js',
     'minigames/framework/minigame-manager.js']) copy(rel);
 // The text-file reader with its own imports cut to what cleanup needs
 put('minigames/text-file/text-file-minigame.js', readFileSync(join(js, 'minigames/text-file/text-file-minigame.js'), 'utf8'));
