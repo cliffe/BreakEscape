@@ -17,10 +17,10 @@ module BreakEscape
                     mfa_prompt_approved mfa_prompt_denied signin_fail signin_ok signin_refused signin_lockout].freeze
     PESTER = { 'approvesPrompts' => 'pestered', 'promptPatience' => 3 }.freeze
 
-    def build(kind: 'push', habits: PESTER, held: [])
+    def build(kind: 'push', habits: PESTER, held: [], max_attempts: 50)
       data = KS.scenario
       data['logSources'] = { 'mfa' => { 'title' => 'MFA', 'events' => MFA_EVENTS } }
-      data['policies']['gate'] = { 'mfa' => kind, 'remote' => 'allowed', 'maxAttempts' => 50 }
+      data['policies']['gate'] = { 'mfa' => kind, 'remote' => 'allowed', 'maxAttempts' => max_attempts }
       data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'sam_pc' }['policy'] = 'gate'
       data['rooms']['lobby']['objects'] << PHONE.merge('takeable' => true)
       data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['habits'] = habits if n['id'] == 'sam' } }
@@ -129,6 +129,36 @@ module BreakEscape
       prompt
       assert_response :unprocessable_entity
       assert_not_includes events, 'mfa_prompt_sent'
+    end
+
+    def lock_out_account
+      3.times do
+        post game_path('login'), params: { pc_id: 'sam_pc', username: 'sokafor', password: 'wrong-password' }, as: :json
+      end
+      assert_includes state['loginLockouts'], 'sam_pc|sokafor'
+    end
+
+    test 'R1-S1: a locked-out account is not signed in by pestering the owner' do
+      build(max_attempts: 3)
+      first_step
+      lock_out_account
+      3.times do
+        later(3)
+        prompt
+        assert_response :unprocessable_entity
+      end
+      assert_nil state['sessions']['sam_pc']
+      assert_includes state['loginLockouts'], 'sam_pc|sokafor'
+    end
+
+    test 'R1-S1: a locked-out account is not signed in by a held phone' do
+      build(kind: 'push_number_match', held: [PHONE], max_attempts: 3)
+      right = first_step['number']
+      lock_out_account
+      body = approve(number: right)
+      assert_response :unprocessable_entity
+      assert_not_equal true, body['success']
+      assert_nil state['sessions']['sam_pc']
     end
 
     test 'a held phone approves and the session opens' do

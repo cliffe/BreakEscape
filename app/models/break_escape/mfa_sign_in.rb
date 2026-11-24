@@ -232,7 +232,11 @@ module BreakEscape
       refusal = second_step_refusal(pc, pending)
       return { refusal: refusal } if refusal
 
-      { pc: pc, map: map, pending: pending, npc: mfa_pending_account(pending) }
+      npc = mfa_pending_account(pending)
+      key = AccessIdentities.lockout_key(pc['id'], npc['creds']['username'])
+      return { refusal: mfa_locked_out_answer(pc, npc) } if login_lockouts.include?(key)
+
+      { pc: pc, map: map, pending: pending, npc: npc }
     end
 
     # The push is approved: end the pending step and open the session as a code pass does
