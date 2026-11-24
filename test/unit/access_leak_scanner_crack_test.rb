@@ -139,8 +139,8 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
   end
 
   test 'near miss: the entry before the crack answer is a finding, and the password too' do
-    found = hits([keyring([dana_entry]), cracked_answer])
-    assert_equal [[1, 'crack_unearned', 'crack:entry:dana.cracked'], [1, 'password', 'npc:dana'], [1, 'password', 'npc:farah']].sort, found.sort
+    found = hits([running_answer, keyring([dana_entry]), cracked_answer])
+    assert_equal [[2, 'crack_unearned', 'crack:entry:dana.cracked'], [2, 'password', 'npc:dana'], [2, 'password', 'npc:farah']].sort, found.sort
   end
 
   test 'near miss: wrong account (the answer named dana, the entry is farah, whose password is equal)' do
@@ -272,7 +272,10 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       row.merge('status' => 'running', 'readyInSeconds' => 9999)
     ]
     bad.each { |r| assert_includes rules([keyring([r])]), 'crack_row', r.inspect }
-    assert_empty hits([keyring([row.merge('status' => 'running', 'readyInSeconds' => 0), hash_row('farah_hash', 'farah', status: 'infeasible')])])
+    # R2-L4: a running row follows a running answer; an infeasible row is a strong record's, after its two runs
+    strong = hash_row('eli_hash', 'eli', status: 'infeasible', salted: false)
+    two_runs = [post_crack({ 'success' => true, 'status' => 'nomatch', 'runs' => 1 }), post_crack({ 'success' => true, 'status' => 'infeasible', 'runs' => 2 })]
+    assert_empty hits([running_answer] + two_runs + [keyring([row.merge('status' => 'running', 'readyInSeconds' => 0), strong])])
   end
 
   test 'a hash row outside a GET /keyring entries list is a finding' do
@@ -282,7 +285,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
 
   test 'the unchanged answer wait map holds whole seconds for hash record ids only' do
     ok = { 'method' => 'GET', 'path' => "#{BASE}/keyring", 'status' => 200, 'body' => { 'rev' => 'a', 'unchanged' => true, 'readyInSeconds' => { 'dana_hash' => 0 } } }
-    assert_empty hits([ok])
+    assert_empty hits([running_answer, ok])
     [{ 'dana' => 3 }, { 'dana_hash' => 'x' }, { 'dana_hash' => -2 }, 'soon', [3]].each do |waits|
       row = ok.merge('body' => ok['body'].merge('readyInSeconds' => waits))
       assert_includes rules([row]), 'crack_row', waits.inspect

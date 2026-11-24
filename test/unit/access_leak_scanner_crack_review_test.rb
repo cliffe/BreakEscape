@@ -309,8 +309,8 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     unchanged = lambda do |waits, extra = {}|
       { 'method' => 'GET', 'path' => "#{BASE}/keyring", 'status' => 200, 'body' => { 'rev' => 'a', 'unchanged' => true, 'readyInSeconds' => waits }.merge(extra) }
     end
-    assert_empty scan([unchanged.call({ 'dana_hash' => 3 })], game: full_game)
-    assert_empty scan([unchanged.call({ 'dana_hash' => 3 })])
+    assert_empty scan([running, unchanged.call({ 'dana_hash' => 3 })], game: full_game)
+    assert_empty scan([running, unchanged.call({ 'dana_hash' => 3 })])
     full = keyring([hash_row('eli_hash', 'eli', salted: false)], { 'readyInSeconds' => { 'eli_hash' => 5 } })
     assert_includes rules([full], game: full_game), 'crack_row'
     assert_includes rules([unchanged.call({ 'eli_hash' => 5 }, 'entries' => [])], game: full_game), 'crack_row'

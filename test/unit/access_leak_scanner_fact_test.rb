@@ -173,6 +173,13 @@ class AccessLeakScannerFactTest < ActiveSupport::TestCase
     assert_empty fact_hits([inventory({ 'dana_pet' => PET }), label], earned: ALL)
   end
 
+  test 'label: the authored label of a grant_fact reward in room data is that reward text, not the withheld entry' do
+    room = ->(path_key, text) { get('room/lobby', { 'room' => { 'objects' => [{ 'id' => 'st', path_key => [{ 'type' => 'grant_fact', 'fact' => 'dana_year', 'label' => text }] }] } }) }
+    assert_empty fact_hits([room.call('flagRewards', "Dana's start year")], earned: [])
+    assert_equal [[1, 'fact:dana_year']], fact_hits([room.call('other', "Dana's start year")], earned: [])
+    assert_equal [[1, 'fact:dana_year']], fact_hits([room.call('flagRewards', 'Dana joined the firm in 2003.')], earned: [])
+  end
+
   test 'an unlock answer with a fact entry under a new key is a finding even for an earned fact' do
     rows = [inventory({ 'dana_pet' => PET }), post('unlock', { 'success' => true, 'clue' => { 'dana_pet' => PET } })]
     assert_equal [[2, 'fact:dana_pet']], fact_hits(rows, earned: ALL)

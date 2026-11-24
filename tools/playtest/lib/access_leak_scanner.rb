@@ -524,6 +524,10 @@ class AccessLeakScanner
     @ops_earned = @ops_supplied | @ops_start_steps
     @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
     @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
+    @crack_running_seen = false # a well formed 200 running answer so far (R2-L4: a running row or a wait map follows one)
+    @crack_runs_seen = false # a 200 nomatch answer with `runs: 1` so far (R2-L3: the strong record's first run)
+    @crack_infeasible_seen = false # a well formed 200 infeasible answer so far (R2-L4)
+    @crack_last_grant = nil # the accounts the cracked answer of the current row granted, nil if none or not grantable (R2-L2)
     @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
     @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
@@ -3531,11 +3535,18 @@ class AccessLeakScanner
   # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none), and only if the
   # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
   def note_crack_earned(body, ctx, row)
+    @crack_last_grant = nil
     return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
 
-    @crack_running_credits += 1 if body['status'] == 'running'
-    accounts = crack_cracked_accounts(body)
-    @crack_earned.merge(accounts) if accounts
+    case body['status']
+    when 'running'
+      @crack_running_credits += 1
+      @crack_running_seen = true
+    when 'nomatch' then @crack_runs_seen = true if body['runs'] == 1
+    when 'infeasible' then @crack_infeasible_seen = true
+    end
+    @crack_last_grant = crack_cracked_accounts(body)
+    @crack_earned.merge(@crack_last_grant) if @crack_last_grant
   end
 
   # The accounts a cracked answer grants, or nil unless the whole answer is well formed and the server could have given it.
@@ -3626,12 +3637,34 @@ class AccessLeakScanner
       keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
         body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
         body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
-    when 'running' then keys == %w[readyInSeconds status success] && @crack_max_wait.positive? && int.call(body['readyInSeconds'], 0..@crack_max_wait)
-    when 'nomatch' then keys == %w[status success] || (keys == %w[runs status success] && body['runs'] == 1)
-    when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2
-    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..@crack_max_facts)
+    when 'running' then keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..crack_held_max_wait)
+    when 'nomatch'
+      keys == %w[status success] || (keys == %w[runs status success] && body['runs'] == 1 && crack_held_class?('strong'))
+    when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2 && crack_held_class?('strong') && @crack_runs_seen
+    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..crack_held_max_facts)
     else false
     end
+  end
+
+  # R2-L3: the server answers `running` only for a held salted record of a crackable class, `needMoreFacts` only for a held
+  # guessable one and `runs` only for a held strong one. Without a game every record counts as held.
+  def crack_waiting_record?(record)
+    record[:resolved] && record[:resolved][:salted] && CRACK_GRANTING_CLASSES.include?(record[:klass])
+  end
+
+  def crack_held_max_wait
+    waits = @crack_records.select { |r| crack_waiting_record?(r) && crack_record_held?(r) }.map { |r| r[:resolved][:crack_seconds] }
+    [waits.compact.max || 0, CRACK_MAX_WAIT].min
+  end
+
+  def crack_held_max_facts
+    facts = @crack_records.select { |r| r[:resolved] && r[:klass] == 'guessable' && crack_record_held?(r) }
+                          .map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    [facts.max || 0, 4].min
+  end
+
+  def crack_held_class?(klass)
+    @crack_records.any? { |r| r[:resolved] && r[:klass] == klass && crack_record_held?(r) }
   end
 
   def crack_refusal_shape_ok?(body, http)
@@ -3723,6 +3756,10 @@ class AccessLeakScanner
 
     ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
     add.call('crack_answer', 'crack:answer', '$') unless ok
+    # R2-L2: a well formed cracked answer for an account the server must not grant is a finding by itself
+    return unless ok && http == 200 && body['status'] == 'cracked' && body.key?('accountId') && @crack_last_grant.nil?
+
+    add.call('crack_unearned', "crack:answer:#{body['accountId']}", '$')
   end
 
   def crack_app_error_ok?(body, http)
@@ -3754,11 +3791,13 @@ class AccessLeakScanner
     return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
     return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
     return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
+    return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && @crack_infeasible_seen)
 
     wait = row['readyInSeconds']
     return !row.key?('readyInSeconds') unless row['status'] == 'running'
 
-    wait.is_a?(Integer) && @crack_max_wait.positive? && wait.between?(0, @crack_max_wait)
+    # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
+    crack_waiting_record?(record) && @crack_running_seen && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
   end
 
   # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
@@ -3795,9 +3834,10 @@ class AccessLeakScanner
     @crack_earned.include?(npc_id) || crack_held_elsewhere?(npc_id)
   end
 
-  def crack_wait_record_held?(id)
+  def crack_wait_ok?(id, seconds)
     record = @crack_records.find { |r| r[:id] == id }
-    !record.nil? && !record[:resolved].nil? && crack_record_held?(record)
+    !record.nil? && crack_waiting_record?(record) && crack_record_held?(record) && @crack_running_seen &&
+      seconds.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
   end
 
   # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
@@ -3807,7 +3847,7 @@ class AccessLeakScanner
     waits = body['readyInSeconds']
     # The server sends the map only on its `unchanged` answer (no entries), and only for rows it lists: proof holds.
     ok = ctx[:crack_keyring] && body['unchanged'] == true && !body.key?('entries') && waits.is_a?(Hash) && waits.all? do |id, v|
-      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, @crack_max_wait) && crack_wait_record_held?(id.to_s)
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && crack_wait_ok?(id.to_s, v)
     end
     add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
   end
@@ -3839,6 +3879,7 @@ class AccessLeakScanner
     @fact_item_ids = Set.new
     @fact_grant_ids = Set.new
     @fact_start_ids = Set.new
+    @fact_reward_labels = Hash.new { |h, k| h[k] = Set.new } # fact id => the authored `label` of its grant_fact rewards (room data ships them)
     facts = @data.dig('social', 'intelFacts')
     return unless facts.is_a?(Hash)
 
@@ -3847,7 +3888,12 @@ class AccessLeakScanner
       when Hash then node.each { |k, v| walk.call(v, k) }
       when Array
         node.each { |f| @fact_item_ids << f if key == 'revealsFacts' && f.is_a?(String) && !f.empty? }
-        node.each { |r| @fact_grant_ids << r['fact'] if key == 'flagRewards' && r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String) }
+        node.each do |r|
+          next unless key == 'flagRewards' && r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String)
+
+          @fact_grant_ids << r['fact']
+          @fact_reward_labels[r['fact']] << r['label'] if r['label'].is_a?(String)
+        end
         node.each { |v| walk.call(v, key) }
       end
     end
@@ -3898,6 +3944,12 @@ class AccessLeakScanner
     places
   end
 
+  # The room data ships a flag reward's own authored label (`...flagRewards[i].label`); when it reads the same as the fact's
+  # label it is that authored string, not the withheld entry. Only the label, only at that key, only the reward's own text.
+  def fact_reward_label_place?(id, str, json_path)
+    json_path.match?(/\.flagRewards\[\d+\]\.label\z/) && @fact_reward_labels[id].include?(str) && str.strip != @fact_entries[id][:text]
+  end
+
   def fact_entry_ok?(id, entry, sources)
     known = @fact_entries[id]
     id.is_a?(String) && known && sources.include?(id) && fact_earned_by_game?(id) && entry == known[:entry]
@@ -3927,6 +3979,7 @@ class AccessLeakScanner
         hit = (f[:text].is_a?(String) && content_match?(str, [f[:text]])) ||
               (f[:label].is_a?(String) && !f[:label].empty? && str.strip == f[:label] && !@public_strings.include?(f[:label]))
         next unless hit
+        next if fact_reward_label_place?(id, str, json_path)
         next if fact_earned_by_game?(id) && (@fact_granted.include?(id) || granted_now.include?(id))
 
         add.call('fact_unearned', "fact:#{id}", safe_path(json_path))
