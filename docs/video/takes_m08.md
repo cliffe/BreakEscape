@@ -79,3 +79,23 @@ All through `scratchpad/run.sh` with `MISSION=m08`, :3025, display :113. Avatar 
 - Real hacking: not filmed (covered by `m08_console_recon_clip.mp4`). VM shots need VM.
 - Run commands: scripts' headers have them; flags per the table above (t21/t27 as t21 flags, t22 as t16 flags).
 - Gotchas: a >140 s take needs run.sh in the background (the Bash tool backgrounds at 180 s; do not wrap in `timeout 290`); `scratchpad/marks8.sh <take>` prints m08 marks, `scratchpad/fr8.sh <take> t1 t2..` makes a frame grid.
+
+## Run 2 (24 Nov, takes agent): t19 check, t20 to t27
+All through `scratchpad/run.sh` with `MISSION=m08` on :3025 / display :113. Avatar before and after: female_hacker_hood_v2 (both readings). Long takes run with Bash `run_in_background` (no `timeout`). No PIN, password or code is quoted here; every pad/panel shows wrong characters only.
+
+| id | avatar | result | len / drop / A/V (ms) | marks and frame notes | window |
+|---|---|---|---|---|---|
+| t19_lobby_pad_notice | vivian_ashby | PASS (frames viewed, no re-take) | 17.44 / 0.51 / -73,-112 | Visitor Badge Printer pad: empty 3.4 to 6.8, three wrong digits typed (no ENTER) 6.9 to 8.9, closed 8.93. Security Alert Board note 13.59 to 16.13: cycling posture text, no code. No player name | pad 3.5 to 8.9; note 13.6 to 16.1 |
+| t20_director_closeups | ngozi_adeyemi | PASS (2nd run) | 50.77 / 0.19 / -52,-63 | Director's Safe pad empty 2.86, three wrong digits 6.2 to 8.3, closed 8.29. RFID cloner open 9.54; Crack keys 12.15, Darkside 14.22 to 46.15 (progress 18 to 95 percent), Save 46.15, "Saved: Director Netherton Keycard" 46.5 to 49.0. SPOILER/UID: the first read screen (about 9.5 to 13) shows the card UID row UNBLURRED (blur starts later); cut before 14. Run 1 and my first re-run failed: m05's cloneAndSave picks Dictionary Attack, which loops on the Darkside menu; _c8.mjs now has its own m03-style cloneAndSave (committed). | pad 3.0 to 8.3; cloner 14.0 to 49.0 |
+| t21_ops_closeups | harjit_singh | PASS (3rd run) | 16.8 / 0.53 / -82,-58 | archives password screen (dots only, no ENTER) 2.96 to 8.4, closed 8.51; Operations Status Board note 13.05 to 16.4 (clean, "STAND DOWN" text, no code; stays on screen past the board-closed mark at 15.57). Runs 1 and 2 failed "1 picture slate": Chrome's Save password bubble covered the end slate. Fixed by blanking the input before closing (committed). Junior Analyst bark bubble at 0.5 to 3 | panel 3.0 to 8.4; board 13.1 to 16.4 |
+| t22_ops_faces | mei_lin_chow | PASS | 19.27 / 0.16 / -58,-62 | full people-chat portraits with caption bars, no "playtest" name: Junior Analyst 3.91 to 6.83, Julian Sallow 9.71 to 12.62, Agnieszka Duda 14.79 to 17.7 (Julian and Agnieszka both appeared). Lines are on screen the whole time | 4.0 to 6.8; 9.8 to 12.6; 14.9 to 17.7 |
+| t23_cyberchef | daniel_seo | PASS | 12.84 / 0.22 / -55,-90 | Crypto Workstation: loading 1.6 to 5.6, ROT13 recipe, input pasted 7.56, decoded neutral sentence in output (about 8.2 on), panes mark 8.16, linger to 11.66. No code | panes 8.2 to 11.7 |
+| t24_server_walk_flag | lucia_moreno | PASS | 17.64 / 0.17 / -35,-35 | walk through the east door 1.4 to 4.8 (server-room lights come on as the door opens), walk to the launcher 5.8 to 9.3, flag station open 13.17 to 16.28, empty ("No flags submitted yet"). Junior Analyst caption bar covers the lower frame about 3 to 10 | walk 1.5 to 9.3 (bar caveat); station 13.2 to 16.3 |
+| t25_rfid_reader | marcus_hale | PASS | 12.4 / 0.69 / -120,-103 | reader at the server-room door 4.46 (single "Emulate Director Netherton Keycard"), Emulate 5.97, card details blurred while emulating, Access Granted about 9.2 to 10.3, door opens 10.38 (lit server room). Clone done off camera | 4.4 to 11.5 |
+| t26_phone_hax | marcus_hale | PASS | 11.4 / 0.25 / -73,-93 | HUD on (objectives, inventory, player icon, no name) 0 to 2.4, phone Messages list 2.47, Agent HaX thread 4.79, four numbered choices shown 7.38 to 10.9, none picked. Intro lines visible | 2.5 to 10.9 |
+| t27_walk_ops | harjit_singh | PASS (weak) | 5.07 / 0.47 / -58,-23 | straight walk right 1.47 to 3.65 past the cooler; the Junior Analyst walks beside the player and partly hides him from about 2.2, bark bubble 0.8 to 3.4. Usable, not clean: re-take if a clean walk is wanted | 1.4 to 3.7 |
+
+## Not done after run 2
+- t12_nightshade walk re-take with `--hide-hud --zoom-step 1` (optional) not run.
+- t27 could be re-taken to avoid the analyst crossing the player.
+- Real hacking and VM shots still need VM; not filmed.
