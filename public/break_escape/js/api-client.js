@@ -102,16 +102,29 @@ export class ApiClient {
 
   // Validate unlock attempt. `extra` carries optional fields for some lock types:
   // { card_ids } for an rfid lock with an access list (access model 4.1).
-  static async unlock(targetType, targetId, attempt, method, extra = {}) {
+  // `opts` (S8c second step) is handed to window.lockStep.run and is never posted.
+  static async unlock(targetType, targetId, attempt, method, extra = {}, opts = {}) {
     // Stamped at dispatch so a late unlock answer cannot overwrite a newer sync's server writes
     const clientTs = typeof window !== 'undefined' ? window.stateSync?.nextClientTs?.() : undefined;
-    const answer = await this.post('/unlock', {
+    const body = {
       ...extra,
       targetType,
       targetId,
       attempt,
       method
-    });
+    };
+    const answer = await this.post('/unlock', body);
+    // A lock with a second step answers { success: false, secondStep: true } instead of a
+    // verdict: hand over to the lock-step module, which resolves with the FINAL /unlock
+    // answer (or rejects with a cancel shaped like a refused post).
+    if (answer && answer.secondStep === true) {
+      const lockStep = typeof window !== 'undefined' ? window.lockStep : undefined;
+      if (lockStep && typeof lockStep.run === 'function') return lockStep.run(answer, body, opts);
+      const cancel = new Error('Second step cancelled');
+      cancel.status = 403;
+      cancel.body = { success: false, reason: 'second_step_cancelled', closedByPlayer: true };
+      throw cancel;
+    }
     // A door unlock may credit a gate (viaCredential): apply the globals and tasks it wrote
     if (answer && (answer.serverGlobals || answer.serverCompletedTasks || answer.serverMissionConcluded) && typeof window !== 'undefined') {
       window.stateSync?.applyServerWrites?.(answer, clientTs);
