@@ -6,38 +6,11 @@
 // piece that is installed later (a toast, a sound, the state sync) is still found when it is used.
 
 import { configure as configureLockStep, run, isCancel, cancelFeedback } from './lock-step.js';
-import { openPane, configure as configurePane } from '../ui/lock-step-pane.js';
+import { openPane, configure as configurePane, findObjectData } from '../ui/lock-step-pane.js';
 import { findAllDoorSpritesForRoom } from './npc-game-bridge.js';
 
 const NOT_APPROVED = 'Not approved.';
 const TOAST_MS = 3000;
-
-function findIn(list, id) {
-    if (!Array.isArray(list)) return null;
-    for (const o of list) {
-        if (!o || typeof o !== 'object') continue;
-        if (o.id === id) return o;
-        const inner = findIn(o.contents, id);
-        if (inner) return inner;
-    }
-    return null;
-}
-
-// The scenario object (room objects, nested contents, then held items) with this id, or null
-function findObjectData(win, id) {
-    for (const room of Object.values(win.gameScenario?.rooms || {})) {
-        const hit = findIn(room?.objects, id);
-        if (hit) return hit;
-    }
-    const items = win.inventory?.items;
-    if (Array.isArray(items)) {
-        for (const it of items) {
-            const d = it && it.scenarioData ? it.scenarioData : it;
-            if (d && d.id === id) return d;
-        }
-    }
-    return null;
-}
 
 const words = (id) => String(id || '').replace(/[_-]+/g, ' ').trim();
 

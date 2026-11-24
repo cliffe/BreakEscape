@@ -64,27 +64,49 @@ function findObject(list, id) {
     return null;
 }
 
-function defaultLockName(ctx) {
-    const w = win();
-    const id = ctx.targetId;
-    const rooms = w.gameScenario?.rooms || {};
-    if (ctx.targetType === 'door') {
-        const room = rooms[id];
-        if (room && typeof room.name === 'string' && room.name) return room.name;
-        return typeof id === 'string' && id ? id : 'this door';
+// The scenario object with this id, from where a real page holds it (S8c R1-CLIENT2). The page never
+// puts a room's objects on gameScenario.rooms[*].objects: core/rooms.js makes sprites in
+// window.rooms[room].objects (a map, objectId -> sprite with scenarioData). So, in order:
+// (1) the lockable of the pad that is up (the one place a nested object, such as a zip inside a
+// computer, is sure to be), (2) every room sprite and what it contains, (3) the held items.
+export function findObjectData(w, id) {
+    if (!id) return null;
+    const m = w.MinigameFramework?.currentMinigame;
+    for (const lockable of [m?.params?.lockable, m?.lockable]) {
+        const d = lockable?.scenarioData;
+        if (d && d.id === id) return d;
     }
-    for (const room of Object.values(rooms)) {
-        const hit = findObject(room?.objects, id);
-        if (hit && typeof hit.name === 'string' && hit.name) return hit.name;
+    for (const room of Object.values(w.rooms || {})) {
+        const objects = room?.objects;
+        if (!objects || typeof objects !== 'object') continue;
+        for (const sprite of Object.values(objects)) {
+            const d = sprite?.scenarioData;
+            if (!d) continue;
+            if (d.id === id) return d;
+            const inner = findObject(d.contents, id);
+            if (inner) return inner;
+        }
     }
     const items = w.inventory?.items;
     if (Array.isArray(items)) {
         for (const it of items) {
             const d = it && it.scenarioData ? it.scenarioData : it;
-            if (d && d.id === id && typeof d.name === 'string' && d.name) return d.name;
+            if (d && d.id === id) return d;
         }
     }
-    return 'this lock';
+    return null;
+}
+
+function defaultLockName(ctx) {
+    const w = win();
+    const id = ctx.targetId;
+    if (ctx.targetType === 'door') {
+        const room = (w.gameScenario?.rooms || {})[id];
+        if (room && typeof room.name === 'string' && room.name) return room.name;
+        return typeof id === 'string' && id ? id : 'this door';
+    }
+    const d = findObjectData(w, id);
+    return d && typeof d.name === 'string' && d.name ? d.name : 'this lock';
 }
 
 function defaultOwnerName(ctx) {

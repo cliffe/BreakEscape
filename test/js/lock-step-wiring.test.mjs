@@ -69,7 +69,7 @@ globalThis.fetch = async (url, init = {}) => {
 function inventoryWith(...data) { return { items: data.map((d) => ({ scenarioData: d })) }; }
 
 // One page per test: the real wiring on a fresh window state
-function boot({ inventory = { items: [] }, scenario = { rooms: {} } } = {}) {
+function boot({ inventory = { items: [] }, scenario = { rooms: {} }, rooms = {} } = {}) {
     document.body.innerHTML = '';
     sent = []; events = []; timers = []; sounds = []; toasts = [];
     window.lockStep = undefined;
@@ -77,7 +77,8 @@ function boot({ inventory = { items: [] }, scenario = { rooms: {} } } = {}) {
     window.MinigameFramework = { currentMinigame: null };
     window.inventory = inventory;
     window.gameScenario = scenario;
-    window.rooms = {};
+    // the page's sprites: window.rooms[room].objects, a map of objectId -> sprite (never gameScenario.rooms[*].objects)
+    window.rooms = rooms;
     window.playUISound = (n) => sounds.push(n);
     window.gameAlert = (...a) => toasts.push(a);
     window.pauseKeyboardInput = () => {};
@@ -276,8 +277,11 @@ test('isClear: a live minigame, a pending conversation, a confirm box or a knock
 
 test('isOpenInClient reads a door from its room and an object from the scenario or the inventory', () => {
     boot({
-        scenario: { rooms: { vault: { locked: false }, records_room: { locked: true },
-            office: { objects: [{ id: 'a', contents: [{ id: 'inner', locked: false }] }, { id: 'b', locked: true }] } } },
+        scenario: { rooms: { vault: { locked: false }, records_room: { locked: true }, office: {} } },
+        rooms: { office: { objects: {
+            a: { scenarioData: { id: 'a', contents: [{ id: 'inner', locked: false }] } },
+            b: { scenarioData: { id: 'b', locked: true } }
+        } } },
         inventory: inventoryWith({ id: 'held_box', locked: false })
     });
     assert.equal(wiring.isOpenInClient(window, 'door', 'vault'), true);
@@ -330,7 +334,10 @@ test('lookups: the owner\'s display name comes from the real NPC manager, in the
 });
 
 test('lookups: an object lock is titled by its scenario name; a held item by its inventory name; else "this lock"', async () => {
-    boot({ scenario: { rooms: { office: { door_sign: 'Office', objects: [{ type: 'locker', id: 'moira_locker', name: 'Moira\'s locker' }] } } } });
+    boot({
+        scenario: { rooms: { office: { door_sign: 'Office' } } },
+        rooms: { office: { objects: { moira_locker: { scenarioData: { type: 'locker', id: 'moira_locker', name: 'Moira\'s locker' } } } } }
+    });
     routes = { '/unlock': ['gate_code'] };
     let p = unlock();
     await settle();

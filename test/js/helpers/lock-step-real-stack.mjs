@@ -158,7 +158,7 @@ export function bootPage(S, { inventory = { items: [] }, scenario = scenarioFrom
     S.lockStep.reset();
     window.inventory = inventory;
     window.gameScenario = scenario;
-    window.rooms = {};
+    window.rooms = roomsFromPayloads();
     window.roomDataCache = new Map();
     window.DISABLE_LOCKS = false;
     window.playUISound = (n) => log.sounds.push(n);
@@ -205,10 +205,17 @@ export const payloads = JSON.parse(readFileSync(join(here, '../fixtures/lock_ste
 export const deep = (v) => JSON.parse(JSON.stringify(v));
 export const reasonOf = (e) => e && e.body && e.body.reason;
 
-// window.gameScenario as the page holds it after the bootstrap and the start room's load: the bootstrap's
-// rooms, with the start room's own payload (objects, npcs) merged over its bootstrap entry.
+// window.gameScenario as the page holds it: the bootstrap's rooms and nothing else. The page never puts a
+// room's objects on gameScenario (core/rooms.js hands the fetched room to createRoom, which builds sprites),
+// so the start room's payload is NOT merged in here (S8c R1-CLIENT2).
 export function scenarioFromPayloads() {
-    const rooms = deep(payloads.bootstrapRooms);
-    Object.assign(rooms.office, deep(payloads.startRoom));
-    return { startRoom: 'office', rooms };
+    return { startRoom: 'office', rooms: deep(payloads.bootstrapRooms) };
+}
+
+// window.rooms as the page holds it once the start room is made: rooms[id].objects is a map of
+// objectId -> sprite, each sprite carrying its scenario object as `scenarioData`.
+export function roomsFromPayloads() {
+    const objects = {};
+    for (const o of deep(payloads.startRoom.objects)) objects[o.id] = { scenarioData: o, objectId: o.id };
+    return { office: { objects } };
 }
