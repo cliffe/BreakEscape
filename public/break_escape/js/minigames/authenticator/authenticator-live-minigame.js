@@ -102,7 +102,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         try { res = await client.phone(this.own ? { own: true } : { npcId: this.npcId }); } catch (e) { res = { ok: false, reason: 'error' }; }
         if (!this.gameState.isActive) return res;
         if (!res || !res.ok) {
-            this._say(res && res.reason === 'no_phone' ? 'You are not holding this phone.' : 'The phone cannot connect.');
+            this._say(res && res.reason === 'no_phone' && !this.own ? 'You are not holding this phone.' : 'The phone cannot connect.');
         } else {
             this.requests = (res.requests || []).filter(isObj);
             if (this.requests.length) this._say(note);
@@ -163,7 +163,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         if (!client || this._busy || !isStr(key)) return null;
         this._busy = true;
         let res;
-        try { res = await client.approve(key, opts); } catch (e) { res = { ok: false, reason: 'error' }; }
+        try { res = await client.approve(key, this.own ? { ...opts, own: true } : opts); } catch (e) { res = { ok: false, reason: 'error' }; }
         this._busy = false;
         if (!this.gameState.isActive) return res;
         let note;

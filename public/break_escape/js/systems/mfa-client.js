@@ -290,9 +290,10 @@ export async function phone({ npcId, own = false } = {}) {
  * params either way; a playtest recorder keeps the query, not the body); for a held phone there is no
  * `own` anywhere.
  */
-export function approve(subject, { number, deny } = {}) {
+export function approve(subject, { number, deny, own: ownPhone } = {}) {
     const extra = {};
-    const own = (pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true;
+    // `own` is passed by the "My phone" scene; the note is kept for callers that have only the subject
+    const own = ownPhone === true || (pendingBySubject.get(subjectKey(subject)) || {}).ownPhone === true;
     if (number != null) extra.number = number;
     if (deny) extra.deny = true;
     return post('mfa/approve', subject, extra, { keep: true, query: own ? 'own=1' : '' });

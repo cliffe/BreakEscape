@@ -200,7 +200,7 @@ test('own authenticator: the approve and deny requests carry own=1 for an own-ph
     ({ calls } = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own'))));
     const held = { ...answer('login.mfa_required_own_push').body }; delete held.ownPhone;
     M.noteRequired(key, held);
-    s = await openPhone();
+    s = await openPhone({ own: false, npcId: 'vera' });
     await s.tapApprove(key);
     M.noteRequired(key, held);
     await s.tapDeny(key);
@@ -221,8 +221,27 @@ test('own authenticator: a wrong number cancels the request', async () => {
     assert.equal(text('.auth-live-status'), 'That number did not match. The request was cancelled.');
 });
 
-test('own authenticator: a phone that is not held says so', async () => {
+test('a held phone that is not held says so; "My phone" (own) says it cannot connect (R1-CLIENT5)', async () => {
+    client(() => serve('phone.no_phone'));
+    await openPhone({ own: false, npcId: 'vera' });
+    assert.equal(text('.auth-live-status'), 'You are not holding this phone.');
     client(() => serve('phone.no_phone'));
     await openPhone();
-    assert.equal(text('.auth-live-status'), 'You are not holding this phone.');
+    assert.equal(text('.auth-live-status'), 'The phone cannot connect.');
+});
+
+// R1-CLIENT5: "My phone" is decided by the phone that was opened, not by a memory note.
+test('own authenticator: Approve with no pending note (a reload) still carries own=1, and a refusal does not say the phone is not held', async () => {
+    const reqs = answer('phone.own').body.requests;
+    const key = `pc:${reqs[0].pcId}`;
+    const { calls } = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own')));
+    // no M.noteRequired: the note is gone
+    const s = await openPhone();
+    await s.tapApprove(key);
+    assert.equal(calls.find((c) => c.path.startsWith('mfa/approve')).path, 'mfa/approve?own=1');
+    // a held phone scene with no note sends no own anywhere
+    const held = client((method, path) => (path.startsWith('mfa/approve') ? serve('approve.own_passed') : serve('phone.own')));
+    const h = await openPhone({ own: false, npcId: 'vera' });
+    await h.tapApprove(key);
+    assert.equal(held.calls.find((c) => c.path.startsWith('mfa/approve')).path, 'mfa/approve');
 });
