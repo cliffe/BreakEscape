@@ -21,6 +21,7 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
     opts = { scenarios_dir: NO_SCENARIOS }
     idx = File.join(dir, 'index.md')
     opts[:index_path] = index || (File.exist?(idx) ? idx : File.join(dir, 'no_index.md'))
+    opts[:first_index] = true unless index || File.exist?(idx) # a fixture without an index is a first run
     %w[nicknames products].each do |kind|
       path = File.join(dir, "#{kind}.txt")
       opts[:"#{kind}_path"] = path if File.exist?(path)
@@ -127,6 +128,115 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
     end
   end
 
+  # ---- the index fails closed (R1-S2) ---------------------------------------------------------
+
+  def copy_catalog(tmp, name = 'pass_ordinary')
+    dir = File.join(tmp, 'cat')
+    FileUtils.mkdir_p(dir)
+    FileUtils.cp(Dir.glob(File.join(FAULTS, name, '*.json')), dir)
+    index = File.join(tmp, 'index.md')
+    problems = check_realism_catalog(dir, index_path: index, scenarios_dir: NO_SCENARIOS, write_index: true, first_index: true)
+    assert_empty errors(problems).map(&:to_s)
+    [dir, index]
+  end
+
+  def check_copy(dir, index)
+    errors(check_realism_catalog(dir, index_path: index, scenarios_dir: NO_SCENARIOS)).map(&:rule)
+  end
+
+  def edit_entries(dir)
+    file = Dir.glob(File.join(dir, '*.json')).first
+    data = JSON.parse(File.read(file))
+    yield data['entries']
+    File.write(file, JSON.generate(data))
+  end
+
+  test 'a missing index is an error and nothing is written unless --first-index is given' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      File.delete(index)
+      assert_equal ['index_missing'], check_copy(dir, index)
+      out, status = Open3.capture2e('ruby', SCRIPT, '--dir', dir, '--index', index, '--scenarios', NO_SCENARIOS, chdir: ROOT)
+      assert_not status.success?, out
+      assert_not File.exist?(index)
+      out, status = Open3.capture2e('ruby', SCRIPT, '--dir', dir, '--index', index, '--scenarios', NO_SCENARIOS, '--first-index', chdir: ROOT)
+      assert status.success?, out
+      assert File.exist?(index)
+    end
+  end
+
+  test 'a hand-edited row that can no longer be read is an error, not a skipped row' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      text = File.read(index)
+      File.write(index, text.sub(/advisories \d+, /, 'advisories one, '))
+      assert_includes check_copy(dir, index), 'index_row_unreadable'
+      # the same edit together with the removal of that id from the catalog is still an error
+      edit_entries(dir) { |e| e.delete('sample_note') }
+      assert_includes check_copy(dir, index), 'index_row_unreadable'
+    end
+  end
+
+  test 'a removed id and a renamed id are errors' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      edit_entries(dir) { |e| e.delete('other_note') }
+      assert_equal ['index_id_missing'], check_copy(dir, index)
+      dir2, index2 = copy_catalog(File.join(tmp, 'two').tap { |d| FileUtils.mkdir_p(d) })
+      edit_entries(dir2) { |e| e['renamed_note'] = e.delete('other_note') }
+      assert_equal ['index_id_missing'], check_copy(dir2, index2)
+    end
+  end
+
+  test 'an id reused with new text is an error even when the form is unchanged' do
+    Dir.mktmpdir do |tmp|
+      dir, index = copy_catalog(tmp)
+      edit_entries(dir) do |e|
+        e['sample_note']['title'] = 'Quillmark gateway wholly different note'
+        e['sample_note']['module'] = 'auxiliary/gather/quillmark/different_one'
+        e['sample_note']['script'] = 'quillmark-different'
+      end
+      assert_equal ['index_identity_changed'], check_copy(dir, index)
+      # a change of the advisories or the output alone is not a reuse
+      dir2, index2 = copy_catalog(File.join(tmp, 'two').tap { |d| FileUtils.mkdir_p(d) })
+      edit_entries(dir2) { |e| e['sample_note']['output'] = ['State: another state line.', 'Disclosed: 0000-02-02.'] }
+      assert_empty check_copy(dir2, index2)
+    end
+  end
+
+  test 'the written index carries an identity digest and no catalog text' do
+    Dir.mktmpdir do |tmp|
+      _dir, index = copy_catalog(tmp)
+      rows = File.readlines(index).grep(/\A\| (sample|other)_note/)
+      assert_equal 2, rows.length
+      rows.each { |r| assert_match(/\| [0-9a-f]{12} \|\s*\z/, r) }
+      assert_not_includes File.read(index), 'Quillmark'
+    end
+  end
+
+  # Every earlier committed version of the index: each id, form and identity in it is still in the index now
+  # (a hand-edited or regenerated index cannot drop or change a row of the history). Skipped without git.
+  test 'every row of every earlier committed index is still in the index' do
+    rel = 'docs/REALISM_CATALOG_INDEX.md'
+    revs, status = Open3.capture2('git', 'log', '--format=%H', '--', rel, chdir: ROOT, err: File::NULL)
+    skip 'no git history here' unless status.success? && !revs.strip.empty?
+    now = realism_read_index(File.join(ROOT, rel)).first
+    revs.split.each do |rev|
+      text, st = Open3.capture2('git', 'show', "#{rev}:#{rel}", chdir: ROOT, err: File::NULL)
+      next unless st.success?
+
+      Dir.mktmpdir do |tmp|
+        file = File.join(tmp, 'old.md')
+        File.write(file, text)
+        realism_read_index(file).first.each do |id, row|
+          assert now.key?(id), "#{id} was in the index at #{rev[0, 9]} and is gone"
+          assert_equal row[:form], now[id][:form], "#{id} changed form since #{rev[0, 9]}"
+          assert_equal row[:identity], now[id][:identity], "#{id} changed identity since #{rev[0, 9]}" if row[:identity]
+        end
+      end
+    end
+  end
+
   test 'a message never quotes a catalog string even for a bad id' do
     Dir.mktmpdir do |tmp|
       File.write(File.join(tmp, 'a.json'), JSON.generate('entries' => { 'Bad Id!' => { 'title' => 't', 'module' => 'auxiliary/a/b', 'script' => 'x' } }))
@@ -166,7 +276,7 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       'blob QWxhZGRpbjpvcGVuU2VzYW1lMTI=' => 'encoded_blob', 'see /etc/x' => 'path', 'see ../x' => 'path',
       'see C:/x' => 'path', 'see a/b/' => 'path', 'see etc/a/b' => 'path', 'user:pass' => 'credential',
       'admin/admin' => 'credential', 'password=abc' => 'credential', 'user=bob' => 'credential',
-      'host 8.8.8.8' => 'host', 'at http://x' => 'host', 'at www.x' => 'host', 'at quill.example.org' => 'host',
+      'host 203.0.113.9' => 'host', 'at http://x' => 'host', 'at www.x' => 'host', 'at quill.example.org' => 'host',
       'a Decoy b' => 'telltale', 'not vulnerable' => 'telltale', 'it is patched' => 'telltale'
     }.each { |text, rule| assert_includes rules(text), rule, text }
   end
