@@ -214,7 +214,7 @@ module BreakEscape
       ask(answers: WRONG)
       res = ask
       assert_equal :ok, res[:status]
-      assert_equal({ granted: true, what: 'password', password: SAM_RESET, lockoutPcIds: %w[sam_pc] }, res[:body])
+      assert_equal({ granted: true, what: 'password', password: SAM_RESET, lockoutPcIds: %w[sam_pc], npcId: 'sam', deskId: 'it_desk' }, res[:body])
       assert_equal %w[sam_pc|lfox], @game.player_state['loginLockouts']
       assert_equal %w[sam_pc|lfox], @game.player_state['loginFailures'].keys
       assert_equal({ 'password' => true }, @game.account_resets['sam'])
@@ -226,7 +226,7 @@ module BreakEscape
       @game.player_state['mfaAccounts'] = { 'sam' => { 'wrong' => 4, 'closedAt' => 12 } }
       @game.player_state['loginLockouts'] = %w[sam_pc|sokafor]
       res = ask(what: 'mfa')
-      assert_equal({ granted: true, what: 'mfa' }, res[:body])
+      assert_equal({ granted: true, what: 'mfa', npcId: 'sam', deskId: 'it_desk' }, res[:body])
       assert_equal({ 'wrong' => 0 }, @game.player_state['mfaAccounts']['sam'])
       assert_equal %w[sam_pc|sokafor], @game.player_state['loginLockouts']
       assert_equal({ 'mfa' => true }, @game.account_resets['sam'])

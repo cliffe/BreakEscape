@@ -2,14 +2,14 @@
   "_about": "S8b answer shapes (unit 04). Name -> { status, body, vary, guess }. Every key set is exact at every level. Values are equal except at the body paths in `vary` (there only the type must match). `guess` lists paths (or `status`) that the brief did not pin and the controller unit must CONFIRM against the real answer, then delete from `guess` (the owner of unit 04 makes the correction). Paths: dotted keys, array positions as [0]. Keys starting with an underscore are not entries.",
   "helpdesk.granted_password": {
     "status": 200,
-    "body": { "granted": true, "what": "password", "password": "Tern-Harbour-41", "lockoutPcIds": ["vault_pc"] },
-    "vary": ["body.password", "body.lockoutPcIds"],
+    "body": { "granted": true, "what": "password", "password": "Tern-Harbour-41", "lockoutPcIds": ["vault_pc"], "npcId": "sam", "deskId": "it_desk" },
+    "vary": ["body.password", "body.lockoutPcIds", "body.npcId", "body.deskId"],
     "guess": []
   },
   "helpdesk.granted_mfa": {
     "status": 200,
-    "body": { "granted": true, "what": "mfa" },
-    "vary": [],
+    "body": { "granted": true, "what": "mfa", "npcId": "sam", "deskId": "it_desk" },
+    "vary": ["body.npcId", "body.deskId"],
     "guess": []
   },
   "helpdesk.refused": {

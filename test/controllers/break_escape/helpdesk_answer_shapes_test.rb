@@ -48,6 +48,19 @@ module BreakEscape
       assert_answer_shape('helpdesk.granted_mfa', response)
     end
 
+    test 'both grants name the account NPC id and the desk, never the typed username, on the first and the repeat' do
+      %w[password mfa].each do |what|
+        build
+        2.times do
+          ask(what: what, username: ' SOkafor ')
+          body = JSON.parse(response.body)
+          assert_equal 'sam', body['npcId']
+          assert_equal 'it_desk', body['deskId']
+          assert_not_includes response.body.downcase.scan(/"npcid":"[^"]*"/).join, 'sokafor'
+        end
+      end
+    end
+
     test 'refused, refused_last and blocked' do
       ask(answers: HS::WRONG)
       assert_answer_shape('helpdesk.refused', response)

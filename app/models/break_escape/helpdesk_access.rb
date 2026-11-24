@@ -218,7 +218,7 @@ module BreakEscape
 
     def grant_helpdesk!(desk_id, desk, npc, typed, what, key)
       npc_id = npc['id']
-      body = helpdesk_grant_body(npc, what)
+      body = helpdesk_grant_body(npc, what, desk_id)
       return { status: :ok, body: body } if account_reset?(npc_id, what)
 
       entry = account_resets[npc_id]
@@ -230,7 +230,7 @@ module BreakEscape
           login_failures.delete(k)
           login_lockouts.delete(k)
         end
-        body = helpdesk_grant_body(npc, what)
+        body = helpdesk_grant_body(npc, what, desk_id)
       else
         account = mfa_account_for(npc_id)
         account['wrong'] = 0
@@ -245,11 +245,14 @@ module BreakEscape
       { status: :ok, body: body }
     end
 
-    def helpdesk_grant_body(npc, what)
+    # npcId is the account NPC's id (never the typed username) and deskId the key the request was
+    # judged against; a repeat grant carries the same two
+    def helpdesk_grant_body(npc, what, desk_id)
+      ids = { npcId: npc['id'].to_s, deskId: desk_id.to_s }
       if what == 'password'
-        { granted: true, what: 'password', password: npc['creds']['resetPassword'], lockoutPcIds: lockout_pcs_for_client }
+        { granted: true, what: 'password', password: npc['creds']['resetPassword'], lockoutPcIds: lockout_pcs_for_client }.merge(ids)
       else
-        { granted: true, what: 'mfa' }
+        { granted: true, what: 'mfa' }.merge(ids)
       end
     end
 
