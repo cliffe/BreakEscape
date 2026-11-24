@@ -11,6 +11,7 @@ module BreakEscape
     include CredentialKeyring
     include EarnedFacts
     include OpsCracking
+    include CachedCredentials # S5b
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
@@ -3115,7 +3116,11 @@ module BreakEscape
       # Offline cracking S7 (S7_BUILD_BRIEF.md 4): earnedFacts [factId] (at most 64), crackRuns and
       # crackStarted { hashId => ... }, crackedAccounts [npcId]. Server-written only, never in a sync
       # body, the bootstrap or any answer whole, at most 64 entries each.
-      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => []
+      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => [],
+      # S5b (S5BC_BUILD_BRIEF 4.2): "<pcId>|<npcId>" pairs. cachedAt: borrowers cached at a PC;
+      # harvestedAccounts: accounts an admin session collected. Grow-only, server-written only.
+      'cachedAt' => [],
+      'harvestedAccounts' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3562,11 +3567,13 @@ module BreakEscape
       self.class.acl_admits?(pc['access'], npc)
     end
 
-    # The accounts present on a PC for an admin session's profile reach. S5a: its owner only
-    # (a seam so S5b can widen it); reads nothing but `owner`.
+    # The accounts present on a PC for an admin session's profile reach: its owner, then (S5b) the
+    # accounts cached at the PC now, each once. Reads only `owner` and the declared cached list.
     def admin_present_accounts(pc)
       owner = login_pc_owner(pc)
-      owner ? [owner] : []
+      present = owner ? [owner] : []
+      cached_accounts_at(pc).each { |npc| present << npc unless present.any? { |p| p['id'] == npc['id'] } }
+      present
     end
 
     # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
