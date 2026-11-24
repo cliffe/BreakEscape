@@ -530,6 +530,7 @@ class AccessLeakScanner
     @crack_last_grant = nil # the accounts the cracked answer of the current row granted, nil if none or not grantable (R2-L2)
     @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
     @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
+    @networks_swept = Set.new # network ids with an earlier 200 POST /network/scan answer (success, network.id, swept: true) this run; the capture only
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
@@ -588,6 +589,7 @@ class AccessLeakScanner
       scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
+      note_network_swept(body, ctx, row)
     end
     findings
   end
@@ -1043,7 +1045,8 @@ class AccessLeakScanner
       ops_technique: method == 'POST' && path.end_with?('/network/technique'),
       inventory_add: ops_inventory_add_id(row, method, path),
       network_view: method == 'GET' && path.end_with?('/network'),
-      log_rows: method == 'GET' && path.end_with?('/log_rows')
+      log_rows: method == 'GET' && path.end_with?('/log_rows'),
+      log_rows_ok: method == 'GET' && path.end_with?('/log_rows') && row['status'].is_a?(Integer) && row['status'] == 200
     }
   end
 
@@ -2055,6 +2058,11 @@ class AccessLeakScanner
       # served that name by the open. Only that owner is dropped; every other owner of the string, any
       # other cell or event, and a share not yet opened stays a finding. A /network listing is no open.
       earned = earned_share_owners(body, json_path, str) if ctx[:log_rows]
+      # A NET_SWEEP row's LOCATION cell holds the name of a network this run swept earlier (a 200 POST /network/scan
+      # answer said so): the browser was served that name by the sweep. Only that owner is dropped.
+      if ctx[:log_rows_ok] && (swept = swept_network_owners(body, json_path, str)).any?
+        earned = (earned || []) + swept
+      end
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
@@ -2081,6 +2089,29 @@ class AccessLeakScanner
       res = resources[id]
       res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip
     end.map { |id| "resource:#{id}" }
+  end
+
+  # The `network:<id>` owners a NET_SWEEP row's LOCATION cell may carry: swept earlier in this capture, name equal.
+  def swept_network_owners(body, json_path, str)
+    match = json_path.to_s.match(/\A\$\.rows\[(\d+)\]\.where\z/)
+    return [] unless match && body.is_a?(Hash) && body['rows'].is_a?(Array)
+
+    row = body['rows'][match[1].to_i]
+    return [] unless row.is_a?(Hash) && row['event'] == 'NET_SWEEP' && row['where'].equal?(str)
+
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    @networks_swept.select do |id|
+      net = networks[id]
+      net.is_a?(Hash) && net['name'].is_a?(String) && net['name'] == str.to_s
+    end.map { |id| "network:#{id}" }
+  end
+
+  # Notes a 200 POST /network/scan answer of a sweep: success true, the network's id, swept true.
+  def note_network_swept(body, ctx, row)
+    return unless ctx[:ops_scan] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+
+    net = body['network']
+    @networks_swept << net['id'] if net.is_a?(Hash) && net['swept'] == true && net['id'].is_a?(String)
   end
 
   # Notes a successful GET /container/<share or an item in it> answer: that share is opened for this run.
