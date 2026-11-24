@@ -223,15 +223,15 @@ We're teaching them, all of them, that trust is dangerous. Verify everything. Qu
 // ================================================
 
 === evil_monologue_part3 ===
-Forty-two to eighty-five deaths. Let's call it sixty.
+Forty-two to eighty-five deaths. Let's call it sixty. #delivery: cold, quiet and controlled, low and slow, no shouting, quietly menacing
 
-Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person?
+Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person? #delivery: cold, quiet and controlled, low and slow, no shouting, quietly menacing
 
-Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation.
+Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation. #delivery: cold, quiet and controlled, low and slow, no shouting, quietly menacing
 
-We're going to end that. One bad weekend, and then NO ONE will ever trust a digital message again without verification.
+We're going to end that. One bad weekend, and then NO ONE will ever trust a digital message again without verification. #delivery: cold, quiet and controlled, low and slow, no shouting, quietly menacing
 
-Sixty deaths to save tens of thousands per year. That's not murder. That's optimisation.
+Sixty deaths to save tens of thousands per year. That's not murder. That's optimisation. #delivery: very low, slow and deliberate, the darkest line, a small pause before That's optimisation, chilling and quiet, no shouting
 
 + [You're calculating human lives like statistics.]
     -> derek_final_philosophy

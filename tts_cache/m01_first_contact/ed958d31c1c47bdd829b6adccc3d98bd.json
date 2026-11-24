@@ -1,0 +1,14 @@
+{
+  "key": "ed958d31c1c47bdd829b6adccc3d98bd",
+  "npc": "derek_lawson",
+  "text": "We're going to end that. One bad weekend, and then NO ONE will ever trust a digital message again without verification.",
+  "delivery": "cold, quiet and controlled, low and slow, no shouting, quietly menacing",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T16:51:55Z"
+}

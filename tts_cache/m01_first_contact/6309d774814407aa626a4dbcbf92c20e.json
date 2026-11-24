@@ -1,0 +1,14 @@
+{
+  "key": "6309d774814407aa626a4dbcbf92c20e",
+  "npc": "derek_lawson",
+  "text": "Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person?",
+  "delivery": "cold, quiet and controlled, low and slow, no shouting, quietly menacing",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T16:51:44Z"
+}
