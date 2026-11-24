@@ -35,6 +35,7 @@ require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_plant_hiding'
 require_relative 'validate_phone_calls'
+require_relative 'validate_cracking'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/schema_walk'
@@ -9120,6 +9121,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
   run.call('check_credentials') { check_credentials(json_data) }
+  run.call('check_cracking') { check_cracking(json_data) }
   run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }

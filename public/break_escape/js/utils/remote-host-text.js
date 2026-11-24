@@ -58,6 +58,9 @@ export const TAG_TEXT = Object.freeze({
     saved_connection: Object.freeze({ tag: 'Saved', full: 'Saved connection', group: 'plug' }),
     assist_invite: Object.freeze({ tag: 'Assist', full: 'Remote assist', group: 'plug' }),
     token: Object.freeze({ tag: 'Token', full: 'Session token', group: 'plug' }),
+    // S7: a hash record, and a password the player cracked from one
+    hash: Object.freeze({ tag: 'Hash', full: 'Hash record', group: 'key' }),
+    cracked: Object.freeze({ tag: 'Cracked', full: 'Cracked password', group: 'key' }),
     // S8b: a password the help desk reset and issued; shown in full, like a captured one
     reset: Object.freeze({ tag: 'Reset', full: 'Reset password', group: 'key' })
 });
@@ -166,6 +169,7 @@ export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
     `${displayName || 'An account'}'s password is in ${label || 'a file'}.`;
 export const assistInviteFoundMessage = ({ label, displayName } = {}) =>
     `${label || 'An invite'}: Connect it from your inventory to join ${displayName || 'an account'}'s session.`;
+export const hashFoundMessage = () => 'Hash collected';
 export const findMoreLine = (n) => `and ${n} more`;
 // K5 (8.5): a token recorded by a foothold
 export const tokenFoundMessage = ({ label, displayName, host } = {}) =>
@@ -186,6 +190,8 @@ export const captureLogPasswordFoundMessage = ({ label, displayName } = {}) =>
 export function findLine(entry, { captureLog = false } = {}) {
     if (!entry || typeof entry !== 'object' || entry.source === 'capture' || entry.source === 'helpdesk') return null;
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo, kind: entry.kind };
+    if (entry.kind === 'hash') return hashFoundMessage();
+    if (entry.kind === 'password' && entry.source === 'cracked') return null;
     if (captureLog) {
         if (entry.kind === 'password') return captureLogPasswordFoundMessage(fields);
         if (entry.kind === 'saved_connection' || entry.kind === 'assist_invite' || entry.kind === 'token') return captureLogFindMessage(fields);
@@ -214,6 +220,7 @@ export function findToastText(entries, { captureLog = null } = {}) {
 export function teachLine(kind, { displayName } = {}) {
     const who = displayName || 'the account holder';
     if (kind === 'in_file') return 'People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file.';
+    if (kind === 'cracked') return 'A password can be worked out from a hash and what is known about the person. Long, unique passwords that nobody could guess from their life stop it.';
     if (kind === 'saved_connection') return `The password is saved inside this file, so opening it signs you in as ${who}. A policy that always asks for the password stops it.`;
     if (kind === 'assist_invite') return `${who} let you into the session. Check who is asking before you share access.`;
     if (kind === 'token') return 'A stolen session token signs in without the password until it expires. Short session lifetimes limit it.';
@@ -254,11 +261,33 @@ export const rowKindName = (kind) => TAG_TEXT[kind]?.full || CAPTURE_TAG_TEXT[ki
 
 /** A credential row's outline source tag, by the capture's `source` or the entry's `how`. */
 export const SOURCE_TAG_TEXT = Object.freeze({
-    phished: 'Phished', recorded: 'Recorded', found: 'Found', given: 'Given', issued: 'Issued'
+    phished: 'Phished', recorded: 'Recorded', found: 'Found', given: 'Given', issued: 'Issued', cracked: 'Cracked'
 });
+
+// S7: a hash record's row in the Sign-ins list. The words only; the server's status decides which.
+export const CRACK_BUTTON_TEXT = 'Crack';
+export const CRACK_OPEN_BUTTON_TEXT = 'Open';
+export const CRACK_FINISH_BUTTON_TEXT = 'Finish';
+export const HASH_SALTED_TEXT = 'Salted';
+export const HASH_READY_TO_FINISH_TEXT = 'Ready to finish';
+/** A hash token as the server sends it (already in dashed groups of four; shown as is). */
+export function hashTokenText(token) {
+    return typeof token === 'string' ? token.trim() : '';
+}
+/** A hash row's status words: ready, running (with a countdown), infeasible, cracked. */
+export function hashStatusText(status, secondsLeft = null) {
+    if (status === 'cracked') return 'Cracked';
+    if (status === 'infeasible') return 'Not feasible';
+    if (status === 'running') {
+        return Number.isFinite(secondsLeft) && secondsLeft > 0 ? `Cracking, ${Math.ceil(secondsLeft)} s left` : HASH_READY_TO_FINISH_TEXT;
+    }
+    return 'Ready';
+}
 
 export const SIGNINS_HEADING = 'Sign-ins';
 export const CAPTURES_HEADING = 'Captures';
+export const HASHES_HEADING = 'Hashes';
+export const HASHES_BANNER_TEXT = 'Hash records. A hash cannot sign in until it is cracked; open one to try.';
 export const SIGNINS_BANNER_TEXT = 'Sign-ins captured or found. Shown in full here, masked in the report.';
 export const CAPTURES_ROWS_BANNER_TEXT = 'PINs, footholds and findings this engagement has recorded.';
 

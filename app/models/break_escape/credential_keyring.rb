@@ -32,8 +32,8 @@ module BreakEscape
         held.is_a?(Hash) && held.key?(proof['foothold'])
       when 'technique_card'
         # A technique yields a saved connection, never a password (plan 4.3): the kind is read here too,
-        # not only by the validator (S3 server R1 m3). S7 widens it to `hash`.
-        entry['kind'] == 'saved_connection' && technique_finding_used?(proof['technique_card'])
+        # not only by the validator (S3 server R1 m3). S7 widens it to `hash` (a hash, never a password).
+        %w[saved_connection hash].include?(entry['kind']) && technique_finding_used?(proof['technique_card'])
       else
         false
       end
@@ -116,14 +116,19 @@ module BreakEscape
     def keyring_for_client(pc_id: nil, route: nil, stamp: false)
       registry = registry_keyring_entries
       with_lock { stamp_keyring_gained!(registry.map { |e| e['id'] }) } if stamp && keyring_gained_pending(registry).any?
-      entries = implicit_keyring_entries + registry + keyring_helpdesk_entries
+      entries = keyring_one_row_per_account(implicit_keyring_entries, cracked_keyring_entries) + registry + keyring_helpdesk_entries
       gained = keyring_gained_map # server-written only, so an Integer check is enough
       entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
       entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
       captures = keyring_captures
-      { rev: keyring_rev(entries, captures), entries: entries, captures: captures }
+      answer = { rev: nil, entries: entries, captures: captures }
+      # S7: the earned fact ids ride only when a hash row is listed, and join the digest then.
+      crack_facts = entries.any? { |e| e['kind'] == 'hash' } ? earned_fact_ids : nil
+      answer[:crackFacts] = crack_facts if crack_facts
+      answer[:rev] = keyring_rev(entries, captures, crack_facts)
+      answer
     end
 
     # The desk-reset entries, read without creating the state key: a game no desk has touched
@@ -284,9 +289,12 @@ module BreakEscape
     # captures map, so an `unchanged` answer never hides a capture's new tag. A token's
     # expiresInS is left out (K5, section 10), so a running token does not change the digest each
     # second; `expired` turning true does.
-    def keyring_rev(entries, captures = {})
-      digested = Array(entries).map { |e| e.is_a?(Hash) && e.key?('expiresInS') ? e.except('expiresInS') : e }
-      Digest::MD5.hexdigest(JSON.generate([digested, captures]))[0, 6]
+    def keyring_rev(entries, captures = {}, crack_facts = nil)
+      digested = Array(entries).map do |e|
+        e.is_a?(Hash) ? e.except('expiresInS', *(e['kind'] == 'hash' ? ['readyInSeconds'] : [])) : e
+      end
+      parts = crack_facts ? [digested, captures, crack_facts] : [digested, captures]
+      Digest::MD5.hexdigest(JSON.generate(parts))[0, 6]
     end
 
     # The Sign-ins list's capture map (K3d, plan 8.7): one entry per capture in the server's own
@@ -308,6 +316,43 @@ module BreakEscape
     end
 
     private
+
+    # One password row per account (S7): when a capture entry carries the value, the cracked entry
+    # is left out; when it carries none, the capture entry is left out.
+    def keyring_one_row_per_account(captured, cracked)
+      return captured if cracked.empty?
+
+      with_value = captured.select { |e| CredentialModel.present_string?(e['password']) }.map { |e| e.dig('account', 'npcId') }
+      cracked_ids = cracked.map { |e| e.dig('account', 'npcId') }
+      kept_cracked = cracked.reject { |e| with_value.include?(e.dig('account', 'npcId')) }
+      kept_captured = captured.reject do |e|
+        id = e.dig('account', 'npcId')
+        cracked_ids.include?(id) && !with_value.include?(id)
+      end
+      kept_captured + kept_cracked
+    end
+
+    # The cracked password rows of a keyring answer: one per cracked account, the password always
+    # attached. keyring_for_client applies the one-row-per-account rule against capture entries.
+    def cracked_keyring_entries
+      cracked = player_state['crackedAccounts']
+      return [] unless cracked.is_a?(Array)
+
+      cracked.grep(String).uniq.filter_map do |npc_id|
+        npc = account_npcs.find { |n| n['id'].to_s == npc_id }
+        password = npc ? npc.dig('creds', 'password') : nil
+        next unless CredentialModel.present_string?(password)
+
+        {
+          'id' => "#{npc_id}.cracked",
+          'kind' => 'password',
+          'source' => 'cracked',
+          'account' => account_block(npc, npc.dig('creds', 'username')),
+          'label' => 'Cracked',
+          'password' => password
+        }
+      end
+    end
 
     # Implicit password entries, one per captured account holder (section 3.1). Built from the same
     # readers as GET /capture_secrets, so the keyring never serves a password the capture answer
@@ -370,6 +415,8 @@ module BreakEscape
 
         if kind == 'password'
           registry_password_entry(id, entry, npc)
+        elsif kind == 'hash'
+          hash_keyring_entry(id, entry, npc)
         else
           registry_connecting_entry(id, entry, npc, ended: ended)
         end

@@ -597,6 +597,25 @@ test('K3d: the Captures section is hidden when it has no row; without revealSecr
     assert.doesNotMatch(device().root.textContent, /Facilities!7/);
 });
 
+test('S7 R3-2: the awareness banner names cracking only when a cracked password row is listed', async () => {
+    const CRACKED = { id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked', account: { npcId: 'dana', username: 'dana', displayName: 'Dana' }, password: 'plum-42-door' };
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } }, social: { captures: { revealSecret: false } } });
+    stubKeyring({ rev: 'r2', entries: [], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.equal(banner('signins'), rows.captureBannerText(false));
+    assert.doesNotMatch(banner('signins'), /cracked/);
+    assert.match(banner('signins'), /this exercise does not record it\.$/);
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } }, social: { captures: { revealSecret: false } } });
+    stubKeyring({ rev: 'r3', entries: [CRACKED], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.equal(banner('signins'), rows.captureBannerText(false, true));
+    assert.match(banner('signins'), /a password you cracked yourself is shown/);
+});
+
 test('K3d: before the first answer the rows come from the globals, keyed by capture; the account row then reads as seen', async () => {
     reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
     await add(HOLDER);
@@ -806,4 +825,33 @@ test('when /capture_secrets keeps failing the row says Could not load, not bulle
     assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Could not load');
     log.CaptureLogMinigame.secretRetryMs = 1500;
     closeDevice();
+});
+
+// ---- S7 review R1-C5: the answer the device hands the row builder carries the keyring's crack clock ----
+test('R1-C5: keyringAnswer() passes the real keyring crackSecondsLeft through', () => {
+    window.keyring = new Keyring();
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', status: 'running', readyInSeconds: 60,
+        account: { npcId: 'dana', username: 'dana.k' } };
+    window.keyring.remember(Keyring.cacheKey(null), { rev: 'r1', entries: [hash], captures: {} });
+    const a = log.keyringAnswer();
+    assert.equal(typeof a.crackSecondsLeft, 'function');
+    assert.equal(a.crackSecondsLeft('h1'), window.keyring.crackSecondsLeft('h1'));
+    assert.ok(a.crackSecondsLeft('h1') <= 60 && a.crackSecondsLeft('h1') > 55);
+});
+
+test('R1-C15: a hash record has its own Hashes section, not the Sign-ins one', async () => {
+    reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
+    const hash = { id: 'h1', kind: 'hash', source: 'registry', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', status: 'ready',
+        account: { npcId: 'dana', username: 'dana.k', displayName: 'Dana K' } };
+    stubKeyring({ ...K3D_ANSWER, entries: [...K3D_ANSWER.entries, hash] });
+    api.get = async () => ({ secrets: {} });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.ok(headings().includes('Hashes'));
+    const root = device().root;
+    assert.ok(root.querySelector('[data-section="hashes"] [data-key="hash:h1"]'));
+    assert.equal(root.querySelector('[data-section="signins"] [data-key="hash:h1"]'), null);
+    assert.ok(headings().indexOf('Hashes') > headings().indexOf('Sign-ins'));
+    while (MF.currentMinigame) MF.endMinigame(false, null);
 });

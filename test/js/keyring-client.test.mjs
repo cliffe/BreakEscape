@@ -1341,3 +1341,62 @@ test('K-lock: a locked credential session (sessionHeld false) signs in again by 
     assert.deepEqual(opened, [['lena_pc', 'jack_comms_port']]);
     assert.equal(pcSessions.isLocked('lena_pc'), false, 'the fresh sign-in replaces the locked copy');
 });
+
+// ── S7: hash rows and cracked passwords ──────────────────────────────────────────────────────
+
+const HASH = { id: 'dana_hash', kind: 'hash', source: 'registry', label: 'dana.hash', token: 'N4L9-E9K3-8PBA-TNMH-9EP6-K66Q', salted: true, status: 'ready', account: { username: 'dana', displayName: 'Dana Roe', npcId: 'dana' } };
+const HASH_RUNNING = { ...HASH, status: 'running', readyInSeconds: 40 };
+const CRACKED_PW = { id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked', account: HASH.account, password: 'pw' };
+
+test('S7: a cracked password is tagged "cracked", is visible at once and is never a find waiting on a file', async () => {
+    setup();
+    const { entryTagKind } = await imp('systems/keyring.js');
+    const kr = window.keyring;
+    assert.equal(entryTagKind(CRACKED_PW), 'cracked');
+    assert.equal(entryTagKind({ ...CRACKED_PW, source: 'registry' }), 'in_file');
+    assert.equal(kr.foundVisible({ ...CRACKED_PW, foundIn: 'never_opened' }), true);
+    assert.equal(kr.findWaiting({ ...CRACKED_PW, foundIn: 'never_opened' }), false);
+    assert.equal(kr.screenEntries([CRACKED_PW]).length, 1, 'the sign-in screen lists it');
+    assert.equal(text.findLine(CRACKED_PW), null, 'no find line for a cracked password');
+});
+
+test('S7: a new hash entry gives the find toast "Hash collected", once', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r1' }, { entries: [HASH], rev: 'r2' }, { entries: [HASH, CRACKED_PW], rev: 'r3' });
+    await kr.prime(); await settle();
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), ['Hash collected']);
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), ['Hash collected'], 'the cracked password adds no toast');
+    assert.equal(text.hashFoundMessage(), 'Hash collected');
+});
+
+test('S7: the store keeps crackFacts from a full answer', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [HASH], rev: 'r1', crackFacts: ['petName', 'streetName'] });
+    await kr.prime(); await settle();
+    assert.deepEqual(kr.crackFacts, ['petName', 'streetName']);
+    answers({ entries: [HASH], rev: 'r2' });
+    await kr.refresh(); await settle();
+    assert.deepEqual(kr.crackFacts, [], 'a full answer without the field clears it');
+});
+
+test('S7: an unchanged answer with readyInSeconds resets the running countdown; without it rows stay as they were', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [HASH_RUNNING], rev: 'r1' });
+    await kr.prime(); await settle();
+    const t0 = Date.now();
+    mock.timers.enable({ apis: ['Date'], now: t0 + 30000 });
+    try {
+        assert.equal(kr.crackSecondsLeft('dana_hash'), 10, '40 s served, 30 s gone on this clock');
+        answers({ unchanged: true, rev: 'r1' });
+        await kr.refresh(); await settle();
+        assert.equal(kr.crackSecondsLeft('dana_hash'), 10, 'no readyInSeconds: left as it was');
+        answers({ unchanged: true, rev: 'r1', readyInSeconds: { dana_hash: 25 } });
+        await kr.refresh(); await settle();
+        assert.equal(kr.crackSecondsLeft('dana_hash'), 25, 'reset to the served value');
+    } finally { mock.timers.reset(); }
+});

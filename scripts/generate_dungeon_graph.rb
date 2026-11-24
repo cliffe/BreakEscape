@@ -18,6 +18,8 @@ require 'digest'
 # Scenario and ink files are UTF-8: read them so whatever the shell's locale (LANG=C).
 Encoding.default_external = Encoding::UTF_8
 
+require_relative 'validate_cracking'
+require_relative '../lib/break_escape/crack_difficulty'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
@@ -1754,6 +1756,51 @@ BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
       add_node(cred_pc_lock, "#{cred_pc['name'] || cred_pc['id']}<br/>#{LOCK_TYPE_LABELS[cred_pc['lockType']] || 'Lock'}", 'lock')
     end
     add_edge(cred_node, cred_pc_lock)
+  end
+end
+
+# S7 (offline cracking): a hash record's account gets a `<npcId> password` node. The hash node and each
+# recipe fact's source (a carrying item, a feed post, a flag station with a grant_fact reward) have an edge
+# to it labelled "crack", or "crack (hard)" with the grade. The source edge into the hash node is the
+# held-item edge or the technique grant edge drawn elsewhere. Labels name ids, never a password.
+BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
+  next unless cred_entry['kind'] == 'hash'
+
+  crack_npc = BreakEscape::CredentialModel.account_npc(scenario, cred_entry['account'])
+  crack_hash_node = "cred_#{nid(cid)}"
+  next unless crack_npc && $nodes.key?(crack_hash_node)
+
+  crack_rec = cred_entry['crack'].is_a?(Hash) ? cred_entry['crack'] : {}
+  crack_habits = crack_npc['habits'].is_a?(Hash) ? crack_npc['habits'] : {}
+  crack_grade = [crack_rec['difficulty'], crack_habits['passwordDifficulty']].find { |g| BreakEscape::CrackDifficulty::GRADES.include?(g) }
+  crack_label = crack_grade ? "crack (#{crack_grade})" : 'crack'
+  crack_pw_node = add_node("crackpw_#{nid(crack_npc['id'])}", "#{crack_npc['displayName'] || crack_npc['id']} password", 'key')
+  crack_edge = lambda do |from|
+    add_edge(from, crack_pw_node, label: crack_label) unless $edges.any? { |e| e[:from] == from && e[:to] == crack_pw_node }
+  end
+  crack_edge.call(crack_hash_node)
+
+  facts = crack_rec['facts'].is_a?(Array) ? crack_rec['facts'].grep(String) : []
+  next if facts.empty?
+
+  crack_reveal_items(scenario).each do |entry|
+    item = entry[:item]
+    next unless item['id'].is_a?(String) && !item['id'].empty? && (Array(item['revealsFacts']) & facts).any?
+
+    crack_edge.call(add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item'))
+  end
+  BreakEscape::CredentialModel.room_npcs(scenario).each do |feed_npc|
+    BreakEscape::AccessWork.feed_posts(feed_npc).each do |post|
+      next unless post['fact'].is_a?(String) && facts.include?(post['fact'].delete_prefix('se_intel_'))
+
+      crack_edge.call(add_node("crack_feed_#{nid(feed_npc['id'])}_#{nid(post['id'])}", scrub_label("#{feed_npc['displayName'] || feed_npc['id']} feed post #{post['id']}"), 'key'))
+    end
+  end
+  crack_hashes_with(scenario, 'flagRewards').each do |holder|
+    node = holder[:node]
+    next unless Array(node['flagRewards']).any? { |r| r.is_a?(Hash) && r['type'] == 'grant_fact' && facts.include?(r['fact']) }
+
+    crack_edge.call(add_node("crack_flag_#{nid(node['id'] || node['name'])}", scrub_label("#{node['name'] || node['id']} flag"), 'key'))
   end
 end
 

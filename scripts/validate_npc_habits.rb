@@ -15,6 +15,7 @@
 # BreakEscape::NpcHabits.expanded_copy(json_data) returns. No line ever quotes a password or
 # any text from one: pieces are named by position and kind, sources by path.
 require_relative '../lib/break_escape/scenario_schema' unless defined?(BreakEscape::ScenarioSchema)
+require_relative '../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
 require_relative '../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 
@@ -150,6 +151,15 @@ module ValidateNpcHabits
         elsif NH::HABITS.key?(name) && !NH.valid_habit?(name, value)
           err(issues, "#{who} habit '#{name}' has value #{value.inspect}; allowed: #{NH::HABITS[name].map(&:inspect).join(', ')}.")
         end
+      end
+      grade = habits['passwordDifficulty']
+      if habits.key?('passwordDifficulty') && NH.valid_parameter?('passwordDifficulty', grade) &&
+         !BreakEscape::CrackDifficulty::GRADES.include?(grade)
+        err(issues, "#{who} habits.passwordDifficulty '#{grade}' is not one of " \
+                    "#{BreakEscape::CrackDifficulty::GRADES.join(', ')}.")
+      end
+      if habits.key?('passwordDifficulty') && !habits.key?('password')
+        warn(issues, "#{who} passwordDifficulty has no effect without a password habit")
       end
       pattern = habits['passwordPattern']
       if NH.valid_parameter?('passwordPattern', pattern) && CL.find_object(json_data, pattern).nil? &&

@@ -116,6 +116,18 @@ export class ApiClient {
     if (answer && (answer.serverGlobals || answer.serverCompletedTasks || answer.serverMissionConcluded) && typeof window !== 'undefined') {
       window.stateSync?.applyServerWrites?.(answer, clientTs);
     }
+    // A flag lock's rewards ride on the answer: a grant_fact reward carries the fact's entry (the
+    // bootstrap withholds it until earned), so hand it to the shared action executor as the flag
+    // station does. Other reward types are not touched here.
+    if (answer && Array.isArray(answer.rewards) && typeof window !== 'undefined') {
+      const facts = answer.rewards.filter(r => r && r.type === 'grant_fact');
+      if (facts.length) {
+        try {
+          const { applyActions } = await import('./systems/apply-actions.js');
+          applyActions(facts, { source: 'flag_reward' });
+        } catch (e) { console.error('[ApiClient] could not apply a fact reward:', e); }
+      }
+    }
     return answer;
   }
 
