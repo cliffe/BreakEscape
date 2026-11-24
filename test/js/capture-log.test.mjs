@@ -595,6 +595,25 @@ test('K3d: the Captures section is hidden when it has no row; without revealSecr
     assert.doesNotMatch(device().root.textContent, /Facilities!7/);
 });
 
+test('S7 R3-2: the awareness banner names cracking only when a cracked password row is listed', async () => {
+    const CRACKED = { id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked', account: { npcId: 'dana', username: 'dana', displayName: 'Dana' }, password: 'plum-42-door' };
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } }, social: { captures: { revealSecret: false } } });
+    stubKeyring({ rev: 'r2', entries: [], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.equal(banner('signins'), rows.captureBannerText(false));
+    assert.doesNotMatch(banner('signins'), /cracked/);
+    assert.match(banner('signins'), /this exercise does not record it\.$/);
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } }, social: { captures: { revealSecret: false } } });
+    stubKeyring({ rev: 'r3', entries: [CRACKED], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.equal(banner('signins'), rows.captureBannerText(false, true));
+    assert.match(banner('signins'), /a password you cracked yourself is shown/);
+});
+
 test('K3d: before the first answer the rows come from the globals, keyed by capture; the account row then reads as seen', async () => {
     reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
     await add(HOLDER);

@@ -394,7 +394,8 @@ export class CaptureLogMinigame extends MinigameScene {
 
         const signInRow = (r) => buildSignInRow(r).row;
         appendSection('signins', SIGNINS_HEADING, sections.signins, signInRow,
-            reveal ? SIGNINS_BANNER_TEXT : captureBannerText(false));
+            reveal ? SIGNINS_BANNER_TEXT
+                : captureBannerText(false, sections.signins.some((r) => Array.isArray(r.kinds) && r.kinds.includes('cracked'))));
         appendSection('hashes', HASHES_HEADING, sections.hashes, signInRow, HASHES_BANNER_TEXT);
         appendSection('captures', CAPTURES_HEADING, sections.captures, signInRow, CAPTURES_ROWS_BANNER_TEXT);
         appendSection('sessions', 'Sessions', sections.sessions, (row) => this.sessionRow(row));

@@ -19,10 +19,11 @@ function el(tag, cls, text) {
 }
 
 /** The note above a list of captures: shown in full (reveal) or acknowledged only (awareness). */
-export function captureBannerText(reveal) {
-    return reveal
-        ? 'Passwords and PINs this engagement has recorded, shown in full here and masked in the report.'
-        : 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record captured passwords (a password you cracked yourself is shown).';
+export function captureBannerText(reveal, hasCracked = false) {
+    if (reveal) return 'Passwords and PINs this engagement has recorded, shown in full here and masked in the report.';
+    return hasCracked
+        ? 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record captured passwords (a password you cracked yourself is shown).'
+        : 'A sign-in was captured here. In a real attack this is the victim’s password; this exercise does not record it.';
 }
 
 /**
