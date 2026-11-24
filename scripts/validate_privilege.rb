@@ -33,6 +33,7 @@ def check_privilege(json_data)
   info = ->(msg) { issues << "ℹ️ INFO: privilege: #{msg}" }
   privilege_not_built(json_data, err)
   privilege_cached_accounts(json_data, err, warn, info) # S5b
+  privilege_port_of(json_data, err, warn) # S5 ruling A
   privilege_admin_profile_collisions(json_data, warn)
   privilege_object_warnings(json_data, warn)
   issues
@@ -308,4 +309,48 @@ def privilege_check_borrow_candidate(json_data, pc, npc, where, owned, headless,
   return if borrows
 
   err.call("#{where}: '#{npc['id']}' has no borrow_session workaround for PC '#{pc_id}', so the account is never cached after a borrow")
+end
+
+# ---- S5 ruling A: portOf ----------------------------------------------------------------------
+# A USB-governed object may say which sign-in PC it is the port of (`portOf`), so an admin session at
+# that PC can plant a storage stick the object's policy would refuse. Every message below needs a
+# `portOf` key, so a scenario with none gets no line from this part.
+def privilege_port_of(json_data, err, warn)
+  ai = BreakEscape::AccessIdentities
+  aw = BreakEscape::AccessWork
+  pcs = ai.sign_in_pcs(json_data).to_h { |e| [e[:object]['id'].to_s, e[:object]] }
+
+  ai.room_objects(json_data).each do |entry|
+    obj = entry[:object]
+    next unless obj.key?('portOf')
+
+    where = "#{entry[:path]} (#{obj['id'] || obj['name'] || '?'})"
+    port = obj['portOf']
+    if ai.login_pc?(obj)
+      err.call("#{where}: portOf is not for a sign-in PC; a sign-in PC is its own port")
+      next
+    end
+    if !port.is_a?(String) || port.strip.empty?
+      err.call("#{where}: portOf must name a sign-in PC by its id (a non-blank string)")
+    elsif !pcs.key?(port)
+      err.call("#{where}: portOf names '#{port[0, 60]}', which is not a sign-in PC in a room")
+    end
+    err.call("#{where}: portOf needs a USB-governed object, and no policy governs this object (give it a policy)") unless aw.usb_governed?(obj)
+
+    grant = privilege_session_grants(obj['triggerOnInteract']).map { |a| a['pc'].to_s.strip }.find { |pc| !pc.empty? }
+    if grant && port.is_a?(String) && grant != port
+      err.call("#{where}: its needsSession grant names '#{grant[0, 60]}', not the port's PC '#{port[0, 60]}'. " \
+               'The engine judges the grant first, so the port would be ignored.')
+    end
+
+    pc = port.is_a?(String) ? pcs[port] : nil
+    next unless pc && aw.usb_governed?(obj)
+
+    mine = aw.usb_policy_for(json_data, obj)
+    theirs = aw.usb_policy_for(json_data, pc)
+    next if mine == theirs
+
+    warn.call("#{where}: the port's USB policy ('#{mine}') differs from the policy of '#{port[0, 60]}' ('#{theirs}'). " \
+              "The stick is judged by the port's own policy.")
+  end
 end
