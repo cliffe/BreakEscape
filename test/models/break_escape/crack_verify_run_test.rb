@@ -19,8 +19,8 @@ module BreakEscape
                                  player: break_escape_demo_users(:test_user), scenario: scenario)
     end
 
-    def run_script
-      ARGV.replace([@game.id.to_s, '--access'])
+    def run_script(*flags)
+      ARGV.replace([@game.id.to_s, *(flags.empty? ? ['--access'] : flags)])
       out, = capture_io do
         verbose = $VERBOSE
         $VERBOSE = nil
@@ -61,6 +61,28 @@ module BreakEscape
       out = run_script
       assert_includes out, 'access model'
       assert_nil crack_line(out)
+    end
+
+    # ---- R1-L15 ------------------------------------------------------------------------------------
+
+    test 'the full report (no --access) prints the crack line for a game whose only access state is a hash record' do
+      @game.player_state['inventory'] = [{ 'id' => 'dana_file', 'type' => 'text_file', 'name' => 'f', 'credential' => 'dana_hash' }]
+      @game.save!
+      out = run_script('--tasks')
+      assert_match(/crack\s+1: dana_hash ready\z/, crack_line(out).to_s)
+      refute_includes out, 'nothing recorded'
+    end
+
+    test 'the habits line never prints the password class, pattern or grade, and keeps the other habits' do
+      scenario = @game.scenario_data
+      npc = scenario['rooms']['lobby']['npcs'].first
+      npc['habits'] = { 'password' => 'guessable', 'passwordPattern' => 'pattern_note', 'passwordDifficulty' => 'hard', 'lockChance' => 0.5 }
+      @game.scenario_data = scenario
+      @game.save!
+      out = run_script
+      line = out.lines.find { |l| l.include?('npc dana') }.to_s
+      assert_includes line, 'lockChance=0.5'
+      %w[guessable passwordPattern pattern_note passwordDifficulty hard password=].each { |w| refute_includes line, w }
     end
   end
 end

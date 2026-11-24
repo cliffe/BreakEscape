@@ -228,6 +228,10 @@ def no_hold_gates(data)
   end
 end
 
+# Habit keys the habits line leaves out: screen/print/usb have their own part, and since S7 the password class, pattern
+# and grade are the cracking recipe (a blind tester's report must not carry them).
+HABITS_HIDDEN = %w[_comment screen print usb password passwordPattern passwordDifficulty].freeze
+
 # The habits block: values only, [] when no NPC in the saved scenario has a habits object
 # and no gate has a noHold.
 def habits_section(g)
@@ -242,7 +246,7 @@ def habits_section(g)
   owners = ai.room_npcs(data).to_h { |e| [e[:npc]['id'], e[:npc]] }
   lines = ['habits']
   npcs.each do |npc|
-    values = npc['habits'].reject { |k, _| %w[_comment screen print usb].include?(k) }.map { |k, v| "#{k}=#{v}" }.join(' ')
+    values = npc['habits'].reject { |k, _| HABITS_HIDDEN.include?(k) }.map { |k, v| "#{k}=#{v}" }.join(' ')
     screen = npc.dig('habits', 'screen')
     habit = screen.nil? ? '-' : JSON.generate(screen)
     lines << "  npc #{npc['id'].to_s.ljust(14)} #{values}  habits.screen #{habit}"
@@ -396,7 +400,7 @@ puts "inventory       #{inv.length}: #{inv.join(', ')}"
 puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{FlagRedaction.list(flags, show: show_flags)}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
-if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? }
+if ACCESS_KEYS.any? { |k| ps[k].respond_to?(:empty?) && !ps[k].empty? } || crack_items(ps, g)
   puts access_section(ps, g)
   puts habits_section(g)
 else
