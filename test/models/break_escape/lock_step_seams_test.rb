@@ -32,6 +32,13 @@ module BreakEscape
       assert_nil g.lock_step_for('object', 'safe1')
       assert_equal({}, g.lock_steps_map)
       assert_empty g.carried_step_ids
+      # unit 13: with nothing gated the gate and the lock actions answer as the stubs did
+      assert_nil g.lock_step_gate('object', 'safe1', 'pin')
+      assert_nil g.lock_step_gate('door', 'vault', 'pin')
+      assert_equal :not_found, g.verify_lock_code!('object', 'safe1', '123456')
+      assert_equal :not_found, g.prompt_lock!('object', 'safe1')
+      assert_equal :not_found, g.approve_lock!('door', 'vault', number: 1)
+      assert_equal :no_phone, g.lock_phone_answer('object', 'safe1', 'amy')
     end
 
     test 'state defaults are empty and survive a reset as empty' do

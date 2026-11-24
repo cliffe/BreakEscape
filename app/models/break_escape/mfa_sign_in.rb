@@ -264,7 +264,7 @@ module BreakEscape
     # Whether any policy of the scenario declares a second-step kind
     def mfa_declared?
       policies = scenario_data['policies']
-      policies.is_a?(Hash) && policies.values.any? { |p| MfaModel.kind(p) != 'none' }
+      policies.is_a?(Hash) && policies.values.any? { |p| MfaModel.kind(p) != 'none' } || BreakEscape::LockStepModel.each_lock_step(scenario_data).any? { |e| e[:step]['kind'] == 'code' } # S8c lock second step
     end
 
     def mfa_pending_map
