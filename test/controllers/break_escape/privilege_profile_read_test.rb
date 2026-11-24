@@ -152,6 +152,24 @@ module BreakEscape
       assert_equal ['profile: Jake Brooks'], read_detail_cells(scenario)
     end
 
+    # R4-8: the owner's display name shows only where the PC's sign-in screen shows everyone's tile.
+    def picker_cells(picker)
+      data = with_profile_reader(scenario)
+      data['rooms'].each_value do |room|
+        Array(room['objects']).each { |o| o['loginPicker'] = picker if o['id'] == 'jake_pc' }
+      end
+      read_detail_cells(data)
+    end
+
+    test 'R4-8: a PC whose loginPicker is known or false shows the kind word, not the owner name' do
+      assert_equal ['profile: Jake Brooks'], picker_cells('accounts')
+      ['known', false].each do |picker|
+        cells = picker_cells(picker)
+        assert_equal ['profile'], cells, picker.inspect
+        refute_includes cells.join, 'Jake'
+      end
+    end
+
     test 'a profile with no named account reads as the kind word once' do
       data = scenario
       data['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }.delete('displayName')

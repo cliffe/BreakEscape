@@ -121,8 +121,8 @@ module BreakEscape
         name: ->(game, id) { OpsLogEvents.device_named(game, id) },
         room: ->(_game, _id) { nil }
       },
-      # A service by its name, which is its id on its host (ops core S2). Never its label: a name is
-      # unique only on its host, a lookup is given no place, and the row's `where` names the host.
+      # A service by its name, which is its id on its host (ops core S2). Its authored label shows only when every host
+      # that declares a service of that name gives it the same label (service_named); else the name.
       'service' => {
         name: ->(game, id) { OpsLogEvents.service_named(game, id) },
         room: ->(_game, _id) { nil }
@@ -258,16 +258,37 @@ module BreakEscape
     # shows an account's files under the account's tile, so the name is the display name of the one
     # account the profile is for (as the sign-in tile shows it). The kind word shows (the id comes
     # back) when no account, several accounts, or an account with no displayName is admitted.
+    # This is the lookup that decides whether the profile exists (a row's check); what a reader shows
+    # is profile_shown_name.
     def profile_named(game, id)
       profiles = game.scenario_data.is_a?(Hash) ? game.scenario_data['accountProfiles'] : nil
       profile = profiles.is_a?(Hash) ? profiles[id.to_s] : nil
       return nil unless profile.is_a?(Hash)
 
+      owner = profile_owner(game, profile)
+      name = owner && owner['displayName']
+      name.is_a?(String) && !name.empty? ? name : id.to_s
+    end
+
+    def profile_owner(game, profile)
       owners = BreakEscape::Game.scenario_room_npcs(game.scenario_data).select do |npc|
         BreakEscape::Game.account_holder?(npc) && BreakEscape::Game.acl_admits?(profile['for'], npc)
       end
-      name = owners.size == 1 ? owners.first['displayName'] : nil
-      name.is_a?(String) && !name.empty? ? name : id.to_s
+      owners.size == 1 ? owners.first : nil
+    end
+
+    # What a log reader's profile cell shows (R4-8): the owner's display name only when the PC the row names shows that
+    # account's tile to anyone at its sign-in screen (its `loginPicker` lists everyone and the PC admits the account); at a PC
+    # whose picker is "known" or false, or a row that names no PC, the kind word, so the cell never gives a name the game has
+    # not shown there. nil when the profile does not exist.
+    def profile_shown_name(game, id, where)
+      named = profile_named(game, id)
+      return named if named.nil? || named == id.to_s
+
+      pc = where.is_a?(Hash) && where['kind'] == 'pc' && where['id'].is_a?(String) ? game.find_login_pc(where['id'])&.dig(:object) : nil
+      owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
+      picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
+      owner && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)
