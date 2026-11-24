@@ -14,14 +14,31 @@ module BreakEscape
 
     private
 
+    # The client posts targetType "item" for every object lock (as plain /unlock has always
+    # read it: anything but "door" is an object). A lock call names the canonical type, in one
+    # place: "item" is "object". Any other word is left as sent, and is refused as before.
+    def lock_step_type(type)
+      type.to_s == 'item' ? 'object' : type
+    end
+
     # ---- POST /unlock ----
 
     # The object an unlock request names, resolved once ({ object:, path: }), or nil: for a door,
     # and for any scenario in which no object carries a step, so the old calls stay as they were.
     def lock_step_resolve(target_type, target_id)
-      return nil if target_type == 'door' || @game.second_step_ids.empty?
+      return nil if target_type == 'door'
 
-      @game.resolve_unlock_target(target_id)
+      lock_step_resolve_id(target_id)
+    end
+
+    # The target an id names, as { object:, path: }, or nil when no object carries a step.
+    # NOTE (unit 15 report): G4 for a scenario with no gated object would need a walk here too, but
+    # a hand-built request for a KO'd NPC's unlocked briefcase is today answered 200
+    # (npc_container_unlock_test) and Rule D has no KO-release leg, so G4 stays off until decided.
+    def lock_step_resolve_id(id)
+      return nil if @game.second_step_ids.empty?
+
+      @game.resolve_unlock_target(id)
     end
 
     # True when the resolved target must be refused as an invented id is: it sits below a closed
@@ -53,11 +70,13 @@ module BreakEscape
     # the gate answer (200, no-store) or, failing closed, the refusal of a gated lock whose
     # step has neither passed nor been skipped by the server. Answers false to go on and open.
     def lock_step_gate_rendered?(target_type, target_id, method, resolved)
+      target_type = lock_step_type(target_type)
       info = lock_step_info(target_type, target_id, resolved)
       return false unless info
 
       gate = @game.lock_step_gate(target_type, target_id, method, resolved: resolved)
       if gate
+        lock_step_name_opener!(gate, target_type, target_id, method)
         response.headers['Cache-Control'] = 'no-store'
         render json: gate
         return true
@@ -66,6 +85,19 @@ module BreakEscape
 
       render_lock_step_refusal
       true
+    end
+
+    # At a door opened by an NPC the gate names the OWNER as `opener`, but the opener is the NPC
+    # that opened the door (the request's attempt, already validated as one that may open it): the
+    # client posts it again to retry. Corrected here; the grant is noted for that NPC.
+    def lock_step_name_opener!(gate, target_type, target_id, method)
+      return unless target_type == 'door' && method == 'npc' && gate.key?(:opener)
+
+      opener = params[:attempt].to_s
+      return if opener.empty? || opener == gate[:opener]
+
+      gate[:opener] = opener
+      @game.note_npc_step_grant!(target_id, opener)
     end
 
     # lock_step_for for the lock this request names, or nil when it has no step
@@ -115,9 +147,7 @@ module BreakEscape
     # True when the object an id names must be refused as an invented id is (Rules C and D, or a
     # gated object whose step is not open). Reads only.
     def lock_step_container_refused?(container_id)
-      return false if @game.second_step_ids.empty?
-
-      resolved = @game.resolve_unlock_target(container_id.to_s)
+      resolved = lock_step_resolve_id(container_id.to_s)
       return false unless resolved
 
       object = resolved[:object]
@@ -128,9 +158,9 @@ module BreakEscape
     # True when an item the player asks to take sits below a closed step or has left the player's
     # reach. The item's own lock is no bar (a gated takeable may be carried closed).
     def lock_step_take_refused?(item)
-      return false if @game.second_step_ids.empty? || !item.is_a?(Hash) || item['id'].to_s.empty?
+      return false if !item.is_a?(Hash) || item['id'].to_s.empty?
 
-      resolved = @game.resolve_unlock_target(item['id'].to_s)
+      resolved = lock_step_resolve_id(item['id'].to_s)
       lock_step_scope_refused?(resolved)
     end
 
@@ -147,25 +177,30 @@ module BreakEscape
 
       type = params[:target_type]
       id = params[:target_id]
-      LOCK_TARGET_TYPES.include?(type) && id.is_a?(String) && !id.empty? ? :lock : :generic
+      LOCK_TARGET_TYPES.include?(lock_step_type(type)) && id.is_a?(String) && !id.empty? ? :lock : :generic
     end
 
     def render_mfa_generic
       render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
     end
 
-    # Renders a lock action's answer: [body, status], { body:, status: } or a symbol. Always
-    # no-store (the caller sets the header first).
-    def render_lock_step_answer(result)
+    # Renders a lock action's answer exactly as the gate returns it: [body, status] (status :ok or
+    # :unprocessable_entity) or one of :not_found, :no_phone, :no_device. The phone answer
+    # ({ requests: [...] }) is rendered by mfa_lock_phone. Anything else fails closed as not found.
+    #
+    # The three POST routes pass echo: true, so a [body, status] answer (a valid target) names the
+    # lock the request was for. The echo is the request's own targetType and targetId; a symbol
+    # answer (not found, no phone, no device) stays exactly as before.
+    def render_lock_step_answer(result, echo: false)
       case result
       when :no_phone then render json: { success: false, error: 'no such phone' }, status: :forbidden
       when :no_device then render json: { success: false, error: 'no such device' }, status: :forbidden
-      when Array then render json: result[0], status: result[1]
-      when Hash
-        if result.key?(:body)
-          render json: result[:body], status: result[:status] || :ok
+      when Array
+        if result.length == 2 && result[0].is_a?(Hash) && %i[ok unprocessable_entity].include?(result[1])
+          body = echo ? result[0].merge(targetType: lock_step_type(params[:target_type]), targetId: params[:target_id]) : result[0]
+          render json: body, status: result[1]
         else
-          render json: result
+          render json: { success: false, error: 'not found' }, status: :not_found
         end
       else render json: { success: false, error: 'not found' }, status: :not_found
       end
@@ -173,13 +208,13 @@ module BreakEscape
 
     def mfa_lock_verify
       code = params[:code].is_a?(String) ? params[:code] : ''
-      result = with_game_lock { @game.verify_lock_code!(params[:target_type], params[:target_id], code) }
-      render_lock_step_answer(result)
+      result = with_game_lock { @game.verify_lock_code!(lock_step_type(params[:target_type]), params[:target_id], code) }
+      render_lock_step_answer(result, echo: true)
     end
 
     def mfa_lock_prompt
-      result = with_game_lock { @game.prompt_lock!(params[:target_type], params[:target_id]) }
-      render_lock_step_answer(result)
+      result = with_game_lock { @game.prompt_lock!(lock_step_type(params[:target_type]), params[:target_id]) }
+      render_lock_step_answer(result, echo: true)
     end
 
     def mfa_lock_approve
@@ -188,9 +223,9 @@ module BreakEscape
       number = nil unless number.is_a?(Integer)
       deny = params[:deny] == true || params[:deny] == 'true'
       result = with_game_lock do
-        @game.approve_lock!(params[:target_type], params[:target_id], number: number, deny: deny)
+        @game.approve_lock!(lock_step_type(params[:target_type]), params[:target_id], number: number, deny: deny)
       end
-      render_lock_step_answer(result)
+      render_lock_step_answer(result, echo: true)
     end
 
     # GET /mfa/phone with target_type and target_id (both, valid): the one request of that lock
@@ -201,25 +236,16 @@ module BreakEscape
 
     def mfa_lock_phone
       npc_id = params[:npc_id]
-      type = params[:target_type]
+      type = lock_step_type(params[:target_type])
       id = params[:target_id]
       valid = npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:own) &&
               LOCK_TARGET_TYPES.include?(type) && id.is_a?(String) && !id.empty?
       return render_lock_step_answer(:no_phone) unless valid
 
-      render_lock_step_answer(lock_phone_call(npc_id, type, id))
-    end
+      answer = @game.lock_phone_answer(type, id, npc_id)
+      return render json: answer if answer.is_a?(Hash) && answer.key?(:requests)
 
-    # unit 13's brief names the owner first, the stub types first: follow the parameter names
-    def lock_phone_call(npc_id, type, id)
-      params_of = @game.method(:lock_phone_answer).parameters
-      if params_of.first && params_of.first[1].to_s == 'npc_id'
-        @game.lock_phone_answer(npc_id, type, id)
-      elsif params_of.any? { |kind, _name| %i[key keyreq keyrest].include?(kind) }
-        @game.lock_phone_answer(type, id, npc_id: npc_id)
-      else
-        @game.lock_phone_answer(type, id, npc_id)
-      end
+      render_lock_step_answer(answer == :no_phone ? :no_phone : :not_found)
     end
   end
 end

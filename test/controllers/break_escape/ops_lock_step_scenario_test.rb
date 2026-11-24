@@ -564,14 +564,14 @@ module BreakEscape
       assert_equal 0, count_at('door', 'plant_room')
       gate = unlock_req('door', 'plant_room', 'gordon', 'npc')
       assert_gate(gate, kind: 'push', type: 'door', id: 'plant_room', npc: 'moira', extra: %w[opener])
-      assert_equal 'moira', gate['opener']
+      assert_equal 'gordon', gate['opener']
       assert_not open_room?('plant_room')
       room_req('plant_room')
       assert_not_includes response.body, 'Plant memo'
       assert_row('mfa_challenge', kind: 'door', id: 'plant_room', npc: 'moira', detail: { 'method' => 'npc' })
       # a reload: the opener comes from the bootstrap, the record is kept
       boot = bootstrap_req
-      assert_equal 'moira', boot.dig('rooms', 'plant_room', 'npcStepOpener')
+      assert_equal 'gordon', boot.dig('rooms', 'plant_room', 'npcStepOpener')
       assert_equal({ 'kind' => 'push', 'owner' => 'moira' }, boot.dig('rooms', 'plant_room', 'secondStep'))
       before = count('mfa_challenge')
       again = unlock_req('door', 'plant_room', 'gordon', 'npc')
