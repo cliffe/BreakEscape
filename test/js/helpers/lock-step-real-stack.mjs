@@ -25,6 +25,9 @@ const REAL = [
     'systems/global-writer.js', 'utils/key-cut-calculator.js', 'utils/constants.js', 'utils/locked-hint.js',
     'utils/remote-host-text.js', 'utils/lock-titles.js', 'utils/conditional-text.js', 'utils/flag-wording.js',
     'utils/display-dashes.js', 'utils/escape-html.js',
+    // the tray menu and the overlay it opens (a carried locked item is opened from here: S8c R1-CLIENT1)
+    'systems/inventory-menu.js', 'systems/item-drop.js', 'systems/table-drop.js', 'systems/consumables.js',
+    'ui/interaction-menu.js', 'ui/modal-stack.js',
     'minigames/framework/base-minigame.js', 'minigames/pin/pin-minigame.js',
     'minigames/password/password-minigame.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js', 'utils/npc-headshot.js'
 ];
@@ -75,7 +78,8 @@ export async function buildStack() {
         starters: await load('systems/minigame-starters.js'),
         pin: await load('minigames/pin/pin-minigame.js'),
         password: await load('minigames/password/password-minigame.js'),
-        refusal: await load('utils/lock-scope-refusal.js')
+        refusal: await load('utils/lock-scope-refusal.js'),
+        inventoryMenu: await load('systems/inventory-menu.js')
     };
     return m;
 }
@@ -169,6 +173,10 @@ export function bootPage(S, { inventory = { items: [] }, scenario = scenarioFrom
     window.mfaClient = S.mfa;
     window.MinigameFramework = installFramework(S);
     window.handleUnlock = S.unlockSystem.handleUnlock;
+    // as inventory-menu.js installs them on import (the module is loaded once, the window is new)
+    window.openInventoryItemMenu = S.inventoryMenu.openInventoryItemMenu;
+    window.inventoryMenuFor = S.inventoryMenu.inventoryMenuFor;
+    window.handleObjectInteraction = () => { log.interactions = (log.interactions || 0) + 1; };
     S.mfa.reset();
     // as pc-sessions.js builds the request function
     S.mfa.configure({

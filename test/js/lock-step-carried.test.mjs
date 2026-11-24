@@ -1,14 +1,19 @@
 // A gated item the player carries, clicked in the inventory: its pad, then the pane (S8c unit 27).
 // The item is the one the real server sent on the NPC's held items (gordon_briefcase, PIN lock, push step
 // owned by Gordon: test/js/fixtures/lock_step_room_payloads.json), put in the tray as an <img> carrying
-// scenarioData the way inventory.js builds it. The click is what inventory.js sends it to for a container:
-// handleUnlock(item, 'item'). Real unlock-system.js, starters, PIN pad, ApiClient.unlock, lock-step.js, pane
-// and mfa-client.js; only the network is stubbed, from the shared answer fixture.
+// scenarioData the way inventory.js builds it. The briefcase is droppable, so a tray click opens its menu
+// (inventory-menu.js) and never reaches interactions.js: the player picks "Unlock" in the real overlay
+// (ui/interaction-menu.js), which calls handleUnlock(item, 'item'). The tray's click listener is the one in
+// inventory.js (openInventoryItemMenu first, handleObjectInteraction after; a source check pins that).
+// Real inventory-menu.js and overlay, unlock-system.js, starters, PIN pad, ApiClient.unlock, lock-step.js,
+// pane and mfa-client.js; only the network is stubbed, from the shared answer fixture.
 // Run with: bin/test-js test/js/lock-step-carried.test.mjs
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { loadAnswer } from './helpers/lock-step-answers.mjs';
-import { buildStack, makeNetwork, settle, quickTimers, bootPage, payloads, deep } from './helpers/lock-step-real-stack.mjs';
+import { buildStack, makeNetwork, settle, quickTimers, bootPage, payloads, deep, js } from './helpers/lock-step-real-stack.mjs';
 
 for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
 
@@ -30,6 +35,14 @@ function carried() {
     img.lockType = data.lockType;
     return img;
 }
+// A click on the tray item, as inventory.js's listener handles it, then a click on the overlay's entry
+function trayClick(item, label) {
+    window.openInventoryItemMenu?.(item, 5, 5) || window.handleObjectInteraction?.(item);
+    const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')];
+    const row = rows.find((r) => r.textContent.includes(label));
+    assert.ok(row, `the tray menu has "${label}" (has: ${rows.map((r) => r.textContent.trim()).join(' | ')})`);
+    row.click();
+}
 const pad = () => window.MinigameFramework.currentMinigame;
 async function typePin() {
     for (const d of '1357') pad().handleNumberInput(d);
@@ -48,7 +61,7 @@ test('clicked in the tray: the pad opens on it, the pane opens over the pad, the
     const item = carried();
     const log = bootPage(S, { inventory: { items: [item] } });
     net.reset({ '/unlock': [gateForGordon, openBriefcase], '/mfa/prompt': ['prompt_passed'] });
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     assert.equal(pad().constructor.name, 'PinMinigame');
     await typePin();
@@ -72,7 +85,7 @@ test('clicked in the tray, the pane names the lock from the held item and the ow
     const item = carried();
     bootPage(S, { inventory: { items: [item] } });
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_waiting'] });
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     await typePin();
     const st = paneState();
@@ -85,7 +98,7 @@ test('clicked in the tray and denied: the item stays shut, in the tray, with one
     const item = carried();
     const log = bootPage(S, { inventory: { items: [item] } });
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_expired'] });
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     await typePin();
     await settle(20);
@@ -102,12 +115,12 @@ test('a carried gated item clicked again after a cancel starts over: a new pad, 
     const item = carried();
     bootPage(S, { inventory: { items: [item] } });
     net.reset({ '/unlock': [gateForGordon, gateForGordon, openBriefcase], '/mfa/prompt': ['prompt_expired', 'prompt_passed'] });
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     await typePin();
     await settle(20);
     assert.equal(item.scenarioData.locked, true);
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     await typePin();
     await settle(20);
@@ -120,7 +133,7 @@ test('the player closing the pane over a carried item is silent', async () => {
     const item = carried();
     const log = bootPage(S, { inventory: { items: [item] } });
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_waiting'] });
-    window.handleUnlock(item, 'item');
+    trayClick(item, 'Unlock');
     await settle();
     await typePin();
     window.__test.lockStep.close();
@@ -128,4 +141,30 @@ test('the player closing the pane over a carried item is silent', async () => {
     assert.deepEqual(log.toasts.filter((t) => /approved/i.test(t[0])), []);
     assert.equal(log.sounds.includes('reject'), false);
     assert.equal(item.scenarioData.locked, true);
+});
+
+test('the tray menu of the carried briefcase offers Unlock first and a click on it never drops or interacts', () => {
+    const item = carried();
+    const log = bootPage(S, { inventory: { items: [item] } });
+    net.reset({ '/unlock': [gateForGordon] });
+    window.openInventoryItemMenu(item, 5, 5);
+    const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].map((r) => r.textContent);
+    assert.match(rows[0], /Unlock/);
+    assert.equal(rows.length, 3);
+    assert.equal(log.interactions || 0, 0);
+});
+
+test('once the briefcase is open its tray menu has no Unlock', async () => {
+    const item = carried();
+    bootPage(S, { inventory: { items: [item] } });
+    item.scenarioData.locked = false;
+    item.scenarioData.contents = [];
+    window.openInventoryItemMenu(item, 5, 5);
+    const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].map((r) => r.textContent);
+    assert.equal(rows.some((r) => /Unlock/.test(r)), false);
+});
+
+test('inventory.js still sends a tray click to the menu first and to handleObjectInteraction after', () => {
+    const src = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
+    assert.match(src, /if \(window\.openInventoryItemMenu\?\.\(this, e\?\.clientX, e\?\.clientY\)\) return;\s*if \(window\.handleObjectInteraction\) \{\s*window\.handleObjectInteraction\(this\);/);
 });
