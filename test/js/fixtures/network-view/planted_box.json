@@ -1,0 +1,49 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab, Spare wall port",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "desk_pc",
+          "kind": "pc",
+          "name": "Desk PC",
+          "host": "LAB-01",
+          "sprite": "pc_desktop",
+          "headless": false,
+          "remoteSignIn": true
+        }
+      ],
+      "networks": [
+        {
+          "id": "lab_net",
+          "name": "Lab network",
+          "route": "up",
+          "via": null,
+          "hosts": [
+            {
+              "id": "desk_pc",
+              "kind": "pc",
+              "name": "Desk PC",
+              "host": "LAB-01",
+              "sprite": "pc_desktop",
+              "headless": false,
+              "remoteSignIn": true
+            }
+          ]
+        }
+      ],
+      "source": {
+        "name": "Spare wall port",
+        "room": "Lab"
+      }
+    }
+  ]
+}

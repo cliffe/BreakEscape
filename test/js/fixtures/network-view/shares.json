@@ -1,0 +1,40 @@
+{
+  "footholds": [
+    {
+      "id": "jack_a",
+      "via": "jack",
+      "name": "Drop box: Lab",
+      "itemId": "netlink_jack_a",
+      "sourceId": "port_a",
+      "network": {
+        "id": "lab_net",
+        "name": "Lab network"
+      },
+      "hosts": [
+        {
+          "id": "locked_share",
+          "kind": "file_share",
+          "name": "Locked-Share",
+          "host": "LAB-FS",
+          "open": false
+        },
+        {
+          "id": "open_share",
+          "kind": "file_share",
+          "name": "Open-Share",
+          "host": "LAB-FS",
+          "open": true
+        },
+        {
+          "id": "queue",
+          "kind": "printer",
+          "name": "Print queue",
+          "host": "LAB-PRN",
+          "open": true,
+          "observations": "Three pages wait."
+        }
+      ],
+      "networks": []
+    }
+  ]
+}
