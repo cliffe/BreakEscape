@@ -1030,7 +1030,7 @@ def _align(frame, bust, box):
                 for dx in range(-2, 3) for dy in range(-2, 3)))[1:]
 
 
-def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55, chin=0):
+def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55, chin=0, top=None):
     """The bust with the lower face (eye line down to `below` rows under the mouth box, ear to
     ear) taken from frame, aligned on the eyes first so a head that moved without tilting lines
     up. Only skin (colours like the cheeks beside and above the mouth) and the mouth itself are
@@ -1041,7 +1041,12 @@ def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55, chin=0
     from the mouth box bottom down, between the eye-box columns, it takes the frame's chin outline
     and neck shadow as well as skin. Without it the bust's own jaw line (dark, so never "skin") is
     always kept, and an open mouth whose frame drops the chin is pasted onto an unmoved chin
-    (female_nurse1, October 2026)."""
+    (female_nurse1, October 2026).
+
+    `top` (a row, default the eye box bottom) starts the paste lower, so the bust's nose and
+    everything above that row stay the bust's own. Without it the nose sits inside the paste, and
+    a frame aligned with a 1-2px head shift moves the nose as the mouth changes (Gwen Pritchard,
+    Adaeze Okafor, Lorna Easton; owner, CA pilot trailers, November 2026)."""
     b = np.asarray(bust.convert("RGBA")).astype(np.int32)
     f = np.asarray(frame.convert("RGBA")).astype(np.int32)
     h, w = b.shape[:2]
@@ -1055,7 +1060,7 @@ def lower_face(bust, frame, mouth, eyes, below=4, feather=2, skin_tol=55, chin=0
     def skin(a):
         return (np.abs(a[..., None, :3] - smp[None, None]).sum(-1).min(-1) < skin_tol) & (a[..., 3] > 0)
     yy, xx = np.mgrid[:h, :w]
-    rows = (yy >= ey1) & (yy <= y1 + below + chin)
+    rows = (yy >= max(ey1, top or 0)) & (yy <= y1 + below + chin)
     cols = (xx >= ex0 - 2) & (xx < ex1 + 2)
     mbox = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1 + 2)
     # nothing outside the bust's own silhouette: a mouth box or blend edge reaching past the jaw
@@ -1232,7 +1237,7 @@ def talk_visemes_contact(run, mouth, eyes):
     return sheets
 
 
-def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None, chin=None):
+def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=None, chin=None, top=None):
     """Install <name>_visemes.png/.json from named talk frames: --frames shape=frame,...
     Each frame's lower face goes onto the bust. The blink comes from --blink (an inpaint variant
     iNN, or 'installed' for the current sheet's blink column); by default the installed sheet's,
@@ -1255,7 +1260,7 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
             sys.exit(f"--frames {shape}={frame}: no such frame ({path})")
         mouth, eyes = tuple(j["params"]["mouth"]), tuple(j["params"]["eyes"])
         cells[shape], sh = lower_face(bust, Image.open(path).convert("RGBA"), mouth, eyes,
-                                      chin=chins.get(shape, 0))
+                                      chin=chins.get(shape, 0), top=top)
         notes = ([f"head {sh[0]:+d},{sh[1]:+d}px"] if sh != (0, 0) else []) + \
             ([f"jaw +{chins[shape]} rows"] if chins.get(shape) else [])
         sources[shape] = frame + (f" ({', '.join(notes)})" if notes else "")
@@ -1303,7 +1308,8 @@ def write_talk_viseme_sheet(run, assets, backup, frames_spec, blink=None, omit=N
     sheet.save(png)
     meta = backup(assets / f"{run.name}_visemes.json")
     source = ("pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face "
-              "pasted on the bust: " + ", ".join(f"{s}:{sources[s]}" for s in order if s in sources))
+              "pasted on the bust" + (f" from row {top} down (nose kept)" if top else "") + ": "
+              + ", ".join(f"{s}:{sources[s]}" for s in order if s in sources))
     meta.write_text(json.dumps({"frameSize": size, "visemes": order, "source": source}, indent=2) + "\n")
     gif = talk_visemes_preview(run, sheet, order, old, old_order)
     print(f"wrote {png} ({', '.join(order)}) and {meta.name}; preview {gif}")
@@ -2361,10 +2367,10 @@ def cmd_pick(args):
         print(f"next: pixellab_pipeline.py character {run.name} --variants 1")
 
     elif stage == "visemes" and vid == "talk":
-        write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit, args.chin)
+        write_talk_viseme_sheet(run, assets, backup, args.frames, args.blink, args.omit, args.chin, args.top)
         if assets.resolve() == CHARACTERS_DIR.resolve():  # a scratch --assets-dir is only a trial
             run.state["picks"]["visemes"] = f"talk {args.frames}" + (f" blink {args.blink}" if args.blink else "") \
-                + (f" chin {args.chin}" if args.chin else "")
+                + (f" chin {args.chin}" if args.chin else "") + (f" top {args.top}" if args.top else "")
         else:
             print("trial pick (--assets-dir is not the game's folder): state.json picks left unchanged")
 
@@ -2616,6 +2622,8 @@ def main():
                    "game's sheet if it has a blink, else the newest inpaint run that made one, else none")
     p.add_argument("--chin", help="visemes talk only: shape=rows, e.g. wide_open=3,round=2: also paste the "
                    "frame's jaw line and that many rows below the usual lower face, for frames that drop the chin")
+    p.add_argument("--top", type=int, help="visemes talk only: first row of the paste (default the eye box "
+                   "bottom). Set it just under the nose so the nose never moves with the mouth")
     p.set_defaults(func=cmd_pick)
 
     for name, fn, hlp in [("status", cmd_status, "show jobs, picks and the next stage"),
