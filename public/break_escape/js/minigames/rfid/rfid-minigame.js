@@ -73,6 +73,9 @@ export class RFIDMinigame extends MinigameScene {
         // `requires` at all, so it still counts as a reader.
         this.accessList = params.accessList === true && typeof params.requestAccess === 'function';
         this._accessPending = false;
+        // The lock has a second step (set by startRFIDMinigame from the lock's data): a read or a
+        // played-back copy says only that the card was read, not that anything opened
+        this.secondStep = params.secondStep === true;
         // True if trying to unlock a specific lock, false if just browsing
         this.isLockingAttempt = this.requiredCardIds.length > 0 || this.accessList;
 
@@ -212,7 +215,7 @@ export class RFIDMinigame extends MinigameScene {
         if (isCorrect) {
             if (window.playUISound) window.playUISound('card_scan');
             this.animations.showTapSuccess();
-            this.ui.showSuccess(this.isLockingAttempt ? 'Access Granted' : 'Card Read');
+            this.ui.showSuccess(this.isLockingAttempt && !this.secondStep ? 'Access Granted' : 'Card Read');
             // The door's toast names the card that opened it (unlock-system.js rfidOpenedLine)
             this.gameResult = { success: true, cardName: card.scenarioData?.name || null, emulated: false };
 
@@ -364,6 +367,12 @@ export class RFIDMinigame extends MinigameScene {
                     this.holdSuccess(emulated ? 2000 : 1500);
                     return;
                 }
+                // The second step was cancelled (denied, expired or closed): not a refusal of
+                // the card. Back to the card list: no tone, no card_emulated, no denial screen.
+                if (outcome === 'second_step_cancelled' || (response && response.reason === 'second_step_cancelled')) {
+                    back();
+                    return;
+                }
                 if (outcome === 'error') {
                     // No answer is not a refusal: nothing reported to the door
                     this._showDenial('No answer from the reader', back, null,
@@ -468,7 +477,7 @@ export class RFIDMinigame extends MinigameScene {
         if (isCorrect) {
             if (window.playUISound) window.playUISound('card_scan');
             this.animations.showEmulationSuccess();
-            this.ui.showSuccess('Access Granted');
+            this.ui.showSuccess(this.secondStep ? 'Card read.' : 'Access Granted');
             this.gameResult = { success: true, cardName: savedCard.name || null, emulated: true };
 
             // Emit event
@@ -792,6 +801,14 @@ export function startRFIDMinigame(lockable, type, params) {
     // Initialize framework if needed
     if (!window.MinigameFramework.mainGameScene && window.game) {
         window.MinigameFramework.init(window.game);
+    }
+
+    // A lock with a second step carries `secondStep` on its data: the copier then says "Card read."
+    // rather than a success line. An ungated lock gets the params exactly as passed.
+    const roomId = lockable?.doorProperties?.connectedRoom;
+    if (lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+        || (roomId && window.gameScenario?.rooms?.[roomId]?.secondStep)) {
+        params = { ...params, secondStep: true };
     }
 
     // Start minigame

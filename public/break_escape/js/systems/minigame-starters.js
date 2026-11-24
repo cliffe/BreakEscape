@@ -227,11 +227,17 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 // minigame reports the method it succeeded with in its result.
                 const usedKey = result?.method === 'key';
                 console.log(`LOCKPICK SUCCESS (method=${usedKey ? 'key' : 'lockpick'})`);
-                window.expectContainerAfterUnlock?.(lockable);
-                if (usedKey) {
-                    window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
-                } else {
-                    window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                // A lock with a second step (its data carries `secondStep`, an object's own or its
+                // door's room's) is not open yet: no toast and no container expected
+                const gated = !!(lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+                    || window.gameScenario?.rooms?.[lockable?.doorProperties?.connectedRoom]?.secondStep);
+                if (!gated) {
+                    window.expectContainerAfterUnlock?.(lockable);
+                    if (usedKey) {
+                        window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
+                    } else {
+                        window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                    }
                 }
                 callback(true, { method: usedKey ? 'key' : 'lockpick' });
             } else {
@@ -477,8 +483,14 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 const successMsg = unlockMethod === 'lockpick'
                     ? 'Successfully picked the lock!'
                     : 'Successfully unlocked with the correct key!';
-                window.expectContainerAfterUnlock?.(lockable, type);
-                window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
+                // A lock with a second step (its data carries `secondStep`, an object's own or its
+                // door's room's) is not open yet: no toast and no container expected
+                const gated = !!(lockable?.scenarioData?.secondStep || lockable?.doorProperties?.secondStep
+                    || window.gameScenario?.rooms?.[lockable?.doorProperties?.connectedRoom]?.secondStep);
+                if (!gated) {
+                    window.expectContainerAfterUnlock?.(lockable, type);
+                    window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
+                }
                 // Small delay to ensure minigame cleanup completes before room loading
                 if (unlockTargetCallback) {
                     setTimeout(() => {

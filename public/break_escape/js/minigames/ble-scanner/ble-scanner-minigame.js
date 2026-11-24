@@ -5,6 +5,33 @@ import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 // Device names, MACs and UUIDs are scenario text: escaped once on the way into HTML.
 
+/**
+ * What pairing a BLE object does in the world: complete the task it declares and set its globals.
+ * A lock with a second step runs this after the final server answer, not on pairing.
+ */
+export function applyBlePairEffects(scenarioData) {
+    const sd = scenarioData || {};
+
+    // Complete any task declared on the BLE object itself
+    if (sd.completesTask && window.eventDispatcher) {
+        window.eventDispatcher.emit('task_completed_by_npc', { taskId: sd.completesTask });
+    }
+
+    // Set any globals declared on the BLE object itself
+    if (sd.onPairSetGlobal && window.gameState?.globalVariables) {
+        Object.entries(sd.onPairSetGlobal).forEach(([key, value]) => {
+            const oldValue = window.gameState.globalVariables[key];
+            window.gameState.globalVariables[key] = value;
+            if (window.eventDispatcher) {
+                window.eventDispatcher.emit(`global_variable_changed:${key}`, { name: key, value, oldValue });
+            }
+            if (window.npcConversationStateManager) {
+                window.npcConversationStateManager.broadcastGlobalVariableChange(key, value, null);
+            }
+        });
+    }
+}
+
 export class BleScannerMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -590,24 +617,9 @@ export class BleScannerMinigame extends MinigameScene {
 
         const sd = device._scenarioData || {};
 
-        // Complete any task declared on the BLE object itself
-        if (sd.completesTask && window.eventDispatcher) {
-            window.eventDispatcher.emit('task_completed_by_npc', { taskId: sd.completesTask });
-        }
-
-        // Set any globals declared on the BLE object itself
-        if (sd.onPairSetGlobal && window.gameState?.globalVariables) {
-            Object.entries(sd.onPairSetGlobal).forEach(([key, value]) => {
-                const oldValue = window.gameState.globalVariables[key];
-                window.gameState.globalVariables[key] = value;
-                if (window.eventDispatcher) {
-                    window.eventDispatcher.emit(`global_variable_changed:${key}`, { name: key, value, oldValue });
-                }
-                if (window.npcConversationStateManager) {
-                    window.npcConversationStateManager.broadcastGlobalVariableChange(key, value, null);
-                }
-            });
-        }
+        // A lock with a second step is not open yet: the task and the globals wait for the
+        // final answer, when the caller runs applyBlePairEffects
+        if (!sd.secondStep) applyBlePairEffects(sd);
 
         this._successTimeout = setTimeout(() => this.complete(true), 2000);
     }
