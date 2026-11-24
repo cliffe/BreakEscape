@@ -37,7 +37,8 @@ window.breakEscapeConfig = { csrfToken: 'test', apiBasePath: '', assetsPath: '/b
 window.pauseKeyboardInput = () => {};
 window.resumeKeyboardInput = () => {};
 window.gameAlert = () => {};
-window.eventDispatcher = { on() {}, off() {}, emit() {} };
+const { default: NPCEventDispatcher } = await import(pathToFileURL(join(js, 'systems/npc-events.js')).href);
+window.eventDispatcher = new NPCEventDispatcher(); // real: the ask watches helpdesk_answered:<desk> on it
 
 const { MinigameFramework: FW } = await import(url('minigames/framework/minigame-manager.js'));
 const { PhoneChatMinigame } = await import(url('minigames/phone-chat/phone-chat-minigame.js'));
@@ -47,6 +48,7 @@ await import(url('systems/minigame-starters.js'));
 await import(url('systems/ink-minigame-launch.js'));
 const P = await import(url('minigames/person-chat/person-chat-pretext.js'));
 const judge = await import(url('systems/pretext-judge.js'));
+const { formatPretextTells } = await import(url('ui/pretext-chrome.js'));
 const { installSocialInfluence, uninstallSocialInfluence } = await import(url('systems/social-influence.js'));
 const helpdeskClient = await import(url('systems/helpdesk-client.js'));
 window.helpdeskClient = helpdeskClient;
@@ -112,6 +114,8 @@ async function reachAsk(callId, npcId) {
 }
 const askButton = () => choiceButtons().find((b) => textOf(b).includes('Request a reset'));
 const endAll = () => { while (FW.currentMinigame && !FW.currentMinigame._ending) FW.endMinigame(false, null); };
+const lineOf = (c) => c.querySelector('.hr-result-line')?.textContent;
+const hangUp = () => choiceButtons().find((b) => textOf(b).includes('Hang up'));
 const openForms = () => document.querySelectorAll('.hr-username').length;
 
 test('the call shows a preparation card first: title "Prepare the call", button "Make the call"', () => {
@@ -135,7 +139,7 @@ test('a granted ask with helpdesk "it_desk" opens that desk\'s form once, a send
     const form = FW.currentMinigame;
     assert.equal(form.params.deskId, 'it_desk');
     assert.equal(form.params.pcId, undefined, 'a call is not a PC');
-    assert.deepEqual(window.gameState.globalVariables.pretext_it_line_call_state.grantedAsks, ['reset_request']);
+    assert.deepEqual(window.gameState.globalVariables.pretext_it_line_call_state.grantedAsks, [], 'nothing is granted until a request is answered');
     assert.equal(openForms(), 1, 'one form, not two');
     await tick(1500);
     assert.equal(openForms(), 1, 'still one form after the delay has passed again');
@@ -148,13 +152,47 @@ test('a granted ask with helpdesk "it_desk" opens that desk\'s form once, a send
     assert.equal(posts[0].payload.desk_id, 'it_desk');
     assert.equal('pc_id' in posts[0].payload, false);
     await until(() => window.gameState.globalVariables.helpdesk_it_desk_result === 'granted', 'the result global');
+    await until(() => lineOf(form.container) !== 'Sending your request...', 'the answer line');
+    assert.deepEqual(window.gameState.globalVariables.pretext_it_line_call_state.grantedAsks, ['reset_request'], 'the answered request grants the ask');
+    assert.equal(window.gameState.globalVariables.pretext_it_line_call_state.log.find((r) => r.kind === 'ask').sent, true);
     assert.equal(form.container.querySelector('.hr-result-line').textContent, resultLine('granted', netAnswer.body));
     // close: back to the same call, same session
     form.container.querySelector('.se-overlay-close').click();
     await until(() => FW.currentMinigame?._sceneType === 'phone-chat', 'the call comes back');
     assert.equal(FW.currentMinigame.params.pretextCallId, 'it_line_call');
     assert.equal(window.gameState.globalVariables.pretext_it_line_call_state.open, true, 'the call is still open');
+    await until(() => hangUp(), 'the Hang up choice');
+    hangUp().click();
+    await until(() => /You got what you came for/.test(textOf(document.body)), 'the debrief says it');
+    const sentLines = formatPretextTells(window.gameState.globalVariables.pretext_it_line_call_state, window.gameScenario.social.pretextNpcs[0], 0);
+    assert.match(sentLines.join(' '), /ASK OK.*The desk put the form through\./, 'the line stands once the request was answered');
     endAll();
+});
+
+test('a form closed without sending leaves the ask not done: no "put the form through", outcome walked away, result global empty (R2 beat 13)', async () => {
+    setUp('test_ops_helpdesk', 'it_line');
+    window.gameState.globalVariables.helpdesk_it_desk_result = 'granted'; // left from an earlier request
+    await reachAsk('it_line_call', 'it_line');
+    askButton().click();
+    await until(() => FW.currentMinigame?._sceneType === 'helpdesk-request', 'the request form', 600);
+    assert.equal(window.gameState.globalVariables.helpdesk_it_desk_result, '', 'cleared when the form opens: nothing sent');
+    FW.currentMinigame.container.querySelector('.se-overlay-close').click();
+    await until(() => FW.currentMinigame?._sceneType === 'phone-chat', 'the call comes back');
+    assert.equal(posts.length, 0, 'no request was sent');
+    const state = window.gameState.globalVariables.pretext_it_line_call_state;
+    assert.deepEqual(state.grantedAsks, []);
+    assert.equal(P.outcomeFor(state), 'walked_away');
+    const shown = formatPretextTells(state, window.gameScenario.social.pretextNpcs[0], 0).join(' ');
+    assert.match(shown, /ASK OK/, 'the judge still said the influence was enough');
+    assert.doesNotMatch(shown, /put the form through/);
+    assert.equal(window.gameState.globalVariables.helpdesk_it_desk_result, '');
+    await until(() => hangUp(), 'the Hang up choice');
+    hangUp().click();
+    await until(() => window.gameState.globalVariables.pretext_it_line_call_state.open === false, 'the call to end');
+    assert.doesNotMatch(textOf(document.body), /You got what you came for/, 'the debrief does not claim it');
+    // a request answered later, with the call over, grants nothing
+    window.eventDispatcher.emit('helpdesk_answered:it_desk', { deskId: 'it_desk', result: 'granted' });
+    assert.deepEqual(window.gameState.globalVariables.pretext_it_line_call_state.grantedAsks, []);
 });
 
 test('a refused ask opens nothing', async () => {
@@ -197,7 +235,7 @@ test('a call closed before the form opens leaves nothing over the world', async 
     setUp('test_ops_helpdesk', 'it_line');
     await reachAsk('it_line_call', 'it_line');
     askButton().click();
-    await until(() => window.gameState.globalVariables.pretext_it_line_call_state?.grantedAsks?.length === 1, 'the ask to be judged');
+    await until(() => window.gameState.globalVariables.pretext_it_line_call_state?.log?.some((r) => r.kind === 'ask'), 'the ask to be judged');
     endAll();
     await tick(1800);
     assert.equal(FW.currentMinigame, null);

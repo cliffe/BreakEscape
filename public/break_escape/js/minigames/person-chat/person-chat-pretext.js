@@ -255,7 +255,7 @@ export function mergeSpec(pretextEntry, charConfig) {
  * @param {Function} [opts.onChange]     called after each applied line (for the UI)
  * @returns {{ pretext_say: Function, pretext_ask: Function }}
  */
-export function makePretextExternals({ service, spec, session, ctx, judge, writeGlobal = writeGlobalDefault, grantFact = null, onChange = null, openHelpdesk = null } = {}) {
+export function makePretextExternals({ service, spec, session, ctx, judge, writeGlobal = writeGlobalDefault, grantFact = null, onChange = null, openHelpdesk = null, watchHelpdesk = watchHelpdeskDefault } = {}) {
     const character = spec.character;
     const runId = ctx?.runId;
 
@@ -297,7 +297,9 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
         const judged = judge.judgeAsk(spec, session, askId, influence) || {};
         applyEntries(judged.entries, askId);
         const inkResult = (judged.inkResult === 0 || judged.inkResult === 1 || judged.inkResult === 2) ? judged.inkResult : 0;
-        if (inkResult === 1) {
+        const deskId = isStr(askSpec.helpdesk) && typeof openHelpdesk === 'function' ? askSpec.helpdesk : null;
+        let askRow = null;
+        const grantAsk = () => {
             // Grants are authored on the ask, not decided by the judge (00 §8).
             // Synchronous, and before the session is saved, so a reload cannot
             // miss a fact the ask just gave (grantFact is loaded with this module).
@@ -307,13 +309,31 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
                 console.warn('⚠️ [pretext] grant failed:', err?.message);
             }
             if (!session.grantedAsks.includes(askId)) session.grantedAsks.push(askId);
-            // An ask that names a helpdesk also opens that desk's request form (S8b unit 21).
-            // The verdict grants nothing by itself: the server decides when the form is sent.
-            // Once per ask, because the ledger above returns the stored result on a replay.
-            if (isStr(askSpec.helpdesk) && askSpec.helpdesk && typeof openHelpdesk === 'function') {
-                try { openHelpdesk(askSpec.helpdesk); }
-                catch (err) { console.warn('⚠️ [pretext] helpdesk form failed:', err?.message); }
-            }
+        };
+        if (inkResult === 1 && deskId) {
+            // An ask that names a helpdesk opens that desk's request form (S8b unit 21) and is
+            // done only when the desk answers that request "granted": a form closed unsent
+            // grants nothing, so the call's outcome and the ask's line stay true (R2 beat 13).
+            // The server decides; the verdict alone grants nothing. Once per ask, because the
+            // ledger above returns the stored result on a replay.
+            try { writeGlobal(`helpdesk_${deskId}_result`, '', { engine: ctx?.engine || null, npcId: ctx?.npcId || null }); }
+            catch (err) { console.warn('⚠️ [pretext] helpdesk result not cleared:', err?.message); }
+            try {
+                watchHelpdesk(deskId, () => {
+                    // The chat is re-attached with a session read back from the store when the form
+                    // closes, so the stored copy says whether the call is still open
+                    const stored = globalsObj()?.[stateKey(session.callId)];
+                    if (!session.open || stored?.open === false) return 'stop';
+                    grantAsk();
+                    if (askRow) askRow.sent = true;
+                    persistSession(session);
+                    if (typeof onChange === 'function') onChange({ kind: 'ask', id: askId, judged, band: service.getBand(character), result: 1 });
+                    return 'stop';
+                });
+                openHelpdesk(deskId);
+            } catch (err) { console.warn('⚠️ [pretext] helpdesk form failed:', err?.message); }
+        } else if (inkResult === 1) {
+            grantAsk();
         } else if (inkResult === 2) {
             // Waiting on verification: record which facts, so the next line's matches
             // clear them and the re-ask then grants (06 §4.2, §4.4).
@@ -328,7 +348,9 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
         session.noteInfluence(service.getInfluence(character));
         const band = Number.isFinite(judged.band) ? judged.band : service.getBand(character);
         session.turn += 1;
-        session.addLog({ turn: session.turn, kind: 'ask', id: askId, entries: judged.entries || [], band, result: inkResult });
+        askRow = { turn: session.turn, kind: 'ask', id: askId, entries: judged.entries || [], band, result: inkResult };
+        if (inkResult === 1 && deskId) { askRow.helpdesk = deskId; askRow.sent = false; }
+        session.addLog(askRow);
         persistSession(session);
         if (typeof onChange === 'function') onChange({ kind: 'ask', id: askId, judged, band, result: inkResult });
         return inkResult;
@@ -338,6 +360,22 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
 }
 
 // -------------------------------------------------------------- the helpdesk form (S8b unit 21)
+
+/**
+ * Call `onGranted()` once when the desk answers a request "granted" while the call is open.
+ * The callback's own check of the call decides: it returns 'stop' to drop the listener.
+ * A listener that sees the call closed drops itself on the next answer.
+ */
+function watchHelpdeskDefault(deskId, onGranted) {
+    const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+    if (typeof d?.on !== 'function') return;
+    const name = `helpdesk_answered:${deskId}`;
+    const fn = (detail) => {
+        if (detail?.result !== 'granted') return;
+        if (onGranted() === 'stop' && typeof d.off === 'function') d.off(name, fn);
+    };
+    d.on(name, fn);
+}
 
 /** How long the ask's reply stays on screen before the form opens over the chat. */
 export const HELPDESK_OPEN_DELAY_MS = 1200;
