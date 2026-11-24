@@ -90,6 +90,14 @@ module BreakEscape
       show?
     end
 
+    def mfa_device?
+      show?
+    end
+
+    def mfa_verify?
+      show?
+    end
+
     def logout?
       show?
     end

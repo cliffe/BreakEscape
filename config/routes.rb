@@ -35,6 +35,8 @@ BreakEscape::Engine.routes.draw do
       post 'inventory'    # Update inventory
 
       # Access model: sign-in PCs and card copies (docs/achitechture/ACCESS_MODEL_PLAN.md section 6)
+      get  'mfa/device',     to: 'games#mfa_device', as: 'mfa_device'   # What a held code device shows (S8a)
+      post 'mfa/verify',     to: 'games#mfa_verify', as: 'mfa_verify'   # The code for a pending second step (S8a)
       post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
       post 'logout'          # End the session at a sign-in PC
       post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again

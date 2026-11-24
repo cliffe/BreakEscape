@@ -25,7 +25,7 @@ module BreakEscape
     end
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
-                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
+                                        :login, :mfa_device, :mfa_verify, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
                                         :log_rows,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
@@ -1559,6 +1559,39 @@ module BreakEscape
           @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold,
                                from: params[:from], from_given: from_param_given?)
         end
+      render json: result[:body], status: result[:status]
+    end
+
+    # GET /games/:id/mfa/device?item_id=
+    # What a held code device shows (S8a unit 16): the only place a code reaches the browser. 404
+    # for an unknown device, 403 unless the player holds it. Reads only: no save.
+    def mfa_device
+      authorize @game if defined?(Pundit)
+
+      response.headers['Cache-Control'] = 'no-store'
+      item_id = params[:item_id]
+      answer = item_id.is_a?(String) && !item_id.empty? ? @game.mfa_device_answer(item_id) : :not_found
+      case answer
+      when :not_found then render json: { success: false, error: 'not found' }, status: :not_found
+      when :no_device then render json: { success: false, error: 'no such device' }, status: :forbidden
+      else render json: answer
+      end
+    end
+
+    # POST /games/:id/mfa/verify
+    # The six digits for a pending second step at a sign-in PC (pc_id, code). A request with no
+    # pc_id, or one that names a target_type, gets the generic refusal. The checks and answers are
+    # Game#verify_sign_in_code!.
+    def mfa_verify
+      authorize @game if defined?(Pundit)
+
+      response.headers['Cache-Control'] = 'no-store'
+      pc_id = params[:pc_id]
+      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type)
+        return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
+      end
+
+      result = with_game_lock { @game.verify_sign_in_code!(pc_id, params[:code].is_a?(String) ? params[:code] : '') }
       render json: result[:body], status: result[:status]
     end
 
@@ -3641,7 +3674,10 @@ module BreakEscape
         # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
         # never offered it, so the pickup asks the same question
         owner = found_item['owner']
-        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
+        # S8a unit 16: the same for every owner-bound item (the code device too), but only for a
+        # stored NPC drop (a room add), and not for an item the player dropped and picks up again
+        if location[:added] && BreakEscape::MfaModel::OWNER_BOUND_TYPES.include?(found_item['type']) && owner.is_a?(String) &&
+           !Array(@game.player_state['droppedItems']).include?(found_item['id']) &&
            !@game.npc_room_drop_allowed?(owner, found_item)
           error_msg = "NPC does not give this item: #{owner}"
           Rails.logger.warn "[BreakEscape] #{error_msg}"
@@ -3668,7 +3704,7 @@ module BreakEscape
         # Code review R5 n2: an NPC the server holds as KO'd (npc_defeated?, the claim rule) gives
         # its phone too, so a KO drop the server refused (its KO sync had not landed) can still be
         # picked up from the local sprite once the KO has reached the server.
-        if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && !@game.friendface_phone_offered?(npc_id) &&
+        if BreakEscape::MfaModel::OWNER_BOUND_TYPES.include?(found_item['type']) && !@game.npc_offers_item?(npc_id, found_item['type']) &&
            !@game.npc_defeated?(npc_id)
           error_msg = "NPC does not give this item: #{npc_id}"
           Rails.logger.warn "[BreakEscape] #{error_msg}"
@@ -3811,7 +3847,7 @@ module BreakEscape
           next unless added_obj['opens_lock'] == item_id || added_obj['key_id'] == item_id || added_obj['id'] == item_id ||
                       added_obj['name'] == item_name || added_obj['name'] == item_id ||
                       item_id.nil?
-          return { item: added_obj, location: { type: 'room', room_id: room_id } }
+          return { item: added_obj, location: { type: 'room', room_id: room_id, added: true } }
         end
       end
 
