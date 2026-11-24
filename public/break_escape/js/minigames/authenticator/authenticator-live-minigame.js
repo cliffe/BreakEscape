@@ -36,6 +36,7 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         this.approvedCount = 0;
         this.deniedCount = 0;
         this._busy = false;
+        this._note = '';
         this._poll = null;
         this.mode = 'live';
     }
@@ -90,6 +91,8 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
 
     /** Read the held phone and redraw its cards. Public so tests drive it without timers. */
     async refresh() {
+        const note = this._note;
+        this._note = '';
         const client = this._client();
         if (!client) { this._say('The phone cannot connect.'); return null; }
         let res;
@@ -99,7 +102,8 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
             this._say(res && res.reason === 'no_phone' ? 'You are not holding this phone.' : 'The phone cannot connect.');
         } else {
             this.requests = (res.requests || []).filter(isObj);
-            this._say(this.requests.length ? '' : 'No sign-in requests right now.');
+            if (this.requests.length) this._say(note);
+            else this._say(note || (this.approvedCount > 0 ? 'Approved. Close the phone to go back to the PC.' : 'No sign-in requests right now.'));
             this._renderCards();
         }
         this._schedulePoll();
@@ -119,12 +123,13 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         const add = (k, v) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', null, v)); };
         add('Account', req.account || req.username);
         add('Computer', req.host || req.pc);
-        add('Request', typeof req.key === 'string' ? req.key : '');
         card.appendChild(dl);
 
         const actions = el('div', 'auth-card-actions');
-        const key = req.key;
-        if (req.kind === 'push_number_match' && Array.isArray(req.numbers)) {
+        // The server's row names the PC (`pcId`), the subject being `pc:<pcId>`; a row with numbers is
+        // a number-matching request (the server sends numbers only for that kind)
+        const key = isStr(req.pcId) ? `pc:${req.pcId}` : req.key;
+        if (Array.isArray(req.numbers) && req.numbers.length) {
             actions.appendChild(el('p', 'auth-card-prompt', 'Choose the number shown on the sign-in screen.'));
             for (const n of req.numbers) {
                 const b = el('button', 'auth-card-action auth-card-number minigame-button', String(n));
@@ -158,15 +163,19 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
         try { res = await client.approve(key, opts); } catch (e) { res = { ok: false, reason: 'error' }; }
         this._busy = false;
         if (!this.gameState.isActive) return res;
+        let note;
         if (res && res.ok) {
             if (kind === 'deny') this.deniedCount += 1; else this.approvedCount += 1;
-            this._say(kind === 'deny' ? 'Refused.' : 'Approved.');
-        } else if (res && res.reason === 'wrong') {
-            this._say('That number did not match.');
-            return res;  // the card stays so the player can try again or deny
+            note = kind === 'deny' ? 'Refused.' : 'Approved. Close the phone to go back to the PC.';
+        } else if (res && res.reason === 'cancelled') {
+            // The server ends the attempt on a deny and on a wrong number alike (422 cancelled)
+            this.deniedCount += 1;
+            note = kind === 'deny' ? 'Refused. The request was cancelled.' : 'That number did not match. The request was cancelled.';
         } else {
-            this._say('That request is no longer open.');
+            note = 'That request is no longer open.';
         }
+        this._say(note);
+        this._note = note;
         await this.refresh();
         return res;
     }

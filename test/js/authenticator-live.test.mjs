@@ -71,7 +71,7 @@ async function open(s, params = {}) {
 const cards = () => [...document.querySelectorAll('.auth-card')];
 
 test('cards come from the stubbed phone, with real Approve and Deny buttons', async () => {
-    const s = stub([{ key: 'pc:desk', kind: 'push', n: 1 }, { key: 'pc:lab', kind: 'push', n: 2 }]);
+    const s = stub([{ pcId: 'desk', host: 'Desk PC', username: 'sam', n: 1 }, { pcId: 'lab', host: 'Lab PC', username: 'sam', n: 2 }]);
     await open(s);
     assert.deepEqual(s.calls.phone, [{ npcId: 'npc_a' }]);
     assert.equal(cards().length, 2);
@@ -82,9 +82,9 @@ test('cards come from the stubbed phone, with real Approve and Deny buttons', as
 });
 
 test('approve and deny call approve with the request key', async () => {
-    const s = stub([{ key: 'pc:desk', kind: 'push', n: 1 }, { key: 'pc:lab', kind: 'push', n: 2 }]);
+    const s = stub([{ pcId: 'desk', host: 'Desk PC', username: 'sam', n: 1 }, { pcId: 'lab', host: 'Lab PC', username: 'sam', n: 2 }]);
     const scene = await open(s);
-    s.state.requests = [{ key: 'pc:lab', kind: 'push', n: 2 }];
+    s.state.requests = [{ pcId: 'lab', host: 'Lab PC', username: 'sam', n: 2 }];
     document.querySelector('.auth-card-approve').click();
     await tick(); await tick();
     assert.deepEqual(s.calls.approve[0], ['pc:desk', {}]);
@@ -97,9 +97,9 @@ test('approve and deny call approve with the request key', async () => {
     assert.deepEqual(scene.closeResult(), { approved: 1, denied: 1, mode: 'live' });
 });
 
-test('number matching shows three number buttons; a wrong number keeps the card', async () => {
-    const s = stub([{ key: 'pc:desk', kind: 'push_number_match', n: 1, numbers: [11, 42, 73] }],
-        (k, o) => (o.number === 42 ? { ok: true, passed: false } : { ok: false, reason: 'wrong' }));
+test('number matching shows three number buttons; a wrong number cancels the request, as the server does', async () => {
+    const s = stub([{ pcId: 'desk', host: 'Desk PC', username: 'sam', n: 1, numbers: [11, 42, 73] }],
+        (k, o) => (o.number === 42 ? { ok: true, passed: true } : { ok: false, reason: 'cancelled' }));
     await open(s);
     const nums = [...document.querySelectorAll('.auth-card-number')];
     assert.deepEqual(nums.map((b) => b.textContent), ['11', '42', '73']);
@@ -107,16 +107,13 @@ test('number matching shows three number buttons; a wrong number keeps the card'
     nums[0].click();
     await tick(); await tick();
     assert.deepEqual(s.calls.approve[0], ['pc:desk', { number: 11 }]);
-    assert.equal(cards().length, 1);
-    assert.match(document.querySelector('.auth-live-status').textContent, /did not match/);
-    document.querySelectorAll('.auth-card-number')[1].click();
-    await tick(); await tick();
-    assert.deepEqual(s.calls.approve[1], ['pc:desk', { number: 42 }]);
+    assert.match(document.querySelector('.auth-live-status').textContent, /did not match.*cancelled/);
+    assert.equal(FW.currentMinigame.deniedCount, 1);
 });
 
 test('hostile host and username are text, never markup', async () => {
     const evil = '<img src=x onerror=alert(1)>';
-    const s = stub([{ key: 'pc:desk', kind: 'push', n: 1, username: evil, host: `<b>${evil}</b>`, app: evil }]);
+    const s = stub([{ pcId: 'desk', n: 1, username: evil, host: `<b>${evil}</b>`, app: evil }]);
     await open(s);
     const card = cards()[0];
     assert.equal(card.querySelector('img'), null);
