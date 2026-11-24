@@ -328,6 +328,38 @@ class ValidateCrackingTest < ActiveSupport::TestCase
     assert(warnings(s).none? { |w| w.include?('reused') })
   end
 
+  # R1-L13: an unsalted hit batches to every other unsalted record with an equal password, whatever its class
+  def unsalted_pair(other_class, other_password = 'Pw-One-1')
+    s = base
+    rec(s)['crack'] = { 'password' => 'common', 'difficulty' => 'easy' }
+    s['credentials']['eli_hash'] = { 'kind' => 'hash', 'account' => 'eli', 'proof' => { 'held' => 'share_file' },
+                                     'crack' => { 'password' => other_class }.merge(other_class == 'guessable' ? { 'facts' => %w[pet town] } : {}) }
+    s['credentials']['eli_hash']['crack']['difficulty'] = 'easy' unless other_class == 'guessable'
+    s['rooms']['office']['npcs'].last['creds']['password'] = other_password
+    s
+  end
+
+  test 'warnings: unsalted hash records with equal passwords, one strong or guessable' do
+    %w[strong guessable].each do |klass|
+      s = unsalted_pair(klass)
+      s['credentials']['eli_hash']['crack']['difficulty'] = 'easy' if klass == 'guessable'
+      assert_warning(s, 'would grant the others without their own recipe')
+      refute_includes check(s).join("\n"), 'Pw-One-1'
+    end
+  end
+
+  test 'warnings: equal passwords that cannot batch are silent (distinct passwords, a common pair, a salted pair)' do
+    assert(warnings(unsalted_pair('strong', 'Pw-Other-3')).none? { |w| w.include?('without their own recipe') })
+    assert(warnings(unsalted_pair('common')).none? { |w| w.include?('without their own recipe') })
+    s = unsalted_pair('strong')
+    s['credentials']['eli_hash']['crack']['difficulty'] = 'hard'
+    s['credentials']['eli_hash']['salted'] = true
+    assert(warnings(s).none? { |w| w.include?('without their own recipe') }, 'a salted member neither batches nor receives')
+    s = unsalted_pair('strong')
+    rec(s)['salted'] = true
+    assert(warnings(s).none? { |w| w.include?('without their own recipe') })
+  end
+
   test 'warnings: password equals a capture secret without revealSecret' do
     s = base
     s['rooms']['office']['npcs'].last['eventMappings'] = [{ 'addCapture' => { 'targetId' => 't1', 'secret' => 'Pw-One-1' } }]

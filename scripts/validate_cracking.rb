@@ -336,6 +336,33 @@ def check_cracking(json_data)
     warn.call("#{label} account password equals a capture target's secret while social.captures.revealSecret is not true; the cracker would hand over what the capture hides") if capture_secrets.include?(password) && !reveal_secret
   end
 
+  # R1-L13: an unsalted direct hit hands over every other held unsalted record with an equal password, whatever that
+  # record's own class (OpsCracking#crack_grant!). Accounts with an unsalted hash record and equal passwords, one of them
+  # strong or guessable, would be given away without their own recipe; usually a copied NPC whose password was not changed.
+  # (Salted records neither batch nor receive a batch, so a salted pair, such as a guessable and a reused account, is silent.)
+  unsalted_groups = Hash.new { |h, k| h[k] = {} }
+  hashes.each do |_id, entry|
+    npc = cm.account_npc(json_data, entry['account'])
+    password = npc && npc['creds'].is_a?(Hash) ? npc['creds']['password'] : nil
+    next unless cm.present_string?(password)
+
+    resolved = cd.resolve(entry, npc)
+    next unless resolved && resolved[:salted] == false
+
+    crack = entry['crack'].is_a?(Hash) ? entry['crack'] : {}
+    habits = npc['habits'].is_a?(Hash) ? npc['habits'] : {}
+    unsalted_groups[password][npc['id']] = crack['password'] || habits['password']
+  end
+  unsalted_groups.each_value do |members|
+    next if members.size < 2
+
+    weak = members.select { |_npc_id, klass| %w[strong guessable].include?(klass) }.keys
+    next if weak.empty?
+
+    warn.call("accounts #{members.keys.map { |a| a.to_s[0, 40] }.sort.join(', ')} have unsalted hash records and equal passwords, and #{weak.map { |a| a.to_s[0, 40] }.sort.join(', ')} " \
+              "is strong or guessable: an unsalted crack of any of them would grant the others without their own recipe; give each account its own password")
+  end
+
   # ---- policies: accepts hash --------------------------------------------------------------
   if json_data['policies'].is_a?(Hash)
     json_data['policies'].each do |pname, policy|
