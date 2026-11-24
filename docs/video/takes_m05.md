@@ -46,3 +46,13 @@ Failed/superseded first run of t10 (no subtitle marks) moved to `tmp/delete/m05-
 
 ## Avatar
 PlayerPreference id 1 read `female_hacker_hood_v2` at the start of this pass and after the last take (run-take restores it).
+
+## Session (24 Nov): lobby retake after the room fix (commit 5fc162203)
+Avatar before: female_hacker_hood_v2. The "999 ROLLOUT" screen covered the north door of reception_lobby in t11_night_corridor (frames 79.8 and 88.8 of the old take). The crescendo shots cr_password, cr_lisa, cr_lockbox, cr_thandiwe and the rest show panels or break-room busts, not the lobby, so only t11 was affected. Scanned every sourced shot in `tools/video/edits/m05_trailer60.json`: only night_dark and night_strike (both t11) show the lobby.
+
+| id | avatar | flags | length | drop % | A/V offsets | marks | frame notes |
+|---|---|---|---|---|---|---|---|
+| t11b_night_corridor (retake of t11) | ngozi_adeyemi | unchanged: `--imports=none --start-room main_corridor --set briefing_played=true --set torres_identified=true --set recruiter_texted=true`; rec `--hide-hud --zoom-step 1` | 94.34 | 0.03 | -37 / -57 | leave-door 4.0, lobby-wait 5.74-87.74, return-door 88.85, corridor-reentered 91.35, linger-end 93.85 | PASS. Lights out at 79.5 (luminance 66 to 54, same as t11), strike dip 88.0-89.0 (about 0.15 s later than t11), lit again 89.25. Frames 79.8 and 88.8 viewed full-res: the screen now sits left of the door, the doorway is clear. Script `t11b_night_corridor.mjs` is an unchanged copy. |
+
+Edit re-pointing: `night_dark` and `night_strike` should use t11b_night_corridor.trimmed.mkv. night_dark keeps 79.0-80.6; night_strike 88.0-89.8 (was 87.9-89.7). Old t11 file kept.
+

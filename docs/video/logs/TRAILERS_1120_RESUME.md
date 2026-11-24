@@ -214,3 +214,20 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - m07 takes: sessions 1-3 done (commits cc7c572d4, 6e3b4a8a5, 9977b4860; log docs/video/takes_m07.md; handover scratchpad/m07-takes-handover.md). Round-2 lines pass: t10_briefing hook 12.44-16.56, t13c Architect 37.5-44.0. Running now: leftovers agent (t20b, t12 exchange or silent-face fallback, log t19c/t23c/t29c) on the machine; m07 edit v1 agent (no render) in parallel, handover scratchpad/m07-edit-handover.md.
 - Agents that stop "waiting on background work" can wake and start takes: TaskStop them once their batch is finished (pgrep -af run-take.sh empty).
 - After m07: render m07 v1 (render6.sh m07:16:9 m07:9:16 m07:1:1), check, tab; then m08, m09, m10 takes (one agent per mission, takes-brief.md), edits, renders. CA0 may ask for a gap before its B3 captures.
+
+## State 24 Nov, late afternoon
+
+Done since the evening note:
+- m02 v5, m04 v3, m06 v2 exported to hacktivity-videos e9f6d52 (not pushed; owner fetches/rebases and pushes). Review page v23 marks them final. Hacktivity .vtt for those three still to generate (asked AC0; Hacktivity edit needs a yes).
+- m01 v12 (card "Uncover the Plan. / Stop It.") rendered, page v24, hash 9f998550f sent; AC0 trains it as T383.
+- Game change 5 (poster over door): 5fc162203 (+ checker 58db8026e, 98b59e3d7), live screenshots checked, hash sent.
+- Game changes 1+2 (Ghost/Architect FX in game): 6a2638a46, c71b33c94, 9e58129e9, 435d721ae, 37b2e1bb3. AC0 holds T383 until the real-call-path proof (agent on :3026) passes. Tesseract in person (m10) and m09 alpha_recording not baked: owner call, placeholder "leave".
+- Hollis visemes 04af8895d (mouth-only inpaints); retake t11c_hollis; m05 lobby retake t11b_night_corridor (0f1811f5a).
+- Console beats: all six cut (CONSOLE_CLIPS.md 67fa6f631, 6e64989fa). Edits: m03 v4 msf use, m05 v5 script read, m07 v2 script read (method named: owner question), m08 shell landing (5ec2ed7b7, edf9f30a6). m09 msf run and m10 file read clips wait for their edits. m02/m04/m06 keep recon (final).
+- Music: m01 v13 Emerald Trigger 85.571 (e325d03df), m08 Shadowline Protocol 109.406 (812209979). m07 v2 freeze flashes + Architect FX (683445b44, a4d4552dc).
+
+Next:
+1. CA0 B2 capture block is running (handed over); wait for its "done".
+2. Render m07 v2, m05 v5, m03 v4, m01 v13, m08 v1 (render6.sh, one mission at a time). Check console crops in 9:16/1:1 (left-anchored cx .281), Hollis, lobby door, the m08 drop under Athena's line (ear).
+3. Review copies, page tabs (questions: m07 method text, m09 spliced strips, m08 music), hash to AC0.
+4. m09 takes (fresh Sonnet agent from takes_m09.md "Not done"), then CA0 B1, m10 takes, m09/m10 edits.

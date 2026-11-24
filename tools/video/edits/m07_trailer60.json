@@ -224,11 +224,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t11b_hollis.trimmed.mkv",
-    "in": 19.4,
-    "out": 23.4667
+    "file": "t11c_hollis.trimmed.mkv",
+    "in": 18.85,
+    "out": 22.9167
    },
-   "note": "second sentence only: voice 19.47-23.38 (first sentence 17.83-19.03 dropped); menu appears about 24; 'playtest' frames 26 and 30 stay out. Bar shows both sentences, so 16:9 UI-free. Frames 19.45 and 23.5 viewed",
+   "note": "v2: retake t11c with the new mouth-only visemes (04af8895d). Second sentence only: speech runs 18.91-22.82, entered in the closed-mouth gap 18.45-18.9; 'playtest' frames ~26 and ~30 stay out.",
    "framing": {
     "16:9": {
      "cx": 0.62,
@@ -597,11 +597,11 @@
    },
    "source": {
     "type": "clip",
-    "file": "m07_console_recon_clip.mp4",
+    "file": "m07_console_script_clip.mp4",
     "in": 0.4,
     "out": 2.2
    },
-   "note": "m07 console recon (vm_console_recon_s945, 30.37-32.97 s; crop x0-340 y0-272 of the 1024x768 console at 3x on #21242D): nmap -Pn -p- -T4, then nine open ports. MAC/vendor line below the crop. No flag, password or credential. BE_CLIPS_DIR=$HOME/video-takes-local/m07/clips",
+   "note": "v2: m07 attack-script read, cat s5sudo.sh (older full-solution take vm_console.trimmed.mkv 91.0-93.6; crop x0-1024 y0-306 at 1.875x nearest on #21242D): variables only, no values; text names the method ('sudo awk breakout', 'cat /root/flag') - owner question. Replaces the nmap recon (owner note 7).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -609,12 +609,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.281,
      "cy": 0.5,
      "zoom": 0.5625
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.281,
      "cy": 0.5,
      "zoom": 1
     }
@@ -629,7 +629,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "terminal scan output only, no credential or flag"
+    "note": "script text with variables only; names the method, no flag value, password or credential"
    }
   },
   {
@@ -1172,11 +1172,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t11b_hollis.trimmed.mkv",
-    "in": 21.0,
-    "out": 21.3333
+    "file": "t11c_hollis.trimmed.mkv",
+    "in": 20.85,
+    "out": 21.1833
    },
-   "note": "Hollis face mid-line, bar cropped off (t11b 21.0 is inside his voiced line, no 'playtest' frame). v2: frozen on 21.0 s (mouth closed, eyes open. Line to be retaken after his visemes are redone; refreeze then)",
+   "note": "v2: frozen on t11c 20.85 s (new visemes, mouth closed, eyes open).",
    "framing": {
     "16:9": {
      "cx": 0.7,
@@ -1206,7 +1206,7 @@
     "note": "portrait only"
    },
    "freeze": true,
-   "freezeAt": 21.0
+   "freezeAt": 20.85
   },
   {
    "id": "cr_scada",
