@@ -100,6 +100,16 @@ test('an mfa_approved:<owner> listener fires for a lock, by code and by phone ap
     assert.deepEqual(third.events.map(e => e.name), ['mfa_approved']);
 });
 
+test('a closed code lock keeps its pending record, so a later pass still names the owner', async () => {
+    const answers = ['verify_closed', 'verify_passed'];
+    const { events } = setup(() => answer(answers.shift()));
+    M.noteRequired('object:locker', { kind: 'code', npcId: 'moira' });
+    assert.equal((await M.verify('object:locker', '000000')).reason, 'locked');
+    assert.equal(M.pendingFor('object:locker').npcId, 'moira');
+    assert.equal((await M.verify('object:locker', '123456')).passed, true);
+    assert.equal(events.filter(e => e.name === 'mfa_approved:moira').length, 1);
+});
+
 test('a wrong code on a lock is reason wrong with no attemptsLeft, and emits mfa_failed with target detail', async () => {
     const { events } = setup(() => answer('verify_wrong'));
     M.noteRequired('door:d1', { kind: 'code', npcId: 'cy' });

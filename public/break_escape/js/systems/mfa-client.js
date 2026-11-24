@@ -196,7 +196,9 @@ function refusalResult(parsed, err) {
         return { ok: false, reason: 'stale', status, body: b, stale: b.stale === 'used' ? 'used' : 'expired' };
     }
     if (b.codeLocked === true || b.closed === true) {
-        pendingBySubject.delete(parsed.key);
+        // A PC's closed step is over; a lock's step stays live on the server (the pane stays open and
+        // the player may try again), so its pending record, and the owner it names, stay too
+        if (parsed.kind === 'pc') pendingBySubject.delete(parsed.key);
         failed(parsed, npcId, 'locked');
         return { ok: false, reason: 'locked', status, body: b, retryIn: Number.isFinite(b.retryIn) ? b.retryIn : null };
     }
