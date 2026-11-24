@@ -3518,6 +3518,7 @@ class AccessLeakScanner
     # the session rules run only for a scenario in which some PC asks some account for a second step
     @mfa_active = @priv_pcs.keys.product(@priv_npcs.keys).any? { |pc, npc| mfa_kind_at(pc, npc) != 'none' }
     # a second-step code exists only where a code device is authored, the three choices only where a policy matches numbers
+    @mfa_borrow_authored = mfa_workaround_authored?(@data, 'borrow_session')
     @mfa_code_possible = !@mfa_devices.empty?
     policies = @data['policies']
     @mfa_numbers_possible = policies.is_a?(Hash) && policies.values.any? { |p| BreakEscape::MfaModel.kind(p) == 'push_number_match' }
@@ -3735,6 +3736,23 @@ class AccessLeakScanner
     end
   end
 
+  # R2-L4: a claim is the server's answer for the owner of a PC (an unlocked screen the owner left), or for a guest an NPC's
+  # borrow left there. So it is exempt only for an account that owns a PC the answer could be about, or when the scenario
+  # authors a borrow_session workaround at all; any other account's `via: claim` is its own word.
+  def mfa_claim_exempt?(hash, npc, pcs)
+    return false unless npc && hash['via'] == 'claim'
+
+    @mfa_borrow_authored || pcs.any? { |pc| @priv_pcs[pc].is_a?(Hash) && @priv_pcs[pc]['owner'] == npc }
+  end
+
+  def mfa_workaround_authored?(node, kind)
+    case node
+    when Hash then node['do'] == kind || node.each_value.any? { |v| mfa_workaround_authored?(v, kind) }
+    when Array then node.any? { |v| mfa_workaround_authored?(v, kind) }
+    else false
+    end
+  end
+
   def mfa_session_hash?(hash)
     hash['npcId'].is_a?(String) && hash.key?('via')
   end
@@ -3748,11 +3766,23 @@ class AccessLeakScanner
   def mfa_judge_sessions(body, info, row, add)
     return unless body.is_a?(Hash)
 
+    # R1-L4, R2-L3: a session-shaped success answer is judged whatever its method or route; the sign-in, the three pass routes
+    # and the bootstrap have their own judgement, every other answer is judged as one the scanner cannot place
     case mfa_route_name(info)
-    when 'login' then mfa_judge_login(body, add) if info[:method] == 'POST' && body['success'] == true
+    when 'login'
+      if info[:method] == 'POST' && body['success'] == true then mfa_judge_login(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
     when 'mfa/verify', 'mfa/prompt', 'mfa/approve' then mfa_judge_pass(body, info, row, add) if body['success'] == true
-    when 'scenario' then mfa_judge_bootstrap(body, add) if info[:method] == 'GET'
-    when nil then mfa_judge_unplaced(body, row, add)
+    when 'scenario'
+      if info[:method] == 'GET' then mfa_judge_bootstrap(body, add)
+      else mfa_judge_unplaced(body, row, add)
+      end
+    else
+      mfa_judge_unplaced(body, row, add)
+      # a session nested under `session` (the shape of a technique answer); a desktop's own `session` is not an answer to judge
+      nested = body['session']
+      mfa_judge_unplaced(nested.merge('success' => true), row, add) if !info[:container] && nested.is_a?(Hash) && nested['npcId'].is_a?(String) && nested.key?('via')
     end
   end
 
@@ -3900,7 +3930,7 @@ class AccessLeakScanner
     npc = hash['npcId'].is_a?(String) && mfa_npc(hash['npcId']) ? hash['npcId'] : nil
     owing = mfa_owing_pcs(pcs, npc)
     return if owing.empty? && !pcs.empty?
-    return if hash['via'] == 'claim' || mfa_exempt_credential?(hash, npc, pcs)
+    return if mfa_claim_exempt?(hash, npc, pcs) || mfa_exempt_credential?(hash, npc, pcs)
     return if mode != :login && hash['via'] == 'technique'
 
     if npc && owing.size == 1
