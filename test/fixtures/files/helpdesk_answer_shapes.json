@@ -58,7 +58,7 @@
       }
     },
     "vary": [],
-    "guess": ["status: the value of the bootstrap key has no status of its own; 200 stands for the bootstrap answer"]
+    "guess": []
   },
   "keyring.reset_entry": {
     "status": 200,
@@ -142,7 +142,7 @@
   },
   "approve.own_passed": {
     "status": 200,
-    "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "approvedBy": "player" },
+    "body": { "success": true, "npcId": "wim", "username": "w.dekker", "displayName": "Wim Dekker", "via": "password", "approvedBy": "own_phone" },
     "vary": ["body.npcId", "body.username", "body.displayName"],
     "guess": []
   },

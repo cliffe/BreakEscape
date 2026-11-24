@@ -2,6 +2,7 @@
 
 require 'test_helper'
 require_relative '../../support/helpdesk_route_scenario'
+require_relative '../../support/helpdesk_reenrol_scenario'
 require_relative '../../support/helpdesk_answer_shapes'
 
 module BreakEscape
@@ -89,6 +90,78 @@ module BreakEscape
       assert_answer_shape('helpdesk.bad_request', response)
       assert_empty OWNED - HelpdeskAnswerShapes.asked, 'a helpdesk.* entry was not produced'
       assert_equal OWNED.sort, HelpdeskAnswerShapes.names.grep(/\Ahelpdesk\./).sort
+    end
+
+    # S8b unit 18: the rest of the fixture, through the real routes.
+    SECOND_STEP = HelpdeskReenrolScenario
+    Shaped = Struct.new(:status, :parsed_body)
+
+    def build_gate(kind, held: [], reset: true, saved: false)
+      data = SECOND_STEP.scenario(kind: kind)
+      SECOND_STEP.with_saved_connection(data) if saved
+      inventory = held.map { |h| SECOND_STEP.held(h) }
+      inventory << SECOND_STEP::SAVED_FILE.dup if saved
+      state = { 'encounteredNPCs' => %w[ria sam lena ian jake], 'inventory' => inventory,
+                'footholds' => KeyringLoginScenario.office_foothold }
+      state.merge!(SECOND_STEP::RESET_SAM.deep_dup) if reset
+      build_network_game(state, data)
+    end
+
+    def sign_in_first
+      post game_path('login'), params: { pc_id: 'sam_pc', username: 'sokafor', password: NetworkModelScenario::SAM_PASSWORD },
+                               as: :json
+      response.parsed_body
+    end
+
+    test 'every other entry of the fixture is produced through the real routes' do
+      HelpdeskAnswerShapes.asked.clear
+      # bootstrap and keyring (a desk grant is what puts the reset password in the keyring)
+      build_gate(nil, reset: false, saved: true)
+      get game_path('scenario'), as: :json
+      assert_answer_shape('bootstrap.helpdesk_forms', Shaped.new(200, response.parsed_body['helpdeskForms']))
+      ask(answers: HS::RIGHT_SAM)
+      get game_path('keyring'), as: :json
+      entry = response.parsed_body['entries'].find { |e| e['id'] == 'sam.reset' }
+      assert_answer_shape('keyring.reset_entry', Shaped.new(200, entry))
+      post game_path('login'), params: { pc_id: 'sam_pc', credential: 'sam_gate_rdp', foothold: KeyringLoginScenario::OFFICE },
+                               as: :json
+      assert_answer_shape('keyring.password_changed', response)
+      # code gate, re-enrolled
+      build_gate('code', held: [SECOND_STEP::FOB])
+      assert_answer_shape('login.mfa_required_own_code', Shaped.new(200, sign_in_first))
+      get game_path('mfa/device'), params: { item_id: 'sam_fob' }
+      assert_answer_shape('device.unenrolled', response)
+      get game_path('mfa/device'), params: { npc_id: 'sam' }
+      assert_answer_shape('device.own', response)
+      code = response.parsed_body['code']
+      post game_path('mfa/verify'), params: { pc_id: 'sam_pc', code: code }, as: :json
+      assert_answer_shape('verify.own_passed', response)
+      get game_path('mfa/device'), params: { npc_id: 'sam' }
+      assert_answer_shape('device.own_used', response)
+      get game_path('mfa/device'), params: { npc_id: 'jake' }
+      assert_answer_shape('device.no_device', response)
+      # push, re-enrolled
+      build_gate('push')
+      sign_in_first
+      post game_path('mfa/prompt'), params: { pc_id: 'sam_pc' }, as: :json
+      assert_answer_shape('prompt.waiting_own', response)
+      get game_path('mfa/phone'), params: { own: 1 }
+      assert_answer_shape('phone.own', response)
+      post game_path('mfa/approve'), params: { pc_id: 'sam_pc', own: 1 }, as: :json
+      assert_answer_shape('approve.own_passed', response)
+      build_gate('push', reset: false)
+      get game_path('mfa/phone'), params: { own: 1 }
+      assert_answer_shape('phone.no_phone', response)
+      # number matching, re-enrolled
+      build_gate('push_number_match')
+      assert_answer_shape('login.mfa_required_own_push', Shaped.new(200, sign_in_first))
+      post game_path('mfa/prompt'), params: { pc_id: 'sam_pc' }, as: :json
+      get game_path('mfa/phone'), params: { own: 1 }
+      assert_answer_shape('phone.own_number_match', response)
+      numbers = response.parsed_body['requests'].first['numbers']
+      post game_path('mfa/approve'), params: { pc_id: 'sam_pc', own: 1, number: numbers.first + 1000 }, as: :json
+      assert_answer_shape('approve.cancelled', response)
+      assert_empty HelpdeskAnswerShapes.unproduced_names - OWNED, 'a fixture entry is produced by no real route'
     end
 
     test 'the fixture entries this file owns have no open guesses left' do

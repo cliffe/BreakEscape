@@ -192,13 +192,18 @@ module BreakEscape
 
     # POST the player's answer to a push on the owner's phone: a number (number matching) or a
     # deny. The route is re-judged. :no_phone unless the player holds the phone.
-    def approve_sign_in!(pc_id, number: nil, deny: false)
+    # `own` says the request came through the own-phone form (the route reads `own=1`). A
+    # re-enrolled account is approved only so: through the old phone it is :no_phone, as if no such
+    # phone existed, and nothing changes. The default is false: a caller must say it.
+    def approve_sign_in!(pc_id, number: nil, deny: false, own: false)
       ctx = push_step_context(pc_id)
       return ctx[:refusal] if ctx[:refusal]
 
       pc = ctx[:pc]
       npc = ctx[:npc]
       key = pc['id'].to_s
+      return :no_phone if mfa_reenrolled?(npc['id']) && own != true
+
       if ctx[:pending]['kind'] == 'push_number_match' && deny != true && number.nil? &&
          (held_friendface_phone(npc['id']) || mfa_reenrolled?(npc['id']))
         # no usable number is a malformed request, not an answer: the step stays
@@ -207,7 +212,8 @@ module BreakEscape
 
       result = approve_second_step(ctx[:map], key, { kind: 'pc', id: key }, npc_id: npc['id'], number: number,
                                                                             deny: deny == true,
-                                                                            reenrolled: mfa_reenrolled?(npc['id']))
+                                                                            reenrolled: mfa_reenrolled?(npc['id']),
+                                                                            own_form: own == true)
       case result
       when :no_phone then :no_phone
       when :cancelled
@@ -217,7 +223,10 @@ module BreakEscape
         { status: :unprocessable_entity, body: { success: false, cancelled: true } }
       else
         approver = mfa_reenrolled?(npc['id']) || !held_friendface_phone(npc['id']) ? 'own_phone' : 'held_phone'
-        mfa_push_passed!(pc, npc, ctx[:map], ctx[:pending], approver: approver, approved_by: 'player')
+        # the answer says which phone approved: 'own_phone' for a re-enrolled account (the own-phone
+        # form), 'player' for a held phone
+        mfa_push_passed!(pc, npc, ctx[:map], ctx[:pending], approver: approver,
+                                                            approved_by: mfa_reenrolled?(npc['id']) ? 'own_phone' : 'player')
       end
     end
 

@@ -254,9 +254,9 @@ module BreakEscape
       prompt = game.prompt_sign_in!('sam_pc')
       shape('prompt.waiting_own', prompt)
       assert_not game.player_state['inventory'].to_a.any? { |i| i['type'] == 'phone_friendface' }
-      approved = game.approve_sign_in!('sam_pc')
+      approved = game.approve_sign_in!('sam_pc', own: true)
       assert_equal :ok, approved[:status]
-      assert_equal 'player', approved[:body][:approvedBy]
+      assert_equal 'own_phone', approved[:body][:approvedBy]
       shape('approve.own_passed', approved)
       row = game.log_rows_for('mfa').find { |r| r['event'] == 'mfa_prompt_approved' }
       assert_equal 'own_phone', row['detail']['approver']
@@ -269,7 +269,7 @@ module BreakEscape
       first_step(game)
       game.prompt_sign_in!('sam_pc')
       assert_equal :no_phone, game.mfa_phone_answer('sam')
-      game.approve_sign_in!('sam_pc')
+      game.approve_sign_in!('sam_pc', own: true)
       row = game.log_rows_for('mfa').find { |r| r['event'] == 'mfa_prompt_approved' }
       assert_equal 'own_phone', row['detail']['approver']
     end
@@ -301,14 +301,14 @@ module BreakEscape
       numbers = list[:requests].first[:numbers]
       assert_includes numbers, right
       wrong = numbers.find { |n| n != right }
-      cancelled = game.approve_sign_in!('sam_pc', number: wrong)
+      cancelled = game.approve_sign_in!('sam_pc', number: wrong, own: true)
       shape('approve.cancelled', cancelled)
       assert_not session?(game)
       again = first_step(game)
       game.prompt_sign_in!('sam_pc')
-      assert_equal :unprocessable_entity, game.approve_sign_in!('sam_pc')[:status]
+      assert_equal :unprocessable_entity, game.approve_sign_in!('sam_pc', own: true)[:status]
       assert_not session?(game)
-      ok = game.approve_sign_in!('sam_pc', number: again[:body][:number])
+      ok = game.approve_sign_in!('sam_pc', number: again[:body][:number], own: true)
       assert_equal :ok, ok[:status]
       assert session?(game)
     end

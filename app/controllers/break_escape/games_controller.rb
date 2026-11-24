@@ -1567,15 +1567,24 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
-    # GET /games/:id/mfa/device?item_id=
+    # GET /games/:id/mfa/device?item_id=  or  ?npc_id=
     # What a held code device shows (S8a unit 16): the only place a code reaches the browser. 404
-    # for an unknown device, 403 unless the player holds it. Reads only: no save.
+    # for an unknown device, 403 unless the player holds it. With `npc_id` (S8b): the own phone of
+    # an account a desk has re-enrolled, 403 for any other account. Reads only: no save.
     def mfa_device
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
       item_id = params[:item_id]
-      answer = item_id.is_a?(String) && !item_id.empty? ? @game.mfa_device_answer(item_id) : :not_found
+      # S8b unit 18: `npc_id` (and no item_id) reads the own phone of an account a desk has
+      # re-enrolled; both given, or neither, is the 404
+      npc_id = params[:npc_id]
+      answer = :not_found
+      if item_id.is_a?(String) && !item_id.empty? && !params.key?(:npc_id)
+        answer = @game.mfa_device_answer(item_id)
+      elsif npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:item_id)
+        answer = @game.mfa_own_device_answer(npc_id)
+      end
       case answer
       when :not_found then render json: { success: false, error: 'not found' }, status: :not_found
       when :no_device then render json: { success: false, error: 'no such device' }, status: :forbidden
@@ -1619,14 +1628,20 @@ module BreakEscape
 
     # GET /games/:id/mfa/phone?npc_id=
     # The push requests waiting on a phone the player holds: the only place the three number
-    # choices reach the browser. 403 unless that NPC's phone is held (own=1 is S8b's: the same
-    # 403). Reads only: no save.
+    # choices reach the browser. 403 unless that NPC's phone is held. `own=1` with no npc_id (S8b
+    # unit 18) lists the waiting requests of every re-enrolled account, 403 when none is; both
+    # given is the 403. Reads only: no save.
     def mfa_phone
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
       npc_id = params[:npc_id]
-      answer = npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:own) ? @game.mfa_phone_answer(npc_id) : :no_phone
+      answer = :no_phone
+      if params.key?(:own)
+        answer = @game.mfa_own_phone_answer if %w[1 true].include?(params[:own].to_s) && !params.key?(:npc_id)
+      elsif npc_id.is_a?(String) && !npc_id.empty?
+        answer = @game.mfa_phone_answer(npc_id)
+      end
       if answer == :no_phone
         render json: { success: false, error: 'no such phone' }, status: :forbidden
       else
@@ -1636,7 +1651,9 @@ module BreakEscape
 
     # POST /games/:id/mfa/approve
     # Approve (number for number matching) or deny a pending push from a held phone (pc_id,
-    # number, deny). No held phone is 403. The answers are Game#approve_sign_in!.
+    # number, deny, own). No held phone is 403. `own=1` names the own-phone form: a re-enrolled
+    # account is approved only so (S8b unit 18); an old phone's approval for it is the 403 "no such
+    # phone". The answers are Game#approve_sign_in!.
     def mfa_approve
       authorize @game if defined?(Pundit)
 
@@ -1649,7 +1666,8 @@ module BreakEscape
       number = params[:number]
       number = Integer(number, 10) if number.is_a?(String) && number.match?(/\A\d{1,3}\z/)
       number = nil unless number.is_a?(Integer)
-      result = with_game_lock { @game.approve_sign_in!(pc_id, number: number, deny: params[:deny] == true || params[:deny] == 'true') }
+      result = with_game_lock { @game.approve_sign_in!(pc_id, number: number, deny: params[:deny] == true || params[:deny] == 'true',
+                                                       own: params[:own] == true || %w[1 true].include?(params[:own].to_s)) }
       if result == :no_phone
         render json: { success: false, error: 'no such phone' }, status: :forbidden
       else
