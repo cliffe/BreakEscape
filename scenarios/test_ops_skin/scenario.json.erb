@@ -7,8 +7,42 @@
   "npcWindupMs": 0,
   "needsDebugOverlay": true,
 
+  "networkView": { "defaultSkin": "cli" },
+
   "networks": {
-    "office_lan": { "name": "Office network", "discovery": "scan" }
+    "office_lan": {
+      "name": "Office network",
+      "discovery": "scan",
+      "cli": {
+        "range": "10.20.0.0/24",
+        "hosts": { "files01": { "address": "10.20.0.10" } }
+      }
+    },
+    "guest_lan": {
+      "name": "Guest network",
+      "cli": {
+        "range": "10.40.0.0/28",
+        "hosts": { "guest_cam01": { "address": "10.40.0.4" } }
+      }
+    }
+  },
+
+  "networkLinks": [
+    ["office_lan", "guest_lan"]
+  ],
+
+  "hosts": {
+    "guest_cam01": {
+      "name": "Guest lounge camera",
+      "network": "guest_lan",
+      "sprite": "cctv_camera1",
+      "services": [
+        {
+          "name": "stream", "port": 554, "product": "Tarnwick ViewLine", "version": "1.0",
+          "cli": { "protocol": "tcp", "service": "viewline", "banner": "Tarnwick ViewLine 1.0 stream ready" }
+        }
+      ]
+    }
   },
 
   "resources": {
@@ -210,21 +244,22 @@
           "services": [
             {
               "name": "storage", "port": 445, "product": "Tarnwick FileHold", "version": "4.2",
+              "cli": { "protocol": "tcp", "service": "filehold", "banner": "Tarnwick FileHold 4.2 file service ready" },
               "weaknesses": [
                 {
-                  "id": "entry_a", "class": "unpatched", "severity": "high",
+                  "id": "entry_a", "class": "unpatched", "severity": "high", "realism": "filehold_update_lag",
                   "summary": "The storage service is behind its published fixes.",
                   "grants": { "session": { "account": "ian", "access": "user" } }
                 },
                 {
-                  "id": "entry_c", "class": "misconfig", "severity": "medium",
+                  "id": "entry_c", "class": "misconfig", "severity": "medium", "realism": "filehold_link_setting",
                   "summary": "A setting on the storage service was left open.",
                   "grants": { "credential": "file_link" }
                 }
               ],
               "decoys": [
                 {
-                  "id": "entry_b", "class": "misconfig", "severity": "low",
+                  "id": "entry_b", "class": "misconfig", "severity": "low", "realism": "filehold_release_line",
                   "summary": "The service reports an older build number.",
                   "falseBecause": "The build number is only a label. The service was updated last month."
                 }

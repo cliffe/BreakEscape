@@ -100,10 +100,11 @@ module BreakEscape
       body
     end
 
-    test 'the scenario has one discovery network, two sign-in hosts, one service with two weaknesses and a decoy, and two cards' do
+    test 'the scenario has a discovery network and an open one, two sign-in hosts, one service with two weaknesses and a decoy, and two cards' do
       build
       data = fresh.scenario_data
-      assert_equal %w[office_lan], data['networks'].keys
+      assert_equal %w[guest_lan office_lan], data['networks'].keys.sort
+      refute data['networks']['guest_lan'].key?('discovery'), 'the guest network is open'
       assert_equal 'scan', data['networks']['office_lan']['discovery']
       assert_equal %w[office_drop floor_printer].sort, data['resources'].keys.sort
       assert_equal %w[settings_review update_notes], data['techniques'].keys.sort
@@ -112,10 +113,35 @@ module BreakEscape
       assert_equal [SESSION_FINDING, CREDENTIAL_FINDING].sort, model.map { |w| w[:finding_id] }.sort
       assert_equal [DECOY], NetworkModel.decoys(data).map { |d| d[:finding_id] }
       assert_equal %w[session credential].sort, model.map { |w| w[:entry]['grants'].keys.first }.sort
-      refute data.key?('networkView')
-      refute data.key?('cli')
-      refute data.key?('realism')
+      assert_equal({ 'defaultSkin' => 'cli' }, data['networkView'])
+      assert_equal %w[guest_cam01], data['hosts'].keys
+      assert_equal({ 'entry_a' => 'filehold_update_lag', 'entry_c' => 'filehold_link_setting' },
+                   model.to_h { |w| [w[:entry]['id'], w[:entry]['realism']] })
+      assert_equal ['filehold_release_line'], NetworkModel.decoys(data).map { |d| d[:entry]['realism'] }
+      records = data['rooms']['comms_room']['objects'].find { |o| o['id'] == 'records01' }
+      refute records['services'].first.key?('cli'), 'the sign-in host with no findings keeps default output'
       assert_equal({}, state['opsUsed'].to_h)
+    end
+
+    test 'the authored fields: the range and addresses ride in the view in stages, and the open network lists its host once the session pivots' do
+      planted
+      block = view_blocks(OFFICE).find { |b| b['id'] == 'office_lan' }
+      assert_equal({ 'range' => '10.20.0.0/24' }, block['cli'])
+      assert_equal %w[office_lan], view_blocks(OFFICE).map { |b| b['id'] }, 'the open network is not reached before a session'
+      ops_scan(OFFICE, network_id: 'office_lan')
+      assert_equal '10.20.0.10', host_row('files01')['address']
+      refute host_row('records01').key?('address')
+      ops_scan(OFFICE, host_id: 'files01')
+      service = host_row('files01')['services'].first
+      assert_equal({ 'protocol' => 'tcp', 'service' => 'filehold', 'banner' => 'Tarnwick FileHold 4.2 file service ready' }, service['cli'])
+      take_cards
+      ops_check(OFFICE, host_id: 'files01', service: 'storage')
+      ALL_FINDINGS.each { |id| ops_confirm(OFFICE, id) }
+      granted(SESSION_FINDING, 'card_update')
+      guest = view_blocks(OFFICE).find { |b| b['id'] == 'guest_lan' }
+      assert_equal({ 'range' => '10.40.0.0/28' }, guest['cli'])
+      assert_equal %w[guest_cam01], guest['hosts'].map { |h| h['id'] }
+      assert_equal '10.40.0.4', guest['hosts'].first['address']
     end
 
     test 'T1: planting the box holds a foothold and the office block lists no host' do

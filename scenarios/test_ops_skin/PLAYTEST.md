@@ -7,8 +7,10 @@ the keyring entry and the server's record must be equal in the two runs.
 
 The scenario is for testing, not play. No sign, task title or brief names a host, product, version, class or summary: those strings reach
 the browser only from `GET /network`, `POST /network/scan`, `/network/check` and `/network/confirm`, and a card's works-on line only once
-a card is held. The scenario has NO `networkView`, `cli` or `realism` field yet (the schema refuses them until unit 21); the look comes
-from `--net-skin`, the stored pick or the default (Panels). Unit 23 adds the links and fields and re-runs this file.
+a card is held. Since unit 23 the scenario has `networkView.defaultSkin: "cli"`, authored `cli` fields (the office range, the file
+server's address and service, an open guest network with one camera) and a `realism` link on each finding. The look comes from
+`--net-skin`, then the stored pick, then that default (Terminal). Panels draws none of the authored text, so a Panels run proves only that
+the authored fields change nothing the Panels look shows or the game records.
 
 **Not played in the browser.** No beat sends a forged, hand-built or replayed request. The request-level checks (the same 404 for a real and an
 invented host before the sweep, the refusal codes, the sealed host's sign-in, the unplug) are in
@@ -47,6 +49,8 @@ Lobby (start): the drop box (`kit_dropbox`), the office wall port (`office_port`
 a sign and Ian. The comms room (north): the file server `files01` and the records server `records01`. One network, `office_lan` (discovery by sweep).
 Two resources on it: the open share `office_drop` and the printer `floor_printer`. Both servers sign in as Ian (`iokafor`; the password is on
 Ian's own record, not on a sign). Take both notes from the cabinet before T5.
+The open guest network `guest_lan` (range 10.40.0.0/28, linked to the office network) holds one camera, `guest_cam01`. It is listed only after
+T7's session on `files01`, which pivots to it.
 
 ## Ids for the tester and units 19, 23 and 25
 
@@ -60,6 +64,9 @@ Ian's own record, not on a sign). Take both notes from the cabinet before T5.
 | Findings (server aliases come from the answers) | `files01.storage.entry_a` (grants a user session), `entry_b` (the decoy, false), `entry_c` (grants the saved connection `file_link`) |
 | Cards | `card_update` (technique `update_notes`, fits `entry_a`), `card_settings` (technique `settings_review`, fits `entry_b` and `entry_c`) |
 | Resources | `office_drop` (open share), `floor_printer` |
+| Open network | `guest_lan`, host `guest_cam01` (service `stream`); reached only through the session on `files01` |
+| Authored text (Terminal only) | office range `10.20.0.0/24`; `files01` address `10.20.0.10`; its `storage` service word `filehold` with a banner naming Tarnwick FileHold 4.2; guest range `10.40.0.0/28`, camera address `10.40.0.4` |
+| Realism links | `entry_a` links `filehold_update_lag`, `entry_b` (the decoy) `filehold_release_line`, `entry_c` `filehold_link_setting` |
 
 ## Beats
 
@@ -76,6 +83,25 @@ Ian's own record, not on a sign). Take both notes from the cabinet before T5.
 | T9 | Unplug. | The view closes; the mark clears. | The same. | No foothold; the session on `files01` ended; `opsUsed` and the keyring entry stay. |
 
 Objectives tick in order: sweep, scan, check, confirm, use.
+
+## K3 beats: the authored fields and the default look
+
+D1 is run once, in its own fresh game and a fresh browser profile, with NO `--net-skin` value and no stored pick. The K3 checks are read in
+the Terminal run of T1 to T9 (and compared with the Panels run).
+
+| Beat | Action | Terminal shows | Panels shows | Server record |
+|---|---|---|---|---|
+| D1 | Fresh profile, no URL value. Plant the box and open the view. Press the header switch once. Reload. | The view opens in the Terminal (the scenario default). One press of the switch gives Panels and is stored; after the reload it opens in Panels. | The same rows and statuses as the Terminal had. | No request names a skin; unchanged by the switch. |
+| K3a | At the first view, before the sweep. | The office range `10.20.0.0/24` in the sweep's start lines when the sweep runs; no host address, banner or finding text yet. | Nothing authored. | Foothold only. |
+| K3b | After the sweep. | `files01` printed with `10.20.0.10`; the printer, share and `records01` print their default lines. The camera and the guest range are NOT shown. | The same four rows, no address. | `opsDiscovered` holds the network. |
+| K3c | After the scan of `files01`. | The service line with the word `filehold` and its banner naming the product and version. No advisory or output line yet. | The service tile as before. | `files01` scanned. |
+| K3d | After the check. | A version scan table, then (script scan) each finding's title and an `IDs:` line and its output lines; the decoy prints the same number of lines as the two weaknesses. At the framework prompt `search`, `info` and `use` print each finding's module and references before any confirm, the decoy and the weaknesses alike. | Three findings under the server's aliases, no extra text. | Three findings, unconfirmed. |
+| K3e | After T7's session on `files01`. | The guest network is listed with its range; its camera shows `10.40.0.4` (the open network lists its host without a sweep). | The same block and row, no address. | One session on `files01`; no extra scan row for the guest network. |
+
+After the run, give the leak scanner the captured responses (`access-leak-check.rb`): it must report no leak, and no answer may hold a link id
+(`filehold_update_lag`, `filehold_release_line`, `filehold_link_setting`), the key `realism`, or the text of any catalog entry no finding links.
+The request-level serving checks are in `test/controllers/break_escape/network_realism_link_test.rb`; the stages are also pinned in
+`access_leak_scanner_ops_skin_real_test.rb`.
 
 ## Switch beats (once, with no `--net-skin`, on `test_ops_scan`) and reruns
 

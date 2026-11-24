@@ -69,6 +69,30 @@
       "optional": false
     },
     {
+      "id": "net_guest_lan",
+      "label": "Guest network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "host_guest_cam01",
+      "label": "Guest lounge camera<br/>(device)",
+      "kind": "container",
+      "optional": false
+    },
+    {
+      "id": "pivot_files01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_records01",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
       "id": "comms_room",
       "label": "Comms room",
       "kind": "room",
@@ -182,6 +206,51 @@
       "to": "weak_files01_storage_entry_c",
       "soft": false,
       "label": "storage"
+    },
+    {
+      "from": "net_guest_lan",
+      "to": "host_guest_cam01",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_guest_lan",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "lock_files01",
+      "to": "pivot_files01",
+      "soft": false
+    },
+    {
+      "from": "pivot_files01",
+      "to": "net_guest_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_records01",
+      "soft": false
+    },
+    {
+      "from": "lock_records01",
+      "to": "pivot_records01",
+      "soft": false
+    },
+    {
+      "from": "pivot_records01",
+      "to": "net_guest_lan",
+      "soft": false,
+      "label": "pivot"
     },
     {
       "from": "lobby",

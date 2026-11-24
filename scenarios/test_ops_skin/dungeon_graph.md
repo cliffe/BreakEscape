@@ -15,8 +15,8 @@ A test floor for the two looks of the network view (S6). A lobby with a drop box
 | VM flag challenges | 0 |
 | Physical locks | 5 |
 | AND-gate convergences | 0 |
-| Rooms | 3 |
-| Puzzle graph nodes / edges | 18 / 21 |
+| Rooms | 4 |
+| Puzzle graph nodes / edges | 22 / 29 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -43,6 +43,8 @@ A test floor for the two looks of the network view (S6). A lobby with a drop box
 | Rounded rectangle | Amber | NPC in room (Rooms & Contents only) |
 
 Edges: `-->` solid = hard dependency; `-.->` dashed = soft / narrative dependency or optional path.
+  Network edges: `-.-` link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share.
+  Network edges: + then `pivot`: the network reached and a session at that host open the linked network.
   Network edges: weak_ node: a weakness a check can find on a host or device, hung from it or from its network.
   Network edges: tech_ node: a technique card, drawn to each weakness it matches; a weakness may grant a session (to the host sign-in) or a credential.
 
@@ -85,6 +87,10 @@ flowchart TD
   resource_office_drop[["Office-Drop<br/>(file share)"]]
   weak_files01_storage_entry_a["File server<br/>storage :445<br/>unpatched / high"]
   weak_files01_storage_entry_c["File server<br/>storage :445<br/>misconfig / medium"]
+  net_guest_lan("Guest network<br/>Network")
+  host_guest_cam01[["Guest lounge camera<br/>(device)"]]
+  pivot_files01((" + "))
+  pivot_records01((" + "))
   comms_room("Comms room")
   log_network_audit[("Network audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used")]
   cred_file_link{"Ian Okafor saved connection<br/>(iokafor)"}
@@ -106,6 +112,14 @@ flowchart TD
   net_office_lan -->|exposes| resource_office_drop
   net_office_lan -->|storage| weak_files01_storage_entry_a
   net_office_lan -->|storage| weak_files01_storage_entry_c
+  net_guest_lan -->|exposes| host_guest_cam01
+  net_office_lan -.-|link| net_guest_lan
+  net_office_lan --> pivot_files01
+  lock_files01 --> pivot_files01
+  pivot_files01 -->|pivot| net_guest_lan
+  net_office_lan --> pivot_records01
+  lock_records01 --> pivot_records01
+  pivot_records01 -->|pivot| net_guest_lan
   lobby --> comms_room
   cred_file_link --> lock_files01
   cred_src_card_update --> tech_update_notes
@@ -117,8 +131,9 @@ flowchart TD
 
   class lock_files01,lock_records01,jack_office_port,weak_files01_storage_entry_a,weak_files01_storage_entry_c lock
   class signin_ian,device_kit_dropbox,cred_file_link,tech_update_notes,tech_settings_review key
-  class lobby,net_office_lan,comms_room room
-  class resource_floor_printer,resource_office_drop container
+  class lobby,net_office_lan,net_guest_lan,comms_room room
+  class resource_floor_printer,resource_office_drop,host_guest_cam01 container
+  class pivot_files01,pivot_records01 gate
   class log_network_audit note
   class cred_src_card_update,cred_src_card_settings item
   class node_start start
@@ -189,6 +204,10 @@ flowchart TD
   resource_office_drop[["Office-Drop<br/>(file share)"]]
   weak_files01_storage_entry_a["File server<br/>storage :445<br/>unpatched / high"]
   weak_files01_storage_entry_c["File server<br/>storage :445<br/>misconfig / medium"]
+  net_guest_lan("Guest network<br/>Network")
+  host_guest_cam01[["Guest lounge camera<br/>(device)"]]
+  pivot_files01((" + "))
+  pivot_records01((" + "))
   comms_room("Comms room")
   log_network_audit[("Network audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used")]
   cred_file_link{"Ian Okafor saved connection<br/>(iokafor)"}
@@ -211,6 +230,14 @@ flowchart TD
   net_office_lan -->|exposes| resource_office_drop
   net_office_lan -->|storage| weak_files01_storage_entry_a
   net_office_lan -->|storage| weak_files01_storage_entry_c
+  net_guest_lan -->|exposes| host_guest_cam01
+  net_office_lan -.-|link| net_guest_lan
+  net_office_lan --> pivot_files01
+  lock_files01 --> pivot_files01
+  pivot_files01 -->|pivot| net_guest_lan
+  net_office_lan --> pivot_records01
+  lock_records01 --> pivot_records01
+  pivot_records01 -->|pivot| net_guest_lan
   lobby --> comms_room
   cred_file_link --> lock_files01
   cred_src_card_update --> tech_update_notes
@@ -222,8 +249,9 @@ flowchart TD
 
   class lock_files01,lock_records01,jack_office_port,weak_files01_storage_entry_a,weak_files01_storage_entry_c lock
   class signin_ian,device_kit_dropbox,cred_file_link,tech_update_notes,tech_settings_review key
-  class lobby,net_office_lan,comms_room room
-  class resource_floor_printer,resource_office_drop container
+  class lobby,net_office_lan,net_guest_lan,comms_room room
+  class resource_floor_printer,resource_office_drop,host_guest_cam01 container
+  class pivot_files01,pivot_records01 gate
   class log_network_audit note
   class cred_src_card_update,cred_src_card_settings item
   class aim_skin_beats aim

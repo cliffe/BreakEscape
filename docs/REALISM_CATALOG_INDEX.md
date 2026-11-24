@@ -6,6 +6,6 @@ an id is never removed or renamed, and its form never changes.
 
 | id | file | form | scenarios |
 | --- | --- | --- | --- |
-| filehold_link_setting | training_fixtures.json | advisories 1, output 2, auxiliary/4 | - |
-| filehold_release_line | training_fixtures.json | advisories 1, output 2, auxiliary/4 | - |
-| filehold_update_lag | training_fixtures.json | advisories 1, output 2, auxiliary/4 | - |
+| filehold_link_setting | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin |
+| filehold_release_line | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin |
+| filehold_update_lag | training_fixtures.json | advisories 1, output 2, auxiliary/4 | test_ops_skin |
