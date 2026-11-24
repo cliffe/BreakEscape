@@ -69,6 +69,7 @@ BreakEscape::Engine.routes.draw do
       get 'log_rows'          # Ops log reader (OPS_LOG_ROWS_PLAN.md section 6): the rows of an ops_log_terminal's source
       get 'keyring'           # Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1): the player's earned credentials, computed server-side
       post 'crack', to: 'games#crack', as: 'crack' # Offline cracking of a hash record (ops S7): one run, the server decides
+      post 'harvest_credentials', to: 'games#harvest_credentials', as: 'harvest_credentials' # Collect a sign-in PC's cached accounts (ops S5b): an admin session decides
       post 'se/landing_page', to: 'games#se_landing_page', as: 'se_landing_page' # SE: record a landing-page build server-side (phish evidence plan, Route 1)
       post 'se/phish_send',   to: 'games#se_phish_send',   as: 'se_phish_send'   # SE: record a phish send server-side (phish evidence plan, Route 2)
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'

@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :mfa_device, :mfa_verify, :mfa_prompt, :mfa_phone, :mfa_approve, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
-                                        :log_rows, :crack,
+                                        :log_rows, :crack, :harvest_credentials,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -2076,6 +2076,60 @@ module BreakEscape
       when :not_found then render json: { success: false, reason: 'not_found' }, status: :not_found
       when :no_recipe, :fact_not_held then render json: { success: false, reason: refusal.to_s }, status: :unprocessable_entity
       else render json: { success: true }.merge(result)
+      end
+    end
+
+    # S5b unit 12: POST /games/:id/harvest_credentials { pc_id [, relay | from | foothold] } (S5BC brief 4.3).
+    # An admin session at a sign-in PC collects the accounts that PC remembers. Each arrives as a row
+    # (never a password); the hash itself reaches the keyring on the next GET /keyring. Refusals in
+    # order, nothing written on any: 400 bad_request, 404 (the invented-id body of GET /container, for
+    # an unknown PC and a real one with no session alike), 403 not_reachable (route), 422 locked,
+    # 403 not_reachable (no level), 422 not_admin.
+    def harvest_credentials
+      authorize @game if defined?(Pundit)
+      response.headers['Cache-Control'] = 'no-store'
+
+      pc_id = params[:pc_id]
+      unless pc_id.is_a?(String) && !pc_id.empty? && pc_id.length <= 40
+        return render json: { success: false, reason: 'bad_request' }, status: :bad_request
+      end
+
+      answer = nil
+      refusal = nil
+      @game.with_lock do
+        info = @game.find_login_pc(pc_id)
+        if info.nil? || !@game.access_sessions[pc_id].is_a?(Hash)
+          refusal = :not_found
+        else
+          route = desktop_route_params
+          if route == :conflict || @game.desktop_refusal(info, route)
+            refusal = :not_reachable
+          elsif @game.session_locked_at?(pc_id)
+            refusal = :locked
+          else
+            level = @game.session_access(pc_id)
+            if level.nil? then refusal = :not_reachable
+            elsif level == 'user' then refusal = :not_admin
+            else
+              result = @game.harvest_cached_credentials!(pc_id)
+              if result.nil?
+                refusal = :not_reachable
+              else
+                answer = { success: true,
+                           harvested: @game.harvested_rows(pc_id, result[:added]),
+                           held: @game.harvested_rows(pc_id, result[:held]),
+                           keyringRev: @game.keyring_for_client(stamp: true)[:rev] }
+              end
+            end
+          end
+        end
+      end
+
+      case refusal
+      when :not_found then render json: { error: "Container not found: #{pc_id}" }, status: :not_found
+      when :not_reachable then render json: { success: false, reason: 'not_reachable' }, status: :forbidden
+      when :locked, :not_admin then render json: { success: false, reason: refusal.to_s }, status: :unprocessable_entity
+      else render json: answer
       end
     end
 
