@@ -5260,7 +5260,9 @@ module BreakEscape
     # generated id (roomId_type_index), as validate_unlock does. Recurses into nested
     # container `contents` so a locked archive inside a pc/desktop container resolves.
     def find_scenario_object(target_id)
-      # Second step (S8c): with gated objects in the scenario, an id resolves by id only
+      # Second step (S8c): with gated objects in the scenario, the lookup goes through
+      # resolve_unlock_target (the first match by id, name or generated id, as the plain walk
+      # below), which also judges what sits below a closed gated container
       return resolve_unlock_target(target_id)&.dig(:object) unless second_step_ids.empty?
 
       scenario_data['rooms']&.each do |room_id, room|

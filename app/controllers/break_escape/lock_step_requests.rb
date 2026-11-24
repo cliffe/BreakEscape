@@ -164,6 +164,19 @@ module BreakEscape
         (@game.second_step_ids.include?(object['id'].to_s) && !@game.step_object_open?(object))
     end
 
+    # True when the object a response is about to SERVE must be refused as an invented id is: it
+    # carries a step that is not open (an id-less one included), or sits below a closed step, or is
+    # a carried object out of reach. Judged on the object itself, found by identity or its own id,
+    # so a plain object that shares the gated one's name or id string opens nothing of it.
+    def lock_step_served_refused?(object)
+      return false if !object.is_a?(Hash) || @game.second_step_ids.empty?
+
+      return true if BreakEscape::LockStepModel.lock_step(object) && !@game.step_object_open?(object)
+
+      located = @game.locate_served_object(object)
+      located ? lock_step_scope_refused?(located) : false
+    end
+
     # True when an item the player asks to take sits below a closed step or has left the player's
     # reach. The item's own lock is no bar (a gated takeable may be carried closed).
     def lock_step_take_refused?(item)

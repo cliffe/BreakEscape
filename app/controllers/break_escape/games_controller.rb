@@ -647,6 +647,11 @@ module BreakEscape
       refusal = container_reach_refusal(located)
       return render_container_refusal(refusal, container_id, located) if refusal
 
+      # S8c R1-SERVER1: judge the object about to be served, not the one the id string resolved to
+      if located && lock_step_served_refused?(located[:object])
+        return render_error("Container not found: #{container_id}", :not_found)
+      end
+
       if located && located[:scope] && located[:scope][:type] == 'resource'
         log_share_folder_opened(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
@@ -661,6 +666,7 @@ module BreakEscape
       # Find container in scenario data
       container_data = find_container_in_scenario(container_id)
       return render_error("Container not found: #{container_id}", :not_found) unless container_data
+      return render_error("Container not found: #{container_id}", :not_found) if lock_step_served_refused?(container_data)
 
       # Check if container is unlocked (check multiple possible identifiers)
       is_unlocked = check_container_unlocked(container_id, container_data)

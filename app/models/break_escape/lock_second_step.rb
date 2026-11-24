@@ -68,6 +68,21 @@ module BreakEscape
       nil
     end
 
+    # { object:, path: } for the very object a response is about to serve (by identity, else by
+    # its own non-empty id, never by name), or nil when it is in no source. The twin of
+    # resolve_unlock_target for the exits that already hold the object: the id the request sent
+    # may be a name that another object shares, so the object served is judged, not the string.
+    def locate_served_object(object)
+      return nil unless object.is_a?(Hash)
+
+      id = object['id'].to_s
+      each_unlock_root do |root, _client_id|
+        found = walk_for_served(root, object, id, [])
+        return found if found
+      end
+      nil
+    end
+
     # Rule B: the object's id is in unlockedObjects (never a name)
     def step_object_open?(object)
       return false unless object.is_a?(Hash)
@@ -170,6 +185,18 @@ module BreakEscape
       held_usb_sticks.each { |stick| yield stick, nil }
       released_npc_containers.each { |container| yield container, nil }
       Array(scenario_data['startItemsInInventory']).each { |item| yield item, nil if item.is_a?(Hash) }
+    end
+
+    def walk_for_served(obj, target, id, path)
+      return nil unless obj.is_a?(Hash)
+      return { object: obj, path: path } if obj.equal?(target) || (!id.empty? && obj['id'] == id)
+      return nil unless obj['contents'].is_a?(Array)
+
+      obj['contents'].each do |child|
+        found = walk_for_served(child, target, id, path + [obj])
+        return found if found
+      end
+      nil
     end
 
     # Depth-first, the object before its contents. ids_only matches a gated object's id alone.
