@@ -1304,6 +1304,18 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A held code device (ops layer S8a, plan 5.3): a click in the inventory opens its scene
+    // alone, which reads the code the server shows for the held item. A loose one (takeable) is
+    // picked up by the generic path, never opened.
+    if (sprite.scenarioData.type === 'code_device' && !sprite.scenarioData.takeable) {
+        if (typeof window.startCodeDevice === 'function') {
+            window.startCodeDevice({ itemId: sprite.scenarioData.id });
+        } else {
+            window.gameAlert('Code device unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Handle the Crypto Workstation - pick it up if takeable, or use it if in inventory
     if (sprite.scenarioData.type === "workstation") {
         // If it's in inventory (marked as non-takeable), open it
