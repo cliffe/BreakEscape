@@ -65,8 +65,13 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
     post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 10 })
   end
 
+  # The account block the server builds (account_block): the NPC's id, its creds.username and its displayName.
+  DISPLAY = { 'dana' => 'Dana Reyes', 'farah' => 'Farah Nkemelu', 'eli' => 'Eli Brandt', 'deskadmin' => 'Front desk administrator',
+              'sparedesk' => 'Spare desk login' }.freeze
+  USERNAMES = { 'dana' => 'dreyes', 'farah' => 'fnkemelu', 'eli' => 'ebrandt', 'deskadmin' => 'fdadmin', 'sparedesk' => 'spare' }.freeze
+
   def acct(npc, user)
-    { 'npcId' => npc, 'username' => user, 'displayName' => npc.capitalize }
+    { 'npcId' => npc, 'username' => user, 'displayName' => DISPLAY[npc] || npc.capitalize }
   end
 
   def entry(npc, user, password)
@@ -74,8 +79,12 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       'label' => 'Cracked', 'password' => password }
   end
 
+  LABELS = { 'dana_hash' => 'Stored record: Dana', 'farah_hash' => 'Stored record: Farah', 'deskadmin_hash' => 'Stored record: desk admin',
+             'sparedesk_hash' => 'Stored record: spare desk', 'eli_hash' => 'Stored record: Eli' }.freeze
+
   def hash_row(id, npc, status: 'ready', salted: true, extra: {})
-    { 'id' => id, 'kind' => 'hash', 'source' => 'registry', 'account' => acct(npc, npc), 'label' => 'Stored record',
+    { 'id' => id, 'kind' => 'hash', 'source' => 'registry', 'account' => acct(npc, USERNAMES[npc] || npc),
+      'label' => LABELS[id] || 'Stored record',
       'token' => TOKEN, 'salted' => salted, 'status' => status }.merge(extra)
   end
 
@@ -263,7 +272,7 @@ class AccessLeakScannerCrackTest < ActiveSupport::TestCase
       row.merge('status' => 'running', 'readyInSeconds' => 9999)
     ]
     bad.each { |r| assert_includes rules([keyring([r])]), 'crack_row', r.inspect }
-    assert_empty hits([keyring([row.merge('status' => 'running', 'readyInSeconds' => 0), row.merge('id' => 'farah_hash', 'status' => 'infeasible')])])
+    assert_empty hits([keyring([row.merge('status' => 'running', 'readyInSeconds' => 0), hash_row('farah_hash', 'farah', status: 'infeasible')])])
   end
 
   test 'a hash row outside a GET /keyring entries list is a finding' do

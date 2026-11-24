@@ -68,8 +68,11 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 10 })
   end
 
+  DISPLAY = { 'dana' => 'Dana Reyes', 'farah' => 'Farah Nkemelu', 'eli' => 'Eli Brandt', 'deskadmin' => 'Front desk administrator',
+              'sparedesk' => 'Spare desk login' }.freeze
+
   def acct(npc, user)
-    { 'npcId' => npc, 'username' => user, 'displayName' => npc.capitalize }
+    { 'npcId' => npc, 'username' => user, 'displayName' => DISPLAY[npc] || npc.capitalize }
   end
 
   def entry(npc, user, password)
@@ -77,8 +80,12 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
       'label' => 'Cracked', 'password' => password }
   end
 
+  LABELS = { 'dana_hash' => 'Stored record: Dana', 'farah_hash' => 'Stored record: Farah', 'deskadmin_hash' => 'Stored record: desk admin',
+             'sparedesk_hash' => 'Stored record: spare desk', 'eli_hash' => 'Stored record: Eli' }.freeze
+
   def hash_row(id, npc, status: 'ready', salted: true, extra: {})
-    { 'id' => id, 'kind' => 'hash', 'source' => 'registry', 'account' => acct(npc, npc), 'label' => 'Stored record',
+    { 'id' => id, 'kind' => 'hash', 'source' => 'registry', 'account' => acct(npc, USERS[npc] || npc),
+      'label' => LABELS[id] || 'Stored record',
       'token' => TOKEN, 'salted' => salted, 'status' => status }.merge(extra)
   end
 
@@ -169,14 +176,14 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
   # ---- R1-L10: a row says cracked only for an account something granted ------------------------------
 
   test 'R1-L10: a hash row that says cracked for an account nothing granted is a finding' do
-    row = keyring([hash_row('eli_hash', 'eli', status: 'cracked')])
+    row = keyring([hash_row('eli_hash', 'eli', salted: false, status: 'cracked')])
     assert_includes rules([row]), 'crack_row'
     assert_includes rules([row], game: full_game), 'crack_row'
     during_wait = [running, keyring([hash_row('dana_hash', 'dana', status: 'cracked')])]
     assert_includes rules(during_wait, game: full_game), 'crack_row'
     # earned by a crack, or held by another route in the game, it passes
     assert_empty scan([running, cracked_answer('dana'), keyring([hash_row('dana_hash', 'dana', status: 'cracked'), own_entry('dana')])], game: full_game)
-    assert_empty scan([keyring([hash_row('eli_hash', 'eli', status: 'cracked')])], game: full_game(held_other: ['eli']))
+    assert_empty scan([keyring([hash_row('eli_hash', 'eli', salted: false, status: 'cracked')])], game: full_game(held_other: ['eli']))
   end
 
   # R1-L4: routes and statuses are matched exactly for the two crack uses
@@ -239,5 +246,60 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     data['credentials'].each_value { |e| e['salted'] = false if e['kind'] == 'hash' }
     lines = [post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 10 })].each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }
     assert_includes AccessLeakScanner.new(data).scan(lines).map(&:rule), 'crack_answer'
+  end
+
+  # ---- R1-L6, R1-L7, R1-L8: a row's and an entry's values are the server's --------------------------------
+
+  test 'R1-L6: a hash row whose values are not the record\'s is a finding' do
+    bad = [
+      hash_row('dana_hash', 'eli'),
+      hash_row('dana_hash', 'dana', extra: { 'account' => acct('dana', 'dreyes').merge('username' => 'someone') }),
+      hash_row('dana_hash', 'dana', extra: { 'account' => acct('dana', 'dreyes').merge('displayName' => 'Eli Brandt') }),
+      hash_row('dana_hash', 'dana', extra: { 'gainedAt' => 'hit', 'forThisPc' => 'match', 'accepted' => 'recipe: common' }),
+      hash_row('dana_hash', 'dana', extra: { 'gainedAt' => 1.5 }),
+      hash_row('dana_hash', 'dana', extra: { 'forThisPc' => 'match' }),
+      hash_row('dana_hash', 'dana', extra: { 'accepted' => 'recipe: common' }),
+      hash_row('dana_hash', 'dana', extra: { 'label' => 'guessable: dana_pet dana_town dana_year' }),
+      hash_row('dana_hash', 'dana', salted: false),
+      hash_row('deskadmin_hash', 'deskadmin', salted: true)
+    ]
+    bad.each { |r| assert_includes rules([keyring([r])], game: full_game), 'crack_row', r.inspect }
+    bad.each { |r| assert_includes rules([keyring([r])]), 'crack_row', r.inspect }
+    ok = [hash_row('dana_hash', 'dana', extra: { 'gainedAt' => 12, 'forThisPc' => true, 'accepted' => false }),
+          hash_row('sparedesk_hash', 'sparedesk', salted: false), hash_row('eli_hash', 'eli', salted: false)]
+    assert_empty scan([keyring(ok)], game: full_game)
+  end
+
+  test 'R1-L7: given a game that can say the token, any other token is a finding' do
+    tokened = Class.new(Game) do
+      def crack_token(id, _entry, _npc)
+        id == 'dana_hash' ? 'ABCD-EFGH-JKLM-NPQR-STUV-2345' : 'WXYZ-2345-6789-ABCD-EFGH-JKLM'
+      end
+    end
+    game = tokened.new(nil, FACTS, [], [])
+    assert_empty scan([keyring([hash_row('dana_hash', 'dana'), hash_row('farah_hash', 'farah', extra: { 'token' => 'WXYZ-2345-6789-ABCD-EFGH-JKLM' })])], game: game)
+    forged = hash_row('dana_hash', 'dana', extra: { 'token' => 'AAAA-AAAA-AAAA-AAAA-AAAA-AAAA' })
+    assert_includes rules([keyring([forged])], game: game), 'crack_row'
+    # the other record's token on this record is no better
+    assert_includes rules([keyring([hash_row('farah_hash', 'farah')])], game: game), 'crack_row'
+  end
+
+  test 'R1-L8: a cracked entry has the server account block and label, and typed optional keys' do
+    bad = [
+      own_entry('dana').merge('account' => acct('dana', 'someone_else')),
+      own_entry('dana').merge('account' => acct('dana', 'dreyes').merge('displayName' => 'Somebody')),
+      own_entry('dana').merge('label' => 'guessable: dana_pet'),
+      own_entry('dana').merge('label' => ''),
+      own_entry('dana').merge('gainedAt' => 'x'),
+      own_entry('dana').merge('forThisPc' => 'match'),
+      own_entry('dana').merge('accepted' => 1)
+    ]
+    bad.each do |e|
+      found = rules([running, cracked_answer('dana'), keyring([e])], game: full_game)
+      assert_includes found, 'crack_unearned', e.inspect
+      assert_includes found, 'password', e.inspect
+    end
+    typed = own_entry('dana').merge('gainedAt' => 5, 'forThisPc' => false, 'accepted' => true)
+    assert_empty scan([running, cracked_answer('dana'), keyring([typed])], game: full_game)
   end
 end

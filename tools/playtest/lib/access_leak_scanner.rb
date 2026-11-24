@@ -3647,9 +3647,8 @@ class AccessLeakScanner
     return nil unless id.is_a?(String) && id.end_with?('.cracked')
 
     npc_id = id.delete_suffix('.cracked')
-    account = entry['account']
-    return nil unless @crack_earned.include?(npc_id) && account.is_a?(Hash) && account['npcId'] == npc_id
-    return nil unless (account.keys - CRACK_ACCOUNT_KEYS).empty?
+    return nil unless @crack_earned.include?(npc_id) && entry['label'] == 'Cracked' && crack_scope_keys_ok?(entry)
+    return nil unless entry['account'] == crack_account_block(BreakEscape::CredentialModel.account_npc(@data, npc_id))
 
     password = entry['password']
     password.is_a?(String) && password == @crack_npc_password[npc_id] ? npc_id : nil
@@ -3726,18 +3725,50 @@ class AccessLeakScanner
     scan_crack_waits(body, ctx, add)
   end
 
+  # A hash row is the server's row (OpsCracking#hash_keyring_entry): the registry record's own values, nothing free.
   def crack_row_ok?(row)
     return false unless (row.keys - CRACK_ROW_KEYS).empty? && row['source'] == 'registry' && row['id'].is_a?(String)
-    return false unless @crack_hash_ids.include?(row['id']) && CRACK_ROW_STATUSES.include?(row['status'])
-    return false unless row['token'].is_a?(String) && row['token'].match?(CRACK_TOKEN) && [true, false].include?(row['salted'])
 
-    account = row['account']
-    return false unless account.is_a?(Hash) && (account.keys - CRACK_ACCOUNT_KEYS).empty? && account['npcId'].is_a?(String)
-
-    return false if row['status'] == 'cracked' && !crack_account_granted?(account['npcId'])
+    record = @crack_records.find { |r| r[:id] == row['id'] }
+    return false unless record && record[:resolved] && CRACK_ROW_STATUSES.include?(row['status'])
+    return false unless row['label'] == crack_record_label(record[:entry]) && row['kind'] == 'hash'
+    return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
+    return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
+    return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
 
     wait = row['readyInSeconds']
-    row['status'] == 'running' ? wait.is_a?(Integer) && @crack_max_wait.positive? && wait.between?(0, @crack_max_wait) : !row.key?('readyInSeconds')
+    return !row.key?('readyInSeconds') unless row['status'] == 'running'
+
+    wait.is_a?(Integer) && @crack_max_wait.positive? && wait.between?(0, @crack_max_wait)
+  end
+
+  # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
+  def crack_token_ok?(token, record)
+    return false unless token.is_a?(String) && token.match?(CRACK_TOKEN)
+    return true unless @game.respond_to?(:crack_token)
+
+    token == @game.crack_token(record[:id], record[:entry], record[:npc])
+  end
+
+  # gainedAt, forThisPc and accepted, when present: an Integer and two booleans.
+  def crack_scope_keys_ok?(hash)
+    (!hash.key?('gainedAt') || hash['gainedAt'].is_a?(Integer)) &&
+      %w[forThisPc accepted].all? { |k| !hash.key?(k) || [true, false].include?(hash[k]) }
+  end
+
+  # OpsCracking credential_label: the record's own label, else its held item's name, else empty.
+  def crack_record_label(entry)
+    return entry['label'] if BreakEscape::CredentialModel.present_string?(entry['label'])
+
+    definition = BreakEscape::CredentialModel.item_definition(@data, entry.dig('proof', 'held'))
+    definition.is_a?(Hash) && BreakEscape::CredentialModel.present_string?(definition['name']) ? definition['name'] : ''
+  end
+
+  # CredentialKeyring#account_block.
+  def crack_account_block(npc)
+    return nil unless npc.is_a?(Hash)
+
+    { 'npcId' => npc['id'], 'username' => npc.dig('creds', 'username'), 'displayName' => npc['displayName'] || npc['id'] }
   end
 
   # A row may say cracked only for an account a cracked answer granted in this scan, or one the game holds by another route.
