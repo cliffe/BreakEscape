@@ -25,7 +25,7 @@ module BreakEscape
       player_state['accountResets']
     end
 
-    # { "<deskId>|<normalised username>" => { 'n' =>, 'seq' =>, 'stoppedAt' =>? } }
+    # { "<deskId>|<normalised username>" => { 'n' =>, 'at' =>, 'stoppedAt' =>? } }; 'at' is the last refusal
     # Writes on first use: for writers only; readers use the view (helpdesk_tries_view).
     def helpdesk_tries
       player_state['helpdeskTries'] = {} unless player_state['helpdeskTries'].is_a?(Hash)
@@ -83,7 +83,7 @@ module BreakEscape
       typed = AccessIdentities.normalise_username(HelpdeskModel.clean_username(username.to_s))
       key = HelpdeskModel.tries_key(desk_id, typed)
       now = mfa_now
-      lift_helpdesk_stop!(key, now)
+      lift_spent_helpdesk_try!(key, now)
       entry = helpdesk_tries_view[key]
       if entry.is_a?(Hash) && entry['stoppedAt'].is_a?(Integer)
         retry_in = entry['stoppedAt'] + HelpdeskModel::DESK_STOP_SECONDS - now
@@ -164,12 +164,22 @@ module BreakEscape
       session.is_a?(Hash) && !session_locked?(session)
     end
 
-    # A stop older than the stop length is lifted (entry deleted, count back to 0)
-    def lift_helpdesk_stop!(key, now)
+    # An entry is spent when its stop, or else its last refusal, is a full stop length old: a spent
+    # entry is deleted (count back to 0), stopped or not. A live entry is never dropped.
+    def lift_spent_helpdesk_try!(key, now)
       entry = helpdesk_tries_view[key]
-      return unless entry.is_a?(Hash) && entry['stoppedAt'].is_a?(Integer)
+      helpdesk_tries.delete(key) if helpdesk_try_spent?(entry, now)
+    end
 
-      helpdesk_tries.delete(key) if now - entry['stoppedAt'] >= HelpdeskModel::DESK_STOP_SECONDS
+    def helpdesk_try_last(entry)
+      entry['stoppedAt'].is_a?(Integer) ? entry['stoppedAt'] : entry['at']
+    end
+
+    def helpdesk_try_spent?(entry, now)
+      return false unless entry.is_a?(Hash)
+
+      last = helpdesk_try_last(entry)
+      last.is_a?(Integer) && now - last >= HelpdeskModel::DESK_STOP_SECONDS
     end
 
     # The rule, and (for a password) the account having something to issue. The rule is always
@@ -195,12 +205,12 @@ module BreakEscape
       if entry.is_a?(Hash)
         entry['n'] = entry['n'].to_i + 1
       else
-        retry_in = make_room_for_helpdesk_try!(tries, now)
+        retry_in = make_room_for_helpdesk_try!(tries, desk_id, now)
         return helpdesk_blocked_by_cap!(desk_id, typed, what, retry_in) if retry_in
 
-        seq = tries.values.map { |e| e.is_a?(Hash) ? e['seq'].to_i : 0 }.max.to_i + 1
-        entry = tries[key] = { 'n' => 1, 'seq' => seq }
+        entry = tries[key] = { 'n' => 1 }
       end
+      entry['at'] = now
       left = [desk['maxTries'] - entry['n'], 0].max
       entry['stoppedAt'] = now if left.zero?
       log_helpdesk_request(desk_id, typed, what, 'refused')
@@ -208,22 +218,18 @@ module BreakEscape
       { status: :unprocessable_entity, body: { reason: 'refused', triesLeft: left } }
     end
 
-    # The tries table holds at most TRIES_CAP names, accounts and others alike, so a refusal never
-    # tells one from the other. Room is made by dropping stops that have run out, then the oldest
-    # name that is not stopped; a stopped name is never dropped (junk names cannot lift a stop).
-    # Answers nil when there is room, else the seconds until the soonest stop ends: every held
-    # name is stopped, and a new name is answered as stopped, account or not.
-    def make_room_for_helpdesk_try!(tries, now)
-      tries.delete_if do |_k, e|
-        e.is_a?(Hash) && e['stoppedAt'].is_a?(Integer) && now - e['stoppedAt'] >= HelpdeskModel::DESK_STOP_SECONDS
-      end
-      while tries.size >= HelpdeskModel::TRIES_CAP
-        loose = tries.reject { |_k, e| e.is_a?(Hash) && e['stoppedAt'].is_a?(Integer) }
-        return tries.values.map { |e| e['stoppedAt'].to_i + HelpdeskModel::DESK_STOP_SECONDS - now }.min if loose.empty?
+    # Each desk's table holds at most TRIES_CAP names, accounts and others alike, so a refusal never
+    # tells one from the other. Room is made by dropping spent entries only; a live entry (a count or
+    # a stop) is never dropped, so other names cannot wipe it. Answers nil when there is room, else
+    # the seconds until the soonest entry of this desk is spent: a new name is then answered as
+    # stopped, account or not.
+    def make_room_for_helpdesk_try!(tries, desk_id, now)
+      tries.delete_if { |_k, e| helpdesk_try_spent?(e, now) }
+      prefix = "#{desk_id}|"
+      mine = tries.select { |k, e| k.start_with?(prefix) && e.is_a?(Hash) }
+      return nil if mine.size < HelpdeskModel::TRIES_CAP
 
-        tries.delete(loose.min_by { |_k, e| e.is_a?(Hash) ? e['seq'].to_i : 0 }.first)
-      end
-      nil
+      mine.values.map { |e| (helpdesk_try_last(e) || now) + HelpdeskModel::DESK_STOP_SECONDS - now }.min
     end
 
     def helpdesk_blocked_by_cap!(desk_id, typed, what, retry_in)

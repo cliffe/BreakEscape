@@ -96,11 +96,67 @@ module BreakEscape
       assert @game.reload.send(:password_reset_untyped?, 'sam')
     end
 
-    test 'R1-SERVER1: another account pending step is kept, and a second-factor reset keeps a step' do
+    test 'R1-SERVER1: a second-factor reset keeps the account step' do
       build(kind: 'push', held: [HR::PHONE])
       first_step
       ask(what: 'mfa')
       assert state['mfaPending'].key?('sam_pc'), 'only a password reset drops the step'
+    end
+
+    test 'R2-SERVER2: a password grant for Sam drops only Sam steps, not another account at another PC' do
+      build(kind: 'push', held: [HR::PHONE])
+      first_step
+      @game.reload
+      @game.player_state['mfaPending']['other_pc'] =
+        { 'id' => 'other_pc', 'kind' => 'push', 'npcId' => 'lena', 'at' => T0.to_i, 'n' => 0, 'tries' => 0 }
+      @game.save!
+      ask
+      assert_response :success
+      assert_not state['mfaPending'].key?('sam_pc'), 'Sam record went'
+      assert state['mfaPending'].key?('other_pc'), 'the other account record stayed'
+    end
+
+    # --- R2-SERVER1: the tries table through the real route -------------------------------------
+
+    test 'R2-SERVER1: 200 other names cannot wipe a real account count, so the stop still comes' do
+      build
+      2.times { ask(answers: HS::WRONG) }
+      HelpdeskModel::TRIES_CAP.times { |i| ask(username: "junk#{i}", answers: HS::WRONG) }
+      ask(answers: HS::WRONG)
+      assert_equal 'refused', json['reason']
+      assert_equal 0, json['triesLeft']
+      ask(answers: HS::WRONG)
+      assert_equal 'blocked', json['reason']
+    end
+
+    test 'R2-SERVER1: a stop cannot be wiped by other names, and an account and a non-account lapse alike' do
+      build
+      3.times { ask(answers: HS::WRONG) }
+      3.times { ask(username: 'zed', answers: HS::WRONG) }
+      (HelpdeskModel::TRIES_CAP + 20).times { |i| ask(username: "junk#{i}", answers: HS::WRONG) }
+      [{}, { username: 'zed' }].each do |who|
+        ask(who.merge(answers: HS::WRONG))
+        assert_equal 'blocked', json['reason']
+      end
+      travel_to T0 + HelpdeskModel::DESK_STOP_SECONDS
+      ask(answers: HS::WRONG)
+      real = [response.status, json]
+      ask(username: 'zed', answers: HS::WRONG)
+      assert_equal real, [response.status, json]
+      assert_equal({ 'reason' => 'refused', 'triesLeft' => 2 }, json)
+    end
+
+    test 'R2-SERVER1: a full table refuses a new name alike, account or not, and is served again once an entry is spent' do
+      build
+      HelpdeskModel::TRIES_CAP.times { |i| ask(username: "junk#{i}", answers: HS::WRONG) }
+      ask(username: 'sokafor', answers: HS::WRONG)
+      real = [response.status, json]
+      ask(username: 'zed', answers: HS::WRONG)
+      assert_equal real, [response.status, json]
+      assert_equal({ 'reason' => 'blocked', 'retryIn' => 300 }, json)
+      travel_to T0 + 300
+      ask(username: 'sokafor', answers: HS::WRONG)
+      assert_equal 'refused', json['reason'], 'no permanent denial'
     end
 
     # --- R1-SERVER3 and 4: nothing tells an account from a name that is not one ------------------

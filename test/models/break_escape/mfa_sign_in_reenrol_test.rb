@@ -355,6 +355,15 @@ module BreakEscape
       assert_nil @game.player_state['mfaAccounts']&.dig('sam')
     end
 
+    test 'R2-SERVER3: reading the own phone creates no mfaPending key when the game has none' do
+      @game.player_state.delete('mfaPending')
+      @game.save!
+      before = @game.reload.player_state.deep_dup
+      refute before.key?('mfaPending')
+      @game.mfa_own_phone_answer
+      assert_equal before, @game.player_state
+    end
+
     test 'R1-SERVER6: a used window still reads as used without creating an entry' do
       @game.player_state['mfaAccounts'] = { 'sam' => { 'used' => (T0.to_i / MfaModel::STEP_SECONDS) + 5 } }
       assert_equal true, @game.mfa_own_device_answer('sam')[:used]

@@ -170,17 +170,62 @@ module BreakEscape
       assert_equal :ok, ask(user: 'lfox', answers: { 'staff_no' => 'B-2210', 'manager' => 'Kofi Adair' })[:status]
     end
 
-    test 'the tries cap holds 200 names, accounts and others alike, dropping the oldest that is not stopped' do
+    test 'R2-SERVER1: two wrong, 200 other names, a third wrong is triesLeft 0 and the fourth blocked' do
+      2.times { ask(answers: WRONG) }
+      HelpdeskModel::TRIES_CAP.times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      assert_equal 0, ask(answers: WRONG)[:body][:triesLeft]
+      assert_equal 'blocked', ask(answers: WRONG)[:body][:reason]
+    end
+
+    test 'R2-SERVER1: no live entry is ever dropped; the table of one desk stops at 200 names' do
       ask(answers: WRONG)
       (HelpdeskModel::TRIES_CAP + 5).times { |i| ask(user: "ghost#{i}", answers: WRONG) }
       keys = @game.helpdesk_tries.keys
       assert_equal HelpdeskModel::TRIES_CAP, keys.size
-      refute_includes keys, 'it_desk|sokafor'
-      refute_includes keys, 'it_desk|ghost0'
-      assert_includes keys, "it_desk|ghost#{HelpdeskModel::TRIES_CAP + 4}"
+      assert_includes keys, 'it_desk|sokafor'
+      assert_includes keys, 'it_desk|ghost0'
+      refute_includes keys, "it_desk|ghost#{HelpdeskModel::TRIES_CAP + 4}"
     end
 
-    test 'a stopped name is never dropped by the cap; a stop that has run out is' do
+    test 'R2-SERVER1: a count is forgotten after five quiet minutes, an account and a non-account alike' do
+      2.times { ask(answers: WRONG) }
+      2.times { ask(user: 'nobody', answers: WRONG) }
+      travel_to T0 + 299
+      assert_equal 0, ask(user: 'nobody', answers: WRONG)[:body][:triesLeft]
+      travel_to T0 + 301
+      assert_equal 2, ask(answers: WRONG)[:body][:triesLeft], 'the account count lapsed'
+      travel_to T0 + 299 + 300
+      assert_equal 2, ask(user: 'nobody', answers: WRONG)[:body][:triesLeft], 'the stop of a non-account lapsed'
+    end
+
+    test 'R2-SERVER1: a refusal renews the quiet time, so a slow guesser is still counted' do
+      ask(answers: WRONG)
+      travel_to T0 + 200
+      ask(answers: WRONG)
+      travel_to T0 + 450
+      assert_equal 0, ask(answers: WRONG)[:body][:triesLeft]
+    end
+
+    test 'R2-SERVER1: a full table answers a new name blocked with the time to the soonest spent entry, account or not' do
+      HelpdeskModel::TRIES_CAP.times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      travel_to T0 + 100
+      # a new account name and a new non-account name meet the same full table
+      fresh = ask(user: 'lfox', answers: WRONG)
+      none = ask(user: 'zzz', answers: WRONG)
+      assert_equal({ reason: 'blocked', retryIn: 200 }, fresh[:body])
+      assert_equal fresh, none
+      travel_to T0 + 300
+      assert_equal 'refused', ask(user: 'lfox', answers: WRONG)[:body][:reason]
+    end
+
+    test 'R2-SERVER1: the cap is per desk' do
+      @game.scenario_data['helpdesks']['id_desk'] = desk
+      HelpdeskModel::TRIES_CAP.times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      assert_equal 'blocked', ask(user: 'late', answers: WRONG)[:body][:reason]
+      assert_equal 'refused', ask(user: 'late', answers: WRONG, desk_id: 'id_desk')[:body][:reason]
+    end
+
+    test 'R2-SERVER1: a stopped name is never dropped by other names; a stop that has run out is' do
       3.times { ask(answers: WRONG) }
       (HelpdeskModel::TRIES_CAP + 5).times { |i| ask(user: "ghost#{i}", answers: WRONG) }
       assert_equal 'blocked', ask(answers: WRONG)[:body][:reason]

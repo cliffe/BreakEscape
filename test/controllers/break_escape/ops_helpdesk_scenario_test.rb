@@ -582,6 +582,25 @@ module BreakEscape
                    committed.map { |r| r.values_at('method', 'path', 'query', 'status') },
                    'the committed capture is out of date: run this file with CAPTURE=1'
       assert_equal @log.map { |r| r.slice('login', 'inv') }, committed.map { |r| r.slice('login', 'inv') }
+      # R2-SERVER4: and the answer bodies too, with the values that differ per game set aside
+      @log.zip(committed).each_with_index do |(now, then_), i|
+        assert_equal normalised_body(then_), normalised_body(now),
+                     "row #{i} (#{now['method']} #{now['path']}): the answer body drifted from the committed capture; run this file with CAPTURE=1"
+      end
+    end
+
+    # A row's body with the per-game values (the six-digit `code` of a code device, and the `rev` and
+    # row `id` of the log rows) replaced by a marker; everything else must match
+    def normalised_body(row)
+      per_game = row['path'].end_with?('/mfa/device') ? %w[code] : (row['path'].end_with?('/log_rows') ? %w[rev id] : [])
+      scrub = lambda do |v|
+        case v
+        when Hash then v.to_h { |k, x| [k, per_game.include?(k) ? '<per game>' : scrub.call(x)] }
+        when Array then v.map { |x| scrub.call(x) }
+        else v
+        end
+      end
+      scrub.call(row['body'])
     end
 
     def write_capture

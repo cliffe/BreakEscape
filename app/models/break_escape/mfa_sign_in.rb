@@ -272,7 +272,8 @@ module BreakEscape
 
     # The waiting push requests of this owner's accounts at sign-in PCs, as the phone lists them
     def phone_request_rows(npc_id)
-      mine = mfa_pending_map.select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
+      stored = player_state['mfaPending']
+      mine = (stored.is_a?(Hash) ? stored : {}).select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
       npc = account_npcs.find { |n| n['id'].to_s == npc_id.to_s }
       username = npc && npc['creds'].is_a?(Hash) ? npc['creds']['username'] : nil
       second_step_requests([{ kind: 'pc', map: mine }], npc_id: npc_id).filter_map do |entry|
