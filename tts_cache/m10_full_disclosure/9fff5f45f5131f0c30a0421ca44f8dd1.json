@@ -9,5 +9,13 @@
   "scenario": "m10_full_disclosure",
   "source": "generate",
   "generated": "2026-11-17",
-  "recorded_at": "2026-11-17T11:05:52Z"
+  "recorded_at": "2026-11-17T11:05:52Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/9fff5f45f5131f0c30a0421ca44f8dd1.mp3",
+    "clean_md5": "e33c4510262de18ef00ddca3740328ff",
+    "baked_md5": "5bc83209fa44b1898ca0d10c426768c9",
+    "baked": "2026-11-24"
+  }
 }

@@ -9,5 +9,13 @@
   "scenario": "m02_ransomed_trust",
   "source": "generate",
   "generated": "2026-11-11",
-  "recorded_at": "2026-11-11T20:27:25Z"
+  "recorded_at": "2026-11-11T20:27:25Z",
+  "voice_fx": {
+    "preset": "entropy-comms",
+    "recipe": "entropy-comms-b-2026-11-24",
+    "clean": "clean/d0cf683d55265f2d02a6cab26d2cf3df.mp3",
+    "clean_md5": "3d181d3b48b505293d6c58f730c0ef26",
+    "baked_md5": "18b897453918e9b05ef6b11d8f3169b7",
+    "baked": "2026-11-24"
+  }
 }
