@@ -17,7 +17,9 @@ test('the module imports nothing and names no DOM', () => {
 });
 
 test('every export equals the scene\'s export of the same name', () => {
-    const names = Object.keys(T).filter(n => n !== 'COMPROMISED_TEXT');
+    // Texts the scene never exported: one private constant, and three added for the skins.
+    const NOT_IN_SCENE = ['COMPROMISED_TEXT', 'SCAN_BAR_TEXT', 'REQUEST_FAILED_TEXT', 'SKIN_LABELS'];
+    const names = Object.keys(T).filter(n => !NOT_IN_SCENE.includes(n));
     assert.ok(names.length >= 30);
     for (const n of names) {
         assert.equal(typeof T[n], typeof scene[n], n);
