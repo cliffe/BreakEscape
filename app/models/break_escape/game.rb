@@ -2542,6 +2542,9 @@ module BreakEscape
       # strips them again as a second line of defence.
       BreakEscape::DeclaredGrants.strip_all_grant_contents!(filtered)
 
+      forms = helpdesk_forms_for_client
+      filtered['helpdeskForms'] = forms unless forms.nil?
+
       filtered
     end
 
@@ -3605,6 +3608,13 @@ module BreakEscape
       "#{owner['creds']['username']} / #{password}"
     end
 
+    # Whether any desk reset is held. The helpdesk accessors write an empty `accountResets` into
+    # player_state when it is missing, which would change every saved game that has no desk; a
+    # sign-in reads them only once the key exists as a non-empty Hash.
+    def resets_held?
+      player_state['accountResets'].is_a?(Hash) && !player_state['accountResets'].empty?
+    end
+
     # POST /login with a username and password (section 6). Returns { status:, body: }.
     # A wrong password and an unknown username answer exactly alike, counted per PC and
     # normalised username; no letter-case hint.
@@ -3638,7 +3648,7 @@ module BreakEscape
       end
 
       npc = account_for_username(normalised)
-      secret = npc && npc['creds']['password']
+      secret = npc && (resets_held? ? effective_password(npc) : npc['creds']['password'])
       if secret.is_a?(String) && !secret.empty? && password.to_s == secret
         unless pc_admits_account?(pc, npc)
           # Ops log L1b: a right password the PC does not admit; saves only when the row stored
@@ -3658,6 +3668,7 @@ module BreakEscape
 
         login_failures.delete(key)
         from = from_given ? from : nil
+        note_typed_sign_in!(npc['id']) if resets_held?
         ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
         save!
         answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
