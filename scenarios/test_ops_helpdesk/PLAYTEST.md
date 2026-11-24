@@ -7,6 +7,8 @@ The run never types a forged or hand-built request, never waits five minutes (th
 **Holding for the whole run.**
 - The X on a PC screen closes the desktop and keeps the session; only Start > Sign out ends it.
 - A reload puts the player at the start point in the Front Office; click the PC again to reopen a pane.
+- The counter in the Front Office (about x 280, y 130) blocks the direct walk to the Records door, and the Service Desk's south door has the same counter. Walk round the west end of it and approach the door from about (283, 81); a straight line ends with `did-not-cross`.
+- After a form closes, the desk NPC speaks its scripted verdict first ("That matches our records.", "I can't verify you.", "I can't take more requests for that account just now.", or "I can't do that one." when nothing was sent), then "Anything else?" replaces it with the choices. The verdict is on screen only for its reading time, so look straight after the close. The headless chat test `helpdesk-ink-tag.test.mjs` proves the order; the second browser playtest (commit 65b993fe1) saw only "Anything else?", so say which you saw. The bark "Next, please." shows only after you leave the chat.
 - The form is a paper request: the "Username" field, an "Ask for" choice ("A password reset" or "A sign-in approval reset") only when the desk does both, and one field per question ("Staff number", "Line manager"). Close it with its Close button.
 
 ## Setup
@@ -14,7 +16,7 @@ The run never types a forged or hand-built request, never waits five minutes (th
 Keyless server on ports 3011 to 3013 (never :3000, :3001, :3002, :3085 or :3086). The scenario has no Mission row until it is seeded, so make the game with the swap script (host scenario `test_access_signin`); do not use `new-game.sh`.
 
 ```bash
-export PATH=/opt/rbenv/bin:/opt/rbenv/shims:$PATH RBENV_VERSION=3.1.6
+# `/opt/rbenv` does not exist on this host: use the ruby on your PATH (2.7.x). The swap script prints only `GAME_ID=`.
 PLAYTEST_PORT=3011 tools/playtest/start-keyless-server.sh
 env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/swap-scenario-game.rb test_access_signin test_ops_helpdesk   # prints GAME_ID=
 S=<scratchpad>/test_ops_helpdesk
@@ -47,7 +49,7 @@ The order matters to the leak scanner: a desk stop (beat 14) stops credit for ev
 1. Walk east to Records. Click "Note: Tess's login" and read it.
 2. Click "Records PC". Click the Tess tile, type a wrong password, click Sign in. Repeat twice more.
 - See: a refusal on the first two, "This account is locked on this PC" on the third.
-- Server: a lockout held for Tess at `records_pc`; `--ops-log` prints three `SIGN_IN` fails and a lockout.
+- Server: a lockout held for Tess at `records_pc`; `--ops-log` prints three `SIGN_IN` fails and a lockout after this beat. In the full run it ends with four `signin_fail` rows at `records_pc`: the fourth is beat 5's old-password refusal, which lands on the same row as beat 1's.
 3. Click the X on the sign-in screen.
 
 ### 2. Find the answers
@@ -57,8 +59,8 @@ The order matters to the leak scanner: a desk stop (beat 14) stops credit for ev
 
 ### 3. The reset
 1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "A password reset", Tess's staff number and her line manager from beat 2. Send.
-- See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." The bark "Next, please." shows.
-- The form note says where it is kept: under Sign-ins in your capture log, and on the sign-in screen. Open the inventory, click "Capture log": under Sign-ins a "Reset" row for Tess shows the new password, with no reload.
+- See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." (briefly, then "Anything else?"). The bark "Next, please." shows only after you leave the chat.
+- The form note says where it is kept: under Sign-ins in your capture log, and on the sign-in screen. Open the inventory, click "Capture log": under Sign-ins a row for Tess, tagged "Reset password" and "Issued", shows the new password, with no reload. (The sign-in tile on the PC says "Reset"; the capture log row says "Reset password".)
 - Server: reset password yes for Tess; the lockout at `records_pc` gone; typed no. `ACCT_RESET` row.
 
 ### 3b. Sign in at the Front PC
@@ -88,7 +90,7 @@ The saved connection has no foothold: its only route is from a PC you are signed
 - See: the "IT request form" window opens over the PC.
 3. In "Username" type Wim's username, under "Ask for" choose "A sign-in approval reset", fill "Staff number" and "Line manager" with Wim's staff number and his line manager from beat 2. Click "Send".
 - See: "Sign-in approvals now come to your phone."
-- Server: reset second step yes for Wim; `ACCT_MFA` row; the request names `front_pc`.
+- Server: reset second step yes for Wim; `ACCT_MFA` row; the audit log names the desk `it_desk`, not `front_pc` (that is what it shows today).
 4. Click the close "×" (its label is "Close").
 - See: the Front PC desktop is back, with the "IT request form" icon still there.
 
@@ -101,12 +103,12 @@ The saved connection has no foothold: its only route is from a PC you are signed
 ### 9. No phone, no callback
 1. Front Office: click Omar Stack. Choose "Ask for an account reset". The form opens.
 2. Type Vera's username (`v.holt`). Omar's form has no "Ask for" choice (his desk resets the second step only). Send.
-- See: refused. Close the form: Omar says "I can't verify you."
+- See: "The desk could not verify you. Tries left: 2." Close the form: Omar says "I can't verify you." (briefly, then "Anything else?").
 
 ### 10. With her phone
 1. Records: click Vera Holt, choose "Could I borrow your phone for a minute?". "Vera's phone" joins the inventory.
 2. Front Office: click Omar, "Ask for an account reset", `v.holt`. Send.
-- See: "Sign-in approvals now come to your phone." Omar says "That matches our records."
+- See: "Sign-in approvals now come to your phone." Omar says "That matches our records." (briefly, then "Anything else?").
 - Server: reset second step yes for Vera.
 
 ### 11. My phone, code
@@ -124,7 +126,9 @@ The saved connection has no foothold: its only route is from a PC you are signed
 - See: a preparation card first. Title "Prepare the call", "Calling: IT service line", "Nothing on the board yet." and the button "Make the call", enabled with nothing held.
 2. Click "Make the call". The call menu shows "1. Request a reset" and "2. Hang up".
 3. Click "Request a reset". Ink says "Right, here is the form."; about a second later the form "IT request form" opens over the call (desk `it_desk`, no PC).
-- See: the form opens once. Close it without sending (the "×" Close): back in the same call. Or send and see the answer line, with the `helpdesk_it_desk_result` global set.
+- See: the form opens once. Close it without sending (the "×" Close): back in the same call. The call's ask line reads "ASK OK needs -30 or better, now at 0." with no "The desk put the form through.", the `helpdesk_it_desk_result` global stays empty, no request is in the audit log, and hanging up shows no "You got what you came for." (the ask is not done).
+4. Hang up, make the call again, open the form and send the same granted request as beat 3.
+- See: the answer line and the `helpdesk_it_desk_result` global set; after the form closes the ask line reads "ASK OK ... The desk put the form through." and hanging up shows "You got what you came for.".
 
 ### 14. Refused, then stopped
 1. Walk to the Service Desk. Click Ria Vance. Choose "Ask for an account reset". Ria says "Fill in the form and I will look at it." and the "IT request form" opens over the chat.
