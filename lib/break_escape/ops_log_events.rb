@@ -97,8 +97,8 @@ module BreakEscape
         room: ->(game, id) { OpsLogEvents.room_hash(game, id) && id }
       },
       'object' => {
-        name: ->(game, id) { OpsLogEvents.object_name(game.login_scope_of(id), id) },
-        room: ->(game, id) { game.login_scope_of(id)&.[](:room_id) }
+        name: ->(game, id) { OpsLogEvents.object_name(OpsLogEvents.object_entry(game, id), id) },
+        room: ->(game, id) { OpsLogEvents.object_entry(game, id)&.[](:room_id) }
       },
       'pc' => {
         name: ->(game, id) { OpsLogEvents.object_name(game.find_login_pc(id), id) },
@@ -168,6 +168,64 @@ module BreakEscape
       rooms = game.scenario_data.is_a?(Hash) ? game.scenario_data['rooms'] : nil
       room = rooms.is_a?(Hash) ? rooms[id.to_s] : nil
       room.is_a?(Hash) ? room : nil
+    end
+
+    # Where an object id really lives, as { object:, room_id: } (room_id nil when no room holds it).
+    # The sign-in resolver answers for room objects, their contents and profiles; after it, every
+    # gated object at any authored home (LockStepModel.each_lock_step: an NPC's itemsHeld, the start
+    # inventory, a grant), any other NPC-held item, then the player's own state: what they carry and
+    # a copy they dropped (a room's objects_added). Nil when the id is held nowhere.
+    def object_entry(game, id)
+      return nil if id.to_s.empty? || !game.scenario_data.is_a?(Hash)
+
+      game.login_scope_of(id) || gated_object_entry(game, id) || npc_held_entry(game, id) || player_object_entry(game, id)
+    end
+
+    def gated_object_entry(game, id)
+      hit = LockStepModel.each_lock_step(game.scenario_data).find { |e| e[:kind] == :object && e[:id] == id.to_s }
+      hit && { object: hit[:lockable], room_id: hit[:room] }
+    end
+
+    def npc_held_entry(game, id)
+      data = game.scenario_data
+      rooms = data['rooms'].is_a?(Hash) ? data['rooms'] : {}
+      rooms.each do |room_id, room|
+        next unless room.is_a?(Hash)
+
+        Array(room['npcs']).each do |npc|
+          found = npc.is_a?(Hash) && find_in_tree(npc['itemsHeld'], id)
+          return { object: found, room_id: room_id } if found
+        end
+      end
+      LockStepModel.headless_held(data).each do |_npc_id, held|
+        found = find_in_tree(held, id)
+        return { object: found, room_id: nil } if found
+      end
+      nil
+    end
+
+    def player_object_entry(game, id)
+      state = game.player_state.is_a?(Hash) ? game.player_state : {}
+      found = find_in_tree(state['inventory'], id) || find_in_tree(game.scenario_data['startItemsInInventory'], id)
+      return { object: found, room_id: nil } if found
+
+      (state['room_states'].is_a?(Hash) ? state['room_states'] : {}).each do |room_id, rs|
+        found = rs.is_a?(Hash) && find_in_tree(rs['objects_added'], id)
+        return { object: found, room_id: room_id } if found
+      end
+      nil
+    end
+
+    # The first hash in a list (or inside any item's contents / itemsHeld) whose id is this one.
+    def find_in_tree(list, id)
+      Array(list).each do |o|
+        next unless o.is_a?(Hash)
+        return o if o['id'].to_s == id.to_s
+
+        found = find_in_tree(o['contents'], id) || find_in_tree(o['itemsHeld'], id)
+        return found if found
+      end
+      nil
     end
 
     def object_name(info, id)
