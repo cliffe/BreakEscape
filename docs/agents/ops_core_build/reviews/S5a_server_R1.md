@@ -179,3 +179,24 @@ Recommendation: option 1 now, so S5a can close with honest docs and a PLAYTEST t
 Checks not completed: none. Not in scope and not read: units 08 to 17 (except unit 15's handover finding, check 10), and unit 15's forged-sync test.
 
 **Verdict: pass for R1 on safety and on code against the brief; one major (F13) open for the owner.** The server does what the plan and the brief say; no path was found that answers admin where the plan gives user or nil, opens a profile, records a plant or keeps a grant that was not earned, puts a secret in an answer or a row, or saves without bound. Fix F5 (one line and a test), F2 (one line) and F6 (one list entry and a fixture) in code; F9 to F12 are test additions; F7, F8 and F13 are for the orchestrator and owner to rule on.
+
+## Outcomes (fix round)
+
+| Finding | Outcome | Commit |
+|---|---|---|
+| F1 | Comment added at `keyboard_admin?` (nil safety). | b3b352b3f |
+| F2 | `admin_profile_reader` walks `sessions_oldest_first`; test with two admin PCs (jake_pc then it_pc, one row, `where` jake_pc). | b3b352b3f |
+| F3 | `record_admin_profile_read` moved into the scoped branch of `#container`. | b3b352b3f |
+| F4 | Declined: record only; unit 13's warning (a) is the answer, for unit 17's docs. | none |
+| F5 | `plant_policy_refusal` returns nil when the object's room is not unlocked; test in `privilege_inventory_remove_test.rb`. | b3b352b3f |
+| F6 | `accountProfiles` keys in `log_stored_id_names`; node test (41 characters, odd characters, a clean id); controller guard kept. | b3b352b3f |
+| F7 | Declined: both cases need before-captures from pre-S5a code (throwaway worktree at `0a66faed5`), not a cheap addition to the case builder. No golden fixture changed; none for `test_ops_access`. | none |
+| F8 | Section 4 of the brief gains item 5 (technique admin session with route down or PC off sends no `access`; P849, M21), accepted by ruling. | this commit |
+| F9 | Added: expired token and PC off for `session_admits?` and the reader; admin at another PC opens no folder or add; admin and user refusal bodies compared. Declined: a user session at another PC while admin is held at the owner's PC (the fixture has only two accounts, the owner and the admin, so no third user exists). | b3b352b3f |
+| F10 | Added: a `from` case and a locked or expired remote session keeping `not_ready`; PC off refuses implant and plant under admin. | b3b352b3f |
+| F11 | The test now has a reader and asserts 200, no save and no row; a second test reads through the shipped scenario's `audit_log_pc`. | b3b352b3f, dc2860603 |
+| F12 | Outage case added on a remote admin session (`office_lan` `offWhen`); the old case renamed to "PC switched off". | b3b352b3f |
+| F13 | Option 1: `PLAYTEST.md` and the brief say plainly there is no path; open question numbered O3 (O2 was taken by M29). No engine or validator change. | dc2860603 (PLAYTEST), this commit (brief) |
+| Coordinator 1 | Card key renamed `field_release_notes`; scanner real-run test uses the shipped scenario. | dc2860603 |
+| Coordinator 2 | `audit_log_pc` reader in the lobby, PLAYTEST beat 2b, graph files regenerated, scanner test reads `/log_rows` through it. | dc2860603 |
+| Coordinator 3 | `session_grant_pc` skips a blank or non-string `pc`; case in `privilege_lib_test.rb`. | b3b352b3f |
