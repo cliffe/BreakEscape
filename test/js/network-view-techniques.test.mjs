@@ -24,6 +24,15 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 for (const f of ['utils/escape-html.js', 'utils/more-below.js', 'utils/author-html.js', 'utils/conditional-text.js',
     'systems/global-writer.js', 'utils/remote-host-text.js', 'utils/sync-before-fetch.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/network-view/ops-model.js',
+    'minigames/network-view/view-texts.js', 'minigames/network-view/view-controls.js', 'minigames/network-view/network-view-panels.js',
+    'minigames/network-view/terminal-grammar.js',
+    'minigames/network-view/terminal-format.js',
+    'minigames/network-view/skin-choice.js',
+    'minigames/network-view/network-view-terminal.js',
+    'minigames/network-view/cli-gen/defaults.js',
+    'minigames/network-view/cli-gen/scanner-output.js',
+    'minigames/network-view/cli-gen/framework-console.js',
+    'minigames/network-view/cli-gen/registry.js',
     'minigames/network-view/network-view-minigame.js', 'utils/compromise-bolt.js']) copy(f);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });

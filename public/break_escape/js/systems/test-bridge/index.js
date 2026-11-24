@@ -49,6 +49,7 @@ import {
 import { logAction, logNote, installEventCapture, drain, peek, clear, currentSeq, eventsSince } from './log.js';
 import { minigameBridge } from './minigames.js';
 import { accessBridge } from './access.js';
+import { networkBridge } from './network.js';
 import { throttleFps, unthrottleFps } from './throttle.js';
 // Imported directly rather than read off window: player.js exports this but
 // never assigns it globally. Used only by moveTo's documented off-screen
@@ -2313,6 +2314,9 @@ const bridge = {
      * Compare with the server's record (tools/playtest/verify-run.rb --access).
      */
     access: accessBridge,
+
+    /** The network view's two skins, driven by real clicks and key presses (see network.js). */
+    network: networkBridge,
 
     // ── Minigames ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,8 @@
+[head|Module: ]auxiliary/scanner/web/unpatched_f3
+[head|Title: ]Out of date Low on web
+[head|Target: ]print01, port 80, web
+[head|Finding: ]f3
+[head|Status: ]False positive
+[head|Risk: ]Out of date Low
+[head|Summary: ]Summary for f3.
+[head|Because: ]The build number is cosmetic.

@@ -1,0 +1,21 @@
+# Well-known vulnerability nicknames. The catalog validator refuses them as (part of) a catalog id; the
+# skin validator and test/unit/realism_separation_test.rb refuse them in any text of an ops scenario (a
+# name written as one word, or joined by a space, _ or -, is matched). A deny list of names only: one per line, lower case, words joined by _ (matched as whole words, also inside
+# an id). Lines starting # are notes. Keep it short and distinctive; add on a real slip.
+heartbleed
+shellshock
+eternalblue
+bluekeep
+log4shell
+spring4shell
+printnightmare
+zerologon
+proxylogon
+proxyshell
+sambacry
+badlock
+dirtycow
+dirty_cow
+dirty_pipe
+wannacry
+notpetya

@@ -114,6 +114,14 @@
     font-size: 16px;
 }
 
+/* The skin switch sits in the window's title bar, left of the X, in both skins */
+.console-titlebar > .network-view-skin-switch {
+    flex: none;
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 16px;
+}
+
 /* A refused Unplug says why next to the button (fix round 1, m2) */
 .network-view-unplug-notice {
     margin: 4px 0 0 0;
@@ -756,4 +764,179 @@ button.network-finding-alias:hover { background: #1b3a4d; }
 .network-bolt-canvas {
     display: block;
     image-rendering: pixelated;
+}
+
+/* Ops (S6): the Scanning bar, shown while a sweep or scan request is out. Pixel-art rule: a
+   2px square border, no radius, the GNF pixel font, a fill of stepped segments, no new colour. */
+.network-scan-bar {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+    height: 24px;
+    margin-left: 8px;
+    overflow: hidden;
+    border: 2px solid #2d3a44;
+    border-radius: 0;
+    background: #10161c;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 20px;
+    color: #e8eef2;
+    vertical-align: middle;
+}
+
+.network-scan-bar-text {
+    position: relative;
+    z-index: 1;
+    padding: 0 6px;
+}
+
+.network-scan-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    background: repeating-linear-gradient(90deg, #2d3a44 0, #2d3a44 8px, #10161c 8px, #10161c 12px);
+    animation: network-scan-bar-run 1.2s steps(8, end) infinite;
+}
+
+@keyframes network-scan-bar-run {
+    from { left: -40%; }
+    to { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .network-scan-bar-fill {
+        animation: none;
+        left: 0;
+        width: 100%;
+    }
+}
+
+.network-row-notice {
+    flex: 1 0 100%;
+    margin: 4px 0 0;
+    font-size: 16px;
+    color: #ffe0a0;
+}
+
+/* The Terminal look (skin `cli`): a log, the quick commands and one prompt. Pixel borders, no radius, no glow. */
+.network-term {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+    padding: 8px;
+    box-sizing: border-box;
+    background: #10161c;
+    color: #e8eef2;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+}
+
+.network-term-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    min-height: 0;
+}
+
+.network-term-log {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 6px;
+    border: 2px solid #2d3a44;
+    background: #0a0f13;
+}
+
+.network-term-line-out {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 20px;
+    min-height: 20px;
+}
+
+/* A span is a cell or a word: padded by the text it carries, kept on the line it began on */
+.network-term-span { display: inline; }
+.network-term-span.prompt { color: #9ee6ff; }
+.network-term-span.head { color: #ffe680; }
+.network-term-span.ok { color: #a8f0b0; }
+.network-term-span.bad { color: #ffd0d0; }
+.network-term-span.note { color: #b8c4cc; }
+
+.network-term-strip {
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.network-term-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.network-term-list[hidden] { display: none; }
+
+.network-term-cmd { display: block; }
+
+.network-term-cmd .minigame-button,
+.network-term-back,
+.network-term-fold {
+    width: 100%;
+    text-align: left;
+    font-size: 16px;
+}
+
+.network-term-quick code {
+    display: block;
+    color: #b8c4cc;
+    font-family: 'VT323', monospace;
+    overflow-wrap: anywhere;
+}
+
+.network-term-quick:disabled code { color: #868d93; }
+
+.network-term-label {
+    display: block;
+    margin-bottom: 2px;
+    color: #b8c4cc;
+}
+
+.network-term-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border: 2px solid #2d3a44;
+    background: #0a0f13;
+}
+
+.network-term-mark { color: #9ee6ff; white-space: pre; }
+
+.network-term-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #e8eef2;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    caret-color: #e8eef2;
+    caret-shape: block;
+}
+
+.network-term-line:focus-within { border-color: #4aa3d8; }
+
+@media (max-width: 599px) {
+    .network-term-body { flex-direction: column; }
+    .network-term-strip { flex: 0 0 auto; max-height: 40%; }
 }

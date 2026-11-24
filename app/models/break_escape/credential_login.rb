@@ -80,6 +80,12 @@ module BreakEscape
       # 8b. A session token that has run out (K5, section 10)
       return { status: :unprocessable_entity, body: { success: false, expired: true } } if kind == 'token' && token_expired?(cred_id)
 
+      # 8c. A kind that stands in for the typed password still owes the second step (S8a): nothing
+      # is written, counted or logged, and the answer names the typed sign-in
+      if CredentialModel::KINDS.dig(kind, :password) == true && mfa_step_for(pc, npc) != 'none'
+        return { status: :unprocessable_entity, body: { success: false, typeToSignIn: 'second_step' } }
+      end
+
       # 9. Write the session (3.8); a replaced session prunes, and the answer names what ended
       relay = route[:relay] == true
       from = relay ? nil : route[:from]

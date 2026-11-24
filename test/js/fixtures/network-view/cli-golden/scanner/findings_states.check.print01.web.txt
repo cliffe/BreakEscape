@@ -1,0 +1,31 @@
+[head|Starting Nmap against print01]
+[note|Running vuln scripts on 80/tcp (web)]
+[head|Nmap scan report for ][head|print01]
+[ok|Host is up.]
+[head|PORT     STATE   SERVICE]
+80/tcp   open    web
+[note|| ][head|web-default-creds:]
+[note||   ]Default login High on web
+[note||     ][note|Finding: ]f1
+[note||     ][note|State: ]Unconfirmed
+[note||     ][note|Risk: ]Default login High
+[note||_    ]Summary for f1.
+[note|| ][head|web-unpatched:]
+[note||   ]Out of date Medium on web
+[note||     ][note|Finding: ]f2
+[note||     ][note|State: ]Confirmed
+[note||     ][note|Risk: ]Out of date Medium
+[note||_    ]Summary for f2.
+[note|| ][head|web-unpatched:]
+[note||   ]Out of date Low on web
+[note||     ][note|Finding: ]f3
+[note||     ][note|State: ]False positive
+[note||     ][note|Risk: ]Out of date Low
+[note||_    ]Summary for f3.
+[note|| ][head|web-unpatched:]
+[note||   ]Out of date Medium on web
+[note||     ][note|Finding: ]f4
+[note||     ][note|State: ]Fixed
+[note||     ][note|Risk: ]Out of date Medium
+[note||_    ]Summary for f4.
+Nmap done: 1 IP address (1 host up) scanned

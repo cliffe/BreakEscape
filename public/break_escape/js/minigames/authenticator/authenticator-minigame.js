@@ -105,6 +105,14 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
 
     init() {
         super.init();
+        this._buildPhoneShell();
+        this._buildAttackerParts();
+        this.gameContainer.appendChild(this.root);
+        this._updateControls();
+    }
+
+    /** The window bar and the phone with its feed: shared by the scripted and the live scene. */
+    _buildPhoneShell() {
         if (this.headerElement) this.headerElement.style.display = 'none';
 
         const root = el('div', 'auth-root');
@@ -116,15 +124,6 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         bar.appendChild(el('span', 'auth-wordmark', this._str('wordmark', WORDMARK)));
         this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
-
-        this.intro = el('p', 'auth-intro', this.choice
-            ? (isStr(this.choice.intro) ? this.choice.intro : this._str('intro', CHOICE_INTRO))
-            : this._str('intro', INTRO));
-        root.appendChild(this.intro);
-
-        // In decision mode the learner chooses before any prompt is drawn; the phone and the
-        // Send control stay hidden until the choice is confirmed.
-        if (this.choice) root.appendChild(this._buildChoicePanel());
 
         const phone = el('div', 'auth-phone');
         if (this.choice) phone.hidden = true;
@@ -147,6 +146,19 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         screen.appendChild(this.feed);
         phone.appendChild(screen);
         root.appendChild(phone);
+    }
+
+    /** The intro, the decision panel, the banner and the Send control (the attacker's view). */
+    _buildAttackerParts() {
+        const root = this.root;
+        this.intro = el('p', 'auth-intro', this.choice
+            ? (isStr(this.choice.intro) ? this.choice.intro : this._str('intro', CHOICE_INTRO))
+            : this._str('intro', INTRO));
+        root.insertBefore(this.intro, this.phoneEl);
+
+        // In decision mode the learner chooses before any prompt is drawn; the phone and the
+        // Send control stay hidden until the choice is confirmed.
+        if (this.choice) root.insertBefore(this._buildChoicePanel(), this.phoneEl);
 
         this.banner = el('p', 'auth-banner');
         this.banner.setAttribute('aria-live', 'assertive');
@@ -164,9 +176,6 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         });
         controls.appendChild(this.sendButton);
         root.appendChild(controls);
-
-        this.gameContainer.appendChild(root);
-        this._updateControls();
     }
 
     start() {

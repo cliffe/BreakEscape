@@ -410,3 +410,51 @@ export function refusalLine(body) {
     const label = body && body.reason === 'need_unmet' && typeof body.need?.label === 'string' ? body.need.label : '';
     return label ? `${base} Missing: ${label}` : base;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Skin exports (Ops S6 unit 02): the lines the Panels scene composed inline, as pure functions, so
+// every skin says the same words. Each returns exactly the text Panels draws today.
+// ---------------------------------------------------------------------------------------------
+
+/** A finding's class and severity words, as Panels show them side by side: "Out of date High". */
+export function findingLabel(finding) {
+    return `${classWord(finding?.class)} ${severityWord(finding?.severity)}`;
+}
+
+/** The mark before a need line: a tick for a met need, a cross for an unmet one. */
+export function needMark(need) {
+    return need?.met === true ? '\u2713' : '\u2717';
+}
+
+/** The account a session names (its display name, else its user name), or ''. */
+export function sessionWho(session) {
+    return String(session?.displayName || session?.username || '');
+}
+
+/** The account named on a row's Open control: the session's account, else the plain word "session". */
+export function openWho(session) {
+    return session?.displayName || session?.username || 'session';
+}
+
+/** The words a refused or unanswered unplug shows beside the button: the server's sentence, else a plain one. */
+export function unplugNoticeText(answer) {
+    return answer?.message || 'The port did not respond. Try again.';
+}
+
+/** The sentence for a session grant: "You now hold a session on <host> as <who>." */
+export function sessionGrantLine(host, who) {
+    return `You now hold a session on ${host || 'that host'}${who ? ` as ${who}` : ''}.`;
+}
+
+/**
+ * The sentence a successful use leaves: a saved sign-in for a credential grant, else the session
+ * grant naming the host (the row `hostId` names in the view, by its host, then name, then id) and
+ * the account the answer's session names. A repeat (`already: true`) reads the same.
+ */
+export function useResultText(answer, view, hostId = null) {
+    if (answer?.grant === 'credential') return 'That gave you a saved sign-in. It is in your keyring.';
+    const row = hostId ? viewRows(view).find(r => r?.id === hostId) : null;
+    const host = String(row?.host || row?.name || hostId || '');
+    const who = answer?.grant === 'session' && answer.session && typeof answer.session === 'object' ? sessionWho(answer.session) : '';
+    return sessionGrantLine(host, who);
+}

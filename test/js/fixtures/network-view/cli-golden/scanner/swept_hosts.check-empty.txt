@@ -1,0 +1,8 @@
+[head|Starting Nmap against print01]
+[note|Running vuln scripts on 80/tcp (web)]
+[head|Nmap scan report for ][head|print01]
+[ok|Host is up.]
+[head|PORT     STATE   SERVICE]
+80/tcp   open    web
+[note|Nothing was found on that service.]
+Nmap done: 1 IP address (1 host up) scanned

@@ -1,0 +1,2 @@
+[head|Host     ][head|Account  ][head|Access]
+desk_pc  Sam      admin

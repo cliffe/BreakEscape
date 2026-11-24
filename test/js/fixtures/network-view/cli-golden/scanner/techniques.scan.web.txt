@@ -1,0 +1,8 @@
+[head|Starting Nmap against web]
+[head|Nmap scan report for ][head|web]
+[ok|Host is up.]
+[head|PORT     STATE   SERVICE   VERSION]
+80/tcp   open    web       Brackley PrintPanel 2.0
+[note||_id: ]web
+[note|Service detection performed.]
+Nmap done: 1 IP address (1 host up) scanned

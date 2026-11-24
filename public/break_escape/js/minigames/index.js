@@ -27,6 +27,8 @@ export { OpsCrackerMinigame } from './ops-cracker/ops-cracker-minigame.js';
 export { AssistantChatMinigame } from './assistant-chat/assistant-chat-minigame.js';
 export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
+export { AuthenticatorLiveMinigame } from './authenticator/authenticator-live-minigame.js';
+export { CodeDeviceMinigame } from './code-device/code-device-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -130,6 +132,8 @@ import { OpsCrackerMinigame } from './ops-cracker/ops-cracker-minigame.js';
 import { AssistantChatMinigame } from './assistant-chat/assistant-chat-minigame.js';
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
+import { AuthenticatorLiveMinigame } from './authenticator/authenticator-live-minigame.js';
+import { CodeDeviceMinigame } from './code-device/code-device-minigame.js';
 
 // Import the PIN minigame
 import { PinMinigame } from './pin/pin-minigame.js';
@@ -216,6 +220,8 @@ MinigameFramework.registerScene('ops-cracker', OpsCrackerMinigame);
 MinigameFramework.registerScene('assistant-chat', AssistantChatMinigame);
 MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
 MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
+MinigameFramework.registerScene('authenticator-live', AuthenticatorLiveMinigame);
+MinigameFramework.registerScene('code-device', CodeDeviceMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);

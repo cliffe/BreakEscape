@@ -48,6 +48,7 @@ copy('utils/remote-host-text.js');
 copy('systems/keyring.js');
 copy('minigames/capture-log/capture-log-minigame.js');
 copy('systems/pc-sessions.js');
+copy('systems/mfa-client.js');
 copy('utils/sync-before-fetch.js');
 put('api-client.js', 'export const ApiClient = { get: (...a) => window.__api.get(...a) };');
 put('systems/minigame-registry.js', `

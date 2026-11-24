@@ -1,0 +1,12 @@
+[prompt|$ ]nmap -sn 10.20.0.0/24
+[head|Starting Nmap against 10.20.0.0/24]
+[head|Nmap scan report for ][head|files01][head| (10.20.0.10)]
+[ok|Host is up.]
+[note|  Name: ]File server
+[note|  Hostname: ]FILES01
+[head|Nmap scan report for ][head|records01]
+[ok|Host is up.]
+[note|  Name: ]Records server
+[note|  Hostname: ]RECORDS01
+[note|  Status: ]Remote sign-in off
+Nmap done: 256 IP addresses (2 hosts up) scanned

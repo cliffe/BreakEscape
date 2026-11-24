@@ -14,6 +14,8 @@ module BreakEscape
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
+    include MfaAccess
+    include MfaSignIn
     include Wearables
     include PinDust
 
@@ -1180,7 +1182,7 @@ module BreakEscape
 
       # q35 review R1 m1: a Friendface phone enters a room only as an NPC's drop or a player's
       # drop, never from client fields, so no client can mint one
-      if item['type'] == SocialFeed::FRIENDFACE_PHONE && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
+      if MfaModel::OWNER_BOUND_TYPES.include?(item['type']) && source_data['npc_id'].blank? && source_data['source_type'] != 'player_drop'
         Rails.logger.warn "[BreakEscape] add_object of a Friendface phone with no source rejected"
         return false
       end
@@ -3061,6 +3063,9 @@ module BreakEscape
     # preserved_keys, so a reset drops them all and initialize_player_state refills them.
     ACCESS_STATE_DEFAULTS = {
       'sessions' => {}, 'signedInPcs' => [], 'loginFailures' => {}, 'loginLockouts' => [],
+      # Multi-factor sign-in (S8a): pending second steps, prompt counts and per-account tallies.
+      # Server-owned: no sync body writes them, and none is sent to the browser.
+      'mfaPending' => {}, 'mfaPrompts' => {}, 'mfaAccounts' => {},
       'copiedItems' => [], 'serverClones' => {},
       # Networks (slice 9.3a, NetworkAccess): footholds held now, and every jack one was gained from
       'footholds' => {}, 'gainedFootholds' => [],
@@ -3626,8 +3631,55 @@ module BreakEscape
       info = find_login_pc(pc_id)
       return { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } unless info
 
-      unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       foothold = foothold.presence&.to_s
+      refusal = typed_route_refusal(info, foothold: foothold, from: from, from_given: from_given)
+      return refusal if refusal
+
+      pc = info[:object]
+      normalised = self.class.normalise_username(username)
+      key = AccessIdentities.lockout_key(pc['id'], username)
+      if login_lockouts.include?(key)
+        # Ops log L1b: a refusal that saves nothing else, so it saves only when the row stored
+        r = write_log_row!('signin_refused', as: { typed: username.to_s }, where: { kind: 'pc', id: pc['id'].to_s },
+                                              result: 'blocked', save_limit: true)
+        save! if r&.stored?
+        return login_locked_out_answer
+      end
+
+      npc = account_for_username(normalised)
+      secret = npc && npc['creds']['password']
+      if secret.is_a?(String) && !secret.empty? && password.to_s == secret
+        unless pc_admits_account?(pc, npc)
+          # Ops log L1b: a right password the PC does not admit; saves only when the row stored
+          r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
+                                                where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
+                                                save_limit: true)
+          save! if r&.stored?
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
+        end
+
+        # Multi-factor sign-in (S8a): a right password owes a second step when the policy asks for one
+        step = mfa_step_for(pc, npc)
+        unless step == 'none'
+          return issue_mfa_challenge!(pc, npc, step, foothold: foothold, from: from, from_given: from_given)
+        end
+
+        login_failures.delete(key)
+        from = from_given ? from : nil
+        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
+        save!
+        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
+        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
+      end
+
+      record_login_failure!(pc, key, account: !npc.nil?)
+    end
+
+    # The route half of attempt_login!: the refusal Hash a typed sign-in meets before any
+    # credential is read, or nil when the route is open (same answers, same order).
+    def typed_route_refusal(info, foothold:, from:, from_given:)
+      unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       if from_given
         return credential_login_refusal if foothold || !credentials_declared?
 
@@ -3659,39 +3711,7 @@ module BreakEscape
         return pc_off_answer
       end
 
-      pc = info[:object]
-      normalised = self.class.normalise_username(username)
-      key = "#{pc['id']}|#{normalised}"
-      if login_lockouts.include?(key)
-        # Ops log L1b: a refusal that saves nothing else, so it saves only when the row stored
-        r = write_log_row!('signin_refused', as: { typed: username.to_s }, where: { kind: 'pc', id: pc['id'].to_s },
-                                              result: 'blocked', save_limit: true)
-        save! if r&.stored?
-        return login_locked_out_answer
-      end
-
-      npc = account_for_username(normalised)
-      secret = npc && npc['creds']['password']
-      if secret.is_a?(String) && !secret.empty? && password.to_s == secret
-        unless pc_admits_account?(pc, npc)
-          # Ops log L1b: a right password the PC does not admit; saves only when the row stored
-          r = write_log_row!('signin_refused', as: { account: npc['creds']['username'] },
-                                                where: { kind: 'pc', id: pc['id'].to_s }, result: 'denied',
-                                                save_limit: true)
-          save! if r&.stored?
-          return { status: :unprocessable_entity,
-                   body: { success: false, message: LOGIN_NOT_PERMITTED, notPermitted: true } }
-        end
-
-        login_failures.delete(key)
-        from = from_given ? from : nil
-        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
-        save!
-        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
-        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
-      end
-
-      record_login_failure!(pc, key, account: !npc.nil?)
+      nil
     end
 
     # A storyPath's text for OwnerClaim: the compiled story GamesController#ink serves (not
@@ -3769,7 +3789,7 @@ module BreakEscape
       creds = npc.is_a?(Hash) ? npc['creds'] : nil
       return false unless creds.is_a?(Hash) && creds['username'].present?
 
-      Array(player_state['loginLockouts']).include?("#{pc_id}|#{self.class.normalise_username(creds['username'])}")
+      Array(player_state['loginLockouts']).include?(AccessIdentities.lockout_key(pc_id, creds['username']))
     end
 
     # Sub-slice L review R1 M1 (orchestrator decision): the sign-in PCs where the server holds a
@@ -3780,7 +3800,7 @@ module BreakEscape
       list = player_state['loginLockouts']
       return [] unless list.is_a?(Array)
 
-      list.filter_map { |k| k.is_a?(String) && k.include?('|') ? k.split('|', 2).first : nil }
+      list.filter_map { |k| AccessIdentities.lockout_key_parts(k)&.first }
           .uniq.select { |pc| find_login_pc(pc) }
     end
 
@@ -4637,7 +4657,7 @@ module BreakEscape
 
     # A failure key ("pcId|username") belongs to a real account.
     def account_login_key?(key, account_usernames)
-      account_usernames.include?(key.to_s.split('|', 2).last)
+      account_usernames.include?(AccessIdentities.lockout_key_parts(key)&.last)
     end
 
     def account_usernames
@@ -4661,7 +4681,7 @@ module BreakEscape
       count = failures[key]['n']
       max = login_max_attempts(pc)
       # Ops log L1b: the typed username as the key holds it (normalised); this method saves
-      write_log_row!('signin_fail', as: { typed: key.to_s.split('|', 2).last.to_s },
+      write_log_row!('signin_fail', as: { typed: AccessIdentities.lockout_key_parts(key)&.last.to_s },
                                     where: { kind: 'pc', id: pc['id'].to_s }, result: 'fail')
       if max && count >= max
         add_login_lockout!(key, account: account)
@@ -4695,7 +4715,7 @@ module BreakEscape
       return if lockouts.include?(key)
 
       # Ops log L1b: one per lockout; record_login_failure! saves
-      pc_part, typed_part = key.to_s.split('|', 2)
+      pc_part, typed_part = AccessIdentities.lockout_key_parts(key)
       write_log_row!('signin_lockout', as: { typed: typed_part.to_s }, where: { kind: 'pc', id: pc_part.to_s })
 
       unless account

@@ -27,6 +27,7 @@ require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/mfa_model'
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1902,6 +1903,55 @@ admin_pcs.each do |pc_id, rec|
   pc_label = rec[:pc]['name'].is_a?(String) && !rec[:pc]['name'].strip.empty? ? rec[:pc]['name'] : pc_id
   add_node(admin_id, "#{pc_label}<br/>Administrator session", 'key')
   rec[:from].uniq.each { |from| add_edge(from, admin_id, label: 'administrator') }
+end
+
+# S8a unit 11 (MFA plan, dungeon graph): a sign-in lock under a policy with an `mfa` kind gets a second key
+# edge per admitted, enrolled account (`creds.mfa` not false; an exempt account gets none). `code`: the
+# account's `code_device` item (the `cred_src_<id>` node, as other held items). `push`: the owner's phone
+# item when one is declared, else an "owner approves" node when the owner's habit resolves to pestered or
+# always. `push_number_match`: the phone item only. Labels name the step, never a code, number or password.
+mfa_graph = BreakEscape::MfaModel
+mfa_item_node = lambda do |item|
+  next nil unless item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty?
+
+  add_node("cred_src_#{nid(item['id'])}", scrub_label((item['name'] || item['id']).to_s), 'item')
+end
+mfa_phone_for = lambda do |npc_id|
+  found = mfa_graph.each_authored_item(scenario).find do |e|
+    e[:item]['type'] == 'phone_friendface' && e[:item]['owner'] == npc_id
+  end
+  found && found[:item]
+end
+BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
+  npc = account[:npc]
+  next unless mfa_graph.enrolled?(npc)
+
+  account[:opens].each do |lock_entry|
+    next unless lock_entry[:kind] == 'login'
+
+    kind = mfa_graph.kind(BreakEscape::CredentialModel.policy_for(scenario, lock_entry[:lock]))
+    next if kind == 'none'
+
+    lock_node = access_lock_node(lock_entry, rooms)
+    sources = []
+    case kind
+    when 'code'
+      sources << mfa_item_node.call(mfa_graph.device_for(scenario, npc['id']))
+    when 'push'
+      phone = mfa_phone_for.call(npc['id'])
+      if phone
+        sources << mfa_item_node.call(phone)
+      elsif %w[pestered always].include?(mfa_graph.prompt_habit(npc, scenario))
+        sources << add_node("mfa_approve_#{nid(lock_entry[:lock]['id'])}_#{nid(npc['id'])}",
+                            "owner approves (#{mfa_graph.prompt_habit(npc, scenario)})", 'key')
+      end
+    when 'push_number_match'
+      sources << mfa_item_node.call(mfa_phone_for.call(npc['id']))
+    end
+    sources.compact.each do |src|
+      add_edge(src, lock_node, label: 'second step') unless $edges.any? { |e| e[:from] == src && e[:to] == lock_node }
+    end
+  end
 end
 
 # N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
