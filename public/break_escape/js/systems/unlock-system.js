@@ -1102,9 +1102,15 @@ export function handleUnlock(lockable, type) {
         const opener = lockRequirements.npcStepOpener;
         const roomId = unlockTargetId(lockable, 'door');
         const apiClient = window.ApiClient || window.APIClient;
+        // No second step ran for this click: the server already held the approval (the player reloaded
+        // after it, or came back to the door), so no pane shows. Say so rather than open silently.
+        const stepsBefore = window.lockStep?.runCount?.();
         Promise.resolve().then(() => apiClient.unlock('door', roomId, opener, 'npc', {}, { fromDoor: true }))
             .then(answer => {
                 if (answer && answer.success) {
+                    if (typeof stepsBefore === 'number' && window.lockStep?.runCount?.() === stepsBefore) {
+                        window.gameAlert?.('Approved earlier. The door opens.', 'info', '', 3000);
+                    }
                     unlockTarget(lockable, type, lockable.layer, answer);
                     if (window.eventDispatcher) {
                         window.eventDispatcher.emit('door_unlocked_by_npc', { roomId, npcId: opener, source: 'npc', retry: true });

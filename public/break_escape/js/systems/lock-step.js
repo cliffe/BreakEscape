@@ -11,6 +11,8 @@ const CLEAR_RETRY_MS = 400;
 const NOOP = () => {};
 let cfg = {};
 let paneOpen = false;
+// How many second steps have been run (for a caller that wants to know whether one ran for its request)
+let runs = 0;
 // Requests ready to open that found a pane open: { start() }, served in order
 let waiting = [];
 
@@ -22,6 +24,11 @@ export function reset() {
     cfg = {};
     paneOpen = false;
     waiting = [];
+    runs = 0;
+}
+
+export function runCount() {
+    return runs;
 }
 
 function fn(name) {
@@ -113,6 +120,7 @@ async function showPane(answer, fromDoor) {
 }
 
 export async function run(answer, request, opts = {}) {
+    runs++;
     const body = copy(request);
     const fromDoor = opts.fromDoor === true;
     let current = answer;

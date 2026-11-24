@@ -225,3 +225,33 @@ test('a door an NPC opened, denied: one "Not approved." and the door stays locke
     assert.equal(log.toasts.filter((t) => t[0] === 'Not approved.').length, 1);
     assert.equal(log.toasts.some((t) => t[0] === 'Access denied'), false);
 });
+
+// S8c playtest 12d: after a reload the door opens at once from an approval the server kept (no gate, no pane):
+// the client says what happened instead of opening silently
+test('a door an NPC opened, approved earlier (the server answers open at once, no pane): one toast says so', async () => {
+    const { log, byRoom } = officeDoors('moira');
+    const door = byRoom('plant_room');
+    nearPlayerAt(door);
+    net.reset({ '/unlock': ['open_door'] });
+    await S.doors.handleDoorInteraction(door);
+    await settle(20);
+    assert.equal(net.posted('/unlock').length, 1);
+    assert.equal(door.doorProperties.locked, false);
+    const said = log.toasts.filter((t) => /approved earlier/i.test(t[0]));
+    assert.equal(said.length, 1);
+    assert.equal(window.__test.lockStep.state().open, false, 'no pane');
+});
+
+test('a door an NPC opened and approved in a pane this click: no "approved earlier" toast', async () => {
+    const { log, byRoom } = officeDoors('moira');
+    const door = byRoom('plant_room');
+    nearPlayerAt(door);
+    net.reset({
+        '/unlock': [{ name: 'gate_door_npc', patch: (b) => { b.targetId = 'plant_room'; } }, 'open_door'],
+        '/mfa/prompt': ['prompt_passed']
+    });
+    await S.doors.handleDoorInteraction(door);
+    await settle(20);
+    assert.equal(door.doorProperties.locked, false);
+    assert.equal(log.toasts.some((t) => /approved earlier/i.test(t[0])), false);
+});

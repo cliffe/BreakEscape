@@ -5,7 +5,7 @@
 // Everything the page owns is read from `win` at CALL time (never captured at wire time), so a
 // piece that is installed later (a toast, a sound, the state sync) is still found when it is used.
 
-import { configure as configureLockStep, run, isCancel, cancelFeedback } from './lock-step.js';
+import { configure as configureLockStep, run, isCancel, cancelFeedback, runCount } from './lock-step.js';
 import { openPane, configure as configurePane, findObjectData } from '../ui/lock-step-pane.js';
 import { findAllDoorSpritesForRoom } from './npc-game-bridge.js';
 
@@ -97,6 +97,7 @@ export function wireLockStep(win = window, timers = {}) {
         run,
         isCancel,
         cancelFeedback,
+        runCount,
         // for the test bridge: the open pane's own state, or null
         paneState: () => (current && typeof current.getTestState === 'function' ? current.getTestState() : null)
     };

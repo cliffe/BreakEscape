@@ -315,3 +315,20 @@ test('a prompt that comes back too soon holds Send again and says so, and does n
     assert.equal(st.open, true);
     assert.match(st.text, /Wait a moment before sending another request\./);
 });
+
+// S8c playtest: "Send again" is greyed after a request and works again when the server's gap is over
+test('Send again is greyed right after a request and enabled when the wait timer fires', async () => {
+    const log = bootPage(S);
+    net.reset({ '/unlock': ['gate_push'], '/mfa/prompt': ['prompt_waiting'] });
+    window.handleUnlock(sprite('moira_locker'), 'item');
+    await settle();
+    await typePin();
+    await settle(20);
+    const again = () => paneState().controls.find((c) => c.label === 'Send again');
+    assert.ok(again(), 'the pane has Send again');
+    assert.equal(again().disabled, true, 'greyed while the gap runs');
+    const waits = log.timers.filter((t) => t.ms === 2000);
+    assert.ok(waits.length >= 1, 'a two second timer holds it');
+    waits[waits.length - 1].fn();
+    assert.equal(again().disabled, false, 'works again after the gap');
+});
