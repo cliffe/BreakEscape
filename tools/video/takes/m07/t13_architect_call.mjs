@@ -7,8 +7,9 @@ import { playThrough } from './_live.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await page.evaluate(() => { try { window.__test.throttleFps(20); } catch (_) {} }); await sleep(800); }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
-  await page.evaluate(() => { window.__subs = []; const seen = new WeakSet(); const scan = () => document.querySelectorAll('.call-subtitle').forEach(n => { if (!seen.has(n)) { seen.add(n); window.__subs.push({ t: performance.timeOrigin + performance.now(), text: n.textContent.trim() }); } }); setInterval(scan, 40); });
-  let nsub = 0, fires = 0; const drain = async () => { const a = await page.evaluate(() => window.__subs.slice()).catch(() => []); for (; nsub < a.length; nsub++) { mark('sub:' + a[nsub].text.slice(0, 60), { text: a[nsub].text }, a[nsub].t); if (/Four fires tonight, and only one of you/i.test(a[nsub].text)) { fires = a[nsub].t; mark('ending-line-start', { clipS: 7.06 }, a[nsub].t); } } };
+  // The call UI types each subtitle out char by char, so a node is re-read every scan: a mark is logged when it first has text, and again as 'full:' when the text stops growing for 3 scans.
+  await page.evaluate(() => { window.__subs = []; const st = new Map(); const scan = () => document.querySelectorAll('.call-subtitle, .message-text').forEach(n => { const tx = n.textContent.trim(); let e = st.get(n); if (!e) { if (!tx) return; e = { first: performance.timeOrigin + performance.now(), last: tx, same: 0, done: false, ix: window.__subs.length }; st.set(n, e); window.__subs.push({ t: e.first, text: tx, full: false }); } if (tx === e.last) e.same++; else { e.last = tx; e.same = 0; } window.__subs[e.ix].text = tx; if (!e.done && e.same >= 3) { e.done = true; window.__subs[e.ix].full = true; window.__subs[e.ix].tFull = performance.timeOrigin + performance.now(); } }); setInterval(scan, 40); });
+  let nsub = 0, fires = 0; const marked = new Set(); const drain = async () => { const a = await page.evaluate(() => window.__subs.slice()).catch(() => []); for (let i = 0; i < a.length; i++) { if (!marked.has(i)) { marked.add(i); mark('sub:' + a[i].text.slice(0, 40), { text: a[i].text }, a[i].t); } if (a[i].full && !marked.has('f' + i)) { marked.add('f' + i); mark('subfull:' + a[i].text.slice(0, 40), { len: a[i].text.length }, a[i].tFull); } if (!fires && /^(.{0,30}:\s*)?Four fires/i.test(a[i].text)) { fires = a[i].t; mark('ending-line-start', { clipS: 7.06 }, a[i].t); } } };
   const timer = setInterval(drain, 200);
   await sleep(1200); mark('walk-start');
   const e = await bridge.enterRoom('operations_floor', { timeoutMs: 45000 }); mark('entered', { ok: e && e.ok });
@@ -17,7 +18,7 @@ export default async (page, bridge, mark) => {
   if (!ok) throw new Error('no ring (room_entered not fired? an NPC chat open?)');
   mark('ring-seen', { afterMs: Date.now() - t0, text: await page.evaluate(() => (document.querySelector('.incoming-call-answer')?.closest('div')?.textContent || '').slice(0, 80)) });
   await sleep(2000);
-  await page.evaluate(() => document.querySelector('.incoming-call-answer').click()); mark('answered'); await sleep(1200);
+  await page.evaluate(() => document.querySelector('.incoming-call-answer').click()); mark('answered'); await page.evaluate(() => { const st = document.createElement('style'); st.textContent = '.notification, .toast-live-region, [class*="bark"], [id*="bark"] { display: none !important; }'; document.head.appendChild(st); }); await sleep(1200);
   await playThrough(page, bridge, mark, vw, { steps: [], settleMs: 700, timeoutMs: 120000 });
   await vw.stop(); await sleep(1500); clearInterval(timer); await drain();
   // round-2 ending line "Four fires tonight..." (7.06 s): its subtitle must have appeared, and the take must stay open for the whole clip

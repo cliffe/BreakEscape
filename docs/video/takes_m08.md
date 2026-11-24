@@ -55,3 +55,27 @@ Ending line "There is a mole in SAFETYNET. I am reasonably certain they are with
 Risks to check on the first run (round 2):
 - The opening runs once per game (`met`); a re-run needs a fresh game. If the Mission Brief notes are open at start, close them (setup clears the screen).
 - The line is the second-to-last of the opening; "Ask me what you need..." follows at once, so cut by the mark.
+
+## Run 1 (24 Nov, takes agent): results, marks checked against frames
+All through `scratchpad/run.sh` with `MISSION=m08`, :3025, display :113. Avatar before and after: female_hacker_hood_v2. Times are trimmed-clip seconds. "playtest" in a frame = the player's portrait name (keep out of windows).
+
+| id | avatar | result | len / drop / A/V (ms) | marks and frame notes | window |
+|---|---|---|---|---|---|
+| t10_athena_hook | ngozi_adeyemi | PASS | 17.3 / 0.86 / -140,-160 | hook+stakes line 7.10 to 15.84 (8.74 s vs 8.9 scout); earlier briefing lines skipped but partly audible (0.67 to 6.0). Subtitle bar shows the WHOLE line on every frame (hook and stakes words together), so cut by crop or caption. ATHENA portrait cyan, no player name | 7.0 to 15.9 |
+| t15_netherton_ending | vivian_ashby | PASS | 70.9 / 0.14 / -93,-115 | round-2 line (ink :97, text matches the cache sidecar) 60.31 to 69.37 (9.06 s). Frames 60.5 to 69 show Netherton portrait + bar with the whole line, no player name. Fallback stakes line "Two of ours are dead..." 47.99 to 52.97. Opening is 60 s of narrator and lines before it | 60.2 to 69.5 |
+| t12_nightshade | harjit_singh | PASS | 36.1 / 0.09 / -67,-63 | line 31.58 to 34.92 (3.34 s). Walk 1.5 to 2.4 is 2 tiles, rec flags "" so HUD and objectives visible and the room is small; interact retried at 10.4. Re-record with `--hide-hud --zoom-step 1` for a clean walk if wanted | 31.5 to 35.0 (walk: re-take) |
+| t13_vector_audit | marcus_hale | PASS | 25.84 / 0.36 / -117,-130 | line 19.39 to 24.71 (5.32 s). Frame 13.5 shows the choice echo with the name "playtest": avoid 12 to 14.5. Narrator beat 15 to 18.2 shows the player portrait without a name | 19.3 to 24.8 |
+| t14_phantom_accuse | frank_callahan | PASS | 30.94 / 0.30 / -93,-72 | "Bold..." 12.22 to 18.32 (6.1 s); second line "I've been hunting this leak... Accuse me properly..." 18.59 to 26.33 (7.74 s), subtitle shows both sentences; strike 28.6 (damage numbers 10 and 4, red hit flash by 30.4), chase held to 30.46. Delivery not heard by ear. An HaX toast shows at 28 to 30 | 18.5 to 26.4, strike 28.4 to 30.5 |
+| t11_lobby_athena | lucia_moreno | PASS (3rd run) | 5.04 / 0.48 / -82,-102 | v2 script (committed): walks UP toward ATHENA 1.65 to 2.5, held to 4.0. Runs 1 and 2 failed drop 1.69 and 1.51 (short clip; first script walked away from her). Camera still panning to 2.5; ATHENA flickers (faint at about 2.0, bright 3.0) | 2.6 to 4.0 settled; 1.7 to 4.0 with the walk |
+| t16_archives_pickup | mei_lin_chow | PASS | 13.17 / 0.65 / -117,-118 | archives lights strike 6.0 to 6.5 (dark then lit). The text panel (Badge Audit text, names and times: spoiler) opens at about 10.1, BEFORE the `pickup` mark 11.08. Cut out by 10.0 | 5.8 to 10.0 |
+| t17_locker_pick | daniel_seo | PASS (2nd run) | 24.4 / 0.38 / -98,-145 | Phantom's locker. Pins set 6.0, 8.4, 10.1, 11.7; open 15.24 ("Lock picked successfully" 15.6). Container contents (named items) show at 16.5: cut before 15.8. Off-duty agent face 20.25 to 22.7 with narration "He doesn't look up from the magazine." Run 1 failed: the container opened over the chat (fixed, committed) | pick 3.0 to 15.5; face 20.3 to 22.6 |
+| t18_locker_key | lucia_moreno | PASS (2nd run) | 10.14 / 0.82 / -52,-115 | Vector's locker, label "Vector's Locker Key". Key select 4.4 to 5.8, insertion 6.5 to 7.4 (pins turn green), open in the room at 8.0. Green sight cones visible in the room frames | 5.8 to 7.6 |
+| t19_lobby_pad_notice | vivian_ashby | PASS (frames not yet viewed) | 17.44 / 0.51 / -73,-112 | pad-open 3.42, typed 6.86, closed 8.93, notice 13.59 to 16.13. Check digits and the note on a contact sheet before use | to check |
+
+## Not done (run 1 stopped at the context limit)
+- t20_director_closeups: run failed (my 290 s timeout killed it; no trimmed file). Re-run without the shell timeout; it takes over 3 min.
+- Not run: t21_ops_closeups, t22_ops_faces, t23_cyberchef, t24_server_walk_flag, t25_rfid_reader, t26_phone_hax, t27_walk_ops.
+- t19 frames not checked. t12 optional re-take with hide-hud.
+- Real hacking: not filmed (covered by `m08_console_recon_clip.mp4`). VM shots need VM.
+- Run commands: scripts' headers have them; flags per the table above (t21/t27 as t21 flags, t22 as t16 flags).
+- Gotchas: a >140 s take needs run.sh in the background (the Bash tool backgrounds at 180 s; do not wrap in `timeout 290`); `scratchpad/marks8.sh <take>` prints m08 marks, `scratchpad/fr8.sh <take> t1 t2..` makes a frame grid.

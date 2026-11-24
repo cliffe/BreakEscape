@@ -273,16 +273,24 @@
 
   training_room("Training Room")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_npc_darren_price_2("Darren Price")
-  rc_npc_leila_nassar_3("Leila Nassar")
+  rc_kit_cooler_2{"Water cooler"}
+  rc_kit_ca03_spare_pc_3{"Spare workstation"}
+  rc_npc_darren_price_4("Darren Price")
+  rc_npc_leila_nassar_5("Leila Nassar")
+  rc_npc_anjali_rao_6("Anjali Rao")
+  rc_npc_niamh_doherty_7("Niamh Doherty")
 
   training_room --> rc_training_kiosk_1
-  training_room --> rc_npc_darren_price_2
-  training_room --> rc_npc_leila_nassar_3
+  training_room --> rc_kit_cooler_2
+  training_room --> rc_kit_ca03_spare_pc_3
+  training_room --> rc_npc_darren_price_4
+  training_room --> rc_npc_leila_nassar_5
+  training_room --> rc_npc_anjali_rao_6
+  training_room --> rc_npc_niamh_doherty_7
 
   class training_room room
-  class rc_training_kiosk_1 item
-  class rc_npc_darren_price_2,rc_npc_leila_nassar_3 npc
+  class rc_training_kiosk_1,rc_kit_cooler_2,rc_kit_ca03_spare_pc_3 item
+  class rc_npc_darren_price_4,rc_npc_leila_nassar_5,rc_npc_anjali_rao_6,rc_npc_niamh_doherty_7 npc
   class node_start start`
     };
     const rendered = {};

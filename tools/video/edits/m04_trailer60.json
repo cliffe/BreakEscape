@@ -1,10 +1,10 @@
 {
  "mission": "m04",
- "id": "m04_trailer60_v2",
+ "id": "m04_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m04 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v2 (2026-11-23): owner notes. No burned captions in 16:9 (crops keep them); hook and Nightshade stakes re-cut from t01b_briefing (Netherton on his own art and re-registered visemes): hook +0.313 s, stakes -10.435 s by silencedetect. v1 (2026-11-23): first cut. Music Shadow Protocol (Remastered) from 26.638 s so its strongest hit lands on the Mission card at 12.0. Real Hacking slot is the m02 slate placeholder until the m04 console take exists. No Relay line or fight footage recorded.",
+ "status": "v3 (2026-11-24): hook and Nightshade stakes now from t01c_briefing (Netherton new mouth-only visemes; hook +0.125 s, stakes +1.155 s by silencedetect). v2 (2026-11-23): owner notes. No burned captions in 16:9 (crops keep them); hook and Nightshade stakes re-cut from t01b_briefing (Netherton on his own art and re-registered visemes): hook +0.313 s, stakes -10.435 s by silencedetect. v1 (2026-11-23): first cut. Music Shadow Protocol (Remastered) from 26.638 s so its strongest hit lands on the Mission card at 12.0. Real Hacking slot is the m02 slate placeholder until the m04 console take exists. No Relay line or fight footage recorded.",
  "music": {
   "track": "SpyAgro/Shadow Protocol (Remastered).mp3",
   "analysis": "shadow_protocol_remastered_60.json",
@@ -78,9 +78,9 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t01b_briefing.trimmed.mkv",
-    "in": 5.813,
-    "out": 10.313
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 5.938,
+    "out": 10.438
    },
    "note": "hook: Netherton voice 4.40-9.84 (J-cut pre 1.2 under the title); bar still shows 'Agent 0x00.' so UI-free in every aspect with captions",
    "framing": {
@@ -204,9 +204,9 @@
     "type": "cut"
    },
    "source": {
-    "file": "t01b_briefing.trimmed.mkv",
-    "in": 14.345,
-    "out": 19.7117
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 15.5,
+    "out": 20.8667
    },
    "note": "Nightshade voice 24.87-30.01; UI-free with captions in every aspect",
    "framing": {

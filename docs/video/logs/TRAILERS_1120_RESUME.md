@@ -176,3 +176,17 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - Owner via AC0: console recordings done for m01–m10. Local mirror ~/safetynet-footage (read only) has all of them; use recon takes s958 (m04), s959 (m05), s960, s945–s948, s940. Agent cutting <m>_console_recon_clip.mp4 into ~/video-takes-local/<m>/clips and swapping m04–m06 edits; log docs/video/logs/CONSOLE_CLIPS.md.
 - Agent aligning m07/m08/m10 take scripts to round-2 lines (script only).
 - Machine: CA0 gets it after the m06 render ("machine yours" + avatar reading). My next block: m05 t24 Niamh, m01 Kevin, Netherton re-takes m04–m06, m04 Voltage ending, m07–m10 takes; renders m01 v11, m02 v5, m04 v3, m05 v4, m06 v2.
+
+## 24 Nov, evening (review page v21)
+- Rendered and published: m02 v5, m01 v11, m04 v3, m05 v4, m06 v2 (tabs on review page, default m02v5; feedback docs feedback/<m>_trailer_<v>). m06 v1 tab also up (feedback/m06_trailer_v1). Gain trims applied after render (ffmpeg -c:v copy, volume) for m01 +0.11, m02 -0.16, m06 -0.13/-0.16 dB.
+- m02 v5 first crop render leaked CyberChef output in m_cyberchef; fixed 58cbaf11d (cr_cyberchef framing) and re-rendered 9:16/1:1; checked frames 22.3-23.0 s and 45.7-45.9 s: input only.
+- Landed today: Netherton visemes 0b206256f, m02 v5 edit 7c947a76d, round-2 lines 694a7ab18, console clips 121249765 (train 374), m01 Hydra final 5ee2019da, m07/m08 script timing 42a5183e8, re-takes fa3be0665 (t24b, t11b, t01c x2, t10c), m06 v2 edit 03e173cbb.
+- Owner decisions (via AC0): keep Hydra in m01 as final; keep service banners in console clips.
+- Machine: mine (CA0 finished; it will ask for a gap before its B3 captures). Avatar female_hacker_hood_v2.
+- Next: m07-m10 takes (scripts ready, risks in takes_m07/08/10.md, m09 t10/t18 updated), then m07-m10 edits; console clips for m07-m10 already in ~/video-takes-local/<m>/clips. Owner must still push hacktivity-videos (e41017f, ddf9dd0).
+
+## 24 Nov, late (m07 under way)
+- AC0 has hash 527568491 (review page v21, five revised cuts); waiting on owner feedback (feedback/m02_trailer_v5, m01_trailer_v11, m04_trailer_v3, m05_trailer_v4, m06_trailer_v2, m06_trailer_v1).
+- m07 takes: sessions 1-3 done (commits cc7c572d4, 6e3b4a8a5, 9977b4860; log docs/video/takes_m07.md; handover scratchpad/m07-takes-handover.md). Round-2 lines pass: t10_briefing hook 12.44-16.56, t13c Architect 37.5-44.0. Running now: leftovers agent (t20b, t12 exchange or silent-face fallback, log t19c/t23c/t29c) on the machine; m07 edit v1 agent (no render) in parallel, handover scratchpad/m07-edit-handover.md.
+- Agents that stop "waiting on background work" can wake and start takes: TaskStop them once their batch is finished (pgrep -af run-take.sh empty).
+- After m07: render m07 v1 (render6.sh m07:16:9 m07:9:16 m07:1:1), check, tab; then m08, m09, m10 takes (one agent per mission, takes-brief.md), edits, renders. CA0 may ask for a gap before its B3 captures.
