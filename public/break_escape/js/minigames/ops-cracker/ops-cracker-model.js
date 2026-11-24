@@ -11,12 +11,16 @@ export const MAX_PICKS = 4;
 export const STATUS_TEXT = Object.freeze({
     ready: 'Pick what you have learned about this account, then press Crack.',
     running: 'Working on it...',
-    ready_to_finish: 'Ready to finish. Press Crack to see the result.',
+    ready_to_finish: 'Ready to finish. Press Finish to see the result.',
     nomatch: 'No match',
     infeasible: 'This one will not fall to guessing. Try another way in.',
     cracked: 'Cracked',
-    need_facts_none: 'You have not learned anything about this account yet.'
+    need_facts_none: 'You have not learned anything about this account yet. You can still press Crack.',
+    no_row: 'This hash is not in your keyring.',
+    not_found: 'You no longer hold this hash.'
 });
+
+export const KNOWN_STATUSES = Object.freeze(['ready', 'running', 'needMoreFacts', 'nomatch', 'infeasible', 'cracked']);
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
@@ -74,17 +78,28 @@ export function statusOf(state) {
 /** Toggle a pick. Only ids in crackFacts, never more than MAX_PICKS. Returns a new state. */
 export function togglePick(state, id) {
     if (!state.crackFacts.includes(id)) return state;
-    if (state.picks.includes(id)) return { ...state, picks: state.picks.filter((p) => p !== id) };
+    // a pick change clears an old refusal (R1-C9)
+    if (state.picks.includes(id)) return { ...state, refusal: null, picks: state.picks.filter((p) => p !== id) };
     if (state.picks.length >= MAX_PICKS) return state;
-    return { ...state, picks: [...state.picks, id] };
+    return { ...state, refusal: null, picks: [...state.picks, id] };
 }
 
-/** Whether Crack may be pressed now (a run needs a pick unless it is the finishing post of a wait). */
+/** Whether a post is in flight (sent, answer not yet taken). */
+export function isBusy(state) {
+    return state.seq > state.accepted;
+}
+
+/**
+ * Whether Crack may be pressed now. No pick is needed (the route takes 0 to 4 facts and three of
+ * the four classes ignore the pick). Not with no row, an unknown status, a finished record, a
+ * post in flight, or a wait that has not ended.
+ */
 export function canCrack(state, nowMs = 0) {
+    if (!state.row || !isStr(state.row.id) || isBusy(state)) return false;
     const st = statusOf(state);
-    if (st === 'cracked' || st === 'infeasible') return false;
+    if (!KNOWN_STATUSES.includes(st) || st === 'cracked' || st === 'infeasible') return false;
     if (st === 'running') return state.deadline !== null && nowMs >= state.deadline;
-    return state.picks.length >= 1;
+    return true;
 }
 
 /** Seconds left in a running wait on the scene clock, or null when nothing is running. */
@@ -143,7 +158,10 @@ export function adoptRow(state, row, crackFacts, nowMs = 0) {
         next.picks = state.picks.filter((p) => next.crackFacts.includes(p));
     }
     if (!state.answer && isObj(row) && row.status === 'running' && Number.isFinite(row.readyInSeconds)) {
-        next.deadline = nowMs + Math.max(0, row.readyInSeconds) * 1000;
+        const secs = Math.max(0, row.readyInSeconds);
+        next.deadline = nowMs + secs * 1000;
+        // the total is not served; the time left at adoption keeps the bar from sitting at 0 (R1-C4)
+        if (secs > 0 && !(state.waitTotal > 0)) next.waitTotal = secs;
     }
     return next;
 }
@@ -162,14 +180,18 @@ export function viewOf(state, nowMs = 0, refusalText = () => 'That did not work.
     const a = state.answer || {};
     let message;
     let tone = 'info';
-    if (state.refusal) { message = refusalText(state.refusal); tone = 'warn'; }
-    else if (st === 'running') {
+    if (!state.row) { message = STATUS_TEXT.no_row; tone = 'warn'; }
+    else if (state.refusal && !(st === 'running' && left !== null && left > 0)) {
+        message = state.refusal === 'not_found' ? STATUS_TEXT.not_found : refusalText(state.refusal);
+        tone = 'warn';
+    } else if (st === 'running') {
         message = left === 0 ? STATUS_TEXT.ready_to_finish : `${STATUS_TEXT.running} ${left === null ? '' : `${left}s`}`.trim();
     } else if (st === 'needMoreFacts') { message = missingText(a.missingCount); tone = 'warn'; }
     else if (st === 'nomatch') { message = STATUS_TEXT.nomatch; tone = 'warn'; }
     else if (st === 'infeasible') { message = STATUS_TEXT.infeasible; tone = 'warn'; }
     else if (st === 'cracked') { message = STATUS_TEXT.cracked; tone = 'good'; }
-    else { message = state.crackFacts.length ? STATUS_TEXT.ready : STATUS_TEXT.need_facts_none; }
+    else if (st === 'ready') { message = state.crackFacts.length ? STATUS_TEXT.ready : STATUS_TEXT.need_facts_none; }
+    else { message = refusalText('unknown_status'); tone = 'warn'; }
     const chips = chipsFor(state.crackFacts, state.intelFacts).map((c) => ({
         ...c,
         picked: state.picks.includes(c.id),
