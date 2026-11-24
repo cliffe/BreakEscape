@@ -39,7 +39,7 @@ import {
     useTarget, parseCheckTarget, parseUseTarget, openWho
 } from './ops-model.js';
 import {
-    SWEEPING_TEXT, SCANNING_TEXT, CHECKING_TEXT, CONFIRMING_TEXT, USING_TEXT, UNPLUGGING_TEXT,
+    SCAN_BAR_TEXT, REQUEST_FAILED_TEXT, SWEEPING_TEXT, SCANNING_TEXT, CHECKING_TEXT, CONFIRMING_TEXT, USING_TEXT, UNPLUGGING_TEXT,
     NEEDS_HEADING, TECHNIQUES_HEADING, PICK_HINT_TEXT, SWEEP_HINT_TEXT, SHARE_LOCKED_TEXT, STALE_TEXT,
     OWN_HEADING, sessionKeptText, sessionGrantText, pickedText, COMPROMISED_TEXT, lockBadgeLabel
 } from './view-texts.js';
@@ -83,6 +83,8 @@ const PENDING_LABELS = Object.freeze({
     sweep: SWEEPING_TEXT, scan: SCANNING_TEXT, check: CHECKING_TEXT, confirm: CONFIRMING_TEXT,
     use: USING_TEXT, unplug: UNPLUGGING_TEXT
 });
+
+const cssEscape = (v) => String(v ?? '').replace(/[^\w-]/g, '\\$&');
 
 // Row lookups on the view the server sent (the same reads the scene makes)
 const plain = (list) => (Array.isArray(list) ? list : []).filter(r => r && typeof r === 'object' && r.id);
@@ -560,14 +562,19 @@ export class PanelsRenderer {
     sweepHtml(block) {
         if (!offersSweep(block)) return '';
         const { busy, text } = this.controlText('sweep', block.id);
-        return `<div class="network-block-ops"><button type="button" class="minigame-button network-row-action network-sweep" data-action="sweep"${busy ? ' disabled' : ''}>${text}</button></div>`;
+        return `<div class="network-block-ops"${busy ? ' aria-busy="true"' : ''}><button type="button" class="minigame-button network-row-action network-sweep" data-action="sweep"${busy ? ' disabled' : ''}>${text}</button>${busy ? this.scanBarHtml() : ''}</div>`;
     }
 
     /** The Scan control of a host row in an ops block, or ''. */
     scanHtml(row, block) {
         if (!offersScan(row, block)) return '';
         const { busy, text } = this.controlText('scan', row.id);
-        return `<button type="button" class="minigame-button network-row-action network-scan" data-action="scan"${busy ? ' disabled' : ''}>${text}</button>`;
+        return `<button type="button" class="minigame-button network-row-action network-scan" data-action="scan"${busy ? ' disabled' : ''}>${text}</button>${busy ? this.scanBarHtml() : ''}`;
+    }
+
+    /** The Scanning bar: a progress bar with no value, drawn only while a sweep or scan request is out. */
+    scanBarHtml() {
+        return `<span class="network-scan-bar" role="progressbar" aria-label="${SCAN_BAR_TEXT}"><span class="network-scan-bar-text">${SCAN_BAR_TEXT}</span><span class="network-scan-bar-fill"></span></span>`;
     }
 
     /**
@@ -670,9 +677,10 @@ export class PanelsRenderer {
     deviceRowHtml(row, block) {
         const ds = downState(row);
         const scan = this.scanHtml(row, block);
+        const scanBusy = !!scan && this.isPending('scan', row.id);
         const tiles = this.servicesHtml(row);
         return `
-                <li class="network-row network-row-host network-row-device${ds.down ? ' network-row-down' : ''}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="device">
+                <li class="network-row network-row-host network-row-device${ds.down ? ' network-row-down' : ''}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="device"${scanBusy ? ' aria-busy="true"' : ''}>
                     <img class="network-row-icon" src="${escapeHtml(this.deviceIcon(row))}" alt="">${this.boltHtml(row)}
                     ${this.labelHtml(row.name || row.id, '', ds)}
                     ${this.downControlHtml(ds)}${scan ? `<span class="network-row-control">${scan}</span>` : ''}${tiles}
@@ -703,11 +711,12 @@ export class PanelsRenderer {
             // A powered-down PC is greyed like a no-route row; remote sign-in off stays readable
             const down = ds.down ? ' network-row-down' : '';
             const scan = this.scanHtml(row, block);
+            const scanBusy = !!scan && this.isPending('scan', row.id);
             const tiles = this.servicesHtml(row);
             if (control !== null) control = this.accessTagHtml(row.session) + control;
             if (scan && control !== null) control += scan;
             return `
-                <li class="network-row network-row-host${down}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
+                <li class="network-row network-row-host${down}${tiles ? ' network-row-scanned' : ''}" data-host-id="${escapeHtml(row.id)}" data-kind="pc"${scanBusy ? ' aria-busy="true"' : ''}>
                     <img class="network-row-icon" src="${this.kindIcons.pc}" alt="">${this.boltHtml(row)}
                     ${this.labelHtml(row.host || row.id, row.name || '', ds)}
                     ${control === null ? this.downControlHtml(ds) + (scan ? `<span class="network-row-control">${scan}</span>` : '') : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}${tiles}
@@ -750,8 +759,25 @@ export class PanelsRenderer {
         if (scene) this.scene = scene;
         const action = offer?.action;
         if (action === 'unplug') { this.noteChange(this.scene, 'unplug'); return; }
+        if (!answer && ['sweep', 'scan'].includes(action)) { this.showRowNotice(offer, REQUEST_FAILED_TEXT); return; }
         if (!answer || answer.success === false) return;
         if (this._hadFocus && ['sweep', 'scan', 'check', 'confirm', 'use'].includes(action)) this.focusAfterOps(offer, answer);
+    }
+
+    /** A line under the control's row (a request that got no reply); the next draw of the list clears it. */
+    showRowNotice(offer, text) {
+        const root = this.game || this.frame;
+        if (!root?.querySelector) return;
+        const row = offer.action === 'scan'
+            ? root.querySelector(`[data-host-id="${cssEscape(offer.target)}"]`)
+            : root.querySelector(`[data-network-id="${cssEscape(offer.target)}"] .network-block-ops`);
+        if (!row) return;
+        row.querySelector(':scope > .network-row-notice')?.remove();
+        const p = row.ownerDocument.createElement('p');
+        p.className = 'network-row-notice';
+        p.setAttribute('role', 'status');
+        p.textContent = text;
+        row.appendChild(p);
     }
 
     /** A line the scene owns changed: draw it in place, with no redraw of the list. */

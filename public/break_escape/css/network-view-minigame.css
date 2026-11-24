@@ -757,3 +757,58 @@ button.network-finding-alias:hover { background: #1b3a4d; }
     display: block;
     image-rendering: pixelated;
 }
+
+/* Ops (S6): the Scanning bar, shown while a sweep or scan request is out. Pixel-art rule: a
+   2px square border, no radius, the GNF pixel font, a fill of stepped segments, no new colour. */
+.network-scan-bar {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+    height: 24px;
+    margin-left: 8px;
+    overflow: hidden;
+    border: 2px solid #2d3a44;
+    border-radius: 0;
+    background: #10161c;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 20px;
+    color: #e8eef2;
+    vertical-align: middle;
+}
+
+.network-scan-bar-text {
+    position: relative;
+    z-index: 1;
+    padding: 0 6px;
+}
+
+.network-scan-bar-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    background: repeating-linear-gradient(90deg, #2d3a44 0, #2d3a44 8px, #10161c 8px, #10161c 12px);
+    animation: network-scan-bar-run 1.2s steps(8, end) infinite;
+}
+
+@keyframes network-scan-bar-run {
+    from { left: -40%; }
+    to { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .network-scan-bar-fill {
+        animation: none;
+        left: 0;
+        width: 100%;
+    }
+}
+
+.network-row-notice {
+    flex: 1 0 100%;
+    margin: 4px 0 0;
+    font-size: 16px;
+    color: #ffe0a0;
+}
