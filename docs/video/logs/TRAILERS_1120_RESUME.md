@@ -184,3 +184,9 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - Owner decisions (via AC0): keep Hydra in m01 as final; keep service banners in console clips.
 - Machine: mine (CA0 finished; it will ask for a gap before its B3 captures). Avatar female_hacker_hood_v2.
 - Next: m07-m10 takes (scripts ready, risks in takes_m07/08/10.md, m09 t10/t18 updated), then m07-m10 edits; console clips for m07-m10 already in ~/video-takes-local/<m>/clips. Owner must still push hacktivity-videos (e41017f, ddf9dd0).
+
+## 24 Nov, late (m07 under way)
+- AC0 has hash 527568491 (review page v21, five revised cuts); waiting on owner feedback (feedback/m02_trailer_v5, m01_trailer_v11, m04_trailer_v3, m05_trailer_v4, m06_trailer_v2, m06_trailer_v1).
+- m07 takes: sessions 1-3 done (commits cc7c572d4, 6e3b4a8a5, 9977b4860; log docs/video/takes_m07.md; handover scratchpad/m07-takes-handover.md). Round-2 lines pass: t10_briefing hook 12.44-16.56, t13c Architect 37.5-44.0. Running now: leftovers agent (t20b, t12 exchange or silent-face fallback, log t19c/t23c/t29c) on the machine; m07 edit v1 agent (no render) in parallel, handover scratchpad/m07-edit-handover.md.
+- Agents that stop "waiting on background work" can wake and start takes: TaskStop them once their batch is finished (pgrep -af run-take.sh empty).
+- After m07: render m07 v1 (render6.sh m07:16:9 m07:9:16 m07:1:1), check, tab; then m08, m09, m10 takes (one agent per mission, takes-brief.md), edits, renders. CA0 may ask for a gap before its B3 captures.
