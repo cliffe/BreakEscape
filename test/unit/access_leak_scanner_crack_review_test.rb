@@ -207,4 +207,37 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     end
     assert_includes rules([keyring([hash_row('dana_hash', 'dana')], path: '/evil/keyring')]), 'crack_row'
   end
+
+  # ---- R1-L5: every hash body on the crack route is judged ---------------------------------------------
+
+  test 'R1-L5: a non-200 crack answer with other keys is a finding; the app error shapes and a non-JSON body are not' do
+    [[500, { 'hit' => true, 'match' => 'dana' }], [422, { 'error' => 'x', 'hit' => true }], [500, { 'success' => false }],
+     [403, { 'error' => 'Not authorized', 'hit' => true }], [500, { 'error' => 'Not authorized' }], [403, { 'error' => 'other' }],
+     [404, {}], [500, []]].each do |http, body|
+      assert_includes rules([post_crack(body, status: http)]), 'crack_answer', [http, body].inspect
+    end
+    assert_empty scan([post_crack({ 'error' => 'Not authorized' }, status: 403),
+                       post_crack({ 'error' => 'invalid_authenticity_token' }, status: 422),
+                       post_crack('<html>Server error</html>', status: 500)])
+  end
+
+  # ---- R1-L12: the ranges of the route -------------------------------------------------------------------
+
+  test 'R1-L12: nomatch runs 2, a wait or missing count beyond the scenario are findings' do
+    [{ 'status' => 'nomatch', 'runs' => 2 }, { 'status' => 'running', 'readyInSeconds' => 600 }, { 'status' => 'running', 'readyInSeconds' => 61 },
+     { 'status' => 'needMoreFacts', 'missingCount' => 4 }].each do |body|
+      assert_includes rules([post_crack({ 'success' => true }.merge(body))]), 'crack_answer', body.inspect
+    end
+    assert_includes rules([keyring([hash_row('dana_hash', 'dana', status: 'running', extra: { 'readyInSeconds' => 100 })])]), 'crack_row'
+    assert_empty scan([post_crack({ 'success' => true, 'status' => 'nomatch', 'runs' => 1 }),
+                       post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 60 }),
+                       post_crack({ 'success' => true, 'status' => 'needMoreFacts', 'missingCount' => 3 })])
+  end
+
+  test 'R1-L12: a scenario with no salted record never answers running' do
+    data = JSON.parse(scenario.to_json)
+    data['credentials'].each_value { |e| e['salted'] = false if e['kind'] == 'hash' }
+    lines = [post_crack({ 'success' => true, 'status' => 'running', 'readyInSeconds' => 10 })].each_with_index.map { |r, i| ['r.jsonl', i + 1, r] }
+    assert_includes AccessLeakScanner.new(data).scan(lines).map(&:rule), 'crack_answer'
+  end
 end

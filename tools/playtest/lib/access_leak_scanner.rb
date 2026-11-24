@@ -3472,6 +3472,8 @@ class AccessLeakScanner
   CRACK_TOKEN = /\A(?:[A-HJ-NP-Z2-9]{4}-){5}[A-HJ-NP-Z2-9]{4}\z/.freeze
   CRACK_REFUSALS = { 'bad_request' => 400, 'not_found' => 404, 'no_recipe' => 422, 'fact_not_held' => 422 }.freeze
   CRACK_MAX_WAIT = 600
+  # The two one-key answers of the app's own handlers that can reach POST /crack: a Pundit refusal and a CSRF failure.
+  CRACK_APP_ERRORS = { 'Not authorized' => 403, 'invalid_authenticity_token' => 422 }.freeze
 
   CRACK_GRANTING_CLASSES = %w[common guessable reused].freeze
 
@@ -3610,10 +3612,10 @@ class AccessLeakScanner
       keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
         body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
         body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
-    when 'running' then keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..CRACK_MAX_WAIT)
-    when 'nomatch' then keys == %w[status success] || (keys == %w[runs status success] && int.call(body['runs'], 1..2))
+    when 'running' then keys == %w[readyInSeconds status success] && @crack_max_wait.positive? && int.call(body['readyInSeconds'], 0..@crack_max_wait)
+    when 'nomatch' then keys == %w[status success] || (keys == %w[runs status success] && body['runs'] == 1)
     when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2
-    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..4)
+    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..@crack_max_facts)
     else false
     end
   end
@@ -3691,15 +3693,22 @@ class AccessLeakScanner
     (list - Array(@game.earned_fact_ids)).empty?
   end
 
+  # Every JSON object answered by POST /crack is judged: the shape of its 200 status, one of the route's four refusals, or
+  # one of the two exact one-key errors the app's own handlers give (Pundit 403, CSRF 422). A body that is not JSON
+  # (an HTML error page, kept as bodyText) on a non-200 stays out.
   def scan_crack_answer(body, ctx, row, add)
     return unless ctx[:crack]
 
     http = row['status']
     return add.call('crack_answer', 'crack:answer', '$') unless http.is_a?(Integer)
-    return unless http == 200 || (body.is_a?(Hash) && (body.key?('success') || body.key?('reason')))
+    return if http != 200 && body.is_a?(String)
 
-    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http))
+    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
     add.call('crack_answer', 'crack:answer', '$') unless ok
+  end
+
+  def crack_app_error_ok?(body, http)
+    body.keys == ['error'] && CRACK_APP_ERRORS[body['error']] == http
   end
 
   def scan_crack_rows(body, ctx, add)
@@ -3728,7 +3737,7 @@ class AccessLeakScanner
     return false if row['status'] == 'cracked' && !crack_account_granted?(account['npcId'])
 
     wait = row['readyInSeconds']
-    row['status'] == 'running' ? wait.is_a?(Integer) && wait.between?(0, CRACK_MAX_WAIT) : !row.key?('readyInSeconds')
+    row['status'] == 'running' ? wait.is_a?(Integer) && @crack_max_wait.positive? && wait.between?(0, @crack_max_wait) : !row.key?('readyInSeconds')
   end
 
   # A row may say cracked only for an account a cracked answer granted in this scan, or one the game holds by another route.
@@ -3742,7 +3751,7 @@ class AccessLeakScanner
 
     waits = body['readyInSeconds']
     ok = ctx[:crack_keyring] && waits.is_a?(Hash) && waits.all? do |id, v|
-      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, CRACK_MAX_WAIT)
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && v.between?(0, @crack_max_wait)
     end
     add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
   end
