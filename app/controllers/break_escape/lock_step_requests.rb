@@ -100,6 +100,15 @@ module BreakEscape
       @game.note_npc_step_grant!(target_id, opener)
     end
 
+    # The open answer of a GATED lock names the lock it opened (the request's own canonical
+    # targetType and targetId, as the /mfa answers echo them). An ungated lock gets nothing.
+    def lock_step_open_echo(target_type, target_id, resolved)
+      type = lock_step_type(target_type)
+      return {} unless lock_step_info(type, target_id, resolved)
+
+      { targetType: type, targetId: target_id }
+    end
+
     # lock_step_for for the lock this request names, or nil when it has no step
     def lock_step_info(target_type, target_id, resolved)
       if target_type == 'door'

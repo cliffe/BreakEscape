@@ -27,14 +27,14 @@
     "route": "POST /unlock",
     "status": 200,
     "from": "test/controllers/break_escape/unlock_response_filter_test.rb: 'opening the outer safe lists the inner box without its password or contents' and games_controller.rb#unlock (object branch: success, type, hasContents, contents)",
-    "body": { "success": true, "type": "object", "hasContents": true, "contents": [ { "id": "locker_memo", "type": "notes", "name": "Locker memo", "takeable": true } ] },
+    "body": { "success": true, "type": "object", "targetType": "object", "targetId": "moira_locker", "hasContents": true, "contents": [ { "id": "locker_memo", "type": "notes", "name": "Locker memo", "takeable": true } ] },
     "varies": ["contents"]
   },
   "open_door": {
     "route": "POST /unlock",
     "status": 200,
     "from": "test/controllers/break_escape/combination_cryptex_unlock_test.rb: 'a combination door opens with the right dials and not with wrong ones' and games_controller.rb#unlock (door branch: success, type, roomData)",
-    "body": { "success": true, "type": "door", "roomData": { "type": "room_office", "connections": {}, "objects": [] } },
+    "body": { "success": true, "type": "door", "targetType": "door", "targetId": "records_room", "roomData": { "type": "room_office", "connections": {}, "objects": [] } },
     "varies": ["roomData"]
   },
   "first_factor_wrong": {

@@ -1314,6 +1314,7 @@ module BreakEscape
             type: 'door',
             roomData: room_data
           }
+          door_answer.merge!(lock_step_open_echo(target_type, target_id, resolved)) # S8c: names a gated lock
           door_answer.merge!(rfid_card_answer) if rfid_card_answer
           # Open before this request: say so, and name no card (R2 m2)
           door_answer[:alreadyOpen] = true if already_open
@@ -1332,6 +1333,7 @@ module BreakEscape
             success: true,
             type: 'object'
           }
+          response.merge!(lock_step_open_echo(target_type, target_id, resolved)) # S8c: names a gated lock
           response.merge!(rfid_card_answer) if rfid_card_answer
           response[:alreadyOpen] = true if already_open
 

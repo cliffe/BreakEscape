@@ -202,6 +202,26 @@ module BreakEscape
       end
     end
 
+    test 'an open answer names its lock only for a gated one, with the canonical type, by an item type word too' do
+      build
+      gate_locker
+      prompts('object:moira_locker', 3)
+      _, body = unlock('item', 'moira_locker', '4817', 'pin')
+      assert_equal %w[object moira_locker], body.values_at('targetType', 'targetId')
+      # a plain locked object and a plain locked door open with today's answers, no echo
+      plain = scenario
+      plain['rooms']['hall']['objects'] << { 'type' => 'safe', 'id' => 'plain_safe', 'name' => 'Plain', 'locked' => true,
+                                             'lockType' => 'pin', 'requires' => '5555', 'contents' => [] }
+      plain['rooms']['hall']['connections']['east'] = 'plain_room'
+      plain['rooms']['plain_room'] = { 'type' => 'room_office', 'locked' => true, 'lockType' => 'pin', 'requires' => '7777',
+                                       'connections' => { 'west' => 'hall' }, 'objects' => [] }
+      build_step_game(plain, 'encounteredNPCs' => %w[moira priya])
+      [unlock('object', 'plain_safe', '5555', 'pin'), unlock('door', 'plain_room', '7777', 'pin')].each do |status, b|
+        assert_equal 200, status
+        assert_empty b.keys & %w[targetType targetId], b.to_s
+      end
+    end
+
     test 'the number lock gate shows one number in 10..99 and the phone shows three, sorted, with it' do
       build
       hold!('priya_phone')
