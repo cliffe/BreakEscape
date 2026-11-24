@@ -57,3 +57,9 @@ Owner note: too many trailers show the nmap scan. m02, m04 and m06 keep their fi
 | m10 | file read: the release arming / kill configuration note | `vm_console_solution.trimmed.mkv`, release_escape run, lands ~245-247. The s948 full take fails after recon; the foothold take is an msf module run like m09 | from the note heading to "A full stop needs the core console"; a flag line sits just below | to do |
 
 Neighbour check: brute force, recon, msf use, recon, script read, recon, script read, shell landing, msf module run, file read. No two neighbours match.
+
+### Cut (24 Nov, all 2.6 s, 1920x1080, 30 fps, h264 High yuv420p crf 14, nearest-neighbour scale on a #21242D pad, no audio)
+
+- m03 msf module use: Cut `$HOME/video-takes-local/m03/clips/m03_console_msfuse_clip.mp4`, 2.6 s (78 frames), 1920x1080. Crop x0-570 y0-180 at 3.3x from `vm_console.trimmed.mkv` 183.4-186.0. Every 3rd frame checked: `bash s4distcc.sh`, then the resource lines (use, set RHOSTS, RPORT, PAYLOAD). No flag, password or secret.
+- m05 attack-script read: Cut `$HOME/video-takes-local/m05/clips/m05_console_script_clip.mp4`, 2.6 s (78 frames), 1920x1080. Crop x0-500 y342-558 at 3.45x from the s959 take (`vm_console_full_RAW_s959.trimmed.mkv`) 67.0-69.6. Every 3rd frame checked: the printf resource lines with shell variables only; the account line and base64 blob above the crop never appear. No flag, password or secret.
+- m07 attack-script read: Cut `$HOME/video-takes-local/m07/clips/m07_console_script_clip.mp4`, 2.6 s (78 frames), 1920x1080. Crop x0-1024 y0-306 at 1.875x (scaled to 1920x574) from `vm_console.trimmed.mkv` 91.0-93.6. Every 3rd frame checked: `cat s5sudo.sh` typed, then the script (variables only). The script text contains the literal path `/root/flag` as a command string, not a value. No flag value, password or secret.
