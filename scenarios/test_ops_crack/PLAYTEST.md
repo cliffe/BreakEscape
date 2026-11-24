@@ -40,12 +40,12 @@ Give the leak check every capture file of the game, one by one, oldest first.
 2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected"; a hash row in the log's Hashes section with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
 3. **Missing facts.** Open the cracker for Dana (Crack button on the row): no chips, and Crack can still be pressed with nothing picked. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
 4. **Earn the rest.** Walk into the bay and wait for Dana's post on the terminal (about 30 s after the bay loads); read the flag text on the lobby sign and submit it at the station. Three chips in the cracker. There is no intel board in this scenario: the facts show only as chips in the cracker.
-5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then "No match". The capture shows `running` with no hint of the verdict.
+5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then "No match". The capture shows `running` with no hint of the verdict. The picks are cleared after "No match", so pick all three again for the next beat.
 6. **The right pick.** Pick all three: the wait, then "Cracked" with the password; the hash row (Hashes section) reads Cracked, and a Cracked password row appears in the Sign-ins section.
 7. **Reuse.** Take Farah's file and Crack with no pick: a 60 s wait, then Cracked (Dana's equal password is held). Reload during the wait: the countdown resumes from the server's time.
 8. **Common, and the batch.** Take the spare desk login's file. Open the cabinet, take the card, sweep the network, scan `desk_panel`, check its service, confirm the finding and use the card: the administrator's hash row appears with the SAME token as the spare desk login's, neither marked Salted. Crack either: both read Cracked at once.
-9. **The real path.** Sign in at Eli's PC with the administrator's cracked password from the keyring; the taskbar shows Administrator.
-10. **Strong is a dead end.** Open Eli's profile and its folder, take the file. Crack: "No match"; again: the infeasible line, and the Crack button goes.
+9. **The real path.** Sign in at Eli's PC: the administrator's tile reads "Cracked" and nothing is filled in, so type the password read from the capture log's Sign-ins section; the taskbar shows Administrator.
+10. **Strong is a dead end.** Open Eli's profile and its folder, take the file. Crack: "No match"; again: the infeasible line, and the Crack button goes from the log row (in the scene it stays, disabled).
 11. **Checks.** Run the leak check over every capture file, oldest first; `verify-run.rb` shows four accounts cracked and Eli's record infeasible; the audit reader shows the share, technique, profile and sign-in rows and nothing for any crack.
 
 ```bash
