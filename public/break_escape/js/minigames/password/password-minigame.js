@@ -2731,6 +2731,7 @@ export class PasswordMinigame extends MinigameScene {
             this.mfaClientRef()?.noteAccount?.(this.mfaSubject(), this.params.mfaAccount);
             // The lesson noted at the first step is taught once the second step passes
             if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.params.mfaTeach = 'in_file';
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.params.mfaTeach = 'cracked';
             else delete this.params.mfaTeach;
             this.passwordField.value = '';
             this.gameData.password = '';
