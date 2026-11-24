@@ -116,7 +116,7 @@ module BreakEscape
     def keyring_for_client(pc_id: nil, route: nil, stamp: false)
       registry = registry_keyring_entries
       with_lock { stamp_keyring_gained!(registry.map { |e| e['id'] }) } if stamp && keyring_gained_pending(registry).any?
-      entries = implicit_keyring_entries + registry
+      entries = keyring_one_row_per_account(implicit_keyring_entries, cracked_keyring_entries) + registry
       gained = keyring_gained_map # server-written only, so an Integer check is enough
       entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
@@ -309,6 +309,43 @@ module BreakEscape
     end
 
     private
+
+    # One password row per account (S7): when a capture entry carries the value, the cracked entry
+    # is left out; when it carries none, the capture entry is left out.
+    def keyring_one_row_per_account(captured, cracked)
+      return captured if cracked.empty?
+
+      with_value = captured.select { |e| CredentialModel.present_string?(e['password']) }.map { |e| e.dig('account', 'npcId') }
+      cracked_ids = cracked.map { |e| e.dig('account', 'npcId') }
+      kept_cracked = cracked.reject { |e| with_value.include?(e.dig('account', 'npcId')) }
+      kept_captured = captured.reject do |e|
+        id = e.dig('account', 'npcId')
+        cracked_ids.include?(id) && !with_value.include?(id)
+      end
+      kept_captured + kept_cracked
+    end
+
+    # The cracked password rows of a keyring answer: one per cracked account, the password always
+    # attached. keyring_for_client applies the one-row-per-account rule against capture entries.
+    def cracked_keyring_entries
+      cracked = player_state['crackedAccounts']
+      return [] unless cracked.is_a?(Array)
+
+      cracked.grep(String).uniq.filter_map do |npc_id|
+        npc = account_npcs.find { |n| n['id'].to_s == npc_id }
+        password = npc ? npc.dig('creds', 'password') : nil
+        next unless CredentialModel.present_string?(password)
+
+        {
+          'id' => "#{npc_id}.cracked",
+          'kind' => 'password',
+          'source' => 'cracked',
+          'account' => account_block(npc, npc.dig('creds', 'username')),
+          'label' => 'Cracked',
+          'password' => password
+        }
+      end
+    end
 
     # Implicit password entries, one per captured account holder (section 3.1). Built from the same
     # readers as GET /capture_secrets, so the keyring never serves a password the capture answer

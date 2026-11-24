@@ -3,9 +3,9 @@
 require 'openssl'
 
 module BreakEscape
-  # Hash records and the offline cracker, the keyring half (S7 unit 08, feature A21): the token a
-  # hash row shows, the password class of a record, its status and the row itself. Reads only; the
-  # run and the grant are another unit's. See docs/agents/ops_core_build/S7_BUILD_BRIEF.md, section 4.
+  # Hash records and the offline cracker (S7 units 08 and 11, feature A21): the token a hash row
+  # shows, the password class of a record, its status and the row itself (reads), then the
+  # refusal checks, the run and the grant (writes, under the caller's game lock). See docs/agents/ops_core_build/S7_BUILD_BRIEF.md, section 4.
   #
   # Nothing here reaches the browser except the row: token, salted, status, readyInSeconds and the
   # account block. The recipe (crack, passwordDifficulty) and the password stay on the server.
@@ -117,7 +117,156 @@ module BreakEscape
       end
     end
 
+    CRACK_STATE_CAP = 64
+
+    # The refusal code (a Symbol) for a crack request, or nil when the run may go ahead. Pure:
+    # writes nothing. Covers checks 3, 5 and 6 of the route, in order: :not_found (not a registry
+    # id, unknown, not a hash record, or a proof that does not hold now), then, unless the
+    # account's password is already held (the route's check 4: run_crack! answers cracked), :no_recipe
+    # and :fact_not_held (a picked id outside the earned set; compared exactly).
+    def crack_refusal(hash_id, facts)
+      found = crack_record(hash_id)
+      return :not_found unless found
+
+      entry, npc = found
+      return nil if password_held_for?(npc['id'])
+      return :no_recipe unless crack_class(entry, npc)
+
+      earned = earned_fact_ids
+      return :fact_not_held unless Array(facts).all? { |f| f.is_a?(String) && earned.include?(f) }
+
+      nil
+    end
+
+    # One crack run (section 4). The caller holds the game lock and has passed crack_refusal.
+    # Returns { status:, runs:?, missingCount:?, readyInSeconds:?, accountId:?, credentialIds:? }
+    # and saves when it changed state. Never carries the password. Time comes only from server_now.
+    def run_crack!(hash_id, facts)
+      found = crack_record(hash_id)
+      return { status: 'nomatch' } unless found
+
+      entry, npc = found
+      return { status: 'cracked' } if password_held_for?(npc['id'])
+
+      klass = crack_class(entry, npc)
+      return { status: 'nomatch' } unless klass
+
+      resolved = CrackDifficulty.resolve(entry, npc)
+      started = crack_started_for(hash_id)
+      return crack_finish_wait!(hash_id, npc, resolved, started) if started
+
+      return crack_strong_run!(hash_id) if klass == 'strong'
+
+      pick = Array(facts).grep(String).uniq
+      case klass
+      when 'common'
+        hit = true
+      when 'guessable'
+        wanted = Array(entry.dig('crack', 'facts')).map(&:to_s).uniq
+        missing = (wanted - earned_fact_ids).size
+        return { status: 'needMoreFacts', missingCount: missing } if missing.positive?
+
+        hit = pick.sort == wanted.sort
+      else # reused
+        hit = crack_reused_hit?(npc)
+      end
+
+      if resolved[:salted]
+        crack_store_state!('crackStarted', hash_id, { 'at' => server_now, 'hit' => hit })
+        save!
+        return { status: 'running', readyInSeconds: resolved[:crack_seconds] }
+      end
+
+      return { status: 'nomatch' } unless hit
+
+      crack_grant!(npc, hash_id, batch: true)
+    end
+
     private
+
+    # [entry, npc] for a hash record whose proof holds now, else nil.
+    def crack_record(hash_id)
+      return nil unless hash_id.is_a?(String) && !hash_id.empty?
+
+      entry = CredentialModel.registry(scenario_data)[hash_id]
+      return nil unless entry.is_a?(Hash) && entry['kind'] == 'hash' && credential_proof_holds?(hash_id, entry)
+
+      npc = CredentialModel.account_npc(scenario_data, entry['account'])
+      npc ? [entry, npc] : nil
+    end
+
+    # A strong password never yields: the first run says nomatch, later ones infeasible.
+    def crack_strong_run!(hash_id)
+      runs = crack_state_hash('crackRuns')
+      count = [runs[hash_id].to_i + 1, STRONG_RUN_CAP].min
+      crack_store_state!('crackRuns', hash_id, count)
+      save!
+      { status: count >= STRONG_RUN_CAP ? 'infeasible' : 'nomatch', runs: count }
+    end
+
+    # A post for a salted record whose run is stored: during the wait it answers running and reads
+    # no pick; after it, the stored verdict (a hit grants that record alone, a miss clears the wait).
+    def crack_finish_wait!(hash_id, npc, resolved, started)
+      wait = resolved[:crack_seconds] || CrackDifficulty::DEFAULT_WAIT
+      left = (started['at'].to_f + wait - server_now).ceil
+      return { status: 'running', readyInSeconds: [left, 0].max } if left.positive?
+
+      crack_clear_state!('crackStarted', hash_id)
+      return crack_grant!(npc, hash_id, batch: false) if started['hit'] == true
+
+      save!
+      { status: 'nomatch' }
+    end
+
+    # Another account the player already holds the password of has an equal password.
+    def crack_reused_hit?(npc)
+      mine = npc.dig('creds', 'password')
+      account_npcs.any? do |other|
+        other['id'] != npc['id'] && other.dig('creds', 'password') == mine && password_held_for?(other['id'])
+      end
+    end
+
+    # Grant this record's account and, for an unsalted run (batch), the account of every other held
+    # unsalted hash record with an equal password. Saves.
+    def crack_grant!(npc, hash_id, batch:)
+      accounts = [npc['id']]
+      if batch
+        password = npc.dig('creds', 'password')
+        CredentialModel.registry(scenario_data).each do |id, other|
+          next if id == hash_id || !other.is_a?(Hash) || other['kind'] != 'hash'
+
+          other_npc = CredentialModel.account_npc(scenario_data, other['account'])
+          next unless other_npc && other_npc.dig('creds', 'password') == password
+          next unless CrackDifficulty.resolve(other, other_npc)&.fetch(:salted) == false
+          next unless credential_proof_holds?(id, other)
+
+          accounts << other_npc['id']
+        end
+      end
+      accounts = accounts.uniq
+      list = Array(player_state['crackedAccounts']).grep(String)
+      accounts.each { |a| list << a unless list.include?(a) }
+      player_state['crackedAccounts'] = list.first(CRACK_STATE_CAP)
+      save!
+      { status: 'cracked', accountId: npc['id'], credentialIds: accounts.map { |a| "#{a}.cracked" } }
+    end
+
+    def crack_state_hash(key)
+      store = player_state[key]
+      player_state[key] = {} unless store.is_a?(Hash)
+      player_state[key]
+    end
+
+    # Writes one entry, dropping the oldest when a new key would pass the 64-entry bound.
+    def crack_store_state!(key, id, value)
+      store = crack_state_hash(key)
+      store.delete(store.keys.first) if !store.key?(id) && store.size >= CRACK_STATE_CAP
+      store[id] = value
+    end
+
+    def crack_clear_state!(key, id)
+      crack_state_hash(key).delete(id)
+    end
 
     def crack_started_for(id)
       store = player_state['crackStarted']
