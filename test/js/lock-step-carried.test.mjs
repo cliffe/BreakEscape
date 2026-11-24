@@ -4,20 +4,42 @@
 // scenarioData the way inventory.js builds it. The briefcase is droppable, so a tray click opens its menu
 // (inventory-menu.js) and never reaches interactions.js: the player picks "Unlock" in the real overlay
 // (ui/interaction-menu.js), which calls handleUnlock(item, 'item'). The tray's click listener is the one in
-// inventory.js (openInventoryItemMenu first, handleObjectInteraction after; a source check pins that).
+// inventory.js: the tray <img> is built by the REAL addToInventory (a copy of inventory.js with only its
+// four collaborators stubbed, as inventory-restore-no-revalidate.test.mjs does) and the test dispatches a real
+// click on it, so the listener under test is inventory.js's own (forced-conversation guard, menu first).
 // Real inventory-menu.js and overlay, unlock-system.js, starters, PIN pad, ApiClient.unlock, lock-step.js,
 // pane and mfa-client.js; only the network is stubbed, from the shared answer fixture.
 // Run with: bin/test-js test/js/lock-step-carried.test.mjs
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { loadAnswer } from './helpers/lock-step-answers.mjs';
 import { buildStack, makeNetwork, settle, quickTimers, bootPage, payloads, deep, js } from './helpers/lock-step-real-stack.mjs';
 
 for (const k of ['log', 'info', 'debug', 'warn', 'error']) console[k] = () => {};
 
+// The real inventory.js, its imports rewritten to stand-ins (what it needs of them is not under test here)
+const idir = mkdtempSync(join(tmpdir(), 'lock-step-carried-'));
+writeFileSync(join(idir, 'package.json'), '{"type":"module"}\n');
+writeFileSync(join(idir, 'rooms-stub.mjs'), 'export const rooms = {};');
+writeFileSync(join(idir, 'ink-stub.mjs'), 'export default class InkEngine {}');
+writeFileSync(join(idir, 'config-stub.mjs'), "export const CSRF_TOKEN = 'x';");
+writeFileSync(join(idir, 'info-label-stub.mjs'), 'export function setHudLabel() {} export function clearHudLabel() {}');
+writeFileSync(join(idir, 'guard-stub.mjs'), 'export function inventoryBlockedByForcedMinigame() { return false; }');
+writeFileSync(join(idir, 'consumables-stub.mjs'), 'export function markObjectConsumed() {}');
+let invSrc = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
+for (const [a, b] of [["'../core/rooms.js'", "'./rooms-stub.mjs'"], ["'./ink/ink-engine.js'", "'./ink-stub.mjs'"], ["'../config.js'", "'./config-stub.mjs'"],
+    ["'../ui/info-label.js'", "'./info-label-stub.mjs'"], ["'./forced-minigame-guard.js'", "'./guard-stub.mjs'"], ["'./consumables.js'", "'./consumables-stub.mjs'"]]) {
+    if (!invSrc.includes(a)) throw new Error(`inventory.js no longer imports ${a}`);
+    invSrc = invSrc.split(a).join(b);
+}
+writeFileSync(join(idir, 'inventory.mjs'), invSrc);
+
 const S = await buildStack();
+const { addToInventory } = await import(pathToFileURL(join(idir, 'inventory.mjs')).href);
 const net = makeNetwork();
 quickTimers();
 
@@ -35,9 +57,21 @@ function carried() {
     img.lockType = data.lockType;
     return img;
 }
-// A click on the tray item, as inventory.js's listener handles it, then a click on the overlay's entry
+// The tray image the real addToInventory builds for the carried item (after bootPage: it clears the body)
+async function inTray(fake) {
+    const box = document.createElement('div');
+    box.id = 'inventory-container';
+    document.body.appendChild(box);
+    const r = await addToInventory({ name: fake.scenarioData.id, objectId: fake.scenarioData.id, scenarioData: fake.scenarioData, _restoredFromSave: true });
+    assert.equal(r.ok, true);
+    const img = box.querySelector('img.inventory-item');
+    assert.ok(img, 'addToInventory put the item in the tray');
+    if (!window.inventory.items.includes(img)) window.inventory.items.push(img);
+    return img;
+}
+// A real click on the tray image (inventory.js's own listener), then a click on the overlay's entry
 function trayClick(item, label) {
-    window.openInventoryItemMenu?.(item, 5, 5) || window.handleObjectInteraction?.(item);
+    item.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true }));
     const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')];
     const row = rows.find((r) => r.textContent.includes(label));
     assert.ok(row, `the tray menu has "${label}" (has: ${rows.map((r) => r.textContent.trim()).join(' | ')})`);
@@ -58,8 +92,9 @@ test('the carried item reads as gated: the payload has secondStep on it and the 
 });
 
 test('clicked in the tray: the pad opens on it, the pane opens over the pad, the owner approves, the item opens once', async () => {
-    const item = carried();
-    const log = bootPage(S, { inventory: { items: [item] } });
+    const fake = carried();
+    const log = bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon, openBriefcase], '/mfa/prompt': ['prompt_passed'] });
     trayClick(item, 'Unlock');
     await settle();
@@ -82,8 +117,9 @@ test('clicked in the tray: the pad opens on it, the pane opens over the pad, the
 });
 
 test('clicked in the tray, the pane names the lock from the held item and the owner from the gate answer', async () => {
-    const item = carried();
-    bootPage(S, { inventory: { items: [item] } });
+    const fake = carried();
+    bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_waiting'] });
     trayClick(item, 'Unlock');
     await settle();
@@ -95,8 +131,9 @@ test('clicked in the tray, the pane names the lock from the held item and the ow
 });
 
 test('clicked in the tray and denied: the item stays shut, in the tray, with one "Not approved." and no attempt spent', async () => {
-    const item = carried();
-    const log = bootPage(S, { inventory: { items: [item] } });
+    const fake = carried();
+    const log = bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_expired'] });
     trayClick(item, 'Unlock');
     await settle();
@@ -112,8 +149,9 @@ test('clicked in the tray and denied: the item stays shut, in the tray, with one
 });
 
 test('a carried gated item clicked again after a cancel starts over: a new pad, a new gate, a pass opens it', async () => {
-    const item = carried();
-    bootPage(S, { inventory: { items: [item] } });
+    const fake = carried();
+    bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon, gateForGordon, openBriefcase], '/mfa/prompt': ['prompt_expired', 'prompt_passed'] });
     trayClick(item, 'Unlock');
     await settle();
@@ -130,8 +168,9 @@ test('a carried gated item clicked again after a cancel starts over: a new pad, 
 });
 
 test('the player closing the pane over a carried item is silent', async () => {
-    const item = carried();
-    const log = bootPage(S, { inventory: { items: [item] } });
+    const fake = carried();
+    const log = bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon], '/mfa/prompt': ['prompt_waiting'] });
     trayClick(item, 'Unlock');
     await settle();
@@ -143,28 +182,27 @@ test('the player closing the pane over a carried item is silent', async () => {
     assert.equal(item.scenarioData.locked, true);
 });
 
-test('the tray menu of the carried briefcase offers Unlock first and a click on it never drops or interacts', () => {
-    const item = carried();
-    const log = bootPage(S, { inventory: { items: [item] } });
+test('the tray menu of the carried briefcase offers Unlock first and a click on it never drops or interacts', async () => {
+    const fake = carried();
+    const log = bootPage(S);
+    const item = await inTray(fake);
     net.reset({ '/unlock': [gateForGordon] });
-    window.openInventoryItemMenu(item, 5, 5);
+    item.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true }));
     const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].map((r) => r.textContent);
     assert.match(rows[0], /Unlock/);
     assert.equal(rows.length, 3);
-    assert.equal(log.interactions || 0, 0);
+    assert.equal(log.interactions || 0, 0, 'the real tray listener opened the menu and did not fall through to the click');
+    window.closeInteractionMenu?.() || document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 });
 
-test('once the briefcase is open its tray menu has no Unlock', async () => {
-    const item = carried();
-    bootPage(S, { inventory: { items: [item] } });
+test('once the briefcase is open its tray menu has Open and no Unlock', async () => {
+    const fake = carried();
+    bootPage(S);
+    const item = await inTray(fake);
     item.scenarioData.locked = false;
-    item.scenarioData.contents = [];
-    window.openInventoryItemMenu(item, 5, 5);
+    item.scenarioData.contents = [{ id: 'board_minutes', type: 'notes', name: 'Board minutes' }];
+    item.dispatchEvent(new window.Event('click', { bubbles: true, cancelable: true }));
     const rows = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].map((r) => r.textContent);
     assert.equal(rows.some((r) => /Unlock/.test(r)), false);
-});
-
-test('inventory.js still sends a tray click to the menu first and to handleObjectInteraction after', () => {
-    const src = readFileSync(join(js, 'systems/inventory.js'), 'utf8');
-    assert.match(src, /if \(window\.openInventoryItemMenu\?\.\(this, e\?\.clientX, e\?\.clientY\)\) return;\s*if \(window\.handleObjectInteraction\) \{\s*window\.handleObjectInteraction\(this\);/);
+    assert.match(rows[0], /Open/, 'an opened container that still holds something can be reopened from the tray');
 });

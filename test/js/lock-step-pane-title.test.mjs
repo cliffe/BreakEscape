@@ -38,15 +38,28 @@ test('a door is titled by its door sign, and an unknown object is "this lock"', 
     assert.equal(nameOf('object', 'no_such_thing'), 'this lock');
 });
 
-test('a nested object is titled by the pad that is up for it (audit_zip is inside moira_pc, in no room list)', () => {
+test('a nested object from the captured payload (audit_zip in moira_pc, in no room list) opens a pane titled by its captured name', async () => {
     bootPage(S);
-    const zip = loadAnswer('open_object').body.contents?.[0] || { id: 'audit_zip' };
-    const lockable = { scenarioData: { id: 'audit_zip', type: 'zip', name: 'Audit archive', locked: true }, objectId: 'audit_zip' };
-    window.MinigameFramework.currentMinigame = { params: { lockable } };
-    assert.equal(nameOf('object', 'audit_zip'), 'Audit archive');
+    const captured = deep(payloads.containerMoiraPc.contents.find((o) => o.id === 'audit_zip'));
+    assert.equal(captured.name, 'quarterly_export.zip');
+    assert.equal(nameOf('object', 'audit_zip'), 'this lock', 'no room list holds it');
+    net.reset({ '/unlock': [{ name: 'gate_push', patch: (b) => { b.targetId = 'audit_zip'; b.npcId = 'gordon'; } }], '/mfa/prompt': ['prompt_waiting'] });
+    // the same call interactions.js makes for a container's contents
+    window.handleUnlock({ scenarioData: captured, objectId: 'audit_zip', layer: 'L' }, 'item');
+    await settle();
+    const pad = window.MinigameFramework.currentMinigame;
+    pad.passwordField.value = 'anything';
+    pad.submitPassword();
+    await settle(20);
+    const st = window.__test.lockStep.state();
+    assert.equal(st.open, true);
+    assert.equal(st.title, captured.name);
+});
+
+test('a pad up for another lock does not name this one', () => {
+    bootPage(S);
     window.MinigameFramework.currentMinigame = { params: { lockable: { scenarioData: { id: 'other', name: 'Other' } } } };
-    assert.equal(nameOf('object', 'audit_zip'), 'this lock', 'a pad for another lock does not name this one');
-    assert.ok(zip);
+    assert.equal(nameOf('object', 'audit_zip'), 'this lock');
 });
 
 test('a nested object is found by walking the contents of a room sprite', () => {

@@ -1992,7 +1992,7 @@ const bridge = {
             const result = {
                 ok: true, item, matched, matchedBy: tier,
                 menu: { title, items: menu.items },
-                hint: 'This item has a menu. Pick an entry with inventoryAct(item, "Drop here" | "Examine" | index).'
+                hint: `This item has a menu. Pick an entry with inventoryAct(item, ${(menu.items || []).map((i) => JSON.stringify(i.label ?? i)).join(' | ')} | index).`
             };
             logAction('openInventoryItem', { item }, result);
             return result;

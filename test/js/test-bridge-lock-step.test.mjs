@@ -147,3 +147,15 @@ test('the bridge is registered on __test as lockStep, with one import', () => {
     assert.match(idx, /import \{ lockStepBridge \} from '\.\/lock-step\.js';/);
     assert.match(idx, /\blockStep: lockStepBridge,/);
 });
+
+// S8c R2-CLIENT8: the tray menu hint names the entries the menu really has (Unlock, Open, Use, Eat ...)
+test('the tray menu hint is built from the menu\'s own entries, not a fixed pair', () => {
+    const idx = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
+    const m = idx.match(/hint: (`This item has a menu\.[^`]*`)/);
+    assert.ok(m, 'the hint is a template over the menu');
+    assert.equal(/"Drop here" \| "Examine" \| index/.test(m[1]), false);
+    const hintFor = new Function('menu', `return ${m[1]};`);
+    assert.equal(hintFor({ items: [{ label: 'Unlock' }, { label: 'Drop here' }, { label: 'Examine' }] }),
+        'This item has a menu. Pick an entry with inventoryAct(item, "Unlock" | "Drop here" | "Examine" | index).');
+    assert.equal(hintFor({ items: [{ label: 'Open' }, { label: 'Drop here' }, { label: 'Examine' }] }).includes('"Open"'), true);
+});
