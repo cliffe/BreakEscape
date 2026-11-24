@@ -121,10 +121,20 @@ module BreakEscape
       assert_equal 0, saves
     end
 
+    # A reader inside a folder of the owner's profile, so the read reaches the scoped branch and
+    # answers 200 under the admin session (without a reader the route is a 404 before any check).
+    def with_profile_reader(data)
+      data['accountProfiles']['jake_files']['contents'][1]['contents'] << {
+        'id' => 'jake_log', 'type' => 'ops_log_terminal', 'name' => 'Audit reader', 'minigameData' => { 'logSource' => 'audit' }
+      }
+      data
+    end
+
     test 'GET /log_rows writes none' do
-      build
+      build(with_profile_reader(scenario))
       dana_in
-      saves = game_saves { get "/break_escape/games/#{@game.id}/log_rows/audit", as: :json }
+      saves = game_saves { get "/break_escape/games/#{@game.id}/log_rows?object_id=jake_log", as: :json }
+      assert_response :success, response.body
       assert_equal 0, saves
       assert_empty rows
     end
@@ -133,6 +143,7 @@ module BreakEscape
       build
       get "/break_escape/games/#{@game.id}/container/jake_archive", as: :json
       assert_response :forbidden
+      first_body = response.parsed_body
       assert_empty rows
 
       dana_in
@@ -140,6 +151,7 @@ module BreakEscape
       @game.save!
       get "/break_escape/games/#{@game.id}/container/jake_archive", as: :json
       assert_response :forbidden
+      assert_equal first_body, response.parsed_body, 'a locked admin session is refused with the same body as no session'
       assert_empty rows, 'a locked admin session reads nothing and leaves no row'
     end
 
@@ -151,8 +163,8 @@ module BreakEscape
       assert_empty rows
     end
 
-    # The log validator does not (yet) check accountProfiles keys against the 40-character row-id
-    # limit, so the controller must not let such an id fail the read or reach the row helper.
+    # The log validator now refuses such an id (validator-log-sources); the controller guard stays
+    # for a snapshot game, which is not re-validated, so such an id must not fail the read.
     test 'a profile id too long for a row opens its folder, leaves no row and does not fail' do
       data = scenario
       long = 'p' * 41
@@ -163,6 +175,22 @@ module BreakEscape
       assert_response :success
       assert_equal 0, saves
       assert_empty rows
+    end
+
+    # S5a R1 F2: two admin PCs can both open the profile; the row names the first in sign-in order,
+    # so one row is stored however often it is read.
+    test 'two admin sessions that can open a profile store one row, on the first PC signed in' do
+      build
+      dana_in('jake_pc')
+      dana_in('it_pc')
+      open_folder
+      assert_response :success
+      assert_equal 1, rows.size
+      first = rows.first
+      3.times { open_folder }
+      assert_equal 1, rows.size, 'a repeat read stores nothing'
+      assert_equal first, rows.first
+      assert_equal({ 'kind' => 'pc', 'id' => 'jake_pc' }, first['where'])
     end
   end
 end

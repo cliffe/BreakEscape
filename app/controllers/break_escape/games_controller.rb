@@ -640,14 +640,14 @@ module BreakEscape
       refusal = container_reach_refusal(located)
       return render_container_refusal(refusal, container_id, located) if refusal
 
-      record_admin_profile_read(located)
-
       if located && located[:scope] && located[:scope][:type] == 'resource'
         log_share_folder_opened(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       elsif located && BreakEscape::Game.login_pc?(located[:object])
         return render_login_desktop(container_id)
       elsif located && located[:scope]
+        # S5a R1 F3: the row is written only in the scoped branch (a sign-in PC object authored in a profile never reaches it)
+        record_admin_profile_read(located)
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       end
 

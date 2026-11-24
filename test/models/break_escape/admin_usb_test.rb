@@ -47,6 +47,13 @@ module BreakEscape
                 'triggerOnInteract' => [{ 'type' => 'confirm_action', 'text' => 'Plug it in?',
                                           'onConfirm' => [{ 'type' => 'grant_foothold', 'pc' => 'jake_pc', 'needsSession' => true,
                                                             'needsHeld' => 'kit_stick' }] }] }
+      %w[jake lena].each do |who|
+        desk << { 'id' => "#{who}_socket", 'type' => 'pc', 'name' => "#{who} USB socket",
+                  'triggerOnInteract' => [{ 'type' => 'grant_foothold', 'pc' => "#{who}_pc", 'needsSession' => true,
+                                            'needsHeld' => 'kit_badusb' }] }
+      end
+      data['credentials']['lena_token'] = { 'kind' => 'token', 'account' => 'lena', 'connectsTo' => 'lena_pc',
+                                            'proof' => { 'foothold' => OFFICE }, 'label' => 'token', 'expiresMin' => 4 }
       data
     end
 
@@ -174,17 +181,64 @@ module BreakEscape
     test 'a live relay session and a live from session answer needs_console' do
       build
       set_session('jake_pc', { 'id' => 'jake', 'via' => 'credential', 'credential' => 'jake_assist', 'relay' => true })
-      @game.reload
-      scenario = @game.scenario_data
-      scenario['rooms']['desk_room']['objects'] << { 'id' => 'jake_socket', 'type' => 'pc', 'name' => 'Socket',
-                                                      'triggerOnInteract' => [{ 'type' => 'grant_foothold', 'pc' => 'jake_pc',
-                                                                                'needsSession' => true, 'needsHeld' => 'kit_badusb' }] }
-      @game.scenario_data = scenario
-      @game.save!
       body = implant('jake_pc')
       assert_response :unprocessable_entity
       assert_equal 'needs_console', body['reason']
       assert_includes held_ids, 'kit_badusb'
+
+      build
+      sign_in_sam
+      set_session('jake_pc', { 'id' => 'jake', 'via' => 'password', 'from' => 'sam_pc' })
+      assert_equal 'admin', game.session_access('jake_pc')
+      body = implant('jake_pc')
+      assert_response :unprocessable_entity
+      assert_equal 'needs_console', body['reason']
+      assert_includes held_ids, 'kit_badusb'
+      assert_empty usb_rows
+    end
+
+    # S5a R1 F10 and open item 3: needs_console asks for a LIVE remote session (session_access not
+    # nil); a locked or expired one keeps the quiet not_ready, so this term is pinned.
+    test 'a locked or expired remote session keeps not_ready' do
+      build
+      set_session('sam_pc', { 'id' => 'sam', 'via' => 'password', 'foothold' => OFFICE, 'locked' => true })
+      assert_equal 'not_ready', implant('sam_pc')['reason']
+      assert_includes held_ids, 'kit_badusb'
+
+      build
+      sign_in_jake
+      set_session('lena_pc', { 'id' => 'lena', 'via' => 'password', 'from' => 'jake_pc', 'locked' => true })
+      assert_equal 'not_ready', implant('lena_pc')['reason']
+
+      build
+      post game_path('login'), params: { pc_id: 'lena_pc', credential: 'lena_token', foothold: OFFICE }, as: :json
+      assert response.parsed_body['success'], response.body
+      assert_equal 'admin', game.session_access('lena_pc')
+      travel_to(Time.current + 2.hours) do
+        assert_nil game.session_access('lena_pc')
+        assert_equal 'not_ready', implant('lena_pc')['reason']
+      end
+      assert_includes held_ids, 'kit_badusb'
+      assert_empty usb_rows
+    end
+
+    test 'a PC whose service is off takes neither the implant nor the plant under admin' do
+      data = usb_scenario
+      data['rooms']['desk_room']['objects'].find { |o| o['id'] == 'jake_pc' }
+        .merge!('requiresItem' => 'kit_stick', 'triggerOnInteract' => [{ 'type' => 'remove_item', 'item' => 'kit_stick' }])
+      build(data)
+      sign_in_jake
+      assert game.keyboard_admin?('jake_pc')
+      @game.reload
+      @game.player_state['globalVariables'] = (@game.player_state['globalVariables'] || {}).merge(KS::JAKE_OFF_GLOBAL => true)
+      @game.save!
+      body = implant('jake_pc')
+      assert_response :unprocessable_entity, body.to_s
+      assert_includes held_ids, 'kit_badusb'
+      refute game.record_planted_item!('kit_stick', 'jake_pc')
+      assert_includes held_ids, 'kit_stick'
+      assert_empty Array(state['plantedItems'])
+      assert_empty usb_rows
     end
 
     test 'not_ready is kept for no session and for no device' do

@@ -412,7 +412,8 @@ module BreakEscape
         next unless action.is_a?(Hash)
 
         if action['type'] == 'grant_foothold' && action['needsSession']
-          return action['pc']
+          # a grant naming no PC is malformed and skipped, as the validator's walk and the client's do
+          return action['pc'] if action['pc'].is_a?(String) && !action['pc'].strip.empty?
         elsif action['type'] == 'confirm_action'
           found = session_grant_pc_in(action['onConfirm'])
           return found if found

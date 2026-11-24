@@ -136,12 +136,38 @@ module BreakEscape
       assert_refused_and_kept(remove('kit_stick', 'lena_pc'))
     end
 
-    test 'an outage that drops the session refuses the stick, through a confirm object too' do
+    test 'a PC switched off drops a keyboard admin session and refuses the stick, through a confirm object too' do
       build
       sign_in_jake
       assert @game.reload.keyboard_admin?('jake_pc')
       set_global(KS::JAKE_OFF_GLOBAL, true)
       assert_refused_and_kept(remove('kit_stick', 'sam_dock'))
+    end
+
+    # S5a R1 F12: the brief's third case, a remote admin session whose network an outage takes down.
+    test 'an outage on the network of a remote admin session refuses the stick' do
+      data = usb_scenario
+      data['networks']['office_lan']['offWhen'] = 'lena_net_down'
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('lena_net_down' => false)
+      build(data)
+      add_held(KS.held('lena_rdp_file'))
+      post game_path('login'), params: { pc_id: 'lena_pc', credential: 'lena_rdp', foothold: OFFICE }, as: :json
+      assert response.parsed_body['success'], response.body
+      assert_equal 'admin', @game.reload.session_access('lena_pc')
+      set_global('lena_net_down', true)
+      assert_nil @game.reload.session_access('lena_pc'), 'the outage drops the route'
+      assert_refused_and_kept(remove('kit_stick', 'lena_pc'))
+    end
+
+    # S5a R1 F5: an object in a room the player has not opened is not probed by a remove.
+    test 'a remove aimed at an object in a locked room answers as before, whatever the policy' do
+      build
+      @game.reload.player_state['unlockedRooms'] -= ['finance_office']
+      @game.save!
+      body = remove('kit_stick', 'lena_pc')
+      assert_response :success, body.to_s
+      assert_equal({ 'success' => true }, body)
+      assert_empty planted
     end
 
     # ---- a plant that is accepted -------------------------------------------------------------

@@ -240,6 +240,15 @@ test('an objective id over 40 characters is not a stored id (R1 m12)', { skip },
     assertHas(errors(issues(net)), 'is over 40 characters');
 });
 
+test('error: an accountProfiles id over 40 characters or with other characters (S5a R1 F6)', { skip }, () => {
+    const long = clean(); long.accountProfiles = { ['p'.repeat(41)]: { for: { people: ['a'] }, contents: [] } };
+    assertHas(errors(issues(long)), 'is over 40 characters');
+    const odd = clean(); odd.accountProfiles = { 'has space': { for: { people: ['a'] }, contents: [] } };
+    assertHas(errors(issues(odd)), 'holds characters outside');
+    const ok = clean(); ok.accountProfiles = { fine_profile: { for: { people: ['a'] }, contents: [] } };
+    assert.deepEqual(errors(issues(ok)), []);
+});
+
 test('the check is hooked into the validator', { skip }, () => {
     const source = readFileSync(join(root, 'scripts/validate_scenario.rb'), 'utf8');
     assert.match(source, /run\.call\('check_log_rows'\) \{ check_log_rows\(json_data\) \}/);

@@ -3331,6 +3331,7 @@ module BreakEscape
 
     # An admin session at this PC's own keyboard: no foothold, not a relay or `from` session.
     def keyboard_admin?(pc_id)
+      # session_admin? true means the record is a Hash, so the reads below are nil-safe (S5a R1 F1)
       return false unless session_admin?(pc_id)
 
       session = access_sessions[pc_id.to_s]
@@ -3481,7 +3482,7 @@ module BreakEscape
       end
       return nil if own
 
-      pc_id = access_sessions.keys.find { |id| admin_session_opens_profile?(id, profile_id) }
+      pc_id = sessions_oldest_first.map(&:first).find { |id| admin_session_opens_profile?(id, profile_id) }
       pc_id ? { pc_id: pc_id, npc: session_identity(pc_id) } : nil
     end
 

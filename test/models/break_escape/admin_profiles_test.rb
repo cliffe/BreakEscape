@@ -109,10 +109,12 @@ module BreakEscape
       dana_in
       get "/break_escape/games/#{@game.id}/container/imran_folder", as: :json
       admin_status = response.status
+      admin_body = response.parsed_body
       build(admin_scenario(admin: false))
       dana_in
       get "/break_escape/games/#{@game.id}/container/imran_folder", as: :json
       assert_equal response.status, admin_status
+      assert_equal admin_body, response.parsed_body, 'refused exactly as for a user session'
       refute_equal 200, admin_status
     end
 
@@ -140,6 +142,49 @@ module BreakEscape
       @game.reload.player_state['sessions'].delete('jake_pc')
       @game.save!
       refute game.session_admits?(scope), 'gone'
+    end
+
+    # S5a R1 F9: an expired token session and a PC that is switched off take no profile either.
+    test 'session_admits? is false for an expired token session and for a PC whose service is off' do
+      scope = { type: 'profile', id: 'jake_files' }
+      data = admin_scenario
+      data['credentials'] = { 'dana_token' => { 'kind' => 'token', 'account' => 'dana', 'connectsTo' => 'jake_pc',
+                                                'proof' => { 'foothold' => 'x' }, 'label' => 'token', 'expiresMin' => 4 } }
+      build(data)
+      @game.reload.player_state['sessions'] = { 'jake_pc' => { 'id' => 'dana', 'via' => 'credential', 'credential' => 'dana_token' } }
+      @game.player_state['credentialClock'] = { 'dana_token' => Time.current.to_f }
+      @game.save!
+      assert_equal 'admin', game.session_access('jake_pc')
+      assert game.session_admits?(scope)
+      travel_to(Time.current + 2.hours) do
+        assert_nil game.session_access('jake_pc')
+        refute game.session_admits?(scope), 'expired'
+        assert_nil game.admin_profile_reader('jake_files')
+      end
+
+      data = admin_scenario
+      data['rooms']['finance']['objects'].find { |o| o['id'] == 'jake_pc' }['offWhen'] = 'jake_off'
+      data['globalVariables'] = (data['globalVariables'] || {}).merge('jake_off' => false)
+      build(data)
+      dana_in
+      assert game.session_admits?(scope)
+      @game.reload.player_state['globalVariables'] = (@game.player_state['globalVariables'] || {}).merge('jake_off' => true)
+      @game.save!
+      refute game.session_admits?(scope), 'PC off'
+      assert_nil game.admin_profile_reader('jake_files')
+    end
+
+    # S5a R1 F9: an admin session at a PC the owner does not own opens nothing of the owner's.
+    test 'an admin session at another PC does not open the owner profile, a folder or an add' do
+      scope = { type: 'profile', id: 'jake_files' }
+      build
+      dana_in('profile_pc')
+      assert_equal 'admin', game.session_access('profile_pc')
+      refute game.session_admits?(scope)
+      get "/break_escape/games/#{@game.id}/container/jake_archive", as: :json
+      refute_equal 200, response.status
+      add_from('profile_pc', 'Q3 budget.xlsx')
+      refute_includes held_names, 'Q3 budget.xlsx'
     end
 
     test 'session_admits? is false once the route is down' do

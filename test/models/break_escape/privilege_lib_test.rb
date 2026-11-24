@@ -79,6 +79,14 @@ module BreakEscape
       assert_equal 'later_pc', CM.session_grant_pc(obj)
     end
 
+    test 'session_grant_pc skips a grant whose pc is blank, as the validator and the client do' do
+      [nil, '', '  ', 7].each do |blank|
+        obj = { 'triggerOnInteract' => [{ 'type' => 'grant_foothold', 'needsSession' => true, 'pc' => blank }, grant('later_pc')] }
+        assert_equal 'later_pc', CM.session_grant_pc(obj), blank.inspect
+        assert_nil CM.session_grant_pc('triggerOnInteract' => [{ 'type' => 'grant_foothold', 'needsSession' => true, 'pc' => blank }])
+      end
+    end
+
     test 'session_grant_pc answers nil when there is no grant' do
       assert_nil CM.session_grant_pc('triggerOnInteract' => [{ 'type' => 'remove_item', 'item' => 'x' }])
       assert_nil CM.session_grant_pc('triggerOnInteract' => [{ 'type' => 'confirm_action', 'onConfirm' => nil }])

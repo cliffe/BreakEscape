@@ -45,12 +45,14 @@ module BreakEscape
 
     # The USB policy's refusal line for a plant the inventory remove would make, or nil. Judges
     # exactly what record_planted_item! judges before its room check (same early returns), so it
-    # never refuses a remove the plant proof would not have judged, and writes nothing. A line is
+    # never refuses a remove the plant proof would not have judged (an object in a room not yet
+    # unlocked answers nil, as before S5a: the remove must not probe it), and writes nothing. A line is
     # the same text the implant path words (USB_REFUSAL_LINES); nil also when an admin session
     # overrides the policy.
     def plant_policy_refusal(item_id, used_on)
       held_data, found = plant_target_for(item_id, used_on)
       return nil unless held_data
+      return nil unless room_unlocked?(found[:room_id])
       return nil unless AccessWork.plant_refused?(scenario_data, found[:object], held_data)
 
       return nil if plant_admin?(found[:object])
