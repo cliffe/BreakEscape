@@ -35,7 +35,7 @@ module BreakEscape
     # One walk over every authored home. Each gated lockable (one `lock_step` answers for) is
     # yielded as (lockable, kind, id, home, where), where kind is :object or :door, id is the
     # object's `id` (nil when it has none) or the room's key, home is where the outermost carrier
-    # sits (:room, :door, :npc, :start or :grant) and `where` is a Hash with :room, :npc, :parent
+    # sits (:room, :door, :npc, :start, :grant, :profile or :share) and `where` is a Hash with :room, :npc, :parent
     # (the carrying object, or nil) and :path (the ids of the carriers above, outermost first).
     # Without a block, answers the same as an Array of Hashes (:lockable, :kind, :id, :home,
     # :room, :npc, :parent, :path, :step).
@@ -75,6 +75,15 @@ module BreakEscape
         walk.call(held, :npc, { room: nil, npc: npc_id }, nil, [])
       end
       walk.call(scenario['startItemsInInventory'], :start, { room: nil, npc: nil }, nil, [])
+      # Account profiles and shares (plan 4.1, G1: a step may sit "in a profile, a share"): the
+      # items a sign-in session or foothold reaches, which the server's resolver already walks
+      %w[accountProfiles resources].each do |key|
+        home = key == 'accountProfiles' ? :profile : :share
+        group = scenario[key].is_a?(Hash) ? scenario[key] : {}
+        group.each_value do |entry|
+          walk.call(entry['contents'], home, { room: nil, npc: nil }, nil, []) if entry.is_a?(Hash)
+        end
+      end
       DeclaredGrants.for(scenario).each do |grant|
         walk.call([grant['item']], :grant, { room: nil, npc: nil }, nil, [])
       end

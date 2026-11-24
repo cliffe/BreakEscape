@@ -82,8 +82,8 @@ module BreakEscape
       assert_not_includes ids, 'plain'
       assert_not_includes ids, 'vault'
       assert_not_includes ids, ''
-      # accountProfiles and resources are not homes LockStepModel walks
-      %w[profdir sharedir].each { |i| assert_not_includes ids, i }
+      # accountProfiles and resources are homes the plan allows (4.1, G1), so they are gated
+      %w[profdir sharedir].each { |i| assert_includes ids, i }
     end
 
     test 'second_step_ids is memoised per instance' do
@@ -239,6 +239,49 @@ module BreakEscape
       assert_empty g.second_step_ids
       assert_not g.behind_closed_step?([{ 'id' => 'plain' }])
       assert_nil g.lock_step_for('object', 'plain')
+    end
+
+    test 'an object with no id keeps second_step_ids from reading empty, though it lists no id' do
+      lone = { 'type' => 'tablet', 'name' => 'Tablet', 'locked' => true, 'lockType' => 'pin', 'requires' => '6',
+               'secondStep' => step, 'contents' => [{ 'type' => 'notes', 'id' => 'tabdoc', 'name' => 'Tab doc' }] }
+      g = build_game(lone_scenario(lone))
+      assert_equal 0, g.second_step_ids.size
+      assert_not g.second_step_ids.empty?
+      assert g.second_step_ids.frozen?
+    end
+
+    test 'the only gated object having no id is never opened by the plain unlock path' do
+      lone = { 'type' => 'tablet', 'name' => 'Tablet', 'locked' => true, 'lockType' => 'pin', 'requires' => '6',
+               'secondStep' => step, 'contents' => [{ 'type' => 'notes', 'id' => 'tabdoc', 'name' => 'Tab doc' }] }
+      g = build_game(lone_scenario(lone))
+      # by name, by generated id, and with the right and wrong code, by every method
+      %w[Tablet hall_tablet_0].each do |target|
+        [['pin', '6'], ['pin', '0'], ['unlocked', ''], ['npc', ''], ['key', '']].each do |method, attempt|
+          assert_not g.validate_unlock('object', target, attempt, method), "#{target} #{method} #{attempt}"
+        end
+        assert_nil g.find_scenario_object(target)
+      end
+      assert g.behind_closed_step?([lone])
+      assert_empty Array(g.player_state['unlockedObjects'])
+      # the old walk it replaces would have found and opened it
+      plain = build_game(ungated(lone_scenario(lone)))
+      assert plain.validate_unlock('object', 'Tablet', '6', 'pin')
+    end
+
+    test 'the tablet contents are not delivered with the object closed' do
+      lone = { 'type' => 'tablet', 'name' => 'Tablet', 'locked' => true, 'lockType' => 'pin', 'requires' => '6',
+               'secondStep' => step, 'contents' => [{ 'type' => 'notes', 'id' => 'tabdoc', 'name' => 'Tab doc' }] }
+      g = build_game(lone_scenario(lone))
+      resolved = g.resolve_unlock_target('tabdoc')
+      assert_equal [lone], resolved[:path]
+      assert_not g.validate_unlock('object', 'tabdoc', '', 'unlocked', resolved: resolved),
+                 'a child of a gated id-less object is refused'
+    end
+
+    def lone_scenario(object)
+      { 'startRoom' => 'hall',
+        'rooms' => { 'hall' => { 'type' => 'room_office', 'objects' => [object],
+                                 'npcs' => [{ 'id' => 'amy' }] } } }
     end
   end
 end

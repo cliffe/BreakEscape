@@ -162,4 +162,28 @@ class LockStepModelTest < ActiveSupport::TestCase
     l = locked('secondStep' => { 'kind' => 'code' })
     assert LM.lock_step_never_passes?(scen(objects: [l]), l)
   end
+
+  test 'each_lock_step walks account profiles and shares, with contents at depth' do
+    gated = lambda do |id, inner = []|
+      { 'type' => 'folder', 'id' => id, 'locked' => true, 'lockType' => 'pin', 'requires' => '1',
+        'secondStep' => step, 'contents' => inner }
+    end
+    data = scen(extra: {
+                  'accountProfiles' => { 'p1' => { 'contents' => [gated.call('pf', [gated.call('pdeep')])] }, 'bad' => 'x' },
+                  'resources' => { 's1' => { 'network' => 'n', 'contents' => [gated.call('sf')] } }
+                })
+    found = LM.each_lock_step(data).to_h { |e| [e[:id], e] }
+    assert_equal %w[pdeep pf sf], found.keys.sort
+    assert_equal :profile, found['pf'][:home]
+    assert_equal :profile, found['pdeep'][:home]
+    assert_equal ['pf'], found['pdeep'][:path]
+    assert_equal :share, found['sf'][:home]
+    assert_nil found['sf'][:room]
+  end
+
+  test 'profiles and shares with no step add nothing' do
+    data = scen(extra: { 'accountProfiles' => { 'p1' => { 'contents' => [locked] } },
+                         'resources' => { 's1' => { 'contents' => [locked] } } })
+    assert_empty LM.each_lock_step(data)
+  end
 end

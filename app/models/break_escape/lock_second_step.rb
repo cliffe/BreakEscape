@@ -13,11 +13,24 @@ module BreakEscape
     # record_step_open! was called for an object whose step has not passed
     class StepNotPassed < StandardError; end
 
+    # The Set second_step_ids returns. `empty?` is false while an object with a second step but no
+    # id exists, though the Set holds no id for it: the seams ask `second_step_ids.empty?` to mean
+    # "nothing in this scenario is gated" and must then route through resolve_unlock_target, which
+    # never resolves such an object, instead of the plain walk that would open it with no step.
+    class GatedIds < Set
+      attr_accessor :idless_count
+
+      def empty?
+        super && idless_count.to_i.zero?
+      end
+    end
+
     # Memoised Set of the ids of the objects that carry a second step. A gated object with no id
-    # is never listed (and never opens: see resolve_unlock_target and behind_closed_step?).
+    # is never listed (and never opens: see resolve_unlock_target and behind_closed_step?), but it
+    # keeps the Set from reporting empty (GatedIds).
     def second_step_ids
       @second_step_ids ||= begin
-        ids = Set.new
+        ids = GatedIds.new
         idless = 0
         BreakEscape::LockStepModel.each_lock_step(scenario_data).each do |entry|
           next unless entry[:kind] == :object
@@ -31,6 +44,7 @@ module BreakEscape
         if idless.positive?
           Rails.logger.warn "[BreakEscape] #{idless} object(s) with a second step have no id and can never open"
         end
+        ids.idless_count = idless
         ids.freeze
       end
     end

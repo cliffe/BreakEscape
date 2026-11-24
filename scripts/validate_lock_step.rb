@@ -100,6 +100,15 @@ def lock_step_context(json_data)
   BreakEscape::DeclaredGrants.for(json_data).each_with_index do |grant, i|
     walk.call([grant['item']], { room: nil, home: :grant, ancestors: [], top: false, table: false, label: "declared grant #{i}" })
   end
+  # Account profiles and shares: a step may sit there (plan 4.1, G1), the walk matches LockStepModel's
+  { profile: 'accountProfiles', share: 'resources' }.each do |home, key|
+    group = json_data[key].is_a?(Hash) ? json_data[key] : {}
+    group.each do |name, entry|
+      next unless entry.is_a?(Hash)
+
+      walk.call(entry['contents'], { room: nil, home: home, ancestors: [], top: false, table: false, label: "#{key}.#{name}.contents" })
+    end
+  end
   { entries: entries, door_steps: door_steps, npc_ids: lock_step_npc_ids(json_data) }
 end
 
@@ -196,7 +205,7 @@ def lock_step_object_errors(e, err)
   at = e[:label]
   id = node['id']
   if !id.is_a?(String) || id.empty?
-    err.call("#{at}: a gated object needs an id.")
+    err.call("#{at}: a gated object needs an id: without one it can never be opened (the server refuses it). A door is keyed by its room, so this is about objects only.")
   else
     err.call("#{at}: id is #{id.length} characters; the most is #{LOCK_STEP_ID_MAX}.") if id.length > LOCK_STEP_ID_MAX
     err.call("#{at}: id '#{id}' uses characters outside A-Z a-z 0-9 _ . : -.") unless id.match?(LOCK_STEP_ID_PATTERN)

@@ -186,6 +186,48 @@ test('lines never quote a secret', { skip }, () => {
     assert.ok(!issues(sc).join('\n').includes('1234'));
 });
 
+// Unit 12b: a gated object with no id, and gated objects in profiles and shares
+const gatedIn = (id) => ({ ...(id ? { id } : {}), type: 'folder', name: 'Folder', locked: true, lockType: 'pin', requires: '1',
+    secondStep: { kind: 'push', owner: 'omar' } });
+
+test('12b: the only gated object having no id is an error that says it can never open', { skip }, () => {
+    const sc = base();
+    delete safe(sc).id;
+    sc.rooms.lobby.objects[0].name = 'Only safe';
+    const errs = errors(issues(sc));
+    assertHas(errs, 'a gated object needs an id');
+    assertHas(errs, 'can never be opened');
+    // twin: with its id it is clean
+    assert.deepEqual(errors(issues(base())), []);
+});
+
+test('12b: a gated room is keyed by its room, and needs no id', { skip }, () => {
+    const sc = base();
+    delete safe(sc).secondStep;
+    vault(sc).secondStep = { kind: 'push', owner: 'omar' };
+    assert.deepEqual(errors(issues(sc)), []);
+});
+
+test('12b: a gated object in an account profile or a share is allowed, and its id is checked', { skip }, () => {
+    for (const [key, extra] of [['accountProfiles', { for: { roles: ['staff'] } }], ['resources', { network: 'n1' }]]) {
+        const ok = base();
+        ok[key] = { g1: { ...extra, contents: [gatedIn('gf1')] } };
+        assert.deepEqual(errors(issues(ok)), [], key);
+        const bad = base();
+        bad[key] = { g1: { ...extra, contents: [gatedIn(null)] } };
+        assertHas(errors(issues(bad)), 'a gated object needs an id');
+    }
+});
+
+test('12b: profiles and shares add no line when no secondStep exists anywhere', { skip }, () => {
+    const sc = base();
+    delete safe(sc).secondStep;
+    const plain = gatedIn(null); delete plain.secondStep;
+    sc.accountProfiles = { g1: { for: { roles: ['staff'] }, contents: [plain] } };
+    sc.resources = { g2: { network: 'n1', contents: [plain] } };
+    assert.deepEqual(issues(sc), []);
+});
+
 test('schema: secondStep is a closed, non-server-only object on rooms and items, not on doors', () => {
     const schema = JSON.parse(readFileSync(join(root, 'scripts/scenario-schema.json'), 'utf8'));
     for (const where of ['room', 'item']) {
