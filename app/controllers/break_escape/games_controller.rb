@@ -1418,7 +1418,7 @@ module BreakEscape
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
             # R1-S1: a fact earned by a give_item reward arrives here as a held item; its entry is
-            # served for the ids the player has earned (earned_fact_entries reads only those)
+            # served for the ids the player has earned (the ids come from the client's item; earned_fact_entries answers only earned ones)
             held_entries = @game.earned_fact_entries(stored_item_fact_ids(item.to_unsafe_h))
             return render json: held_entries.empty? ? { success: true, already: true } : { success: true, already: true, facts: held_entries }
           end
