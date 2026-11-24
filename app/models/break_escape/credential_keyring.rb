@@ -34,9 +34,21 @@ module BreakEscape
         # A technique yields a saved connection, never a password (plan 4.3): the kind is read here too,
         # not only by the validator (S3 server R1 m3). S7 widens it to `hash` (a hash, never a password).
         %w[saved_connection hash].include?(entry['kind']) && technique_finding_used?(proof['technique_card'])
+      when 'harvested'
+        # S5b: a hash record whose "<pcId>|<npcId>" pair the collect has written to `harvestedAccounts`
+        # (server-written, never synced).
+        entry['kind'] == 'hash' && harvested_pair_held?(proof['harvested'], entry['account'])
       else
         false
       end
+    end
+
+    # S5b: whether the collect at this PC has taken this account. The key is read with no default so
+    # this works whether or not the state defaults carry it.
+    def harvested_pair_held?(pc_id, npc_id)
+      pair = CachedAccounts.pair(pc_id, npc_id)
+      held = player_state.is_a?(Hash) ? player_state['harvestedAccounts'] : nil
+      !pair.nil? && held.is_a?(Array) && held.include?(pair)
     end
 
     # Whether the server's `opsUsed` list (OPS_CORE_PLAN.md section 8, server-written only) records
