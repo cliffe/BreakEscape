@@ -28,7 +28,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** The ops fields of an answer: the parity claim is about these, so no list of removed keys may name one. */
-export const OPS_FIELDS = Object.freeze(['finding', 'alias', 'status', 'reason', 'need', 'already']);
+export const OPS_FIELDS = Object.freeze(['finding', 'alias', 'status', 'reason', 'need', 'already', 'cli', 'findings', 'falseBecause', 'needs', 'fixed', 'hostId', 'service', 'class', 'severity', 'summary', 'address', 'services', 'session', 'credential']);
 
 /**
  * Keys removed from an answer before two answers are compared, each with the reason it differs between two

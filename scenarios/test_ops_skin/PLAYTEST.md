@@ -46,11 +46,11 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 ## Layout
 
 Lobby (start): the drop box (`kit_dropbox`), the office wall port (`office_port`), the cabinet by the door (`lobby_cabinet`, holds both field notes),
-a sign and Ian. The comms room (north): the file server `files01` and the records server `records01`. One network, `office_lan` (discovery by sweep).
-Two resources on it: the open share `office_drop` and the printer `floor_printer`. Both servers sign in as Ian (`iokafor`; the password is on
+a sign and Ian. The comms room (north): the file server `files01` and the records server `records01`. Two networks: `office_lan` (discovery by sweep) and the open guest network `guest_lan` (below).
+Two resources on `office_lan`: the open share `office_drop` and the printer `floor_printer`. Both servers sign in as Ian (`iokafor`; the password is on
 Ian's own record, not on a sign). Take both notes from the cabinet before T5.
-The open guest network `guest_lan` (range 10.40.0.0/28, linked to the office network) holds one camera, `guest_cam01`. It is listed only after
-T7's session on `files01`, which pivots to it.
+`guest_lan` (range 10.40.0.0/28, linked to the office network) holds one camera, `guest_cam01`. It is listed only after
+T7's session on `files01`, which pivots to it. The validator gives one warning for this scenario (the guest camera runs a service and nothing on that network has a weakness): the camera is scenery by design, so the scenario validates with 0 errors and that 1 warning.
 
 ## Ids for the tester and units 19, 23 and 25
 

@@ -13,7 +13,7 @@ test('the removed keys are one list, each with a reason, and none is an ops fiel
     assert.ok(REMOVED_KEYS.length > 0);
     for (const e of REMOVED_KEYS) { assert.equal(typeof e.key, 'string'); assert.ok(e.reason.trim().length > 10, e.key); }
     assert.equal(checkRemovedList(REMOVED_KEYS), true);
-    assert.deepEqual([...OPS_FIELDS].sort(), ['alias', 'already', 'finding', 'need', 'reason', 'status']);
+    for (const f of ['alias', 'already', 'finding', 'need', 'reason', 'status', 'cli', 'findings', 'falseBecause', 'needs', 'fixed', 'hostId', 'service', 'class', 'severity', 'summary', 'address', 'services', 'session', 'credential']) assert.ok(OPS_FIELDS.includes(f), f);
     for (const f of OPS_FIELDS) assert.ok(!REMOVED_KEYS.some(e => e.key === f), f);
 });
 
