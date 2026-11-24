@@ -68,17 +68,16 @@ def crack_item_is_source?(entry, data)
     end
     return rooms_at ? item['takeable'] == true : false
   end
-  if chain.include?('flagRewards')
-    return entry[:ancestors].any? { |a| a.is_a?(Hash) && a['type'] == 'give_item' && a['item'].equal?(item) }
-  end
+  # An inline item under a flag reward is never given: the server reads the station's itemsHeld
+  return false if chain.include?('flagRewards')
+
   return false unless rooms_at && chain[rooms_at + 2] == 'objects'
 
   # rooms.<id>.objects[i](.contents[j]...)*. A container's contents are served as it is opened;
-  # a room object, a share file or a PC file counts when takeable.
+  # a room object, a container's content item, a share file or a PC file counts when takeable (the
+  # server refuses an add of an item that is not: "Item is not takeable").
   rest = chain[(rooms_at + 4)..] || []
   return item['takeable'] == true if rest.empty?
-  return true if rest.all? { |k| k == 'contents' || k.is_a?(Integer) }
-
   item['takeable'] == true
 end
 

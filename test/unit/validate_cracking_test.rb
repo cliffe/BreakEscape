@@ -122,11 +122,36 @@ class ValidateCrackingTest < ActiveSupport::TestCase
     rec(s)['crack']['facts'] = %w[year team colour]
     rec(s)['crack']['difficulty'] = 'hard'
     s['rooms']['office']['objects'] << { 'id' => 'drawer', 'type' => 'safe', 'contents' => [
-      { 'type' => 'notes', 'id' => 'letter', 'name' => 'Letter', 'revealsFacts' => ['year'] }
+      { 'type' => 'notes', 'id' => 'letter', 'name' => 'Letter', 'takeable' => true, 'revealsFacts' => ['year'] }
     ] }
     dana(s)['feed'] = { 'posts' => [{ 'id' => 'p1', 'text' => 'hello', 'fact' => 'se_intel_team' }] }
     s['rooms']['office']['objects'] << { 'id' => 'station', 'type' => 'flag-station', 'name' => 'Station',
                                          'flagRewards' => [{ 'type' => 'grant_fact', 'fact' => 'colour' }] }
+    assert_empty errors(s), errors(s).join("\n")
+  end
+
+  test 'a container item is a source only when it can be taken (R1-S2)' do
+    s = base
+    rec(s)['crack']['facts'] = ['year']
+    rec(s)['crack']['difficulty'] = 'easy'
+    s['rooms']['office']['objects'] << { 'id' => 'drawer', 'type' => 'safe', 'contents' => [
+      { 'type' => 'notes', 'id' => 'letter', 'name' => 'Letter', 'takeable' => false, 'readable' => true, 'revealsFacts' => ['year'] }
+    ] }
+    assert_error(s, 'must come from an item the server sees')
+    s['rooms']['office']['objects'].last['contents'][0]['takeable'] = true
+    assert_empty errors(s), errors(s).join("\n")
+  end
+
+  test 'a nested container item is held to the same rule (R1-S2)' do
+    s = base
+    rec(s)['crack']['facts'] = ['year']
+    rec(s)['crack']['difficulty'] = 'easy'
+    inner = { 'type' => 'notes', 'id' => 'letter', 'name' => 'Letter', 'revealsFacts' => ['year'] }
+    s['rooms']['office']['objects'] << { 'id' => 'drawer', 'type' => 'safe', 'contents' => [
+      { 'type' => 'safe', 'id' => 'box', 'contents' => [inner] }
+    ] }
+    assert_error(s, 'must come from an item the server sees')
+    inner['takeable'] = true
     assert_empty errors(s), errors(s).join("\n")
   end
 
