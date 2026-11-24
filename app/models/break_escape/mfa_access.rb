@@ -127,10 +127,16 @@ module BreakEscape
     # The player, holding the owner's phone (or the re-enrolled own phone for a pc subject),
     # answers the prompt. :no_phone, :cancelled (deny or a wrong number: the record is dropped,
     # nothing counted towards a lockout) or :passed.
-    def approve_second_step(map, key, subject, npc_id:, number: nil, deny: false, reenrolled: false)
+    #
+    # `own_form` says the answer came through the own-phone form. For a re-enrolled account on a
+    # pc subject the old phone is no longer its second factor: an approval is accepted only through
+    # the own-phone form, and one through a held old phone is refused as :no_phone with nothing
+    # changed. Any other account is judged as before, whatever `own_form` says.
+    def approve_second_step(map, key, subject, npc_id:, number: nil, deny: false, reenrolled: false, own_form: true)
       tidy_pending!(map)
       record = map[key]
-      phone = held_friendface_phone(npc_id) || (reenrolled && subject.is_a?(Hash) && subject[:kind] == 'pc')
+      own_pc = reenrolled && subject.is_a?(Hash) && subject[:kind] == 'pc'
+      phone = own_pc ? own_form == true : held_friendface_phone(npc_id)
       return :no_phone unless push_record?(record, subject) && phone
 
       right = record['kind'] != 'push_number_match' ||
