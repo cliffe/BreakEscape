@@ -18,6 +18,7 @@ module OpsUnchangedCases
       .merge(privilege_cases)
       .merge(mfa_cases)
       .merge(cracking_cases)
+      .merge(harvest_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -421,6 +422,109 @@ module OpsUnchangedCases
        step('bootstrap_after', 'GET', 'scenario')],
       'npcFrustration' => { 'omar' => handed }
     )
+  end
+
+  # ---- Cached accounts and account kinds plan (S5b, S5c, rulings A and B), unit 01 ----
+  #
+  # One fixture per case, "harvest_<name>", captured from `ops-priv2` as cut, BEFORE any engine edit
+  # of that stage (a first capture, not a re-record). Already pinned elsewhere, so not repeated:
+  # typed sign-in, the notPermitted refusal (`sam_refused_at_ian_pc`, `ian_signs_in_dana_pc`), Switch
+  # user, lock and unlock and the bootstrap of test_access_signin and test_access_sessions
+  # (privilege_*); a keyring sign-in through an implant foothold and a stick plant the policy allows
+  # (privilege_test_access_keyring); every room answer of test_access_keyring (core_*). The
+  # shipped test_access_signin and test_access_sessions declare no credentials, so there is no
+  # keyring sign-in to pin on them. What these add:
+  #  - harvest_relay_test_access_keyring [ruling B]: a relay sign-in (assist invite) and the relay
+  #    desktop, folder and keyring answers, today `user` for every relay record.
+  #  - harvest_usb_port_test_access_social [ruling A]: a storage stick refused at a governed
+  #    object that is not a sign-in PC and at a governed sign-in PC, with no admin session.
+  #  - harvest_rooms_test_access_signin / _sessions [S5c]: every room answer (sign-in tiles,
+  #    `hasPresentNpc`), `scenario_map` (`hasNPCs`) and the account tiles of each sign-in PC
+  #    before and after a sign-in.
+  HARVEST_SCENARIOS = %w[test_access_signin test_access_sessions].freeze
+
+  def harvest_cases
+    cases = { 'harvest_relay_test_access_keyring' => harvest_relay_case,
+              'harvest_usb_port_test_access_social' => harvest_usb_port_case }
+    HARVEST_SCENARIOS.each { |name| cases["harvest_rooms_#{name}"] = harvest_rooms_case(name) }
+    cases
+  end
+
+  def harvest_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "harvest_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  def harvest_relay_case
+    scenario = core_render('test_access_keyring')
+    code = core_people(scenario).flat_map { |npc| Array(npc['itemsHeld']) }.find { |item| item['id'] == 'jake_assist_code' }
+    held = code.slice('id', 'type', 'name', 'credential')
+    harvest_base(
+      'test_access_keyring', 'Ruling B: a relay sign-in over an assist invite and its desktop, keyring and folder answers, before the relay level changes.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_plain', 'GET', 'keyring'),
+       step('accounts_jake_pc_relay', 'GET', 'login_accounts', { 'pc_id' => 'jake_pc', 'relay' => 1 }),
+       step('relay_signin_jake_pc', 'POST', 'login', { 'pc_id' => 'jake_pc', 'credential' => 'jake_assist', 'relay' => true }),
+       step('desktop_jake_pc_relay', 'GET', 'container/jake_pc', { 'relay' => 1 }),
+       step('desktop_jake_pc_no_route', 'GET', 'container/jake_pc'),
+       step('folder_jake_docs_relay', 'GET', 'container/jake_docs', { 'relay' => 1 }),
+       step('keyring_relay', 'GET', 'keyring', { 'relay' => 1 }),
+       step('relay_signin_again', 'POST', 'login', { 'pc_id' => 'jake_pc', 'credential' => 'jake_assist', 'relay' => true }),
+       step('implant_refused_at_relay', 'POST', 'network/implant', { 'pc_id' => 'jake_pc', 'shape' => 'session' }),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => [held]
+    )
+  end
+
+  # test_access_social gains a stick, a dock that takes it under the storage-blocking policy (a
+  # governed object that is not a sign-in PC) and the same intake on kim_pc (a governed sign-in PC).
+  def harvest_usb_port_case
+    scenario = core_render('test_access_social')
+    room = scenario['rooms'].values.find { |r| Array(r['objects']).any? { |o| o['id'] == 'kim_pc' } }
+    take = { 'requiresItem' => 'kit_stick', 'requiresItemHint' => 'You would need a stick for this.',
+             'triggerOnInteract' => [{ 'type' => 'remove_item', 'item' => 'kit_stick' }] }
+    room['objects'].find { |o| o['id'] == 'kim_pc' }.merge!(take)
+    room['objects'] << { 'type' => 'pc', 'id' => 'stick_dock', 'name' => 'Stick dock', 'sprite' => 'network_rack1',
+                         'position' => { 'x' => 9, 'y' => 3 }, 'takeable' => false, 'policy' => 'usb_locked',
+                         'observations' => 'A dock that takes a stick.' }.merge(take)
+    stick = { 'type' => 'pc', 'id' => 'kit_stick', 'name' => 'Spare USB stick', 'sprite' => 'drop_box1',
+              'position' => { 'x' => 7, 'y' => 6 }, 'takeable' => true, 'usbClass' => 'storage',
+              'observations' => 'A spare USB stick.' }
+    harvest_base(
+      'test_access_social', 'Ruling A: a storage stick refused at a governed dock and at a governed sign-in PC with no admin session, before the port override.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('room_of_dock', 'GET', "room/#{scenario['rooms'].key(room)}"),
+       step('plant_refused_dock', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'kit_stick' }, 'used_on' => 'stick_dock' }),
+       step('plant_refused_dock_again', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'kit_stick' }, 'used_on' => 'stick_dock' }),
+       step('plant_refused_kim_pc', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'kit_stick' }, 'used_on' => 'kim_pc' }),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => [stick]
+    )
+  end
+
+  # Every room answer and the map, then the tiles of each sign-in PC before and after one sign-in.
+  def harvest_rooms_case(name)
+    scenario = core_render(name)
+    pcs = core_login_pcs(scenario)
+    people = core_people(scenario)
+    steps = [step('bootstrap', 'GET', 'scenario'), step('scenario_map', 'GET', 'scenario_map')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    pcs.each { |pc| steps << step("accounts_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    first = pcs.find { |pc| pc['id'] == 'ian_pc' }
+    if first
+      steps << login("signin_#{first['id']}", 'ishaw', name == 'test_access_signin' ? 'Patchday!2026' : 'Kettle-Ian-77', first['id'])
+      pcs.each { |pc| steps << step("accounts_after_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    end
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    harvest_base(name, "S5c: room answers, the map and the sign-in tiles of #{name}, before account kinds.", scenario, steps)
   end
 
   # ---- Multi-factor sign-in plan (S8a), unit 01: golden answers for the sign-in paths the second step edits ----
