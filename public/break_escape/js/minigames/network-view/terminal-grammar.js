@@ -396,6 +396,14 @@ const heldIds = (st) => techniqueList(st.view).map(t => t.id);
 // commandFor and helpFor
 // ---------------------------------------------------------------------------------------------
 
+/** What `use` is given for a finding: its module path, or its alias when another listed finding has the same path. */
+function moduleName(view, findingId) {
+    const all = modulesOf(view);
+    const m = all.find(x => x.findingId === findingId);
+    if (!m) return null;
+    return all.some(x => x !== m && norm(x.module) === norm(m.module)) ? m.alias : m.module;
+}
+
 /** The Terminal line for an offer (a line `parse` reads back to the same offer). */
 export function commandFor(offer, view) {
     const o = offer || {};
@@ -415,12 +423,12 @@ export function commandFor(offer, view) {
             return `nmap -sV --script vuln${udp ? ' -sU' : ''}${port} ${ids.hostId}`;
         }
         case 'confirm': {
-            const m = modulesOf(view).find(x => x.findingId === ids.findingId);
-            return m ? `msf > use ${m.module}; check` : null;
+            const m = moduleName(view, ids.findingId);
+            return m ? `msf > use ${m}; check` : null;
         }
         case 'use': {
-            const m = modulesOf(view).find(x => x.findingId === ids.findingId);
-            return m ? `msf > use ${m.module}; set TECHNIQUE ${ids.techniqueId}; run` : null;
+            const m = moduleName(view, ids.findingId);
+            return m ? `msf > use ${m}; set TECHNIQUE ${ids.techniqueId}; run` : null;
         }
         case 'sign-in': return `${verb} ${ids.hostId}`;
         case 'open': return `${verb} ${ids.hostId ?? ids.resourceId}`;
@@ -645,8 +653,11 @@ function doNmap(st, args) {
     if (portValue !== null) {
         const hits = services.filter(s => s.port !== null && s.port === String(portValue).trim());
         if (hits.length === 0) return portList();
-        if (hits.length > 1) return message(fill(T.MORE_THAN_ONE, { ids: joinIds(hits.map(h => h.label)) }));
-        chosen = hits[0];
+        // two services on one port number: the protocol the line names (-sU or not) breaks the tie
+        const wanted = flags.has('-sU') ? 'udp' : 'tcp';
+        const byProtocol = hits.length > 1 ? hits.filter(h => serviceCli(h.service).protocol === wanted) : hits;
+        if (byProtocol.length !== 1 && hits.length > 1) return message(fill(T.MORE_THAN_ONE, { ids: joinIds(hits.map(h => h.label)) }));
+        chosen = byProtocol[0] || hits[0];
     } else if (services.length === 1) {
         chosen = services[0];
     } else {

@@ -555,3 +555,27 @@ test('parse is pure: a second call gives an equal answer and the inputs are not 
     }
     assert.equal(JSON.stringify({ view, offers }), before);
 });
+
+test('R1-C3: two findings with one authored module path, and two services on one port, still read back to their offers', () => {
+    // the same weakness on two hosts: one authored module path, two aliases
+    const rows = [
+        hostRow('web1', { findings: [finding('web1', 'web', 'a1', { cli: { module: 'exploit/training/shared_flaw' } })] }),
+        hostRow('web2', { findings: [finding('web2', 'web', 'b1', { cli: { module: 'exploit/training/shared_flaw' } })] })
+    ];
+    for (const r of rows) r.findings[0].cli = { module: 'exploit/training/shared_flaw' };
+    const view = build(rows, { techniques: { tk: { id: 'tk', name: 'Tk', held: true } } });
+    const offers = offersFor(view);
+    const confirms = offers.filter(o => o.action === 'confirm');
+    assert.equal(confirms.length, 2);
+    for (const offer of confirms) sameOffer(p(G.commandFor(offer, view), view, offers), offer);
+    assert.notEqual(G.commandFor(confirms[0], view), G.commandFor(confirms[1], view));
+    // two services of one host on one port number, one of them udp
+    const dual = build([hostRow('print01', { services: [svc('print', 80), svc('printu', 80, { cli: { protocol: 'udp' } })], findings: [] })]);
+    const dOffers = offersFor(dual);
+    const checks = dOffers.filter(o => o.action === 'check');
+    assert.equal(checks.length, 2);
+    for (const offer of checks) {
+        const line = G.commandFor(offer, dual);
+        sameOffer(p(line, dual, dOffers), offer);
+    }
+});
