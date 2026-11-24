@@ -13,6 +13,9 @@
 // `unchangedCases`, `snapshotUnchanged`, `settle`, `scene` (the scene module), `model` (ops-model).
 // The recorder that wrote the saved snapshots is not part of the repository: a snapshot is only
 // ever compared, and is never re-recorded after the scene has changed.
+// One exception, said here so nobody reads it as a "before" proof: panels-before/cli_authored_bare.* and
+// cli_authored_entries.* were recorded in unit 24, after the split and the Scanning bar. They pin today's
+// drawing and show that no served `cli` string reaches Panels; they prove nothing about the old scene.
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -133,7 +136,7 @@ const attrKey = (btn) => {
  * example `{ skin: 'cli' }`, which the real starter works out); `starter`: open through the scene's own
  * `startNetworkViewMinigame`.
  */
-export async function mount(body, { unplug = false, hold = false, footholdId = null, params = {}, starter = false } = {}) {
+export async function mount(body, { unplug = false, hold = false, footholdId = null, params = {}, starter = false, dropSwitch = false } = {}) {
     window.MinigameFramework?.endMinigame?.(false, null);
     const h = { calls: [], opened: [], toasts: [], events: [], held: [], hold };
     const entry = (footholdId ? body.footholds.find(f => f.id === footholdId) : null) || body.footholds[0];
@@ -182,7 +185,14 @@ export async function mount(body, { unplug = false, hold = false, footholdId = n
     h.calls.length = 0;
     Object.assign(h, {
         view: () => window.MinigameFramework.currentMinigame,
-        dom: () => window.MinigameFramework.currentMinigame.container.innerHTML,
+        dom: () => {
+            const root = window.MinigameFramework.currentMinigame.container;
+            if (!dropSwitch) return root.innerHTML;
+            // The skin switch is the one thing a game-started Panels view draws that the saved snapshots lack
+            const copy = root.cloneNode(true);
+            copy.querySelectorAll('[data-skin-switch]').forEach(e => e.remove());
+            return copy.innerHTML;
+        },
         controls: () => [...window.MinigameFramework.currentMinigame.container.querySelectorAll('[data-action], [data-unplug]')],
         controlKeys: () => h.controls().map(attrKey),
         /** Settles the moves a held mount is waiting on: a body resolves, an Error rejects (with `status`). */
@@ -255,9 +265,10 @@ async function runSequence(body, opts, seq) {
  * a variant with an unplug button, the DOM while the unplug is held and after it is refused; and for
  * a variant that holds techniques, the sequences.
  */
-export async function snapshotVariant(variant) {
+export async function snapshotVariant(variant, { asGame = false } = {}) {
     const body = loadFixture(variant.fixture);
-    const opts = { unplug: variant.unplug };
+    // `asGame`: mount as the game does, with a skin param (Panels, `gui`), and leave the switch button out of the DOM
+    const opts = { unplug: variant.unplug, ...(asGame ? { params: { skin: 'gui' }, dropSwitch: true } : {}) };
     const h = await mount(body, opts);
     const dom = h.dom();
     const keys = h.controlKeys();

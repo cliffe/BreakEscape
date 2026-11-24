@@ -51,3 +51,16 @@ test('every saved view with no ops block draws as saved, with no switch and no T
     assert.equal(mounts, mountsBefore, 'the Terminal was never mounted');
     assert.equal(built(), before + 1, 'the Terminal was never constructed (only the probe above)');
 });
+
+// R1-C15: the saved snapshots mount with no skin param, which the game never does. The game always passes one.
+import { VARIANTS as ALL_VARIANTS, snapshotVariant as snapshotAsGame, FIXTURE_DIR as FIX } from './support/network-view-harness.mjs';
+import { readFileSync as readSaved } from 'node:fs';
+import { join as joinPath } from 'node:path';
+
+for (const variant of ALL_VARIANTS) {
+    test(`Panels as the game opens it (skin param gui), ${variant.name}: the DOM and every press equal the saved snapshot`, async () => {
+        const { dom, data } = await snapshotAsGame(variant, { asGame: true });
+        assert.equal(dom, readSaved(joinPath(FIX, 'panels-before', `${variant.name}.html`), 'utf8'), 'the mounted DOM');
+        assert.deepEqual(data, JSON.parse(readSaved(joinPath(FIX, 'panels-before', `${variant.name}.json`), 'utf8')), 'the recorded presses');
+    });
+}
