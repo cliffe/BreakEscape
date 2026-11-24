@@ -132,7 +132,7 @@ module BreakEscape
         name: ->(game, id) { OpsLogEvents.technique_named(game, id) },
         room: ->(_game, _id) { nil }
       },
-      # An account profile id (S5a), shown as the id when the scenario holds that profile.
+      # An account profile id (S5a), shown by the display name of the one account it is for, else the kind word.
       'profile' => {
         name: ->(game, id) { OpsLogEvents.profile_named(game, id) },
         room: ->(_game, _id) { nil }
@@ -223,15 +223,23 @@ module BreakEscape
       entry && (entry['name'] || id.to_s)
     end
 
-    # The service's name when some host of the scenario declares a service of that name, else nil.
+    # The service's authored label (the words its tile shows) when every host that declares a
+    # service of that name gives it the same label; else its name (the kind word shows). nil when no
+    # host declares one. A lookup is given no place, so a name two hosts label differently is not
+    # guessed at.
     def service_named(game, id)
       data = game.scenario_data
+      found = []
       NetworkModel.networks(data).each_key do |net|
         NetworkModel.hosts_on(net, data).each do |rec|
-          return id.to_s if rec[:services].any? { |svc| svc['name'] == id.to_s }
+          rec[:services].each { |svc| found << svc if svc['name'] == id.to_s }
         end
       end
-      nil
+      return nil if found.empty?
+
+      labels = found.map { |svc| svc['label'] }.uniq
+      label = labels.first
+      labels.size == 1 && label.is_a?(String) && !label.empty? ? label : id.to_s
     end
 
     def share_named(game, id)
@@ -246,9 +254,20 @@ module BreakEscape
       entry && (entry['name'].is_a?(String) && !entry['name'].empty? ? entry['name'] : id.to_s)
     end
 
+    # nil when the scenario holds no such profile. A profile has no authored name; the desktop
+    # shows an account's files under the account's tile, so the name is the display name of the one
+    # account the profile is for (as the sign-in tile shows it). The kind word shows (the id comes
+    # back) when no account, several accounts, or an account with no displayName is admitted.
     def profile_named(game, id)
       profiles = game.scenario_data.is_a?(Hash) ? game.scenario_data['accountProfiles'] : nil
-      profiles.is_a?(Hash) && profiles[id.to_s].is_a?(Hash) ? id.to_s : nil
+      profile = profiles.is_a?(Hash) ? profiles[id.to_s] : nil
+      return nil unless profile.is_a?(Hash)
+
+      owners = BreakEscape::Game.scenario_room_npcs(game.scenario_data).select do |npc|
+        BreakEscape::Game.account_holder?(npc) && BreakEscape::Game.acl_admits?(profile['for'], npc)
+      end
+      name = owners.size == 1 ? owners.first['displayName'] : nil
+      name.is_a?(String) && !name.empty? ? name : id.to_s
     end
 
     def foothold_name(game, id)

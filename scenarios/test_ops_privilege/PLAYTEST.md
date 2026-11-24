@@ -128,7 +128,7 @@ Sign in at `bay_pc` as Adel Wick (password from `note_adel`).
 ### 2b. The audit terminal shows the read
 
 Walk to the lobby and `interact` `audit_log_pc`.
-- Browser: the log reader opens and lists the privilege events so far; one row of kind `ADMIN_READ`, identity `adelwick`, location the PC's display name ("Bay desk PC"), detail the word `profile` only (no raw id of the profile or the PC, no password, no file text). Close it.
+- Browser: the log reader opens and lists the privilege events so far; one row of kind `ADMIN_READ`, identity `adelwick`, location the PC's display name ("Bay desk PC"), detail `profile: Olu Marsh`, the display name of the account the profile is for (never the profile id `olu_files` or the PC id, no password, no file text). Close it.
 - Server: opening the reader saves nothing (`GET /log_rows` writes no row); `--ops-log` still shows exactly one `admin_profile_read` row.
 
 ### 3. A stick at the shelf port is refused, for the administrator too

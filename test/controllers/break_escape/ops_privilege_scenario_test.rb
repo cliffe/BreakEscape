@@ -165,6 +165,9 @@ module BreakEscape
       assert_response :success, response.body
       assert_equal 0, saves
       assert_includes response.body, 'ADMIN_READ'
+      cell = response.parsed_body['rows'].find { |r| r['event'] == 'ADMIN_READ' }['detail']
+      assert_equal 'profile: Olu Marsh', cell
+      refute_includes response.body, 'olu_files'
       refute_includes response.body, OLU_PASSWORD
       assert_equal 1, rows('admin_profile_read').size
     end

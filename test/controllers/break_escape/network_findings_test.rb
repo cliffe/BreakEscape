@@ -465,6 +465,22 @@ module BreakEscape
       assert_equal 'ok', row['result']
     end
 
+    def service_cells
+      Game.find(@game.id).log_rows_for_client('ops')[:rows].select { |r| r[:event] == 'SVC_CHECK' }.map { |r| r[:detail] }
+    end
+
+    test 'a service row shows its authored label when the hosts agree on it, else the kind word once, never the name' do
+      data = NOS.findings_scenario
+      sam = data['rooms'].values.flat_map { |r| r['objects'] }.find { |o| o['id'] == 'sam_pc' }
+      sam['services'].find { |svc| svc['name'] == 'files' }['label'] = 'Quill file share'
+      hold_office_foothold({}, data)
+      sweep_and_scan('sam_pc')
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'files') # one host, labelled
+      ops_check(OFFICE, host_id: 'sam_pc', service: 'web')   # labelled here, not on another host
+      assert_equal ['service: Quill file share', 'service'], service_cells
+      refute_match(/\bfiles\b|\bweb\b/, service_cells.join(' '))
+    end
+
     test 'the rows of a device host use the host kind' do
       sweep_and_scan('print_srv')
       ops_check(OFFICE, host_id: 'print_srv', service: 'queue')

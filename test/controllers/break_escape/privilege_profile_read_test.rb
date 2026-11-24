@@ -139,6 +139,27 @@ module BreakEscape
       assert_empty rows
     end
 
+    def read_detail_cells(data)
+      build(with_profile_reader(data))
+      dana_in
+      open_folder
+      get "/break_escape/games/#{@game.id}/log_rows?object_id=jake_log", as: :json
+      assert_response :success, response.body
+      response.parsed_body['rows'].select { |r| r['event'] == 'ADMIN_READ' }.map { |r| r['detail'] }
+    end
+
+    test 'the admin read row shows the owner account display name, never the profile id' do
+      assert_equal ['profile: Jake Brooks'], read_detail_cells(scenario)
+    end
+
+    test 'a profile with no named account reads as the kind word once' do
+      data = scenario
+      data['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }.delete('displayName')
+      cells = read_detail_cells(data)
+      assert_equal ['profile'], cells
+      refute_match(/jake_files/, cells.join)
+    end
+
     test 'a refused open writes no row, and the refusal is unchanged' do
       build
       get "/break_escape/games/#{@game.id}/container/jake_archive", as: :json

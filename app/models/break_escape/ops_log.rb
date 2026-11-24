@@ -522,7 +522,8 @@ module BreakEscape
         next if rule.nil? || (rule.is_a?(Hash) && rule[:show] == false)
 
         shown = rule.is_a?(Hash) && rule.key?(:id) ? ops_log_client_thing(rule[:id], value.to_s) : value.to_s
-        "#{key}: #{shown}"
+        # a name that is just the kind word reads once ("profile"), never "profile: profile"
+        shown == key.to_s ? shown : "#{key}: #{shown}"
       end
       parts.join(', ')
     end
