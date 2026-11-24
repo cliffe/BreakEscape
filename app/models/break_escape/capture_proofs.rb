@@ -189,7 +189,11 @@ module BreakEscape
       grant_pc = CaptureModel.session_grant_pc(obj)
       return grant_pc if grant_pc.present?
 
-      self.class.login_pc?(obj) ? obj['id'].to_s : nil
+      return obj['id'].to_s if self.class.login_pc?(obj)
+
+      # S5 ruling A: a governed port that names its PC, when that is a sign-in PC in a room
+      port_pc = CaptureModel.port_pc(obj)
+      port_pc && find_login_pc(port_pc) ? port_pc : nil
     end
 
     # A device that needs a session takes only the keyboard; any other plant takes any admin
