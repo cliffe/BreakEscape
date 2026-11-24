@@ -1,0 +1,256 @@
+{
+  "scenario_brief": "TEST: Ops skin\n\nA test floor for the two looks of the network view (S6). A lobby with a drop box, an office wall port and a cabinet of field notes; a comms room with two servers. Plug the box in, sweep and scan, check the file server's service, confirm what you find, use the field notes, then look at the share and the printer. Nothing to solve.",
+  "endGoal": "Test only: use a field note on a confirmed finding, then unplug the box.",
+  "startRoom": "lobby",
+  "startPosition": { "x": 7, "y": 7 },
+  "npcNeedsSeed": "test_ops_skin",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "networks": {
+    "office_lan": { "name": "Office network", "discovery": "scan" }
+  },
+
+  "resources": {
+    "office_drop": {
+      "kind": "file_share",
+      "name": "Office-Drop",
+      "host": "OFFICE-FS",
+      "network": "office_lan",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "drop_note",
+          "name": "welcome.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Welcome to the office network. Nothing secret lives in this share.",
+          "observations": "A readme in the office's open share."
+        }
+      ]
+    },
+    "floor_printer": {
+      "kind": "printer",
+      "name": "Floor print queue",
+      "host": "OFFICE-PRN",
+      "network": "office_lan",
+      "observations": "A print queue anyone on the network can read."
+    }
+  },
+
+  "techniques": {
+    "update_notes": {
+      "name": "Update notes: FileHold 4.2",
+      "summary": "For a service that has fallen behind its published fixes.",
+      "worksOn": { "class": "unpatched", "product": "Tarnwick FileHold", "versions": ["4.2"] }
+    },
+    "settings_review": {
+      "name": "Settings review",
+      "summary": "For a setting somebody left open by mistake.",
+      "worksOn": { "class": "misconfig" }
+    }
+  },
+
+  "credentials": {
+    "file_link": {
+      "kind": "saved_connection",
+      "label": "File server link",
+      "account": "ian",
+      "connectsTo": "files01",
+      "proof": { "technique_card": "files01.storage.entry_c" }
+    }
+  },
+
+  "logSources": {
+    "network_audit": {
+      "title": "Network audit",
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used"]
+    }
+  },
+
+  "policies": {
+    "managed": { "remote": "allowed" },
+    "sealed": { "remote": "blocked" }
+  },
+
+  "gameClock": { "start": "Tue 08:30", "rate": 1 },
+
+  "objectives": [
+    {
+      "aimId": "skin_beats",
+      "title": "Look over the office network",
+      "description": "Test only. Each task ticks when its beat's event fires.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "k1_swept", "title": "Sweep the office network", "type": "custom", "status": "active" },
+        { "taskId": "k2_scanned", "title": "Scan the file server", "type": "custom", "status": "active" },
+        { "taskId": "k3_checked", "title": "Check the file server's service", "type": "custom", "status": "active" },
+        { "taskId": "k4_confirmed", "title": "Confirm a finding", "type": "custom", "status": "active" },
+        { "taskId": "k5_used", "title": "Use a field note on a confirmed finding", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "lobby": {
+      "type": "room_reception",
+      "door_sign": "Lobby",
+      "connections": { "north": "comms_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "drop_box1",
+          "position": { "x": 8, "y": 4 },
+          "takeable": true,
+          "rogueDevice": true,
+          "observations": "A small grey box with a network port and a status light. It plugs into a wall port."
+        },
+        {
+          "type": "pc",
+          "id": "office_port",
+          "name": "Office wall port",
+          "sprite": "network_rack1",
+          "network": "office_lan",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "networkJack": true,
+          "jackConfirm": "Plug the drop box into the office port?",
+          "plantedSprite": "pi_cluster1",
+          "requiresItemHint": "A wall port marked Office. Something small could be plugged in here.",
+          "observations": "A wall port marked Office."
+        },
+        {
+          "type": "filing_cabinet_locked1",
+          "id": "lobby_cabinet",
+          "name": "Cabinet by the front door",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": false,
+          "observations": "A cabinet of notes the front desk keeps.",
+          "contents": [
+            {
+              "type": "technique_card",
+              "id": "card_update",
+              "name": "Field note: file server updates",
+              "technique_card": "update_notes",
+              "takeable": true,
+              "observations": "A folded note about the file server's last update."
+            },
+            {
+              "type": "technique_card",
+              "id": "card_settings",
+              "name": "Field note: reviewing settings",
+              "technique_card": "settings_review",
+              "takeable": true,
+              "observations": "A folded note about settings left open."
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "sign_lobby",
+          "name": "Sign: Start here",
+          "position": { "x": 4, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Ops skin test. Take the drop box and plug it into the office port. Sweep the office network, scan the file server, check its service and confirm what you find. The notes in the cabinet by the door can be used on a confirmed finding. The comms room is to the north.",
+          "observations": "A sign on a stand by the front desk."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ian",
+          "displayName": "Ian Okafor",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_skin/ink/ian.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "iokafor", "password": "Dockyard-Ian-41" },
+          "eventMappings": [
+            { "eventPattern": "network_swept", "onceOnly": true, "completeTask": "k1_swept" },
+            { "eventPattern": "network_host_scanned", "onceOnly": true, "completeTask": "k2_scanned" },
+            { "eventPattern": "network_service_checked", "onceOnly": true, "completeTask": "k3_checked" },
+            { "eventPattern": "network_finding_confirmed", "onceOnly": true, "completeTask": "k4_confirmed" },
+            { "eventPattern": "network_technique_used", "onceOnly": true, "completeTask": "k5_used" }
+          ]
+        }
+      ]
+    },
+
+    "comms_room": {
+      "type": "room_servers",
+      "door_sign": "Comms room",
+      "connections": { "south": "lobby" },
+      "network": "office_lan",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "files01",
+          "name": "File server",
+          "host": "FILES01",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "managed",
+          "observations": "A file server with no screen or keyboard. It is managed over the network.",
+          "services": [
+            {
+              "name": "storage", "port": 445, "product": "Tarnwick FileHold", "version": "4.2",
+              "weaknesses": [
+                {
+                  "id": "entry_a", "class": "unpatched", "severity": "high",
+                  "summary": "The storage service is behind its published fixes.",
+                  "grants": { "session": { "account": "ian", "access": "user" } }
+                },
+                {
+                  "id": "entry_c", "class": "misconfig", "severity": "medium",
+                  "summary": "A setting on the storage service was left open.",
+                  "grants": { "credential": "file_link" }
+                }
+              ],
+              "decoys": [
+                {
+                  "id": "entry_b", "class": "misconfig", "severity": "low",
+                  "summary": "The service reports an older build number.",
+                  "falseBecause": "The build number is only a label. The service was updated last month."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "records01",
+          "name": "Records server",
+          "host": "RECORDS01",
+          "sprite": "pc_desktop",
+          "position": { "x": 7, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["it"] },
+          "policy": "sealed",
+          "observations": "A locked-down server with no screen or keyboard. It takes no remote sign-in.",
+          "services": [
+            { "name": "archive", "port": 873, "product": "Tarnwick ArchiveHold", "version": "2.0" }
+          ]
+        }
+      ]
+    }
+  }
+}
