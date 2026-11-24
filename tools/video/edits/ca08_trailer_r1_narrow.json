@@ -372,8 +372,8 @@
    },
    "source": {
     "file": "t03_anjali_flip.trimmed.mkv",
-    "in": 4.5,
-    "out": 5.7
+    "in": 4.518,
+    "out": 5.718
    },
    "audio": {
     "gain_db": -6
@@ -418,8 +418,8 @@
    },
    "source": {
     "file": "t03_anjali_flip.trimmed.mkv",
-    "in": 15.12,
-    "out": 25.087
+    "in": 14.992,
+    "out": 24.959
    },
    "audio": {
     "gain_db": 0,
@@ -640,7 +640,7 @@
  "vo": [
   {
    "id": "v1",
-   "start": 3.0,
+   "start": 2.92,
    "end": 7.704,
    "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
    "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",

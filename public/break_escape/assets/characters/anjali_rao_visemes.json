@@ -9,5 +9,5 @@
     "wide_open",
     "blink"
   ],
-  "source": "pixellab /animate-with-text-v3 talk frames (4 frames, bust as first and last), lower face pasted on the bust: teeth:teeth_t03_f1, round:round_t01_f1, small_open:small_open_t01_f1, medium_open:medium_open_t03_f1 (head +1,-1px), wide_open:wide_open_t02_f2 (head +1,-2px, jaw +2 rows); blink: inpaint i01 (/inpaint-image-pro-flash, eyes mask)"
+  "source": "pixellab /inpaint-image-pro-flash on the rest frame, rectangle mask x52-70 y25-37 (128px), one generation per call; picks pasted onto rest inside the mask, opaque pixels only: teeth:teeth_s12, small_open:small_s23, medium_open:med_s32, round:wide_s42; wide_open is the earlier sheet's round frame (talk-frame lower face, owner pick 24 Nov); blink kept from the earlier sheet (inpaint i01, eyes mask)"
 }

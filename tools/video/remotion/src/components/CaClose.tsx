@@ -31,7 +31,11 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const wmLines = stacked ? wmParts : [wmParts.join(' ')];
   const wmLead = Math.round(textFont * 1.3);
   // logo (owner, 23 Nov): the Hacktivity Cyber Aware logo SVG replaces a HACKTIVITY wordmark beside the squares; shot.ca.logo: false keeps the text
-  const logo: string | null = cfg.logo === false ? null : (cfg.logo ?? (wmParts.includes('HACKTIVITY') ? 'brand/hacktivity-cyber-aware-logo-light.svg' : null));
+  // light logo: wordmark in Hacktivity nav purple #503883 (owner pick, 24 Nov; plum read too pale on white)
+  // ground (owner mock-up 23 Nov): 'dark' puts the whole card on a dark ground with the dark-ground logo; default light
+  const dark = cfg.ground === 'dark';
+  const P = dark ? { surface: '#15171c', ink: '#ece8e3', line: '#3a3f48', frame: '#2a2e36' } : { surface: CA.surface, ink: CA.ink, line: CA.line, frame: CA.ink };
+  const logo: string | null = cfg.logo === false ? null : (cfg.logo ?? (wmParts.includes('HACKTIVITY') ? (dark ? 'brand/hacktivity-cyber-aware-logo.svg' : 'brand/hacktivity-cyber-aware-logo-light-nav.svg') : null));
   const LOGO_RATIO = 41.199428 / 10.919; // the SVG's viewBox
   const logoH = logo ? Math.round(stacked ? Math.min(gw * 0.9, (w * 0.8) / LOGO_RATIO) : gw * 0.72) : 0;
   const logoW = Math.round(logoH * LOGO_RATIO);
@@ -73,7 +77,7 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
   const belowY = stacked ? ty + wmH + (logo ? Math.round(mS * 0.4) : 6 * u * 2) : gy + gw + Math.round(mS * 0.45);
   void groupW;
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: CA.surface }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: P.surface }}>
       {/* the two halves: moving blocks that become the mark's squares */}
       <div style={{ ...rectStyle(rA, CA.attack), backgroundImage: halvesDone ? 'none' : GRID(u), zIndex: 1 }}>
         {showTabs ? <CaTab label={shot.seat_labels?.attack ?? 'ATTACKER'} bg={CA.attack} size={tf} u={u} style={{ left: 8 * u, top: 8 * u, border: `${2 * u}px solid ${CA.ink}` }} /> : null}
@@ -84,18 +88,18 @@ export const CaClose: React.FC<{ shot: any; w: number; h: number; aspect: string
       {touch ? <div style={{ position: 'absolute', zIndex: 3, background: CA.line, ...(stacked ? { left: 0, width: w, top: h / 2 - 2 * u, height: 4 * u } : { top: 0, height: h, left: w / 2 - 2 * u, width: 4 * u }) }} /> : null}
       {textIn && logo ? <Img src={staticFile(logo)} style={{ position: 'absolute', left: tx, top: ty, width: logoW, height: logoH, display: 'block' }} /> : null}
       {textIn && !logo ? <div style={{ position: 'absolute', left: tx, top: ty, fontFamily: PIXEL_FONT, fontSize: textFont, lineHeight: 1, color: CA.mark, whiteSpace: 'nowrap', textAlign: stacked ? 'center' : 'left', width: stacked ? cwWord : undefined, ...crisp }}>{wmLines.map((l, i) => <div key={i} style={{ marginTop: i ? wmLead - textFont : 0 }}>{l}</div>)}</div> : null}
-      {textIn && cfg.name ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY, textAlign: 'center', fontFamily: GNF_FONT, fontSize: nameFit, lineHeight: 1.1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{cfg.name}</div> : null}
-      {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameFit * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: CA.ink, whiteSpace: 'nowrap', ...crisp }}>{tagLines.map((l, i) => <div key={i}>{l}</div>)}</div> : null}
+      {textIn && cfg.name ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY, textAlign: 'center', fontFamily: GNF_FONT, fontSize: nameFit, lineHeight: 1.1, color: P.ink, whiteSpace: 'nowrap', ...crisp }}>{cfg.name}</div> : null}
+      {tagIn ? <div style={{ position: 'absolute', left: 0, right: 0, top: belowY + (cfg.name ? Math.round(nameFit * 1.25) : 0) + 4 * u, textAlign: 'center', fontFamily: VT_FONT, fontSize: tagSize, lineHeight: 1, color: P.ink, whiteSpace: 'nowrap', ...crisp }}>{tagLines.map((l, i) => <div key={i}>{l}</div>)}</div> : null}
       {hackIn ? (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18 * u, display: 'flex', flexDirection: 'column', alignItems: 'center', ...crisp }}>
-          <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: CA.line, marginBottom: 6 * u }} />
+          <div style={{ width: Math.round(w * (stacked ? 0.5 : 0.36)), height: 2 * u, background: P.line, marginBottom: 6 * u }} />
           {cfg.cta
             // call to action (owner r3: "end on a CTA to learn on Hacktivity.co.uk"): a seat-coloured plate in place of the plain Hacktivity line, fitted to the frame
             ? <div style={{ background: CA.defend, border: `${2 * u}px solid ${CA.ink}`, padding: `${4 * u}px ${10 * u}px`, fontFamily: GNF_FONT, fontSize: fitSize([cfg.cta], GNF_FONT, stacked ? [88, 80, 72, 64, 56, 48] : [hackSize, Math.round(hackSize * 0.8 / 8) * 8, Math.round(hackSize * 0.65 / 8) * 8, 24], w * 0.8), lineHeight: 1, color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>{cfg.cta}</div>
-            : <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: CA.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>}
+            : <div style={{ fontFamily: GNF_FONT, fontSize: hackSize, lineHeight: 1, color: P.ink, width: Math.max(gnfW, hackW), textAlign: 'center' }}>{cfg.hacktivity ?? 'Hacktivity'}</div>}
         </div>
       ) : null}
-      <div style={{ position: 'absolute', inset: 0, border: `${2 * u}px solid ${CA.ink}`, boxSizing: 'border-box', zIndex: 5 }} />
+      <div style={{ position: 'absolute', inset: 0, border: `${2 * u}px solid ${P.frame}`, boxSizing: 'border-box', zIndex: 5 }} />
     </div>
   );
 };
