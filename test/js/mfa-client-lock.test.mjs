@@ -181,11 +181,14 @@ test('approve 403 no such phone is no_phone for a lock', async () => {
     assert.equal((await M.approve('object:safe', { number: 1 })).reason, 'no_phone');
 });
 
-test('a bare refusal on a lock (no flag, no message) is gone and never pc_signin_failed', async () => {
-    const { events } = setup(() => { try { answer('generic_refusal'); } catch (e) { delete e.body.message; throw e; } });
+// The server sends no bare 422 on a lock route, so 'gone' is not reachable from a shipped lock answer:
+// a record dropped under a verify is the expired flag
+test('a verify after the record is gone (verify_dropped) on a lock is expired and never pc_signin_failed', async () => {
+    const { events } = setup(() => answer('verify_dropped'));
     M.noteRequired('door:d', { kind: 'code', npcId: 'n' });
     const r = await M.verify('door:d', '1');
-    assert.equal(r.reason, 'gone');
+    assert.equal(r.reason, 'expired');
+    assert.equal(M.pendingFor('door:d'), null);
     assert.equal(events.some(e => e.name === 'pc_signin_failed'), false);
 });
 

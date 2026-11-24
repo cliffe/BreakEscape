@@ -292,14 +292,18 @@ test('expired: a code verified after the record is gone (verify_dropped) closes 
     assert.equal(log.toasts.filter((t) => t[0] === 'Not approved.').length, 1);
 });
 
-test('a lock answer needs no message key: a bare refusal ends the step and no server wording reaches the screen', async () => {
+test('the server\'s generic refusal on a first request leaves the pane open with "That did not work", no "was sent", and none of the server wording', async () => {
     const log = bootPage(S);
-    net.reset({ '/unlock': ['gate_push'], '/mfa/prompt': [{ name: 'generic_refusal', patch: (b) => { delete b.message; } }] });
+    net.reset({ '/unlock': ['gate_push'], '/mfa/prompt': ['generic_refusal'] });
     window.handleUnlock(sprite('moira_locker'), 'item');
     await settle();
     await typePin();
     await settle(20);
-    assert.equal(layer(), null);
+    const st = paneState();
+    assert.equal(st.open, true);
+    assert.match(st.text, /That did not work\. Try again\./);
+    assert.equal(/was sent/.test(st.text), false);
+    assert.equal(/Requests sent/.test(st.text), false);
     const shown = JSON.stringify(log.toasts) + document.body.textContent;
     assert.equal(/Incorrect username or password/.test(shown), false);
 });

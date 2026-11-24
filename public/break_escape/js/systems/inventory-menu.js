@@ -121,7 +121,14 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     const entries = [];
     // A locked droppable (a carried briefcase): its tray click is the menu, and no other entry reaches
     // the lock (handleObjectInteraction would drop it), so the first entry unlocks it (S8c R1-CLIENT1)
-    if (data.locked === true) entries.push({ id: 'unlock', label: 'Unlock' });
+    // (a flag lock has no pad: its station is reached from the room, so the tray offers no "Unlock" for it).
+    // Once opened, the same container is reopened by "Open", which takes the path a non-droppable container's
+    // tray click takes (handleUnlock, server-checked) because the click here would drop it (S8c R2-CLIENT4)
+    if (data.locked === true) {
+        if (data.lockType !== 'flag') entries.push({ id: 'unlock', label: 'Unlock' });
+    } else if (Array.isArray(data.contents) || data.hasContents === true) {
+        entries.push({ id: 'open', label: 'Open' });
+    }
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
     // click, which interactions.js routes to the wearable before any triggerOnInteract
     if (wearLabel) {
@@ -203,7 +210,7 @@ export function inventoryMenuIcon(id, el) {
     if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
     if (id === 'examine') return { src: `${menuIconsBase()}/menu-examine.png`, width: 64, height: 64 };
     // Connect (keyring K3b) shows the item's own picture, as Use does
-    if ((id !== 'use' && id !== 'connect' && id !== 'unlock') || !el?.src) return undefined;
+    if ((id !== 'use' && id !== 'connect' && id !== 'unlock' && id !== 'open') || !el?.src) return undefined;
     const w = el.naturalWidth || 0;
     const h = el.naturalHeight || 0;
     if (!(w > 0 && h > 0)) return { src: el.src };
@@ -252,6 +259,7 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         use: () => w.handleObjectInteraction?.(el),
         // A locked droppable: the pad and any second step, never the click (which would drop it)
         unlock: () => w.handleUnlock?.(el, 'item'),
+        open: () => w.handleUnlock?.(el, 'item'),
         drop: () => {
             // A worn item under unseenOnly is not dropped in front of anyone (wearables.js)
             const reason = blockedNow() || (w.wearables?.isWorn?.(el, w) ? w.wearables.changeRefusal?.(el.scenarioData, 'drop', w) : null);

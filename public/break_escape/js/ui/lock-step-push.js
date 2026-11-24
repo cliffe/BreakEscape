@@ -159,6 +159,8 @@ export function mountPush(host, ctx = {}, settle = () => {}) {
             return;
         }
         again.disabled = false;
+        // A failed first request: nothing was sent, so the "A request was sent" line must not stand beside it
+        if (sent === 0 && !countEl.textContent) status.textContent = '';
         setMessage('That did not work. Try again.');
     }
 

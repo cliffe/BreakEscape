@@ -515,9 +515,30 @@ test('S8c: a droppable locked item has "Unlock" first, then "Drop here" and "Exa
     assert.deepEqual(menu(held(BRIEFCASE)).map(e => e.id), ['unlock', 'drop', 'examine']);
 });
 
-test('S8c: no "Unlock" once the item is open, or for an unlocked item with contents', () => {
-    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, contents: [] }))), ['Drop here', 'Examine']);
-    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: undefined, hasContents: true }))), ['Drop here', 'Examine']);
+test('S8c R2-CLIENT4: an opened droppable container (contents or hasContents) has "Open" first, never "Unlock"', () => {
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, contents: [] }))), ['Open', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: undefined, hasContents: true }))), ['Open', 'Drop here', 'Examine']);
+    assert.deepEqual(menu(held({ ...BRIEFCASE, locked: false, contents: [] })).map(e => e.id), ['open', 'drop', 'examine']);
+});
+
+test('S8c R2-CLIENT4: a droppable with no contents and no lock keeps just Drop here and Examine', () => {
+    assert.deepEqual(labels(menu(held({ id: 'plain', type: 'notes', name: 'Plain', droppable: true }))), ['Drop here', 'Examine']);
+});
+
+test('S8c R2-CLIENT4: "Open" calls handleUnlock(item, "item"), the same path a non-droppable container takes', () => {
+    const el = held({ ...BRIEFCASE, locked: false, contents: [{ id: 'x' }] });
+    const calls = { unlock: [], interact: 0 };
+    const w = { handleUnlock: (e, t) => calls.unlock.push([e, t]), handleObjectInteraction: () => { calls.interact++; } };
+    let shown;
+    openInventoryItemMenu(el, 1, 1, { ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w, showInteractionMenu: (entries) => { shown = entries; } });
+    assert.equal(shown[0].label, 'Open');
+    shown[0].onSelect();
+    assert.deepEqual(calls.unlock, [[el, 'item']]);
+    assert.equal(calls.interact, 0);
+});
+
+test('S8c R2-CLIENT4: a locked droppable whose lock is a flag has no "Unlock" (the flag station is not reached from the tray)', () => {
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, lockType: 'flag' }))), ['Drop here', 'Examine']);
 });
 
 test('S8c: a locked item that is not droppable keeps no menu (its click already unlocks)', () => {

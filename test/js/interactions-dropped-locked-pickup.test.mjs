@@ -42,7 +42,7 @@ const stubs = {
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
   '../utils/display-dashes.js': 'export function displayDashes(s){ return s; }',
   '../utils/escape-html.js': 'export function escapeHtml(s){ return String(s ?? ""); }',
-  './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
+  './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(s){ return s?.scenarioData?.droppable === true && (globalThis.window?.inventory?.items || []).includes(s); } export function dropInventoryItem(s){ (globalThis.__dropped ||= []).push(s); } export function inventoryMenuFor(){return null;}',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
 for (const [spec, body] of Object.entries(stubs)) {
@@ -56,7 +56,7 @@ const { handleObjectInteraction } = await import(pathToFileURL(join(dir, 'intera
 
 
 function setup() {
-  globalThis.__unlocked = []; globalThis.__taken = [];
+  globalThis.__unlocked = []; globalThis.__taken = []; globalThis.__dropped = [];
   globalThis.window = {
     gameState: { globalVariables: {} }, MinigameFramework: { currentMinigame: null }, gameScenario: {},
     player: { x: 0, y: 0 }, inventory: { items: [] }, gameAlert: () => {}, eventDispatcher: { emit: () => {} }
@@ -86,11 +86,21 @@ test('an unlocked droppable container on the floor keeps the container branch', 
   assert.equal(globalThis.__unlocked.length, 1);
 });
 
-test('a locked droppable held in the tray opens through handleUnlock, as before (the tray menu reaches it)', () => {
+test('a locked droppable held in the tray, clicked through handleObjectInteraction, is dropped and opens no pad (the tray menu\'s "Unlock" is what reaches the lock)', () => {
   setup();
   const s = floor({ takeable: false });
   window.inventory.items.push(s);
   handleObjectInteraction(s);
-  assert.equal(globalThis.__unlocked.length, 1);
+  assert.deepEqual(globalThis.__dropped, [s]);
+  assert.deepEqual(globalThis.__unlocked, []);
   assert.deepEqual(globalThis.__taken, []);
+});
+
+test('the same held droppable that is not droppable (or not held) is not dropped', () => {
+  setup();
+  const s = floor({ takeable: false, droppable: false });
+  window.inventory.items.push(s);
+  handleObjectInteraction(s);
+  assert.deepEqual(globalThis.__dropped, []);
+  assert.equal(globalThis.__unlocked.length, 1);
 });
