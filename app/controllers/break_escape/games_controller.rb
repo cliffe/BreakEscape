@@ -26,7 +26,7 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
-                                        :log_rows,
+                                        :log_rows, :crack,
                                         :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
@@ -1434,7 +1434,9 @@ module BreakEscape
           Rails.logger.info "[BreakEscape] Adding item to inventory: #{item['type']} / #{item['name']}"
           # Store the server's copy, never the client's fields (M6): the key and
           # lockpick checks read opens_lock, scenarioData and type from it.
-          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h))
+          # S7: a take or an NPC give stamps the facts the stored copy reveals; a declared grant does not
+          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h),
+                                    fact_source: !(@collectible_location.is_a?(Hash) && @collectible_location[:type] == 'grant'))
           # Remember what an NPC has handed over, so a reload does not restore it
           # to that NPC's itemsHeld (a later KO would drop a duplicate).
           if @collectible_location && @collectible_location[:type] == 'npc'
@@ -1940,9 +1942,43 @@ module BreakEscape
         # Keyring K5 (plan 10): expiresInS sits outside the digest, so it rides on unchanged too
         live = @game.keyring_live_expires(answer[:entries])
         unchanged[:expiresInS] = live if live.any?
+        # S7: a running crack wait sits outside the digest too, so it rides on unchanged
+        waits = @game.keyring_live_crack_waits(answer[:entries])
+        unchanged[:readyInSeconds] = waits if waits.any?
         render json: unchanged
       else
         render json: answer
+      end
+    end
+
+    # POST /games/:id/crack { hash_id, facts } (S7 brief section 4). One offline crack run on a hash
+    # record. The server decides every outcome; the answer never carries the password or the recipe.
+    # Refusals, in order: bad_request 400, not_found 404 (one body for an unknown, non-hash or
+    # unheld id), no_recipe 422, fact_not_held 422. An account already held answers cracked first.
+    def crack
+      authorize @game if defined?(Pundit)
+      response.headers['Cache-Control'] = 'no-store'
+
+      hash_id = params[:hash_id]
+      facts = params[:facts]
+      facts = [] if facts.nil?
+      unless hash_id.is_a?(String) && !hash_id.empty? && hash_id.length <= 200 &&
+             facts.is_a?(Array) && facts.length <= 4 &&
+             facts.all? { |f| f.is_a?(String) && f.length.between?(1, 64) }
+        return render json: { success: false, reason: 'bad_request' }, status: :bad_request
+      end
+
+      refusal = nil
+      result = nil
+      @game.with_lock do
+        refusal = @game.crack_refusal(hash_id, facts)
+        result = @game.run_crack!(hash_id, facts) unless refusal
+      end
+
+      case refusal
+      when :not_found then render json: { success: false, reason: 'not_found' }, status: :not_found
+      when :no_recipe, :fact_not_held then render json: { success: false, reason: refusal.to_s }, status: :unprocessable_entity
+      else render json: { success: true }.merge(result)
       end
     end
 
@@ -4167,6 +4203,12 @@ module BreakEscape
         when 'emit_event'
           results << process_event_reward(reward, flag_key)
 
+        when 'grant_fact'
+          # S7: the server has just accepted the flag, so the fact is earned. Stamped in memory;
+          # the save below writes it. The reward is forwarded as set_global is.
+          @game.stamp_earned_facts!([reward['fact']])
+          results << reward
+
         when 'set_global', 'unlock_object', 'hint'
           # Client-side-only rewards — forward as-is so processRewardEvents() can handle them
           results << reward
@@ -4204,7 +4246,7 @@ module BreakEscape
       return { type: 'error', message: 'Item not found in flag station' } unless item
 
       # Add to player inventory
-      @game.add_inventory_item!(item)
+      @game.add_inventory_item!(item, fact_source: true)
 
       { type: 'give_item', item: item, success: true }
     end

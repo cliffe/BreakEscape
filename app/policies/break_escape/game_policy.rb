@@ -30,6 +30,10 @@ module BreakEscape
       show?
     end
 
+    def crack?
+      show?
+    end
+
     def update_room?
       show?
     end
