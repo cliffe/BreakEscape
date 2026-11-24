@@ -218,6 +218,7 @@ export function findToastText(entries, { captureLog = null } = {}) {
 export function teachLine(kind, { displayName } = {}) {
     const who = displayName || 'the account holder';
     if (kind === 'in_file') return 'People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file.';
+    if (kind === 'cracked') return 'A password can be worked out from a hash and what is known about the person. Long, unique passwords that nobody could guess from their life stop it.';
     if (kind === 'saved_connection') return `The password is saved inside this file, so opening it signs you in as ${who}. A policy that always asks for the password stops it.`;
     if (kind === 'assist_invite') return `${who} let you into the session. Check who is asking before you share access.`;
     if (kind === 'token') return 'A stolen session token signs in without the password until it expires. Short session lifetimes limit it.';

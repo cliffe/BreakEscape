@@ -414,7 +414,9 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         }
         if (!tile.kinds.includes(kind)) tile.kinds.push(kind);
         if (!tile.targetId && e.account.npcId) tile.targetId = e.account.npcId;
-        if (kind === 'captured') {
+        if (kind === 'cracked') {
+            // S7: the player's own work; they type it from the capture log. No file line, no fill.
+        } else if (kind === 'captured') {
             if (typeof e.password === 'string' && e.password) tile.keyPassword = e.password;
         } else if (kind === 'in_file') {
             if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
@@ -437,10 +439,13 @@ export function credentialLabel(e, kind) {
     return tileFullNames([kind])[0];
 }
 
-/** The tag kind of a keyring entry (8.5): captured, in_file, or the entry's own kind. */
+/** The tag kind of a keyring entry (8.5): captured, in_file, cracked (S7), or the entry's own kind. */
 export function keyringTagKind(entry) {
     if (!entry || typeof entry !== 'object') return null;
-    if (entry.kind === 'password') return entry.source === 'capture' ? 'captured' : 'in_file';
+    if (entry.kind === 'password') {
+        if (entry.source === 'capture') return 'captured';
+        return entry.source === 'cracked' ? 'cracked' : 'in_file';
+    }
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 
@@ -2700,6 +2705,7 @@ export class PasswordMinigame extends MinigameScene {
             // A typed sign-in to an account with a password found in a file teaches that kind (8.1)
             const chosen = st.other ? null : this.signInTileFor(username);
             if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
+            else if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('cracked')) this.teachAfter('cracked', result.session);
             this.signInAccepted(result.session);
             return;
         }

@@ -82,6 +82,7 @@ const RDP = { id: 'k_rdp', kind: 'saved_connection', label: 'HB-FIN-02.rdp', acc
 const RDP_REFUSED = { id: 'k_rdp3', kind: 'saved_connection', label: 'HB-FIN-03.rdp', account: LENA, host: 'HB-FIN-03', accepted: false, forThisPc: true, connectsTo: 'lena_pc' };
 const LENA_CAPTURED = { id: 'k_cap', kind: 'password', source: 'capture', label: 'Finance (Lena)', account: LENA, password: 'Ledger-Lena-9' };
 const JAKE_FOUND = { id: 'k_pw', kind: 'password', source: 'registry', label: 'passwords.txt', account: JAKE, foundIn: 'pw_file' };
+const JAKE_CRACKED = { id: 'dana.cracked', kind: 'password', source: 'cracked', label: 'Cracked password', account: JAKE, accepted: true };
 const INVITE = { id: 'k_inv', kind: 'assist_invite', label: 'Assist code', account: LENA, host: 'HB-FIN-02', accepted: true, forThisPc: true, connectsTo: 'lena_pc' };
 const TILES = [LENA, JAKE].map(a => ({ username: a.username, displayName: a.displayName }));
 
@@ -936,4 +937,26 @@ test('R5a a Connect refusal fills the password the keyring already shows, as the
         assert.equal(q('#password-field').value, 'Ledger-Lena-9', `${reason}: the shown password fills the field`);
         assert.equal(mg.gameData.password, 'Ledger-Lena-9', `${reason}: and the game data`);
     }
+});
+
+test('S7 R2-2: a cracked password has its own tag, no file line, and its own teaching toast after a typed sign-in', async () => {
+    setup();
+    assert.equal(keyringTagKind(JAKE_CRACKED), 'cracked');
+    assert.equal(entryTagKind(JAKE_CRACKED), 'cracked');
+    const merged = mergeRemoteTiles({ picker: 'accounts', tiles: [LENA, JAKE], captured: [], keyring: [JAKE_CRACKED] });
+    const jake = merged.find(t => t.username === 'jjones');
+    assert.deepEqual(jake.kinds, ['cracked']);
+    assert.deepEqual(jake.found, [], 'never the "Type the password from" file line');
+    assert.equal(jake.keyPassword, null, 'the player types it from the capture log');
+    const teach = text.teachLine('cracked', { displayName: 'Jake Jones' });
+    assert.match(teach, /^A password can be worked out from a hash/);
+    const mg = openRemote();
+    answerRemote(mg, { keyring: [JAKE_CRACKED] });
+    tileFor('jjones').click();
+    q('#password-field').value = 'Cedar-Jake-4';
+    q('#submit-password').click();
+    await settle();
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0][0], teach);
+    assert.doesNotMatch(alerts[0][0], /files/);
 });
