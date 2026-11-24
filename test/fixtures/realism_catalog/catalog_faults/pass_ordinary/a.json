@@ -17,7 +17,7 @@
       "module": "auxiliary/gather/quillmark/note_2",
       "script": "quillmark-other",
       "advisories": [
-        "MS00-001",
+        "MS31-901",
         "ZDI-00-0001"
       ],
       "output": [

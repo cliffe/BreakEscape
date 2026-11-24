@@ -62,6 +62,36 @@ class RealismSeparationTest < ActiveSupport::TestCase
     assert_empty real_fragments('auxiliary/scanner/storage/unpatched_f1')
   end
 
+  # Test fixtures and the realism tests may hold an advisory-shaped string only when it is plainly invented:
+  # an impossible year (0000, 9999, 31), an impossible number (999), or a placeholder tail.
+  INVENTED_ID = /\A(cve|can)[-_](0000|9999)[-_]\d+\z|\Ams(31[-_]\d{3}|\d\d[-_]999)\z|\Akb(0000000|9999999)\z|\A(rhsa|dsa|usn)[-_]9999|\A(ghsa|zdi)[-_](00|99|x)/i.freeze
+
+  def uninvented_ids(text)
+    text.scan(/(?<![A-Za-z0-9])(?:(?:cve|can)[-_]\d{4}[-_]\d+|ms\d\d[-_]\d{3}|kb\d{6,7}|(?:rhsa|dsa|usn|ghsa|zdi)[-_][A-Za-z0-9_-]*)/i)
+        .reject { |tok| tok =~ INVENTED_ID }
+  end
+
+  test 'the invented-id check accepts invented forms and refuses a plausible one' do
+    %w[CVE-0000-11111 cve-9999-1 MS31-901 ms99-999 kb9999999 zdi_99 ZDI-00-0001 GHSA-xxxx RHSA-9999].each do |ok|
+      assert_empty uninvented_ids(ok), ok
+    end
+    ['MS' + '00-001', 'CVE-' + '2014-0160', 'kb' + '1234567', 'ZDI-' + '14-001'].each do |bad|
+      assert_equal [bad], uninvented_ids(bad), bad
+    end
+  end
+
+  test 'test fixtures and realism tests hold only plainly invented advisory-shaped strings' do
+    files = Dir.glob(File.join(ROOT, 'test/fixtures/realism_catalog/**/*')).select { |f| File.file?(f) } +
+            Dir.glob(File.join(ROOT, 'test/{unit,controllers,models,lib,support}/**/*realism*')).select { |f| File.file?(f) } +
+            Dir.glob(File.join(ROOT, 'test/**/*{ops_skin,network_skin,network_realism,access_leak_scanner_ops}*')).select { |f| File.file?(f) }
+    assert_operator files.length, :>=, 20
+    problems = files.uniq.flat_map do |file|
+      text = readable(file)
+      text ? uninvented_ids(text).map { |tok| "#{file.delete_prefix("#{ROOT}/")}: #{tok}" } : []
+    end
+    assert_empty problems
+  end
+
   test 'no file under public/ or app/assets/ holds a catalog entry module' do
     modules = BreakEscape::RealismCatalog.entry_ids.filter_map { |id| BreakEscape::RealismCatalog.lookup(id)['module'] }
     assert_operator modules.length, :>=, 3
