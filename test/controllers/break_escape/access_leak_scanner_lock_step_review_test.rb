@@ -407,10 +407,20 @@ module BreakEscape
       assert_raises(ArgumentError) { scan(@rows, data: data) }
     end
 
-    test 'R1-L7 a gated room that authors no objects flags an id-less roomData of an ungated door (the safe direction, kept)' do
+    test 'R1-L7 an open of a gated room that authors no objects, echoing its lock before any gate, is reported' do
       start
       answer('open_door', echo: %w[door records_room])
       assert_equal [['lock_step_content', 'lockstep:open:door:records_room']], lock(scan(@rows, data: scenario(empty_gated_room: true)))
+    end
+
+    test 'R1-L7 an echo-less open of a locked room that lists no object and no NPC is placed nowhere (owner decision, R2-SCANNER2), and one that lists an id no room has is reported' do
+      start
+      answer('open_door', echo: false)
+      assert_equal [], lock(scan(@rows, data: scenario(empty_gated_room: true)))
+      start
+      answer('open_door', echo: false) { |b| b['roomData']['objects'] = [{ 'id' => 'no_such_object', 'type' => 'notes' }] }
+      assert_equal [['lock_step_content', 'lockstep:content:door:plant_room'], ['lock_step_content', 'lockstep:content:door:records_room']], # an unknown id belongs to every shut gated door
+                   lock(scan(@rows, data: scenario(empty_gated_room: true)))
     end
 
     # ---- R1-L8 a repeat gate ---------------------------------------------------------------------------------------

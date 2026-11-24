@@ -346,8 +346,12 @@ module BreakEscape
 
     test 'room data of a gated room outside its open is reported, and the room route too' do
       start
-      raw('GET', 'scenario', { 'rooms' => { 'records_room' => { 'roomData' => { 'type' => 'room_records', 'objects' => [] } } } })
+      raw('GET', 'scenario', { 'rooms' => { 'records_room' => { 'roomData' => { 'type' => 'room_records', 'objects' => [{ 'id' => 'unknown_object', 'type' => 'notes' }] } } } })
       assert_equal [['lock_step_content', 'lockstep:content:door:records_room']], lock(scan)
+      # R2-SCANNER2 (owner decision): room data that lists no object and no NPC carries nothing a rule could protect
+      start
+      raw('GET', 'scenario', { 'rooms' => { 'records_room' => { 'roomData' => { 'type' => 'room_records', 'objects' => [] } } } })
+      assert_equal [], lock(scan)
       start
       raw('GET', 'room/records_room', { 'type' => 'room_records', 'objects' => [] })
       assert_equal [['lock_step_content', 'lockstep:room:door:records_room']], lock(scan)
