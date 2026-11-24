@@ -1135,11 +1135,11 @@ module BreakEscape
 
     test 'the whole real run reports nothing, and holds the answers the tamper tests edit' do
       rows = run_real
-      assert_equal 52, rows.length
+      assert_equal 76, rows.length, 'the S5b rows are 1 to 52; the S5c beats add the rows after them'
       assert_equal [], named(scan(rows))
       assert_empty @scanner.unused_entries
-      assert_equal 5, collect_rows(rows).length
-      assert_equal 4, rows.count { |r| r['path'].end_with?('/keyring') && r['status'] == 200 && r['body']['entries'].any? { |e| e['source'] == 'registry' } }
+      assert_equal 8, collect_rows(rows).length
+      assert_equal 7, rows.count { |r| r['path'].end_with?('/keyring') && r['status'] == 200 && r['body']['entries'].any? { |e| e['source'] == 'registry' } }
       assert_equal 'admin', rows[46]['body']['access'], 'the relay sign-in of the administrator'
     end
 
@@ -1297,7 +1297,7 @@ module BreakEscape
 
     def with_account_only(data)
       data = deep(data)
-      npc = { 'id' => 'deskadmin', 'displayName' => 'Rota Keeper', 'npcType' => 'person', 'accountOnly' => true,
+      npc = { 'id' => 'rotakeeper_acct', 'displayName' => 'Rota Keeper', 'npcType' => 'person', 'accountOnly' => true,
               'creds' => { 'username' => 'rotakeeper', 'password' => 'Unused-Account-91', 'accountKind' => 'local', 'localTo' => ['bay_pc'] } }
       room = data['rooms'].values.find { |r| r['npcs'].is_a?(Array) }
       room['npcs'] << npc
@@ -1317,7 +1317,7 @@ module BreakEscape
     test 'recheck: an account-only word that is an ordinary answer word refuses the scan' do
       rows = run_real
       data = with_account_only(beats_scenario)
-      data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['creds']['username'] = 'admin' if n['id'] == 'deskadmin' } }
+      data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['creds']['username'] = 'admin' if n['id'] == 'rotakeeper_acct' } }
       assert_raises(ArgumentError) { scan(rows, data: data) }
     end
 
@@ -1327,6 +1327,76 @@ module BreakEscape
                  'body' => { 'container_id' => 'olu_folder', 'contents' => [{ 'id' => 'olu_budget', 'name' => 'Budget draft.txt', 'type' => 'text_file', 'text' => 'Budget draft: the van, the toner and one new chair.' }] } }
       after_relay = rows.first(49) + [folder]
       assert_flagged reported(after_relay), 'profile_admin_read', 'item:olu_budget'
+    end
+
+    # ---- Ops S5bc unit 24: beats 11 to 14 (S5c) are the last rows of the run; rows are found by what they are, not by number ----
+
+    def collect_n(rows, pc)
+      rows.index { |r| r['path'].end_with?('/harvest_credentials') && r['status'] == 200 && r['body']['pcId'] == pc } + 1
+    end
+
+    def signin_n(rows, account, pc)
+      rows.index { |r| r['path'].end_with?('/login') && r['status'] == 200 && r['body'].is_a?(Hash) && r['body']['npcId'] == account && @keyboard_pc[r] == pc } + 1
+    end
+
+    def keyring_with_n(rows, word)
+      rows.index { |r| r['path'].end_with?('/keyring') && r['body'].to_json.include?(word) } + 1
+    end
+
+    test 'S5c: the whole real run, with the shared, hardened and domain accounts, reports nothing; eight collects now' do
+      rows = run_real
+      assert_equal [], named(scan(rows))
+      assert_empty @scanner.unused_entries
+      assert_equal 8, collect_rows(rows).length
+      assert_equal %w[desk_a desk_b lab_pc], collect_rows(rows).last(3).map { |r| r['body']['pcId'] }
+    end
+
+    test 'S5c tamper 1: the collect at desk_a moved before the administrator sign-in at desk_a is unearned' do
+      rows = run_real
+      found = reported(moved_before(rows, collect_n(rows, 'desk_a'), signin_n(rows, 'adel', 'desk_a')))
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    test 'S5c tamper 2: the typed sign-in of the shared local administrator at desk_b taken out leaves the desk_b collect unearned' do
+      rows = run_real
+      assert_flagged reported(without(rows, signin_n(rows, 'deskadmin', 'desk_b'))), 'harvest_unearned'
+    end
+
+    test 'S5c tamper 3: the keyring that lists the cracked shared administrator password, moved before the crack, is reported' do
+      rows = run_real
+      listing = keyring_with_n(rows, 'Winter2026')
+      crack = rows.first(listing).rindex { |r| r['path'].end_with?('/crack') && r['status'] == 200 } + 1
+      assert_flagged reported(moved_before(rows, listing, crack)), 'crack_unearned'
+    end
+
+    test 'S5c tamper 4: the keyring that lists the hardened account hash, moved before its collect, is reported' do
+      rows = run_real
+      assert_flagged reported(moved_before(rows, keyring_with_n(rows, 'lab_labadmin'), collect_n(rows, 'lab_pc'))), 'harvest_hash', 'credential:lab_labadmin'
+    end
+
+    test 'S5c tamper 5: the hardened account row credited at desk_a, which does not declare it, is unearned' do
+      rows = run_real
+      found = reported(edit(rows, collect_n(rows, 'lab_pc')) { |r| r['body']['pcId'] = 'desk_a' })
+      assert_flagged found, 'harvest_unearned'
+    end
+
+    # The first run of this beat found that an account-only id in `access.people` of a PC (the room answer) and a fact `subject`
+    # naming it reached the browser: both are authored names, so the scenario now admits by role and gives the fact no subject.
+    # These two tests put each back into the real answer, as the first run showed them.
+    test 'S5c tamper 6: a fact subject naming an account-only account in the poster answer is reported' do
+      rows = run_real
+      n = rows.index { |r| r['path'].end_with?('/inventory') && r['body'].is_a?(Hash) && r['body'].dig('facts', 'it_rota_seen') } + 1
+      found = reported(edit(rows, n) { |r| r['body']['facts']['it_rota_seen']['subject'] = 'deskadmin' })
+      assert(found.any? { |rule, _| %w[account_only fact_unearned].include?(rule) }, found.inspect)
+    end
+
+    test 'S5c tamper 7: a room answer whose PC access list names an account-only id is reported as the account-only username' do
+      rows = run_real
+      # the run never fetches a room, so the answer is built the way the first browser run saw it (POST /unlock, roomData.objects)
+      room = { 't' => rows[collect_n(rows, 'desk_a') - 2]['t'], 'method' => 'POST', 'path' => "/break_escape/games/#{BEATS_GAME_ID}/unlock", 'status' => 200,
+               'body' => { 'success' => true, 'roomData' => { 'objects' => [{ 'id' => 'desk_a', 'type' => 'pc', 'access' => { 'people' => %w[adel deskadmin] } }] } } }
+      found = reported(rows.dup.insert(collect_n(rows, 'desk_a') - 1, room)) # before the collect that earns the name
+      assert_flagged found, 'account_only', 'npc:deskadmin/username'
     end
 
     test 'recheck: a --signin entry naming a PC the account has no such sign-in at, or a relay sign-in, is refused or unused' do

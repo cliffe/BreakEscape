@@ -162,9 +162,16 @@ module BreakEscape
 
     NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
     HASH_FOR_PAIR = { 'bay_pc|olu' => 'baypc_olu', 'bay_pc|uma' => 'baypc_uma',
-                      'hot_desk|priya' => 'hotdesk_priya', 'hot_desk|sam' => 'hotdesk_sam' }.freeze
-    PAIR_PATTERN = /\b(?:bay_pc|hot_desk)\|[a-z_]+/.freeze
-    NEVER_PASSWORDS = %w[Harbourlight-Olu-08 Tidewater-Priya-31 Granary-Sam-47].freeze
+                      'hot_desk|priya' => 'hotdesk_priya', 'hot_desk|sam' => 'hotdesk_sam',
+                      'desk_a|deskadmin' => 'desk_a_deskadmin', 'desk_b|deskadmin' => 'desk_b_deskadmin',
+                      'lab_pc|labadmin' => 'lab_labadmin' }.freeze
+    PAIR_PATTERN = /\b(?:bay_pc|hot_desk|desk_a|desk_b|lab_pc)\|[a-z_]+/.freeze
+    NEVER_PASSWORDS = %w[Harbourlight-Olu-08 Tidewater-Priya-31 Granary-Sam-47 Winter2026 q8-Fen-31-Lab].freeze
+    # S5c: an account-only account's words (id and username are the same string) appear in no answer until a collect at one of its PCs
+    ACCOUNT_ONLY_WORDS = { 'deskadmin' => ['deskadmin', 'Desk administrator'], 'labadmin' => ['labadmin', 'Lab administrator'] }.freeze
+    ACCOUNT_ONLY_PCS = { 'deskadmin' => %w[desk_a|deskadmin desk_b|deskadmin], 'labadmin' => %w[lab_pc|labadmin] }.freeze
+    PASSWORD_OWNER = { 'Harbourlight-Olu-08' => 'olu', 'Tidewater-Priya-31' => 'priya', 'Granary-Sam-47' => 'sam',
+                       'Winter2026' => 'deskadmin', 'q8-Fen-31-Lab' => 'labadmin' }.freeze
 
     teardown { travel_back }
 
@@ -209,12 +216,17 @@ module BreakEscape
         (HASH_FOR_PAIR.values - earned).each { |id| refute_includes body, id, "#{where} names the hash #{id} before its collect" }
         refute_includes body, 'harvested', "#{where} carries the proof word harvested" unless name.start_with?('recorded collect_')
         NEVER_PASSWORDS.each do |pw|
-          account = { 'Harbourlight-Olu-08' => 'olu', 'Tidewater-Priya-31' => 'priya', 'Granary-Sam-47' => 'sam' }[pw]
+          account = PASSWORD_OWNER[pw]
           next if keyring && cracked.include?(account) && !name.start_with?('recorded collect_')
 
           refute_includes body, pw, "#{where} carries the password of #{account} before it is cracked" unless name.start_with?('recorded signin_')
         end
-        PASSWORDS.each { |pw| refute_includes body, pw, "#{where} carries a password" } if name.start_with?('recorded collect_')
+        (PASSWORDS + S5C_PASSWORDS).each { |pw| refute_includes body, pw, "#{where} carries a password" } if name.start_with?('recorded collect_')
+        ACCOUNT_ONLY_WORDS.each do |account, words|
+          next if (ACCOUNT_ONLY_PCS[account] & b_state['harvestedAccounts'].to_a).any?
+
+          words.each { |w| refute_includes body, w, "#{where} names the account-only account #{account} before its collect" }
+        end
       end
     end
 

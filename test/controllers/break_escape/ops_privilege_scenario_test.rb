@@ -20,6 +20,11 @@ module BreakEscape
     OLU_LOGIN = ['omarsh', 'Harbourlight-Olu-08'].freeze
     SAM_LOGIN = ['sokoro', 'Granary-Sam-47'].freeze
     PASSWORDS = %w[Harbourlight-Olu-08 Quayside-Uma-17 Tidewater-Priya-31 Granary-Sam-47 Lanternwick-Adel-52].freeze
+    # S5c (unit 24): the account-only local administrators and the domain administrator
+    DESKADMIN_LOGIN = %w[deskadmin Winter2026].freeze
+    LABADMIN_PASSWORD = 'q8-Fen-31-Lab'.freeze
+    RAVI_LOGIN = %w[rmenon-adm Tidewater-Ravi-64].freeze
+    S5C_PASSWORDS = [DESKADMIN_LOGIN[1], LABADMIN_PASSWORD, RAVI_LOGIN[1]].freeze
 
     def beats_scenario
       JSON.parse(ScenarioBinding.render(File.read(BEATS_SCENARIO)))
@@ -29,8 +34,8 @@ module BreakEscape
       game = Game.new(
         id: BEATS_GAME_ID, mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
         scenario_data: beats_scenario,
-        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby bay store],
-                        'encounteredNPCs' => %w[olu uma adel priya sam],
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby bay store it_room],
+                        'encounteredNPCs' => %w[olu uma adel priya sam ravi],
                         'unlockedObjects' => %w[lobby_cabinet] }
       )
       game.prepare_scenario_data!
@@ -250,6 +255,71 @@ module BreakEscape
       checkpoint('beat 10')
     end
 
+    # S5c beat 11 and 12: collect the shared local administrator at desk A, crack it, reuse it at desk B
+    def beat_shared_local_admin
+      b_logout('hot_desk')
+      body = b_login('desk_a', ADEL_LOGIN, 'signin_admin_desk_a')
+      assert_equal 'admin', body['access']
+      tiles = b_container('desk_a', 'desktop_admin_desk_a')
+      refute_includes tiles.to_s, 'deskadmin', 'the desktop of desk_a names no account-only account before the collect'
+      b_collect('desk_a', 'collect_desk_a_deskadmin')
+      assert_response :success
+      row = response.parsed_body['harvested'].first
+      assert_equal 'deskadmin', row['username']
+      assert_nil row['portrait']
+      assert_equal 'desk_a_deskadmin', row['hashId']
+      b_logout('desk_a')
+      checkpoint('beat 11')
+      b_take('notes1', 'it_rota_poster', 'IT rota poster')
+      b_crack('desk_a_deskadmin', ['it_rota_seen'], 'crack_deskadmin_desk_a')
+      assert_response :success
+      b_keyring('keyring_after_crack_deskadmin')
+      body = b_login('desk_b', DESKADMIN_LOGIN, 'signin_deskadmin_desk_b')
+      assert body['success'], body.to_s
+      assert_equal 'admin', body['access']
+      b_collect('desk_b', 'collect_desk_b_deskadmin')
+      assert_response :success
+      assert_equal %w[desk_b_deskadmin], response.parsed_body['harvested'].map { |r| r['hashId'] }
+      b_logout('desk_b')
+      b_keyring('keyring_after_collect_desk_b')
+      checkpoint('beat 12')
+    end
+
+    # S5c beat 13: the hardened PC holds
+    def beat_hardened_lab
+      body = b_login('lab_pc', DESKADMIN_LOGIN, 'signin_deskadmin_lab_refused')
+      assert_equal false, body['success']
+      assert_response :unprocessable_entity
+      refused = b_game.log_rows_for('priv_audit').select { |r| r['event'] == 'signin_refused' }
+      assert_equal({ 'kind' => 'local' }, refused.last['detail'])
+      b_login('lab_pc', ADEL_LOGIN, 'signin_admin_lab')
+      b_collect('lab_pc', 'collect_lab_labadmin')
+      assert_response :success
+      assert_equal %w[labadmin], response.parsed_body['harvested'].map { |r| r['npcId'] }
+      b_logout('lab_pc')
+      body = b_crack('lab_labadmin', ['it_rota_seen'], 'crack_labadmin_nomatch')
+      assert_response :success
+      assert_equal 'nomatch', body['status'], 'the strong password of the hardened PC does not fall to the rota fact'
+      refute_includes b_state['crackedAccounts'].to_a, 'labadmin'
+      b_keyring('keyring_after_collect_lab')
+      checkpoint('beat 13')
+    end
+
+    # S5c beat 14: the domain administrator
+    def beat_domain_admin
+      b_take('notes1', 'ravi_note', "Note: Ravi's login")
+      %w[bay_pc hot_desk].each do |pc|
+        body = b_login(pc, RAVI_LOGIN, "signin_ravi_#{pc}")
+        assert body['success'], body.to_s
+        assert_equal 'admin', body['access']
+        b_logout(pc)
+      end
+      body = b_login('desk_a', RAVI_LOGIN, 'signin_ravi_desk_a_refused')
+      assert_equal false, body['success']
+      assert_response :unprocessable_entity
+      checkpoint('beat 14')
+    end
+
     def play_all_beats
       beat_user_no_collect
       beat_collect_at_bay
@@ -257,6 +327,9 @@ module BreakEscape
       beat_hot_desk_borrow
       beat_survey_stick
       beat_relay
+      beat_shared_local_admin
+      beat_hardened_lab
+      beat_domain_admin
       @answers
     end
   end
@@ -362,7 +435,8 @@ module BreakEscape
       data = scenario
       npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }
       admins = npcs.select { |n| n.dig('creds', 'admin') == true }.map { |n| n['id'] }
-      assert_equal %w[adel], admins
+      # S5c adds the two shared and hardened local administrators and the domain administrator
+      assert_equal %w[adel deskadmin labadmin ravi], admins
       assert_equal %w[adel_files olu_files uma_files], data['accountProfiles'].keys.sort
       bay = data['rooms']['bay']['objects'].find { |o| o['id'] == 'bay_pc' }
       assert_equal 'olu', bay['owner']
@@ -390,17 +464,54 @@ module BreakEscape
       log = start.find { |i| i['type'] == 'capture_log' }
       assert_equal true, log.dig('holds', 'captures')
       hashes = data['credentials'].select { |_, c| c['kind'] == 'hash' }
-      assert_equal %w[baypc_olu baypc_uma hotdesk_priya hotdesk_sam], hashes.keys
-      assert_equal %w[bay_pc bay_pc hot_desk hot_desk], hashes.values.map { |c| c.dig('proof', 'harvested') }
+      assert_equal %w[baypc_olu baypc_uma hotdesk_priya hotdesk_sam desk_a_deskadmin desk_b_deskadmin lab_labadmin], hashes.keys
+      assert_equal %w[bay_pc bay_pc hot_desk hot_desk desk_a desk_b lab_pc], hashes.values.map { |c| c.dig('proof', 'harvested') }
       assert_equal({ 'kind' => 'assist_invite', 'account' => 'adel', 'connectsTo' => 'hot_desk', 'label' => "Adel's assist code",
                      'proof' => { 'held' => 'adel_assist_code' } }, data['credentials']['adel_assist'])
       # every fact a hash needs comes from a takeable note in an open room, not inside a locked container
-      facts = hashes.values.flat_map { |c| c.dig('crack', 'facts') }
+      facts = hashes.values.flat_map { |c| c.dig('crack', 'facts') }.compact
       notes = objects.select { |o| Array(o['revealsFacts']).any? }
-      assert_equal facts.sort, notes.flat_map { |n| n['revealsFacts'] }.sort
+      assert_equal facts.uniq.sort, notes.flat_map { |n| n['revealsFacts'] }.sort
       notes.each { |n| assert_equal true, n['takeable'], n['id'] }
       sam = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'sam' }
       assert_equal [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }], sam['workarounds']
+    end
+
+    test 'the S5c part of the real scenario holds what beats 11 to 14 need, and the borrow can be made by clicking' do
+      data = scenario
+      objects = data['rooms'].values.flat_map { |r| Array(r['objects']) }
+      by_id = objects.to_h { |o| [o['id'], o] }
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.to_h { |n| [n['id'], n] }
+      assert_equal 'it_room', data['rooms']['lobby']['connections']['south']
+      assert_equal 'lobby', data['rooms']['it_room']['connections']['north']
+      %w[desk_a desk_b lab_pc].each do |id|
+        assert_equal 'login', by_id[id]['lockType']
+        assert_equal true, by_id[id]['locked']
+        # the list names no account-only id: roles only (an id in `access.people` reaches the browser in the room answer)
+        assert_equal({ 'roles' => %w[it] }, by_id[id]['access'])
+      end
+      assert_equal [{ 'npc' => 'deskadmin' }], by_id['desk_a']['cachedAccounts']
+      assert_equal [{ 'npc' => 'deskadmin' }], by_id['desk_b']['cachedAccounts']
+      assert_equal [{ 'npc' => 'labadmin' }], by_id['lab_pc']['cachedAccounts']
+      assert_equal %w[northwind northwind], %w[bay_pc hot_desk].map { |id| by_id[id]['domain'] }
+      deskadmin = npcs['deskadmin']
+      assert_equal true, deskadmin['accountOnly']
+      assert_equal false, deskadmin['staff']
+      assert_equal({ 'accountKind' => 'local', 'localTo' => %w[desk_a desk_b] }, deskadmin['creds'].slice('accountKind', 'localTo'))
+      assert_equal %w[lab_pc], npcs['labadmin']['creds']['localTo']
+      assert_equal({ 'accountKind' => 'domain', 'domain' => 'northwind', 'admin' => true }, npcs['ravi']['creds'].slice('accountKind', 'domain', 'admin'))
+      assert_nil npcs['ravi']['accountOnly']
+      assert_equal %w[it it it it], %w[adel deskadmin labadmin ravi].map { |id| npcs[id]['role'] }
+      assert_nil data['social']['intelFacts']['it_rota_seen']['subject'], 'a fact subject would name the account-only id before its collect'
+      crack = ->(id) { data['credentials'][id]['crack'] }
+      assert_equal({ 'password' => 'guessable', 'facts' => %w[it_rota_seen] }, crack.('desk_a_deskadmin').slice('password', 'facts'))
+      assert_equal 'strong', crack.('lab_labadmin')['password']
+      assert_equal true, by_id['it_rota_poster']['takeable']
+      assert_equal %w[it_rota_seen], by_id['it_rota_poster']['revealsFacts']
+      # the borrow of beat 16: a power switch the player can click makes Sam's PC fail his work, so he asks for the hot desk
+      assert_equal 'sam_pc_off', by_id['sam_pc']['offWhen']
+      assert_equal false, data['globalVariables']['sam_pc_off']
+      assert_equal 'sam_pc_off', by_id['sam_breaker']['triggerOnInteract'].last['onConfirm'].first['key']
     end
 
     # ---- beat 1 and 2: the ordinary account and the administrator ----------------------------

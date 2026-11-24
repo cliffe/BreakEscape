@@ -106,6 +106,27 @@
       "label": "Stored record: Sam (hot desk)",
       "proof": { "harvested": "hot_desk" },
       "crack": { "password": "guessable", "difficulty": "easy", "facts": ["sam_year"] }
+    },
+    "desk_a_deskadmin": {
+      "kind": "hash",
+      "account": "deskadmin",
+      "label": "Stored record: desk admin A",
+      "proof": { "harvested": "desk_a" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["it_rota_seen"] }
+    },
+    "desk_b_deskadmin": {
+      "kind": "hash",
+      "account": "deskadmin",
+      "label": "Stored record: desk admin B",
+      "proof": { "harvested": "desk_b" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["it_rota_seen"] }
+    },
+    "lab_labadmin": {
+      "kind": "hash",
+      "account": "labadmin",
+      "label": "Stored record: lab admin",
+      "proof": { "harvested": "lab_pc" },
+      "crack": { "password": "strong" }
     }
   },
 
@@ -114,7 +135,8 @@
       "olu_pet": { "label": "Olu's dog", "subject": "olu", "source": "bay_pinboard", "text": "Olu has a dog called Harbour." },
       "uma_town": { "label": "Uma's home town", "subject": "uma", "source": "bay_pinboard", "text": "Uma grew up in Quayside." },
       "priya_pet": { "label": "Priya's parrot", "subject": "priya", "source": "lobby_noticeboard", "text": "Priya has a parrot called Tidewater." },
-      "sam_year": { "label": "Sam's start year", "subject": "sam", "source": "lobby_noticeboard", "text": "Sam joined the firm in 2011." }
+      "sam_year": { "label": "Sam's start year", "subject": "sam", "source": "lobby_noticeboard", "text": "Sam joined the firm in 2011." },
+      "it_rota_seen": { "label": "The desk administrator's habit", "source": "it_rota_poster", "text": "The rota poster says the desk administrator password is the season and the year, the same on every desk." }
     }
   },
 
@@ -185,7 +207,7 @@
   "logSources": {
     "priv_audit": {
       "title": "Privilege audit",
-      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used", "admin_profile_read", "usb_install_overridden", "credentials_harvested"]
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used", "admin_profile_read", "usb_install_overridden", "credentials_harvested", "signin_refused"]
     }
   },
 
@@ -194,10 +216,12 @@
     "bay_stick_in": false,
     "bay_off": false,
     "survey_stick_in": false,
+    "sam_pc_off": false,
     "se_intel_olu_pet": false,
     "se_intel_uma_town": false,
     "se_intel_priya_pet": false,
-    "se_intel_sam_year": false
+    "se_intel_sam_year": false,
+    "se_intel_it_rota_seen": false
   },
 
   "gameClock": { "start": "Tue 08:30", "rate": 1 },
@@ -219,7 +243,7 @@
     "lobby": {
       "type": "room_reception",
       "door_sign": "Lobby",
-      "connections": { "north": "bay", "east": "store" },
+      "connections": { "north": "bay", "east": "store", "south": "it_room" },
       "objects": [
         {
           "type": "pc",
@@ -318,6 +342,7 @@
           "loginPicker": "accounts",
           "access": { "roles": ["staff"] },
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "domain": "northwind",
           "cachedAccounts": [{ "npc": "priya" }, { "npc": "sam", "after": "borrow" }],
           "observations": "A shared desk PC in the lobby. Anybody on the staff list may sign in."
         },
@@ -335,6 +360,7 @@
           "access": { "roles": ["staff"] },
           "owner": "sam",
           "policy": "sam_strict",
+          "offWhen": "sam_pc_off",
           "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
           "observations": "Sam's desk PC. A tag on the monitor reads Sam. Three wrong passwords lock an account out of it."
         },
@@ -348,6 +374,33 @@
           "revealsFacts": ["priya_pet", "sam_year"],
           "text": "Front desk notes: Priya's parrot Tidewater is back in the staff kitchen photos. Sam has been here since 2011, so ask him about the old filing room.",
           "observations": "A pad of notes the front desk keeps."
+        },
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "sam_breaker",
+          "name": "Sam's PC power",
+          "position": { "x": 8, "y": 7 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.sam_pc_off",
+              "text": "Switch Sam's PC back on?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [{ "type": "set_global", "key": "sam_pc_off", "value": false }]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.sam_pc_off",
+              "text": "Switch Sam's PC off?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [{ "type": "set_global", "key": "sam_pc_off", "value": true }]
+            }
+          ],
+          "observations": "The power switch for Sam's PC. The PC starts on. Switch it off and Sam cannot work at his desk, so he asks for the hot desk."
         }
       ],
       "npcs": [
@@ -409,6 +462,7 @@
           "owner": "olu",
           "offWhen": "bay_off",
           "policy": "bay_locked",
+          "domain": "northwind",
           "cachedAccounts": [{ "npc": "olu" }, { "npc": "uma" }],
           "observations": "A desk PC in the bay. A tag on the monitor reads Olu."
         },
@@ -656,6 +710,114 @@
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "it",
           "creds": { "username": "adelwick", "password": "Lanternwick-Adel-52", "admin": true }
+        }
+      ]
+    },
+
+    "it_room": {
+      "type": "room_office",
+      "door_sign": "IT room",
+      "connections": { "north": "lobby" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "desk_a",
+          "name": "Desk PC A",
+          "host": "DESKA",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "cachedAccounts": [{ "npc": "deskadmin" }],
+          "observations": "A desk PC in the IT room. It shares its local administrator with the desk PC next to it."
+        },
+        {
+          "type": "pc",
+          "id": "desk_b",
+          "name": "Desk PC B",
+          "host": "DESKB",
+          "sprite": "pc_desktop",
+          "position": { "x": 6, "y": 4 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "cachedAccounts": [{ "npc": "deskadmin" }],
+          "observations": "A second desk PC in the IT room."
+        },
+        {
+          "type": "pc",
+          "id": "lab_pc",
+          "name": "Lab PC",
+          "host": "LAB01",
+          "sprite": "pc_desktop",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["it"] },
+          "cachedAccounts": [{ "npc": "labadmin" }],
+          "observations": "The lab PC. It has an administrator of its own."
+        },
+        {
+          "type": "notes1",
+          "id": "it_rota_poster",
+          "name": "IT rota poster",
+          "position": { "x": 5, "y": 3 },
+          "takeable": true,
+          "readable": true,
+          "revealsFacts": ["it_rota_seen"],
+          "text": "IT rota: desk administrator duty is shared by everyone in turn. The shared desk password follows the season and the year, so nobody has to write it down.",
+          "observations": "A rota poster pinned by the IT room door."
+        },
+        {
+          "type": "notes1",
+          "id": "ravi_note",
+          "name": "Note: Ravi's login",
+          "position": { "x": 2, "y": 6 },
+          "takeable": true,
+          "readable": true,
+          "text": "Ravi's domain login (administrator): rmenon-adm / Tidewater-Ravi-64",
+          "observations": "A note left on the IT room table."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "deskadmin",
+          "displayName": "Desk administrator",
+          "npcType": "person",
+          "accountOnly": true,
+          "staff": false,
+          "role": "it",
+          "creds": { "username": "deskadmin", "password": "Winter2026", "admin": true, "accountKind": "local", "localTo": ["desk_a", "desk_b"] }
+        },
+        {
+          "id": "labadmin",
+          "displayName": "Lab administrator",
+          "npcType": "person",
+          "accountOnly": true,
+          "staff": false,
+          "role": "it",
+          "creds": { "username": "labadmin", "password": "q8-Fen-31-Lab", "admin": true, "accountKind": "local", "localTo": ["lab_pc"] }
+        },
+        {
+          "id": "ravi",
+          "displayName": "Ravi Menon",
+          "npcType": "person",
+          "position": { "x": 5, "y": 6 },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/adel.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it",
+          "creds": { "username": "rmenon-adm", "password": "Tidewater-Ravi-64", "admin": true, "accountKind": "domain", "domain": "northwind" }
         }
       ]
     }
