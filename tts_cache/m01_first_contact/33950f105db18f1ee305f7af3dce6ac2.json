@@ -1,0 +1,14 @@
+{
+  "key": "33950f105db18f1ee305f7af3dce6ac2",
+  "npc": "derek_lawson",
+  "text": "Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation.",
+  "delivery": "cold, quiet and controlled, low and slow, no shouting, quietly menacing",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T16:51:50Z"
+}

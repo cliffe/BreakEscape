@@ -1,0 +1,14 @@
+{
+  "key": "0ada91db3acff91a2a257fe47d0f95f0",
+  "npc": "derek_lawson",
+  "text": "Sixty deaths to save tens of thousands per year. That's not murder. That's optimisation.",
+  "delivery": "very low, slow and deliberate, the darkest line, a small pause before That's optimisation, chilling and quiet, no shouting",
+  "voice": "Algieba",
+  "style": "Confident, slightly menacing corporate executive in his late forties. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a deep, authoritative voice at a measured pace.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-24",
+  "recorded_at": "2026-11-24T16:52:00Z"
+}
