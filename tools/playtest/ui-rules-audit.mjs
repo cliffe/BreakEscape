@@ -25,12 +25,21 @@
 //
 //   node tools/playtest/ui-rules-audit.mjs --port 3350 --game 2449 [--all | --scenes a,b] [--strict]
 //        [--surfaces surfaces.mjs] [--params scene-params.json] [--sizes 1400x1000,800x600,915x412]
-//        [--shots dir] [--json out.json]
+//        [--shots dir] [--json out.json] [--ops-view [footholdId] [--plant "js"]]
 //
 // --all sweeps every registered minigame with a title-only start (or the params given), so
 // data-driven scenes open empty: judge their layout only. --surfaces takes a module whose
 // default export is a list of { name, root, open: "js run in the page", close?: "js" } for
 // dialogs, menus, phone apps and anything that is not a direct minigame start.
+// --ops-view adds the network view, once in each look (surfaces network-view-gui and
+// network-view-cli, opened with window.startNetworkViewMinigame and switched with
+// window.__test.network.setSkin). It needs a live test_ops_skin game (swap-scenario-game.rb
+// test_access_signin test_ops_skin) with its box planted: the audit loads the page with
+// skip_resume=1, so give --plant "js" (run once in the page before the surfaces, for example a
+// call that plugs the drop box into office_port) unless the page already holds the foothold.
+// The foothold is the id after --ops-view, else the first one held (jack_office_port). With no
+// foothold, or no setSkin in the page, the surface throws on open and is reported as not
+// audited. Without --ops-view the network view is not audited, as before.
 // Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE picks the browser.
 import { chromium } from 'playwright';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
@@ -211,7 +220,8 @@ const BUILTIN_PARAMS = {
     'password': { title: 'Password', correctPassword: 'secret', showHint: true, hint: 'A hint' },
     // Review m4: a bare title-only start
     // throws or finds no NPC. person-chat and network-view need the game's own NPCs and network, so they
-    // are reported as not audited (give --skip person-chat,network-view to allow it, or a --surfaces entry)
+    // are reported as not audited (give --skip person-chat,network-view to allow it, a --surfaces entry, or
+    // --ops-view against a planted test_ops_skin game)
     'container': { title: 'Container', containerItem: { name: 'Locker', scenarioData: { name: 'Locker', contents: [] } }, contents: [] },
     'phone-chat': { title: 'Phone', npcId: 'test_npc' },
     // four lamp rows, so the panel has its real width and height (R2 M2)
@@ -241,6 +251,21 @@ async function main() {
         for (const s of scenes) {
             const p = PARAMS[s] || BUILTIN_PARAMS[s] || { title: s };
             surfaces.push({ name: `mg-${s}`, root: '.minigame-container', open: `window.MinigameFramework.startMinigame(${JSON.stringify(s)}, null, ${JSON.stringify(p)})`, close: 'window.MinigameFramework.forceCloseMinigame?.()' });
+        }
+    }
+    if (flag('ops-view')) {
+        const given = opt('ops-view', null);
+        const id = given && !given.startsWith('--') ? given : null;
+        if (opt('plant', null)) {
+            try { await page.evaluate(async (js) => (0, eval)(`(async () => { ${js} })()`), opt('plant')); } catch (e) { console.log(`plant failed: ${String(e.message || e).slice(0, 100)}`); }
+            await page.waitForTimeout(1500);
+        }
+        for (const skin of ['gui', 'cli']) {
+            surfaces.push({
+                name: `network-view-${skin}`, root: '.minigame-container',
+                open: `const held = window.__test.footholds ? window.__test.footholds() : []; const id = ${JSON.stringify(id)} || held[0]?.id; if (!id) throw new Error('no foothold held: the box is not planted'); if (!window.__test.network?.setSkin) throw new Error('no window.__test.network.setSkin'); window.startNetworkViewMinigame(id); await new Promise(r => setTimeout(r, 800)); await window.__test.network.setSkin(${JSON.stringify(skin)});`,
+                close: 'window.MinigameFramework.forceCloseMinigame?.()'
+            });
         }
     }
     if (opt('surfaces', null)) surfaces = surfaces.concat((await import(pathToFileURL(resolve(opt('surfaces'))).href)).default);
