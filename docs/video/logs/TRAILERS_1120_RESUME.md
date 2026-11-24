@@ -1,5 +1,29 @@
 # Trailer update (m01 + m02, spy avatars), resume note for the orchestrator
 
+## State 24 Nov, evening (READ THIS FIRST; older sections below are history)
+Rig: keyless server :3025, display :113, both mine. Takes via scratchpad run.sh (`MISSION=<m>`); renders via scratchpad render6.sh. Check running work with `ps -eo pid,etime,args | grep -E "run-take|render6" | grep -v grep` (pgrep -f matches itself). Avatar must read female_hacker_hood_v2 (`psql -X -At -U deploy -d break_escape_development -c "select selected_sprite from break_escape_player_preferences where id=1"`).
+Review page v22 https://claude.ai/artifact/6JAeGCZXd1neKNc5ccyRea (file docs/video/review/trailers_spies_review.html; tab = CUTS block + nav button + `let current`; asset ids in scratchpad review/asset_ids_1124.txt).
+
+Shipped/approved: m03 (earlier); m02 v5, m04 v3, m06 v2 approved 24 Nov -> export agent running (hacktivity-videos commit, NO push; owner pushes). Mark them final on the page when it reports.
+m07 v1 published (53d05f60b, landed on main as 0a5a30d15; main merged into branch 0a445612c).
+m01 v12 (card "Uncover the Plan. / Stop It.", fa8b57844) rendering now -> check card in 3 aspects, review copies, tab, hash to AC0.
+m08 v1 edit done (94e5fc6cc + crop fixes 60f6af051) but music is being swapped to Noir Shadowline Protocol (m01 takes Emerald Trigger) -> render after the swap; never published yet.
+m09 takes: run 1 done (03ec9f1bc, docs/video/takes_m09.md "Not done" list: t22-t30, re-runs t16/t19/t21, frame checks t14/t15/t17/t20; Helena takes need --set dock_done=true). Next: fresh Sonnet takes agent after the m01 render.
+m10 takes: scripts only, not run.
+
+CA0 machine schedule (agreed): after m09 takes -> CA0 B2 (ca04,ca07,ca03,ca14 + ca03 retake, ~1h45); then my m10 takes + m09 render; then CA0 B1 (~1h40); then my m10 render; then CA0 third block. Message CA0 ("LIVE CA0: Access work slice 9.2 scenario design") when m09 takes finish.
+
+Owner notes 24 Nov (AC0) in flight, one agent each (all told: SendMessage "main" for a machine slot before any browser/encode/render):
+1. Ghost FX in game m02 + 2. Architect FX in game (voicefx agent; GAME CHANGE hash; live proof on :3026).
+5. m05 999 Rollout poster over a doorway (poster agent; GAME CHANGE; overlap check script; :3027). Then retake the m05 0:40 shot myself.
+3. Hollis visemes PixelLab mouth-only (hollis agent). Then retake m07 t11b Hollis line.
+4+2. m07 v2 edit: freeze-frame support in renderer + still crescendo faces + Architect trailer FX (m07v2 agent).
+6. m01 v13 on Emerald Trigger + m08 to Shadowline (music-swap agent; waits for the m01 render to end before writing m01 json).
+7. Console beats varied m01-m10 from ~/safetynet-footage/<m>/solution (opus55 agent; writes clips to ~/video-takes-local/<m>/clips + table in CONSOLE_CLIPS.md; I swap into edits).
+Tell AC0 which hash carries game changes (1, 2, 5).
+Handovers for agents land in scratchpad/*-handover.md.
+Lessons: crops must stay inside rooms (measure bounds); 9:16/1:1 can't shrink below 1x (lint); console clips that fill 1920 px need a left-anchored crop.
+
 Request: AC0 (LIVE AC0, uds:/run/user/1000/cc-socks/3710521.sock) relayed the user's ask on 2026-11-20: update the m01 and m02 trailers to main 1f651abce, new spy starter avatars, switch avatar between cuts. Tell AC0 when renders are ready for review (AC0 relays). TTS/PixelLab spend needs a yes through AC0. No db: tasks, no game-row edits.
 
 ## Setup (all working)
