@@ -6,10 +6,12 @@ import { sleep, clearScreen } from '../lib/lib.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(1500); console.error('SETUP', JSON.stringify((await bridge.getState()).player)); }
 export default async (page, bridge, mark) => {
-  await sleep(1000); const s = await bridge.getState(); const vm = s.nearby.find(n => n.id === 'gate_console');
-  if (!vm) throw new Error('gate_console not in nearby: ' + JSON.stringify(s.nearby.map(n => [n.id, Math.round(n.x), Math.round(n.y)])));
+  await sleep(1000); const s = await bridge.getState();
+  // gate_console is outside the bridge's nearby scan from the spawn; read its position from the room objects instead.
+  const vm = await page.evaluate(() => { const o = window.rooms && window.rooms.forward_post && window.rooms.forward_post.objects && window.rooms.forward_post.objects.gate_console; return o ? { x: o.x, y: o.y } : null; });
+  if (!vm) throw new Error('gate_console not in room objects');
   mark('walk-start', { vm: [vm.x, vm.y], player: s.player });
-  await keyLegs(bridge, [['up', vm.y + 34], ['left', vm.x]], 145, mark);
-  mark('walk-end', { player: (await bridge.getState()).player }); await sleep(1500);
+  await keyLegs(bridge, [['up', vm.y + 34], ['right', vm.x - 70]], 145, mark);
+  mark('walk-end', { player: (await bridge.getState()).player }); await sleep(6000);
   if ((await bridge.getState()).activeMinigame) throw new Error('a minigame opened on the walk');
 };
