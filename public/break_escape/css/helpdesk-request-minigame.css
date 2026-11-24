@@ -45,3 +45,6 @@
 .hr-result-line, .hr-note, .hr-password { margin: 0 0 6px; max-width: 60ch; overflow-wrap: anywhere; }
 .hr-password { color: var(--hr-accent); font-size: 24px; user-select: all; }
 .hr-note { color: var(--hr-dim); }
+
+/* Close while a send is waiting for the desk */
+.hr-minigame-container .se-overlay-close[aria-disabled="true"] { opacity: 0.5; cursor: default; }

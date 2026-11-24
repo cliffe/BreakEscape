@@ -2,7 +2,7 @@
 // (test/js/helpers/helpdesk-answers.mjs); the scene is driven through a stand-in helpdesk client
 // that turns a fixture answer into { result, body } the way unit 08's client does.
 // Run with: bin/test-js test/js/helpdesk-request.test.mjs
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,6 +74,7 @@ function open(helpdesk, params = {}) {
 const input = (c, sel) => c.querySelector(sel);
 const type = (c, sel, v) => { const n = input(c, sel); n.value = v; return n; };
 const settle = () => new Promise((r) => setTimeout(r, 0));
+const settle2 = async () => { for (let i = 0; i < 6; i += 1) await Promise.resolve(); };
 const lineOf = (c) => c.querySelector('.hr-result-line')?.textContent;
 
 test('a desk with both resets draws a username, a choice and a field per question label', () => {
@@ -170,7 +171,13 @@ test('the password is shown only for the granted password answer', async () => {
     await settle();
     assert.equal(lineOf(c), 'Password reset. New password:');
     assert.equal(c.querySelector('.hr-password').textContent, answer('helpdesk.granted_password').body.password);
-    assert.equal(c.querySelector('.hr-note').textContent, 'It is saved as "Reset" under Sign-ins in your capture log, and on the sign-in screen.');
+    assert.equal(c.querySelector('.hr-note').textContent, 'It is saved on the sign-in screen for this account.', 'no capture log held: the log is not named (R2-CLIENT3)');
+    window.inventory = { items: [{ scenarioData: { type: 'capture_log', holds: { captures: true } } }] };
+    try {
+        c.querySelector('.hr-send').click();
+        await settle();
+        assert.equal(c.querySelector('.hr-note').textContent, 'It is saved under Sign-ins in your capture log, and on the sign-in screen.');
+    } finally { delete window.inventory; }
     const st = scene.getTestState();
     assert.equal(st.helpdeskRequest.passwordShown, true);
     assert.ok(!JSON.stringify(st).includes(answer('helpdesk.granted_password').body.password), 'not in the test state');
@@ -308,4 +315,51 @@ test('Close and Escape during an in-flight send are held, and the granted answer
     assert.equal(results.length, 1);
     assert.equal(results[0][0], true);
     delete window.helpdeskClient;
+});
+
+test('a send with no answer times out after 15 seconds, shows a line, frees Close and Send, and a late answer is ignored (R2-CLIENT2)', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const granted = answer('helpdesk.granted_password');
+        const never = [];
+        const client = fakeClient({ reply: (req) => new Promise((resolve) => never.push(() => resolve({ result: 'granted', body: granted.body }))) });
+        const { scene, container: c } = open(client);
+        type(c, '.hr-username input', 'v.lind');
+        c.querySelector('.hr-send').click();
+        await Promise.resolve();
+        assert.equal(lineOf(c), 'Sending your request...');
+        assert.equal(c.querySelector('.hr-send').disabled, true);
+        assert.equal(c.querySelector('[aria-label="Close"]').getAttribute('aria-disabled'), 'true');
+        assert.equal(scene.getTestState().helpdeskRequest.sending, true);
+        mock.timers.tick(14999);
+        await Promise.resolve();
+        assert.equal(lineOf(c), 'Sending your request...', 'still waiting at 14.999 s');
+        mock.timers.tick(1);
+        await settle2();
+        assert.equal(lineOf(c), 'The desk did not answer. Try again.');
+        assert.equal(c.querySelector('.hr-send').disabled, false);
+        assert.equal(c.querySelector('[aria-label="Close"]').hasAttribute('aria-disabled'), false);
+        assert.equal(scene.getTestState().helpdeskRequest.sending, false);
+        // the desk answers late: nothing is drawn for it
+        never[0]();
+        await settle2();
+        assert.equal(lineOf(c), 'The desk did not answer. Try again.');
+        assert.equal(c.querySelector('.hr-password'), null, 'a late grant is not shown');
+        // Send works again
+        c.querySelector('.hr-send').click();
+        await Promise.resolve();
+        assert.equal(client.sent.length, 2);
+        assert.equal(lineOf(c), 'Sending your request...');
+        scene.cleanup();
+    } finally { mock.timers.reset(); }
+});
+
+test('a send that rejects shows the failed line and frees the form without waiting for the timer', async () => {
+    const client = fakeClient({ reply: () => { throw new Error('down'); } });
+    const { container: c } = open(client);
+    type(c, '.hr-username input', 'v.lind');
+    c.querySelector('.hr-send').click();
+    await settle();
+    assert.equal(lineOf(c), TEXT.failed);
+    assert.equal(c.querySelector('.hr-send').disabled, false);
 });

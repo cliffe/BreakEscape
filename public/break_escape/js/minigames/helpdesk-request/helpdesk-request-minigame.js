@@ -16,6 +16,8 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { registerMinigameStarter } from '../../systems/minigame-registry.js';
 
 export const MAX_FIELD = 64;
+/** A send with no answer after this long is given up on (R2-CLIENT2). */
+export const SEND_TIMEOUT_MS = 15000;
 export const TEXT = Object.freeze({
     title: 'IT request form',
     username: 'Username',
@@ -24,7 +26,10 @@ export const TEXT = Object.freeze({
     mfa: 'A sign-in approval reset',
     send: 'Send',
     grantedPassword: 'Password reset. New password:',
-    passwordNote: 'It is saved as "Reset" under Sign-ins in your capture log, and on the sign-in screen.',
+    passwordNote: 'It is saved under Sign-ins in your capture log, and on the sign-in screen.',
+    passwordNoteNoLog: 'It is saved on the sign-in screen for this account.',
+    sending: 'Sending your request...',
+    noAnswer: 'The desk did not answer. Try again.',
     grantedMfa: 'Sign-in approvals now come to your phone.',
     refused: 'The desk could not verify you. Tries left: {n}.',
     blocked: 'The desk is not taking requests for that account. Try again in {n} {minutes}.',
@@ -61,6 +66,7 @@ export function resultLine(result, body) {
         return TEXT.blocked.replace('{n}', String(n)).replace('{minutes}', n === 1 ? 'minute' : 'minutes');
     }
     if (result === 'unavailable') return TEXT.unavailable;
+    if (result === 'no_answer') return TEXT.noAnswer;
     return TEXT.failed;
 }
 
@@ -196,20 +202,32 @@ export class HelpdeskRequestMinigame extends SocialOverlayScene {
         if (typeof this.params.pcId === 'string' && this.params.pcId) request.pcId = this.params.pcId;
 
         this._sending = true;
+        this._passwordShown = false;
         if (this.sendButton) this.sendButton.disabled = true;
-        // Held until the desk answers, so a granted password is never dropped unseen (S8b R1-CLIENT4)
+        // Held while the desk is answering, so a granted password is never dropped unseen
+        // (S8b R1-CLIENT4); given up on after SEND_TIMEOUT_MS (R2-CLIENT2)
         this.closeButton?.setAttribute?.('aria-disabled', 'true');
+        this.resultEl.textContent = '';
+        this.resultEl.dataset.result = 'sending';
+        this.resultEl.appendChild(el('p', 'hr-result-line', TEXT.sending));
         let out = null;
+        let timer = null;
+        const timedOut = Symbol('timed out');
+        let asked;
+        try { asked = Promise.resolve(client.send(request)); } catch (err) { asked = Promise.reject(err); }
+        asked.catch(() => {});
         try {
-            out = await client.send(request);
+            out = await Promise.race([asked, new Promise((resolve) => { timer = setTimeout(() => resolve(timedOut), SEND_TIMEOUT_MS); })]);
         } catch {
             out = null;
         }
+        clearTimeout(timer);
         this._sending = false;
         if (this.sendButton) this.sendButton.disabled = false;
         this.closeButton?.removeAttribute?.('aria-disabled');
         if (this._closed) return;
-        const result = isObj(out) && typeof out.result === 'string' ? out.result : 'error';
+        // A late answer for a request given up on is dropped here: the promise above is not read again
+        const result = out === timedOut ? 'no_answer' : (isObj(out) && typeof out.result === 'string' ? out.result : 'error');
         this._showResult(result, isObj(out?.body) ? out.body : {});
     }
 
@@ -221,12 +239,18 @@ export class HelpdeskRequestMinigame extends SocialOverlayScene {
         this.resultEl.appendChild(el('p', 'hr-result-line', resultLine(result, body)));
         if (result === 'granted' && body.what !== 'mfa' && typeof body.password === 'string' && body.password) {
             this.resultEl.appendChild(el('p', 'hr-password', body.password));
-            this.resultEl.appendChild(el('p', 'hr-note', TEXT.passwordNote));
+            this.resultEl.appendChild(el('p', 'hr-note', this._holdsCaptureLog() ? TEXT.passwordNote : TEXT.passwordNoteNoLog));
             this._passwordShown = true;
         }
         if (result === 'granted') {
             for (const q of this.form?.questions || []) this.answerEls[q.id].value = '';
         }
+    }
+
+    // The same test as keyring.js heldCaptureLog (this scene imports nothing from the keyring)
+    _holdsCaptureLog() {
+        const items = Array.isArray(win().inventory?.items) ? win().inventory.items : [];
+        return items.some((it) => it?.scenarioData?.type === 'capture_log' && it.scenarioData.holds?.captures === true);
     }
 
     // Close and Escape wait for the answer of a send in flight
