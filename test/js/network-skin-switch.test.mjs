@@ -287,3 +287,26 @@ test('the starter works the skin out and passes it to the scene', async () => {
     assert.equal(params.skin, 'gui', 'a press beats the default');
     assert.equal(scene.startingSkin(), 'gui');
 });
+
+test('before the first sweep (no block marked ops yet) the Terminal is there, with the sweep, and stays after the answer', async () => {
+    const body = clone(loadFixture('discovery_unswept'));
+    assert.ok(!body.footholds[0].networks.some(b => b.ops === true), 'the fixture has no ops block yet');
+    const h = await mount(body, { params: { skin: 'cli' }, hold: true });
+    assert.equal(h.view().getTestState().skin, 'cli');
+    assert.ok(q(h, '.network-term'), 'the Terminal is mounted');
+    assert.ok(switchBtn(h), 'the switch is drawn');
+    const sweep = q(h, '[data-network-id] [data-action="sweep"]');
+    assert.ok(sweep, 'the sweep quick command');
+    sweep.click();
+    await settle(2);
+    await h.release({ success: true, network: { id: 'lab_net', swept: true, hosts: [] } });
+    await settle(2);
+    assert.equal(h.view().getTestState().skin, 'cli');
+    assert.ok(q(h, '.network-term'));
+    h.end();
+});
+
+test('a view with no ops block and no sweep offer never builds the Terminal (viewHasOps)', () => {
+    assert.equal(scene.viewHasOps(noOpsBody().footholds[0]), false);
+    assert.equal(scene.viewHasOps(clone(loadFixture('discovery_unswept')).footholds[0]), true);
+});

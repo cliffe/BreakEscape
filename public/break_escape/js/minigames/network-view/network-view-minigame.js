@@ -125,9 +125,13 @@ export const REFETCH_IDLE_MS = 15000;
 // Which trip each foothold's log belongs to, so a log left by an earlier trip never opens a new one
 const LOG_TRIPS = new Map();
 
-/** Whether any block of a view carries `ops: true`: the view the switch and the Terminal are for. */
+/**
+ * Whether the view is one the switch and the Terminal are for: a block carries `ops: true`, or the view
+ * offers a Sweep (a discovery block not yet swept, which the server marks `ops` only after the sweep).
+ */
 export function viewHasOps(view) {
-    return (Array.isArray(view?.networks) ? view.networks : []).some(b => b && typeof b === 'object' && b.ops === true);
+    if ((Array.isArray(view?.networks) ? view.networks : []).some(b => b && typeof b === 'object' && b.ops === true)) return true;
+    try { return offers(view, {}).some(o => o.action === 'sweep'); } catch (e) { return false; }
 }
 
 export const OPS_ACTIONS = Object.freeze(['sweep', 'scan', 'check', 'confirm', 'use']);
