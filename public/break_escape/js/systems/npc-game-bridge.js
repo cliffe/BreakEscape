@@ -190,9 +190,11 @@ export class NPCGameBridge {
                 return result;
             }
         } catch (error) {
-            // A second step the player closed, or that was denied or timed out: not a
-            // failure to report (lock-step.js shows its own feedback; S8c)
+            // A second step the player closed, or that was denied or timed out: not a failure to
+            // report. A denial or an expiry gets the reject tone and "Not approved." once, here (the
+            // callers below show nothing); the player's own X gets nothing (S8c)
             if (error?.body?.reason === 'second_step_cancelled') {
+                try { window.lockStep?.cancelFeedback?.(error); } catch (e) { /* feedback must not break the door */ }
                 const result = { success: false, secondStepCancelled: true, roomId, npcId };
                 this._logAction('unlockDoor', { roomId, npcId }, result);
                 return result;

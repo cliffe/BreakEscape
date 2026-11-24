@@ -705,6 +705,8 @@ async function handleDoorInteraction(doorSprite) {
                 console.error('Clone-as-entry server unlock failed:', error);
             }
             if (!serverResponse || !serverResponse.success) {
+                // S8c: a cancelled second step is silent here (lockStep gave its own feedback)
+                if (serverResponse?.secondStepCancelled) return;
                 window.gameAlert?.('Access denied', 'error', doorRefusalTitle(hintSource, 'Door'), lockedHintDuration(hintSource, 3000, 'Access denied'));
                 return;
             }
