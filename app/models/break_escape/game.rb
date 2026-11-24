@@ -14,6 +14,7 @@ module BreakEscape
     include SocialFeed
     include MfaAccess
     include MfaSignIn
+    include HelpdeskAccess
     include Wearables
     include PinDust
 
