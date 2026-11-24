@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m07 Architect's Gambit 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-24): first cut, not rendered. Music Shadow Tide from 0.05 s (downbeat): quiet intro to 20.9 s, lifts at 4.19 / 10.46 (Mission 7 card) / 20.92 (strong hit 20.72), steady to the end, fade-out 2 s. Compromises: ops-floor Adaeze/Gwen exchange not filmed (t12 open), so the walk across the ops floor stands in (swap when t12 lands); no t20b/flag-station shot; Elena, Park and Mercer are face flashes from line takes; no walk down the generator hall (t29c dropped 1.7% of frames, unused); t19c unused (notes panel); the Architect call is a green terminal view, so the ending 'close-up' is a 4x crop on the text lines, not a portrait.",
+ "status": "v1 (2026-11-24): first cut. Music Shadow Tide from 0.05 s (downbeat): quiet intro to 20.9 s, lifts at 4.19 / 10.46 (Mission 7 card) / 20.92 (strong hit 20.72), steady to the end, fade-out 2 s. Ops floor: Gwen's 'At least the water is cold.' from the Adaeze/Gwen exchange (t12) takes the old walk slot plus the dropped Hollis torch shot, so later cuts are unchanged. SCADA panel from t20b. Elena, Park and Mercer are face flashes from line takes; no walk down the generator hall (t29c dropped 1.7% of frames, unused); t19c unused (notes panel); the Architect call is a green terminal view, so the ending 'close-up' is a 4x crop on the text lines, not a portrait.",
  "music": {
   "track": "SpyAction/Shadow Tide.mp3",
   "analysis": "shadow_tide_60.json",
@@ -216,49 +216,6 @@
    ]
   },
   {
-   "id": "hollis_torch",
-   "type": "gameplay",
-   "duration": 1.0,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t11b_hollis.trimmed.mkv",
-    "in": 7.8,
-    "out": 8.8
-   },
-   "note": "Hollis's torch beam on the checkpoint map, player at the left; frames 4, 8, 11, 13.5 viewed (no HUD, no text)",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
-    },
-    "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.1
-    },
-    "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.15
-    }
-   },
-   "audio": {
-    "gain_db": -120
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "map only"
-   }
-  },
-  {
    "id": "hollis_challenge",
    "type": "gameplay",
    "duration": 4.0667,
@@ -320,38 +277,42 @@
    ]
   },
   {
-   "id": "walk_ops",
+   "id": "ops_water",
    "type": "gameplay",
-   "duration": 1.2,
+   "duration": 2.2,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t28_walk_ops.trimmed.mkv",
-    "in": 0.5,
-    "out": 1.7
+    "file": "t12_ops_exchange.trimmed.mkv",
+    "in": 28.35,
+    "out": 30.55
    },
-   "note": "ops floor in place of the Adaeze/Gwen exchange (t12 not filmed): both staff seated at their consoles, a speech bubble, player walking in; frames 0.5 and 2.8 viewed. SWAP when t12 lands",
+   "note": "Adaeze/Gwen exchange at ops_cooler, last line only (voice 28.5-30.2, bubble over the room, no portraits). Takes the 1.0 s of the dropped hollis_torch shot so later cuts stay put. Wall board shows the outage clock and 8.41M served only. Frame 29.4 viewed",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.375,
+     "cy": 0.65,
+     "zoom": 2.0
     },
     "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.375,
+     "cy": 0.55,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cx": 0.375,
+     "cy": 0.65,
+     "zoom": 2.0
     }
    },
    "audio": {
-    "gain_db": -120
+    "gain_db": 2.0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.0,
+    "post": 0
    },
    "spoiler": {
     "reviewed": true,
@@ -359,8 +320,22 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "room only"
-   }
+    "note": "staff aside, outage clock on the wall board"
+   },
+   "caption": {
+    "16:9": false,
+    "9:16": true,
+    "1:1": true
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Gwen Pritchard",
+     "text": "At least the water is cold.",
+     "start": 0.15,
+     "end": 1.85
+    }
+   ]
   },
   {
    "id": "card_withheld",
@@ -1234,11 +1209,11 @@
     "type": "cut"
    },
    "source": {
-    "file": "t20_server_closeups.trimmed.mkv",
+    "file": "t20b_server_closeups.trimmed.mkv",
     "in": 6.3,
     "out": 6.7
    },
-   "note": "SCADA control password panel, field EMPTY (frame 6.5 viewed); rack_cabling_note shot excluded",
+   "note": "SCADA control password panel, field EMPTY (t20b frame 6.5 viewed; t20b has no cabling note)",
    "framing": {
     "16:9": {
      "cx": 0.5,

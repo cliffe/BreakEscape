@@ -11,8 +11,8 @@ Not rendered. Lint with `BE_CLIPS_DIR=$HOME/video-takes-local/m07/clips ... --ta
 | 6.0 | hook, Netherton "We are faced with an impossible decision, Agent." (J-cut 0.5 s) | t10 12.95-16.65 |
 | 9.7 | card Mission 7 / Architect's / Gambit (on the 10.46 lift) | |
 | 11.2 | stakes "Eight point four million people, Agent." (UI-free crop) | t10 30.0-32.77 |
-| 14.0 | Hollis torch on the checkpoint map, then "So you're lost, or you're the other thing." | t11b 7.8-8.8, 19.4-23.45 |
-| 19.0 | ops floor walk (stand-in) | t28 0.5-1.7 |
+| 14.0 | Hollis "So you're lost, or you're the other thing." | t11b 19.4-23.45 |
+| 18.0 | ops floor, Gwen at the cooler: "At least the water is cold." (2x crop, bubble) | t12 28.35-30.55 |
 | 20.2 | card Withheld / Caller, ring widget (no caller ID), "Don't look for the trace. It isn't there." | t13c 10.3-11.6, 15.7-18.9 |
 | 26.2 | Elena, whole line | t14 46.35-50.1 |
 | 30.0 | card Real / Hacking, walk to the terminal, m07 console clip (nmap, nine ports) | t21, `m07_console_recon_clip.mp4` 0.4-2.2 |
@@ -27,13 +27,13 @@ SpyAction "Shadow Tide", window start 0.05 s (a downbeat), 114.69 BPM, bar 2.092
 
 ### Placeholders and compromises
 - No marked placeholders. The Real Hacking slot is the real m07 console clip.
-- Ops floor: the Adaeze/Gwen exchange take (t12) is not filmed, so a 1.2 s walk across the ops floor (t28) stands in. Swap when t12 lands. t20b (SCADA panel plus flag station) has not run: the SCADA panel comes from t20 (note shot excluded, panel frames only).
+- Ops floor: t12 landed (7fd4c7b08). Gwen's last exchange line replaces the t28 walk stand-in; the silent Hollis torch shot (1.0 s) was dropped to make room, so every cut from 20.2 s on is unchanged. The SCADA crescendo panel now comes from t20b (no cabling note in that take).
 - t19c, t23b and t29c are not marked usable in the takes log (t19c 1.02% and t29c 1.68% dropped frames), so t19c and t29c are unused and there is no generator-hall walk. The key-lock crescendo shot uses t23c (0.61%, passed).
 - The Architect call is a green terminal text view, not a portrait: the "close-up" is a 4x crop on the typed text.
 - Ring crop and the 9:16/1:1 crops were derived, not rendered. Frame-checked at full resolution: ring crop, ending close, call_trace (16:9). Not checked: the clock crop (3x on a small room), 9:16 and 1:1 of the call screens and pads.
 - Hollis's torch shot and Park's swing carry no spoken audio (swing is narrator text only; muted).
 - Face flashes from line takes: Netherton, Elena, Park, Hollis, Mercer (silent, no hostile route).
-- The last crescendo shot (ops floor, 0.73 s) absorbs the 12 frames needed to hit exactly 60.00 s; re-time when t12 or t20b land.
+- The last crescendo shot (ops floor, 0.73 s) absorbs the 12 frames needed to hit exactly 60.00 s.
 
 ### Open questions (recommendation first)
 1. Music by ear: Shadow Tide at 0.05 s. Recommend keep; fall back to window 92.121 if the quiet intro sounds thin under the title.
