@@ -99,7 +99,7 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 ### 10. My phone, push
 1. Service Desk: click "Operations PC", click the Wim tile, type his password (note), Sign in.
 - See: the push pane with a "My phone" button.
-2. Click "My phone", then Approve on the phone.
+2. Click "My phone", then Approve on the phone, then close the phone (its Close button).
 - See: the sign-in screen reopens signed in. Server: approver `own_phone`.
 
 ### 11. No phone, no callback

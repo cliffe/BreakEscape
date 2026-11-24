@@ -2873,7 +2873,14 @@ export class PasswordMinigame extends MinigameScene {
             verify.type = 'button';
             verify.id = 'signin-verify';
             actions.appendChild(verify);
-            if (device) {
+            if (pending.ownPhone === true) {
+                // S8b: a re-enrolled account's codes come from the player's own phone, never a held device
+                const mine = mk('button', `signin-use-device signin-my-phone${inMonitor ? ' pc-os-btn' : ''}`, 'My phone');
+                mine.type = 'button';
+                mine.id = 'signin-my-phone';
+                actions.appendChild(mine);
+                this.addEventListener(mine, 'click', () => this.useCodeDevice(null, { own: true, npcId: pending.npcId }));
+            } else if (device) {
                 const use = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Use ${device.name}`);
                 use.type = 'button';
                 use.id = 'signin-use-device';
@@ -2914,7 +2921,7 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     /** Open the held code device over this screen; the screen comes back as a new instance on its second pane. */
-    useCodeDevice(device) {
+    useCodeDevice(device, own = null) {
         if (!this.gameState.isActive || typeof window.startCodeDevice !== 'function') return;
         const client = this.mfaClientRef();
         const key = this.mfaSubject();
@@ -2931,7 +2938,7 @@ export class PasswordMinigame extends MinigameScene {
         wrapped._mfaOriginal = original;
         this.params.onComplete = wrapped;
         this.params.suspended = true;
-        window.startCodeDevice({ itemId: device.id, returnTo: { sceneType: 'password', params: {} } });
+        window.startCodeDevice(own ? { own: true, npcId: own.npcId, returnTo: { sceneType: 'password', params: {} } } : { itemId: device.id, returnTo: { sceneType: 'password', params: {} } });
         // The child did not start: this screen is still the running one, so give it back as it was
         if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
             this.params.suspended = false;
@@ -2973,7 +2980,13 @@ export class PasswordMinigame extends MinigameScene {
             again.type = 'button';
             again.id = 'signin-send-again';
             actions.appendChild(again);
-            if (phone) {
+            if (pending.ownPhone === true) {
+                const mine = mk('button', `signin-use-device signin-my-phone${inMonitor ? ' pc-os-btn' : ''}`, 'My phone');
+                mine.type = 'button';
+                mine.id = 'signin-my-phone';
+                actions.appendChild(mine);
+                this.addEventListener(mine, 'click', () => this.useLivePhone(pending.npcId, true));
+            } else if (phone) {
                 const check = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Check ${owner}'s phone`);
                 check.type = 'button';
                 check.id = 'signin-check-phone';
@@ -2996,7 +3009,7 @@ export class PasswordMinigame extends MinigameScene {
         if (!made) return false;
         this.pushCountEl?.setAttribute('aria-live', 'polite');
         // Focus lands on the first thing to do, so it does not fall to the page
-        (this.gameContainer.querySelector('#signin-check-phone') || this.gameContainer.querySelector('#signin-second-back'))?.focus?.();
+        (this.gameContainer.querySelector('#signin-my-phone') || this.gameContainer.querySelector('#signin-check-phone') || this.gameContainer.querySelector('#signin-second-back'))?.focus?.();
         this.refreshPushPane(pending);
         // The first request goes out when the pane opens; a pane coming back to a request already sent does not send another
         if (!(Number.isFinite(pending.n) && pending.n >= 1)) this.sendPush();
@@ -3104,7 +3117,7 @@ export class PasswordMinigame extends MinigameScene {
     }
 
     /** Open the owner's held phone over this screen, as the code device is opened. */
-    useLivePhone(npcId) {
+    useLivePhone(npcId, own = false) {
         if (!this.gameState.isActive || typeof window.startAuthenticatorLive !== 'function') return;
         const client = this.mfaClientRef();
         const key = this.mfaSubject();
@@ -3126,6 +3139,7 @@ export class PasswordMinigame extends MinigameScene {
         const parentParams = this.params;
         window.startAuthenticatorLive({
             npcId,
+            ...(own ? { own: true } : {}),
             returnTo: { sceneType: 'password', params: {} },
             onComplete: (success, result) => {
                 if (result && Number(result.denied) > 0) parentParams.mfaPhoneDenied = true;
