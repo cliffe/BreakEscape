@@ -91,6 +91,17 @@ export function sourceRef(shot) {
   const src = shot.source || (shot.type === 'title' || shot.type === 'cta' ? shot.clip : null); if (!src?.file) return null;
   return { dir: src.type === 'clip' ? 'clips' : 'takes', file: src.file };
 }
+/**
+ * Still frame: a gameplay shot with `freeze: true` holds the source frame at source.in for its whole duration; `freezeAt: <source s>`
+ * holds that frame instead (`freeze` may then be left out). Picture only: the audio mix still plays the take from source.in.
+ * Returns the held source second snapped to the frame grid (Math.round(t * fps) / fps), or null for a moving shot.
+ */
+export function freezeSec(shot, fps) {
+  const src = shot?.source; if (!src || shot.freeze === false) return null;
+  const t = typeof shot.freezeAt === 'number' ? shot.freezeAt : shot.freeze === true ? (src.in ?? 0) : null;
+  if (t == null || !Number.isFinite(t)) return null;
+  return fps ? Math.round(t * fps) / fps : t;
+}
 /** `placeholder: true` marks stand-in footage (the lint lists it; --final refuses it). A string `placeholder` is only the label of the test pattern shown when a take is missing. */
 export const isPlaceholderShot = (s) => s.placeholder === true;
 /** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */

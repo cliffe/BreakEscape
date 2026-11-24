@@ -22,6 +22,10 @@ read: scenario "position" overrides on objects are not modelled.
 When a room's grid position can't be worked out (array connections), a single
 north door is checked at both corners and the finding says so.
 
+--both-corners also tests a single north door at the other corner. The engine places
+rooms by a BFS from the start room and picks the door side from grid parity, so a take
+recorded with --start-room (as the trailers do) shows the door on the other side.
+
 Exit status 1 if any overlap is found, else 0.
 """
 import json
@@ -162,7 +166,7 @@ def room_doors(rid, rooms, D, P):
     return out
 
 
-def check_scenario(path):
+def check_scenario(path, both_corners=False):
     sc = cda.load_scenario(path)
     rooms = sc["rooms"]
     D = {r: cda.dims(v["type"]) for r, v in rooms.items()}
@@ -170,7 +174,17 @@ def check_scenario(path):
     found = []
     for rid, v in rooms.items():
         fixtures = map_fixtures(v["type"])
-        for m in check_map_against_doors(v["type"], room_doors(rid, rooms, D, P), fixtures):
+        doors = room_doors(rid, rooms, D, P)
+        if both_corners:
+            # Door sides follow the grid parity of the BFS from the start room, so a
+            # take recorded with --start-room flips them. Also test the other corner.
+            w = D[rid]["w"]
+            extra = []
+            for d, c, _ in doors:
+                if d == "north" and c in (48, w - 48):
+                    extra.append(("north", w - 48 if c == 48 else 48, " (other corner: a different start room flips the door side)"))
+            doors += extra
+        for m in check_map_against_doors(v["type"], doors, fixtures):
             found.append(f"{rid} [{v['type']}]: {m}")
     return found
 
@@ -194,7 +208,7 @@ def main(argv):
         return 2
     total = 0
     for p in paths:
-        found = check_scenario(p)
+        found = check_scenario(p, "--both-corners" in argv)
         print(f"{p}: {len(found)} overlap(s)")
         for f in found:
             print("  " + f)

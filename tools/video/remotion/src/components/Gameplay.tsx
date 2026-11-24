@@ -1,7 +1,7 @@
 import React from 'react';
-import { OffthreadVideo, staticFile } from 'remotion';
+import { Freeze, OffthreadVideo, staticFile } from 'remotion';
 import { Placeholder } from './Placeholder';
-import { framingAt, visibleRect, sourceRef } from '../timeline.js';
+import { framingAt, visibleRect, sourceRef, freezeSec } from '../timeline.js';
 import { Caption } from './Caption';
 import { CaCaption } from './CaSeats';
 import { CaInsets } from './CaInset';
@@ -21,13 +21,16 @@ export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: strin
   const ref = sourceRef(shot); // takes/<file> or, for source.type 'clip', clips/<file> (any video file synced into public/)
   const has = ref && available[`${ref.dir}/${ref.file}`];
   const inSec = shot.source?.in ?? 0;
-  const startFrom = Math.round(inSec * fps);
-  const sourceSec = inSec + frame / fps;
+  // freeze / freezeAt: one source frame held for the whole shot (picture only; the mix still plays the take's audio from source.in)
+  const fz = freezeSec(shot, fps);
+  const startFrom = Math.round((fz ?? inSec) * fps);
+  const sourceSec = fz ?? inSec + frame / fps;
+  const video = has ? <OffthreadVideo src={staticFile(`${ref!.dir}/${ref!.file}`)} startFrom={startFrom} muted pauseWhenBuffering={false} style={{ width: sw, height: sh, imageRendering: 'pixelated' }} /> : null;
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width: sw, height: sh, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${r.scale})`, imageRendering: 'pixelated' }}>
         {has ? (
-          <OffthreadVideo src={staticFile(`${ref!.dir}/${ref!.file}`)} startFrom={startFrom} muted pauseWhenBuffering={false} style={{ width: sw, height: sh, imageRendering: 'pixelated' }} />
+          fz != null ? <Freeze frame={0}>{video}</Freeze> : video
         ) : (
           <Placeholder shot={shot} localSec={frame / fps} sourceSec={sourceSec} />
         )}

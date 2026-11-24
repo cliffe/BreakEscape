@@ -366,6 +366,22 @@ module BreakEscape
       File.delete(tmp) if tmp && File.exist?(tmp)
     end
 
+    # The voice FX preset baked into a cached clip (tools/voice_fx/bake.py), or nil.
+    # Only when the clip's sidecar marker records this exact file: a clip
+    # regenerated since (a new sidecar, no marker) or swapped by hand is clean.
+    def self.baked_voice_fx(mp3_path)
+      return nil if mp3_path.blank?
+
+      sidecar = Pathname.new(mp3_path.to_s).sub_ext(".json")
+      return nil unless sidecar.file?
+
+      mark = (JSON.parse(sidecar.read) rescue nil)&.dig("voice_fx")
+      return nil unless mark.is_a?(Hash) && mark["preset"].is_a?(String) && mark["preset"].match?(/\A[a-z0-9-]{1,40}\z/)
+      return nil unless mark["baked_md5"] == Digest::MD5.file(mp3_path.to_s).hexdigest
+
+      mark["preset"]
+    end
+
     # The current-model key a sidecar's fields make (its delivery note included).
     def self.sidecar_cache_key(data)
       cache_key(*data.values_at("text", "voice", "style", "language", "delivery"))

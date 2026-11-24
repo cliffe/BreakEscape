@@ -7,7 +7,7 @@
     "sync": "node scripts/sync-assets.mjs",
     "lint": "node scripts/lint-edit.mjs",
     "studio": "remotion studio",
-    "test": "node --test tests/ca-lint.test.mjs tests/ca-vo-inset.test.mjs"
+    "test": "node --test tests/ca-lint.test.mjs tests/ca-vo-inset.test.mjs tests/letterbox.test.mjs tests/freeze.test.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.530",
