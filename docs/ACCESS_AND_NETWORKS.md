@@ -53,6 +53,7 @@ In words. An NPC with `creds` is an identity (A1). Doors and objects carry an ac
 | A17 | [Item plants, hiding spots and holder items](#a17-item-plants-hiding-spots-and-holder-items) | A `requiresItem` object takes a kit item the player carries; a `hideable` item can be tucked into any plant in listed rooms; a holder item (`holds`) files captured sessions and findings out of the tray. | `requiresItem`, `consumesItem`, `requiresItemHint`, `requiresItemHintVariants`, `requiresItemCondition`, `requiresItemConditionHint(Variants)` (object); `hideable` (item); `hiddenWith`, `hidingSpot`, `hideAt` (object); `holds`, `storeIn` (item); `linkStoreIn` (jack). |
 | A18 | [Privilege on a session](#a18-privilege-on-a-session) | A sign-in PC session has a level, user or admin. An account marked `creds.admin` gets an admin session by signing in; a technique card can step a session up. An admin session opens the PC owner's profiles and lets a USB device through that the PC's policy would refuse. | `creds.admin` (account); `needs.session`, `grants.session.access` (N15); the PC's `owner`, `accountProfiles`, `usb` policy; item `usbClass`. |
 | A22 | [Multi-factor sign-in](#a22-multi-factor-sign-in) | A sign-in PC asks for a second step after the right password: a six-digit code from a held `code_device`, a push the owner may approve, or a push the owner never approves (a held phone taps the right number). Tokens, help invites and claimed screens skip it; a saved connection still asks. | policy `mfa`; `creds.mfa: false`; item `code_device` (`owner`); `habits.approvesPrompts`, `habits.promptPatience`; owned `phone_friendface`. Validator `check_mfa`; graph "second step" edges. |
+| A23 | [Helpdesk reset and re-enrolment](#a23-helpdesk-reset-and-re-enrolment) | A room NPC runs a desk that, after one rule (anyone, typed answers, or a held owner's phone), hands over an account's reset password or moves its second step to the player's own phone. After `maxTries` refusals the desk stops serving that username for five minutes. | top-level `helpdesks`; `creds.recovery`, `creds.resetPassword`; item `helpdesk_form`; ask key `helpdesk`; ink tag `#helpdesk_request:<deskId>`. Validator `check_helpdesk`; graph grant nodes. |
 | A24 | [Ops log: write side](#a24-ops-log-write-side) | The server records what the player does at a card door and a sign-in PC as short log rows kept in `player_state`, into the sources the scenario declares; nothing shows them yet (a reader comes with L2a). | top level `logSources.<id>` (`title`, `events`, optional `where`, `showCardHolder`, `maxRows`) and a `gameClock`; withheld from the bootstrap. |
 | A24 (read side) | [Ops log: read side](#a24-ops-log-read-side) | An `ops_log_terminal` object opens a viewer of one declared log source: a table of the rows the player's own actions wrote (time, event, identity, location, result, detail), with filters and a detail pane. | object `type: "ops_log_terminal"`, `minigameData.logSource` (required); `GET /log_rows`. |
 | A24 (seed rows and anomalies) | [Ops log: seed rows and anomalies](#a24-ops-log-seed-rows-and-anomalies) | A log source can carry authored history (seed rows) shown before the rows play writes, and its reader can name one seed row as an anomaly the player flags; the browser checks the flag (best effort). | `logSources.<id>.seedRows`; reader `minigameData.anomaly.rowId`, `flagActionLabel`, `flagActions`, `completionActions`. |
@@ -751,7 +752,7 @@ Nothing else changes: tile lists, the keyring and its `rev`, sign-in answers for
 - Item `type: "phone_friendface"` with an `owner`: the owner's phone, used by `push` and `push_number_match`. The scenario must have a `social.osint` site, or the phone has nowhere to open and the existing phone check refuses it. The phone needs an `id`, and the NPC must not be `"phone": false`.
 - NPC `habits.approvesPrompts`: `never`, `pestered` or `always`. Absent, it is read from `awareness`: low is `pestered`, medium and high are `never`. Never sent to the browser.
 - NPC `habits.promptPatience`: an integer 2 to 9, default 3. How many requests a `pestered` owner takes before approving. It does nothing for `never` or `always`. Room NPCs only; never sent to the browser.
-- Not built (S8b): top-level `helpdesks`, `creds.recovery`, `creds.resetPassword` and `helpdesk` on a pretext ask. Each is an ERROR with the line `"<field>" is not built yet (MFA plan stage S8b)`.
+- The helpdesk fields (top-level `helpdesks`, `creds.recovery`, `creds.resetPassword`, `helpdesk` on a pretext ask) are built: see A23.
 
 **The three kinds.**
 - `code`. The device shows six digits that change every 60 seconds. The server accepts the code of the current minute and of the one before it, so a code lasts up to two minutes. A code can be used once: the same code typed again is "stale". The sign-in has five tries per pending step. The fifth wrong try ends the step and the player signs in again. Each wrong code also counts as a failed sign-in for the PC's `maxAttempts`, and the lockout answer is the ordinary one. After 30 wrong codes in all for one account, its code step is closed for five minutes. A code that is not six digits is refused and counted nowhere.
@@ -805,8 +806,59 @@ A device the owner still holds does nothing until the player takes it, because t
 
 **Shown in.** `test_ops_mfa` (five PCs and six accounts across all three kinds and an exempt service account; its `PLAYTEST.md` is the script). The `authenticator` scene of `ca03_helpdesk_reset` is a different, older scene and is unchanged.
 
-**Known limits.** No helpdesk, no account recovery, no password reset, no re-enrolment onto the player's own phone (S8b); `own_phone` is reserved for it. The story offer and the knock-out record are the browser's claim (best effort). Lock plans (`target_type`, `target_id`) are S8c and are refused for now. There is no real clock in the game: the server's wall clock decides code windows and the five-minute closure.
+**Known limits.** Account recovery, password reset and re-enrolment onto the player's own phone are A23; `own_phone` is the approver it records. The story offer and the knock-out record are the browser's claim (best effort). Lock plans (`target_type`, `target_id`) are S8c and are refused for now. There is no real clock in the game: the server's wall clock decides code windows and the five-minute closure.
 **Plan vs code.** `docs/achitechture/OPS_MFA_HELPDESK_PLAN.md` stages M1a to M3. The code differs from the plan in the places `S8A_BUILD_BRIEF.md` section 2 lists (the code is right).
+
+### A23 Helpdesk reset and re-enrolment
+**One line.** A scenario can put a helpdesk behind a room NPC. The player fills in a paper request form; if the desk's rule is met, the desk hands over the account's reset password, or moves that account's second sign-in step to the player's own phone. The lesson is that the recovery path is part of the sign-in, and that facts found online prove nothing about a caller. It is a game abstraction: the engine holds no persuasion script.
+
+**Key fields.**
+- Top level `helpdesks.<id>`: `npc` (a room NPC; one NPC serves at most one desk), `verify` (`none`, `questions` or `callback`), `questions` (the `creds.recovery` ids that count) and `minCorrect` (how many must be right; default all), `maxTries` (1 to 9, default 3), `resets` (any of `password`, `mfa`), `questionLabels` (id to the form's field label, 40 characters at most each). An invalid or missing `verify` is read as `questions` with every question required.
+- Account `creds.recovery`: id to the right answer (64 characters at most each). Server only.
+- Account `creds.resetPassword`: the password the desk issues. Server only. It must differ from `creds.password` and must not appear in any ink file.
+- Desktop item `type: "helpdesk_form"` with `desk`, in a sign-in PC's contents; pretext ask key `helpdesk: "<deskId>"`; ink tag `#helpdesk_request:<deskId>` in the desk NPC's own story.
+- Sent to the browser: per desk only `npc`, `resets` and `questionLabels` (as `helpdeskForms` in the scenario answer; labels only for the ids the desk asks). Never sent: `verify`, `questions`, `minCorrect`, `maxTries`, `creds.recovery`, `creds.resetPassword`, and the state keys `accountResets` and `helpdeskTries`.
+
+**The three rules.**
+- `none`: anyone who asks is served. By design; the validator warns.
+- `questions`: the typed answers are compared with the account's `creds.recovery` after trimming, collapsing spaces and ignoring case. At least `minCorrect` must be right. A desk with no questions never passes. An empty answer never matches.
+- `callback`: granted only while the player holds the account owner's phone (a held `phone_friendface` of that owner).
+
+**What a reset changes.**
+- Password reset: the answer carries the account's `resetPassword` once; the keyring lists it as a "Reset" sign-in (source `helpdesk`); the old password stops working; that account's lockouts at every PC are cleared; a saved connection made before the reset is refused ("This password has been changed. Type the new one to sign in.") until the new password has been typed once. Asking again after a grant is harmless: the same answer, no new state.
+- Second-step reset (re-enrolment): the account's step moves to "My phone". On the code pane and the push pane the sign-in screen shows a "My phone" button in place of the held device or the owner's phone. The old code device says "No longer in use" and shows no digits; the old phone lists nothing and cannot approve. The account's wrong-code count and closure are cleared. A reset for an account under no MFA policy is granted and recorded but changes nothing in play (the validator warns).
+- A granted answer says which account and desk it was for (`npcId`, `deskId`); a refusal never names the username.
+
+**What the player sees.** The "IT request form": "Username", "Ask for" ("A password reset" or "A sign-in approval reset"), one field per question label, "Send", and Close. A grant shows "Password reset. New password:" with the password, or "Sign-in approvals now come to your phone." A refusal shows "The desk could not verify you. Tries left: n." An unknown username gives exactly the same refusal and count as a wrong answer. After `maxTries` refusals for one username the desk says it is not taking requests for that account and for how long. The stop lasts five minutes of server time; it is per desk and per username, and a grant clears that username's count. Usernames that are not accounts are counted too (the oldest of more than 200 is forgotten).
+
+**Three ways to open the form.**
+1. In person: the ink tag `#helpdesk_request:<deskId>` in the desk NPC's story. The chat resumes when the form closes, so the story can read the `helpdesk_<deskId>_result` global (`granted`, `refused`, `blocked`, ...) in its next knot.
+2. Over a PC: a `helpdesk_form` icon on a sign-in PC's desktop. The request carries that PC's id, so the desk serves it only while that PC has an open, unlocked session.
+3. From a call: a pretext ask with `helpdesk: "<deskId>"` opens the form when the ask is granted (no PC); closing it returns to the call.
+The form can also be opened by object type (`helpdesk_form`) or the `trigger_minigame:helpdesk_form` ink tag; the validator checks only the three above.
+
+**What is hard, and what is best effort.**
+- Hard (the server decides): the rule, the answers, the tries and the stop, that the desk NPC exists, has been met and is not recorded as knocked out, the PC session when a PC id is sent, the password and its keyring entry, lockout clearing, the re-enrolment, who may approve afterwards.
+- Best effort: "being in the conversation" is not checked beyond "met and conscious"; the request does not prove the player is at the desk or in a call. The desk NPC's knock-out record and the phone hand-over are the browser's claim, as for A22. A `none` desk grants to anyone, by design. The stop rule counts by the typed username, so playtest order matters.
+
+**Server route.** `POST /games/:id/helpdesk/request` with `desk_id`, `username`, `what`, `answers` (a map of strings, optional) and `pc_id` (optional). Answers, all no-store: 200 granted; 422 `refused` (with `triesLeft`), `blocked` (with `retryIn`) or `unavailable`; 404 `not_found`; 400 `bad_request`. Own forms: `GET /mfa/device?npc_id=` (the own device), `GET /mfa/phone?own=1`, and `POST /mfa/approve` with `own=1`, whose answer carries `approvedBy: "own_phone"` (a held phone stays `"player"`). Without `own` a re-enrolled account's approval is refused.
+
+**Log events.** `helpdesk_request` (label `HELPDESK`, place `desk`; results granted, refused, blocked; detail `what`), `account_password_reset` (label `ACCT_RESET`) and `account_mfa_reenrolled` (label `ACCT_MFA`), both result ok with detail `agent` (the desk NPC). A `logSources` entry must list the event for it to be kept. Identical blocked rows merge with a count.
+
+**Validator.** `scripts/validate_helpdesk.rb` (`check_helpdesk`). Lines start `ERROR: helpdesk: `, `WARNING: helpdesk: ` or `INFO: helpdesk: `; none quotes an answer or password.
+- Errors: a desk that is not an object or whose `npc` is not a room NPC; one NPC serving two desks; a bad `verify`, `resets`, `maxTries` or `minCorrect`; a `questions` desk with no question, a question with no label or a label over 40 characters; a recovery value that is empty or over 64 characters; a question missing from an account's `creds.recovery` that the desk could be asked about; `resets` naming `password` when no account has a `resetPassword`; a `resetPassword` equal to the password or found in an ink file; a pretext ask, `helpdesk_form` item or ink tag naming an unknown desk; a `helpdesk_form` outside a sign-in PC's contents; a tag in a story the desk NPC does not own; a code policy with `maxAttempts` whose only admitted account no desk resets and nothing goes round (it can lock the sign-in for good).
+- Warnings: the same lock-for-good case with other accounts or ways round; a `none` desk; a second-step reset with no account under an MFA policy; a `callback` desk whose account's phone the player can never hold; a question whose answer the player cannot find in any readable text, feed post, document or ink line.
+- Information: per desk, its rule, what it resets and the accounts it covers.
+
+**Dungeon graph.** A desk that covers an account draws one grant node per reset, `desk_<deskId>_<npcId>_<password|mfa>`, in the desk NPC's room. For `questions`, an edge "answer" from each readable text that holds a right answer; for `callback`, an edge from the owner's phone. The grant has an edge into each sign-in lock it opens.
+
+**Check from the server.** `verify-run.rb <game_id>` prints per account whether its password and second step were reset and whether the new password was typed, and per desk and username the tries and whether the desk has stopped.
+
+**What changes for existing scenarios.** Nothing. With no `helpdesks`, no `creds.resetPassword` and no re-enrolment every answer and write is as before; the golden fixtures pin this.
+
+**Shown in.** `test_ops_helpdesk` (two desks, five accounts, three PCs of different kinds; its `PLAYTEST.md` is the script).
+
+**Known limits.** The recovery answers inside arrays are not caught by the leak scanner; a client-side pretext verdict grants nothing by itself, the server decides when the form is sent. The S8c seam `device_in_use?` answers false until locks land. Plan: `docs/achitechture/OPS_MFA_HELPDESK_PLAN.md`; the code differs where `docs/agents/ops_core_build/S8B_BUILD_BRIEF.md` section 2 lists (the code is right).
 
 ### A24 Ops log: write side
 **One line.** A scenario with a `logSources` block and a `gameClock` makes the server record badge swipes, sign-in outcomes and session ends as short rows; only the write side exists, so no screen shows a row yet.
@@ -2294,6 +2346,7 @@ Each block below is a complete scenario that `ruby scripts/validate_scenario.rb 
 | A17 | x | x | x |  |  | x | x |  |  |  | x | test_capture_log, test_remove_item |
 | A18 |  |  |  |  |  |  |  |  |  |  |  | test_ops_privilege, test_ops_access |
 | A22 |  |  |  |  |  |  |  |  |  |  |  | test_ops_mfa |
+| A23 |  |  |  |  |  |  |  |  |  |  |  | test_ops_helpdesk |
 | N1 | x | x | x |  |  | x | x |  |  |  |  |  |
 | N2 | x |  |  |  |  | x | x |  |  |  |  |  |
 | N3 | x | x |  |  |  |  | x |  |  |  |  |  |
