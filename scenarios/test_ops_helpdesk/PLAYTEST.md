@@ -126,9 +126,11 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - See: "No longer in use", no digits.
 
 ### 15. From a call
-1. Open "Your phone" (inventory). Ring "IT service line". If a preparation card shows, start the call.
-2. Choose "Request a reset".
-- See: the form opens when the ask is granted. Close it without sending.
+1. Open "Your phone" (inventory). Click the contact "IT service line". (Needs `callId: "it_line_call"` on the `it_line` NPC; until the scenario carries it this click opens a plain chat with no card and the ask never grants.)
+- See: a preparation card first. Title "Prepare the call", "Calling: IT service line", "Nothing on the board yet." and the button "Make the call", enabled with nothing held.
+2. Click "Make the call". The call menu shows "1. Request a reset" and "2. Hang up".
+3. Click "Request a reset". Ink says "Right, here is the form."; about a second later the form "IT request form" opens over the call (desk `it_desk`, no PC).
+- See: the form opens once. Close it without sending (the "×" Close): back in the same call. Or send and see the answer line, with the `helpdesk_it_desk_result` global set.
 
 ### 16. Checks
 1. Run the leak check and `verify-run.rb` above.

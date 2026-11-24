@@ -255,7 +255,7 @@ export function mergeSpec(pretextEntry, charConfig) {
  * @param {Function} [opts.onChange]     called after each applied line (for the UI)
  * @returns {{ pretext_say: Function, pretext_ask: Function }}
  */
-export function makePretextExternals({ service, spec, session, ctx, judge, writeGlobal = writeGlobalDefault, grantFact = null, onChange = null } = {}) {
+export function makePretextExternals({ service, spec, session, ctx, judge, writeGlobal = writeGlobalDefault, grantFact = null, onChange = null, openHelpdesk = null } = {}) {
     const character = spec.character;
     const runId = ctx?.runId;
 
@@ -307,6 +307,13 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
                 console.warn('⚠️ [pretext] grant failed:', err?.message);
             }
             if (!session.grantedAsks.includes(askId)) session.grantedAsks.push(askId);
+            // An ask that names a helpdesk also opens that desk's request form (S8b unit 21).
+            // The verdict grants nothing by itself: the server decides when the form is sent.
+            // Once per ask, because the ledger above returns the stored result on a replay.
+            if (isStr(askSpec.helpdesk) && askSpec.helpdesk && typeof openHelpdesk === 'function') {
+                try { openHelpdesk(askSpec.helpdesk); }
+                catch (err) { console.warn('⚠️ [pretext] helpdesk form failed:', err?.message); }
+            }
         } else if (inkResult === 2) {
             // Waiting on verification: record which facts, so the next line's matches
             // clear them and the re-ask then grants (06 §4.2, §4.4).
@@ -328,6 +335,24 @@ export function makePretextExternals({ service, spec, session, ctx, judge, write
     });
 
     return { pretext_say, pretext_ask };
+}
+
+// -------------------------------------------------------------- the helpdesk form (S8b unit 21)
+
+/** How long the ask's reply stays on screen before the form opens over the chat. */
+export const HELPDESK_OPEN_DELAY_MS = 1200;
+
+/**
+ * Open the request form for a desk from the call that is running now. The chat is paused, not
+ * ended (the ink-tag launcher), so closing the form returns to the same call. Nothing opens if
+ * the call was closed first. No `pcId`: a call is not a PC.
+ */
+export function openHelpdeskForm(chat, deskId, { launcher = null, delayMs = HELPDESK_OPEN_DELAY_MS, later = null } = {}) {
+    const wait = later || ((fn, ms) => setTimeout(fn, ms));
+    wait(() => {
+        const l = launcher || (typeof window !== 'undefined' ? window.inkMinigameLaunch : null);
+        if (typeof l?.launchFromChat === 'function') l.launchFromChat(chat, 'helpdesk_form', { deskId });
+    }, delayMs);
 }
 
 // -------------------------------------------------------------- outcome and payload (N8)
@@ -660,7 +685,8 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
     const mergedSpec = mergeSpec(spec, service.getCharacterConfig?.(spec.character));
     const { pretext_say, pretext_ask } = makePretextExternals({
         service, spec: mergedSpec, session, ctx, judge: resolved,
-        onChange: () => minigame.ui?.refreshPretext?.()
+        onChange: () => minigame.ui?.refreshPretext?.(),
+        openHelpdesk: (deskId) => openHelpdeskForm(minigame, deskId)
     });
     engine.bindExternalFunction('pretext_say', pretext_say);
     engine.bindExternalFunction('pretext_ask', pretext_ask);
