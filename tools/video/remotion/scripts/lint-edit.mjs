@@ -263,7 +263,7 @@ if (cc) {
   const ccAccents = new Set(shots.map((s) => ccOf(s).accent).filter(Boolean));
   if (ccAccents.size > 1) W('edit', `more than one cc accent in one trailer: ${[...ccAccents].join(', ')}`);
 }
-if (ca) {
+if (ca && edit.kind !== 'preview') { // a catalogue preview (docs/video/CA_PREVIEW_CUTS_PLAN.md) is a silent gameplay loop: no open or close card
   const shots = tl.shots;
   const opens = shots.filter((s) => s.type === 'ca_open'), closes = shots.filter((s) => s.type === 'ca_close');
   if (opens.length !== 1) E('edit', `a CA edit needs exactly one ca_open shot (the ca-open preset), found ${opens.length}`);
