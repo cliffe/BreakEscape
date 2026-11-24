@@ -343,7 +343,7 @@ test('sweep.listed is the scanner layout of the rows already known', () => {
 test('TERMINAL_ONLY_TEXT holds what Panels never shows, and not the shared words', () => {
     const T = FMT.TERMINAL_ONLY_TEXT;
     assert.ok(Object.isFrozen(T));
-    for (const piece of [FMT.OPENING_TEXT, FMT.STRIP_LABEL, FMT.CHANGE_LINE_TEXT, FMT.PENDING_LINE_TEXT, '$', 'msf >', ...SC.TEMPLATES, ...FW.TEMPLATES, ...GR.GRAMMAR_TEXT,
+    for (const piece of [FMT.OPENING_TEXT, FMT.STRIP_LABEL, FMT.CHANGE_LINE_TEXT, '$', 'msf >', ...SC.TEMPLATES, ...FW.TEMPLATES, ...GR.GRAMMAR_TEXT,
         'HOST', 'NAME', 'STATUS', 'SERVICE', 'PORT', 'PRODUCT', 'VERSION', 'TECHNIQUE', 'WORKS ON']) assert.ok(T.includes(piece), piece);
     assert.equal(FMT.OPENING_TEXT, 'Type help, or pick a command below.');
     assert.equal(FMT.STRIP_LABEL, 'Commands:');

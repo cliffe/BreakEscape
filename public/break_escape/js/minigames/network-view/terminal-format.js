@@ -33,8 +33,6 @@ import * as framework from './cli-gen/framework-console.js';
 export const OPENING_TEXT = 'Type help, or pick a command below.';
 export const STRIP_LABEL = 'Commands:';
 export const CHANGE_LINE_TEXT = '-- network changed. show lists it again --';
-export const PENDING_LINE_TEXT = 'Waiting for the answer...';
-export const CURSOR_TEXT = '_';
 export const PROMPT_LABEL = 'Type a command';
 const SET_TEXT = 'TECHNIQUE => <value>';
 const UNSET_TEXT = 'Unsetting TECHNIQUE...';
@@ -64,7 +62,7 @@ const FRAMEWORK_INFO_LABELS = Object.freeze([
 
 /** Everything the Terminal prints that Panels never shows. Shared texts (aliases, state words, results) are not here. */
 export const TERMINAL_ONLY_TEXT = Object.freeze([
-    OPENING_TEXT, STRIP_LABEL, CHANGE_LINE_TEXT, PENDING_LINE_TEXT, CURSOR_TEXT, PROMPT_LABEL, SET_TEXT, UNSET_TEXT,
+    OPENING_TEXT, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL, SET_TEXT, UNSET_TEXT,
     '$', 'msf >', 'msf (<module>) >',
     ...HOST_HEAD, ...RESOURCE_HEAD, ...SERVICE_HEAD, ...TECHNIQUE_HEAD,
     ...scanner.TEMPLATES, ...framework.TEMPLATES, ...FRAMEWORK_INFO_LABELS, ...GRAMMAR_TEXT

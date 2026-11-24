@@ -232,20 +232,39 @@ const snap = (h) => (h.view().mounted === 'cli'
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const FRAGMENTS = [...FMT.TERMINAL_ONLY_TEXT].map(s => String(s)).filter(s => s.trim() !== '');
 const TEMPLATE_RES = FRAGMENTS.map(s => new RegExp(`^${escapeRe(s.trim()).replace(/<[^>]*>/g, '.*')}$`));
-const stripFragments = (s) => {
-    let out = collapse(s);
-    for (let i = 0; i < 4; i++) {
-        let next = out;
-        for (const f of FRAGMENTS) { const c = collapse(f); if (c && next.startsWith(`${c} `)) next = next.slice(c.length).trim(); else if (c && next.startsWith(c)) next = next.slice(c.length).trim(); }
-        for (const f of FRAGMENTS) { const c = collapse(f); if (c && next.endsWith(c) && next.length > c.length) next = next.slice(0, -c.length).trim(); }
-        if (next === out) break;
-        out = next;
-    }
-    return out;
-};
 
 // Text of a Panels control that explains a Panels gesture the Terminal does not have
 const PANELS_GESTURE_TEXT = Object.freeze(['Pick a finding, then a card.', /^Finding \S+ with /]);
+
+
+// The only places where the two skins lay one fact out differently. Anything else must match a Panels piece whole.
+// A Terminal span may be checked word by word (against the words Panels show, the ids, the commands and the
+// defaults) only when it has one of these shapes; a number must be one Panels show, a served port, or a count of rows.
+const CHIP_WORDS = [...Object.values(model.CLASS_WORDS), ...Object.values(model.SEVERITY_WORDS)];
+const CHIP_RE = `(?:${CHIP_WORDS.map(escapeRe).join('|')})`;
+export const TERMINAL_LAYOUTS = Object.freeze([
+    /^\[[-+*!]\]$/,                                         // a tool's line mark
+    /^[\w .-]+:$/,                                           // a label with a colon
+    /^[\w-]+ \(.+\)$/,                                       // a service name and its label
+    /^\d+\/(tcp|udp) open \S+(?: .+)?$/,                     // the scanner's port row
+    /^\d+$/,                                                // a port cell
+    new RegExp(`^${CHIP_RE} ${CHIP_RE}(?: on .+)?$`),        // class and severity, then the service
+    /^Nmap done: \d+ hosts? up$/,                            // the scanner's closing line
+    /^\S+:\d+ - The target (?:appears to be vulnerable|is not vulnerable)\.$/,
+    /^Session opened on \S+ as .+$/
+]);
+
+/** A Panels piece the Terminal lays out another way: the chips, the service line, the grant sentence. */
+function samePieceByLayout(p, terminal, termWords) {
+    if (!/[\p{L}\p{N}]/u.test(p)) return true;                  // a mark with no letter (the cross)
+    if (CHIP_WORDS.includes(p)) return wordsOf(p).every(w => termWords.has(w));
+    const all = [...terminal.elements, ...terminal.lines.map(l => l.join(' ')), ...terminal.lines.flat()].map(collapse);
+    const port = /^(.+) · (\d+) · (.+)$/.exec(p);                // label, port, product and version
+    if (port) return all.some(t => t.includes(`${port[2]}/`) && t.endsWith(port[3]) && /\bopen\b/.test(t)) && all.some(t => t.includes(port[1]));
+    const grant = /^You now hold a session on .+ as (.+?)\.(?: (\w+))?$/.exec(p);
+    if (grant) return all.some(t => new RegExp(`^(?:\\[\\*\\] )?Session opened on \\S+ as ${escapeRe(grant[1])}$`).test(t)) && (!grant[2] || all.some(t => t.split(' ').includes(grant[2])));
+    return false;
+}
 
 /** The key two pieces are compared by: no white space and no joining punctuation (the skins punctuate differently). */
 const key = (s) => collapse(s).replace(/[\s\u00B7,:;()]/g, '');
@@ -264,7 +283,7 @@ const FRAGMENT_WORDS = new Set(FRAGMENTS.flatMap(wordsOf));
  * a control title word, a fixed Terminal template word, a default of cli-gen/defaults.js, or a number.
  * Returns the problems, each a string.
  */
-function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults }, panelsAllRaw = panelsRaw) {
+function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, ports = [], hostCount = 0 }, panelsAllRaw = panelsRaw, counted = false) {
     const problems = [];
     // "<kind> on <host>": the Terminal has the kind and the host as two columns, and the host is a piece of its own in Panels
     const fold = (list) => list.map(p => {
@@ -295,17 +314,19 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults }
         if (PANELS_ONLY_TEXT.includes(p) || PANELS_GESTURE_TEXT.some(g => (g instanceof RegExp ? g.test(p) : g === p))) continue;
         if (elementKeys.has(key(p)) || runKeys.has(key(p))) continue;
         const missing = wordsOf(p).filter(w => !termWords.has(w));
-        if (missing.length) problems.push(`${label}: Panels piece not in the Terminal: ${JSON.stringify(p)} (words missing: ${missing.join(' ')})`);
+        if (samePieceByLayout(p, terminal, termWords)) continue;
+        if (missing.length || true) problems.push(`${label}: Panels piece not in the Terminal: ${JSON.stringify(p)} (words missing: ${missing.join(' ')})`);
     }
     const allowedWords = new Set([...panelsAll.flatMap(wordsOf), ...[...ids].flatMap(wordsOf), ...[...commands].flatMap(wordsOf),
         ...[...titles].flatMap(wordsOf), ...FRAGMENT_WORDS, ...defaults]);
-    const allowedWord = (w) => allowedWords.has(w) || /^\d+$/.test(w);
+    const allowedNumbers = new Set([...panelsAll.flatMap(wordsOf), ...ports, ...Array.from({ length: hostCount + 1 }, (_, i) => String(i))]);
+    const allowedWord = (w) => (/^\d+$/.test(w) ? allowedNumbers.has(w) || allowedWords.has(w) : allowedWords.has(w));
     const idKeys = new Set([...ids].map(key));
     const allKeys = new Set(panelsAll.map(key));
     const allowed = (p) => {
         const k = key(p);
         if (idKeys.has(k) || commands.has(p) || titles.has(p) || TEMPLATE_RES.some(re => re.test(p)) || panelsKeys.has(k) || allKeys.has(k)) return true;
-        return wordsOf(p).every(allowedWord);
+        return TERMINAL_LAYOUTS.some(re => re.test(p)) && wordsOf(p).every(allowedWord);
     };
     const wrong = (p) => wordsOf(p).filter(w => !allowedWord(w));
     for (const p of terminal.elements) if (!allowed(collapse(p))) problems.push(`${label}: Terminal element piece not in Panels: ${JSON.stringify(p)} (words: ${wrong(collapse(p)).join(' ')})`);
@@ -314,6 +335,15 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults }
         if (p === '' || covered[li][i]) return;
         if (!allowed(p)) problems.push(`${label}: Terminal span not in Panels: ${JSON.stringify(p)} (words: ${wrong(p).join(' ')}) (line ${JSON.stringify(line.join('|'))})`);
     }));
+    if (counted) {
+        // A sentence is shown as many times as Panels show it: a status on every row, or on one row twice, is a difference
+        const tally = (list) => { const m = new Map(); for (const p of list) { const k = key(p); if (/\s/.test(collapse(p))) m.set(k, [(m.get(k) || [0, p])[0] + 1, p]); } return m; };
+        const pc = tally(panels);
+        // a line that is one Panels piece spread over spans counts once; any other line counts span by span
+        const pieces = [...terminal.elements, ...terminal.lines.flatMap(l => (panelsKeys.has(key(l.join(' '))) ? [l.join(' ')] : l))];
+        const tc = tally(pieces.map(collapse).filter(Boolean));
+        for (const [k, [n, p]] of tc) if (pc.has(k) && pc.get(k)[0] !== n) problems.push(`${label}: ${JSON.stringify(p)} is shown ${pc.get(k)[0]} time(s) by Panels and ${n} by the Terminal`);
+    }
     return problems;
 }
 
@@ -332,7 +362,9 @@ function context(h) {
             for (const v of Object.values(DEFAULTS.findingCli(f, sv))) if (typeof v === 'string') wordsOf(v).forEach(x => defaults.add(x));
         }
     }
-    return { ids, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults };
+    const ports = new Set();
+    for (const r of view.allRows()) for (const sv of r.services || []) if (sv.port !== undefined) ports.add(String(sv.port));
+    return { ids, ports, hostCount: view.allRows().length, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -419,7 +451,7 @@ async function checkStep(label, w, step) {
         }
         if (process.env.DBG) console.error(label, 'RESULT', JSON.stringify({ panelsNew, termNew }));
     }
-    if (!step.heldOnly) problems.push(...compare(`${label} [state]`, gui.state, cli.state, cli.ctx));
+    if (!step.heldOnly) problems.push(...compare(`${label} [state]`, gui.state, cli.state, cli.ctx, gui.state, true));
     return problems;
 }
 
@@ -535,7 +567,7 @@ test('an unplug held and then refused, and an unplug with no reply', async () =>
 });
 
 test('the comparison itself finds a missing piece, an extra piece and a changed word', () => {
-    const ctx = { ids: new Set(['row_a']), commands: new Set(), titles: new Set(), defaults: new Set() };
+    const ctx = { ids: new Set(['row_a']), commands: new Set(), titles: new Set(), defaults: new Set(), ports: new Set(['445']), hostCount: 2 };
     const terminal = (...lines) => ({ elements: [], lines });
     assert.deepEqual(compare('same', ['Mk1name', 'Mk2host'], terminal(['Mk1name', '   ', 'Mk2host']), ctx), []);
     assert.equal(compare('missing', ['Mk1name', 'Mk2host'], terminal(['Mk1name']), ctx).length, 1);
@@ -543,4 +575,23 @@ test('the comparison itself finds a missing piece, an extra piece and a changed 
     assert.equal(compare('changed', ['Remote sign-in off'], terminal(['Remote sign-in lit']), ctx).length, 2);
     assert.deepEqual(compare('ids and numbers', ['Mk1name'], terminal(['Mk1name', 'row_a', '445']), ctx), []);
     assert.deepEqual(compare('template', [], terminal(['Nmap scan report for ', 'row_a']), ctx), []);
+});
+
+test('the comparison catches the three probes that once passed: a status on every row, invented numbers, a reordered sentence', async () => {
+    const VT = await imp(`${NV}view-texts.js`);
+    const ctx = { ids: new Set(['row_a', 'row_b', 'row_c']), commands: new Set(), titles: new Set(), defaults: new Set(['tcp', 'open', 'smb']), ports: new Set(['80', '445']), hostCount: 3 };
+    const terminal = (...lines) => ({ elements: [], lines });
+    const off = 'Remote sign-in off';
+    // 1. a status Panels show on one row, shown on every row
+    assert.deepEqual(compare('one row', ['Mk1a', off, 'Mk2b', 'Mk3c'], terminal(['Mk1a', off], ['Mk2b'], ['Mk3c']), ctx, undefined, true), []);
+    assert.ok(compare('every row', ['Mk1a', off, 'Mk2b', 'Mk3c'], terminal(['Mk1a', off], ['Mk2b', off], ['Mk3c', off]), ctx, undefined, true).length > 0);
+    // 2. numbers nothing served: an invented line in a scan result
+    assert.deepEqual(compare('port', [], terminal(['445/tcp open smb']), ctx), []);
+    assert.ok(compare('invented', [], terminal(['10.20.30.40', ' 8443', ' 2024']), ctx).length > 0);
+    assert.ok(compare('invented port row', [], terminal(['8443/tcp open smb']), ctx).length > 0);
+    // 3. a fixed sentence with its halves swapped
+    const [first, second] = VT.CREDENTIAL_GRANT_TEXT.split(/(?<=\.) /);
+    assert.deepEqual(compare('whole', [VT.CREDENTIAL_GRANT_TEXT], terminal([VT.CREDENTIAL_GRANT_TEXT]), ctx), []);
+    assert.ok(compare('swapped', [VT.CREDENTIAL_GRANT_TEXT], terminal([`${second} ${first}`]), ctx, [VT.CREDENTIAL_GRANT_TEXT]).length > 0);
+    assert.ok(compare('swapped, state', [VT.CREDENTIAL_GRANT_TEXT], terminal([`${second} ${first}`]), ctx, undefined, true).length > 0);
 });
