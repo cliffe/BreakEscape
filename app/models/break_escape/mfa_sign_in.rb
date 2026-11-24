@@ -180,6 +180,12 @@ module BreakEscape
       pc = ctx[:pc]
       npc = ctx[:npc]
       key = pc['id'].to_s
+      if ctx[:pending]['kind'] == 'push_number_match' && deny != true && number.nil? &&
+         (held_friendface_phone(npc['id']) || mfa_reenrolled?(npc['id']))
+        # no usable number is a malformed request, not an answer: the step stays
+        return { status: :unprocessable_entity, body: { success: false, message: Game::LOGIN_INCORRECT } }
+      end
+
       result = approve_second_step(ctx[:map], key, { kind: 'pc', id: key }, npc_id: npc['id'], number: number,
                                                                             deny: deny == true,
                                                                             reenrolled: mfa_reenrolled?(npc['id']))

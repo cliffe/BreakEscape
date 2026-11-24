@@ -1587,7 +1587,7 @@ module BreakEscape
 
       response.headers['Cache-Control'] = 'no-store'
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type)
+      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
         return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
       end
 
@@ -1604,7 +1604,7 @@ module BreakEscape
 
       response.headers['Cache-Control'] = 'no-store'
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type)
+      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
         return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
       end
 
@@ -1637,7 +1637,7 @@ module BreakEscape
 
       response.headers['Cache-Control'] = 'no-store'
       pc_id = params[:pc_id]
-      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type)
+      if !pc_id.is_a?(String) || pc_id.empty? || params.key?(:target_type) || params.key?(:target_id)
         return render json: { success: false, message: BreakEscape::Game::LOGIN_INCORRECT }, status: :unprocessable_entity
       end
 

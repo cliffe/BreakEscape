@@ -161,6 +161,27 @@ module BreakEscape
       assert_nil state['sessions']['sam_pc']
     end
 
+    test 'R1-S5: approve with no usable number answers 422 and leaves the step' do
+      build(kind: 'push_number_match', held: [PHONE])
+      first_step
+      [{}, { number: 12.5 }, { number: 'abc' }, { number: [1] }].each do |extra|
+        body = approve(extra)
+        assert_response :unprocessable_entity
+        assert_nil body['cancelled'], extra.inspect
+        assert_not_nil state['mfaPending']['sam_pc'], extra.inspect
+      end
+      assert_equal 0, events.count('mfa_prompt_denied')
+    end
+
+    test 'R1-S6: target_id alone is refused at prompt, approve and phone' do
+      first_step
+      post game_path('mfa/prompt'), params: { pc_id: 'sam_pc', target_id: 'x' }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal 0, events.count('mfa_prompt_sent')
+      post game_path('mfa/approve'), params: { pc_id: 'sam_pc', target_id: 'x' }, as: :json
+      assert_response :unprocessable_entity
+    end
+
     test 'a held phone approves and the session opens' do
       build(held: [PHONE])
       first_step
