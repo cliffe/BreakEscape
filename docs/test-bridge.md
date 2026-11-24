@@ -499,6 +499,8 @@ same in both skins. Address network-view controls by selector, label or `network
 | `log()` | The Terminal's log as lines; empty in Panels. |
 | `type(line)` | Types a line into the Terminal prompt and presses Enter (the key, then the form's submit, since a synthetic key does not submit a form). |
 
+**Choosing a skin for a run.** `tools/playtest/session-start.sh --net-skin gui|cli` adds `net_skin=<value>` to the game URL, so the run opens in that skin (a view with no switch stays Panels). The server never sees it. `tools/playtest/network-skin-parity.mjs` (new) is a runner that plays one sequence in three fresh games of `test_ops_skin` (one in Panels, one in the Terminal, one pressing the switch after every step) with `network.run`, and fails if the requests, the normalised answers or the saved game records differ. It needs a keyless server.
+
 ## Minigames
 
 All 43 minigames subclass `MinigameScene` (`minigames/framework/base-minigame.js`)
