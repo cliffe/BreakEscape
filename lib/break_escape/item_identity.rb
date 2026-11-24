@@ -29,6 +29,7 @@ module BreakEscape
       opens_lock key_id keyId keyPins requires lockType locked access
       card_id rfid_protocol acceptsUIDOnly contents itemsHeld flags flagRewards
       droppable needsTag wearable holds storeIn saved_cards credential
+      secondStep
     ].freeze
 
     # Marker the server stamps on an object added to a room with no server-known
