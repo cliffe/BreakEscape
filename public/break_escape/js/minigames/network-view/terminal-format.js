@@ -157,7 +157,8 @@ function plainResult(offer, answer, view) {
         return lookLines(allRows(view).find(r => r.id === id) || null);
     }
     if (action === 'unplug') {
-        const done = isObj(answer) && answer.success === true;
+        // the real answer of unplugFromView carries `action`, never `success`; the scene closes on the same two
+        const done = isObj(answer) && (answer.action === 'unplugged' || answer.action === 'not_planted');
         return done ? [] : [[span(unplugNoticeText(answer), 'bad')]];
     }
     if (answer === undefined) return [];

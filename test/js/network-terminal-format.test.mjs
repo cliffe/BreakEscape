@@ -148,7 +148,8 @@ test('a failed unplug writes the unplug sentence; a good one writes nothing', ()
     FMT.recordResult(log, offer, null, swept);
     FMT.recordResult(log, offer, { success: false, message: 'The box is still in use.' }, swept);
     FMT.recordResult(log, offer, { success: false }, swept);
-    FMT.recordResult(log, offer, { success: true }, swept);
+    FMT.recordResult(log, offer, { action: 'unplugged', footholdId: 'f', endedPcIds: [] }, swept);
+    FMT.recordResult(log, offer, { action: 'not_planted', message: 'Nothing is plugged in here.' }, swept);
     assert.deepEqual(text(log.lines).slice(2), [
         OM.unplugNoticeText(null), 'The box is still in use.', OM.unplugNoticeText({})
     ]);
