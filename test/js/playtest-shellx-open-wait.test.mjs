@@ -144,9 +144,11 @@ const idx = "registerScene('a', A);\nregisterScene('b', B);\nregisterScene('c', 
 const derived = SX.parseNoXScenes(idx, ['class A extends SocialOverlayScene {}', 'class B extends A {}', 'class C extends MinigameScene {}', 'class T extends MinigameScene {}', 'class Z extends SocialOverlayScene {}']);
 assert.ok(derived.join() === 'a,b,title-screen', 'derived: direct and inherited overlay scenes plus the explicit extra only, unregistered classes and plain scenes left out (' + derived.join() + ')');
 const real = SX.loadNoXScenes();
-assert.ok(real.length === 15, 'the real tree gives exactly 15 scenes (' + real.join() + ')');
+// S8a added code-device (its own steel X in the frame) and authenticator-live (the phone's window bar Close,
+// inherited from authenticator): both extend SocialOverlayScene and start through socialOverlayParams (disableClose)
+assert.ok(real.length === 17, 'the real tree gives exactly 17 scenes (' + real.join() + ')');
 assert.ok(!real.includes('concern-form'), 'concern-form shows the framework X, so it is not on the list');
-for (const n of ['mail-client', 'intel-board', 'osint-browser', 'inbox-triage', 'episode-runner', 'consequence-sandbox', 'pretext-prep', 'landing-page-builder', 'sort-drill', 'privacy-panel', 'password-guesser', 'assistant-chat', 'engagement-report', 'authenticator', 'title-screen']) assert.ok(real.includes(n), 'the allowlist has ' + n);
+for (const n of ['mail-client', 'intel-board', 'osint-browser', 'inbox-triage', 'episode-runner', 'consequence-sandbox', 'pretext-prep', 'landing-page-builder', 'sort-drill', 'privacy-panel', 'password-guesser', 'assistant-chat', 'engagement-report', 'authenticator', 'authenticator-live', 'code-device', 'title-screen']) assert.ok(real.includes(n), 'the allowlist has ' + n);
 for (const n of ['pin', 'notes', 'lockpicking', 'phone-chat', 'person-chat']) assert.ok(!real.includes(n), 'the allowlist has no ' + n);
 
 // R4 m3: openScene glue, caseFromOutcome and reportFromEval
