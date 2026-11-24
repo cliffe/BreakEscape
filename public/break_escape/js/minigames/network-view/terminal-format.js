@@ -46,6 +46,7 @@ const TECHNIQUE_HEAD = ['TECHNIQUE', 'WORKS ON'];
 const NOTHING_ANSWERS_TEXT = 'Nothing answers on this network.';
 const NOTHING_MORE_TEXT = 'Nothing more to see from here.';
 const OTHER_GROUP = 'Other devices';
+const ALREADY_LISTED_TEXT = 'Every host here is already listed.';
 // A row in a block with no route is drawn as the kind the scene has an icon for, else as a computer
 const ICON_KINDS = Object.freeze(['pc', 'file_share', 'printer', 'phone']);
 // The scene's kind tables (it owns them; a scene may pass its own as `scene.groups` and `scene.labels`)
@@ -62,7 +63,7 @@ const FRAMEWORK_INFO_LABELS = Object.freeze([
 
 /** Everything the Terminal prints that Panels never shows. Shared texts (aliases, state words, results) are not here. */
 export const TERMINAL_ONLY_TEXT = Object.freeze([
-    OPENING_TEXT, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL, SET_TEXT, UNSET_TEXT,
+    OPENING_TEXT, STRIP_LABEL, CHANGE_LINE_TEXT, PROMPT_LABEL, SET_TEXT, UNSET_TEXT, ALREADY_LISTED_TEXT,
     '$', 'msf >', 'msf (<module>) >',
     ...HOST_HEAD, ...RESOURCE_HEAD, ...SERVICE_HEAD, ...TECHNIQUE_HEAD,
     ...scanner.TEMPLATES, ...framework.TEMPLATES, ...FRAMEWORK_INFO_LABELS, ...GRAMMAR_TEXT
@@ -429,7 +430,8 @@ export function sweepListed(block, view) {
     const offer = { action: 'sweep', target: networkId, ids: { networkId } };
     return [
         ...scanner.started(offer, view),
-        ...scanner.result(offer, { success: true, network: { id: networkId, swept: true, hosts: rows } }, view)
+        ...scanner.result(offer, { success: true, network: { id: networkId, swept: true, hosts: rows } }, view),
+        note(ALREADY_LISTED_TEXT)
     ];
 }
 

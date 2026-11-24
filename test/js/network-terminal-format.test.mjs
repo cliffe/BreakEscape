@@ -335,8 +335,13 @@ test('sweep.listed is the scanner layout of the rows already known', () => {
     const block = swept.networks[0];
     const lines = FMT.localLines({ name: 'sweep.listed', args: { networkId: block.id, block, rows: block.hosts } }, swept, { prompt: 'shell' });
     const offer = { action: 'sweep', target: block.id, ids: { networkId: block.id } };
-    assert.deepEqual(lines, [...SC.started(offer, swept), ...SC.result(offer, { success: true, network: { id: block.id, swept: true, hosts: block.hosts } }, swept)]);
+    // R1-C4: the scanner's layout, then one note line saying nothing new was found
+    const note = lines[lines.length - 1];
+    assert.equal(note.length, 1);
+    assert.equal(note[0].text, 'Every host here is already listed.');
+    assert.deepEqual(lines.slice(0, -1), [...SC.started(offer, swept), ...SC.result(offer, { success: true, network: { id: block.id, swept: true, hosts: block.hosts } }, swept)]);
     assert.ok(flat(lines).includes('Nmap scan report for'));
+    assert.ok(FMT.TERMINAL_ONLY_TEXT.includes('Every host here is already listed.'));
     assert.doesNotThrow(() => FMT.sweepListed(null, null));
 });
 
