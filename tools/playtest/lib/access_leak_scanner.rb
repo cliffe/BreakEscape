@@ -2102,6 +2102,7 @@ class AccessLeakScanner
     # An item id is read with its share, as a pair; an id held by more than one share cannot be told
     # apart by the request, so it opens none of them
     holders = @share_item_pairs.select { |_resource, item_id| item_id == id }.map(&:first).uniq
+    holders = holders.select { |rid| resources[rid].is_a?(Hash) && resources[rid]['kind'] == 'file_share' }
     @shares_opened << holders.first if holders.length == 1
   end
 
