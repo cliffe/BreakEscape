@@ -18,11 +18,6 @@ module BreakEscape
       MfaModel.kind(effective_policy(pc))
     end
 
-    # S8b seam: whether the account has been re-enrolled onto its own phone. Nothing can do that yet.
-    def mfa_reenrolled?(_npc_id)
-      false
-    end
-
     # The kind of second step this account owes at this PC, or 'none': none when the policy asks
     # for none, the account is not enrolled, the PC already holds this account's own locked
     # session (unlocking needs no step), or the kind is code and no device is declared.
@@ -222,6 +217,11 @@ module BreakEscape
     end
 
     private
+
+    # S8b seam: whether the account has been re-enrolled onto its own phone. Nothing can do that yet.
+    def mfa_reenrolled?(_npc_id)
+      false
+    end
 
     # The PC, its live push record and its account, or a refusal (the first step judged again)
     def push_step_context(pc_id)

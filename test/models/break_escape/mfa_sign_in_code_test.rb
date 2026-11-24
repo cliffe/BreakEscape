@@ -97,7 +97,7 @@ module BreakEscape
       sam = @game.scenario_room_npc('sam')
       assert_equal 'code', @game.mfa_step_for(pc, sam)
       assert_equal 'code', @game.mfa_kind_for(pc)
-      assert_equal false, @game.mfa_reenrolled?('sam')
+      assert_equal false, @game.send(:mfa_reenrolled?, 'sam')
       # a policy that asks for none
       @game.scenario_data['policies']['gate']['mfa'] = 'none'
       assert_equal 'none', @game.mfa_step_for(pc, sam)

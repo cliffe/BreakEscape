@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 module BreakEscape
-  # The second sign-in step's subject functions (S8a, feature A22), code kind. They take an owner
-  # (an NPC id), a subject `{ kind:, id: }` and a record map, and read nothing about the subject
-  # but its kind and id. A map holds one record per key; the caller adds the lockout failure and
-  # drops the record on a pass for a `pc` subject, and marks `passed` for any other subject.
-  # Time comes only through `mfa_now`.
+  # The second sign-in step's subject functions (S8a, feature A22), shared by the code and push
+  # kinds. They take an owner (an NPC id), a subject `{ kind:, id: }` and a record map, and read
+  # nothing about the subject but its kind and id. A map holds one record per key; the caller adds
+  # the lockout failure and drops the record on a pass for a `pc` subject, and marks `passed` for
+  # any other subject.
+  # Time comes only through `mfa_now`, which MfaSignIn defines (both modules are included in Game).
   module MfaAccess
     extend ActiveSupport::Concern
 
