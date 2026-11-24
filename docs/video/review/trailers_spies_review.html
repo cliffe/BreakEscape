@@ -64,12 +64,12 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <div class="wrap">
   <header style="display:grid;gap:6px">
-    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 24 Nov 2026</div>
+    <div class="kicker">SAFETYNET: Licence to Hack · trailer review · updated 24 Nov 2026 (evening)</div>
     <h1>Mission trailers with the new spy avatars</h1>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Current round per mission">
-    <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
+    <button class="tab" role="tab" id="tab-m01mus" aria-selected="false" data-cut="m01mus">m01 · v14 music</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
     <button class="tab" role="tab" id="tab-m03v4" aria-selected="false" data-cut="m03v4">m03 · v4 · final</button>
     <button class="tab" role="tab" id="tab-m04v3" aria-selected="false" data-cut="m04v3">m04 · v3 · final</button>
@@ -79,8 +79,9 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
     <button class="tab" role="tab" id="tab-m08v1" aria-selected="false" data-cut="m08v1">m08 · v1 · final</button>
   </nav>
   <details class="earlier" id="earlier">
-    <summary>Earlier rounds (17)</summary>
+    <summary>Earlier rounds (18)</summary>
     <nav class="tabs" role="tablist" aria-label="Earlier rounds">
+      <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
       <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
       <button class="tab" role="tab" id="tab-m01v11" aria-selected="false" data-cut="m01v11">m01 · v11</button>
       <button class="tab" role="tab" id="tab-m01v10" aria-selected="false" data-cut="m01v10">m01 · v10</button>
@@ -113,6 +114,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m01mus: {
+    doc: "feedback/m01_trailer_v14_music",
+    title: "m01 First Contact · v14 music pick (three previews)",
+    videoLabel: "Midnight Trigger from 93.0 s (suggested)",
+    video: "/_blob/ca4729791002d3691e445e3e03147f77",
+    videos: [["Emerald Trigger from its start (0.8 s), with the jazz hits", "/_blob/2cffcdbd7a356bf2fce74adf2495520a", ""], ["Cold Bond Circuit from 53.8 s", "/_blob/5b79ed677e056ccddf254173dfc60636", ""]],
+    stats: ["60.0 s each, 16:9 only (the other aspects follow your pick)", "−13.9 to −14.0 LUFS, true peak under −1.4 dB", "same v14 cut under each track", "Midnight Cipher Chase (your v12 music) is on the m01 · v12 tab under Earlier rounds"],
+    changedLabel: "What changed since v13",
+    changed: ["Your note 1: Derek's \"Sixty deaths ... That's optimisation.\" re-voiced darker and quieter (cold, low and slow, no shouting; the last line slowest). The game takes the same read: the five lines of his monologue carry the new delivery, so it is not out of place in play.", "His scene re-filmed with the new voice; the cut to the close-up still lands in the pause before \"That's optimisation.\"", "Your note 2: three music previews of the same cut. Midnight Trigger and Cold Bond Circuit are spy-action tracks no trailer has used yet. Not offered: Shadow Tide (it is m07's music, so the two trailers would sound alike).", "Card and shot times are the v13 grid; after your pick I re-fit the cuts to that track's beats and render all three aspects."],
+    standinLabel: "How the previews were made",
+    standin: ["Each window was picked from the track's beat and energy analysis, not by ear, and the cuts are not yet fitted to the new tracks' beats. Judge the feel of the music, not the sync.", "Suggested: Midnight Trigger. It is new to the series, and keeps the spy-action sound of the other trailers. I picked it from the analysis: I have checked the numbers and Derek's frames, not listened."],
+    srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:42,941 --> 00:00:49,311\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,050 --> 00:00:51,870\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"music", t:"Which music for m01?", o:[["midtrig", "Midnight Trigger", "New to the series", 1], ["emstart", "Emerald Trigger from its start", "The jazz hits"], ["coldbond", "Cold Bond Circuit", "New to the series"], ["cipher", "Back to Midnight Cipher Chase (v12)", ""], ["other", "Something else", "Say which"]]}, {k:"derek", t:"Derek's darker read", o:[["ok", "Right", "", 1], ["more", "Darker still", "One more pass with your note"], ["back", "Prefer the v13 read", ""]]}, {k:"pace", t:"Anything else for v14?", o:null}]
+  },
   m01v13: {
     doc: "feedback/m01_trailer_v13",
     title: "m01 First Contact · 60 s trailer · v13 (Emerald Trigger)",
@@ -666,7 +681,7 @@ const CUTS = {
 };
 const VERDICT = [["ship","Ship","Export to hacktivity-videos and cut 9:16 / 1:1"],["revise","Revise","Notes below, another round"],["rethink","Rethink","Something structural is wrong"]];
 
-let current = "m01v13";
+let current = "m01mus";
 let answers = {}; Object.keys(CUTS).forEach(k=>answers[k]={});
 let db = null;
 const LS = "safetynet_trailer_review_v2"; // bumped for m02 v4 so v3 answers do not prefill the new round; saved docs reload per round

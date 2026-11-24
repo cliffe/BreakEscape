@@ -249,3 +249,21 @@ Next:
 - m08 v1: -13.99 LUFS, TP -1.85; 9:16 console (shell landing) readable at full res.
 - m03 v4 (msf use console) is the last render of batch5. When it finishes: check console crops, encode, tab, publish, hash; then MESSAGE CA0 that B1 can start.
 - Then as before: m09 takes, m10 takes, m09/m10 edits.
+
+## State 24 Nov, ~17:00 (pre-compaction refresh)
+
+Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 -> v14: (1) Derek's "Sixty deaths ... That's optimisation." darker/menacing re-voice (pre-approved; game takes it too, via #delivery tags on the 5 lines of knot evil_monologue_part3 in m01_derek_confrontation.ink); (2) music: Emerald Trigger not right. Make 2-3 previews to pick by ear, with a recommendation. Owner's options: Midnight Cipher Chase (v12, already on page), m07's Shadow Tide (repeat: not recommended), unused spy-action tracks (Cold Bond Circuit, Midnight Trigger, SpyAgro Action Dub, Hybrid Attack 0/1/2, Shadow Protocol original), or Emerald Trigger's start with the jazz hits (@0.775).
+- Done: page v29 (f2cd94715) marks the four final. hacktivity-videos local commit cddc0e4 (m03 v4 replacing v3, m05/m07/m08 new; owner pushes). Slugs m05-insider-trading, m07-architects-gambit, m08-the-mole.
+- Hacktivity S1 (per-mission trailers), committed on HT main 3ee4d7bb (no push): TrailerMedia model, config/trailer_media.yml (m01-m08; m01 falls back to the event trailer), shared/_trailer_player partial, briefing uses it, square CSS, .gitignore *_trailer_1x1, vtt + posters m02-m08, DEPLOY_NEXT loop. Targeted tests pass apart from the 3 known StoreFront failures (this machine has the real m01 trailer linked in). Full HT suite running (log scratchpad/ht_full.log; 8 known failures). Still to do: live proof screenshot of a dev briefing page (no game-row edits), Electron hidden check, possibly _games_media reuse (only if landing identical; screenshot before/after; else leave it and say so). Then send AC0 the HT hash + test result.
+- Running agents: Sonnet "Re-voice Derek monologue darker" (ink tags, batch TTS, m01 routes, commit on branch).
+- m01 music previews: edits in scratchpad/musprev/ (emstart, midtrig, coldbond; v13 cut, music swapped, cuts not re-timed). Render with scratchpad/render_musprev.sh AFTER the HT suite (16:9 only). Then review copies, a "m01 music" tab with the three plus a v12 pointer, my recommendation, publish, hash.
+- CA0 handed the machine over at 16:17 (ca07/ca14 done). Tell CA0 when capture/render finishes. Order: HT suite -> music previews -> m09 takes (Sonnet, takes_m09.md "Not done") -> m10 takes -> m09/m10 edits.
+- Review page tidy check in a real browser still owed (v28 structure: current per mission on top, "Earlier rounds" details).
+
+## State 24 Nov, ~evening (pre-compaction refresh)
+
+- HT full suite done (only known failures, plus ReauthHardeningTest flaky: passes alone). HT S1 at 3ee4d7bb, not pushed; still owes live briefing screenshot + Electron hidden check + report to AC0.
+- Derek re-voice done: 0682e7a43 (5 #delivery tags in evil_monologue_part3, 5 clips, routes run). t09c retaken (old take in m01/takes/old_t09c_v13/); line 44.891-54.192 in the new take.
+- m01 edit now id m01_trailer60_v14: derek_wide in 47.6167 out 51.95 (audio pre 2.7257), derek_close 51.95-53.95. Frames checked, lint clean. Music still Emerald Trigger (placeholder until owner picks).
+- Music previews regenerated from v14 (scratchpad/musprev/), rendering via render_musprev.sh (log scratchpad/render_musprev.log; outputs m01/renders/m01_musprev_<tag>_16x9.mp4). Next: review copies, "m01 music" tab (emstart, midtrig, coldbond + pointer to v12 Midnight Cipher Chase), recommendation, publish, commit, hash to AC0.
+- Then: m09 takes agent (Sonnet), m10 takes, m09/m10 edits; message CA0 when all capture/render ends. After owner music pick: v14 in all aspects; after sign-off export + rebuild game-level .vtt in HT.
