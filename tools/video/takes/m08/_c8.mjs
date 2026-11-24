@@ -3,7 +3,21 @@ import { sleep } from '../lib/lib.mjs';
 import { keyLegs } from '../lib/walklib.mjs';
 import { openChat, closeAll } from '../m06/_cres.mjs';
 export { faceFlash, openMg, typeKeys, pickLock, closeAll, openChat, driveToMenu } from '../m06/_cres.mjs';
-export { blurUid, cloneAndSave, buttons, clickBtn } from '../m05/t13_rfid_clone.mjs';
+import { buttons, clickBtn } from '../m05/t13_rfid_clone.mjs';
+export { blurUid, buttons, clickBtn } from '../m05/t13_rfid_clone.mjs';
+/** m03-style clone: Crack keys first > Darkside (about 30 s) > Read > Save. (m05's version picks Dictionary Attack, which loops on the menu.) */
+export async function cloneAndSave(page, mark) {
+  let saved = false;
+  for (let i = 0; i < 40 && !saved; i++) {
+    const bs = await buttons(page);
+    for (const o of ['^Save$', 'Darkside Attack', 'Crack keys first', '^>?\\s*Read', 'Place card|Badge|Card']) {
+      const c = await clickBtn(page, o);
+      if (c) { if (mark) mark('step:' + c, { buttons: bs }); if (/^Save$/i.test(c)) saved = true; break; }
+    }
+    await sleep(saved ? 400 : 2000);
+  }
+  return saved;
+}
 export { goRoom } from './_live.mjs';
 export const PAD = { all: ['1', '0', '2'] };   // prefix/position-checked by check_digits.rb (yes/no only)
 /** Off camera: open the Director's chat and sit through his opening (about 30 s) to the first menu, so the server has met him and brief_taken is set; then close. */
