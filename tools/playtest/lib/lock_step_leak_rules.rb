@@ -138,6 +138,39 @@ module LockStepLeakRules
                          contents_ids: ls_ids(list).to_set, room_ids: type == 'door' ? ls_ids(list).to_set : Set.new }
     end
     @ls_active = !@ls_locks.empty?
+    ls_collect_door_routes if @ls_active
+  end
+
+  # The doors the scenario itself authors a way past the step for: a `prop_door` workaround of a room NPC, and an `unlock_door`
+  # flag reward (the reward's `target_room`, else its `room_id`, else the room of the flag station). Both skip the step on the
+  # real server (the plan settles it); a lock-step door nobody authors one for gets no allowance.
+  def ls_collect_door_routes
+    @ls_prop_doors = Set.new
+    @ls_reward_doors = Set.new
+    BreakEscape::Game.scenario_room_npcs(@data).each do |npc|
+      next unless npc.is_a?(Hash)
+
+      BreakEscape::AccessWork.workarounds(@data, npc).each do |w|
+        @ls_prop_doors << w['door'] if w['do'] == 'prop_door' && w['door'].is_a?(String)
+      end
+    end
+    rooms = @data['rooms'].is_a?(Hash) ? @data['rooms'] : {}
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash)
+
+      stations = Array(room['objects']) + Array(room['npcs']).flat_map { |n| n.is_a?(Hash) ? Array(n['itemsHeld']) : [] }
+      stations.each do |station|
+        next unless station.is_a?(Hash) && station['flagRewards']
+
+        rewards = station['flagRewards'].is_a?(Hash) ? station['flagRewards'].values : Array(station['flagRewards'])
+        rewards.each do |r|
+          next unless r.is_a?(Hash) && r['type'] == 'unlock_door'
+
+          door = r['target_room'] || r['room_id'] || room_id
+          @ls_reward_doors << door if door.is_a?(String)
+        end
+      end
+    end
   end
 
   # The name the server gives a lock on the phone (lock_step_name): the object's name, a door's sign or name, else the id.
@@ -240,10 +273,12 @@ module LockStepLeakRules
     ls_judge_phone(body, info, now, add, judged)
     ls_judge_refusal(root, info, row, add, judged, reported)
     open_key, open_reported = ls_judge_open(root, info, unlock, add)
-    ls_judge_contents(body, info, open_key, open_reported, add)
+    prop_key = open_key.nil? && open_reported.empty? ? ls_judge_prop_door(root, info) : nil
+    ls_judge_contents(body, info, open_key || prop_key, open_reported, add)
     ls_judge_secrets(body, info, add, judged)
     ls_judge_unplaced(body, add, judged + reported)
     ls_earn(earn, open_key, root, info)
+    ls_earn_door_routes(root, info, prop_key)
     @ls_placed = judged
   end
 
@@ -337,11 +372,24 @@ module LockStepLeakRules
 
     ok =
       case route
-      when 'prompt' then @priv_npcs.key?(gate[:npc]) && mfa_owner_may_approve?(gate[:npc])
+      when 'prompt' then ls_owner_may_approve?(gate[:npc])
       when 'approve' then mfa_phone_taken?(gate[:npc])
       else ls_code_device_taken?(gate[:npc]) # R1-L3: the server checks the held device before it checks a code
       end
     ok ? [key] : []
+  end
+
+  # The owner's record as the server reads it (Game#find_npc_in_scenario): a room NPC, else a headless record (a mail-only
+  # character); the plan lets either own a lock. Same habit and phone rules as a PC's owner (mfa_owner_may_approve?).
+  def ls_owner_record(id)
+    return nil unless id.is_a?(String)
+
+    @priv_npcs[id] || BreakEscape::Game.headless_npc_records(@data).find { |r| r.is_a?(Hash) && r['id'] == id }
+  end
+
+  def ls_owner_may_approve?(id)
+    record = ls_owner_record(id)
+    !record.nil? && BreakEscape::MfaModel.prompt_habit(record, @data) != 'never' && !@mfa_phone_owners.include?(id)
   end
 
   def ls_code_device_taken?(owner)
@@ -540,6 +588,35 @@ module LockStepLeakRules
     room = info[:path][%r{/games/[^/]+/room/([^/]+)\z}, 1]
     key = room && "door:#{URI.decode_www_form_component(room)}"
     add.call('lock_step_content', "lockstep:room:#{key}", '$') if key && @ls_locks.key?(key) && info[:method] == 'GET' && info[:ok] && !@ls_opened.include?(key)
+  end
+
+  # A 200 POST npc_workaround answer of a `prop_door` that opens a gated room: `{ roomId, roomData }` (and `setGlobal`), the server
+  # opening the room with no step by the plan. Allowed only when the answer names a gated door, carries exactly that door's room data,
+  # and the scenario authors that prop for that door in a room NPC's workarounds. Returns the lock key, or nil.
+  def ls_judge_prop_door(root, info)
+    return nil unless root && info[:method] == 'POST' && info[:ok] && info[:path].match?(%r{/games/[^/]+/npc_workaround\z})
+    return nil unless root['roomData'].is_a?(Hash) && root['roomId'].is_a?(String)
+    return nil unless (root.keys - %w[roomId roomData setGlobal]).empty? && root['success'] != false
+
+    key = "door:#{root['roomId']}"
+    return nil unless @ls_locks.key?(key) && @ls_prop_doors.include?(root['roomId'])
+    return nil unless ls_content_owners(root) == [key]
+
+    key
+  end
+
+  # What a reward answer proves: a 200 POST /flags answer whose `rewards` holds a successful `unlock_door` for a gated door the
+  # scenario authors that reward for; the server has opened the room (unlock_room!), so GET room/<it> is honest afterwards.
+  def ls_earn_door_routes(root, info, prop_key)
+    @ls_opened << prop_key if prop_key
+    return unless root && info[:method] == 'POST' && info[:ok] && info[:path].match?(%r{/games/[^/]+/flags\z}) && root['success'] == true && root['rewards'].is_a?(Array)
+
+    root['rewards'].each do |r|
+      next unless r.is_a?(Hash) && r['type'] == 'unlock_door' && r['success'] == true && r['room_id'].is_a?(String)
+
+      key = "door:#{r['room_id']}"
+      @ls_opened << key if @ls_locks.key?(key) && @ls_reward_doors.include?(r['room_id'])
+    end
   end
 
   # ---- numbers and codes ------------------------------------------------------------------------------------------
