@@ -292,6 +292,28 @@
       }
     },
     "defaultPolicy": { "type": "string", "x-ref": "policy", "description": "Access model: the policy a PC with no policy of its own uses." },
+    "helpdesks": {
+      "x-id-map": true, "x-serverOnly": true, "x-servedBy": "bootstrap helpdeskForms",
+      "type": "object",
+      "description": "Helpdesk recovery (MFA plan S8b, feature A23): desk id to a desk, a room NPC who will reset an account's password or move its second sign-in step to the player's own phone after checking the caller under one rule. Withheld from the bootstrap; the browser gets only helpdeskForms (per desk: npc, resets, questionLabels). One NPC serves at most one desk.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["npc", "verify", "resets"],
+        "properties": {
+          "npc": { "type": "string", "minLength": 1, "x-ref": "npc", "description": "The room NPC who serves this desk." },
+          "verify": { "type": "string", "enum": ["none", "questions", "callback"], "description": "The rule. none grants to anyone who asks; questions compares typed answers with the account's creds.recovery; callback grants only while the player holds the account owner's phone." },
+          "questions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "description": "questions rule: the creds.recovery ids that count. Each needs a questionLabels entry." },
+          "minCorrect": { "type": "integer", "minimum": 1, "description": "questions rule: how many answers must be right. Default all of them; at most the number of questions." },
+          "maxTries": { "type": "integer", "minimum": 1, "maximum": 9, "description": "Refusals for one username before the desk stops serving it for five minutes. Default 3." },
+          "resets": { "type": "array", "items": { "type": "string", "enum": ["password", "mfa"] }, "uniqueItems": true, "description": "What the desk will do: password (issue the account's creds.resetPassword) and mfa (move the account's second step to the player's own phone)." },
+          "questionLabels": { "type": "object", "x-id-map": true, "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 40 }, "description": "Question id to the form's field label, 40 characters at most. Sent to the browser." },
+          "_comment": { "type": "string" }
+        },
+        "additionalProperties": false,
+        "patternProperties": { "^_": {} }
+      }
+    },
     "credentials": {
       "x-serverOnly": true, "x-servedBy": "GET /keyring",
       "type": "object",
@@ -3791,6 +3813,7 @@
         "pressure": {"type": "number"},
         "floor": {"type": "number"},
         "verification": {"type": "array", "items": {"type": "string"}},
+        "helpdesk": {"type": "string", "minLength": 1, "description": "MFA plan S8b: a helpdesk id. A granted ask opens that desk's request form."},
         "grants": {
           "type": "object",
           "properties": {
@@ -4558,6 +4581,8 @@
             "username": { "type": "string", "minLength": 1, "description": "Makes an account (a password is then required). Unique, compared trimmed and case-insensitively." },
             "password": { "type": "string", "minLength": 1, "x-servedBy": [ { "route": "GET /login_accounts", "key": "postitNote" }, "GET /capture_secrets" ], "description": "The only place this account's password is authored. Server-only; served as the constructed sticky-note in a GET /login_accounts tile's postitNote when the owner writes it down (written_down?, game.rb), and by GET /capture_secrets once a capture proof for this account holds (captureProof, game.rb)." },
             "mfa": { "x-serverOnly": true, "type": "boolean", "description": "MFA plan S8a: false exempts this account from a policy's second step. Absent means enrolled. Only the literal false counts; true is an error (it is the default)." },
+            "recovery": { "x-serverOnly": true, "type": "object", "x-id-map": true, "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 64 }, "description": "MFA plan S8b: question id to the right answer, plain text, 64 characters at most. Read by a helpdesk whose rule is questions. Never sent to the browser." },
+            "resetPassword": { "x-serverOnly": true, "type": "string", "minLength": 1, "description": "MFA plan S8b: the password a helpdesk issues for this account. Must differ from password and appear in no ink. Never sent to the browser; given once in the answer that grants it, then listed in the keyring." },
             "admin": { "type": "boolean", "description": "Privilege plan S5a: true makes this an administrator account at every sign-in PC whose access list admits it. Absent is false. Only the literal true counts. Server-only (the whole creds block is)." },
             "card": {"x-id-map": false,  "type": "object", "description": "The card this NPC carries (replaces rfidCard): name, card_id, rfid_protocol and any protocol fields.", "additionalProperties": true },
             "_comment": { "type": "string" }
@@ -5402,7 +5427,7 @@
       "properties": {"onPairSetGlobal": { "type": "object", "additionalProperties": true, "x-id-map": true }, "minigameData": { "type": "object", "x-free-data": true }, 
         "type": {
           "type": "string",
-          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see owner), 'code_device' (MFA plan S8a: a code generator that shows its owner's current six-digit sign-in code while held; needs owner, an account NPC; one per account), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
+          "description": "Sprite name for this item. Any valid sprite asset name is accepted. Certain types have special engine behaviour: 'pc' (file container), 'safe'/'suitcase'/'briefcase'/'bin'/'bin1' (locked containers), 'vm-launcher' (VM terminal), 'launch-device' (launch/abort prop), 'flag-station' (flag submission), 'lockpick'/'key'/'keycard'/'rfid_cloner'/'pin-cracker'/'bluetooth_scanner'/'fingerprint_kit' (security tools), 'phone_friendface' (a Friendface phone: opens the social feed; see owner), 'code_device' (MFA plan S8a: a code generator that shows its owner's current six-digit sign-in code while held; needs owner, an account NPC; one per account), 'helpdesk_form' (MFA plan S8b: a desktop icon, in a sign-in PC's contents, that opens the request form of the helpdesks entry named by desk; needs no sprite), 'notes'/'notes2'/'notes4'/'notes5'/'text_file'/'chalkboard' (readable content). Can be combined with 'observations' for any sprite."
         },
         "id": { "type": "string", "description": "This object's own unique identity, distinct from opens_lock (which names the lock it opens). Used to target this specific object." },
         "name": { "type": "string" },
@@ -5410,6 +5435,7 @@
         "dispenses": { "type": "boolean", "description": "On a container (a badge printer): when the container is opened (any lock type), the contents go straight into the inventory (each item still checked by the server) instead of opening the container screen. Falls back to the container screen if the hand-over fails, and always for contents that are not takeable or are a notes-family item." },
         "blocksSight": { "type": "boolean", "description": "true: this prop blocks NPC sight like a wall; false: it never does. Unset: tall racks, shelving, cabinets, lockers and vending machines block (npc-sight-occlusion.js)" },
         "readable": { "type": "boolean" },
+        "desk": { "type": "string", "minLength": 1, "description": "MFA plan S8b: type helpdesk_form only: the helpdesks id whose request form this desktop icon opens, as a request over that PC. Belongs in a sign-in PC's contents." },
         "credential": { "type": "string", "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.4): names a top-level `credentials` registry id this item carries (a saved connection or a written assist code). Server-only: joins ItemIdentity::FORGEABLE_ITEM_FIELDS, so a client-built item can never carry it, and the stored field always comes from the server's own copy of the definition. The item must use a type with a tray slot that is not always-allowed (text_file), never a notes-family or always-allowed type. Cross-references are enforced only by check_credentials." },
         "technique_card": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$", "maxLength": 40, "description": "Ops core S3 (OPS_CORE_PLAN.md 4.3): a key of the top-level `techniques` technique card registry. Allowed only on an item of type `technique_card`, and such an item must carry it (the validator checks both). It stays on the item the browser receives, as `credential` does; the registry entry it names does not. Not built until N15 (the validator refuses it)." },
         "interactable": { "type": "boolean" },
