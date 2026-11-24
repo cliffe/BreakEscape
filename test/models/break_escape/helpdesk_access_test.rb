@@ -218,6 +218,36 @@ module BreakEscape
       assert_equal 'refused', ask(user: 'lfox', answers: WRONG)[:body][:reason]
     end
 
+    test 'R3-CORE1: at a full desk a name with no entry is blocked whatever its answers, account or not, and served once an entry lapses' do
+      HelpdeskModel::TRIES_CAP.times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      5.times { assert_equal 'blocked', ask(answers: WRONG)[:body][:reason] }
+      assert_equal 'blocked', ask(answers: RIGHT_SAM)[:body][:reason]
+      assert_equal 'blocked', ask(what: 'mfa', answers: RIGHT_SAM)[:body][:reason]
+      assert_equal ask(answers: RIGHT_SAM), ask(user: 'zzz', answers: RIGHT_SAM), 'account and non-account alike'
+      assert_empty @game.account_resets
+      refute @game.helpdesk_tries.key?('it_desk|sokafor'), 'nothing was counted for the name'
+      travel_to T0 + HelpdeskModel::DESK_STOP_SECONDS
+      assert_equal :ok, ask(answers: RIGHT_SAM)[:status]
+    end
+
+    test 'R3-CORE1: a name that already has an entry is still judged at a full desk' do
+      ask(answers: WRONG)
+      (HelpdeskModel::TRIES_CAP - 1).times { |i| ask(user: "ghost#{i}", answers: WRONG) }
+      assert_equal 1, ask(answers: WRONG)[:body][:triesLeft]
+      assert_equal :ok, ask(answers: RIGHT_SAM)[:status]
+    end
+
+    test 'R3-CORE2: an entry with no time is treated as last touched on first request, so it lapses and 200 of them do not stop the desk for good' do
+      HelpdeskModel::TRIES_CAP.times { |i| @game.helpdesk_tries["it_desk|old#{i}"] = { 'n' => 2, 'seq' => i } }
+      @game.helpdesk_tries['it_desk|sokafor'] = { 'n' => 2 }
+      @game.save!
+      assert_equal 'blocked', ask(user: 'newname', answers: WRONG)[:body][:reason]
+      assert_equal 0, ask(answers: WRONG)[:body][:triesLeft], 'the count it had is kept, not reset'
+      travel_to T0 + HelpdeskModel::DESK_STOP_SECONDS
+      res = ask(user: 'newname', answers: WRONG)
+      assert_equal 2, res[:body][:triesLeft], 'they lapsed five minutes after first being seen'
+    end
+
     test 'R2-SERVER1: the cap is per desk' do
       @game.scenario_data['helpdesks']['id_desk'] = desk
       HelpdeskModel::TRIES_CAP.times { |i| ask(user: "ghost#{i}", answers: WRONG) }

@@ -159,6 +159,41 @@ module BreakEscape
       assert_equal 'refused', json['reason'], 'no permanent denial'
     end
 
+    test 'R3-CORE1: at a full desk 50 wrong then the right answers for a new name are all blocked, account or not, and nothing is granted' do
+      build
+      HelpdeskModel::TRIES_CAP.times { |i| ask(username: "junk#{i}", answers: HS::WRONG) }
+      50.times do
+        ask(answers: HS::WRONG)
+        assert_equal [422, 'blocked'], [response.status, json['reason']]
+      end
+      ask
+      real = [response.status, json]
+      ask(username: 'zed')
+      assert_equal real, [response.status, json]
+      assert_equal({ 'reason' => 'blocked', 'retryIn' => 300 }, json)
+      assert_empty state['accountResets'].to_h
+      assert_nil state['helpdeskTries']['it_desk|sokafor']
+      travel_to T0 + HelpdeskModel::DESK_STOP_SECONDS
+      ask
+      assert_response :success
+      assert_equal true, json['granted']
+    end
+
+    test 'R3-CORE1: the three round 2 properties still hold: counts and stops survive other names, account and non-account alike' do
+      build
+      2.times { ask(answers: HS::WRONG) }
+      2.times { ask(username: 'zed', answers: HS::WRONG) }
+      HelpdeskModel::TRIES_CAP.times { |i| ask(username: "junk#{i}", answers: HS::WRONG) }
+      [{}, { username: 'zed' }].each do |who|
+        ask(who.merge(answers: HS::WRONG))
+        assert_equal [422, 'refused', 0], [response.status, json['reason'], json['triesLeft']]
+        ask(who.merge(answers: HS::WRONG))
+        assert_equal 'blocked', json['reason']
+        ask(who)
+        assert_equal 'blocked', json['reason'], 'the right answers during a stop'
+      end
+    end
+
     # --- R1-SERVER3 and 4: nothing tells an account from a name that is not one ------------------
 
     test 'R1-SERVER3: past the 200-name cap an account and a non-account are refused alike' do

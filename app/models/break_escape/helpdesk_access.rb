@@ -83,6 +83,7 @@ module BreakEscape
       typed = AccessIdentities.normalise_username(HelpdeskModel.clean_username(username.to_s))
       key = HelpdeskModel.tries_key(desk_id, typed)
       now = mfa_now
+      stamp_untimed_helpdesk_tries!(now)
       lift_spent_helpdesk_try!(key, now)
       entry = helpdesk_tries_view[key]
       if entry.is_a?(Hash) && entry['stoppedAt'].is_a?(Integer)
@@ -90,6 +91,13 @@ module BreakEscape
         # Past ten stored rows the log call stores nothing, so there is nothing to save
         save! if log_helpdesk_request(desk_id, typed, what, 'blocked')&.stored?
         return { status: :unprocessable_entity, body: { reason: 'blocked', retryIn: retry_in } }
+      end
+
+      # A name with no entry at a full desk is answered stopped whatever its answers: nothing is
+      # judged, counted or granted, so no one gets free guesses by filling the table first
+      unless entry.is_a?(Hash)
+        retry_in = make_room_for_helpdesk_try!(helpdesk_tries, desk_id, now)
+        return helpdesk_blocked_by_cap!(desk_id, typed, what, retry_in) if retry_in
       end
 
       npc = typed.empty? ? nil : account_for_username(typed)
@@ -173,6 +181,20 @@ module BreakEscape
 
     def helpdesk_try_last(entry)
       entry['stoppedAt'].is_a?(Integer) ? entry['stoppedAt'] : entry['at']
+    end
+
+    # An entry saved with no time (an early build) is stamped as last touched now the first time a
+    # request reaches the desk, and saved so the stamp holds; it then lapses like any other. Readers
+    # (the views) never stamp: with no time an entry is simply not spent.
+    def stamp_untimed_helpdesk_tries!(now)
+      stamped = false
+      helpdesk_tries_view.each_value do |e|
+        next unless e.is_a?(Hash) && !e['stoppedAt'].is_a?(Integer) && !e['at'].is_a?(Integer)
+
+        e['at'] = now
+        stamped = true
+      end
+      save! if stamped
     end
 
     def helpdesk_try_spent?(entry, now)
