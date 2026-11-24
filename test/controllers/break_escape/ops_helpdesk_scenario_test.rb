@@ -197,7 +197,7 @@ module BreakEscape
       assert_not_includes response.body, 'maxTries'
     end
 
-    # ---- beat 1 to 3: lock, refuse, stop, the same for a stranger ----------------------------------------------------------
+    # ---- beat 1, 14 and 15: lock; refuse, stop, the same for a stranger (the last two are played last) ----------------------------------------------------------
 
     test 'beat 1: three wrong passwords lock the account at the records PC' do
       lock_tess
@@ -207,7 +207,7 @@ module BreakEscape
       assert_nil state['sessions']['records_pc']
     end
 
-    test 'beat 2: two wrong answers per ask count down, the third stops the desk, the fourth is blocked, five minutes lift it' do
+    test 'beat 14: two wrong answers per ask count down, the third stops the desk, the fourth is blocked, five minutes lift it' do
       ask_wrong
       shaped('helpdesk.refused')
       assert_equal 2, response.parsed_body['triesLeft']
@@ -236,7 +236,7 @@ module BreakEscape
       assert_equal 2, response.parsed_body['triesLeft'], 'the lifted stop starts the count again'
     end
 
-    test 'beat 3: a name nobody has gets the same answer and the same row shape as a wrong answer' do
+    test 'beat 15: a name nobody has gets the same answer and the same row shape as a wrong answer' do
       ask_wrong
       known = [response.status, response.parsed_body, rows('helpdesk_request').last.except('t', 'as', 'seq')]
       ask('nobody.here', 'password', WRONG)
@@ -245,9 +245,9 @@ module BreakEscape
       assert_equal rows('helpdesk_request').first.keys.sort, rows('helpdesk_request').last.keys.sort
     end
 
-    # ---- beat 4: the facts are findable ----------------------------------------------------------------------------------
+    # ---- beat 2: the facts are findable ----------------------------------------------------------------------------------
 
-    test 'beat 4: the staff file and the team post carry the two facts the desk asks for, in public' do
+    test 'beat 2: the staff file and the team post carry the two facts the desk asks for, in public' do
       get game_path('room/records'), as: :json
       assert_response :success
       text = response.body
@@ -258,9 +258,9 @@ module BreakEscape
       assert_includes JSON.generate(body['social']), 'Nell Brook'
     end
 
-    # ---- beat 5 to 8: the reset, the stale saved connection, old out new in, asking twice ------------------------------------
+    # ---- beat 3 to 6: the reset, the stale saved connection, old out new in, asking twice ------------------------------------
 
-    test 'beat 5: the reset grants the password, clears the lockout, and the keyring lists it once' do
+    test 'beat 3: the reset grants the password, clears the lockout, and the keyring lists it once' do
       lock_tess
       3.times { sign_in('records_pc', UGO[0], 'wrong-password') }
       assert_equal 0, rows('account_password_reset').size
@@ -281,7 +281,7 @@ module BreakEscape
       assert_equal TESS_NEW, entry['password']
     end
 
-    test 'beat 5: the reset password is in no answer before the grant, and a wrong request grants nothing' do
+    test 'beat 3: the reset password is in no answer before the grant, and a wrong request grants nothing' do
       ask(TESS[0], 'password', WRONG)
       shaped('helpdesk.refused')
       get game_path('keyring'), as: :json
@@ -290,7 +290,7 @@ module BreakEscape
       assert_not_includes JSON.generate(state), TESS_NEW
     end
 
-    test 'beats 6 and 7: the saved connection is stale after the reset, the old password is refused, the new one signs in' do
+    test 'beats 4 and 5: the saved connection is stale after the reset, the old password is refused, the new one signs in' do
       build('inventory' => [SAVED_FILE])
       sign_in('front_pc', *SAM)
       post game_path('login'), params: { pc_id: 'records_pc', credential: 'tess_saved', from: 'front_pc' }, as: :json
@@ -312,7 +312,7 @@ module BreakEscape
       assert_response :success, 'once the new password is typed the saved connection signs in'
     end
 
-    test 'beat 8: asking twice is harmless: the same grant, state and counters unchanged, no second reset row' do
+    test 'beat 6: asking twice is harmless: the same grant, state and counters unchanged, no second reset row' do
       first = ask(TESS[0], 'password', TESS_ANSWERS)
       before = state.slice('accountResets', 'helpdeskTries', 'loginFailures', 'loginLockouts')
       resets = count('account_password_reset')
@@ -334,9 +334,9 @@ module BreakEscape
       shaped('helpdesk.bad_request')
     end
 
-    # ---- beat 9: over a PC, the form on the desktop ------------------------------------------------------------------------
+    # ---- beat 7: over a PC, the form on the desktop ------------------------------------------------------------------------
 
-    test 'beat 9: the desktop holds the form item with exactly four keys, it cannot be taken, and the PC form resets the second step' do
+    test 'beat 7: the desktop holds the form item with exactly four keys, it cannot be taken, and the PC form resets the second step' do
       assert_equal true, sign_in('front_pc', *SAM)['success']
       body = container('front_pc')
       assert_response :success
@@ -357,7 +357,7 @@ module BreakEscape
       assert_equal 1, count('account_mfa_reenrolled')
     end
 
-    test 'beat 9: a desk request over a PC with no session, or a locked one, is unavailable' do
+    test 'beat 7: a desk request over a PC with no session, or a locked one, is unavailable' do
       ask(WIM[0], 'mfa', WIM_ANSWERS, pc: 'front_pc')
       shaped('helpdesk.unavailable')
       sign_in('front_pc', *SAM)
@@ -366,9 +366,9 @@ module BreakEscape
       shaped('helpdesk.unavailable')
     end
 
-    # ---- beat 10: my phone, push -------------------------------------------------------------------------------------------
+    # ---- beat 8: my phone, push -------------------------------------------------------------------------------------------
 
-    test 'beat 10: before the reset a push at the ops PC has no own phone; after it the own phone approves, the old way is refused' do
+    test 'beat 8: before the reset a push at the ops PC has no own phone; after it the own phone approves, the old way is refused' do
       before = sign_in('ops_pc', *WIM)
       assert_equal true, before['mfaRequired']
       assert_nil before['ownPhone']
@@ -391,7 +391,7 @@ module BreakEscape
       assert_equal 'wim', state['sessions']['ops_pc']['id']
     end
 
-    test 'beat 10: the own phone lists nothing for an account no desk re-enrolled, and approves for nobody else' do
+    test 'beat 8: the own phone lists nothing for an account no desk re-enrolled, and approves for nobody else' do
       wim_reenrolled!
       get game_path('mfa/phone'), params: { own: 1 }, as: :json
       assert_response :success
@@ -400,9 +400,9 @@ module BreakEscape
       assert_not state['sessions']['ops_pc']
     end
 
-    # ---- beat 11 and 12: the callback desk -----------------------------------------------------------------------------------
+    # ---- beat 9 and 10: the callback desk -----------------------------------------------------------------------------------
 
-    test 'beat 11 and 12: the callback desk refuses without her phone and grants with it; the grant re-enrols her' do
+    test 'beat 9 and 10: the callback desk refuses without her phone and grants with it; the grant re-enrols her' do
       ask(VERA[0], 'mfa', {}, desk: 'id_desk')
       shaped('helpdesk.refused')
       assert_nil state['accountResets']
@@ -432,9 +432,9 @@ module BreakEscape
       shaped('helpdesk.unavailable')
     end
 
-    # ---- beat 13 and 14: my phone, code; the old device -------------------------------------------------------------------
+    # ---- beat 11 and 12: my phone, code; the old device -------------------------------------------------------------------
 
-    test 'beat 13 and 14: the own code signs in once, the loose old device shows no code afterwards' do
+    test 'beat 11 and 12: the own code signs in once, the loose old device shows no code afterwards' do
       post game_path('inventory'), params: { action_type: 'add', item: { type: 'phone_friendface', id: 'vera_phone', name: "Vera's phone" },
                                              source_npc_id: 'vera' }, as: :json
       ask(VERA[0], 'mfa', {}, desk: 'id_desk')
@@ -458,16 +458,16 @@ module BreakEscape
       assert_not response.parsed_body.key?('code')
     end
 
-    test 'beat 14: before any reset the loose device is live' do
+    test 'beat 12: before any reset the loose device is live' do
       post game_path('inventory'), params: { action_type: 'add', item: { type: 'code_device', id: 'vera_device', name: 'Code device' } }, as: :json
       get game_path('mfa/device'), params: { item_id: 'vera_device' }, as: :json
       assert_response :success
       assert_match(/\A\d{6}\z/, response.parsed_body['code'])
     end
 
-    # ---- beat 15: from a call ------------------------------------------------------------------------------------------------
+    # ---- beat 13: from a call ------------------------------------------------------------------------------------------------
 
-    test 'beat 15: the call ask names the IT desk, which the bootstrap forms carry' do
+    test 'beat 13: the call ask names the IT desk, which the bootstrap forms carry' do
       body = bootstrap_scenario
       assert_equal 'ria', body['helpdeskForms']['it_desk']['npc']
       assert_includes JSON.generate(body), 'it_line_call'
@@ -499,14 +499,9 @@ module BreakEscape
       build('inventory' => [SAVED_FILE])
       get_row('scenario', {}, :boot0)
       %w[front_office service_desk records].each { |room| get_row("room/#{room}") }
-      # beat 1 to 3
+      # beat 1
       3.times { sign_in_row('records_pc', [TESS[0], 'wrong-password'], :tess_fail) }
-      ask_row(UGO[0], 'password', WRONG, :refused)
-      ask_row('nobody.here', 'password', WRONG, :stranger)
-      ask_row(UGO[0], 'password', WRONG)
-      ask_row(UGO[0], 'password', WRONG, :refused_last)
-      ask_row(UGO[0], 'password', WRONG, :blocked)
-      # beat 5 to 8
+      # beat 3 to 6
       get_row('keyring', {}, :keyring0)
       ask_row(TESS[0], 'password', TESS_ANSWERS, :grant_password)
       get_row('keyring', {}, :keyring1)
@@ -517,26 +512,32 @@ module BreakEscape
       sign_in_row('records_pc', [TESS[0], TESS_NEW], :typed_new)
       post_row('logout', { pc_id: 'records_pc' })
       ask_row(TESS[0], 'password', TESS_ANSWERS, :grant_again)
-      # beat 9
+      # beat 7
       sign_in_row('front_pc', SAM, :sam_in)
       get_row('container/front_pc', {}, :front_desktop)
       ask_row(WIM[0], 'mfa', WIM_ANSWERS, :grant_mfa_wim, pc: 'front_pc')
-      # beat 10
+      # beat 8
       sign_in_row('ops_pc', WIM, :wim_required)
       post_row('mfa/prompt', { pc_id: 'ops_pc' }, :wim_prompt)
       get_row('mfa/phone', { own: 1 }, :own_phone)
       post_row('mfa/approve', { pc_id: 'ops_pc', own: 1 }, :own_approve)
-      # beat 11 and 12
+      # beat 9 and 10
       ask_row(VERA[0], 'mfa', {}, :omar_refused, desk: 'id_desk')
       take_row('vera_phone', 'phone_friendface', "Vera's phone", :take_vera_phone, npc: 'vera')
       ask_row(VERA[0], 'mfa', {}, :grant_mfa_vera, desk: 'id_desk')
-      # beat 13 and 14
+      # beat 11 and 12
       sign_in_row('vault_pc', VERA, :vera_required)
       get_row('mfa/device', { npc_id: 'vera' }, :own_device)
       post_row('mfa/verify', { pc_id: 'vault_pc', code: @marks[:own_device]['body']['code'] }, :vera_pass)
       get_row('mfa/device', { npc_id: 'vera' }, :own_device_used)
       take_row('vera_device', 'code_device', 'Code device', :take_old_device)
       get_row('mfa/device', { item_id: 'vera_device' }, :old_device)
+      # beats 14 and 15, last on purpose: a stop on the desk stops credit for every grant for five minutes (R1-L1)
+      ask_row(UGO[0], 'password', WRONG, :refused)
+      ask_row('nobody.here', 'password', WRONG, :stranger)
+      ask_row(UGO[0], 'password', WRONG)
+      ask_row(UGO[0], 'password', WRONG, :refused_last)
+      ask_row(UGO[0], 'password', WRONG, :blocked)
       get_row('scenario', {}, :boot_end)
       @log
     end

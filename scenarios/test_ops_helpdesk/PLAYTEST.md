@@ -41,6 +41,8 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 
 ## Beats
 
+The order matters to the leak scanner: a desk stop (beat 14) stops credit for every grant for five minutes, and the run never waits that long, so the refusals and the stop come last and no grant follows them.
+
 ### 1. Lock the account
 1. Walk east to Records. Click "Note: Tess's login" and read it.
 2. Click "Records PC". Click the Tess tile, type a wrong password, click Sign in. Repeat twice more.
@@ -48,8 +50,79 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - Server: a lockout held for Tess at `records_pc`; `--ops-log` prints three `SIGN_IN` fails and a lockout.
 3. Click the X on the sign-in screen.
 
-### 2. Refused, then stopped
-1. Walk back through the Front Office and north to the Service Desk. Click Ria Vance. Choose "Ask for an account reset". Ria says "Fill in the form and I will look at it." and the "IT request form" opens over the chat.
+### 2. Find the answers
+1. Walk to Records. Click "Staff file" and read it: two staff numbers (Tess and Wim) and the usernames.
+2. Open your phone's Friendface ("Your feed phone", inventory): read Nell Brook's team post: two line managers.
+- See: the facts on screen. They are public by design.
+
+### 3. The reset
+1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "A password reset", Tess's staff number and her line manager from beat 2. Send.
+- See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." The bark "Next, please." shows.
+- Open the keyring (K): a "Reset" sign-in for Tess.
+- Server: reset password yes for Tess; the lockout at `records_pc` gone; typed no. `ACCT_RESET` row.
+
+### 4. The saved connection is stale
+1. Records: click "Records PC". On the sign-in screen choose Tess's saved connection ("Records PC saved connection").
+- See: "This password has been changed. Type the new one to sign in." No session.
+
+### 5. Old out, new in
+1. Same screen: click the Tess tile, type the OLD password (from her note), Sign in.
+- See: refused; one attempt counted.
+2. Type the new password from beat 3, Sign in.
+- See: signed in at the once-locked PC. Server: typed yes.
+3. Start > Sign out. Choose the saved connection again.
+- See: it now signs in.
+
+### 6. Asking twice is harmless
+1. Service Desk: Ria, "Ask for an account reset", the same request as beat 3. Send.
+- See: the same granted form. Server: state unchanged (no second `ACCT_RESET` row).
+
+### 7. Over a PC
+1. Front Office: click "Note: Sam's login" and read it. Click "Front PC", click the Sam tile, type the password, Sign in.
+2. On the desktop click the "IT request form" icon (it has no picture of its own, so it shows the plain document icon with the name under it).
+- See: the "IT request form" window opens over the PC.
+3. In "Username" type Wim's username, under "Ask for" choose "A sign-in approval reset", fill "Staff number" and "Line manager" with Wim's staff number and his line manager from beat 2. Click "Send".
+- See: "Sign-in approvals now come to your phone."
+- Server: reset second step yes for Wim; `ACCT_MFA` row; the request names `front_pc`.
+4. Click the close "×" (its label is "Close").
+- See: the Front PC desktop is back, with the "IT request form" icon still there.
+
+### 8. My phone, push
+1. Service Desk: click "Operations PC", click the Wim tile, type his password (note), Sign in.
+- See: the push pane with a "My phone" button.
+2. Click "My phone", then Approve on the phone, then close the phone (its Close button).
+- See: the sign-in screen reopens signed in. Server: approver `own_phone`.
+
+### 9. No phone, no callback
+1. Front Office: click Omar Stack. Choose "Ask for an account reset". The form opens.
+2. Type Vera's username (`v.holt`). Omar's form has no "Ask for" choice (his desk resets the second step only). Send.
+- See: refused. Close the form: Omar says "I can't verify you."
+
+### 10. With her phone
+1. Records: click Vera Holt, choose "Could I borrow your phone for a minute?". "Vera's phone" joins the inventory.
+2. Front Office: click Omar, "Ask for an account reset", `v.holt`. Send.
+- See: "Sign-in approvals now come to your phone." Omar says "That matches our records."
+- Server: reset second step yes for Vera.
+
+### 11. My phone, code
+1. Records: click "Vault PC", click the Vera tile, type her password (note), Sign in.
+- See: the code pane shows "My phone" and no "Use" button.
+2. Click "My phone". Read the code on the phone, close the phone.
+- See: the code field is filled. Click Verify: signed in. Server: `used` set for Vera.
+
+### 12. The old device
+1. Click "Code device" on the Records desk to take it. Open the inventory, click "Code device".
+- See: "No longer in use", no digits.
+
+### 13. From a call
+1. Open "Your phone" (inventory). Click the contact "IT service line". (The `it_line` NPC carries `callId: "it_line_call"`, so the click opens the preparation card, not a plain chat.)
+- See: a preparation card first. Title "Prepare the call", "Calling: IT service line", "Nothing on the board yet." and the button "Make the call", enabled with nothing held.
+2. Click "Make the call". The call menu shows "1. Request a reset" and "2. Hang up".
+3. Click "Request a reset". Ink says "Right, here is the form."; about a second later the form "IT request form" opens over the call (desk `it_desk`, no PC).
+- See: the form opens once. Close it without sending (the "×" Close): back in the same call. Or send and see the answer line, with the `helpdesk_it_desk_result` global set.
+
+### 14. Refused, then stopped
+1. Walk to the Service Desk. Click Ria Vance. Choose "Ask for an account reset". Ria says "Fill in the form and I will look at it." and the "IT request form" opens over the chat.
 2. Type Ugo's username (on the "Staff file" in Records, `u.reyes`), choose "A password reset", type any text in "Staff number" and "Line manager". Click Send.
 - See: "Tries left: 2". Close the form: Ria says "I can't verify you."
 3. Choose "Ask for an account reset" again, repeat with different wrong answers: "Tries left: 1", then "Tries left: 0".
@@ -57,81 +130,10 @@ env -u BUNDLE_PATH BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/
 - See: "not taking requests for that account". Ria says "I can't take more requests for that account just now."
 - Server: tries 3 for `it_desk|u.reyes`, stopped yes; `HELPDESK` rows refused, refused, refused, blocked.
 
-### 3. An unknown name looks the same
+### 15. An unknown name looks the same
 1. Ria, "Ask for an account reset", a username nobody has (for example `z.nobody`), "A password reset", any answers, Send.
-- See: the same refusal line and "Tries left: 2" as the first try of beat 2.
-
-### 4. Find the answers
-1. Walk to Records. Click "Staff file" and read it: two staff numbers (Tess and Wim) and the usernames.
-2. Open your phone's Friendface ("Your feed phone", inventory): read Nell Brook's team post: two line managers.
-- See: the facts on screen. They are public by design.
-
-### 5. The reset
-1. Service Desk: Ria, "Ask for an account reset". Type Tess's username, "A password reset", Tess's staff number and her line manager from beat 4. Send.
-- See: "Password reset. New password:" and the password. Close the form: Ria says "That matches our records." The bark "Next, please." shows.
-- Open the keyring (K): a "Reset" sign-in for Tess.
-- Server: reset password yes for Tess; the lockout at `records_pc` gone; typed no. `ACCT_RESET` row.
-
-### 6. The saved connection is stale
-1. Records: click "Records PC". On the sign-in screen choose Tess's saved connection ("Records PC saved connection").
-- See: "This password has been changed. Type the new one to sign in." No session.
-
-### 7. Old out, new in
-1. Same screen: click the Tess tile, type the OLD password (from her note), Sign in.
-- See: refused; one attempt counted.
-2. Type the new password from beat 5, Sign in.
-- See: signed in at the once-locked PC. Server: typed yes.
-3. Start > Sign out. Choose the saved connection again.
-- See: it now signs in.
-
-### 8. Asking twice is harmless
-1. Service Desk: Ria, "Ask for an account reset", the same request as beat 5. Send.
-- See: the same granted form. Server: state unchanged (no second `ACCT_RESET` row).
-
-### 9. Over a PC
-1. Front Office: click "Note: Sam's login" and read it. Click "Front PC", click the Sam tile, type the password, Sign in.
-2. On the desktop click the "IT request form" icon (it has no picture of its own, so it shows the plain document icon with the name under it).
-- See: the "IT request form" window opens over the PC.
-3. In "Username" type Wim's username, under "Ask for" choose "A sign-in approval reset", fill "Staff number" and "Line manager" with Wim's staff number and his line manager from beat 4. Click "Send".
-- See: "Sign-in approvals now come to your phone."
-- Server: reset second step yes for Wim; `ACCT_MFA` row; the request names `front_pc`.
-4. Click the close "×" (its label is "Close").
-- See: the Front PC desktop is back, with the "IT request form" icon still there.
-
-### 10. My phone, push
-1. Service Desk: click "Operations PC", click the Wim tile, type his password (note), Sign in.
-- See: the push pane with a "My phone" button.
-2. Click "My phone", then Approve on the phone, then close the phone (its Close button).
-- See: the sign-in screen reopens signed in. Server: approver `own_phone`.
-
-### 11. No phone, no callback
-1. Front Office: click Omar Stack. Choose "Ask for an account reset". The form opens.
-2. Type Vera's username (`v.holt`). Omar's form has no "Ask for" choice (his desk resets the second step only). Send.
-- See: refused. Close the form: Omar says "I can't verify you."
-
-### 12. With her phone
-1. Records: click Vera Holt, choose "Could I borrow your phone for a minute?". "Vera's phone" joins the inventory.
-2. Front Office: click Omar, "Ask for an account reset", `v.holt`. Send.
-- See: "Sign-in approvals now come to your phone." Omar says "That matches our records."
-- Server: reset second step yes for Vera.
-
-### 13. My phone, code
-1. Records: click "Vault PC", click the Vera tile, type her password (note), Sign in.
-- See: the code pane shows "My phone" and no "Use" button.
-2. Click "My phone". Read the code on the phone, close the phone.
-- See: the code field is filled. Click Verify: signed in. Server: `used` set for Vera.
-
-### 14. The old device
-1. Click "Code device" on the Records desk to take it. Open the inventory, click "Code device".
-- See: "No longer in use", no digits.
-
-### 15. From a call
-1. Open "Your phone" (inventory). Click the contact "IT service line". (The `it_line` NPC carries `callId: "it_line_call"`, so the click opens the preparation card, not a plain chat.)
-- See: a preparation card first. Title "Prepare the call", "Calling: IT service line", "Nothing on the board yet." and the button "Make the call", enabled with nothing held.
-2. Click "Make the call". The call menu shows "1. Request a reset" and "2. Hang up".
-3. Click "Request a reset". Ink says "Right, here is the form."; about a second later the form "IT request form" opens over the call (desk `it_desk`, no PC).
-- See: the form opens once. Close it without sending (the "×" Close): back in the same call. Or send and see the answer line, with the `helpdesk_it_desk_result` global set.
+- See: the same refusal line and "Tries left: 2" as the first try of beat 14.
 
 ### 16. Checks
 1. Run the leak check and `verify-run.rb` above.
-- See: no leak; the per-account and per-desk lines match beats 2, 5, 7, 9 and 12.
+- See: no leak; the per-account and per-desk lines match beats 3, 5, 7, 10 and 14.
