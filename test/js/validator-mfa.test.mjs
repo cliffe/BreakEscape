@@ -206,6 +206,34 @@ test('information line names the ways through for a technique session', { skip }
     assertHas(out, "NPC 'omar' through");
 });
 
+test('R1-S8: the information line lists the owner approving, and a device nobody can hold is not listed', { skip }, () => {
+    let sc = base('push');
+    omar(sc).awareness = 'low';
+    assertHas(infos(issues(sc)), "NPC 'omar' through the owner approves (pestered or always)");
+    sc = base('push');
+    omar(sc).habits = { approvesPrompts: 'never' };
+    assert.ok(!has(infos(issues(sc)), 'the owner approves'));
+    sc = base();
+    room(sc).objects.pop();
+    room(sc).npcs.push({ id: 'guard', npcType: 'person', koImmune: true, itemsHeld: [{ id: 'omar_fob', type: 'code_device', name: 'Fob', owner: 'omar' }] });
+    const out = issues(sc);
+    assertHas(warnings(out), "code_device 'omar_fob' cannot be held");
+    assert.ok(!has(infos(out), "through the account's code device"), out.join('\n'));
+});
+
+test('R1-S10: an all-digit two-digit PC id or username under number matching is an error', { skip }, () => {
+    let sc = base('push_number_match');
+    assert.ok(!has(errors(issues(sc)), 'two-digit'));
+    room(sc).objects[0].id = '42';
+    assertHas(errors(issues(sc)), "PC '42'");
+    sc = base('push_number_match');
+    omar(sc).creds.username = '73';
+    assertHas(errors(issues(sc)), 'username');
+    sc = base('push');
+    omar(sc).creds.username = '73';
+    assert.ok(!has(errors(issues(sc)), 'two-digit'));
+});
+
 test('habit keys: valid values pass, invalid ones and non-room NPCs are errors', { skip }, () => {
     const sc = base('push');
     omar(sc).awareness = 'low';

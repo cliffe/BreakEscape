@@ -133,7 +133,7 @@ def mfa_pcs(json_data)
 end
 
 # The ways round or through the second step for one account at one PC, as words
-def mfa_ways(json_data, entry, npc, mm, holdable_phones)
+def mfa_ways(json_data, entry, npc, mm, holdable_phones, holdable_devices = [])
   cm = BreakEscape::CredentialModel
   pc = entry[:pc]
   ways = []
@@ -156,9 +156,23 @@ def mfa_ways(json_data, entry, npc, mm, holdable_phones)
   end
   ways.uniq!
   device = entry[:kind] == 'code' ? mm.device_for(json_data, npc['id']) : nil
-  ways.unshift('the account\'s code device') if device
+  ways.unshift('the account\'s code device') if device && holdable_devices.include?(device['id'])
+  ways.unshift('the owner approves (pestered or always)') if entry[:kind] == 'push' && mm.prompt_habit(npc, json_data) != 'never'
   ways.unshift("the account's phone") if MFA_PUSH_KINDS.include?(entry[:kind]) && holdable_phones.include?(npc['id'])
   ways
+end
+
+# A two-digit number is an issued secret the log guard compares with ids: under number matching a
+# two-digit PC id or username could trip it (R1-S10)
+def mfa_number_id_errors(entry, who, err)
+  return unless entry[:kind] == 'push_number_match'
+
+  two_digits = /\A\d{2}\z/
+  err.call("#{who}: the PC id is two digits, which can be the same as an issued number. Rename the PC.") if entry[:pc]['id'].to_s.match?(two_digits)
+  entry[:accounts].each do |npc|
+    name = npc.dig('creds', 'username').to_s
+    err.call("#{who}: account #{mfa_name(npc)} has a two-digit username, which can be the same as an issued number. Rename it.") if name.match?(two_digits)
+  end
 end
 
 # Phone items the player can come to hold, as a set of owner ids
@@ -173,6 +187,7 @@ end
 def mfa_pc_errors(json_data, err, warn, info, mm)
   story = ->(path) { ValidateAccessWork.story_file(path) }
   phones = nil
+  devices = nil
   pcs = mfa_pcs(json_data)
   pcs.each do |entry|
     pc = entry[:pc]
@@ -185,6 +200,7 @@ def mfa_pc_errors(json_data, err, warn, info, mm)
         err.call("#{who}: account #{mfa_name(npc)} is admitted and enrolled but is \"phone\": false: a push has nowhere to go.")
       end
     end
+    mfa_number_id_errors(entry, who, err)
     if entry[:kind] == 'code' && entry[:policy].is_a?(Hash) && !entry[:policy]['maxAttempts'].nil?
       warn.call("#{who}: the policy has maxAttempts #{entry[:policy]['maxAttempts'].inspect}, so wrong codes can lock the sign-in for good. " \
                 'Remove maxAttempts, or give the player another way through.')
@@ -192,7 +208,8 @@ def mfa_pc_errors(json_data, err, warn, info, mm)
     next if entry[:accounts].empty?
 
     phones ||= mfa_holdable_phone_owners(json_data, mm, story)
-    all_ways = entry[:accounts].to_h { |npc| [npc, mfa_ways(json_data, entry, npc, mm, phones)] }
+    devices ||= mm.held_item_sources(json_data, [mm::CODE_DEVICE], &story).map { |h| h[:id] }
+    all_ways = entry[:accounts].to_h { |npc| [npc, mfa_ways(json_data, entry, npc, mm, phones, devices)] }
     info.call("#{who}: " + entry[:accounts].map do |npc|
       ways = all_ways[npc]
       "#{mfa_name(npc)} through #{ways.empty? ? 'no listed way' : ways.join(', ')}"
