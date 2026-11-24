@@ -136,7 +136,7 @@ const attrKey = (btn) => {
  * example `{ skin: 'cli' }`, which the real starter works out); `starter`: open through the scene's own
  * `startNetworkViewMinigame`.
  */
-export async function mount(body, { unplug = false, hold = false, footholdId = null, params = {}, starter = false, dropSwitch = false } = {}) {
+export async function mount(body, { unplug = false, hold = false, footholdId = null, params = {}, starter = false, dropSwitch = false, tripSeq = undefined } = {}) {
     window.MinigameFramework?.endMinigame?.(false, null);
     const h = { calls: [], opened: [], toasts: [], events: [], held: [], hold };
     const entry = (footholdId ? body.footholds.find(f => f.id === footholdId) : null) || body.footholds[0];
@@ -179,6 +179,8 @@ export async function mount(body, { unplug = false, hold = false, footholdId = n
     window.networkLinks = links;
     links.load([foothold], foothold.sourceId ? [foothold.sourceId] : []);
     if (unplug) links.trip = { footholdId: fid, atJack: jack };
+    // `tripSeq`: the trip number the real network-links gives each trip (the scene keeps a log only within one trip)
+    if (tripSeq !== undefined) links.trip = { ...(links.trip || { footholdId: fid }), seq: tripSeq };
     window.startNetworkViewMinigame(fid, { unplugJack: jack });
     await settle();
     h.mountEvents = h.events.splice(0);

@@ -377,3 +377,33 @@ test('R1-C10: the no-reply row sentence lasts in the Terminal only as long as it
     assert.ok(!(await showText()).includes(NO_REPLY), 'gone after the next draw');
     h.end();
 });
+
+test('R1-C16: a hand-over keeps the log on the same trip number and drops it on the next trip', async () => {
+    const id = (h) => h.view().footholdId;
+    let h = await mount(opsBody(), { params: { skin: 'gui' }, tripSeq: 7 });
+    const fid = id(h);
+    q(h, '[data-host-id="print02"] [data-action="scan"]').click();
+    await settle();
+    h.view().exitReason = 'handover';
+    h.end();
+    assert.ok(FMT.logFor(fid), 'kept for the return');
+    h = await mount(opsBody(), { params: { skin: 'cli' }, tripSeq: 7 });
+    assert.ok(lines(h).some(l => l.includes('print02')), 'same trip: the earlier move is shown');
+    h.view().exitReason = 'handover';
+    h.end();
+    h = await mount(opsBody(), { params: { skin: 'cli' }, tripSeq: 8 });
+    assert.ok(!lines(h).some(l => l.includes('print02')), 'a later trip starts with its own log');
+    h.end();
+});
+
+test('R1-C16: a request that gets no reply draws its row sentence in Panels through the real press path', async () => {
+    const h = await mount(opsBody(), { params: { skin: 'gui' }, hold: true });
+    q(h, '[data-host-id="print02"] [data-action="scan"]').click();
+    await settle();
+    await h.release(new Error('no reply'));
+    await settle();
+    const row = q(h, '[data-host-id="print02"] .network-row-notice') || q(h, '.network-row-notice');
+    assert.ok(row, 'the row sentence');
+    assert.equal(row.textContent, TEXTS.REQUEST_FAILED_TEXT);
+    h.end();
+});
