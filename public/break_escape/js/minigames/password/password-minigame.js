@@ -1616,6 +1616,7 @@ export class PasswordMinigame extends MinigameScene {
             this.pcMonitor?.destroy?.();
         }
         this._clearKeyboardReveal?.();
+        this.clearPushTimer?.();
         // Call parent cleanup (handles event listeners)
         super.cleanup();
     }
@@ -2767,6 +2768,7 @@ export class PasswordMinigame extends MinigameScene {
     showSecondStep(pending, { fill = false } = {}) {
         if (!this.mfaClientRef()) return false;
         if (pending && pending.kind === 'code') return this.showCodePane(pending, { fill });
+        if (pending && (pending.kind === 'push' || pending.kind === 'push_number_match')) return this.showPushPane(pending, { fill });
         return false;
     }
 
@@ -2801,6 +2803,19 @@ export class PasswordMinigame extends MinigameScene {
         if (own && (own.displayName || own.username)) return own.displayName || own.username;
         const tile = pending?.npcId ? this.signInState.tiles.find(t => t.targetId === pending.npcId) : null;
         return tile ? (tile.displayName || tile.username) : 'this account';
+    }
+
+    /** The owner's held `phone_friendface` item (never the player's own phone), or null. */
+    heldOwnerPhone(npcId) {
+        const items = typeof window !== 'undefined' ? window.inventory?.items : null;
+        if (!npcId || !Array.isArray(items)) return null;
+        for (const it of items) {
+            const d = it && it.scenarioData ? it.scenarioData : it;
+            if (d && d.type === 'phone_friendface' && d.owner === npcId) {
+                return { id: d.id ?? null, name: typeof d.name === 'string' && d.name ? d.name : 'phone' };
+            }
+        }
+        return null;
     }
 
     /** An inventory item that is a code device of the pending account's owner, or null. */
@@ -2912,6 +2927,184 @@ export class PasswordMinigame extends MinigameScene {
         }
     }
 
+    // ── Second step, push pane (S8a unit 21) ─────────────────────────────────
+
+    /** The push pane: the request sent to the owner's phone, the number if one is shown, the count, Send again. */
+    showPushPane(pending, { fill = false } = {}) {
+        const client = this.mfaClientRef();
+        if (typeof client.prompt !== 'function') return false;
+        const phone = this.heldOwnerPhone(pending.npcId);
+        const owner = this.secondStepAccountName(pending);
+        const made = this.mountSecondPane('push', (host) => {
+            const mk = (tag, cls, text) => {
+                const n = document.createElement(tag);
+                if (cls) n.className = cls;
+                if (text != null) n.textContent = text;
+                return n;
+            };
+            const inMonitor = !!this.pcMonitor;
+            host.appendChild(mk('div', 'signin-second-title', `Second step for ${owner}`));
+            this.pushStatusEl = mk('div', 'signin-second-help signin-push-status', `A request was sent to ${owner}'s phone.`);
+            this.pushStatusEl.setAttribute('role', 'status');
+            host.appendChild(this.pushStatusEl);
+            this.pushNumberEl = mk('div', 'signin-push-number');
+            this.pushNumberEl.hidden = true;
+            host.appendChild(this.pushNumberEl);
+            this.pushCountEl = mk('div', 'signin-second-help signin-push-count');
+            host.appendChild(this.pushCountEl);
+            const actions = mk('div', 'signin-second-actions');
+            const again = mk('button', `submit-btn${inMonitor ? ' pc-os-btn' : ''}`, 'Send again');
+            again.type = 'button';
+            again.id = 'signin-send-again';
+            actions.appendChild(again);
+            if (phone) {
+                const check = mk('button', `signin-use-device${inMonitor ? ' pc-os-btn' : ''}`, `Check ${owner}'s phone`);
+                check.type = 'button';
+                check.id = 'signin-check-phone';
+                actions.appendChild(check);
+                this.addEventListener(check, 'click', () => this.useLivePhone(pending.npcId));
+            }
+            const back = mk('button', `signin-second-back${inMonitor ? ' pc-os-btn' : ''}`, 'Use a different account');
+            back.type = 'button';
+            back.id = 'signin-second-back';
+            actions.appendChild(back);
+            host.appendChild(actions);
+            this.pushAgainBtn = again;
+            this.addEventListener(again, 'click', () => this.sendPush());
+            this.addEventListener(back, 'click', () => {
+                this.clearPushTimer();
+                client.clear(this.mfaSubject());
+                this.showPasswordPane();
+            });
+        });
+        if (!made) return false;
+        this.refreshPushPane(pending);
+        // The first request goes out when the pane opens; a pane coming back to a request already sent does not send another
+        if (!(Number.isFinite(pending.n) && pending.n >= 1)) this.sendPush();
+        return true;
+    }
+
+    /** The number line and the count, from what the client holds now. */
+    refreshPushPane(pending = null) {
+        const client = this.mfaClientRef();
+        const now = (client && client.pendingFor(this.mfaSubject())) || pending || {};
+        if (this.pushNumberEl) {
+            if (now.number != null && now.number !== '') {
+                this.pushNumberEl.textContent = `Number: ${now.number}`;
+                this.pushNumberEl.hidden = false;
+            } else {
+                this.pushNumberEl.textContent = '';
+                this.pushNumberEl.hidden = true;
+            }
+        }
+        if (this.pushCountEl) {
+            const n = Number.isFinite(now.n) ? now.n : 0;
+            this.pushCountEl.textContent = `Requests sent: ${n}`;
+        }
+    }
+
+    clearPushTimer() {
+        if (this._pushTimer) { clearTimeout(this._pushTimer); this._pushTimer = null; }
+        this._pushWaitUntil = 0;
+    }
+
+    /** Disable Send again for `seconds`, then enable it. */
+    holdSendAgain(seconds) {
+        this.clearPushTimer();
+        const secs = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+        if (!this.pushAgainBtn) return;
+        if (secs <= 0) { this.pushAgainBtn.disabled = false; return; }
+        this.pushAgainBtn.disabled = true;
+        this._pushTimer = setTimeout(() => {
+            this._pushTimer = null;
+            if (this.pushAgainBtn) this.pushAgainBtn.disabled = false;
+        }, Math.ceil(secs * 1000));
+    }
+
+    /** Send (or send again) the request to the owner's phone. */
+    async sendPush() {
+        if (!this.gameState.isActive || this._signingIn) return;
+        const client = this.mfaClientRef();
+        if (!client) return;
+        this._signingIn = true;
+        if (this.pushAgainBtn) this.pushAgainBtn.disabled = true;
+        let result;
+        try {
+            result = await client.prompt(this.mfaSubject());
+        } finally {
+            this._signingIn = false;
+        }
+        if (!this.gameState.isActive || this.signInPane !== 'push') return;
+        if (result.ok && result.passed) {
+            const body = result.body || {};
+            const held = window.pcSessions?.get?.(this.signIn.pcId);
+            const session = held && held.npcId === body.npcId ? held : { username: body.username, displayName: body.displayName };
+            if (this.params.mfaTeach) this.teachAfter(this.params.mfaTeach, session);
+            this.signInAccepted(session);
+            return;
+        }
+        if (result.ok && result.waiting) {
+            this.refreshPushPane();
+            this.holdSendAgain(2);
+            this.setSignInMessage('');
+            return;
+        }
+        switch (result.reason) {
+            case 'too_soon':
+                this.holdSendAgain(result.retryAfterS);
+                this.setSignInMessage('Wait a moment before sending another request.', 'error');
+                return;
+            case 'cancelled':
+                this.showPasswordPane({ message: 'Request cancelled.' });
+                return;
+            case 'expired':
+                this.showPasswordPane({ message: 'That sign-in timed out. Sign in again.' });
+                return;
+            case 'locked':
+                this.signInLockedOut({ ok: false, reason: 'locked_out' }, { line: 'Too many requests. Try again later.' });
+                return;
+            default:
+                if (this.pushAgainBtn) this.pushAgainBtn.disabled = false;
+                this.setSignInMessage(result.reason === 'error'
+                    ? signInErrorMessage({ status: result.status, serverReason: null })
+                    : 'That did not work. Try again.', 'error');
+        }
+    }
+
+    /** Open the owner's held phone over this screen, as the code device is opened. */
+    useLivePhone(npcId) {
+        if (!this.gameState.isActive || typeof window.startAuthenticatorLive !== 'function') return;
+        const client = this.mfaClientRef();
+        const key = this.mfaSubject();
+        const original = this.params.onComplete;
+        const wrapped = (success, result) => {
+            if (result && result.aborted === true && result.viaChild === true) {
+                try { client?.takeCompleted?.(key); } catch (e) { /* nothing to clear */ }
+            }
+            if (typeof original === 'function') return original(success, result);
+            return undefined;
+        };
+        wrapped._mfaOriginal = original;
+        this.params.onComplete = wrapped;
+        this.params.suspended = true;
+        this.params.mfaPhoneOpened = true;
+        delete this.params.mfaPhoneDenied;
+        // The phone's own result tells this screen, on its return, whether the request was refused
+        const parentParams = this.params;
+        window.startAuthenticatorLive({
+            npcId,
+            returnTo: { sceneType: 'password', params: {} },
+            onComplete: (success, result) => {
+                if (result && Number(result.denied) > 0) parentParams.mfaPhoneDenied = true;
+            }
+        });
+        if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+            this.params.suspended = false;
+            this.params.onComplete = original;
+            delete this.params.mfaPhoneOpened;
+        }
+    }
+
     /** A new instance asks MfaClient first: a completed second step, a pending one, else the password pane. */
     resumeSecondStep() {
         const client = this.mfaClientRef();
@@ -2926,7 +3119,18 @@ export class PasswordMinigame extends MinigameScene {
             return true;
         }
         const pending = client.pendingFor(key);
-        if (!pending) return false;
+        if (!pending) {
+            // Back from the owner's phone with the request gone: it was refused, or it ran out
+            if (this.params.mfaPhoneOpened) {
+                const denied = this.params.mfaPhoneDenied === true;
+                delete this.params.mfaPhoneOpened;
+                delete this.params.mfaPhoneDenied;
+                this.showPasswordPane({ message: denied ? 'Request cancelled.' : 'That sign-in timed out. Sign in again.' });
+                return true;
+            }
+            return false;
+        }
+        delete this.params.mfaPhoneOpened;
         return this.showSecondStep(pending, { fill: true });
     }
 
