@@ -158,3 +158,9 @@ None of the round 2, m03 v3, m02 v4 or m01 v10 documents existed when last liste
 - After renders: contact sheets + numbers, review copies, tabs m04 v2 / m05 v3 / m06 v1 (feedback docs feedback/m04_trailer_v2, m05_trailer_v3, m06_trailer_v1), hash to AC0. m06 reviewer focus: crescendo face centres, 9:16 Satoshi headshot, music by ear.
 - Reported to AC0: m06 lab pizza unreachable (7 px gaps) and scripted door interact not crossing.
 - Then m07-m10 takes (scripts written) in my next machine block.
+
+## (24 Nov) Owner review of m01-m05 + lines (via AC0)
+- m03 v3 SHIP -> export agent (hacktivity-videos). m04 v2 revise: Netherton glitch + Voltage ending "maintenance schedule". m05 v3 revise: Netherton visemes by PixelLab edits of rest; console take answered (none exists, needs real VM elsewhere); Torres hidden. m02 v4 revise: crescendo crops consistent, Ghost dual-layer FX recipe, keep Money tail. m01 v10 revise: cards in m01's words, Kevin visemes with teeth.
+- Lines r2 picks (m04-m10 hooks/endings) -> lines agent on v-trailer-lines (ink, dialog review, TTS, routes, drift). Casualty rule already relaxed.
+- Agents running: export m03, Netherton visemes2 (netherton-visemes wt), Kevin visemes (kevin-visemes wt), lines r2, m02 v5 edit, m01 v11 edit. Handover files in scratchpad *-handover.md.
+- Machine queue when mine: m05 t24 Niamh (main has 9584d3bb8; merge main first), Netherton re-takes (m04/m05/m06 t01b/t10b again) after visemes2 lands, Kevin re-takes, Voltage ending take, m07-m10 takes; renders m01 v11, m02 v5, m04 v3, m05 v4. Door rule: interact opens, then walk.
