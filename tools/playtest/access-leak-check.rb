@@ -18,7 +18,7 @@
 # session at that PC without admin or as an off PC's host row (`responding: false` and `heldAs`), not only after a 403, and only
 # for the same kind of session, a row not past the token's deadline, and no other end in between. A `--logout` or `--signin`
 # name that the next answers refute (the next answer listing that PC's session still shows the account; the desktop right after
-# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands. An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
+# a sign-in is another PC) is an error (exit 2); where no such answer follows, the name stands (the privilege rules only: in a second-step scenario a --signin name must be confirmed, see below). An entry that matches no row, names an unknown PC or account, repeats another entry or is badly formed is
 # an error (exit 2), never silence. Put the options after the game id and before the files. When checking after every beat, give only the entries for rows already in the files.
 #
 # In a scenario whose PCs ask for a second step (multi-factor sign-in, S8a) the same `--signin` and `--logout` entries place the
@@ -68,13 +68,13 @@
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error, files whose first timed rows are not oldest first,
-# overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
+# an unconfirmed second-step name, a capture holding a `login` tag, overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
 
 args = ARGV.dup
 usage = 'usage: access-leak-check.rb [--signin <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... ' \
         '[--resume <account id>@<pc id>@<row time>]... [--logout <account id>@<pc id>#<n> | <account id>@<pc id>@<row time>]... <game_id> <responses.jsonl> [more.jsonl ...] ' \
-        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too)'
+        '(n counts every successful POST /login answer of the account in the log, remote and relay ones too; in a second-step scenario a --signin name must be confirmed by the desktop row that follows, else exit 2; a capture with a `login` tag is refused, exit 2)'
 signins = []
 resumes = []
 logouts = []

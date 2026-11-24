@@ -3498,7 +3498,7 @@ class AccessLeakScanner
   #     session back. A sign-in answer the capture cannot place at a PC (the recorder writes no `login` tag) is named
   #     like the privilege rules' ones: `--signin <account>@<pc>#<n>` (or `@<row time>`) names the PC of ONE sign-in success,
   #     `--logout` that of ONE sign-out; the PC must admit the account, a name is used by one row only, a name that a later
-  #     answer refutes or that matches no row exits 2, and a named sign-in at a step PC still needs the step or a real unlock.
+  #     answer refutes, that no desktop row confirms or that matches no row exits 2, and a named sign-in at a step PC still needs the step or a real unlock.
   #     (`--resume` has nothing to restore here: no answer ends an earned session by a power cut.)
   MFA_NEVER_KEYS = %w[approvesPrompts promptPatience mfaPending mfaAccounts mfaPrompts].freeze
   MFA_DEVICE_KEYS = %w[code deviceId displayName npcId secondsLeft used].freeze
@@ -3514,6 +3514,9 @@ class AccessLeakScanner
     @mfa_held = {}        # PC id => account id, a session a second step earned in this run
     @mfa_locked = Set.new # PC ids whose earned session a 200 lock_session answer locked (used up by the one unlock)
     @mfa_at = {}          # PC id => account id the run holds there: a sign-in placed at that PC or a passed step
+    @mfa_passed = Set.new # R3-5: [PC id, account id] of every step a pass answer closed in the run, never undone
+    @mfa_placed = {}      # R3-2: PC id => account id a confirmed name placed there; only a sign-out or sign-in the scanner can place ends it
+    @mfa_logout_placed = false
     @mfa_taken = Set.new  # item ids a 200 POST /inventory add answer took (a remove row gives back), and the start items
     @mfa_phone_owners = Set.new # accounts whose phone the run ever took (their owner never approves after)
     @mfa_signin_counts = Hash.new(0)
@@ -3802,10 +3805,25 @@ class AccessLeakScanner
       end
     else
       mfa_judge_unplaced(body, row, add)
-      # a session nested under `session` (the shape of a technique answer); a desktop's own `session` is not an answer to judge
+      mfa_judge_desktop_session(body, info, add)
+      # a session nested under `session` (the shape of a technique answer); a desktop's own `session` is judged only above
       nested = body['session']
       mfa_judge_unplaced(nested.merge('success' => true), row, add) if !info[:container] && nested.is_a?(Hash) && nested['npcId'].is_a?(String) && nested.key?('via')
     end
+  end
+
+  # R3-5: a desktop showing a keyboard password session at a PC that asks the account for a step, for an account that never
+  # passed a step there in the run (a sign-out does not undo "ever passed"), is a session no step earned.
+  def mfa_judge_desktop_session(body, info, add)
+    pc = info[:container]
+    session = body['session']
+    return unless info[:ok] && info[:method] == 'GET' && @priv_pcs.key?(pc) && session.is_a?(Hash)
+
+    npc = session['npcId']
+    return unless npc.is_a?(String) && mfa_npc(npc) && session['via'] == 'password' && !session['remote']
+    return if mfa_kind_at(pc, npc) == 'none' || @mfa_passed.include?([pc, npc])
+
+    add.call('mfa_session', "mfa:session:#{npc}", '$.session')
   end
 
   # Placing a sign-in success on the PCs it could be about, once per row: the row's `login` tag, else the answer's host
@@ -3861,7 +3879,7 @@ class AccessLeakScanner
   def mfa_arm_confirm(key, pc, npc, body)
     @mfa_confirm = nil if @mfa_confirm && mfa_unconfirmed!("another name was armed (#{@mfa_row_ref}) before a desktop row followed it")
     @mfa_confirm = { account: npc, pc: pc, text: priv_entry_text(key, pc), ref: @mfa_row_ref,
-                     prior: @mfa_at[pc] == npc, locked: @mfa_locked.include?(pc) }
+                     prior: @mfa_at[pc] == npc || @mfa_placed[pc] == npc, locked: @mfa_locked.include?(pc) }
     return if body['via'] == 'password' && !body['remote']
 
     mfa_unconfirmed!("the sign-in answer is not a keyboard password sign-in (via #{body['via'].inspect}#{body['remote'] ? ', remote' : ''}), so no desktop can confirm it")
@@ -3881,11 +3899,12 @@ class AccessLeakScanner
     return unless pending
 
     if info[:container] && @priv_pcs.key?(info[:container])
+      mfa_unconfirmed!("the first row on a desktop path that followed it is not a GET (#{info[:method]})") unless info[:method] == 'GET'
       mfa_confirm_desktop(pending, body, info)
     elsif info[:method] == 'POST' && mfa_route_name(info) == 'logout'
       mfa_unconfirmed!('a sign-out came before any desktop row')
-    elsif body.is_a?(Hash) && body['success'] == true && body['npcId'] == pending[:account] && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
-      mfa_unconfirmed!("#{pending[:account]} signed in or passed a step again before any desktop row")
+    elsif body.is_a?(Hash) && body['success'] == true && %w[login mfa/verify mfa/prompt mfa/approve].include?(mfa_route_name(info))
+      mfa_unconfirmed!("another sign-in or step passed (#{body['npcId'].inspect}) before any desktop row")
     end
   end
 
@@ -3894,12 +3913,14 @@ class AccessLeakScanner
     session = body.is_a?(Hash) ? body['session'] : nil
     mfa_unconfirmed!("the first desktop row after it has status #{info[:ok] ? 200 : 'other than 200'} and is unreadable or shows no session") unless info[:ok] && session.is_a?(Hash)
     mfa_unconfirmed!("the first desktop that followed is #{shown}, not #{pending[:pc]}") unless shown == pending[:pc]
+    mfa_unconfirmed!("the desktop of #{shown} shows a relayed session, which the server never sends for a keyboard sign-in") if session['relay']
     unless session['npcId'] == pending[:account] && session['via'] == 'password' && !session['remote']
       mfa_unconfirmed!("the desktop of #{shown} shows #{session['npcId'].inspect} (via #{session['via'].inspect}), not #{pending[:account]} signed in by a password")
     end
     if pending[:prior] && !pending[:locked] && mfa_kind_at(shown, pending[:account]) == 'none'
       mfa_unconfirmed!("the run already held #{pending[:account]} at #{shown} before this sign-in, so the desktop cannot be told from the earlier session's")
     end
+    @mfa_placed[shown] = pending[:account]
     @mfa_confirm = nil
   end
 
@@ -4034,7 +4055,10 @@ class AccessLeakScanner
 
   # What a row proves for the rows after it.
   def mfa_note_row(body, info, row, required)
-    mfa_end_pcs(body['endedPcIds']) if info[:ok] && body.is_a?(Hash) && body['endedPcIds'].is_a?(Array)
+    if info[:ok] && body.is_a?(Hash) && body['endedPcIds'].is_a?(Array)
+      mfa_end_pcs(body['endedPcIds'])
+      mfa_unplace(body['endedPcIds'])
+    end
     case mfa_route_name(info)
     when 'inventory' then mfa_note_inventory(body, info, row)
     when 'login'
@@ -4050,6 +4074,7 @@ class AccessLeakScanner
         return unless pc
 
         @mfa_pending.delete(pc)
+        @mfa_passed << [pc, body['npcId']]
         @mfa_held[pc] = @mfa_at[pc] = body['npcId']
         @mfa_locked.delete(pc)
       elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
@@ -4077,6 +4102,11 @@ class AccessLeakScanner
     mfa_end_pcs(@priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys)
   end
 
+  # R3-2: what a confirmed name placed is ended only by an answer that names the PC, never by an unnamed sign-out.
+  def mfa_unplace(pcs)
+    Array(pcs).each { |pc| @mfa_placed.delete(pc) if pc.is_a?(String) }
+  end
+
   def mfa_end_pcs(pcs)
     Array(pcs).each do |pc|
       next unless pc.is_a?(String)
@@ -4101,6 +4131,7 @@ class AccessLeakScanner
         @mfa_at.delete(pc)
       end
     end
+    mfa_unplace(pcs) if pcs.size == 1 && @mfa_placed[pcs.first] != npc
     @mfa_held[@mfa_token_pc] = npc if @mfa_row_strict && @mfa_token_pc && pcs.include?(@mfa_token_pc) && npc.is_a?(String)
     @mfa_at[pcs.first] = npc if @mfa_row_strict && @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
   end
@@ -4130,10 +4161,12 @@ class AccessLeakScanner
     ok = info[:ok] && body.is_a?(Hash) && body['success'] == true
     pcs = ok ? mfa_logout_pcs(row) : @priv_pcs.keys
     mfa_end_pcs(pcs)
+    mfa_unplace(pcs) if ok && @mfa_logout_placed
   end
 
   def mfa_logout_pcs(row)
     @mfa_logout_count += 1
+    @mfa_logout_placed = true
     tag = mfa_row_pc_tag(row)
     return [tag] if tag
 
@@ -4146,6 +4179,7 @@ class AccessLeakScanner
       @mfa_logout_pending[pc] = account
       return [pc]
     end
+    @mfa_logout_placed = false
     @priv_pcs.keys
   end
 end

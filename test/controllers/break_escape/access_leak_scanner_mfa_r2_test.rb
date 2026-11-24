@@ -154,8 +154,9 @@ module BreakEscape
       # a technique session nested the same way is the one way in the server gives there
       nested['body']['session']['via'] = 'technique'
       assert_equal [], found(scan_rows([nested]).first)
-      # a desktop's own session is not an answer to judge here
-      assert_equal [], found(scan_rows(rows(108)).first)
+      # a desktop's own session is not judged as an answer, but R3-5 reports a step-less keyboard session at a step PC
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(108)).first)
+      assert_equal [], found(scan_rows(rows(95, 97, 98, 108)).first)
       # the earned session, then a sign-in answer whose body the recorder lost: nothing is earned any more
       boot = lambda do
         { 'method' => 'GET', 'path' => "#{base}/scenario", 'status' => 200,
