@@ -311,7 +311,7 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
     end
     assert_empty scan([unchanged.call({ 'dana_hash' => 3 })], game: full_game)
     assert_empty scan([unchanged.call({ 'dana_hash' => 3 })])
-    full = keyring([hash_row('eli_hash', 'eli', salted: false)], 'readyInSeconds' => { 'eli_hash' => 5 })
+    full = keyring([hash_row('eli_hash', 'eli', salted: false)], { 'readyInSeconds' => { 'eli_hash' => 5 } })
     assert_includes rules([full], game: full_game), 'crack_row'
     assert_includes rules([unchanged.call({ 'eli_hash' => 5 }, 'entries' => [])], game: full_game), 'crack_row'
     assert_includes rules([unchanged.call({ 'dana_hash' => 3 }, 'unchanged' => false)], game: full_game), 'crack_row'
@@ -342,7 +342,7 @@ class AccessLeakScannerCrackReviewTest < ActiveSupport::TestCase
   end
 
   test 'R1-L11: a facts key on a keyring or crack answer is a finding, a facts list on another route is not' do
-    recipe = keyring([hash_row('dana_hash', 'dana')], 'recipe' => { 'facts' => FACTS, 'class' => 'guessable' })
+    recipe = keyring([hash_row('dana_hash', 'dana')], { 'recipe' => { 'facts' => FACTS, 'class' => 'guessable' } })
     assert_includes rules([recipe]), 'crack_key'
     assert_includes rules([post_crack({ 'success' => true, 'status' => 'nomatch', 'facts' => [] })]), 'crack_key'
     plain = { 'method' => 'GET', 'path' => "#{BASE}/scenario", 'status' => 200, 'body' => { 'list' => { 'facts' => [1] } } }
