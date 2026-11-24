@@ -170,6 +170,25 @@ module BreakEscape
       end
     end
 
+    # The cell's gate called directly: a headless host cannot be signed in to at the keyboard, so the read row cannot be made there.
+    def shown_name(data)
+      build(with_profile_reader(data))
+      BreakEscape::OpsLogEvents.profile_shown_name(@game, 'jake_files', { 'kind' => 'pc', 'id' => 'jake_pc' })
+    end
+
+    test 'R5-4: a headless PC, or one whose remote sign-in screen is typed, shows the kind word, not the owner name' do
+      assert_equal 'Jake Brooks', shown_name(scenario)
+      data = scenario
+      data['rooms'].each_value { |room| Array(room['objects']).each { |o| o['headless'] = true if o['id'] == 'jake_pc' } }
+      assert_equal 'jake_files', shown_name(data)
+      %w[typed tiles].each do |screen|
+        data = scenario
+        data['policies'] = (data['policies'] || {}).merge('nla' => { 'remote' => 'allowed', 'remoteScreen' => screen })
+        data['rooms'].each_value { |room| Array(room['objects']).each { |o| o['policy'] = 'nla' if o['id'] == 'jake_pc' } }
+        assert_equal(screen == 'typed' ? 'jake_files' : 'Jake Brooks', shown_name(data), screen)
+      end
+    end
+
     test 'a profile with no named account reads as the kind word once' do
       data = scenario
       data['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' }.delete('displayName')

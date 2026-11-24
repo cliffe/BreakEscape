@@ -278,9 +278,10 @@ module BreakEscape
     end
 
     # What a log reader's profile cell shows (R4-8): the owner's display name only when the PC the row names shows that
-    # account's tile to anyone at its sign-in screen (its `loginPicker` lists everyone and the PC admits the account); at a PC
-    # whose picker is "known" or false, or a row that names no PC, the kind word, so the cell never gives a name the game has
-    # not shown there. nil when the profile does not exist.
+    # account's tile to anyone at its sign-in screen (its `loginPicker` lists everyone, the PC admits the account, it is not
+    # headless and its remote screen is "tiles"); at a PC whose picker is "known" or false, a headless one, one whose remote
+    # screen is "typed", or a row that names no PC, the kind word, so the cell never gives a name the game has not shown
+    # there. nil when the profile does not exist.
     def profile_shown_name(game, id, where)
       named = profile_named(game, id)
       return named if named.nil? || named == id.to_s
@@ -288,7 +289,8 @@ module BreakEscape
       pc = where.is_a?(Hash) && where['kind'] == 'pc' && where['id'].is_a?(String) ? game.find_login_pc(where['id'])&.dig(:object) : nil
       owner = pc && profile_owner(game, game.scenario_data['accountProfiles'][id.to_s])
       picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts' if pc
-      owner && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
+      shown = pc && !BreakEscape::NetworkModel.headless?(pc) && game.remote_screen(pc) == 'tiles'
+      owner && shown && picker == 'accounts' && BreakEscape::CredentialModel.pc_admits_account?(pc, owner) ? named : id.to_s
     end
 
     def foothold_name(game, id)
