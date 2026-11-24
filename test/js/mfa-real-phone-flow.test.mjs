@@ -77,7 +77,7 @@ const RIGHT = 47;
 const ROW = (numbers) => ({ pcId: 'sam_pc', host: 'Sam PC', username: 'sokafor', n: 1, ...(numbers ? { numbers } : {}) });
 const SESSION_BODY = { success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password', approvedBy: 'player' };
 
-const server = { kind: 'push', open: true, calls: [] };
+const server = { kind: 'push', open: true, calls: [], refuse: null };
 const refuse = (status, body) => Object.assign(new Error('refused'), { status, body });
 window.ApiClient = {
     login: async (pcId, payload) => {
@@ -95,6 +95,7 @@ window.ApiClient = {
     },
     post: async (path, body) => {
         server.calls.push(['post', path, body]);
+        if (server.refuse && (path === '/mfa/verify' || path === '/mfa/prompt')) throw refuse(422, server.refuse);
         if (path === '/mfa/prompt') return { success: false, approved: false, promptsSent: 1 };
         if (path === '/mfa/approve') {
             const rightNumber = server.kind !== 'push_number_match' || body.number === RIGHT;
@@ -122,6 +123,7 @@ const completes = [];
 async function toPhone(kind) {
     server.kind = kind;
     server.open = true;
+    server.refuse = null;
     server.calls.length = 0;
     mfa.reset();
     sessions.sessions.clear?.();
@@ -205,4 +207,80 @@ test('a wrong number cancels the request and the screen says so', async () => {
     await settle(); await settle();
     assert.equal(FW.currentMinigame.signInPane, 'password');
     assert.equal(FW.currentMinigame.signInMessageEl.textContent, 'Request cancelled.');
+});
+
+// R1-C3: answers with no flag the client knew, as the server sends them when the step is over
+async function toCodePane() {
+    server.kind = 'code';
+    server.refuse = null;
+    mfa.reset();
+    for (let i = 0; i < 4 && FW.currentMinigame && !FW.currentMinigame._ending; i += 1) FW.endMinigame(false, null);
+    document.body.querySelectorAll('.minigame-container').forEach((n) => n.remove());
+    const scene = FW.startMinigame('password', null, {
+        title: 'Desk', lockable: { scenarioData: { id: 'sam_pc' } }, type: 'item', requiresKeyboardInput: true,
+        signIn: { pcId: 'sam_pc', pcName: 'Sam PC', picker: 'accounts', tiles: TILES, current: null },
+        showPostit: false, onComplete: () => {}
+    });
+    await settle();
+    scene.selectSignInTile(0);
+    scene.passwordField.value = 'pw';
+    await scene._submitSignInOnce();
+    await settle();
+    assert.equal(scene.signInPane, 'code');
+    return scene;
+}
+async function typeCode(scene) {
+    scene.codeField.value = '123456';
+    await scene.submitCode();
+    await settle();
+}
+
+test('a record that has gone (bare 422) returns to the password pane and forgets the step', async () => {
+    const scene = await toCodePane();
+    server.refuse = { success: false, message: 'Incorrect username or password' };
+    await typeCode(scene);
+    assert.equal(scene.signInPane, 'password');
+    assert.equal(scene.signInMessageEl.textContent, 'That sign-in timed out. Sign in again.');
+    assert.equal(mfa.pendingFor('pc:sam_pc'), null);
+});
+
+test('the login lockout during the second step shows the lockout, not Try again', async () => {
+    const scene = await toCodePane();
+    server.refuse = { success: false, message: 'This account is locked on this PC', lockedOut: true, attemptsLeft: 0 };
+    await typeCode(scene);
+    assert.match(scene.signInMessageEl.textContent, /locked/i);
+    assert.equal(scene.gameResult?.reason, 'locked_out');
+    assert.equal(mfa.pendingFor('pc:sam_pc'), null);
+});
+
+test('the fifth wrong code (mfaIncorrect with expired) says too many wrong codes', async () => {
+    const scene = await toCodePane();
+    server.refuse = { success: false, message: 'Incorrect username or password', mfaIncorrect: true, expired: true };
+    await typeCode(scene);
+    assert.equal(scene.signInPane, 'password');
+    assert.equal(scene.signInMessageEl.textContent, 'Too many wrong codes. Sign in again.');
+});
+
+test('a bare 422 on the push pane (first step no longer allowed) returns to the password pane', async () => {
+    server.kind = 'push';
+    server.refuse = null;
+    mfa.reset();
+    for (let i = 0; i < 4 && FW.currentMinigame && !FW.currentMinigame._ending; i += 1) FW.endMinigame(false, null);
+    document.body.querySelectorAll('.minigame-container').forEach((n) => n.remove());
+    const scene = FW.startMinigame('password', null, {
+        title: 'Desk', lockable: { scenarioData: { id: 'sam_pc' } }, type: 'item', requiresKeyboardInput: true,
+        signIn: { pcId: 'sam_pc', pcName: 'Sam PC', picker: 'accounts', tiles: TILES, current: null },
+        showPostit: false, onComplete: () => {}
+    });
+    await settle();
+    scene.selectSignInTile(0);
+    scene.passwordField.value = 'pw';
+    await scene._submitSignInOnce();
+    await settle();
+    assert.equal(scene.signInPane, 'push');
+    server.refuse = { success: false, message: 'Incorrect username or password' };
+    await scene.sendPush();
+    await settle();
+    assert.equal(scene.signInPane, 'password');
+    assert.equal(scene.signInMessageEl.textContent, 'That sign-in timed out. Sign in again.');
 });

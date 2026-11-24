@@ -105,3 +105,10 @@ test('a held Friendface phone keeps its registry route and opens neither new sce
   handleObjectInteraction(ph);
   assert.deepEqual(globalThis.__calls, [['registry', 'phone_friendface']]);
 });
+
+test('R1-C11: a code device lying in a room with takeable false is not opened (it is not held)', () => {
+  const dev = item('code_device', 'floor_dev');
+  setup();
+  handleObjectInteraction(dev);
+  assert.ok(!globalThis.__calls.some(c => c[0] === 'code-device'));
+});

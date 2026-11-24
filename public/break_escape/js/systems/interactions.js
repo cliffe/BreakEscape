@@ -1307,7 +1307,9 @@ export function handleObjectInteraction(sprite) {
     // A held code device (ops layer S8a, plan 5.3): a click in the inventory opens its scene
     // alone, which reads the code the server shows for the held item. A loose one (takeable) is
     // picked up by the generic path, never opened.
-    if (sprite.scenarioData.type === 'code_device' && !sprite.scenarioData.takeable) {
+    // Held means in the inventory: one lying in a room with takeable false is no device in hand
+    if (sprite.scenarioData.type === 'code_device' && !sprite.scenarioData.takeable &&
+        Array.isArray(window.inventory?.items) && window.inventory.items.includes(sprite)) {
         if (typeof window.startCodeDevice === 'function') {
             window.startCodeDevice({ itemId: sprite.scenarioData.id });
         } else {

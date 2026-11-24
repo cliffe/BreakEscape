@@ -2897,6 +2897,8 @@ export class PasswordMinigame extends MinigameScene {
             const code = client.codeFor(pending);
             if (code && this.codeField) this.codeField.value = code;
         }
+        // The keyboard on a phone must not cover Verify and the message line
+        if (this.codeField) this.bindKeyboardReveal([this.codeField]);
         this.codeField?.focus?.();
         return true;
     }
@@ -2978,6 +2980,9 @@ export class PasswordMinigame extends MinigameScene {
             });
         });
         if (!made) return false;
+        this.pushCountEl?.setAttribute('aria-live', 'polite');
+        // Focus lands on the first thing to do, so it does not fall to the page
+        (this.gameContainer.querySelector('#signin-check-phone') || this.gameContainer.querySelector('#signin-second-back'))?.focus?.();
         this.refreshPushPane(pending);
         // The first request goes out when the pane opens; a pane coming back to a request already sent does not send another
         if (!(Number.isFinite(pending.n) && pending.n >= 1)) this.sendPush();
@@ -3014,6 +3019,8 @@ export class PasswordMinigame extends MinigameScene {
         const secs = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
         if (!this.pushAgainBtn) return;
         if (secs <= 0) { this.pushAgainBtn.disabled = false; return; }
+        // A disabled button drops focus to the page: hand it to the back button first
+        if (document.activeElement === this.pushAgainBtn) this.gameContainer?.querySelector?.('#signin-second-back')?.focus?.();
         this.pushAgainBtn.disabled = true;
         this._pushTimer = setTimeout(() => {
             this._pushTimer = null;
@@ -3027,14 +3034,19 @@ export class PasswordMinigame extends MinigameScene {
         const client = this.mfaClientRef();
         if (!client) return;
         this._signingIn = true;
-        if (this.pushAgainBtn) this.pushAgainBtn.disabled = true;
+        if (this.pushAgainBtn) {
+            if (document.activeElement === this.pushAgainBtn) this.gameContainer?.querySelector?.('#signin-second-back')?.focus?.();
+            this.pushAgainBtn.disabled = true;
+        }
         let result;
         try {
             result = await client.prompt(this.mfaSubject());
         } finally {
             this._signingIn = false;
         }
-        if (!this.gameState.isActive || this.signInPane !== 'push') return;
+        if (!this.gameState.isActive) return;
+        // An approval that landed after the player stepped back still signed the PC in (the client has
+        // recorded the session), so the screen follows it whatever pane it is on
         if (result.ok && result.passed) {
             const body = result.body || {};
             const held = window.pcSessions?.get?.(this.signIn.pcId);
@@ -3043,6 +3055,7 @@ export class PasswordMinigame extends MinigameScene {
             this.signInAccepted(session);
             return;
         }
+        if (this.signInPane !== 'push') return;
         if (result.ok && result.waiting) {
             this.refreshPushPane();
             this.holdSendAgain(2);
@@ -3060,8 +3073,11 @@ export class PasswordMinigame extends MinigameScene {
             case 'expired':
                 this.showPasswordPane({ message: 'That sign-in timed out. Sign in again.' });
                 return;
-            case 'locked':
-                this.signInLockedOut({ ok: false, reason: 'locked_out' }, { line: 'Too many requests. Try again later.' });
+            case 'locked_out':
+                this.signInLockedOut({ ok: false, reason: 'locked_out', message: result.message });
+                return;
+            case 'gone':
+                this.secondStepGone(result);
                 return;
             default:
                 if (this.pushAgainBtn) this.pushAgainBtn.disabled = false;
@@ -3179,13 +3195,22 @@ export class PasswordMinigame extends MinigameScene {
                 this.signInLockedOut({ ok: false, reason: 'locked_out' }, { line: `Too many wrong codes.${wait}` });
                 return;
             }
+            case 'locked_out':
+                this.signInLockedOut({ ok: false, reason: 'locked_out', message: result.message });
+                return;
+            case 'gone':
+                refuse();
+                this.secondStepGone(result);
+                return;
             case 'expired':
             case 'cancelled':
                 // The second step has ended on the server: the password pane, to start again
                 refuse();
                 this.showPasswordPane({ message: result.reason === 'cancelled'
                     ? 'That sign-in was cancelled. Sign in again.'
-                    : 'That sign-in timed out. Sign in again.' });
+                    : (result.body && result.body.mfaIncorrect === true
+                        ? 'Too many wrong codes. Sign in again.'
+                        : 'That sign-in timed out. Sign in again.') });
                 return;
             default:
                 if (result.reason === 'error') {
@@ -3196,6 +3221,13 @@ export class PasswordMinigame extends MinigameScene {
                 }
         }
         if (this.codeField) { this.codeField.value = ''; this.codeField.focus?.(); }
+    }
+
+    /** The server has no second step to go on with (a bare refusal): back to the password pane. */
+    secondStepGone(result) {
+        const said = result && typeof result.message === 'string' ? result.message : '';
+        const generic = !said || said.replace(/\.$/, '') === 'Incorrect username or password';
+        this.showPasswordPane({ message: generic ? 'That sign-in timed out. Sign in again.' : said });
     }
 
     signInAccepted(session) {

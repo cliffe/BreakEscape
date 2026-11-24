@@ -199,3 +199,42 @@ test('transport errors are results, not throws, and emit nothing', async () => {
     assert.equal(M.failureReason(r), null);
     assert.deepEqual(names(ctx.events), ['mfa_required', 'mfa_required:ann']);
 });
+
+test('R1-C5: a code read over a minute ago, or one just used, is not offered', async () => {
+    const h = setup((m, p) => (p === 'mfa/device'
+        ? { deviceId: 'dev1', npcId: 'ann', code: '123456', secondsLeft: 30 }
+        : { success: true, npcId: 'ann', username: 'a', via: 'password' }));
+    await M.readDevice({ itemId: 'dev1' });
+    h.tick(61000);
+    assert.equal(M.codeFor({ npcId: 'ann' }), null, 'rolled over');
+    await M.readDevice({ itemId: 'dev1' });
+    assert.equal(M.codeFor({ npcId: 'ann' }), '123456');
+    M.noteRequired('pc:a', { mfa: 'code', npcId: 'ann' });
+    await M.verify('pc:a', '123456');
+    assert.equal(M.codeFor({ npcId: 'ann' }), null, 'used');
+});
+
+test('R1-C8: a new first-step answer starts the count at zero', () => {
+    setup(() => ({}));
+    M.noteRequired('pc:a', { mfa: 'push', npcId: 'ann', promptsSent: 2 });
+    assert.equal(M.pendingFor('pc:a').n, 2);
+    M.noteRequired('pc:a', { mfa: 'push', npcId: 'ann' });
+    assert.equal(M.pendingFor('pc:a').n, 0);
+});
+
+test('R1-C3: a locked-out answer and a bare 422 end the step and drop the record', async () => {
+    const h = setup((m, p, q) => fail(422, q.code === '111111'
+        ? { success: false, message: 'This account is locked on this PC', lockedOut: true, attemptsLeft: 0 }
+        : { success: false, message: 'Incorrect username or password' }));
+    M.noteRequired('pc:a', { mfa: 'code', npcId: 'ann' });
+    const locked = await M.verify('pc:a', '111111');
+    assert.equal(locked.reason, 'locked_out');
+    assert.equal(M.pendingFor('pc:a'), null);
+    assert.equal(M.failureReason(locked), 'locked_out');
+    M.noteRequired('pc:a', { mfa: 'code', npcId: 'ann' });
+    const gone = await M.verify('pc:a', '222222');
+    assert.equal(gone.reason, 'gone');
+    assert.equal(M.pendingFor('pc:a'), null);
+    assert.equal(M.failureReason(gone), null);
+    assert.ok(h.events.some(e => e.name === 'mfa_failed' && e.detail.reason === 'locked_out'));
+});

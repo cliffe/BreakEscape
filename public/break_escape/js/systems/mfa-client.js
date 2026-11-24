@@ -20,15 +20,18 @@
  *   { ok: true, passed: true, body }
  *   { ok: true, passed: false, waiting: true, body }                  prompt, not yet approved
  *   { ok: false, reason: 'wrong' | 'stale' | 'locked' | 'expired' | 'cancelled' | 'too_soon' |
- *                        'no_phone' | 'refused' | 'error', status, body, ... }
+ *                        'no_phone' | 'locked_out' | 'gone' | 'error', status, body, ... }
  *     'stale' carries `stale: 'used' | 'expired'`; 'locked' carries `retryIn`; 'too_soon' carries
  *     `retryAfterS`; 'wrong' carries `attemptsLeft`.
+ *     'locked_out' is the login lockout (the account is locked on this PC); 'gone' is a bare 422 (the
+ *     record is gone, or the account or route is no longer allowed): both drop the pending record.
  */
 
 let cfg = { request: null, onSession: null, emit: null, now: () => Date.now() };
 
 const pendingBySubject = new Map(); // key -> { kind, npcId, number?, ownPhone?, n }
 const completedBySubject = new Map(); // key -> body, handed out once
+const CODE_FRESH_MS = 60000; // a code lives for 30 s windows; the server takes this and the last
 let lastRead = null; // { npcId, code, source: 'item', deviceId, at }
 
 export function configure({ request, onSession, emit, now } = {}) {
@@ -84,11 +87,11 @@ export function noteRequired(subject, body) {
     const parsed = parseKey(subject);
     if (!parsed.key) return null;
     const b = body || {};
-    const prev = pendingBySubject.get(parsed.key);
     const entry = {
         kind: typeof b.mfa === 'string' ? b.mfa : (typeof b.kind === 'string' ? b.kind : ''),
         npcId: typeof b.npcId === 'string' ? b.npcId : '',
-        n: Number.isFinite(b.promptsSent) ? b.promptsSent : (prev && prev.npcId === b.npcId ? prev.n : 0)
+        // A first-step answer always opens a new server record, so the count starts afresh
+        n: Number.isFinite(b.promptsSent) ? b.promptsSent : 0
     };
     if (b.number != null) entry.number = b.number;
     if (b.ownPhone === true) entry.ownPhone = true;
@@ -142,6 +145,8 @@ export async function readDevice({ itemId } = {}) {
 /** The last read code when it belongs to this pending account and the right kind of device, else null. */
 export function codeFor(pending) {
     if (!pending || !lastRead || !pending.npcId) return null;
+    // A code read long ago has rolled over: do not offer it
+    if (cfg.now() - lastRead.at > CODE_FRESH_MS) return null;
     if (lastRead.npcId !== pending.npcId) return null;
     if ((lastRead.source === 'own') !== (pending.ownPhone === true)) return null;
     return lastRead.code;
@@ -150,6 +155,8 @@ export function codeFor(pending) {
 function passed(parsed, body, { keep }) {
     pendingBySubject.delete(parsed.key);
     const npcId = (body && body.npcId) || '';
+    // The code just used must not be offered again for the next sign-in
+    if (lastRead && lastRead.npcId === npcId) lastRead = null;
     if (parsed.kind === 'pc') {
         if (keep) completedBySubject.set(parsed.key, body);
         if (cfg.onSession) cfg.onSession(parsed.id, body);
@@ -193,7 +200,16 @@ function refusalResult(parsed, err) {
         return { ok: false, reason: 'wrong', status, body: b, attemptsLeft: Number.isFinite(b.attemptsLeft) ? b.attemptsLeft : null };
     }
     if (b.noPhone === true) return { ok: false, reason: 'no_phone', status, body: b };
-    return { ok: false, reason: 'refused', status, body: b };
+    if (b.lockedOut === true) {
+        // The login lockout: wrong codes count against the PC's attempts too
+        pendingBySubject.delete(parsed.key);
+        failed(parsed, npcId, 'locked_out');
+        return { ok: false, reason: 'locked_out', status, body: b, message: typeof b.message === 'string' ? b.message : null };
+    }
+    // A bare refusal (the record has gone, the account is no longer permitted, the route is closed):
+    // the second step cannot go on, so the pending record goes too
+    pendingBySubject.delete(parsed.key);
+    return { ok: false, reason: 'gone', status, body: b, message: typeof b.message === 'string' ? b.message : null };
 }
 
 async function post(path, subject, extra, { keep = false } = {}) {
@@ -273,6 +289,7 @@ export function failureReason(result) {
         case 'locked': return 'mfa_code_locked';
         case 'cancelled': return 'mfa_cancelled';
         case 'expired': return 'mfa_expired';
+        case 'locked_out': return 'locked_out';
         default: return null;
     }
 }
