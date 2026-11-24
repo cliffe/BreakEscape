@@ -432,7 +432,7 @@ test('framework: use, set, unset, back, exit, sessions, search, info, show optio
     assert.match(msg(p('set TECHNIQUE nothing', view, offers, sel)), /^TECHNIQUE must be one you hold: phish, phish_sms$/);
     const un = p('unset TECHNIQUE', view, offers, { ...sel, technique: 'phish' });
     assert.deepEqual([un.name, un.mode], ['msf.unset', sel]);
-    assert.equal(msg(p('set RHOSTS 1.2.3.4', view, offers, sel)), 'RHOSTS and RPORT come from the module in this simulation.');
+    assert.equal(msg(p('set RHOSTS 192.0.2.4', view, offers, sel)), 'RHOSTS and RPORT come from the module in this simulation.');
     assert.equal(msg(p('set RPORT 80', view, offers, sel)), 'RHOSTS and RPORT come from the module in this simulation.');
     assert.equal(msg(p('set LHOST x', view, offers, sel)), 'No such option in this simulation.');
     assert.equal(msg(p('show payloads', view, offers, sel)), 'Not part of this simulation.');

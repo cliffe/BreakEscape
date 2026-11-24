@@ -283,7 +283,7 @@ const FRAGMENT_WORDS = new Set(FRAGMENTS.flatMap(wordsOf));
  * a control title word, a fixed Terminal template word, a default of cli-gen/defaults.js, or a number.
  * Returns the problems, each a string.
  */
-function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, ports = [], hostCount = 0 }, panelsAllRaw = panelsRaw, counted = false) {
+function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, modules = new Set(), ports = [], hostCount = 0 }, panelsAllRaw = panelsRaw, counted = false) {
     const problems = [];
     // "<kind> on <host>": the Terminal has the kind and the host as two columns, and the host is a piece of its own in Panels
     const fold = (list) => list.map(p => {
@@ -315,7 +315,7 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, 
         if (elementKeys.has(key(p)) || runKeys.has(key(p))) continue;
         const missing = wordsOf(p).filter(w => !termWords.has(w));
         if (samePieceByLayout(p, terminal, termWords)) continue;
-        if (missing.length || true) problems.push(`${label}: Panels piece not in the Terminal: ${JSON.stringify(p)} (words missing: ${missing.join(' ')})`);
+        problems.push(`${label}: Panels piece not in the Terminal: ${JSON.stringify(p)} (words missing: ${missing.join(' ')})`);
     }
     const allowedWords = new Set([...panelsAll.flatMap(wordsOf), ...[...ids].flatMap(wordsOf), ...[...commands].flatMap(wordsOf),
         ...[...titles].flatMap(wordsOf), ...FRAGMENT_WORDS, ...defaults]);
@@ -325,7 +325,7 @@ function compare(label, panelsRaw, terminal, { ids, commands, titles, defaults, 
     const allKeys = new Set(panelsAll.map(key));
     const allowed = (p) => {
         const k = key(p);
-        if (idKeys.has(k) || commands.has(p) || titles.has(p) || TEMPLATE_RES.some(re => re.test(p)) || panelsKeys.has(k) || allKeys.has(k)) return true;
+        if (idKeys.has(k) || modules.has(p) || commands.has(p) || titles.has(p) || TEMPLATE_RES.some(re => re.test(p)) || panelsKeys.has(k) || allKeys.has(k)) return true;
         return TERMINAL_LAYOUTS.some(re => re.test(p)) && wordsOf(p).every(allowedWord);
     };
     const wrong = (p) => wordsOf(p).filter(w => !allowedWord(w));
@@ -355,16 +355,19 @@ function context(h) {
     for (const s of Object.keys(view.view?.techniques || {})) ids.add(s);
     // What the Terminal builds for a service or a finding the server sent no `cli` fields for (unit 06's defaults)
     const defaults = new Set();
+    const modules = new Set();
     for (const r of view.allRows()) {
         for (const sv of r.services || []) for (const v of Object.values(DEFAULTS.serviceCli(sv))) wordsOf(String(v)).forEach(x => defaults.add(x));
         for (const f of r.findings || []) {
             const sv = (r.services || []).find(x => x.name === f.service);
             for (const v of Object.values(DEFAULTS.findingCli(f, sv))) if (typeof v === 'string') wordsOf(v).forEach(x => defaults.add(x));
+            modules.add(String(DEFAULTS.findingCli(f, sv).module ?? ''));
+            if (f.cli?.module) modules.add(String(f.cli.module));
         }
     }
     const ports = new Set();
     for (const r of view.allRows()) for (const sv of r.services || []) if (sv.port !== undefined) ports.add(String(sv.port));
-    return { ids, ports, hostCount: view.allRows().length, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults };
+    return { ids, ports, hostCount: view.allRows().length, commands: new Set(offers.map(o => o.command).filter(Boolean)), titles: new Set(Object.values(CONTROLS).map(c => c.title)), defaults, modules };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -418,7 +421,14 @@ async function runSkin(skin, w, step) {
         } else {
             const echoAt = termLines(h).length;
             await submit(h, 'show');
-            out.state = { elements: termStrip(h), lines: termLines(h).slice(echoAt + 1) };
+            const stateLines = termLines(h).slice(echoAt + 1);
+            // R2-11: the framework's own facts (accounts, statuses, targets) are read against Panels too
+            for (const line of ['msfconsole', 'sessions', 'search', 'info', 'show options']) {
+                const at = termLines(h).length;
+                await submit(h, line);
+                stateLines.push(...termLines(h).slice(at + 1));
+            }
+            out.state = { elements: termStrip(h), lines: stateLines };
         }
     } finally {
         h.end();

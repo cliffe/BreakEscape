@@ -59,3 +59,27 @@ test('pure: equal output twice, no global read', () => {
     assert.deepEqual(D.serviceCli(svc), D.serviceCli(svc));
     assert.doesNotMatch(readFileSync(file, 'utf8'), /\b(window|document|localStorage|Date|Math\.random)\b/);
 });
+
+// R2-10: `sessionShown` mirrors `hostAction` (a generator may not import view-controls.js), so the two must agree
+test('sessionShown is open or locked exactly when hostAction is, over the session fixtures and every row shape', async () => {
+    const VC = await import(pathToFileURL(join(here, '../../public/break_escape/js/minigames/network-view/view-controls.js')));
+    const rows = [];
+    const dir = join(here, 'fixtures/network-view');
+    for (const name of ['locked_session', 'admin_session', 'technique_session', 'host_states', 'swept_hosts', 'pivot_open', 'pivot_locked', 'planted_box']) {
+        const d = JSON.parse(readFileSync(join(dir, `${name}.json`), 'utf8'));
+        for (const f of d.footholds || []) rows.push(...(f.hosts || []), ...(f.networks || []).flatMap(b => b.hosts || []));
+    }
+    // every combination of the fields the two functions read
+    for (const responding of [undefined, false]) for (const remote of [undefined, true, false]) {
+        for (const session of [undefined, { via: 'claim' }, { via: 'technique' }, { via: 'technique', locked: true }, { via: 'technique', openHere: true }, { via: 'technique', locked: true, openHere: true }]) {
+            rows.push({ id: 'x', kind: 'pc', responding, remoteSignIn: remote, session });
+        }
+    }
+    assert.ok(rows.length > 40);
+    for (const row of rows) {
+        const action = VC.hostAction(row);
+        const shown = D.sessionShown(row);
+        if (row.kind !== 'pc') { assert.equal(shown, null); continue; }
+        assert.equal(shown, action === 'open' || action === 'locked' ? action : null, JSON.stringify(row));
+    }
+});
