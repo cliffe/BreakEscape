@@ -48,7 +48,42 @@ Gate: m07's briefing gate is `briefing_played`, as in m01 (timedConversation `sk
 - t26: the hub choice appears right after the line, so the menu is on screen about 0.7 s before the pick (cut after the pick); the swing detection looks for "fight" in the narrator text (unverified); chase under headless physics uses `throttleFps(20)`. `park_resolved` becomes ko in that game: use a fresh game.
 - t25: Mercer only needs `scada_control` unlocked; `mercer_fate` unset so he is visible.
 
-## Not done (next agent)
+## Run results (24 Nov, takes agent; footage in ~/video-takes-local/m07/takes, not committed)
+Avatar before: female_hacker_hood_v2; after: female_hacker_hood_v2. Rig: server :3025 and Xvfb :113 were started by the orchestrator and left running. "Frames checked" says what I looked at; everything marked "marks only" had the check-take result and marks read but no frame review.
+
+| id | result | usable window (trimmed clock) / notes |
+|---|---|---|
+| t10_briefing (marcus_hale) | PASS, drop 0.25%, A/V -115/-125 ms, 38.2 s | ROUND-2 HOOK "We are faced with an impossible decision, Agent." line-start 12.44, line-end 16.56 (4.12 s). Stakes "Eight point four million people..." 30.02 to 36.30 (6.28 s). Frames checked at 12.6, 15.5, 31, 35: Netherton portrait, subtitle bar, Skip button, no menu, no player name. Menus visible 7.1-8.5, 18.4-19.5, 21.5-22.8: keep out. |
+| t13c_architect_call (harjit_singh, BE_KEEP_RING=1) | PASS, drop 0.07%, A/V -35/-73 ms, 46.27 s | ROUND-2 ENDING "Four fires tonight..." voice about 37.5 to 44.0 (silencedetect; subtitle typed 34.4 to 36.6; the reply menu appears about 44.25, so cut at 44.0). Beat 7 "Don't look for the trace. It isn't there." voice about 15.8 to 18.7. Withheld ring about 9.9, answered 11.9. Frames checked (14, 16, 19, 38): terminal call screen "The Architect", no toasts. Calls emit no line-start marks, so use sub:/subfull: marks plus the audio. The call UI is the green terminal screen, not a portrait. |
+| t13_architect_call, t13b | superseded. t13: PASS but an HaX toast ("You're inside...") covers the call screen about 17-21 s (beat 7 window). t13b: toast hidden only partly (bark stack, "Clear all"). t13c hides `[class*=bark]` after answering. |
+| t14_elena (daniel_seo) | PASS, drop 0.06%, A/V -33/-33 ms, 52.07 s | "Forty minutes I've been at it. It's read-only. Of course it is." line-start 46.32, line-end 50.38 (4.06 s). Marks only (no frame check): menu [Finish what, exactly?] shown 36.2-37.2, do not use. |
+| t15_park (frank_callahan) | PASS (2nd run), drop 0.23%, A/V -50/-32 ms, 12.3 s | Park entry line, marks and frames NOT yet read. First run failed: the Mission Brief notes minigame was open at interact; fixed by clearing the screen again at the start of the take. |
+| t16_clock (vivian_ashby) | PASS, drop 0.4%, A/V -48/-50 ms, 6.4 s | hold 1.95 to 5.95, no frame check: confirm armed sprite and clock visible, Mercer in room. |
+| t17_checkpoint_pads (mei_lin_chow) | PASS, drop 0.53%, A/V -85/-87 ms, 16.87 s | marks only |
+| t18_rfid_reader (harjit_singh) | PASS, drop 0.72%, A/V -65/-77 ms, 11.77 s | marks only; clone acceptance and Emulate not verified in frames |
+| t19_ops_pc (vivian_ashby) | FAIL (check exit 1), drop 1.04% | over the 1% gate: re-run |
+| t20_server_closeups (lucia_moreno) | PASS, drop 0.43%, A/V -93/-87 ms, 21.37 s | marks only. Orchestrator decision: keep the `rack_cabling_note` shot out of every window. |
+| t21_server_walk (ngozi_adeyemi) | PASS, drop 0.41%, A/V -25/-58 ms, 6.17 s | marks only |
+| t22_gen_lockpick (frank_callahan) | PASS, drop 0.5%, A/V -88/-128 ms, 17.94 s | A/V end offset 128 ms is above the 33 ms gate but constant-offset corrected; marks only |
+| t23_gen_key (marcus_hale) | FAIL (check exit 1), drop 1.02% | over the 1% gate: re-run |
+| t24_vault_pad (daniel_seo) | PASS, drop 0.28%, A/V -37/-55 ms, 9.77 s | marks only; check first and last frames for the ATS-1 plate |
+| t25_mercer_face (vivian_ashby) | PASS, drop 0.36%, A/V -25/-33 ms, 7.37 s | marks only |
+| t27_walk_checkpoint (lucia_moreno) | PASS, drop 0.55%, A/V -25/-40 ms, 4.14 s | marks only |
+| t28_walk_ops (harjit_singh) | PASS, drop 0.58%, A/V -48/-25 ms, 3.7 s | marks only |
+| t30_phone_hax (marcus_hale) | PASS, drop 0.26%, A/V -43/-63 ms, 10.74 s | marks only |
+| t11_hollis | FAIL | "Hollis never challenged" after 60 s (player spawn (160,144) is outside his cone, and the 400 ms pulses never closed the gap). Script now logs `pulse` marks and falls back to `interact('ray_hollis')` once within 110 px after 14 s: NOT re-run. |
+| t12_ops_exchange | FAIL | Forcing thirst to 20 via `npcNeedsSystem.states` did not produce the ex_last_two exchange in 240 s. Not debugged. Fallback: silent face shot of the pair at the cooler, or wait for the natural cycle. Check the needs log for `exchange_started`/`exchange_unheard` and that both reach ops_cooler with a clear line to the player. |
+| t26_park_fight | FAIL | same Mission Brief notes-open error as t15's first run. Apply the t15 fix (clearScreen at the start of the default export); not re-run. |
+| t29_walk_genhall | FAIL | "door not in nearby": the script's door id is not in the nearby list from generator_room (nearby shows genset_control_panel, a cup). Set the leg target from the real vault door id or coordinates; not re-run. |
+| t01-t04 | not run | live-mode scripts, superseded |
+
+## Not done
+- Re-run with fixes: t11 (interact fallback in place), t26 (copy t15's clearScreen fix), t29 (door id), t19 and t23 (drop over 1%, plain re-runs), t12 (debug exchange trigger).
+- Frame review (contact sheets and full-res frames at marks) for t14 to t30: only t10 and t13c were checked in frames. Particular checks: t16 armed clock, t17/t18 cloner and Emulate, t20 note shot excluded, t24 ATS-1 plate, t30 phone thread, t21/t27/t28 walks end before anything opens, no "playtest" name in any chat frame.
+- Sidecars (.take.json) not finished; no Netherton/Adaeze/Gwen/Elena/Park face flashes.
+- Handover: scratchpad `m07-takes-handover.md`. Run all with `MISSION=m07 scratchpad/run.sh <avatar> <take> "<flags>" "<rec>"`; `scratchpad/m07all.sh` holds every flag set.
+
+## Older not-done list (superseded by the one above)
 - Run every script (serial, on the free rig): fill lengths, drop %, A/V offsets and frame notes; check marks against frames (minigame marks drift).
 - Not written: Netherton/Adaeze/Gwen/Elena/Park face flashes (they carry lines), the pc container and situation-board chart shots (optional), the debrief. Check whether t26 should film the menu or whether the edit cuts around it.
 - First-run unknowns above (clone acceptance, wall coordinates for walks, key-selection label, swing text).
