@@ -499,9 +499,9 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t11_kevin_line.trimmed.mkv",
-    "in": 8.24,
-    "out": 12.24
+    "file": "t11b_kevin_line.trimmed.mkv",
+    "in": 10.31,
+    "out": 14.31
    },
    "dialogue": true,
    "lines": [
@@ -546,7 +546,7 @@
     "keypad_partial": null,
     "note": "Kevin line: a wronged insider, no code, culprit or ending"
    },
-   "note": "t11 12.2-16.2: line 12.302-15.815; previous (skipped) line ended 11.646"
+   "note": "t11b (24 Nov re-take, visemes with teeth) 10.31-14.31: line 10.370-13.838; previous (skipped) line ended 10.266"
   },
   {
    "id": "npc_2",

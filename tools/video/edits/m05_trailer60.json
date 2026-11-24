@@ -1,10 +1,10 @@
 {
  "mission": "m05",
- "id": "m05_trailer60_v3",
+ "id": "m05_trailer60_v4",
  "title": "SAFETYNET: Licence to Hack, m05 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3 (2026-11-23): owner notes. No burned captions in 16:9 (crops keep them); hook and HaX stakes re-cut from t01b_briefing (Netherton was on male_spy art; now his own art and re-registered visemes): hook +0.557 s, stakes +4.019 s by silencedetect. Niamh's new bust still to come (t24 re-take). v2 (2026-11-23): night-turn J-cut now uses the Recruiter's 'Fanaticism is somebody else's department. I just staff the operation.' (t10 111.66-116.09) since D356 cut 'I find people the week before...' from the game; night_strike 60->54 frames, recruiter_night 48->54, no other shot moved. v1 (2026-11-23): first cut. Music Midnight Double Agent from 47.992 s (downbeat): quiet bar, lift at 12.78 on the Mission card cut, track drops at 59.66. Real Hacking slot is the m02 slate placeholder. Missing footage (Bernadette face, walks, espresso) cut around.",
+ "status": "v4 (2026-11-24): re-takes. hook and HaX stakes now from t01c_briefing (Netherton new mouth-only visemes; hook -0.12 s, stakes +9.963 s by silencedetect); cr_niamh from t24b_faces_break_room (Niamh new closer bust; 15.6333-15.9). v3 (2026-11-23): owner notes. No burned captions in 16:9 (crops keep them); hook and HaX stakes re-cut from t01b_briefing (Netherton was on male_spy art; now his own art and re-registered visemes): hook +0.557 s, stakes +4.019 s by silencedetect. Niamh's new bust still to come (t24 re-take). v2 (2026-11-23): night-turn J-cut now uses the Recruiter's 'Fanaticism is somebody else's department. I just staff the operation.' (t10 111.66-116.09) since D356 cut 'I find people the week before...' from the game; night_strike 60->54 frames, recruiter_night 48->54, no other shot moved. v1 (2026-11-23): first cut. Music Midnight Double Agent from 47.992 s (downbeat): quiet bar, lift at 12.78 on the Mission card cut, track drops at 59.66. Real Hacking slot is the m02 slate placeholder. Missing footage (Bernadette face, walks, espresso) cut around.",
  "music": {
   "track": "SpyAction/Midnight Double Agent.mp3",
   "analysis": "midnight_double_agent_60.json",
@@ -77,9 +77,9 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t01b_briefing.trimmed.mkv",
-    "in": 9.557,
-    "out": 14.8237
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 9.437,
+    "out": 14.7037
    },
    "note": "hook: audio from t01 8.0 (J-cut pre 1.0) so only the third sentence is heard (voice 8.12-13.82 by silencedetect; 'dislike.' ends 7.64); the bar shows the whole ink line, so UI-free with captions in every aspect",
    "framing": {
@@ -160,9 +160,9 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t01b_briefing.trimmed.mkv",
-    "in": 33.069,
-    "out": 37.6357
+    "file": "t01c_briefing.trimmed.mkv",
+    "in": 43.032,
+    "out": 47.5987
    },
    "note": "HaX stakes, voice 29.24-33.44; out 33.62 before 'Early modelling' (34.33); bar shows only this line; captions 9:16/1:1",
    "framing": {
@@ -1081,9 +1081,9 @@
     "type": "cut"
    },
    "source": {
-    "file": "t24_faces_break_room.trimmed.mkv",
-    "in": 15.0,
-    "out": 15.2667
+    "file": "t24b_faces_break_room.trimmed.mkv",
+    "in": 15.6333,
+    "out": 15.9
    },
    "note": "Niamh Doherty face",
    "framing": {
