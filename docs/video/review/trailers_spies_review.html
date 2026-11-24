@@ -68,6 +68,7 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
   <nav class="tabs" role="tablist" aria-label="Trailer">
     <button class="tab" role="tab" id="tab-m07v2" aria-selected="true" data-cut="m07v2">m07 · v2</button>
     <button class="tab" role="tab" id="tab-m05v5" aria-selected="false" data-cut="m05v5">m05 · v5</button>
+    <button class="tab" role="tab" id="tab-m01v13" aria-selected="false" data-cut="m01v13">m01 · v13</button>
     <button class="tab" role="tab" id="tab-m01v12" aria-selected="false" data-cut="m01v12">m01 · v12</button>
     <button class="tab" role="tab" id="tab-m07v1" aria-selected="false" data-cut="m07v1">m07 · v1</button>
     <button class="tab" role="tab" id="tab-m02v5" aria-selected="false" data-cut="m02v5">m02 · v5 · final</button>
@@ -102,6 +103,20 @@ button.ghost{font-family:var(--display);font-size:11px;padding:12px 16px;border:
 
 <script>
 const CUTS = {
+  m01v13: {
+    doc: "feedback/m01_trailer_v13",
+    title: "m01 First Contact · 60 s trailer · v13 (Emerald Trigger)",
+    videoLabel: "16:9",
+    video: "/_blob/fae92c352333d08d0225171dbdfd9383",
+    videos: [["9:16", "/_blob/c7c2653f995575f40cde89013011a443", "p916"], ["1:1", "/_blob/89c7271add2e598e6c917913594fb13e", "p11"]],
+    stats: ["60.0 s each", "1920×1080, 1080×1920, 1080×1080 at 30 fps", "−14.0 LUFS, true peak −2.4 dB", "music: Emerald Trigger from 85.6 s", "31 shots"],
+    changedLabel: "What changed since v12",
+    changed: ["Your note 6: music is Emerald Trigger, re-cut to its beat grid. Quiet bars under the title; the lift lands as HaX starts; \"Real Hacking\" on the track's peak bar (16.0 s); \"Before the Sunday Launch\" on the lift after a dip (41.6 s); Derek's hard cut to the close-up on a hit at 50.0 s; the closing shot on a hit at 52.0 s.", "To fit, montage shots lost 0.2-0.3 s each and the crescendo one frame; no spoken line was cut.", "Card \"Uncover the Plan. / Stop It.\" kept from v12. Hydra console shot kept (m01's beat stays the brute force)."],
+    standinLabel: "Stand-in and compromises",
+    standin: ["The window was picked from the track's beat and energy analysis, not by ear. Not watched end to end by me: cards, Derek's cut, loudness and captions checked in all three aspects."],
+    srt: "1\n00:00:05,400 --> 00:00:09,120\nAgent HaX: Whatever they're building, it's targeted and sophisticated.\n\n2\n00:00:24,060 --> 00:00:27,540\nKevin Park: I flagged it to management three times. Nothing happened.\n\n3\n00:00:28,000 --> 00:00:31,390\nMaya Chen: Anyone who gets too close gets removed.\n\n4\n00:00:32,000 --> 00:00:36,090\nSarah O'Brien: Next thing you know, HR calls her in and she's gone.\n\n5\n00:00:43,090 --> 00:00:49,450\nDerek Lawson: Sixty deaths to save tens of thousands per year. That's not murder.\n\n6\n00:00:50,190 --> 00:00:51,850\nDerek Lawson: That's optimisation.\n",
+    questions: [{k:"music", t:"Emerald Trigger on m01", o:[["ok", "Keep", "", 1], ["back", "Back to Midnight Cipher Chase (v12)", ""]]}, {k:"cuts", t:"Cards and Derek's cut on the beat", o:[["ok", "Right", "", 1], ["fix", "Off", "Say which"]]}, {k:"pace", t:"Pace: anything too fast or too slow?", o:null}, {k:"seen", t:"Anything on screen a viewer should not see?", o:null}]
+  },
   m05v5: {
     doc: "feedback/m05_trailer_v5",
     title: "m05 Insider Trading · 60 s trailer · v5 (owner notes)",
