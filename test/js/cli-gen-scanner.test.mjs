@@ -1,5 +1,6 @@
 // The scanner generator (Ops S6 unit 10): sweep, scan and check text for the Terminal, pinned by
 // golden files under test/js/fixtures/network-view/cli-golden/scanner/.
+// Golden format: `[cls|text]` per classed span, bare text when unclassed (the framework test uses the same).
 // Run with: node test/js/cli-gen-scanner.test.mjs   (GOLDEN_WRITE=1 writes the golden files)
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -26,7 +27,7 @@ const model = await import(pathToFileURL(join(dir, 'nv/ops-model.js')));
 
 const load = (name) => JSON.parse(readFileSync(join(fixtures, `${name}.json`), 'utf8')).footholds[0];
 const clone = (v) => JSON.parse(JSON.stringify(v));
-const render = (lines) => lines.map(l => l.map(s => `[${s.cls || '-'}]${s.text}`).join('')).join('\n') + '\n';
+const render = (lines) => lines.map(l => l.map(s => (s.cls ? `[${s.cls}|${s.text}]` : s.text)).join('')).join('\n') + '\n';
 
 const sweepOffer = (id) => ({ action: 'sweep', target: id, ids: { networkId: id } });
 const scanOffer = (id) => ({ action: 'scan', target: id, ids: { hostId: id } });

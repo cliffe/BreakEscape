@@ -1,6 +1,6 @@
-[head]Starting Nmap against lab_net
-[head]Nmap scan report for [head]desk_pc
-[ok]Host is up.
-[note]  Name: [-]Desk PC
-[note]  Hostname: [-]LAB-01
-[-]Nmap done: 1 host up
+[head|Starting Nmap against lab_net]
+[head|Nmap scan report for ][head|desk_pc]
+[ok|Host is up.]
+[note|  Name: ]Desk PC
+[note|  Hostname: ]LAB-01
+Nmap done: 1 host up

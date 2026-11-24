@@ -1,2 +1,2 @@
-[head]Starting Nmap against lab_net
-[bad]That did not work.
+[head|Starting Nmap against lab_net]
+[bad|That did not work.]

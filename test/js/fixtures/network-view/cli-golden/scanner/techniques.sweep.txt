@@ -1,8 +1,8 @@
-[head]Starting Nmap against lab_net
-[head]Nmap scan report for [head]web
-[ok]Host is up.
-[note]  Name: [-]Web gateway
-[head]Nmap scan report for [head]web01
-[ok]Host is up.
-[note]  Name: [-]Web gateway two
-[-]Nmap done: 2 hosts up
+[head|Starting Nmap against lab_net]
+[head|Nmap scan report for ][head|web]
+[ok|Host is up.]
+[note|  Name: ]Web gateway
+[head|Nmap scan report for ][head|web01]
+[ok|Host is up.]
+[note|  Name: ]Web gateway two
+Nmap done: 2 hosts up

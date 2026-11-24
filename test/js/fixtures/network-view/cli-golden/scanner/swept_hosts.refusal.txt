@@ -1,2 +1,2 @@
-[head]Starting Nmap against print01
-[bad]That host is not responding.
+[head|Starting Nmap against print01]
+[bad|That host is not responding.]

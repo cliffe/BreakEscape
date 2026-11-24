@@ -1,2 +1,2 @@
-[head]Starting Nmap against print01
-[bad]No reply came back. Nothing finished.
+[head|Starting Nmap against print01]
+[bad|No reply came back. Nothing finished.]

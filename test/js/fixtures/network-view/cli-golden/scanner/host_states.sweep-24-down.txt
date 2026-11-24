@@ -1,16 +1,16 @@
-[head]Starting Nmap against 10.20.30.0/24
-[head]Nmap scan report for [head]desk_pc
-[ok]Host is up.
-[note]  Name: [-]Desk PC
-[note]  Hostname: [-]LAB-01
-[head]Nmap scan report for [head]kiosk_pc
-[ok]Host is up.
-[note]  Name: [-]Kiosk
-[note]  Hostname: [-]LAB-02
-[note]  Status: [-]Remote sign-in off
-[head]Nmap scan report for [head]old_pc
-[bad]Host seems down.
-[note]  Name: [-]Old PC
-[note]  Hostname: [-]LAB-03
-[note]  Status: [-](powered down)
-[-]Nmap done: 256 IP addresses (2 hosts up) scanned
+[head|Starting Nmap against 10.20.30.0/24]
+[head|Nmap scan report for ][head|desk_pc]
+[ok|Host is up.]
+[note|  Name: ]Desk PC
+[note|  Hostname: ]LAB-01
+[head|Nmap scan report for ][head|kiosk_pc]
+[ok|Host is up.]
+[note|  Name: ]Kiosk
+[note|  Hostname: ]LAB-02
+[note|  Status: ]Remote sign-in off
+[head|Nmap scan report for ][head|old_pc]
+[bad|Host seems down.]
+[note|  Name: ]Old PC
+[note|  Hostname: ]LAB-03
+[note|  Status: ](powered down)
+Nmap done: 256 IP addresses (2 hosts up) scanned
