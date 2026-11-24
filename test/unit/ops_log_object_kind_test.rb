@@ -67,6 +67,39 @@ module BreakEscape
       assert_equal 'back', room_of('dropped')
     end
 
+    # R1-SERVER7: a gated carried object is placed where the player has it, not where it was authored
+    def gated_case_game
+      scenario = @game.scenario_data.deep_dup
+      scenario['rooms']['lobby']['npcs'][0]['itemsHeld'] = [{ 'id' => 'bobcase', 'type' => 'briefcase', 'name' => 'Bob case',
+                                                              'takeable' => true, 'locked' => true, 'lockType' => 'pin', 'requires' => '4444',
+                                                              'secondStep' => { 'kind' => 'push', 'owner' => 'gordon' } }]
+      scenario['startItemsInInventory'] = [{ 'id' => 'startcase', 'type' => 'briefcase', 'name' => 'Start case', 'takeable' => true,
+                                             'locked' => true, 'lockType' => 'pin', 'requires' => '2222',
+                                             'secondStep' => { 'kind' => 'push', 'owner' => 'gordon' } }]
+      create_access_game(mission: @mission, player: @player, scenario: scenario)
+    end
+
+    test 'a gated case an NPC gave is placed in no room while held, in the room it was dropped in, and with the NPC if never taken' do
+      game = gated_case_game
+      assert_equal 'lobby', OpsLogEvents.object_entry(game, 'bobcase')[:room_id], 'still with the NPC'
+      game.player_state['inventory'] = [{ 'id' => 'bobcase', 'type' => 'briefcase', 'name' => 'Bob case' }]
+      assert_nil OpsLogEvents.object_entry(game, 'bobcase')[:room_id], 'held: no room'
+      game.player_state['inventory'] = []
+      game.player_state['room_states'] = { 'back' => { 'objects_added' => [{ 'id' => 'bobcase', 'type' => 'briefcase', 'name' => 'Bob case' }],
+                                                       'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} } }
+      assert_equal 'back', OpsLogEvents.object_entry(game, 'bobcase')[:room_id], 'dropped in another room'
+      assert_equal 'Bob case', OpsLogEvents.object_entry(game, 'bobcase')[:object]['name']
+    end
+
+    test 'a gated start item is in no room, held or not, and in the room it was dropped in' do
+      game = gated_case_game
+      assert_nil OpsLogEvents.object_entry(game, 'startcase')[:room_id]
+      game.player_state['room_states'] = { 'back' => { 'objects_added' => [{ 'id' => 'startcase', 'type' => 'briefcase', 'name' => 'Start case' }],
+                                                       'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} } }
+      game.player_state['inventory'] = []
+      assert_equal 'back', OpsLogEvents.object_entry(game, 'startcase')[:room_id]
+    end
+
     test 'an id that exists nowhere does not resolve' do
       assert_nil name_of('nowhere')
       assert_nil room_of('nowhere')

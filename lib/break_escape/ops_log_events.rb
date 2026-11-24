@@ -175,10 +175,30 @@ module BreakEscape
     # gated object at any authored home (LockStepModel.each_lock_step: an NPC's itemsHeld, the start
     # inventory, a grant), any other NPC-held item, then the player's own state: what they carry and
     # a copy they dropped (a room's objects_added). Nil when the id is held nowhere.
+    #
+    # Which room a row belongs to: a room object, its place in the room. An item the player holds
+    # belongs to no room (it goes with them); a copy they dropped belongs to the room it lies in;
+    # only an item still with its NPC, or authored in a profile or share, is placed by where the
+    # scenario put it. So a held or dropped item is asked before the authored homes.
     def object_entry(game, id)
       return nil if id.to_s.empty? || !game.scenario_data.is_a?(Hash)
 
-      game.login_scope_of(id) || gated_object_entry(game, id) || npc_held_entry(game, id) || player_object_entry(game, id)
+      game.login_scope_of(id) || player_carried_entry(game, id) || gated_object_entry(game, id) ||
+        npc_held_entry(game, id) || player_object_entry(game, id)
+    end
+
+    # The player's own copy: in the inventory (no room) or dropped in a room (that room). No start-item
+    # fallback: an item the scenario starts the player with but that is gone from them is not theirs.
+    def player_carried_entry(game, id)
+      state = game.player_state.is_a?(Hash) ? game.player_state : {}
+      found = find_in_tree(state['inventory'], id)
+      return { object: found, room_id: nil } if found
+
+      (state['room_states'].is_a?(Hash) ? state['room_states'] : {}).each do |room_id, rs|
+        found = rs.is_a?(Hash) && find_in_tree(rs['objects_added'], id)
+        return { object: found, room_id: room_id } if found
+      end
+      nil
     end
 
     def gated_object_entry(game, id)

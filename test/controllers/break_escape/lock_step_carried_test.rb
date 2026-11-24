@@ -146,6 +146,47 @@ module BreakEscape
       assert_empty(game_state['lockSteps'] || {})
     end
 
+    # ---- R1-SERVER3 and R1-SERVER4: what stays in reach, and what each add route puts back ----
+
+    # The limit, pinned: the server keeps no record of a take, so a takeable room object that has
+    # left the player is still in reach where it was authored (every other carried home is refused).
+    test 'a takeable room object that has left the player stays in reach by a hand-built request' do
+      assert_equal 200, take('roomcase')[0]
+      remove_from_inventory!('roomcase')
+      assert_not_includes held_ids, 'roomcase'
+      assert_equal true, unlock('object', 'roomcase', '1111', 'pin')[1]['secondStep']
+      assert_equal 200, mfa('prompt', 'object:roomcase')[0]
+      status, body = unlock('object', 'roomcase', '1111', 'pin')
+      assert_equal 200, status
+      assert_equal 'WORDS-roomcase_memo', body['contents'][0]['text']
+      assert_equal 200, container('roomcase')[0]
+    end
+
+    test 're-add after removal, one test per route: a start item and an NPC item cannot come back, a grant item and a room object can' do
+      refused = [422, { 'success' => false, 'message' => 'Item not found in scenario: briefcase' }]
+      # start item: refused once gone, so the step cannot be reached either
+      remove_from_inventory!('startcase')
+      assert_equal refused, take('startcase')
+      assert_equal INVALID, unlock('object', 'startcase', '2222', 'pin')[1]
+      # an item an NPC gave: refused by the give route again, and by the plain route
+      assert_equal 200, take('bobcase', npc: 'bob')[0]
+      remove_from_inventory!('bobcase')
+      assert_equal refused, take('bobcase', npc: 'bob')
+      assert_equal refused, take('bobcase')
+      assert_equal INVALID, unlock('object', 'bobcase', '4444', 'pin')[1]
+      # a grant item: gone is refused, added again it asks both checks again
+      assert_equal 200, take('grantcase')[0]
+      remove_from_inventory!('grantcase')
+      assert_equal INVALID, unlock('object', 'grantcase', '3333', 'pin')[1]
+      assert_equal 200, take('grantcase')[0]
+      assert_equal true, unlock('object', 'grantcase', '3333', 'pin')[1]['secondStep']
+      # a room object: takeable again, the step still its own
+      assert_equal 200, take('roomcase')[0]
+      remove_from_inventory!('roomcase')
+      assert_equal 200, take('roomcase')[0]
+      assert_equal true, unlock('object', 'roomcase', '1111', 'pin')[1]['secondStep']
+    end
+
     # ---- G4 for plain carriers, and the shipped scenarios ----
 
     test 'a plain carrier that is a room takeable stays reachable where it lies and when held' do

@@ -139,5 +139,29 @@ module BreakEscape
       assert_equal 'locks', social.dig('characters', 'ghost', 'emailRecord', 'habits', 'screen')
       assert_equal 'locks', social.dig('mailClient', 'contacts', 0, 'emailRecord', 'habits', 'screen')
     end
+
+    # ---- playtest beat 12d: a reload between requests keeps the count, and the pane sends each prompt ----
+
+    test 'the count survives a repeat gate (a reload), the gate sends no prompt, and the owner approves on the third' do
+      data = scenario
+      data['rooms']['hall']['npcs'].first['habits'] = { 'approvesPrompts' => 'pestered', 'promptPatience' => 3 }
+      build_step_game(data, 'encounteredNPCs' => %w[amy])
+      # the click and the pane: a gate, then the pane's own first prompt; each later click repeats both
+      first = nil
+      2.times do |i|
+        later(3) if i.positive?
+        _, gate = unlock('object', 'realsafe', '7777', 'pin')
+        assert_equal true, gate['secondStep'], 'a repeat gate on the live record is asked again, not passed'
+        _, first = mfa('prompt', 'object:realsafe')
+        assert_equal [i + 1, false], first.values_at('promptsSent', 'approved')
+      end
+      # three gates in a row send no prompt of their own
+      3.times { unlock('object', 'realsafe', '7777', 'pin') }
+      later(3)
+      _, third = mfa('prompt', 'object:realsafe')
+      assert_equal true, third['stepPassed'], 'the third prompt is approved on arrival: the pane opens already passed'
+      assert_equal 'owner', third['approvedBy']
+      assert_equal 200, unlock('object', 'realsafe', '7777', 'pin').first
+    end
   end
 end
