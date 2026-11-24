@@ -235,6 +235,19 @@ module BreakEscape
       assert_equal true, e['accepted'], 'the default policy accepts a saved_connection'
     end
 
+    test 'S7 R1-S8: a hash row listed with a pc_id is not scoped to the PC and is never accepted' do
+      @game.scenario_data['credentials']['lena_hash'] = { 'kind' => 'hash', 'account' => 'lena', 'proof' => { 'held' => 'lena_hash_file' },
+                                                          'crack' => { 'password' => 'strong' } }
+      @game.scenario_data['rooms']['office']['objects'] << { 'id' => 'lena_hash_file', 'type' => 'text_file', 'name' => 'lena hash',
+                                                             'takeable' => true, 'credential' => 'lena_hash' }
+      inv([{ 'id' => 'lena_hash_file', 'type' => 'text_file', 'name' => 'lena hash', 'credential' => 'lena_hash' }])
+      e = @game.keyring_for_client(pc_id: 'lena_pc')[:entries].find { |x| x['id'] == 'lena_hash' }
+      assert_equal 'hash', e['kind'], 'the hash row is listed'
+      assert_equal false, e['forThisPc']
+      assert_equal false, e['accepted'], 'a hash never signs in'
+      assert_nil e['connectsTo']
+    end
+
     test 'a pc_id naming no sign-in PC the player can open is ignored (R1 m3)' do
       inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }])
       e = @game.keyring_for_client(pc_id: 'no_such_pc')[:entries].find { |x| x['id'] == 'lena_rdp' }
