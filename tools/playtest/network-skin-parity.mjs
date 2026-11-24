@@ -7,7 +7,7 @@
 // scenarios/test_ops_skin/PLAYTEST.md says: swap-scenario-game.rb; it never touches an existing game row)
 // and plays one sequence in each with `window.__test.network.run`:
 //   A  stays in Panels (a use by `select`, a use by drag);
-//   B  stays in the Terminal (a use by `typed`, a use by `button`, the quick command);
+//   B  stays in the Terminal and starts there (the sweep, the scans, the checks and the uses by `typed`; one use by `button`);
 //   C  presses the header switch after each step and calls `run` with no `path`.
 // The player acts only through real clicks, key presses and drags. The runner never builds a request, never
 // calls the server, and reads each game's server record only through the Rails runner (as verify-run.rb does).
@@ -118,11 +118,20 @@ export function compareValues(named, label) {
     return diffs;
 }
 
+/**
+ * The skin check made when a game's view first opens: the view must be in the game's wanted skin and must
+ * have the switch. Returns null when it does, else the sentence for the failure. `wanted` is 'gui' or 'cli'.
+ */
+export function startSkinProblem(state, wanted) {
+    if (!state || state.skin !== wanted) return `the view opened in ${state?.skin ?? 'no skin'}, not ${wanted}`;
+    if (!state.hasSwitch) return 'the view has no skin switch';
+    return null;
+}
+
 /** The sequence. `A` and `B` name the path each fixed-skin game uses; C names none. `find` picks the offer. */
 export const STEPS = Object.freeze([
-    // The server sends `ops: true` for a discovery network only once it is swept, so the view has no Terminal
-    // (and no switch) before the sweep: the first step is a press of the button in every game.
-    { name: 'sweep', find: { action: 'sweep', ids: { networkId: 'office_lan' } }, A: 'button', B: 'button' },
+    // The Terminal and the switch are there before the first sweep (commit 153c48ff9), so game B types the sweep.
+    { name: 'sweep', find: { action: 'sweep', ids: { networkId: 'office_lan' } }, A: 'button', B: 'typed' },
     { name: 'scan files01', find: { action: 'scan', ids: { hostId: 'files01' } }, A: 'button', B: 'typed' },
     { name: 'check storage', find: { action: 'check', ids: { hostId: 'files01', service: 'storage' } }, A: 'button', B: 'typed' },
     { name: 'confirm entry_a', find: { action: 'confirm', ids: { findingId: 'files01.storage.entry_a' } }, A: 'button', B: 'typed' },
@@ -238,7 +247,10 @@ async function openGame(browser, base, id, skin, log) {
     await T(() => window.__test.dismissBlockingUi('Plug it in'));
     for (let i = 0; i < 60; i++) {
         const st = await T(() => window.__test.network.state());
-        if (st.skin && st.offers.some(o => o.action === 'sweep')) { log(`game ${id}: view open in ${st.skin}, switch ${st.hasSwitch}`); return { page, context, requests, errors }; }
+        if (st.skin && st.offers.some(o => o.action === 'sweep')) {
+            const problem = startSkinProblem(st, skin);
+            if (problem) throw new Error(`game ${id}: ${problem}, before the first sweep`);
+            log(`game ${id}: view open in ${st.skin}, switch ${st.hasSwitch}`); return { page, context, requests, errors }; }
         await sleep(500);
     }
     throw new Error(`game ${id}: the network view did not open after the plug`);
@@ -327,7 +339,7 @@ async function play(page, mode, log, notes) {
         await sleep(600);
         await backToView(page, log, step.find.action === 'use');
         if (mode !== 'C') {
-            // A fixed-skin game must be in its own skin once the view has ops (it is Panels before the sweep)
+            // A fixed-skin game must stay in its own skin after every step
             const want = WANTED_SKIN[mode];
             for (let i = 0; i < 12 && (await page.evaluate(() => window.__test.network.skin())) !== want; i++) await sleep(250);
             const now = await page.evaluate(() => window.__test.network.skin());

@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const run = await import(pathToFileURL(join(here, '../../tools/playtest/network-skin-parity.mjs')));
-const { REMOVED_KEYS, OPS_FIELDS, normaliseAnswer, checkRemovedList, compareRequests, requestRecord, isRecorded, stripGameId } = run;
+const { STEPS, startSkinProblem, REMOVED_KEYS, OPS_FIELDS, normaliseAnswer, checkRemovedList, compareRequests, requestRecord, isRecorded, stripGameId } = run;
 
 test('the removed keys are one list, each with a reason, and none is an ops field', () => {
     assert.ok(REMOVED_KEYS.length > 0);
@@ -64,4 +64,19 @@ test('a missing or extra request fails the comparison', () => {
     const a = log('x');
     assert.equal(compareRequests({ A: a, B: a.slice(0, 1), C: a }).length, 1);
     assert.equal(compareRequests({ A: a, B: [...a, a[0]], C: a }).length, 1);
+});
+
+test('the Terminal game types the sweep, and the first step is the sweep', () => {
+    assert.equal(STEPS[0].find.action, 'sweep');
+    assert.equal(STEPS[0].B, 'typed');
+    assert.equal(STEPS[0].A, 'button');
+});
+
+test('a game must start in its own skin and have the switch', () => {
+    assert.equal(startSkinProblem({ skin: 'cli', hasSwitch: true }, 'cli'), null);
+    assert.equal(startSkinProblem({ skin: 'gui', hasSwitch: true }, 'gui'), null);
+    assert.match(startSkinProblem({ skin: 'gui', hasSwitch: true }, 'cli'), /gui, not cli/);
+    assert.match(startSkinProblem({ skin: 'cli', hasSwitch: false }, 'cli'), /no skin switch/);
+    assert.match(startSkinProblem({ skin: null, hasSwitch: false }, 'cli'), /no skin/);
+    assert.match(startSkinProblem(null, 'gui'), /no skin/);
 });
