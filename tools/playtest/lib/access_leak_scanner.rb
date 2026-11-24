@@ -3520,6 +3520,7 @@ class AccessLeakScanner
     # a second-step code exists only where a code device is authored, the three choices only where a policy matches numbers
     @mfa_borrow_authored = mfa_workaround_authored?(@data, 'borrow_session')
     @mfa_code_possible = !@mfa_devices.empty?
+    @mfa_authored_codes = Set.new(mfa_collect_codes(@data))
     policies = @data['policies']
     @mfa_numbers_possible = policies.is_a?(Hash) && policies.values.any? { |p| BreakEscape::MfaModel.kind(p) == 'push_number_match' }
   end
@@ -3527,7 +3528,7 @@ class AccessLeakScanner
   # One response row: judges it, then lets it earn what it proves (so a row never proves itself).
   def scan_mfa(body, row, add)
     info = mfa_route(row)
-    @mfa_row_pcs = @mfa_row_clear = @mfa_unlocked_pc = nil
+    @mfa_row_pcs = @mfa_row_clear = @mfa_unlocked_pc = @mfa_token_pc = nil
     mfa_confirm_step(body, info) if @mfa_active
     return unless body.is_a?(Hash) || body.is_a?(Array)
 
@@ -3679,14 +3680,20 @@ class AccessLeakScanner
     kind != 'push_number_match' || (body['number'].is_a?(Integer) && MFA_NUMBER_RANGE.cover?(body['number']))
   end
 
-  # A value that looks like a second-step code: six digits (the server's only form), however spaced, or a structure that
-  # could hold them. An authored field of another shape under a `code` key (a warranty's "W-03") is not one.
-  def mfa_code_like?(value)
-    case value
-    when Hash, Array then true
-    when String, Integer then value.to_s.delete(" \t-").match?(/\d{6}/)
-    else false
+  # R2-L7: inside a scenario that has a code device, a `code` value passes only when it is one the scenario authors (a
+  # warranty's "W-03") and is not six digits however spaced; every other value under a `code` key is a finding.
+  def mfa_authored_code?(value)
+    return false unless value.is_a?(String) || value.is_a?(Integer)
+
+    @mfa_authored_codes.include?(value) && !value.to_s.delete(" \t-").match?(/\d{6}/)
+  end
+
+  def mfa_collect_codes(node, found = [])
+    case node
+    when Hash then node.each { |k, v| k == 'code' && (v.is_a?(String) || v.is_a?(Integer)) ? found << v : mfa_collect_codes(v, found) }
+    when Array then node.each { |v| mfa_collect_codes(v, found) }
     end
+    found
   end
 
   def mfa_judge_keys(body, info, device, phone, required, add)
@@ -3699,7 +3706,7 @@ class AccessLeakScanner
         elsif key == 'mfa' && parent_key == 'creds'
           add.call('mfa_secret', 'mfa:key:creds.mfa', at)
         elsif key == 'code' && @mfa_code_possible && !(device && hash.equal?(body)) &&
-              ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || mfa_code_like?(hash[key]))
+              ((hash.equal?(body) && mfa_route_name(info) == 'mfa/device') || !mfa_authored_code?(hash[key]))
           add.call('mfa_secret', 'mfa:key:code', at)
         elsif key == 'numbers' && @mfa_numbers_possible && phone.none? { |entry| entry.equal?(hash) }
           add.call('mfa_secret', 'mfa:key:numbers', at)
@@ -3930,7 +3937,14 @@ class AccessLeakScanner
     npc = hash['npcId'].is_a?(String) && mfa_npc(hash['npcId']) ? hash['npcId'] : nil
     owing = mfa_owing_pcs(pcs, npc)
     return if owing.empty? && !pcs.empty?
-    return if mfa_claim_exempt?(hash, npc, pcs) || mfa_exempt_credential?(hash, npc, pcs)
+    return if mfa_claim_exempt?(hash, npc, pcs)
+
+    if mfa_exempt_credential?(hash, npc, pcs)
+      # R2-L8: a token session over a foothold is the account's own session at that PC (the server unlocks it with no step
+      # after a lock), so a token sign-in placed at exactly one PC that owes the step is held like a passed step
+      @mfa_token_pc = pcs.first if mode == :login && hash['kind'] == 'token' && pcs.size == 1 && owing.include?(pcs.first)
+      return
+    end
     return if mode != :login && hash['via'] == 'technique'
 
     if npc && owing.size == 1
@@ -4012,8 +4026,10 @@ class AccessLeakScanner
       @mfa_pending[body['pcId']] = { npc: body['npcId'], kind: body['mfa'], number: body['number'] } if required
       mfa_note_signin(body) if @mfa_row_pcs
     when 'mfa/verify', 'mfa/prompt', 'mfa/approve'
-      return unless body.is_a?(Hash) && info[:route]
+      return unless body.is_a?(Hash)
 
+      # R2-L6: closing is the safe direction, so a cancel, expiry or lockout closes on the loose route and at any status; only
+      # a pass answer on the strict route earns
       if body['success'] == true
         pc = mfa_pass_pc(body, info, row)
         return unless pc
@@ -4024,14 +4040,26 @@ class AccessLeakScanner
       elsif body['cancelled'] == true || body['expired'] == true || body['lockedOut'] == true
         # R1-L6, R1-L11: the answer names no PC, so it closes every open step of the kind the route handles (that PC alone
         # when the row's tag names one)
-        kinds = info[:route] == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
+        kinds = mfa_route_name(info) == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
         tag = mfa_row_pc_tag(row)
         @mfa_pending.delete_if { |pc, rec| kinds.include?(rec[:kind]) && (tag.nil? || pc == tag) }
       end
     when 'lock_session'
       @mfa_locked << body['pcId'] if info[:route] && info[:ok] && body.is_a?(Hash) && body['success'] == true && body['locked'] == true && body['pcId'].is_a?(String)
     when 'logout' then mfa_note_logout(body, info, row)
+    when nil then mfa_note_foreign_session(body, info)
     end
+  end
+
+  # R2-L5: a 200 answer on a route these rules do not read (a technique answer) that holds a `session` replaces the session at
+  # the PC its host label names (at every PC when the label names none): the earned session and its lock are taken back.
+  def mfa_note_foreign_session(body, info)
+    session = body.is_a?(Hash) ? body['session'] : nil
+    return unless info[:ok] && !info[:container] && session.is_a?(Hash)
+
+    label = session['host']
+    pc = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    mfa_end_pcs(@priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys)
   end
 
   def mfa_end_pcs(pcs)
@@ -4058,6 +4086,7 @@ class AccessLeakScanner
         @mfa_at.delete(pc)
       end
     end
+    @mfa_held[@mfa_token_pc] = npc if @mfa_row_strict && @mfa_token_pc && pcs.include?(@mfa_token_pc) && npc.is_a?(String)
     @mfa_at[pcs.first] = npc if @mfa_row_strict && @mfa_row_pcs.size == 1 && pcs.size == 1 && npc.is_a?(String) && @mfa_unlocked_pc != pcs.first
   end
 

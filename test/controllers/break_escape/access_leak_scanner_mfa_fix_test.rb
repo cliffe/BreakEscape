@@ -361,8 +361,13 @@ module BreakEscape
         r['body'] = { 'objects' => [{ 'id' => 'x', 'minigameData' => { 'warranties' => [{ 'id' => 'w03', 'code' => value }] } }] }
         r
       end
-      assert_equal [], mfa(scan([room_row.call('W-03')]))
-      assert_equal [], mfa(scan([room_row.call('A12')]))
+      # R2-L7: only a value the scenario authors passes; one it does not author is a finding
+      authored = scenario
+      authored['rooms'].values.first['warrantyProbe'] = [{ 'code' => 'W-03' }, { 'code' => 'A12' }]
+      assert_equal [], mfa(scan_all([room_row.call('W-03')], data: authored).first)
+      assert_equal [], mfa(scan_all([room_row.call('A12')], data: authored).first)
+      assert_includes mfa(scan([room_row.call('W-03')])), ['mfa_secret', 'mfa:key:code']
+      assert_includes mfa(scan([room_row.call('A12')])), ['mfa_secret', 'mfa:key:code']
       # six digits, as a string, a number, spaced, or a structure: a code
       ['123456', 123_456, '123 456', '123-456', { 'x' => 1 }, [1]].each do |value|
         assert_includes mfa(scan([room_row.call(value)])), ['mfa_secret', 'mfa:key:code'], value.inspect

@@ -168,5 +168,76 @@ module BreakEscape
       lost['bodyError'] = 'unreadable'
       assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(95, 97, 98, 100) + [lost, boot.call]).first)
     end
+
+    # ---- R2-L5: a session a route the rules do not read replaced ----------------------------------------------------------
+
+    test 'R2-L5 a technique answer that replaces the session at the PC takes the earned session and the lock back' do
+      base = '/break_escape/games/86'
+      other = { 'method' => 'POST', 'path' => "#{base}/network/technique", 'status' => 200,
+                'body' => { 'success' => true, 'session' => { 'npcId' => 'ines', 'via' => 'technique', 'host' => 'ACC01' } } }
+      unlock = rows(107).first.merge('login' => { 'pcId' => 'code_pc1' })
+      assert_equal [], found(scan_rows(rows(95, 97, 98, 100) + [unlock]).first)
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(95, 97, 98, 100) + [other, unlock]).first)
+      # a session whose host label names no PC replaces every PC's
+      other['body']['session']['host'] = 'NOWHERE'
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows(rows(95, 97, 98, 100) + [other, unlock]).first)
+    end
+
+    # ---- R2-L6: closing is safe on any spelling or status; earning and using a name need the strict 200 answer --------------
+
+    test 'R2-L6 a cancel on the loose route closes the step; a 201 sign-in uses no name' do
+      base = '/break_escape/games/86'
+      post = lambda do |tail, body, extra = {}|
+        { 'method' => 'POST', 'path' => "#{base}/#{tail}", 'status' => 200, 'body' => body }.merge(extra)
+      end
+      required = post.call('login', { 'success' => false, 'mfaRequired' => true, 'mfa' => 'push_number_match', 'pcId' => 'match_pc', 'npcId' => 'nia', 'number' => 42 })
+      take = post.call('inventory', { 'success' => true }, 'inv' => { 'action' => 'add', 'itemId' => 'nia_phone', 'usedOn' => nil })
+      pass = post.call('mfa/approve', { 'success' => true, 'npcId' => 'nia', 'username' => 'nfaraday', 'via' => 'password', 'approvedBy' => 'player' })
+      assert_equal [], found(scan_rows([required, take, pass]).first)
+      cancel = post.call('mfa/approve.json', { 'success' => false, 'cancelled' => true })
+      assert_equal [['mfa_session', 'mfa:session:nia']], found(scan_rows([required, take, cancel, pass]).first)
+      cancel = post.call('mfa/approve', { 'success' => false, 'cancelled' => true }, 'status' => 422)
+      assert_equal [['mfa_session', 'mfa:session:nia']], found(scan_rows([required, take, cancel, pass]).first)
+      # a sign-in answer with status 201 uses up no name
+      list = rows(278, 279)
+      list[0]['status'] = 201
+      findings, scanner = scan_rows(list, signins: %w[cal@plain_pc#1])
+      assert_equal ['cal@plain_pc#1 (--signin)'], scanner.unused_entries
+      assert_equal [['mfa_session', 'mfa:session:cal']], found(findings)
+    end
+
+    # ---- R2-L8: a token session over a foothold, locked, is unlocked by the password with no step ---------------------------
+
+    test 'R2-L8 an honest unlock of a locked token session is clean; with no lock it is reported' do
+      base = '/break_escape/games/86'
+      token = { 'method' => 'POST', 'path' => "#{base}/login", 'status' => 200, 'login' => { 'pcId' => 'code_pc1' },
+                'body' => { 'success' => true, 'npcId' => 'hana', 'username' => 'hquill', 'via' => 'credential', 'kind' => 'token' } }
+      lock = rows(100).first
+      unlock = rows(107).first.merge('login' => { 'pcId' => 'code_pc1' })
+      assert_equal [], found(scan_rows([token, lock, unlock]).first)
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows([token, unlock]).first)
+      # the unlock is used up, as any lock is
+      assert_equal [['mfa_session', 'mfa:session:hana']], found(scan_rows([token, lock, unlock, unlock]).first)
+    end
+
+    # ---- R2-L7: every `code` value in a scenario with a code device is a finding unless the scenario authors it -------------
+
+    test 'R2-L7 a code value passes only when authored and not six digits' do
+      data = scenario
+      data['rooms'].values.first['warrantyProbe'] = { 'code' => 'W-03' }
+      room = lambda do |value|
+        { 'method' => 'GET', 'path' => '/break_escape/games/86/room/lobby', 'status' => 200,
+          'body' => { 'objects' => [{ 'id' => 'x', 'minigameData' => { 'warranties' => [{ 'id' => 'w', 'code' => value }] } }] } }
+      end
+      scan_with = ->(value) { found(AccessLeakScanner.new(data).scan([['c', 1, room.call(value)]])) }
+      assert_equal [], scan_with.call('W-03')
+      code = ['mfa_secret', 'mfa:key:code']
+      ['A12', '12345', 12_345, 123_456.0, '123.456', '123_456', '123/456', "123\n456", "\uFF11\uFF12\uFF13\uFF14\uFF15\uFF16", '123456', 123_456, nil, true, '', { 'x' => 1 }].each do |value|
+        assert_includes scan_with.call(value), code, value.inspect
+      end
+      # an authored six-digit value does not make the six digits a safe value
+      data['rooms'].values.first['sixProbe'] = { 'code' => '123456' }
+      assert_includes scan_with.call('123456'), code
+    end
   end
 end
