@@ -26,6 +26,7 @@ require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/mfa_model'
+require_relative '../lib/break_escape/lock_step_model'
 require_relative '../lib/break_escape/wearable_model'
 require_relative '../lib/break_escape/scenario_binding'
 
@@ -1905,6 +1906,51 @@ BreakEscape::AccessIdentities.reach(scenario)[:accounts].each do |account|
       add_edge(src, lock_node, label: 'second step') unless $edges.any? { |e| e[:from] == src && e[:to] == lock_node }
     end
   end
+end
+
+# S8c unit 07 (lock second step, dungeon graph): a lock whose object or room carries `secondStep` gets a
+# second edge into its lock node from the owner's NPC node, labelled with the kind (`push`,
+# `push_number_match` or `code`). When the step can never pass (LockStepModel.lock_step_never_passes?) the
+# edge is dashed and labelled "never passes". Nothing is drawn when the owner is unknown. Labels name the
+# step only, never a code, number, password or PIN. A scenario without the field draws as before.
+lock_step_find_room = lambda do |npc_id|
+  rooms.find { |_rid, r| r.is_a?(Hash) && Array(r['npcs']).any? { |n| n.is_a?(Hash) && n['id'] == npc_id } }&.first
+end
+BreakEscape::LockStepModel.each_lock_step(scenario).each do |entry|
+  owner = entry[:step]['owner']
+  next unless owner
+
+  lockable = entry[:lockable]
+  if entry[:kind] == :door
+    lock_node = "door_#{entry[:id]}"
+    next unless $nodes.key?(lock_node)
+  else
+    obj_id = entry[:id] || nid((lockable['name'] || lockable['type']).to_s)
+    lock_node = "lock_#{obj_id}"
+    unless $nodes.key?(lock_node)
+      next unless lockable['locked']
+
+      obj_name = lockable['name'] || obj_id.tr('_', ' ').split.map(&:capitalize).join(' ')
+      add_node(lock_node, scrub_label("#{obj_name}<br/>#{LOCK_TYPE_LABELS[lockable['lockType']] || 'Lock'}"), 'lock')
+      add_edge(entry[:room], lock_node) if entry[:room] && rooms.key?(entry[:room]) &&
+                                           add_node(entry[:room], room_label(entry[:room], rooms[entry[:room]]), 'room')
+    end
+  end
+
+  npc = BreakEscape::LockStepModel.find_npc(scenario, owner)
+  display = npc ? (npc['displayName'] || npc['name'] || owner) : owner
+  npc_node = add_node("npc_#{nid(display)}", scrub_label(display.to_s), 'key')
+  npc_room = lock_step_find_room.call(owner)
+  if npc_room && !$edges.any? { |e| e[:to] == npc_node && e[:from] == npc_room }
+    add_node(npc_room, room_label(npc_room, rooms[npc_room]), 'room')
+    add_edge(npc_room, npc_node)
+  end
+
+  never = BreakEscape::LockStepModel.lock_step_never_passes?(scenario, lockable)
+  label = never ? 'never passes' : "second step: #{entry[:step]['kind']}"
+  next if $edges.any? { |e| e[:from] == npc_node && e[:to] == lock_node && e[:label] == label }
+
+  add_edge(npc_node, lock_node, dashed: never, label: label)
 end
 
 # N14 (S2, plan 9.3, Need row): an edge into each weakness from the node of what it needs, drawn here
