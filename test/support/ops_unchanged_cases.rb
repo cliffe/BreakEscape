@@ -17,6 +17,7 @@ module OpsUnchangedCases
       .merge(core_network_cases)
       .merge(privilege_cases)
       .merge(mfa_cases)
+      .merge(helpdesk_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -651,5 +652,103 @@ module OpsUnchangedCases
     steps << step('bootstrap_after', 'GET', 'scenario')
     mfa_base('test_access_habits_expanded', 'S8a unit 01: the expanded habits of test_access_habits as the bootstrap, rooms and desktops show them, before any S8a engine edit.',
              scenario, steps)
+  end
+
+  # ---- Helpdesk recovery plan (S8b), unit 01: golden answers for what the helpdesk stage must leave alone ----
+  #
+  # One fixture per case, "helpdesk_<name>", captured BEFORE any S8b engine edit (a first capture, not a
+  # re-record). The core_, privilege_ and mfa_ fixtures already pin typed and saved-connection sign-in
+  # (foothold, `from`, implant), lockout followed by the right password, the Friendface phone rule and
+  # the bootstrap of the sign-in, keyring, ca03 and habits scenarios. These add only: GET /keyring and
+  # /capture_secrets before and after a captured account, the bootstrap of test_ops_mfa, and on
+  # test_ops_mfa a right password at a code PC, a push prompt and the phone list.
+  def helpdesk_cases
+    {
+      'helpdesk_test_access_keyring_captured' => helpdesk_keyring_captured_case,
+      'helpdesk_bootstrap_test_ops_mfa' => helpdesk_bootstrap_ops_mfa_case,
+      'helpdesk_test_ops_mfa_second_step' => helpdesk_ops_mfa_second_step_case
+    }
+  end
+
+  def helpdesk_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "helpdesk_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+  # The keyring with no capture, then Ian's account recorded through the sync route (the capture card's
+  # addCapture, as the browser sends it), the keyring and /capture_secrets before and after the drop box
+  # proves it, then the typed sign-in at Ian's PC.
+  def helpdesk_keyring_captured_case
+    scenario = core_render('test_access_keyring')
+    held = [mfa_find_object(scenario, 'kit_dropbox')]
+    capture = { 'ian' => { 'targetId' => 'ian', 'kind' => 'credential', 'address' => 'ishaw', 'at' => 1 } }
+    helpdesk_base(
+      'test_access_keyring_captured', 'S8b unit 01: GET /keyring and /capture_secrets before and after a captured account, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_before', 'GET', 'keyring'),
+       step('capture_secrets_before', 'GET', 'capture_secrets'),
+       step('sync_capture_ian', 'PUT', 'sync_state', { 'clientTs' => 10, 'globalVariables' => { 'se_captures' => capture } }),
+       step('keyring_captured', 'GET', 'keyring'),
+       step('capture_secrets_captured', 'GET', 'capture_secrets'),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       step('keyring_captured_proven', 'GET', 'keyring'),
+       step('keyring_captured_foothold', 'GET', 'keyring', { 'foothold' => 'jack_comms_port' }),
+       step('capture_secrets_proven', 'GET', 'capture_secrets'),
+       step('unplug_comms_port', 'POST', 'network/unplug', { 'jack_id' => 'comms_port' }),
+       step('keyring_after_unplug', 'GET', 'keyring'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  # The bootstrap, every room, GET /keyring and the sign-in accounts at each sign-in PC of test_ops_mfa.
+  def helpdesk_bootstrap_ops_mfa_case
+    scenario = core_render('test_ops_mfa')
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    steps << step('keyring_plain', 'GET', 'keyring')
+    core_login_pcs(scenario).each { |pc| steps << step("accounts_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    helpdesk_base('bootstrap_test_ops_mfa', 'S8b unit 01: the bootstrap, rooms, keyring and sign-in accounts of test_ops_mfa, before any S8b engine edit.',
+                  scenario, steps)
+  end
+
+  # A right password at a code PC (the pane, no session), a wrong then a missing-PC code, a right
+  # password at a push PC then the prompt and the phone list, and a PC with no second step. Held: Hana's
+  # code device and Dev's phone. Not here: the held device's answer and the number-matching answers, whose
+  # code and numbers differ per game (the mechanism compares whole bodies); a Rails test pins their keys.
+  def helpdesk_ops_mfa_second_step_case
+    scenario = core_render('test_ops_mfa')
+    held = %w[hana_device dev_phone].map { |id| mfa_find_object(scenario, id) }
+    helpdesk_base(
+      'test_ops_mfa_second_step', 'S8b unit 01: a right password at a code PC, the held device answer, a push prompt and the phone list on test_ops_mfa, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('device_not_declared_id', 'GET', 'mfa/device', { 'item_id' => 'no_such_device' }),
+       step('device_not_held', 'GET', 'mfa/device', { 'item_id' => 'ines_device' }),
+       login('hana_wrong_password', 'hquill', 'nope', 'code_pc1'),
+       login('hana_right_password_code_pc', 'hquill', 'Quillmere-Hana-31', 'code_pc1'),
+       step('verify_wrong_code', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc1', 'code' => '000000' }),
+       step('verify_no_pending_pc', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc2', 'code' => '000000' }),
+       step('verify_unknown_pc', 'POST', 'mfa/verify', { 'pc_id' => 'no_such_pc', 'code' => '000000' }),
+       step('desktop_code_pc1_no_session', 'GET', 'container/code_pc1'),
+       login('dev_right_password_push_pc', 'dkapoor', 'Kaporwell-Dev-77', 'push_pc'),
+       step('prompt_push_pc', 'POST', 'mfa/prompt', { 'pc_id' => 'push_pc' }),
+       step('phone_dev', 'GET', 'mfa/phone', { 'npc_id' => 'dev' }),
+       step('phone_cal_not_held', 'GET', 'mfa/phone', { 'npc_id' => 'cal' }),
+       step('phone_own_refused', 'GET', 'mfa/phone', { 'npc_id' => 'dev', 'own' => '1' }),
+       step('desktop_push_pc_no_session', 'GET', 'container/push_pc'),
+       login('cal_right_password_plain_pc', 'cmoss', 'Mossbank-Cal-12', 'plain_pc'),
+       step('desktop_plain_pc', 'GET', 'container/plain_pc'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
   end
 end
