@@ -121,22 +121,24 @@ test('an approval on an ownPhone note emits mfa_approved by own_phone', async ()
     M.noteRequired('pc:ops_pc', answer('login.mfa_required_own_push').body);
     const res = await M.approve('pc:ops_pc', {});
     assert.equal(res.passed, true);
-    assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc' });
+    assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc', own: 1 });
     const ev = events.filter(e => e.name.startsWith('mfa_approved'));
     assert.equal(ev.length, 2);
     assert.ok(ev.every(e => e.detail.by === 'own_phone'));
 });
 
 test('an approval on a note without ownPhone keeps the server by', async () => {
-    const { events } = setup(() => serve('approve.own_passed'));
+    const held = serve('approve.own_passed'); held.approvedBy = 'player';
+    const { events, calls } = setup(() => held);
     const plain = answer('login.mfa_required_own_push').body; delete plain.ownPhone;
     M.noteRequired('pc:ops_pc', plain);
     await M.approve('pc:ops_pc', {});
+    assert.deepEqual(calls[0].payload, { pc_id: 'ops_pc' });
     assert.equal(events.find(e => e.name === 'mfa_approved').detail.by, 'player');
 });
 
 test('a code sign-in on an ownPhone note is still by code', async () => {
-    const { events } = setup(() => serve('approve.own_passed'));
+    const { events } = setup(() => serve('verify.own_passed'));
     M.noteRequired('pc:vault_pc', OWN_PENDING());
     await M.verify('pc:vault_pc', '123456');
     assert.notEqual(events.find(e => e.name === 'mfa_approved').detail.by, 'own_phone');
