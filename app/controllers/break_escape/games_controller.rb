@@ -525,7 +525,7 @@ module BreakEscape
               connections: room_data['connections'] || {},
               locked: room_data['locked'] || false,
               lockType: room_data['lockType'],
-              hasNPCs: (room_data['npcs']&.length || 0) > 0,
+              hasNPCs: Array(room_data['npcs']).any? { |n| !AccessIdentities.account_only?(n) }, # S5c: an account with no person is no NPC
               accessible: @game.room_unlocked?(room_id)
             }
           rescue => e
@@ -601,7 +601,7 @@ module BreakEscape
         annotate_station_submission_status!(room_data, room_id)
 
         # Track NPC encounters BEFORE sending response
-        npc_count = room_data['npcs']&.length || 0
+        npc_count = Array(room_data['npcs']).count { |n| !AccessIdentities.account_only?(n) } # S5c
         Rails.logger.info "[BreakEscape] 📦 Loading room: #{room_id} (NPCs: #{npc_count})"
         track_npc_encounters(room_id, room_data)
 

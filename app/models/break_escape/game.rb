@@ -2079,6 +2079,7 @@ module BreakEscape
 
           room['npcs'].each do |npc|
             next unless npc.is_a?(Hash) && npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+            next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
             ids << npc['id']
           end
@@ -2088,6 +2089,7 @@ module BreakEscape
 
       narrow_room_npc_stubs.each_with_object(Set.new) do |npc, ids|
         next unless npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+        next if AccessIdentities.account_only?(npc) # S5c: no person to knock out
 
         ids << npc['id']
       end
@@ -2097,7 +2099,7 @@ module BreakEscape
     # scenario_data (sync_state's narrow load). jsonb_each / jsonb_array_elements /
     # jsonb_build_object only, so it runs on PostgreSQL 9.5 (jsonpath needs 12). Bounded by the scenario.
     NARROW_ROOM_NPC_STUBS_SQL = <<~SQL.squish
-      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'npcType', n.npc -> 'npcType')
+      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'accountOnly', n.npc -> 'accountOnly', 'npcType', n.npc -> 'npcType')
       FROM break_escape_games g
       CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(g.scenario_data -> 'rooms') = 'object'
                                          THEN g.scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS r(room_id, room)
@@ -2194,7 +2196,7 @@ module BreakEscape
       room = scenario_data.dig('rooms', room_id)
       return false unless room
 
-      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id }
+      scenario_has_npc = room['npcs']&.any? { |npc| npc['id'] == npc_id && !AccessIdentities.account_only?(npc) } # S5c
 
       # Check if NPC was removed from this room
       removed = player_state.dig('room_states', room_id, 'npcs_removed')&.include?(npc_id)
@@ -2267,7 +2269,7 @@ module BreakEscape
       (scenario_data['rooms'] || {}).values
         .select { |room| room.is_a?(Hash) }
         .flat_map { |room| room['npcs'].is_a?(Array) ? room['npcs'] : [] }
-        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) }
+        .select { |npc| npc.is_a?(Hash) && %w[person both].include?(npc['npcType']) && !AccessIdentities.account_only?(npc) } # S5c
         .map { |npc| npc['spriteSheet'].presence || 'hacker' }
         .push(scenario_data.dig('player', 'spriteSheet').presence)
         .compact
@@ -2486,7 +2488,7 @@ module BreakEscape
           npcs = room_data['npcs']
           if npcs.is_a?(Array)
             kept_fields['hasPresentNpc'] = npcs.any? do |n|
-              n.is_a?(Hash) && n['npcType'] != 'phone' && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
+              n.is_a?(Hash) && n['npcType'] != 'phone' && !AccessIdentities.account_only?(n) && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
             end
           end
 
@@ -2782,6 +2784,9 @@ module BreakEscape
 
       # Apply dynamic room state changes (delta overlay)
       apply_room_state_changes!(room, room_id)
+
+      # S5c: an account with no person behind it is never a room NPC in any answer.
+      room['npcs'].reject! { |npc| AccessIdentities.account_only?(npc) } if room['npcs'].is_a?(Array)
 
       # Remove ONLY the 'requires' field (the solution) and locked 'contents'
       # Keep lockType, locked, observations visible to client. The work plans built on the way
