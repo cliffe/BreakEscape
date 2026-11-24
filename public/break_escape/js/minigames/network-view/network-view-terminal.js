@@ -503,6 +503,9 @@ export class TerminalRenderer {
         };
 
         if (result.kind === 'offer') {
+            // A line with earlier local output: the echo comes first, so the scene is handed an empty echo
+            const lead = (result.before && result.before.length) || (result.notes && result.notes.length);
+            if (lead) put(this._echo(text));
             for (const r of (result.before || [])) logLocal(r);
             for (const n of (result.notes || [])) putText(n, 'note');
             if (result.mode) this.mode = { ...result.mode };
@@ -510,7 +513,7 @@ export class TerminalRenderer {
             this._syncLog();
             // An echo in the framework console carries its mark, so the scene's log line reads as typed there
             const echo = before.prompt === 'msf' && !PROMPT_AT_START.test(text) ? `${promptMark(before, this.view || {})} ${text}` : text;
-            if (this.ctx) this.ctx.perform(result.offer, echo);
+            if (this.ctx) this.ctx.perform(result.offer, lead ? '' : echo);
             this.focusPrompt();
             return;
         }

@@ -327,3 +327,18 @@ test('a view with no ops block and no sweep offer never builds the Terminal (vie
     assert.equal(scene.viewHasOps(noOpsBody().footholds[0]), false);
     assert.equal(scene.viewHasOps(clone(loadFixture('discovery_unswept')).footholds[0]), true);
 });
+
+test('R1-C5: a ; line with local output and a move writes its echo first, once', async () => {
+    const t = await mount(opsBody(), { params: { skin: 'cli' } });
+    const input = q(t, '.network-term-input');
+    input.value = 'show; nmap -sV print02';
+    input.form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+    const log = lines(t);
+    const echoes = log.map((l, i) => [l, i]).filter(([l]) => l.startsWith('$ show; nmap -sV print02'));
+    assert.equal(echoes.length, 1, JSON.stringify(log));
+    const listing = log.findIndex(l => l.includes('HOST'));
+    assert.ok(listing > echoes[0][1], 'the listing comes after the echo');
+    assert.ok(t.record().calls.length >= 1, 'the move was sent');
+    t.end();
+});
