@@ -343,6 +343,7 @@ function buildHashRow(r, row) {
     if (r.token) row.appendChild(el('div', 'signin-hash-token', r.token));
     const status = el('div', 'signin-use signin-hash-status', r.use);
     row.appendChild(status);
+    let crackButton = null;
     if (r.status === 'running' && Number.isFinite(r.secondsLeft) && r.secondsLeft > 0) {
         // Counts down on this page's clock from the served wait; at 0 it reads "Ready to finish"
         const endsAt = Date.now() + r.secondsLeft * 1000;
@@ -352,7 +353,10 @@ function buildHashRow(r, row) {
             else if (wasAttached) { clearInterval(timer); return; }
             const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
             status.textContent = hashStatusText('running', left);
-            if (left <= 0) clearInterval(timer);
+            if (left <= 0) {
+                if (crackButton) crackButton.textContent = CRACK_FINISH_BUTTON_TEXT;
+                clearInterval(timer);
+            }
         }, 1000);
         timer.unref?.();
     }
@@ -360,6 +364,7 @@ function buildHashRow(r, row) {
         const button = el('button', 'signin-crack', r.status !== 'running' ? CRACK_BUTTON_TEXT
             : (Number.isFinite(r.secondsLeft) && r.secondsLeft > 0 ? CRACK_OPEN_BUTTON_TEXT : CRACK_FINISH_BUTTON_TEXT));
         button.type = 'button';
+        crackButton = button;
         button.addEventListener('click', (e) => {
             e.preventDefault?.(); e.stopPropagation?.();
             try { window.MinigameFramework?.startMinigame?.('ops-cracker', null, { hashId: r.hashId }); } catch (err) { /* the scene could not open */ }

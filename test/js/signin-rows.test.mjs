@@ -503,3 +503,20 @@ test('S7: hostile strings in a hash row are drawn as text, never as markup', () 
     assert.equal(row.querySelector('b'), null);
     assert.match(row.textContent, /<img src=x/);
 });
+
+test('S7 R2-6: when a running row counts down to 0 its button changes from Open to Finish with the status', () => {
+    const realSet = globalThis.setInterval, realNow = Date.now;
+    let tick = null, now = 1_000_000;
+    globalThis.setInterval = (fn) => { tick = fn; return { unref() {} }; };
+    globalThis.clearInterval = () => {};
+    Date.now = () => now;
+    try {
+        const r = build({ captures: [], keyring: { entries: [hashEntry({ status: 'running', readyInSeconds: 3 })], captures: {} } }).signins[0];
+        const row = domOf(r);
+        const button = row.querySelector('button.signin-crack');
+        assert.equal(button.textContent, 'Open');
+        now += 3000; tick();
+        assert.equal(row.querySelector('.signin-hash-status').textContent, 'Ready to finish');
+        assert.equal(button.textContent, 'Finish');
+    } finally { globalThis.setInterval = realSet; Date.now = realNow; }
+});
