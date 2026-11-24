@@ -1,0 +1,229 @@
+{
+  "scenario": "test_ops_lock_step",
+  "start_room": "office",
+  "nodes": [
+    {
+      "id": "door_records_room",
+      "label": "Records room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "records_room",
+      "label": "Records room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_plant_room",
+      "label": "Plant room<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "plant_room",
+      "label": "Plant room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lock_moira_pc",
+      "label": "Moira's PC<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_audit_zip",
+      "label": "quarterly_export.zip<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_moira_locker",
+      "label": "Staff locker<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_priya_safe",
+      "label": "Wall safe<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_dana_cabinet",
+      "label": "Finance cabinet<br/>Password lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "log_step_audit",
+      "label": "Sign-in audit<br/>mfa_challenge, mfa_code_ok, mfa_code_wrong, mfa_code_locked, mfa_expired, mfa_prompt_sent, mfa_prompt_approved, mfa_prompt_denied",
+      "kind": "note",
+      "optional": false
+    },
+    {
+      "id": "reader_audit_log_pc",
+      "label": "Audit log terminal<br/>(log reader)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "npc_moira_hale",
+      "label": "Moira Hale",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_gordon_pike",
+      "label": "Gordon Pike",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_priya_nair",
+      "label": "Priya Nair",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "npc_dana_reeve",
+      "label": "Dana Reeve",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lock_gordon_briefcase",
+      "label": "Gordon's briefcase<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_records_room",
+      "to": "records_room",
+      "soft": false
+    },
+    {
+      "from": "door_plant_room",
+      "to": "plant_room",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_moira_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_moira_pc",
+      "to": "lock_audit_zip",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_moira_locker",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_priya_safe",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "lock_dana_cabinet",
+      "soft": false
+    },
+    {
+      "from": "office",
+      "to": "reader_audit_log_pc",
+      "soft": false
+    },
+    {
+      "from": "log_step_audit",
+      "to": "reader_audit_log_pc",
+      "soft": true,
+      "undirected": true
+    },
+    {
+      "from": "office",
+      "to": "npc_moira_hale",
+      "soft": false
+    },
+    {
+      "from": "npc_moira_hale",
+      "to": "lock_moira_pc",
+      "soft": false,
+      "label": "second step: push"
+    },
+    {
+      "from": "office",
+      "to": "npc_gordon_pike",
+      "soft": false
+    },
+    {
+      "from": "npc_gordon_pike",
+      "to": "lock_audit_zip",
+      "soft": true,
+      "label": "never passes"
+    },
+    {
+      "from": "npc_moira_hale",
+      "to": "lock_moira_locker",
+      "soft": false,
+      "label": "second step: push"
+    },
+    {
+      "from": "office",
+      "to": "npc_priya_nair",
+      "soft": false
+    },
+    {
+      "from": "npc_priya_nair",
+      "to": "lock_priya_safe",
+      "soft": true,
+      "label": "never passes"
+    },
+    {
+      "from": "office",
+      "to": "npc_dana_reeve",
+      "soft": false
+    },
+    {
+      "from": "npc_dana_reeve",
+      "to": "lock_dana_cabinet",
+      "soft": true,
+      "label": "never passes"
+    },
+    {
+      "from": "office",
+      "to": "lock_gordon_briefcase",
+      "soft": false
+    },
+    {
+      "from": "npc_gordon_pike",
+      "to": "lock_gordon_briefcase",
+      "soft": true,
+      "label": "never passes"
+    },
+    {
+      "from": "npc_moira_hale",
+      "to": "door_records_room",
+      "soft": false,
+      "label": "second step: push"
+    },
+    {
+      "from": "npc_moira_hale",
+      "to": "door_plant_room",
+      "soft": false,
+      "label": "second step: push"
+    }
+  ]
+}
