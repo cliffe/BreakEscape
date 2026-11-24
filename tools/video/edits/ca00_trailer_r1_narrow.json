@@ -9,12 +9,12 @@
   "brief": "See docs/video/scripts/ca00_trailer_script.md (round 2). Hook and montage reused from ca12 takes. Music chosen in this edit (D331 landed): PeaceFolk Quietly Cinematic, window from 16.636 s."
  },
  "fps": 30,
- "length": 65.4,
+ "length": 65.7,
  "music": {
   "track": "PeaceFolk/Quietly Cinematic.mp3",
   "analysis": "quietly_cinematic_75.json",
   "start": 16.636,
-  "length": 65.4,
+  "length": 65.7,
   "gain_db": -5,
   "fade_in": 0,
   "fade_out": 2.5,
@@ -111,7 +111,7 @@
     "company": "Quayholt Insurance",
     "stripe": "#6b4c9a"
    },
-   "duration": 5.1
+   "duration": 5.4
   },
   {
    "id": "welcome",
@@ -738,107 +738,107 @@
   {
    "id": "v1",
    "start": 2.22,
-   "end": 7.004,
-   "text": "Hacktivity Cyber Aware: Cyber Security training you play.",
-   "caption": "Hacktivity Cyber Aware:\nCyber Security training you play.",
+   "end": 7.332,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v1.mp3"
   },
   {
    "id": "v1b",
-   "start": 7.4,
-   "end": 10.232,
+   "start": 7.7,
+   "end": 10.532,
    "text": "Before episode one, a five-minute welcome.",
    "caption": "Before episode one,\na five-minute welcome.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v1b.mp3"
   },
   {
    "id": "v2",
-   "start": 12.4,
-   "end": 15.472,
+   "start": 12.7,
+   "end": 15.772,
    "text": "Most episodes start with you playing the attacker.",
    "caption": "Most episodes start with\nyou playing the attacker.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v2.mp3"
   },
   {
    "id": "v3",
-   "start": 15.722,
-   "end": 18.626,
+   "start": 16.022,
+   "end": 18.926,
    "text": "Then you take the other seat and defend.",
    "caption": "Then you take the other seat\nand defend.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v3.mp3"
   },
   {
    "id": "v4",
-   "start": 20.4,
-   "end": 22.944,
+   "start": 20.7,
+   "end": 23.244,
    "text": "Research the company and its people.",
    "caption": "Research the company\nand its people.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v4.mp3"
   },
   {
    "id": "v5",
-   "start": 23.9,
-   "end": 25.436,
+   "start": 24.2,
+   "end": 25.736,
    "text": "Write the cover story.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v5.mp3"
   },
   {
    "id": "v6",
-   "start": 26.4,
-   "end": 27.264,
+   "start": 26.7,
+   "end": 27.564,
    "text": "Make the call.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v6.mp3"
   },
   {
    "id": "v7",
-   "start": 28.7,
-   "end": 29.684,
+   "start": 29.0,
+   "end": 29.984,
    "text": "Swap seats.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v7.mp3"
   },
   {
    "id": "v8",
-   "start": 30.7,
-   "end": 32.644,
+   "start": 31.0,
+   "end": 32.944,
    "text": "Then run the front desk.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v8.mp3"
   },
   {
    "id": "v10",
-   "start": 33.4,
-   "end": 36.088,
+   "start": 33.7,
+   "end": 36.388,
    "text": "Every episode is set in a working office.",
    "caption": "Every episode is set\nin a working office.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v10.mp3"
   },
   {
    "id": "v11",
-   "start": 36.9,
-   "end": 41.988,
+   "start": 37.2,
+   "end": 42.288,
    "text": "It records your choices and timings, never anything you type.",
    "caption": "It records your choices\nand timings, never\nanything you type.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v11.mp3"
   },
   {
    "id": "v12",
-   "start": 42.5,
-   "end": 46.364,
+   "start": 42.8,
+   "end": 46.664,
    "text": "One habit: check it yourself, by a route you trust.",
    "caption": "One habit: check it yourself,\nby a route you trust.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v12.mp3"
   },
   {
    "id": "v13",
-   "start": 48.0,
-   "end": 52.008,
+   "start": 48.3,
+   "end": 52.308,
    "text": "Report when unsure. A quick report is never blamed.",
    "caption": "Report when unsure.\nA quick report is never blamed.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v13.mp3"
   },
   {
    "id": "v14",
-   "start": 60.1,
-   "end": 65.068,
+   "start": 60.4,
+   "end": 65.368,
    "text": "Play the attack, learn to stop it, on Hacktivity.co.uk.",
    "caption": "Play the attack,\nlearn to stop it,\non Hacktivity.co.uk.",
    "file": "/home/cliffe/video-takes-local/ca00/vo/Sulafat_v2/trim/v14.mp3"

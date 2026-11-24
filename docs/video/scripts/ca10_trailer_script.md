@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–3.0 | hook | t07c_room_chatter · fresh game, room wide before Start (`kit_quiet` false), the pool line "Phones haven't stopped today." from whichever of Anjali, Darren or Niamh draws it; in = audio start minus 0.3 s, out = in plus 3.0 s (covers Anjali 2.02 s, Niamh 2.54 s and Darren 2.69 s); the game's bar kept · cold open, no tell, nothing pressed · **pending take** | — | Anjali (or Darren or Niamh): "Phones haven't stopped today." (cached for all three; Anjali speech 0.29 to 1.74 s) |
-| 3.0–8.1 | open | Title: Fake downloads and checks / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 3.0–8.1 | open | Title: Fake downloads and checks / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 8.1–15.4 | topic | t05_pages_list 3-10.3 s · tab A MORNING OF WEB PAGES · the seven-row list, '0 of 7 sorted' (constant, nothing picked), held · **pending take** | **v1b** "Some web pages are traps that look ordinary."<br>**v1c** "This episode: fake downloads and checks." | — |
 | 15.4–18.4 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 18.4–23.2 | research | t02_attack_run 8-12.8 s · tab OPEN-SOURCE RESEARCH · Quayholt page "Suppliers and ordering": the supplier-portal block noted (public facts only) · **pending take** | **v3** "The website names the supplier portal staff use." | — |

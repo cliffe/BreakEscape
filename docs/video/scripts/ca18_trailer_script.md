@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22): the trailer stands alone as a sell fo
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–3.6 | hook | t01_ama_hook · Ama Owusu in the portrait view (fresh game, first talk, line 2 after the welcome line); in = audio start minus 0.15 s, out = speech end plus 0.2 s (clip 3.41 s, speech 0.29 to 3.06 s); game's bar cropped and the sentence burned as the caption with her name · cold open, no tell · **pending take** | — | Ama: "Attackers rarely pick one person and crack them." |
-| 3.6–8.7 | open | Title: Password guessing at scale / Merrin & Sallow | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 3.6–8.7 | open | Title: Password guessing at scale / Merrin & Sallow | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 8.7–15.7 | topic | t02_attack_run, tab OPEN-SOURCE RESEARCH · the practice's public People page, the staff list in view, nothing noted · **pending take** | **v1b** "This practice lists its staff online."<br>**v1c** "This episode: password guessing at scale." | — |
 | 15.7–18.7 | red_card | attack card, title only: "You play the attacker" (3.0 s) | **v2** "First, you play the attacker." | — |
 | 18.7–23.7 | research | t02_attack_run · tab OPEN-SOURCE RESEARCH · opens on the click that notes the team line (so it reads as the attack moving on from the `topic` view), then the Contact page: the address-pattern line noted (the "Noted" line appears); public facts only · **pending take** | **v3** "Their website gives the staff and the address pattern." | — |

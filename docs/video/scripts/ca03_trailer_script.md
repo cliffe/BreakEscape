@@ -7,7 +7,7 @@ Owner rules (settled on ca12, 2026-11-22, as carried by ca01 and the batch 1 rev
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.2 | hook | t01_niamh_hook · Niamh after the defend set, not-caught branch (cached, 5.74 s): person-chat view, cut after the first sentence, which ends at 3.79 s (silence 3.79 to 4.32 s), game's bar cropped out and the sentence burned as the caption; in = line start minus 0.3 s, out = 3.79 s plus 0.15 s (4.2 s window; confirm the pause by ear) · **pending take** | — | Niamh: "Helpdesk's had a run of odd reset calls lately." |
-| 4.2–9.3 | open | Title: Help desk resets / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.2–9.3 | open | Title: Help desk resets / Quayholt Insurance | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 9.3–15.3 | topic | t04_service_queue 5-11 s · tab SERVICE DESK QUEUE · the first call card opened, framed on its header "Gordon McLeish, Claims (calling from a mobile)" and the four claimed facts; transcript and buttons out of frame · **pending take** | **v1b** "A caller says he's locked out."<br>**v1c** "This episode: help desk resets." | — |
 | 15.3–18.8 | red_card | attack card, title only: "You play the attacker" (3.5 s) | **v2** "First, you play the attacker." | — |
 | 18.8–23.8 | research | t02_attack_run 8-13 s · tab OPEN-SOURCE RESEARCH · Quayholt "Our people" page with Gordon McLeish noted, then the Events page with the staff reference noted (public facts only) · **pending take** | **v3** "Public pages give a name, manager and staff number." | — |

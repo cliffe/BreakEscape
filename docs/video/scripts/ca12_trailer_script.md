@@ -7,7 +7,7 @@ Owner brief (2026-11-22): the trailer must stand alone as a sell for the trainin
 | Time (s) | Shot | On screen | Narrator (VO) | Game voice |
 |---|---|---|---|---|
 | 0.0–4.9 | hook | t09_step_away 46.7-51.6 s · Camila C1 at the studio: sets the scene (owner r3: open with it); no tells | — | Camila: "Hi, I'm Camila, here for Yasmin Chaudhry. She said to come straight up." |
-| 4.9–10.0 | open | Title: Visitors and tailgating / Merrin & Sallow Architects | **v1** "Hacktivity Cyber Aware: Cyber Security training you play." | — |
+| 4.9–10.0 | open | Title: Visitors and tailgating / Merrin & Sallow Architects | **v1** "Hacktivity Cyber Aware: Security awareness training you can play." | — |
 | 10.0–16.0 | topic | t09_step_away 40.62-46.6 s · Camila walks up to the studio door past the staff; nobody checks she is expected | **v1b** "Nobody checks she's expected."<br>**v1c** "This episode: visitors and tailgating." | — |
 | 16.0–19.5 | red_card | attack card: "You play the attacker" | **v2** "First, you play the attacker." | — |
 | 19.5–23.0 | research | t04_osint_note 4.9-8.4 s · tab OPEN-SOURCE RESEARCH · Public profile page and a noted detail; no code | **v3** "Dig into what staff post in public." | — |
