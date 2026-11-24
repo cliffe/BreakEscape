@@ -756,6 +756,8 @@ export class NetworkViewMinigame extends MinigameScene {
         // like any further network's. UX feedback slice 1: one header for every kind; a subtitle
         // that adds what the title lacks; a Wi-Fi link shows the icon and, once joined, a status
         // line. The name (with its down tag) and the subtitle are the shared bar's title and subtitle
+        // The row sentence of a request with no reply lives until the next draw, as it does on a Panels row
+        this.rowNotice = '';
         const title = v.name || 'Your link';
         const linkDown = downState(v);
         this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, viewSubtitle(v) || '');

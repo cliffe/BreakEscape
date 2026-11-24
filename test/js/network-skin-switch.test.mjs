@@ -354,3 +354,26 @@ test('R1-C7: a typed panels line leaves the focus on the switch, not on the page
     assert.equal(document.activeElement, switchBtn(h));
     h.end();
 });
+
+test('R1-C10: the no-reply row sentence lasts in the Terminal only as long as it does on a Panels row', async () => {
+    const NO_REPLY = TEXTS.REQUEST_FAILED_TEXT;
+    const h = await mount(opsBody(), { params: { skin: 'cli' }, hold: true });
+    q(h, '[data-host-id="print02"] [data-action="scan"]').click();
+    await settle();
+    await h.release(new Error('no reply'));
+    await settle();
+    const showText = async () => {
+        const input = q(h, '.network-term-input');
+        const before = lines(h).length;
+        input.value = 'show';
+        input.form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+        await settle();
+        return lines(h).slice(before).join('\n');
+    };
+    assert.ok((await showText()).includes(NO_REPLY), 'still held right after the failure');
+    // a switch and a return draws the list again: the sentence is gone, as a Panels redraw removes its node
+    switchBtn(h).click(); await settle();
+    switchBtn(h).click(); await settle();
+    assert.ok(!(await showText()).includes(NO_REPLY), 'gone after the next draw');
+    h.end();
+});
