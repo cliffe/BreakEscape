@@ -25,7 +25,8 @@ Give the leak check every capture file of the game, one by one, oldest first.
 
 ## Layout
 
-- `lobby` (start): the drop box `kit_dropbox`; the wall port `office_port` (network `office_lan`, foothold `jack_office_port`); the cabinet `lobby_cabinet` (not locked) with the card `card_factory`;
+- You start holding the `capture_log` (`holds.captures: true`). Its **Hashes** section lists every hash row, and its Crack button (Open on a running row, Finish at 0) is the only way to the cracker. Opening it closes the log; reopen the log from the inventory afterwards.
+- `lobby` (start): the lobby sign `sign_lobby` (it shows the flag text `flag{crack_floor_year}` for beat 4, and nothing about any recipe); the drop box `kit_dropbox`; the wall port `office_port` (network `office_lan`, foothold `jack_office_port`); the cabinet `lobby_cabinet` (not locked) with the card `card_factory`;
   the reception notes `desk_notes` (takeable; gives one fact); the public terminal `friendface_terminal`; the flag station `records_station` (flag `flag{crack_floor_year}`, reward: one fact);
   the poster `it_poster`; the audit reader `audit_log_pc` (source `crack_audit`). Doors: north to `bay`, east to `store`.
 - `bay`: `dana_pc` (Dana's desk), Dana (`dreyes`, guessable) and Farah (`fnkemelu`, reused: her password equals Dana's).
@@ -35,9 +36,9 @@ Give the leak check every capture file of the game, one by one, oldest first.
 
 ## Beats
 
-1. **Start.** The Sign-ins list has no hash group. `verify-run.rb`: nothing held.
-2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected"; a hash row with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
-3. **Missing facts.** Open the cracker for Dana: no chips. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
+1. **Start.** Open the capture log: the Hashes section is not listed (no hash held). `verify-run.rb`: nothing held.
+2. **First hash.** Take the drop box, plug it into `office_port`, join the network, open the share, take Dana's file. Toast "Hash collected"; a hash row in the log's Hashes section with the username, a token, the Salted marker, status Ready and a Crack button. No password anywhere in the capture.
+3. **Missing facts.** Open the cracker for Dana (Crack button on the row): no chips, and Crack can still be pressed with nothing picked. Take the reception notes: one chip. Crack with it: "2 facts still missing", no wait.
 4. **Earn the rest.** Wait for Dana's post on the terminal (about 30 s after the room loads); submit the flag at the station. Three chips; the intel board shows the same facts.
 5. **A wrong pick costs a wait.** Pick two of the three and Crack: a 10 s progress bar, then "No match". The capture shows `running` with no hint of the verdict.
 6. **The right pick.** Pick all three: the wait, then "Cracked" with the password; the row reads Cracked and a password row sits beside it.

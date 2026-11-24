@@ -7,6 +7,18 @@
   "npcWindupMs": 0,
   "needsDebugOverlay": true,
 
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true },
+      "observations": "Your engagement device: it lists every hash and sign-in you collect, and opens the cracker."
+    }
+  ],
+
   "networks": {
     "office_lan": { "name": "Office network", "discovery": "scan" }
   },
@@ -246,7 +258,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "Ops crack test. Take the drop box and plug it into the wall port to reach the office network and its shared drive. The bay is north, the store room east. The notes pad here, the public terminal and the flag station each tell you something about a person; the reader terminal shows what the office systems recorded.",
+          "text": "Ops crack test. Take the drop box and plug it into the wall port to reach the office network and its shared drive. The bay is north, the store room east. The notes pad here, the public terminal and the flag station each tell you something about a person; the reader terminal shows what the office systems recorded. Your capture log lists every hash you collect. The records flag to submit at the station: flag{crack_floor_year}",
           "observations": "A sign on a stand by the front desk."
         },
         {

@@ -99,6 +99,33 @@ module BreakEscape
       assert_equal false, scenario['accountProfiles']['eli_files']['contents'].find { |c| c['id'] == 'eli_folder' }['locked']
     end
 
+    # R1-S8: the same words must not appear in what else the player can read by name: share and profile
+    # files, credential labels, fact ids, and the NPC and record ids a keyring row shows.
+    test 'no share file, profile file, credential label, fact id or npc id gives away a password or a recipe' do
+      sc = scenario
+      files = Array(sc['resources']).flat_map { |_k, r| r.is_a?(Hash) ? Array(r['contents'] || r['files']) : [] }
+      files += sc['accountProfiles'].values.flat_map { |p| Array(p['contents']) }
+      names = files.flat_map { |f| f.is_a?(Hash) ? [f['id'], f['name']] : [] }.compact
+      names += sc['credentials'].values.map { |c| c['label'] }.compact
+      names += sc['social']['intelFacts'].keys
+      names += sc['rooms'].values.flat_map { |r| Array(r['npcs']).map { |n| n['id'] } }
+      words = %w[crack password strong common guess]
+      words.each { |w| refute_includes names.join(' ').downcase, w }
+      # the profile file ids and names also avoid the word hash
+      profile = sc['accountProfiles'].values.flat_map { |p| Array(p['contents']) }.flat_map { |c| [c['id'], c['name']] }.join(' ').downcase
+      refute_includes profile, 'hash'
+    end
+
+    # R1-C2, R1-S12: the player reaches the Crack button by clicks, and can read the flag in the game
+    test 'the player starts with a capture log that lists hash rows, and the lobby sign shows the flag' do
+      sc = scenario
+      log = sc['startItemsInInventory'].find { |i| i['type'] == 'capture_log' }
+      assert log, 'a capture log is the only way to the Crack button'
+      assert_equal true, log.dig('holds', 'captures')
+      sign = sc['rooms']['lobby']['objects'].find { |o| o['id'] == 'sign_lobby' }
+      assert_includes sign['text'], 'flag{crack_floor_year}'
+    end
+
     test 'a new game lists no hash row and holds no crack state' do
       build
       body = keyring
