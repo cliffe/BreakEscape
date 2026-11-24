@@ -5,15 +5,16 @@
 import { sleep, clearScreen, awaitChoice } from '../lib/lib.mjs';
 import { openMg, closeAll } from './_c10.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(800); }
+const xClose = (page) => page.evaluate(() => { for (const x of document.querySelectorAll('.game-display-dialog .game-modal-close')) x.click(); }).catch(() => {});
 export default async (page, bridge, mark) => {
   await sleep(1000);
-  await bridge.moveToNear('incident_file', { timeoutMs: 25000 }); await sleep(600); await openMg(bridge, 'incident_file', 'notes', mark); await sleep(3000); await closeAll(page, bridge); mark('notes-closed'); await sleep(800);
-  await bridge.moveToNear('gate_terminal', { timeoutMs: 25000 }); await sleep(600); await openMg(bridge, 'gate_terminal', 'flag', mark); await sleep(3000); await closeAll(page, bridge); mark('flag-closed'); await sleep(800);
-  await bridge.moveToNear('fp_kettle', { timeoutMs: 25000 }); await sleep(600); mark('kettle-interact'); await bridge.interact('fp_kettle', { timeoutMs: 15000, approach: false }); await sleep(3000); await closeAll(page, bridge); await sleep(600);
+  await bridge.moveToNear('incident_file', { timeoutMs: 25000 }); await sleep(600); await openMg(bridge, 'incident_file', 'notes', mark); await sleep(3000); await xClose(page); await sleep(400); await closeAll(page, bridge); mark('notes-closed'); await sleep(800);
+  await bridge.moveToNear('gate_terminal', { timeoutMs: 25000 }); await sleep(600); await openMg(bridge, 'gate_terminal', 'flag', mark); await sleep(3000); await xClose(page); await sleep(400); await closeAll(page, bridge); mark('flag-closed'); await sleep(800);
+  await bridge.moveToNear('fp_kettle', { timeoutMs: 25000 }); await sleep(600); mark('kettle-interact'); await bridge.interact('fp_kettle', { timeoutMs: 15000, approach: false }); await sleep(3000); await xClose(page); await sleep(400); await closeAll(page, bridge); await sleep(600);
   const r = await bridge.openInventoryItem('phone'); if (!r || !r.ok) throw new Error('phone did not open ' + JSON.stringify(r).slice(0, 200));
   await bridge.waitForMinigame('phone-chat', { timeoutMs: 8000 }); mark('phone-open'); await sleep(2200);
   const c = await bridge.minigame.clickText('Agent HaX'); mark('contact-picked', { ok: c && c.ok }); await sleep(2500);
   const d = await awaitChoice(bridge, 6000).catch(() => null); mark('thread-shown', { choices: d && d.choices.map(x => x.text) }); await sleep(2500);
   try { await bridge.minigame.clickText('Victoria'); mark('victoria-picked'); await sleep(2500); } catch (e) { mark('victoria-missing', { e: String(e).slice(0, 100) }); }
-  await closeAll(page, bridge); await sleep(1000); mark('linger-end');
+  await xClose(page); await sleep(400); await closeAll(page, bridge); await sleep(1000); mark('linger-end');
 };

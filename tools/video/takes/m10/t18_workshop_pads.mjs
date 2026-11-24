@@ -14,7 +14,7 @@ export async function setup(page, bridge) {
 }
 export default async (page, bridge, mark) => {
   await sleep(1000); await openMg(bridge, 'model_terminal', 'pw', mark); await sleep(2200);
-  await typeKeys(page, ['z', 'q', 'x'], mark, 'pw', 350); await sleep(1500); await closeAll(page, bridge); mark('pw-closed'); await sleep(1000);
+  mark('pw-typed'); await sleep(3000); /* no typing: a password field must never be typed into (browser save-password popup, 24 Nov) */ await closeAll(page, bridge); mark('pw-closed'); await sleep(1000);
   await blurUid(page);
   await page.evaluate(() => { const rc = window.npcManager.getNPC('imran').rfidCard; const cardData = { name: rc.name, card_id: rc.card_id, rfid_protocol: rc.rfid_protocol, type: 'keycard' }; for (const k of ['rfid_hex', 'rfid_facility', 'rfid_card_number', 'rfid_data']) if (rc[k] !== undefined) cardData[k] = rc[k]; window.startRFIDMinigame(null, null, { mode: 'clone', cardToClone: cardData, cloneSource: { npc_id: 'imran' } }); });
   mark('cloner-open'); await sleep(2500);
