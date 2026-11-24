@@ -7,7 +7,7 @@
  "preview_for": "ca03_helpdesk_reset",
  "source_edit": "ca03_trailer_r1",
  "fps": 30,
- "length": 20.64,
+ "length": 20.14,
  "music": {
   "none": true
  },
@@ -65,16 +65,16 @@
    }
   },
   {
-   "id": "topic",
+   "id": "research",
    "type": "gameplay",
-   "duration": 5.0,
+   "duration": 4.0,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t04_service_queue.trimmed.mkv",
-    "in": 9.0,
-    "out": 14.0
+    "file": "t02_attack_run.trimmed.mkv",
+    "in": 6.88,
+    "out": 10.88
    },
    "audio": {
     "gain_db": -60
@@ -82,9 +82,9 @@
    "seat": "full",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.28,
-     "zoom": 1.8
+     "cx": 0.503,
+     "cy": 0.5,
+     "zoom": 1.25
     }
    },
    "caption": {
@@ -98,7 +98,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/topic: 0.00 s in, 5.00 s (inside the trailer shot; same spoiler judgement) | t04: list from 6.20 (rules intro before it, not in), card1 opens 11.37; in = card - 2.37 so v1b sits over the list as the card opens and v1c over the first Gordon McLeish card; out before card2 (18.35); transcript hidden by CSS, verdict hints hidden, nothing pressed; frame-check the buttons edge on the render | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca03_trailer_r1/research: 0.50 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | VOICED RETAKE 24 Nov. t02: note:blk_claims_head 6.700; in = head note - 0.32, 5.0 s (rule as r1) | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
@@ -141,14 +141,14 @@
   {
    "id": "queue_b",
    "type": "gameplay",
-   "duration": 3.5,
+   "duration": 4.0,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t04_service_queue.trimmed.mkv",
     "in": 17.4,
-    "out": 20.9
+    "out": 21.4
    },
    "audio": {
     "gain_db": -60
@@ -172,7 +172,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "PREVIEW from ca03_trailer_r1/queue_b: 0.00 s in, 3.50 s (inside the trailer shot; same spoiler judgement) | t04: card2_open 18.35 (second Gordon McLeish call, same four facts); in = card2 - 0.95, out before buttons_view 23.65 starts the sweep; transcript hidden, nothing pressed; v11a over the card, v11b after it | CA: spoilers not an issue (owner), no masks"
+    "note": "PREVIEW from ca03_trailer_r1/queue_b: 0.00 s in, 4.00 s (inside the trailer shot; same spoiler judgement) | t04: card2_open 18.35 (second Gordon McLeish call, same four facts); in = card2 - 0.95, out before buttons_view 23.65 starts the sweep; transcript hidden, nothing pressed; v11a over the card, v11b after it | CA: spoilers not an issue (owner), no masks"
    }
   },
   {
