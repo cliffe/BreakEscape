@@ -1471,7 +1471,7 @@ export class NetworkViewMinigame extends MinigameScene {
         // so no sign-out and sign-in fire again; a copy the client lacks (a reload) is still recorded
         const held = answer.already === true && !!window.pcSessions?.remoteViewFoothold?.(hostId);
         if (!held) {
-            try { window.pcSessions?.noteTechniqueSession?.(hostId, answer.session, answer.endedPcIds ?? null, answer.tokenExpiredPcIds ?? null); } catch (e) { console.warn('[network-view] noting the session threw', e); }
+            try { window.pcSessions?.noteTechniqueSession?.(hostId, answer.session, answer.endedPcIds ?? null, answer.tokenExpiredPcIds ?? null, answer.already === true); } catch (e) { console.warn('[network-view] noting the session threw', e); }
         }
         const start = window.openRemoteDesktop;
         if (typeof start !== 'function' || this._reported || this._ending || this.status !== 'ready') return false;

@@ -168,17 +168,17 @@ test('settle: a locked entry never gains the level; a technique entry gets it ba
     assert.equal(s.sessionAdmin('t'), true);
 });
 
-test('a repeat technique grant after access was dropped restores it with no sign-in events', () => {
+test('a repeat technique grant (the answer has already: true) after access was dropped restores it with no sign-in events', () => {
     const s = setup();
     s.load({ t: { ...TECH } }, ['t']);
     s.noteDesktopRefused('t', 'not_responding');
     events.length = 0;
-    const out = s.noteTechniqueSession('t', { ...TECH });
+    const out = s.noteTechniqueSession('t', { ...TECH }, null, null, true);
     assert.equal(s.sessionAdmin('t'), true);
     assert.deepEqual(events, [], 'no pc_signed_out or pc_signed_in for the same copy');
     assert.equal(out.access, 'admin');
     // and a repeat without access clears it in place, again with no events
-    s.noteTechniqueSession('t', { ...TECH, access: undefined });
+    s.noteTechniqueSession('t', { ...TECH, access: undefined }, null, null, true);
     assert.equal(s.sessionAdmin('t'), false);
     assert.deepEqual(events, []);
 });

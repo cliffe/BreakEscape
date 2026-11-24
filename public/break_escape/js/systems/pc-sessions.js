@@ -653,23 +653,29 @@ export class PcSessions {
     /**
      * A session the server granted with no sign-in (a technique, core plan 5.4): `session` is the
      * answer's session (npcId, username, displayName, via 'technique', remote, footholdId, host,
-     * access?). Recorded as a sign-in's answer is: pc_signed_in, the sessions it ended dropped.
+     * access?). Recorded as a sign-in's answer is: pc_signed_in, the sessions it ended dropped. `already` is the answer's
+     * `already === true`: a repeat of a grant already held, which sets the level in place and fires nothing.
      */
-    noteTechniqueSession(pcId, session, endedPcIds = null, tokenExpiredPcIds = null) {
+    noteTechniqueSession(pcId, session, endedPcIds = null, tokenExpiredPcIds = null, already = false) {
         this.listen();
         if (!pcId || !session?.npcId) return null;
         const held = {
             npcId: session.npcId, username: session.username ?? null, displayName: session.displayName ?? null,
             via: 'technique', ...pictureFields(session), ...accessFields(session), ...remoteFields(session)
         };
-        // A repeat grant (core plan 5.4) changes nothing: the same copy is already held, so no sign-out or sign-in fires
+        // A repeat grant (core plan 5.4) changes nothing: the same copy is already held, so no sign-out or sign-in fires.
+        // The server's own word (`already: true`) says it is a repeat; a real step up at the same copy (user, then admin)
+        // is a new grant and is recorded as a sign-in is (R2-A1)
         const now = this.sessions.get(pcId);
         if (now && now.via === 'technique' && now.npcId === held.npcId && now.footholdId === held.footholdId) {
-            // Only the level may differ (a dropped `access` coming back): set it in place, no events
-            if (now.access !== held.access) {
-                if (held.access === undefined) delete now.access; else now.access = held.access;
+            if (already === true) {
+                // Only the level may differ (a dropped `access` coming back after a refused desktop): set it in place, no events
+                if (now.access !== held.access) {
+                    if (held.access === undefined) delete now.access; else now.access = held.access;
+                }
+                return publicSession(pcId, now);
             }
-            return publicSession(pcId, now);
+            if (now.access === held.access) return publicSession(pcId, now);
         }
         this._replace(pcId, held);
         this._dropEnded(endedPcIds, pcId, tokenExpiredPcIds);
