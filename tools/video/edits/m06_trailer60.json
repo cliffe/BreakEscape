@@ -516,11 +516,11 @@
    },
    "source": {
     "type": "clip",
-    "file": "real_hacking_m02_slate.mp4",
-    "in": 0.0,
-    "out": 1.8
+    "file": "m06_console_recon_clip.mp4",
+    "in": 0.4,
+    "out": 2.2
    },
-   "note": "REAL HACKING slate (m02 room behind it) until the m06 console take exists",
+   "note": "m06 console recon (~/safetynet-footage/m06/solution/vm_console_recon_s960.trimmed.mkv, 48.13-50.73 s): crop x0-345 y0-250 of the 1024x768 console scaled 3x nearest on #21242D, 1920x1080 (m06_console_recon_clip.mp4, 2.6 s, shot uses 0.4-2.2). full-port nmap -Pn -sV -p- command, then the open-port list (ssh, tcpwrapped, zookeeper, five Jetty http ports) appears; crop stops before the long version string and below the MAC/vendor line. No flag, password or credential on screen. BE_CLIPS_DIR=$HOME/video-takes-local/m06/clips",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -530,7 +530,7 @@
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1
+     "zoom": 0.5625
     },
     "1:1": {
      "cx": 0.5,
@@ -541,15 +541,14 @@
    "audio": {
     "gain_db": -6
    },
-   "placeholder": true,
-   "placeholder_note": "PENDING m06 VM console take (vm-console-takes); stand-in real_hacking_m02_slate.mp4 shows the m02 server room behind the slate",
+   "placeholder": false,
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "slate text only"
+    "note": "terminal scan output only, no credential or flag"
    }
   },
   {
