@@ -238,3 +238,16 @@ test('R1-C3: a locked-out answer and a bare 422 end the step and drop the record
     assert.equal(M.failureReason(gone), null);
     assert.ok(h.events.some(e => e.name === 'mfa_failed' && e.detail.reason === 'locked_out'));
 });
+
+test('R2-1: a 403 on approve is no_phone only for "no such phone"; other refusals keep their reason', async () => {
+    setup(() => fail(403, { success: false, error: 'no such phone' }));
+    M.noteRequired('pc:a', { mfa: 'push', npcId: 'ann' });
+    let r = await M.approve('pc:a', {});
+    assert.deepEqual([r.ok, r.reason], [false, 'no_phone']);
+    setup(() => fail(403, { error: 'This PC is off.', reason: 'off' }));
+    r = await M.approve('pc:a', {});
+    assert.equal(r.ok, false);
+    assert.notEqual(r.reason, 'no_phone');
+    assert.equal(r.status, 403);
+    assert.equal(r.body.reason, 'off');
+});

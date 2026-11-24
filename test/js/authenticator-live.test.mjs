@@ -127,3 +127,16 @@ test('a phone the player does not hold shows a message and no cards', async () =
     assert.equal(cards().length, 0);
     assert.match(document.querySelector('.auth-live-status').textContent, /not holding/);
 });
+
+test('R2-7: a locked_out or gone answer to a tap closes the phone, the card does not stay', async () => {
+    for (const reason of ['locked_out', 'gone']) {
+        const s = stub([{ pcId: 'desk', host: 'Desk PC', username: 'sam', n: 1 }], { ok: false, reason });
+        const scene = await open(s);
+        let closed = 0;
+        const orig = scene.complete.bind(scene);
+        scene.complete = (...a) => { closed += 1; return orig(...a); };
+        await scene.tapApprove('pc:desk');
+        await tick();
+        assert.equal(closed, 1, reason);
+    }
+});

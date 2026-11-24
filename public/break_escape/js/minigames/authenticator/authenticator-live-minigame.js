@@ -171,6 +171,10 @@ export class AuthenticatorLiveMinigame extends AuthenticatorMinigame {
             // The server ends the attempt on a deny and on a wrong number alike (422 cancelled)
             this.deniedCount += 1;
             note = kind === 'deny' ? 'Refused. The request was cancelled.' : 'That number did not match. The request was cancelled.';
+        } else if (res && (res.reason === 'locked_out' || res.reason === 'gone')) {
+            // The step is over or the account is locked: close the phone and let the sign-in screen say so
+            this.complete(false);
+            return res;
         } else {
             note = 'That request is no longer open.';
         }

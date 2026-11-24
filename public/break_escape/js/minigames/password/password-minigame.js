@@ -3082,7 +3082,7 @@ export class PasswordMinigame extends MinigameScene {
             default:
                 if (this.pushAgainBtn) this.pushAgainBtn.disabled = false;
                 this.setSignInMessage(result.reason === 'error'
-                    ? signInErrorMessage({ status: result.status, serverReason: null })
+                    ? signInErrorMessage({ status: result.status, serverReason: (result.body && result.body.reason) || null })
                     : 'That did not work. Try again.', 'error');
         }
     }
@@ -3214,7 +3214,7 @@ export class PasswordMinigame extends MinigameScene {
                 return;
             default:
                 if (result.reason === 'error') {
-                    this.setSignInMessage(signInErrorMessage({ status: result.status, serverReason: null }), 'error');
+                    this.setSignInMessage(signInErrorMessage({ status: result.status, serverReason: (result.body && result.body.reason) || null }), 'error');
                 } else {
                     refuse();
                     this.setSignInMessage('That did not work. Try again.', 'error');

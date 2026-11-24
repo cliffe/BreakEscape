@@ -31,7 +31,7 @@ let cfg = { request: null, onSession: null, emit: null, now: () => Date.now() };
 
 const pendingBySubject = new Map(); // key -> { kind, npcId, number?, ownPhone?, n }
 const completedBySubject = new Map(); // key -> body, handed out once
-const CODE_FRESH_MS = 60000; // a code lives for 30 s windows; the server takes this and the last
+const CODE_FRESH_MS = 60000; // a code lives for one 60 s step; the server takes this and the last
 let lastRead = null; // { npcId, code, source: 'item', deviceId, at }
 
 export function configure({ request, onSession, emit, now } = {}) {
@@ -216,7 +216,9 @@ async function post(path, subject, extra, { keep = false } = {}) {
     const parsed = parseKey(subject);
     const res = await call('POST', path, { ...subjectFields(parsed), ...extra });
     if (!res.ok) {
-        if (res.status === 403 && path === 'mfa/approve') return { ...res, reason: 'no_phone' };
+        // Only "no such phone" means the phone is not held; any other 403 (the PC is off, the route is
+        // gone) keeps its own reason in the body for the caller
+        if (res.status === 403 && path === 'mfa/approve' && res.body && res.body.error === 'no such phone') return { ...res, reason: 'no_phone' };
         if (res.status === 422) return refusalResult(parsed, res);
         return res;
     }
