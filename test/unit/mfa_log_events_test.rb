@@ -36,8 +36,10 @@ module BreakEscape
       @game.write_log_row!(event, as: nil, where: where, result: result, detail: detail)
     end
 
-    test 'the eight events are registered last, in order, as pc events labelled within the pattern' do
-      assert_equal EXPECTED.keys, OpsLogEvents::EVENTS.keys.last(8)
+    test 'the eight events are registered together, in order, as pc events labelled within the pattern' do
+      # Later stages register their own events after these, so the eight are
+      # checked as one unbroken run rather than as the tail of the list.
+      assert_includes OpsLogEvents::EVENTS.keys.each_cons(8).to_a, EXPECTED.keys
       EXPECTED.each do |name, want|
         entry = OpsLogEvents::EVENTS[name]
         assert_equal %w[pc], entry[:places], name
