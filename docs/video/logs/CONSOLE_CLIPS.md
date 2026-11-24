@@ -39,19 +39,21 @@ The scan results land at one instant in each take (found by frame-brightness ons
 - m07-m10 have no edits yet; clips only.
 - m01 edit left on the Hydra shot (see above).
 
-## Varied console beats: draft plan (24 Nov, not yet cut)
+## Varied console beats: revised plan (24 Nov, not yet cut)
 
-Owner note: too many trailers show the nmap scan. Surveyed from the full-solution RAW takes (`vm_console_full_RAW_s9xx.trimmed.mkv`, times in trimmed seconds) against each mask log. No clips cut yet; frame-level checks still to do before any cut.
+Owner note: too many trailers show the nmap scan. m02, m04 and m06 keep their final recon clips; m01 keeps Hydra. The other six get a different beat, cut from the full-solution takes (times in trimmed seconds), each window checked frame by frame (every frame's crop compared against full-res reference frames that were read by eye). No take has an msfconsole banner (every run uses `msfconsole -q`) and none runs `search`, so those two beats are not available.
 
-| Mission | Beat kind | Source and time | Mask / risk | Text extent | Neighbour check |
-|---|---|---|---|---|---|
-| m01 | brute force (Hydra, kept) | current edit | password mosaicked (existing) | n/a | m02 differs |
-| m02 | file read (backdoor warning email) | s943, foothold stage 104.7-117.6 | flag line and account name above the email: crop below them | Subject line ~0-470 px; body full width | m01, m03 differ |
-| m03 | keep recon | s949 | distcc output lands in one frame with a flag | as now | m02, m04 differ |
-| m04 | msf module run | s958, rce stage ~174-190 | base64 payload rows on top: crop out; flag only from ~212 | left, ~560-900 px | m03, m05 differ |
-| m05 | keep recon | s959 | later stages are config dumps | as now | m04, m06 differ |
-| m06 | shell landing (uid + runbook note) | s960, foothold-run, lands 80-90 | clean per mask log | top-left, ~0-650 px | m05, m07 differ |
-| m07 | keep recon | s945 | later stages show account, password, flag at once | as now | m06, m08 differ |
-| m08 | shell landing (msf session opened, www-data) | s946, gitlist_rce ~105-150 | no flag in span; check every frame | top-left, under ~700 px | m07, m09 differ |
-| m09 | msf module run | s947, tomb_privesc ~170-176 | base64 blob mid-screen: crop out | top and bottom rows, left | m08, m10 differ |
-| m10 | to pick (not msf module run) | s948 | see mask log | - | - |
+| Mission | Beat | Source and window | Crop (1024x768) | Frame check |
+|---|---|---|---|---|
+| m01 | brute force (Hydra, kept) | current edit | - | existing |
+| m02 | recon (final) | - | - | final |
+| m03 | msf module use and options set (`use exploit/unix/misc/distcc_exec`, set RHOSTS/RPORT/PAYLOAD) | older full take `vm_console.trimmed.mkv`, 183.4-186.0 (lines land 184.4-185.1). The s949 take prints its output and a flag in one frame | x0-570 y0-180 | pass |
+| m04 | recon (final) | - | - | final |
+| m05 | attack script read: the msf resource lines (`use exploit/linux/http/bludit_upload_images_exec`, sets) | s959, 67.0-69.6 (script lands 67.33) | x0-500 y342-558; an account-name line and a base64 blob sit above, kept out | pass |
+| m06 | recon (final) | - | - | final |
+| m07 | attack script read: `cat s5sudo.sh` (NFS mount, listener scan, ssh, sudo awk breakout; variables only) | older, superseded full take `vm_console.trimmed.mkv`, 91.0-93.6. The s945 take shows the account and a flag in its first output frame | x0-1024 y0-306 (full-width lines) | pass |
+| m08 | shell landing (gitlist_exec session, www-data) | s946, ~104-150 | to fix | in progress |
+| m09 | msf module run (nostromo_code_exec) | s947, ~170-176 | top and bottom rows, base64 blob cropped out | to do |
+| m10 | file read: the release arming / kill configuration note | `vm_console_solution.trimmed.mkv`, release_escape run, lands ~245-247. The s948 full take fails after recon; the foothold take is an msf module run like m09 | from the note heading to "A full stop needs the core console"; a flag line sits just below | to do |
+
+Neighbour check: brute force, recon, msf use, recon, script read, recon, script read, shell landing, msf module run, file read. No two neighbours match.
