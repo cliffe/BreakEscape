@@ -17,11 +17,21 @@ module BreakEscape
         wim = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'wim' }
         wim['creds']['resetPassword'] = WIM_NEW
       end
+      if @wim_hash
+        data['credentials'] ||= {}
+        data['social'] ||= {}
+        data['social']['intelFacts'] ||= {}
+        data['credentials']['wim_hash'] = { 'kind' => 'hash', 'account' => 'wim', 'label' => 'Stored record: Wim',
+                                            'proof' => { 'held' => 'wim_hash_file' }, 'crack' => { 'password' => 'common' } }
+        data['rooms']['front_office']['objects'] << { 'type' => 'text_file', 'id' => 'wim_hash_file', 'name' => 'wim_record.dat', 'takeable' => true,
+                                                      'readable' => false, 'credential' => 'wim_hash', 'position' => { 'x' => 3, 'y' => 3 },
+                                                      'observations' => 'A stored account record.' }
+      end
       data
     end
 
-    def scan_rows(rows, data = scenario)
-      AccessLeakScanner.new(data).scan(rows.each_with_index.map { |r, i| ['r2.jsonl', i + 1, r] })
+    def scan_rows(rows, data = scenario, game: nil)
+      AccessLeakScanner.new(data, **(game ? { game: game } : {})).scan(rows.each_with_index.map { |r, i| ['r2.jsonl', i + 1, r] })
     end
 
     def tess_entry(row)
@@ -68,6 +78,58 @@ module BreakEscape
       cases.each do |label, rows|
         assert(scan_rows(rows).any? { |f| f.owner.start_with?('helpdesk:') }, label)
       end
+    end
+
+    test 'R3-SCANNER3: the scoped entry under a query that names no sign-in PC is reported' do
+      grant = ask_row(TESS[0], 'password', TESS_ANSWERS)
+      scoped = get_row('keyring', { pc_id: 'records_pc' })
+      assert(scan_rows([grant, scoped]).empty?, 'the honest scoped row is clean')
+      ['pc_id=ghost_pc', 'pc_id=audit_log_pc', 'pc_id=ghost_pc&pc_id=records_pc', 'pc_id=records_pc&pc_id=ghost_pc',
+       'pc_id=records_pc;pc_id=ghost_pc', 'pc_id=ghost_pc;pc_id=records_pc'].each do |q|
+        r = copy(scoped)
+        r['query'] = q
+        assert(scan_rows([grant, r]).any? { |f| f.owner.start_with?('helpdesk:') }, q)
+      end
+    end
+
+    # ---- R3-SCANNER3: one account with a cracked entry and a reset entry ----
+
+    test 'R3-SCANNER3: a cracked entry and a reset entry of one account are each judged on their own proof' do
+      @wim_pw = true
+      @wim_hash = true
+      build
+      @log = []
+      take_row('wim_hash_file', 'text_file', 'wim_record.dat')
+      get_row('keyring', {}, :k0)
+      post_row('crack', { hash_id: 'wim_hash', facts: [] }, :crack)
+      get_row('keyring', {}, :k_cracked)
+      ask_row(WIM[0], 'password', WIM_ANSWERS, :grant)
+      get_row('keyring', {}, :k_both)
+      both = @log.last
+      old = WIM[1]
+      ids = both['body']['entries'].map { |e| e['id'] }
+      assert_includes ids, 'wim.cracked'
+      assert_includes ids, 'wim.reset'
+      game = Game.find(@game.id)
+      found = scan_rows(@log, scenario, game: game)
+      assert_empty found, found.map { |f| [f.rule, f.owner, f.line] }.inspect
+      entry = ->(rows, id) { rows.last['body']['entries'].find { |e| e['id'] == id } }
+      owners = lambda do |rows|
+        scan_rows(rows, scenario, game: game).map { |f| [f.rule, f.owner] }
+      end
+      swapped = copy_rows(@log)
+      entry.call(swapped, 'wim.cracked')['password'] = WIM_NEW
+      assert(owners.call(swapped).any? { |r, _| r == 'crack_unearned' }, 'cracked entry carrying the reset password')
+      reset_old = copy_rows(@log)
+      entry.call(reset_old, 'wim.reset')['password'] = old
+      assert(owners.call(reset_old).any? { |_, o| o.start_with?('helpdesk:') }, 'reset entry carrying the cracked password')
+      no_crack = copy_rows(@log)
+      no_crack.delete_at(@log.index { |r| r['path'].end_with?('/crack') })
+      assert(owners.call(no_crack).any? { |r, _| r == 'crack_unearned' }, 'a cracked entry with no crack proof')
+    end
+
+    def copy_rows(rows)
+      Marshal.load(Marshal.dump(rows))
     end
 
     # ---- R2-SCANNER3: a repeat password grant drops nothing on the server ----
@@ -132,7 +194,11 @@ module BreakEscape
         found = scan([grant_mfa, row('GET', 'mfa/phone', { 'status' => 200, 'body' => list }, query: q)], data)
         assert_includes helpdesk_owners(found), 'helpdesk:old:phone', q
       end
-      ['npc_id=nia&npc_id=nia', 'npc_id=nia&x=1'].each do |q|
+      ['npc_id=nia;npc_id=hana', 'npc_id=hana;npc_id=nia', 'x=1;npc_id=hana', 'npc_id=hana;x=1'].each do |q|
+        found = scan([grant_mfa, row('GET', 'mfa/phone', { 'status' => 200, 'body' => list }, query: q)], data)
+        assert_includes helpdesk_owners(found), 'helpdesk:old:phone', q
+      end
+      ['npc_id=nia&npc_id=nia', 'npc_id=nia&x=1', 'npc_id=nia;x=1'].each do |q|
         assert_empty helpdesk_only(scan([grant_mfa, row('GET', 'mfa/phone', { 'status' => 200, 'body' => list }, query: q)], data)), q
       end
     end
@@ -140,7 +206,8 @@ module BreakEscape
     test 'R2-SCANNER4: the old device code is a finding when ANY item_id value is the re-enrolled account\'s device' do
       data = scenario
       device = { 'deviceId' => 'hana_device', 'displayName' => npc_of(data, 'hana')['displayName'] || 'hana', 'npcId' => 'hana', 'code' => '111222', 'secondsLeft' => 5, 'used' => false }
-      ['item_id=hana_device&item_id=nia_device', 'item_id=nia_device&item_id=hana_device'].each do |q|
+      ['item_id=hana_device&item_id=nia_device', 'item_id=nia_device&item_id=hana_device', 'item_id=nia_device;item_id=hana_device',
+       'x=1;item_id=hana_device', 'item_id=hana_device;x=1'].each do |q|
         found = scan([grant_mfa, own_device('hana'), take('hana_device'), row('GET', 'mfa/device', { 'status' => 200, 'body' => device }, query: q)], data)
         assert_includes helpdesk_owners(found), 'helpdesk:old:code', q
       end

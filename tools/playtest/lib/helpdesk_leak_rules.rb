@@ -47,7 +47,8 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # the stop a refusal with triesLeft 0 starts, is still running at the row's time; a row with no readable time while any stop was
 # seen counts as stopped), `npcId` is an account and `deskId` a desk of the scenario, that desk covers the account for `what`
 # (a `callback` desk only while the run holds the account's phone at that row), and for a password the value is the one the
-# account alone owns. A repeat grant names the same account again and adds nothing.
+# account alone owns. A repeat grant names the same account again and adds nothing. A grant that is NOT credited (an honest one inside a stop,
+# limit 1) drops no step and marks no pair; the row is already a `helpdesk_grant` finding.
 #
 # LIMITS (the recorder keeps no request bodies): (1) a stop on any desk or username stops every grant until it runs out, because
 # a refusal names no username, so a grant for another account inside that time is not credited: the scripted playtest plays its
@@ -67,7 +68,7 @@ require_relative '../../../lib/break_escape/helpdesk_model' unless defined?(Brea
 # value and as a hash key. (7) The scanner cannot tell whether a `pc_id` keyring screen was openable, so both honest forms of
 # the reset entry (plain, scoped) are accepted; nothing else is. (8) After a credited first password grant the server clears the
 # account's wrong-code count; the scanner cannot clear its own, so a lock answer for an account that had wrong codes before its
-# grant is reported even when honest (the stricter side: a lock the server could not give is reported too).
+# grant is reported even when honest, until a pass answer for that pair removes the mark (the stricter side: a lock the server could not give is reported too).
 #
 # The main scanner is touched in seven places (S8c merges keep all of them): the require, the include, the `helpdesk_begin_scan`
 # call, the `scan_helpdesk` call just before `scan_mfa`, the rule text table, `mfa_kind_at` (`hd_reenrolled?`) and the approve
@@ -700,13 +701,23 @@ module HelpdeskLeakRules
   # name, so a rule that only reports judges all of them). `mfa_query_value` answers nil for a second parameter, which would let
   # the extra parameter hide the rule.
   def hd_query_values(minfo, name)
-    URI.decode_www_form(minfo[:query].to_s).select { |key, value| key == name && !value.empty? }.map(&:last)
+    hd_query_pairs(minfo[:query]).select { |key, value| key == name && !value.empty? }.map(&:last)
   rescue ArgumentError
     []
   end
 
+  # The query split as the server's Rack (2.2) does: on `&` or `;` (each with any spaces after it), empty parts skipped, each
+  # part cut at its first `=`, both sides percent-decoded, a part with no `=` has an empty value. `URI.decode_www_form` splits
+  # on `&` only, so `npc_id=nia;npc_id=hana` would be one pair to it and two to the server.
+  def hd_query_pairs(query)
+    query.to_s.split(/[&;] */).reject(&:empty?).map do |part|
+      key, value = part.split('=', 2)
+      [URI.decode_www_form_component(key), URI.decode_www_form_component(value.to_s)]
+    end
+  end
+
   def hd_query_names?(minfo, name)
-    URI.decode_www_form(minfo[:query].to_s).any? { |key, _| key == name }
+    hd_query_pairs(minfo[:query]).any? { |key, _| key == name }
   rescue ArgumentError
     true
   end
