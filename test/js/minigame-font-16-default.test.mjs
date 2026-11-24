@@ -23,7 +23,7 @@ const VT323_ROOT = new Set(['dusting.css', 'coverage-decision-form-minigame.css'
     'drug-library-integrity-minigame.css', 'log-filter-minigame.css', 'ncsc-brief-minigame.css',
     'combination-minigame.css', 'cryptex-minigame.css', 'flag-station-minigame.css',
     'forensic-data-platform-minigame.css', 'network-architecture-minigame.css', 'patch-panel-minigame.css',
-    'warranty-checklist-minigame.css']);
+    'warranty-checklist-minigame.css', 'lock-step.css', 'lock-step-push.css']);
 const VT323_SELECTOR = [['biometrics-minigame.css', /\.fpr-(?!card)/]];
 
 // First family in a font-family value, quotes stripped: "VT323", 'VT323' and VT323 are the same.
