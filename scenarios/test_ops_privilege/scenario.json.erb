@@ -7,13 +7,44 @@
   "npcWindupMs": 0,
   "needsDebugOverlay": true,
 
+  "chatter": {
+    "wk_borrow": ["I'll use the hot desk."],
+    "station_fail": ["This PC is useless."]
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log_kit",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true },
+      "observations": "Your engagement device: it lists every hash and sign-in you collect, and opens the cracker."
+    },
+    {
+      "type": "usb",
+      "id": "survey_stick",
+      "name": "Survey USB stick",
+      "sprite": "usb_bowl1",
+      "takeable": true,
+      "usbClass": "storage",
+      "observations": "A plain USB stick for the survey."
+    }
+  ],
+
   "networks": {
     "office_lan": { "name": "Office network", "discovery": "scan" }
   },
 
+  "resources": {
+    "staff_mail": { "kind": "email", "name": "Staff email" }
+  },
+
   "policies": {
     "bay_locked": { "remote": "allowed", "usb": "blocked" },
-    "records_policy": { "remote": "allowed" }
+    "records_policy": { "remote": "allowed" },
+    "sam_strict": { "autoLockMin": 5, "maxAttempts": 3 }
   },
 
   "techniques": {
@@ -40,6 +71,50 @@
       "label": "Uma's assist code",
       "proof": { "held": "assist_code" },
       "endsOnGlobal": "assist_ended"
+    },
+    "adel_assist": {
+      "kind": "assist_invite",
+      "account": "adel",
+      "connectsTo": "hot_desk",
+      "label": "Adel's assist code",
+      "proof": { "held": "adel_assist_code" }
+    },
+    "baypc_olu": {
+      "kind": "hash",
+      "account": "olu",
+      "label": "Stored record: Olu (bay PC)",
+      "proof": { "harvested": "bay_pc" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["olu_pet"] }
+    },
+    "baypc_uma": {
+      "kind": "hash",
+      "account": "uma",
+      "label": "Stored record: Uma (bay PC)",
+      "proof": { "harvested": "bay_pc" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["uma_town"] }
+    },
+    "hotdesk_priya": {
+      "kind": "hash",
+      "account": "priya",
+      "label": "Stored record: Priya (hot desk)",
+      "proof": { "harvested": "hot_desk" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["priya_pet"] }
+    },
+    "hotdesk_sam": {
+      "kind": "hash",
+      "account": "sam",
+      "label": "Stored record: Sam (hot desk)",
+      "proof": { "harvested": "hot_desk" },
+      "crack": { "password": "guessable", "difficulty": "easy", "facts": ["sam_year"] }
+    }
+  },
+
+  "social": {
+    "intelFacts": {
+      "olu_pet": { "label": "Olu's dog", "subject": "olu", "source": "bay_pinboard", "text": "Olu has a dog called Harbour." },
+      "uma_town": { "label": "Uma's home town", "subject": "uma", "source": "bay_pinboard", "text": "Uma grew up in Quayside." },
+      "priya_pet": { "label": "Priya's parrot", "subject": "priya", "source": "lobby_noticeboard", "text": "Priya has a parrot called Tidewater." },
+      "sam_year": { "label": "Sam's start year", "subject": "sam", "source": "lobby_noticeboard", "text": "Sam joined the firm in 2011." }
     }
   },
 
@@ -110,14 +185,19 @@
   "logSources": {
     "priv_audit": {
       "title": "Privilege audit",
-      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used", "admin_profile_read", "usb_install_overridden"]
+      "events": ["network_swept", "host_scanned", "service_checked", "finding_confirmed", "technique_refused", "technique_used", "admin_profile_read", "usb_install_overridden", "credentials_harvested"]
     }
   },
 
   "globalVariables": {
     "assist_ended": false,
     "bay_stick_in": false,
-    "bay_off": false
+    "bay_off": false,
+    "survey_stick_in": false,
+    "se_intel_olu_pet": false,
+    "se_intel_uma_town": false,
+    "se_intel_priya_pet": false,
+    "se_intel_sam_year": false
   },
 
   "gameClock": { "start": "Tue 08:30", "rate": 1 },
@@ -200,6 +280,16 @@
               "credential": "uma_assist",
               "text": "Assist code left by Uma for the records machine. Use it from the sign-in screen there.",
               "observations": "A shared-screen code Uma left for the front desk."
+            },
+            {
+              "type": "text_file",
+              "id": "adel_assist_code",
+              "name": "Adel assist code.txt",
+              "takeable": true,
+              "readable": true,
+              "credential": "adel_assist",
+              "text": "Assist code left by Adel for the hot desk. Use it from the sign-in screen there.",
+              "observations": "A shared-screen code Adel left for the front desk."
             }
           ]
         },
@@ -214,6 +304,86 @@
           "addToNotes": false,
           "text": "Ops privilege test. The bay is north, the store room east. Take the drop box and plug it into the wall port to work from another desk. The cabinet holds a note and a shared-screen code. The two logins you need are on notes in the store room.",
           "observations": "A sign on a stand by the front desk."
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk",
+          "name": "Hot desk PC",
+          "host": "HOT01",
+          "sprite": "pc_desktop",
+          "position": { "x": 2, "y": 5 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "cachedAccounts": [{ "npc": "priya" }, { "npc": "sam", "after": "borrow" }],
+          "observations": "A shared desk PC in the lobby. Anybody on the staff list may sign in."
+        },
+        {
+          "type": "pc",
+          "id": "sam_pc",
+          "name": "Sam's desk PC",
+          "host": "SAM01",
+          "sprite": "pc_desktop",
+          "position": { "x": 3, "y": 7 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "access": { "roles": ["staff"] },
+          "owner": "sam",
+          "policy": "sam_strict",
+          "affordance": { "satisfies": "work", "restores": 10, "useSeconds": 5 },
+          "observations": "Sam's desk PC. A tag on the monitor reads Sam. Three wrong passwords lock an account out of it."
+        },
+        {
+          "type": "notes1",
+          "id": "lobby_noticeboard",
+          "name": "Front desk noticeboard",
+          "position": { "x": 6, "y": 3 },
+          "takeable": true,
+          "readable": true,
+          "revealsFacts": ["priya_pet", "sam_year"],
+          "text": "Front desk notes: Priya's parrot Tidewater is back in the staff kitchen photos. Sam has been here since 2011, so ask him about the old filing room.",
+          "observations": "A pad of notes the front desk keeps."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "priya",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/uma.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "creds": { "username": "pnair", "password": "Tidewater-Priya-31" }
+        },
+        {
+          "id": "sam",
+          "displayName": "Sam Okoro",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_ops_privilege/ink/olu.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "staff",
+          "workNeeds": ["+staff_mail"],
+          "needsHome": "sam_pc",
+          "needsDeferMin": 0.5,
+          "creds": { "username": "sokoro", "password": "Granary-Sam-47" },
+          "habits": { "screen": { "lockChance": 0 } },
+          "needs": { "work": { "decayPerMin": 40, "urgentAt": 50, "initial": 60 } },
+          "workarounds": [{ "at": 40, "do": "borrow_session", "pc": "hot_desk" }]
         }
       ]
     },
@@ -239,6 +409,7 @@
           "owner": "olu",
           "offWhen": "bay_off",
           "policy": "bay_locked",
+          "cachedAccounts": [{ "npc": "olu" }, { "npc": "uma" }],
           "observations": "A desk PC in the bay. A tag on the monitor reads Olu."
         },
         {
@@ -342,6 +513,42 @@
           "takeable": true,
           "usbClass": "storage",
           "observations": "A second ordinary USB stick."
+        },
+        {
+          "type": "pc",
+          "id": "bay_usb_port",
+          "name": "Survey port on the bay desk",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 4 },
+          "takeable": false,
+          "policy": "bay_locked",
+          "portOf": "bay_pc",
+          "observations": "A USB port on the bay desk. The bay policy refuses storage sticks here unless an administrator is signed in at the bay PC.",
+          "requiresItem": "usb",
+          "requiresItemHint": "You would need a USB stick to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the survey stick into the bay desk port?",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "remove_item", "item": "usb" },
+                { "type": "set_global", "key": "survey_stick_in", "value": true }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "notes1",
+          "id": "bay_pinboard",
+          "name": "Bay pinboard",
+          "position": { "x": 5, "y": 7 },
+          "takeable": true,
+          "readable": true,
+          "revealsFacts": ["olu_pet", "uma_town"],
+          "text": "Bay pinboard: a photo of Olu's dog Harbour on the shelf, and a postcard to Uma from Quayside, her home town.",
+          "observations": "A pinboard of photos and postcards."
         }
       ],
       "npcs": [

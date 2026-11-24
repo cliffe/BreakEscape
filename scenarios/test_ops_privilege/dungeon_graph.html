@@ -146,9 +146,9 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
       <tr><th>Optional tasks</th><td class="val">0 / 1</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">5</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">7</td></tr>
       <tr><th>Rooms</th><td class="val">4</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">23 / 37</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">42 / 73</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -178,39 +178,76 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   node_start(("▶"))
   node_start --> lobby
 
+  lock_hot_desk["Hot desk PC<br/>Sign-in"]
+  lock_sam_pc["Sam's desk PC<br/>Sign-in"]
   lock_bay_pc["Bay desk PC<br/>Sign-in"]
   lock_store_pc["Records PC<br/>Sign-in"]
+  signin_priya{"Priya Nair sign-in<br/>(pnair)"}
+  lobby("Lobby")
+  signin_sam{"Sam Okoro sign-in<br/>(sokoro)"}
   signin_olu{"Olu Marsh sign-in<br/>(omarsh)"}
   bay("Bay")
   signin_uma{"Uma Quayle sign-in<br/>(umaquay)"}
   store("Store room")
   signin_adel{"Adel Wick sign-in<br/>(adelwick)"}
   device_kit_dropbox{"Network drop box<br/>(rogue device)"}
-  lobby("Lobby")
   jack_office_port["Office wall port<br/>Network jack"]
   net_office_lan("Office network<br/>Network<br/>(sweep to list)")
   weak_store_pc_records_stale_build["Records PC<br/>records :8081<br/>unpatched / high"]
   implant_bay_pc["Implant: bay_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
-  log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden")]
+  workaround_sam_0>"Sam Okoro: uses the hot desk, at 40"]
+  log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden, credentials_harvested")]
   reader_audit_log_pc{"Audit log terminal<br/>(log reader)"}
+  cred_adel_assist{"Adel Wick assist invite<br/>(adelwick)"}
+  cred_src_adel_assist_code{"Adel assist code.txt"}
   cred_adel_token{"Adel Wick token<br/>(adelwick)"}
+  cred_baypc_olu{"Olu Marsh hash<br/>(omarsh)"}
+  cred_baypc_uma{"Uma Quayle hash<br/>(umaquay)"}
+  cred_hotdesk_priya{"Priya Nair hash<br/>(pnair)"}
+  cred_hotdesk_sam{"Sam Okoro hash<br/>(sokoro)"}
   cred_uma_assist{"Uma Quayle assist invite<br/>(umaquay)"}
   cred_src_assist_code{"Uma assist code.txt"}
+  crackpw_olu{"Olu Marsh password"}
+  cred_src_bay_pinboard{"Bay pinboard"}
+  crackpw_uma{"Uma Quayle password"}
+  crackpw_priya{"Priya Nair password"}
+  cred_src_lobby_noticeboard{"Front desk noticeboard"}
+  crackpw_sam{"Sam Okoro password"}
   tech_field_release_notes{"Release notes: records build"}
   cred_src_card_stale{"Field note: records updates"}
+  admin_at_hot_desk{"Hot desk PC<br/>Administrator session"}
+  admin_at_sam_pc{"Sam's desk PC<br/>Administrator session"}
   admin_at_bay_pc{"Bay desk PC<br/>Administrator session"}
   admin_at_store_pc{"Records PC<br/>Administrator session"}
 
+  lobby --> lock_hot_desk
+  lobby --> lock_sam_pc
   bay --> lock_bay_pc
   store --> lock_store_pc
+  lobby --> signin_priya
+  signin_priya --> lock_hot_desk
+  signin_priya --> lock_sam_pc
+  signin_priya --> lock_bay_pc
+  signin_priya --> lock_store_pc
+  lobby --> signin_sam
+  signin_sam --> lock_hot_desk
+  signin_sam --> lock_sam_pc
+  signin_sam --> lock_bay_pc
+  signin_sam --> lock_store_pc
   bay --> signin_olu
+  signin_olu --> lock_hot_desk
+  signin_olu --> lock_sam_pc
   signin_olu --> lock_bay_pc
   signin_olu --> lock_store_pc
   store --> signin_uma
+  signin_uma --> lock_hot_desk
+  signin_uma --> lock_sam_pc
   signin_uma --> lock_bay_pc
   signin_uma --> lock_store_pc
   store --> signin_adel
+  signin_adel --> lock_hot_desk
+  signin_adel --> lock_sam_pc
   signin_adel --> lock_bay_pc
   signin_adel --> lock_store_pc
   lobby --> device_kit_dropbox
@@ -225,26 +262,45 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   device_kit_badusb -->|held| implant_bay_pc
   lock_bay_pc -->|session at PC| implant_bay_pc
   implant_bay_pc --> net_office_lan
+  workaround_sam_0 -->|open session| lock_hot_desk
   lobby --> bay
   lobby --> store
   lobby --> reader_audit_log_pc
   log_priv_audit -.- reader_audit_log_pc
+  cred_src_adel_assist_code --> cred_adel_assist
+  cred_adel_assist --> lock_hot_desk
   cred_adel_token --> lock_bay_pc
   cred_src_assist_code --> cred_uma_assist
   cred_uma_assist --> lock_store_pc
+  cred_baypc_olu -->|crack (easy)| crackpw_olu
+  cred_src_bay_pinboard -->|crack (easy)| crackpw_olu
+  cred_baypc_uma -->|crack (easy)| crackpw_uma
+  cred_src_bay_pinboard -->|crack (easy)| crackpw_uma
+  cred_hotdesk_priya -->|crack (easy)| crackpw_priya
+  cred_src_lobby_noticeboard -->|crack (easy)| crackpw_priya
+  cred_hotdesk_sam -->|crack (easy)| crackpw_sam
+  cred_src_lobby_noticeboard -->|crack (easy)| crackpw_sam
   cred_src_card_stale --> tech_field_release_notes
   tech_field_release_notes --> weak_store_pc_records_stale_build
   weak_store_pc_records_stale_build -->|grants session| lock_store_pc
+  signin_adel -->|administrator| admin_at_hot_desk
+  signin_adel -->|administrator| admin_at_sam_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
   weak_store_pc_records_stale_build -->|administrator| admin_at_store_pc
+  admin_at_hot_desk -->|collect| cred_hotdesk_priya
+  admin_at_hot_desk -->|collect| cred_hotdesk_sam
+  workaround_sam_0 -->|borrow| cred_hotdesk_sam
+  admin_at_bay_pc -->|collect| cred_baypc_olu
+  admin_at_bay_pc -->|collect| cred_baypc_uma
   lock_store_pc --> weak_store_pc_records_stale_build
 
-  class lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
-  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_field_release_notes,admin_at_bay_pc,admin_at_store_pc key
-  class bay,store,lobby,net_office_lan room
+  class lock_hot_desk,lock_sam_pc,lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
+  class signin_priya,signin_sam,signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_assist,cred_adel_token,cred_baypc_olu,cred_baypc_uma,cred_hotdesk_priya,cred_hotdesk_sam,cred_uma_assist,crackpw_olu,crackpw_uma,crackpw_priya,crackpw_sam,tech_field_release_notes,admin_at_hot_desk,admin_at_sam_pc,admin_at_bay_pc,admin_at_store_pc key
+  class lobby,bay,store,net_office_lan room
+  class workaround_sam_0 action
   class log_priv_audit note
-  class reader_audit_log_pc,cred_src_assist_code,cred_src_card_stale item
+  class reader_audit_log_pc,cred_src_adel_assist_code,cred_src_assist_code,cred_src_bay_pinboard,cred_src_lobby_noticeboard,cred_src_card_stale item
   class node_start start`,
       story:      `flowchart TD
 
@@ -288,40 +344,77 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   node_start(("▶"))
   node_start --> lobby
 
+  lock_hot_desk["Hot desk PC<br/>Sign-in"]
+  lock_sam_pc["Sam's desk PC<br/>Sign-in"]
   lock_bay_pc["Bay desk PC<br/>Sign-in"]
   lock_store_pc["Records PC<br/>Sign-in"]
+  signin_priya{"Priya Nair sign-in<br/>(pnair)"}
+  lobby("Lobby")
+  signin_sam{"Sam Okoro sign-in<br/>(sokoro)"}
   signin_olu{"Olu Marsh sign-in<br/>(omarsh)"}
   bay("Bay")
   signin_uma{"Uma Quayle sign-in<br/>(umaquay)"}
   store("Store room")
   signin_adel{"Adel Wick sign-in<br/>(adelwick)"}
   device_kit_dropbox{"Network drop box<br/>(rogue device)"}
-  lobby("Lobby")
   jack_office_port["Office wall port<br/>Network jack"]
   net_office_lan("Office network<br/>Network<br/>(sweep to list)")
   weak_store_pc_records_stale_build["Records PC<br/>records :8081<br/>unpatched / high"]
   implant_bay_pc["Implant: bay_pc<br/>(implant)"]
   device_kit_badusb{"Keystroke injector<br/>(implant device)"}
-  log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden")]
+  workaround_sam_0>"Sam Okoro: uses the hot desk, at 40"]
+  log_priv_audit[("Privilege audit<br/>network_swept, host_scanned, service_checked, finding_confirmed, technique_refused, technique_used, admin_profile_read, usb_install_overridden, credentials_harvested")]
   reader_audit_log_pc{"Audit log terminal<br/>(log reader)"}
+  cred_adel_assist{"Adel Wick assist invite<br/>(adelwick)"}
+  cred_src_adel_assist_code{"Adel assist code.txt"}
   cred_adel_token{"Adel Wick token<br/>(adelwick)"}
+  cred_baypc_olu{"Olu Marsh hash<br/>(omarsh)"}
+  cred_baypc_uma{"Uma Quayle hash<br/>(umaquay)"}
+  cred_hotdesk_priya{"Priya Nair hash<br/>(pnair)"}
+  cred_hotdesk_sam{"Sam Okoro hash<br/>(sokoro)"}
   cred_uma_assist{"Uma Quayle assist invite<br/>(umaquay)"}
   cred_src_assist_code{"Uma assist code.txt"}
+  crackpw_olu{"Olu Marsh password"}
+  cred_src_bay_pinboard{"Bay pinboard"}
+  crackpw_uma{"Uma Quayle password"}
+  crackpw_priya{"Priya Nair password"}
+  cred_src_lobby_noticeboard{"Front desk noticeboard"}
+  crackpw_sam{"Sam Okoro password"}
   tech_field_release_notes{"Release notes: records build"}
   cred_src_card_stale{"Field note: records updates"}
+  admin_at_hot_desk{"Hot desk PC<br/>Administrator session"}
+  admin_at_sam_pc{"Sam's desk PC<br/>Administrator session"}
   admin_at_bay_pc{"Bay desk PC<br/>Administrator session"}
   admin_at_store_pc{"Records PC<br/>Administrator session"}
   aim_privilege_beats{{"Compare the two accounts"}}
 
+  lobby --> lock_hot_desk
+  lobby --> lock_sam_pc
   bay --> lock_bay_pc
   store --> lock_store_pc
+  lobby --> signin_priya
+  signin_priya --> lock_hot_desk
+  signin_priya --> lock_sam_pc
+  signin_priya --> lock_bay_pc
+  signin_priya --> lock_store_pc
+  lobby --> signin_sam
+  signin_sam --> lock_hot_desk
+  signin_sam --> lock_sam_pc
+  signin_sam --> lock_bay_pc
+  signin_sam --> lock_store_pc
   bay --> signin_olu
+  signin_olu --> lock_hot_desk
+  signin_olu --> lock_sam_pc
   signin_olu --> lock_bay_pc
   signin_olu --> lock_store_pc
   store --> signin_uma
+  signin_uma --> lock_hot_desk
+  signin_uma --> lock_sam_pc
   signin_uma --> lock_bay_pc
   signin_uma --> lock_store_pc
   store --> signin_adel
+  signin_adel --> lock_hot_desk
+  signin_adel --> lock_sam_pc
   signin_adel --> lock_bay_pc
   signin_adel --> lock_store_pc
   lobby --> device_kit_dropbox
@@ -336,26 +429,45 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   device_kit_badusb -->|held| implant_bay_pc
   lock_bay_pc -->|session at PC| implant_bay_pc
   implant_bay_pc --> net_office_lan
+  workaround_sam_0 -->|open session| lock_hot_desk
   lobby --> bay
   lobby --> store
   lobby --> reader_audit_log_pc
   log_priv_audit -.- reader_audit_log_pc
+  cred_src_adel_assist_code --> cred_adel_assist
+  cred_adel_assist --> lock_hot_desk
   cred_adel_token --> lock_bay_pc
   cred_src_assist_code --> cred_uma_assist
   cred_uma_assist --> lock_store_pc
+  cred_baypc_olu -->|crack (easy)| crackpw_olu
+  cred_src_bay_pinboard -->|crack (easy)| crackpw_olu
+  cred_baypc_uma -->|crack (easy)| crackpw_uma
+  cred_src_bay_pinboard -->|crack (easy)| crackpw_uma
+  cred_hotdesk_priya -->|crack (easy)| crackpw_priya
+  cred_src_lobby_noticeboard -->|crack (easy)| crackpw_priya
+  cred_hotdesk_sam -->|crack (easy)| crackpw_sam
+  cred_src_lobby_noticeboard -->|crack (easy)| crackpw_sam
   cred_src_card_stale --> tech_field_release_notes
   tech_field_release_notes --> weak_store_pc_records_stale_build
   weak_store_pc_records_stale_build -->|grants session| lock_store_pc
+  signin_adel -->|administrator| admin_at_hot_desk
+  signin_adel -->|administrator| admin_at_sam_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
   weak_store_pc_records_stale_build -->|administrator| admin_at_store_pc
+  admin_at_hot_desk -->|collect| cred_hotdesk_priya
+  admin_at_hot_desk -->|collect| cred_hotdesk_sam
+  workaround_sam_0 -->|borrow| cred_hotdesk_sam
+  admin_at_bay_pc -->|collect| cred_baypc_olu
+  admin_at_bay_pc -->|collect| cred_baypc_uma
   lock_store_pc --> weak_store_pc_records_stale_build
 
-  class lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
-  class signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_token,cred_uma_assist,tech_field_release_notes,admin_at_bay_pc,admin_at_store_pc key
-  class bay,store,lobby,net_office_lan room
+  class lock_hot_desk,lock_sam_pc,lock_bay_pc,lock_store_pc,jack_office_port,weak_store_pc_records_stale_build,implant_bay_pc lock
+  class signin_priya,signin_sam,signin_olu,signin_uma,signin_adel,device_kit_dropbox,device_kit_badusb,cred_adel_assist,cred_adel_token,cred_baypc_olu,cred_baypc_uma,cred_hotdesk_priya,cred_hotdesk_sam,cred_uma_assist,crackpw_olu,crackpw_uma,crackpw_priya,crackpw_sam,tech_field_release_notes,admin_at_hot_desk,admin_at_sam_pc,admin_at_bay_pc,admin_at_store_pc key
+  class lobby,bay,store,net_office_lan room
+  class workaround_sam_0 action
   class log_priv_audit note
-  class reader_audit_log_pc,cred_src_assist_code,cred_src_card_stale item
+  class reader_audit_log_pc,cred_src_adel_assist_code,cred_src_assist_code,cred_src_bay_pinboard,cred_src_lobby_noticeboard,cred_src_card_stale item
   class aim_privilege_beats aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -416,21 +528,29 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   rc_lobby_cabinet_4[["Cabinet by the front door"]]
   rc_card_stale_5{"Field note: records updates"}
   rc_assist_code_6{"Uma assist code.txt"}
-  rc_sign_lobby_7{"Sign: Start here"}
-  rc_bay_pc_8{"Bay desk PC"}
-  rc_bay_dock_9{"USB socket by the bay PC"}
-  rc_bay_port_10{"Stick port on the bay shelf"}
-  rc_bay_breaker_11{"Wall switch: bay power"}
-  rc_bay_breaker_on_12{"Wall switch: bay power back on"}
-  rc_kit_badusb_13{"Keystroke injector"}
-  rc_kit_stick_a_14{"Grey USB stick"}
-  rc_kit_stick_b_15{"Blue USB stick"}
-  rc_npc_olu_marsh_16("Olu Marsh")
-  rc_store_pc_17{"Records PC"}
-  rc_note_uma_18{"Note: Uma's login"}
-  rc_note_adel_19{"Note: Adel's login"}
-  rc_npc_uma_quayle_20("Uma Quayle")
-  rc_npc_adel_wick_21("Adel Wick")
+  rc_adel_assist_code_7{"Adel assist code.txt"}
+  rc_sign_lobby_8{"Sign: Start here"}
+  rc_hot_desk_9{"Hot desk PC"}
+  rc_sam_pc_10{"Sam's desk PC"}
+  rc_lobby_noticeboard_11{"Front desk noticeboard"}
+  rc_npc_priya_nair_12("Priya Nair")
+  rc_npc_sam_okoro_13("Sam Okoro")
+  rc_bay_pc_14{"Bay desk PC"}
+  rc_bay_dock_15{"USB socket by the bay PC"}
+  rc_bay_port_16{"Stick port on the bay shelf"}
+  rc_bay_breaker_17{"Wall switch: bay power"}
+  rc_bay_breaker_on_18{"Wall switch: bay power back on"}
+  rc_kit_badusb_19{"Keystroke injector"}
+  rc_kit_stick_a_20{"Grey USB stick"}
+  rc_kit_stick_b_21{"Blue USB stick"}
+  rc_bay_usb_port_22{"Survey port on the bay desk"}
+  rc_bay_pinboard_23{"Bay pinboard"}
+  rc_npc_olu_marsh_24("Olu Marsh")
+  rc_store_pc_25{"Records PC"}
+  rc_note_uma_26{"Note: Uma's login"}
+  rc_note_adel_27{"Note: Adel's login"}
+  rc_npc_uma_quayle_28("Uma Quayle")
+  rc_npc_adel_wick_29("Adel Wick")
 
   lobby --> bay
   lobby --> store
@@ -440,26 +560,34 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
   lobby --> rc_lobby_cabinet_4
   rc_lobby_cabinet_4 --> rc_card_stale_5
   rc_lobby_cabinet_4 --> rc_assist_code_6
-  lobby --> rc_sign_lobby_7
-  bay --> rc_bay_pc_8
-  bay --> rc_bay_dock_9
-  bay --> rc_bay_port_10
-  bay --> rc_bay_breaker_11
-  bay --> rc_bay_breaker_on_12
-  bay --> rc_kit_badusb_13
-  bay --> rc_kit_stick_a_14
-  bay --> rc_kit_stick_b_15
-  bay --> rc_npc_olu_marsh_16
-  store --> rc_store_pc_17
-  store --> rc_note_uma_18
-  store --> rc_note_adel_19
-  store --> rc_npc_uma_quayle_20
-  store --> rc_npc_adel_wick_21
+  rc_lobby_cabinet_4 --> rc_adel_assist_code_7
+  lobby --> rc_sign_lobby_8
+  lobby --> rc_hot_desk_9
+  lobby --> rc_sam_pc_10
+  lobby --> rc_lobby_noticeboard_11
+  lobby --> rc_npc_priya_nair_12
+  lobby --> rc_npc_sam_okoro_13
+  bay --> rc_bay_pc_14
+  bay --> rc_bay_dock_15
+  bay --> rc_bay_port_16
+  bay --> rc_bay_breaker_17
+  bay --> rc_bay_breaker_on_18
+  bay --> rc_kit_badusb_19
+  bay --> rc_kit_stick_a_20
+  bay --> rc_kit_stick_b_21
+  bay --> rc_bay_usb_port_22
+  bay --> rc_bay_pinboard_23
+  bay --> rc_npc_olu_marsh_24
+  store --> rc_store_pc_25
+  store --> rc_note_uma_26
+  store --> rc_note_adel_27
+  store --> rc_npc_uma_quayle_28
+  store --> rc_npc_adel_wick_29
 
   class lobby,bay,store room
-  class rc_kit_dropbox_1,rc_office_port_2,rc_audit_log_pc_3,rc_card_stale_5,rc_assist_code_6,rc_sign_lobby_7,rc_bay_pc_8,rc_bay_dock_9,rc_bay_port_10,rc_bay_breaker_11,rc_bay_breaker_on_12,rc_kit_badusb_13,rc_kit_stick_a_14,rc_kit_stick_b_15,rc_store_pc_17,rc_note_uma_18,rc_note_adel_19 item
+  class rc_kit_dropbox_1,rc_office_port_2,rc_audit_log_pc_3,rc_card_stale_5,rc_assist_code_6,rc_adel_assist_code_7,rc_sign_lobby_8,rc_hot_desk_9,rc_sam_pc_10,rc_lobby_noticeboard_11,rc_bay_pc_14,rc_bay_dock_15,rc_bay_port_16,rc_bay_breaker_17,rc_bay_breaker_on_18,rc_kit_badusb_19,rc_kit_stick_a_20,rc_kit_stick_b_21,rc_bay_usb_port_22,rc_bay_pinboard_23,rc_store_pc_25,rc_note_uma_26,rc_note_adel_27 item
   class rc_lobby_cabinet_4 container
-  class rc_npc_olu_marsh_16,rc_npc_uma_quayle_20,rc_npc_adel_wick_21 npc
+  class rc_npc_priya_nair_12,rc_npc_sam_okoro_13,rc_npc_olu_marsh_24,rc_npc_uma_quayle_28,rc_npc_adel_wick_29 npc
   class node_start start`
     };
     const rendered = {};

@@ -192,6 +192,24 @@ Sign out of `store_pc` (Start, `#pc-start-signout`). Take `assist_code` from the
 `{"cmd":"sync"}`, the leak check over every capture file, `verify-run.rb <game_id> --access` and `--ops-log` as two commands.
 - No answer holds the key `admin` under an NPC, the administrator's password (outside the note in `store`), or Olu's items before beat 2. `--ops-log` ends `ops log OK`.
 
+## Stage S5b and the two rulings (A: a stick at a governed port; B: a relayed administrator)
+
+Beats 12 to 21 are appended after the S5a beats and use the same game. They are numbered as section 7 of `docs/agents/ops_core_build/S5BC_BUILD_BRIEF.md` (its rows 1 to 10). The scenario adds `hot_desk` (lobby, sign-in PC, no owner, `locked: true` so the sign-in screen shows; admits every staff account), cached accounts on `bay_pc` (Olu, Uma) and `hot_desk` (Priya; Sam only after he has borrowed the hot desk), the hash records `baypc_olu`, `baypc_uma`, `hotdesk_priya`, `hotdesk_sam` (each earned by collecting at that PC), the fact notes `bay_pinboard` (bay) and `lobby_noticeboard` (lobby), `bay_usb_port` in the bay (`portOf: bay_pc`, `survey_stick` in the start items), and the assist code `adel_assist_code` (a cabinet item in the lobby, relay to `hot_desk`). The capture log is a start item.
+Server rows to read after the run: `credentials_harvested` once per collect that adds a pair, `usb_install_overridden` with `device: storage`; `sessions`, `cachedAt`, `harvestedAccounts` in `verify-run.rb --access`.
+
+12. **No collect as a user.** Click `bay_pc`; type Uma's login from her note. The desktop shows no Administrator marker and no "Cached accounts" button.
+13. **Collect as admin.** Taskbar, Switch user, the Adel tile, his password. Marker shown. Click "Cached accounts": rows for Olu and Uma, each "hash" with a Crack button. A second click says nothing new is cached.
+14. **Hash rows listed.** Close the desktop. Inventory tray, capture log, sign-ins list: two hash rows, no password row for either.
+15. **Crack one.** Take `bay_pinboard`, then capture log, a hash row, Crack, pick the fact, run. Status cracked; a password row for that account. Sign in with it at `hot_desk`.
+16. **Borrow, then collect.** Make Sam's work need fail (use his desk PC `sam_pc`) until he asks for the hot desk; let him finish. Click `hot_desk` (his desktop is left open): no collect button. Switch user to Adel, "Cached accounts": before the borrow only Priya was listed, now Sam's row is new.
+17. **Crack from the panel.** Click Crack on Sam's row: the cracker opens for that hash.
+18. **Stick refused.** Click `bay_usb_port` holding `survey_stick` with no session at `bay_pc`: the policy's refusal line, the stick stays in the tray.
+19. **Stick as admin.** Sign in at `bay_pc` as Adel, close the desktop, click `bay_usb_port`: the stick is planted and the audit terminal shows a USB override row.
+20. **Relayed admin.** Take `adel_assist_code`, then connect to `hot_desk` from the capture log or keyring row. The shared screen shows the Administrator marker and the collect button; the network view offers no step-up card for it.
+21. **Relayed user.** Use Uma's assist code to `store_pc` (beat 10): no marker, no collect button.
+
+The collect panel and the bridge readers for it belong to units 21 and 22; until they land, beats 12 to 17 and 20 are read from the server rows and the Rails tests (`ops_privilege_scenario_test.rb`, answers recorded in `test/fixtures/files/ops_privilege_answers.json`).
+
 ## Earned secrets
 
 Uma's and Adel's passwords are typed in beats 1, 2, 5, 7 and 9, from their notes. Olu's password is never given; the scanner treats all three as secrets.

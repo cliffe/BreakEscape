@@ -1,9 +1,9 @@
 {
   "display_name": "Test: Ops privilege",
-  "description": "Test of the privilege stage of the ops core (S5a, feature A18): an administrator account sees the owner's profile on an owned PC and installs a USB device the PC's policy would refuse, only while its session is live and only at the keyboard for a device that needs someone signed in; a step up from a typed session reaches admin. Nothing to solve.",
+  "description": "Test of the privilege stage of the ops core (S5a, feature A18): an administrator account sees the owner's profile on an owned PC and installs a USB device the PC's policy would refuse, only while its session is live and only at the keyboard for a device that needs someone signed in; a step up from a typed session reaches admin. Nothing to solve. S5b adds cached accounts (an administrator collects the stored hashes of accounts that signed in at a PC, one account joins after a borrowed session), a storage stick accepted at a governed port under an administrator session, and a relayed administrator session. Nothing to solve.",
   "difficulty_level": 1,
   "collection": "test_scenarios",
   "estimated_duration_minutes": 30,
   "test_type": "ops_privilege",
-  "test_objective": "Prove an ordinary account sees only its own profile, an administrator also sees the owner's, the taskbar marks an administrator session, a keystroke device at the bay socket is refused for a remote session with its own line and accepted at the keyboard under admin, a locked session overrides nothing, a relay session never steps up and a typed session does"
+  "test_objective": "Prove an ordinary account sees only its own profile, an administrator also sees the owner's, the taskbar marks an administrator session, a keystroke device at the bay socket is refused for a remote session with its own line and accepted at the keyboard under admin, a locked session overrides nothing, a relay session never steps up and a typed session does; a collect needs an administrator session and lists only cached accounts, a borrowed account joins after the borrow, a hash row never holds a password, a governed port takes a stick under an administrator session at its PC, and a relayed administrator may collect while a relayed user may not"
 }

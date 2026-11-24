@@ -1,7 +1,266 @@
 require 'test_helper'
 require_relative '../../support/network_ops_scenario'
+require_relative '../../support/privilege_answers'
 
 module BreakEscape
+  # Ops S5bc unit 19 (S5b, ruling A, ruling B): the beats of S5BC brief section 7 that the real
+  # scenario can play (1 to 10) as one run through the real routes. Every collect, keyring,
+  # crack, stick and relay answer is named; the scenario test records them
+  # (PRIV_ANSWERS_RECORD=1) or asserts them equal the fixture, and the no-exposure test scans them.
+  # `checkpoint(label)` is called after the start and after every beat.
+  module OpsPrivilegeBeats
+    include ActiveSupport::Testing::TimeHelpers
+
+    BEATS_SCENARIO = File.expand_path('../../../scenarios/test_ops_privilege/scenario.json.erb', __dir__)
+    BEATS_GAME_ID = 190_019
+    BEATS_START = Time.utc(2026, 11, 24, 9, 0, 0)
+    OLU_PW = 'Harbourlight-Olu-08'.freeze
+    UMA_LOGIN = ['umaquay', 'Quayside-Uma-17'].freeze
+    ADEL_LOGIN = ['adelwick', 'Lanternwick-Adel-52'].freeze
+    OLU_LOGIN = ['omarsh', 'Harbourlight-Olu-08'].freeze
+    SAM_LOGIN = ['sokoro', 'Granary-Sam-47'].freeze
+    PASSWORDS = %w[Harbourlight-Olu-08 Quayside-Uma-17 Tidewater-Priya-31 Granary-Sam-47 Lanternwick-Adel-52].freeze
+
+    def beats_scenario
+      JSON.parse(ScenarioBinding.render(File.read(BEATS_SCENARIO)))
+    end
+
+    def beats_build
+      game = Game.new(
+        id: BEATS_GAME_ID, mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+        scenario_data: beats_scenario,
+        player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby bay store],
+                        'encounteredNPCs' => %w[olu uma adel priya sam],
+                        'unlockedObjects' => %w[lobby_cabinet] }
+      )
+      game.prepare_scenario_data!
+      game.save!
+      @game = game
+      @answers = {}
+    end
+
+    def b_path(suffix)
+      "/break_escape/games/#{@game.id}/#{suffix}"
+    end
+
+    # Names the answer just received.
+    def name_answer(name)
+      raise "answer #{name} named twice" if @answers.key?(name)
+
+      @answers[name] = { 'status' => response.status, 'body' => JSON.parse(response.body) }
+      response.parsed_body
+    end
+
+    def b_login(pc, who, name = nil, **extra)
+      post b_path('login'), params: { pc_id: pc, username: who[0], password: who[1] }.merge(extra), as: :json
+      name ? name_answer(name) : response.parsed_body
+    end
+
+    def b_logout(pc)
+      post b_path('logout'), params: { pc_id: pc }, as: :json
+    end
+
+    def b_lock(pc)
+      post b_path('lock_session'), params: { pc_id: pc }, as: :json
+    end
+
+    def b_collect(pc, name, **extra)
+      post b_path('harvest_credentials'), params: { pc_id: pc }.merge(extra), as: :json
+      name_answer(name)
+    end
+
+    def b_keyring(name)
+      get b_path('keyring'), as: :json
+      name_answer(name)
+    end
+
+    def b_take(type, id, name)
+      post b_path('inventory'), params: { action_type: 'add', item: { type: type, id: id, name: name } }, as: :json
+      assert_response :success, response.body
+      response.parsed_body
+    end
+
+    def b_crack(hash_id, facts, name)
+      post b_path('crack'), params: { hash_id: hash_id, facts: facts }, as: :json
+      name_answer(name)
+    end
+
+    def b_remove(item_id, used_on, name)
+      post b_path('inventory'), params: { action_type: 'remove', item: { id: item_id }, used_on: used_on }, as: :json
+      name_answer(name)
+    end
+
+    def b_container(id, name = nil, **params)
+      get b_path("container/#{id}"), params: params, as: :json
+      name ? name_answer(name) : response.parsed_body
+    end
+
+    def b_state
+      Game.find(@game.id).player_state
+    end
+
+    def b_game
+      Game.find(@game.id)
+    end
+
+    def b_report(*reports)
+      post npc_frustration_game_url(@game), params: { reports: reports }, as: :json
+      response.parsed_body['answers']
+    end
+
+    def checkpoint(_label); end
+
+    def held_hash_ids
+      b_state['harvestedAccounts'].to_a
+    end
+
+    # beat 1: no collect as a user
+    def beat_user_no_collect
+      travel_to(BEATS_START)
+      beats_build
+      checkpoint('start')
+      body = b_login('bay_pc', UMA_LOGIN, 'signin_user_bay')
+      refute body.key?('access'), body.to_s
+      b_container('bay_pc', 'desktop_user_bay')
+      b_collect('bay_pc', 'collect_refused_not_admin')
+      assert_response :unprocessable_entity
+      b_logout('bay_pc')
+      checkpoint('beat 1')
+    end
+
+    # beat 2 and 3: the collect as an administrator and the hash rows
+    def beat_collect_at_bay
+      body = b_login('bay_pc', ADEL_LOGIN, 'signin_admin_bay')
+      assert_equal 'admin', body['access']
+      b_collect('bay_pc', 'collect_bay_first')
+      assert_response :success
+      checkpoint('beat 2 first collect')
+      b_collect('bay_pc', 'collect_bay_repeat')
+      assert_response :success
+      b_lock('bay_pc')
+      b_collect('bay_pc', 'collect_refused_locked')
+      assert_response :unprocessable_entity
+      b_login('bay_pc', ADEL_LOGIN)
+      b_collect('bay_pc', 'collect_refused_not_reachable', relay: 1)
+      assert_response :forbidden
+      b_collect('no_such_pc', 'collect_refused_unknown_pc')
+      assert_response :not_found
+      checkpoint('beat 2')
+      b_logout('bay_pc')
+      b_keyring('keyring_after_bay_collect')
+      checkpoint('beat 3')
+    end
+
+    # beat 4: crack one, sign in with it elsewhere
+    def beat_crack_olu
+      b_take('notes1', 'bay_pinboard', 'Bay pinboard')
+      b_crack('baypc_olu', ['olu_pet'], 'crack_olu')
+      assert_response :success
+      b_keyring('keyring_after_crack_olu')
+      body = b_login('hot_desk', OLU_LOGIN, 'signin_olu_hot_desk')
+      assert body['success'], body.to_s
+      b_logout('hot_desk')
+      checkpoint('beat 4')
+    end
+
+    # beat 5 and 6: the hot desk before and after the borrow, then crack from the panel
+    def beat_hot_desk_borrow
+      b_login('hot_desk', ADEL_LOGIN, 'signin_admin_hot_desk')
+      b_collect('hot_desk', 'collect_hot_desk_before_borrow')
+      assert_response :success
+      b_logout('hot_desk')
+      checkpoint('beat 5 before the borrow')
+      3.times { |i| b_login('sam_pc', ['sokoro', "wrong-#{i}"]) }
+      assert_includes b_state['loginLockouts'].to_a, 'sam_pc|sokoro'
+      b_report(npc_id: 'sam', event: 'check', object_id: 'sam_pc')
+      fail_report = { npc_id: 'sam', event: 'fail', need: 'work', object_id: 'sam_pc', missing: [{ id: 'sam_pc', why: 'locked_out' }] }
+      travel_to(BEATS_START + 10) { b_report(fail_report) }
+      run = nil
+      travel_to(BEATS_START + 35) { run = b_report(fail_report).first['run'] }
+      assert_equal 'borrow_session', run['do']
+      travel_to(BEATS_START + 100) do
+        post npc_workaround_game_url(@game), params: { npc_id: 'sam', index: run['index'], hand: run['hand'] }, as: :json
+      end
+      assert_response :success, response.body
+      assert_includes b_state['cachedAt'], 'hot_desk|sam'
+      claim = nil
+      travel_to(BEATS_START + 110) do
+        post b_path('login'), params: { pc_id: 'hot_desk', claim: 'guest' }, as: :json
+        claim = name_answer('claim_hot_desk_guest')
+      end
+      assert claim['success'], claim.to_s
+      b_collect('hot_desk', 'collect_refused_claim_user')
+      assert_response :unprocessable_entity
+      # a reload (the bootstrap a checkpoint reads) ends the claimed session
+      checkpoint('beat 5 after the borrow')
+      b_logout('hot_desk')
+      b_login('hot_desk', ADEL_LOGIN)
+      b_collect('hot_desk', 'collect_hot_desk_after_borrow')
+      assert_response :success
+      b_logout('hot_desk')
+      checkpoint('beat 5')
+      b_take('notes1', 'lobby_noticeboard', 'Front desk noticeboard')
+      b_keyring('keyring_before_crack_sam')
+      b_crack('hotdesk_sam', ['sam_year'], 'crack_sam_from_panel')
+      assert_response :success
+      checkpoint('beat 6')
+    end
+
+    # beat 7 and 8: ruling A
+    def beat_survey_stick
+      b_take('usb', 'survey_stick', 'Survey USB stick')
+      b_remove('survey_stick', 'bay_usb_port', 'stick_refused_no_session')
+      assert_response :unprocessable_entity
+      assert_includes b_state['inventory'].map { |i| i['id'] }, 'survey_stick'
+      checkpoint('beat 7')
+      b_login('bay_pc', ADEL_LOGIN)
+      b_remove('survey_stick', 'bay_usb_port', 'stick_planted_admin')
+      assert_response :success
+      refute_includes b_state['inventory'].map { |i| i['id'] }, 'survey_stick'
+      get b_path('log_rows'), params: { object_id: 'audit_log_pc' }, as: :json
+      audit = name_answer('audit_rows_after_override')
+      assert_equal 1, audit['rows'].count { |r| r['event'] == 'USB_OVERRIDE' && r['detail'] == 'device: storage' }
+      assert_equal 1, b_game.log_rows_for('priv_audit').count { |r| r['event'] == 'usb_install_overridden' }
+      assert_equal 1, Array(b_state['plantedItems']).size
+      b_logout('bay_pc')
+      checkpoint('beat 8')
+    end
+
+    # beat 9 and 10: ruling B
+    def beat_relay
+      b_take('text_file', 'adel_assist_code', 'Adel assist code.txt')
+      b_keyring('keyring_with_adel_assist')
+      post b_path('login'), params: { pc_id: 'hot_desk', credential: 'adel_assist', relay: true }, as: :json
+      body = name_answer('relay_signin_adel_hot_desk')
+      assert_equal 'admin', body['access'], body.to_s
+      b_container('hot_desk', 'relay_desktop_hot_desk', relay: 1)
+      b_collect('hot_desk', 'collect_relay_admin', relay: 1)
+      assert_response :success
+      %w[user admin].each do |level|
+        assert_equal false, b_game.ops_need_session('hot_desk', level)['met'], "a relay never meets a #{level} session need"
+      end
+      checkpoint('beat 9')
+      b_take('text_file', 'assist_code', 'Uma assist code.txt')
+      post b_path('login'), params: { pc_id: 'store_pc', credential: 'uma_assist', relay: true }, as: :json
+      body = name_answer('relay_signin_uma_store')
+      refute body.key?('access'), body.to_s
+      post b_path('harvest_credentials'), params: { pc_id: 'store_pc', relay: 1 }, as: :json
+      name_answer('collect_refused_relay_user')
+      assert_response :unprocessable_entity
+      checkpoint('beat 10')
+    end
+
+    def play_all_beats
+      beat_user_no_collect
+      beat_collect_at_bay
+      beat_crack_olu
+      beat_hot_desk_borrow
+      beat_survey_stick
+      beat_relay
+      @answers
+    end
+  end
+
   # Ops S5a unit 15 (OPS_PRIVILEGE_ACCOUNTS_PLAN.md, the S5a feature scenario): the real
   # scenarios/test_ops_privilege/scenario.json.erb driven through the routes, each assertion read
   # from a re-read game or a fresh answer. The browser part (taskbar marker, toasts, the remote
@@ -111,6 +370,39 @@ module BreakEscape
       assert_equal 'priv_audit', data['logSources'].keys.first
     end
 
+
+    test 'the S5b, ruling A and ruling B parts of the real scenario hold what the beats need' do
+      data = scenario
+      objects = data['rooms'].values.flat_map { |r| Array(r['objects']) }
+      by_id = objects.to_h { |o| [o['id'], o] }
+      hot = by_id['hot_desk']
+      assert_equal 'login', hot['lockType']
+      assert_equal true, hot['locked']
+      refute hot.key?('owner')
+      assert_equal [{ 'npc' => 'priya' }, { 'npc' => 'sam', 'after' => 'borrow' }], hot['cachedAccounts']
+      assert_equal [{ 'npc' => 'olu' }, { 'npc' => 'uma' }], by_id['bay_pc']['cachedAccounts']
+      port = by_id['bay_usb_port']
+      assert_equal 'bay_pc', port['portOf']
+      assert_equal 'bay_locked', port['policy']
+      assert_equal false, port['locked'] == true
+      start = data['startItemsInInventory']
+      assert_equal 'storage', start.find { |i| i['id'] == 'survey_stick' }['usbClass']
+      log = start.find { |i| i['type'] == 'capture_log' }
+      assert_equal true, log.dig('holds', 'captures')
+      hashes = data['credentials'].select { |_, c| c['kind'] == 'hash' }
+      assert_equal %w[baypc_olu baypc_uma hotdesk_priya hotdesk_sam], hashes.keys
+      assert_equal %w[bay_pc bay_pc hot_desk hot_desk], hashes.values.map { |c| c.dig('proof', 'harvested') }
+      assert_equal({ 'kind' => 'assist_invite', 'account' => 'adel', 'connectsTo' => 'hot_desk', 'label' => "Adel's assist code",
+                     'proof' => { 'held' => 'adel_assist_code' } }, data['credentials']['adel_assist'])
+      # every fact a hash needs comes from a takeable note in an open room, not inside a locked container
+      facts = hashes.values.flat_map { |c| c.dig('crack', 'facts') }
+      notes = objects.select { |o| Array(o['revealsFacts']).any? }
+      assert_equal facts.sort, notes.flat_map { |n| n['revealsFacts'] }.sort
+      notes.each { |n| assert_equal true, n['takeable'], n['id'] }
+      sam = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'sam' }
+      assert_equal [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }], sam['workarounds']
+    end
+
     # ---- beat 1 and 2: the ordinary account and the administrator ----------------------------
 
     test 'an ordinary account sees only its own profile and no access level; the owner profile is refused' do
@@ -132,8 +424,8 @@ module BreakEscape
       assert_equal 'admin', body['access']
       assert_equal 'admin', level
       ids = desktop_ids
-      assert_equal %w[adel_runbook olu_notes olu_folder].sort, ids.sort
-      refute_includes ids, 'uma_todo'
+      # S5b: Uma is cached at the bay PC, so the administrator reaches her profile there as well
+      assert_equal %w[adel_runbook olu_notes olu_folder uma_todo].sort, ids.sort
       body = folder
       assert_response :success, body.to_s
       assert_equal %w[olu_budget], body['contents'].map { |c| c['id'] }
@@ -442,6 +734,27 @@ module BreakEscape
       first = [level, desktop_ids.sort]
       reread = Game.find(@game.id)
       assert_equal first, [reread.session_access('bay_pc'), desktop_ids.sort]
+    end
+  end
+
+  # Ops S5bc unit 19: the beats of S5BC brief section 7 (S5b, A, B) in one run. With
+  # PRIV_ANSWERS_RECORD=1 it writes every named real answer to test/fixtures/files/ops_privilege_answers.json;
+  # without it, each answer must equal the fixture.
+  class OpsPrivilegeCachedBeatsTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include OpsPrivilegeBeats
+
+    teardown { travel_back }
+
+    test 'the run in order plays every beat and each real answer equals the recorded one' do
+      answers = play_all_beats
+      if ENV['PRIV_ANSWERS_RECORD'] == '1'
+        File.write(PrivilegeAnswers::PATH, "#{JSON.pretty_generate(answers)}\n")
+      else
+        recorded = PrivilegeAnswers.all
+        assert_equal recorded.keys.sort, answers.keys.sort
+        answers.each { |name, entry| assert_equal recorded[name], entry, "answer #{name} differs from the fixture" }
+      end
     end
   end
 end
