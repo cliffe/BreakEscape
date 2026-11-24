@@ -10,13 +10,13 @@ import { watchSubs, throttle } from './_c10.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await throttle(page); await sleep(800); console.error('SETUP', JSON.stringify((await bridge.getState()).player)); }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark); const stopSubs = await watchSubs(page, mark);
-  await sleep(1200); mark('walk-start');
+  await sleep(1200); for (let i = 0; i < 3; i++) { await clearScreen(page, bridge, () => {}); await sleep(600); } mark('walk-start');
   const e = await bridge.enterRoom('power_room', { timeoutMs: 45000 }); mark('entered', { ok: e && e.ok, r: JSON.stringify(e).slice(0, 120) });
   const t0 = Date.now(); let ok = false;
-  while (Date.now() - t0 < 20000) { ok = await page.evaluate(() => { const b = document.querySelector('.incoming-call-answer'); return !!(b && b.offsetParent); }).catch(() => false); if (ok) break; await sleep(100); }
-  if (!ok) throw new Error('no ring on power_room entry (room_entered not fired? a chat open?)');
+  while (Date.now() - t0 < 20000) { ok = await page.evaluate(() => { const b = document.querySelector('.incoming-call-answer'); return !!(b && b.offsetParent); }).catch(() => false); if (ok) break; const mg = (await bridge.getState().catch(() => ({}))).activeMinigame; if (mg) { mark('call-already-open', { mg: JSON.stringify(mg).slice(0, 120) }); break; } await sleep(100); }
+  if (!ok && !(await bridge.getState()).activeMinigame) throw new Error('no ring on power_room entry (room_entered not fired? a chat open?)');
   mark('ring-seen', { afterMs: Date.now() - t0 }); await sleep(1500);
-  await page.evaluate(() => document.querySelector('.incoming-call-answer').click()); mark('answered'); await sleep(1200);
+  if (ok) await page.evaluate(() => document.querySelector('.incoming-call-answer').click()); mark('answered'); await sleep(1200);
   await playThrough(page, bridge, mark, vw, { steps: [/And the gallery camera/i, /Just that one/i, /Got it/i], dwellMs: 1800, settleMs: 700, timeoutMs: 90000 });
   await vw.stop(); await sleep(1200); await stopSubs();
   await bridge.moveToNear('shutter_isolator', { timeoutMs: 25000 }); await sleep(900); mark('to-isolator', (await bridge.getState()).player);
