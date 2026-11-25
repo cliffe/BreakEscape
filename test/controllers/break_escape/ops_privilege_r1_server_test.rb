@@ -87,6 +87,42 @@ module BreakEscape
       refute_includes response.body, 'deskadmin'
     end
 
+    # ---- R2-SERVER1: a room's own access list, and every answer, in every route ----
+
+    def with_room_lists
+      lambda do |d|
+        d['rooms']['it_room']['access'] = { 'roles' => ['it'], 'people' => %w[deskadmin adel] }
+        d['rooms']['lobby']['access'] = { 'people' => %w[deskadmin adel] }
+        object_in(d, 'desk_a')['access'] = PEOPLE.deep_dup
+        object_in(d, 'lobby_cabinet')['access'] = PEOPLE.deep_dup
+      end
+    end
+
+    test 'R2-SERVER1 the bootstrap strips a room access list and keeps the rest' do
+      build_with(&with_room_lists)
+      get b_path('scenario'), as: :json
+      assert_response :success
+      refute_includes response.body, 'deskadmin'
+      rooms = response.parsed_body['rooms']
+      assert_equal %w[adel], rooms['it_room']['access']['people']
+      assert_equal %w[it], rooms['it_room']['access']['roles']
+      assert_equal %w[adel], rooms['lobby']['access']['people']
+    end
+
+    test 'R2-SERVER1 the room, container, network and sync answers name no account-only id' do
+      build_with(&with_room_lists)
+      %w[lobby it_room bay store].each do |room|
+        get b_path("room/#{room}"), as: :json
+        refute_includes response.body, 'deskadmin', "room #{room}"
+      end
+      get b_path('container/lobby_cabinet'), as: :json
+      refute_includes response.body, 'deskadmin', 'container'
+      get b_path('network'), as: :json
+      refute_includes response.body, 'deskadmin', 'network'
+      put b_path('sync_state'), params: { playerState: {} }, as: :json
+      refute_includes response.body, 'deskadmin', 'sync_state'
+    end
+
     # ---- R1-SERVER3: GET /ink and POST /tts ----
 
     def ink_and_tts(id)

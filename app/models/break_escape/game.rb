@@ -2471,6 +2471,7 @@ module BreakEscape
              access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
+          strip_account_only_people!(kept_fields)
           self.class.strip_lock_answers!(kept_fields)
           # A pad lock's answer never leaves this method: fill the PIN pad length first, then drop
           # `requires` unless it names a card, as GamesController#filter_requires_recursive does
