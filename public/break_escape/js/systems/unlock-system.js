@@ -365,6 +365,7 @@ export function remoteLockable(row, footholdId) {
     return {
         scenarioData: {
             id: row?.id, name: row?.name || row?.host || row?.id, host: row?.host || null,
+            ...(typeof row?.domain === 'string' ? { domain: row.domain } : {}),
             type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
             remote: { footholdId }
         },
@@ -893,6 +894,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             pcName: data.host && data.name && data.host !== data.name ? `${data.name} (${data.host})` : hostLabel,
             picker: false,
             tiles: [],
+            domain: domainOf(data),
             current: held && held.via !== 'claim' ? held : null,
             // A locked held session pre-chooses its own account, as the local screen does; a
             // refused Connect (K3b) pre-chooses the credential's account and shows the refusal

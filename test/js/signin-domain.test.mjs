@@ -131,21 +131,20 @@ test('a hostile domain is text, not markup', () => {
     mg.cleanup();
 });
 
-test('a remote sign-in screen (a host row of the network view) has no domain line: the row carries none', async () => {
-    // The real remoteLockable and openLoginSignIn: a network host row is a closed list of keys, and no domain is among them
+// Waits for the server commit that adds `domain` to the remote lockable answer and re-records ops_privilege_answers.json
+// (a recorded host row named 'remote_lockable_bay_pc' is expected); until it lands the recorded answer does not exist.
+test('a remote sign-in screen names the domain too', { todo: 'server commit adding domain to the remote lockable answer has not landed' }, async () => {
     const started = [];
     window.breakEscapeConfig = { gameId: 3 };
     window.ApiClient = { loginAccounts: async () => ({ loginAccounts: [] }), get: async () => ({}) };
     window.pcSessions = { has: () => false, get: () => null, screenShown() {} };
     window.networkLinks = { get: () => ({ name: 'L' }), lastView: () => ({ hosts: [] }) };
     window.MinigameFramework = { mainGameScene: {}, startMinigame: (type, c, params) => { started.push(params); return null; } };
-    const bay = PCS.find(p => p.id === 'bay_pc');
-    const lk = remoteLockable({ id: bay.id, name: bay.name, host: bay.host, domain: bay.domain }, 'jack_office_port');
-    assert.equal('domain' in lk.scenarioData, false);
-    await openLoginSignIn(lk);
-    assert.equal(started[0].signIn.domain, undefined);
+    const row = privilegeAnswer('remote_lockable_bay_pc');
+    await openLoginSignIn(remoteLockable(row, 'jack_office_port'));
+    assert.equal(started[0].signIn.domain, 'northwind');
     const mg = render({ ...started[0].signIn, picker: false });
-    assert.equal(document.querySelector('.signin-domain'), null);
+    assert.equal(document.querySelector('.signin-domain')?.textContent, 'Domain: northwind');
     mg.cleanup();
 });
 
