@@ -342,7 +342,19 @@
           "observations": "A USB port on the desk, wired to the desk policy.",
           "affordance": false,
           "requiresItem": "kit_stick",
-          "requiresItemHint": "You would need a USB stick to plug in here."
+          "requiresItemHint": "You would need a USB stick to plug in here.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the stick into the desk port?",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "remove_item", "item": "kit_stick" },
+                { "type": "hint", "title": "Desk port", "message": "The stick is in the desk port." }
+              ]
+            }
+          ]
         },
         {
           "type": "filing_cabinet_locked1",

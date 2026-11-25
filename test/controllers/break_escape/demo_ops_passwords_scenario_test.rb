@@ -563,6 +563,12 @@ module BreakEscape
         end
         entry = { 'method' => request.request_method, 'path' => request.path, 'status' => response.status }
         entry[parsed.nil? ? 'bodyText' : 'body'] = parsed.nil? ? text : parsed
+        # The browser capture tags each inventory change (action, item, used on); the scanner reads the tag to
+        # know which files the player holds, so the tag is written here from the request the same way.
+        if request.request_method == 'POST' && request.path.end_with?('/inventory')
+          sent = request.request_parameters
+          entry['inv'] = { 'action' => sent['action_type'], 'itemId' => sent.dig('item', 'id'), 'usedOn' => sent['used_on'] }
+        end
         captured << entry
         result
       end
