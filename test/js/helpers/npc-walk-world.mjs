@@ -6,15 +6,22 @@ export const flush = () => new Promise(r => setImmediate(r));
 
 // Two rooms side by side: hall (0-320) and dock (320-640), 320 px tall. The door between them is
 // at (320, 160). The camera shows the hall only.
-export function world({ locked = false, dockLoaded = true, doorGates = null, view = { x: 0, y: 0, width: 300, height: 320 } } = {}) {
+export function world({ locked = false, closed = false, annex = false, dockLoaded = true, doorGates = null, view = { x: 0, y: 0, width: 300, height: 320 } } = {}) {
     const emits = [];
     let clock = 1000;
     const fades = [];
-    const doorSprite = { active: true, doorProperties: { roomId: 'hall', connectedRoom: 'dock', worldX: 320, worldY: 160, locked } };
+    const doorSprite = { active: true, doorProperties: { roomId: 'hall', connectedRoom: 'dock', worldX: 320, worldY: 160, locked, ...(closed ? { open: false, direction: 'east' } : {}) } };
     const rooms = {
         hall: { position: { x: 0, y: 0 }, doorSprites: [doorSprite] },
     };
     const roomBounds = new Map([['hall', { worldX: 0, worldY: 0, mapWidth: 10, mapHeight: 10 }]]);
+    // annex: a second room west of the hall, behind its own door at (0, 160), for tests that try another door
+    const annexDoor = { active: true, doorProperties: { roomId: 'hall', connectedRoom: 'annex', worldX: 0, worldY: 160, locked: false } };
+    if (annex) {
+        rooms.hall.doorSprites.push(annexDoor);
+        rooms.annex = { position: { x: -320, y: 0 }, doorSprites: [] };
+        roomBounds.set('annex', { worldX: -320, worldY: 0, mapWidth: 10, mapHeight: 10 });
+    }
     const dockRoom = { position: { x: 320, y: 0 }, doorSprites: [] };
     const dockBounds = { worldX: 320, worldY: 0, mapWidth: 10, mapHeight: 10 };
     const loadDock = () => { rooms.dock = dockRoom; roomBounds.set('dock', dockBounds); };
@@ -22,8 +29,8 @@ export function world({ locked = false, dockLoaded = true, doorGates = null, vie
     const loads = [];
     const pfm = {
         roomBounds,
-        worldGrid: Array.from({ length: 40 }, () => new Array(80).fill(0)),
-        worldGridBounds: { minX: 0, minY: 0, cols: 80, rows: 40, step: 8 }
+        worldGrid: Array.from({ length: 40 }, () => new Array(annex ? 120 : 80).fill(0)),
+        worldGridBounds: { minX: annex ? -320 : 0, minY: 0, cols: annex ? 120 : 80, rows: 40, step: 8 }
     };
     const visibility = new Map();
     const npcs = new Map();
@@ -49,7 +56,15 @@ export function world({ locked = false, dockLoaded = true, doorGates = null, vie
         doorGates: () => doorGates,
         hostile: () => hostile,
         loadRoom: (id) => { loads.push(id); if (id === 'dock' && w.dockLoadsOnRequest) loadDock(); return Promise.resolve(); },
-        openDoorForNpc: (s, id, o) => { opened.push(id); w.openedOpts.push(o || null); },
+        // like doors.js openDoorForNpc: a closed door opens and door_opened_by_npc fires
+        openDoorForNpc: (s, id, o) => {
+            opened.push(id); w.openedOpts.push(o || null);
+            const p = s?.doorProperties;
+            if (p && p.open === false) {
+                p.open = true;
+                emits.push({ name: 'door_opened_by_npc', data: { roomId: p.roomId, connectedRoom: p.connectedRoom, direction: p.direction, npcId: id } });
+            }
+        },
         requestSync: () => { syncs++; },
         now: () => clock,
         wait: (ms) => { clock += ms; return Promise.resolve(); },
