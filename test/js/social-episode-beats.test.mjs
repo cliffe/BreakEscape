@@ -32,7 +32,7 @@ for (const rel of [
     'minigames/framework/minigame-manager.js', 'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js', 'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js', 'ui/modal-stack.js',
     'ui/success-screen.js', 'utils/desktop-app.js', 'systems/bark-release-policy.js',
-    'systems/npc-manager.js', 'systems/npc-los.js', 'minigames/phone-chat/phone-chat-speaker.js'
+    'utils/world-play.js', 'utils/constants.js', 'utils/player-costume.js', 'utils/player-avatar.js', 'systems/npc-manager.js', 'systems/npc-los.js', 'minigames/phone-chat/phone-chat-speaker.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
@@ -487,8 +487,8 @@ test('E3 watcher: waits for the done global, then a 4 s grace, then returns the 
     assert.equal(calls.returns, 0);
     assert.equal(cur(), null);
     tick(1000);                     // grace over
-    assert.equal(calls.returns, 1, 'moved to the spot once');
     return Promise.resolve().then(() => Promise.resolve()).then(() => {
+        assert.equal(calls.returns, 1, 'moved to the spot once');
         assert.equal(scene(), 'episode-runner');
         assert.equal(epState().stage, 'flip');
         assert.equal(epState().beatPanel, null, 'resumes at the flip, not the panel');
@@ -509,12 +509,12 @@ test('E3 watcher: an open chat delays it until the chat closes, then the grace r
     tick(3000);
     assert.equal(calls.returns, 0);
     tick(1000);
+    await new Promise((r) => setTimeout(r, 0));
     assert.equal(calls.returns, 1);
-    await Promise.resolve(); await Promise.resolve();
     assert.equal(scene(), 'episode-runner');
 });
 
-test('E3 watcher: a chat that opens during the grace restarts it', () => {
+test('E3 watcher: a chat that opens during the grace restarts it', async () => {
     lookUp();
     window.gameState.globalVariables.drop_done = true;
     tick(); tick(2000);
@@ -524,6 +524,7 @@ test('E3 watcher: a chat that opens during the grace restarts it', () => {
     tick(); tick(3000);
     assert.equal(calls.returns, 0);
     tick(1000);
+    await new Promise((r) => setTimeout(r, 0));
     assert.equal(calls.returns, 1);
 });
 
@@ -592,7 +593,7 @@ test('E3 reload: the real watcher started from saved state reopens the runner af
 
 // ── world-play ───────────────────────────────────────────────────────────────
 
-const wp = await import(pathToFileURL(join(js, 'utils/world-play.js')).href);
+const wp = await load('utils/world-play.js');
 const fakePlayer = () => {
     const moves = [];
     return { moves, x: 10, y: 20, setPosition(x, y) { this.x = x; this.y = y; moves.push(['set', x, y]); }, body: { reset(x, y) { moves.push(['reset', x, y]); } } };

@@ -474,9 +474,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
         if (this.rereading && this._canReread()) this._renderDebrief();
         else if (this.alreadySeen) this._renderFinished();
+        else if (this._beatPanel && stage) this._renderBeat();
         else if (this.pauseAfter && stage) this._renderPause();
         else if (this.stepAwayPanel && stage === 'debrief') this._renderStepAway();
-        else if (this._beatPanel && stage) this._renderBeat();
         else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
         else if (stage === 'debrief') this._renderDebrief();
@@ -580,6 +580,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * write the beat's done global true once when it has one, and move on to the next stage.
      */
     _carryOn(beat) {
+        this._steppedAways.add(beat.id); // a facilitated run stores nothing, so remember it for this open
         this._markStepAwayPicked(beat, beat.resumeOnDone ? 'carry' : null);
         const g = this.globals;
         if (beat.doneGlobal && !(g && g[beat.doneGlobal] === true)) {
