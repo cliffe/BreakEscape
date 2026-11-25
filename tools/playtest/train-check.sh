@@ -104,6 +104,7 @@ fi
 cd "$WT" || exit 2
 SUM="$OUT/summary.txt"
 SERVER_PID=""
+JS_TMP=""
 RED=()
 SKIPPED=()
 cleanup() {
@@ -115,6 +116,8 @@ cleanup() {
     for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$SERVER_PID" 2>/dev/null || break; sleep 1; done
     kill -9 "$SERVER_PID" 2>/dev/null || true
   fi
+  # Only the exact mktemp dir created for the JS stage.
+  if [ -n "$JS_TMP" ] && [ -d "$JS_TMP" ]; then rm -rf -- "$JS_TMP"; fi
 }
 trap cleanup EXIT
 trap 'exit 130' INT TERM
@@ -195,8 +198,11 @@ if [ "${TRAIN_CHECK_SKIP_JS:-0}" = 1 ]; then
   echo "js SKIPPED" >> "$SUM"; SKIPPED+=(js)
 else
   # Own temp dir: a shared /tmp clean-up removed bin/test-js's mktemp folder mid-run (T237, exit 143).
-  mkdir -p "$OUT/tmp"
-  TMPDIR="$OUT/tmp" MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j "${TRAIN_CHECK_JS_JOBS:-8}" > "$OUT/js.txt" 2>&1; rc=$?
+  # It must sit in plain /tmp, not under $OUT: disk-clean.sh refuses roots inside a Claude scratchpad or under $HOME,
+  # so disk-clean.test.mjs fails when OUT is in either. Removed on exit (trap), path recorded in the summary.
+  JS_TMP="$(mktemp -d "${TRAIN_CHECK_TMP_BASE:-/tmp}/be-train-js.XXXXXX")"
+  echo "js tmpdir: $JS_TMP" >> "$SUM"
+  TMPDIR="$JS_TMP" MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j "${TRAIN_CHECK_JS_JOBS:-8}" > "$OUT/js.txt" 2>&1; rc=$?
   echo "js exit $rc: $(grep -E '^Files: ' "$OUT/js.txt" | tail -1)" >> "$SUM"
   grep -E '^Failed: ' "$OUT/js.txt" >> "$SUM" || true
   [ "$rc" -ne 0 ] && RED+=("js exit $rc")
