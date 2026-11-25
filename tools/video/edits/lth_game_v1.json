@@ -1742,8 +1742,8 @@
    },
    "source": {
     "file": "lth_gap1_walkthrough.trimmed.mkv",
-    "in": 2.4,
-    "out": 5.2
+    "in": 3.0,
+    "out": 5.8
    },
    "framing": {
     "16:9": {
@@ -1771,10 +1771,10 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "GAP-1 real take: getting-started section scrolling in; crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
+    "note": "GAP-1 real take: getting-started section (window starts after the Purpose list, which names ciphers); crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
    },
    "placeholder": false,
-   "note": "GAP-1 real take: getting-started section scrolling in; crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
+   "note": "GAP-1 real take: getting-started section (window starts after the Purpose list, which names ciphers); crop excludes the Contents sidebar; window ends before the page's 'Break Escape' list item and Derek lines (about 6 s)"
   },
   {
    "id": "S35_v_ghost",
