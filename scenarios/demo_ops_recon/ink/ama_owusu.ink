@@ -42,7 +42,7 @@ What can I help with?
 + { not act_evening } [Call it a day.]
     -> lever_day_end
 + { not terminal_view_done } [I looked at the file server in the Terminal.]
-    -> terminal_check
+    -> terminal_talk
 + { plug_in_done } [What did that show?]
     -> recap
 + [Give me the short version.]
@@ -131,7 +131,7 @@ Seen what you wanted? Once they've gone home, it's just Zainab and Graham.
     Take your time.
     -> hub
 
-=== terminal_check ===
+=== terminal_talk ===
 # speaker:npc
 Good. What did the file server say?
 + [It named the product and its version.]
