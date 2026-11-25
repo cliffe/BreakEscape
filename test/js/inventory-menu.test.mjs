@@ -521,6 +521,10 @@ test('S8c R2-CLIENT4: an opened droppable container (contents or hasContents) ha
     assert.deepEqual(menu(held({ ...BRIEFCASE, locked: false, contents: [{ id: 'x' }] })).map(e => e.id), ['open', 'drop', 'examine']);
     // R3-CLIENT1: an emptied container offers no "Open"
     assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: false, contents: [] }))), ['Drop here', 'Examine']);
+    // R4-6: the S8c briefcase keeps hasContents true after the player takes the last item (the client never clears it); the
+    // contents the client holds decide. With no contents list at all (a USB stick) hasContents still decides.
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: true, contents: [] }))), ['Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ ...BRIEFCASE, locked: false, hasContents: true, contents: [{ id: 'x' }] }))), ['Open', 'Drop here', 'Examine']);
 });
 
 test('S8c R2-CLIENT4: a droppable with no contents and no lock keeps just Drop here and Examine', () => {
