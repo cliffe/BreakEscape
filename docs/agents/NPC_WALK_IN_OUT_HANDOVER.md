@@ -211,3 +211,25 @@ Scratchpad walkproof5/RESULTS.md. m10 A and B pass; c1 a-e pass; f fails (below)
 ### Open
 - Case f: walk_inspector spawned at (116,260) in walk_lobby, its body ended at (146,326) and never moved (stall x2, timeout, faded in at the target). Spawn code equals f72d751b2 (f passed there from (116,164)); the cell differed because the player stood elsewhere (x 334, y -67: the driver's moveTo before f may not have finished). Likely a BFS cell that is grid-walkable but whose body overlaps a wall or prop collider near the lobby's south wall, so physics ejects it out of the grid. Next step: log the spawn cell, the lobby bounds and walls; consider snapping spawns with findNearestWalkableWorldCell and a body-clearance check.
 - Mapping drift check not run (scenario not changed).
+
+## Live-failure pass 4: case f (branch fix/npc-walk-live)
+
+### Cause (confirmed live, not the suspected collider overlap)
+`placeBody` (npc-walk.js) moved every spawn by the body offset. Phaser 3.60 `body.reset(x, y)` puts the body at the sprite's top-left and ignores the body offset until the next physics step re-adds it (`updateFromGameObject`). `placeBody` measured the sprite-to-body gap from that stale body and never re-synced, so after one frame the body centre sat (+30, +66) from the requested cell (offset 30,66 from npc-sprites.js). Probe (walkproof6/probe.mjs, per-call trace of body.reset/updateFromGameObject): `reset(146,295)` left body (106,255), centre (116,260) as asked; the next `updateFromGameObject` made it (136,321), centre (146,326). A cell at y 260 therefore landed at y 326, past the lobby's south wall (wall boxes at y 312-320, grid blocked there): no path, stalls, 20 s timeout, fade in view. Spawns that happened to land inside the room (116,164 became 146,230) "worked", so the bug hid. No physics push, no collider overlap (the probe lists no body near the cell). `seating.js` placeBody already knew the quirk.
+
+### Fixes (npc-walk.js)
+- `placeBody`: `updateFromGameObject()` plus prev/prevFrame copy and `updateCenter()` after each reset, so the feet stay at the cell after the next step (as seating.js does).
+- `bfsOutOfView`: new `clear` (cells; accept only cells whose neighbours within that many cells are walkable, i.e. the 20x10 body fits) and `skip(x, y)`. `chooseSpawn` tries `clear: 1` first, then any walkable cell, so the nearest-out-of-view preference stays.
+- Stall fallback (`onStall`): after the first re-issue, a walk-in still out of view re-spawns at another out-of-view cell: another door first, else another cell behind the same door (at least `WALK_RESPAWN_GAP_PX` = 48 px from every cell already tried, `w.triedAt`). The fade is the last resort (`from` as a fixed tile cannot respawn). Before this, `onStall` only tried other doors, so a one-door room went straight to the timeout fade.
+
+### Tests
+test/js/npc-walk-view.test.mjs (placeBody on a Phaser-style body that models the reset/sync quirk; clear; skip), test/js/npc-walk-recovery.test.mjs (respawn at another cell, never repeats a cell, fixed tile fades; stall tests rewritten with `stallUntilSettled`). bin/test-js over `ls test/js | grep -E "npc|door|walk"`: 124 of 124 pass.
+
+### Proof
+Scratchpad walkproof6/RESULTS.md. Forced spawn at (116,260): body stays at (116,260), the walk completes as 'walked'.
+
+### Open
+- Case c (courier into the never-visited annex) walks or fades depending on where the player stands (camera): run 1 walked, run 2 doorway-faded (annex wholly in view). By design, unchanged.
+- Mapping drift check not run (no scenario change).
+- m10 A/B not re-run at this commit (driver stalled on a repeating phone chat; see walkproof6/RESULTS.md for the setup: `--start-room server_hall` plus the flags). They passed at 3ba8a5f56; this pass changed placeBody (all walk-in spawns), spawn picks and the stall fallback, not the walk-out code, so a re-run is still owed.
+- Servers: :3026 stopped.
