@@ -415,7 +415,9 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         if (!tile.kinds.includes(kind)) tile.kinds.push(kind);
         if (!tile.targetId && e.account.npcId) tile.targetId = e.account.npcId;
         if (kind === 'cracked') {
-            // S7: the player's own work; they type it from the capture log. No file line, no fill.
+            // S7-1: the player's own work fills like any held password. No file line, no credential
+            // button. A captured value wins, whichever entry comes first.
+            if (typeof e.password === 'string' && e.password && !tile.keyPassword) tile.keyPassword = e.password;
         } else if (kind === 'captured') {
             if (typeof e.password === 'string' && e.password) tile.keyPassword = e.password;
         } else if (kind === 'in_file') {

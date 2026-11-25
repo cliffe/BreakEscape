@@ -33,12 +33,13 @@ const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { PasswordMinigame, mergeKeyboardTiles } = await load('minigames/password/password-minigame.js');
 const mfa = await load('systems/mfa-client.js');
 
+const OPS_CRACK = JSON.parse(readFileSync(join(here, 'fixtures/ops_crack/answers.json'), 'utf8'));
 const settle = () => new Promise((r) => setTimeout(r, 0));
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', targetId: 'sam', portrait: null, avatar: null, kinds: [] },
     { username: 'admin', displayName: 'Admin', targetId: 'admin', portrait: null, avatar: null, kinds: ['in_file'] }];
 
 // One rig per test: a fake server for the client, a fake mirror, spies for sounds and the lesson
-function rig({ verify = [], device = {}, tiles = TILES } = {}) {
+function rig({ verify = [], device = {}, tiles = TILES, keyring = null } = {}) {
     document.body.innerHTML = '<div id="mg"></div>';
     window.requestAnimationFrame = (cb) => 1;
     window.visualViewport = null;
@@ -74,7 +75,7 @@ function rig({ verify = [], device = {}, tiles = TILES } = {}) {
     };
     const mg = new PasswordMinigame(document.getElementById('mg'), {
         title: 'Hot desk PC', lockable: { scenarioData: { id: 'hot_desk' } }, type: 'item',
-        signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles, current: null },
+        signIn: { pcId: 'hot_desk', pcName: 'Hot desk PC', picker: 'accounts', tiles, current: null, ...(keyring ? { keyring } : {}) },
         showPostit: false
     });
     window.MinigameFramework.currentMinigame = mg;
@@ -387,4 +388,31 @@ test('F4: a pane that opens again keeps the account name from the first step', a
     mg.signInState.tiles = [];
     assert.equal(mg.resumeSecondStep(), true);
     assert.equal($('#signin-second .signin-second-title').textContent, 'Second step for Sam Okafor');
+});
+
+// A3 (S7-1): the real screen fills a cracked password and signs in with it
+test('a cracked password fills the field on choosing the tile, signs in with it, and clears on Other user', async () => {
+    const row = OPS_CRACK.keyringCracked.entries.find((e) => e.source === 'cracked');
+    const base = [{ username: row.account.username, displayName: row.account.displayName, targetId: row.account.npcId, portrait: null, avatar: null, kinds: [] }];
+    const tiles = mergeKeyboardTiles({ picker: 'accounts', tiles: base, keyring: [row] });
+    assert.deepEqual(tiles[0].kinds, ['cracked']);
+    const { mg, log } = rig({ tiles: base, keyring: [row] });
+    const posted = [];
+    window.pcSessions.signIn = async (pcId, username, password) => {
+        posted.push({ pcId, username, password });
+        log.held = { pcId, npcId: row.account.npcId, username, displayName: row.account.displayName, via: 'password' };
+        return { ok: true, session: log.held };
+    };
+    mg.selectSignInTile(0);
+    assert.equal(mg.passwordField.value, row.password);
+    assert.equal(mg.gameData.password, row.password);
+    await mg._submitSignInOnce();
+    assert.equal(posted.length, 1);
+    assert.equal(posted[0].password, row.password);
+    assert.deepEqual(log.taught, ['cracked'], 'the lesson shows once');
+    const again = rig({ tiles: base, keyring: [row] });
+    again.mg.selectSignInTile(0);
+    assert.equal(again.mg.passwordField.value, row.password);
+    again.mg.selectSignInTile('other');
+    assert.equal(again.mg.passwordField.value, '');
 });
