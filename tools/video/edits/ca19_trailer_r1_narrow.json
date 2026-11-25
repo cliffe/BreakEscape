@@ -1,0 +1,837 @@
+{
+ "mission": "ca19",
+ "id": "ca19_trailer_r1_narrow",
+ "theme": "ca",
+ "title": "Cyber Aware ca19 trailer, round 1 (narrow takes t02b, t03b, t04b, t05b, t06b; render 9:16 and 1:1 from this file)",
+ "script": {
+  "heading": "ca19 trailer script (Malware, ransomware and updates)",
+  "owner_card": "none yet",
+  "brief": "See docs/video/scripts/ca19_trailer_script.md, docs/video/takes_ca19.md and tmp/handover/ca0/HANDOVER_edit_ca19.md. Sulafat_v2 VO. DEFAULTS the owner can change: (1) music PeaceFolk Guitar Motif from 75.35 s (checked: no gap over 0.3 s below -45 dB in the 72 s window; fallback Quietly Cinematic @79.918); (2) integer scale; (3) hook cut at the comma, in 15.58 / out 18.45 (speech 15.70-18.40, 'and' from 18.56), bar masked; (4) montage as z1 page, then two z2 crops; (5) niamh_end z3 on the seated-then-standing pair. Chips: THE TRAINING ROOM, QUAYHOLT BRIEF, YOUR CALLS, YOUR TURN, THE DESK INBOX."
+ },
+ "fps": 30,
+ "length": 69.14,
+ "music": {
+  "track": "PeaceFolk/Guitar Motif.mp3",
+  "analysis": "guitar_motif_75.json",
+  "start": 75.35,
+  "length": 69.14,
+  "gain_db": -5,
+  "fade_in": 0,
+  "fade_out": 2.5,
+  "alternatives": [
+   "PeaceFolk/Quietly Cinematic.mp3 @79.918"
+  ]
+ },
+ "beat": {
+  "bpm": 95.0,
+  "period": 0.6316,
+  "offset": 0
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "seat_labels": {
+  "attack": "YOUR CALLS",
+  "defend": "DEFENDER"
+ },
+ "shots": [
+  {
+   "id": "hook",
+   "type": "gameplay",
+   "duration": 2.87,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t01_anjali_hook.trimmed.mkv",
+    "in": 15.58,
+    "out": 18.45
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t01 hook: speech onset 15.70 (-50 dB, the 15.2-15.5 click sits before in), clause 1 ends 18.40, 'and' starts 18.56, out 18.45 leaves 0.11 s; bar (y 850-1080: name box, text, Skip) masked, caption burned from lines[] | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.690104,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.680208,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "start": 0.12,
+     "end": 2.82,
+     "speaker": "Anjali, information security",
+     "text": "I'm the one who gets the call\nwhen something looks wrong."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   },
+   "masks": [
+    {
+     "x": 0,
+     "y": 850,
+     "w": 1920,
+     "h": 230,
+     "color": "#000000"
+    }
+   ]
+  },
+  {
+   "preset": "ca-open",
+   "id": "open",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "title": "Malware, ransomware and updates",
+    "company": "Quayholt Insurance",
+    "stripe": "#6b4c9a"
+   },
+   "duration": 5.4
+  },
+  {
+   "id": "topic",
+   "type": "gameplay",
+   "duration": 4.7,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02b_brief_narrow.trimmed.mkv",
+    "in": 4.3,
+    "out": 9.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Brief panel static, paragraph hidden; 16:9/1:1 z2 windows end above the dashed scope box; 9:16 z1.125 shows the scope box and Start (accepted, authorisation note) | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "QUAYHOLT BRIEF",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.314815,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "red_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "attack",
+   "duration": 3.3,
+   "join": {
+    "type": "cut"
+   },
+   "text": [
+    "Make the afternoon's calls"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Attack-side chapter card, title only | CA: spoilers not an issue (owner)"
+   }
+  },
+  {
+   "id": "pick_restart",
+   "type": "gameplay",
+   "duration": 4.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+    "in": 5.0,
+    "out": 9.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "beat 1 of 4; pick highlight at 6.386, beat 1 still up at 9.6 (next choice shows 9.8), out 9.2 checked; 9:16 z0.5625 and 1:1 z1 show the 714 px panel whole | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "pick_save",
+   "type": "gameplay",
+   "duration": 4.2,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+    "in": 15.0,
+    "out": 19.2
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "beat 4 of 4; pick at 16.431; See where they led button unpressed through 19.4, montage from about 19.8, out 19.2 checked | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "led_page",
+   "type": "gameplay",
+   "duration": 3.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+    "in": 20.9,
+    "out": 24.4
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "montage page whole at 1x (z1 / 9:16 z0.5625 with bars), Later that afternoon, Continue unpressed; the whole-page view is the establishing cut before the two z2 crops | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 0.5625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   }
+  },
+  {
+   "id": "led_restart",
+   "type": "gameplay",
+   "duration": 4.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+    "in": 24.4,
+    "out": 29.0
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "same static page; z2 window y 206-746 (heading, restart card, most of save card); 9:16 window y 0-960 | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.440741,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.440741,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "led_save",
+   "type": "gameplay",
+   "duration": 4.5,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03b_choices_reveal_narrow.trimmed.mkv",
+    "in": 29.0,
+    "out": 33.5
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "same static page; z2 window y 378-918 (save card, Continue; restart card tail); 9:16 window y 120-1080; take holds to 33.575 | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "attack",
+    "chip": "YOUR CALLS",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.6,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.555556,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.6,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "flip",
+   "type": "gameplay",
+   "duration": 3.0,
+   "join": {
+    "type": "flip"
+   },
+   "source": {
+    "file": "t04b_flip_narrow.trimmed.mkv",
+    "in": 6.63,
+    "out": 9.63
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend panel up from press (6.3 / 6.43), Open the inbox unpressed | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "YOUR TURN",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "blue_card",
+   "type": "card",
+   "style": "ca",
+   "chapter": "defend",
+   "duration": 4.0,
+   "join": {
+    "type": "seam"
+   },
+   "text": [
+    "Sort the desk inbox"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Defend-side chapter card, title only | CA: spoilers not an issue (owner)"
+   }
+  },
+  {
+   "id": "inbox_list",
+   "type": "gameplay",
+   "duration": 4.0,
+   "join": {
+    "type": "seam"
+   },
+   "source": {
+    "file": "t05b_inbox_list_narrow.trimmed.mkv",
+    "in": 6.7,
+    "out": 10.7
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "six-row list, Piledocs focus ring accepted; out is before the row click (10.56 / 10.906); 9:16 window x 600-1140 cuts times and the attachment icon | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE DESK INBOX",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.27037,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.453125,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.453125,
+     "cy": 0.27037,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "inbox_card",
+   "type": "gameplay",
+   "duration": 5.6,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05b_inbox_list_narrow.trimmed.mkv",
+    "in": 12.15,
+    "out": 17.75
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "13:24 card opened, body hidden, pane below empty | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "defend",
+    "chip": "THE DESK INBOX",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.27037,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.453125,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.453125,
+     "cy": 0.3,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "look_up",
+   "type": "gameplay",
+   "duration": 3.55,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06b_lookup_panel_narrow.trimmed.mkv",
+    "in": 4.1,
+    "out": 7.65
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Before the debrief panel, Look up and Carry on never pressed | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 2
+    }
+   }
+  },
+  {
+   "id": "niamh_end",
+   "type": "gameplay",
+   "duration": 6.22,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_niamh_end.trimmed.mkv",
+    "in": 5.06,
+    "out": 11.28
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "t07: Niamh speech 6.605-8.875 and 8.977-11.239, out 11.28 after silence (Darren muted, bar hidden); both NPCs seated at 5.06, standing from about 6; z3 crop on the pair and the isolated PC (red X), room x 291-1245 so no black shows | CA: spoilers not an issue (owner)"
+   },
+   "seat": {
+    "seat": "full",
+    "chip": "THE TRAINING ROOM",
+    "stripe": "#6b4c9a"
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.375,
+     "cy": 0.657407,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.3125,
+     "cy": 0.666667,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.322917,
+     "cy": 0.666667,
+     "zoom": 3
+    }
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "start": 1.545,
+     "end": 3.815,
+     "speaker": "Niamh",
+     "text": "IT have taken mine offline\nwhile they rebuild it,"
+    },
+    {
+     "start": 3.917,
+     "end": 6.179,
+     "speaker": "Niamh",
+     "text": "so I'm on pen and paper\nfor the afternoon."
+    }
+   ],
+   "caption": {
+    "16:9": true,
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "preset": "ca-close",
+   "id": "close",
+   "join": {
+    "type": "seam"
+   },
+   "ca": {
+    "name": "Malware, ransomware and updates",
+    "tagline": "Make the calls · See where they lead",
+    "hacktivity": "Hacktivity",
+    "cta": "Learn on Hacktivity.co.uk",
+    "layout": {
+     "1:1": {
+      "mark_y": 0.14
+     }
+    },
+    "wordmark": [
+     "HACKTIVITY",
+     "CYBER AWARE"
+    ]
+   },
+   "duration": 5.5
+  }
+ ],
+ "vo": [
+  {
+   "id": "v1",
+   "start": 3.07,
+   "end": 7.774,
+   "text": "Hacktivity Cyber Aware: Security awareness training you can play.",
+   "caption": "Hacktivity Cyber Aware:\nSecurity awareness training\nyou can play.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v1.mp3"
+  },
+  {
+   "id": "v1c",
+   "start": 8.47,
+   "end": 11.518,
+   "text": "This episode: malware and updates.",
+   "caption": "This episode:\nmalware and updates.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v1c.mp3"
+  },
+  {
+   "id": "v2",
+   "start": 13.17,
+   "end": 15.762,
+   "text": "First, make the afternoon's calls.",
+   "caption": "First, make\nthe afternoon's calls.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v2.mp3"
+  },
+  {
+   "id": "v3",
+   "start": 16.57,
+   "end": 19.186,
+   "text": "A restart, put off three times.",
+   "caption": "A restart, put off\nthree times.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v3.mp3"
+  },
+  {
+   "id": "v4",
+   "start": 20.77,
+   "end": 23.458,
+   "text": "The afternoon's work sits on the desktop.",
+   "caption": "The afternoon's work\nsits on the desktop.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v4.mp3"
+  },
+  {
+   "id": "v5",
+   "start": 24.97,
+   "end": 26.89,
+   "text": "Then see where each one led.",
+   "caption": "Then see where\neach one led.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v5.mp3"
+  },
+  {
+   "id": "v5b",
+   "start": 28.47,
+   "end": 31.95,
+   "text": "Ransomware locked the machines that never restarted.",
+   "caption": "Ransomware locked the machines\nthat never restarted.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v5b.mp3"
+  },
+  {
+   "id": "v12",
+   "start": 33.07,
+   "end": 36.238,
+   "text": "The desktop file was locked, with no backup.",
+   "caption": "The desktop file was locked,\nwith no backup.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v12.mp3"
+  },
+  {
+   "id": "v6",
+   "start": 37.47,
+   "end": 38.766,
+   "text": "Now it's your turn.",
+   "caption": "Now it's your turn.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v6.mp3"
+  },
+  {
+   "id": "v7",
+   "start": 40.57,
+   "end": 43.858,
+   "text": "Sort the desk inbox, real or risky.",
+   "caption": "Sort the desk inbox,\nreal or risky.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v7.mp3"
+  },
+  {
+   "id": "v8",
+   "start": 44.47,
+   "end": 46.678,
+   "text": "Six items, one afternoon.",
+   "caption": "Six items,\none afternoon.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v8.mp3"
+  },
+  {
+   "id": "v10",
+   "start": 48.57,
+   "end": 50.01,
+   "text": "Is this one real?",
+   "caption": "Is this one real?",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v10.mp3"
+  },
+  {
+   "id": "v11",
+   "start": 54.07,
+   "end": 55.678,
+   "text": "Then Niamh walks over.",
+   "caption": "Then Niamh walks over.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v11.mp3"
+  },
+  {
+   "id": "v13",
+   "start": 63.74,
+   "end": 68.228,
+   "text": "Make the calls, see where they lead, on Hacktivity.co.uk.",
+   "caption": "Make the calls, see where\nthey lead, on Hacktivity.co.uk.",
+   "file": "/home/cliffe/video-takes-local/ca19/vo/Sulafat_v2/trim/v13.mp3"
+  }
+ ]
+}
