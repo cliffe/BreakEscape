@@ -46,5 +46,11 @@ module BreakEscape
       rows = [take('nia_phone')] + refuse_stop(100) + [grant_mfa(150, npc: 'hana', desk: 'call_desk')]
       assert_includes rules(scan(rows, data)), 'helpdesk_grant'
     end
+
+    test 'tamper: a call-back desk that also resets passwords can stop the name itself, so the mfa grant stays flagged' do
+      data = scenario { |d| d['helpdesks']['call_desk'] = { 'npc' => 'ria', 'verify' => 'callback', 'resets' => %w[password mfa] } }
+      rows = [take('nia_phone')] + refuse_stop(100) + [grant_mfa(150, npc: 'nia', desk: 'call_desk')]
+      assert_includes rules(scan(rows, data)), 'helpdesk_grant'
+    end
   end
 end
