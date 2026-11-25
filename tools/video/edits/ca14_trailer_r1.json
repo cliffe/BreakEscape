@@ -48,8 +48,8 @@
    },
    "source": {
     "file": "t07_lorna_photo.trimmed.mkv",
-    "in": 6.21,
-    "out": 10.21
+    "in": 5.66,
+    "out": 9.66
    },
    "audio": {
     "gain_db": 0,
@@ -62,7 +62,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t07 L1 bark: speech 6.51-9.224 (silencedetect -35 dB d 0.08, no pause inside, 11 words); in 6.21 = onset - 0.3 (silence from 0.94), out 10.21 inside silence 9.224-12.007, before the L2 bubble at 11.50; world bubble shows (bubble up from 5.96), room beat after Look up (kiosk panel ends 4.22); picture 4.0 s, inside the 5.0 s cold-open limit; Lorna about x 0.30 y 0.58 of the frame, player at the kiosk about x 0.5 y 0.36 (contact sheet), check the 9:16 and 1:1 crop on the render | CA: spoilers not an issue (owner), no masks"
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca14.md): 6.21-10.21 -> 5.66-9.66 | t07 L1 bark: speech 6.51-9.224 (silencedetect -35 dB d 0.08, no pause inside, 11 words); in 6.21 = onset - 0.3 (silence from 0.94), out 10.21 inside silence 9.224-12.007, before the L2 bubble at 11.50; world bubble shows (bubble up from 5.96), room beat after Look up (kiosk panel ends 4.22); picture 4.0 s, inside the 5.0 s cold-open limit; Lorna about x 0.30 y 0.58 of the frame, player at the kiosk about x 0.5 y 0.36 (contact sheet), check the 9:16 and 1:1 crop on the render | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "full",
@@ -610,8 +610,8 @@
    },
    "source": {
     "file": "t11_lorna_end.trimmed.mkv",
-    "in": 13.15,
-    "out": 16.7
+    "in": 12.17,
+    "out": 15.72
    },
    "audio": {
     "gain_db": 0,
@@ -624,7 +624,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "t11 chat L2: portrait up 12.83 (black frame about 12.7), the cut bark audio ends 12.533, chat speech 13.4535-15.1073 then 15.502-16.2975 (pause 0.394 s measured at -35 dB d 0.08, used for the caption split); in 13.15 = onset - 0.3 inside silence 12.533-13.4535 so the cut bark is not heard; out 16.70 inside silence from 16.2975, before chat-closed 17.13; menu never shown; game chat bar cropped out in every aspect; Lorna about x 0.70 | CA: spoilers not an issue (owner), no masks"
+    "note": "re-capture 24 Nov (visemes / Lorna facing): retimed from the new take marks (docs/video/takes_ca14.md): 13.15-16.7 -> 12.17-15.72 | t11 chat L2: portrait up 12.83 (black frame about 12.7), the cut bark audio ends 12.533, chat speech 13.4535-15.1073 then 15.502-16.2975 (pause 0.394 s measured at -35 dB d 0.08, used for the caption split); in 13.15 = onset - 0.3 inside silence 12.533-13.4535 so the cut bark is not heard; out 16.70 inside silence from 16.2975, before chat-closed 17.13; menu never shown; game chat bar cropped out in every aspect; Lorna about x 0.70 | CA: spoilers not an issue (owner), no masks"
    },
    "seat": {
     "seat": "full",
