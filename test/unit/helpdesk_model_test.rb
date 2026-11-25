@@ -121,4 +121,15 @@ class HelpdeskModelTest < ActiveSupport::TestCase
     assert HM.covers?(cb, { 'creds' => {} }, 'mfa')
     assert_not HM.covers?(q, nil, 'mfa')
   end
+
+  test 'a desk serves directory and domain accounts, never an account-only or a local account' do
+    assert HM.desk_serves_account?({ 'creds' => {} })
+    assert HM.desk_serves_account?({ 'creds' => { 'accountKind' => 'domain', 'domain' => 'northwind' } })
+    assert_not HM.desk_serves_account?({ 'accountOnly' => true, 'creds' => {} })
+    assert_not HM.desk_serves_account?({ 'creds' => { 'accountKind' => 'local', 'localTo' => ['pc'] } })
+    assert_not HM.desk_serves_account?(nil)
+    none = desk('verify' => 'none', 'resets' => %w[password mfa])
+    assert_not HM.covers?(none, { 'accountOnly' => true, 'creds' => { 'resetPassword' => 'pw' } }, 'mfa')
+    assert_not HM.covers?(none, { 'creds' => { 'accountKind' => 'local', 'resetPassword' => 'pw' } }, 'password')
+  end
 end

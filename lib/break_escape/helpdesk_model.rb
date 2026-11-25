@@ -107,11 +107,23 @@ module BreakEscape
       end
     end
 
+    # S5bc: a people desk serves the directory accounts of people who can call it. An account-only
+    # account (no person) and a `local` account are never served: the desk answers a request naming
+    # one exactly as it answers an unknown name. Domain accounts and accounts with no kind are served.
+    def desk_serves_account?(npc)
+      return false unless npc.is_a?(Hash)
+      return false if AccessIdentities.account_only?(npc)
+
+      creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}
+      creds['accountKind'] != 'local'
+    end
+
     # Whether this desk could ever grant `what` for this account NPC: `what` is in `resets`; for
     # `password` the account has a `resetPassword`; for the `questions` rule every asked id has a
     # non-empty recovery answer.
     def covers?(desk, npc, what)
       return false unless desk.is_a?(Hash) && npc.is_a?(Hash)
+      return false unless desk_serves_account?(npc)
       return false unless Array(desk['resets']).include?(what)
 
       creds = npc['creds'].is_a?(Hash) ? npc['creds'] : {}

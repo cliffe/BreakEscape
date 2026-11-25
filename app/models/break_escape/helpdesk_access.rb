@@ -101,6 +101,9 @@ module BreakEscape
       end
 
       npc = typed.empty? ? nil : account_for_username(typed)
+      # An account-only or local account is not one a people desk serves: it is judged on a stub
+      # and refused and counted exactly as an unknown name is
+      npc = nil unless npc && HelpdeskModel.desk_serves_account?(npc)
       # The rule is judged for every name, account or not, and the result discarded for a non-account:
       # there is no branch on "is this an account" before the rule has run
       covered = helpdesk_covers_request?(desk, npc || { 'id' => typed, 'creds' => {} }, what, answers)
