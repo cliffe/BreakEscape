@@ -68,3 +68,9 @@ test('make-srt merges vo cues with dialogue cues in time order, no speaker prefi
   assert.equal(blocks[0][1], '00:00:00,500 --> 00:00:01,500');
   const times = blocks.map((b) => b[1].slice(0, 12)); assert.deepEqual([...times].sort(), times);
 });
+
+test('burned_line, vo_skin and caption_top lint', () => {
+  const e = base(); e.vo_skin = 'cyber'; assert.match(lint(e).out, /vo_skin must be "safetynet"/);
+  const f = base(); f.caption_top = { '9:16': 0.1 }; assert.match(lint(f).out, /caption_top must be/);
+  const g = base(); g.vo_skin = 'safetynet'; g.caption_top = { '9:16': 0.6 }; assert.doesNotMatch(lint(g).out, /vo_skin|caption_top/);
+});

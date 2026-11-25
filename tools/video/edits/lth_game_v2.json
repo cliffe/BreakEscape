@@ -3,6 +3,9 @@
  "id": "lth_game_v2",
  "title": "SAFETYNET: Licence to Hack, whole-game trailer, V2 character lines",
  "fps": 30,
+ "caption_top": {
+  "9:16": 0.6
+ },
  "length": 104.767,
  "status": "v1 (25 Nov 2026): built from docs/video/recipes/lth-game-trailer.md; not rendered. Seven placeholders (GAP-1 to GAP-4); S23 mask box provisional; close burned line needs a renderer overlay; announcer caption skin and 9:16 lift need renderer changes (recipe 'Renderer changes').",
  "music": {
@@ -2209,7 +2212,7 @@
   {
    "preset": "hacktivity-close",
    "snap": false,
-   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): NEEDS RENDERER OVERLAY (no text slot in the preset); music fade 0.6 s from 104.168",
+   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): drawn by the cta renderer (burned_line); music fade 0.6 s from 104.168",
    "burned_line": {
     "text": "SAFETYNET: Licence to Hack",
     "from": 0.0,

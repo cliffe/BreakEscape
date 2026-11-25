@@ -3,6 +3,10 @@
  "id": "lth_game_30_v1",
  "title": "SAFETYNET: Licence to Hack, whole-game trailer 30 s, V1 announcer",
  "fps": 30,
+ "vo_skin": "safetynet",
+ "caption_top": {
+  "9:16": 0.6
+ },
  "length": 30.0,
  "status": "v1 (25 Nov 2026): 30 s autoplay cut from the plan's table (900 frames); not rendered; cuts unsnapped. S40 window starts at the shot's in point (line 0.125 s in). Same placeholders as the main cut where S20 and S30 are used.",
  "music": {
@@ -467,7 +471,7 @@
   {
    "preset": "hacktivity-close",
    "snap": false,
-   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): NEEDS RENDERER OVERLAY (no text slot in the preset); music fade 0.6 s from 104.168",
+   "note": "burned line 'SAFETYNET: Licence to Hack' over the close 96.769-101.568 (upper third, Press Start 2P): drawn by the cta renderer (burned_line); music fade 0.6 s from 104.168",
    "burned_line": {
     "text": "SAFETYNET: Licence to Hack",
     "from": 0.0,
