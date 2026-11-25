@@ -2315,7 +2315,7 @@ const bridge = {
      * in/out return { ok, started } at once; the walk's end shows as npc_arrived /
      * npc_left in the log, or poll state(npcId) until it is null.
      */
-    walk: {
+    npcWalk: {
         _mgr() { return window.npcBehaviorManager?.walkNPCIn ? window.npcBehaviorManager : null; },
         in(npcId, opts = {}) {
             const m = this._mgr();

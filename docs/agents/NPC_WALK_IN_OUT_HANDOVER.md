@@ -116,7 +116,7 @@ Stage A agent stopped at the context limit before writing any code. This note ha
 Done (commits 1fe72e3c3, b5dfe683e, plus this note):
 - `systems/npc-walk.js`: `installNpcWalk(manager, env?)` adds `walkNPCIn(id, opts)`, `walkNPCOut(id, opts)` (promises of `how`: walked | faded | instant | already | noop | cancelled; settled-at-call promises carry `.immediate`), `isWalkingOut(id)`, `walks` Map, `_walkTick`. Pure helpers exported: `rectInView`, `npcRectAt`, `bfsOutOfView`, `doorsOfRoom`, `doorUsable`, `inRoomBounds`, `roomAt`, `placeBody`.
 - Events: walk-in ends with `npc_arrived:<id>` `{ owner: 'walk', walk: 'in', how }`; walk-out ends with `npc_left:<id>` `{ npcId, to, how }`; NPC-opened doors emit `door_opened_by_npc` `{ roomId, connectedRoom, direction, npcId }`.
-- Hooks: `core/game.js` dynamic import; `npc-behavior.js` (`_walkTick` in update, goToAndStay `onArrive`/`arrivalData`/`silentArrival`, `updateCurrentRoom` while `_walk`, `wantsToCrossGate`/`turnBackFromGate` for walkers, `_ensureWallCollidersFor`); `npc-manager.js` (fields, handler, speech deferral, `recordNpcVisibility(..., { persistOnly })`); `doors.js` `openDoorForNpc(sprite, npcId)` (+ `window.openDoorForNpc`); `interactions.js` guard; test bridge `window.__test.walk.in/out/state`.
+- Hooks: `core/game.js` dynamic import; `npc-behavior.js` (`_walkTick` in update, goToAndStay `onArrive`/`arrivalData`/`silentArrival`, `updateCurrentRoom` while `_walk`, `wantsToCrossGate`/`turnBackFromGate` for walkers, `_ensureWallCollidersFor`); `npc-manager.js` (fields, handler, speech deferral, `recordNpcVisibility(..., { persistOnly })`); `doors.js` `openDoorForNpc(sprite, npcId)` (+ `window.openDoorForNpc`); `interactions.js` guard; test bridge `window.__test.npcWalk.in/out/state`.
 - Tests: four `test/js/npc-walk-*.test.mjs` (40 tests), all pass; 174 of 175 related files pass.
 
 Open:
@@ -135,3 +135,26 @@ Open:
 - The scenario has no mission row yet, so no live run: `new-game.sh` needs it (seeds), which needs AC0's yes.
 - Case (b) is "open doorway, room loaded" (player visits the store first): an unloaded room always sits behind a closed door, so the unloaded route is case (c).
 - Same-room offscreen (a) needs a viewport smaller than the 20x10 ward (proof uses 800x600); NPC tile positions in `room_m10_hall` were chosen from its collision layer, not checked live.
+
+## Live-failure fix pass (branch fix/npc-walk-live), handover at ~150k tokens
+
+### Causes found
+- m09 stall: walk-in through a CLOSED door. open_stacks south door (48,288, open:false, unlocked) blocks the path grid until opened, and the walker sat at the far-room door mouth (82,358) more than DOOR_OPEN_PX (48) away, so the tick never opened it. Console: "[archive_guard] No path found to waypoint, will retry in 2s" every 2 s, then the 20 s timeout fade. Engine bug, not the m09 layout. Reproduced live on :3026 (game 13502) via `__test.npcWalk.in('archive_guard', {from:'loading_dock'})`.
+- m10 fade in view: fadeOutAndEnd faded in view at the exit cell and reported w.how. Fix: onOutArrive/replanOut.
+- Walk-ins stop ~1 tile short: npc-behavior.js:1429-1450 stops at 1 tile unless arriveWithin is set. Fix: arriveWithin WALK_ARRIVE_PX (10) in inGoOpts.
+- Bridge bug: `window.__test.walk` clobbered bridge.walk(direction, ms). Renamed to `npcWalk` (test-bridge/index.js ~2318), docs updated.
+- makeEnv scene fallback now also tries pathfindingManager.scene and game.scene.manager.scenes[0] (manager.scene is always set in NPCBehaviorManager's constructor).
+
+### Done (uncommitted at time of writing; see commit below)
+npc-walk.js: goTo() (approach closed door, open, then move), replanOut/onOutArrive, onStall (3 s: re-issue, next door out of view, then onTimeout fade), chooseSpawn/chooseExit exclude/ignoreTo options, constants WALK_STALL_MS/WALK_MAX_REPLANS/WALK_ARRIVE_PX. Closed = `props.open === false` (stub doors with open undefined behave as before).
+
+### Not done
+1. Unit tests: none added yet. Needed: closed-door walk-in does leg 1 to approach then opens (openDoorForNpc) then final move; walk-out arrival in view re-plans (moves.length grows, how stays 'walked'), none reachable -> 'faded'; stall (advance clock >3 s, tick) re-plans/falls back; walk-in goToAndStay opts carry arriveWithin 10. Run `node --test test/js/npc-walk-*.test.mjs` ONE FILE AT A TIME: running all at once showed "Unable to deserialize cloned data" on gate/in-out/mappings (runner isolation, not yet confirmed as unrelated; check by running each file alone, and on git stash-free HEAD~ via worktree if needed). Then bin/test-js for door/NPC/walk suites.
+2. m09 conversation on arrival: mapping keeps conversationMode person-chat + targetKnot start; npc-manager.js:2159 defers `speak()` to walk-in resolve, so it should open. Live run (game 13502) showed a PersonChatMinigame opening after the faded arrival, so it does fire; the earlier proof's "no chat" needs re-checking after the fix. Dillard's behaviour only exists once open_stacks is loaded; with the player elsewhere and the room never visited, walkNPCIn takes the 'instant' path.
+3. Live proof table not run: m09 (real trigger is Tran's sight challenge in server_closet, door locked; a hand emit of player_spotted:jesse_tran opened Tran's chat but did not set tran_alerted; the Auto mode classifier denied hand-setting a global, so use `__test.npcWalk.in` or ask the user), m10 run A/B (start game with --set flag2_submitted=true flag3_submitted=true gallery_shutter_cut=true gallery_camera_blinded=true, run A also imran_outcome=talked_round; m01_maya_ko style imports need --imports=<file>), cases a-f on test_npc_walk_in_out (id 281). Case c (courier, unloaded annex, 3 s 'choosing') still undiagnosed: check E.loadRoom/window.loadRoom for walk_annex and the ward east door's locked flag.
+4. Case e porter fade in view should be fixed by replanOut; re-prove.
+5. Proof script docs updated for npcWalk and the camera accessor (window.pathfindingManager.scene).
+6. Not yet run: ruby tools/check_mapping_index_drift.rb main (no mapping changes made).
+
+### Live setup left behind
+Keyless server on :3026 (pid via tools/playtest/stop... `tools/playtest/stop-keyless-server.sh 3026`), session 13502 (`tools/playtest/session-stop.sh 13502`). Helper scripts in the scratchpad walkfix/: boot.sh GAME, c.sh, probe.js, dump.js, insp.js. Games 13499-13502 are mine (m09).

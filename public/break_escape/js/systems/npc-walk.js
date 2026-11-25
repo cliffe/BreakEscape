@@ -25,6 +25,9 @@ export const WALK_DEFAULT_TIMEOUT_MS = 20000;
 export const WALK_FADE_MS = 400;
 export const WALK_VIEW_MARGIN = TILE_SIZE;
 export const WALK_LOAD_WAIT_MS = 3000;
+export const WALK_STALL_MS = 3000;       // no movement for this long: re-plan, then fall back to the fade
+export const WALK_MAX_REPLANS = 4;        // walk-out re-plans after arriving in view
+export const WALK_ARRIVE_PX = 10;         // a walk-in ends within this of its position (goToAndStay stops at 1 tile otherwise)
 const PLAYER_DOOR_PX = 2 * TILE_SIZE;   // never step out of the door the player stands in
 const DOOR_OPEN_PX = 1.5 * TILE_SIZE;   // a walker this close to a closed door opens it
 export const DOOR_PASS_HOOK_TIMEOUT_MS = 2000;
@@ -215,7 +218,7 @@ export function placeBody(sprite, x, y) {
 
 function makeEnv(manager, env) {
     const w = typeof window !== 'undefined' ? window : {};
-    const scene = () => manager?.scene || w.game?.scene?.scenes?.[0] || null;
+    const scene = () => manager?.scene || w.pathfindingManager?.scene || w.game?.scene?.manager?.scenes?.[0] || w.game?.scene?.scenes?.[0] || null;
     const base = {
         rooms: () => w.rooms || {},
         pfm: () => w.pathfindingManager || manager?.pathfindingManager || null,
@@ -365,6 +368,46 @@ export function installNpcWalk(manager, env = {}) {
         if (npc) npc.roomId = roomId;
     }
 
+    // ── Moving, through a closed door if need be ───────────────────────────
+
+    function doorClosed(d) { return !!d?.props && d.props.open === false && !d.props.locked; }
+
+    function openWalkerDoor(w) {
+        const d = w.door;
+        if (doorClosed(d)) E.openDoorForNpc(d.sprite, w.id);
+    }
+
+    /**
+     * Walk to (x, y) with finalOpts. A closed door on the route blocks the path grid until it
+     * is open, and a walker that has no path never gets close enough for the tick to open it
+     * (m09 Dillard stalled 20 s): so go up to the door first, open it, then make the real move.
+     */
+    function goTo(w, x, y, finalOpts) {
+        const { behavior } = w;
+        const d = w.door;
+        const here = bodyPos(behavior);
+        if (doorClosed(d)) {
+            const dc = { x: d.props.worldX, y: d.props.worldY };
+            const gap = dist(here, dc);
+            if (gap > DOOR_OPEN_PX) {
+                const ux = (here.x - dc.x) / gap, uy = (here.y - dc.y) / gap;
+                const approach = snap(dc.x + ux * TILE_SIZE, dc.y + uy * TILE_SIZE);
+                behavior.goToAndStay(approach.x, approach.y, w.opts.speed, {
+                    owner: 'walk',
+                    silentArrival: true,
+                    onArrive: () => {
+                        if (w.done) return;
+                        openWalkerDoor(w);
+                        behavior.goToAndStay(x, y, w.opts.speed, finalOpts);
+                    }
+                });
+                return;
+            }
+            openWalkerDoor(w);
+        }
+        behavior.goToAndStay(x, y, w.opts.speed, finalOpts);
+    }
+
     // ── Walk-in ─────────────────────────────────────────────────────────────
 
     function finishIn(w, how, emitted = false) {
@@ -377,7 +420,7 @@ export function installNpcWalk(manager, env = {}) {
         endWalk(w, how);
     }
 
-    async function chooseSpawn(w) {
+    async function chooseSpawn(w, exclude = null) {
         const { opts, behavior } = w;
         const near = w.homeRoom;
         const sprite = behavior.sprite;
@@ -397,7 +440,7 @@ export function installNpcWalk(manager, env = {}) {
             const cell = target && bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: target, roomBounds: roomBounds(near), isOutOfView: outOfView });
             return cell ? { ...cell, how: 'walked' } : null;
         }
-        const doors = candidateDoors(near, typeof from === 'string' ? from : null, target);
+        const doors = candidateDoors(near, typeof from === 'string' ? from : null, target).filter(d => !exclude?.has(d.far));
         let fallback = null;
         for (const d of doors) {
             if (!fallback) fallback = d;
@@ -442,11 +485,17 @@ export function installNpcWalk(manager, env = {}) {
         }
         if (!target || dist(spawn, target) < 4) { finishIn(w, w.how); return; }
         w.phase = 'walking';
-        behavior.goToAndStay(target.x, target.y, w.opts.speed, {
+        w.resume = () => goTo(w, target.x, target.y, inGoOpts(w));
+        w.resume();
+    }
+
+    function inGoOpts(w) {
+        return {
             owner: 'walk',
             arrivalData: { walk: 'in', how: w.how },
+            arriveWithin: WALK_ARRIVE_PX,
             onArrive: () => finishIn(w, w.how, true)
-        });
+        };
     }
 
     function walkNPCIn(id, opts = {}) {
@@ -474,7 +523,7 @@ export function installNpcWalk(manager, env = {}) {
             w.phase = 'walking';
             if (!target) { finishIn(w, 'walked'); return w.promise; }
             behavior.goToAndStay(target.x, target.y, opts.speed, {
-                owner: 'walk', arrivalData: { walk: 'in', how: 'walked' }, onArrive: () => finishIn(w, 'walked', true)
+                owner: 'walk', arrivalData: { walk: 'in', how: 'walked' }, arriveWithin: WALK_ARRIVE_PX, onArrive: () => finishIn(w, 'walked', true)
             });
             return w.promise;
         }
@@ -520,12 +569,12 @@ export function installNpcWalk(manager, env = {}) {
         E.fade(sprite, 0, WALK_FADE_MS).then(() => hideAndHome(w, how));
     }
 
-    async function chooseExit(w) {
+    async function chooseExit(w, ov = {}) {
         const { opts, behavior } = w;
-        const near = behavior.roomId || w.homeRoom;
+        const near = ov.near || behavior.roomId || w.homeRoom;
         const sprite = behavior.sprite;
-        const to = opts.to;
-        const here = bodyPos(behavior);
+        const to = ov.ignoreTo ? undefined : opts.to;
+        const here = ov.here || bodyPos(behavior);
         const outOfView = (x, y) => !inView(x, y, sprite);
         if (to && typeof to === 'object') {
             const room = to.room || near;
@@ -538,7 +587,7 @@ export function installNpcWalk(manager, env = {}) {
             const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: here, roomBounds: roomBounds(near), isOutOfView: outOfView });
             return cell ? { ...cell, how: 'walked', anyOutOfView: true } : { fadeInPlace: true };
         }
-        const doors = candidateDoors(near, typeof to === 'string' ? to : null, here);
+        const doors = candidateDoors(near, typeof to === 'string' ? to : null, here).filter(d => !ov.exclude?.has(d.far));
         let fallback = null;
         for (const d of doors) {
             if (!fallback) fallback = d;
@@ -562,6 +611,10 @@ export function installNpcWalk(manager, env = {}) {
     function beginOut(w, exit) {
         if (w.done || !exit) return;
         if (exit.fadeInPlace) { fadeOutAndEnd(w, 'faded'); return; }
+        startOutLeg(w, exit);
+    }
+
+    function startOutLeg(w, exit) {
         const { behavior } = w;
         w.farRoom = exit.farRoom || null;
         w.how = exit.how;
@@ -569,11 +622,54 @@ export function installNpcWalk(manager, env = {}) {
         w.anyOutOfView = !!exit.anyOutOfView;
         if (w.farRoom) behavior._ensureWallCollidersFor?.([w.farRoom]);
         w.phase = 'walking';
-        behavior.goToAndStay(exit.x, exit.y, w.opts.speed, {
+        w.lastPos = null;
+        goTo(w, exit.x, exit.y, {
             owner: 'walk',
             silentArrival: true,
-            onArrive: () => fadeOutAndEnd(w, w.how)
+            onArrive: () => onOutArrive(w)
         });
+    }
+
+    /** The camera follows the player, so the exit cell planned out of view may be in view now. */
+    function onOutArrive(w) {
+        if (w.done) return;
+        const p = bodyPos(w.behavior);
+        if (w.how === 'faded' || !inView(p.x, p.y, w.behavior.sprite)) { fadeOutAndEnd(w, w.how); return; }
+        replanOut(w);
+    }
+
+    /**
+     * Another out-of-view cell, nearest first: in the room the walker stands in, then through
+     * that room's other doors (never back into the room it left). Fades, reporting 'faded',
+     * only when none can be reached.
+     */
+    async function replanOut(w) {
+        if (w.done) return;
+        w.replans = (w.replans || 0) + 1;
+        w.phase = 'replanning';
+        if (w.replans <= WALK_MAX_REPLANS) {
+            const { behavior } = w;
+            const sprite = behavior.sprite;
+            const p = bodyPos(behavior);
+            const outOfView = (x, y) => !inView(x, y, sprite);
+            const room = roomAt(E.pfm()?.roomBounds, p.x, p.y) || behavior.roomId || w.homeRoom;
+            const pfm = E.pfm();
+            const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: p, roomBounds: roomBounds(room), isOutOfView: outOfView });
+            if (cell && dist(cell, p) > 8) {
+                log(`${w.id}: exit cell in view on arrival, re-planning to another out of view (${w.replans})`);
+                startOutLeg(w, { ...cell, how: 'walked', farRoom: room !== w.homeRoom ? room : w.farRoom, anyOutOfView: room === w.homeRoom && !w.farRoom, door: null });
+                return;
+            }
+            const exit = await chooseExit(w, { near: room, here: p, exclude: new Set(room !== w.homeRoom ? [w.homeRoom] : []), ignoreTo: true });
+            if (w.done) return;
+            if (exit && !exit.fadeInPlace && exit.how === 'walked') {
+                log(`${w.id}: re-planning through the door to ${exit.farRoom} (${w.replans})`);
+                startOutLeg(w, exit);
+                return;
+            }
+        }
+        w.phase = 'walking';
+        fadeOutAndEnd(w, 'faded');
     }
 
     function walkNPCOut(id, opts = {}) {
@@ -641,6 +737,41 @@ export function installNpcWalk(manager, env = {}) {
         finishIn(w, shown ? 'faded' : 'instant');
     }
 
+    /**
+     * No movement for WALK_STALL_MS: re-plan, then try the next door, and only then the fade
+     * (the timeout). Out: another exit cell or door (replanOut). In: re-issue the move (this
+     * opens a closed door on the route), then, still out of view, spawn at another door.
+     */
+    async function onStall(w) {
+        w.stalls = (w.stalls || 0) + 1;
+        const { behavior } = w;
+        const p = bodyPos(behavior);
+        log(`${w.id}: no progress for ${WALK_STALL_MS} ms (stall ${w.stalls}), re-planning`);
+        if (w.dir === 'out') { behavior.cancelMove?.(); replanOut(w); return; }
+        if (w.stalls === 1 && w.resume) { behavior.cancelMove?.(); openWalkerDoor(w); w.resume(); return; }
+        if (w.stalls <= 3 && w.door && !inView(p.x, p.y, behavior.sprite)) {
+            const tried = (w.triedFar ||= new Set());
+            tried.add(w.door.far);
+            w.phase = 'replanning';
+            const spawn = await chooseSpawn(w, tried);
+            if (w.done) return;
+            if (spawn && spawn.how === 'walked' && !inView(spawn.x, spawn.y, behavior.sprite)) {
+                behavior.cancelMove?.();
+                w.farRoom = spawn.farRoom || null;
+                w.door = spawn.door || null;
+                if (w.farRoom) behavior._ensureWallCollidersFor?.([w.farRoom]);
+                placeBody(behavior.sprite, spawn.x, spawn.y);
+                w.phase = 'walking';
+                w.lastPos = null;
+                w.resume = () => goTo(w, w.target.x, w.target.y, inGoOpts(w));
+                w.resume();
+                return;
+            }
+            w.phase = 'walking';
+        }
+        onTimeout(w);   // the fade, reported as 'faded'
+    }
+
     function tick() {
         if (!walks.size) return;
         const now = E.now();
@@ -649,6 +780,9 @@ export function installNpcWalk(manager, env = {}) {
             if (now - w.startedAt > w.timeoutMs && w.phase !== 'fading') { onTimeout(w); continue; }
             if (w.phase !== 'walking') continue;
             openDoorsNear(w);
+            const here = bodyPos(w.behavior);
+            if (!w.lastPos || dist(here, w.lastPos) > 3) { w.lastPos = here; w.lastMoveAt = now; }
+            else if (now - w.lastMoveAt > WALK_STALL_MS) { w.lastMoveAt = now; onStall(w); continue; }
             if (w.dir !== 'out') continue;
             const p = bodyPos(w.behavior);
             const past = w.anyOutOfView || (w.farRoom && inRoomBounds(roomBounds(w.farRoom), p.x, p.y));

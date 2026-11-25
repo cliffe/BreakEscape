@@ -24,7 +24,7 @@ Report per case: PASS or FAIL, the probe output summary, the three screenshot pa
 ## 1. The probe (install once per page load)
 
 ```json
-{"cmd":"eval","fn":"() => { const P = window.__walkProbe = { log: [], events: [] }; const ids = ['walk_cleaner','walk_clerk','walk_courier','walk_auditor','walk_porter','walk_inspector','archive_guard','monitor_guard','farah_guard']; const ed = window.eventDispatcher; for (const id of ids) for (const ev of ['npc_arrived:'+id, 'npc_left:'+id]) ed.on(ev, d => P.events.push({ ev, t: Date.now(), d })); ed.on('door_opened_by_npc', d => P.events.push({ ev: 'door_opened_by_npc', t: Date.now(), d })); P.timer = setInterval(() => { const v = window.game.scene.scenes[0].cameras.main.worldView; const mg = window.MinigameFramework?.currentMinigame?.constructor?.name || null; for (const id of ids) { const s = window.npcBehaviorManager?.behaviors?.get(id)?.sprite; if (!s) continue; const x = Math.round(s.body?.center?.x ?? s.x), y = Math.round(s.body?.center?.y ?? s.y); const inView = x + 16 > v.x && x - 16 < v.x + v.width && y > v.y && y - 64 < v.y + v.height; const row = { id, t: Date.now(), vis: !!s.visible, a: Math.round((s.alpha ?? 1) * 100) / 100, x, y, inView, walk: window.__test.walk.state(id), mg }; const last = P.log.filter(r => r.id === id).at(-1); if (!last || last.vis !== row.vis || last.inView !== row.inView || last.a !== row.a || last.mg !== row.mg || Math.abs(last.x - x) + Math.abs(last.y - y) > 8) P.log.push(row); } }, 50); return 'probe on'; }"}
+{"cmd":"eval","fn":"() => { const P = window.__walkProbe = { log: [], events: [] }; const ids = ['walk_cleaner','walk_clerk','walk_courier','walk_auditor','walk_porter','walk_inspector','archive_guard','monitor_guard','farah_guard']; const ed = window.eventDispatcher; for (const id of ids) for (const ev of ['npc_arrived:'+id, 'npc_left:'+id]) ed.on(ev, d => P.events.push({ ev, t: Date.now(), d })); ed.on('door_opened_by_npc', d => P.events.push({ ev: 'door_opened_by_npc', t: Date.now(), d })); P.timer = setInterval(() => { const v = window.pathfindingManager.scene.cameras.main.worldView; const mg = window.MinigameFramework?.currentMinigame?.constructor?.name || null; for (const id of ids) { const s = window.npcBehaviorManager?.behaviors?.get(id)?.sprite; if (!s) continue; const x = Math.round(s.body?.center?.x ?? s.x), y = Math.round(s.body?.center?.y ?? s.y); const inView = x + 16 > v.x && x - 16 < v.x + v.width && y > v.y && y - 64 < v.y + v.height; const row = { id, t: Date.now(), vis: !!s.visible, a: Math.round((s.alpha ?? 1) * 100) / 100, x, y, inView, walk: window.__test.npcWalk.state(id), mg }; const last = P.log.filter(r => r.id === id).at(-1); if (!last || last.vis !== row.vis || last.inView !== row.inView || last.a !== row.a || last.mg !== row.mg || Math.abs(last.x - x) + Math.abs(last.y - y) > 8) P.log.push(row); } }, 50); return 'probe on'; }"}
 ```
 
 Read it with `{"cmd":"eval","fn":"() => ({ events: window.__walkProbe.events, log: window.__walkProbe.log.filter(r => r.id === 'NPC_ID') })"}`.
@@ -38,7 +38,7 @@ Trigger a global the way the take scripts do (`tools/video/takes/m09/_c9.mjs` `s
 - **No pop in view.** In the NPC's log, the first row with `vis: true` and `a > 0` has `inView: false`, unless the case says "fade". For a fade case the first visible rows climb from `a: 0` to `a: 1` over about 400 ms.
 - **Ends at `to`.** After `npc_arrived:<id>`, the NPC's body centre is within 16 px of its scenario position: world = room origin + tile × 32 (`{"cmd":"eval","fn":"() => window.rooms.walk_ward.position"}`). The positions are in `scenario.json.erb`.
 - **Events.** A walk-in fires exactly one `npc_arrived:<id>` with `d.owner === 'walk'`, `d.walk === 'in'` and the `how` given below. A walk-out fires exactly one `npc_left:<id>` and no `npc_arrived:<id>`.
-- `__test.walk.state(id)` is `null` once the walk has ended.
+- `__test.npcWalk.state(id)` is `null` once the walk has ended.
 - Screenshots per case: `start` (before the trigger), `mid` (while `walk.state(id).phase === 'walking'`), `end` (arrived or gone). Path: `tmp/walk-proof/<case>-<start|mid|end>.png` via `{"cmd":"screenshot","path":"..."}`.
 
 ## 3. Cases (one game, in this order)
@@ -48,7 +48,7 @@ Install the probe after the page loads (step 1). Run the cases in order: later o
 ### (a) Same room, from off-screen: `walk_cleaner`
 1. Screenshot `a-start` in the lobby.
 2. `{"cmd":"enter","room":"walk_ward"}`. `room_entered:walk_ward` triggers `walkIn: { from: "offscreen" }`.
-3. Poll `__test.walk.state('walk_cleaner')` every 300 ms; screenshot `a-mid` while `phase` is `walking`.
+3. Poll `__test.npcWalk.state('walk_cleaner')` every 300 ms; screenshot `a-mid` while `phase` is `walking`.
 4. Wait for `npc_arrived:walk_cleaner` (max 20 s); screenshot `a-end`.
 Pass: `how: 'walked'`; first visible row out of view; ends at (7, 6.5). If `how` is `'faded'`, record the viewport (`window.innerWidth`) and the camera worldView: the room fitted the view (not a walk failure, but report it).
 
