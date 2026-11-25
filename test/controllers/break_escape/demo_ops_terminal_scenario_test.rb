@@ -77,6 +77,14 @@ module BreakEscape
       body
     end
 
+    # The spare port is hidden until the ink sets spare_port_offered, and the server refuses a plug-in on a hidden port.
+    def offer_spare_port
+      game = fresh
+      ps = game.player_state
+      ps['globalVariables'] = (ps['globalVariables'] || {}).merge('spare_port_offered' => true)
+      game.update!(player_state: ps)
+    end
+
     def swept(foot = FOOT)
       ops_scan(foot, network_id: 'branch_lan')
       assert_response :success, response.body
@@ -340,6 +348,7 @@ module BreakEscape
       unplug(RACK)
       assert_response :success, response.body
       add_item('pc', 'kit_dropbox', 'Network drop box')
+      offer_spare_port
       body = plant(SPARE)
       assert_response :success, response.body
       assert_equal true, body['success']
