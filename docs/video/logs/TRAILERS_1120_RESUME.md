@@ -345,3 +345,11 @@ Owner verdicts (via AC0): SHIP m03 v4, m05 v5, m07 v2, m08 v1. REVISE m01 v13 ->
 - Walk-in fix (fix/npc-walk-live, worktree .claude/worktrees/npc-walk-fix): Sonnet agent on case f (body-fit spawn, stall respawn) is running; results in $S/walkproof6/RESULTS.md. After a pass: merge main if it moved, train-check.sh (about 40 min, ask CA0 for the machine), GREEN hash to AC0, tell CA0.
 - Machine order agreed with CA0: Noor take, train-check, m09 v3 render; or CA0's B5 (ca19/ca20, about 1.5 h) first if the fix runs late.
 - Then: m10 t16 gallery-guard re-take after the walk-in lands; Tesseract after the owner's pick (E default); catalogue scrub waits on the owner.
+
+## State 25 Nov, ~23:20
+
+- Owner picks (via AC0): m01 v15 ship (keep music, export); m09 v2 revise (Noor visemes: the 20:51 re-pick plus tonight's re-take cover it; keep music, password screen, Dillard). New house rule: integer output scales for pixel-art shots, less zoom on NPC chats, m01–m08 not revisited (memory trailer-integer-scale). CA0 owns the lint warning ("scaleOk": true opt-out) and the GUIDELINES/skill text.
+- m01 v15 export: committed locally in hacktivity-videos (b155e49, 312afe9). No push credentials on this machine, so it's with AC0 for the owner to push (5 commits, all cleared; catalogue regen held for the scrub). The .vtt on Hacktivity needs regenerating.
+- m09 v3: edit a2e8c4428 (Noor re-cut). Render stopped for the reframe. A Sonnet agent is reframing m09 and m10 to integer scales (edit lists only; ffmpeg-only checks while CA0 captures). After it reports and CA0's B5 capture ends (about 00:50): remotion stills check, render m09 v3 (scratchpad render6.sh + enc_v3.sh), v3 tab on page B.
+- CA0 is capturing B5 (ca19, ca20) on :3456/:147 until about 00:50: no renders or encodes until CA0 pings.
+- Walk-in case f agent still running.
