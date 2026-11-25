@@ -47,7 +47,21 @@ Seeds (`SEEDS` in `_ca20.mjs`): defend = `--set episode_e20_remote_and_mobile_wo
 
 ## Recorded-results table
 
-(empty; filled at the recording block)
+Recorded 25 Nov 2026 on display :147, keyless server :3456, BE_SPRITE=female_office_worker_v2. Footage in `~/video-takes-local/ca20/takes/`. All nine passed on the first attempt (no retries). A/V start and end are the residual offsets in ms from the check.
+
+| take | length s | drop % | A/V start / end ms | /tts | status |
+|---|---|---|---|---|---|
+| t01_zainab_hook | 26.40 | 0.12 | +11 / -11 | 200 x3 (audio/mpeg) | pass, sprite female_office_worker_v2 |
+| t02_brief | 11.90 | 0.24 | +11 / -11 | none | pass |
+| t02n_brief | 11.94 | 0.24 | -3 / +2 | none | pass |
+| t03_choices_reveal | 34.67 | 0.27 | +12 / -12 | none | pass |
+| t03n_choices_reveal | 34.24 | 0.27 | +7 / -8 | none | pass |
+| t05_inbox_list | 15.74 | 0.56 | +9 / -9 | none | pass |
+| t05n_inbox_list | 15.34 | 0.58 | +2 / -3 | none | pass |
+| t06_room | 20.87 | 0.14 | -6 / +5 | none | pass, sprite female_office_worker_v2 |
+| t07_chidi_end | 8.57 | 0.31 | +7 / -7 | 200 (audio/mpeg) | pass, sprite female_office_worker_v2 |
+
+Open items: none of the drops is near 1%. The t01 check flags the `interact:zainab_hussain` mark (informational, not a failure). The t01 hook bar prints the full line, so the caption and crop rule in the t01 row still applies. The t03 and t05 pick and list cards are unmasked: the t03 safe option names the tablet and the t05 card shows the page text, which the edit should accept or crop.
 
 ## Unverified
 
