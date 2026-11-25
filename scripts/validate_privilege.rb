@@ -371,7 +371,7 @@ def privilege_account_kinds(json_data, err, warn, info)
     warn.call("sign-in PC '#{pc_id[0, 60]}': domain '#{dom[0, 40]}' is used by no account's creds.domain")
   end
 
-  privilege_account_only(json_data, npcs, err)
+  privilege_account_only(json_data, npcs, err, warn)
 end
 
 # Every sign-in PC's authored domain, as { pc id => domain }; a bad one is an error and left out.
@@ -466,7 +466,7 @@ def privilege_check_local(npc, where, pcs, err, info)
 end
 
 # accountOnly: an account with no person behind it.
-def privilege_account_only(json_data, npcs, err)
+def privilege_account_only(json_data, npcs, err, warn = nil)
   ai = BreakEscape::AccessIdentities
   aw = BreakEscape::AccessWork
   only = {}
@@ -495,6 +495,7 @@ def privilege_account_only(json_data, npcs, err)
   end
   return if only.empty?
 
+  privilege_account_only_names(json_data, only, npcs, err, warn || ->(_msg) {})
   ai.sign_in_pcs(json_data).each do |entry|
     pc = entry[:object]
     owner = ai.owner_id(pc)
@@ -512,4 +513,88 @@ def privilege_account_only(json_data, npcs, err)
       err.call("#{path} (#{npc['id']}): share_login names account-only '#{w['with'].to_s[0, 60]}' as the colleague; it is not a person who can be asked")
     end
   end
+end
+
+# L9 (S5bc R1): an account-only account is found by its display name and username in the answers the
+# scanner reads, so a name that is also something else would make honest answers look like leaks.
+# Error: the display name or username equals, whole and in any case, another NPC's id, display name or
+# username, a sign-in PC's name or host, a room name, a log source title, or a word the answers carry
+# (the scanner's own lists, so the two agree). Warning: an authored string the browser is served holds
+# the name as a whole word.
+PRIVILEGE_L9_SKIP_KEYS = %w[id npc npcId owner account for with pc host].freeze
+
+def privilege_l9_answer_words
+  require_relative '../tools/playtest/lib/access_leak_scanner' unless defined?(AccessLeakScanner)
+  s = AccessLeakScanner
+  keys = s::HARVEST_ANSWER_KEYS + s::HARVEST_ROW_KEYS + s::RELAY_FORBIDDEN_KEYS + s::HARVEST_SESSION_WORDS +
+         s::OPS_SESSION_KEYS + s::LOG_ANSWER_KEYS + s::LOG_ROW_KEYS.flatten + s::CRACK_ROW_KEYS +
+         s::CRACK_ACCOUNT_KEYS + s::CRACK_ENTRY_KEYS + s::CRACK_CREDENTIAL_KEYS + s::KEYRING_CAPTURE_KEYS
+  (s::HARVEST_ANSWER_WORDS + s::HARVEST_PLAIN_WORDS + keys).map { |w| w.strip.downcase }.to_set
+end
+
+def privilege_l9_name_sources(json_data, npcs, own)
+  out = {}
+  add = lambda do |word, what|
+    out[word.strip.downcase] ||= what if word.is_a?(String) && !word.strip.empty?
+  end
+  npcs.each do |npc, _|
+    next if npc.equal?(own)
+
+    add.call(npc['id'], "another NPC's id")
+    add.call(npc['displayName'], "another NPC's display name")
+    add.call(npc.dig('creds', 'username'), "another NPC's username") if npc['creds'].is_a?(Hash)
+  end
+  BreakEscape::AccessIdentities.sign_in_pcs(json_data).each do |e|
+    add.call(e[:object]['name'], 'a PC name')
+    add.call(e[:object]['host'], 'a PC host')
+  end
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'].values : []
+  rooms.each { |room| add.call(room['name'], 'a room name') if room.is_a?(Hash) }
+  logs = json_data['logSources'].is_a?(Hash) ? json_data['logSources'].values : []
+  logs.each { |src| add.call(src['title'], 'a log source title') if src.is_a?(Hash) }
+  out
+end
+
+def privilege_account_only_names(json_data, only, npcs, err, warn)
+  words = privilege_l9_answer_words
+  names = {} # lowercase name => account-only id
+  only.each do |id, npc|
+    sources = privilege_l9_name_sources(json_data, npcs, npc)
+    [['display name', npc['displayName']], ['username', npc.dig('creds', 'username')]].each do |label, value|
+      next unless value.is_a?(String) && !value.strip.empty?
+
+      low = value.strip.downcase
+      names[low] ||= id
+      what = sources[low] || (words.include?(low) ? 'a word the answers carry' : nil)
+      err.call("account-only NPC '#{id[0, 60]}': its #{label} '#{value[0, 40]}' is also #{what}, so honest answers would look like leaks; rename it") if what
+    end
+  end
+  privilege_l9_served_strings(json_data, only, names, warn)
+end
+
+def privilege_l9_served_strings(json_data, only, names, warn)
+  return if names.empty?
+
+  s = AccessLeakScanner
+  skip = Set.new(s::WITHHELD_KEYS + s::WITHHELD_ROOM_KEYS + s::WITHHELD_WORK_KEYS + PRIVILEGE_L9_SKIP_KEYS +
+                 %w[creds cachedAccounts accountOnly credentials workarounds])
+  patterns = names.keys.to_h { |n| [n, /(?<![[:alnum:]_])#{Regexp.escape(n)}(?![[:alnum:]_])/i] }
+  seen = Set.new
+  walk = lambda do |value, path|
+    case value
+    when Hash
+      return if value.key?('id') && only.key?(value['id'].to_s) && value['accountOnly'] == true
+
+      value.each { |k, v| walk.call(v, "#{path}.#{k}") unless skip.include?(k.to_s) || k.to_s.start_with?('_') }
+    when Array
+      value.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    when String
+      patterns.each do |n, re|
+        next unless value.match?(re) && seen.add?([path, n])
+
+        warn.call("#{path.sub(/\A\./, "")[0, 80]}: authored text holds the account-only name '#{n[0, 40]}' as a whole word, and the browser is served it")
+      end
+    end
+  end
+  walk.call(json_data, '')
 end
