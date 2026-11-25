@@ -1,11 +1,18 @@
 // t11_risky_card_narrow: the Defend inbox (narrow, as t10b) with ONE risky card opened: Jordan Vale, "Talent Partner" (e14_fake_recruiter). Preview sample C, "What gives it away?".
-// Not yet run. The tell on the card: the account note "[New account, created last week, no other posts.]" and a stranger asking for the firm's systems and who runs IT.
+// Retaken 25 Nov: the stacked buttons clipped the message body at 560 px, so this take lays Trust / Report / Delete in one row with the hint lines hidden (T11_FIT_CSS, this take only; t10b keeps the stack).
+// The tell on the card: the account note "[New account, created last week, no other posts.]" and a stranger asking for the firm's systems and who runs IT.
 // Nothing is answered (no Trust / Report / Delete press), so no verdict or debrief shows. Same entry state as t10/t10b (drill and privacy seeded; kiosk opens on "Open the phone"):
 //   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca14_social_media t11_risky_card_narrow \
 //     --set episode_e14_social_media_state={\"done\":[\"brief\",\"osint\",\"write\",\"flip\"],\"drill\":{\"done\":true,\"scored\":false,\"total\":7,\"placed\":7},\"privacy\":{\"done\":true,\"settings\":5,\"tightened\":5,\"facts\":5,\"closed\":5}} --set phish_df_cover_attempts=1 "--hide-hud --zoom-step 1"
 // Marks: kiosk-open, launch-panel, phone-open, start, list-up, rect:list, risky-card-open (card text), frame:tell-visible, tell-visible (hold starts), tell-hold-end, end.
-import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, waitVisible, mouseClick, addCss, textShowing } from './_ca14.mjs';
+import { sleep, prepare, openKiosk, pressButton, waitButton, buttons, waitVisible, mouseClick, addCss, textShowing, spriteCheck } from './_ca14.mjs';
 import { HIDE_CSS, NARROW_INBOX_CSS } from './t10_dm_inbox.mjs';
+
+// Framing only (video tooling, not game code): in the 560 px layout the stacked verdict buttons covered the lower half of the card, so the
+// systems request was off screen. One row of three buttons leaves the message body and the account note whole above them.
+const T11_FIT_CSS = `.triage-client .tri-verdicts, .triage-client .tri-actions-open .tri-verdicts { flex-direction: row !important; flex-wrap: nowrap !important; gap: 4px !important; }
+.triage-client .tri-verdict { width: auto !important; flex: 1 1 0 !important; min-width: 0 !important; padding-left: 4px !important; padding-right: 2px !important; }
+.triage-client .tri-verdict .tri-verdict-hint { display: none !important; }`;
 
 export async function setup(page, bridge) {
   await prepare(page, bridge);
@@ -25,10 +32,12 @@ export async function setup(page, bridge) {
   if (st.episode_e14_social_media_defend_complete === true) throw new Error('entry state wrong: defend already complete');
   await addCss(page, HIDE_CSS);
   await addCss(page, NARROW_INBOX_CSS(560));
+  await addCss(page, T11_FIT_CSS);
   await sleep(400);
 }
 
 export default async (page, bridge, mark) => {
+  await spriteCheck(page, mark);
   await openKiosk(page, bridge, mark); mark('kiosk-open');
   const b = await buttons(page); mark('launch-panel', { buttons: b });
   if (!(await waitButton(page, /Open the phone/, 10000))) throw new Error('phone launch panel never showed; buttons: ' + JSON.stringify(b));
@@ -47,12 +56,22 @@ export default async (page, bridge, mark) => {
   mark('frame:list-up'); await sleep(1500);
   // open the risky card (no hover tour: the point is the card)
   await mouseClick(page, '.mail-row', /Jordan Vale/i, { steps: 16, dwell: 400, click: true });
-  await waitVisible(page, '.tri-verdict').catch(() => {});
-  await sleep(600);
-  const body = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
-  if (!/New account, created last week/.test(body)) throw new Error('the tell (account note) is not on the open card; text: ' + body.slice(0, 300));
-  if (!/systems your firm uses/.test(body)) throw new Error('the systems request is not on the open card');
+  // mark the moment the card text is on screen (poll at 30 ms), not after a settle sleep (the first take's mark was 0.55 s late)
+  const t0 = Date.now(); let shown = false;
+  while (Date.now() - t0 < 5000) { if (await page.evaluate(() => [...document.querySelectorAll('.triage-client *')].some(e => !e.closest('.mail-row') && e.offsetParent && [...e.childNodes].some(n => n.nodeType === 3 && /New account, created last week/.test(n.textContent))))) { shown = true; break; } await sleep(30); }
+  if (!shown) throw new Error('the tell (account note) is not on the open card');
   mark('risky-card-open');
+  await sleep(200);
+  const body = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
+  if (!/systems your firm uses/.test(body)) throw new Error('the systems request is not on the open card');
+  // both halves of the tell must be inside the message pane and above the buttons
+  const fit = await page.evaluate(() => {
+    const els = [...document.querySelectorAll('.triage-client *')].filter(e => e.offsetParent && e.children.length === 0 || e.matches('p, .tri-body, .mail-body'));
+    const find = (re) => { const e = els.filter(x => re.test(x.textContent || '')).sort((a, b) => (a.textContent.length - b.textContent.length))[0]; if (!e) return null; const r = e.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) }; };
+    const btn = document.querySelector('.tri-verdict'); const br = btn && btn.getBoundingClientRect();
+    return { note: find(/New account, created last week/), systems: find(/systems your firm uses/), btnTop: br ? Math.round(br.top) : null, btnBottom: br ? Math.round(br.bottom) : null, vh: innerHeight };
+  });
+  mark('fit', fit);
   mark('frame:tell-visible'); mark('tell-visible');
   await sleep(3000); // hold 3 s on the tell, nothing pressed
   mark('tell-hold-end');
