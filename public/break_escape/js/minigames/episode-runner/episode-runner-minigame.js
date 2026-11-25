@@ -157,7 +157,8 @@ const BEAT_COPY = Object.freeze({
     heading: 'Look up from the kiosk',
     text: 'Something is happening in the room that you can see for yourself. Look up, or carry on here. Your place is saved.',
     waiting: 'Still out there. Carry on whenever you like.',
-    carryOn: 'Carry on'
+    carryOn: 'Carry on',
+    wait: 'Look up is ready in a moment.'
 });
 const PAUSE_COPY = Object.freeze({
     heading: 'Pause',
@@ -248,7 +249,16 @@ const win = () => (typeof window !== 'undefined' ? window : {});
 // Gate B D2: episode ids whose defend complete event this page has re-emitted (once per page).
 const REEMITTED = new Set();
 /** Test seam: forget the re-emits of this page. */
-export function _resetDefendReemitsForTests() { REEMITTED.clear(); }
+export function _resetDefendReemitsForTests() {
+    REEMITTED.clear();
+    FACILITATED_STEPPED.clear();
+    for (const id of [...stepAwayWatches.keys()]) stopStepAwayWatch(id);
+    spotHeld.clear();
+}
+
+// E3: beats a facilitated run has stepped away on this page load ("<episodeId>:<beatId>"). A facilitated
+// run stores no pick, so this is what keeps a reopen from offering the beat (and its event) a second time.
+const FACILITATED_STEPPED = new Set();
 
 export class EpisodeRunnerMinigame extends SocialOverlayScene {
     constructor(container, params) {
@@ -446,11 +456,19 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     cleanup() {
         const fromDebrief = this._debriefShown;
+        // E3: closing the kiosk from a beat's waiting panel (picked Look up, done global not yet true)
+        // leaves the beat live, so the automatic return is armed again from where the learner stands.
+        const bp = this._beatPanel;
+        const rewatch = bp && bp.mode === 'waiting' && bp.beat.resumeOnDone && !this.facilitated
+            && this.state?.[`${bp.beat.pickedKey}Via`] === 'lookup' ? bp.beat : null;
         this._destroyView();
         if (fromDebrief) this._markDebriefSeen();
         this.strip?.destroy?.();
         this.strip = null;
         super.cleanup();
+        if (rewatch) {
+            try { this._startResumeWatch(rewatch); } catch (e) { console.error('[episode] could not restart the step-away watch:', e); }
+        }
     }
 
     _destroyView() {
@@ -517,7 +535,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             this._focus();
         }, 'epr-resume');
         // EC1 (e): in an opted-in shell, the pause after the defend stage also offers Look up.
-        if (after === 'defend' && stepAwayOn(this.episode) && this.state.done.includes('defend')) this._lookUpButton(panel);
+        if (after === 'defend' && stepAwayOn(this.episode) && this.state.done.includes('defend') && this._defendBeat()?.facilitated) this._lookUpButton(panel);
     }
 
     // ── the step-away panel (EC1) ────────────────────────────────────────────
@@ -551,7 +569,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             if (beat.after === 'defend') continue;
             if (this.facilitated && !beat.facilitated) continue;
             if (!state.done.includes(beat.after) || state.stage !== stageFollowing(this.episode, beat.after)) continue;
-            if (this._steppedAways.has(beat.id)) continue;
+            if (this._stepped(beat)) continue;
             if (state[beat.pickedKey] !== true) return { beat, mode: 'choose' };
             const g = this.globals;
             if (beat.doneGlobal && state[`${beat.pickedKey}Via`] !== 'carry' && !(g && g[beat.doneGlobal] === true)) {
@@ -559,6 +577,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             }
         }
         return null;
+    }
+
+    /** E3: whether Look up or Carry on was already chosen for the beat in this run (or, facilitated, this page load). */
+    _stepped(beat) {
+        return this._steppedAways.has(beat.id) || (this.facilitated && FACILITATED_STEPPED.has(`${this.episode.id}:${beat.id}`));
+    }
+
+    _markStepped(beat) {
+        this._steppedAways.add(beat.id);
+        if (this.facilitated) FACILITATED_STEPPED.add(`${this.episode.id}:${beat.id}`);
     }
 
     _renderBeat() {
@@ -572,6 +600,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const panel = this._panel(heading, text);
         panel.classList.add('epr-step-away', 'epr-world-beat');
         if (mode === 'choose') this._lookUpButton(panel, beat);
+        else if (beat.doneGlobal) {
+            // the beat ended while the panel is up: move on to the next stage
+            this._watchReady(() => {
+                if (this.globals?.[beat.doneGlobal] !== true || this._beatPanel?.beat.id !== beat.id) return;
+                this._beatPanel = null;
+                this._markResumed();
+                this._render();
+                this._focus();
+            }, beat.doneGlobal);
+        }
         this._button(panel, BEAT_COPY.carryOn, () => this._carryOn(beat), 'epr-carry-on aw-button-secondary');
     }
 
@@ -580,7 +618,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * write the beat's done global true once when it has one, and move on to the next stage.
      */
     _carryOn(beat) {
-        this._steppedAways.add(beat.id); // a facilitated run stores nothing, so remember it for this open
+        this._markStepped(beat); // a facilitated run stores nothing, so remember it
         this._markStepAwayPicked(beat, beat.resumeOnDone ? 'carry' : null);
         const g = this.globals;
         if (beat.doneGlobal && !(g && g[beat.doneGlobal] === true)) {
@@ -608,7 +646,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     /** Look up, disabled until the beat's ready global is true (read now, then on its change event). */
     _lookUpButton(panel, beat = this._defendBeat()) {
         const btn = this._button(panel, STEP_AWAY_COPY.lookUp, () => this._lookUp(beat), 'epr-look-up');
-        const note = el('p', 'epr-step-away-note', STEP_AWAY_COPY.wait);
+        // the post-defend beat waits on the saved result; another beat has its own line (strings.<prefix>ReadyWait)
+        const waitText = !beat || beat.after === 'defend' ? STEP_AWAY_COPY.wait
+            : (isStr(this.strings[`${beat.strings}ReadyWait`]) ? this.strings[`${beat.strings}ReadyWait`] : BEAT_COPY.wait);
+        const note = el('p', 'epr-step-away-note', waitText);
         note.setAttribute('aria-live', 'polite');
         panel.appendChild(note);
         const sync = () => {
@@ -645,8 +686,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      */
     _lookUp(beat = this._defendBeat()) {
         if (!beat) return;
-        if (this._steppedAways.has(beat.id) || !this._stepAwayReady(beat)) return;
-        this._steppedAways.add(beat.id);
+        if (this._stepped(beat) || !this._stepAwayReady(beat)) return;
+        this._markStepped(beat);
         this._markStepAwayPicked(beat, beat.resumeOnDone ? 'lookup' : null);
         this.stepAwayPanel = false;
         this._beatPanel = null;

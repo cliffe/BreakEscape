@@ -86,6 +86,7 @@ class StubOverlay extends SocialOverlayScene {
 }
 FW.registerScene('episode-runner', EpisodeRunnerMinigame);
 FW.registerScene('inbox-triage', StubOverlay);
+FW.registerScene('consequence-sandbox', StubOverlay);
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 const MID = { id: 'red_stick', after: 'mistake', event: 'episode_world_beat', readyGlobal: null, doneGlobal: 'drop_done',
@@ -172,6 +173,7 @@ const pendingTimers = () => timers.filter((t) => t.live).length;
 
 function setup(episode, globals = {}, state = {}) {
     while (FW.currentMinigame) FW.forceCloseMinigame();
+    _resetDefendReemitsForTests();
     for (const t of timers) t.live = false;
     timers.length = 0;
     document.body.innerHTML = '';
@@ -636,6 +638,151 @@ test('E3 world-play: leaveWorld still returns the learner to its origin through 
     assert.equal(await wp.leaveWorld({}, { player, cancelPath() {} }), true);
     assert.deepEqual(player.moves, [['set', 10, 20], ['reset', 10, 20]]);
     assert.equal(wp.worldActive(), false);
+});
+
+const flush = () => new Promise((r) => setImmediate(r));
+const { readFileSync: readSrc } = await import('node:fs');
+
+test('E3 watcher: closing the kiosk from the waiting panel re-arms the return; the beat ending then brings the learner back', async () => {
+    lookUp();
+    open(listEpisode());
+    assert.deepEqual(epState().beatPanel, { id: 'red_stick', mode: 'waiting' });
+    assert.equal(pendingTimers(), 0, 'no watcher while the panel is up');
+    calls.spot.length = 0;
+    FW.forceCloseMinigame();
+    assert.equal(cur(), null);
+    assert.equal(pendingTimers(), 1, 'the watcher is armed again on close');
+    assert.equal(calls.spot.length, 1, 'the spot is recorded again');
+    tick(); tick();
+    assert.equal(cur(), null, 'the global is still false');
+    window.gameState.globalVariables.drop_done = true;
+    tick();
+    tick(4000);
+    await flush();
+    assert.equal(calls.returns, 1, 'one return');
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'flip');
+    assert.equal(epState().beatPanel, null);
+    assert.equal(stored().worldBeatPickedVia, 'resumed');
+    assert.equal(pendingTimers(), 0);
+});
+
+test('E3 watcher: Carry on from the waiting panel, or a refreshed panel, leaves nothing armed on close', () => {
+    lookUp();
+    open(listEpisode());
+    click('.epr-carry-on');
+    FW.forceCloseMinigame();
+    assert.equal(pendingTimers(), 0, 'carried on: no return to wait for');
+});
+
+test('E3 panel: the waiting panel moves on when the done global lands while it is open', () => {
+    lookUp();
+    open(listEpisode());
+    assert.deepEqual(epState().beatPanel, { id: 'red_stick', mode: 'waiting' });
+    window.gameState.globalVariables.drop_done = true;
+    window.eventDispatcher.emit('global_variable_changed:drop_done', true);
+    assert.equal(epState().beatPanel, null);
+    assert.equal(epState().stage, 'flip');
+    assert.ok(q('.stub-continue'), 'the flip shows');
+    assert.equal(stored().worldBeatPickedVia, 'resumed');
+    FW.forceCloseMinigame();
+    assert.equal(pendingTimers(), 0, 'the beat is over: nothing to re-arm');
+});
+
+test('E3 panel: a facilitated beat is not offered again on a reopen, and Look up emits once', () => {
+    const ep = listEpisode({ facilitated: true, stepAways: [{ ...MID, facilitated: true, resumeOnDone: false }, { ...POST }] });
+    finishMistake(ep);
+    assert.equal(epState().beatPanel?.id, 'red_stick');
+    click('.epr-look-up');
+    assert.equal(named('episode_world_beat').length, 1);
+    open(ep, { resume: true });
+    assert.equal(epState().beatPanel, null, 'not offered again');
+    assert.equal(named('episode_world_beat').length, 1, 'no second emit');
+    cur()._lookUp(MID);
+    assert.equal(named('episode_world_beat').length, 1, 'a second Look up does nothing');
+});
+
+test('E3 panel: the facilitated defend pause offers Look up only when the post-defend beat is facilitated', () => {
+    const done = { v: 1, done: ['brief', 'osint', 'mistake', 'flip', 'defend'] };
+    const off = listEpisode({ facilitated: true, stepAways: [{ ...MID }, { ...POST, facilitated: false }] });
+    setup(off, { kit_defend_done: true }, structuredClone(done));
+    open(off, { pauseAfter: 'defend' });
+    assert.equal(epState().paused, true);
+    assert.equal(q('.epr-look-up'), null, 'facilitated: false skips Look up');
+    const on = listEpisode({ facilitated: true });
+    setup(on, { kit_defend_done: true }, structuredClone(done));
+    open(on, { pauseAfter: 'defend' });
+    assert.equal(epState().paused, true);
+    assert.ok(q('.epr-look-up'), 'a facilitated beat keeps it');
+});
+
+test('E3 panel: a mid beat with a ready global shows its own wait line, not the saved-result one', () => {
+    const ep = listEpisode({ stepAways: [{ ...MID, readyGlobal: 'ready_g' }, { ...POST }] });
+    finishMistake(ep, { ready_g: false });
+    assert.equal(q('.epr-look-up').disabled, true);
+    assert.equal(q('.epr-step-away-note').textContent, 'Look up is ready in a moment.');
+    const own = listEpisode({ strings: { worldBeatReadyWait: 'Give Nilesh a moment.' }, stepAways: [{ ...MID, readyGlobal: 'ready_g' }, { ...POST }] });
+    finishMistake(own, { ready_g: false });
+    assert.equal(q('.epr-step-away-note').textContent, 'Give Nilesh a moment.');
+    // the post-defend beat keeps the saved-result line
+    setup(legacyEpisode(), { kit_defend_done: false }, { v: 1, done: ['brief', 'osint', 'write', 'flip', 'defend'] });
+    open(legacyEpisode(), { stepAwayAfter: 'defend' });
+    assert.match(q('.epr-step-away-note').textContent, /your result has saved/);
+});
+
+test('E3 panel: a beat after the mistake stage shows when a real sandbox scene completes and the framework reopens the runner', () => {
+    const ep = listEpisode({ mistake: {} });
+    setup(ep, {}, structuredClone(AT_MISTAKE));
+    open(ep);
+    click('.epr-launch');
+    assert.equal(scene(), 'consequence-sandbox');
+    cur().gameResult = { finished: true, mistakeChoices: {} };
+    cur().complete(true);
+    assert.equal(scene(), 'episode-runner');
+    assert.equal(epState().stage, 'flip');
+    assert.deepEqual(epState().beatPanel, { id: 'red_stick', mode: 'choose' });
+});
+
+test('E3 world-play: with the default spot functions, Look up records the spot, the return puts the player back, a kiosk open forgets it', async () => {
+    const { rememberSpot, clearSpot, returnToSpot, ...bare } = deps;
+    const player = fakePlayer();
+    window.player = player;
+    const ep = listEpisode();
+    const start = () => {
+        setup(ep, {}, structuredClone(AT_MISTAKE));
+        wp.clearStepAwaySpot();
+        startEpisodeRunner(kiosk(ep.id), { deps: bare });
+        cur()._complete('mistake');
+        click('.epr-look-up');
+    };
+    start();
+    await flush();
+    assert.deepEqual(wp.getStepAwaySpot(), { x: 10, y: 20 }, 'the default recorded the spot');
+    player.x = 300; player.y = 400;
+    window.gameState.globalVariables.drop_done = true;
+    tick();
+    tick(4000);
+    await flush();
+    assert.deepEqual(player.moves.slice(-2), [['set', 10, 20], ['reset', 10, 20]], 'back at the Look-up spot');
+    assert.equal(wp.getStepAwaySpot(), null);
+    assert.equal(epState().stage, 'flip');
+    // a kiosk open mid-beat forgets the spot with no move
+    start();
+    await flush();
+    assert.deepEqual(wp.getStepAwaySpot(), { x: 10, y: 20 });
+    player.moves.length = 0;
+    startEpisodeRunner(kiosk(ep.id), { deps: bare });
+    await flush();
+    assert.equal(wp.getStepAwaySpot(), null, 'the default clear ran');
+    assert.deepEqual(player.moves, []);
+    delete window.player;
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+});
+
+test('E3 reload: main.js starts the watcher from saved state on game_loaded', () => {
+    const main = readSrc(join(js, 'main.js'), 'utf8');
+    assert.match(main, /import \{[^}]*startStepAwayWatchFromState[^}]*\} from '\.\/systems\/episode-starter\.js'/);
+    assert.match(main, /once\('game_loaded'[\s\S]{0,200}startStepAwayWatchFromState\(window\)/);
 });
 
 test('E3: no console errors across the cases', () => {
