@@ -60,3 +60,21 @@ test('no warning for the clean shapes', { skip }, () => {
 test('one of the seven error types is left to the existing error', { skip }, () => {
     assert.deepEqual(check([{ id: 's', type: 'safe', name: 'Safe', contents: [item] }]), []);
 });
+
+test('R1-B2: a type that opens its own screen warns with that reason, not the locked-key advice', { skip }, () => {
+    const out = check([{ id: 'b', type: 'backup_recovery', name: 'Console', contents: [item] }]);
+    assert.equal(out.length, 1, out.join('\n'));
+    assert.ok(out[0].includes('opens its own screen'), out[0]);
+    assert.ok(out[0].includes('out of contents'), out[0]);
+    assert.ok(!out[0].includes('"locked": false'), out[0]);
+    // with "locked": false it still warns: the report stays out of reach
+    const out2 = check([{ id: 'b', type: 'backup_recovery', name: 'Console', locked: false, contents: [item] }]);
+    assert.equal(out2.length, 1, out2.join('\n'));
+    assert.ok(out2[0].includes('opens its own screen'), out2[0]);
+});
+
+test('R1-B3: a nested briefcase with no locked key warns', { skip }, () => {
+    const out = check([cabinet({ locked: false, contents: [{ id: 'br', type: 'briefcase', name: 'Case', takeable: true, contents: [item] }] })]);
+    assert.equal(out.length, 1, out.join('\n'));
+    assert.ok(out[0].includes('contents[0]') && out[0].includes('(Case)'), out[0]);
+});

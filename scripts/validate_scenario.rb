@@ -2751,6 +2751,11 @@ end
 # means to be open must say `"locked": false`. Seven types already raise an error for this in
 # check_common_issues; they are skipped here so no object gets two lines.
 UNOPENABLE_ERROR_TYPES = %w[briefcase bag bag1 suitcase safe pc bin1].freeze
+# Types interactions.js sends to their own screen before it reaches the container branch, so their
+# `contents` are never shown whatever `locked` says.
+OWN_SCREEN_TYPES = %w[siem_dashboard scada_historian log_filter_terminal drug_library_terminal backup_recovery
+                      ncsc_brief forensic_data_platform coverage_decision_form network_architecture
+                      infusion_pump command_board].freeze
 
 def check_unopenable_containers(json_data)
   issues = []
@@ -2760,8 +2765,11 @@ def check_unopenable_containers(json_data)
   walk = lambda do |obj, path, nested|
     return unless obj.is_a?(Hash)
     contents = obj['contents']
-    if contents.is_a?(Array) && !contents.empty?
-      exempt = UNOPENABLE_ERROR_TYPES.include?(obj['type']) ||
+    if contents.is_a?(Array) && !contents.empty? && !nested && OWN_SCREEN_TYPES.include?(obj['type'])
+      issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} (type '#{obj['type']}') opens its own screen, so its contents are never shown " \
+                "to the player, whatever 'locked' says. Move the item out of contents (into a room object or an NPC)."
+    elsif contents.is_a?(Array) && !contents.empty?
+      exempt = (!nested && UNOPENABLE_ERROR_TYPES.include?(obj['type'])) ||
                (obj['type'] == 'pc' && obj['lockType'] == 'login') || obj['type'] == 'usb'
       if !exempt && !obj.key?('locked')
         issues << "⚠️ WARNING: '#{path}'#{label.call(obj)} has contents but no 'locked' key. The game reads a missing " \

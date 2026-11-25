@@ -237,7 +237,7 @@ function joinSpans(list) {
 function tableLines(head, rows, indent = '') {
     const widths = head.map((h, i) => Math.max(h.length, ...rows.map(r => cellWidth(r[i] ?? ''))));
     const build = (cells, cls) => {
-        const out = indent ? [span(indent)] : [];
+        const out = indent ? [{ text: ' ', w: indent.length }] : [];
         cells.forEach((c, i) => {
             if (i < cells.length - 1) {
                 const text = cellSpans(c).map(s => s.text).join('');
@@ -248,7 +248,7 @@ function tableLines(head, rows, indent = '') {
                 out.push(...(cls ? [span(c, cls)] : cellSpans(c)));
             }
         });
-        const kept = out.filter(s => s.text !== '' && !(s.w === undefined && s.text.trim() === ''));
+        const kept = out.filter(s => s.text !== '');
         while (kept.length && kept[kept.length - 1].text.trim() === '') kept.pop();
         return kept;
     };

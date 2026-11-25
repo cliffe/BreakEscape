@@ -27,6 +27,8 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       opts[:"#{kind}_path"] = path if File.exist?(path)
     end
     opts[:nicknames_path] ||= File.join(dir, 'none.txt')
+    list = File.join(dir, 'mirror_exempt.txt')
+    opts[:mirror_exempt] = File.read(list).split if File.exist?(list)
     check_realism_catalog(dir, **opts)
   end
 
@@ -266,6 +268,14 @@ class ValidateRealismCatalogTest < ActiveSupport::TestCase
       edit_entries(dir) { |e| e['fresh_note']['script'] = 'fresh-note-tool' }
       assert_equal %w[script_mirrors_id], check_copy(dir, index)
     end
+  end
+
+  test 'R1-B4: a row added to the index by hand does not exempt a mirrored script' do
+    dir = File.join(FAULTS, 'pass_mirror_in_index')
+    problems = errors(check_realism_catalog(dir, index_path: File.join(dir, 'index.md'), scenarios_dir: NO_SCENARIOS,
+                                                nicknames_path: File.join(dir, 'none.txt')))
+    assert_includes problems.map(&:rule), 'script_mirrors_id'
+    assert_equal %w[filehold_link_setting filehold_release_line filehold_update_lag], REALISM_MIRROR_EXEMPT
   end
 
   test 'a first index cannot exempt a mirrored script' do

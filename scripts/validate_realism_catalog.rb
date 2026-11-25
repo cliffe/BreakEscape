@@ -39,6 +39,9 @@ REALISM_PRODUCTS_PATH = File.join(REALISM_ROOT, 'scripts/real_product_names.txt'
 REALISM_SCENARIO_SCHEMA_PATH = File.join(REALISM_ROOT, 'scripts/scenario-schema.json').freeze
 REALISM_SCENARIOS_DIR = File.join(REALISM_ROOT, 'scenarios').freeze
 
+# The ids whose script may mirror the id: the three the index held when the mirror rule landed. A row added to
+# the index by hand never widens this list.
+REALISM_MIRROR_EXEMPT = %w[filehold_link_setting filehold_release_line filehold_update_lag].freeze
 REALISM_ID_FORM = /\A[a-z][a-z0-9_]{2,47}\z/.freeze
 REALISM_FIRST_SEGMENTS = %w[auxiliary exploit post].freeze
 REALISM_ADVISORY_IN_ID = [
@@ -242,7 +245,7 @@ def realism_check_entry(file, id, entry, problems, ctx)
   end
   if entry['script'].is_a?(String)
     text_rule.call(entry['script'], 'script', :script)
-    # A script named for its id is exempt only when the id already has a row in the index (its script is frozen
+    # A script named for its id is exempt only when the id is on the frozen list of ids (its script is frozen
     # by the identity digest and cannot be renamed).
     if realism_squash(entry['script']) == realism_squash(id) && !ctx[:exempt].include?(id)
       realism_problem(problems, file, ids, 'script', 'script_mirrors_id')
@@ -400,14 +403,15 @@ end
 # Returns the problems (RealismProblem). Pass `write_index: true` to rewrite the index when there are none.
 def check_realism_catalog(dir = REALISM_CATALOG_DIR, index_path: REALISM_INDEX_PATH, nicknames_path: REALISM_NICKNAMES_PATH,
                           products_path: REALISM_PRODUCTS_PATH, schema_path: REALISM_SCHEMA_PATH,
-                          scenarios_dir: REALISM_SCENARIOS_DIR, write_index: false, first_index: false)
+                          scenarios_dir: REALISM_SCENARIOS_DIR, write_index: false, first_index: false,
+                          mirror_exempt: REALISM_MIRROR_EXEMPT)
   problems = []
   schema = JSON.parse(File.read(schema_path))
   scenario_schema = JSON.parse(File.read(REALISM_SCENARIO_SCHEMA_PATH))
   classes = scenario_schema.dig('definitions', 'weakness', 'properties', 'class', 'enum') || []
   read = realism_read_index(index_path)
   ctx = { nicknames: realism_word_list(nicknames_path), products: realism_word_list(products_path), classes: classes,
-          exempt: read ? read.first.keys : [] }
+          exempt: mirror_exempt }
 
   map = {}
   files = {}

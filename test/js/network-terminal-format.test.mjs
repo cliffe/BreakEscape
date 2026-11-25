@@ -511,3 +511,25 @@ test('the log reads as cells joined by single spaces, and the cap still holds', 
     for (let i = 0; i < 400; i += 1) FMT.appendLine(log, [{ text: `c${i} `, w: 6 }, { text: 'x' }]);
     assert.ok(log.lines.length <= 300, 'the cap holds');
 });
+
+test('R1-B1: a last cell keeps the space between its spans, and a table keeps its indent as one cell', () => {
+    const spansOf = (name) => FMT.formatListing(viewOf(name), {});
+    const hs = spansOf('host_states');
+    const down = hs.find(l => l.some(s => s.text === 'FAR-01 ') || l.some(s => s.text.startsWith('FAR-01')));
+    assert.ok(down, 'a down row exists');
+    const i = down.findIndex(s => s.text === '(down)');
+    assert.ok(i > 0);
+    assert.equal(down[i + 1]?.text, ' ', 'a space between (down) and its reason');
+    const sh = viewOf('shares');
+    const lines = FMT.formatListing(sh, {});
+    const locked = lines.find(l => l.some(s => s.text === 'Needs account'));
+    assert.ok(locked, 'a locked share row exists');
+    const j = locked.findIndex(s => s.text === 'Needs account');
+    assert.equal(locked[j + 1]?.text, ' ');
+    const fl = FMT.formatListing(states, {});
+    const svc = fl.find(l => l.some(s => s.text.trim() === 'SERVICE'));
+    assert.equal(svc[0].w, 4, 'service table indent is one cell of width 4');
+    assert.equal(svc[0].text, ' ');
+    const hostHead = fl.find(l => l.some(s => s.text.trim() === 'HOST' || s.text.trim() === 'NAME'));
+    if (hostHead) assert.equal(hostHead[0].w, 2);
+});
