@@ -27,6 +27,7 @@ export const WALK_VIEW_MARGIN = TILE_SIZE;
 export const WALK_LOAD_WAIT_MS = 3000;
 export const WALK_STALL_MS = 3000;       // no movement for this long: re-plan, then fall back to the fade
 export const WALK_MAX_REPLANS = 4;        // walk-out re-plans after arriving in view
+export const WALK_RESPAWN_GAP_PX = 48;     // a stall re-spawn lands at least this far from the spawns already tried
 export const WALK_ARRIVE_PX = 10;         // a walk-in ends within this of its position (goToAndStay stops at 1 tile otherwise)
 // Walk-out exit cells: prefer one this far clear of the view edge (beyond WALK_VIEW_MARGIN). Best
 // effort, never a requirement: with no such cell the deepest out-of-view cell is used. The nearest
@@ -142,14 +143,21 @@ export function roomAt(roomBounds, x, y) {
  * construction. Returns the cell centre { x, y } or null.
  * With depthOf(x, y) (px clear of the view edge) and preferDepth: the nearest out-of-view cell
  * at least preferDepth clear, else the out-of-view cell furthest clear (nearest on a tie).
+ * clear (cells): only accept a cell whose neighbours within that many cells are walkable too, so
+ * the NPC's whole body fits there (the body is wider than one grid cell). skip(x, y): refuse cells
+ * it returns true for (spawns already tried).
  */
-export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOutOfView, depthOf = null, preferDepth = 0, slackPx = 2 * TILE_SIZE, maxCells = 40000 }) {
+export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOutOfView, depthOf = null, preferDepth = 0, clear = 0, skip = null, slackPx = 2 * TILE_SIZE, maxCells = 40000 }) {
     if (!grid || !gridBounds || !start || typeof isOutOfView !== 'function') return null;
     const step = gridBounds.step || PATHFINDING_STEP;
     const cols = gridBounds.cols;
     const rows = gridBounds.rows;
     const toWorld = (cx, cy) => ({ x: gridBounds.minX + cx * step + step / 2, y: gridBounds.minY + cy * step + step / 2 });
     const walkable = (cx, cy) => cx >= 0 && cy >= 0 && cx < cols && cy < rows && grid[cy]?.[cx] === 0;
+    const fits = (cx, cy) => {
+        for (let dy = -clear; dy <= clear; dy++) for (let dx = -clear; dx <= clear; dx++) if (!walkable(cx + dx, cy + dy)) return false;
+        return true;
+    };
     const inRoom = (p) => !roomBounds || inRoomBounds(roomBounds, p.x, p.y);
     const allowed = (p) => inRoom(p) || (Math.abs(p.x - start.x) <= slackPx && Math.abs(p.y - start.y) <= slackPx);
     const sx = Math.floor((start.x - gridBounds.minX) / step);
@@ -161,7 +169,7 @@ export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOut
     for (let qi = 0; qi < queue.length && qi < maxCells; qi++) {
         const [cx, cy] = queue[qi];
         const p = toWorld(cx, cy);
-        if (walkable(cx, cy) && inRoom(p) && isOutOfView(p.x, p.y)) {
+        if (walkable(cx, cy) && inRoom(p) && isOutOfView(p.x, p.y) && (!clear || fits(cx, cy)) && !(skip && skip(p.x, p.y))) {
             if (typeof depthOf !== 'function') return p;
             const d = depthOf(p.x, p.y);
             if (d >= preferDepth) return p;
@@ -225,18 +233,33 @@ function settled(how) {
     return p;
 }
 
-/** Move a sprite so its body centre (feet) is at (x, y). Enables the body. */
+/**
+ * Move a sprite so its body centre (feet) is at (x, y). Enables the body.
+ * Phaser 3.60's body.reset() puts the body at the sprite's top-left, ignoring the body offset,
+ * until the next physics step re-adds the offset. Measuring the offset from that stale body and
+ * leaving it unsynced moved every spawn by the offset (live case f: (116,260) became (146,326),
+ * through the lobby's south wall). So re-sync after each reset, as seating.js placeBody does.
+ */
 export function placeBody(sprite, x, y) {
     const body = sprite?.body;
     if (!body || typeof body.reset !== 'function') {
         sprite?.setPosition?.(x, y);
         return;
     }
+    const sync = () => {
+        if (typeof body.updateFromGameObject !== 'function') return;
+        body.updateFromGameObject();
+        body.prev?.copy?.(body.position);
+        body.prevFrame?.copy?.(body.position);
+        body.updateCenter?.();
+    };
     body.enable = true;
     body.reset(sprite.x, sprite.y);
+    sync();
     const dx = sprite.x - (body.center?.x ?? sprite.x);
     const dy = sprite.y - (body.center?.y ?? sprite.y);
     body.reset(x + dx, y + dy);
+    sync();
 }
 
 // ── Environment (overridable for node tests) ────────────────────────────────
@@ -455,7 +478,7 @@ export function installNpcWalk(manager, env = {}) {
         endWalk(w, how);
     }
 
-    async function chooseSpawn(w, exclude = null) {
+    async function chooseSpawn(w, exclude = null, skipAt = null) {
         const { opts, behavior } = w;
         const near = w.homeRoom;
         const sprite = behavior.sprite;
@@ -463,7 +486,10 @@ export function installNpcWalk(manager, env = {}) {
         const target = w.target;
         // Spawns take the nearest out-of-view cell: a deep pick lands against the far wall, where
         // the body sticks (live cases a and f stalled 20 s). recheckSpawn covers a moving camera.
-        const vo = { isOutOfView: (x, y) => !inView(x, y, sprite) };
+        const skip = skipAt?.length ? (x, y) => skipAt.some(c => dist(c, { x, y }) < WALK_RESPAWN_GAP_PX) : null;
+        const vo = { isOutOfView: (x, y) => !inView(x, y, sprite), skip };
+        // A cell whose whole body fits (the body is wider than a grid cell), else any walkable one.
+        const pick = (args) => bfsOutOfView({ ...args, clear: 1 }) || bfsOutOfView(args);
         if (from && typeof from === 'object') {
             const room = from.room || near;
             if (room !== near && !(await ensureLoaded(room))) return null;
@@ -474,10 +500,11 @@ export function installNpcWalk(manager, env = {}) {
         }
         const pfm = E.pfm();
         if (from === 'offscreen') {
-            const cell = target && bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: target, roomBounds: roomBounds(near), ...vo });
+            const cell = target && pick({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: target, roomBounds: roomBounds(near), ...vo });
             return cell ? { ...cell, how: 'walked' } : null;
         }
-        const doors = candidateDoors(near, typeof from === 'string' ? from : null, target).filter(d => !exclude?.has(d.far));
+        let doors = candidateDoors(near, typeof from === 'string' ? from : null, target).filter(d => !exclude?.has(d.far));
+        if (!doors.length && skip) doors = candidateDoors(near, typeof from === 'string' ? from : null, target);   // one door: another cell behind it
         let fallback = null;
         for (const d of doors) {
             if (!fallback) fallback = d;
@@ -489,7 +516,7 @@ export function installNpcWalk(manager, env = {}) {
             if (!ok) { log(`${w.id}: ${d.far} did not load in ${WALK_LOAD_WAIT_MS} ms`); continue; }
             if (pass === 'hook') openByHook(w, d);
             const p2 = E.pfm();
-            const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), ...vo });
+            const cell = pick({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), ...vo });
             if (cell) return { ...cell, how: 'walked', farRoom: d.far, door: d };
         }
         if (fallback) { log(`${w.id}: doorway fade at the door to ${fallback.far}`); return { ...fallback.mouth, how: 'faded', fade: true, door: fallback }; }
@@ -510,6 +537,7 @@ export function installNpcWalk(manager, env = {}) {
         }
         w.farRoom = spawn.farRoom || null;
         w.how = spawn.how;
+        w.triedAt = [{ x: spawn.x, y: spawn.y }];
         w.door = spawn.door || null;
         if (w.farRoom) behavior._ensureWallCollidersFor?.([w.farRoom]);
         manager.setNPCVisible(w.id, true);
@@ -813,13 +841,18 @@ export function installNpcWalk(manager, env = {}) {
         log(`${w.id}: no progress for ${WALK_STALL_MS} ms (stall ${w.stalls}), re-planning`);
         if (w.dir === 'out') { behavior.cancelMove?.(); replanOut(w); return; }
         if (w.stalls === 1 && w.resume) { behavior.cancelMove?.(); openWalkerDoor(w); w.resume(); return; }
-        if (w.stalls <= 3 && w.door && !inView(p.x, p.y, behavior.sprite)) {
+        if (w.stalls <= 3 && w.how === 'walked' && !inView(p.x, p.y, behavior.sprite)) {
+            // Still unseen: spawn again at the next clear out-of-view cell (another door first, else
+            // another cell behind the same one), and fade only when none is left.
             const tried = (w.triedFar ||= new Set());
-            tried.add(w.door.far);
+            if (w.door) tried.add(w.door.far);
+            (w.triedAt ||= []).push({ x: p.x, y: p.y });
             w.phase = 'replanning';
-            const spawn = await chooseSpawn(w, tried);
+            const spawn = await chooseSpawn(w, tried, w.triedAt);
             if (w.done) return;
-            if (spawn && spawn.how === 'walked' && !inView(spawn.x, spawn.y, behavior.sprite)) {
+            if (spawn && spawn.how === 'walked' && !inView(spawn.x, spawn.y, behavior.sprite)
+                && !w.triedAt.some(c => dist(c, spawn) < WALK_RESPAWN_GAP_PX)) {
+                w.triedAt.push({ x: spawn.x, y: spawn.y });
                 behavior.cancelMove?.();
                 w.farRoom = spawn.farRoom || null;
                 w.door = spawn.door || null;
