@@ -992,17 +992,17 @@ module BreakEscape
       # Tiles only under "tiles" and never for a headless host; "typed" and a headless host
       # answer 200 with an empty list, never 403.
       tiles = (!headless && screen == 'tiles') ? login_account_tiles(pc) : []
-      {
-        status: :ok,
-        body: {
-          pc_id: pc['id'],
-          host: host_label(pc),
-          headless: headless,
-          loginPicker: picker,
-          remoteScreen: screen,
-          loginAccounts: tiles
-        }
+      body = {
+        pc_id: pc['id'],
+        host: host_label(pc),
+        headless: headless,
+        loginPicker: picker,
+        remoteScreen: screen,
+        loginAccounts: tiles
       }
+      # S5c: the PC's domain, so a remote sign-in screen can show it as the keyboard one does.
+      body[:domain] = pc['domain'] if pc['domain'].is_a?(String) && !pc['domain'].empty?
+      { status: :ok, body: body }
     end
 
     # A sign-in host whose own office-life service is off (9.3b plan 5.2): its

@@ -111,6 +111,19 @@ module BreakEscape
       assert(body['loginAccounts'].all? { |t| t.key?('displayName') && t.key?('portrait') })
     end
 
+    test 'step 5: a PC with a domain names it in the remote answer, and a PC without one carries no key' do
+      data = NS.scenario
+      data['rooms'].values.flat_map { |r| r['objects'] || [] }
+          .find { |o| o['id'] == 'sam_pc' }['domain'] = 'HQ'
+      with_office_foothold({}, data)
+      body = remote_tiles('sam_pc', OFFICE)
+      assert_response :success
+      assert_equal 'HQ', body['domain']
+      body = remote_tiles('lena_pc', OFFICE)
+      assert_response :success
+      assert_not body.key?('domain')
+    end
+
     test 'step 5: a finance PC lists only the account it admits' do
       with_office_foothold
       body = remote_tiles('lena_pc', OFFICE)
