@@ -104,7 +104,10 @@ on that phone (`held_phone`) and the owner does not approve.
 ## Checked and found sound
 
 - **New and edited tests.** `bin/rails test lock_step_r2_server_test.rb ops_log_taken_room_object_test.rb
-  lock_step_gate_test.rb`: 56 runs, 287 assertions, 0 failures, 0 errors.
+  lock_step_gate_test.rb`: 56 runs, 287 assertions, 0 failures, 0 errors. All the stage's Ruby tests in one
+  process (`lock_step_*` and `ops_lock_step_*` controller tests, `lock_step_*` model and unit tests,
+  `ops_lock_step_click_paths`, `ops_log_object_kind`, `ops_log_taken_room_object`, 18 files): 251 runs, 14708
+  assertions, 0 failures, 0 errors.
 - **Golden.** `bin/ops-golden-compare` (not under flock): 33 runs, 66 assertions, 0 failures, 0 errors.
 - **The opener rule.** One caller hands the gate an opener (`lock_step_requests.rb:79`); `opener` is in the body
   only for a door and method `npc` (`lock_step_gate.rb:287`). Every stored or echoed opener in the runs above is
