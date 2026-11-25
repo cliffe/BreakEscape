@@ -59,6 +59,16 @@ test('L9 warning: an authored string served to the browser holds the name as a w
     assert.equal(out.filter(s => s.startsWith('❌')).length, 0);
 });
 
+test('L9 warning: a name in access.people is said to be stripped, not served', { skip }, () => {
+    const sc = fixture('served_string');
+    sc.rooms.office.objects[2].text = 'Plain text.';
+    sc.rooms.office.objects[2].access = { people: ['Backup service'] };
+    const w = issues(sc).filter(s => s.startsWith('⚠️') && s.includes('access.people'));
+    assert.equal(w.length, 1, w.join('\n'));
+    assert.ok(w[0].includes('strips it'), w[0]);
+    assert.ok(!w[0].includes('browser is served it'), w[0]);
+});
+
 test('L9 warning: part of a longer word is not a whole word', { skip }, () => {
     const sc = fixture('served_string');
     sc.rooms.office.objects[2].text = 'The Backup services desk and backup_service2.';

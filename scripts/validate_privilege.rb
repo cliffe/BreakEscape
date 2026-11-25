@@ -595,7 +595,12 @@ def privilege_l9_served_strings(json_data, only, names, warn)
       patterns.each do |n, re|
         next unless value.match?(re) && seen.add?([path, n])
 
-        warn.call("#{path.sub(/\A\./, "")[0, 80]}: authored text holds the account-only name '#{n[0, 40]}' as a whole word, and the browser is served it")
+        tail = if path.match?(/access\.people\[\d+\]\z/)
+                 'the server strips it from every answer, so it does nothing here (authoring hint only)'
+               else
+                 'and the browser is served it'
+               end
+        warn.call("#{path.sub(/\A\./, "")[0, 80]}: authored text holds the account-only name '#{n[0, 40]}' as a whole word; #{tail}")
       end
     end
   end
