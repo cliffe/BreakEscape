@@ -33,11 +33,14 @@ require_relative '../../../lib/break_escape/lock_step_model' unless defined?(Bre
 #     the open of an ordinary lock: an echo-less one is not reported;
 #   - a lock inside a room that has not opened (gated or ordinary, other than the start room) or inside a closed gated container is
 #     refused by the server as an invented id on every route (072a72a70, Rule C), so a gate, a pass, a phone answer or an echoed
-#     refusal for it is a finding (R1-SCANNER4, R2-SCANNER1). A room counts as opened when a 200 GET room/<id> served it, when its
-#     gated door was opened, or when a 200 POST unlock open of a door listed an id of that room; a lock authored in no room (carried,
-#     profile, share) is never judged by room;
-#   - the open of a locked room that lists no object and no NPC carries nothing a rule could protect (owner decision, R2-SCANNER2): it
-#     is placed nowhere and reports nothing; a room answer that carries any id is judged as before;
+#     refusal for it is a finding (R1-SCANNER4, R2-SCANNER1). A room counts as opened only by proof the server could produce for an
+#     opened room (R3-SCANNER1): its gated door was opened, or a 200 POST unlock door open listed ids of that one room and of no other;
+#     an open that lists ids of two or more rooms opens none and is a finding (`lockstep:room:mixed`); a bare 200 GET room/<id> is no
+#     proof (only the awareness world room is served that way from the start); a lock authored in no room (carried, profile, share) is
+#     never judged by room;
+#   - the OPEN answer of a locked room (200 POST unlock, type door) that lists no object and no NPC carries nothing a rule could protect
+#     (owner decision, 2026-11-24, R2-SCANNER2, narrowed in R3-SCANNER2): it is placed nowhere and reports nothing. Room data with no id
+#     in any other answer (GET scenario, GET room, any route) is judged as before;
 #   - the NPCs of a gated room are watched by their ids only inside room data (`roomData`, `room`, `rooms.<id>`), and the items they
 #     hold by id anywhere (R1-SCANNER5).
 #
@@ -232,17 +235,25 @@ module LockStepLeakRules
     ls_below_closed?(key) || ls_room_shut?(key)
   end
 
-  # What an answer proves about rooms opened: a 200 GET room/<id>, and a 200 POST unlock open of a door whose room data lists an id
-  # of that room.
-  def ls_note_rooms(root, info)
+  # What an answer proves about rooms opened (R3-SCANNER1): a 200 POST unlock open of a door whose room data lists ids of exactly one
+  # room of the scenario (the server serves one room per door open), and a 200 GET room/<id> only for the awareness world room. An
+  # open listing ids of two or more rooms proves none and is a finding.
+  def ls_note_rooms(root, info, add)
     return unless info[:ok]
 
     if info[:method] == 'GET' && (room = info[:path][%r{/games/[^/]+/room/([^/]+)\z}, 1])
-      @ls_rooms << URI.decode_www_form_component(room)
+      room = URI.decode_www_form_component(room)
+      world = @data.dig('social', 'awarenessEpisode', 'world', 'room') if @data['social'].is_a?(Hash) && @data['social']['awarenessEpisode'].is_a?(Hash) && @data['social']['awarenessEpisode']['world'].is_a?(Hash)
+      @ls_rooms << room if world.is_a?(String) && world == room
     elsif root && info[:method] == 'POST' && info[:path].match?(%r{/games/[^/]+/unlock\z}) && root['success'] == true &&
           root['type'] == 'door' && root['roomData'].is_a?(Hash)
       ids = (ls_ids(root['roomData']['objects']) + ls_ids(root['roomData']['npcs'])).to_set
-      @ls_room_ids.each { |room, room_ids| @ls_rooms << room unless (room_ids & ids).empty? }
+      rooms = @ls_room_ids.select { |_room, room_ids| !(room_ids & ids).empty? }.keys
+      if rooms.size == 1
+        @ls_rooms << rooms.first
+      elsif rooms.size > 1
+        add.call('lock_step_content', 'lockstep:room:mixed', '$')
+      end
     end
   end
 
@@ -251,8 +262,8 @@ module LockStepLeakRules
   # real server (the plan settles it); a lock-step door nobody authors one for gets no allowance.
   def ls_collect_door_routes
     @ls_prop_doors = Set.new
-    @ls_reward_doors = Set.new
-    @ls_reward_objects = Set.new
+    @ls_reward_doors = Set.new # the server's unlock_door result carries no station id (process_door_unlock_reward), so doors stay one set
+    @ls_reward_objects = {} # R3-SCANNER4: flag station id => the refs (object id or name) its own unlock_object rewards name
     BreakEscape::Game.scenario_room_npcs(@data).each do |npc|
       next unless npc.is_a?(Hash)
 
@@ -269,11 +280,13 @@ module LockStepLeakRules
         next unless station.is_a?(Hash) && station['flagRewards']
 
         rewards = station['flagRewards'].is_a?(Hash) ? station['flagRewards'].values : Array(station['flagRewards'])
+        station_id = station['id'] || station['name'] # the server's flag_station_id
+
         rewards.each do |r|
           next unless r.is_a?(Hash)
 
           if r['type'] == 'unlock_object' && r['objectId'].is_a?(String)
-            @ls_reward_objects << r['objectId'] # R2-SCANNER3
+            (@ls_reward_objects[station_id] ||= Set.new) << r['objectId'] if station_id.is_a?(String) # R2-SCANNER3
             next
           end
           next unless r['type'] == 'unlock_door'
@@ -393,12 +406,16 @@ module LockStepLeakRules
     ls_judge_unplaced(body, add, judged + reported)
     ls_earn(earn, open_key, root, info)
     ls_earn_door_routes(root, info, prop_key)
-    ls_note_rooms(root, info)
+    ls_note_rooms(root, info, add)
     @ls_placed = judged
   end
 
   def ls_judge_state_keys(body, add)
     mfa_walk(body) do |hash, path, _parent|
+      # R3-SCANNER3: a headless owner's record must not tell the player whether it approves prompts
+      if @ls_active && path.match?(/social\.characters\.[^.]+\.emailRecord\z|social\.mailClient\.contacts\[\d+\]\z/)
+        %w[awareness promptPatience].each { |k| add.call('mfa_secret', "mfa:key:#{k}", safe_path("#{path}.#{k}")) if hash.key?(k) }
+      end
       hash.each_key do |key|
         add.call('lock_step_secret', "lockstep:key:#{key}", safe_path("#{path}.#{key}")) if LS_STATE_KEYS.include?(key)
       end
@@ -659,7 +676,7 @@ module LockStepLeakRules
 
   # Which gated locks an answer's contents or roomData could belong to, by the ids it carries.
   # `loose` (R1-SCANNER5): room data that lists no id of any room of the scenario belongs to every shut gated door
-  def ls_content_owners(hash, loose: true)
+  def ls_content_owners(hash, loose: true, door_open: false)
     owners = Set.new
     if hash['contents'].is_a?(Array)
       ids = hash['contents'].filter_map { |e| e['id'] if e.is_a?(Hash) && e['id'].is_a?(String) }
@@ -669,8 +686,9 @@ module LockStepLeakRules
     if hash['roomData'].is_a?(Hash)
       # the ids it lists: its objects and what is in them, its NPCs and what they hold
       ids = ls_ids(hash['roomData']['objects']) + ls_ids(hash['roomData']['npcs'])
-      # R2-SCANNER2 (owner decision): room data that lists no object and no NPC carries nothing a rule could protect
-      unknown = loose && !ids.empty? && (ids.to_set & @ls_known_ids).empty?
+      # owner decision (2026-11-24, R3-SCANNER2): only the root room data of a 200 POST unlock door open that lists no object and no NPC
+      # carries nothing a rule could protect; everywhere else id-less room data belongs to every shut gated door
+      unknown = loose && (ids.to_set & @ls_known_ids).empty? && !(ids.empty? && door_open)
       @ls_locks.each do |key, l|
         next unless l[:type] == 'door'
 
@@ -768,7 +786,8 @@ module LockStepLeakRules
     end
     mfa_walk(body) do |hash, path, _parent|
       placed_open = (open_key || !open_reported.empty?) && excused.any? { |h| h.equal?(hash) } # R1-SCANNER5: the placed open's own room data names its lock by the echo
-      owners = ls_content_owners(hash, loose: !placed_open) | ls_id_owners(hash) | ls_room_owners(hash, path)
+      door_open = hash.equal?(body) && info[:ok] && info[:method] == 'POST' && info[:path].match?(%r{/games/[^/]+/unlock\z}) && hash['success'] == true && hash['type'] == 'door'
+      owners = ls_content_owners(hash, loose: !placed_open, door_open: door_open) | ls_id_owners(hash) | ls_room_owners(hash, path)
       owners |= ["object:#{info[:container]}"] if info[:container] && hash.equal?(body) && hash.key?('contents') && @ls_locks.key?("object:#{info[:container]}")
       owners.each do |key|
         next if @ls_opened.include?(key)
@@ -807,9 +826,11 @@ module LockStepLeakRules
     root['rewards'].each do |r|
       # R2-SCANNER3: an `unlock_object` reward for a gated object the scenario authors that reward for stands in for the pass; the
       # echoed open then moves it to opened as any pass does
-      if r.is_a?(Hash) && r['type'] == 'unlock_object' && r['objectId'].is_a?(String) && @ls_reward_objects.include?(r['objectId'])
-        key = "object:#{r['objectId']}"
-        @ls_passed << key if @ls_locks.key?(key) && !ls_hidden?(key)
+      if r.is_a?(Hash) && r['type'] == 'unlock_object' && r['objectId'].is_a?(String)
+        # R3-SCANNER4: the answer's own station must author that reward; the server accepts the object's id or its name
+        authored = r['flag_station_id'].is_a?(String) && @ls_reward_objects[r['flag_station_id']]&.include?(r['objectId'])
+        key = @ls_locks.find { |k, l| l[:type] == 'object' && [l[:id], l[:name]].include?(r['objectId']) }&.first
+        @ls_passed << key if authored && key && !ls_hidden?(key)
         next
       end
       next unless r.is_a?(Hash) && r['type'] == 'unlock_door' && r['success'] == true && r['room_id'].is_a?(String)
