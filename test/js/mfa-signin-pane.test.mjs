@@ -24,13 +24,13 @@ put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n
 for (const f of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils/dispense-on-unlock.js',
     'minigames/container/container-item-image.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js',
     'utils/npc-headshot.js', 'utils/author-html.js', 'minigames/framework/base-minigame.js',
-    'utils/remote-host-text.js', 'minigames/password/password-minigame.js', 'systems/mfa-client.js']) copy(f);
+    'utils/remote-host-text.js', 'minigames/password/password-minigame.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js']) copy(f);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
-const { PasswordMinigame } = await load('minigames/password/password-minigame.js');
+const { PasswordMinigame, mergeKeyboardTiles } = await load('minigames/password/password-minigame.js');
 const mfa = await load('systems/mfa-client.js');
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
@@ -136,6 +136,20 @@ test('teachAfter runs only after the second step passes, with the lesson noted a
     assert.ok(log.sounds.includes('confirm'));
     const posted = log.requests.find((r) => r.path === 'mfa/verify');
     assert.deepEqual(posted.payload, { pc_id: 'hot_desk', code: '123456' });
+});
+
+test('a cracked password teaches its lesson after the second step, from a keyring entry as the server sends it', async () => {
+    const SAM = { username: 'sokafor', displayName: 'Sam Okafor', npcId: 'sam' };
+    const entry = { id: 'sam.cracked', kind: 'password', source: 'cracked', label: 'Cracked password', account: SAM, accepted: true };
+    const tiles = mergeKeyboardTiles({ picker: 'accounts', tiles: TILES.slice(0, 1), keyring: [entry] });
+    assert.deepEqual(tiles[0].kinds, ['cracked']);
+    const { mg, log } = rig({ tiles, verify: [{ body: { success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor' } }] });
+    await firstStep(mg);
+    assert.deepEqual(log.taught, [], 'not at the first step');
+    typeCode(mg, '123456');
+    await mg.submitCode();
+    assert.deepEqual(log.taught, ['cracked']);
+    assert.equal(mg.gameResult.success, true);
 });
 
 test('a first step with no lesson teaches nothing after the second', async () => {

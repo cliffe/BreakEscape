@@ -26,7 +26,7 @@ module BreakEscape
     }.freeze
 
     # Keys allowed in `habits` that are not habits.
-    PARAMETERS = %w[passwordPattern].freeze
+    PARAMETERS = %w[passwordPattern passwordDifficulty].freeze
 
     # writesDown and password are in no preset (section 3).
     PRESETS = {
@@ -54,7 +54,7 @@ module BreakEscape
     end
 
     def valid_parameter?(name, value)
-      name == 'passwordPattern' && value.is_a?(String) && !value.empty?
+      PARAMETERS.include?(name) && value.is_a?(String) && !value.empty?
     end
 
     # [level, source] where source is :own or "role:<name>"; [nil, nil] when none.

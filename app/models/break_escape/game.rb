@@ -9,6 +9,8 @@ module BreakEscape
     include NetworkOps
     include CaptureProofs
     include CredentialKeyring
+    include EarnedFacts
+    include OpsCracking
     include CredentialLogin
     include NpcFrustration
     include SocialFeed
@@ -19,6 +21,7 @@ module BreakEscape
     include LockStepGate
     include LockStepReach
     include LockStepDoors
+    include HelpdeskAccess
     include Wearables
     include PinDust
 
@@ -732,7 +735,7 @@ module BreakEscape
       end
     end
 
-    def add_inventory_item!(item)
+    def add_inventory_item!(item, fact_source: false)
       player_state['inventory'] ||= []
 
       # `credential` is a forgeable field (stripped from every client contribution and
@@ -746,6 +749,8 @@ module BreakEscape
 
       unless item_exists
         player_state['inventory'] << item
+        # S7: facts the stored copy reveals (a take or a server-given item), before the save below
+        stamp_item_facts!(item) if fact_source
         # q35: an NPC's Friendface phone reaching the inventory is taken for good (review R1 m2)
         note_friendface_phone_taken!(item)
         save!
@@ -2545,6 +2550,8 @@ module BreakEscape
 
       # Slice 9.2 C (8.3): a feed post's fact travels with its post, never in the bootstrap
       withhold_feed_facts!(filtered)
+      # S7 review R1-S1: and an item's or a flag reward's fact until it is earned
+      withhold_unearned_facts!(filtered)
 
       # Strip every authored capture secret from the bootstrap: a landing page's capture (the
       # phished portal password), an NPC's usePayload, a mapping's addCapture and an
@@ -2564,6 +2571,9 @@ module BreakEscape
       # served from the held item, never shipped. GamesController#filter_requires_recursive
       # strips them again as a second line of defence.
       BreakEscape::DeclaredGrants.strip_all_grant_contents!(filtered)
+
+      forms = helpdesk_forms_for_client
+      filtered['helpdeskForms'] = forms unless forms.nil?
 
       filtered
     end
@@ -3132,7 +3142,11 @@ module BreakEscape
       'opsUsed' => [],
       # Second step on any lock (S8c): { "object:<id>" | "door:<roomId>" => record } and
       # { "door:<roomId>" => npcId }. Server-written only, never in a sync body, the bootstrap or any answer.
-      'lockSteps' => {}, 'npcStepGrants' => {}
+      'lockSteps' => {}, 'npcStepGrants' => {},
+      # Offline cracking S7 (S7_BUILD_BRIEF.md 4): earnedFacts [factId] (at most 64), crackRuns and
+      # crackStarted { hashId => ... }, crackedAccounts [npcId]. Server-written only, never in a sync
+      # body, the bootstrap or any answer whole, at most 64 entries each.
+      'earnedFacts' => [], 'crackRuns' => {}, 'crackStarted' => {}, 'crackedAccounts' => []
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3631,6 +3645,13 @@ module BreakEscape
       "#{owner['creds']['username']} / #{password}"
     end
 
+    # Whether any desk reset is held. The helpdesk accessors write an empty `accountResets` into
+    # player_state when it is missing, which would change every saved game that has no desk; a
+    # sign-in reads them only once the key exists as a non-empty Hash.
+    def resets_held?
+      player_state['accountResets'].is_a?(Hash) && !player_state['accountResets'].empty?
+    end
+
     # POST /login with a username and password (section 6). Returns { status:, body: }.
     # A wrong password and an unknown username answer exactly alike, counted per PC and
     # normalised username; no letter-case hint.
@@ -3664,7 +3685,7 @@ module BreakEscape
       end
 
       npc = account_for_username(normalised)
-      secret = npc && npc['creds']['password']
+      secret = npc && (resets_held? ? effective_password(npc) : npc['creds']['password'])
       if secret.is_a?(String) && !secret.empty? && password.to_s == secret
         unless pc_admits_account?(pc, npc)
           # Ops log L1b: a right password the PC does not admit; saves only when the row stored
@@ -3684,6 +3705,7 @@ module BreakEscape
 
         login_failures.delete(key)
         from = from_given ? from : nil
+        note_typed_sign_in!(npc['id']) if resets_held?
         ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
         save!
         answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)

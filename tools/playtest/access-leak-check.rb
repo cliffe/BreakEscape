@@ -67,6 +67,10 @@
 # have made is credited only for a finding confirmed in the log and not granted yet; otherwise nothing is credited).
 # See the header of tools/playtest/lib/access_leak_scanner.rb.
 #
+# Hash records and the cracker (S7): a cracked password may appear only on the `<npc>.cracked` entry of a GET /keyring answer that
+# follows a 200 POST /crack answer which named that account, so give every capture file of the game, oldest first, as for the
+# ops steps above. The rules are in the scanner header (`crack_key`, `crack_row`, `crack_answer`, `crack_unearned`).
+#
 # Exit status: 0 when nothing leaked, 1 on any finding, 2 on a usage error, files whose first timed rows are not oldest first,
 # an unconfirmed second-step name, a capture holding a `login` tag, overlapping captures, or rows (by their /games/<n>/ path) from another game than <game_id> (a glob such as responses-N*.jsonl sorts -2 before the first file: name them in order).
 require_relative 'lib/access_leak_scanner'
@@ -106,7 +110,12 @@ served = BreakEscape::Game.scenario_room_npcs(game.scenario_data || {}).select d
   BreakEscape::Game.account_holder?(npc) &&
     usernames.include?(BreakEscape::Game.normalise_username(npc['creds']['username']))
 end.map { |npc| npc['id'] }
-scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+begin
+  scanner = AccessLeakScanner.new(game.scenario_data || {}, served_npcs: served, game: game)
+rescue ArgumentError => e
+  warn e.message
+  exit 2
+end
 
 lines = []
 unreadable = 0

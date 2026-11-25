@@ -40,6 +40,8 @@ BreakEscape::Engine.routes.draw do
       post 'mfa/prompt',     to: 'games#mfa_prompt', as: 'mfa_prompt'   # Ask the owner to approve a push (S8a)
       get  'mfa/phone',      to: 'games#mfa_phone', as: 'mfa_phone'     # Requests waiting on a held phone (S8a)
       post 'mfa/approve',    to: 'games#mfa_approve', as: 'mfa_approve' # Approve or deny from a held phone (S8a)
+      # S8b unit 13: helpdesk recovery
+      post 'helpdesk/request', to: 'games#helpdesk_request', as: 'helpdesk_request' # A desk resets a password or second step (S8b)
       post 'login'           # Sign in at a sign-in PC (password, or claim the owner's open session)
       post 'logout'          # End the session at a sign-in PC
       post 'lock_session'    # Lock a held session (UI slice 6): stays held, needs the password again
@@ -68,6 +70,7 @@ BreakEscape::Engine.routes.draw do
       get 'capture_secrets'   # SE: authored secret for each earned credential capture (stripped from the bootstrap)
       get 'log_rows'          # Ops log reader (OPS_LOG_ROWS_PLAN.md section 6): the rows of an ops_log_terminal's source
       get 'keyring'           # Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1): the player's earned credentials, computed server-side
+      post 'crack', to: 'games#crack', as: 'crack' # Offline cracking of a hash record (ops S7): one run, the server decides
       post 'se/landing_page', to: 'games#se_landing_page', as: 'se_landing_page' # SE: record a landing-page build server-side (phish evidence plan, Route 1)
       post 'se/phish_send',   to: 'games#se_phish_send',   as: 'se_phish_send'   # SE: record a phish send server-side (phish evidence plan, Route 2)
       post 'objectives/tasks/:task_id', to: 'games#complete_task', as: 'complete_task'

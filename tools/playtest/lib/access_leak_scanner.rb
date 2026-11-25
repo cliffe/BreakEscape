@@ -5,11 +5,14 @@ require 'set'
 require 'cgi'
 require 'time'
 require 'uri'
+require_relative '../../../lib/break_escape/author_notes' unless defined?(BreakEscape::AuthorNotes)
+require_relative '../../../lib/break_escape/crack_difficulty' unless defined?(BreakEscape::CrackDifficulty)
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 require_relative '../../../lib/break_escape/mfa_model' unless defined?(BreakEscape::MfaModel)
 require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 require_relative '../../../lib/break_escape/realism_catalog' unless defined?(BreakEscape::RealismCatalog)
 require_relative 'lock_step_leak_rules' # S8c lock second step
+require_relative 'helpdesk_leak_rules'
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -58,6 +61,15 @@ require_relative 'lock_step_leak_rules' # S8c lock second step
 # Pages (engine plan section 6): a row with a "dom" key instead of a body is the text of a
 # page the tester read (the capture log device, a captures terminal), labelled by its "label".
 # It is checked for passwords like a /capture_secrets answer, since that is all such a page shows.
+#
+# Award facts (S7 review R2-L1, rule `fact_unearned`): the entry, label or text of an intel fact an item (revealsFacts) or a
+# flag reward (grant_fact) awards is a finding anywhere until a 200 answer grants it, in the server's own place and shape:
+# the top-level `facts` of an inventory answer (item facts), a grant_fact reward's `entry`, a give_item reward's `facts`.
+# After the grant the bootstrap's social.intelFacts may hold it, and its text or label may appear in any string. An entry
+# in a hash keyed by the fact's id anywhere else is a finding even when earned. Given a game, a fact it has not earned (earned_fact_ids at the end of the
+# run) is a finding at every place; without a game the scanner cannot tell earned from unearned, so only the place, the
+# shape and the order are judged (a grant is taken from the answer itself). Feed facts keep the feed rules. Limit: the
+# earned set is read once, at the end of the run.
 #
 # Slice 9.1 (ACCESS_MODEL_SLICE_9_1_PLAN.md, section 6) adds two exceptions and one finding:
 #
@@ -209,6 +221,24 @@ require_relative 'lock_step_leak_rules' # S8c lock second step
 # R4-1 and R4-2: a stored-only key is found as a word before `:` or `=` in a detail string, and the
 # hidden detail keys of the registry join the hand list.
 #
+# Ops S7 (hash records and the offline cracker, `scan_crack`), rules `crack_key`, `crack_row`, `crack_answer` and
+# `crack_unearned`, all structural and failing closed (a proof that is missing, ambiguous or malformed is a finding):
+# - keys the browser never gets, wherever they sit: crack, passwordPattern, passwordDifficulty, earnedFacts, crackRuns,
+#   crackStarted, crackedAccounts; `facts` on a credential-shaped hash; `difficulty` on any hash that is not a lock
+#   (a door or object lock, the one public use of the word, is told by its own lockType, locked, keyPins, requires or
+#   dustable); `crackFacts` only as the top-level list of a GET /keyring answer that lists a hash row, of ids that name an
+#   intel fact, none `se_intel_` prefixed, and (given the game) all in its earned set;
+# - a `kind: "hash"` hash only as an element of a GET /keyring answer's entries, with the keys of the server's row, a
+#   registry source, a status word, `readyInSeconds` only on running, the token shape and the account block, and never a
+#   password, routes or connectsTo; a keyring answer's `readyInSeconds` map holds whole seconds for registry hash ids;
+# - every POST /crack answer has exactly the keys of its status (a running answer carries nothing but the wait: no
+#   account, no credential id, no miss or hit word) and the refusal codes of the route with their HTTP status;
+# - a `source: "cracked"` keyring entry, and the password on it, only in a GET /keyring answer after a 200 POST /crack
+#   answer of the exact shape `{ success: true, status: "cracked", accountId, credentialIds }` named that account (the
+#   account itself, or, in the same answer, another account with an equal password and a hash record of its own), the
+#   entry being `<npc>.cracked` with the keys of the server's row and that account's own password. The password is
+#   allowed at that one path and nowhere else. The earned set starts empty each scan and grows only from such answers.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -244,6 +274,7 @@ class AccessLeakScanner
   CAPTURE_PAGE_LABEL = /(?<![[:alnum:]])captures?(?![[:alnum:]])/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
+  include HelpdeskLeakRules # S8b: the helpdesk rules, in their own file
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
   WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
@@ -410,6 +441,7 @@ class AccessLeakScanner
     @feed_posters = Set.new
     @reaction_items = 0
     collect_passwords
+    collect_crack
     collect_capture_secrets
     @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
       id = e[:object]['id']
@@ -428,6 +460,8 @@ class AccessLeakScanner
     collect_wifi_secrets
     collect_workarounds
     collect_feeds
+    collect_facts
+    require_game_methods
     @items.each_value { |info| info[:strings] = info[:strings].reject { |s| @public_strings.include?(s) } }
     drop_shared_stick_strings
     @items.delete_if { |_, info| info[:strings].empty? }
@@ -510,9 +544,19 @@ class AccessLeakScanner
     @priv_signin_pending = nil # { account:, pc: } of a named keyboard sign-in until the desktop that follows it (R4-7)
     @priv_last_named = nil
     @ops_earned = @ops_supplied | @ops_start_steps
+    @crack_earned = Set.new # NPC ids a 200 POST /crack answer of the exact cracked shape named, so far (S7)
+    @crack_running_credits = 0 # well formed 200 running answers not yet used by a salted grant (S7)
+    @crack_running_seen = false # a well formed 200 running answer so far (R2-L4: a running row or a wait map follows one)
+    @crack_runs_seen = false # a 200 nomatch answer with `runs: 1` so far (R2-L3: the strong record's first run)
+    @crack_infeasible_seen = false # a well formed 200 infeasible answer so far (R2-L4)
+    @crack_last_grant = nil # the accounts the cracked answer of the current row granted, nil if none or not grantable (R2-L2)
+    @fact_granted = @fact_start_ids.dup # award fact ids a 200 answer of the server's own shape has granted so far, and the start items' (S7 R2-L1)
+    @fact_game_earned = @game && !@fact_entries.empty? ? Array(@game.earned_fact_ids).map(&:to_s).to_set : nil
+    @networks_swept = Set.new # network ids with an earlier 200 POST /network/scan answer (success, network.id, swept: true) this run; the capture only
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     mfa_begin_scan # S8a: the second-step rules' own state
+    helpdesk_begin_scan # S8b: the helpdesk rules' own state
     prepare_feed_base(lines)
     prepare_plant_rows(lines)
     lines.each_with_index do |(source, line_no, row), index|
@@ -541,6 +585,7 @@ class AccessLeakScanner
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
       note_privilege_before(body, ctx, row)
+      note_crack_earned(body, ctx, row)
       scan_passwords(body, ctx, legit, add)
       scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
@@ -569,10 +614,14 @@ class AccessLeakScanner
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
       scan_credentials(body, add)
+      scan_crack(body, ctx, row, add)
+      scan_facts(body, ctx, row, add)
       scan_log_rows(body, ctx, add)
       note_share_opened(body, ctx, row)
       scan_lock_steps(body, row, add) # S8c lock second step
+      body = scan_helpdesk(body, row, add) # S8b: judges the row, answers the body the second-step rules see
       scan_mfa(body, row, add)
+      note_network_swept(body, ctx, row)
     end
     mfa_finish_scan
     findings
@@ -631,8 +680,14 @@ class AccessLeakScanner
     'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
     'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
     'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)',
+    **HelpdeskLeakRules::RULE_TEXT,
     'mfa_secret' => MFA_RULE_TEXT['mfa_secret'],
-    'mfa_session' => MFA_RULE_TEXT['mfa_session']
+    'mfa_session' => MFA_RULE_TEXT['mfa_session'],
+    'crack_key' => 'a key the browser never gets from the cracker (the recipe, the difficulty, the earned-fact and cracking state) or a misplaced or unearned crackFacts',
+    'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
+    'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
+    'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
+    'fact_unearned' => "an intel fact's entry, label or text before the answer that grants it (the entry only in the bootstrap's social.intelFacts after the grant, the top-level facts of an inventory answer, the entry of a grant_fact reward or the facts of a give_item reward, in the server's own shape), or any entry of a fact the game has not earned"
   }.merge(LockStepLeakRules::LOCK_STEP_RULE_TEXT).freeze # S8c lock second step
 
   private
@@ -1025,13 +1080,18 @@ class AccessLeakScanner
       lock_session: method == 'POST' && path.end_with?('/lock_session'),
       friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
       keyring: method == 'GET' && path.end_with?('/keyring'),
+      # S7 crack rules: the exact game route (the older rules above keep their own looser matching)
+      crack: method == 'POST' && path.match?(%r{\A(?:/break_escape)?/games/\d+/crack\z}),
+      crack_keyring_route: method == 'GET' && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
+      crack_keyring: method == 'GET' && row['status'].is_a?(Integer) && row['status'] == 200 && path.match?(%r{\A(?:/break_escape)?/games/\d+/keyring\z}),
       ops_scan: method == 'POST' && path.end_with?('/network/scan'),
       ops_check: method == 'POST' && path.end_with?('/network/check'),
       ops_confirm: method == 'POST' && path.end_with?('/network/confirm'),
       ops_technique: method == 'POST' && path.end_with?('/network/technique'),
       inventory_add: ops_inventory_add_id(row, method, path),
       network_view: method == 'GET' && path.end_with?('/network'),
-      log_rows: method == 'GET' && path.end_with?('/log_rows')
+      log_rows: method == 'GET' && path.end_with?('/log_rows'),
+      log_rows_ok: method == 'GET' && path.end_with?('/log_rows') && row['status'].is_a?(Integer) && row['status'] == 200
     }
   end
 
@@ -1058,12 +1118,14 @@ class AccessLeakScanner
     # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
     # registry-sourced entry is never exempted, so a password on one is still flagged.
     keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
+    cracked_paths = ctx[:crack_keyring] ? crack_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
         next if keyring_capture_paths && owners.include?(keyring_capture_paths[json_path])
+        next if cracked_paths && owners.include?(cracked_paths[json_path])
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -2065,6 +2127,11 @@ class AccessLeakScanner
       # served that name by the open. Only that owner is dropped; every other owner of the string, any
       # other cell or event, and a share not yet opened stays a finding. A /network listing is no open.
       earned = earned_share_owners(body, json_path, str) if ctx[:log_rows]
+      # A NET_SWEEP row's LOCATION cell holds the name of a network this run swept earlier (a 200 POST /network/scan
+      # answer said so): the browser was served that name by the sweep. Only that owner is dropped.
+      if ctx[:log_rows_ok] && (swept = swept_network_owners(body, json_path, str)).any?
+        earned = (earned || []) + swept
+      end
 
       @network_strings.each do |secret, owners|
         next unless network_match?(str, secret)
@@ -2091,6 +2158,29 @@ class AccessLeakScanner
       res = resources[id]
       res.is_a?(Hash) && res['name'].is_a?(String) && res['name'].strip == str.to_s.strip
     end.map { |id| "resource:#{id}" }
+  end
+
+  # The `network:<id>` owners a NET_SWEEP row's LOCATION cell may carry: swept earlier in this capture, name equal.
+  def swept_network_owners(body, json_path, str)
+    match = json_path.to_s.match(/\A\$\.rows\[(\d+)\]\.where\z/)
+    return [] unless match && body.is_a?(Hash) && body['rows'].is_a?(Array)
+
+    row = body['rows'][match[1].to_i]
+    return [] unless row.is_a?(Hash) && row['event'] == 'NET_SWEEP' && row['where'].equal?(str)
+
+    networks = @data['networks'].is_a?(Hash) ? @data['networks'] : {}
+    @networks_swept.select do |id|
+      net = networks[id]
+      net.is_a?(Hash) && net['name'].is_a?(String) && net['name'] == str.to_s
+    end.map { |id| "network:#{id}" }
+  end
+
+  # Notes a 200 POST /network/scan answer of a sweep: success true, the network's id, swept true.
+  def note_network_swept(body, ctx, row)
+    return unless ctx[:ops_scan] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['success'] == true
+
+    net = body['network']
+    @networks_swept << net['id'] if net.is_a?(Hash) && net['swept'] == true && net['id'].is_a?(String)
   end
 
   # Notes a successful GET /container/<share or an item in it> answer: that share is opened for this run.
@@ -3489,6 +3579,538 @@ class AccessLeakScanner
     strings.any? { |secret| s == secret || (secret.length >= 20 && s.include?(secret)) }
   end
 
+  # ---- hash records and the cracker (S7) ----------------------------------------------------------
+
+  CRACK_NEVER_KEYS = %w[crack passwordPattern passwordDifficulty earnedFacts crackRuns crackStarted crackedAccounts].freeze
+  CRACK_CREDENTIAL_KEYS = %w[kind account token source proof].freeze
+  CRACK_ROW_KEYS = %w[id kind source account label token salted status readyInSeconds gainedAt forThisPc accepted].freeze
+  CRACK_ROW_STATUSES = %w[ready running infeasible cracked].freeze
+  CRACK_ACCOUNT_KEYS = %w[npcId username displayName].freeze
+  CRACK_ENTRY_KEYS = %w[id kind source account label password gainedAt forThisPc accepted].freeze
+  CRACK_TOKEN = /\A(?:[A-HJ-NP-Z2-9]{4}-){5}[A-HJ-NP-Z2-9]{4}\z/.freeze
+  CRACK_REFUSALS = { 'bad_request' => 400, 'not_found' => 404, 'no_recipe' => 422, 'fact_not_held' => 422 }.freeze
+  CRACK_MAX_WAIT = 600
+  # The two one-key answers of the app's own handlers that can reach POST /crack: a Pundit refusal and a CSRF failure.
+  CRACK_APP_ERRORS = { 'Not authorized' => 403, 'invalid_authenticity_token' => 422 }.freeze
+
+  CRACK_GRANTING_CLASSES = %w[common guessable reused].freeze
+
+  # Hash records of the scenario (with the class and grade the server resolves for each), and each NPC's own password.
+  # Read once.
+  def collect_crack
+    @crack_hash_accounts = Set.new
+    @crack_hash_ids = Set.new
+    @crack_records = []
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      next unless entry['kind'] == 'hash'
+
+      @crack_hash_ids << id.to_s
+      @crack_hash_accounts << entry['account'] if entry['account'].is_a?(String)
+      npc = BreakEscape::CredentialModel.account_npc(@data, entry['account'])
+      @crack_records << { id: id.to_s, entry: entry, account: entry['account'], npc: npc, klass: crack_record_class(entry, npc),
+                          resolved: npc ? BreakEscape::CrackDifficulty.resolve(entry, npc) : nil }
+    end
+    @crack_npc_password = {}
+    @passwords.each { |password, owners| owners.each { |id| @crack_npc_password[id] = password } }
+    waits = @crack_records.filter_map { |r| r[:resolved] && r[:resolved][:salted] ? r[:resolved][:crack_seconds] : nil }
+    @crack_max_wait = [waits.max || 0, CRACK_MAX_WAIT].min
+    facts = @crack_records.select { |r| r[:klass] == 'guessable' }.map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    @crack_max_facts = [facts.max || 0, 4].min
+  end
+
+  GAME_METHODS_CRACK = %i[credential_proof_holds? earned_fact_ids crack_token password_held_for? player_state].freeze
+  GAME_METHODS_FACTS = %i[earned_fact_ids].freeze
+
+  # R2-L5: given a game, the proof, fact, token and held-partner checks need these public methods. A game that lacks one is an
+  # error (the CLI stops and prints no clean result), never a check that quietly passes everything. Only the checks the
+  # scenario can reach are required: hash records need the crack set, award facts the fact set.
+  def require_game_methods
+    return unless @game
+
+    needed = []
+    needed |= GAME_METHODS_CRACK unless @crack_records.empty?
+    needed |= GAME_METHODS_FACTS unless @fact_entries.empty?
+    missing = needed.reject { |m| @game.respond_to?(m) }
+    raise ArgumentError, "the game given to the leak scanner lacks #{missing.join(', ')}: a check would be skipped" unless missing.empty?
+  end
+
+  # OpsCracking#crack_class: crack.password, else the NPC's habits.password, for an NPC with a password and a grade that
+  # resolves; nil otherwise.
+  def crack_record_class(entry, npc)
+    return nil unless entry.is_a?(Hash) && npc.is_a?(Hash)
+    return nil unless BreakEscape::CredentialModel.present_string?(npc.dig('creds', 'password'))
+    return nil unless BreakEscape::CrackDifficulty.resolve(entry, npc)
+
+    crack = entry['crack']
+    written = crack.is_a?(Hash) ? crack['password'] : nil
+    habits = npc['habits']
+    klass = written || (habits.is_a?(Hash) ? habits['password'] : nil)
+    %w[strong guessable reused common].include?(klass) ? klass : nil
+  end
+
+  # Earned set: a 200 POST /crack answer of the exact cracked shape names accounts (all or none), and only if the
+  # server could have given it (see crack_grant). A well formed 200 running answer is one credit for a later salted grant.
+  def note_crack_earned(body, ctx, row)
+    @crack_last_grant = nil
+    return unless ctx[:crack] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && crack_answer_shape_ok?(body)
+
+    case body['status']
+    when 'running'
+      @crack_running_credits += 1
+      @crack_running_seen = true
+    when 'nomatch' then @crack_runs_seen = true if body['runs'] == 1
+    when 'infeasible' then @crack_infeasible_seen = true
+    end
+    @crack_last_grant = crack_cracked_accounts(body)
+    @crack_earned.merge(@crack_last_grant) if @crack_last_grant
+  end
+
+  # The accounts a cracked answer grants, or nil unless the whole answer is well formed and the server could have given it.
+  def crack_cracked_accounts(body)
+    return nil unless body['status'] == 'cracked' && body.key?('accountId')
+
+    account = body['accountId']
+    accounts = body['credentialIds'].map { |cid| cid.delete_suffix('.cracked') }
+    return nil unless accounts.include?(account) && accounts.uniq.length == accounts.length
+
+    crack_grant(account, accounts) ? accounts : nil
+  end
+
+  # OpsCracking#run_crack! and #crack_grant!: a record of the named account that is held, has a class that can be cracked
+  # (never strong), has its recipe met as far as the game shows (all the facts of a guessable record earned; a reused
+  # record's equal-password account already held), and either is unsalted (a direct hit grants at once) or follows a
+  # running answer (a salted hit is granted only by a post after a stored run). More than one account is a batch: only an
+  # unsalted direct hit batches, only to accounts with an equal password and a held unsalted record of their own.
+  def crack_grant(account, accounts)
+    candidates = crack_held_records(account).select { |r| crack_recipe_met?(r) }
+    return false if candidates.empty?
+
+    if accounts.length > 1
+      password = @crack_npc_password[account]
+      return false unless candidates.any? { |r| !r[:resolved][:salted] }
+
+      return (accounts - [account]).all? do |other|
+        @crack_npc_password[other] == password && crack_held_records(other).any? { |r| !r[:resolved][:salted] }
+      end
+    end
+    return true if candidates.any? { |r| !r[:resolved][:salted] }
+    return false if @crack_running_credits < 1
+
+    @crack_running_credits -= 1
+    true
+  end
+
+  def crack_held_records(npc_id)
+    return [] unless @crack_npc_password[npc_id]
+
+    @crack_records.select do |r|
+      r[:account] == npc_id && r[:resolved] && crack_record_held?(r)
+    end
+  end
+
+  def crack_record_held?(record)
+    return true unless @game
+
+    @game.credential_proof_holds?(record[:id], record[:entry])
+  end
+
+  def crack_recipe_met?(record)
+    return false unless CRACK_GRANTING_CLASSES.include?(record[:klass])
+
+    case record[:klass]
+    when 'guessable'
+      return true unless @game
+
+      (Array(record[:entry].dig('crack', 'facts')).map(&:to_s) - Array(@game.earned_fact_ids).map(&:to_s)).empty?
+    when 'reused'
+      password = @crack_npc_password[record[:account]]
+      @crack_npc_password.any? do |other, pw|
+        other != record[:account] && pw == password && (@crack_earned.include?(other) || crack_held_elsewhere?(other))
+      end
+    else true
+    end
+  end
+
+  # The game holds this account's password by a route other than a crack (a capture, a registry password entry).
+  def crack_held_elsewhere?(npc_id)
+    return false unless @game
+
+    state = @game.player_state
+    cracked = state.is_a?(Hash) ? Array(state['crackedAccounts']) : []
+    @game.password_held_for?(npc_id) && !cracked.include?(npc_id)
+  end
+
+  # The exact keys and value ranges of each 200 answer of POST /crack.
+  def crack_answer_shape_ok?(body)
+    return false unless body['success'] == true
+
+    keys = body.keys.sort
+    int = ->(v, range) { v.is_a?(Integer) && range.cover?(v) }
+    case body['status']
+    when 'cracked'
+      return keys == %w[status success] unless body.key?('accountId') || body.key?('credentialIds')
+
+      keys == %w[accountId credentialIds status success] && body['accountId'].is_a?(String) && !body['accountId'].empty? &&
+        body['credentialIds'].is_a?(Array) && body['credentialIds'].length.between?(1, 64) &&
+        body['credentialIds'].all? { |c| c.is_a?(String) && c.end_with?('.cracked') && c.length > '.cracked'.length }
+    when 'running' then keys == %w[readyInSeconds status success] && int.call(body['readyInSeconds'], 0..crack_held_max_wait)
+    when 'nomatch'
+      keys == %w[status success] || (keys == %w[runs status success] && body['runs'] == 1 && crack_held_class?('strong'))
+    when 'infeasible' then keys == %w[runs status success] && body['runs'] == 2 && crack_held_class?('strong') && @crack_runs_seen
+    when 'needMoreFacts' then keys == %w[missingCount status success] && int.call(body['missingCount'], 1..crack_held_max_facts)
+    else false
+    end
+  end
+
+  # R2-L3: the server answers `running` only for a held salted record of a crackable class, `needMoreFacts` only for a held
+  # guessable one and `runs` only for a held strong one. Without a game every record counts as held.
+  def crack_waiting_record?(record)
+    record[:resolved] && record[:resolved][:salted] && CRACK_GRANTING_CLASSES.include?(record[:klass])
+  end
+
+  def crack_held_max_wait
+    waits = @crack_records.select { |r| crack_waiting_record?(r) && crack_record_held?(r) }.map { |r| r[:resolved][:crack_seconds] }
+    [waits.compact.max || 0, CRACK_MAX_WAIT].min
+  end
+
+  def crack_held_max_facts
+    facts = @crack_records.select { |r| r[:resolved] && r[:klass] == 'guessable' && crack_record_held?(r) }
+                          .map { |r| Array(r[:entry].dig('crack', 'facts')).length }
+    [facts.max || 0, 4].min
+  end
+
+  def crack_held_class?(klass)
+    @crack_records.any? { |r| r[:resolved] && r[:klass] == klass && crack_record_held?(r) }
+  end
+
+  def crack_refusal_shape_ok?(body, http)
+    body['success'] == false && body.keys.sort == %w[reason success] && CRACK_REFUSALS[body['reason']] == http
+  end
+
+  # { JSON path => npc id } for the `password` of each cracked keyring entry that passes the full check, so
+  # scan_passwords can let that NPC's own value through there, and only there.
+  def crack_password_paths(body)
+    entries = keyring_entries_in(body)
+    return {} if entries.nil?
+
+    paths = {}
+    entries.each_with_index do |entry, i|
+      npc_id = crack_entry_account(entry)
+      paths["$.entries[#{i}].password"] = npc_id if npc_id
+    end
+    paths
+  end
+
+  # The account of a well formed, earned cracked entry (the server's row, its own password), else nil.
+  def crack_entry_account(entry)
+    return nil unless entry.is_a?(Hash) && entry['source'] == 'cracked'
+    return nil unless (entry.keys - CRACK_ENTRY_KEYS).empty? && entry['kind'] == 'password'
+
+    id = entry['id']
+    return nil unless id.is_a?(String) && id.end_with?('.cracked')
+
+    npc_id = id.delete_suffix('.cracked')
+    return nil unless @crack_earned.include?(npc_id) && entry['label'] == 'Cracked' && crack_scope_keys_ok?(entry)
+    return nil unless entry['account'] == crack_account_block(BreakEscape::CredentialModel.account_npc(@data, npc_id))
+
+    password = entry['password']
+    password.is_a?(String) && password == @crack_npc_password[npc_id] ? npc_id : nil
+  end
+
+  def scan_crack(body, ctx, row, add)
+    scan_crack_keys(body, ctx, add)
+    scan_crack_answer(body, ctx, row, add)
+    scan_crack_rows(body, ctx, add)
+    scan_crack_entries(body, ctx, add)
+  end
+
+  def scan_crack_keys(body, ctx, add)
+    each_key_path(body) do |key, json_path|
+      add.call('crack_key', "crack:key:#{key}", safe_path(json_path)) if CRACK_NEVER_KEYS.include?(key.to_s)
+    end
+    recipe_route = ctx[:keyring] || ctx[:crack] || ctx[:crack_keyring_route]
+    walk_hashes(body, '$') do |hash, json_path|
+      add.call('crack_key', 'crack:key:difficulty', safe_path("#{json_path}.difficulty")) if hash.key?('difficulty') && !crack_lock_difficulty?(hash, recipe_route)
+      credential_shaped = hash['kind'].is_a?(String) || hash['account'].is_a?(Hash) || hash.key?('proof')
+      add.call('crack_key', 'crack:key:facts', safe_path("#{json_path}.facts")) if hash.key?('facts') && (credential_shaped || recipe_route)
+      add.call('crack_key', 'crack:key:crackFacts', safe_path("#{json_path}.crackFacts")) if hash.key?('crackFacts') && !crack_facts_ok?(body, hash, json_path, ctx)
+    end
+  end
+
+  # The one public use of `difficulty`: a door or object lock, told by a string lockType and none of a credential's keys,
+  # and never on the keyring or crack routes (every shipped lock with a difficulty has a string lockType).
+  def crack_lock_difficulty?(hash, recipe_route)
+    !recipe_route && hash['lockType'].is_a?(String) && (hash.keys & CRACK_CREDENTIAL_KEYS).empty?
+  end
+
+  # crackFacts: the top-level list of a keyring answer that lists a hash row; known fact ids, bare, no repeats,
+  # and (given the game) earned.
+  def crack_facts_ok?(body, hash, json_path, ctx)
+    return false unless ctx[:crack_keyring] && json_path == '$' && hash.equal?(body)
+
+    entries = keyring_entries_in(body)
+    list = hash['crackFacts']
+    return false unless entries && entries.any? { |e| e.is_a?(Hash) && e['kind'] == 'hash' }
+    return false unless list.is_a?(Array) && list.all? { |f| f.is_a?(String) } && list.uniq.length == list.length
+
+    known = @data.dig('social', 'intelFacts')
+    return false unless known.is_a?(Hash) && list.all? { |f| !f.start_with?('se_intel_') && known.key?(f) }
+    return true unless @game
+
+    (list - Array(@game.earned_fact_ids)).empty?
+  end
+
+  # Every JSON object answered by POST /crack is judged: the shape of its 200 status, one of the route's four refusals, or
+  # one of the two exact one-key errors the app's own handlers give (Pundit 403, CSRF 422). A body that is not JSON
+  # (an HTML error page, kept as bodyText) on a non-200 stays out.
+  def scan_crack_answer(body, ctx, row, add)
+    return unless ctx[:crack]
+
+    http = row['status']
+    return add.call('crack_answer', 'crack:answer', '$') unless http.is_a?(Integer)
+    return if http != 200 && body.is_a?(String)
+
+    ok = body.is_a?(Hash) && (http == 200 ? crack_answer_shape_ok?(body) : crack_refusal_shape_ok?(body, http) || crack_app_error_ok?(body, http))
+    add.call('crack_answer', 'crack:answer', '$') unless ok
+    # R2-L2: a well formed cracked answer for an account the server must not grant is a finding by itself
+    return unless ok && http == 200 && body['status'] == 'cracked' && body.key?('accountId') && @crack_last_grant.nil?
+
+    add.call('crack_unearned', "crack:answer:#{body['accountId']}", '$')
+  end
+
+  def crack_app_error_ok?(body, http)
+    body.keys == ['error'] && CRACK_APP_ERRORS[body['error']] == http
+  end
+
+  def scan_crack_rows(body, ctx, add)
+    elements = {}
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
+    entries&.each_with_index { |e, i| elements["$.entries[#{i}]"] = e }
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['kind'] == 'hash'
+
+      %w[password routes connectsTo].each do |key|
+        add.call('crack_row', "crack:row:#{key}", safe_path("#{json_path}.#{key}")) if hash.key?(key)
+      end
+      add.call('crack_row', 'crack:row', safe_path(json_path)) unless elements[json_path].equal?(hash) && crack_row_ok?(hash)
+    end
+    scan_crack_waits(body, ctx, add)
+  end
+
+  # A hash row is the server's row (OpsCracking#hash_keyring_entry): the registry record's own values, nothing free.
+  def crack_row_ok?(row)
+    return false unless (row.keys - CRACK_ROW_KEYS).empty? && row['source'] == 'registry' && row['id'].is_a?(String)
+
+    record = @crack_records.find { |r| r[:id] == row['id'] }
+    return false unless record && record[:resolved] && CRACK_ROW_STATUSES.include?(row['status'])
+    return false unless row['label'] == crack_record_label(record[:entry]) && row['kind'] == 'hash'
+    return false unless row['account'] == crack_account_block(record[:npc]) && row['salted'] == record[:resolved][:salted]
+    return false unless crack_token_ok?(row['token'], record) && crack_scope_keys_ok?(row)
+    return false if row['status'] == 'cracked' && !crack_account_granted?(record[:account])
+    return false if row['status'] == 'infeasible' && !(record[:klass] == 'strong' && @crack_infeasible_seen)
+
+    wait = row['readyInSeconds']
+    return !row.key?('readyInSeconds') unless row['status'] == 'running'
+
+    # R2-L4: running only for a salted record of a crackable class, within its own wait, after a running answer
+    crack_waiting_record?(record) && @crack_running_seen && wait.is_a?(Integer) && wait.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # The token shape; given a game that can say it, the token it would show for this record (Game#crack_token is pure).
+  def crack_token_ok?(token, record)
+    return false unless token.is_a?(String) && token.match?(CRACK_TOKEN)
+    return true unless @game
+
+    token == @game.crack_token(record[:id], record[:entry], record[:npc])
+  end
+
+  # gainedAt, forThisPc and accepted, when present: an Integer and two booleans.
+  def crack_scope_keys_ok?(hash)
+    (!hash.key?('gainedAt') || hash['gainedAt'].is_a?(Integer)) &&
+      %w[forThisPc accepted].all? { |k| !hash.key?(k) || [true, false].include?(hash[k]) }
+  end
+
+  # OpsCracking credential_label: the record's own label, else its held item's name, else empty.
+  def crack_record_label(entry)
+    return entry['label'] if BreakEscape::CredentialModel.present_string?(entry['label'])
+
+    definition = BreakEscape::CredentialModel.item_definition(@data, entry.dig('proof', 'held'))
+    definition.is_a?(Hash) && BreakEscape::CredentialModel.present_string?(definition['name']) ? definition['name'] : ''
+  end
+
+  # CredentialKeyring#account_block.
+  def crack_account_block(npc)
+    return nil unless npc.is_a?(Hash)
+
+    { 'npcId' => npc['id'], 'username' => npc.dig('creds', 'username'), 'displayName' => npc['displayName'] || npc['id'] }
+  end
+
+  # A row may say cracked only for an account a cracked answer granted in this scan, or one the game holds by another route.
+  def crack_account_granted?(npc_id)
+    @crack_earned.include?(npc_id) || crack_held_elsewhere?(npc_id)
+  end
+
+  def crack_wait_ok?(id, seconds)
+    record = @crack_records.find { |r| r[:id] == id }
+    !record.nil? && crack_waiting_record?(record) && crack_record_held?(record) && @crack_running_seen &&
+      seconds.between?(0, [record[:resolved][:crack_seconds], CRACK_MAX_WAIT].min)
+  end
+
+  # The keyring `unchanged` answer's readyInSeconds map: whole seconds for registry hash ids only.
+  def scan_crack_waits(body, ctx, add)
+    return unless ctx[:crack_keyring_route] && body.is_a?(Hash) && body.key?('readyInSeconds')
+
+    waits = body['readyInSeconds']
+    # The server sends the map only on its `unchanged` answer (no entries), and only for rows it lists: proof holds.
+    ok = ctx[:crack_keyring] && body['unchanged'] == true && !body.key?('entries') && waits.is_a?(Hash) && waits.all? do |id, v|
+      @crack_hash_ids.include?(id.to_s) && v.is_a?(Integer) && crack_wait_ok?(id.to_s, v)
+    end
+    add.call('crack_row', 'crack:row:readyInSeconds', '$.readyInSeconds') unless ok
+  end
+
+  # A `source: "cracked"` hash anywhere: only an earned, well formed entry of a GET /keyring answer passes.
+  def scan_crack_entries(body, ctx, add)
+    entries = ctx[:crack_keyring] ? keyring_entries_in(body) : nil
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash['source'] == 'cracked'
+
+      listed = entries&.each_with_index&.any? { |e, i| e.equal?(hash) && json_path == "$.entries[#{i}]" }
+      next if listed && crack_entry_account(hash)
+
+      add.call('crack_unearned', "crack:entry:#{hash['id'].is_a?(String) ? hash['id'] : '?'}", safe_path(json_path))
+    end
+  end
+
+
+  # ---- award facts (S7 review R2-L1) ---------------------------------------------------------------
+
+  # The facts an item (revealsFacts) or a flag reward (grant_fact) awards are withheld from the bootstrap until earned
+  # (EarnedFacts#withhold_unearned_facts!) and sent with the answer that earns them: the inventory answer's top-level
+  # `facts`, a grant_fact reward's `entry`, a give_item reward's `facts`. A reload then holds the entry in the bootstrap's
+  # social.intelFacts. Feed facts keep their own rules (scan_feed) and are left out here, so nothing is reported twice.
+  # Given a game, a fact it has not earned is a finding wherever its entry, label or text sits; without one the scanner
+  # cannot tell earned from unearned, so only the place, the shape and the order are judged.
+  def collect_facts
+    @fact_entries = {} # id => { entry: the server's entry (notes stripped), text:, label: }
+    @fact_item_ids = Set.new
+    @fact_grant_ids = Set.new
+    @fact_start_ids = Set.new
+    @fact_reward_labels = Hash.new { |h, k| h[k] = Set.new } # fact id => the authored `label` of its grant_fact rewards (room data ships them)
+    facts = @data.dig('social', 'intelFacts')
+    return unless facts.is_a?(Hash)
+
+    grant = lambda do |r|
+      next unless r.is_a?(Hash) && r['type'] == 'grant_fact' && r['fact'].is_a?(String)
+
+      @fact_grant_ids << r['fact']
+      @fact_reward_labels[r['fact']] << r['label'] if r['label'].is_a?(String)
+    end
+    walk = lambda do |node, key|
+      case node
+      when Hash
+        # the hash form of flagRewards, { "<flag>": { type: grant_fact, ... } }, as EarnedFacts reads it
+        node.each_value { |r| grant.call(r) } if key == 'flagRewards'
+        node.each { |k, v| walk.call(v, k) }
+      when Array
+        node.each { |f| @fact_item_ids << f if key == 'revealsFacts' && f.is_a?(String) && !f.empty? }
+        node.each { |r| grant.call(r) } if key == 'flagRewards'
+        node.each { |v| walk.call(v, key) }
+      end
+    end
+    walk.call(@data.except('social'), nil)
+    Array(@data['startItemsInInventory']).each do |item|
+      next unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      Array(data['revealsFacts']).grep(String).each { |f| @fact_start_ids << f }
+    end
+    feed = Set.new(BreakEscape::AccessWork.feed_facts(@data)) | @feed_fact_ids
+    (@fact_item_ids | @fact_grant_ids).each do |id|
+      next if feed.include?(id) || !facts[id].is_a?(Hash)
+
+      entry = Marshal.load(Marshal.dump(facts[id]))
+      BreakEscape::AuthorNotes.strip_notes!(entry, BreakEscape::ScenarioSchema.at('#/definitions/socialIntelFact'))
+      @fact_entries[id] = { entry: entry, text: entry['text'], label: entry['label'] }
+    end
+    @fact_start_ids &= @fact_entries.keys.to_set
+  end
+
+  # { json path of an entry the server sends in this answer => fact id } for the three places that carry one, and the
+  # bootstrap's own, each only for the exact entry the scenario holds and only on a 200 answer.
+  def fact_places(body, ctx, row)
+    places = {}
+    return places unless body.is_a?(Hash) && row['status'].is_a?(Integer) && row['status'] == 200
+
+    route = ctx[:route]
+    if route.start_with?('POST ') && route.end_with?('/inventory') && body['facts'].is_a?(Hash)
+      body['facts'].each { |id, e| places["$.facts.#{id}"] = [id, :item] if fact_entry_ok?(id, e, @fact_item_ids) }
+    end
+    if route.start_with?('POST ') && (route.end_with?('/flags') || route.end_with?('/unlock')) && body['rewards'].is_a?(Array)
+      body['rewards'].each_with_index do |r, i|
+        next unless r.is_a?(Hash)
+
+        id = r['fact']
+        places["$.rewards[#{i}].entry"] = [id, :grant] if r['type'] == 'grant_fact' && id.is_a?(String) && fact_entry_ok?(id, r['entry'], @fact_grant_ids)
+        next unless r['type'] == 'give_item' && r['facts'].is_a?(Hash)
+
+        r['facts'].each { |fid, e| places["$.rewards[#{i}].facts.#{fid}"] = [fid, :item] if fact_entry_ok?(fid, e, @fact_item_ids) }
+      end
+    end
+    if ctx[:scenario] && body.dig('social', 'intelFacts').is_a?(Hash)
+      body['social']['intelFacts'].each do |id, e|
+        places["$.social.intelFacts.#{id}"] = [id, :bootstrap] if @fact_granted.include?(id) && fact_entry_ok?(id, e, @fact_entries.keys)
+      end
+    end
+    places
+  end
+
+  # The room data ships a flag reward's own authored label (`...flagRewards[i].label`); when it reads the same as the fact's
+  # label it is that authored string, not the withheld entry. Only the label, only at that key, only the reward's own text,
+  # and only when that label does not hold the fact's text (a label with the text inside a longer sentence is a finding).
+  def fact_reward_label_place?(id, str, json_path)
+    text = @fact_entries[id][:text]
+    json_path.match?(/\.flagRewards\[\d+\]\.label\z/) && @fact_reward_labels[id].include?(str) &&
+      !(text.is_a?(String) && !text.empty? && str.include?(text))
+  end
+
+  def fact_entry_ok?(id, entry, sources)
+    known = @fact_entries[id]
+    id.is_a?(String) && known && sources.include?(id) && fact_earned_by_game?(id) && entry == known[:entry]
+  end
+
+  def fact_earned_by_game?(id)
+    @fact_game_earned.nil? || @fact_game_earned.include?(id)
+  end
+
+  def scan_facts(body, ctx, row, add)
+    return if @fact_entries.empty?
+
+    places = fact_places(body, ctx, row)
+    granted_now = places.values.reject { |_id, kind| kind == :bootstrap }.map(&:first).to_set
+    walk_hashes(body, '$') do |hash, json_path|
+      hash.each do |k, v|
+        next unless @fact_entries.key?(k) && v.is_a?(Hash) && (v.key?('label') || v.key?('text'))
+
+        path = "#{json_path}.#{k}"
+        add.call('fact_unearned', "fact:#{k}", safe_path(path)) unless places.key?(path)
+      end
+    end
+    each_string(body) do |str, json_path, _owner|
+      next if places.keys.any? { |p| json_path == p || json_path.start_with?("#{p}.") || json_path.start_with?("#{p}[") }
+
+      @fact_entries.each do |id, f|
+        hit = (f[:text].is_a?(String) && content_match?(str, [f[:text]])) ||
+              (f[:label].is_a?(String) && !f[:label].empty? && str.strip == f[:label] && !@public_strings.include?(f[:label]))
+        next unless hit
+        next if fact_reward_label_place?(id, str, json_path)
+        next if fact_earned_by_game?(id) && (@fact_granted.include?(id) || granted_now.include?(id))
+
+        add.call('fact_unearned', "fact:#{id}", safe_path(json_path))
+      end
+    end
+    @fact_granted.merge(granted_now)
+  end
+
   def safe_path(json_path)
     redact(json_path)
   end
@@ -3651,7 +4273,7 @@ class AccessLeakScanner
     return 'none' unless BreakEscape::CredentialModel.pc_admits_account?(pc, npc)
 
     kind = BreakEscape::MfaModel.kind(BreakEscape::CredentialModel.policy_for(@data, pc))
-    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil?
+    return 'none' if kind == 'code' && BreakEscape::MfaModel.device_for(@data, npc['id']).nil? && !hd_reenrolled?(npc['id']) # S8b: a re-enrolled account owes a code step with no authored device
 
     kind
   end
@@ -4061,7 +4683,7 @@ class AccessLeakScanner
       case route
       when 'verify' then rec[:kind] == 'code' && !body.key?('approvedBy')
       when 'prompt' then rec[:kind] == 'push' && body['approvedBy'] == 'owner' && mfa_owner_may_approve?(npc)
-      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && body['approvedBy'] == 'player' && mfa_phone_taken?(npc)
+      when 'approve' then MFA_PUSH_KINDS.include?(rec[:kind]) && ((body['approvedBy'] == 'player' && mfa_phone_taken?(npc)) || hd_own_approval?(body, info, pc, npc))
       end
     good ? pc : nil
   end

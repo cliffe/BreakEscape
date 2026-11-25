@@ -1,5 +1,5 @@
-// scripts/validate_mfa.rb check_mfa (MFA plan S8a, unit 10): errors, warnings, "not built yet"
-// lines and information lines, the schema entries, and the habit keys in validate_npc_habits.rb.
+// scripts/validate_mfa.rb check_mfa (MFA plan S8a, unit 10): errors, warnings
+// and information lines, the schema entries, and the habit keys in validate_npc_habits.rb.
 // Run with: node test/js/validator-mfa.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -117,19 +117,6 @@ test('error: creds.mfa other than false', { skip }, () => {
     assertHas(errors(issues(sc)), 'creds.mfa must be false');
     omar(sc).creds.mfa = 'false';
     assertHas(errors(issues(sc)), 'creds.mfa must be false');
-});
-
-test('the S8b fields are errors with the fixed line', { skip }, () => {
-    const sc = base();
-    sc.helpdesks = {};
-    omar(sc).creds.recovery = {};
-    omar(sc).creds.resetPassword = true;
-    sc.social = { pretextNpcs: [{ id: 'c', asks: { a: { helpdesk: true } } }] };
-    const out = errors(issues(sc));
-    assertHas(out, '"helpdesks" is not built yet (MFA plan stage S8b)');
-    assertHas(out, 'creds."recovery" is not built yet (MFA plan stage S8b)');
-    assertHas(out, 'creds."resetPassword" is not built yet (MFA plan stage S8b)');
-    assertHas(out, 'asks.a: "helpdesk" is not built yet (MFA plan stage S8b)');
 });
 
 test('warning: a code_device nobody can get, and one that is not gated', { skip }, () => {

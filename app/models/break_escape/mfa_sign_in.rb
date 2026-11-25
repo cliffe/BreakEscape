@@ -27,7 +27,7 @@ module BreakEscape
 
       held = access_sessions[pc['id'].to_s]
       return 'none' if held.is_a?(Hash) && held['id'].to_s == npc['id'].to_s && session_locked?(held)
-      return 'none' if kind == 'code' && MfaModel.device_for(scenario_data, npc['id']).nil?
+      return 'none' if kind == 'code' && MfaModel.device_for(scenario_data, npc['id']).nil? && !mfa_reenrolled?(npc['id'])
 
       kind
     end
@@ -68,8 +68,9 @@ module BreakEscape
     end
 
     # GET /mfa/device: :not_found when no policy declares an mfa kind (or no such device),
-    # :no_device unless the device is held, else what the device shows. The only place a code
-    # reaches the browser.
+    # :no_device unless the device is held, else what the device shows. A held device whose owner
+    # a desk has re-enrolled shows no code (the own phone does: mfa_own_device_answer). The only
+    # places a code reaches the browser.
     def mfa_device_answer(item_id)
       return :not_found unless mfa_declared?
 
@@ -82,11 +83,33 @@ module BreakEscape
       return :no_device unless held_code_device(owner)
 
       npc = scenario_room_npc(owner)
+      if mfa_reenrolled?(owner) && !device_in_use?(owner)
+        return { deviceId: device['id'], displayName: (npc && (npc['displayName'] || npc['id'])) || owner,
+                 npcId: owner, enrolled: false }
+      end
       now = mfa_now
       window = now / MfaModel::STEP_SECONDS
       used = mfa_account_for(owner)['used']
       { deviceId: device['id'], displayName: (npc && (npc['displayName'] || npc['id'])) || owner, npcId: owner,
         code: code_device_code(device['id'], window),
+        secondsLeft: MfaModel::STEP_SECONDS - (now % MfaModel::STEP_SECONDS),
+        used: !used.nil? && used.to_i >= window }
+    end
+
+    # GET /mfa/device?npc_id=: the own phone of an account a desk has re-enrolled. :not_found when
+    # no policy declares a second step, :no_device unless this account is re-enrolled, else the
+    # code of the device `own:<npcId>`. The only other place a code reaches the browser.
+    def mfa_own_device_answer(npc_id)
+      return :not_found unless mfa_declared?
+      return :no_device unless npc_id.is_a?(String) && !npc_id.empty? && mfa_reenrolled?(npc_id)
+
+      now = mfa_now
+      window = now / MfaModel::STEP_SECONDS
+      accounts = player_state['mfaAccounts']
+      stored = accounts.is_a?(Hash) ? accounts[npc_id.to_s] : nil
+      used = stored.is_a?(Hash) ? stored['used'] : nil
+      { deviceId: "own:#{npc_id}", displayName: 'My phone', npcId: npc_id,
+        code: code_device_code("own:#{npc_id}", window),
         secondsLeft: MfaModel::STEP_SECONDS - (now % MfaModel::STEP_SECONDS),
         used: !used.nil? && used.to_i >= window }
     end
@@ -110,9 +133,12 @@ module BreakEscape
       return mfa_locked_out_answer(pc, npc) if login_lockouts.include?(key)
 
       device = MfaModel.device_for(scenario_data, npc['id'])
-      return credential_login_refusal unless device
+      reenrolled = mfa_reenrolled?(npc['id'])
+      return credential_login_refusal unless device || reenrolled
 
-      result = verify_second_step_code(map, pc['id'].to_s, { kind: 'pc', id: pc['id'].to_s }, code.to_s, device['id'],
+      # a re-enrolled account's step is its own phone, never the old device
+      device_id = reenrolled ? "own:#{npc['id']}" : device['id']
+      result = verify_second_step_code(map, pc['id'].to_s, { kind: 'pc', id: pc['id'].to_s }, code.to_s, device_id,
                                        npc_id: npc['id'])
       result, closing = result if result.is_a?(Array) && result.last == :closed && %i[wrong expired].include?(result.first)
       case result
@@ -168,13 +194,18 @@ module BreakEscape
 
     # POST the player's answer to a push on the owner's phone: a number (number matching) or a
     # deny. The route is re-judged. :no_phone unless the player holds the phone.
-    def approve_sign_in!(pc_id, number: nil, deny: false)
+    # `own` says the request came through the own-phone form (the route reads `own=1`). A
+    # re-enrolled account is approved only so: through the old phone it is :no_phone, as if no such
+    # phone existed, and nothing changes. The default is false: a caller must say it.
+    def approve_sign_in!(pc_id, number: nil, deny: false, own: false)
       ctx = push_step_context(pc_id)
       return ctx[:refusal] if ctx[:refusal]
 
       pc = ctx[:pc]
       npc = ctx[:npc]
       key = pc['id'].to_s
+      return :no_phone if mfa_reenrolled?(npc['id']) && own != true
+
       if ctx[:pending]['kind'] == 'push_number_match' && deny != true && number.nil? &&
          (held_friendface_phone(npc['id']) || mfa_reenrolled?(npc['id']))
         # no usable number is a malformed request, not an answer: the step stays
@@ -183,7 +214,8 @@ module BreakEscape
 
       result = approve_second_step(ctx[:map], key, { kind: 'pc', id: key }, npc_id: npc['id'], number: number,
                                                                             deny: deny == true,
-                                                                            reenrolled: mfa_reenrolled?(npc['id']))
+                                                                            reenrolled: mfa_reenrolled?(npc['id']),
+                                                                            own_form: own == true)
       case result
       when :no_phone then :no_phone
       when :cancelled
@@ -192,20 +224,59 @@ module BreakEscape
         save!
         { status: :unprocessable_entity, body: { success: false, cancelled: true } }
       else
-        approver = held_friendface_phone(npc['id']) ? 'held_phone' : 'own_phone'
-        mfa_push_passed!(pc, npc, ctx[:map], ctx[:pending], approver: approver, approved_by: 'player')
+        approver = mfa_reenrolled?(npc['id']) || !held_friendface_phone(npc['id']) ? 'own_phone' : 'held_phone'
+        # the answer says which phone approved: 'own_phone' for a re-enrolled account (the own-phone
+        # form), 'player' for a held phone
+        mfa_push_passed!(pc, npc, ctx[:map], ctx[:pending], approver: approver,
+                                                            approved_by: mfa_reenrolled?(npc['id']) ? 'own_phone' : 'player')
       end
     end
 
     # GET /mfa/phone: :no_phone unless the player holds the phone of `npc_id`, else the waiting
     # push requests of this owner's accounts at sign-in PCs.
     def mfa_phone_answer(npc_id)
-      return :no_phone unless held_friendface_phone(npc_id)
+      # the old phone of a re-enrolled account is no longer its second factor
+      return :no_phone if !held_friendface_phone(npc_id) || mfa_reenrolled?(npc_id)
 
-      mine = mfa_pending_map.select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
+      { requests: phone_request_rows(npc_id) }
+    end
+
+    # GET /mfa/phone?own=1: :no_phone unless a desk has re-enrolled some account, else the waiting
+    # push requests of every re-enrolled account, in the same entry shape.
+    def mfa_own_phone_answer
+      return :no_phone unless resets_recorded?
+
+      ids = player_state['accountResets'].select { |_id, entry| entry.is_a?(Hash) && entry['mfa'] == true }.keys
+      return :no_phone if ids.empty?
+
+      { requests: ids.flat_map { |id| phone_request_rows(id) } }
+    end
+
+    private
+
+    # Whether a desk has re-enrolled the account's second step onto the player's own phone
+    def mfa_reenrolled?(npc_id)
+      resets_recorded? && account_reset?(npc_id, 'mfa')
+    end
+
+    # Whether any reset is on record. The accessors create their key on a read, and a game no desk
+    # touched must stay byte-for-byte as it was, so nothing here reads them until one is.
+    def resets_recorded?
+      player_state['accountResets'].is_a?(Hash)
+    end
+
+    # S8c seam: a lock step that still names this owner's device
+    def device_in_use?(_npc_id)
+      false
+    end
+
+    # The waiting push requests of this owner's accounts at sign-in PCs, as the phone lists them
+    def phone_request_rows(npc_id)
+      stored = player_state['mfaPending']
+      mine = (stored.is_a?(Hash) ? stored : {}).select { |_k, rec| rec.is_a?(Hash) && rec['npcId'].to_s == npc_id.to_s }
       npc = account_npcs.find { |n| n['id'].to_s == npc_id.to_s }
       username = npc && npc['creds'].is_a?(Hash) ? npc['creds']['username'] : nil
-      requests = second_step_requests([{ kind: 'pc', map: mine }], npc_id: npc_id).filter_map do |entry|
+      second_step_requests([{ kind: 'pc', map: mine }], npc_id: npc_id).filter_map do |entry|
         info = find_login_pc(entry['id'])
         next unless info
 
@@ -213,14 +284,6 @@ module BreakEscape
         row[:numbers] = entry['numbers'] if entry['numbers']
         row
       end
-      { requests: requests }
-    end
-
-    private
-
-    # S8b seam: whether the account has been re-enrolled onto its own phone. Nothing can do that yet.
-    def mfa_reenrolled?(_npc_id)
-      false
     end
 
     # The PC, its live push record and its account, or a refusal (the first step judged again)
@@ -253,6 +316,7 @@ module BreakEscape
       login_failures.delete(key)
       foothold = pending['foothold'].presence&.to_s
       from = pending['fromGiven'] == true ? pending['from'] : nil
+      note_typed_sign_in!(npc['id']) if resets_recorded?
       ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
       write_log_row!('mfa_prompt_approved', as: { account: npc['creds']['username'] },
                                             where: { kind: 'pc', id: pc['id'].to_s }, detail: { 'approver' => approver })
@@ -284,10 +348,12 @@ module BreakEscape
                 'fromGiven' => from_given == true }
       record = issue_second_step!(mfa_pending_map, pc['id'].to_s, npc['id'], kind, extra)
       body = { success: false, mfaRequired: true, mfa: kind, pcId: pc['id'], npcId: npc['id'] }
+      reenrolled = mfa_reenrolled?(npc['id'])
       if kind == 'push_number_match'
         number = second_step_numbers({ kind: 'pc', id: pc['id'].to_s }, record, npc_id: npc['id'].to_s)[:right]
         body[:number] = number
       end
+      body[:ownPhone] = true if reenrolled
       write_log_row!('mfa_challenge', as: { account: npc['creds']['username'] }, where: { kind: 'pc', id: pc['id'].to_s },
                                       detail: { 'route' => route })
       save!
@@ -306,6 +372,7 @@ module BreakEscape
       login_failures.delete(key)
       foothold = pending['foothold'].presence&.to_s
       from = pending['fromGiven'] == true ? pending['from'] : nil
+      note_typed_sign_in!(npc['id']) if resets_recorded?
       ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
       write_log_row!('mfa_code_ok', as: { account: npc['creds']['username'] }, where: { kind: 'pc', id: pc['id'].to_s })
       save!

@@ -30,11 +30,13 @@ require_relative 'validate_network_ops'
 require_relative 'validate_privilege'
 require_relative 'validate_mfa'
 require_relative 'validate_lock_step'
+require_relative 'validate_helpdesk'
 require_relative 'validate_realism_skin'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
 require_relative 'validate_plant_hiding'
 require_relative 'validate_phone_calls'
+require_relative 'validate_cracking'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/schema_walk'
@@ -3362,6 +3364,7 @@ def check_common_issues(json_data, valid_item_types = nil)
       # world sprite, so it needs no picture in assets/objects/. Only a folder nested in a
       # container's contents is exempt: a room-level folder is drawn in the world and needs one.
       engine_type ||= t == 'folder' && in_contents
+      engine_type ||= t == 'helpdesk_form' && in_contents
       # The ops log terminal reuses the existing log terminal's sprite (log_filter_terminal.png)
       engine_type ||= t == 'ops_log_terminal'
       unless exact_match || variant_match || engine_type
@@ -9119,6 +9122,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
   run.call('check_credentials') { check_credentials(json_data) }
+  run.call('check_cracking') { check_cracking(json_data) }
   run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
@@ -9128,6 +9132,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_privilege') { check_privilege(json_data) }
   run.call('check_mfa') { check_mfa(json_data) }
   run.call('check_lock_step') { check_lock_step(json_data) }
+  run.call('check_helpdesk') { check_helpdesk(json_data, repo_root, scenario_dir) }
   run.call('check_realism_skin') { check_realism_skin(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }

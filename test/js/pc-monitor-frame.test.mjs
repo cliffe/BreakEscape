@@ -29,7 +29,7 @@ put('systems/inventory.js', 'export async function addToInventory() { return { o
 for (const rel of ['utils/escape-html.js', 'utils/computer-keywords.js', 'utils/author-html.js', 'utils/lock-scope-refusal.js',
     'utils/pc-monitor.js', 'utils/more-below.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'minigames/framework/base-minigame.js',
     'minigames/container/container-item-image.js', 'minigames/container/container-minigame.js',
-    'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'utils/sync-before-fetch.js', 'minigames/text-file/text-file-minigame.js',
+    'utils/remote-host-text.js', 'utils/compromise-bolt.js', 'minigames/password/password-minigame.js', 'systems/pc-sessions.js', 'systems/mfa-client.js', 'systems/helpdesk-client.js', 'utils/sync-before-fetch.js', 'minigames/text-file/text-file-minigame.js',
     'minigames/notes/notes-minigame.js', 'utils/note-markdown.js', 'utils/test-state-text.js']) copy(rel);
 
 const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });

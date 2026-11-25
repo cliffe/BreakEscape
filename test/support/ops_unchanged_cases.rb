@@ -18,6 +18,8 @@ module OpsUnchangedCases
       .merge(privilege_cases)
       .merge(mfa_cases)
       .merge(lock_cases) # S8c unit 01
+      .merge(helpdesk_cases)
+      .merge(cracking_cases)
   end
 
   def step(id, method, path, params = nil)
@@ -691,6 +693,33 @@ module OpsUnchangedCases
     }
   end
 
+  # ---- Helpdesk recovery plan (S8b), unit 01: golden answers for what the helpdesk stage must leave alone ----
+  #
+  # One fixture per case, "helpdesk_<name>", captured BEFORE any S8b engine edit (a first capture, not a
+  # re-record). The core_, privilege_ and mfa_ fixtures already pin typed and saved-connection sign-in
+  # (foothold, `from`, implant), lockout followed by the right password, the Friendface phone rule and
+  # the bootstrap of the sign-in, keyring, ca03 and habits scenarios. These add only: GET /keyring and
+  # /capture_secrets before and after a captured account, the bootstrap of test_ops_mfa, and on
+  # test_ops_mfa a right password at a code PC, a push prompt and the phone list.
+  def helpdesk_cases
+    {
+      'helpdesk_test_access_keyring_captured' => helpdesk_keyring_captured_case,
+      'helpdesk_bootstrap_test_ops_mfa' => helpdesk_bootstrap_ops_mfa_case,
+      'helpdesk_test_ops_mfa_second_step' => helpdesk_ops_mfa_second_step_case
+    }
+  end
+
+  def helpdesk_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => "helpdesk_#{name}", 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
   def take_step(id, item, source_npc = nil)
     step(id, 'POST', 'inventory', { 'action_type' => 'add', 'item' => item, 'source_npc_id' => source_npc }.compact)
   end
@@ -921,6 +950,212 @@ module OpsUnchangedCases
        unlock('terminal_right', 'object', 'm5_locked_terminal', 'pin', 'attempt' => '2468'),
        container_step('terminal_container_open', 'm5_locked_terminal'),
        take_step('take_terminal_open', laptop),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # ---- Ops cracking (S7), unit 01: golden answers for what the hash records must leave alone ----
+  #
+  # Captured on the code as it stood BEFORE any S7 engine edit (first capture, not a re-record). They
+  # pin GET /keyring and its rev answer, the inventory add paths (room take, NPC give, declared grant,
+  # a flag station's item taken again) and POST /flags with give_item and set_global rewards. No
+  # existing core_* or privilege_* case sends a rev, adds to the inventory or submits a flag, so
+  # nothing here repeats one.
+
+  # What a keyring with no entries digests to (the rev core_test_access_networks records), and a
+  # rev that matches nothing.
+  CRACKING_KEYRING_REV = '06f67e'.freeze
+
+  def cracking_cases
+    { 'cracking_keyring' => cracking_keyring_case,
+      'cracking_inventory_add' => cracking_inventory_add_case,
+      'cracking_flag_submit' => cracking_flag_submit_case }
+  end
+
+  def cracking_base(name, description, scenario, steps, player_state = {})
+    people = core_people(scenario).map { |npc| npc['id'] }
+    {
+      'name' => name, 'description' => description, 'clock' => OpsGolden::DEFAULT_CLOCK,
+      'scenario' => scenario,
+      'playerState' => { 'currentRoom' => scenario['startRoom'], 'unlockedRooms' => scenario['rooms'].keys,
+                         'encounteredNPCs' => people }.merge(player_state),
+      'steps' => steps
+    }
+  end
+
+
+  # The keyring with no capture, then Ian's account recorded through the sync route (the capture card's
+  # addCapture, as the browser sends it), the keyring and /capture_secrets before and after the drop box
+  # proves it, then the typed sign-in at Ian's PC.
+  def helpdesk_keyring_captured_case
+    scenario = core_render('test_access_keyring')
+    held = [mfa_find_object(scenario, 'kit_dropbox')]
+    capture = { 'ian' => { 'targetId' => 'ian', 'kind' => 'credential', 'address' => 'ishaw', 'at' => 1 } }
+    helpdesk_base(
+      'test_access_keyring_captured', 'S8b unit 01: GET /keyring and /capture_secrets before and after a captured account, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_before', 'GET', 'keyring'),
+       step('capture_secrets_before', 'GET', 'capture_secrets'),
+       step('sync_capture_ian', 'PUT', 'sync_state', { 'clientTs' => 10, 'globalVariables' => { 'se_captures' => capture } }),
+       step('keyring_captured', 'GET', 'keyring'),
+       step('capture_secrets_captured', 'GET', 'capture_secrets'),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       step('keyring_captured_proven', 'GET', 'keyring'),
+       step('keyring_captured_foothold', 'GET', 'keyring', { 'foothold' => 'jack_comms_port' }),
+       step('capture_secrets_proven', 'GET', 'capture_secrets'),
+       step('unplug_comms_port', 'POST', 'network/unplug', { 'jack_id' => 'comms_port' }),
+       step('keyring_after_unplug', 'GET', 'keyring'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  # The bootstrap, every room, GET /keyring and the sign-in accounts at each sign-in PC of test_ops_mfa.
+  def helpdesk_bootstrap_ops_mfa_case
+    scenario = core_render('test_ops_mfa')
+    steps = [step('bootstrap', 'GET', 'scenario')]
+    scenario['rooms'].each_key { |room| steps << step("room_#{room}", 'GET', "room/#{room}") }
+    steps << step('keyring_plain', 'GET', 'keyring')
+    core_login_pcs(scenario).each { |pc| steps << step("accounts_#{pc['id']}", 'GET', 'login_accounts', { 'pc_id' => pc['id'] }) }
+    steps << step('bootstrap_after', 'GET', 'scenario')
+    helpdesk_base('bootstrap_test_ops_mfa', 'S8b unit 01: the bootstrap, rooms, keyring and sign-in accounts of test_ops_mfa, before any S8b engine edit.',
+                  scenario, steps)
+  end
+
+  # A right password at a code PC (the pane, no session), a wrong then a missing-PC code, a right
+  # password at a push PC then the prompt and the phone list, and a PC with no second step. Held: Hana's
+  # code device and Dev's phone. Not here: the held device's answer and the number-matching answers, whose
+  # code and numbers differ per game (the mechanism compares whole bodies); a Rails test pins their keys.
+  def helpdesk_ops_mfa_second_step_case
+    scenario = core_render('test_ops_mfa')
+    held = %w[hana_device dev_phone].map { |id| mfa_find_object(scenario, id) }
+    helpdesk_base(
+      'test_ops_mfa_second_step', 'S8b unit 01: a right password at a code PC, the held device answer, a push prompt and the phone list on test_ops_mfa, before any S8b engine edit.',
+      scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       step('device_not_declared_id', 'GET', 'mfa/device', { 'item_id' => 'no_such_device' }),
+       step('device_not_held', 'GET', 'mfa/device', { 'item_id' => 'ines_device' }),
+       login('hana_wrong_password', 'hquill', 'nope', 'code_pc1'),
+       login('hana_right_password_code_pc', 'hquill', 'Quillmere-Hana-31', 'code_pc1'),
+       step('verify_wrong_code', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc1', 'code' => '000000' }),
+       step('verify_no_pending_pc', 'POST', 'mfa/verify', { 'pc_id' => 'code_pc2', 'code' => '000000' }),
+       step('verify_unknown_pc', 'POST', 'mfa/verify', { 'pc_id' => 'no_such_pc', 'code' => '000000' }),
+       step('desktop_code_pc1_no_session', 'GET', 'container/code_pc1'),
+       login('dev_right_password_push_pc', 'dkapoor', 'Kaporwell-Dev-77', 'push_pc'),
+       step('prompt_push_pc', 'POST', 'mfa/prompt', { 'pc_id' => 'push_pc' }),
+       step('phone_dev', 'GET', 'mfa/phone', { 'npc_id' => 'dev' }),
+       step('phone_cal_not_held', 'GET', 'mfa/phone', { 'npc_id' => 'cal' }),
+       step('phone_own_refused', 'GET', 'mfa/phone', { 'npc_id' => 'dev', 'own' => '1' }),
+       step('desktop_push_pc_no_session', 'GET', 'container/push_pc'),
+       login('cal_right_password_plain_pc', 'cmoss', 'Mossbank-Cal-12', 'plain_pc'),
+       step('desktop_plain_pc', 'GET', 'container/plain_pc'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => held
+    )
+  end
+
+  def keyring_rev_step(id, rev, params = {})
+    step(id, 'GET', 'keyring', { 'rev' => rev }.merge(params))
+  end
+
+  # GET /keyring over test_access_networks: plain, with a matching rev, with a stale rev, then the
+  # same after a typed sign-in and under a planted jack's foothold.
+  def cracking_keyring_case
+    cracking_base(
+      'cracking_keyring', 'S7 unit 01: GET /keyring with and without a matching rev, before any S7 engine edit.',
+      core_render('test_access_networks'),
+      [step('bootstrap', 'GET', 'scenario'),
+       step('keyring_plain', 'GET', 'keyring'),
+       keyring_rev_step('keyring_rev_match', CRACKING_KEYRING_REV),
+       keyring_rev_step('keyring_rev_stale', 'stale0'),
+       step('keyring_pc_id', 'GET', 'keyring', { 'pc_id' => 'sam_pc' }),
+       login('sam_signs_in_typed', 'sokafor', 'Marmalade-82', 'sam_pc'),
+       step('keyring_after_signin', 'GET', 'keyring', { 'pc_id' => 'sam_pc' }),
+       keyring_rev_step('keyring_after_signin_rev_match', CRACKING_KEYRING_REV, 'pc_id' => 'sam_pc'),
+       step('keyring_bad_from', 'GET', 'keyring', { 'from' => 'sam_pc' }),
+       step('plant_comms_port', 'POST', 'network/plant', { 'jack_id' => 'comms_port' }),
+       step('keyring_jack_foothold', 'GET', 'keyring', { 'foothold' => 'jack_comms_port' }),
+       keyring_rev_step('keyring_jack_foothold_rev_match', CRACKING_KEYRING_REV, 'foothold' => 'jack_comms_port'),
+       step('bootstrap_after', 'GET', 'scenario')],
+      'inventory' => core_network_case('test_access_networks')['playerState']['inventory']
+    )
+  end
+
+  CRACKING_FLAG_ONE = 'flag{cracking_one}'.freeze
+  CRACKING_FLAG_TWO = 'flag{cracking_two}'.freeze
+
+  # test_simple_vm_flag as shipped, plus what the inventory and flag cases need: a takeable file in the
+  # room, an NPC holding one, a declared give_item on a sign, and flags and rewards on its station
+  # (one flag gives an item the station holds, the other sets a global).
+  def cracking_station_scenario
+    scenario = core_render('test_simple_vm_flag')
+    scenario['flags'] = { 'desktop' => { 'flag_1' => CRACKING_FLAG_ONE, 'flag_2' => CRACKING_FLAG_TWO } }
+    room = scenario['rooms']['test_room']
+    station = room['objects'].find { |obj| obj['type'] == 'flag-station' }
+    station['flags'] = %w[desktop:flag_1 desktop:flag_2]
+    station['itemsHeld'] = [{ 'type' => 'text_file', 'id' => 'cr_station_map', 'name' => 'Station Map', 'takeable' => true }]
+    station['flagRewards'] = [{ 'type' => 'give_item', 'item_name' => 'Station Map' },
+                              { 'type' => 'set_global', 'key' => 'cr_second_flag', 'value' => true }]
+    room['objects'] << { 'type' => 'text_file', 'id' => 'cr_floor_note', 'name' => 'Floor Note', 'position' => { 'x' => 3, 'y' => 5 },
+                         'takeable' => true, 'observations' => 'A note on the floor.' }
+    room['objects'] << { 'type' => 'notes', 'id' => 'cr_sign', 'name' => 'Sign', 'position' => { 'x' => 4, 'y' => 5 }, 'takeable' => false,
+                         'observations' => 'A sign.',
+                         'triggerOnInteract' => [{ 'type' => 'give_item',
+                                                   'item' => { 'type' => 'text_file', 'id' => 'cr_sign_memo', 'name' => 'Sign Memo', 'takeable' => true } }] }
+    room['npcs'] = [{ 'id' => 'cr_npc', 'displayName' => 'Cass', 'npcType' => 'person', 'position' => { 'x' => 6, 'y' => 5 },
+                      'itemsHeld' => [{ 'type' => 'text_file', 'id' => 'cr_npc_file', 'name' => 'Cass File', 'takeable' => true }] }]
+    scenario
+  end
+
+  def cracking_item(id, name)
+    { 'type' => 'text_file', 'id' => id, 'name' => name, 'takeable' => true }
+  end
+
+  def inventory_add_step(id, item, extra = {})
+    step(id, 'POST', 'inventory', { 'action_type' => 'add', 'item' => item }.merge(extra))
+  end
+
+  def flag_step(id, flag, station = 'flag_station_desktop')
+    step(id, 'POST', 'flags', { 'flag' => flag, 'stationId' => station })
+  end
+
+  # POST /inventory add: a room take (and again), an invented item, an NPC give (and again), a declared
+  # grant, a station item before its flag, after it, and taken again once removed.
+  def cracking_inventory_add_case
+    station_map = cracking_item('cr_station_map', 'Station Map')
+    cracking_base(
+      'cracking_inventory_add', 'S7 unit 01: inventory adds (room take, NPC give, declared grant, flag station re-collect) through the real routes, before any S7 engine edit.',
+      cracking_station_scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       inventory_add_step('take_room_item', cracking_item('cr_floor_note', 'Floor Note')),
+       inventory_add_step('take_room_item_again', cracking_item('cr_floor_note', 'Floor Note')),
+       inventory_add_step('take_invented_item', cracking_item('cr_invented', 'Invented File')),
+       inventory_add_step('npc_give', cracking_item('cr_npc_file', 'Cass File'), 'source_npc_id' => 'cr_npc'),
+       inventory_add_step('npc_give_again', cracking_item('cr_npc_file', 'Cass File'), 'source_npc_id' => 'cr_npc'),
+       inventory_add_step('declared_grant', cracking_item('cr_sign_memo', 'Sign Memo')),
+       inventory_add_step('station_item_before_flag', station_map),
+       flag_step('station_flag_one', CRACKING_FLAG_ONE),
+       step('remove_station_item', 'POST', 'inventory', { 'action_type' => 'remove', 'item' => { 'id' => 'cr_station_map' } }),
+       inventory_add_step('station_item_recollect', station_map),
+       inventory_add_step('station_item_recollect_again', station_map),
+       step('bootstrap_after', 'GET', 'scenario')]
+    )
+  end
+
+  # POST /flags at a station whose rewards are give_item and set_global: a wrong flag, the give_item
+  # flag, the same flag again, the set_global flag, an unknown station, and the stored flag_rewards_claimed.
+  def cracking_flag_submit_case
+    cracking_base(
+      'cracking_flag_submit', 'S7 unit 01: flag answers with give_item and set_global rewards through the real routes, before any S7 engine edit.',
+      cracking_station_scenario,
+      [step('bootstrap', 'GET', 'scenario'),
+       flag_step('flag_wrong', 'flag{not_a_flag}'),
+       flag_step('flag_one_give_item', CRACKING_FLAG_ONE),
+       flag_step('flag_one_again', CRACKING_FLAG_ONE),
+       flag_step('flag_two_set_global', CRACKING_FLAG_TWO.upcase),
+       flag_step('flag_two_again', CRACKING_FLAG_TWO),
+       flag_step('flag_unknown_station', CRACKING_FLAG_ONE, 'no_such_station'),
        step('bootstrap_after', 'GET', 'scenario')]
     )
   end

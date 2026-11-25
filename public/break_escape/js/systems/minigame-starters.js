@@ -1418,3 +1418,29 @@ export function startPretextPrepMinigame(params = {}) {
     window.MinigameFramework.startMinigame('pretext-prep', null, socialOverlayParams(params));
 }
 window.startPretextPrepMinigame = startPretextPrepMinigame;
+
+// IT request form (ops layer S8b): object type `helpdesk_form`, through the starter registry (the
+// scene registers the type). Takes { deskId, pcId? } from the object's minigameData, from a bare
+// object, or from options (options win); returnTo and onComplete go through as the scene takes them.
+export function startHelpdeskRequest(obj = {}, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Request form unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = obj?.scenarioData?.minigameData || obj?.minigameData || obj || {};
+    const params = { ...options };
+    for (const key of ['deskId', 'pcId']) {
+        if (params[key] === undefined && typeof data[key] === 'string' && data[key]) params[key] = data[key];
+    }
+    return window.MinigameFramework.startMinigame('helpdesk-request', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startHelpdeskRequest = startHelpdeskRequest;

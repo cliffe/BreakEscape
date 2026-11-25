@@ -37,7 +37,7 @@ for (const [spec, url] of Object.entries(stubs)) src = src.split(`'${spec}'`).jo
 globalThis.window = {};
 globalThis.__passwordStarts = 0;
 const { handleUnlock, openLoginSignIn, interactLoginPc } = await import(dataUrl(src));
-const { PcSessions } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`)));
+const { PcSessions } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8').split("'../utils/sync-before-fetch.js'").join(`'${dataUrl(readFileSync(join(js, 'utils/sync-before-fetch.js'), 'utf8'))}'`).split("'./mfa-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/mfa-client.js'), 'utf8'))}'`).split("'./helpdesk-client.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/helpdesk-client.js'), 'utf8'))}'`)));
 
 const TILES = [{ username: 'sokafor', displayName: 'Sam Okafor', portrait: null, avatar: null }];
 let calls, started, desktops, shown, sessionHeld;

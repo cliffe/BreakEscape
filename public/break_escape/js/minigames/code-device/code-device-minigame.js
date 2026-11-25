@@ -10,7 +10,11 @@
 // SocialOverlayScene with the default closeMode: as a child, Close returns to the parent screen;
 // alone, it closes.
 //
-// Params: { itemId, deps? } where deps may inject { mfa, now, schedule, clearScheduled, tickMs }.
+// Own phone (S8b unit 16): started with { own: true, npcId } it draws the player's own phone
+// (a phone frame titled "My phone", no owner row) and reads through readDevice({ npcId }), the
+// code of an account a desk has re-enrolled. Everything else is as for the item.
+//
+// Params: { itemId, own?, npcId?, deps? } where deps may inject { mfa, now, schedule, clearScheduled, tickMs }.
 // `mfa` defaults to window.mfaClient (the way this folder reaches window.pcSessions), `now` to
 // Date.now. Every server or author string reaches the DOM through textContent.
 
@@ -37,7 +41,7 @@ export class CodeDeviceMinigame extends SocialOverlayScene {
     static framed = true;
 
     constructor(container, params) {
-        super(container, { title: 'Code device', ...(params || {}) });
+        super(container, { title: (params && params.own === true) ? 'My phone' : 'Code device', ...(params || {}) });
         const deps = isObj(this.params.deps) ? this.params.deps : {};
         this.deps = {
             mfa: deps.mfa || null,
@@ -47,6 +51,8 @@ export class CodeDeviceMinigame extends SocialOverlayScene {
             tickMs: Number.isFinite(deps.tickMs) ? deps.tickMs : DEFAULT_TICK_MS
         };
         this.itemId = this.params.itemId ?? null;
+        this.own = this.params.own === true;
+        this.npcId = this.params.npcId ?? null;
         this.state = 'loading'; // loading | code | used | retired | nothing
         this.code = '';
         this.displayName = '';
@@ -64,19 +70,20 @@ export class CodeDeviceMinigame extends SocialOverlayScene {
         super.init();
         if (this.headerElement) this.headerElement.style.display = 'none';
 
-        const frame = el('div', 'device-frame code-device');
+        const frame = el('div', this.own ? 'code-device code-device-phone' : 'device-frame code-device');
         frame.setAttribute('role', 'region');
-        frame.setAttribute('aria-label', 'Code device');
+        frame.setAttribute('aria-label', this.own ? 'My phone' : 'Code device');
         this.frame = frame;
 
         const title = el('div', 'device-frame-title code-device-title');
-        title.appendChild(el('h2', 'code-device-title-text', 'Code device'));
+        title.appendChild(el('h2', 'code-device-title-text', this.own ? 'My phone' : 'Code device'));
         frame.appendChild(title);
 
         const owner = el('div', 'code-device-owner');
         this.headshotEl = el('div', 'code-device-headshot');
         this.headshotEl.hidden = true;
         this.headshotEl.setAttribute('aria-hidden', 'true');
+        if (this.own) owner.hidden = true;
         owner.appendChild(this.headshotEl);
         this.nameEl = el('div', 'code-device-name', '');
         owner.appendChild(this.nameEl);
@@ -131,7 +138,7 @@ export class CodeDeviceMinigame extends SocialOverlayScene {
         this._reading = true;
         let res = null;
         try {
-            res = await client.readDevice({ itemId: this.itemId });
+            res = await client.readDevice(this.own ? { npcId: this.npcId } : { itemId: this.itemId });
         } catch (e) {
             res = { ok: false, reason: 'error' };
         }
@@ -244,6 +251,7 @@ export class CodeDeviceMinigame extends SocialOverlayScene {
                 state: this.state,
                 digits: this.digitsEl ? this.digitsEl.textContent : '',
                 used: this.state === 'used',
+                own: this.own,
                 reads: this.reads,
                 secondsLeft: this.endsAt ? this.secondsLeft() : null
             }

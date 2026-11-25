@@ -28,7 +28,7 @@ module BreakEscape
     FORGEABLE_ITEM_FIELDS = %w[
       opens_lock key_id keyId keyPins requires lockType locked access
       card_id rfid_protocol acceptsUIDOnly contents itemsHeld flags flagRewards
-      droppable needsTag wearable holds storeIn saved_cards credential
+      droppable needsTag wearable holds storeIn saved_cards credential revealsFacts
       secondStep
     ].freeze
 

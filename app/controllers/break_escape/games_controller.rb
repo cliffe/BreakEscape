@@ -2,6 +2,10 @@ require 'open3'
 
 module BreakEscape
   class GamesController < ApplicationController
+    # S8b unit 13 (helpdesk): the request route lives in the concern. Included before the
+    # set_format_header re-prepend below so that callback stays first.
+    include BreakEscape::HelpdeskActions
+
     helper PlayerPreferencesHelper
 
     # --- S8c unit 14: second step on any lock (one block; helpers in lock_step_requests.rb) ---
@@ -30,8 +34,9 @@ module BreakEscape
 
     before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :mfa_device, :mfa_verify, :mfa_prompt, :mfa_phone, :mfa_approve, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join, :network_scan, :network_check, :network_confirm, :network_technique,
-                                        :log_rows,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
+                                        :log_rows, :crack,
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send,
+                                        :helpdesk_request] # S8b unit 13
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -1441,7 +1446,10 @@ module BreakEscape
           # gift record for that NPC is kept.
           if source_npc_id.blank? && source_pc_id.blank? && source_resource_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
             Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
-            return render json: { success: true, already: true }
+            # R1-S1: a fact earned by a give_item reward arrives here as a held item; its entry is
+            # served for the ids the player has earned (the ids come from the client's item; earned_fact_entries answers only earned ones)
+            held_entries = @game.earned_fact_entries(stored_item_fact_ids(item.to_unsafe_h))
+            return render json: held_entries.empty? ? { success: true, already: true } : { success: true, already: true, facts: held_entries }
           end
           validation_error = validate_item_collectible(item, source_npc_id, source_pc_id: source_pc_id, transfer: transfer,
                                                                           source_resource_id: source_resource_id)
@@ -1462,7 +1470,10 @@ module BreakEscape
           Rails.logger.info "[BreakEscape] Adding item to inventory: #{item['type']} / #{item['name']}"
           # Store the server's copy, never the client's fields (M6): the key and
           # lockpick checks read opens_lock, scenarioData and type from it.
-          @game.add_inventory_item!(canonical_inventory_item(item.to_unsafe_h))
+          # S7: a take or an NPC give stamps the facts the stored copy reveals; a declared grant does not
+          stored_item = canonical_inventory_item(item.to_unsafe_h)
+          @game.add_inventory_item!(stored_item,
+                                    fact_source: !(@collectible_location.is_a?(Hash) && @collectible_location[:type] == 'grant'))
           # Remember what an NPC has handed over, so a reload does not restore it
           # to that NPC's itemsHeld (a later KO would drop a duplicate).
           if @collectible_location && @collectible_location[:type] == 'npc'
@@ -1473,7 +1484,10 @@ module BreakEscape
           Rails.logger.info "[BreakEscape] Item added successfully. Current inventory size: #{@game.player_state['inventory']&.length}"
           # No client reads the inventory echo from this answer (sync deltas P2); the
           # tray is reconciled by PUT /sync_state and the network delta answers.
-          render json: { success: true }
+          # R1-S1: the entries of the facts this take earned (the bootstrap withholds an unearned
+          # fact's entry); nothing is added when the item reveals none.
+          earned_entries = @game.earned_fact_entries(stored_item_fact_ids(stored_item))
+          render json: earned_entries.empty? ? { success: true } : { success: true, facts: earned_entries }
 
         when 'remove'
           # A plant (engine plan section 6): the client names the object the device was used
@@ -1590,15 +1604,24 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
-    # GET /games/:id/mfa/device?item_id=
+    # GET /games/:id/mfa/device?item_id=  or  ?npc_id=
     # What a held code device shows (S8a unit 16): the only place a code reaches the browser. 404
-    # for an unknown device, 403 unless the player holds it. Reads only: no save.
+    # for an unknown device, 403 unless the player holds it. With `npc_id` (S8b): the own phone of
+    # an account a desk has re-enrolled, 403 for any other account. Reads only: no save.
     def mfa_device
       authorize @game if defined?(Pundit)
 
       response.headers['Cache-Control'] = 'no-store'
       item_id = params[:item_id]
-      answer = item_id.is_a?(String) && !item_id.empty? ? @game.mfa_device_answer(item_id) : :not_found
+      # S8b unit 18: `npc_id` (and no item_id) reads the own phone of an account a desk has
+      # re-enrolled; both given, or neither, is the 404
+      npc_id = params[:npc_id]
+      answer = :not_found
+      if item_id.is_a?(String) && !item_id.empty? && !params.key?(:npc_id)
+        answer = @game.mfa_device_answer(item_id)
+      elsif npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:item_id)
+        answer = @game.mfa_own_device_answer(npc_id)
+      end
       case answer
       when :not_found then render json: { success: false, error: 'not found' }, status: :not_found
       when :no_device then render json: { success: false, error: 'no such device' }, status: :forbidden
@@ -1646,8 +1669,9 @@ module BreakEscape
 
     # GET /games/:id/mfa/phone?npc_id=
     # The push requests waiting on a phone the player holds: the only place the three number
-    # choices reach the browser. 403 unless that NPC's phone is held (own=1 is S8b's: the same
-    # 403). Reads only: no save.
+    # choices reach the browser. 403 unless that NPC's phone is held. `own=1` with no npc_id (S8b
+    # unit 18) lists the waiting requests of every re-enrolled account, 403 when none is; both
+    # given is the 403. Reads only: no save.
     def mfa_phone
       authorize @game if defined?(Pundit)
 
@@ -1655,7 +1679,12 @@ module BreakEscape
       return mfa_lock_phone if mfa_lock_phone_named? # S8c unit 14
 
       npc_id = params[:npc_id]
-      answer = npc_id.is_a?(String) && !npc_id.empty? && !params.key?(:own) ? @game.mfa_phone_answer(npc_id) : :no_phone
+      answer = :no_phone
+      if params.key?(:own)
+        answer = @game.mfa_own_phone_answer if %w[1 true].include?(params[:own].to_s) && !params.key?(:npc_id)
+      elsif npc_id.is_a?(String) && !npc_id.empty?
+        answer = @game.mfa_phone_answer(npc_id)
+      end
       if answer == :no_phone
         render json: { success: false, error: 'no such phone' }, status: :forbidden
       else
@@ -1665,7 +1694,9 @@ module BreakEscape
 
     # POST /games/:id/mfa/approve
     # Approve (number for number matching) or deny a pending push from a held phone (pc_id,
-    # number, deny). No held phone is 403. The answers are Game#approve_sign_in!.
+    # number, deny, own). No held phone is 403. `own=1` names the own-phone form: a re-enrolled
+    # account is approved only so (S8b unit 18); an old phone's approval for it is the 403 "no such
+    # phone". The answers are Game#approve_sign_in!.
     def mfa_approve
       authorize @game if defined?(Pundit)
 
@@ -1680,7 +1711,8 @@ module BreakEscape
       number = params[:number]
       number = Integer(number, 10) if number.is_a?(String) && number.match?(/\A\d{1,3}\z/)
       number = nil unless number.is_a?(Integer)
-      result = with_game_lock { @game.approve_sign_in!(pc_id, number: number, deny: params[:deny] == true || params[:deny] == 'true') }
+      result = with_game_lock { @game.approve_sign_in!(pc_id, number: number, deny: params[:deny] == true || params[:deny] == 'true',
+                                                       own: params[:own] == true || %w[1 true].include?(params[:own].to_s)) }
       if result == :no_phone
         render json: { success: false, error: 'no such phone' }, status: :forbidden
       else
@@ -2066,9 +2098,43 @@ module BreakEscape
         # Keyring K5 (plan 10): expiresInS sits outside the digest, so it rides on unchanged too
         live = @game.keyring_live_expires(answer[:entries])
         unchanged[:expiresInS] = live if live.any?
+        # S7: a running crack wait sits outside the digest too, so it rides on unchanged
+        waits = @game.keyring_live_crack_waits(answer[:entries])
+        unchanged[:readyInSeconds] = waits if waits.any?
         render json: unchanged
       else
         render json: answer
+      end
+    end
+
+    # POST /games/:id/crack { hash_id, facts } (S7 brief section 4). One offline crack run on a hash
+    # record. The server decides every outcome; the answer never carries the password or the recipe.
+    # Refusals, in order: bad_request 400, not_found 404 (one body for an unknown, non-hash or
+    # unheld id), no_recipe 422, fact_not_held 422. An account already held answers cracked first.
+    def crack
+      authorize @game if defined?(Pundit)
+      response.headers['Cache-Control'] = 'no-store'
+
+      hash_id = params[:hash_id]
+      facts = params[:facts]
+      facts = [] if facts.nil?
+      unless hash_id.is_a?(String) && !hash_id.empty? && hash_id.length <= 200 &&
+             facts.is_a?(Array) && facts.length <= 4 &&
+             facts.all? { |f| f.is_a?(String) && f.length.between?(1, 64) }
+        return render json: { success: false, reason: 'bad_request' }, status: :bad_request
+      end
+
+      refusal = nil
+      result = nil
+      @game.with_lock do
+        refusal = @game.crack_refusal(hash_id, facts)
+        result = @game.run_crack!(hash_id, facts) unless refusal
+      end
+
+      case refusal
+      when :not_found then render json: { success: false, reason: 'not_found' }, status: :not_found
+      when :no_recipe, :fact_not_held then render json: { success: false, reason: refusal.to_s }, status: :unprocessable_entity
+      else render json: { success: true }.merge(result)
       end
     end
 
@@ -3634,6 +3700,14 @@ module BreakEscape
       [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
     ).freeze
 
+    # The revealsFacts ids of an item's stored copy (the same level the stamp reads).
+    def stored_item_fact_ids(item)
+      return [] unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      Array(data['revealsFacts']).grep(String)
+    end
+
     # What the inventory stores for an add that validate_item_collectible passed.
     # A scenario item is stored as the server's own copy, filtered exactly as the
     # client received it, so nothing in the client's hash can add a lock
@@ -4296,6 +4370,14 @@ module BreakEscape
         when 'emit_event'
           results << process_event_reward(reward, flag_key)
 
+        when 'grant_fact'
+          # S7: the server has just accepted the flag, so the fact is earned. Stamped in memory;
+          # the save below writes it. The reward is forwarded as set_global is.
+          @game.stamp_earned_facts!([reward['fact']])
+          # R1-S1: the bootstrap withholds the fact's entry until it is earned, so it rides here
+          entry = @game.earned_fact_entries([reward['fact']])[reward['fact']]
+          results << (entry ? reward.merge('entry' => entry) : reward)
+
         when 'set_global', 'unlock_object', 'hint'
           # Client-side-only rewards — forward as-is so processRewardEvents() can handle them
           results << reward
@@ -4333,9 +4415,13 @@ module BreakEscape
       return { type: 'error', message: 'Item not found in flag station' } unless item
 
       # Add to player inventory
-      @game.add_inventory_item!(item)
+      @game.add_inventory_item!(item, fact_source: true)
 
-      { type: 'give_item', item: item, success: true }
+      result = { type: 'give_item', item: item, success: true }
+      # R1-S1: entries of the facts the item earned (the bootstrap withholds them until earned)
+      earned_entries = @game.earned_fact_entries(stored_item_fact_ids(item))
+      result[:facts] = earned_entries unless earned_entries.empty?
+      result
     end
 
     def process_door_unlock_reward(reward, flag_key)

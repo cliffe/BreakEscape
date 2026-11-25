@@ -30,6 +30,10 @@ module BreakEscape
       show?
     end
 
+    def crack?
+      show?
+    end
+
     def update_room?
       show?
     end
@@ -107,6 +111,11 @@ module BreakEscape
     end
 
     def mfa_approve?
+      show?
+    end
+
+    # S8b unit 13
+    def helpdesk_request?
       show?
     end
 
