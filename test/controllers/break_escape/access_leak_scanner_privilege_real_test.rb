@@ -1202,9 +1202,10 @@ module BreakEscape
 
     test 'tamper 5: the relay sign-in of the administrator taken out: the desktop that shows the relay administrator reads the profile unearned' do
       rows = run_real
-      # limit: the relay administrator step is also proved by that PC's desktop answer (invite, creds.admin and the game's own
-      # account_admin_at?), so the collect after it is still credited; the folder read in the desktop is what is reported
-      assert_flagged reported(without(rows, 47)), 'profile_admin_read', 'item:adel_runbook'
+      # R2-L1: the desktop alone no longer proves a relay administrator: the collect after it is unearned as well as the folder read
+      found = reported(without(rows, relay_in_n(rows)))
+      assert_flagged found, 'profile_admin_read', 'item:adel_runbook'
+      assert_flagged found, 'harvest_unearned'
     end
 
     test 'tamper 6: the relay administrator collect moved before the relay sign-in and its desktop is unearned' do
@@ -1300,18 +1301,77 @@ module BreakEscape
     end
 
     # ---- Ops S5bc fix, scanner review R2 (docs/agents/ops_core_build/reviews/S5bc_scanner_R2.md) ----
+    # Rows are found by what they are, not by number, so a beat added to the run does not move them.
+
+    def nth_row(rows)
+      (rows.index { |r| yield r } || raise('no such row')) + 1
+    end
+
+    def relay_in_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/login') && r['body'].is_a?(Hash) && r['body']['relay'] == true && r['body']['access'] == 'admin' }
+    end
+
+    def invite_item_n(rows)
+      nth_row(rows) { |r| r['inv'].is_a?(Hash) && r['inv']['action'] == 'add' && r['inv']['itemId'] == 'adel_assist_code' }
+    end
+
+    def invite_key_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/keyring') && r['status'] == 200 && r['body'].to_json.include?('adel_assist') }
+    end
+
+    # the first row after row `from` (1-based) that the block accepts
+    def row_after_n(rows, from)
+      found = rows.each_with_index.find { |r, i| i >= from && yield(r) }
+      (found || raise('no such row'))[1] + 1
+    end
+
+    def relay_desktop_n(rows)
+      row_after_n(rows, relay_in_n(rows)) { |r| r['path'].end_with?('/container/hot_desk') }
+    end
+
+    def relay_collect_n(rows)
+      row_after_n(rows, relay_in_n(rows)) { |r| r['path'].end_with?('/harvest_credentials') && r['status'] == 200 }
+    end
+
+    def log_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/log_rows') }
+    end
+
+    def bay_signin_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/login') && r['status'] == 200 && r['body'].is_a?(Hash) && r['body']['npcId'] == 'adel' && @keyboard_pc[r] == 'bay_pc' }
+    end
+
+    def hot_signin_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/login') && r['status'] == 200 && r['body'].is_a?(Hash) && r['body']['npcId'] == 'adel' && @keyboard_pc[r] == 'hot_desk' }
+    end
+
+    def plant_n(rows)
+      nth_row(rows) { |r| r['inv'].is_a?(Hash) && r['inv']['action'] == 'remove' && r['status'] == 200 && r['body'] == { 'success' => true } }
+    end
+
+    def handed_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/npc_frustration') && r['body'].to_json.include?('borrow_session') }
+    end
+
+    def done_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/npc_workaround') && r['status'] == 200 && r['body'].is_a?(Hash) && r['body']['guest'] == true }
+    end
+
+    def room_row(rows, name)
+      { 't' => rows.last['t'], 'method' => 'GET', 'path' => rows.last['path'].sub(%r{/games/(\d+)/.*}, "/games/\\1/room/#{name}"), 'status' => 200, 'body' => {} }
+    end
 
     # R2-L1: a relay administrator needs an earlier keyring row that lists the invite AND an earlier relay sign-in, in capture order.
     test 'R2-L1 (G1): the relay sign-in taken out: the desktop alone proves no relay administrator, so its collect is unearned' do
       rows = run_real
-      found = reported(without(rows, 47))
+      found = reported(without(rows, relay_in_n(rows)))
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
     end
 
     test 'R2-L1 (G1b): a relay desktop and collect with no relay sign-in, before the invite is held, are reported' do
       rows = run_real
-      forged = rows.first(35) + [rows[47], rows[48]]
+      forged = rows.first(invite_item_n(rows) - 1) + [rows[relay_desktop_n(rows) - 1], rows[relay_collect_n(rows) - 1]]
       found = reported(forged)
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
@@ -1319,35 +1379,34 @@ module BreakEscape
 
     test 'R2-L1 (H1b): a relay desktop and collect where no admin was ever at hot_desk are reported' do
       rows = run_real
-      found = reported(rows.first(13) + [rows[47], rows[48]])
+      found = reported(rows.first(hot_signin_n(rows) - 1) + [rows[relay_desktop_n(rows) - 1], rows[relay_collect_n(rows) - 1]])
       assert_flagged found, 'harvest_unearned'
     end
 
     test 'R2-L1 (G2): the real relay sign-in, desktop and collect moved before the invite item and the keyring row that lists it are reported' do
       rows = run_real
       assert_empty reported(rows)
-      moved = rows.first(44) + rows[46..48] + rows[44..45] + rows[49..]
+      a = invite_item_n(rows)
+      r = relay_in_n(rows)
+      c = relay_collect_n(rows)
+      moved = rows.first(a - 1) + rows[(r - 1)..(c - 1)] + rows[(a - 1)..(r - 2)] + rows[c..]
       found = reported(moved)
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
     end
 
-    test 'R2-L1: the relay sign-in taken out, the relay administrator collect is unearned (tamper 5 as the review asks)' do
-      rows = run_real
-      assert_flagged reported(without(rows, 47)), 'harvest_unearned'
-    end
-
     test 'R2-L1: the keyring row that lists the invite taken out leaves the relay sign-in and collect unearned' do
       rows = run_real
-      found = reported(without(rows, 46))
+      found = reported(without(rows, invite_key_n(rows)))
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
     end
 
-    test 'R2-L1: a bootstrap between the relay sign-in and a second desktop answer takes the proof back' do
+    test 'R2-L1: a bootstrap between the relay sign-in and the desktop answer takes the proof back' do
       rows = run_real
-      boot = { 't' => rows[47]['t'], 'method' => 'GET', 'path' => '/break_escape/games/190019/scenario', 'status' => 200, 'body' => { 'sessions' => {} } }
-      found = reported(rows.first(47) + [boot, rows[47], rows[48]])
+      r = relay_in_n(rows)
+      boot = room_row(rows, 'x').merge('path' => rows.last['path'].sub(%r{/games/(\d+)/.*}, '/games/\\1/scenario'), 'body' => { 'sessions' => {} })
+      found = reported(rows.first(r) + [boot] + rows[r..])
       assert_flagged found, 'ops_string', 'ops:key:access'
       assert_flagged found, 'harvest_unearned'
     end
@@ -1355,7 +1414,7 @@ module BreakEscape
     # R2-L2: CRED_COLLECT and USB_OVERRIDE log rows are tied to credited collect answers (count, account, PC) and to the
     # recorder's `inv` tag on POST /inventory, and not to a session that was shown some time before.
     def log_answer_rows(rows, *entries)
-      deep(rows[42]).tap { |row| row['body']['rows'] = entries.map { |e| { 'id' => SecureRandom.hex(5), 'elapsedMs' => 0, 'result' => 'OK', 'as' => 'adelwick' }.merge(e) } }
+      deep(rows[log_n(rows) - 1]).tap { |row| row['body']['rows'] = entries.map { |e| { 'id' => SecureRandom.hex(5), 'elapsedMs' => 0, 'result' => 'OK', 'as' => 'adelwick' }.merge(e) } }
     end
 
     def collect_entry(where, detail, extra = {})
@@ -1368,20 +1427,21 @@ module BreakEscape
 
     test 'R2-L2 (G3a): an admin signed in, no collect ever, a CRED_COLLECT row is reported' do
       rows = run_real
-      found = reported(rows.first(5) + [log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 8'))])
+      found = reported(rows.first(bay_signin_n(rows)) + [log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 8'))])
       assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
     end
 
     test 'R2-L2 (G3b): an admin signed in, no stick ever planted, a USB_OVERRIDE row is reported' do
       rows = run_real
-      found = reported(rows.first(5) + [log_answer_rows(rows, stick_entry)])
+      found = reported(rows.first(bay_signin_n(rows)) + [log_answer_rows(rows, stick_entry)])
       assert_flagged found, 'log_row', 'log:usb_override:bay_pc'
     end
 
     test 'R2-L2 (G3c): the real run, a CRED_COLLECT row with another count, or more repeats than collects, is reported' do
       rows = run_real
       assert_empty reported(rows)
-      flagged = ->(edit_row) { assert_flagged reported(edit(rows, 43) { |r| edit_row.call(r['body']['rows'].find { |x| x['where'] == 'Bay desk PC' && x['event'] == 'CRED_COLLECT' }) }), 'log_row', 'log:cred_collect:bay_pc' }
+      n = log_n(rows)
+      flagged = ->(edit_row) { assert_flagged reported(edit(rows, n) { |r| edit_row.call(r['body']['rows'].find { |x| x['where'] == 'Bay desk PC' && x['event'] == 'CRED_COLLECT' }) }), 'log_row', 'log:cred_collect:bay_pc' }
       flagged.call(->(x) { x['detail'] = 'count: 7' })
       flagged.call(->(x) { x['result'] = 'OK x9' })
       flagged.call(->(x) { x['result'] = 'OK x2' })
@@ -1391,28 +1451,104 @@ module BreakEscape
 
     test 'R2-L2 (G3d): the real run, a CRED_COLLECT row as another account is reported' do
       rows = run_real
-      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['as'] = 'omarsh' })
+      found = reported(edit(rows, log_n(rows)) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['as'] = 'omarsh' })
       assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
     end
 
     test 'R2-L2 (G3e): the admin session ended, a log answer with both rows, and no collect or stick made, is reported' do
       rows = run_real
-      logout = rows.index { |r| r['path'].end_with?('/logout') } + 1
-      found = reported(rows.first(5) + [rows[logout - 1], log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 2'), stick_entry)])
+      bay = bay_signin_n(rows)
+      logout = row_after_n(rows, bay) { |r| r['path'].end_with?('/logout') }
+      found = reported(rows.first(bay) + [rows[logout - 1], log_answer_rows(rows, collect_entry('Bay desk PC', 'count: 2'), stick_entry)])
       assert_flagged found, 'log_row', 'log:cred_collect:bay_pc'
       assert_flagged found, 'log_row', 'log:usb_override:bay_pc'
     end
 
     test 'R2-L2: the real stick row is earned by the tagged plant: the plant row without its tag, or naming another object, or another device, is reported' do
       rows = run_real
-      plant = rows.index { |r| r['path'].end_with?('/inventory') && r['inv'] && r['inv']['action'] == 'remove' && r['status'] == 200 && r['body'] == { 'success' => true } && r['body'].size == 1 && r['t'] < rows[42]['t'] && rows.index(r) > 39 } + 1
-      assert_equal 42, plant
-      assert_flagged reported(edit(rows, 42) { |r| r['inv'] = nil }), 'log_row', 'log:usb_override:bay_pc'
-      assert_flagged reported(edit(rows, 42) { |r| r.delete('inv') }), 'log_row', 'log:usb_override:bay_pc'
-      assert_flagged reported(edit(rows, 42) { |r| r['inv']['usedOn'] = 'store_pc' }), 'log_row', 'log:usb_override:bay_pc'
-      assert_flagged reported(edit(rows, 42) { |r| r['inv']['action'] = 'add' }), 'log_row', 'log:usb_override:bay_pc'
-      assert_flagged reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['detail'] = 'device: hid' }), 'log_row', 'log:usb_override:bay_pc'
-      assert_flagged reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }), 'log_row', 'log:usb_override:bay_pc'
+      plant = plant_n(rows)
+      log = log_n(rows)
+      assert_operator plant, :<, log
+      assert_flagged reported(edit(rows, plant) { |r| r['inv'] = nil }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, plant) { |r| r.delete('inv') }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, plant) { |r| r['inv']['usedOn'] = 'store_pc' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, plant) { |r| r['inv']['action'] = 'add' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['detail'] = 'device: hid' }), 'log_row', 'log:usb_override:bay_pc'
+      assert_flagged reported(edit(rows, log) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['result'] = 'OK x2' }), 'log_row', 'log:usb_override:bay_pc'
+    end
+
+    # R2-L3: the refused word list is built from what the scanner knows, and a clash refuses the scan (as `admin` does).
+    test 'R2-L3 (G7): an account-only username or display name that is a key of the answers, a PC name or a log title refuses the scan; the real deskadmin and labadmin do not' do
+      rows = run_real
+      assert_empty named(scan(rows)), 'the real account-only accounts do not clash'
+      %w[guest host session success held status storage relay error].each do |word|
+        data = with_account_only(beats_scenario)
+        data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['creds']['username'] = word if n['id'] == 'rotakeeper_acct' } }
+        assert_raises(ArgumentError, word) { scan(rows, data: data) }
+      end
+      ['Hot desk PC', 'Privilege audit', 'Bay desk PC'].each do |name|
+        data = with_account_only(beats_scenario)
+        data['rooms'].each_value { |r| Array(r['npcs']).each { |n| n['displayName'] = name if n['id'] == 'rotakeeper_acct' } }
+        assert_raises(ArgumentError, name) { scan(rows, data: data) }
+      end
+    end
+
+    # R2-L4
+    test 'R2-L4 (G4): the collect 404 carries only the id the player sent, at most 40 characters' do
+      rows = run_real
+      n = rows.index { |r| r['path'].end_with?('/harvest_credentials') && r['status'] == 404 } + 1
+      assert_empty reported(rows)
+      long = 'Container not found: hot_desk caches Priya Nair (pnair) and Sam Okoro (sokoro) CHE3-MXCQ-YCU4-FFG5-53V7-FMQ3'
+      assert_flagged reported(edit(rows, n) { |r| r['body']['error'] = long }), 'harvest_row', 'refusal'
+      assert_flagged reported(edit(rows, n) { |r| r['body']['error'] = 'Something else entirely' }), 'harvest_row', 'refusal'
+      assert_flagged reported(edit(rows, n) { |r| r['body']['error'] = "Container not found: a\nb" }), 'harvest_row', 'refusal'
+    end
+
+    # R2-L5
+    test 'R2-L5 (M1, M2): a pair string, or the id, label or token of an uncollected harvested record, in any answer is reported' do
+      rows = run_real
+      %w[hot_desk|priya hot_desk|sam bay_pc|uma].each do |pair|
+        found = reported(edit(rows, 2) { |r| r['body']['note'] = "see #{pair} here" })
+        assert_flagged found, 'harvest_key', "pair:#{pair}"
+      end
+      found = reported(edit(rows, 2) { |r| r['body']['note'] = 'hotdesk_priya' })
+      assert_flagged found, 'harvest_hash', 'credential:hotdesk_priya'
+      found = reported(edit(rows, 2) { |r| r['body']['note'] = 'Stored record: Priya (hot desk)' })
+      assert_flagged found, 'harvest_hash', 'credential:hotdesk_priya'
+      token = @game_after.crack_token('hotdesk_priya', BreakEscape::CredentialModel.registry(beats_scenario)['hotdesk_priya'], beats_scenario['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |x| x['id'] == 'priya' })
+      found = reported(edit(rows, 2) { |r| r['body']['note'] = "token #{token}" })
+      assert_flagged found, 'harvest_hash', 'credential:hotdesk_priya'
+    end
+
+    # R2-L6
+    test 'R2-L6 (G6c): a keyring row of an unheld record of an account-only account earns nothing: the later name and username are reported too' do
+      rows = run_real
+      data = with_account_only(beats_scenario)
+      data['credentials']['rota_hash'] = { 'kind' => 'hash', 'account' => 'rotakeeper_acct', 'label' => 'Rota hash', 'proof' => { 'held' => 'never_taken_item' } }
+      block = { 'npcId' => 'rotakeeper_acct', 'username' => 'rotakeeper', 'displayName' => 'Rota Keeper' }
+      forged = edit(rows, nth_row(rows) { |r| r['path'].end_with?('/keyring') && r['body'].to_json.include?('baypc_olu') }) do |r|
+        entry = deep(r['body']['entries'][0])
+        entry.merge!('id' => 'rota_hash', 'account' => block, 'label' => 'Rota hash')
+        r['body']['entries'] << entry
+      end
+      later = { 't' => rows.last['t'], 'method' => 'GET', 'path' => rows.last['path'].sub(%r{/games/(\d+)/.*}, '/games/\1/room/lobby'), 'status' => 200,
+                'body' => { 'note' => 'the local admin here is rotakeeper (Rota Keeper)' } }
+      found = reported(forged + [later], data: data)
+      assert_flagged found, 'credential_unheld'
+      assert_flagged found, 'account_only', 'npc:rotakeeper_acct/username'
+      assert_flagged found, 'account_only', 'npc:rotakeeper_acct/name'
+    end
+
+    # R2-L8
+    test 'R2-L8: a borrower is credited only when a run handed it a borrow at that PC before the done answer' do
+      rows = run_real
+      assert_empty reported(rows)
+      handed = handed_n(rows)
+      done = done_n(rows)
+      assert_flagged reported(without(rows, handed)), 'harvest_unearned', 'account:sam'
+      assert_flagged reported(edit(rows, handed) { |r| r['body']['answers'][0]['npcId'] = 'priya' }), 'harvest_unearned', 'account:sam'
+      assert_flagged reported(edit(rows, handed) { |r| r['body']['answers'][0]['run']['pc'] = 'store_pc' }), 'harvest_unearned', 'account:sam'
+      assert_flagged reported(moved_before(rows, handed, done + 1)), 'harvest_unearned', 'account:sam'
     end
 
     # ---- re-checks the scanner fixer listed ----

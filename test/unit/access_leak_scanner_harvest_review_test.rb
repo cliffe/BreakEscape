@@ -163,6 +163,11 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
 
   # ---- R1-L7: the borrow is proved by the capture's order, with the game's record as a floor ----
 
+  # R2-L8: the answer that hands Sam his borrow run at the PC, which must come before the done answer
+  def handed(pc = 'profile_pc', npc = 'sam')
+    row({ 'answers' => [{ 'npcId' => npc, 'level' => 50, 'run' => { 'do' => 'borrow_session', 'pc' => pc } }] }, path: 'npc_frustration', method: 'POST')
+  end
+
   def borrow_done(pc = 'profile_pc', extra = {})
     row({ 'pcId' => pc, 'guest' => true }.merge(extra), path: 'npc_workaround', method: 'POST')
   end
@@ -171,17 +176,21 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     game = FakeGame.new(cached_at: ['profile_pc|sam'])
     sam = collect([crow('sam', 'hot_sam')])
     assert_includes rules(scan([admin_signin, sam], game: game)), 'harvest_unearned'
-    assert_empty scan([admin_signin, borrow_done, sam], game: game)
-    assert_includes rules(scan([admin_signin, sam, borrow_done], game: game)), 'harvest_unearned'
-    assert_includes rules(scan([admin_signin, borrow_done('it_pc'), sam], game: game)), 'harvest_unearned'
+    assert_empty scan([admin_signin, handed, borrow_done, sam], game: game)
+    assert_includes rules(scan([admin_signin, handed, sam, borrow_done], game: game)), 'harvest_unearned'
+    # R2-L8: the done answer with no hand-over before it, or one that handed another NPC the run, credits nobody
+    assert_includes rules(scan([admin_signin, borrow_done, sam], game: game)), 'harvest_unearned'
+    assert_includes rules(scan([admin_signin, handed('profile_pc', 'jake'), borrow_done, sam], game: game)), 'harvest_unearned'
+    assert_includes rules(scan([admin_signin, borrow_done, handed, sam], game: game)), 'harvest_unearned'
+    assert_includes rules(scan([admin_signin, handed, borrow_done('it_pc'), sam], game: game)), 'harvest_unearned'
     # a writes_down answer, a dropped hand-over, a refused answer and a text body prove nothing
     [row({ 'pcId' => 'profile_pc', 'hasPostit' => true }, path: 'npc_workaround', method: 'POST'),
      row({ 'dropped' => true }, path: 'npc_workaround', method: 'POST'),
      row({ 'pcId' => 'profile_pc', 'guest' => true }, path: 'npc_workaround', method: 'POST', status: 422)].each do |not_a_done|
-      assert_includes rules(scan([admin_signin, not_a_done, sam], game: game)), 'harvest_unearned', not_a_done['body'].to_s
+      assert_includes rules(scan([admin_signin, handed, not_a_done, sam], game: game)), 'harvest_unearned', not_a_done['body'].to_s
     end
     # and the floor holds: the order proof alone is not enough
-    assert_includes rules(scan([admin_signin, borrow_done, sam], game: FakeGame.new)), 'harvest_unearned'
+    assert_includes rules(scan([admin_signin, handed, borrow_done, sam], game: FakeGame.new)), 'harvest_unearned'
   end
 
   # ---- relay admin (ruling B): R1-L1, R1-L4, R1-L5, R1-L14 ----
@@ -352,11 +361,21 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     s = account_only
     scenario_scanner = AccessLeakScanner.new(s)
     block = scenario_scanner.send(:crack_account_block, s['rooms']['finance']['npcs'].find { |n| n['id'] == 'jake' })
-    entry = { 'id' => 'other', 'kind' => 'hash', 'source' => 'registry', 'account' => block }
+    # R2-L6: the row must be a registry record of that account whose proof the game holds, in a 200 GET /keyring
+    s['credentials']['jake_other'] = { 'kind' => 'hash', 'account' => 'jake', 'label' => 'Other record', 'proof' => { 'held' => 'x' } }
+    entry = { 'id' => 'jake_other', 'kind' => 'hash', 'source' => 'registry', 'account' => block }
     shown = row({ 'rev' => 2, 'entries' => [entry] }, path: 'keyring')
-    assert_empty scan([shown, row({ 'x' => 'jbrooks Jake Brooks' }, path: 'room/finance')], scenario: s).select { |f| f.rule == 'account_only' }
+    later = row({ 'x' => 'jbrooks Jake Brooks' }, path: 'room/finance')
+    assert_empty scan([shown, later], scenario: s, game: FakeGame.new).select { |f| f.rule == 'account_only' }
     odd = row({ 'rev' => 2, 'entries' => [entry.merge('account' => block.merge('username' => 'zz'))] }, path: 'keyring')
-    assert_includes rules(scan([odd, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s)), 'account_only'
+    assert_includes rules(scan([odd, row({ 'x' => 'jbrooks' }, path: 'room/finance')], scenario: s, game: FakeGame.new)), 'account_only'
+    # no game, a proof the game does not hold, an id that is no registry record, or an answer that is not the keyring earn nothing
+    assert_includes rules(scan([shown, later], scenario: s)), 'account_only'
+    assert_includes rules(scan([shown, later], scenario: s, game: FakeGame.new(proof: false))), 'account_only'
+    unknown = row({ 'rev' => 2, 'entries' => [entry.merge('id' => 'other')] }, path: 'keyring')
+    assert_includes rules(scan([unknown, later], scenario: s, game: FakeGame.new)), 'account_only'
+    elsewhere = row({ 'rev' => 2, 'entries' => [entry] }, path: 'room/finance')
+    assert_includes rules(scan([elsewhere, later], scenario: s, game: FakeGame.new)), 'account_only'
   end
 
   test 'R1-L9: an account-only word that is an ordinary word or another account\'s is refused at construction' do
@@ -415,7 +434,7 @@ class AccessLeakScannerHarvestReviewTest < ActiveSupport::TestCase
     sam_read = profile_read('profile_pc', [SAM_ITEM])
     assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read], game: game))
     assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read], game: nil))
-    assert_empty scan([admin_signin, done, sam_read], game: game)
+    assert_empty scan([admin_signin, handed, done, sam_read], game: game)
     assert_equal [%w[profile_admin_read item:sam_note]], hits(scan([admin_signin, sam_read, done], game: game))
   end
 

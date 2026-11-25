@@ -5000,8 +5000,13 @@ class AccessLeakScanner
   #   assist_invite`, `relay: true`, `host`, never with `remote`, `footholdId`, `fromPcId` or `locked`.
   # Known limits, both failing closed (R1-L15): a keyring row of a harvested hash is flagged when its collect is in an earlier
   # capture file or when the collect answer's body was lost (as S7 does for a cracked entry): the finding is correct for the
-  # capture, do not look for a loosening. Two borrowers at one PC share the "done" proof of that PC (the answer names the PC, not
-  # the borrower); the game's `cachedAt` floor separates them only by end state.
+  # capture, do not look for a loosening. Two borrowers handed a run at one PC share the "done" proof of that PC (the answer names
+  # the PC, not the borrower; R2-L8 narrows it to the NPCs a POST /npc_frustration run handed a borrow there first); the game's
+  # `cachedAt` floor separates them only by end state. A relay administrator desktop is flagged when its relay sign-in, or the
+  # keyring answer that listed the invite, is in an earlier capture file (R2-L1); a CRED_COLLECT or USB_OVERRIDE row is flagged when
+  # its collect or plant is in an earlier capture file (R2-L2). R2-L7 not built: a list of cached accounts under another key (a hash
+  # of five of the six row keys) is not seen, because an honest sign-in answer of an NPC with a portrait and an avatar holds the
+  # same five (`login_session_answer`), and an exemption is not allowed.
   HARVEST_NEVER_KEYS = %w[cachedAccounts cachedAt harvestedAccounts accountKind localTo accountOnly].freeze
   HARVEST_ANSWER_KEYS = %w[success pcId harvested held keyringRev].freeze
   # The real server's keyring rev is six hex characters (`keyring_rev`); unit 23 found the rule asking for an integer.
@@ -5025,6 +5030,31 @@ class AccessLeakScanner
       @hv_hash_account[id.to_s] = entry['account']
       @hv_hash_ids << id.to_s if BreakEscape::CredentialModel.proof_kind(entry['proof']) == 'harvested'
     end
+    @hv_registry_account = {} # R2-L6: every registry record id => the npc id of its account
+    BreakEscape::CredentialModel.registry(@data).each do |id, entry|
+      @hv_registry_account[id.to_s] = BreakEscape::CredentialModel.account_npc(@data, entry['account'])&.dig('id') if entry.is_a?(Hash)
+    end
+    @hv_pair_strings = {}  # R2-L5: the pair string of every declared candidate => its owner
+    @hv_candidates.each do |npc, entries|
+      entries.each do |pc, _after|
+        pair = BreakEscape::CachedAccounts.pair(pc, npc)
+        @hv_pair_strings[pair] = "pair:#{pc}|#{npc}" if pair
+      end
+    end
+    @hv_hash_words = {}    # R2-L5: harvested hash record id => [whole-word pattern of the id, its authored label, its token or nil]
+    registry = BreakEscape::CredentialModel.registry(@data)
+    @hv_hash_ids.each do |id|
+      entry = registry[id] || registry[id.to_sym]
+      next unless entry.is_a?(Hash)
+
+      token = begin
+        npc = @priv_npcs[@hv_registry_account[id]]
+        @game.respond_to?(:crack_token) && npc ? @game.crack_token(id, entry, npc) : nil
+      rescue StandardError
+        nil
+      end
+      @hv_hash_words[id] = [Regexp.new("(?<![A-Za-z0-9_])#{Regexp.escape(id)}(?![A-Za-z0-9_])"), entry['label'].is_a?(String) ? entry['label'] : nil, token.is_a?(String) ? token : nil]
+    end
     @hv_account_only = {}  # account-only npc id => { name:, user: }
     @priv_npcs.each do |id, npc|
       next unless BreakEscape::AccessIdentities.account_only?(npc)
@@ -5043,16 +5073,32 @@ class AccessLeakScanner
   # username equal (any case) to another account's, or to a word of the answers the scanner already knows, is refused.
   HARVEST_ANSWER_WORDS = %w[admin user password credential claim technique registry capture cracked hash ready running local domain].freeze
 
+  # R2-L3: since JSON keys are read as strings of the answer, the refused list is built from what the scanner knows: every key
+  # it pins on an answer, a few ordinary words, and the scenario's own PC names and hosts, room names and log titles (whole, any case).
+  HARVEST_PLAIN_WORDS = %w[guest ok true false null storage hid device count profile error message reason status success session].freeze
+  HARVEST_SESSION_WORDS = %w[npcId username displayName via portrait kind label access relay host route remote locked].freeze
+
+  def harvest_refused_words
+    keys = HARVEST_ANSWER_KEYS + HARVEST_ROW_KEYS + RELAY_FORBIDDEN_KEYS + HARVEST_SESSION_WORDS + OPS_SESSION_KEYS + LOG_ANSWER_KEYS +
+           LOG_ROW_KEYS.flatten + CRACK_ROW_KEYS + CRACK_ACCOUNT_KEYS + CRACK_ENTRY_KEYS + CRACK_CREDENTIAL_KEYS + KEYRING_CAPTURE_KEYS
+    known = HARVEST_ANSWER_WORDS + HARVEST_PLAIN_WORDS + keys
+    names = @priv_pcs.values.flat_map { |pc| [pc['name'], pc['host']] }
+    names += @data['rooms'].is_a?(Hash) ? @data['rooms'].values.map { |room| room.is_a?(Hash) ? room['name'] : nil } : []
+    names += @data['logSources'].is_a?(Hash) ? @data['logSources'].values.map { |src| src.is_a?(Hash) ? src['title'] : nil } : []
+    (known + names).select { |w| w.is_a?(String) && !w.strip.empty? }.map { |w| w.strip.downcase }.to_set
+  end
+
   def check_account_only_words
+    refused = harvest_refused_words
     @hv_account_only.each do |id, words|
-      mine = [words[:name], words[:user]].compact.map(&:downcase)
+      mine = [words[:name], words[:user]].compact.map { |w| w.strip.downcase }
       others = @priv_npcs.reject { |other, _| other == id }.flat_map { |_, n| [n['displayName'], n.dig('creds', 'username'), n['id']] }
                          .select { |w| w.is_a?(String) }.map(&:downcase)
-      clash = mine.find { |w| HARVEST_ANSWER_WORDS.include?(w) || others.include?(w) }
+      clash = mine.find { |w| refused.include?(w) || others.include?(w) }
       next unless clash
 
-      raise ArgumentError, "account-only NPC #{id} has a display name or username that is also another account's or an answer word " \
-                           "(#{HARVEST_ANSWER_WORDS.include?(clash) ? 'answer word' : 'another account'}): the scan would flag honest answers; rename it"
+      raise ArgumentError, "account-only NPC #{id} has a display name or username that is also another account's or a word the answers carry " \
+                           "(#{refused.include?(clash) ? 'answer word, key, PC, room or log name' : 'another account'}: #{clash}): the scan would flag honest answers; rename it"
     end
   end
 
@@ -5067,6 +5113,8 @@ class AccessLeakScanner
     @hv_invite_listed = Set.new # R2-L1: registry ids of assist invites a 200 GET /keyring listed with the proof held (never taken back)
     @hv_body = nil
     @hv_borrow_seen = Set.new   # PC ids a 200 POST /npc_workaround borrow "done" answer named so far (R1-L7)
+    @hv_borrow_handed = Hash.new { |h, k| h[k] = Set.new } # R2-L8: PC id => NPC ids a 200 POST /npc_frustration run handed a borrow at that PC so far
+    @hv_borrow_done = Hash.new { |h, k| h[k] = Set.new }   # R2-L8: PC id => NPC ids handed a borrow there when a done answer named the PC
   end
 
   # A scan needs these readers on the game it was given: the borrow record, and the game's own admin-at-PC check.
@@ -5080,11 +5128,13 @@ class AccessLeakScanner
   end
 
   def scan_harvest(body, ctx, row, add)
+    note_borrow_handed(body, ctx, row)
     note_harvest_borrow(body, ctx, row)
     note_usb_plant(body, row)
     scan_harvest_keys(body, ctx, add)
     judge_harvest_answer(body, ctx, row, add) if ctx[:harvest]
-    note_harvest_keyring(body, add)
+    note_harvest_keyring(body, ctx, add)
+    scan_harvest_strings(body, add)
     note_harvest_login(body, ctx, row)
     scan_account_only(body, ctx, add) unless @hv_account_only.empty?
   end
@@ -5108,7 +5158,7 @@ class AccessLeakScanner
 
   def harvest_refusal_ok?(status, body)
     return false unless body.is_a?(Hash)
-    return body.keys == ['error'] && body['error'].is_a?(String) if status == 404
+    return body.keys == ['error'] && body['error'].is_a?(String) && body['error'].match?(/\AContainer not found: [^\n]{1,40}\z/) if status == 404 # R2-L4
 
     Array(HARVEST_REFUSALS[status]).include?(body)
   end
@@ -5215,10 +5265,24 @@ class AccessLeakScanner
     return unless body['pcId'].is_a?(String) && @priv_pcs.key?(body['pcId']) && [true, false].include?(body['guest']) && !body.key?('hasPostit')
 
     @hv_borrow_seen << body['pcId']
+    @hv_borrow_done[body['pcId']].merge(@hv_borrow_handed[body['pcId']])
+  end
+
+  # R2-L8: the answer that hands an NPC its run names the NPC and the PC (`answers[].npcId`, `run: { do: "borrow_session", pc }`).
+  # A done answer credits only the NPCs handed a borrow at its PC before it. Limit: two NPCs handed a borrow at one PC, one done answer.
+  def note_borrow_handed(body, ctx, row)
+    return unless ctx[:npc_frustration] && row['status'].is_a?(Integer) && row['status'] == 200 && body.is_a?(Hash) && body['answers'].is_a?(Array)
+
+    body['answers'].each do |answer|
+      run = answer.is_a?(Hash) ? answer['run'] : nil
+      next unless run.is_a?(Hash) && run['do'] == 'borrow_session' && answer['npcId'].is_a?(String) && run['pc'].is_a?(String) && @priv_pcs.key?(run['pc'])
+
+      @hv_borrow_handed[run['pc']] << answer['npcId']
+    end
   end
 
   def harvest_borrowed?(pc_id, npc_id)
-    return false unless @hv_borrow_seen.include?(pc_id)
+    return false unless @hv_borrow_seen.include?(pc_id) && @hv_borrow_done[pc_id].include?(npc_id)
     return false unless @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash)
 
     at = @game.player_state['cachedAt']
@@ -5228,7 +5292,27 @@ class AccessLeakScanner
 
   # A keyring hash row of a harvested record before a credited collect named it is a finding; one of an account-only account
   # earns that account's name and username (the registry row is judged by the older rules).
-  def note_harvest_keyring(body, add)
+  # R2-L5: a pair string of a declared candidate is never in an answer; the id, authored label or token of a harvested hash record is
+  # not either until a credited collect row has named it (the collect answer that serves the row is judged first, so it is clean).
+  def scan_harvest_strings(body, add)
+    return if @hv_pair_strings.empty? && @hv_hash_words.empty?
+
+    texts = []
+    each_string(body) { |str, path, _owner| texts << [str, path] }
+    walk_hashes(body, '$') { |hash, path| hash.each_key { |key| texts << [key.to_s, path] } }
+    texts.each do |str, path|
+      @hv_pair_strings.each { |pair, owner| add.call('harvest_key', owner, safe_path(path)) if str.include?(pair) }
+      @hv_hash_words.each do |id, (pattern, label, token)|
+        next if @hv_served_hashes.include?(id)
+
+        # two records of one password (the same shared administrator at two desks) have one token: once either is served it is known
+        token = nil if token && @hv_served_hashes.any? { |other| @hv_hash_words[other] && @hv_hash_words[other][2] == token }
+        add.call('harvest_hash', "credential:#{id}", safe_path(path)) if str.match?(pattern) || (label && str.strip == label) || (token && str.include?(token))
+      end
+    end
+  end
+
+  def note_harvest_keyring(body, ctx, add)
     entries = keyring_entries_in(body)
     return if entries.nil?
 
@@ -5240,11 +5324,13 @@ class AccessLeakScanner
         add.call('harvest_hash', "credential:#{id}", "$.entries[#{i}]")
         next
       end
-      account = @hv_hash_account.key?(id) ? @hv_hash_account[id] : harvest_row_account(entry)
-      if @hv_account_only.key?(account)
-        @hv_name_earned << account
-        @hv_user_earned << account
-      end
+      # R2-L6: a row earns an account-only account's words only as a 200 GET /keyring row of a registry record the game holds
+      # the proof of, whose account is that account (an unheld or unknown record is reported by the older rules and earns nothing)
+      account = @hv_registry_account[id]
+      next unless ctx[:crack_keyring] && @hv_account_only.key?(account) && credential_proof_held_ids&.include?(id) && harvest_row_account(entry) == account
+
+      @hv_name_earned << account
+      @hv_user_earned << account
     end
   end
 

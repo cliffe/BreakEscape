@@ -100,7 +100,8 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
   end
 
   test 'a collect row with no admin session earned is flagged, and so is one after the session ended' do
-    assert_equal [%w[harvest_unearned account:jake]], hits(scan([collect([collect_row('jake', 'hot_jake')])]))
+    # R2-L5: the unserved record's id in the uncredited row is a leak of its own
+    assert_equal [%w[harvest_unearned account:jake]], hits(scan([collect([collect_row('jake', 'hot_jake')])])).select { |rule, _| rule == 'harvest_unearned' }
     ended = row({ 'success' => true, 'locked' => true, 'pcId' => 'profile_pc' }, path: 'lock_session', method: 'POST')
     assert_includes rules(scan([admin_signin, ended, collect([collect_row('jake', 'hot_jake')])])), 'harvest_unearned'
   end
@@ -120,7 +121,8 @@ class AccessLeakScannerHarvestTest < ActiveSupport::TestCase
     # R1-L7: the game's record is a floor; the capture must also hold the accepted borrow "done" answer for that PC first
     assert_includes rules(scan(rows, game: FakeGame.new(cached_at: ['profile_pc|sam']))), 'harvest_unearned'
     done = row({ 'pcId' => 'profile_pc', 'guest' => true }, path: 'npc_workaround', method: 'POST')
-    rows = [admin_signin, done, collect([collect_row('sam', 'hot_sam')])]
+    handed = row({ 'answers' => [{ 'npcId' => 'sam', 'run' => { 'do' => 'borrow_session', 'pc' => 'profile_pc' } }] }, path: 'npc_frustration', method: 'POST')
+    rows = [admin_signin, handed, done, collect([collect_row('sam', 'hot_sam')])]
     assert_empty scan(rows, game: FakeGame.new(cached_at: ['profile_pc|sam']))
     assert_includes rules(scan(rows, game: FakeGame.new(cached_at: ['it_pc|sam']))), 'harvest_unearned'
   end
