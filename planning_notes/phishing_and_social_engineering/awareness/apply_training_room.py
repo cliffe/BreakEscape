@@ -395,7 +395,7 @@ def _splice_object(text, start, drop, add, after=None, in_place=False):
     return _rebuild(text, start, pieces, pad, close_pad)
 
 
-def _splice_array(text, start, drop, add, ident=None, label='list', strict=False, unique=False):
+def _splice_array(text, start, drop, add, ident=None, label='list', strict=False, unique=False, plan=None):
     """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`. With `ident`,
     the merge is office_kit.merge_plan itself (the same routine office_kit.merge_list runs): a dropped
     element the kit's `add` also holds stays where it is, its text replaced only when the value differs,
@@ -407,7 +407,9 @@ def _splice_array(text, start, drop, add, ident=None, label='list', strict=False
     ind0 = ind0[:len(ind0) - len(ind0.lstrip())]
     pad0 = _line_indent(text, elems[0][0]) if elems else ind0 + '  '
     pad0 = pad0[:len(pad0) - len(pad0.lstrip())] if elems and pad0.strip() else pad0
-    if ident:
+    if plan is not None:      # a plan decided elsewhere (eventMappings: merged by key, see office_kit.prepare)
+        pass
+    elif ident:
         plan = office_kit.merge_plan(parsed, add, drop, ident, label, strict, unique)
     else:       # no identity: every dropped element goes and every value is appended
         plan = [('keep', i, None) for i, p in enumerate(parsed) if not drop(p)] + [('add', None, v) for v in add]
@@ -454,9 +456,12 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     host_id = office_kit._find_host(old)['id']
     expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
     prefix, state_global = office_kit.shell_ids(old, row)
-    b = office_kit.build(kit, row, prefix, state_global)
+    # eventMappings (host and each kit NPC's own) are merged by key, with the position guard, once, in prepare:
+    # the same call apply_kit makes. b is the plain build with the kit NPCs' mappings already merged.
+    prep = office_kit.prepare(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id)
+    b = prep.b
     mine = office_kit.kit_owned(old, host_id)
-    lost = office_kit.hand_written(mine, b)
+    lost = office_kit.hand_written(mine, b, maps_lost=prep.lost)
     if lost and not allow_drop:
         raise WouldDropHandWrittenContent(
             f"{shell}: --kit would drop hand-written kit content it cannot regenerate: " + '; '.join(lost)
@@ -483,8 +488,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     cur = json.loads(text[em[0]:em[1]]) if em else []
     merged = office_kit._find_host(expect, host_id).get('eventMappings')    # apply_kit's list: one merge, one order
     if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
-        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], office_kit.map_ident,
-                             f'{shell} host eventMappings', strict=True)
+        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], plan=prep.host_plan)
     elif merged is None and not em:
         pass     # the convention form (ca00) has no kit host mappings: add no empty list
     else:
@@ -537,7 +541,7 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     adds = []
     for k, v in b['scenario'].items():
         if k != 'npcThoughts' and not (k == 'chatter' and ch_own):
-            adds.append((k, v))
+            adds.append((k, expect['chatter'] if k == 'chatter' and 'chatter' in expect else v))   # apply_kit's order
     flags = office_kit.shell_flags(row)
     text = _splice_object(text, _root(text), lambda k: k == office_kit.TTS_FLAG, [])   # re-added with adds, so a rerun is stable
     adds.extend(flags.items())
@@ -559,6 +563,14 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS or (k == 'chatter' and not ch_own),
                           [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts'], after='disableAttacks')
     text = _splice_object(text, _root(text), lambda k: False, adds, after='globalVariables')
+    # The position guard again, on the text that was actually produced (not on the plan that made it): every
+    # index of the old host and kit-NPC eventMappings lists must hold the same record afterwards.
+    new_sc = json.loads(text)
+    office_kit.check_positions(f'{shell} host eventMappings', prep.host_old, prep.host_keys,
+                               office_kit._find_host(new_sc, host_id).get('eventMappings', []), prep.host_new)
+    new_npcs = {n['id']: n for n in new_sc['rooms']['training_room']['npcs']}
+    for nid, (label, ol, nkeys, ml) in prep.npc_lists.items():
+        office_kit.check_positions(label, ol, nkeys, new_npcs[nid].get('eventMappings', []), ml)
     # compared as text, not dict equality, so key order must agree too (a later --kit run changes nothing)
     assert json.dumps(json.loads(text)) == json.dumps(expect), f'{shell}: kit splice differs from office_kit.apply_kit'
     return text

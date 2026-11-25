@@ -35,6 +35,7 @@
         "yusuf_demir": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca11_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -94,12 +95,14 @@
         "yusuf_demir": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca11_out",
               "eventPattern": "global_variable_changed:kit_ca11_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca11_out_2",
               "eventPattern": "global_variable_changed:kit_ca11_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -113,6 +116,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_yusuf_demir_sets_ca11_at_tray",
               "eventPattern": "npc_arrived:kit_yusuf_demir",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -122,6 +126,7 @@
               "bark": "This printout isn't ours. It's a care home's resident list, with health notes on it. Someone sent it here by mistake."
             },
             {
+              "_kitKey": "chg_ca11_at_tray",
               "eventPattern": "global_variable_changed:kit_ca11_at_tray",
               "condition": "value === true && globalVars.kit_ca11_out === true",
               "onceOnly": true,
@@ -135,6 +140,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca11_at_tray_sets_ca11_done",
               "eventPattern": "global_variable_changed:kit_ca11_at_tray",
               "condition": "value === true && globalVars.kit_ca11_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -145,6 +151,7 @@
               "bark": "You'll want this today. In the wrong hands it's a shortlist of vulnerable people, with their addresses, handed over for free."
             },
             {
+              "_kitKey": "chg_ca11_done",
               "eventPattern": "global_variable_changed:kit_ca11_done",
               "condition": "value === true",
               "onceOnly": true,
