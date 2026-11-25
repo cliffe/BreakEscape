@@ -864,7 +864,7 @@ A device the owner still holds does nothing until the player takes it, because t
 **Validator.** `scripts/validate_log_rows.rb` (called from `validate_scenario.rb`): events must be registered, a source needs a `gameClock`, and the secret and caps checks; the schema block is `logSources` in `scripts/scenario-schema.json`.
 **Check from the server.** `bin/rails runner tools/playtest/verify-run.rb <game_id> --ops-log` prints each source's rows and exits 1 if one holds a registered secret or breaks a cap.
 **Shown in.** `test_ops_logs` (doors, sign-in PC, clock, two sources, and from L2a a security room with a reader each). Its `PLAYTEST.md` is the scripted run.
-**Known limits.** The reader is A24 (read side). Only `scenarios/test_ops_*` may declare `logSources` for now.
+**Known limits.** The reader is A24 (read side). Only `scenarios/test_ops_*` and `scenarios/demo_ops_*` may declare `logSources` for now.
 **Plan vs code.** `docs/achitechture/OPS_LOG_ROWS_PLAN.md` sections 4.1 and 13.8.
 
 ### A24 Ops log: read side
@@ -889,7 +889,7 @@ A device the owner still holds does nothing until the player takes it, because t
 **Validator.** `scripts/validate_log_rows.rb`: a seed row needs a unique `^s[0-9]{1,3}$` id, an `at` in the clock's form, a registered event, a result and detail the event allows, an `as` that is an NPC id (or a plain username on a `signin_*` row), a `where` that exists, and its text may not equal a declared password or credential value; rows must ascend and end at or before the start time; at most 100 per source; the schema block is `seedRows` in `scripts/scenario-schema.json`. A reader's `anomaly.rowId` must be one of its source's seed rows (error), and a source with a single seed row warns (the flag has one candidate); an anomaly whose actions set no global to true, or that has no actions, also warns. Warning for a seed row of an event the source does not record.
 **Graph.** `scripts/generate_dungeon_graph.rb` draws each log source as a note node (its title and events), joined by a dashed undirected edge to each reader that shows it; it gates nothing, and the anomaly adds no edge of its own.
 **Shown in.** `test_ops_logs`: `night_log_pc` in the finance office reads the `night_log` source (four seed rows, the `Mon 23:58` swipe is the anomaly). `PLAYTEST.md` beats 14 to 19.
-**Known limits.** The flag can be cheated from the browser (a player who reads the scenario object knows the row), as the log filter's can; no attempt cap. A play row can never be an anomaly. Only `scenarios/test_ops_*` may declare `logSources` for now.
+**Known limits.** The flag can be cheated from the browser (a player who reads the scenario object knows the row), as the log filter's can; no attempt cap. A play row can never be an anomaly. Only `scenarios/test_ops_*` and `scenarios/demo_ops_*` may declare `logSources` for now.
 **Plan vs code.** `docs/achitechture/OPS_LOG_ROWS_PLAN.md` sections 4.2, 5.2 and 7; the build follows the plan with one reading: the plan's "no row is ever tinted" is about telling rows apart before the player acts, and a row the player has rightly flagged is marked (and stays marked after a reload).
 
 ### A24 Ops log: network and share rows
