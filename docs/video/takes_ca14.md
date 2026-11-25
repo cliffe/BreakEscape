@@ -67,3 +67,15 @@ Recorded on display 147 and a keyless server on :3456 (worktree b-ca-trailers-ne
 | t10b_dm_inbox_narrow | 19.80 | 0.46 | kiosk-open 2.97, launch-panel 3.04, phone-open 4.18, start 5.26, list-up 5.38, tabs 5.66, hover-row:1 9.63, :2 10.68, :3 11.75, :4 12.84, :5 13.92, :6 15.05, rows_hover_end 15.70, safe-card-open 17.15, safe-card-end 19.35, end 19.35 | Narrow (560 px, verdict buttons stacked). Same in-point flag (first usable 5.38). Frame at 18.5 s: list, Thandiwe Moyo message and stacked Trust / Report / Delete whole; sender names truncate with an ellipsis; no verdict |
 
 Cross-take notes: the kiosk takes (t03 to t11) begin with 0.5 to 2 s of the training room map and a 1 to 4 s launch panel; always cut in at the first usable frames given above. No take has a second NPC bubble opening before the first speaker's sentence ends. No "!" ask cue appeared in any take. The only verdict-style panel is t03/t03b's "It landed. They acted on it." (the lands shot, as planned).
+
+
+## Re-capture 24 Nov (visemes / Lorna facing)
+
+Lorna's portrait sheets were mirrored (commit 0f9fb5843), so t07_lorna_photo and t11_lorna_end were re-recorded 24 Nov on display :147, keyless :3456, `female_office_worker_v2` (`player-sprite` mark 0.43 and 0.42 s), with the step-away flags above. Old files are in `~/video-takes-local/ca14/takes/pre_visemes_2411/`. t07 shows Lorna only as room barks (bubbles), so the facing change shows in t11's chat portrait: **Lorna faces LEFT** (portrait on the right of the frame, turned towards the caption and the player side), checked at 14.5 s. Delta = new minus old (duplicate bark labels compared in order).
+
+| take | file | length | check | dropped % | A/V offset (ms) | marks (new, old, delta) |
+|---|---|---|---|---|---|---|
+| t07_lorna_photo | `t07_lorna_photo.trimmed.mkv` | 16.10 s (old 16.84) | pass, fullFrame | 0.18 | -43 / -50 | kiosk-open 2.72 (3.00); look_up 3.92 (4.22); l1_start 5.54 (6.08, -0.55); audio-start L1 5.50, audio-end 8.89 (9.68); L2 bubble/l2_start 11.05 (11.67, -0.62); L2 audio-start 10.99, audio-end 14.23 (15.12, -0.89); end 15.64 (16.41). silencedetect speech: L1 5.82 to 8.55 (old 6.51 to 9.24, -0.69), L2 11.19 to 14.05 (old 12.01 to 14.87, -0.82); pause inside L2 12.86 to 13.25 |
+| t11_lorna_end | `t11_lorna_end.trimmed.mkv` | 17.64 s (old 18.60) | pass, fullFrame | 0.17 | -38 / -42 | kiosk-open 2.85 (3.06); look_up 3.86 (4.12); L1 bubble 5.46 (5.84), l1_start 5.56 (5.95); L2 bubble 11.04 (11.37); bark audio 11.17 to 12.17 (cut; old 11.77 to 12.59); frame:npc-portrait-up 12.31 (12.83, -0.52); **l2_start / line-start 12.32 (13.32, -1.00)**; l2_end 15.59 (16.57, -0.98); frame:portrait-held 15.68 (16.60); chat-closed 16.14 (17.13, -0.99); end 17.18 (18.17). Speech: L1 6.05 to 8.79, bark 11.34 to 12.13, chat L2 12.52 to 15.37. The chat opens 0.6 s sooner after the bark than before, so lorna_end's in point (at or after the bark's audio-end 12.17) moves about -1.0 s |
+
+In-game proof for Lorna was read on ca12 t13 (see takes_ca12.md): `visemeSheet.image` is `lorna_easton_visemes.png`, 896x128, timeline set, `flipped` true.

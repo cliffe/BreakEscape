@@ -91,6 +91,8 @@ From seating (systems/seating.js, 2026-11-05):
 
 ## Story and missions
 
+- **ca12: Camila pops into view beside the reception door** (CA pilot trailers, owner via AC0, 2026-11-24; S–M). `kit_camila_ospina` in `scenarios/ca12_visitor_tailgater` is `initiallyHidden` at tile (8.5, 2.5), is shown by `setVisible` on `kit_ca12_visitor_go`, then stands still for 2 s (`delayMs: 2000`) before her `patrolOverride` walk. A player watching the room sees her appear from nowhere next to the door (trailer take t09_step_away, 44.15 s; the ca12 r4 edit now cuts before it). Fix: place her outside the room or on the door tile and start the walk at once (delay 0), so she visibly walks in through the door. Check the defend twin and `_office_kit` for the same pattern.
+
 - **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. **Partly done 2026-10-17:** m04 now names both fates through carry-over (HaX on Sterling in the briefing, on Danny at Task Force Null in the debrief). Still open: Sterling as a later asset or liability, and the "It should be you" payoff.
 - **m08 pays off the Architect's teacher line** (m07 fixer; S). Nightshade or HaX quotes "Let it hurt afterwards, not during."
 
