@@ -190,3 +190,24 @@ bin/test-js test/js/npc-walk-*.test.mjs: 6 of 6 files pass (recovery now 19 test
 
 ### Live setup left behind
 Keyless server on :3026 from this worktree (stop: tools/playtest/stop-keyless-server.sh 3026). Driver and analyser: scratchpad walkproof4/ (VH env var sets viewport height, default 420; `node drive.mjs c1|m09|m09t|m10a|m10b <gameId>`; `python3 analyse.py <folder>`). Games 13523-13530 plus later ones are mine; the port in drive.mjs is 3026.
+
+## Live-failure pass 3 (branch fix/npc-walk-live, 3ba8a5f56)
+
+### Root causes
+- m10 stall and 20 s timeout: the player stands just inside the gallery (feet x 660, door x 624, door gap 24 px). Walk moves (owner 'walk') could not squeeze past the player: `_mayPassPlayer` (npc-behavior.js, about line 1929) allowed only owner 'needs'. The routed guard kept its line and the collider pushed the player back through the door at about 4 px/s (walkproof4 probe: player x 664 to 574 with the driver idle). The guards reached server_hall only once the camera had followed the shoved player in, so they timed out and faded in view. Fix: owner 'walk' may pass too (same 2.5 s wait as needs walks; hostile, KO'd and squeezePastPlayer:false still never pass).
+- Case e (4 re-plans): exit cells were the nearest out-of-view cell, on the view edge. The leg stops up to WALK_ARRIVE_PX short and a few px of camera drift brings it back inside the margin, so each re-plan repeated it. Fix: walk-out exits prefer a cell WALK_PICK_DEPTH_PX (64) clear of the view edge, best effort (else the deepest out-of-view cell, never none): `bfsOutOfView` depthOf/preferDepth, `viewGap`.
+- An unseen hide after re-plans ran out or a timeout reported 'faded'. fadeOutAndEnd now reports 'walked' when the walker is out of view and through its door (the tick's early-end rule); in view it still fades and reports 'faded'.
+- Not a cause: m10 geometry. server_hall is x 0-640, zoom 1, view 800 wide; with the player at the gallery door the view starts at x 260, so server_hall x < 212 is out of view (engine margin). Exit cells [100,124] and [116,124]. No scenario change needed. Caveat: a wider window or a player who steps back into server_hall leaves no out-of-view cell; the fade fallback then applies.
+
+### Design
+Kept the plan-time pick with the tick's early end (hide the first moment the walker is through the door and out of view); the exit cell is only a cap. Deep picks apply to walk-out exits and re-plans only: deep walk-in spawns landed against the far wall and stuck (cases a and f, game 13562), so spawns keep the nearest cell plus recheckSpawn. API, how values and event payloads unchanged.
+
+### Commits
+b98f3ba76 (pass the player, deep exit picks, unseen end reports walked, tests), 6a665d1e3 (tests), 3ba8a5f56 (spawns back to nearest cell).
+
+### Proof
+Scratchpad walkproof5/RESULTS.md. m10 A and B pass; c1 a-e pass; f fails (below).
+
+### Open
+- Case f: walk_inspector spawned at (116,260) in walk_lobby, its body ended at (146,326) and never moved (stall x2, timeout, faded in at the target). Spawn code equals f72d751b2 (f passed there from (116,164)); the cell differed because the player stood elsewhere (x 334, y -67: the driver's moveTo before f may not have finished). Likely a BFS cell that is grid-walkable but whose body overlaps a wall or prop collider near the lobby's south wall, so physics ejects it out of the grid. Next step: log the spawn cell, the lobby bounds and walls; consider snapping spawns with findNearestWalkableWorldCell and a body-clearance check.
+- Mapping drift check not run (scenario not changed).
