@@ -1,0 +1,15 @@
+{
+ "scenario": "ca10_downloads_and_fake_checks_defend",
+ "lists": {
+  "host": [
+   null,
+   "quiet_on",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ],
+  "npc:kit_darren_price": [
+   "chg_defend_done_knot_ca10_react"
+  ]
+ }
+}

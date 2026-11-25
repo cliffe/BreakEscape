@@ -1,0 +1,36 @@
+{
+ "scenario": "ca10_downloads_and_fake_checks",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_anjali_rao": [
+   "chg_out",
+   "chg_out_2",
+   "chg_ca10_check_choice",
+   "chg_ca10_done"
+  ],
+  "npc:kit_darren_price": [
+   "chg_out_sets_ca10_there",
+   "chg_out",
+   "chg_ca10_there_knot_ca10_check",
+   "chg_ca10_there_sets_ca10_asked",
+   "conversation_closed_darren_price_sets_ca10_check_choice",
+   "chg_ca10_check_choice_sets_ca10_moved",
+   "chg_ca10_check_choice_sets_ca10_done",
+   "chg_ca10_moved_sets_ca10_done",
+   "chg_ca10_done_sets_ca10_check_choice",
+   "chg_ca10_there_knot_ca10_check~rearm",
+   "chg_ca10_there_sets_ca10_asked~rearm",
+   "chg_ca10_there_sets_ca10_asked~rearm_cue"
+  ]
+ }
+}

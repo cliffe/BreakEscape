@@ -1,0 +1,36 @@
+{
+ "scenario": "ca05_signin_pages",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_anjali_rao": [
+   "chg_out",
+   "chg_out_2",
+   "chg_ca05_prompt_choice",
+   "chg_ca05_done"
+  ],
+  "npc:kit_darren_price": [
+   "chg_out_sets_ca05_there",
+   "chg_out",
+   "chg_ca05_there_knot_ca05_prompt",
+   "chg_ca05_there_sets_ca05_asked",
+   "conversation_closed_darren_price_sets_ca05_prompt_choice",
+   "chg_ca05_prompt_choice_sets_ca05_moved",
+   "chg_ca05_prompt_choice_sets_ca05_done",
+   "chg_ca05_moved_sets_ca05_done",
+   "chg_ca05_done_sets_ca05_prompt_choice",
+   "chg_ca05_there_knot_ca05_prompt~rearm",
+   "chg_ca05_there_sets_ca05_asked~rearm",
+   "chg_ca05_there_sets_ca05_asked~rearm_cue"
+  ]
+ }
+}

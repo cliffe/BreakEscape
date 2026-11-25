@@ -1,0 +1,16 @@
+{
+ "scenario": "ca13_ai_assistant_defend",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ],
+  "npc:kit_graham_whitfield": [
+   "chg_defend_done_knot_ca13_react"
+  ]
+ }
+}

@@ -37,6 +37,14 @@ whose episodes.json row has a tier (a hand-authored shell, or a generated one yo
 
        python3 apply_training_room.py [--repo <checkout>] --kit <outdir> [--allow-drop]   # patched copies to <outdir>
 
+Key ledger: office_kits/ledger/<shell>.json stores the `_kitKey` of every record of the host's and each kit
+NPC's eventMappings (null for a hand record), because the server keys those lists by index and a record's
+identity must not be guessed from content on each run. With a ledger the record at index i has its key; a key
+the kit no longer has is a drop (tail only), a new key is added last. No ledger: the keys are inferred once and
+stored. After a hand edit of a shell's mapping list (ledger out of step) run
+       python3 apply_training_room.py [--repo <checkout>] --rebuild-ledger [shell ...]
+A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
+
 The outdir is required: the tool never writes into scenarios/ (generate into scratch, diff, copy back what
 you mean to change). A shell holding hand-written kit content that the kit data would not write back is
 refused with the names of what would go; move it into the kit data (a set piece's staff patches, mappings,
@@ -320,6 +328,9 @@ def refresh(outdir):
         with open(dest, 'w') as f:
             f.write(new)
         print('wrote', dest, '' if new != text else '(unchanged)')
+        if new_ledger != ledger:    # copy it next to the shell when the shell is copied back
+            print('wrote', office_kit.save_ledger(name, new_ledger, path=os.path.join(d, 'kit_ledger.json')),
+                  f'(copy to office_kits/ledger/{name}.json with the shell)')
 
 
 # ---- kit mode ------------------------------------------------------------------
@@ -449,16 +460,22 @@ class WouldDropHandWrittenContent(Exception):
     """Regenerating would erase kit-owned content the kit data does not produce."""
 
 
-def kit_text(text, kit, row, shell, allow_drop=False):
+def kit_text(text, kit, row, shell, allow_drop=False, ledger=None):
     """Splice the kit into one shell's text. Returns the new text. Refuses (WouldDropHandWrittenContent)
-    when the shell holds kit-owned content that the kit data would not write back, unless allow_drop."""
+    when the shell holds kit-owned content that the kit data would not write back, unless allow_drop.
+    `ledger` is the shell's stored key ledger (None: keys inferred from content)."""
+    return kit_text_ledger(text, kit, row, shell, allow_drop, ledger)[0]
+
+
+def kit_text_ledger(text, kit, row, shell, allow_drop=False, ledger=None):
+    """kit_text, returning (new text, the ledger of the new text)."""
     old = json.loads(text)
     host_id = office_kit._find_host(old)['id']
-    expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
+    expect = office_kit.apply_kit(old, kit, row, host_id=host_id, ledger=ledger)
     prefix, state_global = office_kit.shell_ids(old, row)
     # eventMappings (host and each kit NPC's own) are merged by key, with the position guard, once, in prepare:
     # the same call apply_kit makes. b is the plain build with the kit NPCs' mappings already merged.
-    prep = office_kit.prepare(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id)
+    prep = office_kit.prepare(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id, ledger)
     b = prep.b
     mine = office_kit.kit_owned(old, host_id)
     lost = office_kit.hand_written(mine, b, maps_lost=prep.lost)
@@ -573,7 +590,45 @@ def kit_text(text, kit, row, shell, allow_drop=False):
         office_kit.check_positions(label, ol, nkeys, new_npcs[nid].get('eventMappings', []), ml)
     # compared as text, not dict equality, so key order must agree too (a later --kit run changes nothing)
     assert json.dumps(json.loads(text)) == json.dumps(expect), f'{shell}: kit splice differs from office_kit.apply_kit'
-    return text
+    return text, prep.ledger
+
+
+def infer_shell_ledger(text, kit, row):
+    """The key ledger of a shell's text, inferred from content (the one place that still matches by content,
+    with office_kit.match_mappings)."""
+    old = json.loads(text)
+    host_id = office_kit._find_host(old)['id']
+    prefix, state_global = office_kit.shell_ids(old, row)
+    return office_kit.infer_ledger(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id)
+
+
+def rebuild_ledgers(names=()):
+    """--rebuild-ledger [shell ...]: run the content inference once on each tiered shell as it is on disk
+    and (over)write its ledger. Use it to resync after a hand edit of a shell's eventMappings. A shell the
+    inference cannot read is reported and skipped."""
+    rows = [r for r in office_kit.load_rows() if office_kit.tier_of(r) != 'none' and not r.get('fixture')]
+    unknown = set(names) - {r['id'] for r in rows}
+    if unknown:
+        sys.exit('--rebuild-ledger names no kit shell: ' + ', '.join(sorted(unknown)))
+    bad = 0
+    for row in rows:
+        name = row['id']
+        if names and name not in names:
+            continue
+        path = os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')
+        if not os.path.exists(path):
+            print(f'{name}: no shell at {path}', file=sys.stderr)
+            bad += 1
+            continue
+        try:
+            ledger = infer_shell_ledger(open(path).read(), office_kit.load_kit(row['company']), row)
+        except office_kit.KitMergeError as e:
+            print(f'{name}: SKIPPED, {e}', file=sys.stderr)
+            bad += 1
+            continue
+        print('wrote', office_kit.save_ledger(name, ledger))
+    if bad:
+        sys.exit(f'{bad} shell(s) without a ledger')
 
 
 def kit(outdir, allow_drop=()):
@@ -608,21 +663,33 @@ def kit(outdir, allow_drop=()):
         if not os.path.exists(path):
             sys.exit(f'episodes.json row {name} has no shell at {path}')
         text = open(path).read()
+        ledger = office_kit.load_ledger(name)
+        if ledger is None:      # bootstrap: infer the keys from the shell as it is, once, and store them
+            ledger = infer_shell_ledger(text, office_kit.load_kit(row['company']), row)
+            print(f'{name}: no key ledger; inferred one from the shell and wrote',
+                  office_kit.save_ledger(name, ledger), file=sys.stderr)
         try:
-            new = kit_text(text, office_kit.load_kit(row['company']), row, name, allow_drop=name in allow_drop)
+            new, new_ledger = kit_text_ledger(text, office_kit.load_kit(row['company']), row, name,
+                                              allow_drop=name in allow_drop, ledger=ledger)
         except WouldDropHandWrittenContent as e:
             sys.exit(str(e))
-        plan.append((name, path, text, new))
-    for name, path, text, new in plan:
+        plan.append((name, path, text, new, ledger, new_ledger))
+    for name, path, text, new, ledger, new_ledger in plan:
         d = os.path.join(outdir, name)
         os.makedirs(d, exist_ok=True)
         dest = os.path.join(d, 'scenario.json.erb')
         with open(dest, 'w') as f:
             f.write(new)
         print('wrote', dest, '' if new != text else '(unchanged)')
+        if new_ledger != ledger:    # copy it next to the shell when the shell is copied back
+            print('wrote', office_kit.save_ledger(name, new_ledger, path=os.path.join(d, 'kit_ledger.json')),
+                  f'(copy to office_kits/ledger/{name}.json with the shell)')
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--rebuild-ledger':
+        rebuild_ledgers(sys.argv[2:])
+        return
     if len(sys.argv) > 1 and sys.argv[1] == '--kit':
         rest, allow = [], []
         args = iter(sys.argv[2:])

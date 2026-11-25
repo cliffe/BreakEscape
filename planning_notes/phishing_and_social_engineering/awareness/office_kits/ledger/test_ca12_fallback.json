@@ -1,0 +1,17 @@
+{
+ "scenario": "test_ca12_fallback",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ],
+  "npc:kit_camila_ospina": [
+   "chg_defend_done"
+  ]
+ }
+}

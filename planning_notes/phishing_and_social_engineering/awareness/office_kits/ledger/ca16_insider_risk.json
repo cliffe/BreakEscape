@@ -1,0 +1,38 @@
+{
+ "scenario": "ca16_insider_risk",
+ "lists": {
+  "host": [
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_darren_price": [
+   "chg_ca16_out",
+   "chg_ca16_done"
+  ],
+  "npc:kit_niamh_doherty": [
+   "chg_ca16_out",
+   "chg_ca16_out_2",
+   "npc_use_failed_niamh_doherty_sets_ca16_signin_failed",
+   "chg_ca16_signin_failed",
+   "chg_ca16_signin_failed_2",
+   "npc_arrived_niamh_doherty_sets_ca16_there",
+   "chg_ca16_there_knot_ca16_signin",
+   "chg_ca16_there_sets_ca16_asked",
+   "conversation_closed_niamh_doherty_sets_ca16_signin_choice",
+   "chg_ca16_signin_choice",
+   "chg_ca16_signin_choice_sets_ca16_done",
+   "chg_ca16_done_sets_ca16_signin_choice",
+   "chg_ca16_done",
+   "chg_ca16_done_2",
+   "chg_ca16_there_knot_ca16_signin~rearm",
+   "chg_ca16_there_sets_ca16_asked~rearm",
+   "chg_ca16_there_sets_ca16_asked~rearm_cue"
+  ]
+ }
+}

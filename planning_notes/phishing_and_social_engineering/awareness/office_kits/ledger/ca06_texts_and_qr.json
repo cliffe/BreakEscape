@@ -1,0 +1,36 @@
+{
+ "scenario": "ca06_texts_and_qr",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_fatima_begum": [
+   "chg_ca06_out",
+   "chg_ca06_done"
+  ],
+  "npc:kit_zainab_hussain": [
+   "chg_ca06_out",
+   "chg_ca06_out_2",
+   "chg_ca06_out_3",
+   "npc_arrived_zainab_hussain_sets_ca06_there",
+   "chg_ca06_there_knot_ca06_notice",
+   "chg_ca06_there_sets_ca06_asked",
+   "conversation_closed_zainab_hussain_sets_ca06_notice_choice",
+   "chg_ca06_notice_choice_sets_ca06_done",
+   "chg_ca06_notice_choice_sets_ca06_done_2",
+   "chg_ca06_done_sets_ca06_notice_choice",
+   "chg_ca06_done",
+   "chg_ca06_there_knot_ca06_notice~rearm",
+   "chg_ca06_there_sets_ca06_asked~rearm",
+   "chg_ca06_there_sets_ca06_asked~rearm_cue"
+  ]
+ }
+}

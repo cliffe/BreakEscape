@@ -1,0 +1,38 @@
+{
+ "scenario": "ca13_ai_assistant",
+ "lists": {
+  "host": [
+   null,
+   null,
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_agnieszka_duda": [
+   "chg_out",
+   "chg_out_2",
+   "chg_ca13_send_choice",
+   "chg_ca13_done"
+  ],
+  "npc:kit_graham_whitfield": [
+   "chg_out_sets_ca13_there",
+   "chg_out",
+   "chg_ca13_there_knot_ca13_send",
+   "chg_ca13_there_sets_ca13_asked",
+   "conversation_closed_graham_whitfield_sets_ca13_send_choice",
+   "chg_ca13_send_choice_sets_ca13_moved",
+   "chg_ca13_send_choice_sets_ca13_done",
+   "chg_ca13_moved_sets_ca13_done",
+   "chg_ca13_done_sets_ca13_send_choice",
+   "chg_ca13_there_knot_ca13_send~rearm",
+   "chg_ca13_there_sets_ca13_asked~rearm",
+   "chg_ca13_there_sets_ca13_asked~rearm_cue"
+  ]
+ }
+}

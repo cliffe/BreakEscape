@@ -1,0 +1,28 @@
+{
+ "scenario": "ca08_after_the_click",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away",
+   "chg_ca08_there_sets_ca08_done"
+  ],
+  "npc:kit_darren_price": [
+   "chg_ca08_out",
+   "chg_ca08_out_2",
+   "npc_arrived_darren_price_sets_ca08_there",
+   "chg_ca08_there",
+   "chg_ca08_done"
+  ],
+  "npc:kit_niamh_doherty": [
+   "chg_ca08_out",
+   "chg_ca08_done"
+  ]
+ }
+}

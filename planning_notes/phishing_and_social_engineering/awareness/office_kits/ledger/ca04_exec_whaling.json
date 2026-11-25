@@ -1,0 +1,14 @@
+{
+ "scenario": "ca04_exec_whaling",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ]
+ }
+}

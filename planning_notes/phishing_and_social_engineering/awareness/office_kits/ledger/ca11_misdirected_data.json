@@ -1,0 +1,23 @@
+{
+ "scenario": "ca11_misdirected_data",
+ "lists": {
+  "host": [
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away"
+  ],
+  "npc:kit_yusuf_demir": [
+   "chg_ca11_out",
+   "chg_ca11_out_2",
+   "npc_arrived_yusuf_demir_sets_ca11_at_tray",
+   "chg_ca11_at_tray",
+   "chg_ca11_at_tray_sets_ca11_done",
+   "chg_ca11_done"
+  ]
+ }
+}

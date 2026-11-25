@@ -1,0 +1,28 @@
+{
+ "scenario": "test_ca01_panel",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away",
+   "chg_chain_agn_there_sets_chain_done"
+  ],
+  "npc:kit_agnieszka_duda": [
+   "chg_out",
+   "chg_out_2",
+   "npc_arrived_agnieszka_duda_sets_chain_agn_there",
+   "chg_chain_agn_there",
+   "chg_chain_done"
+  ],
+  "npc:kit_gwen_pritchard": [
+   "chg_out",
+   "chg_chain_done"
+  ]
+ }
+}

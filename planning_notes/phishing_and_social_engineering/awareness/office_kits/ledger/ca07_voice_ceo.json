@@ -1,0 +1,36 @@
+{
+ "scenario": "ca07_voice_ceo",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away",
+   "chg_ca07_call_choice"
+  ],
+  "npc:kit_graham_whitfield": [
+   "chg_out_sets_ca07_there",
+   "chg_out",
+   "chg_ca07_there_knot_ca07_call",
+   "chg_ca07_there_sets_ca07_asked",
+   "conversation_closed_graham_whitfield_sets_ca07_call_choice",
+   "chg_ca07_call_choice_sets_ca07_moved",
+   "chg_ca07_call_choice_sets_ca07_done",
+   "chg_ca07_moved_sets_ca07_done",
+   "chg_ca07_done_sets_ca07_call_choice",
+   "chg_ca07_there_knot_ca07_call~rearm",
+   "chg_ca07_there_sets_ca07_asked~rearm",
+   "chg_ca07_there_sets_ca07_asked~rearm_cue"
+  ],
+  "npc:kit_gwen_pritchard": [
+   "chg_out",
+   "chg_out_2",
+   "chg_ca07_done"
+  ]
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "scenario": "ca14_social_media",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away",
+   "object_interacted_sets_ca14_seen",
+   "object_interacted_sets_ca14_seen_2"
+  ],
+  "npc:kit_delphine_arvanitis": [
+   "chg_out",
+   "chg_out_2",
+   "chg_ca14_photo_choice",
+   "chg_ca14_done",
+   "chg_ca14_seen",
+   "chg_ca14_done_2"
+  ],
+  "npc:kit_lorna_easton": [
+   "chg_out_sets_ca14_there",
+   "chg_out",
+   "chg_ca14_there_knot_ca14_photo",
+   "chg_ca14_there_sets_ca14_asked",
+   "conversation_closed_lorna_easton_sets_ca14_photo_choice",
+   "chg_ca14_photo_choice_sets_ca14_moved",
+   "chg_ca14_photo_choice_sets_ca14_done",
+   "chg_ca14_moved_sets_ca14_done",
+   "chg_ca14_done_sets_ca14_photo_choice",
+   "conversation_closed_lorna_easton_sets_ca14_closed_unseen",
+   "chg_ca14_there_knot_ca14_photo~rearm",
+   "chg_ca14_there_sets_ca14_asked~rearm",
+   "chg_ca14_there_sets_ca14_asked~rearm_cue"
+  ]
+ }
+}

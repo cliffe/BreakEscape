@@ -1,0 +1,13 @@
+{
+ "scenario": "ca20_remote_and_mobile_working",
+ "lists": {
+  "host": [
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ]
+ }
+}

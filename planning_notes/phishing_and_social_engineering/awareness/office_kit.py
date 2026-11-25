@@ -978,7 +978,8 @@ def keyed_plan(old, old_keys, new, label):
         if k is None or isinstance(k, str):
             if gone is not None:
                 raise KitMergeError(
-                    f"{label}: the kit no longer produces the mapping at index {gone[0]} {_summ(gone[1])}, and records "
+                    f"{label}: the kit no longer produces the mapping at index {gone[0]} {_summ(gone[1])}"
+                    f"{' (ledger key ' + repr(gone[2]) + ': key renamed or removed)' if gone[2] else ''}, and records "
                     f"follow it (index {i}), so regenerating would shift them. Keep that mapping in the kit data, "
                     f"or edit the shell's list by hand.")
         if k is None:
@@ -987,7 +988,7 @@ def keyed_plan(old, old_keys, new, label):
             used.add(k)
             plan.append(('set', i, strip_keys(new_by_key[k])))
         elif gone is None:
-            gone = (i, o)
+            gone = (i, o, k[2] if len(k) > 2 else None)
     plan += [('add', None, strip_keys(n)) for n in new if n[KEY] not in used]
     return plan
 
@@ -1012,60 +1013,150 @@ def check_positions(label, old, old_keys, merged, new):
                                 f"so a mapping may only change in place, be dropped from the end, or be added last")
 
 
-def merge_keyed_mappings(old, new, label, candidate, orphan_ok):
+LEDGER_DIR = os.path.join(KITS_DIR, 'ledger')
+
+
+def ledger_path(sid, ledger_dir=None):
+    return os.path.join(ledger_dir or LEDGER_DIR, f'{sid}.json')
+
+
+def load_ledger(sid, ledger_dir=None):
+    """The shell's stored key ledger {'host': [key|None, ...], 'npc:<id>': [...]}, or None when it has none."""
+    path = ledger_path(sid, ledger_dir)
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        doc = json.load(f)
+    return doc['lists']
+
+
+def ledger_text(sid, lists):
+    """Plain, sorted, one key per line, so a diff shows exactly which index changed."""
+    return json.dumps({'scenario': sid, 'lists': {k: lists[k] for k in sorted(lists)}}, indent=1) + '\n'
+
+
+def save_ledger(sid, lists, ledger_dir=None, path=None):
+    path = path or ledger_path(sid, ledger_dir)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'w') as f:
+        f.write(ledger_text(sid, lists))
+    return path
+
+
+def _ledger_keys(old, ledger_list, new, label, sid):
+    """The key of each record of the shell's `old` list, read from the stored ledger (no content matching):
+    a str when the kit still writes that key, None for a hand record, ('orphan', i, key) when the kit no
+    longer has the key (dropped, or renamed: a rename is a drop plus an insert)."""
+    resync = f"resync with: apply_training_room.py --rebuild-ledger {sid} (infers the keys once from the shell as it is)"
+    if len(ledger_list) != len(old):
+        raise KitMergeError(f"{label}: the key ledger holds {len(ledger_list)} entries but the shell's list holds "
+                            f"{len(old)}, so the shell was edited out of step with the ledger; {resync}")
+    seen = [k for k in ledger_list if k is not None]
+    if len(seen) != len(set(seen)):
+        raise KitMergeError(f"{label}: the key ledger repeats a key; {resync}")
+    kit_keys = {n[KEY] for n in new}
+    return [None if k is None else k if k in kit_keys else ('orphan', i, k) for i, k in enumerate(ledger_list)]
+
+
+def _ledger_from_keys(keys):
+    """The ledger list for inferred keys: a str stays, None stays, an orphan gets a stable placeholder."""
+    return [k if k is None or isinstance(k, str) else f'orphan:{k[1]}' for k in keys]
+
+
+def _ledger_after(keys, plan, new):
+    """The ledger list for the merged list: old positions in order (dropped ones gone), then added keys."""
+    used = {keys[i] for op, i, _ in plan if op == 'set'}
+    return [keys[i] for op, i, _ in plan if op != 'add'] + [n[KEY] for n in new if n[KEY] not in used]
+
+
+def merge_keyed_mappings(old, new, label, candidate, orphan_ok, ledger_list=None, sid=''):
     """Merge a kit's keyed `new` mappings into the shell's `old` list. Returns (merged list, plan, old keys,
-    orphans); the position guard has already run."""
-    keys = match_mappings(old, new, candidate, orphan_ok, label)
+    orphans, new ledger list); the position guard has already run. With `ledger_list` (the stored keys of
+    the old records) no content is matched: the record at index i has the ledger's key. Without one the keys
+    are inferred from content once (match_mappings: bootstrap and rebuild only)."""
+    if ledger_list is None:
+        keys = match_mappings(old, new, candidate, orphan_ok, label)
+    else:
+        keys = _ledger_keys(old, ledger_list, new, label, sid)
     plan = keyed_plan(old, keys, new, label)
     merged = [old[i] if op == 'keep' else rec for op, i, rec in plan]
     check_positions(label, old, keys, merged, new)
     orphans = [old[i] for i, k in enumerate(keys) if isinstance(k, tuple)]
-    return merged, plan, keys, orphans
+    return merged, plan, keys, orphans, _ledger_after(keys, plan, new)
 
 
-def prepare(orig, bk, sid, host_id=None):
+def infer_ledger(orig, bk, sid, host_id=None):
+    """The ledger of the shell `orig` as it stands, inferred from content once against the keyed build `bk`
+    (bootstrap and --rebuild-ledger). Raises KitMergeError where the inference cannot tell records apart."""
+    ohost = _find_host(orig, host_id)
+    lists = {'host': _ledger_from_keys(match_mappings(
+        ohost.get('eventMappings', []), bk['mappings'], is_kit_mapping, _strong_kit_mapping, f'{sid} host eventMappings'))}
+    for n in orig['rooms']['training_room']['npcs']:
+        if is_kit_member(n) and n.get('eventMappings'):
+            nk = next((x for x in bk['npcs'] if x['id'] == n['id']), None)
+            ml = nk.get('eventMappings', []) if nk else []
+            lists[f"npc:{n['id']}"] = _ledger_from_keys(match_mappings(
+                n['eventMappings'], ml, lambda m: True, lambda m: True, f"{sid} npc {n['id']} eventMappings"))
+    return lists
+
+
+def prepare(orig, bk, sid, host_id=None, ledger=None):
     """Everything a merge decides about eventMappings, from the shell `orig` and the keyed build `bk`: the host
-    list and each kit NPC's own list (M2), merged by key with the position guard run. Returns a namespace:
+    list and each kit NPC's own list (M2), merged by key with the position guard run. `ledger` is the stored
+    {'host': [...], 'npc:<id>': [...]} key ledger (None: infer once). Returns a namespace:
     b (the plain build, its NPCs carrying the merged eventMappings), host_merged, host_plan, host_keys,
-    npc_lists {npc id: (label, old list, old keys, keyed new list)} and lost (strings for hand_written)."""
+    npc_lists {npc id: (label, old list, old keys, keyed new list)}, lost (strings for hand_written) and
+    ledger (the ledger of the merged shell)."""
     import types
     b = strip_keys(bk)
     ohost = _find_host(orig, host_id)
     old = ohost.get('eventMappings', [])
     host_label = f'{sid} host eventMappings'
-    merged, plan, keys, orphans = merge_keyed_mappings(old, bk['mappings'], host_label, is_kit_mapping, _strong_kit_mapping)
+    lget = (lambda k: ledger.get(k, [])) if ledger is not None else (lambda k: None)
+    merged, plan, keys, orphans, new_led = merge_keyed_mappings(
+        old, bk['mappings'], host_label, is_kit_mapping, _strong_kit_mapping, lget('host'), sid)
+    out_ledger = {'host': new_led}
     lost = [f"host mapping on {m.get('eventPattern')} setting {sorted(m.get('setGlobal') or {})}" for m in orphans]
     old_npcs = {n['id']: n for n in orig['rooms']['training_room']['npcs'] if is_kit_member(n)}
     npc_lists = {}
     for nk, n in zip(bk['npcs'], b['npcs']):
         o = old_npcs.get(nk['id'])
+        ml = nk.get('eventMappings', [])
         if o is None:
+            if ml:
+                out_ledger[f"npc:{nk['id']}"] = [m[KEY] for m in ml]
             continue
-        ml, ol = nk.get('eventMappings', []), o.get('eventMappings', [])
+        ol = o.get('eventMappings', [])
         if not ml and not ol:
             continue
         label = f"{sid} npc {nk['id']} eventMappings"
-        nm, nplan, nkeys, norph = merge_keyed_mappings(ol, ml, label, lambda m: True, lambda m: True)
+        nm, nplan, nkeys, norph, nled = merge_keyed_mappings(
+            ol, ml, label, lambda m: True, lambda m: True, lget(f"npc:{nk['id']}"), sid)
         if nm:
             n['eventMappings'] = nm
+            out_ledger[f"npc:{nk['id']}"] = nled
         else:
             n.pop('eventMappings', None)
         npc_lists[nk['id']] = (label, ol, nkeys, ml)
         lost += [f"npc {nk['id']} mapping on {m.get('eventPattern')}" for m in norph]
     return types.SimpleNamespace(b=b, host_merged=merged, host_plan=plan, host_keys=keys, host_old=old,
-                                 host_new=bk['mappings'], npc_lists=npc_lists, lost=lost)
+                                 host_new=bk['mappings'], npc_lists=npc_lists, lost=lost, ledger=out_ledger)
 
 
-def apply_kit(sc, kit, row, host_id=None):
+def apply_kit(sc, kit, row, host_id=None, ledger=None, ledger_out=None):
     """The shell with the kit's content applied (a new dict). Tier none returns an unchanged copy.
-    Old kit-owned members are removed first, so applying twice gives the same result."""
+    Old kit-owned members are removed first, so applying twice gives the same result. `ledger` is the shell's
+    stored key ledger (None: keys are inferred from content, for bootstrap); `ledger_out`, a dict, receives
+    the ledger of the result."""
     if not active(row):
         return copy.deepcopy(sc)
     orig = copy.deepcopy(sc)
     out = strip_kit(sc, host_id)
     prefix, state_global = shell_ids(out, row)
     sid = row['id']
-    prep = prepare(orig, build(kit, row, prefix, state_global, keyed=True), sid, host_id)
+    prep = prepare(orig, build(kit, row, prefix, state_global, keyed=True), sid, host_id, ledger)
+    if ledger_out is not None:
+        ledger_out.update(prep.ledger)
     b = prep.b      # the plain build; its kit NPCs carry their eventMappings merged by key (M2)
     tr = out['rooms']['training_room']
     otr = orig['rooms']['training_room']

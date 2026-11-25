@@ -1,0 +1,12 @@
+{
+ "scenario": "ca12_visitor_tailgater_defend",
+ "lists": {
+  "host": [
+   null,
+   "quiet_on",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief"
+  ]
+ }
+}

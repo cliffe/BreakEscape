@@ -1,0 +1,28 @@
+{
+ "scenario": "ca03_helpdesk_reset",
+ "lists": {
+  "host": [
+   null,
+   null,
+   "quiet_on",
+   "attack_done",
+   "defend_done",
+   "caught",
+   "quiet_off_debrief",
+   "quiet_off_debrief_seen",
+   "step_away",
+   "chg_ca03_there_sets_ca03_done"
+  ],
+  "npc:kit_anjali_rao": [
+   "chg_ca03_out",
+   "chg_ca03_out_2",
+   "npc_arrived_anjali_rao_sets_ca03_there",
+   "chg_ca03_there",
+   "chg_ca03_done"
+  ],
+  "npc:kit_niamh_doherty": [
+   "chg_ca03_out",
+   "chg_ca03_done"
+  ]
+ }
+}
