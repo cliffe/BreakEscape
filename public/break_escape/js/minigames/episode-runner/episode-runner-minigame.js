@@ -706,7 +706,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const s = this.state;
         for (const beat of stepAwayBeats(this.episode)) {
             if (!beat.resumeOnDone || s[`${beat.pickedKey}Via`] !== 'lookup') continue;
-            if (this._beatPanel?.beat === beat) continue; // still waiting
+            if (this._beatPanel?.beat.id === beat.id) continue; // still waiting
             this._markStepAwayPicked(beat, 'resumed');
         }
     }
