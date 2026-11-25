@@ -1,0 +1,13 @@
+{
+ "scenario": "ca20_remote_and_mobile_working",
+ "lists": {
+  "host": [
+   {"k": null, "h": "e9c6c7f2"},
+   {"k": "quiet_on", "h": "5c9f4f6b"},
+   {"k": "attack_done", "h": "a67ecc77"},
+   {"k": "defend_done", "h": "a18c57f1"},
+   {"k": "caught", "h": "5ea11506"},
+   {"k": "quiet_off_debrief", "h": "566dd058"}
+  ]
+ }
+}

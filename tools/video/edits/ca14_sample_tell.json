@@ -47,14 +47,14 @@
   {
    "id": "inbox",
    "type": "gameplay",
-   "duration": 6.2,
+   "duration": 5.72,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t11_risky_card_narrow.trimmed.mkv",
-    "in": 13.15,
-    "out": 19.35
+    "in": 5.15,
+    "out": 10.87
    },
    "audio": {
     "gain_db": -60
@@ -78,22 +78,22 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "SAMPLE C: TODO in/out are placeholders from t10b; retime from t11_risky_card_narrow marks (list-up .. tell-visible) after capture. Opens Jordan Vale's fake-recruiter DM; tell is the account note and the systems request. Trust/Report/Delete shown, none pressed, no verdict."
+    "note": "SAMPLE C: t11 retake marks: list-up 5.15 to tell-visible 7.86, live through tell-hold-end 10.86 (card on screen from 7.67). Opens Jordan Vale's fake-recruiter DM; tell is the account note and the systems request. Trust/Report/Delete shown, none pressed, no verdict."
    }
   },
   {
    "id": "inbox_hold",
    "type": "gameplay",
-   "duration": 3.0,
+   "duration": 3.48,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t11_risky_card_narrow.trimmed.mkv",
-    "in": 19.3,
-    "out": 22.3
+    "in": 7.86,
+    "out": 11.34
    },
-   "freezeAt": 19.3,
+   "freezeAt": 7.86,
    "audio": {
     "gain_db": -60
    },
@@ -116,7 +116,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "SAMPLE C: TODO freezeAt and in/out placeholders; set to t11 tell-visible + 3 s. Frozen last frame of the risky card"
+    "note": "SAMPLE C: frozen at t11 tell-visible 7.86 (card static to tell-hold-end 10.86); live from 5.15 to 10.87, then the freeze holds 3.48 s so the two shots keep the 9.2 s sequence. Frozen frame of the risky card"
    }
   },
   {

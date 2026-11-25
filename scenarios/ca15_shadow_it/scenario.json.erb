@@ -46,19 +46,28 @@
           "title": "Sort the shortcuts",
           "type": "custom",
           "status": "active"
-        },
+        }
+      ]
+    },
+    {
+      "aimId": "red_team_drop_aim",
+      "title": "Try the red-team drop",
+      "description": "Nilesh's test: leave the red stick somewhere people stop, and see who picks it up.",
+      "status": "locked",
+      "order": 1,
+      "tasks": [
         {
           "taskId": "drop_the_stick",
           "title": "Leave the red-team stick where someone will find it",
           "type": "custom",
-          "status": "active",
+          "status": "locked",
           "optional": true
         },
         {
           "taskId": "watch_who_finds_it",
           "title": "Watch who picks it up",
           "type": "custom",
-          "status": "active",
+          "status": "locked",
           "optional": true
         }
       ]
@@ -640,6 +649,9 @@
       },
       "strings": {
         "stepAway": "Look up from the kiosk and carry on in the room for a minute. Someone may ask you something. Your place is saved.",
+        "worldBeatHeading": "One from the red-team kit",
+        "worldBeat": "Nilesh has something for you. Look up from the kiosk; your place is saved.",
+        "worldBeatWaiting": "Still out there. Carry on whenever you like.",
         "weakestTells": "The risks most often missed: {names} ({counts} each).",
         "weakestTell": "The risk most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
@@ -761,7 +773,28 @@
           "launchButton": "Open the Swap Shop"
         }
       },
-      "stepAway": true
+      "stepAways": [
+        {
+          "id": "red_stick",
+          "after": "mistake",
+          "event": "episode_world_beat",
+          "readyGlobal": null,
+          "doneGlobal": "ca15_drop_done",
+          "pickedKey": "worldBeatPicked",
+          "strings": "worldBeat",
+          "facilitated": false,
+          "resumeOnDone": true
+        },
+        {
+          "id": "found_stick",
+          "after": "defend",
+          "event": "episode_step_away",
+          "readyGlobal": "kit_defend_done",
+          "doneGlobal": null,
+          "pickedKey": "stepAwayPicked",
+          "strings": "stepAway"
+        }
+      ]
     },
     "awareness": {
       "ruleOfThumb": {
@@ -1029,6 +1062,25 @@
               "condition": "value === true && !globalVars.ca15_drop_done",
               "onceOnly": true,
               "bark": "Next door. Somewhere people stop for a minute."
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_given",
+              "condition": "value === true && !globalVars.ca15_drop_done",
+              "onceOnly": true,
+              "unlockAim": "red_team_drop_aim",
+              "unlockTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
+            },
+            {
+              "eventPattern": "global_variable_changed:ca15_drop_done",
+              "condition": "value === true && globalVars.ca15_drop_given && !globalVars.ca15_drop_used",
+              "onceOnly": true,
+              "skipTask": [
+                "drop_the_stick",
+                "watch_who_finds_it"
+              ]
             }
           ]
         },
@@ -1477,6 +1529,11 @@
       "npcs": [
         {
           "id": "ca15_joanne_pell",
+          "voice": {
+            "name": "Zephyr",
+            "style": "Tarrowby's operations coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
           "displayName": "Joanne Pell",
           "npcType": "person",
           "position": {
@@ -1554,6 +1611,11 @@
         },
         {
           "id": "ca15_niamh_doherty",
+          "voice": {
+            "name": "Leda",
+            "style": "Tarrowby's operations assistant, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+            "language": "en-GB"
+          },
           "displayName": "Niamh Doherty",
           "npcType": "person",
           "position": {

@@ -37,6 +37,16 @@ whose episodes.json row has a tier (a hand-authored shell, or a generated one yo
 
        python3 apply_training_room.py [--repo <checkout>] --kit <outdir> [--allow-drop]   # patched copies to <outdir>
 
+Key ledger: office_kits/ledger/<shell>.json stores the `_kitKey` of every record of the host's and each kit
+NPC's eventMappings (null for a hand record), because the server keys those lists by index and a record's
+identity must not be guessed from content on each run. With a ledger the record at index i has its key; a key
+the kit no longer has is a drop (tail only), a new key is added last. No ledger: the keys are inferred once and
+stored. After a hand edit of a shell's mapping list (ledger out of step) run
+       python3 apply_training_room.py [--repo <checkout>] --rebuild-ledger [shell ...]
+Each ledger entry is {"k": key-or-null, "h": 8-hex hash of the key plus the record as written, _kitKey stripped}; a kit record
+that no longer matches its hash, or a hand record that is a kit record, raises KitMergeError (run --rebuild-ledger
+after checking; it also adopts a hand record equal to the kit's output for a key, labelling it with that key; an old-format ledger is refused the same way). A --kit run writes a changed ledger to <outdir>/<shell>/kit_ledger.json: copy it with the shell.
+
 The outdir is required: the tool never writes into scenarios/ (generate into scratch, diff, copy back what
 you mean to change). A shell holding hand-written kit content that the kit data would not write back is
 refused with the names of what would go; move it into the kit data (a set piece's staff patches, mappings,
@@ -320,6 +330,9 @@ def refresh(outdir):
         with open(dest, 'w') as f:
             f.write(new)
         print('wrote', dest, '' if new != text else '(unchanged)')
+        if new_ledger != ledger:    # copy it next to the shell when the shell is copied back
+            print('wrote', office_kit.save_ledger(name, new_ledger, path=os.path.join(d, 'kit_ledger.json')),
+                  f'(copy to office_kits/ledger/{name}.json with the shell)')
 
 
 # ---- kit mode ------------------------------------------------------------------
@@ -356,17 +369,29 @@ def _rebuild(text, start, pieces, pad, close_pad):
     return text[:start] + body + text[end:]
 
 
-def _splice_object(text, start, drop, add, after=None):
+def _splice_object(text, start, drop, add, after=None, in_place=False):
     """Object at `start`: drop members whose key satisfies `drop`, add (key, value) pairs `add` right
-    after the kept member `after` (else at the end). Kept members keep their own text. Returns new text."""
+    after the kept member `after` (else at the end). Kept members keep their own text. Returns new text.
+    With `in_place`, a dropped member the pairs `add` also hold stays where it is (its value replaced when
+    it differs) and only the other pairs are added: office_kit.merge_dict on the text."""
     kept, olds = [], []
     first_key = None
     after_at = None
-    for key, ks, vs, ve in _members_full(text, start):
+    adding = dict(add)
+    members = list(_members_full(text, start))
+    close_pad0 = _line_indent(text, start)
+    close_pad0 = close_pad0[:len(close_pad0) - len(close_pad0.lstrip())]
+    pad0 = _line_indent(text, members[0][1]) if members and '\n' in text[start:members[0][1]] else close_pad0 + '  '
+    if in_place:
+        add = [(k, v) for k, v in add if not any(k == mk and drop(mk) for mk, _, _, _ in members)]
+    for key, ks, vs, ve in members:
         first_key = ks if first_key is None else first_key
         s = text[ks:ve]
         olds.append(s)
-        if not drop(key):
+        if in_place and drop(key) and key in adding:
+            kept.append(s if json.dumps(json.loads(text[vs:ve])) == json.dumps(adding[key])
+                        else json.dumps(key) + ': ' + _indented(adding[key], len(pad0)))
+        elif not drop(key):
             kept.append(s)
             if key == after:
                 after_at = len(kept)
@@ -383,22 +408,37 @@ def _splice_object(text, start, drop, add, after=None):
     return _rebuild(text, start, pieces, pad, close_pad)
 
 
-def _splice_array(text, start, drop, add):
-    """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`."""
-    kept, olds = [], []
-    first = None
-    for a, b in _elements(text, start):
-        first = a if first is None else first
-        s = text[a:b]
-        olds.append(s)
-        if not drop(json.loads(s)):
-            kept.append(s)
-    ind = _line_indent(text, start)
-    close_pad = ind[:len(ind) - len(ind.lstrip())]
+def _splice_array(text, start, drop, add, ident=None, label='list', strict=False, unique=False, plan=None):
+    """Array at `start`: drop elements satisfying `drop(parsed)`, append the values in `add`. With `ident`,
+    the merge is office_kit.merge_plan itself (the same routine office_kit.merge_list runs): a dropped
+    element the kit's `add` also holds stays where it is, its text replaced only when the value differs,
+    and only the other values are appended."""
+    elems = list(_elements(text, start))
+    olds = [text[a:b] for a, b in elems]
+    parsed = [json.loads(s) for s in olds]
+    ind0 = _line_indent(text, start)
+    ind0 = ind0[:len(ind0) - len(ind0.lstrip())]
+    pad0 = _line_indent(text, elems[0][0]) if elems else ind0 + '  '
+    pad0 = pad0[:len(pad0) - len(pad0.lstrip())] if elems and pad0.strip() else pad0
+    if plan is not None:      # a plan decided elsewhere (eventMappings: merged by key, see office_kit.prepare)
+        pass
+    elif ident:
+        plan = office_kit.merge_plan(parsed, add, drop, ident, label, strict, unique)
+    else:       # no identity: every dropped element goes and every value is appended
+        plan = [('keep', i, None) for i, p in enumerate(parsed) if not drop(p)] + [('add', None, v) for v in add]
+    kept, fresh_vals = [], []
+    for op, i, rec in plan:
+        if op == 'keep':
+            kept.append(olds[i])
+        elif op == 'set':
+            kept.append(olds[i] if json.dumps(parsed[i]) == json.dumps(rec) else _indented(rec, len(pad0)))
+        else:
+            fresh_vals.append(rec)
+    first = elems[0][0] if elems else None
+    close_pad = ind0
     pad = _line_indent(text, first) if first is not None else close_pad + '  '
     pad = pad[:len(pad) - len(pad.lstrip())] if first is not None and pad.strip() else pad
-    fresh = [_indented(v, len(pad)) for v in add]
-    pieces = kept + fresh
+    pieces = kept + [_indented(v, len(pad)) for v in fresh_vals]
     if pieces == olds:
         return text
     return _rebuild(text, start, pieces, pad, close_pad)
@@ -422,16 +462,25 @@ class WouldDropHandWrittenContent(Exception):
     """Regenerating would erase kit-owned content the kit data does not produce."""
 
 
-def kit_text(text, kit, row, shell, allow_drop=False):
+def kit_text(text, kit, row, shell, allow_drop=False, ledger=None):
     """Splice the kit into one shell's text. Returns the new text. Refuses (WouldDropHandWrittenContent)
-    when the shell holds kit-owned content that the kit data would not write back, unless allow_drop."""
+    when the shell holds kit-owned content that the kit data would not write back, unless allow_drop.
+    `ledger` is the shell's stored key ledger (None: keys inferred from content)."""
+    return kit_text_ledger(text, kit, row, shell, allow_drop, ledger)[0]
+
+
+def kit_text_ledger(text, kit, row, shell, allow_drop=False, ledger=None):
+    """kit_text, returning (new text, the ledger of the new text)."""
     old = json.loads(text)
     host_id = office_kit._find_host(old)['id']
-    expect = office_kit.apply_kit(old, kit, row, host_id=host_id)
+    expect = office_kit.apply_kit(old, kit, row, host_id=host_id, ledger=ledger)
     prefix, state_global = office_kit.shell_ids(old, row)
-    b = office_kit.build(kit, row, prefix, state_global)
+    # eventMappings (host and each kit NPC's own) are merged by key, with the position guard, once, in prepare:
+    # the same call apply_kit makes. b is the plain build with the kit NPCs' mappings already merged.
+    prep = office_kit.prepare(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id, ledger)
+    b = prep.b
     mine = office_kit.kit_owned(old, host_id)
-    lost = office_kit.hand_written(mine, b)
+    lost = office_kit.hand_written(mine, b, maps_lost=prep.lost)
     if lost and not allow_drop:
         raise WouldDropHandWrittenContent(
             f"{shell}: --kit would drop hand-written kit content it cannot regenerate: " + '; '.join(lost)
@@ -456,55 +505,50 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     ha, _ = find_host_span(text, host_id, shell)
     em = _try_member(text, ha, 'eventMappings')
     cur = json.loads(text[em[0]:em[1]]) if em else []
+    merged = office_kit._find_host(expect, host_id).get('eventMappings')    # apply_kit's list: one merge, one order
     if em and not (cur and all(office_kit.is_kit_mapping(m) for m in cur)):
-        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'])
-    elif not b['mappings'] and not em:
+        text = _splice_array(text, em[0], office_kit.is_kit_mapping, b['mappings'], plan=prep.host_plan)
+    elif merged is None and not em:
         pass     # the convention form (ca00) has no kit host mappings: add no empty list
     else:
-        # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end
+        # none yet, or only kit mappings (strip_kit drops the key then): (re)create it at the host's end,
+        # in the order office_kit.merge_list gives it (the old order, never the kit's)
         if em:
             text = _splice_object(text, ha, lambda k: k == 'eventMappings', [])
-        ha, _ = find_host_span(text, host_id, shell)
-        text = _splice_object(text, ha, lambda k: False, [('eventMappings', b['mappings'])])
+        if merged:
+            ha, _ = find_host_span(text, host_id, shell)
+            text = _splice_object(text, ha, lambda k: False, [('eventMappings', merged)])
     # room npcs and objects
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'])
+    text = _splice_array(text, _member(text, tr, 'npcs')[0], is_kit, b['npcs'], office_kit.member_ident, f'{shell} npcs', unique=True)
     tr = _training_room(text)
-    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'])
+    text = _splice_array(text, _member(text, tr, 'objects')[0], is_kit, b['objects'], office_kit.member_ident, f'{shell} objects', unique=True)
     # social.awarenessEpisode.stepAway
     social = _member(text, _root(text), 'social')[0]
     epa = _member(text, social, 'awarenessEpisode')[0]
-    text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] else [])
+    # a hand-written `stepAways` list stands in for it: never add `stepAway` beside the list (validator: both set)
+    has_list = any(k == 'stepAways' for k, _, _ in _members(text, epa))
+    text = _splice_object(text, epa, lambda k: k == 'stepAway', [('stepAway', True)] if b['stepAway'] and not has_list else [])
     # social.triageSets[0].outcome.messageGlobals (the row's keyMessage)
     if not office_kit.is_convention(row):    # the convention form (ca00) has no triage set
-        oc = _first_set_outcome(text)
-        own_mg = [v for k, a, bb in _members(text, oc) if k == 'messageGlobals' for v in [json.loads(text[a:bb])]]
-        if not own_mg or all(str(v).startswith('kit_') for v in own_mg[0].values()):
-            text = _splice_object(text, oc, lambda k: k == 'messageGlobals',
-                                  [('messageGlobals', b['messageGlobals'])] if b.get('messageGlobals') else [])
-        else:    # the shell's own non-kit entries stay; the kit's are merged in as apply_kit does
-            # (old kit_ entries are dropped first, as office_kit.strip_kit does: wrap-fix review m4)
-            mg = {**{k: v for k, v in own_mg[0].items() if not str(v).startswith('kit_')}, **b.get('messageGlobals', {})}
-            text = _splice_object(text, oc, lambda k: k == 'messageGlobals', [('messageGlobals', mg)])
-        # social.triageSets[0].outcome.messageCaughtVerdicts (the row's keyCaughtVerdicts): the kit owns
-        # the entries for its own messageGlobals ids, old and new; any other entry stays
-        kit_ids = ({k for k, v in own_mg[0].items() if str(v).startswith('kit_')} if own_mg else set()) \
-            | set(b.get('messageGlobals', {}))
-        oc = _first_set_outcome(text)
-        own_mcv = [json.loads(text[a:bb]) for k, a, bb in _members(text, oc) if k == 'messageCaughtVerdicts']
-        mcv = {**{k: v for k, v in (own_mcv[0] if own_mcv else {}).items() if k not in kit_ids},
-               **b.get('messageCaughtVerdicts', {})}
-        if own_mcv or mcv:
-            text = _splice_object(text, oc, lambda k: k == 'messageCaughtVerdicts',
-                                  [('messageCaughtVerdicts', mcv)] if mcv else [])
+        # Both objects are read from apply_kit's result, so the entries keep apply_kit's order (kit-owned ones
+        # in place, new ones last): the kit's `messageGlobals` (a kit_ value) and `messageCaughtVerdicts`
+        # (the verdicts for the kit's own message ids); any other entry stays.
+        eo = office_kit.key_outcome(expect) or {}
+        for key in ('messageGlobals', 'messageCaughtVerdicts'):
+            oc = _first_set_outcome(text)
+            own = any(k == key for k, _, _ in _members(text, oc))
+            want = eo.get(key)
+            if own or want:
+                text = _splice_object(text, oc, lambda k, key=key: k == key, [(key, want)] if want else [])
     # globals
     gv = _member(text, _root(text), 'globalVariables')[0]
-    text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()))
+    text = _splice_object(text, gv, lambda k: k.startswith('kit_'), list(b['globals'].items()), in_place=True)
     # top-level keys, in the same places as office_kit.apply_kit: npcThoughts after disableAttacks;
     # officePresets, chatter, timers, resources and roles after globalVariables
     tl = _try_member(text, _root(text), 'timers')
     if tl:
-        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'])
+        text = _splice_array(text, tl[0], lambda e: str(e.get('id', '')).startswith('kit_'), b['timers'], office_kit.member_ident, f'{shell} timers', unique=True)
         tl = _try_member(text, _root(text), 'timers')
         if json.loads(text[tl[0]:tl[1]]) == []:
             text = _splice_object(text, _root(text), lambda k: k == 'timers', [])
@@ -512,11 +556,11 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     ch = _try_member(text, _root(text), 'chatter')
     ch_own = bool(ch) and any(not str(k).startswith('kit_') for k in json.loads(text[ch[0]:ch[1]]))
     if ch and ch_own:    # the shell's own pools stay; only the kit_ keys are replaced
-        text = _splice_object(text, ch[0], lambda k: k.startswith('kit_'), list(b['scenario']['chatter'].items()))
+        text = _splice_object(text, ch[0], lambda k: k.startswith('kit_'), list(b['scenario']['chatter'].items()), in_place=True)
     adds = []
     for k, v in b['scenario'].items():
         if k != 'npcThoughts' and not (k == 'chatter' and ch_own):
-            adds.append((k, v))
+            adds.append((k, expect['chatter'] if k == 'chatter' and 'chatter' in expect else v))   # apply_kit's order
     flags = office_kit.shell_flags(row)
     text = _splice_object(text, _root(text), lambda k: k == office_kit.TTS_FLAG, [])   # re-added with adds, so a rerun is stable
     adds.extend(flags.items())
@@ -526,9 +570,9 @@ def kit_text(text, kit, row, shell, allow_drop=False):
         mem = _try_member(text, _root(text), key)
         if mem:
             if text[mem[0]] == '{':
-                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()))
+                text = _splice_object(text, mem[0], lambda k: k.startswith('kit_'), list(b.get(key, {}).items()), in_place=True)
             else:
-                text = _splice_array(text, mem[0], is_kit, b.get(key, []))
+                text = _splice_array(text, mem[0], is_kit, b.get(key, []), office_kit.member_ident, f'{shell} {key}', unique=True)
             mem = _try_member(text, _root(text), key)
             if not json.loads(text[mem[0]:mem[1]]):
                 text = _splice_object(text, _root(text), lambda k, key=key: k == key, [])
@@ -538,9 +582,77 @@ def kit_text(text, kit, row, shell, allow_drop=False):
     text = _splice_object(text, _root(text), lambda k: k in office_kit.KIT_TOP_KEYS or (k == 'chatter' and not ch_own),
                           [(k, v) for k, v in b['scenario'].items() if k == 'npcThoughts'], after='disableAttacks')
     text = _splice_object(text, _root(text), lambda k: False, adds, after='globalVariables')
+    # The position guard again, on the text that was actually produced (not on the plan that made it): every
+    # index of the old host and kit-NPC eventMappings lists must hold the same record afterwards.
+    new_sc = json.loads(text)
+    office_kit.check_positions(f'{shell} host eventMappings', prep.host_old, prep.host_keys,
+                               office_kit._find_host(new_sc, host_id).get('eventMappings', []), prep.host_new)
+    new_npcs = {n['id']: n for n in new_sc['rooms']['training_room']['npcs']}
+    for nid, (label, ol, nkeys, ml) in prep.npc_lists.items():
+        office_kit.check_positions(label, ol, nkeys, new_npcs[nid].get('eventMappings', []), ml)
     # compared as text, not dict equality, so key order must agree too (a later --kit run changes nothing)
     assert json.dumps(json.loads(text)) == json.dumps(expect), f'{shell}: kit splice differs from office_kit.apply_kit'
-    return text
+    return text, prep.ledger
+
+
+def infer_shell_ledger(text, kit, row):
+    """The key ledger of a shell's text, inferred from content (the one place that still matches by content,
+    with office_kit.match_mappings)."""
+    old = json.loads(text)
+    host_id = office_kit._find_host(old)['id']
+    prefix, state_global = office_kit.shell_ids(old, row)
+    return office_kit.infer_ledger(old, office_kit.build(kit, row, prefix, state_global, keyed=True), row['id'], host_id)
+
+
+def rebuild_ledgers(names=()):
+    """--rebuild-ledger [shell ...]: run the content inference once on each tiered shell as it is on disk
+    and (over)write its ledger. Use it to resync after a hand edit of a shell's eventMappings. A shell the
+    inference cannot read is reported and skipped."""
+    rows = [r for r in office_kit.load_rows() if office_kit.tier_of(r) != 'none' and not r.get('fixture')]
+    unknown = set(names) - {r['id'] for r in rows}
+    if unknown:
+        sys.exit('--rebuild-ledger names no kit shell: ' + ', '.join(sorted(unknown)))
+    bad = 0
+    for row in rows:
+        name = row['id']
+        if names and name not in names:
+            continue
+        path = os.path.join(REPO, 'scenarios', name, 'scenario.json.erb')
+        if not os.path.exists(path):
+            print(f'{name}: no shell at {path}', file=sys.stderr)
+            bad += 1
+            continue
+        try:
+            ledger = infer_shell_ledger(open(path).read(), office_kit.load_kit(row['company']), row)
+        except office_kit.KitMergeError as e:
+            print(f'{name}: SKIPPED, {e}', file=sys.stderr)
+            bad += 1
+            continue
+        print('wrote', office_kit.save_ledger(name, ledger))
+    if bad:
+        sys.exit(f'{bad} shell(s) without a ledger')
+
+
+def trash_dir():
+    return os.path.join(REPO, 'tmp', 'delete')
+
+
+def _retire_stale_ledgers(outdir):
+    """Move any kit_ledger.json left in outdir by an earlier run to tmp/delete/ (never removed), before this run
+    builds anything: a ledger is written only after a fully successful build, so a failed run leaves none that
+    could be copied over a good one."""
+    import glob
+    import time
+    for path in sorted(glob.glob(os.path.join(outdir, '*', 'kit_ledger.json'))):
+        trash = trash_dir()
+        os.makedirs(trash, exist_ok=True)
+        dest = os.path.join(trash, f"{time.strftime('%Y%m%d-%H%M%S')}_{os.path.basename(os.path.dirname(path))}_kit_ledger.json")
+        n = 0
+        while os.path.exists(dest):
+            n += 1
+            dest = f'{dest}.{n}'
+        os.replace(path, dest)
+        print('moved stale ledger', path, '->', dest, file=sys.stderr)
 
 
 def kit(outdir, allow_drop=()):
@@ -551,6 +663,7 @@ def kit(outdir, allow_drop=()):
         sys.exit('--kit needs an output folder: apply_training_room.py --kit <outdir> [--allow-drop <shell>]... '
                  '(nothing is written into scenarios/)')
     allow_drop = set(allow_drop)
+    _retire_stale_ledgers(outdir)
     rows_all = office_kit.load_rows()
     fixtures = allow_drop & {r['id'] for r in rows_all if r.get('fixture')}
     if fixtures:
@@ -575,21 +688,33 @@ def kit(outdir, allow_drop=()):
         if not os.path.exists(path):
             sys.exit(f'episodes.json row {name} has no shell at {path}')
         text = open(path).read()
+        ledger = office_kit.load_ledger(name)
+        if ledger is None:      # bootstrap: infer the keys from the shell as it is, once, and store them
+            ledger = infer_shell_ledger(text, office_kit.load_kit(row['company']), row)
+            print(f'{name}: no key ledger; inferred one from the shell and wrote',
+                  office_kit.save_ledger(name, ledger), file=sys.stderr)
         try:
-            new = kit_text(text, office_kit.load_kit(row['company']), row, name, allow_drop=name in allow_drop)
+            new, new_ledger = kit_text_ledger(text, office_kit.load_kit(row['company']), row, name,
+                                              allow_drop=name in allow_drop, ledger=ledger)
         except WouldDropHandWrittenContent as e:
             sys.exit(str(e))
-        plan.append((name, path, text, new))
-    for name, path, text, new in plan:
+        plan.append((name, path, text, new, ledger, new_ledger))
+    for name, path, text, new, ledger, new_ledger in plan:
         d = os.path.join(outdir, name)
         os.makedirs(d, exist_ok=True)
         dest = os.path.join(d, 'scenario.json.erb')
         with open(dest, 'w') as f:
             f.write(new)
         print('wrote', dest, '' if new != text else '(unchanged)')
+        if new_ledger != ledger:    # copy it next to the shell when the shell is copied back
+            print('wrote', office_kit.save_ledger(name, new_ledger, path=os.path.join(d, 'kit_ledger.json')),
+                  f'(copy to office_kits/ledger/{name}.json with the shell)')
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--rebuild-ledger':
+        rebuild_ledgers(sys.argv[2:])
+        return
     if len(sys.argv) > 1 and sys.argv[1] == '--kit':
         rest, allow = [], []
         args = iter(sys.argv[2:])

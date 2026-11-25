@@ -1,0 +1,15 @@
+{
+ "scenario": "ca15_shadow_it_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "f645d198"},
+   {"k": "quiet_on", "h": "9b3adef0"},
+   {"k": "defend_done", "h": "8bf0d4cb"},
+   {"k": "caught", "h": "3f0c52fe"},
+   {"k": "quiet_off_debrief", "h": "31f72ad0"}
+  ],
+  "npc:kit_chidi_okeke": [
+   {"k": "chg_defend_done_knot_ca15_react", "h": "ffafbdef"}
+  ]
+ }
+}

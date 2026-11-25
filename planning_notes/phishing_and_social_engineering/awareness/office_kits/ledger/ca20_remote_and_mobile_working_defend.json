@@ -1,0 +1,15 @@
+{
+ "scenario": "ca20_remote_and_mobile_working_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "ff3e583d"},
+   {"k": "quiet_on", "h": "ad0ccd40"},
+   {"k": "defend_done", "h": "1c2b81bc"},
+   {"k": "caught", "h": "6204d678"},
+   {"k": "quiet_off_debrief", "h": "65586f6a"}
+  ],
+  "npc:kit_chidi_okeke": [
+   {"k": "chg_defend_done_knot_ca20_react", "h": "0ef8803c"}
+  ]
+ }
+}

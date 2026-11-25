@@ -62,6 +62,7 @@
         "anjali_rao": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca03_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -78,6 +79,7 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca08_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -94,6 +96,7 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca10_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -110,6 +113,7 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca16_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -126,6 +130,7 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca19_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -142,6 +147,7 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca05_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -201,12 +207,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca03_out",
               "eventPattern": "global_variable_changed:kit_ca03_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca03_out_2",
               "eventPattern": "global_variable_changed:kit_ca03_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -220,6 +228,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_anjali_rao_sets_ca03_there",
               "eventPattern": "npc_arrived:kit_anjali_rao",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -229,6 +238,7 @@
               "bark": "I came over to use the spare and it's on the sign-in screen, asking for everything again. Darren, is it doing this to everyone?"
             },
             {
+              "_kitKey": "chg_ca03_there",
               "eventPattern": "global_variable_changed:kit_ca03_there",
               "condition": "value === true",
               "onceOnly": true,
@@ -236,6 +246,7 @@
               "delayMs": 3000
             },
             {
+              "_kitKey": "chg_ca03_done",
               "eventPattern": "global_variable_changed:kit_ca03_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -246,12 +257,14 @@
         "niamh_doherty": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca03_out",
               "eventPattern": "global_variable_changed:kit_ca03_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca03_done",
               "eventPattern": "global_variable_changed:kit_ca03_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -262,6 +275,7 @@
       },
       "mappings": [
         {
+          "_kitKey": "chg_ca03_there_sets_ca03_done",
           "eventPattern": "global_variable_changed:kit_ca03_there",
           "condition": "value === true && globalVars.kit_ca03_out === true && globalVars.kit_quiet === true",
           "onceOnly": true,
@@ -335,12 +349,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca08_out",
               "eventPattern": "global_variable_changed:kit_ca08_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca08_out_2",
               "eventPattern": "global_variable_changed:kit_ca08_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -354,6 +370,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_darren_price_sets_ca08_there",
               "eventPattern": "npc_arrived:kit_darren_price",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -363,6 +380,7 @@
               "bark": "My screen's locked me out and a shared folder won't open. If someone's in my account, they'll be sending as me. Reporting it now."
             },
             {
+              "_kitKey": "chg_ca08_there",
               "eventPattern": "global_variable_changed:kit_ca08_there",
               "condition": "value === true",
               "onceOnly": true,
@@ -370,6 +388,7 @@
               "delayMs": 3000
             },
             {
+              "_kitKey": "chg_ca08_done",
               "eventPattern": "global_variable_changed:kit_ca08_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -380,12 +399,14 @@
         "niamh_doherty": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca08_out",
               "eventPattern": "global_variable_changed:kit_ca08_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca08_done",
               "eventPattern": "global_variable_changed:kit_ca08_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -396,6 +417,7 @@
       },
       "mappings": [
         {
+          "_kitKey": "chg_ca08_there_sets_ca08_done",
           "eventPattern": "global_variable_changed:kit_ca08_there",
           "condition": "value === true && globalVars.kit_ca08_out === true && globalVars.kit_quiet === true",
           "onceOnly": true,
@@ -516,12 +538,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca19_out",
               "eventPattern": "global_variable_changed:kit_ca19_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca19_out_2",
               "eventPattern": "global_variable_changed:kit_ca19_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -535,6 +559,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_niamh_doherty_sets_ca19_there",
               "eventPattern": "npc_arrived:kit_niamh_doherty",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca19_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -544,6 +569,7 @@
               "bark": "IT have taken mine offline while they rebuild it, so I'm on pen and paper for the afternoon."
             },
             {
+              "_kitKey": "chg_ca19_there",
               "eventPattern": "global_variable_changed:kit_ca19_there",
               "condition": "value === true",
               "onceOnly": true,
@@ -551,6 +577,7 @@
               "delayMs": 3000
             },
             {
+              "_kitKey": "chg_ca19_done",
               "eventPattern": "global_variable_changed:kit_ca19_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -561,12 +588,14 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca19_out",
               "eventPattern": "global_variable_changed:kit_ca19_out",
               "condition": "value === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca19_out_2",
               "eventPattern": "global_variable_changed:kit_ca19_out",
               "condition": "value === true",
               "onceOnly": true,
@@ -580,6 +609,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca19_there_sets_ca19_done",
               "eventPattern": "global_variable_changed:kit_ca19_there",
               "condition": "value === true && globalVars.kit_ca19_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -590,6 +620,7 @@
               "bark": "Mine's still running. Whoever's behind this locks whatever it can reach, then waits for someone to pay. IT got to hers first."
             },
             {
+              "_kitKey": "chg_ca19_done",
               "eventPattern": "global_variable_changed:kit_ca19_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -720,12 +751,14 @@
         "darren_price": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca16_out",
               "eventPattern": "global_variable_changed:kit_ca16_out",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca16_done",
               "eventPattern": "global_variable_changed:kit_ca16_done",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -752,6 +785,7 @@
           ],
           "eventMappings": [
             {
+              "_kitKey": "chg_ca16_out",
               "eventPattern": "global_variable_changed:kit_ca16_out",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -762,6 +796,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_out_2",
               "eventPattern": "global_variable_changed:kit_ca16_out",
               "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -769,6 +804,7 @@
               "bark": "Hang on, my screen's thrown me out."
             },
             {
+              "_kitKey": "npc_use_failed_niamh_doherty_sets_ca16_signin_failed",
               "eventPattern": "npc_use_failed:kit_niamh_doherty",
               "condition": "data.objectId === 'kit_ca16_pc' && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -777,6 +813,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_signin_failed",
               "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -784,6 +821,7 @@
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca16_signin_failed_2",
               "eventPattern": "global_variable_changed:kit_ca16_signin_failed",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -797,6 +835,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_niamh_doherty_sets_ca16_there",
               "eventPattern": "npc_arrived:kit_niamh_doherty",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_failed === true && !globalVars.kit_ca16_there",
               "onceOnly": true,
@@ -805,6 +844,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_there_knot_ca16_signin",
               "eventPattern": "global_variable_changed:kit_ca16_there",
               "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_quiet === true && globalVars.kit_ca16_signin_choice === ''",
               "onceOnly": true,
@@ -813,6 +853,7 @@
               "targetKnot": "ca16_signin"
             },
             {
+              "_kitKey": "chg_ca16_there_sets_ca16_asked",
               "eventPattern": "global_variable_changed:kit_ca16_there",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -822,6 +863,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_niamh_doherty_sets_ca16_signin_choice",
               "eventPattern": "conversation_closed:kit_niamh_doherty",
               "condition": "globalVars.kit_ca16_signin_choice === 'asked' && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -830,6 +872,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_signin_choice",
               "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
               "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
               "onceOnly": true,
@@ -837,6 +880,7 @@
               "needs": "resume"
             },
             {
+              "_kitKey": "chg_ca16_signin_choice_sets_ca16_done",
               "eventPattern": "global_variable_changed:kit_ca16_signin_choice",
               "condition": "value !== '' && value !== 'asked' && globalVars.kit_ca16_out === true && !globalVars.kit_ca16_done",
               "onceOnly": true,
@@ -846,6 +890,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_done_sets_ca16_signin_choice",
               "eventPattern": "global_variable_changed:kit_ca16_done",
               "condition": "value === true && globalVars.kit_ca16_out === true && globalVars.kit_ca16_signin_choice === 'asked'",
               "onceOnly": true,
@@ -854,12 +899,14 @@
               }
             },
             {
+              "_kitKey": "chg_ca16_done",
               "eventPattern": "global_variable_changed:kit_ca16_done",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
               "needs": "resume"
             },
             {
+              "_kitKey": "chg_ca16_done_2",
               "eventPattern": "global_variable_changed:kit_ca16_done",
               "condition": "value === true && globalVars.kit_ca16_out === true",
               "onceOnly": true,
@@ -984,12 +1031,14 @@
         "anjali_rao": {
           "eventMappings": [
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_out_2",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
@@ -1003,6 +1052,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca05_prompt_choice",
               "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca05_done",
               "onceOnly": true,
@@ -1010,6 +1060,7 @@
               "bark": "Darren, have you just sent me a sign-in link? It's gone to the whole claims team."
             },
             {
+              "_kitKey": "chg_ca05_done",
               "eventPattern": "global_variable_changed:kit_ca05_done",
               "condition": "value === true && globalVars.kit_ca05_out === true",
               "onceOnly": true,
@@ -1032,6 +1083,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out_sets_ca05_there",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca05_out === true",
               "onceOnly": true,
@@ -1041,6 +1093,7 @@
               }
             },
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1048,6 +1101,7 @@
               "bark": "Voicemail's come through by email. Signing in to hear it."
             },
             {
+              "_kitKey": "chg_ca05_there_knot_ca05_prompt",
               "eventPattern": "global_variable_changed:kit_ca05_there",
               "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true && globalVars.kit_ca05_prompt_choice === ''",
               "onceOnly": true,
@@ -1056,6 +1110,7 @@
               "targetKnot": "ca05_prompt"
             },
             {
+              "_kitKey": "chg_ca05_there_sets_ca05_asked",
               "eventPattern": "global_variable_changed:kit_ca05_there",
               "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1065,6 +1120,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_darren_price_sets_ca05_prompt_choice",
               "eventPattern": "conversation_closed:kit_darren_price",
               "condition": "globalVars.kit_ca05_prompt_choice === 'asked' && globalVars.kit_ca05_out === true",
               "onceOnly": true,
@@ -1073,6 +1129,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca05_prompt_choice_sets_ca05_moved",
               "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
               "onceOnly": true,
@@ -1082,6 +1139,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca05_prompt_choice_sets_ca05_done",
               "eventPattern": "global_variable_changed:kit_ca05_prompt_choice",
               "condition": "value === 'stop' && globalVars.kit_ca05_out === true && !globalVars.kit_ca05_done",
               "onceOnly": true,
@@ -1091,6 +1149,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca05_moved_sets_ca05_done",
               "eventPattern": "global_variable_changed:kit_ca05_moved",
               "condition": "value === true && globalVars.kit_ca05_out === true",
               "onceOnly": true,
@@ -1100,6 +1159,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca05_done_sets_ca05_prompt_choice",
               "eventPattern": "global_variable_changed:kit_ca05_done",
               "condition": "value === true && globalVars.kit_ca05_out === true && globalVars.kit_ca05_prompt_choice === 'asked'",
               "onceOnly": true,
@@ -1222,12 +1282,14 @@
         "anjali_rao": {
           "eventMappings": [
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_out_2",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
@@ -1241,6 +1303,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca10_check_choice",
               "eventPattern": "global_variable_changed:kit_ca10_check_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca10_done",
               "onceOnly": true,
@@ -1248,6 +1311,7 @@
               "bark": "Your account's being used from somewhere we've never seen, Darren. That's not you, is it?"
             },
             {
+              "_kitKey": "chg_ca10_done",
               "eventPattern": "global_variable_changed:kit_ca10_done",
               "condition": "value === true && globalVars.kit_ca10_out === true",
               "onceOnly": true,
@@ -1270,6 +1334,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out_sets_ca10_there",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca10_out === true",
               "onceOnly": true,
@@ -1279,6 +1344,7 @@
               }
             },
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1286,6 +1352,7 @@
               "bark": "Supplier portal's asking me to prove I'm human now."
             },
             {
+              "_kitKey": "chg_ca10_there_knot_ca10_check",
               "eventPattern": "global_variable_changed:kit_ca10_there",
               "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true && globalVars.kit_ca10_check_choice === ''",
               "onceOnly": true,
@@ -1294,6 +1361,7 @@
               "targetKnot": "ca10_check"
             },
             {
+              "_kitKey": "chg_ca10_there_sets_ca10_asked",
               "eventPattern": "global_variable_changed:kit_ca10_there",
               "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1303,6 +1371,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_darren_price_sets_ca10_check_choice",
               "eventPattern": "conversation_closed:kit_darren_price",
               "condition": "globalVars.kit_ca10_check_choice === 'asked' && globalVars.kit_ca10_out === true",
               "onceOnly": true,
@@ -1311,6 +1380,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca10_check_choice_sets_ca10_moved",
               "eventPattern": "global_variable_changed:kit_ca10_check_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
               "onceOnly": true,
@@ -1320,6 +1390,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca10_check_choice_sets_ca10_done",
               "eventPattern": "global_variable_changed:kit_ca10_check_choice",
               "condition": "value === 'close' && globalVars.kit_ca10_out === true && !globalVars.kit_ca10_done",
               "onceOnly": true,
@@ -1329,6 +1400,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca10_moved_sets_ca10_done",
               "eventPattern": "global_variable_changed:kit_ca10_moved",
               "condition": "value === true && globalVars.kit_ca10_out === true",
               "onceOnly": true,
@@ -1338,6 +1410,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca10_done_sets_ca10_check_choice",
               "eventPattern": "global_variable_changed:kit_ca10_done",
               "condition": "value === true && globalVars.kit_ca10_out === true && globalVars.kit_ca10_check_choice === 'asked'",
               "onceOnly": true,

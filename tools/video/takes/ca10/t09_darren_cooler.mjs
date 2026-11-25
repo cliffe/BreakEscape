@@ -1,18 +1,36 @@
-// t09_anjali_cooler: Anjali's cooler trip, followed by the camera. Forced at take start with triggerNeed(thirst, 5): she leaves her post (7.4,8.3), i.e. px (237,266),
-// walks to the water cooler (tile 8.2,5.6, px (262,179)), drinks for about 20 s and walks back. The camera follows her out and back, then glides to the player.
-// The forced trip is not proved on this episode yet (the ca13 equivalent is). Never clicks in the room, never opens the chat.
-// Entry state: the step-away flags (kit_quiet and kit_ca10_out are set by the game, kit_ca10_out must NOT be set: Look up never pressed).
-//   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca10_downloads_and_fake_checks t09_anjali_cooler \
+// t09_darren_cooler: Darren Price's forced water-cooler trip, followed by the camera. Replaces t09_anjali_cooler: Anjali's post settles at (245,233),
+// about 30 px from the cooler's use point, so her drink trip is a step. Darren (needsHome kit_ca10_pc, thirst) starts about 170 px away.
+// triggerNeed(thirst, 5) at take start: he leaves his post for the water cooler (tile 8.2,5.6, px (262,179); use point about (262,219), dy +1.25),
+// drinks for about 20 s and walks back. The camera follows him out and back, then glides to the player. No kiosk is opened and nothing is clicked.
+// Arrival is only accepted within 48 px of the use point (a mid-route pause of about 1 s once read as arrival in ca06 t10); the post is his settled start point.
+// Entry state: the step-away flags; kit_ca10_out must NOT be set (Look up never pressed; after Look up Darren is in the D1 scene).
+//   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca10_downloads_and_fake_checks t09_darren_cooler \
 //     "--set episode_e10_downloads_and_fake_checks_state={\"done\":[\"brief\",\"osint\",\"build\",\"write\",\"flip\",\"defend\"]} --set episode_e10_downloads_and_fake_checks_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e10_downloads_and_fake_checks_defend_percent=100" \
 //     "--hide-hud --zoom-step 1"
-// Marks: player-sprite, npc-start, follow-on, need-set, walk-start (left-post), arrive (at-cooler), return-start, back, follow-off, cam-summary, npc-end, end.
+// Marks: player-sprite, npc-start, post-set, follow-on, need-set, walk-start (left-post), arrive (at-cooler), trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
 import { sleep, prepare, checkSprite } from './_ca10.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
-const NPC = 'kit_anjali_rao';
-let POST = { x: 237, y: 266 }; // surveyed estimate; replaced by her settled start position in the default export
+const NPC = 'kit_darren_price';
+const USE = { x: 262, y: 219 };   // cooler (262,179) + useFrom dy 1.25 tiles
+const ARRIVE_PX = 48;             // arrival must be this close to the use point
+const MIN_TRIP_PX = 120;
+let POST = { x: 0, y: 0 };        // set from his settled start point in the default export
 
-const near = (p, q, r = 24) => Math.hypot(p.x - q.x, p.y - q.y) <= r;
+const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+const near = (p, q, r = 24) => dist(p, q) <= r;
+
+/** Keeps settling until the NPC stands still within r px of target, or null after timeoutMs (a pause mid-route does not count). */
+async function settleNear(page, npcId, target, r, timeoutMs) {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    const p = await settle(page, npcId, Math.max(1500, end - Date.now()), 1000);
+    if (!p) return null;
+    if (near(p, target, r)) return p;
+    await sleep(300);
+  }
+  return null;
+}
 
 /** Resolves the NPC's position once it has stood still for stableMs, or null after timeoutMs. */
 async function settle(page, npcId, timeoutMs, stableMs = 1000) {
@@ -67,25 +85,26 @@ export default async (page, bridge, mark) => {
   await checkSprite(page, mark);
   const p0 = await npcPos(page, NPC);
   mark('npc-start', p0);
-  // 25 Nov dry runs: she stood at (245,233) on two fresh games, not at the surveyed (237,266). Her post is where she
-  // settles at take start; the return check is against that spot.
   const settled = await settle(page, NPC, 8000);
-  if (!settled) throw new Error(`Anjali did not settle at take start: ${JSON.stringify(p0)}`);
+  if (!settled) throw new Error(`Darren did not settle at take start: ${JSON.stringify(p0)}`);
   POST = { x: settled.x, y: settled.y };
   mark('post-set', POST);
   const smp = startSampler(page);
   try {
     mark('follow-on'); await followNpc(page, NPC, { lerp: 0.08 });
     await triggerNeed(page, NPC, 'thirst', 5); mark('need-set', { need: 'thirst', level: 5 });
-    if (!(await waitNpcMoved(page, NPC, 24, 30000))) throw new Error(`Anjali never left her post (${POST.x},${POST.y}) within 30 s of the thirst trigger`);
+    if (!(await waitNpcMoved(page, NPC, 24, 30000))) throw new Error(`Darren never left his post (${POST.x},${POST.y}) within 30 s of the thirst trigger`);
     mark('walk-start', await npcPos(page, NPC));
-    const arr = await settle(page, NPC, 30000);
-    if (!arr) throw new Error('Anjali did not stop at the water cooler within 30 s');
-    mark('arrive', arr);
-    if (!(await waitNpcMoved(page, NPC, 24, 45000))) throw new Error('Anjali did not walk back from the cooler within 45 s of arriving');
+    const arr = await settleNear(page, NPC, USE, ARRIVE_PX, 40000);
+    if (!arr) throw new Error(`Darren did not stop within ${ARRIVE_PX} px of the cooler use point (${USE.x},${USE.y}) within 40 s; last ${JSON.stringify(await npcPos(page, NPC))}`);
+    mark('arrive', { ...arr, fromUse: Math.round(dist(arr, USE)) });
+    const trip = Math.round(dist(arr, POST));
+    mark('trip-distance', { px: trip, min: MIN_TRIP_PX });
+    if (trip < MIN_TRIP_PX) throw new Error(`Darren's trip is only ${trip} px from his post; the take needs at least ${MIN_TRIP_PX} px`);
+    if (!(await waitNpcMoved(page, NPC, 24, 45000))) throw new Error('Darren did not walk back from the cooler within 45 s of arriving');
     mark('return-start', await npcPos(page, NPC));
-    const back = await settle(page, NPC, 30000);
-    if (!back || !near(back, POST)) throw new Error(`Anjali did not get back to her post: ${JSON.stringify(back)}`);
+    const back = await settleNear(page, NPC, POST, 24, 40000);
+    if (!back) throw new Error(`Darren did not get back to his post: ${JSON.stringify(back)}`);
     mark('back', back);
     await finish(page, mark, smp);
   } finally {

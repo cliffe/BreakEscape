@@ -17,6 +17,7 @@ E7 has no check missions: its role is everyone, and it reuses the general-staff 
 (ca_{pre,post}_general_{ab,ba}), which already have shells.
 
 Usage: gen_e6_e7_shells.py [--repo <checkout>] <out_dir>   (the output folder is required)
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
 """
 import copy
 import json
@@ -491,7 +492,7 @@ EPISODES = {
                 'heading': 'How a voice gets copied',
                 'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
-            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one."),
+            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one. A voice you know can be faked on a live call as well as in a voicemail, and ringing back on a number you already hold is what settles it either way."),
         },
     },
 }

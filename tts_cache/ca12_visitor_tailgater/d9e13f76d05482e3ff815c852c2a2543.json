@@ -1,0 +1,14 @@
+{
+  "key": "d9e13f76d05482e3ff815c852c2a2543",
+  "npc": "ca12_yusuf_demir",
+  "text": "Sorry, can I help you there?",
+  "delivery": "polite, firm, unhurried",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:58:28Z"
+}

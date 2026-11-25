@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""P7-J: build the five E1 shells (defend-only + four check missions) from P7-E's fragment."""
+"""P7-J: build the five E1 shells (defend-only + four check missions) from P7-E's fragment.
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
+"""
 import copy
 import json
 import os

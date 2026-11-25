@@ -1,0 +1,17 @@
+{
+ "scenario": "test_ca12_fallback",
+ "lists": {
+  "host": [
+   {"k": null, "h": "501cdd17"},
+   {"k": null, "h": "ff4e056e"},
+   {"k": "quiet_on", "h": "ee9704ff"},
+   {"k": "attack_done", "h": "3a1ca384"},
+   {"k": "defend_done", "h": "dc17d87d"},
+   {"k": "caught", "h": "49f17eee"},
+   {"k": "quiet_off_debrief", "h": "dce8b7f9"}
+  ],
+  "npc:kit_camila_ospina": [
+   {"k": "chg_defend_done", "h": "ca68d9e7"}
+  ]
+ }
+}

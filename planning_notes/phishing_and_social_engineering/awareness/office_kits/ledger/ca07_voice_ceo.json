@@ -1,0 +1,36 @@
+{
+ "scenario": "ca07_voice_ceo",
+ "lists": {
+  "host": [
+   {"k": null, "h": "b0b31048"},
+   {"k": null, "h": "9aa5d15e"},
+   {"k": "quiet_on", "h": "71ce28cf"},
+   {"k": "attack_done", "h": "5eb7a24b"},
+   {"k": "defend_done", "h": "954ec9b2"},
+   {"k": "caught", "h": "e0ca7462"},
+   {"k": "quiet_off_debrief", "h": "934c6fcc"},
+   {"k": "quiet_off_debrief_seen", "h": "4c323673"},
+   {"k": "step_away", "h": "4e5b0b4f"},
+   {"k": "chg_ca07_call_choice", "h": "e045de76"}
+  ],
+  "npc:kit_graham_whitfield": [
+   {"k": "chg_out_sets_ca07_there", "h": "cd610333"},
+   {"k": "chg_out", "h": "ed899379"},
+   {"k": "chg_ca07_there_knot_ca07_call", "h": "6eab1b58"},
+   {"k": "chg_ca07_there_sets_ca07_asked", "h": "316a6101"},
+   {"k": "conversation_closed_graham_whitfield_sets_ca07_call_choice", "h": "f5738839"},
+   {"k": "chg_ca07_call_choice_sets_ca07_moved", "h": "4c5078e4"},
+   {"k": "chg_ca07_call_choice_sets_ca07_done", "h": "a99683ff"},
+   {"k": "chg_ca07_moved_sets_ca07_done", "h": "396ee8bd"},
+   {"k": "chg_ca07_done_sets_ca07_call_choice", "h": "f2e8c765"},
+   {"k": "chg_ca07_there_knot_ca07_call~rearm", "h": "e2131033"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm", "h": "d36e0314"},
+   {"k": "chg_ca07_there_sets_ca07_asked~rearm_cue", "h": "c8201c4a"}
+  ],
+  "npc:kit_gwen_pritchard": [
+   {"k": "chg_out", "h": "8d1c7ea7"},
+   {"k": "chg_out_2", "h": "79a3b145"},
+   {"k": "chg_ca07_done", "h": "1e1d19dc"}
+  ]
+ }
+}

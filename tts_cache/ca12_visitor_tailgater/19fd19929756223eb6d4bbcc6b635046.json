@@ -1,0 +1,13 @@
+{
+  "key": "19fd19929756223eb6d4bbcc6b635046",
+  "npc": "ca12_jun_watanabe",
+  "text": "Client's in this morning.",
+  "voice": "Puck",
+  "style": "A junior architect at Merrin & Sallow, in his early 20s, in his first job, eager and polite; Japanese-British, grew up in the UK. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:59:11Z"
+}

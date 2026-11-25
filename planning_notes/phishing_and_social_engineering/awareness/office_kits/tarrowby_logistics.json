@@ -61,6 +61,7 @@
         "chidi_okeke": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca02_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -77,6 +78,7 @@
         "zainab_hussain": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca06_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -93,6 +95,7 @@
         "chidi_okeke": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca09_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -109,6 +112,7 @@
         "chidi_okeke": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca15_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -125,6 +129,7 @@
         "fatima_begum": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca17_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -141,6 +146,7 @@
         "chidi_okeke": {
           "eventMappings": [
             {
+              "_kitKey": "chg_defend_done_knot_ca20_react",
               "eventPattern": "global_variable_changed:kit_defend_done",
               "condition": "value === true",
               "onceOnly": true,
@@ -213,12 +219,14 @@
         "fatima_begum": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca06_out",
               "eventPattern": "global_variable_changed:kit_ca06_out",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca06_done",
               "eventPattern": "global_variable_changed:kit_ca06_done",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
@@ -236,12 +244,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca06_out",
               "eventPattern": "global_variable_changed:kit_ca06_out",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca06_out_2",
               "eventPattern": "global_variable_changed:kit_ca06_out",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
@@ -255,6 +265,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_out_3",
               "eventPattern": "global_variable_changed:kit_ca06_out",
               "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -262,6 +273,7 @@
               "bark": "Is that new? I've not seen a parking notice up in here before."
             },
             {
+              "_kitKey": "npc_arrived_zainab_hussain_sets_ca06_there",
               "eventPattern": "npc_arrived:kit_zainab_hussain",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_there",
               "onceOnly": true,
@@ -270,6 +282,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_there_knot_ca06_notice",
               "eventPattern": "global_variable_changed:kit_ca06_there",
               "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_quiet === true && globalVars.kit_ca06_notice_choice === ''",
               "onceOnly": true,
@@ -278,6 +291,7 @@
               "targetKnot": "ca06_notice"
             },
             {
+              "_kitKey": "chg_ca06_there_sets_ca06_asked",
               "eventPattern": "global_variable_changed:kit_ca06_there",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
@@ -287,6 +301,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_zainab_hussain_sets_ca06_notice_choice",
               "eventPattern": "conversation_closed:kit_zainab_hussain",
               "condition": "globalVars.kit_ca06_notice_choice === 'asked' && globalVars.kit_ca06_out === true",
               "onceOnly": true,
@@ -295,6 +310,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_notice_choice_sets_ca06_done",
               "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
               "condition": "value === 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
               "onceOnly": true,
@@ -304,6 +320,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_notice_choice_sets_ca06_done_2",
               "eventPattern": "global_variable_changed:kit_ca06_notice_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'fine' && globalVars.kit_ca06_out === true && !globalVars.kit_ca06_done",
               "onceOnly": true,
@@ -313,6 +330,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_done_sets_ca06_notice_choice",
               "eventPattern": "global_variable_changed:kit_ca06_done",
               "condition": "value === true && globalVars.kit_ca06_out === true && globalVars.kit_ca06_notice_choice === 'asked'",
               "onceOnly": true,
@@ -321,6 +339,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca06_done",
               "eventPattern": "global_variable_changed:kit_ca06_done",
               "condition": "value === true && globalVars.kit_ca06_out === true",
               "onceOnly": true,
@@ -475,6 +494,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "object_interacted_sets_ca09_note_seen",
           "eventPattern": "object_interacted",
           "condition": "data.objectName === \"Chidi's PC\" && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_up === true && !globalVars.kit_ca09_done",
           "onceOnly": true,
@@ -483,6 +503,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca09_at_host",
           "eventPattern": "global_variable_changed:kit_ca09_at_host",
           "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca09_done",
           "onceOnly": true,
@@ -490,6 +511,7 @@
           "bark": "Right, Chidi. A password manager remembers it for you, so nothing goes on the screen."
         },
         {
+          "_kitKey": "chg_ca09_at_host_sets_ca09_done",
           "eventPattern": "global_variable_changed:kit_ca09_at_host",
           "condition": "value === true && globalVars.kit_ca09_out === true",
           "onceOnly": true,
@@ -503,12 +525,14 @@
         "fatima_begum": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca09_out",
               "eventPattern": "global_variable_changed:kit_ca09_out",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca09_done",
               "eventPattern": "global_variable_changed:kit_ca09_done",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -535,6 +559,7 @@
           ],
           "eventMappings": [
             {
+              "_kitKey": "chg_ca09_out",
               "eventPattern": "global_variable_changed:kit_ca09_out",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -545,6 +570,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_out_2",
               "eventPattern": "global_variable_changed:kit_ca09_out",
               "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -552,6 +578,7 @@
               "bark": "That's me booted out. Wants a brand new password, of course."
             },
             {
+              "_kitKey": "npc_use_failed_chidi_okeke_sets_ca09_note_up",
               "eventPattern": "npc_use_failed:kit_chidi_okeke",
               "condition": "data.objectId === 'kit_ca09_pc' && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -560,6 +587,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_note_up",
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -567,6 +595,7 @@
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca09_note_up_knot_ca09_note",
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
               "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_quiet === true && globalVars.kit_ca09_note_choice === ''",
               "onceOnly": true,
@@ -575,6 +604,7 @@
               "targetKnot": "ca09_note"
             },
             {
+              "_kitKey": "chg_ca09_note_up_sets_ca09_asked",
               "eventPattern": "global_variable_changed:kit_ca09_note_up",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -584,6 +614,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_chidi_okeke_sets_ca09_note_choice",
               "eventPattern": "conversation_closed:kit_chidi_okeke",
               "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen === true",
               "onceOnly": true,
@@ -592,6 +623,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_note_choice_sets_ca09_to_host",
               "eventPattern": "global_variable_changed:kit_ca09_note_choice",
               "condition": "value === 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
               "onceOnly": true,
@@ -600,6 +632,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_to_host",
               "eventPattern": "global_variable_changed:kit_ca09_to_host",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -613,6 +646,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_chidi_okeke_sets_ca09_at_host",
               "eventPattern": "npc_arrived:kit_chidi_okeke",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_to_host === true && !globalVars.kit_ca09_at_host",
               "onceOnly": true,
@@ -621,6 +655,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_note_choice_sets_ca09_done",
               "eventPattern": "global_variable_changed:kit_ca09_note_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'mention' && globalVars.kit_ca09_out === true && !globalVars.kit_ca09_done",
               "onceOnly": true,
@@ -630,6 +665,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_done_sets_ca09_note_choice",
               "eventPattern": "global_variable_changed:kit_ca09_done",
               "condition": "value === true && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_choice === 'asked'",
               "onceOnly": true,
@@ -638,12 +674,14 @@
               }
             },
             {
+              "_kitKey": "chg_ca09_done",
               "eventPattern": "global_variable_changed:kit_ca09_done",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
               "needs": "resume"
             },
             {
+              "_kitKey": "chg_ca09_done_2",
               "eventPattern": "global_variable_changed:kit_ca09_done",
               "condition": "value === true && globalVars.kit_ca09_out === true",
               "onceOnly": true,
@@ -654,6 +692,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_chidi_okeke_sets_ca09_closed_unseen",
               "eventPattern": "conversation_closed:kit_chidi_okeke",
               "condition": "globalVars.kit_ca09_note_choice === 'asked' && globalVars.kit_ca09_out === true && globalVars.kit_ca09_note_seen !== true",
               "onceOnly": true,
@@ -776,6 +815,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "chg_ca15_at_host",
           "eventPattern": "global_variable_changed:kit_ca15_at_host",
           "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
           "onceOnly": true,
@@ -783,6 +823,7 @@
           "bark": "Thanks, Fatima. I'll check it on a spare machine that isn't connected to anything."
         },
         {
+          "_kitKey": "chg_ca15_at_host_sets_ca15_done",
           "eventPattern": "global_variable_changed:kit_ca15_at_host",
           "condition": "value === true && globalVars.kit_ca15_out === true",
           "onceOnly": true,
@@ -792,6 +833,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca15_at_tray_sets_ca15_done",
           "eventPattern": "global_variable_changed:kit_ca15_at_tray",
           "condition": "value === true && globalVars.kit_ca15_out === true",
           "onceOnly": true,
@@ -801,6 +843,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca15_stick_choice_sets_ca15_chidi_go",
           "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
           "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
           "onceOnly": true,
@@ -810,6 +853,7 @@
           }
         },
         {
+          "_kitKey": "chg_ca15_chidi_at_host",
           "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
           "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca15_done",
           "onceOnly": true,
@@ -817,6 +861,7 @@
           "bark": "Ta, Chidi. That's sat on the floor all afternoon. Anyone could've pocketed it first."
         },
         {
+          "_kitKey": "chg_ca15_chidi_at_host_sets_ca15_done",
           "eventPattern": "global_variable_changed:kit_ca15_chidi_at_host",
           "condition": "value === true && globalVars.kit_ca15_out === true",
           "onceOnly": true,
@@ -837,12 +882,14 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_ca15_out",
               "eventPattern": "global_variable_changed:kit_ca15_out",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca15_out_2",
               "eventPattern": "global_variable_changed:kit_ca15_out",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -856,6 +903,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_out_3",
               "eventPattern": "global_variable_changed:kit_ca15_out",
               "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -863,6 +911,7 @@
               "bark": "Hang on, someone's dropped a memory stick over here."
             },
             {
+              "_kitKey": "npc_arrived_fatima_begum_sets_ca15_there",
               "eventPattern": "npc_arrived:kit_fatima_begum",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_there",
               "onceOnly": true,
@@ -871,6 +920,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_there_knot_ca15_stick",
               "eventPattern": "global_variable_changed:kit_ca15_there",
               "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true && globalVars.kit_ca15_stick_choice === ''",
               "onceOnly": true,
@@ -879,6 +929,7 @@
               "targetKnot": "ca15_stick"
             },
             {
+              "_kitKey": "chg_ca15_there_sets_ca15_asked",
               "eventPattern": "global_variable_changed:kit_ca15_there",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -888,6 +939,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_fatima_begum_sets_ca15_stick_choice",
               "eventPattern": "conversation_closed:kit_fatima_begum",
               "condition": "globalVars.kit_ca15_stick_choice === 'asked' && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -896,6 +948,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_stick_choice_sets_ca15_stick_taken",
               "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -905,6 +958,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_stick_choice_sets_ca15_sent",
               "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
               "condition": "value === 'handin' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -921,6 +975,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_stick_choice_sets_ca15_sent_2",
               "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
               "condition": "value === 'lost' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -937,6 +992,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_fatima_begum_sets_ca15_at_host",
               "eventPattern": "npc_arrived:kit_fatima_begum",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'handin' && !globalVars.kit_ca15_at_host",
               "onceOnly": true,
@@ -945,6 +1001,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_fatima_begum_sets_ca15_at_tray",
               "eventPattern": "npc_arrived:kit_fatima_begum",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_sent === true && globalVars.kit_ca15_stick_choice === 'lost' && !globalVars.kit_ca15_at_tray",
               "onceOnly": true,
@@ -953,6 +1010,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_stick_choice",
               "eventPattern": "global_variable_changed:kit_ca15_stick_choice",
               "condition": "value === 'leave' && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -960,6 +1018,7 @@
               "needs": "resume"
             },
             {
+              "_kitKey": "chg_ca15_done_sets_ca15_stick_choice",
               "eventPattern": "global_variable_changed:kit_ca15_done",
               "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_ca15_stick_choice === 'asked'",
               "onceOnly": true,
@@ -968,6 +1027,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_done",
               "eventPattern": "global_variable_changed:kit_ca15_done",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -978,12 +1038,14 @@
         "chidi_okeke": {
           "eventMappings": [
             {
+              "_kitKey": "chg_ca15_out",
               "eventPattern": "global_variable_changed:kit_ca15_out",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca15_chidi_go",
               "eventPattern": "global_variable_changed:kit_ca15_chidi_go",
               "condition": "value === true && globalVars.kit_ca15_out === true && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -996,6 +1058,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_chidi_okeke_sets_ca15_chidi_there",
               "eventPattern": "npc_arrived:kit_chidi_okeke",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_go === true && !globalVars.kit_ca15_chidi_there && !globalVars.kit_ca15_done",
               "onceOnly": true,
@@ -1004,6 +1067,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_chidi_there_sets_ca15_stick_taken",
               "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -1012,6 +1076,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_chidi_there",
               "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
               "condition": "value === true && globalVars.kit_ca15_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1019,6 +1084,7 @@
               "bark": "Whose is this, then? I'll take it to Nilesh."
             },
             {
+              "_kitKey": "chg_ca15_chidi_there_sets_ca15_chidi_sent",
               "eventPattern": "global_variable_changed:kit_ca15_chidi_there",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -1035,6 +1101,7 @@
               }
             },
             {
+              "_kitKey": "npc_arrived_chidi_okeke_sets_ca15_chidi_at_host",
               "eventPattern": "npc_arrived:kit_chidi_okeke",
               "condition": "data.owner !== 'needs' && globalVars.kit_ca15_out === true && globalVars.kit_ca15_chidi_sent === true && !globalVars.kit_ca15_chidi_at_host",
               "onceOnly": true,
@@ -1043,6 +1110,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca15_done",
               "eventPattern": "global_variable_changed:kit_ca15_done",
               "condition": "value === true && globalVars.kit_ca15_out === true",
               "onceOnly": true,
@@ -1164,6 +1232,7 @@
       ],
       "mappings": [
         {
+          "_kitKey": "chg_ca02_cv_choice",
           "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
           "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && !globalVars.kit_ca02_done",
           "onceOnly": true,
@@ -1171,6 +1240,7 @@
           "bark": "Chidi, IT have just cut your machine off. The driver applications are all on there."
         },
         {
+          "_kitKey": "chg_ca02_asked",
           "eventPattern": "global_variable_changed:kit_ca02_asked",
           "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_portal_caught !== true && globalVars.kit_ca02_cv_choice !== 'enable' && globalVars.kit_ca02_cv_choice !== 'silent'",
           "onceOnly": true,
@@ -1183,12 +1253,14 @@
         "zainab_hussain": {
           "eventMappings": [
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.{out} === true",
               "onceOnly": true,
               "needs": "suspend"
             },
             {
+              "_kitKey": "chg_ca02_done",
               "eventPattern": "global_variable_changed:kit_ca02_done",
               "condition": "value === true && globalVars.kit_ca02_out === true",
               "onceOnly": true,
@@ -1211,6 +1283,7 @@
           },
           "eventMappings": [
             {
+              "_kitKey": "chg_out_sets_ca02_there",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca02_out === true",
               "onceOnly": true,
@@ -1220,6 +1293,7 @@
               }
             },
             {
+              "_kitKey": "chg_out",
               "eventPattern": "global_variable_changed:{out}",
               "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1227,6 +1301,7 @@
               "bark": "Got a CV in for the driver job."
             },
             {
+              "_kitKey": "chg_ca02_there_knot_ca02_cv",
               "eventPattern": "global_variable_changed:kit_ca02_there",
               "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true && globalVars.kit_ca02_cv_choice === ''",
               "onceOnly": true,
@@ -1235,6 +1310,7 @@
               "targetKnot": "ca02_cv"
             },
             {
+              "_kitKey": "chg_ca02_there_sets_ca02_asked",
               "eventPattern": "global_variable_changed:kit_ca02_there",
               "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_quiet === true",
               "onceOnly": true,
@@ -1244,6 +1320,7 @@
               }
             },
             {
+              "_kitKey": "conversation_closed_chidi_okeke_sets_ca02_cv_choice",
               "eventPattern": "conversation_closed:kit_chidi_okeke",
               "condition": "globalVars.kit_ca02_cv_choice === 'asked' && globalVars.kit_ca02_out === true",
               "onceOnly": true,
@@ -1252,6 +1329,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca02_cv_choice_sets_ca02_moved",
               "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
               "condition": "value !== '' && value !== 'asked' && value !== 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
               "onceOnly": true,
@@ -1261,6 +1339,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca02_cv_choice_sets_ca02_done",
               "eventPattern": "global_variable_changed:kit_ca02_cv_choice",
               "condition": "value === 'report' && globalVars.kit_ca02_out === true && !globalVars.kit_ca02_done",
               "onceOnly": true,
@@ -1270,6 +1349,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca02_moved_sets_ca02_done",
               "eventPattern": "global_variable_changed:kit_ca02_moved",
               "condition": "value === true && globalVars.kit_ca02_out === true",
               "onceOnly": true,
@@ -1279,6 +1359,7 @@
               }
             },
             {
+              "_kitKey": "chg_ca02_done_sets_ca02_cv_choice",
               "eventPattern": "global_variable_changed:kit_ca02_done",
               "condition": "value === true && globalVars.kit_ca02_out === true && globalVars.kit_ca02_cv_choice === 'asked'",
               "onceOnly": true,

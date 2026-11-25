@@ -100,3 +100,46 @@ Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=
 - **t04**: the first `interact:chidi_okeke` reported `no-effect-confirmed` at 8.00 yet the portrait was up at 8.99 and C1 played once (line-start 9.18); a second interact at 10.37 reported ok with no second line. Harmless, but cut on c1_start.
 - Marks versus pictures agree to within a frame in every take checked. The 9:16 bubble crop for t07 and t08 has not been framed.
 - Zainab's Z2 started 4.2 s after arrival in t08 (about 3.5 s in t07).
+
+## Render queue
+
+Edit lists from the 25 Nov takes (round 1, 73.0 s, 16 shots, lint 0 errors): `tools/video/edits/ca06_trailer_r1.json` (16:9) and `ca06_trailer_r1_narrow.json` (9:16 and 1:1). Not rendered. Takes are read from `video_out/ca06/takes`, a symlink to `~/video-takes-local/ca06/takes` (git-ignored; recreate it on a fresh checkout). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`). About 35 min per aspect at one thread (about 1 h 50 min for all three):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca06_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca06_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed). Output: `video_out/ca06/renders/`.
+
+Window table (output s, take, in-out in trimmed-take s; narrow file in the second column where it differs):
+
+| shot | out s | take (wide / narrow) | in-out (wide / narrow) | note |
+|---|---|---|---|---|
+| hook | 0-3.9 | t08_zainab_to_notice | 6.465-10.365 | Z1 speech 6.615-10.049; background drifts for about 1 s while Zainab stays at x 0.50 |
+| topic | 9.0-15.8 | t05 run A | 8.0-14.8 | narrow file uses the same wide run, zoomed out |
+| research | 18.8-23.0 | t02 / t02b | 6.35-10.55 / 6.25-10.45 | Kaylee and Dev noted |
+| notices | 23.0-26.5 | t02 / t02b | 11.17-14.67 / 11.05-14.55 | 3.5 s; browser closes just after the out |
+| write | 26.5-32.3 | t02 / t02b | 29.4-35.2 / 29.27-35.07 | ask set about 3.0-3.6 s in |
+| lands | 32.3-35.3 | t02 / t02b | 36.4-39.4 / 36.27-39.27 | flip panel not in |
+| flip | 35.3-37.3 | t02 / t02b | 40.0-42.0 / 39.87-41.87 | heading and tab strip only |
+| chidi_flip | 37.3-45.7 | t04_chidi_flip | 9.0-17.4 | portrait first shows at 9.0; speech about 9.45-17.2 |
+| phone_list | 47.7-54.5 | t05 run B / t05b | 8.0-14.8 / 7.35-14.15 | card not up yet |
+| phone_card | 54.5-60.1 | t05 run B / t05b | 16.0-21.6 / 15.0-20.6 | canteen notice, no verdict row |
+| office_life (PROPOSED) | 60.1-62.5 | t10_fatima_drinks | 24.5-26.9 | silent, +2.4 s |
+| office | 62.5-67.5 | t07_notice_beat | 10.59-15.59 | Z2 speech 10.938-15.187 |
+
+Edit notes (defaults the owner can change):
+- Music: PeaceFolk Guitar Motif from 95.545 s, as ca02 (alternatives are listed in the edit's `music` block). The script names no track.
+- Office-life slot: `office_life` uses t10_fatima_drinks (24.5-26.9, silent) between phone_card and office. It is not in the script; delete the shot for 70.6 s.
+- The office shot uses t07_notice_beat, not t08. Reason: t08's camera pans back to the player from 14.49 inside Z2's last sentence, so a fixed crop would go half black. t07 has a fixed camera (room x 0.155-0.65, Zainab at 0.27). The hook is t08.
+- Notices window is 3.5 s, not the script's 3.6 s (the browser closes between 14.70 and 14.73 in the wide take). Research and notices are two cut shots.
+- chidi_flip is 8.4 s from 9.0 (the script's 8.45 s starts before the portrait is up).
+- VO: Sulafat_v2 clips, no trims.
+
+Checks still to do before a render (crop simulations on one frame per shot, no render needed): 9:16 and 1:1 for the hook (bubble inside 607 px, notice in frame), office (bubble 0.16-0.39), chidi_flip (Chidi in frame, game text bar cropped out), and t10 (Fatima centred as the camera follows). Also check the t05b phone_list out (14.15) has no card, and read the written 9:16 and 1:1 framings of the wide file as untested (the wide file mirrors the narrow values for shots that have a narrow take). Lint warnings: unreviewed spoiler blocks on every gameplay and card shot; VO v5 is 3.0 words/s and v10 is 3.2 words/s (the voiced files).
