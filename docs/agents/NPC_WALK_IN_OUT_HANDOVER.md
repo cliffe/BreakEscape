@@ -123,3 +123,15 @@ Open:
 - `validator-office-life-events.test.mjs` fails: the new engine literal `npc_left` must be added to an event list in `scripts/validate_office_life.rb` (around line 66, beside `npc_arrived`). That file belongs to the validator agent.
 - Deviations from the plan: walk-in timeout with `to` in view fades in at `to` (not at the inner doorway mouth); doors are scored by straight-line distance, not path length; the spawn cell is not path-checked to `to` (BFS connectivity only); `_approachRouteGate` for walks left out as the handover says.
 - No live browser proof yet (scenario `test_npc_walk_in_out` and m09/m10 conversions are later stages). m10 `farah_guard`: in-place `walkOut` only, no appended mapping (plan section 13).
+
+## B3 status (2026-11-25)
+Done (commits e08489a67, 439b5b5aa, plus the proof-script commit):
+- Door-pass hook for CA0: `setNpcDoorPassHook(fn)` exported from `npc-walk.js`, also `window.npcWalk.setDoorPassHook`. Asked (via `askDoorPassHook`) only when `doorUsable` says no, in both `chooseSpawn` and `chooseExit`, with `{ roomId, connectedRoom, direction, npcId }`. true / promise of true: the far room is loaded, then `openDoorForNpc(sprite, id, { passedByHook: true })` (doors.js now opens a locked door on that flag; a gate still returns false there, so CA0's door-gates side must open the gate). Throw, reject, non-true or no answer in `DOOR_PASS_HOOK_TIMEOUT_MS` (2000) = false. One hook; a second replaces it with console.warn; null clears. Never cached. Env override `hookTimeoutMs` for tests.
+- Shared test world moved to `test/js/helpers/npc-walk-world.mjs` (not a test file); `npc-walk-gate.test.mjs` 21 tests (13 new); door/npc/walk suites 107/107 files pass.
+- `scenarios/test_npc_walk_in_out/`: validator 0 errors, 8 warnings (porter's two mappings on one event, intended; no talk portraits; locked vault walkIn, intended). Not in Hacktivity fixtures.
+- `docs/agents/NPC_WALK_IN_OUT_PROOF_SCRIPT.md`.
+
+Open:
+- The scenario has no mission row yet, so no live run: `new-game.sh` needs it (seeds), which needs AC0's yes.
+- Case (b) is "open doorway, room loaded" (player visits the store first): an unloaded room always sits behind a closed door, so the unloaded route is case (c).
+- Same-room offscreen (a) needs a viewport smaller than the 20x10 ward (proof uses 800x600); NPC tile positions in `room_m10_hall` were chosen from its collision layer, not checked live.
