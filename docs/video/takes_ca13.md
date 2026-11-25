@@ -75,3 +75,23 @@ Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=
 | t07_graham_coffee | 43.57 | 0.07 | -48 / -62 | post-set (100,187) 1.44, follow-on 1.44, need-set 1.49, walk-start 2.87, arrive 5.46 at (238,213), trip 140 px (min 120), return-start 38.06, back 40.79 at (100,187), follow-off 41.60, cam-summary 43.05 (154 samples, scroll range 126 by 32, back on the player) |
 
 Drop is 0.07 to 0.80 % (run A of t05 is the highest at 0.80 %, still under the 1 % gate). Edit retime: t07 Graham stands about 33 s at the station between arrive (5.46) and return-start (38.06), so cut the wait. Sidecars are still drafts.
+
+## Retake 26 Nov (owner: player aside)
+
+Owner (25 Nov): "The opening scene has 3 characters standing too close together. Have the player stand aside." Frames at 5.5, 7.0 and 12.0 s of the 25 Nov t06 show the trio at the top of the room: Agnieszka (red hair, left), Gwen (middle) and the player (right, white shirt, beside the kiosk). The player sits on the scenario's `resumeSpawn` (6.6, 3.6 tiles), Gwen is at (5.5, 3.8), Agnieszka at (6, 4). Graham is the seated man at the desk (3, 6), not part of the trio. Only t06 shows this: the hook (source 5.10 to 7.55) and the office shot (10.56 to 19.04).
+
+**Change (take script only, `tools/video/takes/ca13/t06_graham_step_away.mjs`).** The kiosk opens only within 1 tile (32 px), so the player cannot move first, and the camera is locked on the player (everything scrolls with it). So: (1) `stopFollow` freezes the camera at take start while the player is still at the spawn, which keeps the 25 Nov framing exactly (the edit's 16:9 crop cx 0.411 cy 0.537 zoom 2 still fits); (2) kiosk opens and Look up are untouched; (3) right after Look up and once the panel has gone, the player walks straight down 64 px (2 tiles, about 190 px on screen), 3x screen scale. Old position: (6.6, 3.6) tiles, about 1 tile from Gwen. New: about (6.6, 5.6), about 2.5 tiles from Gwen, in open carpet below the kiosk (desk 4 tiles left, chairs lower right), inside the crop (feet about y 810 of 850). G1 plays about 1.6 s after Look up and the walk takes about 0.5 s, so the player is still before the hook's source in-point.
+
+**Marks kept:** kiosk-open, look_up, bubble-start/end, bark1_start (about 5.08), bark2_start (about 10.58), bark2_end, audio-start/end, tts, frame:t+N, end. **New marks:** cam-before-freeze, cam-freeze, aside-start, aside-end (x, y, movedPx, camera scroll, atS), frame:aside. The take throws if the player moved less than 48 px.
+
+**Dry run** (keyless server, as the 25 Nov takes; machine unlocked, display :147):
+
+```
+BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca13_ai_assistant t06_graham_step_away \
+  "--set episode_e13_ai_assistant_state={\"done\":[\"brief\",\"write\",\"flip\",\"defend\"]} --set episode_e13_ai_assistant_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e13_ai_assistant_defend_percent=60 --set kit_quiet=true" \
+  "--hide-hud --zoom-step 1"
+```
+
+Dry-run checks before the real capture: (a) `aside-end` movedPx 60 to 66, atS under 1.4 and scrollX/scrollY equal to `cam-before-freeze` (frame did not scroll); (b) `look_up` to `bark1_start` about 1.6 s and `bark2_start` minus `bark1_start` about 5.5 s as on 25 Nov (look_up 3.49, bark1 5.08, bark2 10.58, bark2_end 19.32 in trimmed seconds); (c) frames at 5.5, 7.0 and 12.0 s: player clearly apart from Gwen and Agnieszka, fully in the 16:9 crop (x 310 to 1270, y 310 to 850) and in the 9:16 window; (d) no chat or menu opened, `bubble-hidden-check` still `visible:false`. If the player's feet are cut at the crop's bottom edge, reduce `ASIDE_DOWN_PX` to 48. Then capture as for 25 Nov (record, trim, check, marks), replace `t06_graham_step_away.trimmed.mkv` and markers in `~/video-takes-local/ca13/takes/`, and re-measure the edit cues if any mark moved more than 0.1 s (G1 speech 5.257, G2 10.858 on 25 Nov).
+
+**Other takes with the same opening:** none need it. There is no narrow t06. t01, t02, t04, t05 and their narrow versions show the kiosk or chat panels, not the room trio (t04 walks to Gwen on purpose). t07_graham_coffee starts from the same spawn but its camera follows Graham, so the player is only in frame if he is near the trio at 2.87 to 5.46 s: check that shot once and recapture only if so. Recapture: t06 only.
