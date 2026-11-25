@@ -12,7 +12,7 @@
 // gates its lunch on kitchen_seen).
 
 VAR coffee_call = 0
-VAR coffee_pending = false
+VAR coffee_pending = false // Synced scenario global: set here on a press, cleared when Jun is back at his desk or on a load
 VAR act_midday = false
 VAR act_evening = false
 VAR kitchen_seen = false

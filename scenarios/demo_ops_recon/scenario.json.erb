@@ -488,7 +488,7 @@
           "behavior": { "facePlayer": true, "immovable": true },
           "eventMappings": [
             { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
-            { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false } },
+            { "eventPattern": "game_loaded", "cooldown": 0, "setGlobal": { "kitchen_seen": false, "server_room_seen": false, "coffee_pending": false } },
             { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
             { "eventPattern": "network_foothold_gained:hotdesk_jack", "onceOnly": true, "cooldown": 0, "condition": "globalVars.kitchen_used !== true", "completeTask": "plug_in", "setGlobal": { "plug_in_done": true }, "bark": "You're on the office network now. The box is your foothold. Anything it can reach, you can look at. Now sweep the network." },
