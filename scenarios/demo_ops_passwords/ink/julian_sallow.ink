@@ -7,7 +7,7 @@ VAR met_julian = false
 }
 ~ met_julian = true
 # speaker:npc
-Ah, the visitor. Keep it brief, I'm off to a client lunch.
+Ah, the visitor. Keep it brief, I've a client lunch later.
 -> hub.choices
 
 === hub ===

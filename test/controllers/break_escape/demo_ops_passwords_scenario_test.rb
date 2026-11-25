@@ -155,6 +155,39 @@ module BreakEscape
       assert_equal %w[graham_whitfield], data['rooms'].values.flat_map { |r| Array(r['npcs']) }.select { |n| n.dig('creds', 'admin') }.map { |n| n['id'] }
     end
 
+    test 'the levers are counters with the section 4 shape, and the reported ticks are gated on what makes them possible' do
+      data = scenario
+      npcs = data['rooms'].values.flat_map { |r| Array(r['npcs']) }.index_by { |n| n['id'] }
+      delphine = npcs['delphine_arvanitis']
+      { 'coffee_call' => 'caffeine', 'ask_weekend' => 'social_media' }.each do |global, need|
+        assert_equal 0, data['globalVariables'][global], global
+        m = delphine['eventMappings'].find { |e| e['eventPattern'] == "global_variable_changed:#{global}" }
+        refute_nil m, global
+        assert_equal 0, m['cooldown'], global
+        assert_nil m['condition'], global
+        assert_operator m.dig('needs', 'set', need), :<, delphine.dig('needs', need, 'urgentAt'), global
+      end
+      ama = npcs['ama_owusu']['eventMappings']
+      { 'kitchen' => 'kitchen_seen', 'it_room' => 'it_room_seen', 'partner_office' => 'partner_office_seen' }.each do |room, global|
+        assert(ama.any? { |m| m['eventPattern'] == "room_entered:#{room}" && m.dig('setGlobal', global) == true }, room)
+        assert_equal false, data['globalVariables'][global], global
+      end
+      assert_equal "data.username === 'darvanitis'", ama.find { |m| m['eventPattern'] == 'pc_signed_in:delphine_pc' }['condition']
+      ink = File.read(File.join(ROOT, 'scenarios/demo_ops_passwords/ink/ama_owusu.ink'))
+      lunch = ink[/=== lever_lunch ===.*?(?====)/m]
+      assert_includes lunch, 'not (kitchen_seen and it_room_seen and partner_office_seen)', 'lunch waits until every room an NPC needs is loaded'
+      assert_match(/\+ \{ not earn_facts_done and se_intel_delphine_dog_name and se_intel_delphine_dog_year \}/, ink)
+      assert_match(/\+ \{ admin_signin_done and not profile_read_done \}/, ink)
+    end
+
+    test 'the log seed has exactly one night-time failure, and it is the anomaly' do
+      data = scenario
+      night = data['logSources']['signin_log']['seedRows'].select { |r| r['event'] == 'signin_fail' && r['at'] =~ /\A\w+ 0[0-5]:/ }
+      assert_equal %w[s2], night.map { |r| r['id'] }
+      reader = data['rooms']['it_room']['objects'].find { |o| o['id'] == 'signin_log_pc' }
+      assert_equal 's2', reader.dig('minigameData', 'anomaly', 'rowId')
+    end
+
     test 'no password appears in ink, notices, objectives or the mission file outside creds and the printer note' do
       files = Dir[File.join(ROOT, 'scenarios/demo_ops_passwords/ink/*.{ink,json}')] + [File.join(ROOT, 'scenarios/demo_ops_passwords/mission.json')]
       files.each do |path|
@@ -326,6 +359,27 @@ module BreakEscape
       refute_includes response.body, JULIAN_PASSWORD
     end
 
+    test 'P5: the strong record never falls, even with both facts earned and picked and the note held' do
+      travel_to T0 do
+        build
+        take_records
+        take_photo
+        serve_feed_post
+        take_note
+        assert_equal FACTS.sort, earned.sort
+        body = crack('julian_hash', FACTS)
+        assert_equal 'nomatch', body['status']
+        assert_equal 1, body['runs']
+        assert_equal 'infeasible', crack('julian_hash', FACTS)['status']
+        assert_equal 'infeasible', crack('julian_hash')['status']
+        assert_equal 'infeasible', row('julian_hash')['status']
+        assert_nil row('julian_sallow.cracked')
+        assert_equal 2, state['crackRuns']['julian_hash']
+        refute_includes Array(state['crackedAccounts']), 'julian_sallow'
+        refute_includes response.body, JULIAN_PASSWORD
+      end
+    end
+
     # ---- P6: user sign-in, the printer account, the USB policy --------------------------------------
 
     test 'P6: the cracked password signs in at Delphine\'s PC as a user, with no access level, and the stick is refused' do
@@ -401,7 +455,13 @@ module BreakEscape
       assert_equal 1, rows('signin_fail').size
       3.times { sign_in('graham_pc', 'gwhitfield', 'not-the-password') }
       assert_equal 1, rows('signin_fail').size, 'the failures merge into one row'
-      body = sign_in('graham_pc', *GRAHAM)
+      assert_equal 4, rows('signin_fail').first['n'].to_i, 'the merged row counts every failure'
+      # the password read from the note's own text, typed for Graham's account
+      note = scenario['rooms']['office']['objects'].find { |o| o['id'] == 'printer_admin_note' } ||
+             scenario['rooms']['office']['objects'].find { |o| o['id'] == 'printer_cupboard' }['contents'].find { |c| c['id'] == 'printer_admin_note' }
+      account, typed = note['text'].lines.last.strip.split(' / ')
+      assert_equal PRINTER[0], account
+      body = sign_in('graham_pc', GRAHAM[0], typed)
       assert body['success'], body.to_s
       assert_equal 'admin', level('graham_pc')
     end
@@ -584,34 +644,16 @@ module BreakEscape
       assert_equal %w[cracked infeasible needMoreFacts nomatch running], shapes
     end
 
-    # Filter (listed in planning/BUILD_REPORT.md): the server's hash row carries `heldItem` (follow-up A1, the held file's
-    # id, no secret), which tools/playtest/lib/access_leak_scanner.rb CRACK_ROW_KEYS does not list yet, so the scanner
-    # reads every hash row as foreign. The raw run must give findings of no other rule and only on keyring hash rows;
-    # with that one key removed it must give none. When the scanner lists the key, the raw scan alone passes.
+    # The scanner lists the hash row's `heldItem` key since Track A's fix (c153103d8), so the raw run is scanned as it is.
     def scan_run(rows)
       lines = rows.each_with_index.map { |r, i| ['run.jsonl', i + 1, r] }
       AccessLeakScanner.new(scenario, game: Game.find(@game.id)).scan(lines, signins: @signins)
     end
 
-    def without_held_item(rows)
-      copy = Marshal.load(Marshal.dump(rows))
-      copy.each do |r|
-        next unless r['path'].to_s.end_with?('/keyring') && r['body'].is_a?(Hash)
-
-        Array(r['body']['entries']).each { |e| e.delete('heldItem') if e['kind'] == 'hash' }
-      end
-      copy
-    end
-
     test 'the leak scanner judges every answer of the whole run clean' do
       play_whole_run
       assert_operator captured.size, :>, 40
-      raw = scan_run(captured)
-      assert_equal [], raw.map(&:rule).uniq - ['crack_row'], 'only the heldItem key may be flagged'
-      held = captured.flat_map { |r| r['path'].to_s.end_with?('/keyring') && r['body'].is_a?(Hash) ? Array(r['body']['entries']) : [] }
-                     .select { |e| e['kind'] == 'hash' }.map { |e| e['heldItem'] }.uniq.sort
-      assert_equal %w[delphine_record_file graham_record_file julian_record_file], held
-      assert_equal [], scan_run(without_held_item(captured)).map { |f| [f.line, f.rule, f.owner, f.route] }
+      assert_equal [], scan_run(captured).map { |f| [f.line, f.rule, f.owner, f.route] }
     end
 
     test 'the scanner is not blind: the same run with a password put into a keyring answer is a finding' do
@@ -619,7 +661,7 @@ module BreakEscape
       rows_copy = Marshal.load(Marshal.dump(captured))
       last = rows_copy.rindex { |r| r['method'] == 'GET' && r['path'].end_with?('/keyring') && r['body'].is_a?(Hash) }
       rows_copy[last]['body']['entries'].find { |e| e['id'] == 'julian_hash' }['label'] = JULIAN_PASSWORD
-      found = scan_run(without_held_item(rows_copy))
+      found = scan_run(rows_copy)
       refute_empty found
     end
   end

@@ -16,7 +16,7 @@ Yes?
 - (choices)
 + [Do you lock your screen?]
     # speaker:npc
-    If I'm away for more than ten seconds, it locks itself.
+    The moment I get up, it locks itself. IT insisted.
     -> choices
 + [Do you post much?]
     # speaker:npc

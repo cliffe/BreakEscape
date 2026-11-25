@@ -16,7 +16,7 @@ What's up?
 - (choices)
 + [Anything worth reading on the office feed?]
     # speaker:npc
-    Delphine's on there again. You can learn a lot about her.
+    Delphine's on there again. Mostly the dog.
     -> choices
 + [I'll let you get on.]
     # speaker:npc

@@ -29,9 +29,9 @@ Go on, then.
 
 === log_offer ===
 # speaker:npc
-Every sign-in leaves a row. Open the log PC and find yours.
+Every sign-in leaves a row. Open the log terminal and find yours.
 # speaker:npc
-Then look at the small hours. One row doesn't belong.
+Then look at the small hours. Someone tried my PC in the night. Flag that row.
 -> hub.choices
 
 // Played once by the needs system when Graham and Niamh chat at the cooler

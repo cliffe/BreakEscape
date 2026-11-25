@@ -46,6 +46,8 @@
     "act_evening": false,
     "office_coffee_off": false,
     "kitchen_seen": false,
+    "it_room_seen": false,
+    "partner_office_seen": false,
     "heard_exchange_cooler_chat": false,
     "cake_servings": 2,
     "earn_facts_done": false,
@@ -219,8 +221,8 @@
       "seedRows": [
         { "id": "s1", "at": "Mon 17:32", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
         { "id": "s2", "at": "Tue 02:10", "event": "signin_fail", "as": "administrator", "where": { "kind": "pc", "id": "graham_pc" }, "result": "fail" },
-        { "id": "s3", "at": "Tue 02:12", "event": "signin_fail", "as": "backup", "where": { "kind": "pc", "id": "graham_pc" }, "result": "fail" },
-        { "id": "s4", "at": "Tue 07:51", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
+        { "id": "s3", "at": "Tue 07:51", "event": "signin_ok", "as": "graham_whitfield", "where": { "kind": "pc", "id": "graham_pc" }, "result": "ok" },
+        { "id": "s4", "at": "Tue 08:01", "event": "signin_fail", "as": "delphine_arvanitis", "where": { "kind": "pc", "id": "delphine_pc" }, "result": "fail" },
         { "id": "s5", "at": "Tue 08:02", "event": "signin_ok", "as": "delphine_arvanitis", "where": { "kind": "pc", "id": "delphine_pc" }, "result": "ok" },
         { "id": "s6", "at": "Tue 08:09", "event": "signin_ok", "as": "jun_watanabe", "where": { "kind": "pc", "id": "jun_pc" }, "result": "ok" }
       ]
@@ -231,7 +233,7 @@
     {
       "aimId": "morning",
       "title": "Morning: the facts",
-      "description": "Staff give things away without meaning to. Each task ticks when you have done it.",
+      "description": "Staff give things away without meaning to. Come back and tell Ama what you find, and she ticks it off.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -241,7 +243,7 @@
     {
       "aimId": "midday",
       "title": "Midday: crack and sign in",
-      "description": "Lunch empties rooms. Take the stored records, crack what will crack, and use what you learn. Each task ticks when you have done it.",
+      "description": "Lunch empties rooms. Take the stored records, crack what will crack, and use what you learn. Taking the records, sign-ins and the devices tick by themselves; tell Ama about each crack and the client files.",
       "status": "active",
       "order": 1,
       "tasks": [
@@ -251,9 +253,9 @@
         { "taskId": "crack_strong", "title": "Try the record that never falls", "type": "custom", "status": "active" },
         { "taskId": "user_signin", "title": "Sign in at Delphine's PC with her password", "type": "custom", "status": "active" },
         { "taskId": "usb_refused", "title": "Plug the stick into Delphine's desk and see what the office policy says", "type": "custom", "status": "active" },
-        { "taskId": "admin_signin", "title": "Sign in as the administrator at the partner's PC", "type": "custom", "status": "active" },
-        { "taskId": "profile_read", "title": "Open the partner's client files as the administrator", "type": "custom", "status": "active" },
-        { "taskId": "override", "title": "Use the keystroke device at the partner's PC as the administrator", "type": "custom", "status": "active" }
+        { "taskId": "admin_signin", "title": "Sign in at the partner's PC as Graham, an administrator", "type": "custom", "status": "active" },
+        { "taskId": "profile_read", "title": "Open the partner's client files as Graham", "type": "custom", "status": "active" },
+        { "taskId": "override", "title": "Use the keystroke device at the partner's PC, signed in as Graham", "type": "custom", "status": "active" }
       ]
     },
     {
@@ -263,7 +265,7 @@
       "status": "active",
       "order": 2,
       "tasks": [
-        { "taskId": "read_log", "title": "Find your own trail in the sign-in log, and the one entry that does not belong", "type": "custom", "status": "active" }
+        { "taskId": "read_log", "title": "Find your own trail in the sign-in log, and flag the night-time failure", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -338,20 +340,9 @@
           "takeable": false,
           "policy": "desk",
           "observations": "A USB port on the desk, wired to the desk policy.",
+          "affordance": false,
           "requiresItem": "kit_stick",
-          "requiresItemHint": "You would need a USB stick to plug in here.",
-          "triggerOnInteract": [
-            {
-              "type": "confirm_action",
-              "text": "Plug the stick into the desk port?",
-              "confirmLabel": "Plug it in",
-              "cancelLabel": "Leave it",
-              "onConfirm": [
-                { "type": "remove_item", "item": "kit_stick" },
-                { "type": "hint", "title": "Desk port", "message": "The stick is in the desk port." }
-              ]
-            }
-          ]
+          "requiresItemHint": "You would need a USB stick to plug in here."
         },
         {
           "type": "filing_cabinet_locked1",
@@ -439,7 +430,7 @@
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "observations": "",
-          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in as the administrator at the partner's office and open the client files.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
+          "text": "Morning:\n- Read what Delphine posts on the office feed in the kitchen.\n- Take the photo from her desk while she is away.\nMidday:\n- Look round the kitchen, the IT room and the partner's office, then ask Ama to send them to lunch.\n- Take the stored records from the bin in the IT room.\n- Crack them: one will, one will after a wait, one never will.\n- Sign in at Delphine's PC, then try the stick in her desk port.\n- Sign in at the partner's PC as Graham, an administrator, and open the client files.\n- Still signed in there, try the keystroke device in the socket beside the PC.\n- Tell Ama what you find as you go.\nEvening:\n- Call it a day, then read the sign-in log in the IT room."
         }
       ],
       "npcs": [
@@ -459,13 +450,16 @@
           "eventMappings": [
             { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
             { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
+            { "eventPattern": "room_entered:it_room", "cooldown": 0, "setGlobal": { "it_room_seen": true } },
+            { "eventPattern": "room_entered:partner_office", "cooldown": 0, "setGlobal": { "partner_office_seen": true } },
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId.includes('_record_file')", "cooldown": 0, "completeTask": "get_records", "setGlobal": { "get_records_done": true } },
             { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "setGlobal": { "heard_exchange_cooler_chat": true } },
             { "eventPattern": "npc_posted:delphine_arvanitis", "onceOnly": true, "cooldown": 0, "bark": "Delphine's posted on the office feed. Have a read." },
-            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "onceOnly": true, "delayMs": 6000, "cooldown": 0, "bark": "Lunch. Graham and Julian are both out of their rooms." },
-            { "eventPattern": "pc_signed_in:delphine_pc", "cooldown": 0, "completeTask": "user_signin", "setGlobal": { "user_signin_done": true } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "onceOnly": true, "delayMs": 6000, "cooldown": 0, "bark": "Lunch. Graham's off to the kitchen, and Julian's gone to his client lunch." },
+            { "eventPattern": "pc_signed_in:delphine_pc", "condition": "data.username === 'darvanitis'", "cooldown": 0, "completeTask": "user_signin", "setGlobal": { "user_signin_done": true } },
             { "eventPattern": "usb_refused:desk_usb_port", "cooldown": 0, "completeTask": "usb_refused", "setGlobal": { "usb_refused_done": true } },
             { "eventPattern": "pc_signed_in:partner_pc", "condition": "data.username === 'gwhitfield'", "cooldown": 0, "completeTask": "admin_signin", "setGlobal": { "admin_signin_done": true } },
-            { "eventPattern": "network_foothold_gained", "onceOnly": true, "delayMs": 2500, "cooldown": 0, "completeTask": "override", "setGlobal": { "override_done": true }, "bark": "That's the office network, seen from Julian's PC. Another lesson; close it." },
+            { "eventPattern": "network_foothold_gained", "onceOnly": true, "delayMs": 2500, "cooldown": 0, "completeTask": "override", "setGlobal": { "override_done": true }, "bark": "His PC blocks devices, but an administrator's session let it through. That window's the office network. Close it for today." },
             { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } }
           ]
         },
@@ -533,7 +527,7 @@
           "storyPath": "scenarios/demo_ops_passwords/ink/jun_watanabe.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "voice": { "name": "Puck", "style": "Fenlow Managed IT's junior technician, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Puck", "style": "Merrin & Sallow's junior office assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "staff",
           "creds": { "username": "jwatanabe", "password": "Marlow-Quarry-Tide-71" },
@@ -835,6 +829,7 @@
           "position": { "x": 7, "y": 3.5 },
           "takeable": false,
           "observations": "A spare USB socket on the desk. Useful only while you are signed in at the partner's PC.",
+          "affordance": false,
           "requiresItem": "kit_badusb",
           "requiresItemHint": "You would need a device to plug in here.",
           "triggerOnInteract": [
