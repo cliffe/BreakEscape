@@ -113,9 +113,9 @@ class AccessLeakCheckCliTagsTest < ActiveSupport::TestCase
   end
 
   test 'T8: a tagged capture with --signin or --logout is refused, and so is --untagged on a tagged file' do
-    assert_refused(tagged_rows, '--signin', 'omar@front_pc#1')
-    assert_refused(tagged_rows, '--logout', 'omar@front_pc#1')
-    assert_refused(tagged_rows, '--untagged', '--signin', 'omar@front_pc#1')
+    assert_refused(tagged_rows, '--signin', 'jake@jake_pc#1')
+    assert_refused(tagged_rows, '--logout', 'jake@jake_pc#1')
+    assert_refused(tagged_rows, '--untagged', '--signin', 'jake@jake_pc#1')
     assert_refused(tagged_rows, '--untagged')
   end
 
@@ -135,7 +135,7 @@ class AccessLeakCheckCliTagsTest < ActiveSupport::TestCase
     assert_includes [0, 1], status, out
     assert_includes out, 'VERDICT'
     # --resume is allowed beside tags: the refusal, if any, is the unmatched entry, never the mode
-    out, status = check(tagged_rows, '--resume', 'omar@front_pc@2026-01-01T00:00:00.000Z')
+    out, status = check(tagged_rows, '--resume', 'jake@jake_pc@2026-01-01T00:00:00.000Z')
     assert_equal 2, status, out
     assert_includes out, 'entries that matched no row'
     refute_match(/tag|--untagged/i, out)
@@ -171,7 +171,7 @@ class AccessLeakCheckCliTagsTest < ActiveSupport::TestCase
 
   test 'entries that match no row still exit 2 with --untagged' do
     rows = plain_rows + [pc_row.reject { |k, _| k == 'pc' }]
-    out, status = check(rows, '--untagged', '--signin', 'omar@front_pc#9')
+    out, status = check(rows, '--untagged', '--signin', 'jake@jake_pc#9')
     assert_equal 2, status, out
     assert_includes out, 'entries that matched no row'
   end
