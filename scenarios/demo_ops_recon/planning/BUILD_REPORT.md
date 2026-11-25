@@ -31,3 +31,13 @@ Validator: `ruby scripts/validate_scenario.rb scenarios/demo_ops_recon/scenario.
 ## Not done by this unit
 
 `dungeon_graph.*` (unit R-T), `PLAYTEST.md`, `VOICED_LINES.md`, the Rails test.
+
+## Wave 2 (unit R-T)
+
+Validator `ruby scripts/validate_scenario.rb scenarios/demo_ops_recon/scenario.json.erb`: 0 errors, 23 warnings (down from 26: the three ink warnings are cleared). The remaining warnings are the office-life "target is in another room" notes for the copied kitchen block (as `office_life_showcase`), the generic suggestions (VM launcher, flag station, lock variety and so on, not relevant to a demo), and the "puzzle_graph_unlocks" suggestion. Dialoguelint (node 22): 0 ERROR lines. The ink compiler prints its usual "END detected" convention note for each file.
+
+Integration changes: `ama_owusu.ink` knot `terminal_check` renamed `terminal_talk` (the knot name paired "terminal" with "check" and tripped the realism wording warning); `zainab_hussain.ink` `card_offer` puts `#give_item:technique_card` before the dialogue (the held card is the only NPC-held `technique_card`, so the type alone picks it, `games_controller.rb` `find_npc_holding_item`).
+
+Scenario change found by the leak scanner: the plan's mappings for `confirm_both` and `use_card` named finding ids in `eventPattern` (`network_finding_confirmed:printer_host.admin_page.factory_login`), which ship with the office room's NPC data before any check; the scanner (rule `ops_string`) reports them. They now listen to the bare events and read the payload (`data.findingId.includes('printer_host.')`, `data.status`, `data.grant === 'credential'`). The four `confirm_both` mappings keep their shape (two setting a global, two completing the task on the second confirm, either order).
+
+Leak scan: the whole played run (every answer of the real routes, plug to unplug and the log read) gives zero findings with nothing filtered.
