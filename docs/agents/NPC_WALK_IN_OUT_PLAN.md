@@ -182,7 +182,7 @@ Not edited: `door-gates.js`, `lighting.js`, `state-sync.js`, server `game.rb`/`g
 1. Load an unlocked far room so an NPC can walk in from it: yes. Fade at the doorway only if the route is locked.
 2. The player cannot talk to an NPC who is walking out: agreed.
 3. Dillard enters from `loading_dock`: agreed. The map shows no nearer unloaded room out of the camera's view (`reading_room` is the other choice, and it is neither nearer nor better hidden).
-4. The m10 gallery guard leaves via `server_hall`: agreed. The camera line belongs to `monitor_guard`, not `farah_guard`. `farah_guard` also vanishes on gallery entry (`setVisible: false` on `room_entered:gallery`), so she is converted too: she walks out to `server_hall` when Imran is talked round (an appended mapping), and her entry mapping becomes a `walkOut` in place.
+4. The m10 gallery guard leaves via `server_hall`: agreed. The camera line belongs to `monitor_guard`, not `farah_guard`. `farah_guard` also vanishes on gallery entry (`setVisible: false` on `room_entered:gallery`), so she is converted too, but in place only: her existing `room_entered:gallery` mapping becomes `"walkOut": { "to": "server_hall" }`. No `talked_round` mapping is appended, because that would change story timing (orchestrator, B1 brief). Scenario conversions are a later agent's job.
 5. Speech held for arrival is lost on a reload mid-walk: accepted. No new synced state.
 6. Pop check: WARN only if it flags nothing but the known cases across all scenarios, otherwise INFO. Known cases must not turn the train RED.
 

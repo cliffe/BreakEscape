@@ -832,10 +832,13 @@ function unlockDoor(doorSprite, roomData) {
 // Make unlockDoor globally available for NPC unlock handlers
 window.unlockDoor = unlockDoor;
 
-// Function to open a door
-function openDoor(doorSprite) {
+// Function to open a door. opts.byNpc (openDoorForNpc): an NPC walking through. The far
+// room is not loaded (the walk has loaded it, or the NPC fades at the doorway), and the
+// event is door_opened_by_npc, never door_opened, which mappings read as a player action.
+function openDoor(doorSprite, opts = {}) {
     const props = doorSprite.doorProperties;
-    console.log(`Opening door: ${props.roomId} -> ${props.connectedRoom}`);
+    const byNpc = opts?.byNpc || null;
+    console.log(`Opening door: ${props.roomId} -> ${props.connectedRoom}${byNpc ? ` (by NPC ${byNpc})` : ''}`);
     
     // Wait for game scene to be ready before proceeding
     // This prevents crashes when called immediately after minigame cleanup
@@ -879,7 +882,7 @@ function openDoor(doorSprite) {
         
         // Load the connected room if it doesn't exist
         // Use window.rooms to ensure we see the latest state
-        const needsLoading = !window.rooms || !window.rooms[props.connectedRoom];
+        const needsLoading = !byNpc && (!window.rooms || !window.rooms[props.connectedRoom]);
         let roomLoadPromise = null;
         if (needsLoading) {
             console.log(`Loading room: ${props.connectedRoom}`);
@@ -950,7 +953,14 @@ function openDoor(doorSprite) {
             }
 
             props.open = true;
-            if (window.eventDispatcher) {
+            if (byNpc) {
+                window.eventDispatcher?.emit?.('door_opened_by_npc', {
+                    roomId: props.roomId,
+                    connectedRoom: props.connectedRoom,
+                    direction: props.direction,
+                    npcId: byNpc
+                });
+            } else if (window.eventDispatcher) {
                 // restored: re-opened by the workaround runner as the room was built (a propped
                 // door after a reload, or the far side of one), so a mapping can skip it (9.2 B R1 m7)
                 window.eventDispatcher.emit('door_opened', {
@@ -1005,6 +1015,22 @@ function openDoor(doorSprite) {
         waitForGameReady();
     }
 }
+
+/**
+ * An NPC opens a closed, unlocked door it is walking through (systems/npc-walk.js).
+ * Closed doors do not block NPC bodies, so this is the open animation and the grid only:
+ * no far-room load, no player transition, and door_opened_by_npc { roomId, connectedRoom,
+ * direction, npcId } instead of door_opened.
+ * @returns {boolean} true if the door started opening
+ */
+export function openDoorForNpc(doorSprite, npcId) {
+    const props = doorSprite?.doorProperties;
+    if (!props || props.open || props.locked || doorSprite.active === false) return false;
+    if (window.doorGates?.isGate?.(doorSprite)) return false;   // gates open by proximity (door-gates.js)
+    openDoor(doorSprite, { byNpc: npcId || true });
+    return true;
+}
+window.openDoorForNpc = openDoorForNpc;
 
 // Function to remove the matching door sprite from the connected room
 function removeMatchingDoorSprite(roomId, fromRoomId, direction, doorWorldX, doorWorldY) {

@@ -938,7 +938,9 @@ export function handleObjectInteraction(sprite) {
     // Handle NPC sprite interaction
     if (sprite._isNPC && sprite.npcId) {
         console.log('NPC INTERACTION', { npcId: sprite.npcId });
-        
+        // An NPC walking out (systems/npc-walk.js) is leaving: no conversation
+        if (window.npcBehaviorManager?.isWalkingOut?.(sprite.npcId)) return;
+
         // A hostile NPC can't be talked to: say so, and throw the next punch
         // of the combo at it
         const isHostile = window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(sprite.npcId);

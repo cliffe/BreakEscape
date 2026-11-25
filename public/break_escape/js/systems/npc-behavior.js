@@ -325,6 +325,9 @@ export class NPCBehaviorManager {
         for (const [npcId, behavior] of this.behaviors) {
             behavior.update(time, delta, playerPos);
         }
+        // NPC walk-in/walk-out (systems/npc-walk.js installs it). A hidden NPC's update
+        // never runs, so the walk state machine ticks here, in the manager.
+        this._walkTick?.(time, playerPos);
     }
 
     /**
@@ -1034,8 +1037,9 @@ export class NPCBehavior {
                 if (this.roomId !== roomId) {
                     console.log(`🚪 [${this.npcId}] Moved from ${this.roomId} to ${roomId}`);
                     this.roomId = roomId;
-                    // A route walker's room is where he is (sight checks, LOS read npc.roomId)
-                    if (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0) {
+                    // A route walker's room is where he is (sight checks, LOS read npc.roomId);
+                    // so is a walk-in/walk-out walker's (npc-walk.js sets this._walk)
+                    if (this._walk || (this.config?.patrol?.multiRoom && this.config.patrol.route?.length > 0)) {
                         const npcData = window.npcManager?.npcs?.get(this.npcId);
                         if (npcData) npcData.roomId = roomId;
                     }
@@ -2466,17 +2470,24 @@ export class NPCBehavior {
     }
 
     _ensureRouteWallColliders() {
+        this._ensureWallCollidersFor((this.config.patrol.route || []).map(seg => seg?.room));
+    }
+
+    /**
+     * Collide this NPC with the wall boxes of each loaded room in roomIds, once per room.
+     * Route walkers pass their route rooms; a walk-in/walk-out passes its far room.
+     */
+    _ensureWallCollidersFor(roomIds) {
         if (!this._routeWallRooms.size) this._routeWallRooms.add(this.homeRoomId || this.roomId);   // spawn room: rooms.js added it
         const physics = this.scene?.physics || window.game?.scene?.scenes?.[0]?.physics;
         if (!physics?.add?.collider) return;
-        for (const seg of this.config.patrol.route) {
-            const roomId = seg?.room;
+        for (const roomId of roomIds || []) {
             if (!roomId || this._routeWallRooms.has(roomId)) continue;
             const room = window.rooms?.[roomId];
             if (!room?.wallCollisionBoxes) continue;
             room.wallCollisionBoxes.forEach(box => { if (box.body) physics.add.collider(this.sprite, box); });
             this._routeWallRooms.add(roomId);
-            console.log(`🧱 [${this.npcId}] Wall collisions added for route room ${roomId}`);
+            console.log(`🧱 [${this.npcId}] Wall collisions added for room ${roomId}`);
         }
     }
 
@@ -2623,6 +2634,16 @@ export class NPCBehavior {
      * turned back.
      */
     wantsToCrossGate(gate) {
+        // A walk-in/walk-out walker (npc-walk.js) wants to cross a gate between the room he
+        // is in and the walk's far room.
+        const walk = this._walk;
+        if (walk) {
+            const here = this.roomId;
+            const far = walk.farRoom;
+            if (!here || !far || here === far) return false;
+            const rooms = [gate?.roomId, gate?.connectedRoom];
+            return rooms.includes(here) && rooms.includes(far);
+        }
         const patrol = this.config?.patrol;
         if (!patrol?.enabled || !patrol.multiRoom || !patrol.route?.length) return false;
         const target = patrol.route[patrol.currentSegmentIndex]?.room;
@@ -2641,6 +2662,8 @@ export class NPCBehavior {
      * @returns {boolean} true if he turned back
      */
     turnBackFromGate(gate) {
+        // A walker waits at the gate and falls back on the walk's timeoutMs instead
+        if (this._walk) return false;
         if (!this.wantsToCrossGate(gate)) return false;
         return this._resumeOnThisSide(`Gate to ${this.config.patrol.route[this.config.patrol.currentSegmentIndex].room} held shut`);
     }
@@ -3489,6 +3512,11 @@ export class NPCBehavior {
         if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
         else if (this._playerPass) { this._playerPass.reissued = true; this._playerPass.reissuedAt = null; }
         this._moveOwner = opts?.owner;
+        // Arrival extras (npc-walk.js): a callback, data spread into npc_arrived, and a
+        // silent arrival (a walk-out ends with npc_left, never npc_arrived)
+        this._moveOnArrive = typeof opts?.onArrive === 'function' ? opts.onArrive : null;
+        this._moveArrivalData = opts?.arrivalData || null;
+        this._moveSilent = !!opts?.silentArrival;
         // Room leash for a needs move: rooms the walk must not enter. A needs move without
         // avoidRooms (seating's chair fetch, in the NPC's own room) keeps the current value;
         // any other move drops it (scripts ignore the leash).
@@ -3565,6 +3593,9 @@ export class NPCBehavior {
         this._goToStayDest = null;
         this._moveId = null;   // SIMS-2: a cancelled move issues no arrival
         this._moveOwner = undefined;
+        this._moveOnArrive = null;
+        this._moveArrivalData = null;
+        this._moveSilent = false;
         this._playerPass = null;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
@@ -3594,6 +3625,12 @@ export class NPCBehavior {
         // SIMS-2: read the move id and the steps the path had left before the path is cleared below.
         const moveId = this._moveId ?? null;
         const pathLeft = Math.max(0, (this.currentPath?.length || 0) - (this.pathIndex || 0));
+        const onArrive = this._moveOnArrive;
+        const arrivalData = this._moveArrivalData;
+        const silent = this._moveSilent;
+        this._moveOnArrive = null;
+        this._moveArrivalData = null;
+        this._moveSilent = false;
         this._moveId = null;
         this._avoid = null;
         this._moveOwner = undefined;
@@ -3628,15 +3665,19 @@ export class NPCBehavior {
         // fires exactly once per move. Scenario NPCs subscribe with an exact-match
         // eventMapping `"eventPattern": "npc_arrived:<npcId>"` (npc-manager.js registers
         // one dispatcher listener per mapping pattern), so no manager change is needed.
-        if (window.eventDispatcher) {
+        if (window.eventDispatcher && !silent) {
             window.eventDispatcher.emit(`npc_arrived:${this.npcId}`, {
                 npcId: this.npcId,
                 x: arrivedPos.x,
                 y: arrivedPos.y,
                 owner,
                 moveId,
-                pathLeft
+                pathLeft,
+                ...(arrivalData || {})
             });
+        }
+        if (onArrive) {
+            try { onArrive(arrivedPos); } catch (e) { console.error(`❌ [${this.npcId}] arrival callback failed:`, e); }
         }
     }
 

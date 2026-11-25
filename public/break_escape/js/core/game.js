@@ -2084,6 +2084,11 @@ export async function create() {
             .then(module => {
                 window.npcBehaviorManager = new module.NPCBehaviorManager(this, window.npcManager);
                 console.log('✅ NPC Behavior Manager initialized');
+                // NPC walk-in/walk-out (eventMapping walkIn/walkOut); a dynamic import so no
+                // test harness copy list has to carry npc-walk.js
+                import('../systems/npc-walk.js')
+                    .then(m => m.installNpcWalk(window.npcBehaviorManager))
+                    .catch(err => console.error('❌ npc-walk.js failed to load:', err));
                 // NOTE: Individual behaviors registered per-room in rooms.js createNPCSpritesForRoom()
                 // That skips NPCs whose sprites were created before this import finished
                 // (the start room can win the race), so register those now.
