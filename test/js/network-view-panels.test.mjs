@@ -149,3 +149,38 @@ test('the re-recorded held sweep and scan DOMs equal the old ones once the bar a
         assert.equal(stripBar(now), o.old, `${o.variant} #${o.control}`);
     }
 });
+
+// A host with several services shows several Check buttons: each names the service it checks.
+// A host with one service keeps the bare "Check".
+const withServices = (names) => {
+    const body = loadFixture('findings_states');
+    const hosts = [body.footholds[0].hosts[0], ...body.footholds[0].networks.flatMap(n => n.hosts)];
+    for (const host of hosts) {
+        const first = host.services[0];
+        host.services = names.map((name, i) => ({ ...first, name, label: i === 0 ? first.label : 'Admin page', port: 80 + i }));
+    }
+    return body;
+};
+const checkLabels = (h) => [...root(h).querySelectorAll('[data-action="check"]')].map(b => b.textContent.trim());
+
+test('two services on one host: each Check button names its service', async () => {
+    const h = await mount(withServices(['web', 'admin']));
+    assert.deepEqual(checkLabels(h), ['Check web', 'Check Admin page']);
+    h.end();
+});
+
+test('one service on a host: the Check button stays bare', async () => {
+    const h = await mount(withServices(['web']));
+    assert.deepEqual(checkLabels(h), ['Check']);
+    h.end();
+});
+
+test('two services, a check pending: the busy button shows the bare busy text, without the service name', async () => {
+    const h = await mount(withServices(['web', 'admin']), { hold: true });
+    root(h).querySelector('[data-action="check"]').click();
+    await settle();
+    const busy = [...root(h).querySelectorAll('[data-action="check"]')].filter(b => b.disabled);
+    assert.ok(busy.length >= 1);
+    for (const b of busy) assert.ok(!/web|Admin page/.test(b.textContent), b.textContent);
+    h.end();
+});
