@@ -111,3 +111,15 @@ Stage A agent stopped at the context limit before writing any code. This note ha
 - `scenario-schema.json` (`walkIn`, `walkOut` beside `setPatrolSpeed`), `validate_office_life.rb` (`walks` hint), `owner_claim.rb` (`scripted_move` for walkIn/walkOut) plus two cases in `test/unit/owner_claim_test.rb`, `test/js/npc-walk-validator.test.mjs` (16 tests).
 - Not done here (other stages): scenario conversions, README_scenario_design.md, IDEAS_BACKLOG audit list (the 91 NPCs; list is reproducible by running the validator and grepping "pop check").
 - Run Rails tests from a worktree with `BUNDLE_PATH=<main checkout>/vendor/bundle`.
+
+## B1 status (2026-11-25)
+Done (commits 1fe72e3c3, b5dfe683e, plus this note):
+- `systems/npc-walk.js`: `installNpcWalk(manager, env?)` adds `walkNPCIn(id, opts)`, `walkNPCOut(id, opts)` (promises of `how`: walked | faded | instant | already | noop | cancelled; settled-at-call promises carry `.immediate`), `isWalkingOut(id)`, `walks` Map, `_walkTick`. Pure helpers exported: `rectInView`, `npcRectAt`, `bfsOutOfView`, `doorsOfRoom`, `doorUsable`, `inRoomBounds`, `roomAt`, `placeBody`.
+- Events: walk-in ends with `npc_arrived:<id>` `{ owner: 'walk', walk: 'in', how }`; walk-out ends with `npc_left:<id>` `{ npcId, to, how }`; NPC-opened doors emit `door_opened_by_npc` `{ roomId, connectedRoom, direction, npcId }`.
+- Hooks: `core/game.js` dynamic import; `npc-behavior.js` (`_walkTick` in update, goToAndStay `onArrive`/`arrivalData`/`silentArrival`, `updateCurrentRoom` while `_walk`, `wantsToCrossGate`/`turnBackFromGate` for walkers, `_ensureWallCollidersFor`); `npc-manager.js` (fields, handler, speech deferral, `recordNpcVisibility(..., { persistOnly })`); `doors.js` `openDoorForNpc(sprite, npcId)` (+ `window.openDoorForNpc`); `interactions.js` guard; test bridge `window.__test.walk.in/out/state`.
+- Tests: four `test/js/npc-walk-*.test.mjs` (40 tests), all pass; 174 of 175 related files pass.
+
+Open:
+- `validator-office-life-events.test.mjs` fails: the new engine literal `npc_left` must be added to an event list in `scripts/validate_office_life.rb` (around line 66, beside `npc_arrived`). That file belongs to the validator agent.
+- Deviations from the plan: walk-in timeout with `to` in view fades in at `to` (not at the inner doorway mouth); doors are scored by straight-line distance, not path length; the spawn cell is not path-checked to `to` (BFS connectivity only); `_approachRouteGate` for walks left out as the handover says.
+- No live browser proof yet (scenario `test_npc_walk_in_out` and m09/m10 conversions are later stages). m10 `farah_guard`: in-place `walkOut` only, no appended mapping (plan section 13).
