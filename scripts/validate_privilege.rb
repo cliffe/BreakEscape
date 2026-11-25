@@ -483,6 +483,9 @@ def privilege_account_only(json_data, npcs, err, warn = nil)
     only[npc['id'].to_s] = npc
     creds = npc['creds']
     err.call("#{where}: an account-only NPC needs creds.username") unless creds.is_a?(Hash) && privilege_present?(creds['username'])
+    if creds.is_a?(Hash) && creds.key?('card')
+      err.call("#{where}: an account-only NPC cannot carry creds.card; it is not a person who holds a badge")
+    end
     unless [true, false].include?(npc['staff'])
       err.call("#{where}: an account-only NPC needs staff set to true or false (an NPC with creds is staff unless it says false)")
     end

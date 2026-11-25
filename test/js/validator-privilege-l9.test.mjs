@@ -80,3 +80,15 @@ test('no account-only NPC, no L9 line', { skip }, () => {
     assert.deepEqual(l9(issues(sc)), []);
     assert.deepEqual(issues(sc), []);
 });
+
+test('an account-only NPC carrying creds.card is an error; without it the clean fixture stays clean', { skip }, () => {
+    const sc = fixture('clean');
+    sc.rooms.office.npcs[3].creds.card = 'svc_badge';
+    const out = issues(sc);
+    const hit = out.filter(s => s.startsWith('❌') && s.includes('creds.card'));
+    assert.equal(hit.length, 1, out.join('\n'));
+    assert.ok(hit[0].includes('svc'), 'names the account-only NPC');
+    assert.equal(out.filter(s => s.startsWith('❌')).length, 1, out.join('\n'));
+    delete sc.rooms.office.npcs[3].creds.card;
+    assert.deepEqual(issues(sc), []);
+});
