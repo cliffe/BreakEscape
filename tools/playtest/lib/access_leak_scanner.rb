@@ -3571,6 +3571,8 @@ class AccessLeakScanner
     inv = row['inv']
     # S5bc R2-SCANNER1: an item given back to the tray can be planted again
     @hv_held << inv['itemId'] if inv.is_a?(Hash) && inv['action'] == 'add' && inv['itemId'].is_a?(String)
+    # S5bc R4-SCANNER1: every 200 remove of a held device takes it out of the held set, whatever object it names (or none)
+    held = inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && body['success'] == true ? @hv_held.delete?(inv['itemId']) : nil
     return unless body.keys == ['success'] && body['success'] == true
     return unless inv.is_a?(Hash) && inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
 
@@ -3583,7 +3585,7 @@ class AccessLeakScanner
     return unless pc && @priv_pcs.key?(pc)
     # S5bc R2-SCANNER1: the server answers 200 to a remove of an item that is not held and writes no row: only the first
     # plant of a device (since it was last added) can have written one
-    return unless @hv_held.delete?(item['id'] || inv['itemId'])
+    return unless held
     return unless grant.present? ? @ops_earned.include?("admin:#{pc}") : harvest_pc_admin?(pc)
 
     account = admin_act_account(pc)
@@ -3600,9 +3602,10 @@ class AccessLeakScanner
     return unless body['consumedId'].is_a?(String) && body['foothold'].is_a?(Hash) && body['foothold']['sourceId'].is_a?(String)
     return if body['already'] == true # S5bc R2-SCANNER1: the retry answer consumes nothing and writes no row
 
+    held = @hv_held.delete?(body['consumedId']) # R3-SCANNER1, R4-SCANNER1: taken out of the held set at any PC
     pc = body['foothold']['sourceId']
     return unless @priv_pcs.key?(pc)
-    return unless @hv_held.delete?(body['consumedId']) # R3-SCANNER1: only a device the capture shows held can have been taken
+    return unless held # only a device the capture shows held can have been taken
     # R2-SCANNER2: the keyboard step only (a technique session's admin step answers needs_console and writes no row)
     return unless @ops_earned.include?("admin:#{pc}") && %w[password credential].include?(@priv_kinds[pc]&.first) && @priv_kinds[pc][1] == false && @priv_keyboard[pc]
 

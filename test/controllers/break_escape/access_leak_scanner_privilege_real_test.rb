@@ -1527,6 +1527,18 @@ module BreakEscape
       assert_flagged reported(extra), 'log_row', 'log:usb_override:bay_pc'
     end
 
+    # S5bc R4-SCANNER1 (D1, D2): any 200 remove of the held device takes it out of the held set before the honest plant.
+    [['D1', nil], ['D2', 'bay_pinboard']].each do |label, used_on|
+      test "R4-SCANNER1 (#{label}): an earlier remove of the planted device (#{used_on || 'no object'}) leaves the honest plant earning no row" do
+        rows = run_real
+        plant = plant_n(rows)
+        drop = deep(rows[plant - 1]).tap do |r|
+          used_on ? r['inv']['usedOn'] = used_on : r['inv'].delete('usedOn')
+        end
+        assert_flagged reported(rows.dup.insert(plant - 1, drop)), 'log_row', 'log:usb_override:bay_pc'
+      end
+    end
+
     # R2-L3: the refused word list is built from what the scanner knows, and a clash refuses the scan (as `admin` does).
     test 'R2-L3 (G7): an account-only username or display name that is a key of the answers, a PC name or a log title refuses the scan; the real deskadmin and labadmin do not' do
       rows = run_real

@@ -210,6 +210,37 @@ class AccessLeakScannerPlaytest173Test < ActiveSupport::TestCase
     assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
   end
 
+  # R4-SCANNER1: every 200 remove of a held device takes it out of the held set, whatever object it names (or none).
+  def any_remove(id, used_on = nil)
+    inv = { 'action' => 'remove', 'itemId' => id }
+    inv['usedOn'] = used_on if used_on
+    { 'method' => 'POST', 'path' => '/break_escape/games/173/inventory', 'status' => 200, 'body' => { 'success' => true }, 'inv' => inv }
+  end
+
+  test 'R4-SCANNER1 (D1): a remove of kit_badusb that names no object, then the implant, earns no row' do
+    a40, s119, i122, a302 = pick(40, 119, 122, 302)
+    found, = scan([a40, any_remove('kit_badusb'), s119, i122, a302], signins: ADEL)
+    assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+  end
+
+  test 'R4-SCANNER1 (D2): a remove naming an unknown object, then the implant, earns no row' do
+    a40, s119, i122, a302 = pick(40, 119, 122, 302)
+    found, = scan([a40, any_remove('kit_badusb', 'nowhere_obj'), s119, i122, a302], signins: ADEL)
+    assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+  end
+
+  test 'R4-SCANNER1 (D3): a no-object remove, then a plant remove at the port, earns no row' do
+    a40, s119, _i122, a302 = pick(40, 119, 122, 302)
+    found, = scan([a40, s119, any_remove('kit_badusb'), any_remove('kit_badusb', 'bay_usb_port'), a302], signins: ADEL)
+    assert_includes found.map { |_, rule, owner| [rule, owner] }, USB_OVERRIDE_FLAG
+  end
+
+  test 'R4-SCANNER1 (D3c): the plant remove alone, after the add, is the honest case and earns the row' do
+    a40, s119, _i122, a302 = pick(40, 119, 122, 302)
+    found, = scan([a40, s119, any_remove('kit_badusb', 'bay_usb_port'), a302], signins: ADEL)
+    assert_empty found.map { |_, rule, owner| [rule, owner] }.select { |x| x == USB_OVERRIDE_FLAG }
+  end
+
   test 'R3-SCANNER2 (I4, I4n, I4t): a remote password or token admin session at the PC does not earn the implant row' do
     rows = pick(40, 119, 122, 302)
     remote = lambda do |extra|
