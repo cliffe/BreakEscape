@@ -4,6 +4,7 @@
   "difficulty_level": 1,
   "scoring": "completion",
   "resultGlobal": "episode_e15_shadow_it_defend_percent",
+  "endingCheck": false,
   "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",

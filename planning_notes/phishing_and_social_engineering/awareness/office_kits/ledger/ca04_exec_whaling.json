@@ -1,0 +1,14 @@
+{
+ "scenario": "ca04_exec_whaling",
+ "lists": {
+  "host": [
+   {"k": null, "h": "c97a49b4"},
+   {"k": null, "h": "20d849e6"},
+   {"k": "quiet_on", "h": "7828e622"},
+   {"k": "attack_done", "h": "403f81b4"},
+   {"k": "defend_done", "h": "699407f2"},
+   {"k": "caught", "h": "bb1c0da5"},
+   {"k": "quiet_off_debrief", "h": "43de388b"}
+  ]
+ }
+}

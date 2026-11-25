@@ -1,0 +1,13 @@
+{
+  "key": "8a3e755c5a6b4b8a321ee239f97e6170",
+  "npc": "ca12_yusuf_demir",
+  "text": "Client's in this morning.",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:59:31Z"
+}

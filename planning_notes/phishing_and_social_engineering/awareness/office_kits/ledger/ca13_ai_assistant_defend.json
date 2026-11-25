@@ -1,0 +1,16 @@
+{
+ "scenario": "ca13_ai_assistant_defend",
+ "lists": {
+  "host": [
+   {"k": null, "h": "072e644f"},
+   {"k": null, "h": "badd94f0"},
+   {"k": "quiet_on", "h": "d27cbe1e"},
+   {"k": "defend_done", "h": "ba986237"},
+   {"k": "caught", "h": "4de91111"},
+   {"k": "quiet_off_debrief", "h": "98cafb31"}
+  ],
+  "npc:kit_graham_whitfield": [
+   {"k": "chg_defend_done_knot_ca13_react", "h": "a3f013c5"}
+  ]
+ }
+}

@@ -136,13 +136,13 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">2</td></tr>
-      <tr><th>Total tasks</th><td class="val">2</td></tr>
-      <tr><th>Optional tasks</th><td class="val">0 / 2</td></tr>
+      <tr><th>Total tasks</th><td class="val">4</td></tr>
+      <tr><th>Optional tasks</th><td class="val">2 / 4</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">1</td></tr>
       <tr><th>Rooms</th><td class="val">1</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">2 / 1</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">4 / 3</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">2 / 0</td></tr>
     </table>
   </div>
@@ -173,11 +173,16 @@
 
   door_training_room["Studio<br/>Key lock"]
   training_room("Studio")
+  grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
+  grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
 
   door_training_room --> training_room
+  training_room -.-> grant_ca12_auth_letter
+  training_room -.-> grant_ca12_hivis
 
   class door_training_room lock
   class training_room room
+  class grant_ca12_auth_letter,grant_ca12_hivis item
   class node_start start`,
       story:      `flowchart TD
 
@@ -223,13 +228,18 @@
 
   door_training_room["Studio<br/>Key lock"]
   training_room("Studio")
+  grant_ca12_auth_letter{"Authorisation letter<br/>(granted)"}
+  grant_ca12_hivis{"Courier hi-vis<br/>(granted)"}
   aim_red_team_aim{{"Run the front-desk pretext"}}
   aim_reception_desk_aim{{"Cover the reception desk"}}
 
   door_training_room --> training_room
+  training_room -.-> grant_ca12_auth_letter
+  training_room -.-> grant_ca12_hivis
 
   class door_training_room lock
   class training_room room
+  class grant_ca12_auth_letter,grant_ca12_hivis item
   class aim_red_team_aim,aim_reception_desk_aim aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -283,40 +293,46 @@
   training_room["Studio<br/>(locked)"]
   lobby("Reception")
   rc_training_kiosk_1{"Training kiosk"}
-  rc_kit_sofa_2{"Sofa"}
-  rc_kit_ca12_journals_3{"Journal stack"}
-  rc_kit_ca12_pc_4{"Thandiwe's workstation"}
-  rc_npc_lorna_easton_5("Lorna Easton")
-  rc_npc_thandiwe_moyo_6("Thandiwe Moyo")
-  rc_npc_julian_sallow_7("Julian Sallow")
-  rc_npc_camila_ospina_8("Camila Ospina")
-  rc_npc_jun_watanabe_9("Jun Watanabe")
-  rc_npc_jo_fairweather_10("Jo Fairweather")
-  rc_ca12_badge_reader_11{"Studio door badge reader"}
-  rc_lobby_hotdesk_12{"Hot-desk workstation"}
-  rc_npc_delphine_arvanitis_13("Delphine Arvanitis")
-  rc_npc_yusuf_demir_14("Yusuf Demir")
+  rc_ca12_kit_bag_2{"Jo's kit bag"}
+  rc_kit_sofa_3{"Sofa"}
+  rc_kit_ca12_journals_4{"Journal stack"}
+  rc_kit_ca12_pc_5{"Thandiwe's workstation"}
+  rc_npc_lorna_easton_6("Lorna Easton")
+  rc_npc_thandiwe_moyo_7("Thandiwe Moyo")
+  rc_npc_julian_sallow_8("Julian Sallow")
+  rc_npc_camila_ospina_9("Camila Ospina")
+  rc_npc_jun_watanabe_10("Jun Watanabe")
+  rc_npc_jo_fairweather_11("Jo Fairweather")
+  rc_ca12_badge_reader_12{"Studio door badge reader"}
+  rc_lobby_hotdesk_13{"Hot-desk workstation"}
+  rc_npc_delphine_arvanitis_14("Delphine Arvanitis")
+  rc_npc_yusuf_demir_15("Yusuf Demir")
+  rc_grant_ca12_auth_letter_16{"Authorisation letter<br/>(granted)"}
+  rc_grant_ca12_hivis_17{"Courier hi-vis<br/>(granted)"}
 
   training_room --> lobby
   training_room --> rc_training_kiosk_1
-  training_room --> rc_kit_sofa_2
-  training_room --> rc_kit_ca12_journals_3
-  training_room --> rc_kit_ca12_pc_4
-  training_room --> rc_npc_lorna_easton_5
-  training_room --> rc_npc_thandiwe_moyo_6
-  training_room --> rc_npc_julian_sallow_7
-  training_room --> rc_npc_camila_ospina_8
-  training_room --> rc_npc_jun_watanabe_9
-  training_room --> rc_npc_jo_fairweather_10
-  lobby --> rc_ca12_badge_reader_11
-  lobby --> rc_lobby_hotdesk_12
-  lobby --> rc_npc_delphine_arvanitis_13
-  lobby --> rc_npc_yusuf_demir_14
+  training_room --> rc_ca12_kit_bag_2
+  training_room --> rc_kit_sofa_3
+  training_room --> rc_kit_ca12_journals_4
+  training_room --> rc_kit_ca12_pc_5
+  training_room --> rc_npc_lorna_easton_6
+  training_room --> rc_npc_thandiwe_moyo_7
+  training_room --> rc_npc_julian_sallow_8
+  training_room --> rc_npc_camila_ospina_9
+  training_room --> rc_npc_jun_watanabe_10
+  training_room --> rc_npc_jo_fairweather_11
+  lobby --> rc_ca12_badge_reader_12
+  lobby --> rc_lobby_hotdesk_13
+  lobby --> rc_npc_delphine_arvanitis_14
+  lobby --> rc_npc_yusuf_demir_15
+  training_room -.-> rc_grant_ca12_auth_letter_16
+  training_room -.-> rc_grant_ca12_hivis_17
 
   class training_room lock
   class lobby room
-  class rc_training_kiosk_1,rc_kit_sofa_2,rc_kit_ca12_journals_3,rc_kit_ca12_pc_4,rc_ca12_badge_reader_11,rc_lobby_hotdesk_12 item
-  class rc_npc_lorna_easton_5,rc_npc_thandiwe_moyo_6,rc_npc_julian_sallow_7,rc_npc_camila_ospina_8,rc_npc_jun_watanabe_9,rc_npc_jo_fairweather_10,rc_npc_delphine_arvanitis_13,rc_npc_yusuf_demir_14 npc
+  class rc_training_kiosk_1,rc_ca12_kit_bag_2,rc_kit_sofa_3,rc_kit_ca12_journals_4,rc_kit_ca12_pc_5,rc_ca12_badge_reader_12,rc_lobby_hotdesk_13,rc_grant_ca12_auth_letter_16,rc_grant_ca12_hivis_17 item
+  class rc_npc_lorna_easton_6,rc_npc_thandiwe_moyo_7,rc_npc_julian_sallow_8,rc_npc_camila_ospina_9,rc_npc_jun_watanabe_10,rc_npc_jo_fairweather_11,rc_npc_delphine_arvanitis_14,rc_npc_yusuf_demir_15 npc
   class node_start start`
     };
     const rendered = {};

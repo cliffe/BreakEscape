@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: flip line by global (E5)",
+  "description": "Fixture for engine change E5: strings.flipDefenderLineByGlobal with a heading entry. A tester NPC sets marker globals before the run, so the flip shows the line the markers choose, on the replay path and on the missed and landed-no-tells paths. Stub content, not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

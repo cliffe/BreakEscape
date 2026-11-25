@@ -56,3 +56,22 @@ Dry run 25 Nov (step-away seed with kit_quiet=true, headless, BE_DRY=1): FAIL af
 Dry run 25 Nov, t07_graham_coffee (step-away seed with kit_quiet=true, headless, BE_DRY=1, keyless :3456, game 13380, attempt 1 of 3): PASS. Graham's start and post (100,187); target the coffee station, arrive (240,214), trip 143 px (minimum 120); return-start (210,187); back on the post (100,187). Camera start (-381,-87) (first followed sample), end (-269,-155) after the glide back to the player; scroll covered 128 px in x and 32 px in y while following. Agnieszka's take is replaced: the kit's needsHome for her is the training room, and the take proved only that she leaves her post, not that she returns.
 
 Repeat dry runs 25 Nov, t07_graham_coffee (same entry state, fresh game each time): run 2 PASS (game 13381) and run 3 PASS (game 13385). Post (100,187) both times. Arrive (238,213), trip 140 px (run 2); arrive (237,213), trip 139 px (run 3). Return-start (205,182) and (217,194); back on the post (100,187) both times. Scroll range while following: x 126 and 125, y 29 on both; camera back on the player at the end, no errors.
+
+## Capture 25 Nov
+
+Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2` (every take logged `player-sprite` = that key), seeds as above (none for t01 and t01b, flip for t02, t02b, t04, defend for t05 and t05b, step-away for t06 and t07), `--hide-hud --zoom-step 1`. Footage in `~/video-takes-local/ca13/takes/` (not in git), each file `<id>.trimmed.mkv` with `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All 10 passed the check first time (both slates found, A/V offset corrected as a constant, `fullFrame` true, no problems); no retakes, no dry runs needed (all had passed). Marks are in trimmed seconds, taken from the scripts; no frames were looked at beyond the check's first-frame test. t05 run A is `CA13_LIST_ONLY=1` (list held), run B is the full take with the card; the video, trimmed markers, check and contact files were renamed `_runA` and `_runB` straight after each run (the untrimmed `.markers.json`, `.record.json` and `.take.json` carry run B's content under the plain name).
+
+| take (file) | length s | drop % | A/V offset start/end ms | key marks (trimmed s) |
+|---|---|---|---|---|
+| t01_attack_run | 21.04 | 0.14 | -32 / -30 | start 4.13, mail-open 5.76, compose 7.94, pretext-set 10.08, hidden-lines/crop/address-line 10.11, build-held 12.62, send 13.60, landed 13.64, landed-held 16.64, mail-closed 18.07, flip-up 18.07, flip-held 20.58, end 20.58 |
+| t01b_attack_run_narrow | 20.40 | 0.15 | -20 / -47 | start 3.94, mail-open 5.46, compose 7.57, pretext-set 9.71, hidden-crop 9.72, build-held 12.22, send 12.96, landed 12.97, landed-held 15.97, mail-closed 17.42, flip-up 17.42, end 19.93 |
+| t02_assist_window | 18.40 | 0.16 | -38 / -25 | kiosk-open 2.47, window-open 3.48, idle-start 3.79, summarise-click 11.95, reply-shown 11.95, reply-text 13.16, end 17.96 |
+| t02b_assist_window_narrow | 18.80 | 0.16 | -38 / -43 | kiosk-open 2.64, window-open 3.66, idle-start 3.98, summarise-click 12.30, reply-shown 12.32, reply-text 13.54, end 18.34 |
+| t04_gwen_flip | 14.20 | 0.21 | -62 / -30 | walk-start 2.07, walk-end 2.84 (moveToNear fallback used), w2-subtitle-start 3.51, w2-audio-start 4.04, talk 4.97, w2-audio-end 12.17, chat-closed 12.78, end 13.78 |
+| t05_inbox_list_runA | 10.20 | 0.80 | -58 / -75 | kiosk-open 2.58, defend-panel 3.84, intro 4.84, list 6.20, list-held 9.73 |
+| t05_inbox_list_runB | 18.60 | 0.16 | -50 / -37 | kiosk-open 2.55, defend-panel 3.75, intro 4.67, list 5.89, row_open 10.16, card-held-check 11.66, card-held 18.16 |
+| t05b_inbox_list_narrow | 18.47 | 0.16 | -58 / -38 | kiosk-open 2.50, defend-panel 3.70, intro 4.62, list 5.84, row_open 10.03, card-held-check 11.53, card-held 18.03 |
+| t06_graham_step_away | 20.20 | 0.15 | -20 / -40 | kiosk-open 2.47, look_up 3.49, bark1_start 5.08, bark2_start 10.58, bark2_end 19.32, end 19.72 |
+| t07_graham_coffee | 43.57 | 0.07 | -48 / -62 | post-set (100,187) 1.44, follow-on 1.44, need-set 1.49, walk-start 2.87, arrive 5.46 at (238,213), trip 140 px (min 120), return-start 38.06, back 40.79 at (100,187), follow-off 41.60, cam-summary 43.05 (154 samples, scroll range 126 by 32, back on the player) |
+
+Drop is 0.07 to 0.80 % (run A of t05 is the highest at 0.80 %, still under the 1 % gate). Edit retime: t07 Graham stands about 33 s at the station between arrive (5.46) and return-start (38.06), so cut the wait. Sidecars are still drafts.

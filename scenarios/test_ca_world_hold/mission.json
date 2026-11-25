@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: world hold (E2)",
+  "description": "Fixture for engine change E2: a call attack with world.holdUntil and a short holdMaxMs. After the call the learner stays in the lobby until the guard conversation closes (or the 20 s cap), then the runner hands back to the kiosk. Also reads flipDefenderLineByGlobal (E5) on the call flip. Stub content, not a mission.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

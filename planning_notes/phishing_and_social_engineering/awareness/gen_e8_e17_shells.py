@@ -12,6 +12,7 @@ be changed by this one. Differences, all to make it safe by construction:
     to gen_checks_v2_shells.py.
 
 Usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
 """
 import copy
 import json

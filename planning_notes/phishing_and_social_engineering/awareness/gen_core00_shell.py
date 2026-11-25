@@ -11,6 +11,7 @@ The fragment holds the whole awarenessEpisode block (ENG-10 variant brief, seven
 oncePerLearner). There is no triage set. The host ink is core00/ink/anjali_rao.ink, copied verbatim.
 
 Usage: gen_core00_shell.py [--repo <checkout>] <out_dir>
+Ledger: this script calls apply_kit with no ledger, so do not copy its output over a shipped shell; use apply_training_room.py --kit (it checks the shell against office_kits/ledger).
 """
 import copy
 import json

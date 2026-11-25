@@ -1,0 +1,14 @@
+{
+  "key": "cde0cc3e3f03c4dc0fa3ca7f01ce66c2",
+  "npc": "ca12_yusuf_demir",
+  "text": "Reception's asked me to have a word.",
+  "delivery": "polite, firm, unhurried",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:58:31Z"
+}

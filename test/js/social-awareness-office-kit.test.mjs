@@ -138,6 +138,10 @@ import { execFileSync } from 'node:child_process';
 const AW = join(root, 'planning_notes/phishing_and_social_engineering/awareness');
 const rowsFile = JSON.parse(readFileSync(join(AW, 'office_kits/episodes.json'), 'utf8'));
 const kitRows = rowsFile.episodes.filter((r) => r.tier && r.tier !== 'none');
+// The step-away is on in either form: the legacy `stepAway: true`, or a `stepAways` list (plan E3) with a post-defend beat.
+const stepAwayOn = (ep) => Array.isArray(ep.stepAways)
+  ? ep.stepAways.some((b) => b.after === 'defend' && b.event === 'episode_step_away')
+  : ep.stepAway === true;
 const readShell = (name) => JSON.parse(readFileSync(join(scenarios, name, 'scenario.json.erb'), 'utf8'));
 const exportKit = (shell) => {
   const out = execFileSync('python3', ['-I', join(AW, 'office_kit.py'), '--repo', root, 'export', shell], { encoding: 'utf8', cwd: root });
@@ -189,7 +193,7 @@ test('kit: every non-fixture kit row has its shell, and the shell holds exactly 
         ...(Object.keys(sc.chatter || {}).some((k) => k.startsWith('kit_'))
           ? { chatter: Object.fromEntries(Object.entries(sc.chatter).filter(([k]) => k.startsWith('kit_'))) } : {}),
       },
-      stepAway: sc.social.awarenessEpisode.stepAway === true,
+      stepAway: stepAwayOn(sc.social.awarenessEpisode),
     };
     for (const k of Object.keys(got)) {
       assert.ok(canon(got[k]) === canon(want[k]), `${r.id}: ${k} differs from the tool's export`);
@@ -212,7 +216,7 @@ test('kit: the gate A fixture still carries everything the tool exports for it (
   assert.ok(JSON.stringify(sc.chatter) === JSON.stringify(want.scenario.chatter));
   assert.ok(sc.npcThoughts === false);
   for (const n of want.npcs) assert.ok(tr.npcs.some((x) => x.id === n.id && x.chatter && JSON.stringify(x.chatter) === JSON.stringify(n.chatter)), n.id);
-  assert.ok(sc.social.awarenessEpisode.stepAway === true);
+  assert.ok(stepAwayOn(sc.social.awarenessEpisode));
 });
 
 test('kit: tier none exports nothing, and a pinned shell has no kit row with a tier', () => {
@@ -224,7 +228,7 @@ test('kit: tier none exports nothing, and a pinned shell has no kit row with a t
 test('kit: each kit row matches its shell (stepAway, ambient ids, kit_ep)', () => {
   for (const r of kitRows) {
     const sc = readShell(r.id);
-    assert.ok((sc.social.awarenessEpisode.stepAway === true) === (r.stepAway === true), `${r.id}: stepAway`);
+    assert.ok(stepAwayOn(sc.social.awarenessEpisode) === (r.stepAway === true), `${r.id}: stepAway`);
     assert.ok(sc.globalVariables.kit_ep === r.ep, `${r.id}: kit_ep`);
     const ids = sc.rooms.training_room.npcs.filter((n) => n.id.startsWith('kit_') && n.person).map((n) => n.person);
     assert.ok(JSON.stringify(ids) === JSON.stringify(r.ambient), `${r.id}: ambient`);
@@ -280,7 +284,7 @@ test('kit conformance: pools, quiet gate, mappings and kiosk text in every shell
     }
     if (convention) assert.ok(maps.length === 0, where('a convention shell carries no kit host mapping'));
     else assert.ok(maps.some((m) => m.setGlobal && m.setGlobal.kit_defend_done === true), where('sets kit_defend_done'));
-    if (sc.social.awarenessEpisode.stepAway === true) {
+    if (stepAwayOn(sc.social.awarenessEpisode)) {
       const releases = maps.filter((m) => m.setGlobal && m.setGlobal.kit_quiet === false).map((m) => m.condition);
       assert.ok(releases.includes("data.value.done.includes('debrief')"), where('debrief release'));
       assert.ok(releases.includes('data.value.debriefSeen === true'), where('debriefSeen release'));
@@ -308,7 +312,7 @@ const barkGateOk = (m, sc) => {
 };
 const globalsRead = (cond) => [...String(cond || '').matchAll(/globalVars\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
 // the gate A fixture (test_ca_office_kit) is a hand-built probe with its own targetKnot chain: not held to the generated-chain rules
-const chainShells = () => kitShellNames().filter((n) => readShell(n).social.awarenessEpisode.stepAway === true && !kitRows.find((r) => r.id === n)?.fixture);
+const chainShells = () => kitShellNames().filter((n) => stepAwayOn(readShell(n).social.awarenessEpisode) && !kitRows.find((r) => r.id === n)?.fixture);
 const allKitMappings = (sc) => {
   const tr = sc.rooms.training_room;
   const host = (hostOf(sc).eventMappings || []).filter(isKitMapping).map((m) => ({ m, who: 'host', host: true }));
@@ -451,7 +455,7 @@ test('kit chain: mapping fields, barks, step-away and arrival rules (plan 4.5)',
 test('kit chain: only a shell with the step-away panel has a chain, an out global or a timer', () => {
   for (const name of kitShellNames()) {
     const sc = readShell(name);
-    if (sc.social.awarenessEpisode.stepAway === true) continue;
+    if (stepAwayOn(sc.social.awarenessEpisode)) continue;
     assert.ok(!Object.keys(sc.globalVariables).some((k) => /^kit_.*_out$/.test(k)), `${name}: an out global without stepAway`);
     assert.ok(!(sc.timers || []).some((t) => String(t.id).startsWith('kit_')), `${name}: a kit timer without stepAway`);
     for (const { m } of allKitMappings(sc)) assert.ok(!m.patrolOverride && !m.needs, `${name}: a chain mapping without stepAway`);
@@ -956,7 +960,7 @@ test('wave 3: each shell has its set piece, a stepAway row that matches the shel
     const row = kitRows.find((r) => r.id === name);
     const sc = readShell(name);
     assert.ok(row && row.setPiece === w.setPiece && row.tier === 'O', `${name}: row`);
-    assert.ok(row.stepAway === true && sc.social.awarenessEpisode.stepAway === true, `${name}: stepAway in row and shell`);
+    assert.ok(row.stepAway === true && stepAwayOn(sc.social.awarenessEpisode), `${name}: stepAway in row and shell`);
     for (const g of [`kit_${w.ep}_out`, w.there, `kit_${w.ep}_done`, `kit_${w.ep}_host_said`]) {
       assert.ok(sc.globalVariables[g] === false, `${name}: ${g} declared false`);
     }
@@ -1297,7 +1301,7 @@ test('wave 4: each shell has its set piece, a tier E stepAway row that matches t
     const row = kitRows.find((r) => r.id === name);
     const sc = w4Shell(name);
     assert.ok(row && row.setPiece === w.setPiece && row.tier === 'E' && row.handAuthored === true, `${name}: row`);
-    assert.ok(row.stepAway === true && sc.social.awarenessEpisode.stepAway === true, `${name}: stepAway in row and shell`);
+    assert.ok(row.stepAway === true && stepAwayOn(sc.social.awarenessEpisode), `${name}: stepAway in row and shell`);
     assert.ok(kits[w.company][w.setPiece], `${name}: the ${w.company} kit has ${w.setPiece}`);
     for (const g of [`kit_${w.ep}_out`, w.there, `kit_${w.ep}_done`, `kit_${w.ep}_host_said`]) assert.ok(sc.globalVariables[g] === false, `${name}: ${g} declared false`);
     assert.ok(sc.globalVariables[w.choice] === '', `${name}: ${w.choice} declared ""`);

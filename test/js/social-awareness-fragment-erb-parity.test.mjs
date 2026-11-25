@@ -79,8 +79,10 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //     the defend-only fragment has no flip. Keep it here until the ca12 shell uses it, then it stays: the defend twin never will.
 //   - stepAwayHeading, stepAway (ca12 fix 1A): the step-away panel copy lives only in the hand-written full shell,
 //     which has the panel; the defend-only fragment has none.
+//   - worldBeatHeading, worldBeat, worldBeatWaiting (ca15, plan E3): the copy for a mid-episode world beat in a `stepAways`
+//     list; only the full shell has the beat, the defend-only fragment has none.
 const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages',
-    'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove', 'stepAwayHeading', 'stepAway',
+    'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove', 'stepAwayHeading', 'stepAway', 'worldBeat', 'worldBeatHeading', 'worldBeatWaiting',
     'flipGuessIntroNoSpray', 'flipDefenderLineNoSpray', 'flipPageIntroByHost', 'flipDefenderLineByHost', 'flipDefenderLineByGlobal', 'debriefHostLineByHost']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);

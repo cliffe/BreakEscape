@@ -59,3 +59,83 @@ Owner note: the NPCs stand still on their spots. Helper `tools/video/takes/lib/c
 | t09_anjali_cooler (new) | step-away flags, kit_ca10_out not set | `followNpc(kit_anjali_rao)`; `triggerNeed(thirst, 5)`; she walks from (7.4,8.3) to the cooler (tile 8.2,5.6, drinks 20 s); `followPlayer` | follow-start, left-post, at-cooler, follow-end | hook (her chat is the current hook: this is a movement lead-in) | Trip not observed in the survey (estimated 40 s unforced); forced trip not proved here, only the ca13 equivalent. The cooler chatter never fires for a lone drinker (see Hook decision). After Look up, a `patrolOverride` sends her back to (7.4,8.3): a trip in progress ends with a walk home, a second movement shot (unproven) |
 
 Dry run 25 Nov (step-away flags, headless, BE_DRY=1): PASS on attempt 3, game 13377. Attempts 1 and 2 (games 13375, 13376) stopped at the post check: Anjali stood at (245,233) on both fresh games, not at the surveyed (237,266). The take now uses her settled start position as her post (settle, 8 s limit) and logs `post-set`. Attempt 3: she walks from (245,233) 1.7 s after the thirst trigger, stops at (269,213) 1.1 s later, about 35 px short of the cooler tile (262,179), waits about 23 s and is back at (245,233). Camera: 102 samples while following, scroll start (-236,-38), end (-288,-72), range 21 by 20, back on the player at the end. The trip is a short step, not a walk to the cooler: check the cooler point before recording. Frames not looked at.
+
+## t09 swap: Darren replaces Anjali (25 Nov)
+
+`t09_anjali_cooler` is replaced by `t09_darren_cooler` (old script in `tmp/delete/ca10_t09_anjali_cooler.mjs`). Reason: Anjali settles at (245,233), about 30 px from the cooler's use point (262,219), so her drink trip is a step. The only other ca10 NPC with needs is Darren Price (thirst, `needsHome` `kit_ca10_pc`); Niamh has none. Darren's post is (100,185), 170 px or more from the use point.
+
+Dry runs (headless, step-away flags, `BE_DRY=1`, keyless :3456, fresh game each): PASS on both, games 13440 and 13441. Post (100,185) both times; walk-start (131,204) and (128,201); arrival (269,213) and (271,213), 9 and 11 px from the use point; trip 171 and 173 px; back on the post (100,185); camera followed 118 and 120 samples (scroll range x 157 and 159, y 29), then back on the player; no errors. The script accepts arrival only within 48 px of the use point, so a mid-route pause cannot count as arrival (the ca06 t10 failure), and it requires a trip of at least 120 px. Take ids in the "Movement shots" table above that read `t09_anjali_cooler` now mean `t09_darren_cooler`. Run before pressing Look up: after `kit_ca10_out` Darren is in the D1 scene.
+
+## Capture 25 Nov
+
+Real captures, 1920x1080 30 fps, display :147, keyless server :3456, `BE_SPRITE=female_office_worker_v2` (every take logged `player-sprite` = that key), flags as in the seeds above (step-away for t01, t07, t07b, t07c, t09; defend for t04, t05, t05b; none for t02, t02b, t03, t03b), `--hide-hud --zoom-step 1`. Footage in `~/video-takes-local/ca10/takes/` (not in git), each file `<id>.trimmed.mkv` with `.trimmed.markers.json`, `.check.json`, `.contact.jpg`. All 13 passed the check (both slates found, A/V offset corrected as a constant, `fullFrame` true, no problems). Marks are in trimmed seconds. t05 run A is `CA10_LIST_ONLY=1` (list held), run B is the full take with the card; both renamed `_runA` and `_runB` straight after each run. Sidecars are still drafts. No frames were looked at beyond the check's own first-frame test; marks come from the scripts.
+
+| take (file) | length s | drop % | A/V offset start/end ms | key marks (trimmed s) |
+|---|---|---|---|---|
+| t09_darren_cooler | 34.17 | 0.09 | -52 / -40 | walk-start 2.88, arrive 5.63 at (272,213), 12 px from the use point, trip 174 px, return-start 28.31, back 31.53 at (100,185), cam 121 samples, scroll range 160 by 31, back on player 33.72 |
+| t01_anjali_hook | 10.30 | 0.27 | -40 / -37 | hook_start 2.47, portrait up 3.73, hook_end 8.59, chat-closed 9.04, end 9.84 |
+| t07_darren_prompt | 10.80 | 0.26 | -62 / -48 | kiosk-open 2.89, look_up 3.90, bubble 5.49, d1_start 5.58, d1_end 10.20, end 10.33 |
+| t07b_lookup_panel | 7.04 | 0.37 | -30 / -45 | kiosk-open 2.75, panel 3.36, hold-end 6.56 |
+| t07c_lookup_panel_narrow | 7.07 | 0.36 | -43 / -47 | as t07b |
+| t04_niamh_flip | 18.90 | 0.48 | -85 / -62 | n1_start 9.30, portrait up 10.62, n1_end 17.22, chat-closed 17.66, end 18.46 |
+| t02_attack_run | 58.60 | 0.16 | -88 / -90 | start 4.16, browser-open 5.81, note-fernside 9.40, note-portal 12.95, browser-closed 15.69, builder-open 16.71, scored 28.35, attached 29.91, mail-open 30.97, compose 33.33, slot1 37.02, slot2 39.83, pretext-set 41.40, send 43.73, landed 43.77, reply-in 50.80, done 51.37, reply-open 53.67, flip-up 55.34, end 58.14 |
+| t02b_attack_run_narrow | 58.14 | 0.17 | -93 / -93 | as t02 |
+| t03_fake_check_builder | 15.04 | 0.58 | -62 / -70 | builder-open 2.12, host 6.17, pretext 7.85, urgency 9.51, step 11.56, hold-end 14.56 |
+| t03b_fake_check_builder_narrow | 15.10 | 0.19 | -40 / -35 | as t03 |
+| t05_pages_list_runA | 15.30 | 0.57 | -75 / -82 | kiosk-open 2.94, intro 5.53, list 6.84, list held to 14.84 (8.0 s) |
+| t05_pages_list_runB | 17.17 | 0.17 | -53 / -37 | kiosk-open 2.97, intro 5.53, list 6.84, row_open 10.21, card 11.72, card-held 16.73 |
+| t05b_pages_list_narrow | 17.14 | 0.52 | -77 / -62 | as t05 run B |
+
+Findings: the t09 swap passed first time on the real capture. Anjali's t01 hook mark: hook_start is 2.47 but the portrait is up at 3.73, so cut from hook_start - 0.3 as the hook decision says and check the portrait frame. The t02 reply arrives 7.0 s after send (reply-in 50.80 vs send 43.73), over the 6 s limit noted for the lands variant; use the default lands cut.
+
+## Edit lists and render queue (25 Nov, round 1)
+
+Edit lists from the 25 Nov takes (round 1, 15 shots, 72.7 s, lint 0 errors, 15 warnings): `tools/video/edits/ca10_trailer_r1.json` (16:9) and `ca10_trailer_r1_narrow.json` (9:16 and 1:1). Generated from the plan in `tmp/handover/ca0/HANDOVER_edit_ca10.md`. Not rendered. Takes are read from `video_out/ca10/takes`, which must be a symlink to `~/video-takes-local/ca10/takes` (git-ignored; it does not exist yet, create it before rendering, or lint with `--takes-dir`). Run one at a time, nothing else rendering or capturing (`pgrep -af 'remotion|render.mjs|render.sh'`, `free -g`). About 35 min per aspect at one thread (about 1 h 45 min for all three):
+
+```bash
+cd <worktree>
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca10_trailer_r1-16x9     # dedicated empty folder, deleted on success
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca10_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca10_trailer_r1_narrow-9x16
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca10_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca10_trailer_r1_narrow-1x1
+nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca10_trailer_r1_narrow.json 1:1
+```
+
+No `--final` (spoiler blocks are unreviewed, as for the other CA round-1 edits). Output: `video_out/ca10/renders/`.
+
+Defaults the owner can change (also in each edit's `script.brief`):
+1. Music: PeaceFolk Guitar Motif from 95.545 s, gain -5, 2.5 s fade-out, as ca02. The ca10 script names no track; the scenario plays PeaceFolk. Alternatives are in `music.alternatives`.
+2. Office life: `office_life` (t09_darren_cooler, 2.4 s, silent) is not in the script. It sits after pages and before step_away. Delete the shot (and shift later VO starts by 2.4 s) to return to the script's 70.3 s.
+
+Other choices: Leo's reply is not shown (default lands cut). The hook crops the game bar out in every aspect (it shows both sentences, sentence 2 is the tell) and burns in sentence 1 as a caption. v8b starts 0.25 s after v8a (the script's pages+2.49 left a 0.03 s gap). Chips: MORNING OF WEB PAGES (the script's tab name, 20 characters) for topic and pages.
+
+Window table (output s, take, in-out in trimmed-take s; narrow file in brackets where it differs):
+
+| shot | out s | take | in-out | note |
+|---|---|---|---|---|
+| hook | 0-3.45 | t01_anjali_hook | 2.5-5.95 | portrait up 2.39, speech 2.71-5.82, sentence 2 starts 6.11 |
+| open | 3.45-8.55 | card | | v1 |
+| topic | 8.55-15.85 | t05 run A | 7.0-14.3 | narrow file: same wide take zoomed out |
+| red_card | 15.85-18.85 | card | | v2 |
+| research | 18.85-23.65 | t02 / t02b | 10.55-15.35 / 10.4-15.2 | browser closes about 15.45 |
+| build | 23.65-31.45 | t03 / t03b | 5.5-13.3 | host pick about 5.8, steps by 11.5 |
+| lands | 31.45-35.65 | t02 / t02b | 43.0-47.2 / 42.65-46.85 | send 43.73 / 43.38 |
+| flip | 35.65-38.05 | t02 / t02b | 55.3-57.7 / 54.75-57.15 | flip-up 55.34 / 54.87 |
+| niamh_flip | 38.05-46.2 | t04_niamh_flip | 9.27-17.42 | speech 9.335-17.07, sentence 2 split at 4.79-5.13 |
+| blue_card | 46.2-48.6 | card | | |
+| pages | 48.6-57.6 | t05 run B / t05b | 7.5-16.5 | list to 10.2, card from 10.21 |
+| office_life (PROPOSED) | 57.6-60.0 | t09_darren_cooler | 2.65-5.05 | silent, Darren walks to the cooler |
+| step_away | 60.0-63.2 | t07b / t07c | 3.4-6.6 | panel static, no click |
+| darren_end | 63.2-67.2 | t07_darren_prompt | 5.8-9.8 | speech 6.04-9.37, never reaches D2 |
+| close | 67.2-72.7 | card | | v11 |
+
+Lint warnings (same in both files): 13 "spoiler not yet reviewed" (every gameplay and card shot), blue_card heading is 31 characters (over 28, owner wording as ca02), VO v4b is 3.4 words/s (the voiced file).
+
+Frame checks still to do (no frames were viewed in this pass; framings marked estimated come from the plan):
+- t03b (narrow builder): preview and chips fit, the 9:16 and 1:1 crop at zoom 1.25 hides any Close fragment; window is a copy of the wide one.
+- t05b (narrow pages): panel width, verdict buttons possibly in frame at 9:16 (zoom 0.72) and 1:1 (zoom 1.15).
+- t07c (narrow step-away): panel fits at 9:16 zoom 0.75 and 1:1 zoom 1.3.
+- office_life cooler crop (zoom 1.5, cx 0.46, cy 0.5): check the first and last frames, the follow-cam pans the room from x 0.32-0.81 to 0.10-0.60.
+- Narrow lands zoom 1.25: Close-button fragment (x 0.65-0.68, y 0.03-0.07) hidden at 9:16 and 1:1, first and last frame.
+- Also: hook cx 0.68 on Anjali and the bar out; niamh_flip cx (copied from ca02 Fatima); darren_end crop zoom 1.9 cx 0.38; narrow research last frame 15.2 (browser closes about 15.4); flip first frame (55.2 or 54.7); the sentence-2 caption split for Niamh by ear.
