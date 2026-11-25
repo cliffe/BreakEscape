@@ -616,7 +616,11 @@ module BreakEscape
 
         Rails.logger.debug "[BreakEscape] Serving room data for: #{room_id}"
 
-        render json: { room_id: room_id, room: room_data }
+        answer = { room_id: room_id, room: room_data }
+        # K1 (ops hardening U4): a non-secret mark while the room is served but not earned, the
+        # predicate of object_in_unpromoted_route_room?. Never in the both-lists interim.
+        answer[:routeRoom] = true if is_route_room && !is_unlocked
+        render json: answer
       rescue => e
         Rails.logger.error "[BreakEscape] room error: #{e.message}\n#{e.backtrace.first(10).join("\n")}"
         render_error("Failed to load room: #{e.message}", :internal_server_error)
@@ -1294,6 +1298,7 @@ module BreakEscape
 
       # Use transaction to ensure atomic update
       flag_not_recorded = false
+      route_room_unpromoted = false
       ActiveRecord::Base.transaction(requires_new: true) do
         if target_type == 'door'
           if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
@@ -1303,6 +1308,7 @@ module BreakEscape
             # Still compose filtered_room_data and track_npc_encounters, or route-room NPCs go
             # untracked until promotion.
             @game.record_npc_route_room!(target_id)
+            route_room_unpromoted = true
             room_data = @game.filtered_room_data(target_id)
             annotate_station_submission_status!(room_data, target_id) if room_data
             track_npc_encounters(target_id, room_data)
@@ -1327,6 +1333,7 @@ module BreakEscape
           }
           door_answer.merge!(lock_step_open_echo(target_type, target_id, resolved)) # S8c: names a gated lock
           door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          door_answer[:routeRoom] = true if route_room_unpromoted # K1: served, not earned
           # Open before this request: say so, and name no card (R2 m2)
           door_answer[:alreadyOpen] = true if already_open
           # Globals and tasks a viaCredential credit wrote during this unlock
