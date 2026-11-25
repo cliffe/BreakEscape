@@ -22,6 +22,9 @@ VAR kit_ca15_host_said = false
 VAR kit_ca15_out = false
 VAR kit_ca15_done = false
 VAR hub_quiet = false
+// Red-team USB-drop beat (2.6): the ink gives the stick and sets this global, which
+// the shell's eventMappings read. Declared in the scenario globalVariables so it syncs.
+VAR ca15_drop_given = false
 
 === start ===
 -> hub
@@ -57,3 +60,25 @@ VAR hub_quiet = false
     ~ hub_quiet = true
     #exit_conversation
     -> hub
+
+// Red-team USB-drop beat: routed to by the shell's eventMappings on the world beat.
+// Nilesh hands over the stick as he explains where to leave it (the #give_item is
+// server-known: ca15_red_stick is in his itemsHeld), sets ca15_drop_given, then the
+// learner can ask why it works or just take it. Both paths park the hub quietly.
+=== red_stick ===
+Nilesh Solanki: Before we flip, one from the red-team kit. A stick, no label, no note. #delivery: stepping into the red-team host role, conspiratorial but light
+Nilesh Solanki: It's a safe tracker, booked in with IT. It only tells us who opened it. #delivery: stepping into the red-team host role, conspiratorial but light
+#give_item:ca15_red_stick
+Nilesh Solanki: Leave it next door, somewhere people stop. Then watch who picks it up. #delivery: stepping into the red-team host role, conspiratorial but light
+~ ca15_drop_given = true
++ [Why would anyone plug in a stranger's stick?]
+    Nilesh Solanki: To find out whose it is. Kindness does the attacker's work. #delivery: stepping into the red-team host role, conspiratorial but light
+    Nilesh Solanki: No label is deliberate. A labelled stick gets opened out of nosiness. A blank one gets plugged in to find its owner. #delivery: stepping into the red-team host role, conspiratorial but light
+    -> red_stick_leave
++ [On it.]
+    -> red_stick_leave
+
+=== red_stick_leave ===
+~ hub_quiet = true
+#exit_conversation
+-> hub
