@@ -1,18 +1,21 @@
-// t07_agnieszka_coffee: Agnieszka's forced coffee trip, followed by the camera. triggerNeed(caffeine, 5) at take start: she leaves her post (192,97) for the station (244,209)
-// (proved headless in ca13 game 13362: she walks within about 1.5 s, the trip took about 2 s of game time), stays a while, then walks back. The camera follows her out and back,
+// t07_graham_coffee: Graham Whitfield's forced coffee trip, followed by the camera. triggerNeed(caffeine, 5) at take start: he leaves his settled post
+// for the coffee station (about (244,209) px, the station Agnieszka walked to). The trip must be at least 120 px from his post. The camera follows him out and back,
 // then glides to the player. No kiosk is opened and nothing is clicked.
+// Post: his settled start point (read at take start, as in ca10 t09). The scenario's needsHome is his PC, so he should settle back on the same spot.
 // Entry state: the step-away seed with kit_quiet=true (kit_ca13_out must NOT be set, Look up never pressed).
-//   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca13_ai_assistant t07_agnieszka_coffee \
+//   BE_SPRITE=female_office_worker_v2 tools/video/takes/run-take.sh ca13_ai_assistant t07_graham_coffee \
 //     "--set episode_e13_ai_assistant_state={\"done\":[\"brief\",\"write\",\"flip\",\"defend\"]} --set episode_e13_ai_assistant_defend_complete=true --set kit_defend_done=true --set kit_attack_done=true --set episode_e13_ai_assistant_defend_percent=60 --set kit_quiet=true" \
 //     "--hide-hud --zoom-step 1"
-// Marks: player-sprite, npc-start, follow-on, need-set, walk-start (left-post), arrive (at-station), return-start, back, follow-off, cam-summary, npc-end, end.
+// Marks: player-sprite, npc-start, post-set, follow-on, need-set, walk-start (left-post), arrive (at-station), trip-distance, return-start, back, follow-off, cam-summary, npc-end, end.
 import { sleep, prepare, checkSprite } from './_ca13.mjs';
 import { followNpc, followPlayer, camState, triggerNeed, waitNpcMoved, npcPos } from '../lib/camlib.mjs';
 
-const NPC = 'kit_agnieszka_duda';
-const POST = { x: 192, y: 97 };
+const NPC = 'kit_graham_whitfield';
+const MIN_TRIP_PX = 120;
+let POST = { x: 0, y: 0 }; // set from his settled start point in the default export
 
-const near = (p, q, r = 24) => Math.hypot(p.x - q.x, p.y - q.y) <= r;
+const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+const near = (p, q, r = 24) => dist(p, q) <= r;
 
 /** Resolves the NPC's position once it has stood still for stableMs, or null after timeoutMs. */
 async function settle(page, npcId, timeoutMs, stableMs = 1000) {
@@ -68,20 +71,26 @@ export default async (page, bridge, mark) => {
   await checkSprite(page, mark);
   const p0 = await npcPos(page, NPC);
   mark('npc-start', p0);
-  if (!p0 || !near(p0, POST)) throw new Error(`Agnieszka is not on her post at take start: ${JSON.stringify(p0)}`);
+  const settled = await settle(page, NPC, 8000);
+  if (!settled) throw new Error(`Graham did not settle at take start: ${JSON.stringify(p0)}`);
+  POST = { x: settled.x, y: settled.y };
+  mark('post-set', POST);
   const smp = startSampler(page);
   try {
     mark('follow-on'); await followNpc(page, NPC, { lerp: 0.08 });
     await triggerNeed(page, NPC, 'caffeine', 5); mark('need-set', { need: 'caffeine', level: 5 });
-    if (!(await waitNpcMoved(page, NPC, 24, 30000))) throw new Error(`Agnieszka never left her post (${POST.x},${POST.y}) within 30 s of the caffeine trigger`);
+    if (!(await waitNpcMoved(page, NPC, 24, 30000))) throw new Error(`Graham never left his post (${POST.x},${POST.y}) within 30 s of the caffeine trigger`);
     mark('walk-start', await npcPos(page, NPC));
     const arr = await settle(page, NPC, 30000);
-    if (!arr) throw new Error('Agnieszka did not stop at the coffee station within 30 s');
+    if (!arr) throw new Error('Graham did not stop at the coffee station within 30 s');
     mark('arrive', arr);
-    if (!(await waitNpcMoved(page, NPC, 24, 45000))) throw new Error('Agnieszka did not walk back from the station within 45 s of arriving');
+    const trip = Math.round(dist(arr, POST));
+    mark('trip-distance', { px: trip, min: MIN_TRIP_PX });
+    if (trip < MIN_TRIP_PX) throw new Error(`Graham's trip is only ${trip} px from his post; the take needs at least ${MIN_TRIP_PX} px`);
+    if (!(await waitNpcMoved(page, NPC, 24, 45000))) throw new Error('Graham did not walk back from the station within 45 s of arriving');
     mark('return-start', await npcPos(page, NPC));
     const back = await settle(page, NPC, 30000);
-    if (!back || !near(back, POST)) throw new Error(`Agnieszka did not get back to her post: ${JSON.stringify(back)}`);
+    if (!back || !near(back, POST)) throw new Error(`Graham did not get back to his post: ${JSON.stringify(back)}`);
     mark('back', back);
     await finish(page, mark, smp);
   } finally {
