@@ -70,8 +70,7 @@ module BreakEscape
     # GET /mfa/device: :not_found when no policy declares an mfa kind (or no such device),
     # :no_device unless the device is held, else what the device shows. A held device whose owner
     # a desk has re-enrolled shows no code (the own phone does: mfa_own_device_answer), unless a live
-    # code lock step of that owner still needs it. The only
-    # places a code reaches the browser.
+    # code lock step of that owner still needs it. The only places a code reaches the browser.
     def mfa_device_answer(item_id)
       return :not_found unless mfa_declared?
 

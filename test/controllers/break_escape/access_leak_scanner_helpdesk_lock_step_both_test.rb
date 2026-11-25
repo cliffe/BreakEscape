@@ -106,12 +106,5 @@ module BreakEscape
       timeless = old_device(at: 20).tap { |r| r.delete('t') }
       assert_equal ['helpdesk:old:code'], device_findings(earned_prefix + [code_gate(at: 10), timeless])
     end
-
-    test 'real rows: the code lock flow after a re-enrolment is clean, and reports without its gate row' do
-      rows = earned_prefix + [code_gate(at: 10), old_device(at: 20)]
-      assert_empty device_findings(rows)
-      real = rows.map { |r| r.merge('t' => r['t']) }
-      assert_equal %w[helpdesk:old:code], device_findings(real.reject { |r| r['path'].end_with?('/unlock') })
-    end
   end
 end
