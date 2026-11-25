@@ -54,3 +54,11 @@ Unverified: no real-fps run of t01, t03 or the walking shots on the capture disp
 | take | length | drop % | key marks (trimmed s) | checked against frames / notes |
 |---|---|---|---|---|
 | | | | | |
+
+## Movement shots (25 Nov)
+
+Survey: `docs/video/CA_MOVEMENT_B4.md`. Helper `tools/video/takes/lib/camlib.mjs`. **Proposed script written, not yet dry-run.** Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t08_yusuf_cooler (new, not yet dry-run) | fresh game, `--set kit_defend_done=true`; `kit_ca11_out` not set | read his settled post (near (96,224)); `followNpc(kit_yusuf_demir, lerp 0.08)`; `triggerNeed(thirst, 5)`; he walks to the water cooler (use point about (262,219), about 166 px), drinks 20 s, walks back; `followPlayer` | post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, cam-summary, end | optional office insert near `panel` (v9); the existing `office` shot keeps his tray walk | His natural trip fires about 30 s after load, so a late start finds him mid-trip (the script refuses if he is not near home). After Look up his needs are suspended and he walks to the copier tray: record before the press. Trip length is an estimate from tiles |

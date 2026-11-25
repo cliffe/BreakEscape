@@ -26,3 +26,11 @@ Dry-run only, no recording yet. Keyless server on :3454 from worktree b-ca-trail
 ## Recorded marks
 
 (empty: not recorded)
+
+## Movement shots (25 Nov)
+
+Survey: `docs/video/CA_MOVEMENT_B4.md`. Helper `tools/video/takes/lib/camlib.mjs`. **Proposed script written, not yet dry-run.** Never click in the room; refuse in `setup()` if the entry state is wrong.
+
+| take | entry state | actions (follow-cam) | marks to log | serves | hazards |
+|---|---|---|---|---|---|
+| t07_chidi_machine_follow (new, not yet dry-run) | fresh game, `--set kit_quiet=true` | read his settled post (near (96,192)); `followNpc(kit_chidi_okeke, lerp 0.08)`; `triggerNeed(thirst, 5)`; he walks to the drinks machine (about (237,225), about 145 px), drinks, walks back; `followPlayer` | post-set, follow-on, need-set, walk-start, arrive, trip-distance, return-start, back, cam-summary, end | `room_end` (v9 "Out in the depot, Chidi's back."), a follow-camera variant of t06_room_end (which keeps a fixed camera and the natural 15.8 s start) | Fatima joins the machine at about 31 s in t06: the edit window (in at walk start, out at arrive + about 4 s) ends before. Chidi never barks (pair-chat finding in t06 above). Not yet measured with the follow camera |
