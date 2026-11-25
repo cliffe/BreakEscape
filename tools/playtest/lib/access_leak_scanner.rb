@@ -659,6 +659,7 @@ class AccessLeakScanner
     @shares_opened = Set.new # resource ids with an earlier successful GET /container/<share or item in it> this run
     legit = Set.new # items already served by their own allowed route earlier in the run
     mfa_begin_scan # S8a: the second-step rules' own state
+    tag_begin_scan # hardening U1b: the tag refutation rule's window and present map
     helpdesk_begin_scan # S8b: the helpdesk rules' own state
     harvest_begin_scan # S5b, S5c
     prepare_feed_base(lines)
@@ -673,12 +674,13 @@ class AccessLeakScanner
       end
       @mfa_row_ref = "#{source}:#{line_no}"
       if body.nil?
+        tag_note_bodyless(row)
         mfa_note_bodyless(row)
         ls_note_bodyless(row) # S8c lock second step: a lost answer may have been a cancel or an expiry
         next
       end
 
-      ctx = response_context(row).merge(index: index)
+      ctx = response_context(row).merge(index: index, row: row)
       body = log_rows_without_typed(body) if ctx[:log_rows]
       add = lambda do |rule, owner, json_path|
         key = [source, line_no, rule, owner]
@@ -730,6 +732,7 @@ class AccessLeakScanner
       # never call an earned own-phone secret a leak, and judge a lock-form answer whole.
       body = scan_helpdesk(body, row, add)
       scan_lock_steps(body, row, add) # S8c lock second step
+      scan_tag_rule(body, row, ctx, add) # hardening U1b: 3.3, the tag refutation rule (both rule sets use it)
       scan_mfa(body, row, add)
       note_network_swept(body, ctx, row)
     end
@@ -797,7 +800,7 @@ class AccessLeakScanner
     'crack_row' => 'a hash row outside a GET /keyring answer, or with a key or value the server\'s row does not have (a password, routes, connectsTo), or a malformed readyInSeconds map',
     'crack_answer' => 'a POST /crack answer that is not exactly the shape of its status or refusal (a running answer carries only the wait)',
     'crack_unearned' => 'a cracked keyring entry, or its password, that no earlier 200 POST /crack cracked answer named, or one that is not the server\'s row',
-    'ops_tag' => 'a recorder pc tag on a 200 PC-route row that names no sign-in PC of the scenario, a PC that does not admit the account that signed in, or a PC other than the one the answer names (a lock answer pcId, a remote sign-in host label)',
+    'ops_tag' => 'a recorder pc tag on a 200 PC-route row that names no sign-in PC of the scenario, a PC that does not admit the account that signed in, or a PC other than the one the answer names (a lock answer or an `mfaRequired` answer pcId, a remote sign-in host label); and a tagged sign-in that the first answer about its PC refutes (another account shown, or no session while its deadline has not passed), or that another PC\'s desktop shows by a keyboard password where the run holds the account at no PC but the tagged one',
     'harvest_key' => 'a cached-account or account-kind key in a response (cachedAccounts, cachedAt, harvestedAccounts, accountKind, localTo, accountOnly, or creds.domain), or a hashId outside a POST /harvest_credentials answer',
     'harvest_row' => 'a POST /harvest_credentials answer that is not exactly the server\'s shape (a refusal with rows, a row with a key, a password or a picture an account-only account has not)',
     'harvest_unearned' => 'a collect answer or row at a PC with no admin session earned there in the run (a keyboard sign-in, or a proved relay administrator), for an account that PC does not declare (a borrow-gated account needs a borrow "done" answer earlier in the capture and the game\'s own cachedAt record: a game row from before cachedAt reads as no borrow), or whose hashId is not that PC\'s hash record',
@@ -1905,12 +1908,15 @@ class AccessLeakScanner
   # route, verb or status stays a finding.
   MFA_VERIFY_LOCK_KEYS = %w[attemptsLeft lockedOut message success].freeze
 
-  def mfa_verify_lockout_proved?(body, hash, json_path, ctx)
+  def mfa_verify_lockout_proved?(body, hash, json_path, ctx, row = ctx[:row])
     return false unless @game && ctx[:mfa_verify_strict] && ctx[:status] == 422 && json_path == '$' && hash.equal?(body)
     return false unless hash.keys.sort == MFA_VERIFY_LOCK_KEYS
     return false unless hash['success'] == false && hash['lockedOut'] == true && hash['attemptsLeft'] == 0 && hash['message'] == BreakEscape::Game::LOGIN_LOCKED_OUT
 
     open = (@mfa_pending || {}).select { |_pc, rec| rec[:kind] == 'code' }
+    # hardening U1b (P8 b): a tagged refusal is the open code step at the PC the tag names; no tag, no narrowing (as before)
+    tag = row.is_a?(Hash) ? row_pc_tag(row) : nil
+    open = open.select { |pc, _rec| pc == tag } if tag
     return false unless open.size == 1
 
     pc, rec = open.first
@@ -4584,7 +4590,9 @@ class AccessLeakScanner
 
     if body.is_a?(Hash)
       case self.class.tag_route_name(row)
-      when 'login'
+      when 'login', 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+        # an `mfaRequired` answer or a step answer that names its PC must name the tagged one (hardening U1b)
+        return [:rejected, nil] if body['pcId'].is_a?(String) && body['pcId'] != tag
         if body['success'] == true && body['npcId'].is_a?(String)
           npc = @priv_npcs[body['npcId']]
           return [:rejected, nil] unless npc && BreakEscape::CredentialModel.pc_admits_account?(@priv_pcs[tag], npc)
@@ -4606,6 +4614,244 @@ class AccessLeakScanner
 
     state, = pc_tag_state(body, row)
     add.call('ops_tag', "tag:#{self.class.tag_route_name(row)}", '$') if state == :rejected
+  end
+
+  # ---- the tag refutation rule (hardening U1b, brief 3.3) ---------------------------------------------------------------------
+  #
+  # A tag is the request's own word, so another PC's desktop says nothing against it. It is refuted only by the answers about the
+  # tagged PC itself, inside the window a tagged sign-in opens, and by one cross-PC case. State (`tag_begin_scan`), all kept here
+  # and never read by an earn rule:
+  # - `@tg_win`, the one open window: { pc:, account:, deadline:, route:, pc_spent:, cross_spent: }. Only a 200 `success: true`
+  #   answer with `npcId` that completes a sign-in (a POST login, or a step that passes) at an accepted tag opens it. It closes at
+  #   the first of: another POST sign-in, sign-out, lock or step answer (any status, or a body lost), an end at the tagged PC (a
+  #   200 `endedPcIds` naming it, a lock, a 403 desktop, a session of the same account locked, a sessions map showing no session
+  #   there, a passed deadline), a later answer about the tagged PC after its first one, the capture's end.
+  # - the tagged-PC check, spent on the first answer about the tagged PC: another account shown (a desktop or a sessions map)
+  #   refutes; a 200 desktop with no session refutes only while the sign-in's own deadline (row `t` plus `expiresInS` of a token) has
+  #   not come within 2 s of passing (row `t` is arrival), and never when the deadline is unreadable; a sessions map with no session
+  #   at the tagged PC is always an end (the bootstrap ends and hides claim and relay sessions, so an honest reload shows it).
+  # - the cross-PC check, spent on the first desktop row of any PC: a 200 desktop of another PC showing the same account by a
+  #   keyboard password refutes when `@tg_present` does not hold the account at that PC now (and its holder is not unknown).
+  # - `@tg_present` (PC id => accounts) over-counts on purpose: it adds on every sign-in answer, desktop or session the capture
+  #   shows, and removes only on an answer that names the PC and shows the account gone (a tagged logout, a lock, `endedPcIds`, a
+  #   desktop or sessions map showing the PC with another account or none). A 403, a downgrade, an untagged or unnamed end and a
+  #   passed deadline remove nothing. `@tg_unknown` (PC ids): a lost sign-in or step body, or a session-bearing answer naming no
+  #   account, marks the PCs it could be about until a 200 desktop or sessions map shows the PC's holder.
+  TAG_SIGNIN_ROUTES = %w[login mfa/verify mfa/prompt mfa/approve].freeze
+
+  def tag_begin_scan
+    @tg_win = nil
+    @tg_present = {}
+    @tg_unknown = Set.new
+  end
+
+  # A lost body: it closes the window (a POST PC route is any other sign-in, sign-out, lock or step), and a sign-in or step row
+  # could have put any account at its PC (every PC when it names none).
+  def tag_note_bodyless(row)
+    return unless @tags_on && self.class.tag_route_kind(row) == :pc
+
+    @tg_win = nil
+    return unless TAG_SIGNIN_ROUTES.include?(self.class.tag_route_name(row))
+
+    tag = row_pc_tag(row)
+    (tag ? [tag] : @priv_pcs.keys).each { |pc| @tg_unknown << pc }
+  end
+
+  def scan_tag_rule(body, row, ctx, add)
+    return unless @tags_on
+
+    route = self.class.tag_route_kind(row) == :pc ? self.class.tag_route_name(row) : nil
+    ok = row['status'].is_a?(Integer) && row['status'] == 200
+    hash = body.is_a?(Hash) ? body : nil
+    at = priv_row_time(row)
+    @tg_win = nil if @tg_win && @tg_win[:deadline] && at && at > @tg_win[:deadline] # a passed deadline is an end
+    @tg_win = nil if route # any other sign-in, sign-out, lock or step answer closes it
+    tag_judge_window(hash, row, ctx, ok, at, add) if @tg_win && hash
+    tag_open_window(hash, row, route, ok, at) if route && ok && hash
+    tag_update_present(hash, row, ctx, route, ok) if ok && hash
+  end
+
+  # The desktop answer's PC when this row is the desktop of a sign-in PC (any status), else nil.
+  def tag_desktop_pc(ctx)
+    ctx[:container].is_a?(String) && @priv_pcs.key?(ctx[:container]) ? ctx[:container] : nil
+  end
+
+  def tag_judge_window(hash, row, ctx, ok, at, add)
+    win = @tg_win
+    if ok && hash['endedPcIds'].is_a?(Array) && hash['endedPcIds'].include?(win[:pc])
+      @tg_win = nil # an end at the tagged PC
+      return
+    end
+    desktop = tag_desktop_pc(ctx)
+    sessions = ok && ctx[:scenario] && hash['sessions'].is_a?(Hash) ? hash['sessions'] : nil
+    if desktop && !win[:cross_spent]
+      win[:cross_spent] = true
+      tag_cross_check(win, desktop, hash, ok, add)
+    end
+    if desktop == win[:pc]
+      tag_check_tagged_desktop(win, hash, row, ok, at, add)
+    elsif sessions
+      tag_check_tagged_map(win, sessions, add)
+    end
+  end
+
+  def tag_refute(win, add, json_path)
+    add.call('ops_tag', "tag:#{win[:route]}", safe_path(json_path))
+    @tg_win = nil
+  end
+
+  # First desktop row of any PC: another PC's desktop showing the account by a keyboard password, where the present map does not
+  # hold the account now and the PC's holder is known, says the tag was moved.
+  def tag_cross_check(win, desktop, hash, ok, add)
+    return unless ok && desktop != win[:pc]
+
+    session = hash['session']
+    return unless session.is_a?(Hash) && session['npcId'] == win[:account] && session['via'] == 'password' &&
+                  !session['remote'] && session['relay'] != true && session['locked'] != true
+    return if @tg_unknown.include?(desktop) || (@tg_present[desktop] || Set.new).include?(win[:account])
+
+    tag_refute(win, add, '$.session')
+  end
+
+  def tag_check_tagged_desktop(win, hash, row, ok, at, add)
+    if row['status'].is_a?(Integer) && row['status'] == 403
+      @tg_win = nil # a refused desktop is an end
+      return
+    end
+    return unless ok
+
+    session = hash['session']
+    first = !win[:pc_spent]
+    win[:pc_spent] = true
+    if session.is_a?(Hash) && session['npcId'].is_a?(String)
+      if session['npcId'] != win[:account]
+        first ? tag_refute(win, add, '$.session') : (@tg_win = nil)
+      elsif session['locked'] == true
+        @tg_win = nil
+      end
+    elsif first && tag_deadline_unpassed?(win, at)
+      tag_refute(win, add, '$.session')
+    else
+      @tg_win = nil # no session after the deadline, or at it (within the 2 s tolerance), or later in the window: an end
+    end
+  end
+
+  # "No session" refutes only while the sign-in's own deadline has not come within 2 s: a sign-in with no deadline has none to
+  # pass; one with a deadline needs a readable row time before it.
+  def tag_deadline_unpassed?(win, at)
+    return true unless win[:deadline]
+
+    !at.nil? && at < win[:deadline] - 2
+  end
+
+  def tag_check_tagged_map(win, sessions, add)
+    held = sessions[win[:pc]]
+    first = !win[:pc_spent]
+    win[:pc_spent] = true
+    if held.is_a?(Hash) && held['npcId'].is_a?(String)
+      if held['npcId'] != win[:account]
+        first ? tag_refute(win, add, "$.sessions.#{win[:pc]}") : (@tg_win = nil)
+      elsif held['locked'] == true
+        @tg_win = nil
+      end
+    else
+      @tg_win = nil # R5-1: a sessions map with no session at the tagged PC is an end, never a refutation
+    end
+  end
+
+  # R5-m1: only a 200 `success: true` answer naming an account that completes a sign-in, at an accepted tag, opens a window.
+  def tag_open_window(hash, row, route, ok, at)
+    return unless ok && TAG_SIGNIN_ROUTES.include?(route) && hash['success'] == true && hash['npcId'].is_a?(String)
+
+    state, tag = pc_tag_state(hash, row)
+    return unless state == :accepted
+
+    seconds = hash['expiresInS']
+    deadline = at && hash['kind'] == 'token' && seconds.is_a?(Numeric) && seconds.positive? ? at + seconds : nil
+    @tg_win = { pc: tag, account: hash['npcId'], deadline: deadline, route: route, pc_spent: false, cross_spent: false }
+  end
+
+  def tag_present_add(pcs, account)
+    pcs.each { |pc| (@tg_present[pc] ||= Set.new) << account }
+  end
+
+  # What a 200 answer shows about a PC's holder: the PC's accounts become exactly the one shown (none when no session), and a
+  # holder that is shown is no longer unknown. A session with no readable account leaves the map and marks the PC unknown.
+  def tag_present_shows(pc, session)
+    if session.is_a?(Hash) && session['npcId'].is_a?(String)
+      @tg_present[pc] = Set.new([session['npcId']])
+      @tg_unknown.delete(pc)
+    elsif session.is_a?(Hash)
+      @tg_unknown << pc
+    else
+      @tg_present[pc] = Set.new
+      @tg_unknown.delete(pc)
+    end
+  end
+
+  def tag_update_present(hash, row, ctx, route, ok)
+    if hash['endedPcIds'].is_a?(Array)
+      hash['endedPcIds'].each { |pc| @tg_present[pc] = Set.new if pc.is_a?(String) && @priv_pcs.key?(pc) }
+    end
+    account = hash['npcId'].is_a?(String) ? hash['npcId'] : nil
+    case route
+    when 'login', 'mfa/verify', 'mfa/prompt', 'mfa/approve'
+      return unless account && (hash['success'] == true || (route == 'login' && hash['mfaRequired'] == true))
+
+      state, tag = pc_tag_state(hash, row)
+      tag_present_add(state == :accepted ? [tag] : mfa_admitting_pcs(account), account)
+    when 'logout'
+      state, tag = pc_tag_state(hash, row)
+      @tg_present[tag] = Set.new if hash['success'] == true && state == :accepted
+    when 'lock_session'
+      state, tag = pc_tag_state(hash, row)
+      pc = hash['pcId'].is_a?(String) ? hash['pcId'] : (state == :accepted ? tag : nil)
+      @tg_present[pc] = Set.new if hash['locked'] == true && pc && @priv_pcs.key?(pc)
+    when nil
+      desktop = tag_desktop_pc(ctx)
+      if desktop
+        tag_present_shows(desktop, hash['session'])
+      elsif ctx[:scenario] && hash['sessions'].is_a?(Hash)
+        @priv_pcs.each_key { |pc| tag_present_shows(pc, hash['sessions'][pc]) }
+      elsif hash['session'].is_a?(Hash) && !ctx[:container]
+        tag_note_foreign_session(hash['session'])
+      end
+    end
+  end
+
+  # A 200 answer of another route holding a `session`: it is at the PC its host label names, else at any PC.
+  def tag_note_foreign_session(session)
+    label = session['host']
+    pc = label.is_a?(String) ? @ops_host_by_label[label] : nil
+    pcs = @priv_pcs.key?(pc) ? [pc] : @priv_pcs.keys
+    if session['npcId'].is_a?(String)
+      tag_present_add(pcs, session['npcId'])
+    else
+      pcs.each { |p| @tg_unknown << p }
+    end
+  end
+
+  # hardening U1b: the PC a second-step row is placed at by its tag, or nil. On a 200 row the tag counts only when pc_tag_state
+  # accepts it (a rejected tag narrows nothing); a refused row (a wrong code, a cancel at 422) has no answer to check it against,
+  # so a tag naming a sign-in PC of the scenario places it, as before.
+  def mfa_tag_for(body, row)
+    raw = row_pc_tag(row)
+    return nil unless raw
+    return raw unless row['status'].is_a?(Integer) && row['status'] == 200
+
+    state, tag = pc_tag_state(body, row)
+    state == :accepted ? tag : nil
+  end
+
+  # A pass answer whose tag was rejected earned nothing and took no step: the step it may have closed stays unproved, so every
+  # step open for its account is closed and the account's sessions at the PCs that admit it are taken back (the unnamed take-back).
+  def mfa_take_back_rejected_pass(body, row)
+    return unless pc_tag_state(body, row).first == :rejected && body['npcId'].is_a?(String)
+
+    @mfa_pending.delete_if { |_pc, rec| rec[:npc] == body['npcId'] }
+    admitting = mfa_admitting_pcs(body['npcId'])
+    mfa_end_pcs(admitting)
+    mfa_unplace(admitting)
   end
 
   # The value of a query's only parameter, or nil (a second parameter, a bad escape: nothing is earned).
@@ -4706,7 +4952,9 @@ class AccessLeakScanner
     return false unless body.is_a?(Hash) && body['mfaRequired'] == true
     return false unless info[:method] == 'POST' && info[:route] == 'login' && info[:ok]
 
-    tag = mfa_row_pc_tag(row)
+    # a tagged run reports a tag that disagrees with the answer's `pcId` once, as an `ops_tag` finding (pc_tag_state, scan_tags);
+    # the older rule's own mismatch finding is for untagged runs
+    tag = @tags_on ? nil : mfa_row_pc_tag(row)
     return false if tag && tag != body['pcId']
 
     kind = mfa_kind_at(body['pcId'], body['npcId'])
@@ -4858,10 +5106,16 @@ class AccessLeakScanner
     @mfa_signin_counts[npc] += 1 if npc
     # R2-L6: only the answer the server gives (the strict route, status 200) uses a name up or writes down where the run sits
     @mfa_row_strict = !info[:route].nil? && info[:ok]
-    tag = mfa_row_pc_tag(row)
+    state, tag = pc_tag_state(body, row)
     label = body['host']
-    if tag
+    if state == :accepted
+      # hardening U1b: a tagged sign-in is placed at its tag, as a confirmed name is
       @mfa_row_pcs = @mfa_row_clear = [tag]
+      @mfa_placed[tag] = npc if @mfa_row_strict && npc
+    elsif state == :rejected
+      # a rejected tag earns nothing and never narrows a take-back: placed as an unnamed row with no host label
+      @mfa_row_pcs = @priv_pcs.keys
+      @mfa_row_clear = npc && mfa_npc(npc) ? mfa_admitting_pcs(npc) : @priv_pcs.keys
     elsif label.is_a?(String)
       @mfa_row_pcs = @mfa_row_clear = [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
     elsif @mfa_row_strict && (named = mfa_named_signin(npc, row, body))
@@ -5021,7 +5275,7 @@ class AccessLeakScanner
     return unless body['success'] == true && body['npcId'].is_a?(String) && body.key?('via')
 
     label = body['host']
-    tag = mfa_row_pc_tag(row)
+    tag = mfa_tag_for(body, row)
     pcs = if tag then [tag]
     elsif label.is_a?(String) then [@ops_host_by_label[label]].compact.select { |pc| @priv_pcs.key?(pc) }
     else @priv_pcs.keys
@@ -5038,7 +5292,9 @@ class AccessLeakScanner
     open = @mfa_pending.select { |_pc, rec| rec[:npc] == npc }
     label = body['host']
     open = open.select { |pc, _| @ops_host_by_label[label] == pc } if label.is_a?(String)
-    tag = mfa_row_pc_tag(row)
+    return nil if pc_tag_state(body, row).first == :rejected # a rejected tag earns nothing
+
+    tag = mfa_tag_for(body, row)
     open = open.select { |pc, _| pc == tag } if tag
     return nil unless open.size == 1
 
@@ -5095,7 +5351,7 @@ class AccessLeakScanner
       mfa_count_wrong_code(body, info, row)
       if body['success'] == true
         pc = mfa_pass_pc(body, info, row)
-        return unless pc
+        return mfa_take_back_rejected_pass(body, row) unless pc
 
         @mfa_wrong.delete([pc, body['npcId']])
         @mfa_wrong_unknown.delete([pc, body['npcId']])
@@ -5107,7 +5363,7 @@ class AccessLeakScanner
         # R1-L6, R1-L11: the answer names no PC, so it closes every open step of the kind the route handles (that PC alone
         # when the row's tag names one)
         kinds = mfa_route_name(info) == 'mfa/verify' ? %w[code] : MFA_PUSH_KINDS
-        tag = mfa_row_pc_tag(row)
+        tag = mfa_tag_for(body, row)
         @mfa_pending.delete_if { |pc, rec| kinds.include?(rec[:kind]) && (tag.nil? || pc == tag) }
       end
     when 'lock_session'
@@ -5122,7 +5378,7 @@ class AccessLeakScanner
   def mfa_count_wrong_code(body, info, row)
     return unless info[:route] == 'mfa/verify' && info[:method] == 'POST' && row['status'] == 422 && body['mfaIncorrect'] == true && body['attemptsLeft'].is_a?(Integer)
 
-    tag = mfa_row_pc_tag(row)
+    tag = mfa_tag_for(body, row)
     open = @mfa_pending.select { |pc, rec| rec[:kind] == 'code' && (tag.nil? || pc == tag) }
     if open.size == 1
       pc, rec = open.first
@@ -5208,15 +5464,15 @@ class AccessLeakScanner
   # successful sign-out (the run holding that account there), else every PC.
   def mfa_note_logout(body, info, row)
     ok = info[:ok] && body.is_a?(Hash) && body['success'] == true
-    pcs = ok ? mfa_logout_pcs(row) : @priv_pcs.keys
+    pcs = ok ? mfa_logout_pcs(row, body) : @priv_pcs.keys
     mfa_end_pcs(pcs)
     mfa_unplace(pcs) if ok && @mfa_logout_placed
   end
 
-  def mfa_logout_pcs(row)
+  def mfa_logout_pcs(row, body = nil)
     @mfa_logout_count += 1
     @mfa_logout_placed = true
-    tag = mfa_row_pc_tag(row)
+    tag = mfa_tag_for(body, row)
     return [tag] if tag
 
     @priv_logouts.each do |key, pc|
