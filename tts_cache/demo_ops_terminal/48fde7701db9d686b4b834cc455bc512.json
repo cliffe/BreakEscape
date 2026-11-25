@@ -1,0 +1,13 @@
+{
+  "key": "48fde7701db9d686b4b834cc455bc512",
+  "npc": "ama_owusu",
+  "text": "Tokens run out. The session ended on the clock, and the token won't open it again.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:43Z"
+}

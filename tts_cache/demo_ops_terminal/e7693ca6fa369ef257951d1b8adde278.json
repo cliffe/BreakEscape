@@ -1,0 +1,13 @@
+{
+  "key": "e7693ca6fa369ef257951d1b8adde278",
+  "npc": "ama_owusu",
+  "text": "That's a user session. The settings finding needs one before it will work.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_ops_terminal",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T19:37:23Z"
+}
