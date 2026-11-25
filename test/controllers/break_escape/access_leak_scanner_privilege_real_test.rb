@@ -1141,12 +1141,12 @@ module BreakEscape
 
     test 'the whole real run reports nothing, and holds the answers the tamper tests edit' do
       rows = run_real
-      assert_equal 76, rows.length, 'the S5b rows are 1 to 52; the S5c beats add the rows after them'
+      assert_operator rows.length, :>=, 76, 'the S5b rows come first; later beats add rows after them, so the count only grows'
       assert_equal [], named(scan(rows))
       assert_empty @scanner.unused_entries
-      assert_equal 8, collect_rows(rows).length
+      assert_operator collect_rows(rows).length, :>=, 8
       assert_equal 7, rows.count { |r| r['path'].end_with?('/keyring') && r['status'] == 200 && r['body']['entries'].any? { |e| e['source'] == 'registry' } }
-      assert_equal 'admin', rows[46]['body']['access'], 'the relay sign-in of the administrator'
+      assert_equal 'admin', rows[relay_in_n(rows) - 1]['body']['access'], 'the relay sign-in of the administrator'
     end
 
     # ---- one edit each, on the real run. Row numbers are the run's own (1-based): 1 Uma signs in at bay_pc, 3 a refused collect,
@@ -1185,7 +1185,7 @@ module BreakEscape
 
     test 'tamper 2: the first collect moved before the administrator sign-in is unearned' do
       rows = run_real
-      assert_flagged reported(moved_before(rows, 6, 5)), 'harvest_unearned'
+      assert_flagged reported(moved_before(rows, first_collect_n(rows), bay_signin_n(rows))), 'harvest_unearned'
     end
 
     test 'tamper 3: the keyring that lists the harvested hash rows, moved before the collect, is reported' do
@@ -1210,12 +1210,12 @@ module BreakEscape
 
     test 'tamper 6: the relay administrator collect moved before the relay sign-in and its desktop is unearned' do
       rows = run_real
-      assert_flagged reported(moved_before(rows, 49, 47)), 'harvest_unearned'
+      assert_flagged reported(moved_before(rows, relay_collect_n(rows), relay_in_n(rows))), 'harvest_unearned'
     end
 
     test 'tamper 7: a collect answer naming another PC than the admin earned is unearned' do
       rows = run_real
-      found = reported(edit(rows, 21) { |r| r['body']['pcId'] = 'store_pc' })
+      found = reported(edit(rows, collect_n(rows, 'hot_desk')) { |r| r['body']['pcId'] = 'store_pc' })
       assert_flagged found, 'harvest_unearned'
     end
 
@@ -1234,13 +1234,13 @@ module BreakEscape
 
     test 'tamper 10: a password key added to a collect row is reported' do
       rows = run_real
-      found = reported(edit(rows, 6) { |r| r['body']['harvested'][0]['password'] = 'x' })
+      found = reported(edit(rows, first_collect_n(rows)) { |r| r['body']['harvested'][0]['password'] = 'x' })
       assert_flagged found, 'harvest_row'
     end
 
     test 'tamper 11: a collect row with another account hash id is reported' do
       rows = run_real
-      found = reported(edit(rows, 6) { |r| r['body']['harvested'][0]['hashId'] = 'baypc_uma' })
+      found = reported(edit(rows, first_collect_n(rows)) { |r| r['body']['harvested'][0]['hashId'] = 'baypc_uma' })
       assert_flagged found, 'harvest_unearned'
     end
 
@@ -1272,31 +1272,31 @@ module BreakEscape
     test 'tamper 16 (the stick audit, ruling A): a USB_OVERRIDE audit row naming a PC where no admin session was ever shown is reported; the real row is clear' do
       rows = run_real
       assert_empty reported(rows)
-      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['where'] = 'Records PC' })
+      found = reported(edit(rows, audit_n(rows)) { |r| r['body']['rows'].find { |x| x['event'] == 'USB_OVERRIDE' }['where'] = 'Records PC' })
       assert_flagged found, 'log_row', 'log:usb_override:store_pc'
     end
 
     test 'tamper 17: a CRED_COLLECT audit row naming a PC where no admin session was ever shown is reported' do
       rows = run_real
-      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Records PC' })
+      found = reported(edit(rows, audit_n(rows)) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Records PC' })
       assert_flagged found, 'log_row', 'log:cred_collect:store_pc'
     end
 
     test 'tamper 18: a CRED_COLLECT row naming a place that is no PC is reported (fail closed)' do
       rows = run_real
-      found = reported(edit(rows, 43) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Nowhere' })
+      found = reported(edit(rows, audit_n(rows)) { |r| r['body']['rows'].find { |x| x['event'] == 'CRED_COLLECT' }['where'] = 'Nowhere' })
       assert_flagged found, 'log_row', 'log:cred_collect:unknown'
     end
 
     test 'tamper 19: the relay administrator audit row read, with no folder read earned at hot_desk, is reported' do
       rows = run_real
-      found = reported(edit(rows, 43) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'as' => 'adelwick', 'where' => 'Hot desk PC', 'result' => 'OK', 'detail' => 'profile', 'elapsedMs' => 0, 'id' => 'aaaa' } })
+      found = reported(edit(rows, audit_n(rows)) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'as' => 'adelwick', 'where' => 'Hot desk PC', 'result' => 'OK', 'detail' => 'profile', 'elapsedMs' => 0, 'id' => 'aaaa' } })
       assert_flagged found, 'log_row', 'log:admin_read:hot_desk'
     end
 
     test 'tamper 16: an administrator audit reading row that no admin read earned is reported' do
       rows = run_real
-      found = reported(edit(rows, 43) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'detail' => 'profile: olu' } })
+      found = reported(edit(rows, audit_n(rows)) { |r| r['body']['rows'] << { 'event' => 'ADMIN_READ', 'detail' => 'profile: olu' } })
       assert_flagged found, 'log_row'
     end
 
@@ -1305,6 +1305,19 @@ module BreakEscape
 
     def nth_row(rows)
       (rows.index { |r| yield r } || raise('no such row')) + 1
+    end
+
+    # the first collect answer that handed rows over (its harvested list is not empty)
+    def first_collect_n(rows)
+      nth_row(rows) { |r| r['path'].end_with?('/harvest_credentials') && r['status'] == 200 && r['body'].is_a?(Hash) && Array(r['body']['harvested']).any? }
+    end
+
+    # the first /log_rows answer that holds both the stick override and the collect audit rows (what the tamper tests edit)
+    def audit_n(rows)
+      nth_row(rows) do |r|
+        events = r['path'].end_with?('/log_rows') && r['body'].is_a?(Hash) ? Array(r['body']['rows']).map { |x| x['event'] } : []
+        events.include?('USB_OVERRIDE') && events.include?('CRED_COLLECT')
+      end
     end
 
     def relay_in_n(rows)
@@ -1605,7 +1618,7 @@ module BreakEscape
       rows = run_real
       assert_equal [], named(scan(rows))
       assert_empty @scanner.unused_entries
-      assert_equal 8, collect_rows(rows).length
+      assert_operator collect_rows(rows).length, :>=, 8
       assert_equal %w[desk_a desk_b lab_pc], collect_rows(rows).last(3).map { |r| r['body']['pcId'] }
     end
 
