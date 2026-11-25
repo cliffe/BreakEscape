@@ -514,6 +514,23 @@ signals = {
   'flags submitted' => flags.length
 }
 signals['tasks completed'] = completed_ids.length if tasks_count_toward_verdict
+# Ops-layer work is progress too (sweeps, scans, findings, footholds, network log rows). Zero entries are left
+# out. Sessions and signedInPcs alone are not counted, since seeded sign-ins can exist; `gainedFootholds` is
+# grow-only, unlike `footholds`, which unplugging empties.
+ops_discovered = ps['opsDiscovered'].is_a?(Hash) ? ps['opsDiscovered'] : {}
+ops_count = lambda do |key|
+  list = ops_discovered[key]
+  list.is_a?(Array) ? list.length : 0
+end
+ops_log_rows = ps['opsLog'].is_a?(Hash) ? ps['opsLog'].values.sum { |r| r.is_a?(Array) ? r.size : 0 } : 0
+{
+  'ops networks swept' => ops_count.call('networks'),
+  'ops hosts discovered' => ops_count.call('hosts'),
+  'ops services checked' => ops_count.call('services'),
+  'ops findings held' => ps['opsFindings'].is_a?(Hash) ? ps['opsFindings'].size : 0,
+  'footholds gained' => ps['gainedFootholds'].is_a?(Array) ? ps['gainedFootholds'].length : 0,
+  'ops log rows' => ops_log_rows
+}.each { |label, n| signals[label] = n if n.positive? }
 played = signals.values.sum
 
 puts
@@ -529,7 +546,7 @@ if g.updated_at <= g.created_at + 1
 elsif played.zero?
   puts "VERDICT: BOOTSTRAP ONLY — #{signals.map { |k, v| "#{v} #{k}" }.join(', ')}."
   puts 'Nothing here could only have come from playing: the player never left'
-  puts 'the starting room, opened anything, or submitted a flag. Globals and'
+  puts 'the starting room, opened anything, submitted a flag, or did any ops work. Globals and'
   puts 'encountered NPCs are set by mission setup and the opening cutscene, so'
   puts 'they are not evidence. A report claiming steps is unsupported.'
   exit 1
