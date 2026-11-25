@@ -1400,3 +1400,122 @@ test('S7: an unchanged answer with readyInSeconds resets the running countdown; 
         assert.equal(kr.crackSecondsLeft('dana_hash'), 25, 'reset to the served value');
     } finally { mock.timers.reset(); }
 });
+
+// ── S7-2 (follow-up A5): the cracker opens from the toast and the held file ─────────────────
+// Rows are read from the shared answer fixture (test/js/fixtures/ops_crack/answers.json).
+const CRACK_FIX = JSON.parse(readFileSync(join(here, 'fixtures/ops_crack/answers.json'), 'utf8'));
+const fixAnswer = (name, rev) => ({ ...CRACK_FIX[name], rev });
+const started = () => window.MinigameFramework.started;
+
+function crackSetup() {
+    setup();
+    window.MinigameFramework = { currentMinigame: null, started: [], startMinigame: (...a) => { window.MinigameFramework.started.push(a); } };
+    window.isInteractionMenuOpen = () => false;
+    window.currentConversationNPCId = null;
+}
+
+test('A5: one new hash gives "Hash collected" with a Crack button that starts the cracker with that hash id', async () => {
+    crackSetup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, fixAnswer('keyringOneReady', 'r1'));
+    await kr.prime(); await settle();
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), ['Hash collected']);
+    const action = alerts[0][4].action;
+    assert.equal(action.label, 'Crack');
+    assert.equal(action.label, text.CRACK_TOAST_ACTION_TEXT);
+    action.onPress(); await settle();
+    assert.deepEqual(started(), [['ops-cracker', null, { hashId: 'dana_hash' }]]);
+});
+
+test('A5: two new hashes, and a hash with a saved connection, give no action', async () => {
+    crackSetup();
+    let kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, fixAnswer('keyringTwoHashes', 'r1'));
+    await kr.prime(); await settle();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0][4].action, undefined, 'two hashes: no button');
+    assert.equal(alerts[0][4].plainText, true);
+
+    crackSetup();
+    kr = window.keyring;
+    const hash = CRACK_FIX.keyringOneReady.entries[0];
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP, hash], rev: 'r1' });
+    await kr.prime(); await settle();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0][4].action, undefined, 'a hash mixed with another find: no button');
+});
+
+test('A5: a held toast (conversation open) keeps its action when released', async () => {
+    crackSetup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, fixAnswer('keyringOneReady', 'r1'));
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 0);
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), ['Hash collected']);
+    alerts[0][4].action.onPress(); await settle();
+    assert.deepEqual(started(), [['ops-cracker', null, { hashId: 'dana_hash' }]]);
+});
+
+test('A5: openCracker over another screen says so and starts nothing', async () => {
+    for (const block of [
+        () => { window.MinigameFramework.currentMinigame = {}; },
+        () => { window.isInteractionMenuOpen = () => true; },
+        () => { window.currentConversationNPCId = 'lena'; }
+    ]) {
+        crackSetup();
+        block();
+        const r = await window.keyring.openCracker('dana_hash');
+        assert.equal(r, false);
+        assert.deepEqual(toasts(), [text.CRACKER_BUSY_TEXT]);
+        assert.equal(text.CRACKER_BUSY_TEXT, 'Close this screen first. The cracker also opens from your capture log.');
+        assert.equal(started().length, 0);
+    }
+    crackSetup();
+    assert.equal(await window.keyring.openCracker('dana_hash'), true);
+    assert.equal(alerts.length, 0);
+    window.MinigameFramework.currentMinigame = null; window.isInteractionMenuOpen = undefined;
+});
+
+test('A5: hashEntryFor matches a hash row by heldItem only; the cracked password adds no toast', async () => {
+    crackSetup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, fixAnswer('keyringOneReady', 'r1'), fixAnswer('keyringCracked', 'r2'));
+    await kr.prime(); await settle();
+    await kr.refresh(); await settle();
+    assert.equal(kr.hashEntryFor('dana_file').id, 'dana_hash');
+    assert.equal(kr.hashEntryFor('nothing'), null);
+    assert.equal(kr.hashEntryFor(''), null);
+    assert.equal(kr.connectEntryFor('dana_file'), null, 'connect stays connect kinds only');
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1, 'the crack adds no toast');
+});
+
+test('A5: dropping and retaking the file toasts again; a hash with no heldItem toasts once per page', async () => {
+    crackSetup();
+    const kr = window.keyring;
+    const tray = (...ids) => ids.map(id => ({ scenarioData: { id } }));
+    answers({ entries: [], rev: 'r0' }, fixAnswer('keyringOneReady', 'r1'));
+    await kr.prime();
+    kr.trayChanged(tray('dana_file')); await settle();
+    assert.deepEqual(toasts(), ['Hash collected']);
+    kr.trayChanged(tray()); await settle();       // dropped
+    kr.trayChanged(tray('dana_file')); await settle(); // retaken
+    assert.deepEqual(toasts(), ['Hash collected', 'Hash collected'], 'toasts again');
+    assert.equal(typeof alerts[1][4].action.onPress, 'function');
+
+    crackSetup();
+    const kr2 = window.keyring;
+    const card = { ...CRACK_FIX.keyringOneReady.entries[0] }; delete card.heldItem;
+    answers({ entries: [], rev: 'r0' }, { entries: [card], rev: 'r1' }, { entries: [card], rev: 'r2' });
+    await kr2.prime(); await settle();
+    await kr2.refresh(); await settle();
+    await kr2.refresh(); await settle();
+    assert.deepEqual(toasts(), ['Hash collected'], 'once per page');
+});

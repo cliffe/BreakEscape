@@ -583,8 +583,39 @@ export class Keyring {
         const message = t.findToastText(entries, { captureLog: heldCaptureLog() });
         if (!message) return null;
         // No title and `whole` (clamp lift only), so a grouped toast is never cut on a phone
-        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
+        const opts = { plainText: true, whole: true };
+        // S7-2: exactly one find with a line and it is a hash: the toast gets a Crack button
+        const lined = (Array.isArray(entries) ? entries : []).filter(e => t.findLine(e, { captureLog: !!heldCaptureLog() }));
+        if (lined.length === 1 && lined[0].kind === 'hash' && typeof lined[0].id === 'string') {
+            const id = lined[0].id;
+            opts.action = { label: t.CRACK_TOAST_ACTION_TEXT, onPress: () => this.openCracker(id) };
+        }
+        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, opts); } catch (e) { /* no notification layer */ }
         return message;
+    }
+
+    /** The hash row a held tray item proves, from the latest answer, or null. */
+    hashEntryFor(itemId) {
+        if (typeof itemId !== 'string' || !itemId) return null;
+        return this.latest.find(e => e.kind === 'hash' && e.heldItem === itemId) || null;
+    }
+
+    /**
+     * Open the cracker for a hash (S7-2: the toast button and the tray entry). Never over another
+     * screen: with a minigame, an interaction menu or a conversation up it says so and opens nothing.
+     * Answers whether the cracker was asked to open.
+     */
+    async openCracker(hashId) {
+        const w = typeof window !== 'undefined' ? window : {};
+        if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.() || inConversation()) {
+            try {
+                const t = await import('../utils/remote-host-text.js');
+                w.gameAlert?.(t.CRACKER_BUSY_TEXT, 'info', '', 4000, { plainText: true });
+            } catch (e) { /* no notification layer */ }
+            return false;
+        }
+        try { w.MinigameFramework?.startMinigame?.('ops-cracker', null, { hashId }); } catch (e) { return false; }
+        return true;
     }
 
     /** The entry a held tray item proves for Connect, from the latest answer, or null. */

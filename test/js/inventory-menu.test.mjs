@@ -505,3 +505,52 @@ test('K3b: an item with no keyring row, or no keyring at all, has no Connect', (
     assert.equal(connectMenuEntry(held(RDP), {}), null, 'no keyring (a scenario without credentials)');
     assert.equal(connectMenuEntry(held(RDP), { keyring: keyringWith([{ ...rdpEntry, kind: 'password' }]) }), null);
 });
+
+// ── S7-2 (follow-up A5): the cracker from a held hash file ─────────────────────────────────────
+// Rows are read from the shared answer fixture; the real Keyring answers hashEntryFor and crackSecondsLeft.
+const CRACK_FIX = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures/ops_crack/answers.json'), 'utf8'));
+const DANA_FILE = { id: 'dana_file', type: 'text_file', name: 'dana_record.dat', text: 'A record.' };
+const crackKeyring = (name) => { const kr = new Keyring(); kr.latest = CRACK_FIX[name].entries; kr.noteCrackWaits?.(kr.latest); return kr; };
+const crackMenu = (kr, data = DANA_FILE) => inventoryMenuFor(held(data), { inventoryItems: items, dropBlocked: null, window: { keyring: kr } });
+
+test('A5: a held hash file has Crack (ready), Open (running, time left) or Finish (running, 0 s)', () => {
+    assert.deepEqual(labels(crackMenu(crackKeyring('keyringOneReady'))), ['Crack', 'Examine']);
+    const running = crackKeyring('keyringRunning');
+    assert.deepEqual(labels(crackMenu(running)), ['Open', 'Examine']);
+    running.crackEndsAt.set('dana_hash', Date.now() - 1000);
+    assert.deepEqual(labels(crackMenu(running)), ['Finish', 'Examine']);
+    assert.deepEqual(labels(crackMenu(crackKeyring('keyringOneReady'), { ...DANA_FILE, droppable: true })), ['Crack', 'Drop here', 'Examine']);
+});
+
+test('A5: no Crack entry once cracked or infeasible; the file keeps today\'s menu', () => {
+    assert.equal(crackMenu(crackKeyring('keyringCracked')), null, 'a plain text file with no drop has no menu');
+    const infeasible = new Keyring();
+    infeasible.latest = [{ ...CRACK_FIX.keyringOneReady.entries[0], status: 'infeasible' }];
+    assert.equal(crackMenu(infeasible), null);
+    assert.deepEqual(labels(crackMenu(crackKeyring('keyringCracked'), { ...DANA_FILE, droppable: true })), ['Drop here', 'Examine']);
+    assert.equal(crackMenu(new Keyring()), null, 'no row, no entry');
+});
+
+test('A5: choosing Crack opens the cracker for that hash, with the tray picture as its icon', () => {
+    const kr = crackKeyring('keyringOneReady');
+    const opened = [];
+    kr.openCracker = (id) => { opened.push(id); return true; };
+    const el = held(DANA_FILE);
+    let shown;
+    const ok = openInventoryItemMenu(el, 5, 5, {
+        window: { keyring: kr }, ctx: { inventoryItems: items, dropBlocked: null, window: { keyring: kr } },
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.equal(ok, true);
+    assert.deepEqual(shown.map(e => e.label), ['Crack', 'Examine']);
+    shown[0].onSelect();
+    assert.deepEqual(opened, ['dana_hash']);
+    assert.deepEqual(inventoryMenuIcon('crack', { src: 'x.png', naturalWidth: 32, naturalHeight: 32 }), { src: 'x.png', width: 64, height: 64 });
+});
+
+test('A5: a saved connection\'s Connect entry and click are unchanged beside a hash row', () => {
+    const kr = keyringWith([rdpEntry, ...CRACK_FIX.keyringOneReady.entries]);
+    const w = { keyring: kr };
+    assert.deepEqual(labels(inventoryMenuFor(held(RDP), { inventoryItems: items, dropBlocked: null, window: w })), ['Connect', 'Examine']);
+    assert.equal(trayClickIsConnect(held({ id: 'lena_rdp_file', type: 'text_file', name: 'x' }), { inventoryItems: items, window: w }), true);
+});
