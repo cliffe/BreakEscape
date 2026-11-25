@@ -199,9 +199,9 @@ class AccessLeakScannerTagsModeTest < ActiveSupport::TestCase
                     sess = { 'npcId' => session_account, 'via' => 'password' }
                     sess['access'] = access if access
                     { 'container_id' => pc_id, 'contents' => [], 'session' => sess }
-                  else
+    else
                     { 'error' => 'no', 'reason' => 'off' }
-                  end
+    end
     row
   end
 
