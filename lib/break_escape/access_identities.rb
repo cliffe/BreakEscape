@@ -296,9 +296,12 @@ module BreakEscape
       card_opens?(lock, card_id, holders) && !Array(lock['requires']).map(&:to_s).include?(card_id.to_s)
     end
 
-    # May an account sign in at this PC? No access list admits every account (section 5.2).
+    # May an account sign in at this PC? The account's kind is judged first (S5c: kinds only narrow), then
+    # the access list; no access list admits every account (section 5.2). Same rule as
+    # CredentialModel.pc_admits_account?, which the server uses; the graph and the validator ask this one.
     def account_admitted?(pc, npc)
       return false unless account?(npc)
+      return false unless account_kind_admits?(pc, npc)
 
       pc['access'].is_a?(Hash) ? acl_admits?(pc['access'], npc) : true
     end

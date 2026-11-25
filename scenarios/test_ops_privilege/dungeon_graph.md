@@ -16,7 +16,7 @@ A test floor for the privilege stage of the ops core (OPS_PRIVILEGE_ACCOUNTS_PLA
 | Physical locks | 10 |
 | AND-gate convergences | 0 |
 | Rooms | 5 |
-| Puzzle graph nodes / edges | 59 / 120 |
+| Puzzle graph nodes / edges | 59 / 104 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -174,19 +174,11 @@ flowchart TD
   it_room --> signin_deskadmin
   signin_deskadmin --> lock_desk_a
   signin_deskadmin --> lock_desk_b
-  signin_deskadmin --> lock_lab_pc
   it_room --> signin_labadmin
-  signin_labadmin --> lock_desk_a
-  signin_labadmin --> lock_desk_b
   signin_labadmin --> lock_lab_pc
   it_room --> signin_ravi
   signin_ravi --> lock_hot_desk
-  signin_ravi --> lock_sam_pc
   signin_ravi --> lock_bay_pc
-  signin_ravi --> lock_store_pc
-  signin_ravi --> lock_desk_a
-  signin_ravi --> lock_desk_b
-  signin_ravi --> lock_lab_pc
   lobby --> device_kit_dropbox
   lobby --> jack_office_port
   device_kit_dropbox --> jack_office_port
@@ -229,24 +221,16 @@ flowchart TD
   signin_adel -->|administrator| admin_at_hot_desk
   signin_ravi -->|administrator| admin_at_hot_desk
   signin_adel -->|administrator| admin_at_sam_pc
-  signin_ravi -->|administrator| admin_at_sam_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_ravi -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
-  signin_ravi -->|administrator| admin_at_store_pc
   weak_store_pc_records_stale_build -->|administrator| admin_at_store_pc
   signin_adel -->|administrator| admin_at_desk_a
   signin_deskadmin -->|administrator| admin_at_desk_a
-  signin_labadmin -->|administrator| admin_at_desk_a
-  signin_ravi -->|administrator| admin_at_desk_a
   signin_adel -->|administrator| admin_at_desk_b
   signin_deskadmin -->|administrator| admin_at_desk_b
-  signin_labadmin -->|administrator| admin_at_desk_b
-  signin_ravi -->|administrator| admin_at_desk_b
   signin_adel -->|administrator| admin_at_lab_pc
-  signin_deskadmin -->|administrator| admin_at_lab_pc
   signin_labadmin -->|administrator| admin_at_lab_pc
-  signin_ravi -->|administrator| admin_at_lab_pc
   admin_at_hot_desk -->|collect| cred_hotdesk_priya
   admin_at_hot_desk -->|collect| cred_hotdesk_sam
   workaround_sam_0 -->|borrow| cred_hotdesk_sam
@@ -420,19 +404,11 @@ flowchart TD
   it_room --> signin_deskadmin
   signin_deskadmin --> lock_desk_a
   signin_deskadmin --> lock_desk_b
-  signin_deskadmin --> lock_lab_pc
   it_room --> signin_labadmin
-  signin_labadmin --> lock_desk_a
-  signin_labadmin --> lock_desk_b
   signin_labadmin --> lock_lab_pc
   it_room --> signin_ravi
   signin_ravi --> lock_hot_desk
-  signin_ravi --> lock_sam_pc
   signin_ravi --> lock_bay_pc
-  signin_ravi --> lock_store_pc
-  signin_ravi --> lock_desk_a
-  signin_ravi --> lock_desk_b
-  signin_ravi --> lock_lab_pc
   lobby --> device_kit_dropbox
   lobby --> jack_office_port
   device_kit_dropbox --> jack_office_port
@@ -475,24 +451,16 @@ flowchart TD
   signin_adel -->|administrator| admin_at_hot_desk
   signin_ravi -->|administrator| admin_at_hot_desk
   signin_adel -->|administrator| admin_at_sam_pc
-  signin_ravi -->|administrator| admin_at_sam_pc
   signin_adel -->|administrator| admin_at_bay_pc
   signin_ravi -->|administrator| admin_at_bay_pc
   signin_adel -->|administrator| admin_at_store_pc
-  signin_ravi -->|administrator| admin_at_store_pc
   weak_store_pc_records_stale_build -->|administrator| admin_at_store_pc
   signin_adel -->|administrator| admin_at_desk_a
   signin_deskadmin -->|administrator| admin_at_desk_a
-  signin_labadmin -->|administrator| admin_at_desk_a
-  signin_ravi -->|administrator| admin_at_desk_a
   signin_adel -->|administrator| admin_at_desk_b
   signin_deskadmin -->|administrator| admin_at_desk_b
-  signin_labadmin -->|administrator| admin_at_desk_b
-  signin_ravi -->|administrator| admin_at_desk_b
   signin_adel -->|administrator| admin_at_lab_pc
-  signin_deskadmin -->|administrator| admin_at_lab_pc
   signin_labadmin -->|administrator| admin_at_lab_pc
-  signin_ravi -->|administrator| admin_at_lab_pc
   admin_at_hot_desk -->|collect| cred_hotdesk_priya
   admin_at_hot_desk -->|collect| cred_hotdesk_sam
   workaround_sam_0 -->|borrow| cred_hotdesk_sam

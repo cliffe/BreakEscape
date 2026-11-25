@@ -549,23 +549,8 @@
       "soft": false
     },
     {
-      "from": "signin_deskadmin",
-      "to": "lock_lab_pc",
-      "soft": false
-    },
-    {
       "from": "it_room",
       "to": "signin_labadmin",
-      "soft": false
-    },
-    {
-      "from": "signin_labadmin",
-      "to": "lock_desk_a",
-      "soft": false
-    },
-    {
-      "from": "signin_labadmin",
-      "to": "lock_desk_b",
       "soft": false
     },
     {
@@ -585,32 +570,7 @@
     },
     {
       "from": "signin_ravi",
-      "to": "lock_sam_pc",
-      "soft": false
-    },
-    {
-      "from": "signin_ravi",
       "to": "lock_bay_pc",
-      "soft": false
-    },
-    {
-      "from": "signin_ravi",
-      "to": "lock_store_pc",
-      "soft": false
-    },
-    {
-      "from": "signin_ravi",
-      "to": "lock_desk_a",
-      "soft": false
-    },
-    {
-      "from": "signin_ravi",
-      "to": "lock_desk_b",
-      "soft": false
-    },
-    {
-      "from": "signin_ravi",
-      "to": "lock_lab_pc",
       "soft": false
     },
     {
@@ -848,12 +808,6 @@
       "label": "administrator"
     },
     {
-      "from": "signin_ravi",
-      "to": "admin@sam_pc",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
       "from": "signin_adel",
       "to": "admin@bay_pc",
       "soft": false,
@@ -867,12 +821,6 @@
     },
     {
       "from": "signin_adel",
-      "to": "admin@store_pc",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
-      "from": "signin_ravi",
       "to": "admin@store_pc",
       "soft": false,
       "label": "administrator"
@@ -896,18 +844,6 @@
       "label": "administrator"
     },
     {
-      "from": "signin_labadmin",
-      "to": "admin@desk_a",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
-      "from": "signin_ravi",
-      "to": "admin@desk_a",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
       "from": "signin_adel",
       "to": "admin@desk_b",
       "soft": false,
@@ -920,37 +856,13 @@
       "label": "administrator"
     },
     {
-      "from": "signin_labadmin",
-      "to": "admin@desk_b",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
-      "from": "signin_ravi",
-      "to": "admin@desk_b",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
       "from": "signin_adel",
       "to": "admin@lab_pc",
       "soft": false,
       "label": "administrator"
     },
     {
-      "from": "signin_deskadmin",
-      "to": "admin@lab_pc",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
       "from": "signin_labadmin",
-      "to": "admin@lab_pc",
-      "soft": false,
-      "label": "administrator"
-    },
-    {
-      "from": "signin_ravi",
       "to": "admin@lab_pc",
       "soft": false,
       "label": "administrator"
