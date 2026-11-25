@@ -1,0 +1,13 @@
+{
+  "key": "8843239f85d79e8dd87dd06772b889c7",
+  "npc": "ca12_yusuf_demir",
+  "text": "Printer's warm again.",
+  "voice": "Alnilam",
+  "style": "Merrin & Sallow's building security officer on the studio door, in his 40s, British Turkish, steady and practical; polite, firm, unhurried. Speak with a consistent British accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-25",
+  "recorded_at": "2026-11-25T16:59:28Z"
+}
