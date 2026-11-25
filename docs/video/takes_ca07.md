@@ -75,3 +75,23 @@ Recorded on display 147 and a keyless server on :3456 (worktree b-ca-trailers-ne
 | t04b_finance_line_narrow | t04b_finance_line_narrow.trimmed.mkv | 17.47 | 0.17 | intro text panel 5.2 to 6.1, **list from 6.1**, **card open at 11.50** (`row_open` mark 11.50), card-held 17.01, end 17.01; no audio | List stacked over card in the 560 px frame, five rows and four verb buttons fit. The faint empty box at the top right of the header is not visible at contact size. Contact sheet read |
 
 No retakes. Differences from the dry run: the research note-ceo to note-post gap is 4.7 s (dry run 4.3); t02 landed 0.07 s after send; the flip card is on screen 0.2 s before the `flip-up` mark; the `list` mark in t04 is 1.2 s after the list actually appears (use the frame times above); t03 first `interact` retried twice before the chat opened (harmless).
+
+## Render queue 25 Nov (take 1)
+
+Owner pick (25 Nov, via AC0, round b2 r3.1): take 1 of the four takes of the v4 narrator line "Write a phishing email to back up a cloned call." The "take" is a voice take, not footage, so there is no in/out to change. Take 1 is `$HOME/video-takes-local/ca07/vo/Sulafat_v2/trim/v4.mp3` (3.48 s, md5 61b01a5d..., identical to the r3.1 review clip `ca07_v4_take1.mp3`). Both edit lists already point at it (commit 42b63e132): v4 start 24.233, end 27.713, caption unchanged. Shot durations and the beat grid are untouched, so the r3.1 render is already the take-1 cut; re-render only to refresh the finals.
+
+Lint (25 Nov, no render): `ca07_trailer_r1.json` and `ca07_trailer_r1_narrow.json` both 14 shots, 70.03 s, 0 errors, 26 warnings (missing take files in this worktree's `video_out`, unreviewed spoiler on `office`, VO words per second on v1b, v3b, v4b, v9). Run `lint-edit.mjs --final` before the real render.
+
+Render commands (one at a time, run when the machine is free; takes from `$HOME/video-takes-local/ca07/takes`, VO from the paths in the edit):
+
+```bash
+cd /home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/b-ca-trailers-next
+export BE_TAKES_DIR=$HOME/video-takes-local/ca07/takes BE_RENDER_DIR=$HOME/video-takes-local/ca07/renders
+node tools/video/remotion/scripts/lint-edit.mjs tools/video/edits/ca07_trailer_r1.json
+node tools/video/remotion/scripts/lint-edit.mjs tools/video/edits/ca07_trailer_r1_narrow.json
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca07-16x9; nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca07_trailer_r1.json 16:9
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca07-9x16; nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca07_trailer_r1_narrow.json 9:16
+export BE_VIDEO_SCRATCH=<scratchpad>/render-ca07-1x1;  nice -n 19 tools/video/remotion/render.sh tools/video/edits/ca07_trailer_r1_narrow.json 1:1
+```
+
+Assumption: the 16:9 render comes from `ca07_trailer_r1.json` and 9:16 and 1:1 from the `_narrow` list (its title says so).
