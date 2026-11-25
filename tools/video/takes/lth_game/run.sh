@@ -9,6 +9,7 @@ FOOTAGE_ROOT="${FOOTAGE_ROOT:-/data/footage}"; OUT="${FOOTAGE_ROOT:?}/lth_game/t
 case "$ID" in
   gap2_field_guide)  NG="--set briefing_played=true --set lockpicking_guide_offered=true" ;;
   gap3_flag_station|gap3_archive_key) NG="--start-room server_room --set briefing_played=true" ;;
+  gap4_decoding)     NG="--start-room it_room --set briefing_played=true" ;;
   gap1_walkthrough)  NG="" ;;
   *) echo "unknown take $ID" >&2; exit 2 ;;
 esac

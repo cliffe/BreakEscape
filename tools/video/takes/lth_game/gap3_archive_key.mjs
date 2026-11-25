@@ -19,6 +19,8 @@ export default async (page, bridge, mark) => {
   const xml = fs.readFileSync(`${process.env.BE_ROOT || process.cwd()}/tools/playtest/m01_first_contact-flags-game${gid}.xml`, 'utf8');
   const flags = [...xml.matchAll(/<flag>([^<]*)<\/flag>/g)].map(m => m[1]);
   if (flags.length < 1) throw new Error('no flags in the seed xml');
+  // NOTE: the examine text box at the bottom (names derek's account and the host, no value) stays in frame: the editor crops it out (hiding it blanked the page). Hide the SSH / privilege-escalation toast (names a technique) in every frame: removed the moment it appears, 50 ms poll.
+  await page.evaluate(() => { window.__hideTech = setInterval(() => { document.querySelectorAll('.notification, .npc-bark').forEach(n => { if (/SSH|privilege escalation/i.test(n.textContent)) n.style.display = 'none'; }); }, 50); });
   await bridge.interact('entropy_encrypted_archive', { timeoutMs: 25000 });
   await bridge.waitForMinigame('flag-station', { timeoutMs: 8000 }); mark('terminal-open');
   await page.evaluate(() => { document.querySelector('#flag-input').type = 'password'; }); mark('masked'); await sleep(1500);
