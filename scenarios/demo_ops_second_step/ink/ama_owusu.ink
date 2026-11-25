@@ -243,23 +243,26 @@ Records index off. Let's see what Fatima does about it.
 # speaker:npc
 Seen everything you wanted? Staff won't be back once they've gone home.
 + [Yes, call it a day.]
-    # speaker:npc
-    Right. Home time for nearly everyone.
-    # speaker:npc
-    Thandiwe stays on in the IT room.
-    #set_global:act_evening:true
-    ~ act_evening = true
-    # exit_conversation
-    -> END
+    -> day_end_go
 + [Not yet.]
     # speaker:npc
     Take your time.
     -> hub.choices
 
+=== day_end_go ===
+# speaker:npc
+Right. Home time for nearly everyone.
+# speaker:npc
+Thandiwe stays on in the IT room.
+#set_global:act_evening:true
+~ act_evening = true
+# exit_conversation
+-> END
+
 === lever_day_refused ===
 + [Skip them and call it a day anyway.]
     ~ skip_late = true
-    -> lever_day_end
+    -> day_end_go
 + [Not yet.]
     # speaker:npc
     Take your time.
