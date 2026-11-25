@@ -167,3 +167,26 @@ Keyless server on :3026 (pid via tools/playtest/stop... `tools/playtest/stop-key
 - Fixes: `ensureLoaded` (`npc-walk.js:294`) stops waiting as soon as `loadRoom` settles without the room (no 3 s dead time on a refusal); case c now needs `new-game.sh 281 --unlock walk_annex` (brief and proof script updated).
 - Open: a walk-in from a room the player never unlocked always doorway-fades (safe, but not a walk). Serving an unlocked, adjacent, never-visited room as a route room (served, not promoted, `record_npc_route_room!`) would let it walk; that is a server access change, so it is the owner's call. Real conversions (m09, m10) work only where the far room is already unlocked.
 - Suites: walk, door and npc JS files, 124 of 124 pass under `bin/test-js`. No Ruby touched.
+
+## Live-failure pass 2 (branch fix/npc-walk-live), handover at ~150k tokens
+
+### Causes
+- Case e (porter fade in view, 4 re-plans): two causes. (1) The driver's `__test.interact('walk_porter')` is a click; the game walks the player towards him, the camera follows and the exit cell comes into view. Check the no-chat rule with `window.handleObjectInteraction(<sprite>)` instead (no player movement). (2) Real engine bug: walk-out legs had no `arriveWithin`, so goToAndStay stopped 1 tile short of the exit cell. The BFS picks the nearest out-of-view cell, which sits on the view boundary, so the walker stopped in view and every re-plan repeated it. Fixed: `startOutLeg` passes `arriveWithin: WALK_ARRIVE_PX`.
+- Case f (lobby doorway fade): geometry. The lobby is 320 px deep; an 800x600 camera centred on the ward shows all of it, so no out-of-view cell exists and the fade is the correct fallback. At 800x420 the walk works (live: 'walked', first visible out of view). Proof viewport changed to 800x420 (proof script).
+- Case b (first run only, clerk visible in view): not reproduced in three reruns. Probable cause is the player/camera moving between the spawn search and the show. Added `recheckSpawn` (npc-walk.js, before `inGoOpts`): looks again just before beginIn, picks again twice, then fades in at the doorway. Unit test added.
+- A deeper pick margin (WALK_PICK_DEPTH) was tried and removed: in the annex it left no out-of-view cell (courier faded), because the button position, hence the camera, varies per run.
+
+### Commits
+528b1e676 (arriveWithin on out legs, recheckSpawn, deep margin, tests, proof script), then a follow-up that removes the deep margin (see git log).
+
+### Tests
+bin/test-js test/js/npc-walk-*.test.mjs: 6 of 6 files pass (recovery now 19 tests, incl. out-leg arriveWithin and the spawn re-check). Door and npc suites not re-run since the change.
+
+### Not done
+- Re-run of a-f at the final commit: the run before removing the deep margin gave a, b, f walked with first visible out of view; c faded (margin, now removed), d faded (expected), e faded because the porter's out-of-view cells were gone at that player position (margin, now removed). Re-run needed.
+- m10 A and B: driver fixed (walkproof4/drive.mjs: enterRoomClear closes the phone chat and retries on minigame-active). Not run yet. New game flags: see the m10 section of the proof script (`--set flag2_submitted=true flag3_submitted=true gallery_shutter_cut=true gallery_camera_blinded=true`, A also `imran_outcome=talked_round`).
+- RESULTS.md at scratchpad walkproof4/RESULTS.md not written.
+- bin/test-js on door and npc files; validator not needed (scenario unchanged).
+
+### Live setup left behind
+Keyless server on :3026 from this worktree (stop: tools/playtest/stop-keyless-server.sh 3026). Driver and analyser: scratchpad walkproof4/ (VH env var sets viewport height, default 420; `node drive.mjs c1|m09|m09t|m10a|m10b <gameId>`; `python3 analyse.py <folder>`). Games 13523-13530 plus later ones are mine; the port in drive.mjs is 3026.

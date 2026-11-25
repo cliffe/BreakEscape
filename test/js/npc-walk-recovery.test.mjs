@@ -9,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { world, flush } from './helpers/npc-walk-world.mjs';
-import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, WALK_PICK_DEPTH, WALK_VIEW_MARGIN, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
+import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
 
 const names = (w, prefix) => w.emits.filter(e => e.name.startsWith(prefix));
 const tick = (w) => w.manager._walkTick(0, {});
@@ -284,7 +284,7 @@ test('a slow room load that finishes inside the wait still walks in', async () =
     assert.equal(await p, 'walked');
 });
 
-// ── exit and spawn cells picked deep, walk-out stops close, spawn re-checked ──────────────
+// ── walk-out stops close, spawn re-checked before showing ─────────────────────────────
 
 test('walk-out legs end within WALK_ARRIVE_PX (a 1-tile stop short left the walker in view)', async () => {
     const w = world();
@@ -292,24 +292,6 @@ test('walk-out legs end within WALK_ARRIVE_PX (a 1-tile stop short left the walk
     w.manager.walkNPCOut('guard', { to: 'dock' });
     await flush();
     assert.equal(b.moves.at(-1).opts.arriveWithin, WALK_ARRIVE_PX);
-});
-
-test('exit and spawn cells are picked WALK_PICK_DEPTH beyond the view margin', async () => {
-    assert.equal(WALK_PICK_DEPTH, 32);
-    const w = world({ view: { x: 0, y: 0, width: 300, height: 320 } });
-    const b = w.addNpc('guard', { visible: true });
-    w.manager.walkNPCOut('guard', { to: 'dock' });
-    await flush();
-    const exit = b.moves.at(-1);
-    // the sprite rect is 32 wide: its left edge must clear view right + margin + depth
-    assert.ok(exit.x - 16 >= 300 + WALK_VIEW_MARGIN + WALK_PICK_DEPTH, `exit cell x ${exit.x} is deep enough`);
-
-    const w2 = world({ view: { x: 0, y: 0, width: 300, height: 320 } });
-    const b2 = w2.addNpc('guard');
-    w2.manager.walkNPCIn('guard', { from: 'dock' });
-    await flush();
-    const first = b2.sprite.body.center;
-    assert.ok(first.x - 16 >= 300 + WALK_VIEW_MARGIN + WALK_PICK_DEPTH, `spawn x ${first.x} is deep enough`);
 });
 
 test('a spawn cell that comes into view before the NPC is shown is not used: fade at the doorway, no pop', async () => {

@@ -27,7 +27,6 @@ export const WALK_VIEW_MARGIN = TILE_SIZE;
 export const WALK_LOAD_WAIT_MS = 3000;
 export const WALK_STALL_MS = 3000;       // no movement for this long: re-plan, then fall back to the fade
 export const WALK_MAX_REPLANS = 4;        // walk-out re-plans after arriving in view
-export const WALK_PICK_DEPTH = TILE_SIZE;   // spawn and exit cells are picked this far beyond the view margin, so a camera drift or a short stop does not bring them into view
 export const WALK_ARRIVE_PX = 10;         // a walk-in ends within this of its position (goToAndStay stops at 1 tile otherwise)
 const PLAYER_DOOR_PX = 2 * TILE_SIZE;   // never step out of the door the player stands in
 const DOOR_OPEN_PX = 1.5 * TILE_SIZE;   // a walker this close to a closed door opens it
@@ -265,9 +264,9 @@ export function installNpcWalk(manager, env = {}) {
 
     const getNpc = (id) => E.npcManager()?.getNPC?.(id) || E.npcManager()?.npcs?.get?.(id) || null;
     const roomBounds = (id) => E.pfm()?.roomBounds?.get?.(id) || null;
-    const inView = (x, y, sprite, extra = 0) => rectInView(
+    const inView = (x, y, sprite) => rectInView(
         npcRectAt(x, y, sprite?.displayWidth || TILE_SIZE, sprite?.displayHeight || 2 * TILE_SIZE),
-        E.view(), WALK_VIEW_MARGIN + extra);
+        E.view());
     const snap = (x, y) => E.pfm()?.findNearestWalkableWorldCell?.(x, y) || { x, y };
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     const emit = (name, data) => E.dispatcher()?.emit?.(name, data);
@@ -431,7 +430,7 @@ export function installNpcWalk(manager, env = {}) {
         const sprite = behavior.sprite;
         const from = opts.from;
         const target = w.target;
-        const outOfView = (x, y) => !inView(x, y, sprite, WALK_PICK_DEPTH);
+        const outOfView = (x, y) => !inView(x, y, sprite);
         if (from && typeof from === 'object') {
             const room = from.room || near;
             if (room !== near && !(await ensureLoaded(room))) return null;
@@ -601,7 +600,7 @@ export function installNpcWalk(manager, env = {}) {
         const sprite = behavior.sprite;
         const to = ov.ignoreTo ? undefined : opts.to;
         const here = ov.here || bodyPos(behavior);
-        const outOfView = (x, y) => !inView(x, y, sprite, WALK_PICK_DEPTH);
+        const outOfView = (x, y) => !inView(x, y, sprite);
         if (to && typeof to === 'object') {
             const room = to.room || near;
             if (room !== near && !(await ensureLoaded(room))) return { fadeInPlace: true };
@@ -678,7 +677,7 @@ export function installNpcWalk(manager, env = {}) {
             const { behavior } = w;
             const sprite = behavior.sprite;
             const p = bodyPos(behavior);
-            const outOfView = (x, y) => !inView(x, y, sprite, WALK_PICK_DEPTH);
+            const outOfView = (x, y) => !inView(x, y, sprite);
             const room = roomAt(E.pfm()?.roomBounds, p.x, p.y) || behavior.roomId || w.homeRoom;
             const pfm = E.pfm();
             const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: p, roomBounds: roomBounds(room), isOutOfView: outOfView });
