@@ -44,13 +44,13 @@ Main cut: 104.768 s (3143 frames). A 30 s cut is planned below; a 60 s cut is le
 - **Codes.** The m09 password-hint screen is not used (its hint text is too close to an answer). The decoding shots come from GAP-4, the same in-game screens at 200% browser zoom with short neutral strings, so input and output read together in every aspect. The existing takes are the fallback (Aspect ratios gives the crops).
 - **Console.** Five quick clips with different looks; at most one shows a scan. No tool, exploit or technique is named anywhere.
 - **USP wording.** The default is the owner's sentence as he wrote it, ending "like this". The bolder "does this" and a claim-free pair are the alternatives in Q2.
-- **Announcer cue lengths.** Each cue sits on its measured clip length where one exists, otherwise on an estimate at the announcer's pace (script, fit rule). At that pace the gap between the Recruiter and the Architect holds about seven words, so VO9 is the claim alone and C7a carries what the claim is about. The gap between Netherton and HaX holds about four words, so VO2 stays "Ten missions. One enemy.", the same words as C1; the voice and the card say the scope line together, and VO2 has no burned caption.
+- **Announcer cue lengths.** Every cue sits on its measured speech length in Alnilam's voice (script, cue table). The gap between the Recruiter and the Architect holds 6.84 s of speech, so VO9 is the claim alone (4.24 s) and C7a carries what the claim is about. The gap between Netherton and HaX holds 4.41 s, so VO2 stays "Ten missions. One enemy." (4.04 s), the same words as C1; the voice and the card say the scope line together, and VO2 has no burned caption. VO7 is "Stuck? Ask your handler." and VO8 is "Walkthroughs for everyone.", both as voiced; VO8 is the one cue that runs 0.53 s into the ghost call (no character line there) and ends before the withheld call.
 - **Grid.** Cuts sit on measured onsets, which drift from a constant beat grid, so the edit list turns snapping off for the whole edit. Three cuts are deliberate holds off any onset: S23 at 45.872, S32 at 64.236 and C7b at 88.935.
 - **End.** The music ends on the 104.768 s drop with a 0.6 s fade, a button end. The 1.6 s fade is the alternative render.
 - **Flag shot.** The shot uses the ENTROPY Encrypted Archive key (reaction "ENTROPY archive decryption key confirmed"), not the flag station. The flag the station accepts shows a reaction that names a technique, which the plan excludes. The archive take is cut before its contents screen, with the input masked and the extra access toast masked or cut.
 - **Stills.** S13, S18, S39 and S40 stay stills or near-stills (0.7 to 3.6 s); their pictures do not change inside the window and the lines carry the shots. No change.
 - **Short holds kept.** S16 shows its choices for the last 0.77 s only (the take ends at 11.866 s), and C4 keeps 1.71 s clean against a reading need of 1.83 s. Both are accepted; the title cannot be shortened to buy time, because the keyhole reveal is fixed.
-- **Lone agent.** S41 is a dim, empty generator hall: none of the existing lone walks checked is dark, and the hall reads as one agent alone. A darker walk would need a new take.
+- **Lone agent.** S41 is the empty generator hall, fully lit, with one agent standing in it (a small step at the end of the window). None of the existing lone walks checked is dark, and the shot reads as one agent alone. A darker walk would need a new take.
 - **No "Your Mission" card**; no "Break Escape"; "Play now"; hard cuts between gameplay; glitch only into and out of cards and the title.
 
 ## The music grid (Emerald Trigger)
@@ -61,7 +61,7 @@ Track: `public/break_escape/assets/music/SpyAction/Emerald Trigger.mp3`, 162.72 
 |---|---|---|
 | 0.0 to 5.6 | Near-silent intro (bars 0 to 2) | Title, VO1 |
 | 5.759 | First bass impact | Cut out of the title |
-| 6.362, 6.978 | Two stabs | Lights, lights, then Netherton |
+| 6.362, 6.978 | Two stabs | Hospital, plant, then Netherton |
 | 7.175 to 13.06 | Drop, then a light lift at 10.374 | Netherton's threat line |
 | 13.061 | Light onset (0.26) | The ransom screen |
 | 13.851 to 17.392 | Stab run (13.851, 16.080, 16.684, 17.392) | Card 1, two location flashes |
@@ -109,7 +109,7 @@ Takes live in `~/video-takes-local/<mission>/takes/` (trimmed `.mkv`); console c
 | # | Id | In | Out | Frames | Lands on | Mission, take | Source in to out | Line (trailer clock) | From | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 0 | title | 0.000 | 5.767 | 173 | start | preset `safetynet-open` |  |  |  | duration override 173 frames |
-| S01 | hospital_alert | 5.759 | 6.362 | 18 | 5.759 (0.39) | m02 t02_lights | 0.500 to 1.103 |  | m02 m_lights | the hospital lobby under a red alert: the alarm kiosks glow red and the skull is on the desk screen, two figures at the desk; no change of light is claimed (the take's light change at 3.8 to 4.4 s only brightens a dark side room, which reads weakly) |
+| S01 | hospital_alert | 5.759 | 6.362 | 18 | 5.759 (0.39) | m02 t02_lights | 0.500 to 1.103 |  | new | the hospital lobby under a red alert: the alarm kiosks glow red and the skull is on the desk screen, two figures at the desk; no change of light is claimed (the take's light change at 3.8 to 4.4 s only brightens a dark side room, which reads weakly). Own framing, not the m02 lights window's: the map fills only x 0.25 to 0.75 of the 16:9 frame, so 16:9 at cx 0.50, cy 0.42, zoom 2.0 (desk, skull and both figures; the kiosks fall out); 9:16 at cx 0.50, cy 0.45, zoom 1.1; 1:1 at cx 0.50, cy 0.45, zoom 1.8 |
 | S02 | lights_plant | 6.362 | 6.978 | 18 | 6.362 (0.76) | m04 t02_drop | 3.400 to 4.016 |  | m04 drop_lights | frame-check: slide the window onto the strike if one falls near it; else it plays as a dark office |
 | S03 | netherton_threat | 6.978 | 13.061 | 183 | 6.978 (0.70) | m04 t01c_briefing | 4.750 to 10.833 | 7.066 to 12.506 | m04 hook_netherton | frame-check the picture from 4.75; the next line (sped up) starts after the out point. Record the crop at cy 0.40, not 0.41: the game bar starts at about 0.84 of the height, and the top right close button must stay out of the crop |
 | S04 | ransom | 13.061 | 13.851 | 24 | 13.061 (0.26) | m02 t04_ransom | 2.300 to 3.090 |  | m02 m_ransom | the ransom screen answers "can't live without" |
@@ -143,7 +143,7 @@ Takes live in `~/video-takes-local/<mission>/takes/` (trimmed `.mkv`); console c
 | S29 | victoria | 51.972 | 56.738 | 143 | 51.972 bar | m03 t19_victoria_pitch | 18.132 to 22.898 | 52.100 to 56.530 | new | she reads the player's cover CV; two pauses inside the line. 16:9 full frame (zoom 1), so the game's bar shows the line |
 | S30 | flag_accepted | 56.738 | 59.931 | 96 | 56.738 (0.36) | GAP-3 (m01) |  |  |  | required: the m01 archive terminal takes the key (input masked as bullets), about 1.4 s, cut before the archive's contents screen opens; then Agent HaX's message "ENTROPY archive decryption key confirmed" as the toast lands, about 1.8 s, with the other toasts masked or cropped out (see GAP-3) |
 | C5 | card_help | 59.931 | 62.334 | 72 | 59.931 (0.50) | card |  |  |  |  |
-| S31 | phone_ask | 62.334 | 64.236 | 57 | 62.334 (0.61) | GAP-2 (fallback m03 t05_phone, 4.200 to 5.600 held 0.5 s on the last frame) |  |  |  | the phone choice "Send me the lockpicking field guide", then the guide picked from the list. The fallback shows "Send me a field guide" listed and stops before the next option is sent (5.7 s in the take); the phone is a narrow column, so crop to it in every aspect |
+| S31 | phone_ask | 62.334 | 64.236 | 57 | 62.334 (0.61) | GAP-2 (fallback m03 t05_phone, 4.200 to 5.500 held 0.6 s on the last frame) |  |  |  | the phone choice "Send me the lockpicking field guide", then the guide picked from the list. The fallback shows "Send me a field guide" listed and stops before the choice is sent (the list is gone from 5.60 in the take); the phone is a narrow column, so crop to it in every aspect |
 | S32 | field_guide | 64.236 | 65.736 | 45 | 64.236 (hold) | GAP-2 |  |  |  | the field guide open at the workstation, title readable |
 | S33 | irina | 65.736 | 71.529 | 174 | 65.736 (0.66) | m06 t12_irina_badges | 23.900 to 29.693 | 65.973 to 71.393 | m06 irina | an NPC drops a hint; "Exactly backwards." (source 30.26) falls after the out point |
 | S34 | walkthrough | 71.529 | 74.327 | 84 | 71.529 (0.62) | GAP-1 |  |  |  | the m01 walkthrough in Hacktivity |
@@ -157,7 +157,7 @@ Takes live in `~/video-takes-local/<mission>/takes/` (trimmed `.mkv`); console c
 | C7b | card_usp2 | 88.935 | 91.928 | 90 | 88.935 (hold, 0.2 s after the 88.735 onset) | card |  |  |  |  |
 | F1 | f_briefcase | 91.928 | 92.334 | 12 | 91.928 (0.55) | m01 t19_minigames | 2.900 to 3.306 |  | m01 cr_briefcase | the one crescendo flash (Q4 offers m10's alarm panel instead) |
 | S40 | architect | 92.334 | 95.933 | 108 | 92.334 (0.54) | m07 t13c_architect_call_fx | 37.400 to 40.999 | 92.459 to 95.692 | m07 ending_close | whole line inside the shot; frame-check the picture from 37.4 |
-| S41 | lone_agent | 95.933 | 96.769 | 25 | 95.933 (0.60) | m07 t29b_walk_genhall | 0.300 to 1.136 |  | new | a lone agent walking the empty backup generation hall at night, no one else in frame; silent, take audio muted (no voice plays in the window). The map fills the width of the frame for the first 1.2 s, so the 16:9 needs no crop; 9:16 and 1:1 at cx 0.50 on the agent. Reads as "only one of you" |
+| S41 | lone_agent | 95.933 | 96.769 | 25 | 95.933 (0.60) | m07 t29b_walk_genhall | 0.300 to 1.136 |  | new | a lone agent in the empty backup generation hall, no one else in frame; the hall is lit and the agent is almost still (the walk proper starts at 1.50 s, after the window); silent, take audio muted (no voice plays in the window). The map fills the width of the frame for the first 1.2 s, so the 16:9 needs no crop; 9:16 and 1:1 at cx 0.50 on the agent. Reads as "only one of you" |
 | 99 | close | 96.769 | 104.768 | 240 | 96.769 bar | preset `hacktivity-close` |  |  |  | "Play now", red hex curtain; music fade 0.6 s, 104.168 to 104.768 |
 
 Count: 41 gameplay shots (40 shots and 1 flash), 8 cards and 2 presets, 51 rows. V1 and V2 use the same rows. Seven shots depend on new takes: S30 (GAP-3), S31 and S32 (GAP-2), S34 (GAP-1) and S20 to S22 (GAP-4); S31 and S20 to S22 have fallbacks in existing takes, and S23 needs GAP-5 only if its frame check fails. S22 has no fallback: if GAP-4 does not supply it, S21 runs on to 43.932.
@@ -222,7 +222,7 @@ No two neighbours look alike, and none is a scan. If a slot ever needs filling, 
 - 9:16 position: lift `Caption.tsx` to start at 0.60 of the frame height (from 0.70), so a two-line caption ends above the platform UI. In 16:9 and 1:1 it stays at 0.78.
 - V1 announcer: burned on all three aspects, in the same skin and the same top fraction as the character captions in each aspect (0.78 in 16:9 and 1:1, 0.60 in 9:16; today `CaVo.tsx` sits lower than `Caption.tsx`, so it is moved to match and the viewer sees no jump between an announcer and a character caption). The script's cue table gives each cue's caption state:
   - VO3, VO4, VO5 and VO7 start over a card; their captions stay hidden while the card is up (`onCard: "hide"`) and appear when it cuts away.
-  - VO6 shows over S30 and hides when C5 comes up.
+  - VO6 shows over S30 and hides when C5 comes up. VO8 shows from 71.70 to 74.86, through the cut to the ghost call.
   - VO2 and VO9 sit over cards that show the same words, and VO10 over the close, which shows the game's name and "Play now"; none of the three is burned (all stay in the `.srt`).
   - VO1 is burned over the title, its caption clamped to end at the title's end (5.767); if a voice runs past it, start the cue at 0.30 (the clear window allows it). Frame-check that it clears the keyhole art in each aspect.
 - Close: a burned line "SAFETYNET: Licence to Hack" over the close preset from 96.769 to 101.568 (before the curtain covers), Press Start 2P, upper third, in both versions. The 30 s cut carries the same line on its close.
@@ -235,7 +235,8 @@ Renderer changes needed before the render (small, in `tools/video/remotion`): `C
 - Dialogue shots: copy each "From" shot's framing (9:16 speaker portrait near cx 0.70).
 - The Recruiter (S39) is a single shot in close framing; S29 (Victoria) and S16 (conversation) have no source framing: 16:9 full frame; speaker portrait near cx 0.70 in 9:16, as the other dialogue shots. S18 (Kemal) copies m06 kemal_move.
 - Minigames: copy framing from the source shot; S17's window is later than its source, so recheck its 9:16 crop.
-- S05 (m10 forward post): 16:9 full frame; 9:16 and 1:1 centred on the vans (cx about 0.35).
+- S01 (hospital lobby): its own framing, because the map is only the middle half of the 16:9 frame: 16:9 cx 0.50, cy 0.42, zoom 2.0; 9:16 cx 0.50, cy 0.45, zoom 1.1; 1:1 cx 0.50, cy 0.45, zoom 1.8. No black side bars in any aspect.
+- S05 (m10 forward post): 16:9 cropped to x 0.25 to 1.0 (zoom about 1.3, cx 0.62); 9:16 and 1:1 at cx 0.42 (vans and team, 0.26 to 0.58).
 - Decoding shots (S20 to S22) from GAP-4: input and output sit close together at 200% zoom, so one crop on the input-to-output span serves all three aspects. Fallback from the existing takes: 2.0 times on the input-to-output span for 16:9 and 1:1 (input and output sit about 464 px apart at 1080p, so no tighter crop holds both); in 9:16 a stacked pan inside each shot, input first, then output. S22 (ROT13) has no existing-take fallback: the m02 take shows the mission's own note, with numbers. That is why GAP-4 is required.
 - S23 (VM in the game), S30 (flag accepted), S31 and S32 (phone and field guide) and S41 (lone agent): 16:9 full frame; 9:16 and 1:1 centred on the panel or the agent. S23's mask follows the note in every aspect.
 - GAP-1 is captured at 1920x1080 with the heading in the centre third, so the 9:16 crop keeps it readable.
@@ -255,24 +256,24 @@ For autoplay feeds, where most people see only the first seconds with the sound 
 | Order | Seconds | Content |
 |---|---|---|
 | 1 | 5.8 | Title, as the main cut (173 frames), out on the 5.759 impact |
-| 2 | 3.4 | S40 the Architect, "Four fires tonight, and only one of you." (the whole 3.23 s line, burned caption): the spy-thriller beat with a voice |
-| 3 | 6.0 | C7a then C7b, a plain cut between them (reading need 3.17 s plus 2.84 s) |
-| 4 | 1.5 | Three 0.5 s flashes: S09 lockpick, S11 badge emulate, S20 decode |
+| 2 | 3.3 | S40 the Architect, "Four fires tonight, and only one of you." (the whole 3.23 s line, starting 0.05 s into the shot, burned caption): the spy-thriller beat with a voice |
+| 3 | 6.4 | C7a 3.35 s then C7b 3.05 s, a plain cut between them (reading need 3.17 s plus 2.84 s, plus one join each) |
+| 4 | 1.2 | Three 0.4 s flashes (12 frames each): S09 lockpick, S11 badge emulate, S20 decode |
 | 5 | 2.0 | S23 VM panel in the game (0.6 s), then S28 console (1.4 s, the output lands 0.9 s in) |
 | 6 | 1.1 | S30, the key accepted only |
 | 7 | 2.2 | C5 "Stuck? / Hints. Guides. / Walkthroughs." (needs 2.2 s) |
 | 8 | 8.0 | Close preset at its full 240 frames, with the burned name line, "Play now" |
 
-The rows sum to 30.0 s (5.8 + 3.4 + 6.0 + 1.5 + 2.0 + 1.1 + 2.2 + 8.0). Every row is at least as long as its card needs or its clip runs. All six beats are carried: story (S40, C7a), puzzles and gadgets (the flashes), encoding (S20), real VMs (S23, S28, C7a), flags (S30), help (C5), the USP (C7a, C7b). S31, S32 and S34 are not shown as pictures; C5 states the help beat, which is the sound-off reading. If the owner wants the field guide seen, swap the three flashes for S32 (1.5 s) and lose the puzzle beat; Q10 says so. C4 and the lone agent are left out: C7a already says "Real VMs", and the close needs its full length because the preset's key press and curtain are fixed in frames.
+The rows sum to 30.0 s (5.8 + 3.3 + 6.4 + 1.2 + 2.0 + 1.1 + 2.2 + 8.0). C7a follows a shot and C7b leads into the flashes, so each loses one glitch join (about 0.17 s of card): C7a keeps about 3.18 s clean against 3.17 s, C7b about 2.88 s against 2.84 s. Every other row is at least as long as its card needs or its clip runs. All six beats are carried: story (S40, C7a), puzzles and gadgets (the flashes), encoding (S20), real VMs (S23, S28, C7a), flags (S30), help (C5), the USP (C7a, C7b). S31, S32 and S34 are not shown as pictures; C5 states the help beat, which is the sound-off reading. If the owner wants the field guide seen, swap the three flashes for S32 (1.2 s) and lose the puzzle beat; Q10 says so. C4 and the lone agent are left out: C7a already says "Real VMs", and the close needs its full length because the preset's key press and curtain are fixed in frames.
 
-V1 announcer for the 30 s cut, if it is made with one: VO9 sits over C7a and C7b as in the main cut, VO10 is unchanged; both are re-placed on the new clock on their measured lengths, with the same clearances (VO9 keeps 0.3 s clear of the Architect's line).
+V1 announcer for the 30 s cut, if it is made with one, uses VO9 and VO10 on the new clock (title 0 to 5.8; S40 5.8 to 9.1, its line 5.85 to 9.083; C7a 9.1 to 12.45; C7b 12.45 to 15.5; flashes to 16.7; S23 and S28 to 18.7; S30 to 19.8; C5 to 22.0; close 22.0 to 30.0). VO9 (4.239 s) starts at 10.40 and ends at 14.639, 1.32 s after the Architect's line, so "does it like this" lands on C7b and the voice ends inside the card pair, clear of the flash row. VO10 (6.097 s) starts with the close at 22.00 and ends at 28.097. No announcer cue crosses a card it should not.
 
 ## Gaps (new takes needed)
 
 | Gap | Mission and place | What the shot shows | Why no existing take works | Spoiler level |
 |---|---|---|---|---|
 | GAP-1 (S34, 2.8 s used) | none (Hacktivity, browser capture) | The m01 walkthrough inside Hacktivity's Walkthrough view, no browser URL bar: the heading, the getting-started stage, one visible nudge, the collapsed "Nudge" and "Recipe" boxes unopened; a slow scroll. Capture 4 s | No footage of walkthroughs exists | None if only the m01 getting-started stage shows and nothing is expanded |
-| GAP-2 (S31 1.9 s, S32 1.5 s) | m01 (`tools/video/takes/lth_game/gap2_field_guide.mjs`): a fresh game with the lockpicking guide already offered | Three frames in one take: the phone conversation with the choice "Send me the lockpicking field guide" on screen; the guide given and opened from the inventory; the field guide open at the workstation with its title readable. Only the lockpicking guide is used, a technique guide with no answer. The take marks give the cut points; about 22 s raw | No take shows a field guide. Fallback for the phone half only: `m03 t05_phone` 4.200 to 5.600 held 0.5 s (frame-check) | Low (the guide is lockpicking technique; no flag or code on screen) |
+| GAP-2 (S31 1.9 s, S32 1.5 s) | m01 (`tools/video/takes/lth_game/gap2_field_guide.mjs`): a fresh game with the lockpicking guide already offered | Three frames in one take: the phone conversation with the choice "Send me the lockpicking field guide" on screen; the guide given and opened from the inventory; the field guide open at the workstation with its title readable. Only the lockpicking guide is used, a technique guide with no answer. The take marks give the cut points; about 22 s raw | No take shows a field guide. Fallback for the phone half only: `m03 t05_phone` 4.200 to 5.500 held 0.6 s (frame-check) | Low (the guide is lockpicking technique; no flag or code on screen) |
 | GAP-3 (S30, 3.2 s, **required**) | m01 (`tools/video/takes/lth_game/gap3_archive_key.mjs`), started in the server room with the one flag the archive needs seeded (`new-game.rb` FLAGS_XML plus `session-start.sh --flags`). The key is entered at the ENTROPY Encrypted Archive; its reaction is the message "ENTROPY archive decryption key confirmed". The flag station is not used: the station flag that works shows a reaction that names a technique | The archive terminal takes the key, about 1.4 s, typed with the input masked as bullets; cut before the archive's contents screen opens (it lists titles from the m01 reveal); then Agent HaX's message "ENTROPY archive decryption key confirmed" as the toast lands (about 6 s after the submit), about 1.8 s. The access toast that arrives with it is masked or cropped out of every frame. Capture about 20 s from the submit | Every flag-station take shows the empty station only. The other m01 flag reactions name a character whose identity is the m01 reveal or a technique, and m02's name a tool and give part of an answer | None if the input is masked, the contents screen is cut and the extra toast is out; frame-check that no toast names a technique |
 | GAP-4 (S20 to S22, **required**; S22 has no fallback) | m01, m09 and m02 decoding screens, in the game | One take of each screen at 200% browser zoom: a short input and its decoded output (Base64, Vigenère, ROT13), each a short neutral phrase chosen at capture, never a mission's message, key or answer. Output one line. Capture 3 s each | The existing takes put input and output too far apart for one crop in 9:16, and the m02 take shows the mission's own note | None |
 | GAP-5 (S23, only if its frame check fails) | m03, the in-game VM panel | The VM panel open in the game with the desktop drawn in, the login note out of frame or masked. Capture 3 s | The existing take may show only a dark panel in the usable window | None with the note masked |
@@ -283,7 +284,7 @@ Frame checks on existing takes before the edit is locked:
 
 | Shot | Check |
 |---|---|
-| S01 | `m02 t02_lights` 0.5 to 1.1 s: the lobby, the red alarm kiosks and the skull on the desk screen are in frame for the whole window |
+| S01 | `m02 t02_lights` 0.5 to 1.1 s: with the S01 framing, the skull on the desk screen and both figures are in frame for the whole window in 16:9, 9:16 and 1:1, and no black side bars show (the kiosks fall out of the crop) |
 | S02 | Whether a light strike falls near 3.4 to 4.0 s; slide onto it if so |
 | S03 | The picture from source 4.75 s (the shot starts earlier than in the m04 trailer); no sliver of the game bar and no top-right close button in the burned framings at cy 0.40 |
 | S05 | m10 forward post: no duplicated team sprites, no text, no name bar; the crops given in the shot list keep black out of every aspect |
@@ -296,27 +297,28 @@ Frame checks on existing takes before the edit is locked:
 | S20 and S21 fallback | The output reads as English for the whole window; slide the in point if not. The m09 key and text shown are not the key or text of an m09 puzzle. S22 has no fallback (the m02 take shows the mission's own note) |
 | S23 | `m03 t02_vm_approach` 9.5 to 10.16 s: the desktop is drawn from 9.5 s (before that the panel is a dark rectangle). The login note sits outside the panel at the bottom left and is readable throughout, so it is masked with a solid box in every aspect. The panel fills only the left 53% of a 16:9 frame: crop to it. If the crop fails, GAP-5 |
 | S30 | The input shows bullets only; the archive contents screen never appears; the reaction toast reads "ENTROPY archive decryption key confirmed" and no other toast (above all the SSH access toast) is readable; the objectives panel names no technique |
-| S31 fallback | `m03 t05_phone` 4.2 to 5.6 s shows "Send me a field guide" listed before the next option is sent (5.7 s); hold the last frame 0.5 s; crop to the phone column |
+| S31 fallback | `m03 t05_phone` 4.2 to 5.5 s shows "Send me a field guide" listed (the list is gone at 5.60, with a typing indicator); hold the 5.50 frame 0.6 s so the list stays up; crop to the phone column |
 | S39 | The Recruiter's picture from 146.5 to 148.55 s, not used before |
 | S40 | The Architect's picture from 37.4 s, not used before |
-| S41 | `m07 t29b_walk_genhall` 0.3 to 1.136 s: the agent alone in the hall, full-width map, no voice in the window. Alternative: `m07 t29c_walk_genhall`, same hall |
+| S35 | `m02 t17_ghost_call` 2.7 to 3.368 s: no voice plays in the window (the announcer's VO8 runs into its first 0.53 s) |
+| S41 | `m07 t29b_walk_genhall` 0.3 to 1.136 s: the agent alone in the lit hall, full-width map, no voice in the window. Alternative: `m07 t29c_walk_genhall`, same hall; the walk proper (1.50 to 2.34 s) needs a 9:16 and 1:1 crop re-check because the camera pans from about 1.9 s |
 
 ## Review questions for the owner
 
 1. **Verdict.** For each version: ship, revise or rethink? Which of V1 (announcer) and V2 (character lines only) leads?
 2. **The USP claim.** Three options:
    - (a) Default, your sentence as you wrote it, with "like this": C7a "Real VMs and CTF / In a Spy Story", C7b "No Other Game / Does It Like This", and V1's VO9 "No other game does it like this."
-   - (b) Bolder: C7b "No Other Game / Does This", VO9 "Real hacking. No other game does this." (the same length on the clock). This is a stronger claim than your sentence, and two public products come close enough that a viewer may object:
+   - (b) Bolder: C7b "No Other Game / Does This", VO9 "Real hacking. No other game does this." (6 words, no longer than the default; it needs voicing and a fit check). This is a stronger claim than your sentence, and two public products come close enough that a viewer may object:
      - TryHackMe's Advent of Cyber: a yearly story event with recurring characters, where each day deploys real VMs and asks for flags.
      - SANS Holiday Hack Challenge: an explorable game world with characters and a story, with terminal challenges in real Linux shells and CTF-style objectives.
 
      What neither has, as far as is publicly known, is a ten-mission spy campaign with full VMs (an attack box and target servers) inside the game world, where every flag is a story key. "Like this" points at that difference; "does this" does not.
-   - (c) Claim-free: C7b "Every Flag / Moves the Story", VO9 "Real flags. Inside a spy story.", and VO6 cut so the words do not repeat.
+   - (c) Claim-free: C7b "Every Flag / Moves the Story", VO9 "Real flags. Inside a spy story." (needs voicing and a fit check), and VO6 cut so the words do not repeat.
 3. **Announcer.** Pick a voice from the auditions on the page (Alnilam, Gacrux, Algenib, in the epic style; Alnilam also in a hushed, urgent style for VO1). Every cue is timed on Alnilam's lengths; the other two also fit if VO5 starts 0.5 s earlier. And the last line: keep VO10 "SAFETYNET: Licence to Hack. Play now.", or end on "SAFETYNET: Licence to Hack. Your mission starts now." (it fits before the music ends; "Play now" stays on the close either way)?
 4. **m09 and m10.** The m09 shots (S21 decoding, S26 console) are in, though the m09 trailer is not signed off: keep them? If m09 goes, the only cipher shown beyond encoding is ROT13, so S21 is the shot that backs "Break the ciphers". m10 appears once, as the forward-post map under "Ten Missions" (nothing from its story): keep it, and add its alarm panel (a red FORCED lamp) as the crescendo flash in place of the m01 briefcase?
 5. **Derek.** Derek Lawson (m01) is left out: who he is, is the m01 reveal. Keep him out?
 6. **"Field notes".** The brief says "feildnotes". The game's help feature is the SAFETYNET Field Guide, which the phone handler sends on request ("Send me a field guide") and which opens at the workstation; the notepad only collects clues. The plan reads your word as field guides (C5 "Guides", and the phone sending one in S31 and S32). Is that what you meant?
-7. **Release day.** C1 says "Ten Missions", VO5 says "Real machines" and VO8 says "Walkthroughs for every mission". Will all ten missions, each with its VMs, be live on the day the trailer goes out? (All ten walkthroughs are published and linked already.)
+7. **Release day.** C1 says "Ten Missions" and VO5 says "Real machines". Will all ten missions, each with its VMs, be live on the day the trailer goes out? (All ten walkthroughs are published and linked already.)
 8. **Pace.** Where does it sag? Watch the smooth bars (51.97 to 59.93 s: Victoria, then the flag accepted) and the USP breakdown (85.57 to 91.93 s: cards only). If the first sags, Victoria's shot can be split across the two pauses in her line. The end is a 0.6 s button; a 1.6 s fade is the alternative render.
 9. **Anything on screen** you would not want a viewer to see?
 10. **Cut-downs.** Make the 30 s cut (see "30 s cut") once the main cut is signed off? And a 60 s cut as well? (The 30 s cut shows no field guide or walkthrough picture; say if you want S32 in place of the three flashes.)
