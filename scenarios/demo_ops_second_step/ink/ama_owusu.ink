@@ -24,6 +24,7 @@ VAR read_log_done = false // Synced scenario global
 VAR reset_password_done = false // Synced scenario global
 VAR reenrol_done = false // Synced scenario global
 VAR desk_refuses_done = false // Synced scenario global
+VAR desk_call_done = false // Synced scenario global
 VAR records_index_off = false // Synced scenario global
 VAR door_step_done = false // Synced scenario global
 VAR propped_done = false // Synced scenario global
@@ -136,6 +137,11 @@ What can I help with?
     - not desk_refuses_done:
         # speaker:npc
         Try Lorna's username at the desk, and answer wrongly until it stops listening.
+    - not desk_call_done:
+        # speaker:npc
+        One more at the desk. Meet Priya in the IT room, then ring the IT line on your work phone.
+        # speaker:npc
+        You've still got Yusuf's phone. Ask them to move his approvals. The desk rings his phone to check, and you hold it.
     - not door_step_done:
         # speaker:npc
         Facilities pinned two new door codes on the facilities notice in the kitchen. The records room also wants Gwen's approval.
@@ -234,7 +240,7 @@ Records index off. Let's see what Fatima does about it.
 -> END
 
 === lever_day_end ===
-{ not skip_late and not (reset_password_done and reenrol_done and desk_refuses_done and door_step_done and propped_done and safe_step_done and case_step_done):
+{ not skip_late and not (reset_password_done and reenrol_done and desk_refuses_done and desk_call_done and door_step_done and propped_done and safe_step_done and case_step_done):
     # speaker:npc
     Not yet. Some of the afternoon and late things are still undone, and staff won't be back once they've gone home.
     -> lever_day_refused
@@ -266,7 +272,7 @@ Seen everything you wanted? Staff won't be back once they've gone home.
 
 === recap ===
 {
-    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done and not reset_password_done and not reenrol_done and not desk_refuses_done and not door_step_done and not propped_done and not safe_step_done and not case_step_done:
+    - not see_note_done and not see_temper_note_done and not overhear_done and not step_holds_done and not open_screen_done and not fob_done and not number_match_done and not pestered_done and not exempt_done and not read_log_done and not reset_password_done and not reenrol_done and not desk_refuses_done and not desk_call_done and not door_step_done and not propped_done and not safe_step_done and not case_step_done:
         # speaker:npc
         Nothing to look back on yet. Try one of the things on the board.
         -> hub.choices
@@ -318,6 +324,10 @@ Seen everything you wanted? Staff won't be back once they've gone home.
 { desk_refuses_done:
     # speaker:npc
     After three wrong answers the desk stopped listening, and never said whether the name was real.
+}
+{ desk_call_done:
+    # speaker:npc
+    The phone line moved Yusuf's approvals, because the desk rang his phone to check and you were holding it.
 }
 { door_step_done:
     # speaker:npc

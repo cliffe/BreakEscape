@@ -45,9 +45,9 @@ Every run: a screenshot per beat, findings written as the run goes, and an **ear
 - **IT room** (east): Thandiwe Moyo, "Thandiwe's laptop", the "Approvals log terminal".
 - Ama's hub choices (all in her conversation; S8c adds "Switch the records index off."): "What's next?", "Could I have Lorna's sign-in?", "I read Anjali's note.", "Send them for coffee.", "Switch the printer off.", "Send them to lunch.", "Call it a day." (then "Yes, call it a day."), "What did that show?", "Give me the short version." The levers can be pressed in any order once the Kitchen has been opened; "Send them for coffee" can be pressed again and again. "Send them to lunch" fires once only.
 - Keep the Cake in the inventory until M5 is done: dropped in the Office it becomes a 12-second lunch for Darren, and his screen then stays open.
-- The objectives panel has five aims, in order Morning, Midday, Afternoon (the helpdesk), Late (doors, safe, case) and Evening (the trail). The board and Ama's "What's next?" follow the same order, and "Call it a day." refuses with "Not yet..." until the seven afternoon and late tasks are done or the player chooses "Skip them and call it a day anyway." Tasks tick on their own when a beat has happened; none gates anything.
+- The objectives panel has five aims, in order Morning, Midday, Afternoon (the helpdesk), Late (doors, safe, case) and Evening (the trail). The board and Ama's "What's next?" follow the same order, and "Call it a day." refuses with "Not yet..." until the eight afternoon and late tasks (the afternoon now ends on `desk_call`, M13b) are done or the player chooses "Skip them and call it a day anyway." Tasks tick on their own when a beat has happened; none gates anything.
 
-## The guided tour (about 35 minutes; the whole path, in the order Ama's "What's next?" and the objectives panel give)
+## The guided tour (about 40 minutes with U3b; the whole path, in the order Ama's "What's next?" and the objectives panel give)
 
 Follow only Ama's pointers (her "What's next?" and the barks) and the objectives panel. Each beat below: what Ama points at, what you do, the "what you just saw" line she barks when the task ticks (barks are held while a minigame is open and show when it closes; read them from `npcManager.conversationHistory`, `isBark` messages, if the bubble has gone), and the tick. Every bark is once only. The detail of each click is in Runs A to E below; the beat numbers (M0 to M17) are the same.
 
@@ -68,6 +68,7 @@ Follow only Ama's pointers (her "What's next?" and the barks) and the objectives
 | M11 | Thandiwe, password reset (in person) | as Run D step 2 | "Two facts anyone could read were enough for a new password. His old one is dead, and the new one fills his tile." | `reset_password` |
 | M12 | "This time use the IT request form on Darren's desktop. Send them for coffee first, so his screen is open." | Coffee lever; open Darren's desktop while he is out; open the "IT request form" there; ask for the approval reset for `ydemir` | "The form on a desktop goes to the same desk. Yusuf's approvals come to your phone now, and his own phone shows nothing." | `reenrol` (see the note below) |
 | M13 | wrong answers until it stops | as Run D step 4 | "Three wrong tries and the desk stopped listening. It never said whether the name was real." | `desk_refuses` |
+| M13b | "Meet Priya in the IT room, then ring the IT line on your work phone. You've still got Yusuf's phone. Ask them to move his approvals." | as Run D step 5 | "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it." | `desk_call` |
 | M14 | the facilities notice, then Gwen's phone | as Run E step 2 | "The door's second step went to Gwen's phone. With her phone in your hand, you approved it yourself." | `door_step` |
 | M15 | the records index off, the archive door | as Run E step 1 | "Nobody approved anything. Fatima propped the door, and the step never came into it." | `propped` |
 | M16 | Gwen's drawer note and Anjali's fob | as Run E step 3 | "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." | `safe_step` |
@@ -140,7 +141,7 @@ The runs below are the click-by-click detail for each aim (A and B morning and m
 6. Click Ama and choose "What did that show?" then "Give me the short version.": a one-line recap per ticked beat (the log line says the night burst means someone else had Darren's password first) and a four-line summary. Check that no line names a password.
 7. Run the three checks listed in Setup. Expected: `verify-run --access` and `--ops-log` pass; the leak check exits 0.
 
-## Run D: the helpdesk (M11 to M13, added by S8b)
+## Run D: the helpdesk (M11 to M13, added by S8b; M13b added by U3b)
 
 A fresh game that first plays Run A's steps through M2 and M3 (printer off, Darren's note, the overhear), because step 2 tries Darren's old note and step 3 signs in with the overheard password. Never use "Call it a day." here (the desk works in the evening too, but Darren's badge and Yusuf's sign-in need staff to take turns away from their desks). Open the Office and the Kitchen first, then press Ama's "Send them for coffee." so Darren's badge is on his desk. The form works wherever Thandiwe is: the desk needs only that she exists, has been met and is not knocked out, so M11 and M12 also work from the form on Darren's desktop.
 
@@ -156,8 +157,13 @@ A fresh game that first plays Run A's steps through M2 and M3 (printer off, Darr
    - Server: `account_mfa_reenrolled` ok, `mfa_prompt_approved` with approver `own_phone`.
 4. **M13, the desk says no.** After M11 and M12 (the stop counts by the typed username and a grant clears it, so never use `dprice` or `ydemir` here). Click Thandiwe, "I need a password reset.", username `leaston`, any two wrong answers: "The desk could not verify you. Tries left: 2." Send again twice more: "Tries left: 1.", then "Tries left: 0.". The next request says the desk is not taking requests for that account, with a time. The task "Get refused by the desk until it stops listening" ticks on that answer. The refusal never says whether the name exists: try `nobody.here` and compare the wording and the count.
    - Wait five minutes of real time and the desk listens to `leaston` again (optional).
-5. Click Ama, "What did that show?": three more lines (the two things about Darren anyone could read, the phone move, the desk that never said whether the name was real).
-6. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0, with no `--signin` entry.
+5. **M13b, the phone call with a call-back desk (U3b).** Meet Priya Nair in the IT room first (click her once; she sits by Thandiwe, and runs `call_desk`). You must be holding Yusuf's Friendface phone: while Yusuf is away on a coffee trip, take "Yusuf's phone" from beside the coffee machine. Open "Your work phone" from the inventory, tap the "IT service line" contact, and choose "Ask them to move an account's approvals to your phone". The line confirms — it rings the number it holds for the account, which is the very phone you took — and the IT request form opens: username `ydemir`, "A sign-in approval reset", Send.
+   - See: the desk grants it; task "Reset an account over the phone, holding its owner's phone" ticks; the bark "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it.".
+   - Ring again and ask for `dprice` or `leaston` with only Yusuf's phone in hand: refused, because you hold no phone of theirs. The call-back has no number of yours to reach.
+   - If `ydemir` was already re-enrolled in M12, the call-back grant is idempotent (nothing new changes); the lesson is the route and the call-back check, which the bark names. In a run that skips M12, it moves Yusuf's approvals for the first time here.
+   - The pretext call and the form are the browser's; the tick is a mapping on `helpdesk_answered:call_desk` granted. Server: `helpdesk_request` granted for `call_desk`.
+6. Click Ama, "What did that show?": the lines above (the two things about Darren anyone could read, the phone move, the desk that never said whether the name was real, and the call-back the phone defeats).
+7. Checks: `verify-run --access` shows Darren's password reset and Yusuf's step reset; `--ops-log` passes; the leak check exits 0, with no `--signin` entry.
 
 ## Run E: doors, a safe and a case (M14 to M17, added by S8c)
 
@@ -201,7 +207,6 @@ A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16
 ## Not in the tour (shown by test scenarios)
 
 - A saved connection still asks for the second step; tokens, invites and claims skip it: `test_ops_mfa`.
-- The helpdesk by phone call and the call-back rule: the last unit of the tour (not built in this unit).
 - The old code device shown "No longer in use" after a re-enrolment, the lock-step device-in-use seam, number matching on a lock, the lapsed USB override: the test scenarios named in SHOWCASE_TOUR_PLAN.md 1.6.
 
 ## Free play
@@ -210,6 +215,7 @@ A tester who presses "Call it a day." first loses M17 (Darren goes home) and M16
 - Send Lorna's request twenty times: the step ends and an expired row is written to the log. (A push simply left waiting past five minutes is refused on the next send and writes no row.)
 - Sign out and back in at Darren's PC: a saved session no longer helps; the password and the second step are asked again.
 - Switch the printer back on at the "Printer wall socket" and watch the staff settle.
+- Ring the IT line (M13b) and ask to move the approvals of an account whose phone you do not hold (`dprice`, `leaston`): the call-back desk refuses, because it has no number of yours to ring back.
 
 ## What to record
 

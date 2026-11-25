@@ -118,10 +118,41 @@ rec = {
       "maxTries": 3,
       "resets": ["password", "mfa"],
       "questionLabels": { "staff_no": "Staff number", "manager": "Line manager" }
+    },
+    "call_desk": {
+      "npc": "priya_nair",
+      "verify": "callback",
+      "resets": ["mfa"]
     }
   },
 
   "social": {
+    "characters": {
+      "it_line": {
+        "displayName": "IT service line",
+        "channels": { "person": "it_line", "phone": "it_line" },
+        "influence": { "global": "it_line_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["it_line_influence"],
+        "thresholds": [
+          { "id": "reports", "at": -70, "icon": "reports", "effects": [ { "type": "setGlobal", "global": "it_line_reported", "value": true } ] }
+        ]
+      }
+    },
+    "pretextNpcs": [
+      {
+        "character": "it_line",
+        "callId": "it_line_call",
+        "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+        "asks": {
+          "reset_request": { "pressure": 0, "floor": -30, "verification": [], "helpdesk": "call_desk" }
+        },
+        "outcomes": { "got_it": {}, "reported": {}, "walked_away": {} },
+        "tells": {
+          "ask": { "accepted": "The desk put the form through.", "pending": "The desk wants one more check.", "refused": "The desk will not do that on this line." },
+          "bands": { "calm": "The desk is relaxed.", "wary": "The desk has slowed down.", "refusing": "The desk has stopped helping." }
+        }
+      }
+    ],
     "osint": {
       "sites": [
         {
@@ -150,6 +181,15 @@ rec = {
         "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
         "magnet": { "tempt": 45, "servings": 2, "perPerson": 1 }
       }
+    },
+    {
+      "type": "phone",
+      "id": "work_phone",
+      "name": "Your work phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["it_line"],
+      "observations": "Your own work phone. One contact saved: the IT service line."
     }
   ],
 
@@ -187,7 +227,16 @@ rec = {
     "propped_done": false,
     "safe_step_done": false,
     "case_step_done": false,
-    "darren_pc_screen_locked": false
+    "darren_pc_screen_locked": false,
+    "desk_call_done": false,
+    "helpdesk_call_desk_result": "",
+    "it_line_influence": 0,
+    "pretext_it_line_call_state": {},
+    "pretext_it_line_call_outcome": "",
+    "pretext_it_line_call_lowest": 0,
+    "pretext_it_line_call_reports": 0,
+    "it_line_latched": "",
+    "it_line_reported": false
   },
 
   "objectives": [
@@ -237,7 +286,8 @@ rec = {
       "tasks": [
         { "taskId": "reset_password", "title": "Get a password reset at the IT desk", "type": "custom", "status": "active" },
         { "taskId": "reenrol", "title": "Move someone's sign-in approvals to your own phone", "type": "custom", "status": "active" },
-        { "taskId": "desk_refuses", "title": "Get refused by the desk until it stops listening", "type": "custom", "status": "active" }
+        { "taskId": "desk_refuses", "title": "Get refused by the desk until it stops listening", "type": "custom", "status": "active" },
+        { "taskId": "desk_call", "title": "Reset an account over the phone, holding its owner's phone", "type": "custom", "status": "active" }
       ]
     },
     {
@@ -407,7 +457,9 @@ rec = {
             { "eventPattern": "global_variable_changed:safe_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time." },
             { "eventPattern": "global_variable_changed:case_step_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "You carried the case off and kept asking. Darren approved in the end, wherever the case was." },
             { "eventPattern": "global_variable_changed:darren_pc_screen_locked", "condition": "data.value === true && data.oldValue !== true && globalVars.act_midday === true && globalVars.pestered_done !== true", "onceOnly": true, "cooldown": 0, "bark": "Darren's screen has locked. Now try his PC." },
-            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } }
+            { "eventPattern": "helpdesk_answered:it_desk", "condition": "data.result === 'granted' && globalVars.reset_password_done === true && globalVars.reenrol_done !== true", "cooldown": 0, "completeTask": "reenrol", "setGlobal": { "reenrol_done": true } },
+            { "eventPattern": "helpdesk_answered:call_desk", "condition": "data.result === 'granted'", "cooldown": 0, "completeTask": "desk_call", "setGlobal": { "desk_call_done": true } },
+            { "eventPattern": "global_variable_changed:desk_call_done", "condition": "data.value === true && data.oldValue !== true", "onceOnly": true, "cooldown": 0, "bark": "The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it." }
           ]
         },
         {
@@ -1077,6 +1129,31 @@ rec = {
           "role": "it",
           "needsHome": "thandiwe_laptop",
           "needsSpeed": 80
+        },
+        {
+          "id": "priya_nair",
+          "displayName": "Priya Nair",
+          "npcType": "person",
+          "position": { "x": 4, "y": 5.5 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/demo_ops_second_step/ink/priya_nair.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Leda", "style": "IT service desk at Merrin & Sallow, in her 20s, brisk and friendly. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "it"
+        },
+        {
+          "id": "it_line",
+          "displayName": "IT service line",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "callId": "it_line_call",
+          "storyPath": "scenarios/demo_ops_second_step/ink/it_line.json",
+          "currentKnot": "start",
+          "voice": { "name": "Sulafat", "style": "IT service desk phone agent at Merrin & Sallow, in his 30s, even and procedural. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" }
         }
       ]
     },

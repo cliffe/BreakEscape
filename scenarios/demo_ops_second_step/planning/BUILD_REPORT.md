@@ -196,3 +196,29 @@ Main was not merged into the worktree by this unit: another builders' uncommitte
 - Panel order: unchanged (the plan's table already follows it).
 - Validator: 0 errors, 35 warnings, the same list as before this unit (diffed against HEAD). Dialoguelint 0 ERROR (one existing `crowded-hub`). Scenario test: 41 runs, 0 failures (5 new tour cases); the whole-run leak scans are the existing ones, 0 findings.
 - The old "Darren's gone to lunch. His screen will be locked." and the new lock bark both fire at the lunch leave; the dialogue review may fold them.
+
+## Tour unit U3b (SHOWCASE_TOUR_PLAN.md 2.6 M13b, 4.1 U3b; owner's answer 5.4 YES, recorded as decided)
+
+Main was not merged into the worktree by this unit either (same reason U3 gives: the tree holds other builders' work and the merge is refused). Left to the orchestrator/train; the leak scan ran against the scanner now in the worktree.
+
+### Probes (from the code; the call route itself is browser-only, proven by engine JS tests)
+
+- Call-back verify rule: `helpdesk_covers_request?` grants a `callback` desk when `held_friendface_phone(account_npc_id)` is non-nil (`app/models/break_escape/helpdesk_access.rb:219`), i.e. the player holds the account owner's declared `phone_friendface`. Confirmed by `test/models/break_escape/helpdesk_access_test.rb:321` and reproduced in this unit's Rails cases.
+- Call -> helpdesk route: a pretext ask carrying `helpdesk:<deskId>` opens that desk's request form on a granted ask (`person-chat-pretext.js:300,313-334`); the server's `request_helpdesk!(desk_id, ...)` decides; the client emits `helpdesk_answered:<deskId>` with `{deskId, result}` (`helpdesk-client.js:131-135`). So `desk_call` ticks on an appended Ama mapping `helpdesk_answered:call_desk` with `data.result === 'granted'` — the same pattern the proven `reenrol`/`desk_refuses` ticks use.
+- Phone-call plumbing shape (copied from `test_ops_helpdesk`): a room npc `{npcType:"phone", phoneId, callId, storyPath}` (the IT line contact) plus a `phone` item with the same `phoneId` and `npcIds:["it_line"]` (the work phone you ring from). The call-back's trusted phone is a separate held item — Yusuf's `phone_friendface`, taken at the coffee machine in M7.
+- Desk must be met: `helpdesk_npc_serving?` needs the desk NPC encountered and present (`helpdesk_access.rb:162-168`), so Priya is a met IT-room NPC; before she is met the line answers `unavailable` (tested).
+- Idempotency: a repeat mfa reset returns granted with no further change (`helpdesk_access.rb:270`). In the guided order M13b follows M12, which already moved Yusuf's approvals, so M13b's grant is idempotent; the bark teaches the route and the call-back check, not a fresh change. In a run that skips M12 (and in the isolated Rails case) it is the first move.
+- Validator flags `call_desk` callback "not takeable" for lorna/niamh/darren/anjali (no takeable phone of theirs) and NOT for yusuf_demir or gwen_pritchard — confirming the mechanic is solvable for the account whose phone the player holds (Yusuf). Informational; recorded here.
+
+### Plan deviation
+
+The plan (4.1 U3b, test shape) suggested the call-back desk on "a second room NPC" with the call text written by a social-engineering specialist and wired by Sonnet. This unit was a single Opus builder: I wrote the (mild, training) pretext lines myself and added a minimal second IT-room NPC, Priya Nair (call_desk), plus the `it_line` phone contact, so the plan's "second room NPC" holds. The call-back resets Yusuf's approvals (the only owner phone the player holds by the afternoon); no new secret is introduced (a password reset on Yusuf would have needed a `resetPassword` the existing M11 shape test forbids).
+
+### What changed
+
+- `scenario.json.erb`: `call_desk` helpdesk (callback, resets mfa, npc priya_nair); `social.characters.it_line` and `social.pretextNpcs` (ask `reset_request` -> helpdesk `call_desk`), copied in shape from `test_ops_helpdesk`; `work_phone` start item (type phone, npcIds `it_line`); `priya_nair` and the `it_line` phone contact in the IT room (Priya voice Leda, it_line voice Sulafat — both free after the plan's Thandiwe/Lorna voice moves); `desk_call` task appended to the afternoon aim; two appended Ama mappings (the `helpdesk_answered:call_desk` tick and the `desk_call_done` bark); eight new `globalVariables` (desk_call_done, helpdesk_call_desk_result, the it_line pretext globals).
+- Ink: new `it_line.ink` and `priya_nair.ink`; `ama_owusu.ink` gains `VAR desk_call_done`, the M13b "What's next?" pointer, the recap line, and `desk_call_done` added to the day-end gate and the recap-empty guard. tagdiff: ama structure-only additions, priya/it_line added, all explained; no existing knot/divert/condition removed beyond the two in-place gate edits.
+- No existing mapping moved or deleted; `check_mapping_index_drift.rb main`: 0 failures.
+- Rails test: 5 new U3b cases + the NPC-list assertion updated for Priya and the IT line; 46 runs, 0 failures; the leak scanner over a played call-desk run reports 0.
+- Validator: 0 errors, 39 warnings (the only new substantive ones are the expected "callback not takeable" notices for accounts whose phone the player cannot hold). Dialoguelint: 0 ERROR (the pre-existing `crowded-hub` CHECK on Ama's hub is unchanged — no hub choice was added). `bin/ops-golden-compare`: 45 runs, 0 failures. Dungeon graph regenerated.
+- Live smoke (keyless :3056, swapped game 285): the app boots the scenario with `helpdeskForms.call_desk` (npc priya_nair, resets mfa), `social.characters.it_line` and the `it_line_call` pretext ask pointing at `call_desk`, no server errors. The pretext-call UI and form are engine code with their own JS tests; the desk_call tick was not driven in a browser (same proven mapping mechanism as U3's barks).

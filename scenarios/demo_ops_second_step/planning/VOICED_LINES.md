@@ -266,3 +266,33 @@ Nothing is generated; audio waits for the dialogue sign-off. Voice changes (plan
 | global_variable_changed:safe_step_done | The safe asked for the fob's code after the PIN. Same fob, same six digits, on a lock this time. | 20 |
 | global_variable_changed:case_step_done | You carried the case off and kept asking. Darren approved in the end, wherever the case was. | 17 |
 | global_variable_changed:darren_pc_screen_locked | Darren's screen has locked. Now try his PC. | 8 |
+| global_variable_changed:desk_call_done | The same form, from a phone call. The desk that calls back only trusts the owner's phone, and you were holding it. | 22 |
+
+
+## U3b appended: the helpdesk by phone call (M13b)
+
+New Ama ink lines (face to face, cap 30):
+
+| Knot | Line | Words |
+|---|---|---|
+| whats_next | One more at the desk. Meet Priya in the IT room, then ring the IT line on your work phone. | 20 |
+| whats_next | You've still got Yusuf's phone. Ask them to move his approvals. The desk rings his phone to check, and you hold it. | 22 |
+| recap | The phone line moved Yusuf's approvals, because the desk rang his phone to check and you were holding it. | 19 |
+
+New NPC priya_nair (ink, face to face, cap 30; voice Leda):
+
+| Knot | Line | Words |
+|---|---|---|
+| start | Priya Nair, IT service desk. I take the ones that come in by phone. | 13 |
+| hub | Can I help? | 3 |
+| hub | Ring it and we'll move an account's approvals. We call the number we hold for them back, to check it's really them. | 22 |
+| hub | Right you are. | 3 |
+
+New NPC it_line, the IT service line (ink, on the phone, cap 25; voice Sulafat):
+
+| Knot | Line | Words |
+|---|---|---|
+| start | IT service line, you're through to the desk. | 8 |
+| ask_reaction | One moment. We ring the number we hold for that account to check it's them. | 15 |
+| ask_reaction | That came back fine. Fill in the form and it's done. | 11 |
+| ask_reaction | I can't do that one over the phone. | 8 |
