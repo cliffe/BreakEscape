@@ -45,7 +45,7 @@ if (typeof window !== 'undefined') installStepAwayHold(window);
  * memory, so after a reload nothing would end it until the learner opened the kiosk, and the
  * beat's window mappings gated on the hold global would stay armed. On game load this writes the
  * hold global true (one delta, then a sync) when the episode has a hold, its call's outcome is
- * set, the write stage is not yet done and the hold global is falsy. It does not touch the stage
+ * set, the learner is at the write stage and the hold global is falsy. It does not touch the stage
  * state or open anything: the runner's own open completes the stage and flips. Returns true when
  * it wrote. `write` is a test seam.
  */
@@ -58,7 +58,8 @@ export function settleHeldWorld(w = win(), write = writeGlobal) {
     if (!globals || globals[hold]) return false;
     const outcome = globals[callOutcomeKey(episode.attack.callId)];
     if (typeof outcome !== 'string' || !outcome) return false;
-    if (readState(episode, globals[stateKey(episode.id)]).done.includes('write')) return false;
+    // the runner's own test (_settleCall): only a learner already at the write stage has made the call
+    if (readState(episode, globals[stateKey(episode.id)]).stage !== 'write') return false;
     write(hold, true, { openChat: false });
     w.stateSync?.sync?.();
     return true;

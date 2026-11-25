@@ -8,6 +8,7 @@ import { loadCanvasFonts } from './utils/canvas-fonts.js';
 // Bluetooth scanner is now handled as a minigame
 // Biometrics is now handled as a minigame
 import { startLockpickingMinigame } from './systems/minigame-starters.js';
+import { settleHeldWorld } from './systems/episode-starter.js';
 import { initializeDebugSystem } from './systems/debug.js';
 import { initializeUI } from './ui/panels.js';
 import { initializeModals } from './ui/modals.js';
@@ -208,10 +209,10 @@ function initializeGame() {
 
     // Reload handler (E2): a world hold left open by a reload ends here. Its cap clock is page
     // memory, so without this the hold global stays false (and the beat's mappings armed) until
-    // the learner next opens the kiosk. systems/episode-starter.js installs window.settleHeldWorld.
+    // the learner next opens the kiosk. systems/episode-starter.js exports settleHeldWorld.
     if (window.eventDispatcher) {
         window.eventDispatcher.once('game_loaded', () => {
-            try { window.settleHeldWorld?.(); } catch (err) { console.warn('[BreakEscape] hold settle failed:', err); }
+            try { settleHeldWorld(window); } catch (err) { console.warn('[BreakEscape] hold settle failed:', err); }
         });
     }
 

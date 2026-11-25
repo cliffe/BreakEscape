@@ -587,19 +587,21 @@ test('E2: the load-time settle does nothing without a hold, an outcome, or with 
     assert.equal(quiet(episode(WORLD), (g) => { g[outcomeKey] = 'got_it'; }), undefined, 'no hold');
     assert.equal(quiet(episode(HOLD), (g) => { g[outcomeKey] = 'got_it'; g[M.stateKey('e12_fixture')] = { v: 1, done: ['brief', 'write'] }; }), undefined, 'already settled');
     assert.equal(quiet(episode(HOLD), (g) => { g[outcomeKey] = 'got_it'; g.e12_world_done = 'mapped'; }), 'mapped', 'already set');
+    assert.equal(quiet(episode(HOLD), (g) => { g[outcomeKey] = 'got_it'; g[M.stateKey('e12_fixture')] = { v: 1, done: [] }; }), undefined, 'stale outcome, learner still at the first stage');
     window.gameScenario = null;
     assert.doesNotThrow(() => window.settleHeldWorld());
 });
 
 test('main.js runs the load-time settle on game_loaded', () => {
     const main = readFileSync(join(js, 'main.js'), 'utf8');
-    assert.match(main, /once\('game_loaded'[\s\S]{0,160}window\.settleHeldWorld\?\.\(\)/);
+    assert.match(main, /import \{ settleHeldWorld \} from '\.\/systems\/episode-starter\.js'/);
+    assert.match(main, /once\('game_loaded'[\s\S]{0,160}settleHeldWorld\(window\)/);
 });
 
-test('E2 world-play: a world costume that went on is removed on hand-back (over a wearable the validator warns)', async () => {
+test('E2 world-play: a world costume that went on is removed on hand-back', async () => {
     const s = stage();
     s.deps.applyCostume = async () => true;
     await wp.enterWorld(WORLD, s.deps);
     await wp.leaveWorld(WORLD, s.deps);
-    assert.deepEqual(s.costume, [['off']], 'the hand-back removes the costume that went on (author warned by the validator)');
+    assert.deepEqual(s.costume, [['off']], 'the hand-back removes the costume that went on ');
 });
