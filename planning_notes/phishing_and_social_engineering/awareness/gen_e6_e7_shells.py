@@ -491,7 +491,7 @@ EPISODES = {
                 'heading': 'How a voice gets copied',
                 'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
-            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one."),
+            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one. A voice you know can be faked on a live call as well as in a voicemail, and ringing back on a number you already hold is what settles it either way."),
         },
     },
 }

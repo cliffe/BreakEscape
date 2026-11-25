@@ -37,8 +37,10 @@ EXPORT_PATHS = ['planning_notes/phishing_and_social_engineering', 'scenarios']
 GENERATORS = ['gen_core00_shell', 'gen_e1_shells', 'gen_e2_e4_shells',
               'gen_e3_e5_shells', 'gen_e6_e7_shells', 'gen_e8_e17_shells']
 
-# Known drift: HEAD holds hand-compacted one-line `verdict` objects in these shells' JSON files.
-JSON_COMPARED = {'ca14_social_media_defend', 'ca16_insider_risk_defend', 'ca18_credential_attacks_at_scale_defend'}
+# Known drift: HEAD holds hand-compacted one-line `verdict` objects in these shells' JSON files (and, for
+# ca12, a one-line `kind` object that a test reads: commit 610efa306).
+JSON_COMPARED = {'ca12_visitor_tailgater_defend', 'ca14_social_media_defend', 'ca16_insider_risk_defend',
+                 'ca18_credential_attacks_at_scale_defend'}
 
 OWNED = ('head', 'root', 'gen', 'kit', 'logs')
 
