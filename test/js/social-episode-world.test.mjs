@@ -366,6 +366,9 @@ test('E2: holdMaxMs ends the hold, writes the global true, and hands back once',
     runTimers();
     await flush();
     assert.equal(gv().e12_world_done, true, 'the cap writes the global true');
+    assert.equal(leaves(), 0, 'the hand-back waits one tick for what the write opens');
+    runTimers();
+    await flush();
     assert.equal(leaves(), 1);
     assert.equal(flips(), 1);
     clock += 60000;
@@ -391,6 +394,8 @@ test('E2: a cap that falls while a chat is open waits for the chat to close, the
     runTimers();
     await flush();
     assert.equal(gv().e12_world_done, true);
+    runTimers();
+    await flush();
     assert.equal(leaves(), 1);
     assert.equal(flips(), 1);
 });
@@ -415,6 +420,7 @@ test('E2: a reload while held writes the global and resumes into the flip', asyn
     clock = 5000;
     openHold(ep);
     await flush();
+    assert.equal(leaves(), 0, 'nobody was sent away by this page, so nobody is brought back');
     assert.equal(gv().e12_world_done, true);
     assert.ok(stored(ep.id).done.includes('write'));
     assert.equal(stored(ep.id).sent.outcome, 'walked_away');
@@ -428,7 +434,7 @@ test('E2: the kiosk reached inside the hold stops the watcher, writes the global
     cur().requestClose(); // the chat closes; the runner opens within the grace
     openHold(ep);
     await flush();
-    runTimers(); // the watcher sees the runner and stops
+    runTimers(); // nothing left to run: _settleCall stopped the watcher on open
     await flush();
     assert.equal(gv().e12_world_done, true);
     assert.ok(stored(ep.id).done.includes('write'));
@@ -486,4 +492,114 @@ test('E2 world-play: a costume this module did not put on is not taken off on ha
     await wp.enterWorld(WORLD, u.deps);
     await wp.leaveWorld(WORLD, u.deps);
     assert.deepEqual(u.costume, [['on', 'male_spy_v2'], ['off']]);
+});
+
+test('E2: the hold global turning true while a chat is open waits for the close, then hands back', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep); // the phone chat is still open
+    runTimers();
+    gv().e12_world_done = true; // a mapping fires mid-chat
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0, 'the chat is still open');
+    assert.equal(flips(), 0);
+    cur().requestClose();
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+});
+
+test('E2: an overlay the cap write opens is waited out before the hand-back', async () => {
+    const ep = episode(HOLD);
+    await startHeld(ep);
+    cur().requestClose();
+    runTimers();
+    clock += 30000;
+    window.stateSync = { sync() { FW.startMinigame('phone-chat', null, { npcId: 'x' }); } }; // a mapping opens a chat on the write
+    runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, true);
+    runTimers();
+    await flush();
+    assert.equal(leaves(), 0, 'the overlay from the write is open');
+    cur().requestClose();
+    runTimers();
+    await flush();
+    delete window.stateSync;
+    assert.equal(leaves(), 1);
+    assert.equal(flips(), 1);
+});
+
+test('E2: the four-hour give-up writes the hold global only when a call outcome was heard', async () => {
+    // never heard: no outcome. The give-up hands back and writes nothing.
+    const ep = episode(HOLD);
+    setup(ep);
+    clock = 0;
+    openHold(ep);
+    click('.epr-launch');
+    await flush();
+    beginCall();
+    await flush();
+    for (let i = 0; i < 48002; i++) runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, undefined, 'no outcome heard: a retry can still hold');
+    assert.equal(leaves(), 1);
+    // heard, but a chat that never closes: the give-up writes the global
+    const ep2 = episode(HOLD);
+    await startHeld(ep2);
+    for (let i = 0; i < 48002; i++) runTimers();
+    await flush();
+    assert.equal(gv().e12_world_done, true);
+});
+
+// ── E2: the load-time settle (a reload while held) ──────────────────────────────
+
+test('E2: a reload while held ends the hold on page load, with no kiosk open and no hand-back', async () => {
+    const ep = episode(HOLD);
+    setup(ep);
+    gv()[outcomeKey] = 'got_it'; // the call ended; the page reloaded before the cap
+    window.stateSync = { sync() { log.push('sync'); } };
+    assert.equal(typeof window.settleHeldWorld, 'function', 'the starter installs the load hook');
+    window.settleHeldWorld(); // what main.js runs on game_loaded
+    assert.equal(gv().e12_world_done, true);
+    assert.deepEqual(log, ['sync'], 'one write, one sync, nothing opened or handed back');
+    assert.equal(scene(), null, 'the kiosk is not open');
+    assert.deepEqual(stored(ep.id).done, ['brief'], 'the stage state is left for the runner');
+    window.settleHeldWorld();
+    assert.deepEqual(log, ['sync'], 'a second load writes nothing');
+    // the kiosk opened afterwards finishes the write stage and flips, without a second write
+    openHold(ep);
+    await flush();
+    assert.ok(stored(ep.id).done.includes('write'));
+    assert.equal(flips(), 1);
+    delete window.stateSync;
+});
+
+test('E2: the load-time settle does nothing without a hold, an outcome, or with the stage already done', () => {
+    const quiet = (ep, mutate) => {
+        setup(ep);
+        mutate?.(gv());
+        window.settleHeldWorld();
+        return gv().e12_world_done;
+    };
+    assert.equal(quiet(episode(HOLD)), undefined, 'no outcome yet');
+    assert.equal(quiet(episode(WORLD), (g) => { g[outcomeKey] = 'got_it'; }), undefined, 'no hold');
+    assert.equal(quiet(episode(HOLD), (g) => { g[outcomeKey] = 'got_it'; g[M.stateKey('e12_fixture')] = { v: 1, done: ['brief', 'write'] }; }), undefined, 'already settled');
+    assert.equal(quiet(episode(HOLD), (g) => { g[outcomeKey] = 'got_it'; g.e12_world_done = 'mapped'; }), 'mapped', 'already set');
+    window.gameScenario = null;
+    assert.doesNotThrow(() => window.settleHeldWorld());
+});
+
+test('main.js runs the load-time settle on game_loaded', () => {
+    const main = readFileSync(join(js, 'main.js'), 'utf8');
+    assert.match(main, /once\('game_loaded'[\s\S]{0,160}window\.settleHeldWorld\?\.\(\)/);
+});
+
+test('E2 world-play: a world costume that went on is removed on hand-back (over a wearable the validator warns)', async () => {
+    const s = stage();
+    s.deps.applyCostume = async () => true;
+    await wp.enterWorld(WORLD, s.deps);
+    await wp.leaveWorld(WORLD, s.deps);
+    assert.deepEqual(s.costume, [['off']], 'the hand-back removes the costume that went on (author warned by the validator)');
 });

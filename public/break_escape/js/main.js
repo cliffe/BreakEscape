@@ -206,6 +206,15 @@ function initializeGame() {
         });
     }
 
+    // Reload handler (E2): a world hold left open by a reload ends here. Its cap clock is page
+    // memory, so without this the hold global stays false (and the beat's mappings armed) until
+    // the learner next opens the kiosk. systems/episode-starter.js installs window.settleHeldWorld.
+    if (window.eventDispatcher) {
+        window.eventDispatcher.once('game_loaded', () => {
+            try { window.settleHeldWorld?.(); } catch (err) { console.warn('[BreakEscape] hold settle failed:', err); }
+        });
+    }
+
     // Reload handler: if this game was already concluded, replay the conclusion screen
     // once the scene is fully loaded and objectives are available.
     if (window.breakEscapeConfig?.missionConcludedAt) {

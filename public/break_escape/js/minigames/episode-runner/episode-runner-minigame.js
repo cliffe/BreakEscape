@@ -1409,8 +1409,9 @@ export function stopCallWatch(episodeId) {
  * longer hands back at once. The clock starts when the outcome is first seen; the watch waits
  * until the global `until` is truthy or `maxMs` has passed, and, as before, until no overlay is
  * open (a chat still open at the cap is waited out). When the hold ends on the cap, `writeHold`
- * writes the global true first, so scenario mappings gated on it disarm. Then hand-back and
- * reopen run once, as without a hold. Without `hold` nothing here changes.
+ * writes the global true, so scenario mappings gated on it disarm; hand-back and reopen then
+ * run once, on the next tick, after any overlay those mappings opened has closed. The four-hour
+ * give-up writes the global only when a call outcome was heard. Without `hold` nothing here changes.
  */
 export function watchCall({ episode, callId, before = null, reopen = {}, handBack = null, hold = null, now = Date.now, writeHold = null, globals, save, schedule, clearScheduled }) {
     stopCallWatch(episode.id);
@@ -1421,6 +1422,7 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
     let timer = null;
     let ticks = 0;
     let endedAt = null; // E2: when the outcome was first seen
+    let holdWritten = false; // E2: the cap write has been made; hand back on a later tick
     const holdOpen = (g) => !!hold && !g[hold.until];
     const endHold = (g) => { if (hold && !g[hold.until]) { try { writeHold?.(hold.until); } catch (e) { console.error('[episode] hold write failed:', e); } } };
     const onEvent = () => { heard = true; };
@@ -1442,8 +1444,15 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
         // Held: not over until the global is true or the cap has passed (and no overlay is open).
         const held = ended && holdOpen(g) && now() - endedAt < hold.maxMs;
         if (ended && !current && !held) {
+            // The cap write fires the hold global's mappings, which may open an overlay. Give them
+            // one tick, then hand back once nothing is open (a failed write is not waited on twice).
+            if (hold && !g[hold.until] && !holdWritten) {
+                holdWritten = true;
+                endHold(g);
+                timer = schedule(tick, CALL_WAIT_MS);
+                return;
+            }
             stopCallWatch(episode.id);
-            endHold(g);
             const finish = () => {
                 const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
                     { sent: sentFromCall(callId, outcome) });
@@ -1465,7 +1474,8 @@ export function watchCall({ episode, callId, before = null, reopen = {}, handBac
         }
         if (++ticks > CALL_WAIT_LIMIT) {
             stopCallWatch(episode.id);
-            endHold(g);
+            // Only a heard call ends the hold: a learner who never finished the chat can retry and hold then.
+            if (isStr(g[key]) && (heard || g[key] !== before)) endHold(g);
             if (typeof handBack === 'function') Promise.resolve().then(handBack).catch(() => {});
             return;
         }

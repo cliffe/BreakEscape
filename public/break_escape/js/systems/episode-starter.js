@@ -9,7 +9,8 @@
  * Returns the params the runner was started with, or null.
  */
 
-import { stateKey, readState, stepAwayHeld } from '../minigames/episode-runner/episode-model.js';
+import { stateKey, readState, stepAwayHeld, worldFor, writeKind, callOutcomeKey } from '../minigames/episode-runner/episode-model.js';
+import { writeGlobal } from './global-writer.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -38,6 +39,32 @@ export function installStepAwayHold(w = win()) {
 }
 
 if (typeof window !== 'undefined') installStepAwayHold(window);
+
+/**
+ * E2: settle a world hold left open by a reload. The hold's cap clock and watcher live in page
+ * memory, so after a reload nothing would end it until the learner opened the kiosk, and the
+ * beat's window mappings gated on the hold global would stay armed. On game load this writes the
+ * hold global true (one delta, then a sync) when the episode has a hold, its call's outcome is
+ * set, the write stage is not yet done and the hold global is falsy. It does not touch the stage
+ * state or open anything: the runner's own open completes the stage and flips. Returns true when
+ * it wrote. `write` is a test seam.
+ */
+export function settleHeldWorld(w = win(), write = writeGlobal) {
+    const episode = w.gameScenario?.social?.awarenessEpisode;
+    if (!episode || typeof episode !== 'object' || !episode.id) return false;
+    const hold = worldFor(episode)?.holdUntil;
+    if (!hold || writeKind(episode) !== 'call') return false;
+    const globals = w.gameState?.globalVariables;
+    if (!globals || globals[hold]) return false;
+    const outcome = globals[callOutcomeKey(episode.attack.callId)];
+    if (typeof outcome !== 'string' || !outcome) return false;
+    if (readState(episode, globals[stateKey(episode.id)]).done.includes('write')) return false;
+    write(hold, true, { openChat: false });
+    w.stateSync?.sync?.();
+    return true;
+}
+
+if (typeof window !== 'undefined') window.settleHeldWorld = () => settleHeldWorld(window);
 
 export function startEpisodeRunner(lockable, options = {}) {
     const w = win();

@@ -2,7 +2,8 @@
  * World-play placement for an awareness episode's attack (ENG-05a, E12).
  *
  * `enterWorld(world)` moves the learner into `world.room` (the lobby) and puts the costume on;
- * `leaveWorld(world)` puts them back where they stood and takes the costume off. Both are safe
+ * `leaveWorld(world)` puts them back where they stood and takes off a costume that `enterWorld`
+ * put on (never a worn wearable). Both are safe
  * to call at any time: `leaveWorld` with nobody displaced does nothing, so every exit path
  * (the call ending, the prep card closed, a watcher giving up) can call it without checking.
  *
@@ -79,8 +80,9 @@ export async function enterWorld(world, deps = {}) {
 }
 
 /**
- * Put the player back where they stood and take the costume off. Returns true when someone was
- * displaced. The costume comes off even if the placement cannot be made.
+ * Put the player back where they stood and take off the costume `enterWorld` put on (a worn
+ * wearable stays). Returns true when someone was displaced. That costume comes off even if the
+ * placement cannot be made.
  */
 export async function leaveWorld(world, deps = {}) {
     if (!origin) return false;
