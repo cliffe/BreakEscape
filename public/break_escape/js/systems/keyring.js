@@ -586,7 +586,8 @@ export class Keyring {
         const opts = { plainText: true, whole: true };
         // S7-2: exactly one find with a line and it is a hash: the toast gets a Crack button
         const lined = (Array.isArray(entries) ? entries : []).filter(e => t.findLine(e, { captureLog: !!heldCaptureLog() }));
-        if (lined.length === 1 && lined[0].kind === 'hash' && typeof lined[0].id === 'string') {
+        if (lined.length === 1 && lined[0].kind === 'hash' && typeof lined[0].id === 'string'
+            && (lined[0].status === 'ready' || lined[0].status === 'running')) {
             const id = lined[0].id;
             opts.action = { label: t.CRACK_TOAST_ACTION_TEXT, onPress: () => this.openCracker(id) };
         }

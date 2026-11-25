@@ -510,29 +510,37 @@ test('K3b: an item with no keyring row, or no keyring at all, has no Connect', (
 // Rows are read from the shared answer fixture; the real Keyring answers hashEntryFor and crackSecondsLeft.
 const CRACK_FIX = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures/ops_crack/answers.json'), 'utf8'));
 const DANA_FILE = { id: 'dana_file', type: 'text_file', name: 'dana_record.dat', text: 'A record.' };
-const crackKeyring = (name) => { const kr = new Keyring(); kr.latest = CRACK_FIX[name].entries; kr.noteCrackWaits?.(kr.latest); return kr; };
+// The real Keyring answer path: the fixture answer goes through prime() against a stubbed fetch
+const crackKeyring = async (name) => {
+    window.breakEscapeConfig = { gameId: 5 };
+    window.gameScenario = { credentialsDeclared: true };
+    window.gameState = { globalVariables: {} };
+    window.eventDispatcher = { emit: () => {}, on: () => {} };
+    window.ApiClient = { keyring: async () => ({ ...CRACK_FIX[name], rev: 'r1' }) };
+    const kr = new Keyring();
+    await kr.prime();
+    return kr;
+};
 const crackMenu = (kr, data = DANA_FILE) => inventoryMenuFor(held(data), { inventoryItems: items, dropBlocked: null, window: { keyring: kr } });
 
-test('A5: a held hash file has Crack (ready), Open (running, time left) or Finish (running, 0 s)', () => {
-    assert.deepEqual(labels(crackMenu(crackKeyring('keyringOneReady'))), ['Crack', 'Examine']);
-    const running = crackKeyring('keyringRunning');
+test('A5: a held hash file has Crack (ready), Open (running, time left) or Finish (running, 0 s)', async () => {
+    assert.deepEqual(labels(crackMenu((await crackKeyring('keyringOneReady')))), ['Crack', 'Examine']);
+    const running = (await crackKeyring('keyringRunning'));
     assert.deepEqual(labels(crackMenu(running)), ['Open', 'Examine']);
     running.crackEndsAt.set('dana_hash', Date.now() - 1000);
     assert.deepEqual(labels(crackMenu(running)), ['Finish', 'Examine']);
-    assert.deepEqual(labels(crackMenu(crackKeyring('keyringOneReady'), { ...DANA_FILE, droppable: true })), ['Crack', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(crackMenu((await crackKeyring('keyringOneReady')), { ...DANA_FILE, droppable: true })), ['Crack', 'Drop here', 'Examine']);
 });
 
-test('A5: no Crack entry once cracked or infeasible; the file keeps today\'s menu', () => {
-    assert.equal(crackMenu(crackKeyring('keyringCracked')), null, 'a plain text file with no drop has no menu');
-    const infeasible = new Keyring();
-    infeasible.latest = [{ ...CRACK_FIX.keyringOneReady.entries[0], status: 'infeasible' }];
-    assert.equal(crackMenu(infeasible), null);
-    assert.deepEqual(labels(crackMenu(crackKeyring('keyringCracked'), { ...DANA_FILE, droppable: true })), ['Drop here', 'Examine']);
+test('A5: no Crack entry once cracked or infeasible; the file keeps today\'s menu', async () => {
+    assert.equal(crackMenu((await crackKeyring('keyringCracked'))), null, 'a plain text file with no drop has no menu');
+    assert.equal(crackMenu(await crackKeyring('keyringInfeasible'), { ...DANA_FILE, id: 'eli_hash_file' }), null);
+    assert.deepEqual(labels(crackMenu((await crackKeyring('keyringCracked')), { ...DANA_FILE, droppable: true })), ['Drop here', 'Examine']);
     assert.equal(crackMenu(new Keyring()), null, 'no row, no entry');
 });
 
-test('A5: choosing Crack opens the cracker for that hash, with the tray picture as its icon', () => {
-    const kr = crackKeyring('keyringOneReady');
+test('A5: choosing Crack opens the cracker for that hash, with the tray picture as its icon', async () => {
+    const kr = (await crackKeyring('keyringOneReady'));
     const opened = [];
     kr.openCracker = (id) => { opened.push(id); return true; };
     const el = held(DANA_FILE);

@@ -83,6 +83,7 @@ module BreakEscape
         build(inventory: %w[eli_hash_file])
         assert_equal 'nomatch', crack('eli_hash')['status']
         out['crackInfeasible'] = crack('eli_hash', [])
+        out['keyringInfeasible'] = keyring
       end
       normalise(out)
     end

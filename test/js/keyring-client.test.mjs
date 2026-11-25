@@ -1519,3 +1519,22 @@ test('A5: dropping and retaking the file toasts again; a hash with no heldItem t
     await kr2.refresh(); await settle();
     assert.deepEqual(toasts(), ['Hash collected'], 'once per page');
 });
+
+// R1-A2: a retaken file whose hash is already cracked or infeasible still toasts, but offers no Crack button
+for (const name of ['keyringCracked', 'keyringInfeasible']) {
+    test(`R1-A2: a retaken file with a ${name} hash row toasts "Hash collected" with no action`, async () => {
+        crackSetup();
+        const kr = window.keyring;
+        const tray = (...ids) => ids.map(id => ({ scenarioData: { id } }));
+        const row = CRACK_FIX[name].entries.find(e => e.kind === 'hash' && e.heldItem);
+        assert.ok(row, 'the fixture has a held hash row');
+        assert.ok(['cracked', 'infeasible'].includes(row.status));
+        answers({ entries: [], rev: 'r0' }, fixAnswer(name, 'r1'), fixAnswer(name, 'r2'));
+        await kr.prime(); await settle();
+        kr.trayChanged(tray(row.heldItem)); await settle();
+        kr.trayChanged(tray()); await settle();
+        kr.trayChanged(tray(row.heldItem)); await settle();
+        assert.ok(toasts().length >= 1 && toasts().every(m => m === 'Hash collected'));
+        assert.ok(alerts.every(a => !a[4].action), 'no Crack button on a finished record');
+    });
+}

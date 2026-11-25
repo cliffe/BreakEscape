@@ -162,5 +162,28 @@
     "success": true,
     "status": "infeasible",
     "runs": 2
+  },
+  "keyringInfeasible": {
+    "rev": "REVISION",
+    "entries": [
+      {
+        "id": "eli_hash",
+        "kind": "hash",
+        "source": "registry",
+        "account": {
+          "npcId": "eli",
+          "username": "ebrandt",
+          "displayName": "Eli Brandt"
+        },
+        "label": "Stored record: Eli",
+        "token": "XXXX-XXXX-XXXX-XXXX-XXXX-ELIX",
+        "salted": false,
+        "status": "infeasible",
+        "heldItem": "eli_hash_file",
+        "gainedAt": 1795521600000
+      }
+    ],
+    "captures": {},
+    "crackFacts": []
   }
 }
