@@ -119,6 +119,14 @@ Style format (house style, per `sis01_healthcare/scenario.json.erb`):
 | **Tomasz Wiśniewski** (`tomasz_wisniewski`) | e11_misdirected_data (+defend); pre/post_data_conduct_ab | **Algieba** | Carrholme's Data Protection Officer, in his 50s, careful and reassuring; in the UK 25 years. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout — do not shift to any other accent. | Smooth, steady male timbre for a careful DPO; Polish, long-settled, kept light. |
 | **Yusuf Demir** (`yusuf_demir`) | pre/post_data_conduct_ba | **Alnilam** | Carrholme's information security lead, in his 40s, steady and practical. Speak with a consistent British accent throughout — do not shift to any other accent. | Firm male timbre for a steady security lead; British Turkish, UK accent. |
 
+### ca12 additions (2026-11-25, pending owner confirmation)
+
+| Character (id) | Scenarios | Voice | Style | Why |
+|---|---|---|---|---|
+| **Jo Fairweather** (`ca12_jo`) | ca12_visitor_tailgater (one bark, off screen) | **Aoede (PENDING)** | Jo Fairweather, red-team lead at Northlight Security, 30s, quiet and pleased, speaking low into a tester's earpiece. Speak with a consistent southern English accent throughout — do not shift to any other accent. | Off-screen red-team voice in the learner's earpiece. Aoede breaks the rule above (Agent HaX's signature, kept out of the awareness course); every other female voice is taken, so the alternative is a reuse from a character never in ca12 (for example Leda, Niamh Doherty). Owner to pick. |
+
+Role variants in ca12 (same voice names, scenario-local styles): Yusuf Demir is the building security officer on the Merrin & Sallow studio door (the table above has him at Carrholme), and Jun Watanabe is a junior architect at Merrin & Sallow (above: Tarrowby's HR assistant). The pre/post checks never meet ca12 together, so the voices stay; the bios differ by employer only.
+
 ## Within-scenario uniqueness check
 
 Only `ca12_visitor_tailgater` has two voiced speakers: **Delphine Arvanitis (Despina)** and

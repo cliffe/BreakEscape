@@ -2,7 +2,7 @@
   "scenario_id": "ca12_visitor_tailgater",
   "scenario_name": "Visitor and tailgater: both sides",
   "titleScreenName": "Visitors and tailgating",
-  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets at the front desk. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
   "endGoal": "At the training kiosk, run the front-desk pretext, then work the reception desk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -22,11 +22,17 @@
       "walkFrameRate": 12
     }
   },
+  "disguises": {
+    "courier": {
+      "sprite": "male_telecom_v2",
+      "talk": "assets/characters/male_telecom_talk.png"
+    }
+  },
   "objectives": [
     {
       "aimId": "red_team_aim",
       "title": "Run the front-desk pretext",
-      "description": "Start the exercise at the training kiosk, then put on the courier's hi-vis, carry the parcel, and try to talk the front desk into buzzing you through the badge door without a badge.",
+      "description": "Start the exercise at the training kiosk, then take the courier's hi-vis from Jo's kit bag, carry the parcel, and see whether the front desk and the studio door let you through without a badge.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -34,6 +40,20 @@
           "taskId": "run_front_desk_pretext",
           "title": "Start at the training kiosk, then approach the front desk as the courier",
           "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "wear_hivis",
+          "title": "Optional: put on the courier's hi-vis",
+          "type": "manual",
+          "optional": true,
+          "status": "active"
+        },
+        {
+          "taskId": "slip_past_guard",
+          "title": "Optional: get through the studio door: follow staff in, or have the desk let you through",
+          "type": "manual",
+          "optional": true,
           "status": "active"
         }
       ]
@@ -53,7 +73,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Visitor and tailgater: finished",
-        "body": "You've tried the front desk in a courier's hi-vis, then sat on reception and worked through the visitors yourself. That's this episode finished."
+        "body": "You've tried the front desk and the studio door as a courier, then sat on reception and worked through the visitors yourself. That's this episode finished."
       },
       "tasks": [
         {
@@ -636,7 +656,7 @@
       },
       "variant": "full",
       "durationTargetMin": 15,
-      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: one practice approach to the front desk in a courier's hi-vis, and six situations to handle on the reception seat. Jo's test is authorised and the costume is handed back afterwards.",
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: one practice approach to the front desk and the studio door as a courier, and six situations to handle on the reception seat. Jo's test is authorised and the costume is handed back afterwards.",
       "stages": [
         "brief",
         "osint",
@@ -670,7 +690,7 @@
         "stage": null
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets at the front desk. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team with Jo Fairweather of Northlight Security, who the practice has hired to test the building. You'll pull on a hi-vis jacket, pick up a parcel, and see how far a friendly courier gets. This is a booked test, signed off by the partners. The scope is the front desk and the studio door. If you're challenged, step back. That's a result too. The letter's in Jo's bag with the hi-vis. The whole point is never to need it. Then you swap seats: you're on reception yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do leaves the game.",
         "flipHeading": "Now you're the one on the desk",
         "flipIntro": "This is how your approach looked from Delphine's side of the counter. The lines picked out below are what got the door open.",
         "flipDefenderLine": "The call landed. What happened at the door is above; now you're the one on the desk, and the same kinds of visitor are on their way.",
@@ -768,6 +788,27 @@
           "first": "Catherine",
           "formal": "Ms Merrin",
           "full": "Catherine Merrin"
+        }
+      },
+      {
+        "id": "yusuf",
+        "kind": "cast",
+        "role": "Building security officer",
+        "forms": {
+          "first": "Yusuf",
+          "formal": "Mr Demir",
+          "full": "Yusuf Demir"
+        }
+      },
+      {
+        "id": "jun",
+        "kind": "cast",
+        "role": "Junior architect",
+        "address": "jun.watanabe@merrinsallow.example",
+        "forms": {
+          "first": "Jun",
+          "formal": "Mr Watanabe",
+          "full": "Jun Watanabe"
         }
       }
     ],
@@ -1307,7 +1348,8 @@
               "onceOnly": true,
               "setGlobal": {
                 "ca12_tailgated": true
-              }
+              },
+              "completeTask": "slip_past_guard"
             },
             {
               "eventPattern": "room_entered:training_room",
@@ -1315,7 +1357,8 @@
               "onceOnly": true,
               "setGlobal": {
                 "ca12_desk_pass": true
-              }
+              },
+              "completeTask": "slip_past_guard"
             },
             {
               "eventPattern": "room_entered:training_room",
@@ -1346,6 +1389,12 @@
               "setGlobal": {
                 "ca12_gate_open": false
               }
+            },
+            {
+              "eventPattern": "global_variable_changed:ca12_wearing_hivis",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "wear_hivis"
             }
           ]
         },
@@ -1794,6 +1843,93 @@
           "minigameData": {
             "episodeId": "e12_visitor_tailgater"
           }
+        },
+        {
+          "type": "aes_hivis_hook",
+          "id": "ca12_kit_bag",
+          "name": "Jo's kit bag",
+          "sprite": "aes_hivis_hook1",
+          "position": {
+            "x": 8.25,
+            "y": 0.875,
+            "elevation": 8
+          },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "triggerOnInteract": [
+            {
+              "type": "give_item",
+              "item": {
+                "type": "notes",
+                "id": "ca12_auth_letter",
+                "name": "Authorisation letter",
+                "sprite": "notes1",
+                "takeable": true,
+                "readable": true,
+                "text": "Authorisation letter. Merrin & Sallow has engaged the bearer to test physical entry at the studio door today. Signed, Julian Sallow, Partner.",
+                "observations": "The signed letter for Jo's test. Carry it, and only show it if a challenge goes further than stepping back."
+              }
+            },
+            {
+              "type": "give_item",
+              "item": {
+                "type": "aes_hivis_hook1",
+                "id": "ca12_hivis",
+                "name": "Courier hi-vis",
+                "sprite": "aes_hivis_hook1",
+                "takeable": false,
+                "interactable": true,
+                "active": true,
+                "wearable": {
+                  "costume": "courier",
+                  "global": "ca12_wearing_hivis",
+                  "unseenOnly": true,
+                  "seenBy": {
+                    "ignore": [
+                      "lorna_easton",
+                      "ca12_jun_watanabe",
+                      "ca12_jo",
+                      "kit_thandiwe_moyo",
+                      "kit_julian_sallow",
+                      "kit_camila_ospina"
+                    ]
+                  },
+                  "confirmOn": "Put the courier hi-vis on? In it you pass for a delivery, and staff may let you follow them through the studio door. Without it, the door and the guard treat you as a visitor.",
+                  "confirmOff": "Take the courier hi-vis off? You go back to looking like a visitor. It stays in your kit.",
+                  "onWear": [
+                    {
+                      "type": "hint",
+                      "title": "Hi-vis on",
+                      "message": "You pass for a courier now. Start the approach at the kiosk."
+                    }
+                  ],
+                  "onRemove": [
+                    {
+                      "type": "hint",
+                      "title": "Hi-vis off",
+                      "message": "You look like a visitor again. The hi-vis is still in your kit: click it there to put it back on."
+                    }
+                  ]
+                },
+                "observations": "The courier hi-vis from Jo's kit bag. Click it to put it on or take it off, where the lobby staff can't see you change."
+              }
+            },
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.ca12_wearing_hivis",
+              "text": "The hi-vis and the letter are in your kit now. Put the hi-vis on? In it you pass for a delivery, and staff may let you follow them through the studio door. You can leave it off and put it on from your kit later.",
+              "confirmLabel": "Put it on",
+              "cancelLabel": "Leave it off",
+              "onConfirm": [
+                {
+                  "type": "wear",
+                  "itemId": "ca12_hivis"
+                }
+              ]
+            }
+          ],
+          "observations": "Jo's kit bag on its hook: a courier's hi-vis and the signed authorisation letter. Take them and they go into your kit."
         },
         {
           "type": "leather_sofa",

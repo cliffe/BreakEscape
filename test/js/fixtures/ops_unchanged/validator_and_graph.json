@@ -3113,7 +3113,7 @@
       "graphHtmlHash": "de1b3c6adbe190aac506506872cbcbea14e5779b2fcf5b11f28adbab5e5484b1"
     },
     "ca12_visitor_tailgater": {
-      "sourceHash": "75d2d83d89e5c88c2460e655af71500cf86c8d6d7374c32717df50b551e0c432",
+      "sourceHash": "1868081d3b3a9feb61290978e1dacb6b39115e88bc67a2b6fe5b43aaef039003",
       "validatorExit": 0,
       "validator": [
         "Validating scenario: <scenarios>/ca12_visitor_tailgater/scenario.json.erb",
@@ -3220,6 +3220,18 @@
             "label": "Studio",
             "kind": "room",
             "optional": false
+          },
+          {
+            "id": "grant_ca12_auth_letter",
+            "label": "Authorisation letter<br/>(granted)",
+            "kind": "item",
+            "optional": false
+          },
+          {
+            "id": "grant_ca12_hivis",
+            "label": "Courier hi-vis<br/>(granted)",
+            "kind": "item",
+            "optional": false
           }
         ],
         "edges": [
@@ -3227,11 +3239,21 @@
             "from": "door_training_room",
             "to": "training_room",
             "soft": false
+          },
+          {
+            "from": "training_room",
+            "to": "grant_ca12_auth_letter",
+            "soft": true
+          },
+          {
+            "from": "training_room",
+            "to": "grant_ca12_hivis",
+            "soft": true
           }
         ]
       },
-      "graphMdHash": "1f8043ab304e6e0ac982e5398aece18b005e1dea453424065422e6162dcf8ed8",
-      "graphHtmlHash": "11062a7d524460ce04750eedeb3ffe4ae630e31dcd10c0a1c4d3f80f01e0945a"
+      "graphMdHash": "75690f9d6a8ddb3a6d5b53f3dc218833ca5b4af7de6a21525cc1a306960e9882",
+      "graphHtmlHash": "aef3e05aff8c055b853298ecd0f073df0f97fd035e809fc7306437ae6124b9b9"
     },
     "test_dm_social": {
       "sourceHash": "46d2107e49a0cd79cd3e31a57bb4a2d43c71a6f1825fc2355c1047b3a4bc36f4",
