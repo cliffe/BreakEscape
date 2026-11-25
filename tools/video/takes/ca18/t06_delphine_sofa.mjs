@@ -89,14 +89,16 @@ export default async (page, bridge, mark) => {
     if (trip < MIN_TRIP_PX) throw new Error(`Delphine Arvanitis's trip is only ${trip} px from her post; the take needs at least ${MIN_TRIP_PX} px`);
     if (!(await waitNpcMoved(page, NPC, 24, 45000))) throw new Error('Delphine Arvanitis did not walk back from the sofa within 45 s of arriving');
     mark('return-start', await npcPos(page, NPC));
-    // settle() also resolves on a pause partway back (dry run: a 1 s stop at (165,134), 30 px short of her post), so wait until she is at the post, then settle there.
+    // She comes back to about (164,133), 28 px from her settled start, on both 25 Nov dry runs: that is her real return spot,
+    // so "back" means settled within RETURN_R of the post (one-off pauses further out still fail the near() test).
+    const RETURN_R = 40;
     let back = null; const backAt = Date.now() + 30000;
     while (Date.now() < backAt) {
       const p = await npcPos(page, NPC);
-      if (p && near(p, POST)) { back = (await settle(page, NPC, 5000)) || p; break; }
+      if (p && near(p, POST, RETURN_R)) { back = (await settle(page, NPC, 5000)) || p; break; }
       await sleep(150);
     }
-    if (!back || !near(back, POST)) throw new Error(`Delphine Arvanitis did not get back to her post: ${JSON.stringify(await npcPos(page, NPC))}`);
+    if (!back || !near(back, POST, RETURN_R)) throw new Error(`Delphine Arvanitis did not get back to her post: ${JSON.stringify(await npcPos(page, NPC))}`);
     mark('back', back);
     await finish(page, mark, smp);
   } finally {
