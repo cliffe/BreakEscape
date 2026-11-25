@@ -9,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { world, flush } from './helpers/npc-walk-world.mjs';
-import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
+import { WALK_STALL_MS, WALK_MAX_REPLANS, WALK_ARRIVE_PX, WALK_PICK_DEPTH_PX, viewGap, npcRectAt, installNpcWalk } from '../../public/break_escape/js/systems/npc-walk.js';
 
 const names = (w, prefix) => w.emits.filter(e => e.name.startsWith(prefix));
 const tick = (w) => w.manager._walkTick(0, {});
@@ -317,4 +317,39 @@ test('a spawn cell that comes into view before the NPC is shown is not used: fad
     assert.equal(await p, 'faded');
     const arrived = names(w, 'npc_arrived:guard');
     assert.equal(arrived.length, 1);
+});
+
+// ── Live-failure pass 3: deep picks, unseen ends report walked ─────────────────────────
+
+test('walk-out exit cell is picked WALK_PICK_DEPTH_PX clear of the view, so stopping WALK_ARRIVE_PX short stays out of view', async () => {
+    const w = world();
+    const b = w.addNpc('guard', { visible: true });
+    w.manager.walkNPCOut('guard', { to: 'dock' });
+    await flush();
+    const mv = b.moves.at(-1);
+    const gap = viewGap(npcRectAt(mv.x, mv.y), w.view);
+    assert.ok(gap >= WALK_PICK_DEPTH_PX, `exit cell ${gap} px clear of the view`);
+    assert.ok(gap - WALK_ARRIVE_PX > 0, 'a stop short of it is still out of view');
+});
+
+test('walk-out whose re-plans run out while it is out of view in the far room reports walked (nobody saw it go)', async () => {
+    const w = world();
+    const b = w.addNpc('guard', { visible: true });
+    const p = w.manager.walkNPCOut('guard', { to: 'dock' });
+    await flush();
+    for (let i = 0; i < WALK_MAX_REPLANS; i++) {
+        const mv = b.moves.at(-1);
+        w.view = { x: 0, y: 0, width: mv.x - 28, height: 320 };   // each arrival cell is in view
+        b.arrive({ x: mv.x, y: mv.y });
+        await flush();
+    }
+    // Last arrival: the camera has swung back, the walker stands in the dock out of view
+    const mv = b.moves.at(-1);
+    w.view = { x: 0, y: 0, width: 300, height: 320 };
+    w.manager.walks.get('guard').phase = 'replanning';   // the tick's early end does not get there first
+    w.manager.walks.get('guard').replans = WALK_MAX_REPLANS;
+    b.arrive({ x: mv.x, y: mv.y });
+    assert.equal(await p, 'walked');
+    assert.deepEqual(w.fades, [], 'no fade');
+    assert.equal(names(w, 'npc_left:guard')[0].data.how, 'walked');
 });

@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const {
-    rectInView, npcRectAt, bfsOutOfView, doorsOfRoom, doorUsable, inRoomBounds, roomAt, placeBody
+    rectInView, npcRectAt, bfsOutOfView, viewGap, doorsOfRoom, doorUsable, inRoomBounds, roomAt, placeBody
 } = await import('../../public/break_escape/js/systems/npc-walk.js');
 
 const view = { x: 0, y: 0, width: 300, height: 320 };
@@ -111,4 +111,29 @@ test('placeBody puts the body centre (feet) on the point', () => {
     assert.equal(sprite.body.enable, true);
     assert.deepEqual(sprite.body.center, { x: 200, y: 300 });
     assert.equal(sprite.y, 284);
+});
+
+test('viewGap: px clear of the grown view, 0 or less in view', () => {
+    // 32 px wide rect at x 350: left edge 334, the grown view ends at 332
+    assert.equal(viewGap(npcRectAt(350, 150), view), 2);
+    assert.ok(viewGap(npcRectAt(150, 150), view) <= 0);
+    assert.equal(viewGap(npcRectAt(450, 150), view), 102);
+    assert.equal(viewGap(npcRectAt(150, 150), null), Infinity);
+});
+
+test('bfsOutOfView with a depth preference: the nearest cell that clear, else the deepest out of view', () => {
+    const gb = { minX: 0, minY: 0, cols: 80, rows: 40, step: 8 };
+    const g = grid(80, 40);
+    const isOutOfView = (x, y) => !rectInView(npcRectAt(x, y), view);
+    const depthOf = (x, y) => viewGap(npcRectAt(x, y), view);
+    const edge = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView });
+    const deep = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, isOutOfView, depthOf, preferDepth: 64 });
+    assert.ok(depthOf(edge.x, edge.y) < 16, 'without a preference: on the view edge');
+    assert.ok(depthOf(deep.x, deep.y) >= 64, 'with one: at least 64 px clear');
+    assert.ok(depthOf(deep.x, deep.y) < 72, 'and no further than it needs');
+    // A room only 40 px past the view: no cell 64 px clear, so the deepest one (never null)
+    const room = { worldX: 0, worldY: 0, mapWidth: 12, mapHeight: 10 };   // to x 384
+    const capped = bfsOutOfView({ grid: g, gridBounds: gb, start: { x: 300, y: 160 }, roomBounds: room, isOutOfView, depthOf, preferDepth: 64 });
+    assert.ok(capped, 'still a cell');
+    assert.ok(capped.x >= 370, `the deepest cell in the room (${capped.x})`);
 });

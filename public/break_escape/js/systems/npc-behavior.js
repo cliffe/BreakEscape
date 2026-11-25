@@ -1924,12 +1924,16 @@ export class NPCBehavior {
     }
 
     /**
-     * May this walk squeeze past the player? A needs walk (job, need or interest) in progress,
+     * May this walk squeeze past the player? A needs walk (job, need or interest) or an NPC
+     * walk-in/out (owner 'walk') in progress,
      * not hostile or KO'd, and not opted out with behaviour squeezePastPlayer: false.
      */
     _mayPassPlayer() {
         if (this.config?.squeezePastPlayer === false) return false;
-        if (this._moveOwner !== 'needs' || !this._stopOnArrival) return false;
+        // 'walk': an NPC walk-in or walk-out (npc-walk.js). A walk-out through the door the
+        // player stands in used to shove the player back through it for the whole 20 s timeout
+        // (m10 gallery guards), since the routed NPC holds and only the player gives way.
+        if ((this._moveOwner !== 'needs' && this._moveOwner !== 'walk') || !this._stopOnArrival) return false;
         const hs = window.npcHostileSystem;
         if (hs?.isNPCKO?.(this.npcId) || hs?.isNPCHostile?.(this.npcId)) return false;
         return true;

@@ -28,6 +28,11 @@ export const WALK_LOAD_WAIT_MS = 3000;
 export const WALK_STALL_MS = 3000;       // no movement for this long: re-plan, then fall back to the fade
 export const WALK_MAX_REPLANS = 4;        // walk-out re-plans after arriving in view
 export const WALK_ARRIVE_PX = 10;         // a walk-in ends within this of its position (goToAndStay stops at 1 tile otherwise)
+// Spawn and exit cells: prefer one this far clear of the view edge (beyond WALK_VIEW_MARGIN). Best
+// effort, never a requirement: with no such cell the deepest out-of-view cell is used. The nearest
+// out-of-view cell sits on the view edge, so a walker stopping WALK_ARRIVE_PX short of it, or a
+// camera that moves a few px, put it back in view (case e: 4 re-plans, then a fade).
+export const WALK_PICK_DEPTH_PX = 2 * TILE_SIZE;
 const PLAYER_DOOR_PX = 2 * TILE_SIZE;   // never step out of the door the player stands in
 const DOOR_OPEN_PX = 1.5 * TILE_SIZE;   // a walker this close to a closed door opens it
 export const DOOR_PASS_HOOK_TIMEOUT_MS = 2000;
@@ -103,6 +108,18 @@ export function rectInView(rect, view, margin = WALK_VIEW_MARGIN) {
     return rect.x < vx + vw && rect.x + rect.w > vx && rect.y < vy + vh && rect.y + rect.h > vy;
 }
 
+/**
+ * How far rect lies outside the view grown by margin: the largest gap on any side, in px.
+ * 0 or less: in view (touching counts as in). No view: Infinity.
+ */
+export function viewGap(rect, view, margin = WALK_VIEW_MARGIN) {
+    if (!rect) return -Infinity;
+    if (!view) return Infinity;
+    const vx = view.x - margin, vy = view.y - margin;
+    const vr = view.x + view.width + margin, vb = view.y + view.height + margin;
+    return Math.max(vx - (rect.x + rect.w), rect.x - vr, vy - (rect.y + rect.h), rect.y - vb);
+}
+
 /** Is a point inside a pathfinding roomBounds entry (worldX/worldY px, mapWidth/mapHeight tiles)? */
 export function inRoomBounds(b, x, y) {
     if (!b) return false;
@@ -123,8 +140,10 @@ export function roomAt(roomBounds, x, y) {
  * seeded on the near side of a door can step through it), for the first cell inside
  * roomBounds that isOutOfView(x, y) accepts. The cell is connected to start by
  * construction. Returns the cell centre { x, y } or null.
+ * With depthOf(x, y) (px clear of the view edge) and preferDepth: the nearest out-of-view cell
+ * at least preferDepth clear, else the out-of-view cell furthest clear (nearest on a tie).
  */
-export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOutOfView, slackPx = 2 * TILE_SIZE, maxCells = 40000 }) {
+export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOutOfView, depthOf = null, preferDepth = 0, slackPx = 2 * TILE_SIZE, maxCells = 40000 }) {
     if (!grid || !gridBounds || !start || typeof isOutOfView !== 'function') return null;
     const step = gridBounds.step || PATHFINDING_STEP;
     const cols = gridBounds.cols;
@@ -138,10 +157,16 @@ export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOut
     if (sx < 0 || sy < 0 || sx >= cols || sy >= rows) return null;
     const seen = new Set([sy * cols + sx]);
     const queue = [[sx, sy]];
+    let best = null, bestDepth = -Infinity;
     for (let qi = 0; qi < queue.length && qi < maxCells; qi++) {
         const [cx, cy] = queue[qi];
         const p = toWorld(cx, cy);
-        if (walkable(cx, cy) && inRoom(p) && isOutOfView(p.x, p.y)) return p;
+        if (walkable(cx, cy) && inRoom(p) && isOutOfView(p.x, p.y)) {
+            if (typeof depthOf !== 'function') return p;
+            const d = depthOf(p.x, p.y);
+            if (d >= preferDepth) return p;
+            if (d > bestDepth) { best = p; bestDepth = d; }
+        }
         if (qi > 0 && !walkable(cx, cy)) continue;   // the start cell may sit on a door edge
         for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]) {
             const key = ny * cols + nx;
@@ -151,7 +176,7 @@ export function bfsOutOfView({ grid, gridBounds, start, roomBounds = null, isOut
             queue.push([nx, ny]);
         }
     }
-    return null;
+    return best;
 }
 
 /**
@@ -267,6 +292,12 @@ export function installNpcWalk(manager, env = {}) {
     const inView = (x, y, sprite) => rectInView(
         npcRectAt(x, y, sprite?.displayWidth || TILE_SIZE, sprite?.displayHeight || 2 * TILE_SIZE),
         E.view());
+    // The out-of-view test and the depth preference for spawn and exit searches
+    const viewOpts = (sprite) => ({
+        isOutOfView: (x, y) => !inView(x, y, sprite),
+        depthOf: (x, y) => viewGap(npcRectAt(x, y, sprite?.displayWidth || TILE_SIZE, sprite?.displayHeight || 2 * TILE_SIZE), E.view()),
+        preferDepth: WALK_PICK_DEPTH_PX
+    });
     const snap = (x, y) => E.pfm()?.findNearestWalkableWorldCell?.(x, y) || { x, y };
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     const emit = (name, data) => E.dispatcher()?.emit?.(name, data);
@@ -430,7 +461,7 @@ export function installNpcWalk(manager, env = {}) {
         const sprite = behavior.sprite;
         const from = opts.from;
         const target = w.target;
-        const outOfView = (x, y) => !inView(x, y, sprite);
+        const vo = viewOpts(sprite);
         if (from && typeof from === 'object') {
             const room = from.room || near;
             if (room !== near && !(await ensureLoaded(room))) return null;
@@ -441,7 +472,7 @@ export function installNpcWalk(manager, env = {}) {
         }
         const pfm = E.pfm();
         if (from === 'offscreen') {
-            const cell = target && bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: target, roomBounds: roomBounds(near), isOutOfView: outOfView });
+            const cell = target && bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: target, roomBounds: roomBounds(near), ...vo });
             return cell ? { ...cell, how: 'walked' } : null;
         }
         const doors = candidateDoors(near, typeof from === 'string' ? from : null, target).filter(d => !exclude?.has(d.far));
@@ -456,7 +487,7 @@ export function installNpcWalk(manager, env = {}) {
             if (!ok) { log(`${w.id}: ${d.far} did not load in ${WALK_LOAD_WAIT_MS} ms`); continue; }
             if (pass === 'hook') openByHook(w, d);
             const p2 = E.pfm();
-            const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), isOutOfView: outOfView });
+            const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), ...vo });
             if (cell) return { ...cell, how: 'walked', farRoom: d.far, door: d };
         }
         if (fallback) { log(`${w.id}: doorway fade at the door to ${fallback.far}`); return { ...fallback.mouth, how: 'faded', fade: true, door: fallback }; }
@@ -589,7 +620,13 @@ export function installNpcWalk(manager, env = {}) {
         w.phase = 'fading';
         const sprite = w.behavior.sprite;
         const p = bodyPos(w.behavior);
-        if (!inView(p.x, p.y, sprite)) { hideAndHome(w, how); return; }
+        if (!inView(p.x, p.y, sprite)) {
+            // Nobody sees it go. A walker already through its door (or anywhere, for 'offscreen')
+            // left by walking, exactly as the tick's early end would have reported it.
+            const past = w.anyOutOfView || (w.farRoom && inRoomBounds(roomBounds(w.farRoom), p.x, p.y));
+            hideAndHome(w, past && w.how === 'walked' ? 'walked' : how);
+            return;
+        }
         w.behavior.cancelMove?.();
         E.fade(sprite, 0, WALK_FADE_MS).then(() => hideAndHome(w, how));
     }
@@ -600,7 +637,7 @@ export function installNpcWalk(manager, env = {}) {
         const sprite = behavior.sprite;
         const to = ov.ignoreTo ? undefined : opts.to;
         const here = ov.here || bodyPos(behavior);
-        const outOfView = (x, y) => !inView(x, y, sprite);
+        const vo = viewOpts(sprite);
         if (to && typeof to === 'object') {
             const room = to.room || near;
             if (room !== near && !(await ensureLoaded(room))) return { fadeInPlace: true };
@@ -609,7 +646,7 @@ export function installNpcWalk(manager, env = {}) {
         }
         const pfm = E.pfm();
         if (to === 'offscreen') {
-            const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: here, roomBounds: roomBounds(near), isOutOfView: outOfView });
+            const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: here, roomBounds: roomBounds(near), ...vo });
             return cell ? { ...cell, how: 'walked', anyOutOfView: true } : { fadeInPlace: true };
         }
         const doors = candidateDoors(near, typeof to === 'string' ? to : null, here).filter(d => !ov.exclude?.has(d.far));
@@ -624,7 +661,7 @@ export function installNpcWalk(manager, env = {}) {
             if (!ok) continue;
             if (pass === 'hook') openByHook(w, d);
             const p2 = E.pfm();
-            const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), isOutOfView: outOfView });
+            const cell = bfsOutOfView({ grid: p2?.worldGrid, gridBounds: p2?.worldGridBounds, start: d.mouth, roomBounds: roomBounds(d.far), ...vo });
             if (cell) return { ...cell, how: 'walked', farRoom: d.far, door: d };
             // The far room is all in view: walk through the door and fade there
             return { ...d.mouth, how: 'faded', farRoom: null, door: d };
@@ -677,10 +714,9 @@ export function installNpcWalk(manager, env = {}) {
             const { behavior } = w;
             const sprite = behavior.sprite;
             const p = bodyPos(behavior);
-            const outOfView = (x, y) => !inView(x, y, sprite);
             const room = roomAt(E.pfm()?.roomBounds, p.x, p.y) || behavior.roomId || w.homeRoom;
             const pfm = E.pfm();
-            const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: p, roomBounds: roomBounds(room), isOutOfView: outOfView });
+            const cell = bfsOutOfView({ grid: pfm?.worldGrid, gridBounds: pfm?.worldGridBounds, start: p, roomBounds: roomBounds(room), ...viewOpts(sprite) });
             if (cell && dist(cell, p) > 8) {
                 log(`${w.id}: exit cell in view on arrival, re-planning to another out of view (${w.replans})`);
                 startOutLeg(w, { ...cell, how: 'walked', farRoom: room !== w.homeRoom ? room : w.farRoom, anyOutOfView: room === w.homeRoom && !w.farRoom, door: null });
