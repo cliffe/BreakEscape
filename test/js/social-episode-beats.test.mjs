@@ -649,10 +649,13 @@ test('E3 watcher: closing the kiosk from the waiting panel re-arms the return; t
     assert.deepEqual(epState().beatPanel, { id: 'red_stick', mode: 'waiting' });
     assert.equal(pendingTimers(), 0, 'no watcher while the panel is up');
     calls.spot.length = 0;
+    window.player = { x: 321, y: 654 };
     FW.forceCloseMinigame();
+    delete window.player;
     assert.equal(cur(), null);
     assert.equal(pendingTimers(), 1, 'the watcher is armed again on close');
     assert.equal(calls.spot.length, 1, 'the spot is recorded again');
+    assert.deepEqual(calls.spot[0], { x: 321, y: 654 }, 'the spot is where the learner stands at the kiosk');
     tick(); tick();
     assert.equal(cur(), null, 'the global is still false');
     window.gameState.globalVariables.drop_done = true;
@@ -673,6 +676,23 @@ test('E3 watcher: Carry on from the waiting panel, or a refreshed panel, leaves 
     click('.epr-carry-on');
     FW.forceCloseMinigame();
     assert.equal(pendingTimers(), 0, 'carried on: no return to wait for');
+});
+
+test('E3 panel: Carry on from the waiting panel renders the next stage once', () => {
+    lookUp();
+    const orig = deps.renderFlipView;
+    let renders = 0;
+    deps.renderFlipView = (...a) => { renders++; return orig(...a); };
+    try {
+        open(listEpisode());
+        assert.deepEqual(epState().beatPanel, { id: 'red_stick', mode: 'waiting' });
+        renders = 0;
+        click('.epr-carry-on');
+    } finally {
+        deps.renderFlipView = orig;
+    }
+    assert.equal(renders, 1, 'one render of the flip');
+    assert.ok(q('.stub-continue'));
 });
 
 test('E3 panel: the waiting panel moves on when the done global lands while it is open', () => {
@@ -714,6 +734,9 @@ test('E3 panel: the facilitated defend pause offers Look up only when the post-d
     open(on, { pauseAfter: 'defend' });
     assert.equal(epState().paused, true);
     assert.ok(q('.epr-look-up'), 'a facilitated beat keeps it');
+    click('.epr-look-up');
+    open(on, { pauseAfter: 'defend' });
+    assert.equal(q('.epr-look-up'), null, 'already stepped away: no dead Look up');
 });
 
 test('E3 panel: a mid beat with a ready global shows its own wait line, not the saved-result one', () => {

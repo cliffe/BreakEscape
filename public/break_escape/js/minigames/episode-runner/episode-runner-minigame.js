@@ -535,7 +535,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             this._focus();
         }, 'epr-resume');
         // EC1 (e): in an opted-in shell, the pause after the defend stage also offers Look up.
-        if (after === 'defend' && stepAwayOn(this.episode) && this.state.done.includes('defend') && this._defendBeat()?.facilitated) this._lookUpButton(panel);
+        if (after === 'defend' && stepAwayOn(this.episode) && this.state.done.includes('defend') && this._defendBeat()?.facilitated && !this._stepped(this._defendBeat())) this._lookUpButton(panel);
     }
 
     // ── the step-away panel (EC1) ────────────────────────────────────────────
@@ -619,6 +619,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      */
     _carryOn(beat) {
         this._markStepped(beat); // a facilitated run stores nothing, so remember it
+        // the done-global write emits synchronously: stop listening and drop the panel first, so
+        // the waiting listener cannot render the next stage as well
+        this._unwatchReady();
+        this._beatPanel = null;
         this._markStepAwayPicked(beat, beat.resumeOnDone ? 'carry' : null);
         const g = this.globals;
         if (beat.doneGlobal && !(g && g[beat.doneGlobal] === true)) {
