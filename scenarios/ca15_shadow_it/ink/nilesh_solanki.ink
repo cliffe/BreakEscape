@@ -22,17 +22,31 @@ VAR kit_ca15_host_said = false
 VAR kit_ca15_out = false
 VAR kit_ca15_done = false
 VAR hub_quiet = false
-// Red-team USB-drop beat (2.6): the ink gives the stick and sets this global, which
-// the shell's eventMappings read. Declared in the scenario globalVariables so it syncs.
+// Red-team USB-drop beat (2.6). ca15_drop_given is set by the red_stick knot; the other
+// three are set by the shell's eventMappings and read here. All four are declared in the
+// scenario globalVariables so they sync. ca15_drop_said is an ink-local flag (not synced):
+// it keeps the "after a find" hub line to a single showing.
+VAR ca15_drop_offered = false
 VAR ca15_drop_given = false
+VAR ca15_drop_used = false
+VAR ca15_drop_done = false
+VAR ca15_drop_said = false
 
 === start ===
 -> hub
 
 === hub ===
+// A chat closed before the stick is given picks the offer up again next time.
+{ ca15_drop_offered and not ca15_drop_given and not ca15_drop_done:
+    -> red_stick
+}
 { hub_quiet:
     ~ hub_quiet = false
 - else:
+    { ca15_drop_used and not ca15_drop_said:
+        Nilesh Solanki: Nobody was careless there. She was being kind, and that's what a drop relies on.
+        ~ ca15_drop_said = true
+    - else:
     { kit_defend_done && (kit_ca15_done || not kit_ca15_out) && not kit_ca15_host_said:
         { kit_key_caught:
             { kit_caught:
@@ -52,6 +66,7 @@ VAR ca15_drop_given = false
     - else:
         Nilesh Solanki: Nilesh, service desk. Something slowing you down? Ask us first. We'd rather help than clean up.
         Nilesh Solanki: Start at the kiosk. Play out the Friday, then sort what's actually waiting.
+    }
     }
     }
 }
