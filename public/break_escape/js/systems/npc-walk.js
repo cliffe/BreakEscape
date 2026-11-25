@@ -533,7 +533,7 @@ export function installNpcWalk(manager, env = {}) {
     function openDoorsNear(w) {
         const p = bodyPos(w.behavior);
         const rooms = E.rooms();
-        for (const rid of [w.behavior.roomId, w.farRoom, w.homeRoom]) {
+        for (const rid of new Set([w.behavior.roomId, w.farRoom, w.homeRoom])) {
             for (const s of rooms[rid]?.doorSprites || []) {
                 const props = s?.doorProperties;
                 if (!props || props.open || props.locked || s.active === false) continue;
