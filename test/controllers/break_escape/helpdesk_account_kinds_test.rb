@@ -24,7 +24,8 @@ module BreakEscape
       data['helpdesks'] = {
         'it_desk' => { 'npc' => 'ravi', 'verify' => 'questions', 'questions' => ['staff_no'],
                        'questionLabels' => { 'staff_no' => 'Staff number' }, 'maxTries' => 3, 'resets' => %w[password mfa] },
-        'open_desk' => { 'npc' => 'priya', 'verify' => 'none', 'maxTries' => 3, 'resets' => %w[password mfa] }
+        'open_desk' => { 'npc' => 'priya', 'verify' => 'none', 'maxTries' => 3, 'resets' => %w[password mfa] },
+        'call_desk' => { 'npc' => 'sam', 'verify' => 'callback', 'maxTries' => 3, 'resets' => %w[mfa] }
       }
       npc_in(data, 'olu')['creds'].merge!('recovery' => { 'staff_no' => '40611' }, 'resetPassword' => 'Reset-Olu-71')
       npc_in(data, 'uma')['creds'].merge!('accountKind' => 'local', 'localTo' => %w[bay_pc store_pc],
@@ -111,6 +112,28 @@ module BreakEscape
     test 'wrong answers for an account-only account count and answer as for an unknown name' do
       assert_same_as_unknown('it_desk', 'deskadmin', 'password', { 'staff_no' => '1' })
       assert_same_as_unknown('it_desk', 'deskadmin', 'password', { 'staff_no' => '1' })
+    end
+
+    test 'a callback desk refuses an account-only and a local account, as an unknown name' do
+      assert_same_as_unknown('call_desk', 'labadmin', 'mfa', nil)
+      assert_same_as_unknown('call_desk', 'deskadmin', 'mfa', nil)
+      assert_same_as_unknown('call_desk', 'umaquay', 'mfa', nil)
+      assert_nil b_state['accountResets']&.dig('labadmin')
+    end
+
+    test 'at a full desk a new account-only name is blocked exactly as a new unknown name, and nothing is counted' do
+      game = Game.find(@game.id)
+      HelpdeskModel::TRIES_CAP.times do |i|
+        game.helpdesk_tries["it_desk|old#{i}"] = { 'n' => 1, 'at' => BEATS_START.to_i, 'seq' => i }
+      end
+      game.save!
+      account_only = desk('it_desk', 'deskadmin', 'password', { 'staff_no' => '40999' })
+      unknown = desk('it_desk', 'nobodyatall', 'password', { 'staff_no' => '40999' })
+      assert_equal 422, account_only['status']
+      assert_equal 'blocked', account_only['body']['reason']
+      assert_equal unknown['body'].to_json, account_only['body'].to_json
+      refute b_state['helpdeskTries'].key?(HelpdeskModel.tries_key('it_desk', 'deskadmin'))
+      refute b_state['helpdeskTries'].key?(HelpdeskModel.tries_key('it_desk', 'nobodyatall'))
     end
 
     test 'a normal directory account is still granted' do

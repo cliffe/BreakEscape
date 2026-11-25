@@ -40,10 +40,10 @@ Because of this, the following were not run by this review:
 
 ### Minor
 
-- **D1. A desk run by an account-only NPC still names it in the bootstrap.** `HelpdeskModel.forms` (the bootstrap `helpdeskForms`) copies `desk['npc']` without checking it. `helpdesk_npc_serving?` refuses such a desk at request time, but the id is still served. The new validator error (`a4d6e4e26`) stops anyone authoring this, and no shipped scenario has it. If defence in depth is wanted, `forms` could drop that desk.
+- **D1. A desk run by an account-only NPC still names it in the bootstrap.** `HelpdeskModel.forms` (the bootstrap `helpdeskForms`) copies `desk['npc']` without checking it. `helpdesk_npc_serving?` refuses such a desk at request time, but the id is still served. The new validator error (`a4d6e4e26`) stops anyone authoring this, and no shipped scenario has it. If defence in depth is wanted, `forms` could drop that desk. **Checked later:** the validator now rejects a desk run by an account-only NPC as an error, so no validator-clean scenario can reach this; no server change is needed.
 - **D2. A reset saved before this fix still holds.** `effective_password` and `helpdesk_keyring_entries` still honour an `accountResets` entry for an account-only or local account. That entry can only exist in a game saved before c821f856b in a scenario that combines desks with kinds, and none ships. Note it only. No change is needed.
 - **D3. Test gaps.**
-  - There is no callback desk case. It is structurally identical, but the decision says "every desk kind".
+  - (Closed: `helpdesk_account_kinds_test.rb` now has a callback desk case and a full-table case.) There is no callback desk case. It is structurally identical, but the decision says "every desk kind".
   - There is no stopped or cap case for an unserved name. Both are before the lookup.
   - No case compares log rows.
   - A domain account is shown granted only in the model unit test, not through the route. Ravi is the `it_desk` agent in the test copy, so another domain account would be needed.
